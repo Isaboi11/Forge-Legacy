@@ -19,6 +19,8 @@ export * from '../buttons'
 export * from '../inputs'
 // CLA-C06/C07  Cards — implemented; export from dedicated subfolder:
 export * from '../cards'
+// Navigation Library v1.0 — implemented; export from dedicated subfolder:
+export * from '../navigation'
 // CLA-C16  export { ListItem }     from './ListItem'
 // CLA-C17  export { SectionHeader } from './SectionHeader'
 // CLA-C18  export { AppBar }       from './AppBar'
