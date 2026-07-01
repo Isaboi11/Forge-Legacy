@@ -10,7 +10,7 @@
  * Thumb: off=#9E9890, on=#DFC49A (highlight)
  */
 
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   ActivityIndicator,
   Animated,
@@ -40,7 +40,7 @@ export function ForgeToggle({
   loading = false,
   accessibilityLabel,
 }: ForgeToggleProps) {
-  const thumbX = useRef(new Animated.Value(value ? INP.THUMB_ON_X : 0)).current
+  const [thumbX] = useState(() => new Animated.Value(value ? INP.THUMB_ON_X : 0))
 
   useEffect(() => {
     Animated.timing(thumbX, {
@@ -48,7 +48,7 @@ export function ForgeToggle({
       duration: 150,
       useNativeDriver: true,
     }).start()
-  }, [value])
+  }, [value, thumbX])
 
   const handlePress = () => {
     if (disabled || loading) return

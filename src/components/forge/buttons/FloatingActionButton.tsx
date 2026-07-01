@@ -7,7 +7,7 @@
  * Typically absolutely positioned at the bottom-right of the viewport.
  */
 
-import React, { useRef, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   ActivityIndicator,
   Animated,
@@ -42,8 +42,8 @@ export function FloatingActionButton({
   error = false,
   accessibilityLabel,
 }: FloatingActionButtonProps) {
-  const scale  = useRef(new Animated.Value(1)).current
-  const shakeX = useRef(new Animated.Value(0)).current
+  const [scale]  = useState(() => new Animated.Value(1))
+  const [shakeX] = useState(() => new Animated.Value(0))
   const [pressed, setPressed] = useState(false)
   const [focused, setFocused] = useState(false)
 
@@ -56,7 +56,7 @@ export function FloatingActionButton({
       Animated.timing(shakeX, { toValue: 5,  duration: 55, useNativeDriver: true }),
       Animated.timing(shakeX, { toValue: 0,  duration: 60, useNativeDriver: true }),
     ]).start()
-  }, [error])
+  }, [error, shakeX])
 
   const handlePressIn = () => {
     if (disabled || loading) return

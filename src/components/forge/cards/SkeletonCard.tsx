@@ -8,7 +8,7 @@
  * Variants: base · stat · media · feed · compact
  */
 
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   Animated,
   StyleSheet,
@@ -23,7 +23,7 @@ export interface SkeletonCardProps {
 }
 
 function usePulse() {
-  const opacity = useRef(new Animated.Value(1)).current
+  const [opacity] = useState(() => new Animated.Value(1))
 
   useEffect(() => {
     const anim = Animated.loop(

@@ -7,21 +7,20 @@
  * H 52 · R 12 · PX 24
  */
 
-import React, { useRef, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   ActivityIndicator,
   Animated,
   Pressable,
   StyleSheet,
   Text,
-  View,
 } from 'react-native'
 import { color, typography } from '@/constants/tokens'
 import { BTN } from './_buttonTokens'
 import { ButtonIcon } from './_ButtonIcon'
 import type { ButtonBaseProps, ShadowStyle } from './_types'
 
-export interface SecondaryButtonProps extends ButtonBaseProps {}
+export type SecondaryButtonProps = ButtonBaseProps
 
 export function SecondaryButton({
   title,
@@ -36,8 +35,8 @@ export function SecondaryButton({
   accessibilityLabel,
   fullWidth = false,
 }: SecondaryButtonProps) {
-  const scale = useRef(new Animated.Value(1)).current
-  const shakeX = useRef(new Animated.Value(0)).current
+  const [scale]  = useState(() => new Animated.Value(1))
+  const [shakeX] = useState(() => new Animated.Value(0))
   const [pressed, setPressed] = useState(false)
   const [focused, setFocused] = useState(false)
 
@@ -50,7 +49,7 @@ export function SecondaryButton({
       Animated.timing(shakeX, { toValue: 4,  duration: 50, useNativeDriver: true }),
       Animated.timing(shakeX, { toValue: 0,  duration: 60, useNativeDriver: true }),
     ]).start()
-  }, [error])
+  }, [error, shakeX])
 
   const handlePressIn = () => {
     if (disabled || loading) return

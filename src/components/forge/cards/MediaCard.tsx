@@ -18,7 +18,7 @@ import {
   View,
 } from 'react-native'
 import { Feather } from '@expo/vector-icons'
-import { color, space, radius } from '@/constants/tokens'
+import { color, space } from '@/constants/tokens'
 import { CARD } from './_cardTokens'
 import type { MediaCardState } from './types'
 

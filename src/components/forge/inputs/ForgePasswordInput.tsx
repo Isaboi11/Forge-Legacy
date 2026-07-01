@@ -22,8 +22,8 @@ import { INP } from './_inputTokens'
 import { getBorderColor, getBgColor, getGlow, getHelperColor, resolveHelper } from './_inputUtils'
 import type { InputBaseProps } from './_types'
 
-export interface ForgePasswordInputProps
-  extends Omit<InputBaseProps, 'iconLeft' | 'iconRight' | 'keyboardType'> {}
+export type ForgePasswordInputProps =
+  Omit<InputBaseProps, 'iconLeft' | 'iconRight' | 'keyboardType'>
 
 export function ForgePasswordInput({
   label,

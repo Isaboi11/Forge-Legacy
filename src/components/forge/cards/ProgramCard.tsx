@@ -16,7 +16,7 @@ import {
   View,
 } from 'react-native'
 import { Feather } from '@expo/vector-icons'
-import { color, space, size } from '@/constants/tokens'
+import { color, space } from '@/constants/tokens'
 import { BaseCard } from './BaseCard'
 import { CARD } from './_cardTokens'
 import type { ProgramCardState, DifficultyLevel } from './types'
