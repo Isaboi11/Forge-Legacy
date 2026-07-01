@@ -14,3 +14,4 @@
 export * from './primitives'
 export * from './composites'
 export * from './compositions'
+export * from './modals'
