@@ -17,6 +17,8 @@ export * from '../buttons'
 // CLA-C12  export { ProgressBar }  from './ProgressBar'
 // CLA-C13/C14/C15  Inputs — implemented; export from dedicated subfolder:
 export * from '../inputs'
+// CLA-C06/C07  Cards — implemented; export from dedicated subfolder:
+export * from '../cards'
 // CLA-C16  export { ListItem }     from './ListItem'
 // CLA-C17  export { SectionHeader } from './SectionHeader'
 // CLA-C18  export { AppBar }       from './AppBar'
