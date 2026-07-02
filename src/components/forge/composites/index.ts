@@ -21,6 +21,8 @@ export * from '../inputs'
 export * from '../cards'
 // Navigation Library v1.0 — implemented; export from dedicated subfolder:
 export * from '../navigation'
+// Progress Components Library v1.0 — implemented; export from dedicated subfolder:
+export * from '../progress'
 // CLA-C16  export { ListItem }     from './ListItem'
 // CLA-C17  export { SectionHeader } from './SectionHeader'
 // CLA-C18  export { AppBar }       from './AppBar'
