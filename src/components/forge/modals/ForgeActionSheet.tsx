@@ -7,8 +7,10 @@
  * A standalone Cancel row always closes it.
  */
 
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import {
+  Animated,
+  Easing,
   Modal,
   Pressable,
   StyleSheet,
@@ -19,6 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Feather } from '@expo/vector-icons'
 import { color } from '@/constants/tokens'
 import { MODAL } from './_modalTokens'
+import { useOverlayTransition } from './_useOverlayTransition'
 import type { ActionSheetItem, ActionItemVariant, ForgeActionSheetProps } from './types'
 
 export function ForgeActionSheet({
@@ -30,6 +33,11 @@ export function ForgeActionSheet({
   accessibilityLabel = 'Action sheet',
 }: ForgeActionSheetProps) {
   const insets = useSafeAreaInsets()
+
+  // Spec §14: action sheet 200ms ease-out (translateY 24 → 0, fade)
+  const { backdrop, panel, rendered } = useOverlayTransition(visible, {
+    enterDuration: MODAL.DUR_ACTION,
+  })
 
   const handleItem = useCallback((item: ActionSheetItem) => {
     if (item.variant === 'disabled') return
@@ -43,14 +51,18 @@ export function ForgeActionSheet({
 
   return (
     <Modal
-      visible={visible}
+      visible={rendered}
       transparent
-      animationType="slide"
+      animationType="none"
       onRequestClose={onClose}
       statusBarTranslucent
       accessibilityViewIsModal
     >
       {/* Backdrop */}
+      <Animated.View
+        pointerEvents="none"
+        style={[styles.backdropFill, { opacity: backdrop }]}
+      />
       <Pressable
         style={styles.backdrop}
         onPress={onClose}
@@ -59,8 +71,17 @@ export function ForgeActionSheet({
       />
 
       {/* Panels */}
-      <View
-        style={[styles.panels, { paddingBottom: insets.bottom + 8 }]}
+      <Animated.View
+        style={[
+          styles.panels,
+          { paddingBottom: insets.bottom + 8 },
+          {
+            opacity: panel,
+            transform: [
+              { translateY: panel.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) },
+            ],
+          },
+        ]}
         accessibilityLabel={accessibilityLabel}
         accessibilityRole="menu"
       >
@@ -75,12 +96,13 @@ export function ForgeActionSheet({
 
           {/* Normal items */}
           {normalItems.map((item, i) => (
-            <ActionItem
-              key={item.key}
-              item={item}
-              onPress={handleItem}
-              isLast={i === normalItems.length - 1 && destructiveItems.length === 0}
-            />
+            <StaggerIn key={item.key} visible={visible} index={i}>
+              <ActionItem
+                item={item}
+                onPress={handleItem}
+                isLast={i === normalItems.length - 1 && destructiveItems.length === 0}
+              />
+            </StaggerIn>
           ))}
 
           {/* Separator before destructive */}
@@ -90,12 +112,13 @@ export function ForgeActionSheet({
 
           {/* Destructive items */}
           {destructiveItems.map((item, i) => (
-            <ActionItem
-              key={item.key}
-              item={item}
-              onPress={handleItem}
-              isLast={i === destructiveItems.length - 1}
-            />
+            <StaggerIn key={item.key} visible={visible} index={normalItems.length + i}>
+              <ActionItem
+                item={item}
+                onPress={handleItem}
+                isLast={i === destructiveItems.length - 1}
+              />
+            </StaggerIn>
           ))}
         </View>
 
@@ -108,9 +131,37 @@ export function ForgeActionSheet({
         >
           <Text style={styles.cancelLabel}>{cancelLabel}</Text>
         </Pressable>
-      </View>
+      </Animated.View>
     </Modal>
   )
+}
+
+/** Spec §14 — options stagger in under 40ms each */
+function StaggerIn({
+  visible,
+  index,
+  children,
+}: {
+  visible: boolean
+  index: number
+  children: React.ReactNode
+}) {
+  const [opacity] = useState(() => new Animated.Value(0))
+
+  useEffect(() => {
+    if (visible) {
+      opacity.setValue(0)
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: MODAL.DUR_ACTION,
+        delay: index * MODAL.STAGGER_ACTION,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }).start()
+    }
+  }, [visible, index, opacity])
+
+  return <Animated.View style={{ opacity }}>{children}</Animated.View>
 }
 
 function ActionItem({
@@ -163,9 +214,12 @@ function ActionItem({
 void (undefined as unknown as ActionItemVariant)
 
 const styles = StyleSheet.create({
+  backdropFill: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: color.background.overlay,
+  },
   backdrop: {
     flex: 1,
-    backgroundColor: color.background.overlay,
   },
   panels: {
     paddingHorizontal: 8,

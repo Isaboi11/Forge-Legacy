@@ -42,6 +42,7 @@ export type {
   // ForgePickerModal
   PickerItem,
   PickerFilter,
+  PickerMode,
   ForgePickerModalProps,
 
   // ForgeMediaModal

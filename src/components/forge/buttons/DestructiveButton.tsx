@@ -3,7 +3,7 @@
  * Tier: 2 (Composite)
  * Spec: ButtonLibrary.dc.html · variant="destructive"
  *
- * Elevated dark surface fill, red 1px border, white text.
+ * Dark gradient surface fill, red 1px border, white text.
  * RESTRICTED: M-6 Destructive Confirm + L-13 Delete action ONLY (CLA-D8).
  * H 52 · R 12 · PX 24
  */
@@ -16,10 +16,11 @@ import {
   StyleSheet,
   Text,
 } from 'react-native'
-import { color, typography } from '@/constants/tokens'
+import { LinearGradient } from 'expo-linear-gradient'
+import { color } from '@/constants/tokens'
 import { BTN } from './_buttonTokens'
 import { ButtonIcon } from './_ButtonIcon'
-import type { ButtonBaseProps, ShadowStyle } from './_types'
+import type { ButtonBaseProps } from './_types'
 
 export type DestructiveButtonProps = ButtonBaseProps
 
@@ -62,34 +63,41 @@ export function DestructiveButton({
     Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 2 }).start()
   }
 
-  let bgColor: string    = color.background.elevated
-  let borderCol: string  = color.destructive
-  let textColor: string  = BTN.WHITE
-  let shadow: ShadowStyle = BTN.SHADOW_CARD
+  let bgColors: readonly [string, string] = BTN.DESTRUCTIVE_GRAD_COLORS
+  let borderColor: string = 'rgba(196,86,60,0.9)'
+  let textColor: string = BTN.WHITE
+  let stateBoxShadow: string = BTN.BOX_SHADOW_DESTRUCTIVE_DEFAULT
 
   if (selected) {
-    bgColor   = BTN.SELECTED_DESTR_BG
-    borderCol = '#C46A6A'
-    shadow    = BTN.SHADOW_DESTRUCTIVE_PRESSED
+    bgColors = [BTN.SELECTED_DESTR_BG, BTN.SELECTED_DESTR_BG] as const
+    borderColor = BTN.SELECTED_DESTR_BORDER
+    stateBoxShadow = BTN.BOX_SHADOW_DESTRUCTIVE_SELECTED
   } else if (success) {
-    bgColor   = BTN.SUCCESS_NON_FILL_BG
-    borderCol = color.success
+    bgColors = [BTN.SUCCESS_NON_FILL_BG, BTN.SUCCESS_NON_FILL_BG] as const
+    borderColor = color.success
     textColor = color.success
-    shadow    = BTN.SHADOW_SUCCESS
+    stateBoxShadow = BTN.BOX_SHADOW_SUCCESS_NON_FILL
   } else if (error) {
-    shadow    = BTN.SHADOW_ERROR
-    borderCol = color.danger
+    bgColors = [BTN.ERROR_NON_FILL_BG, BTN.ERROR_NON_FILL_BG] as const
+    borderColor = color.danger
+    textColor = BTN.ERROR_TEXT
+    stateBoxShadow = BTN.BOX_SHADOW_ERROR_NON_FILL
   } else if (pressed) {
-    bgColor   = BTN.DESTRUCTIVE_PRESSED
-    shadow    = BTN.SHADOW_DESTRUCTIVE_PRESSED
+    bgColors = [BTN.DESTRUCTIVE_PRESSED_BG, BTN.DESTRUCTIVE_PRESSED_BG] as const
+    borderColor = BTN.DESTRUCTIVE_PRESSED_BORDER
+    stateBoxShadow = BTN.BOX_SHADOW_DESTRUCTIVE_PRESSED
   }
 
-  if (focused) {
-    shadow = { ...BTN.SHADOW_ERROR, shadowColor: color.destructive as string, shadowOpacity: 0.45 }
-  }
+  const boxShadow = disabled
+    ? BTN.DISABLED_BOX_SHADOW
+    : focused
+    ? BTN.appendFocusRing(stateBoxShadow)
+    : stateBoxShadow
 
-  const iconName = success ? 'check' : error ? 'x' : iconLeft
   const hasLabel = !!(title && title.trim().length > 0)
+  let iconName = iconLeft
+  if (selected && !iconName && hasLabel) iconName = 'check'
+  if (success && !iconName) iconName = 'check'
 
   return (
     <Animated.View
@@ -108,33 +116,38 @@ export function DestructiveButton({
         accessibilityLabel={accessibilityLabel ?? title}
         accessibilityRole="button"
         accessibilityState={{ disabled, busy: loading }}
-        style={[
-          styles.base,
-          shadow,
-          { backgroundColor: bgColor, borderColor: borderCol },
-          focused && styles.focusRing,
-          disabled && styles.disabled,
-          fullWidth && styles.fullWidth,
-          !hasLabel && styles.iconOnly,
-        ]}
+        style={[fullWidth && styles.fullWidth]}
       >
-        {loading ? (
-          <ActivityIndicator size="small" color={textColor} />
-        ) : (
-          <>
-            {iconName && (
-              <ButtonIcon name={iconName} size={BTN.ICON_SIZE} color={textColor} />
-            )}
-            {hasLabel && (
-              <Text style={[styles.label, { color: textColor }]} numberOfLines={1}>
-                {title}
-              </Text>
-            )}
-            {!success && !error && iconRight && (
-              <ButtonIcon name={iconRight} size={BTN.ICON_SIZE} color={textColor} />
-            )}
-          </>
-        )}
+        <LinearGradient
+          colors={bgColors}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={[
+            styles.base,
+            { borderColor, boxShadow },
+            disabled && styles.disabled,
+            fullWidth && styles.fullWidth,
+            !hasLabel && styles.iconOnly,
+          ]}
+        >
+          {loading ? (
+            <ActivityIndicator size="small" color={textColor} />
+          ) : (
+            <>
+              {iconName && (
+                <ButtonIcon name={iconName} size={BTN.ICON_SIZE} color={textColor} />
+              )}
+              {hasLabel && (
+                <Text style={[styles.label, { color: textColor }]} numberOfLines={1}>
+                  {title}
+                </Text>
+              )}
+              {iconRight && (
+                <ButtonIcon name={iconRight} size={BTN.ICON_SIZE} color={textColor} />
+              )}
+            </>
+          )}
+        </LinearGradient>
       </Pressable>
     </Animated.View>
   )
@@ -162,15 +175,12 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   label: {
-    fontSize: typography.scale.standardCardName.fontSize,
+    fontSize: 16,
     fontWeight: BTN.FONT_WEIGHT,
     letterSpacing: BTN.LETTER_SPACING,
-    lineHeight: typography.scale.standardCardName.lineHeight,
-  },
-  focusRing: {
-    borderWidth: 2,
+    lineHeight: BTN.LABEL_LINE_HEIGHT,
   },
   disabled: {
-    opacity: 0.3,
+    opacity: BTN.DISABLED_OPACITY,
   },
 })

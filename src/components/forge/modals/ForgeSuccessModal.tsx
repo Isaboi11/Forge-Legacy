@@ -10,8 +10,10 @@
  *         88Ã—88 bronze icon circle, overline + title + description.
  */
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import {
+  Animated,
+  Easing,
   Modal,
   Pressable,
   StyleSheet,
@@ -22,6 +24,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Feather } from '@expo/vector-icons'
 import { color, elevation } from '@/constants/tokens'
 import { MODAL } from './_modalTokens'
+import { useOverlayTransition } from './_useOverlayTransition'
 import type { ForgeSuccessModalProps } from './types'
 
 export function ForgeSuccessModal({
@@ -37,27 +40,78 @@ export function ForgeSuccessModal({
 }: ForgeSuccessModalProps) {
   const insets = useSafeAreaInsets()
 
+  // Spec §14: success animation 300ms spring·gentle — scale 0.6→1,
+  // bronze mark draws once, then holds. The ring pulse stands in for the
+  // SVG ring-draw (no svg dependency in this library).
+  const { backdrop, panel, rendered } = useOverlayTransition(visible, {
+    enterDuration: MODAL.DUR_CEREMONY,
+    spring: true,
+  })
+  const [ring] = useState(() => new Animated.Value(0))
+
+  useEffect(() => {
+    if (visible) {
+      ring.setValue(0)
+      Animated.timing(ring, {
+        toValue: 1,
+        duration: MODAL.DUR_CEREMONY * 2,
+        delay: 120,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }).start()
+    }
+  }, [visible, ring])
+
   return (
     <Modal
-      visible={visible}
+      visible={rendered}
       transparent
-      animationType="fade"
+      animationType="none"
       onRequestClose={onClose}
       statusBarTranslucent
       accessibilityViewIsModal
     >
+      <Animated.View
+        pointerEvents="none"
+        style={[styles.backdropFill, { opacity: backdrop }]}
+      />
       <View
         style={[styles.backdrop, { paddingBottom: insets.bottom + 20 }]}
         accessibilityLabel={accessibilityLabel}
-        
+
         accessibilityViewIsModal
       >
         {/* Ceremony container â€” premium border, deeper bg */}
-        <View style={styles.container}>
-          {/* Hero icon */}
-          <View style={styles.heroCircle}>
+        <Animated.View
+          style={[
+            styles.container,
+            {
+              opacity: panel,
+              transform: [
+                { translateY: panel.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) },
+              ],
+            },
+          ]}
+        >
+          {/* Hero icon — reveals slowly and holds */}
+          <Animated.View
+            style={[
+              styles.heroCircle,
+              { transform: [{ scale: panel.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) }] },
+            ]}
+          >
             <Feather name={iconName as 'award'} size={44} color={color.text.inverse} />
-          </View>
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.heroRing,
+                {
+                  opacity: ring.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 0.55, 0] }),
+                  transform: [{ scale: ring.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1.35] }) }],
+                },
+              ]}
+            />
+          </Animated.View>
 
           {/* Text group */}
           <View style={styles.textGroup}>
@@ -109,16 +163,19 @@ export function ForgeSuccessModal({
               </Pressable>
             ) : null}
           </View>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   )
 }
 
 const styles = StyleSheet.create({
+  backdropFill: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: color.background.overlay,
+  },
   backdrop: {
     flex: 1,
-    backgroundColor: color.background.overlay,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
@@ -152,6 +209,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 20,
     elevation: 6,
+  },
+  heroRing: {
+    position: 'absolute',
+    top: -1,
+    left: -1,
+    width: MODAL.ICON_BOX_SUCCESS + 2,
+    height: MODAL.ICON_BOX_SUCCESS + 2,
+    borderRadius: MODAL.RADIUS_PILL,
+    borderWidth: 2,
+    borderColor: color.accent.primary,
   },
   textGroup: {
     alignItems: 'center',

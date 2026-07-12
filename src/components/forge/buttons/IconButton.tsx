@@ -3,7 +3,7 @@
  * Tier: 2 (Composite)
  * Spec: ButtonLibrary.dc.html · variant="icon"
  *
- * Square 44×44, border-radius 12, bronze outline, centered Feather icon.
+ * Square 44×44, border-radius 12, bronze outline glow, centered Feather icon.
  * Icon-only — no label prop (use accessibilityLabel for screen readers).
  */
 
@@ -14,10 +14,11 @@ import {
   Pressable,
   StyleSheet,
 } from 'react-native'
+import { LinearGradient } from 'expo-linear-gradient'
 import { color } from '@/constants/tokens'
 import { BTN } from './_buttonTokens'
 import { ButtonIcon } from './_ButtonIcon'
-import type { ButtonIconName, ShadowStyle } from './_types'
+import type { ButtonIconName } from './_types'
 
 export interface IconButtonProps {
   /** Phosphor/Feather icon name to display */
@@ -60,37 +61,43 @@ export function IconButton({
   const handlePressIn = () => {
     if (disabled || loading) return
     setPressed(true)
-    Animated.spring(scale, { toValue: 0.96, useNativeDriver: true, speed: 50, bounciness: 0 }).start()
+    Animated.spring(scale, { toValue: 0.98, useNativeDriver: true, speed: 50, bounciness: 0 }).start()
   }
   const handlePressOut = () => {
     setPressed(false)
     Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 2 }).start()
   }
 
-  let bgColor: string   = 'transparent'
-  let borderCol: string = color.accent.highlight
-  let iconColor: string = color.accent.primary
-  let shadow: ShadowStyle = BTN.SHADOW_CARD
+  let bgColors: readonly [string, string, string] = BTN.ICON_GLOW_COLORS
+  let borderColor: string = BTN.BORDER_BRONZE_ICON
+  let iconColor: string = BTN.DEFAULT_TEXT_OUTLINE
+  let stateBoxShadow: string = BTN.BOX_SHADOW_ICON_DEFAULT
 
   if (selected) {
-    bgColor   = BTN.SELECTED_BRONZE_BG
-    borderCol = color.accent.highlight
+    bgColors = [BTN.SELECTED_BRONZE_BG, BTN.SELECTED_BRONZE_BG, BTN.SELECTED_BRONZE_BG] as const
+    borderColor = color.accent.highlight
     iconColor = color.accent.highlight
-    shadow    = BTN.SHADOW_GLOW_PRESSED
+    stateBoxShadow = BTN.BOX_SHADOW_OUTLINE_SELECTED
   } else if (success) {
-    bgColor   = BTN.SUCCESS_NON_FILL_BG
-    borderCol = color.success
+    bgColors = [BTN.SUCCESS_NON_FILL_BG, BTN.SUCCESS_NON_FILL_BG, BTN.SUCCESS_NON_FILL_BG] as const
+    borderColor = color.success
     iconColor = color.success
-    shadow    = BTN.SHADOW_SUCCESS
+    stateBoxShadow = BTN.BOX_SHADOW_SUCCESS_NON_FILL
   } else if (error) {
-    bgColor   = BTN.ERROR_NON_FILL_BG
-    borderCol = color.danger
+    bgColors = [BTN.ERROR_NON_FILL_BG, BTN.ERROR_NON_FILL_BG, BTN.ERROR_NON_FILL_BG] as const
+    borderColor = color.danger
     iconColor = BTN.ERROR_TEXT
-    shadow    = BTN.SHADOW_ERROR
+    stateBoxShadow = BTN.BOX_SHADOW_ERROR_NON_FILL
   } else if (pressed) {
-    bgColor   = BTN.ICON_PRESSED_BG
-    shadow    = BTN.SHADOW_GLOW_PRESSED
+    bgColors = [BTN.ICON_PRESSED_BG, BTN.ICON_PRESSED_BG, BTN.ICON_PRESSED_BG] as const
+    stateBoxShadow = BTN.BOX_SHADOW_OUTLINE_PRESSED
   }
+
+  const boxShadow = disabled
+    ? BTN.DISABLED_BOX_SHADOW
+    : focused
+    ? BTN.appendFocusRing(stateBoxShadow)
+    : stateBoxShadow
 
   const displayIcon: ButtonIconName = success ? 'check' : error ? 'x' : icon
 
@@ -106,19 +113,23 @@ export function IconButton({
         accessibilityLabel={accessibilityLabel}
         accessibilityRole="button"
         accessibilityState={{ disabled, busy: loading, selected }}
-        style={[
-          styles.base,
-          shadow,
-          { backgroundColor: bgColor, borderColor: borderCol },
-          focused && styles.focusRing,
-          disabled && styles.disabled,
-        ]}
       >
-        {loading ? (
-          <ActivityIndicator size="small" color={iconColor} />
-        ) : (
-          <ButtonIcon name={displayIcon} size={BTN.ICON_SIZE_ICON} color={iconColor} />
-        )}
+        <LinearGradient
+          colors={bgColors}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={[
+            styles.base,
+            { borderColor, boxShadow },
+            disabled && styles.disabled,
+          ]}
+        >
+          {loading ? (
+            <ActivityIndicator size="small" color={iconColor} />
+          ) : (
+            <ButtonIcon name={displayIcon} size={BTN.ICON_SIZE_ICON} color={iconColor} />
+          )}
+        </LinearGradient>
       </Pressable>
     </Animated.View>
   )
@@ -133,11 +144,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  focusRing: {
-    borderWidth: 2,
-    borderColor: color.accent.primary,
-  },
   disabled: {
-    opacity: 0.3,
+    opacity: BTN.DISABLED_OPACITY,
   },
 })

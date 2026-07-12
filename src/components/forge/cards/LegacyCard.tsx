@@ -1,5 +1,7 @@
 /**
- * CLA-C07 — LegacyCard
+ * Unassigned — not yet in the CLA-Cxx registry (Component-Library-Architecture-v1.0.md);
+ * conceptually overlaps CLA-C25 ChapterCard, but the registry name differs and the
+ * mapping has not been confirmed — do not treat this as CLA-C25's implementation.
  * Tier: 2 (Composite)
  * Spec: Forge Card Library.dc.html §07
  *

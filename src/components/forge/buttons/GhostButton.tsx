@@ -15,7 +15,7 @@ import {
   StyleSheet,
   Text,
 } from 'react-native'
-import { color, typography } from '@/constants/tokens'
+import { color } from '@/constants/tokens'
 import { BTN } from './_buttonTokens'
 import { ButtonIcon } from './_ButtonIcon'
 import type { ButtonBaseProps } from './_types'
@@ -54,43 +54,51 @@ export function GhostButton({
   const handlePressIn = () => {
     if (disabled || loading) return
     setPressed(true)
-    Animated.timing(opacity, { toValue: 0.72, duration: 60, useNativeDriver: true }).start()
+    Animated.timing(opacity, { toValue: BTN.GHOST_PRESSED_OPACITY, duration: 60, useNativeDriver: true }).start()
   }
   const handlePressOut = () => {
     setPressed(false)
     Animated.timing(opacity, { toValue: 1, duration: 150, useNativeDriver: true }).start()
   }
 
+  // Ghost never has a real border by default — success/error borrow the
+  // shared non-fill treatment (which does add a real 1px border), everything
+  // else uses an inset box-shadow ring instead so layout never shifts.
   let bgColor: string = 'transparent'
-  let textColor: string = color.accent.primary
+  let textColor: string = BTN.DEFAULT_TEXT_OUTLINE
   let borderWidth = 0
   let borderColor: string = 'transparent'
+  let stateBoxShadow = 'none'
 
   if (selected) {
     bgColor = BTN.SELECTED_GHOST_BG
-    borderWidth = 1
-    borderColor = 'rgba(200,138,61,0.3)'
+    stateBoxShadow = BTN.BOX_SHADOW_GHOST_SELECTED
   } else if (success) {
     bgColor = BTN.SUCCESS_NON_FILL_BG
     borderWidth = 1
     borderColor = color.success
     textColor = color.success
+    stateBoxShadow = BTN.BOX_SHADOW_SUCCESS_NON_FILL
   } else if (error) {
     bgColor = BTN.ERROR_NON_FILL_BG
     borderWidth = 1
     borderColor = color.danger
     textColor = BTN.ERROR_TEXT
+    stateBoxShadow = BTN.BOX_SHADOW_ERROR_NON_FILL
   } else if (pressed) {
     bgColor = BTN.GHOST_PRESSED_BG
   }
 
-  if (focused) {
-    borderWidth = 2
-    borderColor = color.accent.primary
-  }
+  const boxShadow = disabled
+    ? BTN.DISABLED_BOX_SHADOW
+    : focused
+    ? BTN.appendFocusRing(stateBoxShadow)
+    : stateBoxShadow
 
-  const iconName = success ? 'check' : error ? 'x' : iconLeft
   const hasLabel = !!(title && title.trim().length > 0)
+  let iconName = iconLeft
+  if (selected && !iconName && hasLabel) iconName = 'check'
+  if (success && !iconName) iconName = 'check'
 
   return (
     <Animated.View
@@ -111,7 +119,7 @@ export function GhostButton({
         accessibilityState={{ disabled, busy: loading, selected }}
         style={[
           styles.base,
-          { backgroundColor: bgColor, borderWidth, borderColor },
+          { backgroundColor: bgColor, borderWidth, borderColor, boxShadow },
           disabled && styles.disabled,
           fullWidth && styles.fullWidth,
           !hasLabel && styles.iconOnly,
@@ -129,7 +137,7 @@ export function GhostButton({
                 {title}
               </Text>
             )}
-            {!success && !error && iconRight && (
+            {iconRight && (
               <ButtonIcon name={iconRight} size={BTN.ICON_SIZE} color={textColor} />
             )}
           </>
@@ -160,12 +168,12 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   label: {
-    fontSize: typography.scale.standardCardName.fontSize,
+    fontSize: 16,
     fontWeight: BTN.FONT_WEIGHT,
     letterSpacing: BTN.LETTER_SPACING,
-    lineHeight: typography.scale.standardCardName.lineHeight,
+    lineHeight: BTN.LABEL_LINE_HEIGHT,
   },
   disabled: {
-    opacity: 0.3,
+    opacity: BTN.DISABLED_OPACITY,
   },
 })

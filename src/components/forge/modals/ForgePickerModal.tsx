@@ -2,15 +2,18 @@
  * ForgePickerModal
  * Spec: Forge Modal Library.dc.html Â§06
  *
- * Search â†’ filter â†’ select â†’ confirm.
- * Layout: fixed header (title + close), search field, filter chips,
- * scrollable item list, pinned confirm button.
+ * Two content modes:
+ *   list — search â†’ filter â†’ select â†’ confirm. Fixed header (title + close),
+ *          search field, filter chips, scrollable item list, pinned confirm.
+ *   date — month calendar grid. Month header with prev/next, weekday row,
+ *          day grid with selected/today states, confirm counts the pick.
  *
  * Used for: Exercise Picker, Date Picker, Program/Goal/Challenge Picker.
  */
 
 import React, { useCallback, useState } from 'react'
 import {
+  Animated,
   Modal,
   Pressable,
   ScrollView,
@@ -23,28 +26,53 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Feather } from '@expo/vector-icons'
 import { color } from '@/constants/tokens'
 import { MODAL } from './_modalTokens'
+import { useOverlayTransition } from './_useOverlayTransition'
 import type { ForgePickerModalProps, PickerItem } from './types'
+
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+] as const
+const MONTHS_SHORT = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+] as const
+const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'] as const
 
 export function ForgePickerModal({
   visible,
   onClose,
+  mode = 'list',
   title = 'Select',
-  placeholder = 'Searchâ€¦',
+  placeholder = 'Search…',
   searchValue = '',
   onSearchChange,
   filters = [],
   activeFilter,
   onFilterChange,
-  items,
+  items = [],
   selectedKeys = [],
   multiSelect = false,
   onSelectionChange,
-  confirmLabel = 'Confirm',
+  confirmLabel,
   onConfirm,
+  selectedDate,
+  onDateChange,
+  onConfirmDate,
   accessibilityLabel = 'Picker',
 }: ForgePickerModalProps) {
   const insets = useSafeAreaInsets()
   const [localSelected, setLocalSelected] = useState<string[]>(selectedKeys)
+
+  // Date mode state
+  const [localDate, setLocalDate] = useState<Date | undefined>(selectedDate)
+  const [monthCursor, setMonthCursor] = useState<Date>(() => {
+    const base = selectedDate ?? new Date()
+    return new Date(base.getFullYear(), base.getMonth(), 1)
+  })
+
+  // Spec §14: modal entrance — backdrop dims first, panel pops in
+  const { backdrop, panel, rendered } = useOverlayTransition(visible, { spring: true })
 
   const toggleItem = useCallback((key: string) => {
     setLocalSelected(prev => {
@@ -61,28 +89,69 @@ export function ForgePickerModal({
   }, [multiSelect, onSelectionChange])
 
   const handleConfirm = useCallback(() => {
+    if (mode === 'date') {
+      if (localDate) onConfirmDate?.(localDate)
+      onClose()
+      return
+    }
     onConfirm?.(localSelected)
     onClose()
-  }, [localSelected, onConfirm, onClose])
+  }, [mode, localDate, onConfirmDate, localSelected, onConfirm, onClose])
 
-  const confirmText = localSelected.length > 0
-    ? `${confirmLabel} (${localSelected.length})`
-    : confirmLabel
+  const selectDay = useCallback((day: number) => {
+    const next = new Date(monthCursor.getFullYear(), monthCursor.getMonth(), day)
+    setLocalDate(next)
+    onDateChange?.(next)
+  }, [monthCursor, onDateChange])
+
+  const shiftMonth = useCallback((delta: number) => {
+    setMonthCursor(prev => new Date(prev.getFullYear(), prev.getMonth() + delta, 1))
+  }, [])
+
+  const baseLabel = confirmLabel ?? (mode === 'date' ? 'Set Date' : 'Confirm')
+  const confirmText = mode === 'date'
+    ? (localDate
+        ? `${baseLabel} · ${MONTHS_SHORT[localDate.getMonth()]} ${localDate.getDate()}`
+        : baseLabel)
+    : (localSelected.length > 0
+        ? `${baseLabel} (${localSelected.length})`
+        : baseLabel)
+  const confirmDisabled = mode === 'date' && !localDate
 
   return (
     <Modal
-      visible={visible}
+      visible={rendered}
       transparent
-      animationType="fade"
+      animationType="none"
       onRequestClose={onClose}
       statusBarTranslucent
       accessibilityViewIsModal
     >
+      <Animated.View
+        pointerEvents="none"
+        style={[styles.backdropFill, { opacity: backdrop }]}
+      />
       <View
-        style={[styles.backdrop, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }]}
+        style={[
+          styles.backdrop,
+          mode === 'date' && styles.backdropCenter,
+          { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 },
+        ]}
         accessibilityLabel={accessibilityLabel}
       >
-        <View style={styles.container}>
+        <Animated.View
+          style={[
+            styles.container,
+            mode === 'date' && styles.containerDate,
+            {
+              opacity: panel,
+              transform: [
+                { translateY: panel.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) },
+                { scale: panel.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1] }) },
+              ],
+            },
+          ]}
+        >
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>{title}</Text>
@@ -90,12 +159,90 @@ export function ForgePickerModal({
               onPress={onClose}
               accessibilityLabel="Close"
               accessibilityRole="button"
+              hitSlop={(MODAL.TAP_MIN - 28) / 2}
               style={({ pressed }) => [styles.closeBtn, pressed && styles.closeBtnPressed]}
             >
               <Feather name="x" size={12} color={color.text.secondary} />
             </Pressable>
           </View>
 
+          {mode === 'date' ? (
+            /* Date grid — spec §06 date variant */
+            <View style={styles.calendar}>
+              <View style={styles.monthHeader}>
+                <Text style={styles.monthTitle}>
+                  {MONTHS[monthCursor.getMonth()]} {monthCursor.getFullYear()}
+                </Text>
+                <View style={styles.monthNav}>
+                  <Pressable
+                    onPress={() => shiftMonth(-1)}
+                    accessibilityLabel="Previous month"
+                    accessibilityRole="button"
+                    hitSlop={(MODAL.TAP_MIN - 28) / 2}
+                    style={({ pressed }) => [styles.navBtn, pressed && styles.closeBtnPressed]}
+                  >
+                    <Feather name="chevron-left" size={14} color={color.text.secondary} />
+                  </Pressable>
+                  <Pressable
+                    onPress={() => shiftMonth(1)}
+                    accessibilityLabel="Next month"
+                    accessibilityRole="button"
+                    hitSlop={(MODAL.TAP_MIN - 28) / 2}
+                    style={({ pressed }) => [styles.navBtn, pressed && styles.closeBtnPressed]}
+                  >
+                    <Feather name="chevron-right" size={14} color={color.text.secondary} />
+                  </Pressable>
+                </View>
+              </View>
+
+              <View style={styles.weekRow}>
+                {WEEKDAYS.map((d, i) => (
+                  <Text key={`${d}-${i}`} style={styles.weekday}>{d}</Text>
+                ))}
+              </View>
+
+              <View style={styles.dayGrid}>
+                {_calendarCells(monthCursor).map((day, i) => {
+                  if (day === null) {
+                    return <View key={`blank-${i}`} style={styles.dayCell} />
+                  }
+                  const isSelected = !!localDate
+                    && localDate.getFullYear() === monthCursor.getFullYear()
+                    && localDate.getMonth() === monthCursor.getMonth()
+                    && localDate.getDate() === day
+                  const today = new Date()
+                  const isToday = today.getFullYear() === monthCursor.getFullYear()
+                    && today.getMonth() === monthCursor.getMonth()
+                    && today.getDate() === day
+                  return (
+                    <Pressable
+                      key={day}
+                      onPress={() => selectDay(day)}
+                      accessibilityLabel={`${MONTHS[monthCursor.getMonth()]} ${day}`}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: isSelected }}
+                      style={[
+                        styles.dayCell,
+                        isToday && !isSelected && styles.dayCellToday,
+                        isSelected && styles.dayCellSelected,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.dayLabel,
+                          isToday && !isSelected && styles.dayLabelToday,
+                          isSelected && styles.dayLabelSelected,
+                        ]}
+                      >
+                        {day}
+                      </Text>
+                    </Pressable>
+                  )
+                })}
+              </View>
+            </View>
+          ) : (
+          <>
           {/* Search + filters */}
           <View style={styles.searchArea}>
             <View style={styles.searchField}>
@@ -162,22 +309,42 @@ export function ForgePickerModal({
               />
             ))}
           </ScrollView>
+          </>
+          )}
 
           {/* Confirm footer */}
           <View style={styles.footer}>
             <Pressable
               onPress={handleConfirm}
+              disabled={confirmDisabled}
               accessibilityLabel={confirmText}
               accessibilityRole="button"
-              style={({ pressed }) => [styles.confirmBtn, pressed && styles.confirmBtnPressed]}
+              accessibilityState={{ disabled: confirmDisabled }}
+              style={({ pressed }) => [
+                styles.confirmBtn,
+                pressed && !confirmDisabled && styles.confirmBtnPressed,
+                confirmDisabled && styles.confirmBtnDisabled,
+              ]}
             >
               <Text style={styles.confirmLabel}>{confirmText}</Text>
             </Pressable>
           </View>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   )
+}
+
+/** Sunday-first cell list for the month: leading blanks, then days 1..n */
+function _calendarCells(monthCursor: Date): (number | null)[] {
+  const year = monthCursor.getFullYear()
+  const month = monthCursor.getMonth()
+  const firstDow = new Date(year, month, 1).getDay()
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  return [
+    ...Array.from({ length: firstDow }, () => null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ]
 }
 
 function PickerRow({
@@ -224,10 +391,19 @@ function PickerRow({
 }
 
 const styles = StyleSheet.create({
+  backdropFill: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: color.background.overlay,
+  },
   backdrop: {
     flex: 1,
-    backgroundColor: color.background.overlay,
     paddingHorizontal: 16,
+  },
+  backdropCenter: {
+    justifyContent: 'center',
+  },
+  containerDate: {
+    flex: 0,
   },
   container: {
     flex: 1,
@@ -268,6 +444,81 @@ const styles = StyleSheet.create({
   },
   closeBtnPressed: {
     backgroundColor: color.innerHighlight,
+  },
+  // ── Date mode — spec §06 date-grid variant ────────────────────────────────
+  calendar: {
+    paddingBottom: 4,
+  },
+  monthHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: color.border.subtle,
+  },
+  monthTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: color.text.primary,
+  },
+  monthNav: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  navBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: MODAL.RADIUS_PILL,
+    backgroundColor: color.background.surface,
+    borderWidth: 1,
+    borderColor: color.border.subtle,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  weekRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 8,
+  },
+  weekday: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 11,
+    color: color.text.tertiary,
+  },
+  dayGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 16,
+  },
+  dayCell: {
+    width: `${100 / 7}%`,
+    aspectRatio: 1,
+    borderRadius: MODAL.RADIUS_PILL,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dayCellToday: {
+    borderWidth: 1,
+    borderColor: color.accent.muted,
+  },
+  dayCellSelected: {
+    backgroundColor: color.accent.primary,
+  },
+  dayLabel: {
+    fontSize: 13,
+    color: color.text.primary,
+  },
+  dayLabelToday: {
+    color: color.accent.primary,
+    fontWeight: '600',
+  },
+  dayLabelSelected: {
+    color: color.text.inverse,
+    fontWeight: '600',
   },
   searchArea: {
     paddingHorizontal: 12,
@@ -373,6 +624,9 @@ const styles = StyleSheet.create({
   },
   confirmBtnPressed: {
     backgroundColor: color.accent.highlight,
+  },
+  confirmBtnDisabled: {
+    opacity: 0.45,
   },
   confirmLabel: {
     fontSize: 15,

@@ -1,5 +1,5 @@
 /**
- * CLA-C07 — SkeletonCard
+ * CLA-C23 — SkeletonCard (Skeleton, card variant)
  * Tier: 2 (Composite)
  * Spec: Forge Card Library.dc.html §13
  *

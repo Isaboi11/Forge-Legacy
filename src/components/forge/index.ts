@@ -1,6 +1,12 @@
 /**
  * Forge Legacy Component Library — single import point
  *
+ * STATUS: LEGACY / REFERENCE. The visual design system is being rebuilt in
+ * Claude Design first; this code is the pre-redesign implementation and is
+ * not the current visual source of truth. Do not delete — see README.md for
+ * the replacement plan (logic/types/a11y/exports/interaction patterns carry
+ * forward; only visuals are being redone, one library at a time).
+ *
  * All screens and compositions import from here ONLY.
  * Never import directly from a component's own file path.
  *

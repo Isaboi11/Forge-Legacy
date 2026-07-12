@@ -28,6 +28,7 @@ export function ForgeLoadingModal({
   status = 'loading',
   title,
   message,
+  progress,
   onDismiss,
   accessibilityLabel = 'Loading',
 }: ForgeLoadingModalProps) {
@@ -43,6 +44,11 @@ export function ForgeLoadingModal({
     return undefined
   }, [status, onDismiss])
 
+  // Spec §08 determinate variant: when progress is measurable, replace the
+  // spinner with a bronze progress bar and a live percentage — never a fake bar.
+  const isDeterminate = status === 'loading' && typeof progress === 'number'
+  const pct = isDeterminate ? Math.round(Math.min(1, Math.max(0, progress)) * 100) : 0
+
   return (
     <ForgeModal
       visible={visible}
@@ -50,17 +56,58 @@ export function ForgeLoadingModal({
       variant="small"
       accessibilityLabel={accessibilityLabel}
     >
-      <View style={styles.content}>
-        <StatusIndicator status={status} />
-        <View style={styles.textGroup}>
-          <Text style={styles.title}>{title ?? defaultTitle}</Text>
-          {(message ?? defaultMsg) ? (
-            <Text style={styles.message}>{message ?? defaultMsg}</Text>
+      {isDeterminate ? (
+        <View style={styles.determinate}>
+          <View style={styles.determinateHeader}>
+            <Text style={styles.title}>{title ?? defaultTitle}</Text>
+            <Text style={styles.percentage}>{pct}%</Text>
+          </View>
+          <View
+            style={styles.track}
+            accessibilityRole="progressbar"
+            accessibilityValue={{ min: 0, max: 100, now: pct }}
+          >
+            <View style={[styles.fill, { width: `${pct}%` }]} />
+          </View>
+          {message ? (
+            <Text style={styles.subLabel}>{message}</Text>
           ) : null}
         </View>
-      </View>
+      ) : (
+        <StatusSwap status={status}>
+          <View style={styles.content}>
+            <StatusIndicator status={status} />
+            <View style={styles.textGroup}>
+              <Text style={styles.title}>{title ?? defaultTitle}</Text>
+              {(message ?? defaultMsg) ? (
+                <Text style={styles.message}>{message ?? defaultMsg}</Text>
+              ) : null}
+            </View>
+          </View>
+        </StatusSwap>
+      )}
     </ForgeModal>
   )
+}
+
+/**
+ * Spec §14 loading transition — spinner ⇄ result swap in place over 200ms,
+ * container fixed, no layout shift.
+ */
+function StatusSwap({ status, children }: { status: LoadingStatus; children: React.ReactNode }) {
+  const opacity = useState(() => new Animated.Value(1))[0]
+
+  useEffect(() => {
+    opacity.setValue(0)
+    Animated.timing(opacity, {
+      toValue: 1,
+      duration: MODAL.DUR_STATUS,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start()
+  }, [status, opacity])
+
+  return <Animated.View style={{ opacity }}>{children}</Animated.View>
 }
 
 // â”€â”€ Spinner + success/failure indicator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -159,6 +206,39 @@ const styles = StyleSheet.create({
   textGroup: {
     alignItems: 'center',
     gap: 4,
+  },
+  // Determinate variant — spec §08
+  determinate: {
+    gap: 10,
+    paddingTop: 4,
+    paddingBottom: 4,
+  },
+  determinateHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  percentage: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: color.accent.primary,
+    fontVariant: ['tabular-nums'],
+  },
+  track: {
+    height: 6,
+    borderRadius: MODAL.RADIUS_PILL,
+    backgroundColor: color.progressTrack,
+    overflow: 'hidden',
+  },
+  fill: {
+    height: '100%',
+    borderRadius: MODAL.RADIUS_PILL,
+    backgroundColor: color.accent.primary,
+  },
+  subLabel: {
+    fontSize: 13,
+    color: color.text.secondary,
   },
   title: {
     fontSize: 16,

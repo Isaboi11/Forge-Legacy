@@ -13,6 +13,7 @@
 import React, { useCallback } from 'react'
 import {
   ActivityIndicator,
+  Animated,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -26,7 +27,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Feather } from '@expo/vector-icons'
 import { color, size } from '@/constants/tokens'
 import { MODAL } from './_modalTokens'
+import { useOverlayTransition } from './_useOverlayTransition'
 import type { ForgeModalProps, ModalVariant } from './types'
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
 
 export function ForgeModal({
   visible,
@@ -48,6 +52,10 @@ export function ForgeModal({
 }: ForgeModalProps) {
   const insets = useSafeAreaInsets()
   const isDisabled = state === 'disabled' || loading
+
+  // Spec §14: backdrop 150ms ease-out; entrance 220ms spring·soft
+  // (translateY 8→0, scale 0.97→1); exit 180ms ease-in.
+  const { backdrop, panel, rendered } = useOverlayTransition(visible, { spring: true })
 
   const handleBackdropPress = useCallback(() => {
     if (dismissible && onClose) onClose()
@@ -71,9 +79,9 @@ export function ForgeModal({
 
   return (
     <Modal
-      visible={visible}
+      visible={rendered}
       transparent
-      animationType="fade"
+      animationType="none"
       onRequestClose={handleBackdropPress}
       statusBarTranslucent
       accessibilityViewIsModal
@@ -82,7 +90,13 @@ export function ForgeModal({
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* Backdrop */}
+        {/* Backdrop dim layer — fades independently of the panel */}
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.backdropFill, { opacity: backdrop }]}
+        />
+
+        {/* Backdrop tap layer */}
         <Pressable
           style={[styles.backdrop, { paddingBottom: insets.bottom }]}
           onPress={handleBackdropPress}
@@ -90,15 +104,22 @@ export function ForgeModal({
           accessibilityRole="button"
         >
           {/* Container â€” stop backdrop tap from propagating */}
-          <Pressable
+          <AnimatedPressable
             onPress={() => {}}
             style={[
               styles.container,
               isFullScreen ? styles.containerFullScreen : { maxWidth },
               isFullScreen && { paddingBottom: insets.bottom + MODAL.PAD_MODAL },
+              {
+                opacity: panel,
+                transform: [
+                  { translateY: panel.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) },
+                  { scale: panel.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1] }) },
+                ],
+              },
             ]}
             accessibilityLabel={accessibilityLabel}
-            
+
             accessibilityViewIsModal
           >
             {/* Header row: illustration/icon + title/subtitle + close */}
@@ -133,6 +154,7 @@ export function ForgeModal({
                     onPress={onClose}
                     accessibilityLabel="Close"
                     accessibilityRole="button"
+                    hitSlop={(MODAL.TAP_MIN - MODAL.CLOSE_BTN) / 2}
                     style={({ pressed }) => [styles.closeBtn, pressed && styles.closeBtnPressed]}
                   >
                     <Feather name="x" size={14} color={color.text.secondary} />
@@ -196,7 +218,7 @@ export function ForgeModal({
                 ) : null}
               </View>
             ) : null)}
-          </Pressable>
+          </AnimatedPressable>
         </Pressable>
       </KeyboardAvoidingView>
     </Modal>
@@ -213,9 +235,12 @@ function _maxWidth(v: ModalVariant): number {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  backdropFill: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: color.background.overlay,
+  },
   backdrop: {
     flex: 1,
-    backgroundColor: color.background.overlay,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,

@@ -38,10 +38,18 @@ export const MODAL = {
   PAD_MODAL_SM: 20,
   PAD_SHEET_H:  12,
 
-  // ── Animation (ms) ───────────────────────────────────────────────────────
-  DUR_MODAL:      200,
-  DUR_SHEET:      250,
-  DUR_CEREMONY:   500,
+  // ── Motion (ms) — spec §14 motion table ──────────────────────────────────
+  DUR_BACKDROP:   150,  // backdrop fade, ease-out — dims in before the modal moves
+  DUR_ENTER:      220,  // modal entrance, spring·soft (translateY 8→0, scale 0.97→1)
+  DUR_EXIT:       180,  // modal exit, ease-in — faster out than in
+  DUR_SHEET:      240,  // bottom sheet slide, ease-out
+  DUR_ACTION:     200,  // action sheet entrance, ease-out
+  STAGGER_ACTION:  40,  // per-option stagger within the action sheet
+  DUR_CEREMONY:   300,  // success ceremony, spring·gentle (scale 0.6→1)
+  DUR_STATUS:     200,  // loading spinner ⇄ result crossfade, container fixed
+
+  // ── Touch targets ────────────────────────────────────────────────────────
+  TAP_MIN:         44,  // spec §13 — minimum actionable element size
 
   // ── Status-state colours (not in global tokens) ──────────────────────────
   DANGER_GLOW:  'rgba(168,82,82,0.12)',

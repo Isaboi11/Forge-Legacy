@@ -1,6 +1,6 @@
 /**
- * CLA-C07 — FeedPostCard
- * Tier: 2 (Composite)
+ * CLA-C34 — FeedPostCard (registry name: PostCard — code name not yet reconciled)
+ * Tier: 3 (Screen-level)
  * Spec: Forge Card Library.dc.html §09
  *
  * Social and community feed posts.

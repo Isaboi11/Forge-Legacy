@@ -1,5 +1,5 @@
 /**
- * CLA-C07 — BannerCard
+ * Unassigned — not yet in the CLA-Cxx registry (Component-Library-Architecture-v1.0.md)
  * Tier: 2 (Composite)
  * Spec: Forge Card Library.dc.html §12
  *

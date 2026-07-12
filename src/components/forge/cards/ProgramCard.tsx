@@ -1,6 +1,6 @@
 /**
- * CLA-C07 — ProgramCard
- * Tier: 2 (Composite)
+ * CLA-C26 — ProgramCard
+ * Tier: 3 (Screen-level)
  * Spec: Forge Card Library.dc.html §03
  *
  * Training program card.

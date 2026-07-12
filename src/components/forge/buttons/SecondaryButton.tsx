@@ -3,7 +3,7 @@
  * Tier: 2 (Composite)
  * Spec: ButtonLibrary.dc.html · variant="secondary"
  *
- * Transparent fill, 1px bronze border, bronze text, subtle ambient glow.
+ * Subtle top-fade fill, 1px bronze border, bronze text, ambient glow.
  * H 52 · R 12 · PX 24
  */
 
@@ -15,10 +15,11 @@ import {
   StyleSheet,
   Text,
 } from 'react-native'
-import { color, typography } from '@/constants/tokens'
+import { LinearGradient } from 'expo-linear-gradient'
+import { color } from '@/constants/tokens'
 import { BTN } from './_buttonTokens'
 import { ButtonIcon } from './_ButtonIcon'
-import type { ButtonBaseProps, ShadowStyle } from './_types'
+import type { ButtonBaseProps } from './_types'
 
 export type SecondaryButtonProps = ButtonBaseProps
 
@@ -61,42 +62,44 @@ export function SecondaryButton({
     Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 2 }).start()
   }
 
-  // Derived state
-  const isSuccess = success
-  const isError   = error
-  const isSelected = selected
+  let bgColors: readonly [string, string] = BTN.SECONDARY_GRAD_COLORS
+  let borderColor: string = BTN.BORDER_BRONZE_SECONDARY
+  let textColor: string = BTN.DEFAULT_TEXT_OUTLINE
+  let stateBoxShadow: string = BTN.BOX_SHADOW_OUTLINE_DEFAULT
 
-  let bgColor: string = 'transparent'
-  let borderColor: string = color.accent.highlight
-  let textColor: string = color.accent.primary
-  let shadow: ShadowStyle = BTN.SHADOW_CARD
-
-  if (isSelected) {
-    bgColor = BTN.SELECTED_BRONZE_BG
+  if (selected) {
+    bgColors = [BTN.SELECTED_BRONZE_BG, BTN.SELECTED_BRONZE_BG] as const
     borderColor = color.accent.highlight
     textColor = color.accent.highlight
-    shadow = BTN.SHADOW_GLOW_PRESSED
-  } else if (isSuccess) {
-    bgColor = BTN.SUCCESS_NON_FILL_BG
+    stateBoxShadow = BTN.BOX_SHADOW_OUTLINE_SELECTED
+  } else if (success) {
+    bgColors = [BTN.SUCCESS_NON_FILL_BG, BTN.SUCCESS_NON_FILL_BG] as const
     borderColor = color.success
     textColor = color.success
-    shadow = BTN.SHADOW_SUCCESS
-  } else if (isError) {
-    bgColor = BTN.ERROR_NON_FILL_BG
+    stateBoxShadow = BTN.BOX_SHADOW_SUCCESS_NON_FILL
+  } else if (error) {
+    bgColors = [BTN.ERROR_NON_FILL_BG, BTN.ERROR_NON_FILL_BG] as const
     borderColor = color.danger
     textColor = BTN.ERROR_TEXT
-    shadow = BTN.SHADOW_ERROR
+    stateBoxShadow = BTN.BOX_SHADOW_ERROR_NON_FILL
   } else if (pressed) {
-    bgColor = BTN.SECONDARY_PRESSED_BG
-    shadow = BTN.SHADOW_GLOW_PRESSED
+    bgColors = [BTN.SECONDARY_PRESSED_BG, BTN.SECONDARY_PRESSED_BG] as const
+    stateBoxShadow = BTN.BOX_SHADOW_OUTLINE_PRESSED
   }
 
-  const focusShadow = focused
-    ? { ...shadow, shadowColor: color.accent.primary, shadowOpacity: 0.4, shadowRadius: 8 }
-    : shadow
+  const boxShadow = disabled
+    ? BTN.DISABLED_BOX_SHADOW
+    : focused
+    ? BTN.appendFocusRing(stateBoxShadow)
+    : stateBoxShadow
 
-  const iconName = isSuccess ? 'check' : isError ? 'x' : iconLeft
+  // Icon-swap semantics: selected auto-checks only if no custom icon was
+  // supplied; success keeps a custom icon if one was given; error never
+  // changes the icon for text buttons.
   const hasLabel = !!(title && title.trim().length > 0)
+  let iconName = iconLeft
+  if (selected && !iconName && hasLabel) iconName = 'check'
+  if (success && !iconName) iconName = 'check'
 
   return (
     <Animated.View
@@ -115,33 +118,38 @@ export function SecondaryButton({
         accessibilityLabel={accessibilityLabel ?? title}
         accessibilityRole="button"
         accessibilityState={{ disabled, busy: loading, selected }}
-        style={[
-          styles.base,
-          { backgroundColor: bgColor, borderColor },
-          focusShadow,
-          focused && styles.focusRing,
-          disabled && styles.disabled,
-          fullWidth && styles.fullWidth,
-          !hasLabel && styles.iconOnly,
-        ]}
+        style={[fullWidth && styles.fullWidth]}
       >
-        {loading ? (
-          <ActivityIndicator size="small" color={textColor} />
-        ) : (
-          <>
-            {iconName && (
-              <ButtonIcon name={iconName} size={BTN.ICON_SIZE} color={textColor} />
-            )}
-            {hasLabel && (
-              <Text style={[styles.label, { color: textColor }]} numberOfLines={1}>
-                {title}
-              </Text>
-            )}
-            {!isSuccess && !isError && iconRight && (
-              <ButtonIcon name={iconRight} size={BTN.ICON_SIZE} color={textColor} />
-            )}
-          </>
-        )}
+        <LinearGradient
+          colors={bgColors}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={[
+            styles.base,
+            { borderColor, boxShadow },
+            disabled && styles.disabled,
+            fullWidth && styles.fullWidth,
+            !hasLabel && styles.iconOnly,
+          ]}
+        >
+          {loading ? (
+            <ActivityIndicator size="small" color={textColor} />
+          ) : (
+            <>
+              {iconName && (
+                <ButtonIcon name={iconName} size={BTN.ICON_SIZE} color={textColor} />
+              )}
+              {hasLabel && (
+                <Text style={[styles.label, { color: textColor }]} numberOfLines={1}>
+                  {title}
+                </Text>
+              )}
+              {iconRight && (
+                <ButtonIcon name={iconRight} size={BTN.ICON_SIZE} color={textColor} />
+              )}
+            </>
+          )}
+        </LinearGradient>
       </Pressable>
     </Animated.View>
   )
@@ -169,16 +177,12 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   label: {
-    fontSize: typography.scale.standardCardName.fontSize,
+    fontSize: 16,
     fontWeight: BTN.FONT_WEIGHT,
     letterSpacing: BTN.LETTER_SPACING,
-    lineHeight: typography.scale.standardCardName.lineHeight,
-  },
-  focusRing: {
-    borderWidth: 2,
-    borderColor: color.accent.primary,
+    lineHeight: BTN.LABEL_LINE_HEIGHT,
   },
   disabled: {
-    opacity: 0.3,
+    opacity: BTN.DISABLED_OPACITY,
   },
 })

@@ -15,7 +15,6 @@ import {
   StyleSheet,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
-import { color } from '@/constants/tokens'
 import { BTN } from './_buttonTokens'
 import { ButtonIcon } from './_ButtonIcon'
 import type { ButtonIconName } from './_types'
@@ -61,7 +60,7 @@ export function FloatingActionButton({
   const handlePressIn = () => {
     if (disabled || loading) return
     setPressed(true)
-    Animated.spring(scale, { toValue: 0.94, useNativeDriver: true, speed: 50, bounciness: 0 }).start()
+    Animated.spring(scale, { toValue: 0.975, useNativeDriver: true, speed: 50, bounciness: 0 }).start()
   }
   const handlePressOut = () => {
     setPressed(false)
@@ -73,14 +72,29 @@ export function FloatingActionButton({
     : selected
     ? BTN.GRAD_COLORS_SELECTED
     : BTN.GRAD_COLORS
+  const gradStart = success || selected ? BTN.GRAD_START_ANGLED : BTN.GRAD_START
+  const gradEnd   = success || selected ? BTN.GRAD_END_ANGLED   : BTN.GRAD_END
 
-  const shadow = pressed
-    ? BTN.SHADOW_FAB_PRESSED
-    : success
-    ? BTN.SHADOW_SUCCESS
+  const stateBoxShadow = success
+    ? BTN.BOX_SHADOW_FAB_SUCCESS
     : error
-    ? BTN.SHADOW_ERROR
-    : BTN.SHADOW_FAB
+    ? BTN.BOX_SHADOW_FAB_ERROR
+    : selected
+    ? BTN.BOX_SHADOW_FAB_SELECTED
+    : pressed
+    ? BTN.BOX_SHADOW_FAB_PRESSED
+    : BTN.BOX_SHADOW_FAB_DEFAULT
+  const boxShadow = disabled
+    ? BTN.DISABLED_BOX_SHADOW
+    : focused
+    ? BTN.appendFocusRing(stateBoxShadow)
+    : stateBoxShadow
+
+  const filter = disabled
+    ? BTN.DISABLED_FILTER
+    : pressed
+    ? BTN.PRESSED_FILTER_BRONZE
+    : undefined
 
   const iconColor = BTN.WHITE
   const displayIcon: ButtonIconName = success ? 'check' : error ? 'x' : icon
@@ -103,15 +117,18 @@ export function FloatingActionButton({
       >
         <LinearGradient
           colors={gradColors}
-          start={BTN.GRAD_START}
-          end={BTN.GRAD_END}
+          start={gradStart}
+          end={gradEnd}
           locations={BTN.GRAD_LOCATIONS}
-          style={[
-            styles.base,
-            shadow,
-            focused && styles.focusRing,
-          ]}
+          style={[styles.base, { boxShadow, filter }]}
         >
+          <LinearGradient
+            pointerEvents="none"
+            colors={BTN.HIGHLIGHT_OVERLAY_COLORS}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 0.55 }}
+            style={[StyleSheet.absoluteFill, styles.highlightOverlay]}
+          />
           {loading ? (
             <ActivityIndicator size="small" color={iconColor} />
           ) : (
@@ -130,12 +147,12 @@ const styles = StyleSheet.create({
     borderRadius: BTN.RADIUS_FAB,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
-  focusRing: {
-    borderWidth: 2,
-    borderColor: color.accent.primary,
+  highlightOverlay: {
+    borderRadius: BTN.RADIUS_FAB,
   },
   disabled: {
-    opacity: 0.3,
+    opacity: BTN.DISABLED_OPACITY,
   },
 })

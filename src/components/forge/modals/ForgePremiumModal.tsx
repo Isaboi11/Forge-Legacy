@@ -9,6 +9,7 @@
 
 import React from 'react'
 import {
+  Animated,
   Modal,
   Pressable,
   StyleSheet,
@@ -19,6 +20,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Feather } from '@expo/vector-icons'
 import { color, elevation } from '@/constants/tokens'
 import { MODAL } from './_modalTokens'
+import { useOverlayTransition } from './_useOverlayTransition'
 import type { ForgePremiumModalProps } from './types'
 
 const DEFAULT_BENEFITS = [
@@ -42,23 +44,41 @@ export function ForgePremiumModal({
 }: ForgePremiumModalProps) {
   const insets = useSafeAreaInsets()
 
+  // Spec §14: backdrop 150ms ease-out; entrance 220ms spring·soft; exit 180ms ease-in
+  const { backdrop, panel, rendered } = useOverlayTransition(visible, { spring: true })
+
   return (
     <Modal
-      visible={visible}
+      visible={rendered}
       transparent
-      animationType="fade"
+      animationType="none"
       onRequestClose={onClose}
       statusBarTranslucent
       accessibilityViewIsModal
     >
+      <Animated.View
+        pointerEvents="none"
+        style={[styles.backdropFill, { opacity: backdrop }]}
+      />
       <View
         style={[styles.backdrop, { paddingBottom: insets.bottom + 20 }]}
         accessibilityLabel={accessibilityLabel}
-        
+
         accessibilityViewIsModal
       >
         {/* Premium container â€” accent.muted border, deeper bg */}
-        <View style={styles.container}>
+        <Animated.View
+          style={[
+            styles.container,
+            {
+              opacity: panel,
+              transform: [
+                { translateY: panel.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) },
+                { scale: panel.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1] }) },
+              ],
+            },
+          ]}
+        >
           {/* Illustration banner */}
           <View style={styles.banner}>
             {illustration ?? (
@@ -70,6 +90,7 @@ export function ForgePremiumModal({
                 onPress={onClose}
                 accessibilityLabel="Close"
                 accessibilityRole="button"
+                hitSlop={(MODAL.TAP_MIN - 28) / 2}
                 style={({ pressed }) => [styles.closeBtn, pressed && styles.closeBtnPressed]}
               >
                 <Feather name="x" size={13} color={color.text.secondary} />
@@ -146,16 +167,19 @@ export function ForgePremiumModal({
               ) : null}
             </View>
           </View>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   )
 }
 
 const styles = StyleSheet.create({
+  backdropFill: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: color.background.overlay,
+  },
   backdrop: {
     flex: 1,
-    backgroundColor: color.background.overlay,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,

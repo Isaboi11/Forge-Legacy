@@ -16,15 +16,6 @@ export type ButtonIconName =
   | 'download'
   | 'heart'
 
-/** Loose shadow object for dynamic per-state shadow assignment */
-export interface ShadowStyle {
-  shadowColor: string
-  shadowOffset: { width: number; height: number }
-  shadowOpacity: number
-  shadowRadius: number
-  elevation: number
-}
-
 export interface ButtonBaseProps {
   /** Button label text. Required for text buttons; omitted for icon-only. */
   title?: string

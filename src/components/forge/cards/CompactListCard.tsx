@@ -1,5 +1,6 @@
 /**
- * CLA-C07 — CompactListCard
+ * Unassigned — not yet in the CLA-Cxx registry (Component-Library-Architecture-v1.0.md);
+ * conceptually related to CLA-C16 ListItem, but not a confirmed mapping.
  * Tier: 2 (Composite)
  * Spec: Forge Card Library.dc.html §10
  *

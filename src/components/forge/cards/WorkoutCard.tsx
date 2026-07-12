@@ -1,6 +1,6 @@
 /**
- * CLA-C07 — WorkoutCard
- * Tier: 2 (Composite)
+ * CLA-C30 — WorkoutCard (registry name: WorkoutSessionCard — code name not yet reconciled)
+ * Tier: 3 (Screen-level)
  * Spec: Forge Card Library.dc.html §04
  *
  * Scheduled or history workout row.

@@ -10,6 +10,7 @@
 import React from 'react'
 import {
   ActivityIndicator,
+  Animated,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -23,7 +24,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Feather } from '@expo/vector-icons'
 import { color } from '@/constants/tokens'
 import { MODAL } from './_modalTokens'
+import { useOverlayTransition } from './_useOverlayTransition'
 import type { ForgeFormModalProps } from './types'
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
 
 export function ForgeFormModal({
   visible,
@@ -40,11 +44,14 @@ export function ForgeFormModal({
   const insets = useSafeAreaInsets()
   const isDisabled = loading
 
+  // Spec §14: backdrop 150ms ease-out; entrance 220ms spring·soft; exit 180ms ease-in
+  const { backdrop, panel, rendered } = useOverlayTransition(visible, { spring: true })
+
   return (
     <Modal
-      visible={visible}
+      visible={rendered}
       transparent
-      animationType="fade"
+      animationType="none"
       onRequestClose={onClose}
       statusBarTranslucent
       accessibilityViewIsModal
@@ -54,6 +61,10 @@ export function ForgeFormModal({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={insets.top}
       >
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.backdropFill, { opacity: backdrop }]}
+        />
         <Pressable
           style={[styles.backdrop, { paddingBottom: insets.bottom + 20 }]}
           onPress={onClose}
@@ -61,11 +72,20 @@ export function ForgeFormModal({
           accessibilityRole="button"
         >
           {/* Container */}
-          <Pressable
+          <AnimatedPressable
             onPress={() => {}}
-            style={styles.container}
+            style={[
+              styles.container,
+              {
+                opacity: panel,
+                transform: [
+                  { translateY: panel.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) },
+                  { scale: panel.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1] }) },
+                ],
+              },
+            ]}
             accessibilityLabel={accessibilityLabel}
-            
+
             accessibilityViewIsModal
           >
             {/* Header */}
@@ -83,6 +103,7 @@ export function ForgeFormModal({
                   onPress={onClose}
                   accessibilityLabel="Close"
                   accessibilityRole="button"
+                  hitSlop={(MODAL.TAP_MIN - MODAL.CLOSE_BTN) / 2}
                   style={({ pressed }) => [styles.closeBtn, pressed && styles.closeBtnPressed]}
                 >
                   <Feather name="x" size={14} color={color.text.secondary} />
@@ -151,7 +172,7 @@ export function ForgeFormModal({
                 ) : null}
               </View>
             ) : null}
-          </Pressable>
+          </AnimatedPressable>
         </Pressable>
       </KeyboardAvoidingView>
     </Modal>
@@ -160,9 +181,12 @@ export function ForgeFormModal({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  backdropFill: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: color.background.overlay,
+  },
   backdrop: {
     flex: 1,
-    backgroundColor: color.background.overlay,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 20,

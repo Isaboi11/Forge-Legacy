@@ -124,9 +124,14 @@ export interface PickerFilter {
   label: string
 }
 
+/** 'list' — search/filter/select; 'date' — month calendar grid (spec §06) */
+export type PickerMode = 'list' | 'date'
+
 export interface ForgePickerModalProps {
   visible: boolean
   onClose: () => void
+
+  mode?: PickerMode
 
   title?: string
   placeholder?: string
@@ -137,13 +142,19 @@ export interface ForgePickerModalProps {
   activeFilter?: string
   onFilterChange?: (key: string) => void
 
-  items: PickerItem[]
+  /** List mode only */
+  items?: PickerItem[]
   selectedKeys?: string[]
   multiSelect?: boolean
   onSelectionChange?: (keys: string[]) => void
 
   confirmLabel?: string
   onConfirm?: (keys: string[]) => void
+
+  // Date mode (spec §06 date-grid variant)
+  selectedDate?: Date
+  onDateChange?: (date: Date) => void
+  onConfirmDate?: (date: Date) => void
 
   accessibilityLabel?: string
 }
@@ -162,6 +173,18 @@ export interface ForgeMediaModalProps {
   showZoom?: boolean
   onZoomIn?: () => void
   onZoomOut?: () => void
+
+  // Video chrome (spec §07 video variant — playback · scrubber · close)
+  /** Context chip in the top chrome, e.g. "Form Check" */
+  badge?: string
+  /** Title above the scrubber, e.g. "Squat · Depth Review" */
+  videoTitle?: string
+  /** Current playback position in seconds */
+  positionSeconds?: number
+  /** Clip length in seconds — when set, the scrubber chrome renders */
+  durationSeconds?: number
+  /** Tap-to-seek on the scrubber track */
+  onSeek?: (seconds: number) => void
 
   accessibilityLabel?: string
 }

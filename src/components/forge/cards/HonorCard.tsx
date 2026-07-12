@@ -1,6 +1,6 @@
 /**
- * CLA-C07 — HonorCard
- * Tier: 2 (Composite)
+ * CLA-C28 — HonorCard
+ * Tier: 3 (Screen-level)
  * Spec: Forge Card Library.dc.html §05
  *
  * Badges and achievements. Center-aligned.
