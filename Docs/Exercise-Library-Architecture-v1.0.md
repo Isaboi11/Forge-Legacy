@@ -1,10 +1,12 @@
 # Forge Legacy — Exercise Library & Custom Workout Builder Architecture
-## Version 1.1 | June 2026
+## Version 1.2 | June 2026
 
 **Status:** LOCKED
 **Authority:** Program-Catalog-Architecture-v1.0.md (LOCKED), Program-Ecosystem-Architecture-v1.0.md (LOCKED), Exercise-Detail-Wireframe-Spec-W22.md (LOCKED), Exercise-Picker-Wireframe-Spec-W23.md (LOCKED), Workout-Builder-Wireframe-Spec-W24.md (LOCKED), Active-Workout-Flow-Spec-W9-W16.md (LOCKED), Architecture-Amendment-001-Import.md (LOCKED), Product DNA (LOCKED)
-**Amendment history:** R1-1 (HINGE merged into LEGS_AND_GLUTES), R1-2 (progressionExerciseIds + regressionExerciseIds added), R1-3 (HOME_GYM rejected; Athlete Equipment Profile noted as non-MVP) — all applied before lock.
-**Downstream impact:** W-21 (Exercise Library Hub — unspecced, uses category list from this document), W-23 (Exercise Picker — browse category list updated per R1-1), W-25 (Free Workout Builder — new, unspecced), W-26 (Workout Templates Hub — new, unspecced), W-27 (Template Detail — new, unspecced)
+**Amendment history:** R1-1 (HINGE merged into LEGS_AND_GLUTES), R1-2 (progressionExerciseIds + regressionExerciseIds added), R1-3 (HOME_GYM rejected; Athlete Equipment Profile noted as non-MVP), R1-4 (muscleTargetImageUrl added to ExerciseDefinition as a new Exercise Anatomy schema group, per Exercise-Media-Architecture-v1.0.md — additive, non-breaking), R1-5 (2026-06-30: illustrative exercise-name examples updated to canonical names — Squat→Back Squat, Bench Press→Barbell Bench Press, Plank→Front Plank, Romanian Deadlift→Barbell Romanian Deadlift — per the Exercise Naming Standard reconciliation; no schema change), R1-6 (2026-07-11: added `SHOULDER_ISOLATION` + `NECK_ISOLATION` movement patterns and the `neck` muscle at the data layer, per the Exercise Relationship System source-correction pass — additive, non-breaking; see § 4.2 note) — all applied before lock.
+**Downstream impact:** W-21 (Exercise Library Hub — unspecced, uses category list from this document), W-23 (Exercise Picker — browse category list updated per R1-1), W-25 (Free Workout Builder — new, unspecced), W-26 (Workout Templates Hub — new, unspecced), W-27 (Template Detail — new, unspecced), Exercise-Media-Architecture-v1.0.md (companion doc — production standards for this document's media/anatomy fields)
+
+> **Consuming-authority pointer — `Backend-Data-Model-Architecture-v1.0.md` (LOCK-CANDIDATE, June 2026).** The `ExerciseDefinition` schema and its five taxonomies (`ExerciseCategory`, `MovementPattern`, `MuscleGroup`, `EquipmentTag`, `EnvironmentTag`) are adopted verbatim in that document's Section 10, alongside `UserFavoriteExercise` and the carry-forward-from-`ExerciseLog` rule. This document remains the sole authority on the schema's content and evolution (R1-1 through R1-5 and beyond) — the Backend doc only formalizes where these entities live physically (Firestore collection/document mapping, Section 4.2 there) and which fields must stay query-indexable for a future Global Search spec (Section 14 there).
 
 ---
 
@@ -73,6 +75,9 @@ ExerciseDefinition {
   videoUrl:                 string | null
   imageUrl:                 string | null
 
+  // Exercise Anatomy
+  muscleTargetImageUrl:     string | null   // bespoke per-exercise muscle diagram; production standards in Exercise-Media-Architecture-v1.0.md § 3.3
+
   // Exercise relationships
   alternativeExerciseIds:   uuid[]   // same-difficulty substitutes; bidirectional (§ 2.3); FORGE only
   progressionExerciseIds:   uuid[]   // harder versions of this exercise (§ 2.4); FORGE only; CUSTOM: always []
@@ -133,7 +138,7 @@ Rules:
 - Recommended maximum: 1–3 entries per array; more than 3 suggests the taxonomy needs refinement
 - The three relationship arrays (`alternativeExerciseIds`, `progressionExerciseIds`, `regressionExerciseIds`) are independent and non-overlapping in intent; an exercise should not appear in more than one of these arrays on the same exercise
 - No MVP UI surfaces these fields (see EL-D12)
-- MVP content target: populate progressions and regressions for the 40–50 anchor exercises before ship (foundational movements: Push-Up, Squat, Deadlift, Pull-Up, Bench Press, Overhead Press, Plank, Hip Thrust, Lunge, Dumbbell Row, etc.); remaining exercises filled in first post-MVP content cycle
+- MVP content target: populate progressions and regressions for the 40–50 anchor exercises before ship (foundational movements: Push-Up, Back Squat, Deadlift, Pull-Up, Barbell Bench Press, Overhead Press, Front Plank, Hip Thrust, Lunge, Dumbbell Row, etc.); remaining exercises filled in first post-MVP content cycle
 
 ### 2.5 isFavorite as Computed Join
 
@@ -203,10 +208,10 @@ type ExerciseCategory =
 
 | Enum | Display Name | What It Covers | Examples |
 |------|-------------|----------------|---------|
-| `PUSH` | Push (Upper Body) | Horizontal, vertical, and diagonal pressing movements; chest, shoulder, and tricep primary movers | Bench Press, Overhead Press, Push-Up, Incline DB Press, Cable Fly, Pike Push-Up, Dip |
+| `PUSH` | Push (Upper Body) | Horizontal, vertical, and diagonal pressing movements; chest, shoulder, and tricep primary movers | Barbell Bench Press, Overhead Press, Push-Up, Incline DB Press, Cable Fly, Pike Push-Up, Dip |
 | `PULL` | Pull (Upper Body) | Horizontal and vertical pulling movements; back and bicep primary movers | Pull-Up, Barbell Row, Lat Pulldown, Cable Row, Face Pull, Barbell Curl, Hammer Curl |
-| `LEGS_AND_GLUTES` | Legs & Glutes | All lower-body movements — both knee-dominant (squat, lunge) and hip-dominant (deadlift, hip thrust, RDL) patterns | Back Squat, Romanian Deadlift, Hip Thrust, Lunge, Bulgarian Split Squat, Leg Press, Glute Bridge, Kettlebell Swing, Good Morning |
-| `CORE` | Core & Stability | Spinal stability, anti-rotation, and core endurance movements | Plank, Dead Bug, Pallof Press, Ab Wheel, Bird Dog, Hollow Body Hold, Hanging Leg Raise, Russian Twist |
+| `LEGS_AND_GLUTES` | Legs & Glutes | All lower-body movements — both knee-dominant (squat, lunge) and hip-dominant (deadlift, hip thrust, RDL) patterns | Back Squat, Barbell Romanian Deadlift, Hip Thrust, Lunge, Bulgarian Split Squat, Leg Press, Glute Bridge, Kettlebell Swing, Good Morning |
+| `CORE` | Core & Stability | Spinal stability, anti-rotation, and core endurance movements | Front Plank, Dead Bug, Pallof Press, Ab Wheel, Bird Dog, Hollow Body Hold, Hanging Leg Raise, Russian Twist |
 | `FULL_BODY` | Carry & Full Body | Multi-joint, explosive, locomotion, and carry movements that do not fit a single upper/lower pattern | Farmer Carry, Sled Push, Burpee, Turkish Get-Up, Clean, Battle Ropes, Rowing Machine, Box Jump |
 | `MOBILITY` | Mobility & Flexibility | Stretching, joint mobility, yoga poses, foam rolling, and breathing exercises | Hip Flexor Stretch, Pigeon Pose, Cat-Cow, Thoracic Rotation, Foam Roll Quads, Box Breathing |
 
@@ -235,7 +240,7 @@ type ExerciseCategory =
 ```
 type MovementPattern =
   // Push patterns
-  | 'PUSH_HORIZONTAL'      // Bench Press, Push-Up, Cable Crossover, DB Chest Press
+  | 'PUSH_HORIZONTAL'      // Barbell Bench Press, Push-Up, Cable Crossover, DB Chest Press
   | 'PUSH_VERTICAL'        // Overhead Press, DB Shoulder Press, Handstand Push-Up
   | 'PUSH_DIAGONAL'        // Incline Press, Landmine Press, Arnold Press
 
@@ -246,12 +251,12 @@ type MovementPattern =
 
   // Lower body patterns
   | 'SQUAT'                // Back Squat, Front Squat, Goblet Squat, Lunge, Split Squat, Leg Press
-  | 'HINGE'                // Deadlift, Romanian Deadlift, Good Morning, Hip Thrust, Glute Bridge, KB Swing
+  | 'HINGE'                // Deadlift, Barbell Romanian Deadlift, Good Morning, Hip Thrust, Glute Bridge, KB Swing
   | 'KNEE_ISOLATION'       // Leg Extension, Leg Curl, Calf Raise — machine/isolation movements
   | 'PLYOMETRIC_LOWER'     // Box Jump, Jump Squat, Broad Jump, Sprint Drill, Bounding
 
   // Core patterns
-  | 'CORE_ANTI_EXTENSION'  // Plank, Ab Wheel, Dead Bug — resisting spinal extension under load
+  | 'CORE_ANTI_EXTENSION'  // Front Plank, Ab Wheel, Dead Bug — resisting spinal extension under load
   | 'CORE_ANTI_ROTATION'   // Pallof Press, single-arm variations requiring rotation resistance
   | 'CORE_FLEXION'         // Crunch, Hanging Leg Raise, V-Up — spinal flexion under control
   | 'CORE_ROTATION'        // Russian Twist, Wood Chop, Med Ball Rotational Throw
@@ -266,9 +271,15 @@ type MovementPattern =
   | 'JOINT_MOBILITY'       // Cat-Cow, Thoracic Rotation, Ankle Circles, Hip 90/90 — joint articulation
   | 'FOAM_ROLL'            // Foam Roll Quads, Lacrosse Ball Glute — tissue work
   | 'BREATHWORK'           // Box Breathing, Diaphragmatic Breathing — breathing-specific
+
+  // Isolation patterns (upper body) — added R1-6 (2026-07-11)
+  | 'SHOULDER_ISOLATION'   // Lateral Raise, Front Raise, Rear Delt Fly, Shrug, Face Pull
+  | 'NECK_ISOLATION'       // Neck Flexion, Neck Extension, Neck Lateral Flexion
 ```
 
-Total: 21 movement patterns.
+Total: 23 movement patterns.
+
+> **R1-6 (2026-07-11) — data-layer taxonomy sync.** The launch exercise catalog and the Exercise Relationship System (`src/domain/exercise-relationships/`) use a parallel string form of this taxonomy (`'Horizontal Push'`, `'Hinge / Hip Dominant'`, …). Two isolation patterns were added there and are mirrored above: **`SHOULDER_ISOLATION`** (data: `'Shoulder Isolation'`) for shrugs and deltoid raises, and **`NECK_ISOLATION`** (data: `'Neck Isolation'`) for the three neck-machine exercises. The MuscleGroup/muscle taxonomy also gained one entry at the data layer — **`neck`** (Neck, Upper Body) — to give the neck machines a real anatomical primary instead of a system bucket. These are additive and non-breaking; the relationship system's `schema.ts` `MOVEMENT_PATTERNS` is the data-layer authority and is validated by its `validate.mjs`.
 
 ### 4.3 W-23 Mobility Context Filter
 
@@ -348,7 +359,7 @@ type MuscleGroup =
 
 - Covers all equipment used across 25 Forge Programs and all environments (GYM, HOME, OUTDOOR)
 - Lean: no exotic, niche, or brand-specific equipment
-- Multi-select: an exercise may require more than one tag (e.g., Bench Press → [BARBELL, SQUAT_RACK, BENCH])
+- Multi-select: an exercise may require more than one tag (e.g., Barbell Bench Press → [BARBELL, SQUAT_RACK, BENCH])
 - `BODYWEIGHT` is a valid tag (means no external equipment required)
 
 ### 6.2 EquipmentTag Enum
@@ -392,7 +403,7 @@ Total: 18 equipment tags.
 
 - Every FORGE exercise has at least 1 equipment tag
 - If the exercise requires only the athlete's body, it is tagged `BODYWEIGHT`
-- Multi-equipment: Bench Press → `[BARBELL, SQUAT_RACK, BENCH]`; Pull-Up → `[PULL_UP_BAR]`; Push-Up → `[BODYWEIGHT]`
+- Multi-equipment: Barbell Bench Press → `[BARBELL, SQUAT_RACK, BENCH]`; Pull-Up → `[PULL_UP_BAR]`; Push-Up → `[BODYWEIGHT]`
 
 ### 6.4 Equipment Tag → Environment Implications
 
@@ -424,7 +435,7 @@ An exercise may carry multiple environment tags, representing all environments w
 
 | Exercise | Equipment | Environment Tags |
 |----------|-----------|-----------------|
-| Bench Press | BARBELL, SQUAT_RACK, BENCH | GYM |
+| Barbell Bench Press | BARBELL, SQUAT_RACK, BENCH | GYM |
 | Push-Up | BODYWEIGHT | GYM, HOME, OUTDOOR |
 | Lat Pulldown | CABLE_MACHINE | GYM |
 | Pull-Up | PULL_UP_BAR | GYM, HOME |
@@ -458,7 +469,7 @@ When the Athlete Equipment Profile ships post-MVP, the existing `EquipmentTag` o
 
 ### 8.1 MVP Target: 200–225 Exercises at Launch
 
-The library is not an exercise database. It is a curated, coach-authored catalog. Every exercise in the library must have complete FORGE-required content (description, why it matters, 4–8 instructions, 2–5 coaching cues, 2–4 common mistakes, GIF or video media) before entering the active catalog. This content production constraint naturally governs scope.
+The library is not an exercise database. It is a curated, coach-authored catalog. Every exercise in the library must have complete FORGE-required content (description, why it matters, 4–8 instructions, 2–5 coaching cues, 2–4 common mistakes, GIF or video media, and a muscle target image) before entering the active catalog. Media and anatomy production standards are governed by `Exercise-Media-Architecture-v1.0.md`. This content production constraint naturally governs scope.
 
 The 25 Forge Programs collectively require comprehensive exercise coverage. Hypertrophy programs use 30+ distinct exercises per program. Mobility programs require 50+ mobility exercises. Strength programs require barbell, dumbbell, cable, and machine variants across all movement patterns. A 100-exercise library cannot serve 25 programs without repetition that reduces program quality.
 
@@ -483,7 +494,7 @@ All exercises at launch are FORGE source. CUSTOM exercises are created by athlet
 
 Post-MVP additions require:
 - All FORGE-required content fields populated
-- GIF or video media produced
+- GIF or video media, and a muscle target image, produced
 - Reviewed by product/content team
 - No duplicate of existing exercise at same difficulty + equipment combination
 - Fills a genuine gap (athlete requests, program needs, missing movement pattern coverage)
@@ -675,10 +686,10 @@ W-24 and W-25 share UI components (exercise card, prescription stepper, section 
 **4 programs** (Strength Foundation I, II, III, Powerbuilding Foundation) — all GYM environment.
 
 Required exercise coverage:
-- `PUSH`: Bench Press, Overhead Press, Incline Press, DB Press, Push-Up
+- `PUSH`: Barbell Bench Press, Overhead Press, Incline Press, DB Press, Push-Up
 - `PULL`: Barbell Row, DB Row, Pull-Up, Lat Pulldown, Face Pull, Curl variations
-- `LEGS_AND_GLUTES`: Back Squat, Front Squat, Romanian Deadlift, Deadlift, Hip Thrust, Lunge, Bulgarian Split Squat, Good Morning (hinge-pattern exercises are here per R1-1)
-- `CORE`: Plank, Ab Wheel, Pallof Press
+- `LEGS_AND_GLUTES`: Back Squat, Front Squat, Barbell Romanian Deadlift, Deadlift, Hip Thrust, Lunge, Bulgarian Split Squat, Good Morning (hinge-pattern exercises are here per R1-1)
+- `CORE`: Front Plank, Ab Wheel, Pallof Press
 
 Equipment: BARBELL, SQUAT_RACK, BENCH, DUMBBELL, CABLE_MACHINE. ✓
 
@@ -730,7 +741,7 @@ Required bodyweight-only coverage (Bodyweight Foundation, Bodyweight Strength, B
 - `PUSH`: Push-Up (standard, wide, narrow, incline, decline), Dip, Pike Push-Up, Archer Push-Up, Diamond Push-Up
 - `PULL`: Pull-Up, Chin-Up, Resistance Band Row, Archer Pull-Up
 - `LEGS_AND_GLUTES`: Bodyweight Squat, Jump Squat, Lunge, Glute Bridge, Single-Leg RDL (bodyweight), Bulgarian Split Squat (bodyweight), Pistol Squat (for Bodyweight Performance), Nordic Curl (for Bodyweight Performance)
-- `CORE`: Plank, Mountain Climber, Hollow Body Hold, L-Sit, Dragon Flag (for Bodyweight Performance)
+- `CORE`: Front Plank, Mountain Climber, Hollow Body Hold, L-Sit, Dragon Flag (for Bodyweight Performance)
 - `FULL_BODY`: Burpee, Bear Crawl
 
 Home Strength Foundation requires dumbbell-based compound exercise coverage (DB Goblet Squat, DB Romanian Deadlift, DB Row, DB Floor Press, DB Shoulder Press, DB Lunges). These exercises are already in the library as variants of GYM barbell/cable exercises — no new exercise category coverage required.
@@ -839,7 +850,7 @@ In priority order:
 ### EquipmentTag Taxonomy
 - [ ] 18 values
 - [ ] FORGE: minimum 1 tag; BODYWEIGHT is valid
-- [ ] Multi-select: Bench Press → [BARBELL, SQUAT_RACK, BENCH]
+- [ ] Multi-select: Barbell Bench Press → [BARBELL, SQUAT_RACK, BENCH]
 
 ### EnvironmentTag
 - [ ] 3 values: GYM, HOME, OUTDOOR — no HOME_GYM
@@ -850,6 +861,7 @@ In priority order:
 - [ ] 200–225 FORGE exercises at launch
 - [ ] All exercises have complete required content fields before `isActive: true`
 - [ ] All exercises have GIF, video, or static image media
+- [ ] All exercises have a muscle target image (`muscleTargetImageUrl`)
 - [ ] Distribution: ~30–35 PUSH, ~28–32 PULL, ~55–65 LEGS_AND_GLUTES, ~20–25 CORE, ~15–18 FULL_BODY, ~40–50 MOBILITY
 - [ ] Anchor exercises (40–50) have progressionExerciseIds and regressionExerciseIds populated at ship
 
@@ -881,7 +893,7 @@ In priority order:
 - [ ] EL-D12 covers progressionExerciseIds + regressionExerciseIds intent, directionality, MVP content target, and future UI deferral
 
 ### 25-Program Validation
-- [ ] All program types covered: Strength (4), Hypertrophy (3), Running (2), Cycling (2), Conditioning/Hybrid (6), Combat (2), Full Body/Home (3), Mobility (2) = 24 programs (note: Program Ecosystem Architecture v1.0 defines 25 total; confirm final count against that document)
+- [ ] All program types covered: Strength (4), Hypertrophy (5), Running (2), Cycling (0 — category enum retained for athlete-created programs), Conditioning/Hybrid (6), Combat (0 — category enum retained for athlete-created programs), Full Body/Home (5), Mobility (2) = 24 programs (confirmed against Program-Ecosystem-Architecture-v1.0.md's locked 24-program total, PE-D1)
 - [ ] Hinge-pattern exercises confirmed present in LEGS_AND_GLUTES for all programs that require them
 - [ ] Import rules (WS-A6) unaffected by this architecture
 
@@ -891,11 +903,13 @@ In priority order:
 
 | Version | Date | Change |
 |---------|------|--------|
+| v1.2 | June 2026 | Exercise-Media-Architecture-v1.0.md companion doc created (Exercise Library Phase 4). Added `muscleTargetImageUrl: string \| null` to ExerciseDefinition §2.1 as a new "Exercise Anatomy" schema group, kept separate from the existing Media block — bespoke per-exercise muscle diagram, FORGE-required before `isActive: true` (matching the existing GIF/video requirement), CUSTOM-optional. §8.1 and §8.3 required-content language updated to include the muscle target image alongside GIF/video media. §16 Validation Checklist updated. Additive, non-breaking — no existing field semantics changed. No exercise content, taxonomy, or other schema fields modified. |
+| v1.1 (Documentation Reconciliation) | June 2026 | Stale checklist fix only, no behavioral change: Section 16's "25-Program Validation" checklist line still read "Hypertrophy (3) ... Cycling (2) ... Combat (2) ... Full Body/Home (3)" — the program-count figures from before the v1.1 Catalog Revision Amendment below, never updated when §13.2/§13.4/§13.6/§13.7 were revised. Checklist line corrected to Hypertrophy (5), Cycling (0), Combat (0), Full Body/Home (5) = 24 programs, matching both §13's body text and Program-Ecosystem-Architecture-v1.0.md's locked 24-program total (PE-D1). The "confirm final count" note is removed as resolved. |
 | v1.1 | June 2026 | Catalog Revision Amendment applied. Section 13 validation audit updated: §13.2 Hypertrophy Programs updated from 3 to 5 programs (added Lower Body Foundation, Lower Body Intermediate) with hip-specific machine coverage note; §13.4 Cycling Programs updated to 0 Forge launch programs (category enum retained for athlete-created programs); §13.6 Combat Programs updated to 0 Forge launch programs (category enum retained for athlete-created programs); §13.7 Full Body & Home Programs updated from 3 to 5 programs (added Bodyweight Performance and Home Strength Foundation) with Bodyweight Performance advanced bodyweight coverage and Home Strength Foundation DUMBBELL coverage. Status: LOCKED. |
 | v1.0 | June 2026 | Initial specification. Defines ExerciseDefinition complete data model with source semantics, deletion semantics, and isFavorite computed join. Establishes 6-category ExerciseCategory taxonomy (PUSH, PULL, LEGS_AND_GLUTES, CORE, FULL_BODY, MOBILITY); HINGE absorbed into LEGS_AND_GLUTES per R1-1. Establishes 21-value MovementPattern taxonomy (HINGE retained at this level), 14-value MuscleGroup taxonomy, 18-value EquipmentTag taxonomy, and 3-value EnvironmentTag system (HOME_GYM rejected per R1-3; Athlete Equipment Profile noted as non-MVP path). Adds progressionExerciseIds[] and regressionExerciseIds[] to ExerciseDefinition per R1-2; no MVP UI; anchor exercises targeted at ship. Recommends 200–225 FORGE exercises at MVP launch with per-category distribution. Defines WorkoutTemplate entity with creation paths, mutability rules, and deletion semantics. Defines Free Workout data model with session name derivation, carry-forward rules (actual logged values, not plan values), and three entry paths. Establishes W-25 as new template-building screen parallel to W-24. 12 architecture decisions (EL-D1 through EL-D12). 25-program validation audit confirming all Forge Programs supported. R1 amendments applied before lock. |
 
 ---
 
 *Forge Legacy — Exercise Library & Custom Workout Builder Architecture*
-*Version 1.1 | June 2026*
+*Version 1.2 | June 2026*
 *Authority for all exercise taxonomy, exercise library scope, WorkoutTemplate, and Free Workout architecture decisions.*

@@ -1,0 +1,142 @@
+[
+  {
+    "id": "barbell",
+    "name": "Barbell",
+    "category": "Free Weight",
+    "portable": false,
+    "environments": [
+      "Commercial Gym",
+      "Home Gym"
+    ]
+  },
+  {
+    "id": "dumbbell",
+    "name": "Dumbbell",
+    "category": "Free Weight",
+    "portable": true,
+    "environments": [
+      "Commercial Gym",
+      "Home Gym",
+      "Hotel Gym"
+    ]
+  },
+  {
+    "id": "kettlebell",
+    "name": "Kettlebell",
+    "category": "Free Weight",
+    "portable": true,
+    "environments": [
+      "Commercial Gym",
+      "Home Gym"
+    ]
+  },
+  {
+    "id": "cable",
+    "name": "Cable Machine",
+    "category": "Machine",
+    "portable": false,
+    "environments": [
+      "Commercial Gym"
+    ]
+  },
+  {
+    "id": "selectorized_machine",
+    "name": "Selectorized Machine",
+    "category": "Machine",
+    "portable": false,
+    "environments": [
+      "Commercial Gym"
+    ]
+  },
+  {
+    "id": "smith_machine",
+    "name": "Smith Machine",
+    "category": "Machine",
+    "portable": false,
+    "environments": [
+      "Commercial Gym"
+    ]
+  },
+  {
+    "id": "bodyweight",
+    "name": "Bodyweight",
+    "category": "Bodyweight",
+    "portable": true,
+    "environments": [
+      "Commercial Gym",
+      "Home Gym",
+      "Hotel Gym",
+      "Outdoors"
+    ]
+  },
+  {
+    "id": "resistance_band",
+    "name": "Resistance Band",
+    "category": "Accessory",
+    "portable": true,
+    "environments": [
+      "Commercial Gym",
+      "Home Gym",
+      "Hotel Gym"
+    ]
+  },
+  {
+    "id": "suspension_trainer",
+    "name": "Suspension Trainer",
+    "category": "Accessory",
+    "portable": true,
+    "environments": [
+      "Commercial Gym",
+      "Home Gym"
+    ]
+  },
+  {
+    "id": "medicine_ball",
+    "name": "Medicine Ball",
+    "category": "Accessory",
+    "portable": true,
+    "environments": [
+      "Commercial Gym",
+      "Home Gym"
+    ]
+  },
+  {
+    "id": "plyo_box",
+    "name": "Plyometric Box",
+    "category": "Accessory",
+    "portable": false,
+    "environments": [
+      "Commercial Gym",
+      "Home Gym"
+    ]
+  },
+  {
+    "id": "sled",
+    "name": "Sled / Prowler",
+    "category": "Conditioning",
+    "portable": false,
+    "environments": [
+      "Commercial Gym"
+    ]
+  },
+  {
+    "id": "battle_rope",
+    "name": "Battle Rope",
+    "category": "Conditioning",
+    "portable": false,
+    "environments": [
+      "Commercial Gym"
+    ]
+  },
+  {
+    "id": "cardio",
+    "name": "Cardio Equipment / Outdoors",
+    "category": "Cardio",
+    "portable": false,
+    "environments": [
+      "Commercial Gym",
+      "Home Gym",
+      "Outdoors"
+    ]
+  }
+]

@@ -1,0 +1,147 @@
+[
+  {
+    "id": "chest",
+    "name": "Chest",
+    "region": "Upper Body"
+  },
+  {
+    "id": "upper_back",
+    "name": "Upper Back",
+    "region": "Upper Body"
+  },
+  {
+    "id": "lats",
+    "name": "Latissimus Dorsi",
+    "region": "Upper Body"
+  },
+  {
+    "id": "front_deltoids",
+    "name": "Front Deltoids",
+    "region": "Upper Body"
+  },
+  {
+    "id": "lateral_deltoids",
+    "name": "Lateral Deltoids",
+    "region": "Upper Body"
+  },
+  {
+    "id": "rear_deltoids",
+    "name": "Rear Deltoids",
+    "region": "Upper Body"
+  },
+  {
+    "id": "traps",
+    "name": "Trapezius",
+    "region": "Upper Body"
+  },
+  {
+    "id": "biceps",
+    "name": "Biceps",
+    "region": "Upper Body"
+  },
+  {
+    "id": "triceps",
+    "name": "Triceps",
+    "region": "Upper Body"
+  },
+  {
+    "id": "forearms",
+    "name": "Forearms",
+    "region": "Upper Body"
+  },
+  {
+    "id": "rotator_cuff",
+    "name": "Rotator Cuff",
+    "region": "Upper Body"
+  },
+  {
+    "id": "erector_spinae",
+    "name": "Erector Spinae",
+    "region": "Core"
+  },
+  {
+    "id": "rectus_abdominis",
+    "name": "Rectus Abdominis",
+    "region": "Core"
+  },
+  {
+    "id": "obliques",
+    "name": "Obliques",
+    "region": "Core"
+  },
+  {
+    "id": "transverse_abdominis",
+    "name": "Transverse Abdominis",
+    "region": "Core"
+  },
+  {
+    "id": "hip_flexors",
+    "name": "Hip Flexors",
+    "region": "Core"
+  },
+  {
+    "id": "glutes",
+    "name": "Glutes",
+    "region": "Lower Body"
+  },
+  {
+    "id": "quadriceps",
+    "name": "Quadriceps",
+    "region": "Lower Body"
+  },
+  {
+    "id": "hamstrings",
+    "name": "Hamstrings",
+    "region": "Lower Body"
+  },
+  {
+    "id": "adductors",
+    "name": "Adductors",
+    "region": "Lower Body"
+  },
+  {
+    "id": "abductors",
+    "name": "Abductors",
+    "region": "Lower Body"
+  },
+  {
+    "id": "calves",
+    "name": "Calves",
+    "region": "Lower Body"
+  },
+  {
+    "id": "tibialis_anterior",
+    "name": "Tibialis Anterior",
+    "region": "Lower Body"
+  },
+  {
+    "id": "full_body",
+    "name": "Full Body",
+    "region": "System"
+  },
+  {
+    "id": "cardiovascular",
+    "name": "Cardiovascular System",
+    "region": "System"
+  },
+  {
+    "id": "grip",
+    "name": "Grip",
+    "region": "System"
+  },
+  {
+    "id": "mobility",
+    "name": "Mobility",
+    "region": "System"
+  },
+  {
+    "id": "balance",
+    "name": "Balance / Stability",
+    "region": "System"
+  },
+  {
+    "id": "neck",
+    "name": "Neck",
+    "region": "Upper Body"
+  }
+]
