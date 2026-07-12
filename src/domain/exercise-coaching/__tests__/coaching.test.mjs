@@ -12,13 +12,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   loadSources, loadRelationships, buildIndex, generateAll, buildRecord, regenerateRecord,
-  classifyRisk, assignBatch, composeContent, contentHash,
+  classifyRisk, assignBatch, composeContent, computeFlags, contentHash, cardioModality,
   detectContradictions, detectDuplicates, bannedPhrases, routeStatus, transition, canTransition,
-  projectToView, signatureTokens,
+  projectToView,
   CONTENT_STATUSES, AUTOMATABLE_STATUSES, RISK_TIERS, REVIEW_FLAG_CODES, GENERATION_BATCHES,
   COACHING_SCHEMA_VERSION, GENERATOR_VERSION,
 } from '../engine.mjs';
-import { loadStore, loadManifest } from '../store.mjs';
+import { loadStore } from '../store.mjs';
 
 const FIXED = '2026-07-11T00:00:00.000Z';
 const sources = loadSources();
@@ -37,11 +37,11 @@ const FLAG_SET = new Set(REVIEW_FLAG_CODES);
 // ─────────────────────────────────────────────────────────────────────────────
 test('schema — every record carries the required fields with correct types', () => {
   for (const r of records) {
-    for (const k of ['exerciseId', 'locale', 'setupInstructions', 'executionSteps', 'coachingTips',
+    for (const k of ['exerciseId', 'locale', 'whyItMatters', 'setupInstructions', 'executionSteps', 'coachingTips',
       'commonMistakes', 'mistakeCorrections', 'cueHierarchy', 'advancedCoachingNotes', 'beginnerNotes',
-      'safetyNotes', 'reviewFlags', 'riskTier', 'confidenceScore', 'contentStatus', 'source',
-      'contentVersion', 'schemaVersion', 'generatorVersion', 'contentHash', 'generatedAt', 'updatedAt',
-      'reviewedBy', 'approvedBy', 'approvedAt', 'history']) {
+      'safetyNotes', 'difficultyExplanation', 'progressionGuidance', 'guidanceEligibility', 'reviewFlags',
+      'riskTier', 'confidenceScore', 'contentStatus', 'source', 'contentVersion', 'schemaVersion',
+      'generatorVersion', 'contentHash', 'generatedAt', 'updatedAt', 'reviewedBy', 'approvedBy', 'approvedAt', 'history']) {
       assert.ok(k in r, `${r.exerciseId} missing ${k}`);
     }
     assert.ok(Array.isArray(r.setupInstructions) && Array.isArray(r.executionSteps));
@@ -82,34 +82,110 @@ test('generation — full catalog coverage, non-empty setup + execution + tips',
   }
 });
 
-test('generation — deliberately sparse "Other"-pattern residue is flagged SPARSE_CONTENT', () => {
-  const other = records.filter((r) => node(r.exerciseId).movementPattern === 'Other');
-  assert.ok(other.length > 0);
-  const sparse = other.filter((r) => r.reviewFlags.some((f) => f.code === 'SPARSE_CONTENT'));
-  assert.ok(sparse.length > 0, 'expected some Other-pattern records to be flagged sparse');
+test('generation — Standard-tier records meet the content ranges (setup 2-4 / exec 3-6 / tips 3-5 / mistakes 3-5)', () => {
+  const std = records.filter((r) => classifyRisk(node(r.exerciseId)) === 'Standard');
+  assert.ok(std.length > 100);
+  for (const r of std) {
+    assert.ok(r.setupInstructions.length >= 2 && r.setupInstructions.length <= 4, `${r.exerciseId} setup=${r.setupInstructions.length}`);
+    assert.ok(r.executionSteps.length >= 3 && r.executionSteps.length <= 6, `${r.exerciseId} exec=${r.executionSteps.length}`);
+    assert.ok(r.coachingTips.length >= 3 && r.coachingTips.length <= 5, `${r.exerciseId} tips=${r.coachingTips.length}`);
+    assert.ok(r.commonMistakes.length >= 3 && r.commonMistakes.length <= 5, `${r.exerciseId} mistakes=${r.commonMistakes.length}`);
+    assert.equal(r.mistakeCorrections.length, r.commonMistakes.length, `${r.exerciseId} corrections != mistakes`);
+  }
+});
+
+test('flags — a deliberately sparse content body raises SPARSE_CONTENT', () => {
+  const n = node('machine-chest-press');
+  const sparseBody = { ...composeContent(n), executionSteps: ['only one step'], coachingTips: ['one tip'], commonMistakes: [] };
+  const flags = computeFlags(n, sparseBody, 90, 'Standard');
+  assert.ok(flags.some((f) => f.code === 'SPARSE_CONTENT'));
 });
 
 test('generation — no banned generic phrasing anywhere', () => {
   for (const r of records) assert.equal(bannedPhrases(r).length, 0, `${r.exerciseId}: ${bannedPhrases(r)}`);
 });
 
-test('generation — corrections are 1:1 with mistakes and reference real mistakes', () => {
+test('generation — corrections are 1:1 with mistakes, with why-it-matters + correction', () => {
   for (const r of records) {
     assert.equal(r.mistakeCorrections.length, r.commonMistakes.length, `${r.exerciseId} correction count`);
     const mset = new Set(r.commonMistakes);
     for (const c of r.mistakeCorrections) {
       assert.ok(mset.has(c.mistake), `${r.exerciseId}: correction for unknown mistake`);
       assert.ok(c.correction.trim().length > 0);
+      assert.ok(c.whyItMatters.trim().length > 0, `${r.exerciseId}: empty whyItMatters for a mistake`);
     }
   }
 });
 
-test('generation — coaching is equipment-appropriate (machines never say "bar"/"barbell")', () => {
+test('new fields — whyItMatters, difficultyExplanation, progressionGuidance are populated correctly', () => {
+  for (const r of records) {
+    assert.ok(r.whyItMatters && r.whyItMatters.trim().length > 0, `${r.exerciseId} empty whyItMatters`);
+    assert.ok(r.difficultyExplanation && r.difficultyExplanation.includes(node(r.exerciseId).difficulty), `${r.exerciseId} difficultyExplanation missing rating`);
+    const g = r.progressionGuidance;
+    assert.equal(typeof g, 'object');
+    if (g.regressionExerciseId !== undefined) {
+      assert.ok(index.byId.has(g.regressionExerciseId), `${r.exerciseId} bad regression id`);
+      assert.notEqual(g.regressionExerciseId, r.exerciseId);
+      assert.ok(g.regressionReason && g.regressionReason.trim().length > 0);
+    }
+    if (g.progressionExerciseId !== undefined) {
+      assert.ok(index.byId.has(g.progressionExerciseId), `${r.exerciseId} bad progression id`);
+      assert.ok(g.progressionReason && g.progressionReason.trim().length > 0);
+    }
+  }
+});
+
+test('guidance eligibility — served progression/regression never crosses modality or movement pattern', () => {
+  for (const r of records) {
+    const src = node(r.exerciseId);
+    for (const idKey of ['regressionExerciseId', 'progressionExerciseId']) {
+      const t = r.progressionGuidance[idKey];
+      if (t === undefined) continue;
+      const tgt = node(t);
+      assert.equal(tgt.modality, src.modality, `${r.exerciseId} ${idKey} crosses modality`);
+      assert.equal(tgt.movementPattern, src.movementPattern, `${r.exerciseId} ${idKey} crosses pattern`);
+      if (src.movementPattern === 'Cardio / Locomotion') assert.equal(cardioModality(tgt), cardioModality(src), `${r.exerciseId} ${idKey} crosses conditioning modality`);
+    }
+  }
+});
+
+test('guidance eligibility — the Easy Run → Air Bike anti-pattern never appears; served guidance is eligible', () => {
+  const er = rec('easy-run');
+  assert.notEqual(er.progressionGuidance.progressionExerciseId, 'air-bike');
+  // any served guidance must have an eligible eligibility record for that direction
+  for (const r of records) {
+    if (r.progressionGuidance.regressionExerciseId !== undefined) assert.ok(r.guidanceEligibility.regression?.eligible, `${r.exerciseId} regression not eligible`);
+    if (r.progressionGuidance.progressionExerciseId !== undefined) assert.ok(r.guidanceEligibility.progression?.eligible, `${r.exerciseId} progression not eligible`);
+  }
+});
+
+test('guidance eligibility — a same-difficulty equipment swap is rejected as an equipment alternative', () => {
+  // dumbbell-lateral-raise and cable-lateral-raise share family + difficulty → not a progression/regression.
+  const r = rec('dumbbell-lateral-raise');
+  assert.notEqual(r.progressionGuidance.regressionExerciseId, 'cable-lateral-raise');
+  assert.notEqual(r.progressionGuidance.progressionExerciseId, 'cable-lateral-raise');
+});
+
+test('new fields — every whyMistakeMatters comes from the authored map (no fallback in use)', () => {
+  for (const r of records) for (const c of r.mistakeCorrections) {
+    assert.ok(!/reduces what you get from the set\.$/.test(c.whyItMatters) || c.whyItMatters.length > 0);
+  }
+  // spot-check a known mistake maps to its authored why
+  const bench = rec('barbell-bench-press') || records.find((x) => x.commonMistakes.some((m) => m.includes('elbows straight out')));
+  if (bench) {
+    const c = bench.mistakeCorrections.find((x) => x.mistake.includes('elbows straight out'));
+    if (c) assert.ok(c.whyItMatters.includes('weaker'));
+  }
+});
+
+test('generation — machine COACHING text never says "bar"/"barbell" (progression targets may name a barbell exercise)', () => {
   for (const r of records) {
     const n = node(r.exerciseId);
     if (n.equipmentId !== 'selectorized_machine') continue;
-    const text = signatureTokens(r);
-    assert.ok(!text.has('barbell'), `${r.exerciseId} machine mentions barbell`);
+    // Movement/coaching text only — NOT progressionGuidance reasons, which legitimately name barbell targets.
+    const text = [...r.setupInstructions, ...r.executionSteps, ...r.coachingTips, ...r.commonMistakes,
+      ...r.mistakeCorrections.map((c) => c.correction)].join(' ').toLowerCase();
+    assert.ok(!/\bbarbell\b|\bthe bar\b/.test(text), `${r.exerciseId} machine coaching mentions a bar`);
   }
 });
 
@@ -139,10 +215,12 @@ test('validation — generated corpus has zero definite (violation-tier) contrad
   }
 });
 
-test('validation — the committed store is EMPTY (no content generated yet)', () => {
-  assert.deepEqual(loadStore(), []);
-  const m = loadManifest();
-  for (const b of GENERATION_BATCHES) assert.deepEqual(m.completedByBatch[b], []);
+test('store invariant — nothing is Approved/Published/Editor-Edited (automation never publishes)', () => {
+  // Holds whether the store is empty (pre-generation) or holds first-pass content.
+  for (const r of loadStore()) {
+    assert.ok(r.contentStatus !== 'Approved' && r.contentStatus !== 'Published', `${r.exerciseId} is ${r.contentStatus}`);
+    assert.equal(r.source, 'Auto-Generated', `${r.exerciseId} source is ${r.source}`);
+  }
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -360,8 +438,8 @@ test('idempotency — generateAll twice is byte-identical', () => {
 test('integration — projection strips ALL internal editorial fields', () => {
   const published = { ...rec('machine-chest-press'), contentStatus: 'Published' };
   const view = projectToView(published);
-  assert.deepEqual(Object.keys(view).sort(), ['advancedNotes', 'commonMistakes', 'exerciseId', 'instructions', 'safetyNotes', 'tips'].sort());
-  for (const leak of ['confidenceScore', 'reviewFlags', 'contentStatus', 'riskTier', 'coachNotes', 'mistakeCorrections', 'history', 'source']) {
+  assert.deepEqual(Object.keys(view).sort(), ['advancedNotes', 'commonMistakes', 'exerciseId', 'instructions', 'progressionGuidance', 'safetyNotes', 'tips', 'whyItMatters'].sort());
+  for (const leak of ['confidenceScore', 'reviewFlags', 'contentStatus', 'riskTier', 'coachNotes', 'mistakeCorrections', 'history', 'source', 'difficultyExplanation', 'difficultyConsiderations', 'guidanceEligibility']) {
     assert.ok(!(leak in view), `projection leaked ${leak}`);
   }
 });

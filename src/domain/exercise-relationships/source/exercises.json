@@ -1665,7 +1665,7 @@
     "aliases": [],
     "family": "Reverse Nordic Curl",
     "equipmentId": "bodyweight",
-    "movementPattern": "Elbow Flexion",
+    "movementPattern": "Squat / Knee Dominant",
     "difficulty": "Advanced",
     "modality": "Strength"
   },
@@ -2335,7 +2335,7 @@
     "aliases": [],
     "family": "McGill Curl-Up",
     "equipmentId": "bodyweight",
-    "movementPattern": "Elbow Flexion",
+    "movementPattern": "Core",
     "difficulty": "Intermediate",
     "modality": "Mobility"
   },

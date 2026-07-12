@@ -5,6 +5,8 @@
  *
  * Options:
  *   --batch=<Name>     Only generate one batch (Machines, Cable, Dumbbells, ...).
+ *   --risk=<Tier>      Only generate one risk tier (Standard, Technical, Specialist) —
+ *                      used for controlled tier-by-tier rollout.
  *   --regenerate       Refresh EXISTING auto-generated records (bumps version on
  *                      material change; never touches Editor-Edited/Approved/Published).
  *   --limit=<N>        Cap the number of NEW records this run (smoke tests).
@@ -22,9 +24,9 @@
 
 import { STORE_PATH, MANIFEST_PATH, loadStore, writeStore, buildManifest } from './store.mjs';
 import {
-  loadSources, loadRelationships, buildIndex, assignBatch,
+  loadSources, loadRelationships, buildIndex, assignBatch, classifyRisk,
   buildRecord, regenerateRecord, detectDuplicates, routeStatus,
-  GENERATION_BATCHES, GENERATOR_VERSION,
+  GENERATION_BATCHES, RISK_TIERS, GENERATOR_VERSION,
 } from './engine.mjs';
 
 // ── args ──────────────────────────────────────────────────────────────────────
@@ -32,6 +34,7 @@ const args = process.argv.slice(2);
 const getOpt = (name) => { const a = args.find((x) => x.startsWith(`--${name}=`)); return a ? a.split('=').slice(1).join('=') : undefined; };
 const hasFlag = (name) => args.includes(`--${name}`);
 const onlyBatch = getOpt('batch');
+const onlyRisk = getOpt('risk');
 const regenerate = hasFlag('regenerate');
 const limit = getOpt('limit') ? Number(getOpt('limit')) : Infinity;
 const now = getOpt('now') ?? new Date().toISOString();
@@ -41,6 +44,10 @@ if (onlyBatch && !GENERATION_BATCHES.includes(onlyBatch)) {
   console.error(`Unknown batch "${onlyBatch}". Valid: ${GENERATION_BATCHES.join(', ')}`);
   process.exit(1);
 }
+if (onlyRisk && !RISK_TIERS.includes(onlyRisk)) {
+  console.error(`Unknown risk tier "${onlyRisk}". Valid: ${RISK_TIERS.join(', ')}`);
+  process.exit(1);
+}
 
 // ── load ──────────────────────────────────────────────────────────────────────
 const sources = loadSources();
@@ -48,10 +55,10 @@ const index = buildIndex(sources, loadRelationships());
 const store = loadStore();
 const byId = new Map(store.map((r) => [r.exerciseId, r]));
 
-// target ids in batch order, then id, filtered to a single batch if requested.
+// target ids in batch order, then id, filtered to a single batch and/or risk tier if requested.
 const targets = index.ids
-  .map((id) => ({ id, node: index.byId.get(id), batch: assignBatch(index.byId.get(id)) }))
-  .filter((t) => !onlyBatch || t.batch === onlyBatch)
+  .map((id) => ({ id, node: index.byId.get(id), batch: assignBatch(index.byId.get(id)), risk: classifyRisk(index.byId.get(id)) }))
+  .filter((t) => (!onlyBatch || t.batch === onlyBatch) && (!onlyRisk || t.risk === onlyRisk))
   .sort((a, b) => (GENERATION_BATCHES.indexOf(a.batch) - GENERATION_BATCHES.indexOf(b.batch)) || (a.id < b.id ? -1 : 1));
 
 // ── generate / resume ─────────────────────────────────────────────────────────
@@ -102,7 +109,7 @@ const total = index.ids.length;
 const covered = allRecords.length;
 const byStatus = {};
 for (const r of allRecords) byStatus[r.contentStatus] = (byStatus[r.contentStatus] ?? 0) + 1;
-console.log(`${dryRun ? '[dry-run] ' : ''}Coaching generation — generator ${GENERATOR_VERSION}${onlyBatch ? ` (batch: ${onlyBatch})` : ''}`);
+console.log(`${dryRun ? '[dry-run] ' : ''}Coaching generation — generator ${GENERATOR_VERSION}${onlyBatch ? ` (batch: ${onlyBatch})` : ''}${onlyRisk ? ` (risk: ${onlyRisk})` : ''}`);
 console.log(`  catalog: ${total}   covered: ${covered}   gap: ${total - covered}`);
 console.log(`  created: ${created}   regenerated: ${regenerated}   skipped: ${skipped}   human-locked untouched: ${untouchedHuman}   duplicate-flagged: ${dupFlagged}`);
 console.log('  by status:', byStatus);

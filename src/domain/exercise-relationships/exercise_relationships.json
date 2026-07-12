@@ -2643,31 +2643,11 @@
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "assisted-nordic-curl__reverse-nordic-curl",
-    "sourceExerciseId": "assisted-nordic-curl",
-    "targetExerciseId": "reverse-nordic-curl",
-    "type": "Substitute",
-    "rank": 3,
-    "compatibilityScore": 79,
-    "movementPattern": "Elbow Flexion",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "hamstrings"
-    ],
-    "equipmentChange": false,
-    "swapContexts": [
-      "General swap"
-    ],
-    "reason": "Preserves the elbow flexion pattern and trains the hamstrings with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
     "id": "assisted-nordic-curl__sliding-hamstring-curl",
     "sourceExerciseId": "assisted-nordic-curl",
     "targetExerciseId": "sliding-hamstring-curl",
     "type": "Regression",
-    "rank": 4,
+    "rank": 3,
     "compatibilityScore": 75.5,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -2688,7 +2668,7 @@
     "sourceExerciseId": "assisted-nordic-curl",
     "targetExerciseId": "nordic-curl-machine",
     "type": "Regression",
-    "rank": 5,
+    "rank": 4,
     "compatibilityScore": 74,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -2711,7 +2691,7 @@
     "sourceExerciseId": "assisted-nordic-curl",
     "targetExerciseId": "band-leg-curl",
     "type": "Regression",
-    "rank": 6,
+    "rank": 5,
     "compatibilityScore": 70.5,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -2736,7 +2716,7 @@
     "sourceExerciseId": "assisted-nordic-curl",
     "targetExerciseId": "cable-standing-leg-curl",
     "type": "Regression",
-    "rank": 7,
+    "rank": 6,
     "compatibilityScore": 70.5,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -2759,7 +2739,7 @@
     "sourceExerciseId": "assisted-nordic-curl",
     "targetExerciseId": "suspension-trainer-hamstring-curl",
     "type": "Substitute",
-    "rank": 8,
+    "rank": 7,
     "compatibilityScore": 70.5,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -2774,6 +2754,29 @@
       "Different equipment"
     ],
     "reason": "Preserves the elbow flexion pattern and trains the hamstrings with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "assisted-nordic-curl__lying-leg-curl-machine",
+    "sourceExerciseId": "assisted-nordic-curl",
+    "targetExerciseId": "lying-leg-curl-machine",
+    "type": "Regression",
+    "rank": 8,
+    "compatibilityScore": 67,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "hamstrings"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment",
+      "More stability",
+      "Skill regression"
+    ],
+    "reason": "An easier elbow flexion regression using selectorized machine instead of bodyweight.",
     "editorialStatus": "Auto-Generated"
   },
   {
@@ -7921,11 +7924,31 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "band-overhead-triceps-extension__band-triceps-kickback",
+    "sourceExerciseId": "band-overhead-triceps-extension",
+    "targetExerciseId": "band-triceps-kickback",
+    "type": "Substitute",
+    "rank": 5,
+    "compatibilityScore": 79,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "band-overhead-triceps-extension__band-triceps-pushdown",
     "sourceExerciseId": "band-overhead-triceps-extension",
     "targetExerciseId": "band-triceps-pushdown",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -7945,7 +7968,7 @@
     "sourceExerciseId": "band-overhead-triceps-extension",
     "targetExerciseId": "suspension-trainer-triceps-extension",
     "type": "Progression",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 76,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -7964,27 +7987,6 @@
     "id": "band-overhead-triceps-extension__barbell-jm-press",
     "sourceExerciseId": "band-overhead-triceps-extension",
     "targetExerciseId": "barbell-jm-press",
-    "type": "Substitute",
-    "rank": 7,
-    "compatibilityScore": 74,
-    "movementPattern": "Elbow Extension",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "triceps"
-    ],
-    "equipmentChange": true,
-    "swapContexts": [
-      "Equipment unavailable",
-      "Different equipment"
-    ],
-    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "band-overhead-triceps-extension__barbell-skull-crusher",
-    "sourceExerciseId": "band-overhead-triceps-extension",
-    "targetExerciseId": "barbell-skull-crusher",
     "type": "Substitute",
     "rank": 8,
     "compatibilityScore": 74,
@@ -10310,7 +10312,7 @@
     "preservesPattern": true,
     "samePrimaryMuscle": true,
     "sharedPrimaryMuscleIds": [
-      "glutes"
+      "triceps"
     ],
     "equipmentChange": true,
     "swapContexts": [
@@ -10320,6 +10322,150 @@
       "Different equipment"
     ],
     "reason": "Preserves the elbow extension movement while using dumbbell instead of resistance band.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "band-triceps-kickback__band-overhead-triceps-extension",
+    "sourceExerciseId": "band-triceps-kickback",
+    "targetExerciseId": "band-overhead-triceps-extension",
+    "type": "Substitute",
+    "rank": 2,
+    "compatibilityScore": 79,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "band-triceps-kickback__band-triceps-pushdown",
+    "sourceExerciseId": "band-triceps-kickback",
+    "targetExerciseId": "band-triceps-pushdown",
+    "type": "Substitute",
+    "rank": 3,
+    "compatibilityScore": 79,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "band-triceps-kickback__suspension-trainer-triceps-extension",
+    "sourceExerciseId": "band-triceps-kickback",
+    "targetExerciseId": "suspension-trainer-triceps-extension",
+    "type": "Progression",
+    "rank": 4,
+    "compatibilityScore": 76,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding elbow extension progression using suspension trainer instead of resistance band.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "band-triceps-kickback__barbell-jm-press",
+    "sourceExerciseId": "band-triceps-kickback",
+    "targetExerciseId": "barbell-jm-press",
+    "type": "Substitute",
+    "rank": 5,
+    "compatibilityScore": 74,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "band-triceps-kickback__barbell-overhead-triceps-extension",
+    "sourceExerciseId": "band-triceps-kickback",
+    "targetExerciseId": "barbell-overhead-triceps-extension",
+    "type": "Substitute",
+    "rank": 6,
+    "compatibilityScore": 74,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "band-triceps-kickback__barbell-skull-crusher",
+    "sourceExerciseId": "band-triceps-kickback",
+    "targetExerciseId": "barbell-skull-crusher",
+    "type": "Substitute",
+    "rank": 7,
+    "compatibilityScore": 74,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "band-triceps-kickback__cable-cross-body-triceps-extension",
+    "sourceExerciseId": "band-triceps-kickback",
+    "targetExerciseId": "cable-cross-body-triceps-extension",
+    "type": "Substitute",
+    "rank": 8,
+    "compatibilityScore": 74,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
     "editorialStatus": "Auto-Generated"
   },
   {
@@ -10364,11 +10510,31 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "band-triceps-pushdown__band-triceps-kickback",
+    "sourceExerciseId": "band-triceps-pushdown",
+    "targetExerciseId": "band-triceps-kickback",
+    "type": "Substitute",
+    "rank": 3,
+    "compatibilityScore": 79,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "band-triceps-pushdown__suspension-trainer-triceps-extension",
     "sourceExerciseId": "band-triceps-pushdown",
     "targetExerciseId": "suspension-trainer-triceps-extension",
     "type": "Progression",
-    "rank": 3,
+    "rank": 4,
     "compatibilityScore": 76,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -10388,7 +10554,7 @@
     "sourceExerciseId": "band-triceps-pushdown",
     "targetExerciseId": "barbell-jm-press",
     "type": "Substitute",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 74,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -10409,7 +10575,7 @@
     "sourceExerciseId": "band-triceps-pushdown",
     "targetExerciseId": "barbell-overhead-triceps-extension",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 74,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -10430,7 +10596,7 @@
     "sourceExerciseId": "band-triceps-pushdown",
     "targetExerciseId": "barbell-skull-crusher",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 74,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -10450,27 +10616,6 @@
     "id": "band-triceps-pushdown__cable-cross-body-triceps-extension",
     "sourceExerciseId": "band-triceps-pushdown",
     "targetExerciseId": "cable-cross-body-triceps-extension",
-    "type": "Substitute",
-    "rank": 7,
-    "compatibilityScore": 74,
-    "movementPattern": "Elbow Extension",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "triceps"
-    ],
-    "equipmentChange": true,
-    "swapContexts": [
-      "Equipment unavailable",
-      "Different equipment"
-    ],
-    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "band-triceps-pushdown__cable-overhead-triceps-extension",
-    "sourceExerciseId": "band-triceps-pushdown",
-    "targetExerciseId": "cable-overhead-triceps-extension",
     "type": "Substitute",
     "rank": 8,
     "compatibilityScore": 74,
@@ -16106,11 +16251,34 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "barbell-jm-press__dumbbell-triceps-kickback",
+    "sourceExerciseId": "barbell-jm-press",
+    "targetExerciseId": "dumbbell-triceps-kickback",
+    "type": "Substitute",
+    "rank": 6,
+    "compatibilityScore": 76,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Hotel gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "barbell-jm-press__single-arm-dumbbell-overhead-triceps-extension",
     "sourceExerciseId": "barbell-jm-press",
     "targetExerciseId": "single-arm-dumbbell-overhead-triceps-extension",
     "type": "Progression",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 76,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -16130,31 +16298,8 @@
     "sourceExerciseId": "barbell-jm-press",
     "targetExerciseId": "two-hand-dumbbell-overhead-triceps-extension",
     "type": "Substitute",
-    "rank": 7,
-    "compatibilityScore": 76,
-    "movementPattern": "Elbow Extension",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "triceps"
-    ],
-    "equipmentChange": true,
-    "swapContexts": [
-      "Equipment unavailable",
-      "Home gym",
-      "Hotel gym",
-      "Different equipment"
-    ],
-    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "barbell-jm-press__band-overhead-triceps-extension",
-    "sourceExerciseId": "barbell-jm-press",
-    "targetExerciseId": "band-overhead-triceps-extension",
-    "type": "Substitute",
     "rank": 8,
-    "compatibilityScore": 74,
+    "compatibilityScore": 76,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
     "samePrimaryMuscle": true,
@@ -20932,31 +21077,11 @@
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "barbell-skull-crusher__single-arm-dumbbell-overhead-triceps-extension",
+    "id": "barbell-skull-crusher__dumbbell-triceps-kickback",
     "sourceExerciseId": "barbell-skull-crusher",
-    "targetExerciseId": "single-arm-dumbbell-overhead-triceps-extension",
-    "type": "Progression",
-    "rank": 7,
-    "compatibilityScore": 76,
-    "movementPattern": "Elbow Extension",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "triceps"
-    ],
-    "equipmentChange": true,
-    "swapContexts": [
-      "Skill progression"
-    ],
-    "reason": "A more demanding elbow extension progression using dumbbell instead of barbell.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "barbell-skull-crusher__two-hand-dumbbell-overhead-triceps-extension",
-    "sourceExerciseId": "barbell-skull-crusher",
-    "targetExerciseId": "two-hand-dumbbell-overhead-triceps-extension",
+    "targetExerciseId": "dumbbell-triceps-kickback",
     "type": "Substitute",
-    "rank": 8,
+    "rank": 7,
     "compatibilityScore": 76,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -20972,6 +21097,26 @@
       "Different equipment"
     ],
     "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "barbell-skull-crusher__single-arm-dumbbell-overhead-triceps-extension",
+    "sourceExerciseId": "barbell-skull-crusher",
+    "targetExerciseId": "single-arm-dumbbell-overhead-triceps-extension",
+    "type": "Progression",
+    "rank": 8,
+    "compatibilityScore": 76,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding elbow extension progression using dumbbell instead of barbell.",
     "editorialStatus": "Auto-Generated"
   },
   {
@@ -25062,11 +25207,31 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "bird-dog-mobility__mcgill-curl-up",
+    "sourceExerciseId": "bird-dog-mobility",
+    "targetExerciseId": "mcgill-curl-up",
+    "type": "Progression",
+    "rank": 5,
+    "compatibilityScore": 78.5,
+    "movementPattern": "Core",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "rectus_abdominis"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding core progression with greater technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "bird-dog-mobility__copenhagen-plank",
     "sourceExerciseId": "bird-dog-mobility",
     "targetExerciseId": "copenhagen-plank",
     "type": "Progression",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 77.5,
     "movementPattern": "Core",
     "preservesPattern": true,
@@ -25086,7 +25251,7 @@
     "sourceExerciseId": "bird-dog-mobility",
     "targetExerciseId": "forearm-plank",
     "type": "Progression",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 77.5,
     "movementPattern": "Core",
     "preservesPattern": true,
@@ -25105,26 +25270,6 @@
     "id": "bird-dog-mobility__hanging-leg-raise",
     "sourceExerciseId": "bird-dog-mobility",
     "targetExerciseId": "hanging-leg-raise",
-    "type": "Progression",
-    "rank": 7,
-    "compatibilityScore": 77.5,
-    "movementPattern": "Core",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "rectus_abdominis"
-    ],
-    "equipmentChange": false,
-    "swapContexts": [
-      "Skill progression"
-    ],
-    "reason": "A more demanding core progression with greater technical and stability demand.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "bird-dog-mobility__hollow-body-hold",
-    "sourceExerciseId": "bird-dog-mobility",
-    "targetExerciseId": "hollow-body-hold",
     "type": "Progression",
     "rank": 8,
     "compatibilityScore": 77.5,
@@ -27849,35 +27994,11 @@
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "cable-assisted-nordic-curl__reverse-nordic-curl",
-    "sourceExerciseId": "cable-assisted-nordic-curl",
-    "targetExerciseId": "reverse-nordic-curl",
-    "type": "Substitute",
-    "rank": 5,
-    "compatibilityScore": 74,
-    "movementPattern": "Elbow Flexion",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "hamstrings"
-    ],
-    "equipmentChange": true,
-    "swapContexts": [
-      "Equipment unavailable",
-      "No equipment",
-      "Home gym",
-      "Hotel gym",
-      "Different equipment"
-    ],
-    "reason": "Preserves the elbow flexion pattern and trains the hamstrings with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
     "id": "cable-assisted-nordic-curl__band-leg-curl",
     "sourceExerciseId": "cable-assisted-nordic-curl",
     "targetExerciseId": "band-leg-curl",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 5,
     "compatibilityScore": 70.5,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -27900,7 +28021,7 @@
     "sourceExerciseId": "cable-assisted-nordic-curl",
     "targetExerciseId": "sliding-hamstring-curl",
     "type": "Substitute",
-    "rank": 7,
+    "rank": 6,
     "compatibilityScore": 70.5,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -27924,7 +28045,7 @@
     "sourceExerciseId": "cable-assisted-nordic-curl",
     "targetExerciseId": "suspension-trainer-hamstring-curl",
     "type": "Substitute",
-    "rank": 8,
+    "rank": 7,
     "compatibilityScore": 70.5,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -27939,6 +28060,29 @@
       "Different equipment"
     ],
     "reason": "Preserves the elbow flexion pattern and trains the hamstrings with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "cable-assisted-nordic-curl__lying-leg-curl-machine",
+    "sourceExerciseId": "cable-assisted-nordic-curl",
+    "targetExerciseId": "lying-leg-curl-machine",
+    "type": "Regression",
+    "rank": 8,
+    "compatibilityScore": 69,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "hamstrings"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment",
+      "More stability",
+      "Skill regression"
+    ],
+    "reason": "An easier elbow flexion regression using selectorized machine instead of cable machine.",
     "editorialStatus": "Auto-Generated"
   },
   {
@@ -29432,9 +29576,9 @@
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "cable-cross-body-triceps-extension__band-triceps-pushdown",
+    "id": "cable-cross-body-triceps-extension__band-triceps-kickback",
     "sourceExerciseId": "cable-cross-body-triceps-extension",
-    "targetExerciseId": "band-triceps-pushdown",
+    "targetExerciseId": "band-triceps-kickback",
     "type": "Substitute",
     "rank": 8,
     "compatibilityScore": 74,
@@ -34524,9 +34668,9 @@
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "cable-rope-pushdown__band-triceps-pushdown",
+    "id": "cable-rope-pushdown__band-triceps-kickback",
     "sourceExerciseId": "cable-rope-pushdown",
-    "targetExerciseId": "band-triceps-pushdown",
+    "targetExerciseId": "band-triceps-kickback",
     "type": "Substitute",
     "rank": 8,
     "compatibilityScore": 74,
@@ -49914,11 +50058,31 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "dumbbell-jm-press__dumbbell-triceps-kickback",
+    "sourceExerciseId": "dumbbell-jm-press",
+    "targetExerciseId": "dumbbell-triceps-kickback",
+    "type": "Substitute",
+    "rank": 4,
+    "compatibilityScore": 79,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "dumbbell-jm-press__single-arm-dumbbell-overhead-triceps-extension",
     "sourceExerciseId": "dumbbell-jm-press",
     "targetExerciseId": "single-arm-dumbbell-overhead-triceps-extension",
     "type": "Substitute",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -49938,7 +50102,7 @@
     "sourceExerciseId": "dumbbell-jm-press",
     "targetExerciseId": "two-hand-dumbbell-overhead-triceps-extension",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -49958,7 +50122,7 @@
     "sourceExerciseId": "dumbbell-jm-press",
     "targetExerciseId": "barbell-overhead-triceps-extension",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 76,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -49979,7 +50143,7 @@
     "sourceExerciseId": "dumbbell-jm-press",
     "targetExerciseId": "barbell-skull-crusher",
     "type": "Substitute",
-    "rank": 7,
+    "rank": 8,
     "compatibilityScore": 76,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -49990,29 +50154,6 @@
     "equipmentChange": true,
     "swapContexts": [
       "Equipment unavailable",
-      "Different equipment"
-    ],
-    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "dumbbell-jm-press__band-overhead-triceps-extension",
-    "sourceExerciseId": "dumbbell-jm-press",
-    "targetExerciseId": "band-overhead-triceps-extension",
-    "type": "Substitute",
-    "rank": 8,
-    "compatibilityScore": 74,
-    "movementPattern": "Elbow Extension",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "triceps"
-    ],
-    "equipmentChange": true,
-    "swapContexts": [
-      "Equipment unavailable",
-      "Home gym",
-      "Hotel gym",
       "Different equipment"
     ],
     "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
@@ -52998,11 +53139,31 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "dumbbell-skull-crusher__dumbbell-triceps-kickback",
+    "sourceExerciseId": "dumbbell-skull-crusher",
+    "targetExerciseId": "dumbbell-triceps-kickback",
+    "type": "Substitute",
+    "rank": 5,
+    "compatibilityScore": 79,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "dumbbell-skull-crusher__single-arm-dumbbell-overhead-triceps-extension",
     "sourceExerciseId": "dumbbell-skull-crusher",
     "targetExerciseId": "single-arm-dumbbell-overhead-triceps-extension",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -53022,7 +53183,7 @@
     "sourceExerciseId": "dumbbell-skull-crusher",
     "targetExerciseId": "two-hand-dumbbell-overhead-triceps-extension",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -53041,27 +53202,6 @@
     "id": "dumbbell-skull-crusher__barbell-jm-press",
     "sourceExerciseId": "dumbbell-skull-crusher",
     "targetExerciseId": "barbell-jm-press",
-    "type": "Substitute",
-    "rank": 7,
-    "compatibilityScore": 76,
-    "movementPattern": "Elbow Extension",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "triceps"
-    ],
-    "equipmentChange": true,
-    "swapContexts": [
-      "Equipment unavailable",
-      "Different equipment"
-    ],
-    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "dumbbell-skull-crusher__barbell-overhead-triceps-extension",
-    "sourceExerciseId": "dumbbell-skull-crusher",
-    "targetExerciseId": "barbell-overhead-triceps-extension",
     "type": "Substitute",
     "rank": 8,
     "compatibilityScore": 76,
@@ -54603,11 +54743,31 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "dumbbell-tate-press__dumbbell-triceps-kickback",
+    "sourceExerciseId": "dumbbell-tate-press",
+    "targetExerciseId": "dumbbell-triceps-kickback",
+    "type": "Substitute",
+    "rank": 3,
+    "compatibilityScore": 79,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "dumbbell-tate-press__single-arm-dumbbell-overhead-triceps-extension",
     "sourceExerciseId": "dumbbell-tate-press",
     "targetExerciseId": "single-arm-dumbbell-overhead-triceps-extension",
     "type": "Substitute",
-    "rank": 3,
+    "rank": 4,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -54627,7 +54787,7 @@
     "sourceExerciseId": "dumbbell-tate-press",
     "targetExerciseId": "two-hand-dumbbell-overhead-triceps-extension",
     "type": "Substitute",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -54647,7 +54807,7 @@
     "sourceExerciseId": "dumbbell-tate-press",
     "targetExerciseId": "barbell-jm-press",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 76,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -54668,7 +54828,7 @@
     "sourceExerciseId": "dumbbell-tate-press",
     "targetExerciseId": "barbell-overhead-triceps-extension",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 76,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -54689,7 +54849,7 @@
     "sourceExerciseId": "dumbbell-tate-press",
     "targetExerciseId": "barbell-skull-crusher",
     "type": "Substitute",
-    "rank": 7,
+    "rank": 8,
     "compatibilityScore": 76,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -54700,29 +54860,6 @@
     "equipmentChange": true,
     "swapContexts": [
       "Equipment unavailable",
-      "Different equipment"
-    ],
-    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "dumbbell-tate-press__band-overhead-triceps-extension",
-    "sourceExerciseId": "dumbbell-tate-press",
-    "targetExerciseId": "band-overhead-triceps-extension",
-    "type": "Substitute",
-    "rank": 8,
-    "compatibilityScore": 74,
-    "movementPattern": "Elbow Extension",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "triceps"
-    ],
-    "equipmentChange": true,
-    "swapContexts": [
-      "Equipment unavailable",
-      "Home gym",
-      "Hotel gym",
       "Different equipment"
     ],
     "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
@@ -54948,7 +55085,7 @@
     "preservesPattern": true,
     "samePrimaryMuscle": true,
     "sharedPrimaryMuscleIds": [
-      "glutes"
+      "triceps"
     ],
     "equipmentChange": true,
     "swapContexts": [
@@ -54958,6 +55095,148 @@
       "Different equipment"
     ],
     "reason": "Preserves the elbow extension movement while using resistance band instead of dumbbell.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "dumbbell-triceps-kickback__dumbbell-jm-press",
+    "sourceExerciseId": "dumbbell-triceps-kickback",
+    "targetExerciseId": "dumbbell-jm-press",
+    "type": "Substitute",
+    "rank": 2,
+    "compatibilityScore": 79,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "dumbbell-triceps-kickback__dumbbell-skull-crusher",
+    "sourceExerciseId": "dumbbell-triceps-kickback",
+    "targetExerciseId": "dumbbell-skull-crusher",
+    "type": "Substitute",
+    "rank": 3,
+    "compatibilityScore": 79,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "dumbbell-triceps-kickback__dumbbell-tate-press",
+    "sourceExerciseId": "dumbbell-triceps-kickback",
+    "targetExerciseId": "dumbbell-tate-press",
+    "type": "Substitute",
+    "rank": 4,
+    "compatibilityScore": 79,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "dumbbell-triceps-kickback__single-arm-dumbbell-overhead-triceps-extension",
+    "sourceExerciseId": "dumbbell-triceps-kickback",
+    "targetExerciseId": "single-arm-dumbbell-overhead-triceps-extension",
+    "type": "Substitute",
+    "rank": 5,
+    "compatibilityScore": 79,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "dumbbell-triceps-kickback__two-hand-dumbbell-overhead-triceps-extension",
+    "sourceExerciseId": "dumbbell-triceps-kickback",
+    "targetExerciseId": "two-hand-dumbbell-overhead-triceps-extension",
+    "type": "Substitute",
+    "rank": 6,
+    "compatibilityScore": 79,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "dumbbell-triceps-kickback__barbell-jm-press",
+    "sourceExerciseId": "dumbbell-triceps-kickback",
+    "targetExerciseId": "barbell-jm-press",
+    "type": "Substitute",
+    "rank": 7,
+    "compatibilityScore": 76,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "dumbbell-triceps-kickback__barbell-overhead-triceps-extension",
+    "sourceExerciseId": "dumbbell-triceps-kickback",
+    "targetExerciseId": "barbell-overhead-triceps-extension",
+    "type": "Substitute",
+    "rank": 8,
+    "compatibilityScore": 76,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
     "editorialStatus": "Auto-Generated"
   },
   {
@@ -77633,179 +77912,164 @@
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "mcgill-curl-up__alternating-dumbbell-curl",
+    "id": "mcgill-curl-up__modified-side-plank",
     "sourceExerciseId": "mcgill-curl-up",
-    "targetExerciseId": "alternating-dumbbell-curl",
+    "targetExerciseId": "modified-side-plank",
     "type": "Substitute",
     "rank": 1,
-    "compatibilityScore": 70,
-    "movementPattern": "Elbow Flexion",
+    "compatibilityScore": 82,
+    "movementPattern": "Core",
     "preservesPattern": true,
     "samePrimaryMuscle": true,
     "sharedPrimaryMuscleIds": [
-      "biceps"
+      "rectus_abdominis"
     ],
-    "equipmentChange": true,
+    "equipmentChange": false,
     "swapContexts": [
-      "Equipment unavailable",
-      "Home gym",
-      "Hotel gym",
-      "Different equipment"
+      "General swap"
     ],
-    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
+    "reason": "Preserves the core pattern and trains the rectus abdominis with a different exercise.",
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "mcgill-curl-up__band-biceps-curl",
+    "id": "mcgill-curl-up__open-book-rotation",
     "sourceExerciseId": "mcgill-curl-up",
-    "targetExerciseId": "band-biceps-curl",
+    "targetExerciseId": "open-book-rotation",
     "type": "Substitute",
     "rank": 2,
-    "compatibilityScore": 70,
-    "movementPattern": "Elbow Flexion",
+    "compatibilityScore": 82,
+    "movementPattern": "Core",
     "preservesPattern": true,
     "samePrimaryMuscle": true,
     "sharedPrimaryMuscleIds": [
-      "biceps"
+      "rectus_abdominis"
     ],
-    "equipmentChange": true,
+    "equipmentChange": false,
     "swapContexts": [
-      "Equipment unavailable",
-      "Home gym",
-      "Hotel gym",
-      "Different equipment"
+      "General swap"
     ],
-    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
+    "reason": "Preserves the core pattern and trains the rectus abdominis with a different exercise.",
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "mcgill-curl-up__band-hammer-curl",
+    "id": "mcgill-curl-up__bird-dog-mobility",
     "sourceExerciseId": "mcgill-curl-up",
-    "targetExerciseId": "band-hammer-curl",
-    "type": "Substitute",
+    "targetExerciseId": "bird-dog-mobility",
+    "type": "Regression",
     "rank": 3,
-    "compatibilityScore": 70,
-    "movementPattern": "Elbow Flexion",
+    "compatibilityScore": 78.5,
+    "movementPattern": "Core",
     "preservesPattern": true,
     "samePrimaryMuscle": true,
     "sharedPrimaryMuscleIds": [
-      "biceps"
+      "rectus_abdominis"
     ],
-    "equipmentChange": true,
+    "equipmentChange": false,
     "swapContexts": [
-      "Equipment unavailable",
-      "Home gym",
-      "Hotel gym",
-      "Different equipment"
+      "More stability",
+      "Skill regression"
     ],
-    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
+    "reason": "An easier core regression with lower technical and stability demand.",
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "mcgill-curl-up__band-reverse-curl",
+    "id": "mcgill-curl-up__copenhagen-plank",
     "sourceExerciseId": "mcgill-curl-up",
-    "targetExerciseId": "band-reverse-curl",
+    "targetExerciseId": "copenhagen-plank",
     "type": "Substitute",
     "rank": 4,
-    "compatibilityScore": 70,
-    "movementPattern": "Elbow Flexion",
+    "compatibilityScore": 78,
+    "movementPattern": "Core",
     "preservesPattern": true,
     "samePrimaryMuscle": true,
     "sharedPrimaryMuscleIds": [
-      "biceps"
+      "rectus_abdominis"
     ],
-    "equipmentChange": true,
+    "equipmentChange": false,
     "swapContexts": [
-      "Equipment unavailable",
-      "Home gym",
-      "Hotel gym",
-      "Different equipment"
+      "General swap"
     ],
-    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
+    "reason": "Preserves the core pattern and trains the rectus abdominis with a different exercise.",
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "mcgill-curl-up__barbell-biceps-curl",
+    "id": "mcgill-curl-up__forearm-plank",
     "sourceExerciseId": "mcgill-curl-up",
-    "targetExerciseId": "barbell-biceps-curl",
+    "targetExerciseId": "forearm-plank",
     "type": "Substitute",
     "rank": 5,
-    "compatibilityScore": 70,
-    "movementPattern": "Elbow Flexion",
+    "compatibilityScore": 78,
+    "movementPattern": "Core",
     "preservesPattern": true,
     "samePrimaryMuscle": true,
     "sharedPrimaryMuscleIds": [
-      "biceps"
+      "rectus_abdominis"
     ],
-    "equipmentChange": true,
+    "equipmentChange": false,
     "swapContexts": [
-      "Equipment unavailable",
-      "Different equipment"
+      "General swap"
     ],
-    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
+    "reason": "Preserves the core pattern and trains the rectus abdominis with a different exercise.",
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "mcgill-curl-up__barbell-drag-curl",
+    "id": "mcgill-curl-up__hanging-leg-raise",
     "sourceExerciseId": "mcgill-curl-up",
-    "targetExerciseId": "barbell-drag-curl",
+    "targetExerciseId": "hanging-leg-raise",
     "type": "Substitute",
     "rank": 6,
-    "compatibilityScore": 70,
-    "movementPattern": "Elbow Flexion",
+    "compatibilityScore": 78,
+    "movementPattern": "Core",
     "preservesPattern": true,
     "samePrimaryMuscle": true,
     "sharedPrimaryMuscleIds": [
-      "biceps"
+      "rectus_abdominis"
     ],
-    "equipmentChange": true,
+    "equipmentChange": false,
     "swapContexts": [
-      "Equipment unavailable",
-      "Different equipment"
+      "General swap"
     ],
-    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
+    "reason": "Preserves the core pattern and trains the rectus abdominis with a different exercise.",
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "mcgill-curl-up__barbell-preacher-curl",
+    "id": "mcgill-curl-up__hollow-body-hold",
     "sourceExerciseId": "mcgill-curl-up",
-    "targetExerciseId": "barbell-preacher-curl",
+    "targetExerciseId": "hollow-body-hold",
     "type": "Substitute",
     "rank": 7,
-    "compatibilityScore": 70,
-    "movementPattern": "Elbow Flexion",
+    "compatibilityScore": 78,
+    "movementPattern": "Core",
     "preservesPattern": true,
     "samePrimaryMuscle": true,
     "sharedPrimaryMuscleIds": [
-      "biceps"
+      "rectus_abdominis"
     ],
-    "equipmentChange": true,
+    "equipmentChange": false,
     "swapContexts": [
-      "Equipment unavailable",
-      "Different equipment"
+      "General swap"
     ],
-    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
+    "reason": "Preserves the core pattern and trains the rectus abdominis with a different exercise.",
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "mcgill-curl-up__barbell-reverse-curl",
+    "id": "mcgill-curl-up__hollow-rock",
     "sourceExerciseId": "mcgill-curl-up",
-    "targetExerciseId": "barbell-reverse-curl",
+    "targetExerciseId": "hollow-rock",
     "type": "Substitute",
     "rank": 8,
-    "compatibilityScore": 70,
-    "movementPattern": "Elbow Flexion",
+    "compatibilityScore": 78,
+    "movementPattern": "Core",
     "preservesPattern": true,
     "samePrimaryMuscle": true,
     "sharedPrimaryMuscleIds": [
-      "biceps"
+      "rectus_abdominis"
     ],
-    "equipmentChange": true,
+    "equipmentChange": false,
     "swapContexts": [
-      "Equipment unavailable",
-      "Different equipment"
+      "General swap"
     ],
-    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
+    "reason": "Preserves the core pattern and trains the rectus abdominis with a different exercise.",
     "editorialStatus": "Auto-Generated"
   },
   {
@@ -80264,11 +80528,31 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "modified-side-plank__mcgill-curl-up",
+    "sourceExerciseId": "modified-side-plank",
+    "targetExerciseId": "mcgill-curl-up",
+    "type": "Substitute",
+    "rank": 2,
+    "compatibilityScore": 82,
+    "movementPattern": "Core",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "rectus_abdominis"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the core pattern and trains the rectus abdominis with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "modified-side-plank__bird-dog-mobility",
     "sourceExerciseId": "modified-side-plank",
     "targetExerciseId": "bird-dog-mobility",
     "type": "Regression",
-    "rank": 2,
+    "rank": 3,
     "compatibilityScore": 81.5,
     "movementPattern": "Core",
     "preservesPattern": true,
@@ -80289,7 +80573,7 @@
     "sourceExerciseId": "modified-side-plank",
     "targetExerciseId": "copenhagen-plank",
     "type": "Substitute",
-    "rank": 3,
+    "rank": 4,
     "compatibilityScore": 81,
     "movementPattern": "Core",
     "preservesPattern": true,
@@ -80309,7 +80593,7 @@
     "sourceExerciseId": "modified-side-plank",
     "targetExerciseId": "forearm-plank",
     "type": "Substitute",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 81,
     "movementPattern": "Core",
     "preservesPattern": true,
@@ -80329,7 +80613,7 @@
     "sourceExerciseId": "modified-side-plank",
     "targetExerciseId": "hanging-leg-raise",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 81,
     "movementPattern": "Core",
     "preservesPattern": true,
@@ -80349,7 +80633,7 @@
     "sourceExerciseId": "modified-side-plank",
     "targetExerciseId": "hollow-body-hold",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 81,
     "movementPattern": "Core",
     "preservesPattern": true,
@@ -80368,26 +80652,6 @@
     "id": "modified-side-plank__hollow-rock",
     "sourceExerciseId": "modified-side-plank",
     "targetExerciseId": "hollow-rock",
-    "type": "Substitute",
-    "rank": 7,
-    "compatibilityScore": 81,
-    "movementPattern": "Core",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "rectus_abdominis"
-    ],
-    "equipmentChange": false,
-    "swapContexts": [
-      "General swap"
-    ],
-    "reason": "Preserves the core pattern and trains the rectus abdominis with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "modified-side-plank__l-sit",
-    "sourceExerciseId": "modified-side-plank",
-    "targetExerciseId": "l-sit",
     "type": "Substitute",
     "rank": 8,
     "compatibilityScore": 81,
@@ -81815,31 +82079,11 @@
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "nordic-curl-machine__reverse-nordic-curl",
-    "sourceExerciseId": "nordic-curl-machine",
-    "targetExerciseId": "reverse-nordic-curl",
-    "type": "Progression",
-    "rank": 4,
-    "compatibilityScore": 74,
-    "movementPattern": "Elbow Flexion",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "hamstrings"
-    ],
-    "equipmentChange": true,
-    "swapContexts": [
-      "Skill progression"
-    ],
-    "reason": "A more demanding elbow flexion progression using bodyweight instead of selectorized machine.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
     "id": "nordic-curl-machine__cable-standing-leg-curl",
     "sourceExerciseId": "nordic-curl-machine",
     "targetExerciseId": "cable-standing-leg-curl",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 4,
     "compatibilityScore": 72.5,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -81860,7 +82104,7 @@
     "sourceExerciseId": "nordic-curl-machine",
     "targetExerciseId": "lying-leg-curl-machine",
     "type": "Regression",
-    "rank": 6,
+    "rank": 5,
     "compatibilityScore": 72,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -81881,7 +82125,7 @@
     "sourceExerciseId": "nordic-curl-machine",
     "targetExerciseId": "seated-leg-curl-machine",
     "type": "Regression",
-    "rank": 7,
+    "rank": 6,
     "compatibilityScore": 72,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -81901,6 +82145,27 @@
     "id": "nordic-curl-machine__single-leg-seated-leg-curl",
     "sourceExerciseId": "nordic-curl-machine",
     "targetExerciseId": "single-leg-seated-leg-curl",
+    "type": "Regression",
+    "rank": 7,
+    "compatibilityScore": 72,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "hamstrings"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "More stability",
+      "Skill regression"
+    ],
+    "reason": "An easier elbow flexion regression with lower technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "nordic-curl-machine__standing-leg-curl-machine",
+    "sourceExerciseId": "nordic-curl-machine",
+    "targetExerciseId": "standing-leg-curl-machine",
     "type": "Regression",
     "rank": 8,
     "compatibilityScore": 72,
@@ -81939,31 +82204,11 @@
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "nordic-hamstring-curl__reverse-nordic-curl",
-    "sourceExerciseId": "nordic-hamstring-curl",
-    "targetExerciseId": "reverse-nordic-curl",
-    "type": "Substitute",
-    "rank": 2,
-    "compatibilityScore": 79,
-    "movementPattern": "Elbow Flexion",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "hamstrings"
-    ],
-    "equipmentChange": false,
-    "swapContexts": [
-      "General swap"
-    ],
-    "reason": "Preserves the elbow flexion pattern and trains the hamstrings with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
     "id": "nordic-hamstring-curl__sliding-hamstring-curl",
     "sourceExerciseId": "nordic-hamstring-curl",
     "targetExerciseId": "sliding-hamstring-curl",
     "type": "Regression",
-    "rank": 3,
+    "rank": 2,
     "compatibilityScore": 75.5,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -81984,7 +82229,7 @@
     "sourceExerciseId": "nordic-hamstring-curl",
     "targetExerciseId": "cable-assisted-nordic-curl",
     "type": "Substitute",
-    "rank": 4,
+    "rank": 3,
     "compatibilityScore": 74,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -82005,7 +82250,7 @@
     "sourceExerciseId": "nordic-hamstring-curl",
     "targetExerciseId": "nordic-curl-machine",
     "type": "Regression",
-    "rank": 5,
+    "rank": 4,
     "compatibilityScore": 74,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -82028,7 +82273,7 @@
     "sourceExerciseId": "nordic-hamstring-curl",
     "targetExerciseId": "band-leg-curl",
     "type": "Regression",
-    "rank": 6,
+    "rank": 5,
     "compatibilityScore": 70.5,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -82053,7 +82298,7 @@
     "sourceExerciseId": "nordic-hamstring-curl",
     "targetExerciseId": "cable-standing-leg-curl",
     "type": "Regression",
-    "rank": 7,
+    "rank": 6,
     "compatibilityScore": 70.5,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -82076,7 +82321,7 @@
     "sourceExerciseId": "nordic-hamstring-curl",
     "targetExerciseId": "suspension-trainer-hamstring-curl",
     "type": "Substitute",
-    "rank": 8,
+    "rank": 7,
     "compatibilityScore": 70.5,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -82091,6 +82336,29 @@
       "Different equipment"
     ],
     "reason": "Preserves the elbow flexion pattern and trains the hamstrings with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "nordic-hamstring-curl__lying-leg-curl-machine",
+    "sourceExerciseId": "nordic-hamstring-curl",
+    "targetExerciseId": "lying-leg-curl-machine",
+    "type": "Regression",
+    "rank": 8,
+    "compatibilityScore": 67,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "hamstrings"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment",
+      "More stability",
+      "Skill regression"
+    ],
+    "reason": "An easier elbow flexion regression using selectorized machine instead of bodyweight.",
     "editorialStatus": "Auto-Generated"
   },
   {
@@ -82282,11 +82550,31 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "open-book-rotation__mcgill-curl-up",
+    "sourceExerciseId": "open-book-rotation",
+    "targetExerciseId": "mcgill-curl-up",
+    "type": "Substitute",
+    "rank": 2,
+    "compatibilityScore": 82,
+    "movementPattern": "Core",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "rectus_abdominis"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the core pattern and trains the rectus abdominis with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "open-book-rotation__bird-dog-mobility",
     "sourceExerciseId": "open-book-rotation",
     "targetExerciseId": "bird-dog-mobility",
     "type": "Regression",
-    "rank": 2,
+    "rank": 3,
     "compatibilityScore": 81.5,
     "movementPattern": "Core",
     "preservesPattern": true,
@@ -82307,7 +82595,7 @@
     "sourceExerciseId": "open-book-rotation",
     "targetExerciseId": "copenhagen-plank",
     "type": "Substitute",
-    "rank": 3,
+    "rank": 4,
     "compatibilityScore": 81,
     "movementPattern": "Core",
     "preservesPattern": true,
@@ -82327,7 +82615,7 @@
     "sourceExerciseId": "open-book-rotation",
     "targetExerciseId": "forearm-plank",
     "type": "Substitute",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 81,
     "movementPattern": "Core",
     "preservesPattern": true,
@@ -82347,7 +82635,7 @@
     "sourceExerciseId": "open-book-rotation",
     "targetExerciseId": "hanging-leg-raise",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 81,
     "movementPattern": "Core",
     "preservesPattern": true,
@@ -82367,7 +82655,7 @@
     "sourceExerciseId": "open-book-rotation",
     "targetExerciseId": "hollow-body-hold",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 81,
     "movementPattern": "Core",
     "preservesPattern": true,
@@ -82386,26 +82674,6 @@
     "id": "open-book-rotation__hollow-rock",
     "sourceExerciseId": "open-book-rotation",
     "targetExerciseId": "hollow-rock",
-    "type": "Substitute",
-    "rank": 7,
-    "compatibilityScore": 81,
-    "movementPattern": "Core",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "rectus_abdominis"
-    ],
-    "equipmentChange": false,
-    "swapContexts": [
-      "General swap"
-    ],
-    "reason": "Preserves the core pattern and trains the rectus abdominis with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "open-book-rotation__l-sit",
-    "sourceExerciseId": "open-book-rotation",
-    "targetExerciseId": "l-sit",
     "type": "Substitute",
     "rank": 8,
     "compatibilityScore": 81,
@@ -87676,178 +87944,166 @@
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "reverse-nordic-curl__assisted-nordic-curl",
+    "id": "reverse-nordic-curl__assisted-pistol-squat",
     "sourceExerciseId": "reverse-nordic-curl",
-    "targetExerciseId": "assisted-nordic-curl",
+    "targetExerciseId": "assisted-pistol-squat",
     "type": "Substitute",
     "rank": 1,
     "compatibilityScore": 79,
-    "movementPattern": "Elbow Flexion",
+    "movementPattern": "Squat / Knee Dominant",
     "preservesPattern": true,
     "samePrimaryMuscle": true,
     "sharedPrimaryMuscleIds": [
-      "hamstrings"
+      "quadriceps"
     ],
     "equipmentChange": false,
     "swapContexts": [
       "General swap"
     ],
-    "reason": "Preserves the elbow flexion pattern and trains the hamstrings with a different exercise.",
+    "reason": "Preserves the squat pattern and trains the quadriceps with a different exercise.",
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "reverse-nordic-curl__nordic-hamstring-curl",
+    "id": "reverse-nordic-curl__pistol-squat",
     "sourceExerciseId": "reverse-nordic-curl",
-    "targetExerciseId": "nordic-hamstring-curl",
+    "targetExerciseId": "pistol-squat",
     "type": "Substitute",
     "rank": 2,
     "compatibilityScore": 79,
-    "movementPattern": "Elbow Flexion",
+    "movementPattern": "Squat / Knee Dominant",
     "preservesPattern": true,
     "samePrimaryMuscle": true,
     "sharedPrimaryMuscleIds": [
-      "hamstrings"
+      "quadriceps"
     ],
     "equipmentChange": false,
     "swapContexts": [
       "General swap"
     ],
-    "reason": "Preserves the elbow flexion pattern and trains the hamstrings with a different exercise.",
+    "reason": "Preserves the squat pattern and trains the quadriceps with a different exercise.",
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "reverse-nordic-curl__sliding-hamstring-curl",
+    "id": "reverse-nordic-curl__bodyweight-squat",
     "sourceExerciseId": "reverse-nordic-curl",
-    "targetExerciseId": "sliding-hamstring-curl",
+    "targetExerciseId": "bodyweight-squat",
     "type": "Regression",
     "rank": 3,
     "compatibilityScore": 75.5,
-    "movementPattern": "Elbow Flexion",
+    "movementPattern": "Squat / Knee Dominant",
     "preservesPattern": true,
     "samePrimaryMuscle": true,
     "sharedPrimaryMuscleIds": [
-      "hamstrings"
+      "quadriceps"
     ],
     "equipmentChange": false,
     "swapContexts": [
       "More stability",
       "Skill regression"
     ],
-    "reason": "An easier elbow flexion regression with lower technical and stability demand.",
+    "reason": "An easier squat regression with lower technical and stability demand.",
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "reverse-nordic-curl__cable-assisted-nordic-curl",
+    "id": "reverse-nordic-curl__bulgarian-split-squat",
     "sourceExerciseId": "reverse-nordic-curl",
-    "targetExerciseId": "cable-assisted-nordic-curl",
+    "targetExerciseId": "bulgarian-split-squat",
     "type": "Substitute",
     "rank": 4,
-    "compatibilityScore": 74,
-    "movementPattern": "Elbow Flexion",
+    "compatibilityScore": 75.5,
+    "movementPattern": "Squat / Knee Dominant",
     "preservesPattern": true,
     "samePrimaryMuscle": true,
     "sharedPrimaryMuscleIds": [
-      "hamstrings"
+      "quadriceps"
     ],
-    "equipmentChange": true,
+    "equipmentChange": false,
     "swapContexts": [
-      "Equipment unavailable",
-      "Different equipment"
+      "General swap"
     ],
-    "reason": "Preserves the elbow flexion pattern and trains the hamstrings with a different exercise.",
+    "reason": "Preserves the squat pattern and trains the quadriceps with a different exercise.",
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "reverse-nordic-curl__nordic-curl-machine",
+    "id": "reverse-nordic-curl__cossack-squat",
     "sourceExerciseId": "reverse-nordic-curl",
-    "targetExerciseId": "nordic-curl-machine",
-    "type": "Regression",
+    "targetExerciseId": "cossack-squat",
+    "type": "Substitute",
     "rank": 5,
-    "compatibilityScore": 74,
-    "movementPattern": "Elbow Flexion",
+    "compatibilityScore": 75.5,
+    "movementPattern": "Squat / Knee Dominant",
     "preservesPattern": true,
     "samePrimaryMuscle": true,
     "sharedPrimaryMuscleIds": [
-      "hamstrings"
+      "quadriceps"
     ],
-    "equipmentChange": true,
+    "equipmentChange": false,
     "swapContexts": [
-      "Equipment unavailable",
-      "Different equipment",
-      "More stability",
-      "Skill regression"
+      "General swap"
     ],
-    "reason": "An easier elbow flexion regression using selectorized machine instead of bodyweight.",
+    "reason": "Preserves the squat pattern and trains the quadriceps with a different exercise.",
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "reverse-nordic-curl__band-leg-curl",
+    "id": "reverse-nordic-curl__curtsy-lunge",
     "sourceExerciseId": "reverse-nordic-curl",
-    "targetExerciseId": "band-leg-curl",
-    "type": "Regression",
+    "targetExerciseId": "curtsy-lunge",
+    "type": "Substitute",
     "rank": 6,
-    "compatibilityScore": 70.5,
-    "movementPattern": "Elbow Flexion",
+    "compatibilityScore": 75.5,
+    "movementPattern": "Squat / Knee Dominant",
     "preservesPattern": true,
     "samePrimaryMuscle": true,
     "sharedPrimaryMuscleIds": [
-      "hamstrings"
+      "quadriceps"
     ],
-    "equipmentChange": true,
+    "equipmentChange": false,
     "swapContexts": [
-      "Equipment unavailable",
-      "Home gym",
-      "Hotel gym",
-      "Different equipment",
-      "More stability",
-      "Skill regression"
+      "General swap"
     ],
-    "reason": "An easier elbow flexion regression using resistance band instead of bodyweight.",
+    "reason": "Preserves the squat pattern and trains the quadriceps with a different exercise.",
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "reverse-nordic-curl__cable-standing-leg-curl",
+    "id": "reverse-nordic-curl__forward-lunge",
     "sourceExerciseId": "reverse-nordic-curl",
-    "targetExerciseId": "cable-standing-leg-curl",
+    "targetExerciseId": "forward-lunge",
     "type": "Regression",
     "rank": 7,
-    "compatibilityScore": 70.5,
-    "movementPattern": "Elbow Flexion",
+    "compatibilityScore": 75.5,
+    "movementPattern": "Squat / Knee Dominant",
     "preservesPattern": true,
     "samePrimaryMuscle": true,
     "sharedPrimaryMuscleIds": [
-      "hamstrings"
+      "quadriceps"
     ],
-    "equipmentChange": true,
+    "equipmentChange": false,
     "swapContexts": [
-      "Equipment unavailable",
-      "Different equipment",
       "More stability",
       "Skill regression"
     ],
-    "reason": "An easier elbow flexion regression using cable machine instead of bodyweight.",
+    "reason": "An easier squat regression with lower technical and stability demand.",
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "reverse-nordic-curl__suspension-trainer-hamstring-curl",
+    "id": "reverse-nordic-curl__jump-squat",
     "sourceExerciseId": "reverse-nordic-curl",
-    "targetExerciseId": "suspension-trainer-hamstring-curl",
-    "type": "Substitute",
+    "targetExerciseId": "jump-squat",
+    "type": "Regression",
     "rank": 8,
-    "compatibilityScore": 70.5,
-    "movementPattern": "Elbow Flexion",
+    "compatibilityScore": 75.5,
+    "movementPattern": "Squat / Knee Dominant",
     "preservesPattern": true,
     "samePrimaryMuscle": true,
     "sharedPrimaryMuscleIds": [
-      "hamstrings"
+      "quadriceps"
     ],
-    "equipmentChange": true,
+    "equipmentChange": false,
     "swapContexts": [
-      "Equipment unavailable",
-      "Home gym",
-      "Different equipment"
+      "More stability",
+      "Skill regression"
     ],
-    "reason": "Preserves the elbow flexion pattern and trains the hamstrings with a different exercise.",
+    "reason": "An easier squat regression with lower technical and stability demand.",
     "editorialStatus": "Auto-Generated"
   },
   {
@@ -93549,9 +93805,9 @@
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "single-arm-cable-pushdown__band-triceps-pushdown",
+    "id": "single-arm-cable-pushdown__band-triceps-kickback",
     "sourceExerciseId": "single-arm-cable-pushdown",
-    "targetExerciseId": "band-triceps-pushdown",
+    "targetExerciseId": "band-triceps-kickback",
     "type": "Substitute",
     "rank": 8,
     "compatibilityScore": 74,
@@ -94705,9 +94961,9 @@
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "single-arm-dumbbell-overhead-triceps-extension__two-hand-dumbbell-overhead-triceps-extension",
+    "id": "single-arm-dumbbell-overhead-triceps-extension__dumbbell-triceps-kickback",
     "sourceExerciseId": "single-arm-dumbbell-overhead-triceps-extension",
-    "targetExerciseId": "two-hand-dumbbell-overhead-triceps-extension",
+    "targetExerciseId": "dumbbell-triceps-kickback",
     "type": "Substitute",
     "rank": 8,
     "compatibilityScore": 79,
@@ -99767,31 +100023,11 @@
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "sliding-hamstring-curl__reverse-nordic-curl",
-    "sourceExerciseId": "sliding-hamstring-curl",
-    "targetExerciseId": "reverse-nordic-curl",
-    "type": "Progression",
-    "rank": 3,
-    "compatibilityScore": 75.5,
-    "movementPattern": "Elbow Flexion",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "hamstrings"
-    ],
-    "equipmentChange": false,
-    "swapContexts": [
-      "Skill progression"
-    ],
-    "reason": "A more demanding elbow flexion progression with greater technical and stability demand.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
     "id": "sliding-hamstring-curl__band-leg-curl",
     "sourceExerciseId": "sliding-hamstring-curl",
     "targetExerciseId": "band-leg-curl",
     "type": "Substitute",
-    "rank": 4,
+    "rank": 3,
     "compatibilityScore": 74,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -99814,7 +100050,7 @@
     "sourceExerciseId": "sliding-hamstring-curl",
     "targetExerciseId": "cable-standing-leg-curl",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 4,
     "compatibilityScore": 74,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -99835,7 +100071,7 @@
     "sourceExerciseId": "sliding-hamstring-curl",
     "targetExerciseId": "suspension-trainer-hamstring-curl",
     "type": "Progression",
-    "rank": 6,
+    "rank": 5,
     "compatibilityScore": 74,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -99855,7 +100091,7 @@
     "sourceExerciseId": "sliding-hamstring-curl",
     "targetExerciseId": "cable-assisted-nordic-curl",
     "type": "Substitute",
-    "rank": 7,
+    "rank": 6,
     "compatibilityScore": 70.5,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -99876,7 +100112,7 @@
     "sourceExerciseId": "sliding-hamstring-curl",
     "targetExerciseId": "lying-leg-curl-machine",
     "type": "Regression",
-    "rank": 8,
+    "rank": 7,
     "compatibilityScore": 70.5,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -99892,6 +100128,27 @@
       "Skill regression"
     ],
     "reason": "An easier elbow flexion regression using selectorized machine instead of bodyweight.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "sliding-hamstring-curl__nordic-curl-machine",
+    "sourceExerciseId": "sliding-hamstring-curl",
+    "targetExerciseId": "nordic-curl-machine",
+    "type": "Substitute",
+    "rank": 8,
+    "compatibilityScore": 70.5,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "hamstrings"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow flexion pattern and trains the hamstrings with a different exercise.",
     "editorialStatus": "Auto-Generated"
   },
   {
@@ -109737,11 +109994,36 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "suspension-trainer-triceps-extension__band-triceps-kickback",
+    "sourceExerciseId": "suspension-trainer-triceps-extension",
+    "targetExerciseId": "band-triceps-kickback",
+    "type": "Regression",
+    "rank": 2,
+    "compatibilityScore": 76,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Hotel gym",
+      "Different equipment",
+      "More stability",
+      "Skill regression"
+    ],
+    "reason": "An easier elbow extension regression using resistance band instead of suspension trainer.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "suspension-trainer-triceps-extension__band-triceps-pushdown",
     "sourceExerciseId": "suspension-trainer-triceps-extension",
     "targetExerciseId": "band-triceps-pushdown",
     "type": "Regression",
-    "rank": 2,
+    "rank": 3,
     "compatibilityScore": 76,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -109766,7 +110048,7 @@
     "sourceExerciseId": "suspension-trainer-triceps-extension",
     "targetExerciseId": "barbell-jm-press",
     "type": "Regression",
-    "rank": 3,
+    "rank": 4,
     "compatibilityScore": 74,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -109789,7 +110071,7 @@
     "sourceExerciseId": "suspension-trainer-triceps-extension",
     "targetExerciseId": "barbell-overhead-triceps-extension",
     "type": "Regression",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 74,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -109812,7 +110094,7 @@
     "sourceExerciseId": "suspension-trainer-triceps-extension",
     "targetExerciseId": "barbell-skull-crusher",
     "type": "Regression",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 74,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -109835,7 +110117,7 @@
     "sourceExerciseId": "suspension-trainer-triceps-extension",
     "targetExerciseId": "cable-cross-body-triceps-extension",
     "type": "Regression",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 74,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -109857,29 +110139,6 @@
     "id": "suspension-trainer-triceps-extension__cable-overhead-triceps-extension",
     "sourceExerciseId": "suspension-trainer-triceps-extension",
     "targetExerciseId": "cable-overhead-triceps-extension",
-    "type": "Regression",
-    "rank": 7,
-    "compatibilityScore": 74,
-    "movementPattern": "Elbow Extension",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "triceps"
-    ],
-    "equipmentChange": true,
-    "swapContexts": [
-      "Equipment unavailable",
-      "Different equipment",
-      "More stability",
-      "Skill regression"
-    ],
-    "reason": "An easier elbow extension regression using cable machine instead of suspension trainer.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "suspension-trainer-triceps-extension__cable-rope-pushdown",
-    "sourceExerciseId": "suspension-trainer-triceps-extension",
-    "targetExerciseId": "cable-rope-pushdown",
     "type": "Regression",
     "rank": 8,
     "compatibilityScore": 74,
@@ -112722,11 +112981,34 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "triceps-stretch__band-triceps-kickback",
+    "sourceExerciseId": "triceps-stretch",
+    "targetExerciseId": "band-triceps-kickback",
+    "type": "Substitute",
+    "rank": 2,
+    "compatibilityScore": 70,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Hotel gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "triceps-stretch__band-triceps-pushdown",
     "sourceExerciseId": "triceps-stretch",
     "targetExerciseId": "band-triceps-pushdown",
     "type": "Substitute",
-    "rank": 2,
+    "rank": 3,
     "compatibilityScore": 70,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -112749,7 +113031,7 @@
     "sourceExerciseId": "triceps-stretch",
     "targetExerciseId": "barbell-jm-press",
     "type": "Substitute",
-    "rank": 3,
+    "rank": 4,
     "compatibilityScore": 70,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -112770,7 +113052,7 @@
     "sourceExerciseId": "triceps-stretch",
     "targetExerciseId": "barbell-overhead-triceps-extension",
     "type": "Substitute",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 70,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -112791,7 +113073,7 @@
     "sourceExerciseId": "triceps-stretch",
     "targetExerciseId": "barbell-skull-crusher",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 70,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -112812,7 +113094,7 @@
     "sourceExerciseId": "triceps-stretch",
     "targetExerciseId": "cable-cross-body-triceps-extension",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 70,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -112832,27 +113114,6 @@
     "id": "triceps-stretch__cable-overhead-triceps-extension",
     "sourceExerciseId": "triceps-stretch",
     "targetExerciseId": "cable-overhead-triceps-extension",
-    "type": "Substitute",
-    "rank": 7,
-    "compatibilityScore": 70,
-    "movementPattern": "Elbow Extension",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "triceps"
-    ],
-    "equipmentChange": true,
-    "swapContexts": [
-      "Equipment unavailable",
-      "Different equipment"
-    ],
-    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "triceps-stretch__cable-rope-pushdown",
-    "sourceExerciseId": "triceps-stretch",
-    "targetExerciseId": "cable-rope-pushdown",
     "type": "Substitute",
     "rank": 8,
     "compatibilityScore": 70,
@@ -113267,11 +113528,31 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "two-hand-dumbbell-overhead-triceps-extension__dumbbell-triceps-kickback",
+    "sourceExerciseId": "two-hand-dumbbell-overhead-triceps-extension",
+    "targetExerciseId": "dumbbell-triceps-kickback",
+    "type": "Substitute",
+    "rank": 4,
+    "compatibilityScore": 79,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "two-hand-dumbbell-overhead-triceps-extension__single-arm-dumbbell-overhead-triceps-extension",
     "sourceExerciseId": "two-hand-dumbbell-overhead-triceps-extension",
     "targetExerciseId": "single-arm-dumbbell-overhead-triceps-extension",
     "type": "Substitute",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -113291,7 +113572,7 @@
     "sourceExerciseId": "two-hand-dumbbell-overhead-triceps-extension",
     "targetExerciseId": "barbell-jm-press",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 76,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -113312,7 +113593,7 @@
     "sourceExerciseId": "two-hand-dumbbell-overhead-triceps-extension",
     "targetExerciseId": "barbell-overhead-triceps-extension",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 76,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -113333,7 +113614,7 @@
     "sourceExerciseId": "two-hand-dumbbell-overhead-triceps-extension",
     "targetExerciseId": "barbell-skull-crusher",
     "type": "Substitute",
-    "rank": 7,
+    "rank": 8,
     "compatibilityScore": 76,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -113344,29 +113625,6 @@
     "equipmentChange": true,
     "swapContexts": [
       "Equipment unavailable",
-      "Different equipment"
-    ],
-    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "two-hand-dumbbell-overhead-triceps-extension__band-overhead-triceps-extension",
-    "sourceExerciseId": "two-hand-dumbbell-overhead-triceps-extension",
-    "targetExerciseId": "band-overhead-triceps-extension",
-    "type": "Substitute",
-    "rank": 8,
-    "compatibilityScore": 74,
-    "movementPattern": "Elbow Extension",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "triceps"
-    ],
-    "equipmentChange": true,
-    "swapContexts": [
-      "Equipment unavailable",
-      "Home gym",
-      "Hotel gym",
       "Different equipment"
     ],
     "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",

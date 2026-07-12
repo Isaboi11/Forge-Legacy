@@ -8,18 +8,19 @@
  * record — so internal signals can never leak to end users.
  *
  * ── W-22 mapping (LOCKED content order, Exercise-Detail-Wireframe-Spec-W22) ──
+ *   WHY IT MATTERS ← view.whyItMatters
  *   HOW TO DO IT   ← view.instructions   (setupInstructions + executionSteps)
  *   COACHING CUES  ← view.tips           (cueHierarchy-ordered coaching tips)
  *   WATCH OUT FOR  ← view.commonMistakes
  *   (additive, optional) Safety Notes    ← view.safetyNotes
  *   (additive, optional) Advanced Notes  ← view.advancedNotes
+ *   (additive, optional) Progression     ← view.progressionGuidance
  *
- * `WHY IT MATTERS` and `ABOUT` are NOT produced here — they are
- * `ExerciseDefinition.whyItMatters` / `.description` education fields owned by
- * Architecture Amendment 001, deliberately kept separate from coaching content
- * (README.md § "Modularity"). The two optional sections (Safety / Advanced) are
- * additive projections available to the screen; they do not reorder the locked
- * six W-22 sections.
+ * The coaching system now authors `WHY IT MATTERS` (previously an
+ * `ExerciseDefinition` field, Architecture Amendment 001); the integration layer
+ * supplies it to the W-22 section. `ABOUT` (`description`) remains
+ * `ExerciseDefinition`-owned. The additive Safety / Advanced / Progression
+ * projections are available to the screen and do not reorder the locked sections.
  *
  * Serving policy: only Published content reaches the UI. Non-published exercises
  * return null and the screen falls back to its section-visibility rules (W-22
@@ -49,11 +50,13 @@ export function toCoachingView(
   const tips = record.cueHierarchy.length ? record.cueHierarchy : record.coachingTips;
   return {
     exerciseId: record.exerciseId,
+    whyItMatters: record.whyItMatters,
     instructions: [...record.setupInstructions, ...record.executionSteps],
     tips: [...tips],
     commonMistakes: [...record.commonMistakes],
     safetyNotes: [...record.safetyNotes],
     advancedNotes: [...record.advancedCoachingNotes],
+    progressionGuidance: { ...record.progressionGuidance },
   };
 }
 

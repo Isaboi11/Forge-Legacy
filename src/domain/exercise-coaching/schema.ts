@@ -19,8 +19,12 @@
  * (README.md § "Generation strategy").
  */
 
-/** The bump-on-breaking-change version of this record shape (not per-record content version). */
-export const COACHING_SCHEMA_VERSION = 1;
+/**
+ * The bump-on-breaking-change version of this record shape (not per-record content
+ * version). v2 added `whyItMatters`, `difficultyExplanation`, `progressionGuidance`,
+ * and per-mistake `whyItMatters` (`CoachingMistake`).
+ */
+export const COACHING_SCHEMA_VERSION = 2;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Editorial workflow
@@ -162,10 +166,51 @@ export interface CoachingHistoryEntry {
 // Coaching content — the record
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** A common-mistake paired with its concrete correction. `mistake` mirrors an entry in `commonMistakes`. */
-export interface MistakeCorrection {
+/**
+ * A common mistake with why it matters and its concrete correction. `mistake`
+ * mirrors an entry in `commonMistakes`. `whyItMatters` explains the cost of the
+ * mistake (lost effectiveness / weaker position) — educational, never a medical claim.
+ */
+export interface CoachingMistake {
   mistake: string;
+  whyItMatters: string;
   correction: string;
+}
+
+/**
+ * @deprecated Superseded by {@link CoachingMistake} (which adds `whyItMatters`).
+ * Retained as a name alias for any external reference.
+ */
+export type MistakeCorrection = CoachingMistake;
+
+/**
+ * Structured progression guidance, sourced from the canonical relationship graph
+ * (regression/progression edges). IDs are catalog `exerciseId`s the UI resolves
+ * to names; reasons explain why to step down or up. Fields are optional — an
+ * exercise may have a regression, a progression, both, or neither.
+ */
+export interface ExerciseProgressionGuidance {
+  regressionExerciseId?: string;
+  regressionReason?: string;
+  progressionExerciseId?: string;
+  progressionReason?: string;
+}
+
+/**
+ * The result of the semantic guidance-eligibility check for one candidate edge.
+ * A relationship-graph edge only becomes user-facing progression/regression
+ * guidance when it is a genuine training continuation — same modality, movement
+ * pattern, and recognizable skill/strength continuity — not merely a harder or
+ * easier exercise that shares some metadata. Editorial only (never user-visible).
+ */
+export interface CoachingGuidanceEligibility {
+  /** The candidate target that was evaluated (id + name), or null when there were no candidates. */
+  candidateExerciseId: string | null;
+  eligible: boolean;
+  /** 0–100 continuity confidence (0 when rejected). */
+  confidence: number;
+  reasons: string[];
+  rejectionReasons: string[];
 }
 
 /**
@@ -181,6 +226,8 @@ export interface ExerciseCoachingContent {
   locale: string;
 
   // ── Coaching content ─────────────────────────────────────────────────────────
+  /** Why the exercise matters — purpose and training adaptation. Feeds W-22 "WHY IT MATTERS". */
+  whyItMatters: string | null;
   /** Getting into the start position, before the first rep. Ordered. */
   setupInstructions: string[];
   /** The movement itself, rep by rep. Ordered. Feeds W-22 "HOW TO DO IT". */
@@ -189,8 +236,8 @@ export interface ExerciseCoachingContent {
   coachingTips: string[];
   /** What to watch for, framed descriptively (no shame/imperatives). Feeds W-22 "WATCH OUT FOR". */
   commonMistakes: string[];
-  /** 1:1 concrete corrections; each `.mistake` matches an entry in `commonMistakes`. */
-  mistakeCorrections: MistakeCorrection[];
+  /** 1:1 mistake → why-it-matters → correction; each `.mistake` matches an entry in `commonMistakes`. */
+  mistakeCorrections: CoachingMistake[];
   /** When/how to breathe. Null when not meaningfully specific. */
   breathingGuidance: string | null;
   /** Cadence guidance (e.g. "Control a 2-count lower; drive up with intent"). Null when generic. */
@@ -209,10 +256,27 @@ export interface ExerciseCoachingContent {
   spottingNotes: string | null;
   /** Present ONLY when a specific, non-medical safety note applies. */
   safetyNotes: string[];
-  /** How difficulty scales / who this suits. Null when not distinctive. */
+  /** How difficulty scales / who this suits (multi-axis training note). Null when not distinctive. */
   difficultyConsiderations: string | null;
+  /** Plain explanation of WHY this exercise carries its difficulty rating. Null when not distinctive. */
+  difficultyExplanation: string | null;
+  /**
+   * Structured regression/progression guidance — populated ONLY with candidate
+   * edges that pass the semantic eligibility check (same modality/pattern +
+   * recognizable continuity). Often empty: no guidance is better than weak guidance.
+   */
+  progressionGuidance: ExerciseProgressionGuidance;
 
   // ── Editorial metadata (NEVER user-visible) ───────────────────────────────────
+  /**
+   * Why the regression/progression guidance was included or rejected — the
+   * eligibility result for the top candidate edge in each direction (or the
+   * selected eligible one). Editorial transparency; never served to users.
+   */
+  guidanceEligibility: {
+    regression: CoachingGuidanceEligibility | null;
+    progression: CoachingGuidanceEligibility | null;
+  };
   /** Internal editorial note carried with the record. Never served to users. */
   coachNotes: string | null;
   reviewFlags: ReviewFlag[];
@@ -250,16 +314,20 @@ export interface ExerciseCoachingContent {
  * that omits every editorial field (confidence, flags, status, risk tier, coach
  * notes, corrections). Section names map onto the LOCKED W-22 content order.
  *
+ *   WHY IT MATTERS ← whyItMatters
  *   HOW TO DO IT   ← instructions   (setupInstructions + executionSteps)
  *   COACHING CUES  ← tips           (cueHierarchy-ordered coachingTips)
  *   WATCH OUT FOR  ← commonMistakes
- *   (additive, optional) Safety Notes / Advanced Notes
+ *   (additive, optional) Safety Notes / Advanced Notes / Progression
  *
- * `whyItMatters` and `description` are NOT here — they are ExerciseDefinition
- * education fields (Architecture Amendment 001), owned outside this system.
+ * The coaching system now authors `whyItMatters` (previously an ExerciseDefinition
+ * field, Architecture Amendment 001); the integration layer supplies it to the
+ * W-22 "WHY IT MATTERS" section. `description` (ABOUT) remains ExerciseDefinition-owned.
  */
 export interface ExerciseCoachingView {
   exerciseId: string;
+  /** Feeds W-22 "WHY IT MATTERS". Null when not authored. */
+  whyItMatters: string | null;
   instructions: string[];
   tips: string[];
   commonMistakes: string[];
@@ -267,6 +335,8 @@ export interface ExerciseCoachingView {
   safetyNotes: string[];
   /** Optional additive section — present only when the record carries advanced notes. */
   advancedNotes: string[];
+  /** Optional additive: structured "make it easier / harder" guidance from the relationship graph. */
+  progressionGuidance: ExerciseProgressionGuidance;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

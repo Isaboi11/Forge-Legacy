@@ -817,7 +817,7 @@
   },
   {
     "exerciseId": "band-triceps-kickback",
-    "muscleId": "glutes",
+    "muscleId": "triceps",
     "role": "Primary",
     "displayOrder": 1
   },
@@ -4051,7 +4051,7 @@
   },
   {
     "exerciseId": "dumbbell-triceps-kickback",
-    "muscleId": "glutes",
+    "muscleId": "triceps",
     "role": "Primary",
     "displayOrder": 1
   },
@@ -5677,8 +5677,14 @@
   },
   {
     "exerciseId": "mcgill-curl-up",
-    "muscleId": "biceps",
+    "muscleId": "rectus_abdominis",
     "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "mcgill-curl-up",
+    "muscleId": "obliques",
+    "role": "Secondary",
     "displayOrder": 1
   },
   {
@@ -6403,7 +6409,7 @@
   },
   {
     "exerciseId": "reverse-nordic-curl",
-    "muscleId": "hamstrings",
+    "muscleId": "quadriceps",
     "role": "Primary",
     "displayOrder": 1
   },

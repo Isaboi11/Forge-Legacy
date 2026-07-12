@@ -73,11 +73,42 @@ node src/domain/exercise-coaching/generate.mjs --dry-run
 
 ## Schema (`ExerciseCoachingContent`)
 
-**Content fields:** `setupInstructions[]`, `executionSteps[]`, `coachingTips[]`,
-`commonMistakes[]`, `mistakeCorrections[]` (1:1 with mistakes), `breathingGuidance`,
+**Content fields:** `whyItMatters` (purpose/adaptation → W-22 "WHY IT MATTERS"),
+`setupInstructions[]`, `executionSteps[]`, `coachingTips[]`, `commonMistakes[]`,
+`mistakeCorrections[]` — each a `CoachingMistake` `{ mistake, whyItMatters, correction }`
+(1:1 with `commonMistakes`, every mistake explains **why it matters**), `breathingGuidance`,
 `tempoGuidance`, `rangeOfMotionNotes`, `cueHierarchy[]` (most-important-first),
 `advancedCoachingNotes[]`, `beginnerNotes[]`, `equipmentSetup`, `spottingNotes`
-(only when relevant), `safetyNotes[]` (only when relevant), `difficultyConsiderations`.
+(only when relevant), `safetyNotes[]` (only when relevant), `difficultyConsiderations`
+(multi-axis training note), `difficultyExplanation` (plain reason for the difficulty
+rating), and `progressionGuidance` (`{ regressionExerciseId?, regressionReason?,
+progressionExerciseId?, progressionReason? }`) — structured "make it easier / harder"
+sourced from the canonical **relationship graph**.
+
+### Guidance eligibility (relationship edge ≠ coaching recommendation)
+
+The relationship graph is only the **candidate** source for progression/regression
+guidance. A deterministic selector (`guidanceEligibility` + `selectGuidance`) walks
+the ranked candidate edges and serves the **first that passes a semantic
+eligibility check** — otherwise it serves **nothing** (no guidance is better than
+weak guidance). A candidate is eligible only when it is a genuine training
+continuation: **same modality, same movement pattern, same conditioning modality
+(for cardio), shared primary training intent, and family / closely-related
+mechanics** — and it is rejected when it merely changes modality/pattern, is
+**primarily an equipment alternative** (same family + same difficulty + different
+equipment), or has no recognizable skill continuity. So `Easy Run → Air Bike`,
+`Cycling → Swimming`, isolation → unrelated compound, and same-difficulty equipment
+swaps never appear; `Easy Run → Fartlek Run` and `Recovery Ride → Endurance Ride`
+do. The per-direction eligibility result (`{ eligible, confidence, reasons[],
+rejectionReasons[] }`) is stored in the editorial-only `guidanceEligibility` field
+for review transparency; `validate.mjs` enforces that no served edge crosses
+modality/pattern/conditioning-modality.
+
+**Similarity signature note:** duplicate detection scores the genuinely-authored
+coaching only. It deliberately EXCLUDES the derived fields — per-mistake `whyItMatters`
+(strict 1:1 with `commonMistakes`) and `difficultyExplanation` (a fixed function of
+equipment/difficulty/role) — so they don't double-weight content already counted.
+Banned-phrase scanning still covers every field.
 
 **Editorial metadata (never user-visible):** `coachNotes`, `reviewFlags[]`,
 `riskTier`, `confidenceScore`, `contentStatus`, `source`, `contentVersion`,

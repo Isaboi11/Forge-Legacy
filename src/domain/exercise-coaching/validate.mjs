@@ -20,7 +20,7 @@
 import { loadStore } from './store.mjs';
 import {
   loadSources, loadRelationships, buildIndex, generateAll, detectDuplicates, detectContradictions,
-  bannedPhrases, CONTENT_STATUSES, RISK_TIERS, REVIEW_FLAG_CODES, COACHING_SCHEMA_VERSION,
+  bannedPhrases, cardioModality, CONTENT_STATUSES, RISK_TIERS, REVIEW_FLAG_CODES, COACHING_SCHEMA_VERSION,
 } from './engine.mjs';
 
 const DRY = process.argv.includes('--dry-run');
@@ -44,8 +44,8 @@ const FLAG_SET = new Set(REVIEW_FLAG_CODES);
 const SEVERITY_SET = new Set(['info', 'warn', 'block']);
 const STRING_ARRAYS = ['setupInstructions', 'executionSteps', 'coachingTips', 'commonMistakes',
   'cueHierarchy', 'advancedCoachingNotes', 'beginnerNotes', 'safetyNotes'];
-const NULLABLE_STRINGS = ['breathingGuidance', 'tempoGuidance', 'rangeOfMotionNotes', 'equipmentSetup',
-  'spottingNotes', 'difficultyConsiderations', 'coachNotes'];
+const NULLABLE_STRINGS = ['whyItMatters', 'breathingGuidance', 'tempoGuidance', 'rangeOfMotionNotes', 'equipmentSetup',
+  'spottingNotes', 'difficultyConsiderations', 'difficultyExplanation', 'coachNotes'];
 
 const hasDup = (arr) => new Set(arr.map((x) => x.trim().toLowerCase())).size !== arr.length;
 
@@ -68,8 +68,8 @@ for (const r of records) {
   // required top-level fields
   for (const k of ['locale', 'setupInstructions', 'executionSteps', 'coachingTips', 'commonMistakes',
     'mistakeCorrections', 'cueHierarchy', 'advancedCoachingNotes', 'beginnerNotes', 'safetyNotes',
-    'reviewFlags', 'riskTier', 'confidenceScore', 'contentStatus', 'source', 'contentVersion',
-    'schemaVersion', 'generatorVersion', 'contentHash', 'generatedAt', 'updatedAt', 'history']) {
+    'progressionGuidance', 'reviewFlags', 'riskTier', 'confidenceScore', 'contentStatus', 'source',
+    'contentVersion', 'schemaVersion', 'generatorVersion', 'contentHash', 'generatedAt', 'updatedAt', 'history']) {
     if (!(k in r)) fail(`${id}: missing field ${k}`);
   }
   for (const k of NULLABLE_STRINGS) if (!(k in r)) fail(`${id}: missing nullable field ${k}`);
@@ -93,9 +93,40 @@ for (const r of records) {
     if ((r.commonMistakes ?? []).length !== r.mistakeCorrections.length)
       violation(`${id}: ${r.mistakeCorrections.length} corrections for ${(r.commonMistakes ?? []).length} mistakes (missing corrections)`);
     for (const c of r.mistakeCorrections) {
-      if (!c || typeof c.mistake !== 'string' || typeof c.correction !== 'string') { fail(`${id}: malformed mistakeCorrection`); continue; }
+      if (!c || typeof c.mistake !== 'string' || typeof c.correction !== 'string' || typeof c.whyItMatters !== 'string') { fail(`${id}: malformed mistakeCorrection (needs mistake/whyItMatters/correction)`); continue; }
       if (!mSet.has(c.mistake.trim())) violation(`${id}: correction references a mistake not in commonMistakes`);
       if (!c.correction.trim()) violation(`${id}: empty correction text`);
+      if (!c.whyItMatters.trim()) violation(`${id}: empty whyItMatters for a mistake`);
+    }
+  }
+
+  // progressionGuidance structural integrity — ids valid + reason present + not self;
+  // and SEMANTIC integrity — served guidance must preserve modality + movement pattern.
+  if (r.progressionGuidance && typeof r.progressionGuidance === 'object') {
+    const g = r.progressionGuidance;
+    for (const [idKey, reasonKey] of [['regressionExerciseId', 'regressionReason'], ['progressionExerciseId', 'progressionReason']]) {
+      if (g[idKey] !== undefined) {
+        if (!byId.has(g[idKey])) { violation(`${id}: ${idKey} references unknown exercise ${g[idKey]}`); continue; }
+        if (g[idKey] === id) violation(`${id}: ${idKey} references itself`);
+        if (!g[reasonKey] || !String(g[reasonKey]).trim()) violation(`${id}: ${idKey} present but ${reasonKey} missing`);
+        const tgt = byId.get(g[idKey]);
+        if (tgt.modality !== node.modality) violation(`${id}: ${idKey} crosses modality (${node.modality} → ${tgt.modality})`);
+        if (tgt.movementPattern !== node.movementPattern) violation(`${id}: ${idKey} crosses movement pattern`);
+        if (node.movementPattern === 'Cardio / Locomotion' && cardioModality(node) !== cardioModality(tgt)) violation(`${id}: ${idKey} crosses conditioning modality`);
+      }
+    }
+  } else fail(`${id}: progressionGuidance is not an object`);
+
+  // guidanceEligibility present + consistent with served guidance.
+  if (!r.guidanceEligibility || typeof r.guidanceEligibility !== 'object') fail(`${id}: missing guidanceEligibility`);
+  else {
+    for (const [dir, idKey] of [['regression', 'regressionExerciseId'], ['progression', 'progressionExerciseId']]) {
+      const served = r.progressionGuidance?.[idKey];
+      const e = r.guidanceEligibility[dir];
+      if (served !== undefined) {
+        if (!e || !e.eligible) violation(`${id}: served ${dir} guidance but guidanceEligibility.${dir} is not eligible`);
+        else if (e.candidateExerciseId !== served) violation(`${id}: ${dir} guidance ${served} != eligibility candidate ${e?.candidateExerciseId}`);
+      }
     }
   }
 
