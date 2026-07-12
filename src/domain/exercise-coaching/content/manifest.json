@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "generatorVersion": "coach-gen@1",
+  "catalogSize": 794,
+  "completedByBatch": {
+    "Machines": [],
+    "Cable": [],
+    "Dumbbells": [],
+    "Bodyweight": [],
+    "Barbell": [],
+    "Bands": [],
+    "Kettlebells": [],
+    "Cardio": [],
+    "Mobility": [],
+    "Specialist": []
+  },
+  "updatedAt": "1970-01-01T00:00:00.000Z",
+  "note": "EMPTY STORE — no coaching content has been generated. The first batch production run is gated on human approval (README.md § 'Generation strategy'). Run `node generate.mjs` only after approval."
+}
