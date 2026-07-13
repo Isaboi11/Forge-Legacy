@@ -1,9 +1,20 @@
 # Forge Legacy — Account Creation Wireframe Specification
-## O-1 | Phase 2B | Version 1.0 — June 2026
+## O-1 | Phase 2B | Version 1.1 — July 2026
 
 **Status:** Locked
-**Authority:** Forge Legacy Master PRD Section 5 (MVP), Product DNA
+**Authority:** `Onboarding-First-Time-Journey-Architecture-v1.0.md` (LOCKED, governing); Forge Legacy Master PRD Section 5 (MVP), Product DNA
 **PRD Authority:** Section 5 (MVP Scope), Section 1 (Mission)
+
+---
+
+> ## ⚠️ v1.1 Reconciliation Banner — READ FIRST
+>
+> **This version changes no governing product decision.** It reconciles O-1 to the locked `Onboarding-First-Time-Journey-Architecture-v1.0.md` (Architecture Freeze Row 4). Two additive changes:
+>
+> 1. **"Your Next Chapter" vision screen inserted after Welcome (ONB-D5 / §27-A).** Between O-1a Welcome and O-1b Create Account, the athlete sees a five-card *vision* screen (Your Journey · Earn Recognition · Always Know What's Next · Build Together · Leave a Legacy). This is a **vision** screen, not a feature carousel or benefits showcase — no cheesy icons, no app comparisons, no social proof, no mechanics taught. It narrows (does not reverse) O-1 Decision 5's "no benefits carousel" stance; see Section 4a below.
+> 2. **One unified onboarding path.** O-1 is the entry to a **single** onboarding sequence for every athlete. There is no "new vs. experienced" path choice anywhere in onboarding. O-1c exits into the unified **O-2 v2.0** flow (About You → Goals → Experience → Equipment → Schedule → Recommended Starting Point → Transition/silent Chapter I). The old "O-2 collects Athlete Type / Chapter Invitation" language is corrected below: **Athlete Type is derived, not collected**, and the **first Chapter is created silently** (no invitation/naming gate).
+>
+> Welcome copy also aligns to ONB-D4 (headline "Every Legacy Starts With a Foundation." with the ONB-D4 body) — the O-1a philosophy (single significant image, wordmark, quiet invitation, no app comparisons) is unchanged. Everything else in O-1 (auth model, display name, sign-in, forgot-password, legal, error states) is unaffected.
 
 ---
 
@@ -77,10 +88,14 @@ Explicitly excluded. These platforms' logos and auth patterns have no place in t
 - Password (required for email auth path only)
 - Display Name (required in O-1c — the identity anchor used throughout the app from the first session)
 
-**Deferred to O-2:**
-- Athlete Type (Strength, Bodybuilding, Hybrid, Running, Cycling, Combat, General)
-- Profile Photo
-- Chapter creation invitation
+**Deferred to O-2 (unified flow, per O-2 v2.0 / governing Onboarding architecture):**
+- Sex (artwork/silhouette selection only — ONB-D7)
+- Profile Photo (optional)
+- Personalization inputs collected as journey-state, not health data: primary Goal, Experience, Equipment, Training Schedule (drive the deterministic recommendation)
+
+**Not collected in onboarding at all (corrected from earlier drafts):**
+- **Athlete Type is *derived* from the primary goal (ONB-D8), never asked** — no manual Athlete-Type step or tile group exists.
+- **The first Chapter is created *silently* (ONB-D14)** — there is no chapter-creation invitation or naming gate in onboarding. Prior Accomplishments are not collected in onboarding (relocated to post-onboarding P-1).
 
 **Not collected at any point in MVP onboarding:**
 - Birthdate / age
@@ -270,6 +285,25 @@ Requirements for tagline copy (final copy is a design/marketing decision, not lo
 - Tapping navigates to O-1d (Sign In)
 
 **What the Welcome Screen does NOT contain:** Feature screenshots, benefit lists, testimonials, social proof, App Store rating badge, "Learn more" link, squad or program preview, progress indicators, or any premium or pricing language.
+
+---
+
+## Section 4a — Your Next Chapter (Vision Screen)
+
+**Added by v1.1 reconciliation. Governed by ONB-D5 / §27-A.** After O-1a Welcome and **before** O-1b Create Account, the athlete sees the **Your Next Chapter** vision screen — five premium benefit cards that create excitement and introduce the Chapter philosophy **without teaching any mechanics**.
+
+| Card | Headline | Body |
+|---|---|---|
+| 1 | **Your Journey** | Turn months of training into meaningful Chapters you'll remember for years. |
+| 2 | **Earn Recognition** | Unlock Honors for accomplishments worth remembering. |
+| 3 | **Always Know What's Next** | Follow programs built around your goals and experience. |
+| 4 | **Build Together** | Train with friends and your squad. |
+| 5 | **Leave a Legacy** | Everything you accomplish becomes part of your permanent story. |
+
+- **Premium typographic/illustrative cards** — no cheesy icons, no app comparisons, no social proof, no feature tour.
+- Creates **awareness** that Chapters, Honors, Programs, Friends/Squads, and Legacy exist (deep education happens later via Progressive Discovery), framing the whole product around the Chapter the athlete is about to begin.
+- This narrows O-1 Decision 5's "no benefits carousel" stance rather than reversing it: it is a **vision** screen, the legitimate restrained expression of "this is not another fitness app."
+- **Continue → O-1b (Create Account).** No path choice is offered here or anywhere else — every athlete proceeds through the same sequence.
 
 ---
 
@@ -609,8 +643,10 @@ O-1b (Create Account)
     ↓ Social auth success OR email+password Continue
 O-1c (Display Name)
     ↓ Continue OR "Skip for now"
-O-2 (Athlete Type → Photo → Chapter Invitation)
+O-2 v2.0 (unified: About You → Goals → Experience → Equipment → Schedule → Recommended Starting Point → Transition/silent Chapter I)
 ```
+
+*(Corrected from earlier drafts: O-2 no longer collects a manual Athlete Type and presents no chapter-creation invitation — Athlete Type is derived and Chapter I is silent.)*
 
 ### 12.2 Returning Athlete Flow
 
@@ -963,6 +999,14 @@ On a new device: O-2 surfaces before Home (onboarding completion is account-leve
 ---
 
 ## Change Log
+
+### v1.1 — July 2026 (Reconciliation to the governing Onboarding architecture)
+
+Reconciled O-1 to `Onboarding-First-Time-Journey-Architecture-v1.0.md` (LOCKED, governing). **No governing product decision changed.** Additive/corrective only:
+- Added **Section 4a — Your Next Chapter** vision screen (ONB-D5 / §27-A) between Welcome and Create Account (vision, not a feature carousel).
+- Affirmed **one unified onboarding path** — no new-vs-experienced path choice anywhere; O-1c exits into the unified O-2 v2.0 flow.
+- Corrected the **"Deferred to O-2"** boundary (Decision 2) and the **Section 12.1 navigation flow**: Athlete Type is **derived, not collected**; the first Chapter is created **silently** (no invitation/naming gate); Sex + Goals/Experience/Equipment/Schedule are collected in O-2 as journey-state; Prior Accomplishments are not collected in onboarding.
+- Welcome copy aligned to ONB-D4; O-1a philosophy unchanged. Auth model, display name, sign-in, forgot-password, legal, and error states unaffected.
 
 ### v1.0 — June 2026
 

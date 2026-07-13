@@ -1,269 +1,187 @@
 # Forge Legacy — First-Time Setup Wireframe Specification
-## O-2 | Phase 2B | Version 1.0 — June 2026
+## O-2 | Phase 2B | Version 2.0 — July 2026
 
 **Status:** Locked
-**Authority:** Forge Legacy Master PRD Section 3 (Target User), Section 5 (MVP), Section 17 (Profile), Product DNA, Identity Amendment 001 v1.1, O-1 Account Creation v1.0
-**PRD Authority:** Section 5 (MVP Scope — dual-path onboarding), Section 3 (New to Fitness / Experienced Athlete paths), Section 17 (Athlete Type enum)
+**Authority:** `Onboarding-First-Time-Journey-Architecture-v1.0.md` (LOCKED, governing) — this document is a downstream wireframe spec and inherits from it. Also: Forge Legacy Master PRD Section 5 (MVP), Section 17 (Profile), Product DNA, Identity Amendment 001 v1.1, O-1 Account Creation.
+**PRD Authority:** Section 5 (MVP Scope), Section 17 (Athlete Type enum / Profile)
+
+---
+
+> ## ⚠️ v2.0 Reconciliation Banner — READ FIRST
+>
+> **This version changes no governing product decision.** It updates this downstream wireframe spec to conform to the already-locked `Onboarding-First-Time-Journey-Architecture-v1.0.md` (Architecture Freeze Row 4). Where any earlier O-2 content conflicted with the governing architecture, the governing architecture wins and this document was corrected to match.
+>
+> **The governing principle (enforced here):** *Every athlete follows one unified onboarding path, begins Forge with the same empty first Chapter ("Chapter I — Building Your Foundation," created silently), and receives a personalized, deterministic starting recommendation based on their goals, experience, equipment, and schedule.* There is no beginner path, no experienced-athlete path, no import path, and no legacy-seeding path during onboarding.
+>
+> **What changed from O-2 v1.1 (all mandated by the governing §26 Reconciliation Ledger and §27 conflict resolutions):**
+> 1. **Removed O-2a Path Selection entirely** (§27-D). There is no "new athlete vs. experienced athlete" fork. Experience level (ONB-D10) personalizes the recommendation and copy but **never branches the flow**.
+> 2. **Removed the manual Athlete Type step** (ONB-D8 / §27-B). Athlete Type is now **derived deterministically** from the athlete's primary goal and written through the profile model. It is never asked as a question and never a tile group.
+> 3. **Removed O-2e Prior Accomplishments from onboarding** (§27-D). The capability is **relocated to a post-onboarding P-1 affordance** and is not eliminated from the product — it is simply not part of first-time setup.
+> 4. **Added the unified personalization steps** the governing architecture requires: **Goals** (ONB-D9), **Experience** (ONB-D10), **Equipment** (ONB-D11), **Training Schedule** (ONB-D12), and the **Sex** field (ONB-D7).
+> 5. **Added the deterministic Recommended Starting Point** (ONB-D13) — rule-based, explainable, never AI, never forced.
+> 6. **Replaced the old "Completion Moment" (v1.1 O-2f) with the Transition Into Forge ceremony** (ONB-D16). Onboarding celebrates **readiness**, not a completed accomplishment; the profile-reveal / rank / "Chapter comes alive" payoff is **withheld until Workout #1** (ONB-D18) so the first real reward is earned.
+> 7. **Silent Chapter I** (ONB-D14) is prepared in the background during the transition — no naming gate, no manual creation.
+>
+> **Implementation note:** As of this reconciliation, **no onboarding code exists** in `src/` (verified: no onboarding routes, no path/type/accomplishments screens, no onboarding store, no Chapter service, no recommendation engine, no test framework). Section 20 (Implementation Requirements) therefore records the binding requirements the eventual implementation must satisfy — it is forward-looking, not a description of existing code.
 
 ---
 
 ## Preamble: What O-2 Is For
 
-O-2 transforms a newly created account into an athlete profile.
+O-2 transforms a newly created account into a personalized athlete ready to train.
 
-Before O-2, Forge Legacy knows the athlete's name and credentials. After O-2, it knows who they are.
+Before O-2, Forge Legacy knows the athlete's name and credentials (from O-1). After O-2, it knows enough about them — who they are and how they train — that the experience is personal from minute one, and it has silently prepared their first Chapter and recommended a starting point.
 
-O-2 answers: "Who am I as an athlete?"
+O-2 answers two questions in one uninterrupted arc: **"Who am I as an athlete?"** and **"Where do I start?"**
 
-This is a declaration, not a form. The athlete is not configuring settings — they are stating an identity. Every decision in this spec serves that framing. The experience should feel personal, intentional, and meaningful. Not corporate. Not social-media driven. Not a productivity app setup wizard.
+This is a declaration followed by a personalized hand-off — not a configuration wizard and not a fork in the road. Every athlete walks the same path. Their answers change the *recommendation*, never the *route*.
 
-**O-2 contains six sub-screens, five of which are shared across both onboarding paths:**
+**O-2 owns the "First-Time Setup" phase of the governing journey — seven screens, one path for everyone:**
 
-1. **O-2a — Path Selection:** New to Fitness vs. Experienced Athlete
-2. **O-2b — Athlete Type:** The declaration of what the athlete trains
-3. **O-2c — Username:** The searchable address (optional, per Identity Amendment 001)
-4. **O-2d — Profile Photo:** The face in the system (optional)
-5. **O-2e — Prior Accomplishments:** Honor what has already been built (Path B only)
-6. **O-2f — Completion Moment:** The profile reveal. The emotional outcome of O-2.
+1. **O-2a — About You:** Name · Username (optional) · Profile photo (optional) · Sex
+2. **O-2b — Goals:** Up to three; exactly one primary (required)
+3. **O-2c — Experience:** Beginner · Intermediate · Advanced
+4. **O-2d — Equipment:** Commercial Gym · Home Gym · Dumbbells Only · Bodyweight
+5. **O-2e — Training Schedule:** Days per week · preferred days · preferred duration
+6. **O-2f — Recommended Starting Point:** "You're Ready" — deterministic recommendation, Start / Browse / Skip
+7. **O-2g — Transition Into Forge:** Silent Chapter I prepared; readiness ceremony; "Enter Forge"
 
-**O-2 flows into O-3 (First Chapter Invitation).** O-3 is defined in a separate spec. O-2 does not flow directly to Home.
+**Athlete Type is derived, never a screen** (see Decision 2). **Path Selection and Prior Accomplishments no longer exist in onboarding** (see Section 19, Removed Screens).
+
+O-2 hands off to the **First Home experience (H-1)**, where the athlete's first meaningful action is **Workout #1** — the first earned emotional payoff (owned by H-1 + W-17, governed by ONB-D17/D18).
 
 ---
 
 ## Architecture Decisions
 
-Eight decisions were required to complete this specification.
+Six decisions define this specification. All inherit from the governing Onboarding architecture; none originate a new product decision.
 
 ---
 
-### Decision 1 — Dual-Path Architecture
+### Decision 1 — One Unified Path (no Path Selection)
 
-**Recommendation: A single path-selection screen at the start of O-2. One path difference: Prior Accomplishments (O-2e) appears in Path B only.**
+**Locked. Enforces ONB-D10 / §27-D.** There is a single onboarding sequence for every athlete. O-2 does **not** ask the athlete to choose between routes ("new athlete" / "experienced athlete" / "start fresh" / "bring my history" / "build from scratch" / "import an existing path"). No such screen exists.
 
-The Master PRD locks a dual-path structure: "New to Fitness" (Path A) and "Experienced Athlete" (Path B). The question is where the path diverges.
+**Experience** (O-2c) is collected as a personalization signal. It affects the recommendation, the recommended program's difficulty/volume, and the tone of instructional copy. It **must not** affect which screens are shown, whether a Chapter is created, whether the athlete begins with empty progress, or whether the athlete can enter Forge.
 
-The paths diverge at O-2e. Everything before it (O-2a–O-2d) is identical. The Prior Accomplishments step appears only for Path B athletes — it would be confusing and premature for an athlete who is just starting out.
-
-**Path A (New to Fitness):** O-2a → O-2b → O-2c → O-2d → O-2f
-**Path B (Experienced Athlete):** O-2a → O-2b → O-2c → O-2d → O-2e → O-2f
-
-O-2a (Path Selection) is a single-tap choice — no Continue button, no form. Tapping a path option immediately advances to O-2b. The path is stored server-side and determines whether O-2e surfaces.
-
-The path selection copy is non-judgmental:
-- "I'm just getting started." — not "I'm a beginner" or "New to fitness"
-- "I've been training for a while." — not "Experienced athlete" or "Advanced"
-
-Both framings are honest and forward-looking. The system categorizes internally; the athlete simply answers truthfully.
+The old O-2a "I'm just getting started." / "I've been training for a while." fork is retired. Beginner ≈ the former Path A; Intermediate/Advanced ≈ the former Path B — but this is now a three-level *preference*, not a branch.
 
 ---
 
-### Decision 2 — Athlete Type: Required
+### Decision 2 — Athlete Type: Derived, Never Asked
 
-**Recommendation: Required. No skip. "General" is always available as the correct option for athletes who don't fit a specific category.**
+**Locked, load-bearing. Enforces ONB-D8 / §27-B.** The Rank Computation Model requires an Athlete Type (Strength · Bodybuilding · Endurance · Hybrid) to select each athlete's Personal-Improvement evaluation context. O-2 does **not** present a manual Athlete-Type step, tile group, or field. Instead, Athlete Type is **derived deterministically from the primary goal** (O-2b) and written through the profile model:
 
-The seven athlete types (Strength, Bodybuilding, Hybrid, Running, Cycling, Combat, General) cover the full MVP user range. "General" is not a fallback for athletes who don't know — it is a legitimate athlete identity that covers general fitness, multi-sport, and unspecialized training.
+| Primary goal (O-2b) | Derived default Athlete Type |
+|---|---|
+| Increase Strength | Strength |
+| Build Muscle | Bodybuilding |
+| Improve Endurance | Endurance |
+| Athletic Performance | Hybrid |
+| Lose Weight | Hybrid |
+| General Health | Hybrid |
+| Improve Mobility | Hybrid |
+| Build Consistency | Hybrid |
 
-Athlete type is required because:
-1. It appears on P-1 Profile immediately after onboarding — the profile is incomplete without it
-2. It contextualizes the athlete's identity in squad rosters and the Limited Athlete Profile
-3. The selection is trivially fast: one tap from seven tiles
-4. "General" prevents any athlete from being unable to complete the step
-
-No athlete should reach the completion moment without having declared what they train.
-
-**Athlete type can be changed in P-2 at any time.** This is not a permanent classification. The framing ("What do you train?") communicates that it describes current practice, not a permanent category.
-
----
-
-### Decision 3 — Username Placement and Behavior
-
-**Recommendation: O-2c, after Athlete Type. Optional but strongly encouraged. Per Identity Amendment 001 v1.1.**
-
-Username is placed after Athlete Type because:
-- Athlete Type is required — it must come before optional steps
-- Username is a utility field, not an identity declaration — placing it after the identity steps keeps the emotional arc coherent
-
-The username step behavior is fully defined in Identity Amendment 001 v1.1. This spec does not re-define username rules — it establishes where the step lives in the flow.
-
-O-2c behavior summary:
-- Auto-suggests username from display name
-- Live availability check
-- "Skip for now" always present and functional
-- Continue enabled when a valid, available username is entered
+- The derivation is a **default, never a lock.** Athlete Type remains freely editable post-onboarding via **P-1.1 Edit Profile**. Hybrid is the always-valid catch-all.
+- Onboarding **never re-implements Rank evaluation** — it only seeds the profile input the profile model already stores.
+- **No Athlete-Type value is ever surfaced in the onboarding UI.** If a backend contract requires the field, it is derived from the answers above, marked as system-derived, and not shown to the athlete as a question. This spec never displays labels like "Powerlifter," "Runner," "Bodybuilder," "General Fitness Athlete," or "Strength/Endurance Athlete" as onboarding choices.
 
 ---
 
-### Decision 4 — Profile Photo: Optional
+### Decision 3 — Personalization Steps: Goals, Experience, Equipment, Schedule
 
-**Recommendation: Optional. "Skip for now" always present. Initials avatar as default.**
+**Locked. Enforces ONB-D9–D12.** After identity (About You), O-2 collects exactly four personalization inputs, each of which must visibly improve the athlete's start (each drives the recommendation). No input is collected "for data."
 
-Profile photo is optional throughout the MVP. The P-1 spec locks that "Avatar defaults to athlete's initials if no photo is set." The initials avatar is a complete, acceptable default — not a placeholder state that implies incompleteness.
+- **Goals (O-2b):** up to three from the locked eight-option taxonomy; exactly one designated primary (required). The primary goal drives the recommendation and the Athlete-Type derivation.
+- **Experience (O-2c):** one of Beginner · Intermediate · Advanced. Personalizes recommended difficulty/volume and copy tone. Never branches the flow (Decision 1).
+- **Equipment (O-2d):** one training environment from the canonical enum, extended by `dumbbells_only`. Written to the profile environment field; constrains the recommendation and enables optional, non-restrictive library/catalog filtering (nothing is ever hidden — the athlete can always browse everything).
+- **Schedule (O-2e):** days per week, preferred days, preferred duration. Journey-state preferences that constrain the recommendation. Never a quota, streak target, or shame surface.
 
-The Profile Photo step (O-2d) shows the athlete's initials avatar as a preview. The athlete can add a photo or skip. If skipped, the initials avatar is what appears in squads, WwF partner selection, and the profile.
-
-Photo can be added or changed at any time in P-2 (Edit Profile).
-
-**Photo access permission:** When the athlete taps "Choose Photo," the system requests photo library access permission (iOS/Android). If denied, a prompt explains: "Allow photo access to add a profile photo." No photo is added; the athlete proceeds with initials. No error state — the permission denial is graceful.
-
----
-
-### Decision 5 — Prior Accomplishments: Optional, Path B Only
-
-**Recommendation: Optional freeform text entries, Path B only. Any number of entries. Entire step skippable.**
-
-Prior Accomplishments honors the Experienced Athlete path mandate from the PRD: "Experienced path includes optional prior accomplishment entry." This step creates entries in the Accomplishments system — the same system used by L-12 (Accomplishments Detail) and visible on P-1.
-
-Each entry is freeform text (no categories, no structured fields). An athlete writes what they've built: "Ran my first marathon in under 4 hours (2022)" or "Competed in 3 powerlifting meets." The accomplishment record is exactly what they type.
-
-Entries added in O-2e are labeled with the creation date (today) — they are not backdated. If an athlete wants to record an accomplishment with historical context, the text they write communicates that (e.g., "Ran my first marathon in 2022"). The system records when they added it to Forge Legacy, not when the achievement occurred.
-
-The step is skippable — not all experienced athletes will want to list accomplishments during onboarding. The accomplishments system is available from P-1 at any time post-onboarding.
+These are personalization preferences owned by onboarding as journey state (ONB-D2). **Goals here are not Goal records** — they never auto-create anything in the Goal system. **Schedule here is not a schedule of record** — the Program Ecosystem owns `ProgramSlot`.
 
 ---
 
-### Decision 6 — Forging Since: Revealed at Completion, Not Editable
+### Decision 4 — Sex Field (artwork only)
 
-**Recommendation: "Forging Since" is not shown or collected during O-2 steps. It is revealed for the first time in the completion moment (O-2f).**
+**Locked. Enforces ONB-D7.** O-2a collects a **Sex** selection. Its **only** use is selecting badge artwork and rank-silhouette variants (owned by the Rank/Honor artwork layer). It is **not** a health metric, drives **no** Rank/Honor/Goal/recommendation logic, is **never** used for comparison, and **never** branches the onboarding flow.
 
-"Forging Since" is set at O-1b completion (account creation) and is permanently immutable. It requires no athlete input.
-
-The completion moment (O-2f) is where the athlete first sees their assembled profile: name, athlete type, starting rank, and — for the first time — "Forging since [Month Year]." This is the emotional reveal of O-2. The date is not a field to fill in; it is a fact that already exists. Revealing it at completion communicates: *your legacy has already begun.*
-
-The framing in O-2f: "Forging since June 2026" (same format as P-1). 13sp, muted secondary, centered below rank.
-
-**Never show "Forging Since" as an editable field anywhere in the product.** It appears only as a display element.
+- Reuse the canonical profile field for this value; do not create a duplicate onboarding-only property.
+- Use the exact label, options, optionality, data model, and privacy treatment specified in the governing architecture and the Profile/Backend data model. This spec does not expand the field's use beyond artwork selection.
 
 ---
 
-### Decision 7 — Privacy Defaults
+### Decision 5 — Recommended Starting Point: Deterministic, Explainable, Never Forced
 
-**Recommendation: Privacy defaults are set silently during account creation and O-2. No privacy screen in O-2. Configurable post-onboarding via P-6.**
+**Locked. Enforces ONB-D13.** After Goals + Experience + Equipment + Schedule, O-2f presents a calm "You're Ready" moment with a single recommended starting program.
 
-Privacy defaults:
-- Non-squad athlete search: **On** (per Identity Amendment 001 — athletes are searchable by default)
-- WwF non-squad tagging: **On** (follows searchability — the same toggle governs both)
-- Squad visibility: **On** — squad members can see your presence and profile card
+- **Rule-based and deterministic** — the same inputs always produce the same recommendation. **Not AI, never presented as AI** (AI program generation remains Post-MVP).
+- **Explainable** — the screen states *why* the program was recommended (e.g., "Built for Strength, beginner-friendly, fits a home gym and 3 days a week.").
+- **Compatible** — the recommendation must never require equipment the athlete did not select, nor more weekly training days than the athlete chose.
+- **Never forced** — the athlete can Start the program, Browse alternatives (→ W-2), or Skip For Now (proceed with no active program; the Workout CTA still works). Skip is first-class.
 
-These defaults are appropriate for the product's core use case: small, trusted groups. An athlete who wants more privacy configures it in P-6 (Privacy Settings) post-onboarding.
-
-O-2 does not present a privacy settings screen. Showing privacy controls before the athlete has experienced the product creates pre-emptive friction and implies the product is more public than it is. The correct moment for privacy configuration is after the athlete understands what they're private from.
-
-A single passive acknowledgment appears in O-2f (completion): "Your profile is visible to your squad members." (13sp, muted, below the primary CTA). This is information, not a consent action.
+Recommendation logic and fallback behavior are specified in Section 9.
 
 ---
 
-### Decision 8 — Completion Flow and Emotional Outcome
+### Decision 6 — Readiness, Not Completion: Transition + Silent Chapter I
 
-**Recommendation: O-2 flows into O-3 (First Chapter Invitation), not directly to Home. Emotional outcome: Ownership.**
+**Locked. Enforces ONB-D14 / D16 / D18 / D22.** O-2 does **not** end on a celebratory profile-reveal "completion moment." The old v1.1 O-2f (assembled profile + starting rank + "Your legacy starts here.") is replaced by the **Transition Into Forge** ceremony (O-2g), which celebrates **readiness**, not an accomplishment.
 
-After "Start Building" in O-2f, the athlete navigates to O-3 (First Chapter Invitation), defined in a separate spec. O-3 is a gentle, skippable invitation to create the athlete's first chapter. It is not a gate — the athlete who skips O-3 goes directly to Home and encounters the chapter creation invitation in the Home empty state.
-
-The decision to use O-3 rather than landing on Home directly is intentional: O-2 establishes identity; O-3 establishes purpose. The onboarding arc is:
-- O-1: *Who are you?* (Account creation, credentials, display name)
-- O-2: *Who are you as an athlete?* (Type, username, photo, history)
-- O-3: *What are you building?* (Chapter creation invitation)
-
-**Emotional outcome of O-2: Ownership.**
-
-The athlete who completes O-2 should feel: *This is mine. This is me in Forge Legacy.*
-
-Not excitement at features. Not gamification energy. Not anticipation of challenges. The quiet, meaningful recognition that the athlete has established their record in a system that will hold it for years.
-
-The completion moment achieves this through restraint. No confetti. No celebration animation. No "Welcome to the community!" copy. Just: the athlete's assembled profile, reflected back to them for the first time. "Your legacy starts here." A single CTA to continue.
+- During the transition, Forge **silently creates "Chapter I — Building Your Foundation"** via the Chapter API (ONB-D14). No naming gate, no manual creation, no confirmation step.
+- The Chapter begins **empty** — no workouts, no fabricated progress, no fake timeline events, no artificial honors, no imported accomplishments, no seeded completion percentage, no invented history (ONB-D22).
+- The **earned payoff is withheld** to Workout #1: the "Chapter comes alive" animation, the first rank surfacing, and the profile reveal all happen after the first real workout (ONB-D18), not during setup.
+- Emotional outcome: **anticipation and ownership**, achieved through restraint — no confetti, no "Welcome to the community!", no fabricated celebration.
 
 ---
 
 ## Section 1 — Purpose
 
-O-2 establishes the athlete's identity in Forge Legacy.
+O-2 personalizes the athlete and prepares their start, in one path, for everyone.
 
-Not their goals. Not their programs. Not their social connections. Their identity.
+After O-2, Forge Legacy can address the athlete by name, show their face and badge artwork, hold their derived training orientation, recommend a compatible starting program, and present an empty, ready first Chapter. The product feels personal from the first session — and every athlete's Forge record still begins at zero, because nothing has been earned yet.
 
-After O-2, Forge Legacy can address the athlete by name, display their type, show their face in squads, and hold their prior history. The product feels personal from the first session.
-
-**O-2 is a declaration, not a configuration.** The athlete is not setting up features — they are answering a question about who they are. Every step serves that.
+**O-2 is a declaration followed by a personalized hand-off, not a configuration.** Every question improves the athlete's start. Nothing is collected "for data," and nothing branches the route.
 
 ---
 
 ## Section 2 — Screen Goals
 
 **O-2 succeeds when:**
-1. The athlete declares what they train (Athlete Type — required)
-2. The athlete has the opportunity to establish a unique address (Username — optional)
-3. The athlete has the opportunity to put a face to their profile (Photo — optional)
-4. Experienced athletes have the opportunity to honor their prior history (Accomplishments — optional, Path B)
-5. The completion moment makes the athlete feel the weight and ownership of having begun something real
-6. The entire flow takes under 3 minutes
+1. The athlete provides identity (name, optional username, optional photo, sex-for-artwork) with minimal friction.
+2. The athlete declares a primary goal and three lightweight personalization inputs (experience, equipment, schedule), each of which visibly shapes the recommendation.
+3. The athlete receives a deterministic, compatible, explainable recommended starting point they can accept, change, or skip.
+4. Every athlete — beginner or advanced — traverses the same screens.
+5. The athlete enters Forge with an empty, ready Chapter I and is pointed at Workout #1 as the first meaningful action.
+6. The entire flow takes under 3 minutes.
 
 **O-2 fails when:**
-- The athlete is asked for information they cannot understand the purpose of
-- A skippable step blocks or pressures the athlete into completion
-- The completion moment celebrates features instead of the athlete's beginning
-- The flow feels like a productivity tool or social media profile builder
-- The athlete type step requires more than a single tap
+- Any screen asks the athlete to choose an onboarding path.
+- Any screen asks the athlete to manually select an Athlete Type.
+- Any screen asks the athlete to enter prior accomplishments, PRs, past programs, or historic achievements.
+- The recommendation requires equipment or weekly days the athlete did not select.
+- The flow fabricates progress, a completion meter, or a celebration the athlete has not earned.
+- Experienced athletes are addressed with beginner-only language.
 
 ---
 
 ## Section 3 — Information Hierarchy
 
-O-2 is a six-screen sequential flow. The hierarchy:
+O-2 is a seven-screen sequential flow, one path for all. The hierarchy:
 
-**O-2a — Path Selection (TIER 1):** Two choices. No form. Tapping a choice is the action. Determines whether O-2e appears.
-
-**O-2b — Athlete Type (TIER 1, Declarative):** The most important identity declaration. Required. One tap.
-
-**O-2c — Username (TIER 2, Utility):** Search address. Optional. Auto-suggested. Low friction.
-
-**O-2d — Profile Photo (TIER 2, Expression):** Face in the system. Optional. Initials avatar as default.
-
-**O-2e — Prior Accomplishments (TIER 2, Honoring history — Path B only):** What has already been built. Optional. Freeform. Skippable.
-
-**O-2f — Completion Moment (TIER 1, Ceremonial):** The assembled profile, revealed for the first time. The emotional outcome. One CTA forward.
+- **O-2a — About You (TIER 1, Identity):** Name (confirm/edit) · Username (optional) · Photo (optional) · Sex (artwork).
+- **O-2b — Goals (TIER 1, Declarative):** The primary identity/orientation signal. Drives recommendation + Athlete-Type derivation.
+- **O-2c — Experience (TIER 2, Personalization):** Three levels. Personalizes; never branches.
+- **O-2d — Equipment (TIER 2, Personalization):** Training environment. Constrains recommendation.
+- **O-2e — Training Schedule (TIER 2, Personalization):** Availability. Constrains recommendation.
+- **O-2f — Recommended Starting Point (TIER 1, Payoff-of-setup):** Deterministic recommendation; Start / Browse / Skip.
+- **O-2g — Transition Into Forge (TIER 1, Ceremonial):** Readiness ceremony; silent Chapter I prepared; "Enter Forge."
 
 ---
 
-## Section 4 — O-2a: Path Selection
+## Section 4 — O-2a: About You
 
-The first screen of O-2. Two paths. One tap to proceed.
-
-```
-┌─────────────────────────────────────────────────────────┐
-│  SYSTEM STATUS BAR                                      │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│  Tell us about your           [22sp, primary weight]    │
-│  journey.                                               │
-│                                                         │
-│  ─────────────────────────────────────────────────────  │
-│                                                         │
-│  ┌─────────────────────────────────────────────────┐   │
-│  │  I'm just getting started.                  →   │   │  ← Path A
-│  └─────────────────────────────────────────────────┘   │
-│                                                         │
-│  ┌─────────────────────────────────────────────────┐   │
-│  │  I've been training for a while.            →   │   │  ← Path B
-│  └─────────────────────────────────────────────────┘   │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
-```
-
-**No Continue button.** Tapping a path option immediately advances to O-2b. The tap is the selection AND the navigation action. The selected row briefly highlights (300ms) before transitioning.
-
-**No back navigation from O-2a.** The account was created in O-1 — there is nothing meaningful to go back to. The first screen of O-2 has no ‹ or ✕.
-
-**Path copy rationale:**
-- "I'm just getting started." — warm, specific, non-labeling. Not "I'm a beginner" (implies low status) or "New to fitness" (might not be true — they may be new to Forge Legacy but not to training).
-- "I've been training for a while." — factual, inclusive. Not "Experienced athlete" (sounds like a category assignment) or "Advanced" (implies hierarchy).
-
-**Path is stored server-side.** If the athlete exits O-2 after O-2a and returns, the path selection is remembered and O-2 resumes from O-2b.
-
-**Path affects only O-2e.** Athletes can update their self-identification (by adding accomplishments, updating athlete type) post-onboarding through P-2. The path selection is not a permanent classification.
-
----
-
-## Section 5 — O-2b: Athlete Type
-
-The identity declaration. Required.
+Identity in one screen. Reuses O-1c (name) + Identity Amendment 001 (username) + photo, plus the new Sex field.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -271,727 +189,540 @@ The identity declaration. Required.
 ├─────────────────────────────────────────────────────────┤
 │  ‹                                                      │
 │                                                         │
-│  What do you train?           [22sp, primary weight]    │
-│           [Path A variant: "What interests you?"]       │
+│  About you                    [22sp, primary weight]    │
 │                                                         │
-│  This shows on your profile.  [15sp, secondary, muted]  │
-│  You can change it later.                               │
-│                                                         │
-│  ─────────────────────────────────────────────────────  │
-│                                                         │
-│  ┌────────────────────┐   ┌────────────────────┐       │
-│  │     Strength       │   │   Bodybuilding     │       │
-│  └────────────────────┘   └────────────────────┘       │
-│                                                         │
-│  ┌────────────────────┐   ┌────────────────────┐       │
-│  │      Hybrid        │   │     Running        │       │
-│  └────────────────────┘   └────────────────────┘       │
-│                                                         │
-│  ┌────────────────────┐   ┌────────────────────┐       │
-│  │     Cycling        │   │     Combat         │       │
-│  └────────────────────┘   └────────────────────┘       │
-│                                                         │
-│  ┌──────────────────────────────────────────────┐      │
-│  │                  General                     │      │  ← Full-width last tile
-│  └──────────────────────────────────────────────┘      │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
-```
-
-**Title copy by path:**
-- Path A: "What interests you?" — forward-looking. The new athlete is declaring intent.
-- Path B: "What do you train?" — declarative. The experienced athlete is stating fact.
-
-**Tile layout:** 2×3 grid + 1 full-width tile. 7 tiles total. Each tile is a tappable surface — minimum 52dp height.
-
-**Tile labels (locked per P-1 spec and PRD):**
-Strength | Bodybuilding | Hybrid | Running | Cycling | Combat | General
-
-**Tile design:** Tiles may include a small icon above the label — icon selection is a design decision not locked by this spec. Labels are locked.
-
-**Selection behavior:** Tapping a tile selects it (highlighted state, 300ms) then auto-advances to O-2c. No Continue button.
-
-**"General" tile:** Full-width, positioned last. This communicates: it is a complete and valid choice, not a fallback or lesser option. Athletes who do multiple disciplines, follow general fitness routines, or don't fit one of the six specific categories use General.
-
-**No skip path.** Athlete Type is required. Every athlete must tap a tile to proceed. "General" is always a valid answer — no athlete is ever stuck.
-
-**Athlete type can be changed in P-2.** The subtitle copy ("This shows on your profile. You can change it later.") sets this expectation without making the decision feel consequential.
-
----
-
-## Section 6 — O-2c: Username
-
-Per Identity Amendment 001 v1.1. The username step is optional but strongly encouraged.
-
-```
-┌─────────────────────────────────────────────────────────┐
-│  SYSTEM STATUS BAR                                      │
-├─────────────────────────────────────────────────────────┤
-│  ‹                                                      │
-│                                                         │
-│  Choose your username         [22sp, primary weight]    │
-│                                                         │
-│  This is how athletes find    [15sp, secondary]         │
-│  you in Forge Legacy.                                   │
-│                                                         │
-│  ─────────────────────────────────────────────────────  │
-│                                                         │
-│  Username                         [13sp, muted label]   │
-│  ┌─────────────────────────────────────────────────┐   │
-│  │  @  isaiahaltamirano                             │   │  ← Auto-suggested, editable
-│  └─────────────────────────────────────────────────┘   │
-│  Available ✓                  [13sp, success green]     │
-│                                                         │
-│  [  Continue  ]                   ← Primary, 52dp      │
-│                                                         │
-│  [  Skip for now  ]               ← Tertiary text link │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
-```
-
-**All username rules defined in Identity Amendment 001 v1.1, Section 2.1.** This section establishes placement, not rules.
-
-**Back navigation:** ‹ returns to O-2b (Athlete Type).
-
-**Auto-suggestion:** Username field pre-populated from display name (e.g., "Isaiah Altamirano" → "isaiahaltamirano"). Athlete can edit. Live availability check runs on change.
-
-**Continue button:** Enabled when username is available and format-valid. Disabled (not hidden) when field is empty or invalid.
-
-**"Skip for now":** Always present and functional. Proceeds to O-2d without a username set.
-
----
-
-## Section 7 — O-2d: Profile Photo
-
-Optional. Initials avatar is the complete default.
-
-```
-┌─────────────────────────────────────────────────────────┐
-│  SYSTEM STATUS BAR                                      │
-├─────────────────────────────────────────────────────────┤
-│  ‹                                                      │
-│                                                         │
-│  Add a photo                  [22sp, primary weight]    │
-│                                                         │
-│  This is how you appear       [15sp, secondary]         │
-│  in squads.                                             │
+│  A few details so Forge feels  [15sp, secondary]        │
+│  like yours.                                            │
 │                                                         │
 │  ─────────────────────────────────────────────────────  │
 │                                                         │
 │              ┌───────────────┐                          │
-│              │               │                          │
 │              │      I A      │  ← Initials, 88dp circle │
-│              │               │                          │
 │              └───────────────┘                          │
+│              [  Add photo  ]      ← optional            │
 │                                                         │
-│  [  Choose Photo  ]               ← Primary, 52dp      │
+│  Name                               [13sp, muted]       │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │  Isaiah                                          │   │  ← from O-1c; editable
+│  └─────────────────────────────────────────────────┘   │
 │                                                         │
-│  [  Skip for now  ]               ← Tertiary text link │
+│  Username (optional)                [13sp, muted]       │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │  @  isaiahaltamirano                             │   │  ← auto-suggested
+│  └─────────────────────────────────────────────────┘   │
+│  Available ✓                  [13sp, success]           │
+│                                                         │
+│  Sex                                [13sp, muted]       │
+│  ( ) [option]   ( ) [option]   …  [per canonical model] │
+│                                                         │
+│  [  Continue  ]                   ← Primary, 52dp      │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
 ```
 
-**Initials avatar preview:** Shows the athlete's actual initials from their display name — "I A" for "Isaiah Altamirano." Not a generic icon. This communicates: the default is not empty; it is already a valid representation.
-
-**"Choose Photo" tap:**
-1. Requests photo library permission (iOS/Android system permission dialog)
-2. If granted: opens system photo picker
-3. Photo selected → inline crop/preview within O-2d
-4. Athlete confirms → photo saved; "Choose Photo" becomes "Change Photo"; "Remove Photo" appears below; "Skip for now" becomes "Continue"
-5. If permission denied: inline message "Allow photo access in your device settings to add a photo." Athlete proceeds with initials. No error state.
-
-**Back navigation:** ‹ returns to O-2c (Username).
-
-**"Skip for now":** Always present until photo is confirmed. Proceeds to O-2e (Path B) or O-2f (Path A).
+- **Name:** pre-filled from O-1c if set; editable. If O-1c was skipped, the athlete can set it here; the field placeholder shows the display-name examples from O-1c. Not required to advance if a system placeholder is acceptable per O-1 (a name may still be added later via P-1.1).
+- **Username:** optional, auto-suggested from the display name, live availability check. All username rules per Identity Amendment 001 v1.1. "Skip"/leaving empty is always allowed.
+- **Photo:** optional. Initials avatar is the complete default (no incomplete-profile framing). Permission requested only on "Add photo" tap; denial is graceful (proceed with initials).
+- **Sex:** selection per Decision 4. Label, options, optionality, and privacy treatment come from the canonical Profile/Backend data model. **Artwork/silhouette use only.**
+- **Continue** advances to O-2b (Goals).
+- **Back:** ‹ returns to Account Creation / the preceding onboarding surface per O-1.
 
 ---
 
-## Section 8 — O-2e: Prior Accomplishments (Path B Only)
+## Section 5 — O-2b: Goals
 
-Honoring what has already been built. Entirely optional. Path B (Experienced Athlete) only.
+The primary orientation signal. Drives the recommendation and the Athlete-Type derivation.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  SYSTEM STATUS BAR                                      │
-├─────────────────────────────────────────────────────────┤
 │  ‹                                                      │
 │                                                         │
-│  What have you built          [22sp, primary weight]    │
-│  so far?                                                │
+│  What are you working         [22sp, primary weight]    │
+│  toward?                                                │
 │                                                         │
-│  Honor what you've already    [15sp, secondary]         │
-│  accomplished.                                          │
+│  Pick up to three. Choose one  [15sp, secondary]        │
+│  as your main focus.                                    │
+│                                                         │
+│  ─────────────────────────────────────────────────────  │
+│                                                         │
+│  ☐ Build Muscle          ☐ Increase Strength           │
+│  ☐ Improve Endurance     ☐ Athletic Performance        │
+│  ☐ Lose Weight           ☐ General Health              │
+│  ☐ Improve Mobility      ☐ Build Consistency           │
+│                                                         │
+│  ★ Primary: [ Increase Strength ▾ ]   (required)       │
+│                                                         │
+│  [  Continue  ]                   ← Primary, 52dp      │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+- **Locked taxonomy (the eight onboarding goal options — do not create a competing taxonomy):** Build Muscle · Increase Strength · Improve Endurance · Athletic Performance · Lose Weight · General Health · Improve Mobility · Build Consistency.
+- **Up to 3 selectable; exactly 1 primary required.** Selecting fewer than three is fine; the primary is the only required choice in this step.
+- These are **personalization preferences owned by onboarding as journey state** — not Goal records. Onboarding never creates a Goal record. The primary goal may later *suggest* (never auto-create) a chapter goal in the Goal system.
+- **Continue** is disabled until a primary goal is designated. Advances to O-2c.
+- **Athlete Type is derived from the primary goal** here (Decision 2) and written through the profile model — invisibly.
+
+---
+
+## Section 6 — O-2c: Experience
+
+Three levels. Personalizes; never branches (Decision 1).
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  ‹                                                      │
+│                                                         │
+│  How much training            [22sp, primary weight]    │
+│  experience do you have?                                │
+│                                                         │
+│  This tunes your starting      [15sp, secondary]        │
+│  recommendation.                                        │
 │                                                         │
 │  ─────────────────────────────────────────────────────  │
 │                                                         │
 │  ┌─────────────────────────────────────────────────┐   │
-│  │  + Add an accomplishment                         │   │  ← Tappable row
+│  │  Beginner                                    →   │   │
+│  └─────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │  Intermediate                                →   │   │
+│  └─────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │  Advanced                                    →   │   │
 │  └─────────────────────────────────────────────────┘   │
 │                                                         │
-│  (Added entries appear as scrollable cards with × )     │
+└─────────────────────────────────────────────────────────┘
+```
+
+- **Locked three-level model:** Beginner · Intermediate · Advanced.
+- Tapping a level selects it (300ms highlight) and advances to O-2d. No Continue button needed; no skip (a level is required, and any level is valid).
+- **Experience affects:** recommended program difficulty, appropriate starting volume/complexity, instructional copy tone, the suggested starting point.
+- **Experience must not affect:** which onboarding screens are shown, whether a Chapter is created, whether the athlete begins with empty progress, or whether they can access Forge.
+
+---
+
+## Section 7 — O-2d: Equipment
+
+Training environment. Constrains the recommendation; enables optional non-restrictive filtering.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  ‹                                                      │
+│                                                         │
+│  Where will you train?        [22sp, primary weight]    │
+│                                                         │
+│  We'll only recommend programs [15sp, secondary]        │
+│  you can actually do.                                   │
+│                                                         │
+│  ─────────────────────────────────────────────────────  │
+│                                                         │
+│  ┌────────────────────┐   ┌────────────────────┐       │
+│  │  Commercial Gym    │   │   Home Gym         │       │
+│  └────────────────────┘   └────────────────────┘       │
+│  ┌────────────────────┐   ┌────────────────────┐       │
+│  │  Dumbbells Only    │   │   Bodyweight       │       │
+│  └────────────────────┘   └────────────────────┘       │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+- **Canonical environment options (per ONB-D11):** Commercial Gym · Home Gym · Dumbbells Only · Bodyweight. These map onto the Environment-Tags enum extended by the additive value `dumbbells_only` (`commercial_gym`, `home_gym`, `dumbbells_only`, `bodyweight`) — the existing three values are unchanged, no migration of tagged programs. **Do not invent new equipment categories** beyond the canonical source.
+- Written to the **profile environment field**. Feeds the recommendation (O-2f) and optional, opt-in, **non-restrictive** exercise/program filtering (the athlete can always browse everything).
+- Tapping a tile selects it (300ms highlight) and advances to O-2e.
+- Finer-grained owned-equipment definition ("Home Gym Builder") is a future enhancement per ONB-D11 — **not** part of V1 onboarding.
+
+---
+
+## Section 8 — O-2e: Training Schedule
+
+Realistic availability. Constrains the recommendation.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  ‹                                                      │
+│                                                         │
+│  When can you train?          [22sp, primary weight]    │
+│                                                         │
+│  Be honest — we'll fit the     [15sp, secondary]        │
+│  recommendation to your week.                           │
+│                                                         │
+│  ─────────────────────────────────────────────────────  │
+│                                                         │
+│  Days per week                                          │
+│  [ 2 ] [ 3 ] [ 4 ] [ 5 ] [ 6 ]     ← single-select     │
+│                                                         │
+│  Preferred days (optional)                              │
+│  [M][T][W][T][F][S][S]             ← multi-select       │
+│                                                         │
+│  Preferred session length                               │
+│  [30] [45] [60] [75+] min          ← single-select     │
 │                                                         │
 │  [  Continue  ]                   ← Primary, 52dp      │
 │                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+- **Days per week** (single-select, per the locked schedule model, e.g. 2–6): the binding constraint on the recommendation. The recommendation must **not** require more weekly training days than selected.
+- **Preferred days** (optional multi-select): may seed the Calendar's program projection context later; not required.
+- **Preferred session length** (single-select): further tunes the recommendation.
+- Journey-state preferences (ONB-D2). **Never** turned into a quota, streak target, or shame surface (ONB-D22).
+- **Continue** advances to O-2f (days-per-week is required; preferred days optional).
+
+---
+
+## Section 9 — O-2f: Recommended Starting Point
+
+The calm "You're Ready" moment. Deterministic recommendation. Never forced.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  ‹                                                      │
+│                                                         │
+│  You're ready.                [22sp, primary weight]    │
+│                                                         │
+│  Based on your goal,           [15sp, secondary]        │
+│  experience, equipment,                                 │
+│  and schedule, we suggest:                              │
+│                                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │  [Program Name]                                  │   │
+│  │  Built for Strength · beginner-friendly ·        │   │
+│  │  fits a home gym · 3 days a week                 │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+│  [  Start Program  ]              ← Primary, 52dp      │
+│  [  Browse Programs  ]            ← Secondary          │
 │  [  Skip for now  ]               ← Tertiary text link │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
 ```
 
-**Entry card (after adding):**
-```
-┌─────────────────────────────────────────────────────────┐
-│  [×]  Ran my first marathon in under 4 hours (2022)     │
-└─────────────────────────────────────────────────────────┘
-```
+### 9.1 Recommendation Contract (deterministic)
 
-**"+ Add an accomplishment" tap:** Inline text field appears below the row (not a new screen). Athlete types a short description. Tapping "Add" creates an entry card. Field clears; row becomes "+ Add another."
+The recommendation ranks the **existing Program Catalog** against the athlete's inputs. Onboarding owns no program logic (ONB-D2) — it performs a deterministic ranked read.
 
-**Entry rules:**
-- Freeform text, maximum 150 characters per entry
-- Minimum 1 non-whitespace character to enable "Add"
-- No categories, no date picker, no structured fields
-- No maximum entry count in MVP
-- Character counter appears at ≤ 15 remaining
+**Inputs (at minimum):** **primary goal (first-order determinant)** · experience level · equipment selection · weekly days available. Secondary goals are *not* a selection input (see below).
 
-**Entries are saved server-side immediately on "Add" tap** (progressive save, not held until O-2f completion). If the athlete exits and returns, entries are preserved.
+**Hard constraints (must never be violated):**
+- The recommended program's required equipment must be a subset of the athlete's selected environment. Never recommend a program requiring equipment the athlete does not have.
+- The recommended program's required weekly training days must be **≤** the athlete's selected days per week. Never recommend a program requiring more days than the athlete chose.
 
-**Creation date for entries:** Set to today. Entries are not backdated. The athlete communicates historical context through their entry text.
+**Ranking (ordered, deterministic).** Among constraint-compatible programs, apply these keys **in strict priority order**:
+1. **Primary-goal match (first, and dominant).** The athlete's single primary goal (O-2b) → program focus, including the Athlete-Type derivation (Decision 2). This is the first-order determinant of *which* program is recommended; no lower-priority key may promote a program above a better primary-goal match.
+2. **Experience match** — difficulty/volume appropriate to Beginner/Intermediate/Advanced.
+3. **Schedule fit** — days per week, then preferred session length.
+4. **Secondary goals — lowest-weight tie-breaker only.** The athlete's non-primary goals (O-2b) may break a tie **only** among candidates already equal on keys 1–3, nudging toward a program that also serves a secondary goal. They may otherwise be retained purely as **display context** in the explanation. Secondary goals **must never override the primary goal, promote a program above a better primary-goal match, or produce an ambiguous selection.**
+5. **Stable catalog order** — final deterministic tie-break so identical inputs always yield the identical single result (no ambiguity ever remains).
 
-**Continue:** Advances to O-2f whether or not any entries were added.
+Because primary-goal match is dominant and the final tie-break is a stable total order, **the recommendation is always a unique, deterministic program**; secondary goals can influence only otherwise-perfect ties and can never make the selection ambiguous.
 
-**"Skip for now":** Advances to O-2f without any accomplishment entries.
+**Explanation:** the card states the concrete reasons the program matched (goal, experience-fit, equipment-fit, schedule-fit). Do not fabricate personalization copy the underlying rules do not support.
 
-**Back navigation:** ‹ returns to O-2d (Profile Photo). Entries are preserved. If an inline entry field is open (text typed but not yet added) and the athlete taps ‹, a confirmation appears: "Discard this entry?" — Discard / Keep Editing.
+### 9.2 Fallback (no exact match)
 
-**This screen does NOT appear in Path A.**
+If no program satisfies all hard constraints, fall back **without violating the athlete's equipment or schedule**:
+1. Relax soft ranking preferences (session length, then experience-difficulty tolerance) before relaxing anything.
+2. If still none, present the closest **equipment- and schedule-compatible** option and clearly frame it as a starting point they can change.
+3. If truly nothing compatible exists, do not force a program — present "Skip for now" as the primary path and route Browse (→ W-2) as the alternative. **Never** silently recommend something that breaks the athlete's equipment or day constraints.
+
+### 9.3 Actions
+- **Start Program** — enrolls via the Program system; proceeds to O-2g.
+- **Browse Programs** — → W-2 Program Browse; the athlete may return and proceed to O-2g with or without enrolling.
+- **Skip for now** — proceeds to O-2g with no active program. The Workout CTA still works; training is never gated on accepting a program.
 
 ---
 
-## Section 9 — O-2f: Completion Moment
+## Section 10 — O-2g: Transition Into Forge
 
-The assembled profile, revealed for the first time. The emotional outcome of O-2.
+The onboarding terminus. Celebrates **readiness**, not an accomplishment. Silent Chapter I is prepared here.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │  SYSTEM STATUS BAR (light text on dark)                 │
 │                                                         │
-│  [Background: dark charcoal. Optional: faint warm       │
-│   photography at low opacity — same aesthetic as O-1a.  │
-│   Design decision; not locked by this spec.]            │
+│  [Dark charcoal. Restraint — no confetti.]              │
 │                                                         │
-│          ┌──────────────────────┐                       │
-│          │                      │                       │
-│          │   [Photo or  I A ]   │  ← 88dp circle        │
-│          │                      │                       │
-│          └──────────────────────┘                       │
+│          Chapter I Prepared          [17sp, light]      │
+│          Building Your Foundation     [22sp, light]     │
 │                                                         │
-│          [Display Name]       [22sp, light, centered]   │
-│          [Athlete Type]       [14sp, muted, centered]   │
-│          Apprentice · I       [14sp, muted, centered]   │
-│          Forging since        [13sp, muted, centered]   │
-│          June 2026                                      │
+│          Your first Chapter is ready.                   │
+│          It begins the moment you                       │
+│          complete your first workout.  [15sp, muted]    │
+│                                                         │
+│          Every great story has a beginning.             │
+│          Today, yours is waiting to be written.         │
 │                                                         │
 │  ─────────────────────────────────────────────────────  │
 │                                                         │
-│  Your legacy starts here.     [17sp, light, centered]   │
-│                                                         │
-│  [  Start Building  ]           ← Primary CTA, 52dp    │
-│                                                         │
-│  Your profile is visible to your squad members.        │
-│                               [13sp, muted, centered]   │
+│  [  Enter Forge  ]              ← Primary CTA, 52dp    │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
 ```
 
-**What appears:**
-- Profile photo (or initials avatar if no photo was set)
-- Display Name — 22sp, light, centered
-- Athlete Type — 14sp, muted, centered
-- Starting rank: **Apprentice · I** — 14sp, muted, centered — system-assigned, shown here for the first time
-- **"Forging since [Month Year]"** — 13sp, muted, centered — the founding date of their legacy, revealed here for the first time
-
-**"Forging since [Month Year]":**
-The emotional center of the completion moment. The athlete did not input this date — it was established when they created their account. Seeing it as part of their assembled profile communicates: *this record already exists. Your legacy has already begun.*
-
-**Starting rank:**
-"Apprentice · I" is the first rank for all new athletes. System-assigned, no input required. The completion moment is where the athlete first sees their rank — not as something to grind toward, but as the beginning of a long trajectory.
-
-**"Your legacy starts here.":**
-17sp, light, centered. Not a product tagline. A direct acknowledgment of the moment. Not "Welcome to Forge Legacy!" or "You're all set!" — those are product-facing. "Your legacy starts here." is athlete-facing.
-
-**"Your profile is visible to your squad members.":**
-Single passive privacy acknowledgment. 13sp, muted, below the primary CTA. Informational only — not a consent action, not a decision point.
-
-**"Start Building" CTA:**
-- Full-width, 52dp, primary
-- Navigates to O-3 (First Chapter Invitation)
-- The only action on this screen
-
-**No back navigation on O-2f.** The profile has been assembled; the onboarding arc is complete. The ‹ is absent.
-
-**No animation or celebration.** The completion moment is still and intentional. No confetti, no "You did it!" overlay, no pulsing achievements. The profile card is the ceremony.
-
-**If display name was skipped in O-1c:**
-The Display Name line shows "Athlete" (the system placeholder). An inline prompt appears below: "Add your name" (14sp, muted, tappable) — tapping opens an inline text field within O-2f. The athlete can add their display name before tapping "Start Building." "Start Building" is not blocked by the absent display name.
+- **Silent Chapter I creation (ONB-D14):** during/at this transition, Forge creates **"Chapter I — Building Your Foundation"** through the Chapter API. No naming gate, no manual creation, no confirmation. The Chapter is **prepared, not celebrated** — empty, holding no workouts and no fabricated state.
+- **Copy beats (locked, ONB-D16):**
+  1. "Chapter I Prepared"
+  2. "Building Your Foundation"
+  3. "Your first Chapter is ready."
+  4. "It begins the moment you complete your first workout."
+  5. "Every great story has a beginning. Today, yours is waiting to be written."
+- **Button:** "Enter Forge." → First Home (H-1).
+- **No profile-reveal, no starting-rank surfacing, no "Chapter comes alive" animation here** — those are withheld to Workout #1 (ONB-D18). Onboarding celebrates readiness; the accomplishment is still ahead.
+- **No back navigation.** The arc is complete.
+- **"Forging Since"** is set at account creation (O-1b), immutable, and is surfaced later on the profile — it is never an editable field and is not a terminus reveal in this reconciled flow.
 
 ---
 
-## Section 10 — Skip Behavior
-
-### 10.1 What Is Skippable
+## Section 11 — Skip Behavior
 
 | Step | Skippable | Default if skipped |
 |------|-----------|-------------------|
-| O-2a Path Selection | No — selection IS the navigation action | N/A |
-| O-2b Athlete Type | No — required, "General" always available | N/A |
-| O-2c Username | Yes | No username set |
-| O-2d Profile Photo | Yes | Initials avatar |
-| O-2e Prior Accomplishments | Yes (entire step, Path B only) | No accomplishments added |
-| O-2f Completion Moment | No — "Start Building" is the only forward path | N/A |
+| O-2a About You — Name | Per O-1 (placeholder allowed) | System placeholder until set via P-1.1 |
+| O-2a About You — Username | Yes | No username set (single P-1 prompt later) |
+| O-2a About You — Photo | Yes | Initials avatar (no nudge) |
+| O-2a About You — Sex | Per canonical model | Per canonical model (artwork default) |
+| O-2b Goals | No — one primary required | N/A |
+| O-2c Experience | No — one level required (any valid) | N/A |
+| O-2d Equipment | No — one environment required | N/A |
+| O-2e Training Schedule | Days/week required; preferred days optional | N/A / no preferred days |
+| O-2f Recommended Starting Point | Yes — "Skip for now" is first-class | No active program (Workout CTA still works) |
+| O-2g Transition | No — "Enter Forge" is the only forward path | N/A |
 
-### 10.2 Skip Does Not Mean Incomplete
+**Skip does not mean incomplete.** No "complete your profile" progress bar, no "X% complete" meter anywhere (ONB-D22). The only permitted post-onboarding nudge is a single P-1 prompt if username was skipped.
 
-An athlete who skips Username and Profile Photo has a complete, valid Forge Legacy profile. Skipped fields are not shown as incomplete or missing — they are the correct default state for that athlete at that time.
-
-- No "Complete your profile" progress bar on P-1
-- No "X% complete" indicator anywhere in the product
-- The only post-onboarding nudge: if Username was skipped, a single contextual prompt appears in P-1 — "Add a username so athletes can find you." No nudges for skipped photo or accomplishments.
-
-### 10.3 Skip and Return
-
-Any skipped field can be set later via P-2 (Edit Profile). No time limit, no penalty, no expiration.
+**Prior Accomplishments is not in this table because it is not an onboarding step** (Section 19). It is available post-onboarding via P-1 at any time.
 
 ---
 
-## Section 11 — Privacy Defaults
+## Section 12 — Privacy Defaults
 
-Privacy defaults are set silently at account creation or during O-2 processing. The athlete takes no privacy actions during onboarding.
+Privacy defaults are set silently during account creation / O-2 processing; the athlete takes no privacy actions during onboarding (per O-2 v1.1 carry-over, consistent with ONB-D15 and P-6):
 
 | Setting | Default | Governs |
 |---------|---------|---------|
-| Non-squad athlete search | On | Whether non-squad athletes can find this athlete by display name or username search |
-| WwF non-squad tagging | On (follows search toggle) | Whether non-squad athletes can initiate a WwF tag request |
+| Non-squad athlete search | On | Whether non-squad athletes can find this athlete by display name or username |
+| WwF non-squad tagging | On (follows search) | Whether non-squad athletes can initiate a WwF tag request |
 | Squad member visibility | On | Whether squad members can see presence and profile card |
 
-All settings are configurable post-onboarding in P-6 (Privacy Settings). P-6 is accessible from P-1 → Settings → Privacy.
-
-The passive privacy disclosure in O-2f is informational only. It does not present the privacy toggle. It does not require a response.
+All configurable post-onboarding in P-6. No privacy screen appears in O-2. Any passive disclosure is informational, never a consent wall.
 
 ---
 
-## Section 12 — Abandoned Onboarding Recovery
+## Section 13 — Abandoned Onboarding & Resume
 
-Per O-1 Decision 7: if the athlete exits after O-1 completion but before O-2 completion, O-2 surfaces on next launch before Home. The skip prompt appears for up to 3 launches before the app stops surfacing it.
+**Progressive save (account-level).** Each step is saved server-side immediately: About You fields, each goal + primary designation, experience, equipment, schedule, and the recommendation state. Silent Chapter I is created only at the O-2g transition and must be **idempotent** (Section 20).
 
-**Within O-2, each step is a progressive save:**
-- Path selected → saved immediately
-- Athlete type selected → saved immediately
-- Username set → saved immediately
-- Photo confirmed → saved immediately
-- Accomplishment added → saved immediately
+**Resume:** on return before completion, the athlete resumes at the nearest valid step in the **unified** flow, with previously saved answers pre-populated. The athlete may back up to change earlier answers.
 
-**If the athlete exits mid-O-2 and returns:**
-- O-2 resumes from the last uncompleted step
-- Previously saved data is pre-populated (athlete type tile shows selection; username field shows saved value; etc.)
-- The athlete can back up to earlier steps to change selections
+**Legacy onboarding state normalization (for any partially-onboarded dev accounts created under the old dual-path model):** see Section 20.3 — old Athlete Type / Path / Prior Accomplishments state is normalized or dropped without creating fake history, and the athlete resumes in the unified flow.
 
-**If the athlete exits at O-2f without tapping "Start Building":**
-On return: O-3 is shown. O-2 is not reshown (profile assembly is complete).
+**After completion:** O-2 is not reshown. Onboarding completion is account-level, not device-level.
 
 ---
 
-## Section 13 — Navigation
+## Section 14 — Navigation
 
-### 13.1 O-2 Screen Flow (Path A — New to Fitness)
+### 14.1 Unified Flow (all athletes)
 
 ```
-O-1c (Display Name) — or O-1b via social auth
+O-1 (Account Creation, incl. Your Next Chapter vision) — from O-1
          ↓ account created
-O-2a (Path Selection) — "I'm just getting started."
+O-2a (About You: name · username · photo · sex)
+         ↓ Continue
+O-2b (Goals: up to 3, 1 primary)               → derives Athlete Type
+         ↓ Continue
+O-2c (Experience: Beginner/Intermediate/Advanced)
          ↓ tile tap
-O-2b (Athlete Type)
+O-2d (Equipment)
          ↓ tile tap
-O-2c (Username)
-         ↓ Continue OR Skip for now
-O-2d (Profile Photo)
-         ↓ Continue OR Skip for now
-O-2f (Completion Moment)
-         ↓ "Start Building"
-O-3 (First Chapter Invitation)
+O-2e (Training Schedule)
+         ↓ Continue
+O-2f (Recommended Starting Point) — Start / Browse / Skip
+         ↓
+O-2g (Transition Into Forge) — silent Chapter I prepared
+         ↓ "Enter Forge"
+H-1 (First Home — Active Chapter · awaiting first workout)
+         ↓ Start Workout
+Workout #1 → earned payoff (ONB-D18)
 ```
 
-### 13.2 O-2 Screen Flow (Path B — Experienced Athlete)
-
-```
-O-2a (Path Selection) — "I've been training for a while."
-         ↓ tile tap
-O-2b (Athlete Type)
-         ↓ tile tap
-O-2c (Username)
-         ↓ Continue OR Skip for now
-O-2d (Profile Photo)
-         ↓ Continue OR Skip for now
-O-2e (Prior Accomplishments)
-         ↓ Continue OR Skip for now
-O-2f (Completion Moment)
-         ↓ "Start Building"
-O-3 (First Chapter Invitation)
-```
-
-### 13.3 Back Navigation
+### 14.2 Back Navigation
 
 | Screen | Back navigates to |
 |--------|-----------------|
-| O-2a | No back (first O-2 screen; account already created) |
+| O-2a | Account Creation / preceding O-1 surface |
 | O-2b | O-2a |
 | O-2c | O-2b |
 | O-2d | O-2c |
 | O-2e | O-2d |
-| O-2f | No back (profile assembled; onboarding arc complete) |
+| O-2f | O-2e |
+| O-2g | No back (arc complete) |
 
-Back navigation returns to the previous O-2 screen with existing selections preserved. Athlete type selection persists through back navigation — the tile shows as selected on return to O-2b.
+Back preserves saved answers. **There is no path-branch and no Athlete-Type step to navigate through.**
 
-### 13.4 O-2 Does Not Navigate To
-
-- Home (H-1) directly — O-2 exits to O-3
-- Profile (P-1) — accessible post-onboarding
-- Any workout, squad, goal, or program screen
-- O-1 screens — account already created
-
----
-
-## Section 14 — Mobile UX
-
-### 14.1 Screen Types
-
-All O-2 screens are standard navigation screens in a sequential push-navigation stack. Not modals. Not bottom sheets — except the accomplishment inline entry field in O-2e, which is an in-place expanding field.
-
-### 14.2 Keyboard Behavior
-
-- O-2c (Username): auto-focus on screen open, keyboard appears immediately
-- O-2e accomplishment entry: keyboard appears when "+ Add an accomplishment" is tapped
-- All screens: keyboard avoidance via scroll — active field stays above keyboard
-
-### 14.3 Tap Target Minimums
-
-| Element | Minimum |
-|---------|---------|
-| Path selection tiles (O-2a) | Full-width × 64dp |
-| Athlete type grid tiles (O-2b) | ~50% width × 52dp |
-| "General" full-width tile (O-2b) | Full-width × 52dp |
-| ‹ back button | 44×44dp |
-| Continue / "Start Building" buttons | Full-width × 52dp |
-| "Skip for now" text link | 44dp touch area minimum |
-| "Choose Photo" button | Full-width × 52dp |
-| "+ Add an accomplishment" row | Full-width × 52dp |
-| Accomplishment × remove | 44×44dp |
-
-### 14.4 Portrait Orientation
-
-All O-2 screens are portrait only.
-
-### 14.5 Progressive Save
-
-All step completions are saved server-side immediately. O-2 does not hold a draft until the completion moment.
+### 14.3 O-2 Does Not Navigate To
+- A path-selection screen (does not exist).
+- A manual Athlete-Type screen (does not exist).
+- A Prior-Accomplishments screen (does not exist).
+- O-3 (superseded — the transition/silent Chapter I replaces it).
+- Any workout, squad, goal, or program screen except W-2 via "Browse Programs" on O-2f.
 
 ---
 
-## Section 15 — Accessibility
+## Section 15 — Mobile UX
 
-**O-2a (Path Selection):**
-- Screen title announced on load: "Tell us about your journey"
-- Path A tile: `accessibilityLabel` = "I'm just getting started — tap to choose this path"
-- Path B tile: `accessibilityLabel` = "I've been training for a while — tap to choose this path"
-
-**O-2b (Athlete Type):**
-- Screen title announced on load
-- Each tile: `accessibilityLabel` = "[Type] — tap to select and continue"
-- Selected tile: `accessibilityValue` communicates selected state
-
-**O-2c (Username):**
-- Per Identity Amendment 001 v1.1 accessibility requirements
-
-**O-2d (Profile Photo):**
-- Initials avatar: `accessibilityLabel` = "[Initials] — your default avatar"
-- "Choose Photo": `accessibilityLabel` = "Choose a profile photo"
-- "Skip for now": `accessibilityLabel` = "Skip, continue with initials avatar"
-- After photo confirmed: "Change Photo" and "Remove Photo" labeled accordingly
-
-**O-2e (Prior Accomplishments):**
-- "+ Add an accomplishment": `accessibilityLabel` = "Add an accomplishment — tap to enter text"
-- Each entry card: `accessibilityLabel` = "[entry text], removable"
-- × remove button: `accessibilityLabel` = "Remove: [entry text]"
-
-**O-2f (Completion Moment):**
-- Profile card elements are in the accessibility tree (read-only)
-- "Start Building": `accessibilityLabel` = "Start building your legacy"
-- "Forging since [Month Year]": in accessibility tree
-- Privacy disclosure: in accessibility tree
+- **Screen types:** standard navigation screens in one sequential push stack. Not modals.
+- **Keyboard:** About You fields auto-focus/keyboard-avoid; username live-check; all forms keep the active field above the keyboard.
+- **Tap targets:** primary buttons full-width × 52dp; grid/list tiles ≥ 64–88dp; back ‹ 44×44dp; text links ≥ 44dp touch area.
+- **Portrait only.**
+- **Progressive save:** every step completion persists immediately (Section 13).
 
 ---
 
-## Section 16 — Edge Cases
+## Section 16 — Accessibility
 
-### 16.1 Display Name Skipped in O-1c
+Preserve the Forge component system and tokens; do not redesign the visual language. All controls must have clear labels, selected states, keyboard support where applicable, screen-reader labels, sufficient contrast, error messaging, back-navigation, persistence through interruption, and reduced-motion support.
 
-O-2a through O-2e proceed normally. At O-2f: Display Name line shows "Athlete." An inline prompt below reads "Add your name" (14sp, muted, tappable) — opens an inline text field. Athlete can set their name before tapping "Start Building." "Start Building" is not blocked.
-
-### 16.2 Back Navigation to Change Athlete Type
-
-If the athlete selects Strength, advances to O-2c, then navigates ‹ back to O-2b: the Strength tile shows as selected. Tapping a different tile changes the selection and saves immediately.
-
-### 16.3 Username Auto-Suggestion Exceeds 20 Characters
-
-Display name "Alexander Hamilton Fitzgerald" → truncates to "alexanderhamilto" (20 chars). Pre-populated; athlete edits if desired. No error.
-
-### 16.4 Username Auto-Suggestion Already Taken
-
-System appends incrementing number: "alexanderhamilto2", "alexanderhamilto3", etc. First available variant is suggested. If variants through 99 are all taken: field shown empty; athlete enters manually.
-
-### 16.5 Photo Upload Fails (Network Error)
-
-Toast: "Couldn't save your photo. Check your connection and try again." "Choose Photo" and crop preview remain visible. Athlete can retry or skip. Onboarding does not block on upload failure.
-
-### 16.6 Large Photo File
-
-System compresses before upload. Crop/preview shows compressed result. No explicit file size error — compression is transparent to the athlete.
-
-### 16.7 Accomplishment Text at Limit
-
-Input blocked at 150 characters. Counter appears at ≤ 15 remaining; turns accent color at 0 remaining.
-
-### 16.8 Accomplishment Entry Open on Back Navigation
-
-If the inline entry field has unsaved text and the athlete taps ‹: "Discard this entry?" — Discard / Keep Editing. Discard: navigates to O-2d, entry dropped. Keep Editing: returns to O-2e, text preserved.
-
-### 16.9 O-3 Not Yet Built at Ship Time
-
-"Start Building" navigates to Home (H-1). The W-1 "No Active Chapter" empty state serves as the chapter creation invitation. Documented as a temporary fallback; O-3 replaces it when built.
-
-### 16.10 Athlete Completed O-2 on One Device, Opens App on Another
-
-O-2 is NOT reshown (onboarding completion is account-level, not device-level). Athlete goes directly to their current state — O-3 if not yet completed, or Home.
-
-### 16.11 Path B Athlete Exits After Adding Accomplishments, Returns
-
-O-2e shows the preserved entry cards on resume. Athlete can add more, remove existing, or continue.
+- **O-2a:** each field labeled; initials avatar `accessibilityLabel` = "[Initials] — your default avatar"; Sex options labeled per canonical model.
+- **O-2b:** each goal checkbox labeled; primary selector announces the chosen primary; Continue hint explains the primary requirement.
+- **O-2c/O-2d:** each option `accessibilityLabel` = "[Value] — tap to select and continue"; selected state announced.
+- **O-2e:** day/length selectors labeled; days-per-week announced as the binding choice.
+- **O-2f:** recommendation card read as name + reasons; Start/Browse/Skip labeled; Skip is a first-class control.
+- **O-2g:** copy beats in the accessibility tree; "Enter Forge" = "Enter Forge — begin your first Chapter."
 
 ---
 
-## Section 17 — Architecture Risks
+## Section 17 — Edge Cases
 
-### Risk 1 — O-3 Spec Undefined
-
-**Issue:** O-2f exits to O-3, which has not been specified. If O-3 is not ready when O-2 is implemented, "Start Building" has no destination.
-
-**Recommendation:** Implement O-2f → Home (H-1) as a fallback until O-3 is built. Home empty state (W-1 "No Active Chapter" card) is a functional equivalent. Document as temporary.
-
-**Risk level:** Low for O-2. Medium for onboarding arc completeness.
-
----
-
-### Risk 2 — Dual-Path State Persistence
-
-**Issue:** Path selection (A vs. B) must be stored server-side. If stored client-only, a device switch or reinstall loses the state and defaults to Path A, causing experienced athletes to skip O-2e.
-
-**Recommendation:** Path selection is the first server-save of O-2. Must be treated as account-level state, not a local preference.
-
-**Risk level:** Medium.
+- **Name skipped in O-1c:** O-2a pre-fills empty; a name can be added here or later via P-1.1; a system placeholder is used until set. Nothing blocks progress.
+- **Username auto-suggestion taken / too long:** per Identity Amendment 001 (increment/truncate); no error.
+- **Photo permission denied / upload fails:** graceful; proceed with initials; retry or skip.
+- **No compatible program at O-2f:** Section 9.2 fallback; never violate equipment/schedule; Skip stays first-class.
+- **Athlete changes primary goal after reaching a later step:** the derived Athlete Type re-derives from the new primary (Decision 2); recommendation recomputes deterministically.
+- **Retry/refresh/network replay at O-2g:** silent Chapter I creation is idempotent — exactly one Chapter I, one completion state (Section 20.2).
+- **Returning on a second device mid-flow:** resume from the nearest valid step (account-level state); completed users go straight to their current state (H-1 or Workout #1 payoff), never re-onboarded.
 
 ---
 
-### Risk 3 — L-5 Chapter Creation and O-3
+## Section 18 — Architecture Risks
 
-**RESOLVED — O-2-A1 | June 2026**
+### Risk 1 — Recommendation catalog coverage
+**Issue:** The deterministic recommendation depends on the Program Catalog having constraint-compatible entries across goal × experience × equipment × schedule combinations. Content authoring is early (~4 of 24 programs).
+**Recommendation:** The Section 9.2 fallback guarantees the flow never breaks or violates constraints, but recommendation *quality* improves only as the catalog fills. Track as a content dependency, not a flow blocker.
+**Risk level:** Medium (content), Low (flow).
 
-L-5 Chapter Creation has been specced (L-5-Chapter-Creation-Spec.md). The O-3/L-5/G-3 integration is now defined: O-3 is the onboarding entry point, which flows into L-5 for chapter creation; G-3 (Goal Create/Edit) is reached from L-5 during chapter setup. No changes to O-2 are required; the risk fully transferred to O-3 design as originally noted.
+### Risk 2 — Chapter API + idempotency (implementation)
+**Issue:** Silent Chapter I must be created through the Chapter service (single-writer architecture) and must not duplicate on retry.
+**Recommendation:** Enforce idempotency at implementation (Section 20.2). No code exists yet; this is a forward requirement.
+**Risk level:** Medium at implementation.
 
-**Original issue:** G-3 (Goal Create/Edit) references "L-5 Chapter Creation" as an entry point. L-5 was not yet specced. O-3 is the onboarding entry point for chapter creation. The relationship between O-3, L-5, and G-3 integration was undefined.
-
-**Risk level:** Closed — L-5 specced.
-
----
-
-### Risk 4 — Accomplishments API: Account-Level Entries
-
-**Issue:** O-2e accomplishments must be stored in the Accomplishments system (used by L-12 and P-1). These entries have no chapter association — they are account-level pre-history. The API must support chapter-less entries.
-
-**Architecture clarification:** The Accomplishments system must support two distinct contexts — account-level (created outside any chapter, e.g., O-2e) and chapter-level (created within a chapter later in the product). Both are first-class records. Neither is secondary to the other. A `chapterId` field (or equivalent) must be nullable: `null` for account-level entries, `[id]` for chapter-level entries. Full model documented in `Docs/Accomplishments-Architecture-Note.md`.
-
-**Recommendation:** Confirm Accomplishments data model supports nullable chapter association before implementing O-2e.
-
-**Risk level:** Medium. Requires explicit data model confirmation before O-2e implementation.
+### Risk 3 — Legacy-state normalization (implementation)
+**Issue:** Any accounts created under the old dual-path model carry obsolete Athlete-Type / Path / Prior-Accomplishments state.
+**Recommendation:** Normalize per Section 20.3. Because no onboarding code shipped, in practice there are no production accounts to migrate today; the requirement is retained for dev/test fixtures and future safety.
+**Risk level:** Low.
 
 ---
 
-## Section 18 — Validation Checklist
+## Section 19 — Removed Screens (traceability)
 
-### O-2a — Path Selection
-- [ ] Title: "Tell us about your journey." — 22sp, primary weight
-- [ ] Two tiles: "I'm just getting started." / "I've been training for a while."
-- [ ] No Continue button — tile tap navigates immediately with 300ms highlight
-- [ ] Path stored server-side on tap
-- [ ] No back navigation from O-2a
+These screens existed in O-2 v1.1 and are **removed from onboarding** by this reconciliation. Documented here so the removal is explicit and cannot be silently reintroduced.
 
-### O-2b — Athlete Type
-- [ ] Title: "What do you train?" (Path B) / "What interests you?" (Path A) — 22sp
-- [ ] Subtitle: "This shows on your profile. You can change it later." — 15sp, muted
-- [ ] All 7 tiles: Strength, Bodybuilding, Hybrid, Running, Cycling, Combat, General
-- [ ] Layout: 2×3 grid + 1 full-width "General" tile
-- [ ] No skip path — required
-- [ ] Tile tap: 300ms highlight → auto-advance to O-2c
-- [ ] Athlete type saved server-side on tile tap
-- [ ] Back navigation returns to O-2a
+| Removed (v1.1) | Reason | Replacement / relocation |
+|---|---|---|
+| **O-2a Path Selection** ("I'm just getting started." / "I've been training for a while.") | ONB-D10 / §27-D — one unified path | Experience (O-2c) as a non-branching preference |
+| **O-2b Athlete Type** (manual tile group: Strength/Bodybuilding/Endurance/Hybrid) | ONB-D8 / §27-B — derived, never asked | Derived from primary goal (Decision 2), written invisibly |
+| **O-2e Prior Accomplishments** (freeform prior-history entry, Path B only) | §27-D — keeps the arc lean; never seed fake history | Relocated to a post-onboarding **P-1** affordance (capability preserved, not eliminated) |
+| **O-2f Completion Moment** (assembled profile + starting rank + "Your legacy starts here.") | ONB-D16/D18 — celebrate readiness, earn the payoff | Transition Into Forge (O-2g) + the Workout #1 payoff (ONB-D18, owned by H-1/W-17) |
 
-### O-2c — Username
-- [ ] Per Identity Amendment 001 v1.1 validation checklist
-- [ ] Positioned after O-2b, before O-2d
-- [ ] Back navigation returns to O-2b
-
-### O-2d — Profile Photo
-- [ ] Title: "Add a photo" — 22sp
-- [ ] Subtitle: "This is how you appear in squads." — 15sp
-- [ ] Initials avatar: 88dp circle, athlete's actual initials
-- [ ] "Choose Photo" — full-width, 52dp
-- [ ] "Skip for now" link — present until photo confirmed
-- [ ] Permission request fires on "Choose Photo" tap
-- [ ] Permission denied: inline message, graceful fallback to initials
-- [ ] After photo confirmed: "Change Photo" / "Remove Photo" visible; "Skip for now" → "Continue"
-- [ ] Photo saved server-side on confirmation
-- [ ] Back navigation returns to O-2c
-
-### O-2e — Prior Accomplishments (Path B Only)
-- [ ] Title: "What have you built so far?" — 22sp
-- [ ] Subtitle: "Honor what you've already accomplished." — 15sp
-- [ ] "+ Add an accomplishment" tappable row — full-width, 52dp
-- [ ] Inline text field: freeform, max 150 characters
-- [ ] Character counter at ≤ 15 remaining
-- [ ] "Add" disabled until ≥ 1 non-whitespace character
-- [ ] Entry card with × remove
-- [ ] No maximum entry count
-- [ ] Entries saved server-side immediately on "Add"
-- [ ] Continue advances regardless of entry count
-- [ ] "Skip for now" always present
-- [ ] Open entry field on ‹ back triggers discard confirmation
-- [ ] NOT present in Path A flow
-
-### O-2f — Completion Moment
-- [ ] No back navigation
-- [ ] Profile photo or initials avatar — 88dp
-- [ ] Display Name — 22sp, light, centered
-- [ ] Athlete Type — 14sp, muted, centered
-- [ ] Starting rank: "Apprentice · I" — 14sp, muted, centered
-- [ ] "Forging since [Month Year]" — 13sp, muted, centered
-- [ ] Statement: "Your legacy starts here." — 17sp, light, centered
-- [ ] "Start Building" CTA — full-width, 52dp, primary
-- [ ] Privacy disclosure: "Your profile is visible to your squad members." — 13sp, muted, below CTA
-- [ ] If display name skipped: "Add your name" inline prompt; "Start Building" not blocked
-- [ ] No animation, confetti, or celebration overlay
-- [ ] "Start Building" → O-3 (or Home fallback if O-3 not built)
-
-### Skip Behavior
-- [ ] Username skip: no username set; P-1 nudge appears post-onboarding
-- [ ] Photo skip: initials avatar; no post-onboarding nudge for photo
-- [ ] Accomplishments skip (Path B): no entries created; no post-onboarding nudge
-- [ ] No "complete your profile" progress bar anywhere
-- [ ] No "X% complete" metric anywhere
-
-### Privacy Defaults
-- [ ] Non-squad search On by default — set silently at account creation
-- [ ] No privacy screen in O-2
-- [ ] O-2f privacy disclosure is passive — no action required
-- [ ] P-6 accessible post-onboarding from P-1 → Settings → Privacy
-
-### Navigation
-- [ ] O-2a → O-2b on tile tap
-- [ ] O-2b → O-2c on tile tap
-- [ ] O-2c → O-2d on Continue or Skip
-- [ ] O-2d → O-2e (Path B) or O-2f (Path A) on Continue or Skip
-- [ ] O-2e → O-2f on Continue or Skip
-- [ ] O-2f → O-3 on "Start Building"
-- [ ] All ‹ back navigations functional except O-2a and O-2f
-
-### Abandoned Onboarding Recovery
-- [ ] Each step saves server-side immediately (progressive save)
-- [ ] O-2 resumes from last uncompleted step on return
-- [ ] Previously saved selections pre-populated on resume
-- [ ] O-2 not reshown after O-2f completion
+**Copy, route maps, step counters, tests, mock data, and analytics events that referenced any removed screen must not be reintroduced.** No onboarding code references these today (verified); this table is the standing guard against regression.
 
 ---
 
-## Section 19 — Downstream Dependencies
+## Section 20 — Implementation Requirements (forward-looking)
 
-| Dependency | What O-2 Requires | Priority |
+**No onboarding implementation exists in `src/` as of this reconciliation** (no onboarding routes, store, Chapter service, recommendation engine, or test framework). This section records the binding requirements the eventual implementation must satisfy so it is built as the unified flow and cannot resurrect the dual-path model. These map to the acceptance criteria in the reconciliation task.
+
+### 20.1 Unified flow & absent screens
+- No route/screen/state for path selection, manual Athlete Type, or Prior Accomplishments may be created.
+- Beginner and Advanced athletes must traverse the identical screen sequence (Section 14.1). Experience must not gate screens.
+- Athlete Type, if required by a backend contract, is derived (Decision 2), stored as system-derived, and never rendered as a question.
+
+### 20.2 Chapter I creation & idempotency
+- Create "Chapter I — Building Your Foundation" via the canonical Chapter service/API — **never** by writing Firestore directly or bypassing the single-writer architecture.
+- Creation must be **idempotent**: retry/refresh/network-replay of onboarding completion must yield exactly one Chapter I and one onboarding-completion record (use a deterministic idempotency key, e.g. per-account onboarding-completion id).
+- The Chapter begins empty: no workouts, no fabricated timeline events, no artificial honors, no imported accomplishments, no seeded completion percentage, no invented history.
+
+### 20.3 State & migration
+- Provide safe normalization for obsolete onboarding state on dev/test accounts: ignore a stored old Athlete Type (re-derive from goals); map an old beginner/experienced Path answer to the canonical Experience value where unambiguous; drop stale Prior-Accomplishments onboarding state **without** creating history; resume at the nearest valid unified step; never restart fully-completed users; never create a duplicate Chapter I.
+- Remove/deprecate any obsolete types, schemas, form state, routes, analytics event names, resume-logic branches, fixtures, and seed data tied to the dual-path model when onboarding is implemented. Do not leave dead branch logic behind flags without a documented migration reason.
+
+### 20.4 Recommendation determinism & tests
+- Same inputs → same recommendation (pure, deterministic). Add unit tests asserting determinism and the hard constraints (equipment subset; required days ≤ selected days) once a test framework exists.
+- Include the Section 9.2 fallback; assert fallback never violates equipment/schedule.
+
+### 20.5 Import boundary (do not exceed MVP)
+- Do **not** add historical workout, Apple Health, Strava, or photo import as part of onboarding or MVP. The only locked MVP import is **program / chapter-structure** import via the W-IM-1 → W-IM-4 flow (CSV/XLSX/pasted structure) per `Architecture-Amendment-001-Import.md`. No MVP copy may promise workout-history or photo import.
+
+### 20.6 First Home & payoff
+- First Home (H-1) must present the empty, ready Chapter I via the "Active Chapter · awaiting first workout" hero sub-state (H-1, per ONB-D17) — no fake progress, no countdown, no shame, Start Workout primary, experienced users not addressed with beginner-only language.
+- The earned payoff (Chapter-comes-alive, first rank, profile reveal) fires only after Workout #1 (ONB-D18), layered on the standard W-17 summary, first-run only.
+
+---
+
+## Section 21 — Verification Scenarios
+
+For implementation acceptance (and for validating the reconciled spec's internal consistency):
+
+- **A — Beginner Strength / Full gym / 3 days:** unified path; compatible beginner strength recommendation; silent empty Chapter I; Home → Workout #1.
+- **B — Advanced Build Muscle / Full gym / 5 days:** **same screens as A**; advanced-compatible hypertrophy recommendation; no beginner-condescending copy; same empty Chapter I.
+- **C — Intermediate / Dumbbells + bands only / 4 days:** no recommendation requiring machines or barbells.
+- **D — Intermediate Strength / Full gym / 2 days:** no recommendation requiring 3–6 mandatory days.
+- **E — Resume legacy state (old Athlete Type + Path + Prior Accomplishments):** state normalized (Section 20.3); resume in unified flow; no fabricated legacy; no duplicate Chapter.
+- **F — Retry completion (double-fire):** one Chapter I; one completion record; no duplicated timeline/recommendation records.
+
+---
+
+## Section 22 — Downstream Dependencies
+
+| Dependency | What O-2 requires | Priority |
 |------------|------------------|----------|
-| O-3 spec | Must define First Chapter Invitation and skip behavior | High — O-2f exit destination |
-| Accomplishments API | Must support account-level entries with no chapter association | High — blocks O-2e implementation |
-| Photo upload service | Photo library access, upload, storage from O-2d | High |
-| Athlete type data model | Accept one of 7 enum values; stored at account level | High |
-| Username system | Fully defined by Identity Amendment 001 — must be implemented per that spec | High |
-| P-1 Profile | O-2f completion moment mirrors P-1 identity block — must use same data model | Medium |
-| P-2 Edit Profile | All O-2 fields are editable post-onboarding via P-2 | Medium |
-| P-6 Privacy | Default privacy settings applied at account creation; P-6 surfaces them post-onboarding | Medium |
-| L-5 Chapter Creation | Referenced by O-3 — not a direct O-2 dependency | RESOLVED — L-5 specced (O-2-A1) |
-
----
-
-## Section 20 — Post-MVP Architecture Backlog
-
-Items in this section are deferred for post-MVP consideration. **No O-2 v1.0 behavior, flow, navigation, validation, copy, or wireframe is affected by any item below.**
-
----
-
-### Post-MVP Item 1 — Athlete Type Expansion Framework
-
-**The seven MVP athlete types are locked. This entry documents the deferral and records future expansion considerations only.**
-
-**MVP athlete types (final for v1.0):**
-- Strength
-- Bodybuilding
-- Hybrid
-- Running
-- Cycling
-- Combat
-- General
-
-**Candidate types considered and intentionally deferred:**
-- CrossFit (requires community/affiliation context not yet specced)
-- Hiking / Trail Running (sub-specialization of Running considered but deferred)
-- Triathlon (multi-sport; may require a composite type model)
-- Functional Fitness (overlaps significantly with Hybrid)
-- Team Sports (requires team and sport context not yet specced)
-
-**What post-MVP expansion requires (for future architecture work):**
-- Athlete Type data model that supports extending the enum without migrating existing athlete records
-- O-2b UI changes: additional tiles, or a scrollable tile pattern if the type list grows beyond 9–10
-- P-1 and P-2 changes to reflect new type values
-- A decision on whether existing "General" athletes can retroactively re-categorize when new types become available
-
-This backlog item does not affect O-2 v1.0.
+| `Onboarding-First-Time-Journey-Architecture-v1.0` | Governing authority for every decision here | Authoritative |
+| Chapter service/API | Idempotent silent Chapter I creation (single-writer) | High (impl) |
+| Program Catalog | Constraint-compatible entries for recommendation quality | Medium (content) |
+| Profile / Backend data model | Canonical fields for name, username, photo, **Sex**, derived Athlete Type, environment | High |
+| Rank / RCM | Consumes derived Athlete Type; onboarding writes no progression signal | High |
+| H-1 | "Active Chapter · awaiting first workout" hero sub-state (ONB-D17) | High |
+| W-17 | First-run Workout #1 payoff layered on the summary (ONB-D18) | Medium |
+| P-1 | Prior Accomplishments relocated here (post-onboarding); identity block mirrors O-2a | Medium |
+| Identity Amendment 001 | Username rules for O-2a | High |
+| `Architecture-Amendment-001-Import` | Import boundary (program/chapter structure only) | Reference |
 
 ---
 
 ## Change Log
 
-### v1.0 — June 2026 (Locked)
+### v2.0 — July 2026 (Reconciliation to the governing Onboarding architecture)
 
-Initial specification. O-2 First-Time Setup established as the identity-declaration phase of onboarding. Six sub-screens: O-2a Path Selection, O-2b Athlete Type, O-2c Username, O-2d Profile Photo, O-2e Prior Accomplishments (Path B only), O-2f Completion Moment. Eight architecture decisions resolved: dual-path via single selection screen (O-2e differentiates paths); athlete type required with "General" as inclusive full-width option; username placement and behavior per Identity Amendment 001 v1.1; profile photo optional with initials default; prior accomplishments optional freeform text for Path B only; Forging Since revealed at completion moment (system-set, never editable, never collected); privacy defaults set silently with passive disclosure in O-2f; O-2 exits to O-3 (not Home) with Ownership as the intended emotional outcome. Four architecture risks documented. Downstream dependency on O-3 spec identified as the highest-priority follow-up.
+Full reconciliation of O-2 to `Onboarding-First-Time-Journey-Architecture-v1.0.md` (LOCKED, governing). **No governing product decision changed** — this brings the downstream wireframe into conformance and removes contradictions.
 
-**Non-behavior additions applied at lock (no screen, flow, navigation, validation, copy, or wireframe changes):**
-- Section 20 added: Post-MVP Athlete Type Expansion Framework. Documents the MVP 7-type enum as locked and records deferred expansion candidates.
-- Risk 4 expanded: Architecture clarification added documenting account-level vs. chapter-level accomplishment distinction. References `Docs/Accomplishments-Architecture-Note.md`.
-- Status updated from Lock-Ready to Locked.
+- **Removed O-2a Path Selection** (one unified path; ONB-D10 / §27-D).
+- **Removed the manual Athlete-Type step**; Athlete Type is now derived from the primary goal and written invisibly (ONB-D8 / §27-B).
+- **Removed O-2e Prior Accomplishments** from onboarding; relocated to a post-onboarding P-1 affordance (§27-D). Capability preserved, not eliminated.
+- **Added** About You Sex field (ONB-D7), Goals (ONB-D9), Experience (ONB-D10), Equipment incl. additive `dumbbells_only` (ONB-D11), Training Schedule (ONB-D12).
+- **Added** the deterministic, explainable, never-forced Recommended Starting Point with hard equipment/schedule constraints and fallback (ONB-D13). Ranking is **primary-goal-first (dominant)**; secondary goals are a lowest-weight tie-breaker / display context only and can never override the primary goal or produce an ambiguous selection (§9.1).
+- **Replaced** the v1.1 profile-reveal Completion Moment with the Transition Into Forge readiness ceremony + silent Chapter I creation (ONB-D14/D16); the earned payoff is withheld to Workout #1 (ONB-D18/D22).
+- **Rewrote** the flow to a single seven-screen sequence (O-2a…O-2g); corrected navigation maps, skip table, hierarchy, decisions, and checklist.
+- **Added** Section 19 (Removed Screens, traceability), Section 20 (Implementation Requirements, forward-looking), and Section 21 (Verification Scenarios).
+- **Recorded** that no onboarding code exists yet; the implementation requirements are forward-looking.
 
----
+### v1.1 — June 2026 (superseded by v2.0)
+Reconciliation applying O-2-Amendment-002 (four-tile Athlete Type). Superseded: the manual Athlete-Type step it corrected is now removed entirely (derived), and the dual-path/Prior-Accomplishments structure it described is retired.
 
----
-
-### v1.0.1 (O-2-A1) — June 2026
-
-Batch closure amendment. Architecture Risk 3 (L-5/O-3 integration undefined) marked RESOLVED — L-5 Chapter Creation spec now exists. §19 downstream dependencies table updated. No O-2 screen, flow, navigation, copy, or wireframe changes.
+### v1.0 / v1.0.1 — June 2026 (historical)
+Initial O-2 (dual-path identity declaration: Path Selection, manual Athlete Type, Username, Photo, Prior Accomplishments, Completion Moment) and its O-2-A1 batch-closure amendment. Retained as historical lineage; superseded by v2.0.
 
 ---
 
 *Forge Legacy First-Time Setup Wireframe Specification — O-2*
-*v1.0 — June 2026 | Amended O-2-A1 June 2026*
-*Authority: Master PRD Section 5 (MVP), Section 3 (Target User), Product DNA, Identity Amendment 001 v1.1, O-1 v1.0*
+*v2.0 — July 2026 | Reconciled to Onboarding-First-Time-Journey-Architecture-v1.0 (governing)*
+*Authority: Onboarding-First-Time-Journey-Architecture-v1.0 (LOCKED); Master PRD §5/§17; Product DNA; Identity Amendment 001 v1.1; O-1 v1.0*

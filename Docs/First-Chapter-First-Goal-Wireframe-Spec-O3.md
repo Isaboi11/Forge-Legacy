@@ -1,9 +1,24 @@
 # Forge Legacy — First Chapter / First Goal Wireframe Specification
 ## O-3 | Phase 2B | Version 1.0 — June 2026
 
-**Status:** Locked
-**Authority:** Forge Legacy Master PRD Section 5 (MVP), Section 6 (Chapter System), Product DNA, O-1 v1.0, O-2 v1.0, G-3 Goal Create/Edit v1.1, Accomplishments Architecture Note v1.0
-**PRD Authority:** Section 6 (Chapter System), Section 5 (MVP — dual-path onboarding)
+**Status:** ⛔ **SUPERSEDED (July 2026)** — do not implement. Retained as historical record only.
+**Superseded by:** `Onboarding-First-Time-Journey-Architecture-v1.0.md` (LOCKED, governing) — **ONB-D14 Silent Chapter I creation** and **ONB-D16 Transition Into Forge**.
+**Authority (historical):** Forge Legacy Master PRD Section 5 (MVP), Section 6 (Chapter System), Product DNA, O-1 v1.0, O-2 v1.0, G-3 Goal Create/Edit v1.1, Accomplishments Architecture Note v1.0
+**PRD Authority (historical):** Section 6 (Chapter System), Section 5 (MVP — dual-path onboarding)
+
+---
+
+> ## ⛔ SUPERSEDED — READ FIRST
+>
+> **This specification is superseded and must not be implemented.** It described an explicit first-chapter *naming gate* (O-3a "Name your first chapter") and a first-goal step (O-3b) as the final onboarding screens. The governing `Onboarding-First-Time-Journey-Architecture-v1.0.md` (LOCKED, Architecture Freeze Row 4) replaces this with a **silent, unnamed first Chapter created in the background** and a **readiness transition**, so that setup friction is removed and the chapter's meaning is *earned* through Workout #1 rather than declared during setup.
+>
+> **What replaces O-3 (per the reconciliation ledger §26 / §27-F):**
+> - **ONB-D14 — Silent Chapter I:** Forge silently creates *"Chapter I — Building Your Foundation"* via the Chapter API. No naming gate, no manual creation, no confirmation. See also `First-Time-Setup-Wireframe-Spec-O2.md` v2.0 §10 (Transition Into Forge).
+> - **ONB-D16 — Transition Into Forge:** the onboarding terminus (readiness ceremony, "Enter Forge") that replaces O-3 as the final onboarding surface.
+> - **Chapter naming/renaming/management** moves to **L-5 Chapter Creation** (`L-5-Chapter-Creation-Spec.md`) — the active Chapter's name is freely editable post-onboarding.
+> - **First goal:** onboarding collects goal *preferences* (O-2 v2.0 §5 / ONB-D9) that drive the recommendation; it never auto-creates a Goal record. Real chapter goals are created later via the Goal system (G-series).
+>
+> **Still-valid intent preserved elsewhere:** O-3's "chapters encouraged, never required" and "skip without shame" guarantees survive — every athlete now simply *has* an empty Chapter I that pressures nothing (ONB-D14/D22). Nothing below should be built; consult the governing architecture and O-2 v2.0 instead.
 
 ---
 
