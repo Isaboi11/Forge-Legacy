@@ -49,6 +49,8 @@ export function definitionToProgram(def: ProgramDefinition, active: boolean): Pr
     name: def.name,
     family: def.family,
     difficulty: def.difficulty ?? 'Beginner',
+    durationWeeks: def.durationWeeks,
+    frequencyPerWeek: def.frequencyPerWeek,
     theme: def.theme,
     structure: def.structure,
     schedule: (firstBlock?.workouts ?? []).map((w) => ({ name: w.name, focus: SPLIT_LABEL[w.split] })),

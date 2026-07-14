@@ -261,6 +261,10 @@ export interface Program {
   name: string;
   family: ProgramFamily;
   difficulty: ProgramDifficulty;
+  /** Authored length, surfaced from the definition (Programs Catalog meta). */
+  durationWeeks?: number;
+  /** Authored sessions/week, surfaced from the definition (Programs Catalog meta). */
+  frequencyPerWeek?: number;
   /** Explicit theme enum (resolver rung 5). */
   theme?: ProgramTheme;
   /** Program structure — disambiguates Legs vs Lower (resolver spec §08). */
