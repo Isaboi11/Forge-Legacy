@@ -9,6 +9,9 @@ export const LEGACY_DATA: LegacyData = {
   rankName:  'Apprentice',
   rankSubTier: 'II',
 
+  // Hero — "My Standard" creed (placeholder; no backend/editor yet)
+  standard: 'Show up when it’s hard. The work is the promise I keep to myself.',
+
   // Section 1 — Active Chapter
   activeChapter: {
     id: 'ch_4',

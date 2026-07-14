@@ -68,6 +68,8 @@ export type Honor = {
 export type LegacyData = {
   rankName: string
   rankSubTier: string
+  /** "My Standard" — the athlete's creed, shown at the top of the Legacy hero. */
+  standard: string
   activeChapter: Chapter | null
   dayCount: number
   featuredMoment: FeaturedMoment | null

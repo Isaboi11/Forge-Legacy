@@ -1,3 +1,10 @@
+/**
+ * ⚠️ LEGACY (2026-07-14) — old `legacy-theme` component, NO LONGER USED BY THE
+ * Legacy tab. Superseded this session (STEP D) by the foundation-based
+ * `src/app/legacy.tsx`, rebuilt to the handoff `Forge Legacy.dc.html`. Retained
+ * (not deleted) as reference — still consumed by the non-tab `/legacy-design-test`
+ * dev route.
+ */
 import React from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { LC, LS } from '@/constants/legacy-theme'
@@ -35,7 +42,7 @@ function StateACard({ chapter, onPress }: { chapter: Chapter; onPress?: () => vo
       <GoalOutcome goal={chapter.goal} />
       {chapter.reflection ? (
         <Text style={styles.aReflection}>
-          "{chapter.reflection.slice(0, 120)}"
+          &ldquo;{chapter.reflection.slice(0, 120)}&rdquo;
         </Text>
       ) : null}
       <Text style={styles.aCounts}>

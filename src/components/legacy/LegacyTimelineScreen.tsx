@@ -1,4 +1,10 @@
 /**
+ * ⚠️ LEGACY (2026-07-14) — old `legacy-theme` component, NO LONGER USED BY THE
+ * Legacy tab. Superseded this session (STEP D) by the foundation-based
+ * `src/app/legacy.tsx`, rebuilt to the handoff `Forge Legacy.dc.html`. Retained
+ * (not deleted) as reference — still consumed by the non-tab `/legacy-design-test`
+ * dev route.
+ *
  * L-2 Legacy Timeline screen — rendered as a component so legacy-design-test.tsx
  * can swap it in via local state (no router changes needed for the prototype).
  */
