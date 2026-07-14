@@ -1,16 +1,15 @@
 /**
- * CLA-C02 — Icon (app-shell nav subset)
+ * CLA-C02 — Icon (bottom-nav tab glyphs)
  * Tier: 1 (Primitive)
- * Spec: Forge Home.dc.html `renderVals()` `tabItems` — ported 1:1 (same path
- * data) for Home and Legacy. Workout and Squads have no Claude Design source
- * yet (both tabs route to placeholder screens) — their glyphs are new marks
- * authored in the same stroke style (round-cap, currentColor, 1.8 stroke) so
- * they don't stand out. ExploreTabIcon is kept for the still-existing
- * `/explore` route even though it's no longer wired into the bottom nav.
+ * Spec: Forge Home.dc.html `tabItems` (line 371) → `ForgeSymbols.SYMBOLS`
+ * (design_reference `forge-symbols.js`, "Navigation" category). All five glyphs
+ * are ported 1:1 (same `path` data + the Forged-DNA render: stroke-width 2,
+ * SQUARE linecaps, MITER joins, miterlimit 8) — not redrawn. The Community tab
+ * uses the `explore` compass glyph, per the dc (`navIcon('explore')`).
  */
 
 import React from 'react'
-import Svg, { Circle, Path, Rect } from 'react-native-svg'
+import Svg, { Circle, Path } from 'react-native-svg'
 import { flColor } from '@/constants/foundation'
 
 export interface NavIconProps {
@@ -18,66 +17,76 @@ export interface NavIconProps {
   color?: string
 }
 
-export function HomeTabIcon({ size = 22, color = flColor.gray600 }: NavIconProps) {
+/** Shared Forged-DNA wrapper (matches ForgeSymbols.create). */
+function Glyph({ size = 22, color = flColor.gray600, children }: NavIconProps & { children: React.ReactNode }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M4 11l8-7 8 7M6 10v9h12v-9"
-        stroke={color}
-        strokeWidth={1.8}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+    <Svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="square"
+      strokeLinejoin="miter"
+      strokeMiterlimit={8}
+    >
+      {children}
     </Svg>
   )
 }
 
-export function ExploreTabIcon({ size = 22, color = flColor.gray600 }: NavIconProps) {
+// home: '<path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/>'
+export function HomeTabIcon(props: NavIconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Circle cx={12} cy={12} r={8} stroke={color} strokeWidth={1.8} />
-      <Path
-        d="M14.5 9.5l-1.8 4.2-4.2 1.8 1.8-4.2z"
-        stroke={color}
-        strokeWidth={1.8}
-        strokeLinejoin="round"
-      />
-    </Svg>
+    <Glyph {...props}>
+      <Path d="M4 11l8-7 8 7" />
+      <Path d="M6 10v9h12v-9" />
+    </Glyph>
   )
 }
 
-export function WorkoutTabIcon({ size = 22, color = flColor.gray600 }: NavIconProps) {
+// workouts: barbell — '<path d="M6.5 9v6"/><path d="M17.5 9v6"/><path d="M4 10.5v3"/><path d="M20 10.5v3"/><path d="M6.5 12h11"/>'
+export function WorkoutsTabIcon(props: NavIconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M7 12h10" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
-      <Path d="M6 10.5v3M18 10.5v3" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
-      <Rect x={2.5} y={9} width={3.5} height={6} rx={1} stroke={color} strokeWidth={1.8} strokeLinejoin="round" />
-      <Rect x={18} y={9} width={3.5} height={6} rx={1} stroke={color} strokeWidth={1.8} strokeLinejoin="round" />
-    </Svg>
+    <Glyph {...props}>
+      <Path d="M6.5 9v6" />
+      <Path d="M17.5 9v6" />
+      <Path d="M4 10.5v3" />
+      <Path d="M20 10.5v3" />
+      <Path d="M6.5 12h11" />
+    </Glyph>
   )
 }
 
-export function SquadsTabIcon({ size = 22, color = flColor.gray600 }: NavIconProps) {
+// legacy: open book — '<path d="M12 6.5C10 5 7 4.5 4 5v12c3-.5 6 0 8 1.5"/><path d="M12 6.5C14 5 17 4.5 20 5v12c-3-.5-6 0-8 1.5z"/>'
+export function LegacyTabIcon(props: NavIconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Circle cx={9} cy={8} r={2.5} stroke={color} strokeWidth={1.8} />
-      <Circle cx={16.5} cy={9} r={2} stroke={color} strokeWidth={1.8} />
-      <Path d="M4.5 18c0-2.8 2-4.5 4.5-4.5s4.5 1.7 4.5 4.5" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
-      <Path d="M14.5 18c0-1.9 1.4-3.3 3-3.3s3 1.4 3 3.3" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
-    </Svg>
+    <Glyph {...props}>
+      <Path d="M12 6.5C10 5 7 4.5 4 5v12c3-.5 6 0 8 1.5" />
+      <Path d="M12 6.5C14 5 17 4.5 20 5v12c-3-.5-6 0-8 1.5z" />
+    </Glyph>
   )
 }
 
-export function LegacyTabIcon({ size = 22, color = flColor.gray600 }: NavIconProps) {
+// squads: '<circle cx="7.5" cy="8" r="2.7"/><circle cx="16.5" cy="8" r="2.7"/><path d="M3 19.5a4.5 4.5 0 0 1 9 0"/><path d="M12 19.5a4.5 4.5 0 0 1 9 0"/>'
+export function SquadsTabIcon(props: NavIconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M5 5.5h6a2 2 0 012 2V19a2 2 0 00-2-2H5zM19 5.5h-6a2 2 0 00-2 2V19a2 2 0 012-2h6z"
-        stroke={color}
-        strokeWidth={1.8}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
+    <Glyph {...props}>
+      <Circle cx={7.5} cy={8} r={2.7} />
+      <Circle cx={16.5} cy={8} r={2.7} />
+      <Path d="M3 19.5a4.5 4.5 0 0 1 9 0" />
+      <Path d="M12 19.5a4.5 4.5 0 0 1 9 0" />
+    </Glyph>
+  )
+}
+
+// community: explore compass — '<circle cx="12" cy="12" r="8.5"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>'
+export function CommunityTabIcon(props: NavIconProps) {
+  return (
+    <Glyph {...props}>
+      <Circle cx={12} cy={12} r={8.5} />
+      <Path d="M15.5 8.5l-2 5-5 2 2-5z" />
+    </Glyph>
   )
 }
