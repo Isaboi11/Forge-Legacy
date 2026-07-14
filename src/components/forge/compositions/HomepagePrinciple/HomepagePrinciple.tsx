@@ -1,4 +1,10 @@
 /**
+ * ⚠️ LEGACY (2026-07-14) — NO LONGER USED ON HOME. Superseded this session (STEP C)
+ * by `ChapterTitleBlock`, which integrates the rotating principle into the ornate
+ * chapter title-block per the handoff `Forge Home.dc.html`. An earlier-session
+ * component, retained (not deleted) as reference; safe to remove once nothing else
+ * references it.
+ *
  * CLA-C37 — HomepagePrinciple
  * Tier: 3 (Composition)
  * Spec: Forge Home.dc.html · Homepage-Principles-Architecture-v1.0.md (HP-D1–HP-D11)

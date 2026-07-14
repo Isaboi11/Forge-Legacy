@@ -49,3 +49,23 @@ export function todaysPrinciple(date: Date = new Date()): string {
   const dayIndex = Math.floor(date.getTime() / 86_400_000)
   return HOMEPAGE_PRINCIPLES[dayIndex % HOMEPAGE_PRINCIPLES.length]
 }
+
+/**
+ * Chapter identity for the Home title block. PLACEHOLDER — no Chapter/Legacy
+ * backend exists yet (L-series). `number`/`name` mirror the split of
+ * `HOME_DATA.mission.chapterName`; `weekDay` is placeholder (day isn't tracked).
+ */
+export const HOME_CHAPTER = {
+  number: 'Chapter III',
+  name: 'The Rebuild',
+  weekDay: 'Week 6 · Day 2',
+} as const
+
+/**
+ * A friend's latest update for the "Your Circle" card. PLACEHOLDER — no Social
+ * feed backend exists yet; swap for the real Friends feed once one lands.
+ */
+export const FRIEND_ACTIVITY = {
+  name: 'Diego',
+  quote: 'Squat finally moved — 100 kg for a clean triple.',
+} as const

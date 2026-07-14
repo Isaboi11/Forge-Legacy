@@ -6,13 +6,15 @@ import { useRouter } from 'expo-router';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { ForgeMarkIcon } from '@/components/forge/primitives/icons/HomeIcons';
-import { HomepagePrinciple } from '@/components/forge/compositions/HomepagePrinciple';
+import { ChapterTitleBlock } from '@/components/forge/compositions/ChapterTitleBlock';
 import { TodaysWorkoutCard } from '@/components/forge/compositions/TodaysWorkoutCard';
 import { ProgramMissionGrid } from '@/components/forge/compositions/ProgramMissionGrid';
-import { FriendActionSheet, TrainTogetherCard } from '@/components/forge/compositions/TrainTogetherCard';
-import { HOME_DATA, todaysPrinciple } from '@/data/home-placeholder';
+import { YourCircleCard } from '@/components/forge/compositions/YourCircleCard';
+import { QuickActionsRow } from '@/components/forge/compositions/QuickActionsRow';
+import { FriendActionSheet } from '@/components/forge/compositions/TrainTogetherCard';
+import { FRIEND_ACTIVITY, HOME_CHAPTER, HOME_DATA, todaysPrinciple } from '@/data/home-placeholder';
 import { LIVE_TRAINING_USERS } from '@/data/live-training-placeholder';
-import { flColor, flFont, flGradient } from '@/constants/foundation';
+import { flColor, flGradient } from '@/constants/foundation';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { getSelfProfile } from '@/domain/profile/placeholder-data';
 import { getActiveProgram, getNextWorkout } from '@/domain/training/active-program';
@@ -30,16 +32,21 @@ function HomeWordmark() {
 }
 
 /**
- * H-1 Home (v2, Phase 2 re-layout)
- * Source of truth: the design handoff "Forge Home.dc.html".
+ * H-1 Home — full-screen match of the design handoff "Forge Home.dc.html"
+ * (Phase 2 core + STEP C follow-up).
  *
- * Supersedes the fused, artwork-less MissionCard: a dedicated artwork-driven
- * "Today's Workout" hero card (fed by the Home Workout Artwork Resolver) over a
- * separate Program|Mission grid. The hero + Program tile + AppBar avatar read
- * REAL data (converted programs + profile); the Mission tile + chapter heading
- * remain HOME_DATA placeholders (no Goal/Chapter backend yet). The ornate chapter
- * title-block, "Your Circle" rework, and Quick Actions row are a follow-up
- * full-match pass; HomepagePrinciple + TrainTogetherCard are kept as-is.
+ * Sections, top to bottom: the ornate chapter title-block (chapter + diamond
+ * divider + week/day + the rotating principle), the resolver-driven "Today's
+ * Workout" hero, the Program|Mission grid, the "Your Circle" presence card, and
+ * the Quick Actions row.
+ *
+ * Real data: the hero art + title/focus/count (resolver over the converted active
+ * program), the Program tile (`getActiveProgram()`), the AppBar avatar
+ * (`getSelfProfile()`), and the principle (`todaysPrinciple`). PLACEHOLDER
+ * (no backend yet): chapter/week (HOME_DATA + HOME_CHAPTER), the Mission tile
+ * goal, live presence + friend activity (LIVE_TRAINING_USERS / FRIEND_ACTIVITY),
+ * and the Quick Actions. The rank medallion is a pending-asset placeholder — no
+ * rank artwork exists yet, so it is not fabricated.
  */
 export default function HomeScreen() {
   const [friendSheetOpen, setFriendSheetOpen] = useState(false);
@@ -76,19 +83,17 @@ export default function HomeScreen() {
         title={<HomeWordmark />}
         avatar={<Avatar name={profile.name} size="appBar" />}
         onAvatar={() => {
-          // P-1 Profile is not yet implemented (Code Implementation: 0%).
+          // P-1 Profile is not yet implemented.
         }}
       />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Chapter heading — compact (ornate title block w/ rank medallion is the follow-up). */}
-        <View style={styles.chapterHeading}>
-          <Text style={styles.chapterEyebrow}>{mission.weekLabel}</Text>
-          <Text style={styles.chapterName}>{mission.chapterName}</Text>
-          <Text style={styles.forgingSince}>{mission.forgingSinceLabel}</Text>
-        </View>
-
-        <HomepagePrinciple text={todaysPrinciple()} />
+        <ChapterTitleBlock
+          chapterNumber={HOME_CHAPTER.number}
+          chapterName={HOME_CHAPTER.name}
+          weekDay={HOME_CHAPTER.weekDay}
+          principle={todaysPrinciple()}
+        />
 
         <View style={styles.content}>
           {workout ? (
@@ -98,9 +103,6 @@ export default function HomeScreen() {
               focus={workout.focus}
               exerciseCount={workout.exerciseCount ?? workout.exercises?.length ?? 0}
               onStart={() => {
-                // Starting a workout automatically goes live to squad/friends (useWorkoutSession).
-                // Active workout logging (W-9–W-16) isn't built, so this starts the session and
-                // hands off to the /workout tab placeholder for Finish/Abandon.
                 startWorkout(workout.name);
                 router.push('/workout');
               }}
@@ -126,12 +128,25 @@ export default function HomeScreen() {
             />
           ) : null}
 
-          <TrainTogetherCard
+          <YourCircleCard
             liveUsers={LIVE_TRAINING_USERS}
-            onJoinLiveUser={() => {
+            friendActivity={FRIEND_ACTIVITY}
+            onJoinLive={() => {
               // S-2 Squad Detail / S-10 Train Together join flow — not yet implemented.
             }}
-            onChoosePartner={() => setFriendSheetOpen(true)}
+            onFriendActivity={() => {
+              // Friends Feed post detail — not yet implemented.
+            }}
+            onSeeCircle={() => {
+              // Friends Feed — not yet implemented.
+            }}
+          />
+
+          <QuickActionsRow
+            onChallenge={() => setFriendSheetOpen(true)}
+            onCompetitions={() => {
+              // Competitions Hub — not yet implemented.
+            }}
           />
         </View>
       </ScrollView>
@@ -159,30 +174,8 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 18,
+    paddingTop: 8,
     gap: 20,
-  },
-  chapterHeading: {
-    paddingHorizontal: 26,
-    paddingTop: 14,
-    gap: 6,
-  },
-  chapterEyebrow: {
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 3,
-    textTransform: 'uppercase',
-    color: flColor.gray400,
-  },
-  chapterName: {
-    fontFamily: flFont.display,
-    fontSize: 26,
-    fontWeight: '600',
-    letterSpacing: 0.3,
-    color: flColor.cream100,
-  },
-  forgingSince: {
-    fontSize: 13,
-    color: flColor.gray400,
   },
   wordmark: {
     flexDirection: 'row',

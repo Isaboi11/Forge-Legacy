@@ -1,4 +1,11 @@
 /**
+ * ⚠️ LEGACY (2026-07-14) — the `TrainTogetherCard` component is NO LONGER USED ON
+ * HOME. Superseded this session (STEP C) by `YourCircleCard`, the rework to the
+ * handoff `Forge Home.dc.html` (§ Your Circle). It is an earlier-session component,
+ * retained (not deleted) as reference. NOTE: this module also exports the still-in-use
+ * `FriendActionSheet` (Home's Challenge action opens it), so the FILE must stay —
+ * only the `TrainTogetherCard` component below is retired.
+ *
  * Tier: 3 (Composition)
  * Spec: Home v2 revision — unified Train Together card.
  *
