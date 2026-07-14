@@ -1,0 +1,172 @@
+[
+  {
+    "name": "Box Step-Up",
+    "sections": [
+      "main"
+    ],
+    "programs": [
+      "strength-foundation-i-3day",
+      "strength-foundation-i-4day"
+    ],
+    "likelyNonCatalog": false,
+    "candidates": [
+      "step-up"
+    ],
+    "recommended": "step-up"
+  },
+  {
+    "name": "Chest-Supported Row",
+    "sections": [
+      "main"
+    ],
+    "programs": [
+      "strength-foundation-i-3day",
+      "strength-foundation-i-4day",
+      "strength-foundation-ii-4day"
+    ],
+    "likelyNonCatalog": false,
+    "candidates": [
+      "dumbbell-chest-supported-row",
+      "chest-supported-row-machine"
+    ],
+    "recommended": "dumbbell-chest-supported-row"
+  },
+  {
+    "name": "Dumbbell Curl",
+    "sections": [
+      "main"
+    ],
+    "programs": [
+      "strength-foundation-i-3day",
+      "strength-foundation-i-4day",
+      "strength-foundation-ii-4day"
+    ],
+    "likelyNonCatalog": false,
+    "candidates": [
+      "alternating-dumbbell-curl"
+    ],
+    "recommended": "alternating-dumbbell-curl"
+  },
+  {
+    "name": "Face Pull",
+    "sections": [
+      "main"
+    ],
+    "programs": [
+      "strength-foundation-ii-4day"
+    ],
+    "likelyNonCatalog": false,
+    "candidates": [
+      "cable-face-pull",
+      "band-face-pull"
+    ],
+    "recommended": "cable-face-pull"
+  },
+  {
+    "name": "Front Plank",
+    "sections": [
+      "main"
+    ],
+    "programs": [
+      "strength-foundation-i-3day",
+      "strength-foundation-i-4day",
+      "strength-foundation-ii-4day"
+    ],
+    "likelyNonCatalog": false,
+    "candidates": [
+      "plank"
+    ],
+    "recommended": "plank"
+  },
+  {
+    "name": "Goblet Squat",
+    "sections": [
+      "main",
+      "substitution"
+    ],
+    "programs": [
+      "strength-foundation-i-3day",
+      "strength-foundation-i-4day"
+    ],
+    "likelyNonCatalog": false,
+    "candidates": [
+      "cable-goblet-squat",
+      "dumbbell-goblet-squat",
+      "band-goblet-squat"
+    ],
+    "recommended": "dumbbell-goblet-squat"
+  },
+  {
+    "name": "Hammer Curl",
+    "sections": [
+      "main"
+    ],
+    "programs": [
+      "strength-foundation-i-3day",
+      "strength-foundation-i-4day",
+      "strength-foundation-ii-4day"
+    ],
+    "likelyNonCatalog": false,
+    "candidates": [
+      "dumbbell-hammer-curl",
+      "band-hammer-curl"
+    ],
+    "recommended": "dumbbell-hammer-curl"
+  },
+  {
+    "name": "Lat Pulldown",
+    "sections": [
+      "main"
+    ],
+    "programs": [
+      "strength-foundation-i-3day",
+      "strength-foundation-i-4day",
+      "strength-foundation-ii-4day"
+    ],
+    "likelyNonCatalog": false,
+    "candidates": [
+      "cable-lat-pulldown",
+      "single-arm-cable-lat-pulldown",
+      "machine-lat-pulldown",
+      "band-lat-pulldown"
+    ],
+    "recommended": "cable-lat-pulldown"
+  },
+  {
+    "name": "Rear Delt Fly",
+    "sections": [
+      "main"
+    ],
+    "programs": [
+      "strength-foundation-i-3day",
+      "strength-foundation-i-4day",
+      "strength-foundation-ii-4day"
+    ],
+    "likelyNonCatalog": false,
+    "candidates": [
+      "cable-rear-delt-fly",
+      "dumbbell-rear-delt-fly",
+      "incline-dumbbell-rear-delt-fly",
+      "machine-rear-delt-fly",
+      "band-rear-delt-fly"
+    ],
+    "recommended": "dumbbell-rear-delt-fly"
+  },
+  {
+    "name": "Triceps Pressdown",
+    "sections": [
+      "main"
+    ],
+    "programs": [
+      "strength-foundation-i-3day",
+      "strength-foundation-i-4day",
+      "strength-foundation-ii-4day"
+    ],
+    "likelyNonCatalog": false,
+    "candidates": [
+      "cable-triceps-pushdown",
+      "band-triceps-pushdown"
+    ],
+    "recommended": "cable-triceps-pushdown"
+  }
+]

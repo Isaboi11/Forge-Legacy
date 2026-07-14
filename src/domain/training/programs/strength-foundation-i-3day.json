@@ -1,0 +1,738 @@
+{
+  "id": "strength-foundation-i-3day",
+  "name": "Strength Foundation I (3-Day)",
+  "family": "Strength",
+  "difficulty": "Beginner",
+  "durationWeeks": 6,
+  "frequencyPerWeek": 3,
+  "environment": "Commercial Gym",
+  "description": "Build strength, confidence, and gym competence through six weeks of foundational training. This program is designed for beginner athletes who want to develop strength, learn foundational movement patterns, become comfortable in a commercial gym environment, and establish long-term training habits.",
+  "goals": [
+    "Build foundational strength",
+    "Improve gym confidence",
+    "Learn core movement patterns",
+    "Develop consistency",
+    "Prepare for Strength Foundation II",
+    "Strength Foundation I (3-Day)",
+    "Version: 1.0Status: LOCKEDProgram Family: StrengthEnvironment: Commercial GymDuration: 6 WeeksFrequency: 3 Days Per WeekSuccessor Program: Strength Foundation II",
+    "Program Description",
+    "Build strength, confidence, and gym competence through six weeks of foundational training.",
+    "This program is designed for beginner athletes who want to develop strength, learn foundational movement patterns, become comfortable in a commercial gym environment, and establish long-term training habits.",
+    "Program Goals",
+    "Build foundational strength• Improve gym confidence• Learn core movement patterns• Develop consistency• Prepare for Strength Foundation II"
+  ],
+  "successorName": "Strength Foundation II",
+  "theme": "beginner",
+  "structure": "full_body",
+  "blocks": [
+    {
+      "label": "Weeks 1–2",
+      "weekStart": 1,
+      "weekEnd": 2,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Confidence Builder",
+          "modality": "strength",
+          "split": "full_body",
+          "warmup": [
+            {
+              "name": "Light treadmill walk",
+              "detail": "2 minutes",
+              "text": "Light treadmill walk — 2 minutes"
+            },
+            {
+              "name": "Bodyweight Squat",
+              "detail": "10 reps",
+              "text": "Bodyweight Squat — 10 reps"
+            },
+            {
+              "name": "Arm Circles",
+              "detail": "10 forward / 10 backward",
+              "text": "Arm Circles — 10 forward / 10 backward"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "dumbbell-goblet-squat",
+              "displayName": "Goblet Squat",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "dumbbell-bench-press",
+              "displayName": "Dumbbell Bench Press",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "incline-push-up",
+              "displayName": "Incline Push-Up",
+              "sets": 2,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "dumbbell-chest-supported-row",
+              "displayName": "Chest-Supported Row",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "step-up",
+              "displayName": "Box Step-Up",
+              "sets": 2,
+              "reps": 10,
+              "unit": "reps",
+              "per": "leg",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "alternating-dumbbell-curl",
+              "displayName": "Dumbbell Curl",
+              "sets": 2,
+              "reps": 12,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "plank",
+              "displayName": "Front Plank",
+              "sets": 2,
+              "reps": 30,
+              "unit": "seconds",
+              "restSec": 60
+            }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Strength Builder",
+          "modality": "strength",
+          "split": "full_body",
+          "warmup": [
+            {
+              "name": "Light treadmill walk",
+              "detail": "2 minutes",
+              "text": "Light treadmill walk — 2 minutes"
+            },
+            {
+              "name": "Glute Bridge",
+              "detail": "10 reps",
+              "text": "Glute Bridge — 10 reps"
+            },
+            {
+              "name": "Shoulder Rolls",
+              "detail": "10 each direction",
+              "text": "Shoulder Rolls — 10 each direction"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "dumbbell-romanian-deadlift",
+              "displayName": "Dumbbell Romanian Deadlift",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "seated-dumbbell-shoulder-press",
+              "displayName": "Seated Dumbbell Shoulder Press",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "cable-lat-pulldown",
+              "displayName": "Lat Pulldown",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "split-squat",
+              "displayName": "Split Squat",
+              "sets": 2,
+              "reps": 10,
+              "unit": "reps",
+              "per": "leg",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "dumbbell-lateral-raise",
+              "displayName": "Dumbbell Lateral Raise",
+              "sets": 2,
+              "reps": 12,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "farmer-carry",
+              "displayName": "Farmer Carry",
+              "sets": 3,
+              "reps": 30,
+              "unit": "yards",
+              "repsMax": 40,
+              "restSec": 60
+            }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Momentum Builder",
+          "modality": "strength",
+          "split": "full_body",
+          "warmup": [
+            {
+              "name": "Light treadmill walk",
+              "detail": "2 minutes",
+              "text": "Light treadmill walk — 2 minutes"
+            },
+            {
+              "name": "Bodyweight Squat",
+              "detail": "10 reps",
+              "text": "Bodyweight Squat — 10 reps"
+            },
+            {
+              "name": "Incline Push",
+              "detail": "Up — 10 reps",
+              "text": "Incline Push-Up — 10 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "dumbbell-goblet-squat",
+              "displayName": "Goblet Squat",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "push-up",
+              "displayName": "Push-Up Progression",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "cable-seated-row",
+              "displayName": "Seated Cable Row",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "glute-bridge",
+              "displayName": "Glute Bridge",
+              "sets": 2,
+              "reps": 12,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "cable-triceps-pushdown",
+              "displayName": "Triceps Pressdown",
+              "sets": 2,
+              "reps": 12,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "dumbbell-lateral-raise",
+              "displayName": "Dumbbell Lateral Raise",
+              "sets": 2,
+              "reps": 12,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "dead-bug",
+              "displayName": "Dead Bug",
+              "sets": 2,
+              "reps": 10,
+              "unit": "reps",
+              "per": "side",
+              "restSec": 60
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Weeks 3–4",
+      "weekStart": 3,
+      "weekEnd": 4,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Confidence Builder 2.0",
+          "modality": "strength",
+          "split": "full_body",
+          "warmup": [
+            {
+              "name": "Light treadmill walk",
+              "detail": "2 minutes",
+              "text": "Light treadmill walk — 2 minutes"
+            },
+            {
+              "name": "Bodyweight Squat",
+              "detail": "10 reps",
+              "text": "Bodyweight Squat — 10 reps"
+            },
+            {
+              "name": "Arm Circles",
+              "detail": "10 forward / 10 backward",
+              "text": "Arm Circles — 10 forward / 10 backward"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "dumbbell-goblet-squat",
+              "displayName": "Goblet Squat",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps"
+            },
+            {
+              "catalogKey": "dumbbell-bench-press",
+              "displayName": "Dumbbell Bench Press",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps"
+            },
+            {
+              "catalogKey": "dumbbell-chest-supported-row",
+              "displayName": "Chest-Supported Row",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps"
+            },
+            {
+              "catalogKey": "step-up",
+              "displayName": "Box Step-Up",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "per": "leg"
+            },
+            {
+              "catalogKey": "dumbbell-hammer-curl",
+              "displayName": "Hammer Curl",
+              "sets": 2,
+              "reps": 12,
+              "unit": "reps"
+            },
+            {
+              "catalogKey": "side-plank",
+              "displayName": "Side Plank",
+              "sets": 2,
+              "reps": 20,
+              "unit": "seconds",
+              "repsMax": 30,
+              "per": "side"
+            },
+            {
+              "catalogKey": "incline-push-up",
+              "displayName": "Incline Push-Up",
+              "sets": 2,
+              "reps": 10,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Strength Builder 2.0",
+          "modality": "strength",
+          "split": "full_body",
+          "warmup": [
+            {
+              "name": "Light treadmill walk",
+              "detail": "2 minutes",
+              "text": "Light treadmill walk — 2 minutes"
+            },
+            {
+              "name": "Glute Bridge",
+              "detail": "10 reps",
+              "text": "Glute Bridge — 10 reps"
+            },
+            {
+              "name": "Shoulder Rolls",
+              "detail": "10 each direction",
+              "text": "Shoulder Rolls — 10 each direction"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "dumbbell-romanian-deadlift",
+              "displayName": "Dumbbell Romanian Deadlift",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps"
+            },
+            {
+              "catalogKey": "seated-dumbbell-shoulder-press",
+              "displayName": "Seated Dumbbell Shoulder Press",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps"
+            },
+            {
+              "catalogKey": "cable-lat-pulldown",
+              "displayName": "Lat Pulldown",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps"
+            },
+            {
+              "catalogKey": "split-squat",
+              "displayName": "Split Squat",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "per": "leg"
+            },
+            {
+              "catalogKey": "dumbbell-rear-delt-fly",
+              "displayName": "Rear Delt Fly",
+              "sets": 2,
+              "reps": 12,
+              "unit": "reps"
+            },
+            {
+              "catalogKey": "farmer-carry",
+              "displayName": "Farmer Carry",
+              "sets": 3,
+              "reps": 40,
+              "unit": "yards"
+            }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Momentum Builder 2.0",
+          "modality": "strength",
+          "split": "full_body",
+          "warmup": [
+            {
+              "name": "Light treadmill walk",
+              "detail": "2 minutes",
+              "text": "Light treadmill walk — 2 minutes"
+            },
+            {
+              "name": "Bodyweight Squat",
+              "detail": "10 reps",
+              "text": "Bodyweight Squat — 10 reps"
+            },
+            {
+              "name": "Incline Push",
+              "detail": "Up — 10 reps",
+              "text": "Incline Push-Up — 10 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "dumbbell-goblet-squat",
+              "displayName": "Goblet Squat",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps"
+            },
+            {
+              "catalogKey": "push-up",
+              "displayName": "Push-Up Progression",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps"
+            },
+            {
+              "catalogKey": "cable-seated-row",
+              "displayName": "Seated Cable Row",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps"
+            },
+            {
+              "catalogKey": "glute-bridge",
+              "displayName": "Glute Bridge",
+              "sets": 3,
+              "reps": 12,
+              "unit": "reps"
+            },
+            {
+              "catalogKey": "cable-triceps-pushdown",
+              "displayName": "Triceps Pressdown",
+              "sets": 2,
+              "reps": 12,
+              "unit": "reps"
+            },
+            {
+              "catalogKey": "dumbbell-lateral-raise",
+              "displayName": "Dumbbell Lateral Raise",
+              "sets": 2,
+              "reps": 12,
+              "unit": "reps"
+            },
+            {
+              "catalogKey": "dead-bug",
+              "displayName": "Dead Bug",
+              "sets": 2,
+              "reps": 12,
+              "unit": "reps",
+              "per": "side"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Weeks 5–6",
+      "weekStart": 5,
+      "weekEnd": 6,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Confidence Builder 3.0",
+          "modality": "strength",
+          "split": "full_body",
+          "warmup": [
+            {
+              "name": "Light treadmill walk",
+              "detail": "2 minutes",
+              "text": "Light treadmill walk — 2 minutes"
+            },
+            {
+              "name": "Bodyweight Squat",
+              "detail": "10 reps",
+              "text": "Bodyweight Squat — 10 reps"
+            },
+            {
+              "name": "Arm Circles",
+              "detail": "10 forward / 10 backward",
+              "text": "Arm Circles — 10 forward / 10 backward"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "dumbbell-goblet-squat",
+              "displayName": "Goblet Squat",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps"
+            },
+            {
+              "catalogKey": "dumbbell-bench-press",
+              "displayName": "Dumbbell Bench Press",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps"
+            },
+            {
+              "catalogKey": "dumbbell-chest-supported-row",
+              "displayName": "Chest-Supported Row",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps"
+            },
+            {
+              "catalogKey": "step-up",
+              "displayName": "Box Step-Up",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "per": "leg"
+            },
+            {
+              "catalogKey": "dumbbell-hammer-curl",
+              "displayName": "Hammer Curl",
+              "sets": 2,
+              "reps": 12,
+              "unit": "reps"
+            },
+            {
+              "catalogKey": "side-plank",
+              "displayName": "Side Plank",
+              "sets": 2,
+              "reps": 30,
+              "unit": "seconds",
+              "per": "side"
+            },
+            {
+              "catalogKey": "incline-push-up",
+              "displayName": "Incline Push-Up",
+              "sets": 2,
+              "reps": 12,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Strength Builder 3.0",
+          "modality": "strength",
+          "split": "full_body",
+          "warmup": [
+            {
+              "name": "Light treadmill walk",
+              "detail": "2 minutes",
+              "text": "Light treadmill walk — 2 minutes"
+            },
+            {
+              "name": "Glute Bridge",
+              "detail": "10 reps",
+              "text": "Glute Bridge — 10 reps"
+            },
+            {
+              "name": "Shoulder Rolls",
+              "detail": "10 each direction",
+              "text": "Shoulder Rolls — 10 each direction"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "dumbbell-romanian-deadlift",
+              "displayName": "Dumbbell Romanian Deadlift",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps"
+            },
+            {
+              "catalogKey": "seated-dumbbell-shoulder-press",
+              "displayName": "Seated Dumbbell Shoulder Press",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps"
+            },
+            {
+              "catalogKey": "cable-lat-pulldown",
+              "displayName": "Lat Pulldown",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps"
+            },
+            {
+              "catalogKey": "split-squat",
+              "displayName": "Split Squat",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "per": "leg"
+            },
+            {
+              "catalogKey": "dumbbell-rear-delt-fly",
+              "displayName": "Rear Delt Fly",
+              "sets": 2,
+              "reps": 12,
+              "unit": "reps"
+            },
+            {
+              "catalogKey": "suitcase-carry",
+              "displayName": "Suitcase Carry",
+              "sets": 3,
+              "reps": 40,
+              "unit": "yards"
+            }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Graduation Builder",
+          "modality": "strength",
+          "split": "full_body",
+          "warmup": [
+            {
+              "name": "Light treadmill walk",
+              "detail": "2 minutes",
+              "text": "Light treadmill walk — 2 minutes"
+            },
+            {
+              "name": "Bodyweight Squat",
+              "detail": "10 reps",
+              "text": "Bodyweight Squat — 10 reps"
+            },
+            {
+              "name": "Bodyweight Box Squat",
+              "detail": "10 reps",
+              "text": "Bodyweight Box Squat — 10 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-back-squat",
+              "displayName": "Back Squat",
+              "sets": 3,
+              "reps": 8,
+              "unit": "reps",
+              "substitution": {
+                "catalogKey": "dumbbell-goblet-squat",
+                "name": "Goblet Squat",
+                "sets": 3,
+                "reps": 10,
+                "unit": "reps"
+              }
+            },
+            {
+              "catalogKey": "push-up",
+              "displayName": "Push-Up Progression",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps"
+            },
+            {
+              "catalogKey": "cable-seated-row",
+              "displayName": "Seated Cable Row",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps"
+            },
+            {
+              "catalogKey": "glute-bridge",
+              "displayName": "Glute Bridge",
+              "sets": 3,
+              "reps": 12,
+              "unit": "reps"
+            },
+            {
+              "catalogKey": "cable-triceps-pushdown",
+              "displayName": "Triceps Pressdown",
+              "sets": 2,
+              "reps": 12,
+              "unit": "reps"
+            },
+            {
+              "catalogKey": "dumbbell-lateral-raise",
+              "displayName": "Dumbbell Lateral Raise",
+              "sets": 2,
+              "reps": 12,
+              "unit": "reps"
+            },
+            {
+              "catalogKey": "dead-bug",
+              "displayName": "Dead Bug",
+              "sets": 2,
+              "reps": 12,
+              "unit": "reps",
+              "per": "side"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "status": "LOCKED",
+  "source": "forge",
+  "sourceFile": "Programs/Strength/Strength Foundation I (3-day)/Strength-Foundation-I-3-Day-v1.0.docx"
+}

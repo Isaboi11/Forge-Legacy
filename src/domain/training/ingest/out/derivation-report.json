@@ -1,0 +1,261 @@
+[
+  {
+    "slug": "strength-foundation-i-3day",
+    "verified": true,
+    "status": "LOCKED",
+    "explicit": {
+      "name": "Strength Foundation I (3-Day)",
+      "family": "Strength",
+      "durationWeeks": 6,
+      "frequencyPerWeek": 3,
+      "successor": "Strength Foundation II",
+      "environment": "Commercial Gym"
+    },
+    "derived": {
+      "difficulty": {
+        "value": "Beginner",
+        "rule": "title \"Foundation I\" + description mentions beginner",
+        "confidence": 0.9
+      },
+      "structure": {
+        "value": "full_body",
+        "rule": "every workout resolves to full_body via the muscle bridge (squat+push+pull+carry/core each day)",
+        "confidence": 0.9,
+        "perWorkoutSplits": [
+          "full_body",
+          "full_body",
+          "full_body"
+        ]
+      },
+      "modality": {
+        "value": "strength",
+        "rule": "all main work is resistance training",
+        "confidence": 0.95,
+        "perWorkout": [
+          "strength",
+          "strength",
+          "strength"
+        ]
+      },
+      "split": {
+        "perWorkout": [
+          {
+            "code": "A",
+            "name": "Confidence Builder",
+            "split": "full_body",
+            "provisionalKeys": true,
+            "unresolvedExercises": 0
+          },
+          {
+            "code": "B",
+            "name": "Strength Builder",
+            "split": "full_body",
+            "provisionalKeys": true,
+            "unresolvedExercises": 0
+          },
+          {
+            "code": "C",
+            "name": "Momentum Builder",
+            "split": "full_body",
+            "provisionalKeys": true,
+            "unresolvedExercises": 0
+          }
+        ],
+        "note": "per-workout split via Phase-1 muscle bridge; provisionalKeys=true means a recommended (unconfirmed) exercise match contributed"
+      },
+      "theme": {
+        "recommended": "beginner",
+        "rule": "Foundation I = beginner on-ramp",
+        "confidence": 0.5,
+        "flag": "NEEDS PO CONFIRMATION — theme drives artwork; beginner vs strength",
+        "alternatives": [
+          "beginner",
+          "strength"
+        ]
+      }
+    }
+  },
+  {
+    "slug": "strength-foundation-i-4day",
+    "verified": true,
+    "status": "DRAFT",
+    "statusFlag": "Status \"DRAFT\" (not LOCKED)",
+    "explicit": {
+      "name": "Strength Foundation I (4-Day)",
+      "family": "Strength",
+      "durationWeeks": 6,
+      "frequencyPerWeek": 4,
+      "successor": "Strength Foundation II (4-Day)",
+      "environment": "Commercial Gym"
+    },
+    "derived": {
+      "difficulty": {
+        "value": "Beginner",
+        "rule": "title \"Foundation I\" + description mentions beginner",
+        "confidence": 0.9
+      },
+      "structure": {
+        "value": null,
+        "rule": "every workout resolves to full_body via the muscle bridge (squat+push+pull+carry/core each day)",
+        "confidence": 0.4,
+        "perWorkoutSplits": [
+          "full_body",
+          "upper",
+          "full_body",
+          "full_body"
+        ],
+        "flag": "NEEDS PO — not every workout resolved to full_body; check perWorkoutSplits"
+      },
+      "modality": {
+        "value": "strength",
+        "rule": "all main work is resistance training",
+        "confidence": 0.95,
+        "perWorkout": [
+          "strength",
+          "strength",
+          "strength",
+          "strength"
+        ]
+      },
+      "split": {
+        "perWorkout": [
+          {
+            "code": "A",
+            "name": "Confidence Builder",
+            "split": "full_body",
+            "provisionalKeys": true,
+            "unresolvedExercises": 0
+          },
+          {
+            "code": "B",
+            "name": "Physique Builder",
+            "split": "upper",
+            "provisionalKeys": true,
+            "unresolvedExercises": 0
+          },
+          {
+            "code": "C",
+            "name": "Strength Builder",
+            "split": "full_body",
+            "provisionalKeys": true,
+            "unresolvedExercises": 0
+          },
+          {
+            "code": "D",
+            "name": "Momentum Builder",
+            "split": "full_body",
+            "provisionalKeys": true,
+            "unresolvedExercises": 0
+          }
+        ],
+        "note": "per-workout split via Phase-1 muscle bridge; provisionalKeys=true means a recommended (unconfirmed) exercise match contributed"
+      },
+      "theme": {
+        "recommended": "beginner",
+        "rule": "Foundation I = beginner on-ramp",
+        "confidence": 0.5,
+        "flag": "NEEDS PO CONFIRMATION — theme drives artwork; beginner vs strength",
+        "alternatives": [
+          "beginner",
+          "strength"
+        ]
+      }
+    }
+  },
+  {
+    "slug": "strength-foundation-ii-3day",
+    "verified": false,
+    "reasons": [
+      "title \"Strength Foundation I (3-Day)\" != expected \"Strength Foundation II (3-Day)\"",
+      "reads as a research/benchmark document, not a program spec",
+      "Program Family is \"null\", expected Strength"
+    ],
+    "note": "NOT DERIVED — mislabeled/unverifiable source (review gate FLAG 1)"
+  },
+  {
+    "slug": "strength-foundation-ii-4day",
+    "verified": true,
+    "status": "LOCKED",
+    "explicit": {
+      "name": "Strength Foundation II (4-Day)",
+      "family": "Strength",
+      "durationWeeks": 6,
+      "frequencyPerWeek": 4,
+      "successor": "Strength Builder I (4-Day)",
+      "environment": "Commercial Gym"
+    },
+    "derived": {
+      "difficulty": {
+        "value": "Intermediate",
+        "rule": "title \"Foundation II\" (builds on I; introduces barbell)",
+        "confidence": 0.8
+      },
+      "structure": {
+        "value": null,
+        "rule": "every workout resolves to full_body via the muscle bridge (squat+push+pull+carry/core each day)",
+        "confidence": 0.4,
+        "perWorkoutSplits": [
+          "full_body",
+          "upper",
+          "full_body",
+          "full_body"
+        ],
+        "flag": "NEEDS PO — not every workout resolved to full_body; check perWorkoutSplits"
+      },
+      "modality": {
+        "value": "strength",
+        "rule": "all main work is resistance training",
+        "confidence": 0.95,
+        "perWorkout": [
+          "strength",
+          "strength",
+          "strength",
+          "strength"
+        ]
+      },
+      "split": {
+        "perWorkout": [
+          {
+            "code": "A",
+            "name": "Confidence Builder",
+            "split": "full_body",
+            "provisionalKeys": true,
+            "unresolvedExercises": 0
+          },
+          {
+            "code": "B",
+            "name": "Physique Builder",
+            "split": "upper",
+            "provisionalKeys": true,
+            "unresolvedExercises": 0
+          },
+          {
+            "code": "C",
+            "name": "Strength Builder",
+            "split": "full_body",
+            "provisionalKeys": true,
+            "unresolvedExercises": 0
+          },
+          {
+            "code": "D",
+            "name": "Momentum Builder",
+            "split": "full_body",
+            "provisionalKeys": true,
+            "unresolvedExercises": 0
+          }
+        ],
+        "note": "per-workout split via Phase-1 muscle bridge; provisionalKeys=true means a recommended (unconfirmed) exercise match contributed"
+      },
+      "theme": {
+        "recommended": "strength",
+        "rule": "Foundation II = past the beginner on-ramp → strength",
+        "confidence": 0.5,
+        "flag": "NEEDS PO CONFIRMATION — theme drives artwork; beginner vs strength",
+        "alternatives": [
+          "beginner",
+          "strength"
+        ]
+      }
+    }
+  }
+]
