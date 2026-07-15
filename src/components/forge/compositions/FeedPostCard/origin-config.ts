@@ -39,10 +39,13 @@ const CONFIG: Record<FeedOrigin, FeedOriginConfig> = {
     programCTA: false,
     presenceOnAchievement: false,
   },
-  // Squad — training-only context (feed TBD; defaults kept lean like Friends).
+  // Squad — internal training feed. The Firewall is lifted here, but it stays training-only: no
+  // save/RSVP/program (squads have no programs or public events). Posts are typed (Check-in / PR /
+  // Challenge Update / …) so the type label shows. Share is limited to genuine keepsakes (a PR
+  // carries an SH-1 kind); no blanket external share on a private squad's feed.
   squad: {
     audienceTag: false,
-    showTypeLabel: false,
+    showTypeLabel: true,
     save: false,
     shareAlways: false,
     eventRSVP: false,

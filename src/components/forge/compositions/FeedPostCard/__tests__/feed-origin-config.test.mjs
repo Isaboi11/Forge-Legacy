@@ -30,9 +30,12 @@ test('friends stays lean: audience tag on, moderation/creator affordances off', 
   assert.equal(f.shareAlways, false)
 })
 
-test('squad defaults are lean (feed TBD)', () => {
+test('squad is training-only: typed posts, but no save/RSVP/program/blanket-share', () => {
   const s = feedOriginConfig('squad')
+  assert.equal(s.showTypeLabel, true) // Check-in / PR / Challenge Update …
   assert.equal(s.save, false)
-  assert.equal(s.audienceTag, false)
-  assert.equal(s.programCTA, false)
+  assert.equal(s.eventRSVP, false)
+  assert.equal(s.programCTA, false) // squads have no programs
+  assert.equal(s.shareAlways, false) // private feed; only keepsakes (PR) carry a share kind
+  assert.equal(s.audienceTag, false) // every post is in the one squad
 })

@@ -1,0 +1,104 @@
+/**
+ * CHARACTERIZATION + FIREWALL lock for the Squad feed (S-2) convergence onto the shared card.
+ *
+ * getSquadFeed(squadId) maps each squad's CommunityPost-shaped seed onto the shared FeedPost so
+ * the ONE FeedPostCard renders it. This test locks:
+ *   1) the semantic render-contract of the two seeded squads (iron, dawn) as an explicit golden —
+ *      including the 3 NEW additive content types (checkin/streak, challengeUpdate, traintogether);
+ *   2) PER-SQUAD ISOLATION as a hard contract, NOT a runtime hope: a squad's feed contains only
+ *      its own posts, feeds are disjoint, empty squads are empty, and every post is sourced to its
+ *      own squad. This is the squad equivalent of the friends firewall.
+ *
+ * Zero-dep node --test; no RN renderer, so the lock is at the data/semantic layer (affordances are
+ * locked by feed-origin-config.test.mjs). If this goes red, a squad post changed meaning or a feed
+ * leaked — STOP, don't force it.
+ */
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import { getSquadFeed, getPost } from '../post-placeholder.ts'
+
+const GOLDEN = {
+  iron: [
+    { id: 'iv_fc', author: 'Dana Cole', role: undefined, typeLabel: 'Form Check', respect: 14, comment: 2, contentType: 'media', shareable: false, media: { mediaKind: 'video', duration: '0:31' }, challenge: 'Forge League · Week 3' },
+    { id: 'iv_pr', author: 'Marcus Vale', role: 'captain', typeLabel: 'PR', respect: 22, comment: 1, contentType: 'achievement', shareable: true, achievement: { value: '315 lb', exercise: 'Bench Press', label: 'Squad PR' } },
+    { id: 'iv_ch', author: 'Ada Ridge', role: 'owner', typeLabel: 'Challenge Update', respect: 18, comment: 1, contentType: 'challengeUpdate', shareable: false, challengeUpdate: { name: 'Forge League', place: '2nd', of: '5', metric: '5 workouts' } },
+    { id: 'iv_ann', author: 'Ada Ridge', role: 'owner', typeLabel: 'Announcement', respect: 9, comment: 0, contentType: 'text', shareable: false },
+  ],
+  dawn: [
+    { id: 'dp_ci', author: 'Sana Okafor', role: undefined, typeLabel: 'Check-in', respect: 7, comment: 1, contentType: 'checkin', shareable: false, checkin: { streak: 11 } },
+    { id: 'dp_pr', author: 'Ravi Menon', role: 'captain', typeLabel: 'PR', respect: 19, comment: 1, contentType: 'achievement', shareable: true, achievement: { value: '19:48', exercise: '5K', label: 'Squad PR' } },
+    { id: 'dp_tt', author: 'Mara Lindqvist', role: undefined, typeLabel: 'Train Together', respect: 5, comment: 0, contentType: 'traintogether', shareable: false },
+  ],
+}
+
+const SOURCE_NAME = { iron: 'Iron Vigil', dawn: 'Dawn Patrol' }
+
+for (const [squadId, golden] of Object.entries(GOLDEN)) {
+  test(`merge preserves every rendered field: getSquadFeed('${squadId}')`, () => {
+    const feed = getSquadFeed(squadId)
+    assert.equal(feed.length, golden.length, `${squadId} feed length`)
+    assert.deepEqual(feed.map((p) => p.id), golden.map((g) => g.id), `${squadId} order`)
+
+    for (const g of golden) {
+      const post = feed.find((p) => p.id === g.id)
+      assert.ok(post, `${squadId} missing ${g.id}`)
+      assert.equal(post.author, g.author, `${g.id} author`)
+      assert.equal(post.role, g.role, `${g.id} role`)
+      assert.equal(post.typeLabel, g.typeLabel, `${g.id} typeLabel`)
+      assert.equal(post.respect, g.respect, `${g.id} respect`)
+      assert.equal(post.commentCount, g.comment, `${g.id} comment count`)
+      assert.equal(post.content.type, g.contentType, `${g.id} content type`)
+      assert.equal(Boolean(post.shareType), g.shareable, `${g.id} shareable`)
+      assert.equal(post.source.kind, 'squad', `${g.id} source kind`)
+
+      if (g.challenge !== undefined) assert.equal(post.challenge, g.challenge, `${g.id} challenge context`)
+      if (g.achievement) {
+        assert.equal(post.content.value, g.achievement.value, `${g.id} value`)
+        assert.equal(post.content.exercise, g.achievement.exercise, `${g.id} exercise`)
+        assert.equal(post.content.label, g.achievement.label, `${g.id} label`)
+      }
+      if (g.media) {
+        assert.equal(post.content.mediaKind, g.media.mediaKind, `${g.id} media kind`)
+        assert.equal(post.content.duration, g.media.duration, `${g.id} media duration`)
+      }
+      if (g.checkin) assert.equal(post.content.streak, g.checkin.streak, `${g.id} streak`)
+      if (g.challengeUpdate) {
+        assert.equal(post.content.name, g.challengeUpdate.name, `${g.id} challenge name`)
+        assert.equal(post.content.place, g.challengeUpdate.place, `${g.id} place`)
+        assert.equal(post.content.of, g.challengeUpdate.of, `${g.id} of`)
+        assert.equal(post.content.metric, g.challengeUpdate.metric, `${g.id} metric`)
+      }
+    }
+  })
+}
+
+test('FIREWALL: per-squad isolation — feeds contain only their own posts, and are disjoint', () => {
+  const iron = getSquadFeed('iron')
+  const dawn = getSquadFeed('dawn')
+
+  // every post is sourced to its own squad
+  for (const p of iron) assert.equal(p.source.name, SOURCE_NAME.iron, `${p.id} must be sourced to Iron Vigil`)
+  for (const p of dawn) assert.equal(p.source.name, SOURCE_NAME.dawn, `${p.id} must be sourced to Dawn Patrol`)
+
+  // no post id appears in both feeds (no leak)
+  const ironIds = new Set(iron.map((p) => p.id))
+  const dawnIds = new Set(dawn.map((p) => p.id))
+  for (const id of ironIds) assert.equal(dawnIds.has(id), false, `${id} leaked from iron into dawn`)
+  for (const id of dawnIds) assert.equal(ironIds.has(id), false, `${id} leaked from dawn into iron`)
+})
+
+test('FIREWALL: squads with no posts return empty; unknown squad returns empty (never another squad)', () => {
+  assert.deepEqual(getSquadFeed('proving'), [])
+  assert.deepEqual(getSquadFeed('home'), [])
+  assert.deepEqual(getSquadFeed('does-not-exist'), [])
+})
+
+test('tap-through: every squad feed post resolves via getPost(id)', () => {
+  for (const squadId of ['iron', 'dawn']) {
+    for (const post of getSquadFeed(squadId)) {
+      const resolved = getPost(post.id)
+      assert.ok(resolved, `getPost('${post.id}') should resolve for feed↔detail consistency`)
+      assert.equal(resolved.id, post.id)
+    }
+  }
+})

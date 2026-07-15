@@ -271,6 +271,55 @@ function ContentBlock({ content }: { content: PostContent }) {
           <Text style={styles.pollFooter}>{content.footer}</Text>
         </View>
       );
+    case 'checkin':
+      return (
+        <View style={styles.checkin}>
+          <View style={styles.checkinIcon}>
+            <BigCheckGlyph />
+          </View>
+          <View style={styles.plateText}>
+            <Text style={styles.plateLabel}>Check-in</Text>
+            <Text style={styles.plateTitle}>Trained today</Text>
+          </View>
+          {content.streak != null ? (
+            <View style={styles.streakBadge}>
+              <FlameIcon size={14} color={flColor.bronze300} />
+              <Text style={styles.streakText}>{content.streak}-day streak</Text>
+            </View>
+          ) : null}
+        </View>
+      );
+    case 'challengeUpdate':
+      return (
+        <View style={styles.program}>
+          <View style={styles.programHead}>
+            <Text style={styles.programKind}>{content.name}</Text>
+          </View>
+          <View style={styles.cuStatsRow}>
+            <View style={styles.cuStat}>
+              <Text style={styles.cuPlace}>{content.place}</Text>
+              <Text style={styles.cuStatLabel}>of {content.of}</Text>
+            </View>
+            <View style={styles.cuDivider} />
+            <View style={styles.cuStat}>
+              <Text style={styles.cuMetric}>{content.metric}</Text>
+              <Text style={styles.cuStatLabel}>to close</Text>
+            </View>
+          </View>
+        </View>
+      );
+    case 'traintogether':
+      return (
+        <View style={styles.trainTog}>
+          <View style={styles.trainTogHead}>
+            <TrainGlyph />
+            <Text style={styles.trainTogText}>Train Together</Text>
+          </View>
+          <Pressable onPress={() => {}} accessibilityRole="button" accessibilityLabel="Join" style={styles.joinBtn} hitSlop={6}>
+            <Text style={styles.joinText}>Join</Text>
+          </Pressable>
+        </View>
+      );
   }
 }
 
@@ -346,10 +395,11 @@ function ReplyItem({ reply }: { reply: PostReply }) {
   );
 }
 
+const ROLE_LABEL: Record<PostRole, string> = { owner: 'Owner', captain: 'Captain', mod: 'Mod' };
 function RoleBadge({ role }: { role: PostRole }) {
   return (
     <View style={styles.roleBadge}>
-      <Text style={styles.roleBadgeText}>{role === 'owner' ? 'Owner' : 'Mod'}</Text>
+      <Text style={styles.roleBadgeText}>{ROLE_LABEL[role]}</Text>
     </View>
   );
 }
@@ -464,6 +514,22 @@ function ShareGlyph() {
       <Circle cx={17} cy={6} r={2.4} />
       <Circle cx={17} cy={18} r={2.4} />
       <Path d="M8.1 10.9l6.8-3.8M8.1 13.1l6.8 3.8" />
+    </Svg>
+  );
+}
+function BigCheckGlyph() {
+  return (
+    <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M5 12.5l4.5 4.5L19 7" />
+    </Svg>
+  );
+}
+function TrainGlyph() {
+  return (
+    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <Circle cx={7.5} cy={8} r={2.4} />
+      <Circle cx={16.5} cy={8} r={2.4} />
+      <Path d="M3 19a4.5 4.5 0 0 1 9 0M12 19a4.5 4.5 0 0 1 9 0" />
     </Svg>
   );
 }
@@ -705,6 +771,78 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.bronzeTint,
   },
   rsvpText: { fontSize: 13, fontWeight: '700', letterSpacing: 0.4, color: flColor.bronze300 },
+
+  // squad check-in
+  checkin: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginTop: 14,
+    padding: 16,
+    borderRadius: flRadius.md,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    backgroundColor: flColor.charcoal900,
+  },
+  checkinIcon: {
+    width: 52,
+    height: 52,
+    flexShrink: 0,
+    borderRadius: flRadius.round,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    backgroundColor: flColor.charcoal800,
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: flShadow.glowSubtle,
+  },
+  streakBadge: {
+    flexShrink: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 5,
+    paddingHorizontal: 11,
+    borderRadius: flRadius.pill,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    backgroundColor: flColor.bronzeTint,
+  },
+  streakText: { fontSize: 12, fontWeight: '700', color: flColor.bronze300 },
+
+  // squad challenge update (reuses the .program shell + head)
+  cuStatsRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 14 },
+  cuStat: { flex: 1, alignItems: 'center', gap: 3 },
+  cuDivider: { width: 1, alignSelf: 'stretch', backgroundColor: flColor.charcoal700 },
+  cuPlace: { fontFamily: flFont.display, fontSize: 28, fontWeight: '700', letterSpacing: -0.4, color: flColor.bronze300 },
+  cuMetric: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', color: flColor.cream100 },
+  cuStatLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase', color: flColor.gray600 },
+
+  // squad train-together
+  trainTog: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 14,
+    paddingVertical: 13,
+    paddingHorizontal: 15,
+    borderRadius: flRadius.md,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    backgroundColor: flColor.charcoal900,
+  },
+  trainTogHead: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 9 },
+  trainTogText: { fontSize: 11.5, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronze400 },
+  joinBtn: {
+    flexShrink: 0,
+    paddingVertical: 9,
+    paddingHorizontal: 20,
+    borderRadius: flRadius.pill,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    backgroundColor: flColor.bronzeTint,
+  },
+  joinText: { fontSize: 12.5, fontWeight: '700', letterSpacing: 0.4, color: flColor.bronze300 },
 
   // poll
   poll: { marginTop: 14, gap: 9 },

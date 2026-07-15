@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -42,7 +43,10 @@ import type { Squad, SquadMember } from '@/data/squads-placeholder';
 
 export default function SquadsScreen() {
   const selfName = getSelfProfile().name;
+  const router = useRouter();
   const [favoriteIds, setFavoriteIds] = useState<string[]>(INITIAL_FAVORITE_IDS);
+
+  const openSquad = (id: string) => router.push({ pathname: '/squad/[id]', params: { id } });
 
   const toggleFavorite = (id: string) => {
     setFavoriteIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : prev.concat(id)));
@@ -117,6 +121,7 @@ export default function SquadsScreen() {
                         selfName={selfName}
                         isFavorite
                         onToggleFavorite={() => toggleFavorite(s.id)}
+                        onOpen={() => openSquad(s.id)}
                       />
                     ))}
                   </View>
@@ -135,6 +140,7 @@ export default function SquadsScreen() {
                           selfName={selfName}
                           isFavorite={false}
                           onToggleFavorite={() => toggleFavorite(s.id)}
+                          onOpen={() => openSquad(s.id)}
                         />
                       ))}
                     </View>
@@ -150,6 +156,7 @@ export default function SquadsScreen() {
                     selfName={selfName}
                     isFavorite={false}
                     onToggleFavorite={() => toggleFavorite(s.id)}
+                    onOpen={() => openSquad(s.id)}
                   />
                 ))}
               </View>
@@ -183,11 +190,13 @@ function SquadCard({
   selfName,
   isFavorite,
   onToggleFavorite,
+  onOpen,
 }: {
   squad: Squad;
   selfName: string;
   isFavorite: boolean;
   onToggleFavorite: () => void;
+  onOpen: () => void;
 }) {
   const memberCount = squad.members.length;
   const shown = squad.members.slice(0, 4);
@@ -195,9 +204,7 @@ function SquadCard({
 
   return (
     <Pressable
-      onPress={() => {
-        // S-2 Squad Detail — not yet implemented.
-      }}
+      onPress={onOpen}
       accessibilityRole="button"
       accessibilityLabel={`Open ${squad.name}`}
       style={[styles.card, isFavorite ? styles.cardFav : null]}

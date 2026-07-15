@@ -12,8 +12,10 @@ import type { ShareKind } from '@/domain/share/content'
 // resolves it via allowImportingTsExtensions, same convention as domain/rank-artwork imports.
 import { COMMUNITY_DATA } from './community-placeholder.ts'
 import type { CommunityPost } from './community-placeholder.ts'
+import { SQUAD_SEED, SQUAD_FEED_IDENTITY } from './squad-feed-placeholder.ts'
+import type { SquadComment, SquadPost } from './squad-feed-placeholder.ts'
 
-export type PostRole = 'owner' | 'mod'
+export type PostRole = 'owner' | 'mod' | 'captain'
 
 /** The source-context bar — which surface the post lives in. */
 export interface PostSource {
@@ -54,6 +56,15 @@ export type PostContent =
   | { type: 'media'; mediaKind: 'photo' | 'video'; duration?: string }
   | { type: 'event'; month: string; day: string; title: string; when: string; going: number }
   | { type: 'poll'; options: { text: string; pct: number; chosen?: boolean }[]; footer: string }
+  // ── Squad-only content (additive; the Firewall is lifted for a squad's own internal feed).
+  //    New union variants so the ONE shared card/Post Detail renders them — never a squad-only
+  //    renderer. The note text rides on `body`; these carry the structured part.
+  // Daily check-in — "I trained today"; optional running streak.
+  | { type: 'checkin'; streak?: number }
+  // Progress in the squad's active challenge (standings stay inside the challenge; this is a report).
+  | { type: 'challengeUpdate'; name: string; place: string; of: string; metric: string }
+  // Train-together coordination — the when/where rides on `body`; the block adds a Join affordance.
+  | { type: 'traintogether' }
 
 export interface PostReply {
   id: string
@@ -232,9 +243,92 @@ export function getCommunityFeed(): FeedPost[] {
   return COMMUNITY_FEED
 }
 
-/** Demo fetch. Resolves the static demo posts, the friends feed, and the community feed by id. */
+// ─────────────────────────────────────────────────────────────────────────────
+// Squad feed (S-2) — a squad's OWN internal training feed. The Firewall is lifted for a squad's
+// own surface, so squad content (check-ins / PRs / form checks / challenge progress / train-
+// together / announcements) renders through the SAME shared card + Post Detail, via additive
+// PostContent variants — never a squad-only renderer. PER-SQUAD ISOLATION is a tested contract:
+// getSquadFeed(squadId) returns ONLY that squad's posts. Locked by squad-feed-characterization.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const SQUAD_TYPE_LABEL: Record<SquadPost['type'], string> = {
+  checkin: 'Check-in',
+  pr: 'PR',
+  formcheck: 'Form Check',
+  challenge: 'Challenge Update',
+  announcement: 'Announcement',
+  traintogether: 'Train Together',
+}
+
+function squadCommentsToPost(comments: SquadComment[]): PostComment[] {
+  return comments.map((c) => ({
+    id: c.id,
+    author: c.author,
+    role: c.role ?? undefined,
+    time: c.time,
+    body: c.body,
+    respect: c.respect,
+    replies: c.replies.map((r) => ({ id: r.id, author: r.author, role: r.role ?? undefined, time: r.time, body: r.body })),
+  }))
+}
+
+/** Map one squad post onto the shared FeedPost — additive, no field dropped. */
+function squadPostToFeedPost(squadId: string, p: SquadPost): FeedPost {
+  const identity = SQUAD_FEED_IDENTITY[squadId]
+  const source: PostSource = {
+    kind: 'squad',
+    name: identity?.name ?? 'Squad',
+    sub: `Squad · ${identity?.members ?? 0} members`,
+    tag: 'Squad',
+  }
+  const base = {
+    id: p.id,
+    author: p.author,
+    role: p.role ?? undefined,
+    timestamp: p.time,
+    source,
+    typeLabel: SQUAD_TYPE_LABEL[p.type],
+    body: p.body,
+    respect: p.respect,
+    commentCount: p.comments.length,
+    comments: squadCommentsToPost(p.comments),
+  }
+  switch (p.type) {
+    case 'checkin':
+      return { ...base, content: { type: 'checkin', streak: p.streak } }
+    case 'pr':
+      return { ...base, shareType: 'pr', content: { type: 'achievement', value: p.achievement.value, exercise: p.achievement.exercise, label: p.achievement.label } }
+    case 'formcheck':
+      return { ...base, challenge: p.challengeContext, content: { type: 'media', mediaKind: 'video', duration: p.media.dur } }
+    case 'challenge':
+      return { ...base, content: { type: 'challengeUpdate', name: p.challenge.name, place: p.challenge.place, of: p.challenge.of, metric: p.challenge.metric } }
+    case 'announcement':
+      return { ...base, content: { type: 'text' } }
+    case 'traintogether':
+      return { ...base, content: { type: 'traintogether' } }
+  }
+}
+
+// Per-squad feeds, built once. Keyed by squadId so a read cannot cross squads.
+const SQUAD_FEEDS: Record<string, FeedPost[]> = Object.fromEntries(
+  Object.entries(SQUAD_SEED).map(([squadId, posts]) => [squadId, posts.map((p) => squadPostToFeedPost(squadId, p))]),
+)
+const SQUAD_BY_ID: Record<string, FeedPost> = Object.fromEntries(
+  Object.values(SQUAD_FEEDS).flat().map((p) => [p.id, p]),
+)
+
+/**
+ * A single squad's internal feed (demo). Squad-scoped: returns ONLY `squadId`'s posts (empty for
+ * an unknown squad or one with no posts) — cross-squad leakage is structurally impossible. Same
+ * posts open in Post Detail via `/post/[id]`. Placeholder — no backend (real: GET /squads/:id/feed).
+ */
+export function getSquadFeed(squadId: string): FeedPost[] {
+  return SQUAD_FEEDS[squadId] ?? []
+}
+
+/** Demo fetch. Resolves the static demo posts, plus the community + squad feeds, by id. */
 export function getPost(id: string): FeedPost | null {
-  return POSTS[id] ?? COMMUNITY_BY_ID[id] ?? null
+  return POSTS[id] ?? COMMUNITY_BY_ID[id] ?? SQUAD_BY_ID[id] ?? null
 }
 
 /**
