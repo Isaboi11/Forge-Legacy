@@ -174,11 +174,17 @@ function ContentBlock({ content }: { content: PostContent }) {
           </View>
         </View>
       );
-    case 'program':
+    case 'program': {
+      const meta =
+        content.meta ??
+        (content.durationWeeks != null && content.frequencyPerWeek != null
+          ? `${content.durationWeeks} weeks · ${content.frequencyPerWeek} days/week`
+          : undefined);
+      const footNote = content.footNote ?? content.savedNote;
       return (
         <View style={styles.program}>
           <View style={styles.programHead}>
-            <Text style={styles.programKind}>Program</Text>
+            <Text style={styles.programKind}>{content.kindLabel ?? 'Program'}</Text>
             {content.price ? (
               <View style={styles.pricePill}>
                 <Text style={styles.pricePillText}>{content.price}</Text>
@@ -191,11 +197,21 @@ function ContentBlock({ content }: { content: PostContent }) {
             </View>
             <View style={styles.plateText}>
               <Text style={styles.plateTitle}>{content.programName}</Text>
-              <Text style={styles.plateSub}>{`${content.durationWeeks} weeks · ${content.frequencyPerWeek} days/week`}</Text>
+              {meta ? <Text style={styles.plateSub}>{meta}</Text> : null}
             </View>
           </View>
+          {content.saveLabel ? (
+            <View style={styles.programFoot}>
+              <View style={styles.programSaveBtn}>
+                <BookmarkGlyph />
+                <Text style={styles.programSaveText}>{content.saveLabel}</Text>
+              </View>
+              {footNote ? <Text style={styles.programFootNote}>{footNote}</Text> : null}
+            </View>
+          ) : null}
         </View>
       );
+    }
     case 'media':
       return (
         <View style={styles.media}>
@@ -604,6 +620,19 @@ const styles = StyleSheet.create({
   },
   pricePillText: { fontSize: 10.5, fontWeight: '700', color: flColor.bronze300 },
   programBody: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 14 },
+  programFoot: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    paddingVertical: 11,
+    paddingHorizontal: 14,
+    borderTopWidth: 1,
+    borderTopColor: flColor.charcoal700,
+  },
+  programSaveBtn: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  programSaveText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze300 },
+  programFootNote: { flexShrink: 1, textAlign: 'right', fontSize: 11.5, color: flColor.gray600 },
 
   // media
   media: {

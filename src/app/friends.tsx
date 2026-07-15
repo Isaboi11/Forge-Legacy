@@ -65,6 +65,7 @@ export default function FriendsFeedRoute() {
           <FeedPostCard
             key={post.id}
             post={post}
+            origin="friend"
             onOpen={() => openPost(post.id)}
             onShare={post.shareType ? () => openShare({ shareType: post.shareType!, overrides: { athlete: post.author } }) : undefined}
           />

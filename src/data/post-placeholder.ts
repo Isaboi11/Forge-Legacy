@@ -8,6 +8,10 @@
  */
 
 import type { ShareKind } from '@/domain/share/content'
+// Value import (explicit .ts so the zero-dep node --test suites resolve it); the app bundler
+// resolves it via allowImportingTsExtensions, same convention as domain/rank-artwork imports.
+import { COMMUNITY_DATA } from './community-placeholder.ts'
+import type { CommunityPost } from './community-placeholder.ts'
 
 export type PostRole = 'owner' | 'mod'
 
@@ -27,7 +31,26 @@ export type PostContent =
   // Program share = a snapshot of a real Program. Uses the Phase-0 runtime `Program` field
   // names (durationWeeks/frequencyPerWeek) so the backend swap is a data change, not a
   // renderer change; the renderer formats the meta line. `programId` is the ref for the swap.
-  | { type: 'program'; programId?: string; programName: string; durationWeeks: number; frequencyPerWeek: number; price?: string }
+  //
+  // ADDITIVE superset (Community convergence): structured duration/frequency are now optional,
+  // and a Community program may instead carry a free-form `meta` line + `kindLabel` (e.g. "Forge
+  // Program" / "Paid Program"), a `saveLabel` CTA ("Save to Upcoming" / "Get Program"), a
+  // `savedNote` ("214 saved") and a `footNote`. Renderers prefer `meta` when present, else format
+  // the numbers. Nothing existing loses meaning — the two committed structured posts still supply
+  // durationWeeks/frequencyPerWeek.
+  | {
+      type: 'program'
+      programId?: string
+      programName: string
+      durationWeeks?: number
+      frequencyPerWeek?: number
+      price?: string
+      kindLabel?: string
+      meta?: string
+      saveLabel?: string
+      savedNote?: string
+      footNote?: string
+    }
   | { type: 'media'; mediaKind: 'photo' | 'video'; duration?: string }
   | { type: 'event'; month: string; day: string; title: string; when: string; going: number }
   | { type: 'poll'; options: { text: string; pct: number; chosen?: boolean }[]; footer: string }
@@ -147,9 +170,71 @@ const POSTS: Record<string, FeedPost> = {
   },
 }
 
-/** Demo fetch. Returns null for an unknown id (the screen shows a graceful not-found state). */
+// ─────────────────────────────────────────────────────────────────────────────
+// Community feed — the committed Community tab renders COMMUNITY_DATA.posts (a richer
+// `CommunityPost[]`). The convergence maps each onto the shared `FeedPost` so the ONE
+// FeedPostCard renders it and it taps through to this same Post Detail. Semantic contract is
+// locked by community-feed-characterization.test.mjs. Community-only affordances (save / RSVP /
+// program CTA / author presence) are the CARD's origin-config, not extra data.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Map one committed CommunityPost onto the shared FeedPost — additive, no field dropped. */
+function communityPostToFeedPost(p: CommunityPost): FeedPost {
+  const base = {
+    id: p.id,
+    author: p.author,
+    role: p.role,
+    timestamp: p.time,
+    source: COMMUNITY,
+    typeLabel: p.typeLabel,
+    body: p.body,
+    respect: p.respectCount,
+    commentCount: p.commentCount,
+    comments: [] as PostComment[], // no authored comment threads in the community seed
+  }
+  switch (p.kind) {
+    case 'discussion':
+      return { ...base, content: { type: 'text' } }
+    case 'event':
+      return {
+        ...base,
+        content: { type: 'event', month: p.eventMonth, day: p.eventDay, title: p.eventTitle, when: p.eventWhen, going: p.eventGoing },
+      }
+    case 'formcheck':
+      return { ...base, content: { type: 'media', mediaKind: 'video', duration: p.videoDuration } }
+    case 'achievement':
+      return {
+        ...base,
+        shareType: 'pr', // a PR keepsake is genuinely shareable via SH-1
+        content: { type: 'achievement', value: p.plateValue, exercise: p.plateExercise, label: p.plateLabel },
+      }
+    case 'program':
+      return {
+        ...base,
+        content: { type: 'program', programName: p.programTitle, kindLabel: p.programKindLabel, meta: p.programMeta, saveLabel: 'Save to Upcoming', savedNote: p.savedNote },
+      }
+    case 'programPaid':
+      return {
+        ...base,
+        content: { type: 'program', programName: p.programTitle, kindLabel: p.programKindLabel, meta: p.programMeta, price: p.price, saveLabel: 'Get Program', footNote: p.footNote },
+      }
+  }
+}
+
+const COMMUNITY_FEED: FeedPost[] = COMMUNITY_DATA.posts.map(communityPostToFeedPost)
+const COMMUNITY_BY_ID: Record<string, FeedPost> = Object.fromEntries(COMMUNITY_FEED.map((p) => [p.id, p]))
+
+/**
+ * The Community Home feed (demo). Same posts open in Post Detail via `/post/[id]`. Derived from
+ * the committed COMMUNITY_DATA seed — placeholder, no feed backend (real: GET /communities/:id/feed).
+ */
+export function getCommunityFeed(): FeedPost[] {
+  return COMMUNITY_FEED
+}
+
+/** Demo fetch. Resolves the static demo posts, the friends feed, and the community feed by id. */
 export function getPost(id: string): FeedPost | null {
-  return POSTS[id] ?? null
+  return POSTS[id] ?? COMMUNITY_BY_ID[id] ?? null
 }
 
 /**

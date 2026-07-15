@@ -1,41 +1,55 @@
 /**
  * FeedPostCard — the ONE feed post card, shared by every feed surface (Friends, Community,
- * Squad). It is config-driven off the post's own fields — `source.kind` (community/squad/
- * friend) + `role` (owner/mod) + the `showAudience` prop — rather than forked into parallel
- * cards, mirroring how Post Detail keys its chrome off the post origin.
+ * Squad). It is config-driven off the post's own fields — `source.kind` selects a
+ * `feedOriginConfig` (which affordances light up), plus `role`, exactly the way Post Detail keys
+ * its chrome off origin. No forked per-surface cards.
  *
- * Renders: author header (Avatar + role badge + time + optional audience tag), caption, a
- * condensed content preview (milestone plate for PR/honor/program, media band), and the
- * reaction row. Tapping the card/caption/content calls `onOpen` (→ Post Detail); `onShare`
- * (milestone posts) reuses SH-1. Read-only: options/react are inert; media is a pending-asset
- * band. All content is placeholder (no feed backend).
+ * Content is rendered ONE way per type (a single renderer, not condensed-vs-rich forks):
+ * achievement → PR plate, honor → honor plate, program → program card, media → band, event →
+ * event card, text/poll → caption only. The origin config then toggles affordances: the audience
+ * tag, the type label, author presence, a save control, the event RSVP, and the program CTA.
+ * Tapping the card/caption/content calls `onOpen` (→ Post Detail); `onShare` (keepsake posts)
+ * reuses SH-1.
+ *
+ * READ-ONLY: options / save / RSVP / react are inert; media is a pending-asset band. All content
+ * is placeholder (no feed backend).
  */
 
 import React from 'react'
 import Svg, { Circle, Path, Rect } from 'react-native-svg'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { LinearGradient } from 'expo-linear-gradient'
 import { Avatar } from '../../composites/Avatar'
 import { FlameIcon } from '../../primitives/icons/HomeIcons'
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation'
 import type { FeedPost, PostContent, PostRole } from '@/data/post-placeholder'
+import { feedOriginConfig, type FeedOrigin, type FeedOriginConfig } from './origin-config'
 
 export interface FeedPostCardProps {
   post: FeedPost
+  /**
+   * The FEED SURFACE this card is displayed in — which drives the affordance config. This is the
+   * screen, NOT the post's source: a community-sourced post re-shared into the Friends feed still
+   * renders lean (origin="friend"). `post.source` only supplies the audience-tag text + the Post
+   * Detail source bar.
+   */
+  origin: FeedOrigin
   onOpen: () => void
   onShare?: () => void
-  /**
-   * Show the source/audience tag next to the timestamp. Friends feed = true (posts come from
-   * different circles); a Community/Squad feed where every post shares the one source can pass
-   * false to drop the redundant tag. Default true.
-   */
+  /** Override the audience-tag visibility; defaults to the surface config. */
   showAudience?: boolean
 }
 
-export function FeedPostCard({ post, onOpen, onShare, showAudience = true }: FeedPostCardProps) {
+export function FeedPostCard({ post, origin, onOpen, onShare, showAudience }: FeedPostCardProps) {
+  const cfg = feedOriginConfig(origin)
+  const showTag = showAudience ?? cfg.audienceTag
+  const presence = cfg.presenceOnAchievement && post.content.type === 'achievement'
+  const showShare = Boolean(onShare) || cfg.shareAlways
+
   return (
     <View style={styles.card}>
       <View style={styles.authorRow}>
-        <Avatar name={post.author} size="listRow" />
+        <Avatar name={post.author} size="listRow" presence={presence} />
         <View style={styles.authorText}>
           <View style={styles.nameRow}>
             <Text style={styles.authorName} numberOfLines={1}>
@@ -45,7 +59,7 @@ export function FeedPostCard({ post, onOpen, onShare, showAudience = true }: Fee
           </View>
           <View style={styles.authorMeta}>
             <Text style={styles.time}>{post.timestamp}</Text>
-            {showAudience ? (
+            {showTag ? (
               <>
                 <View style={styles.dot} />
                 <Text style={styles.audience}>{post.source.tag}</Text>
@@ -53,6 +67,7 @@ export function FeedPostCard({ post, onOpen, onShare, showAudience = true }: Fee
             ) : null}
           </View>
         </View>
+        {cfg.showTypeLabel && post.typeLabel ? <Text style={styles.typeLabel}>{post.typeLabel}</Text> : null}
         <Pressable onPress={() => {}} accessibilityRole="button" accessibilityLabel="Post options" style={styles.optionsBtn} hitSlop={6}>
           <OverflowIcon />
         </Pressable>
@@ -65,7 +80,7 @@ export function FeedPostCard({ post, onOpen, onShare, showAudience = true }: Fee
       ) : null}
 
       <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={`Open ${post.author}'s post`}>
-        <FeedContent content={post.content} />
+        <FeedContent content={post.content} cfg={cfg} />
       </Pressable>
 
       <View style={styles.reactions}>
@@ -77,9 +92,14 @@ export function FeedPostCard({ post, onOpen, onShare, showAudience = true }: Fee
           <CommentGlyph />
           <Text style={styles.reactText}>{post.commentCount}</Text>
         </Pressable>
+        {cfg.save ? (
+          <Pressable onPress={() => {}} accessibilityRole="button" accessibilityLabel="Save" style={styles.reactIconBtn} hitSlop={6}>
+            <BookmarkGlyph />
+          </Pressable>
+        ) : null}
         <View style={styles.reactSpacer} />
-        {onShare ? (
-          <Pressable onPress={onShare} accessibilityRole="button" accessibilityLabel="Share" style={styles.shareBtn} hitSlop={6}>
+        {showShare ? (
+          <Pressable onPress={onShare ?? (() => {})} accessibilityRole="button" accessibilityLabel="Share" style={styles.shareBtn} hitSlop={6}>
             <ShareGlyph />
           </Pressable>
         ) : null}
@@ -88,24 +108,25 @@ export function FeedPostCard({ post, onOpen, onShare, showAudience = true }: Fee
   )
 }
 
-/** Condensed content preview for the feed card (the full block renders in Post Detail). */
-function FeedContent({ content }: { content: PostContent }) {
+/** The single content renderer — one treatment per type; the origin config toggles affordances. */
+function FeedContent({ content, cfg }: { content: PostContent; cfg: FeedOriginConfig }) {
   switch (content.type) {
     case 'text':
     case 'poll':
-    case 'event':
-      return null
+      return null // caption carries text; polls open in Post Detail
     case 'achievement':
       return (
-        <View style={styles.milestone}>
-          <View style={styles.mileHead}>
-            <DumbbellGlyph />
-            <Text style={styles.mileKind}>Personal Record</Text>
-          </View>
-          <Text style={styles.mileTitle}>
-            <Text style={styles.mileValue}>{content.value}</Text> {content.exercise}
-          </Text>
-          <Text style={styles.mileSub}>{content.label}</Text>
+        <View style={styles.achPlate}>
+          <LinearGradient
+            colors={['rgba(191,143,79,0.24)', 'rgba(23,17,11,0.96)'] as const}
+            locations={[0, 0.7] as const}
+            start={{ x: 0.5, y: 0.2 }}
+            end={{ x: 0.5, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+          <Text style={styles.achValue}>{content.value}</Text>
+          <Text style={styles.achExercise}>{content.exercise}</Text>
+          <Text style={styles.achLabel}>{content.label}</Text>
         </View>
       )
     case 'honor':
@@ -119,17 +140,51 @@ function FeedContent({ content }: { content: PostContent }) {
           {content.sub ? <Text style={styles.mileSub}>{content.sub}</Text> : null}
         </View>
       )
-    case 'program':
+    case 'program': {
+      const meta =
+        content.meta ??
+        (content.durationWeeks != null && content.frequencyPerWeek != null
+          ? `${content.durationWeeks} weeks · ${content.frequencyPerWeek} days/week`
+          : undefined)
+      const footNote = content.footNote ?? content.savedNote
       return (
-        <View style={styles.milestone}>
-          <View style={styles.mileHead}>
-            <DumbbellGlyph />
-            <Text style={styles.mileKind}>Program</Text>
+        <View style={styles.programCard}>
+          <View style={styles.programHeader}>
+            <ProgramKindGlyph />
+            <Text style={styles.programKind}>{content.kindLabel ?? 'Program'}</Text>
+            {content.price ? (
+              <View style={styles.pricePill}>
+                <Text style={styles.priceText}>{content.price}</Text>
+              </View>
+            ) : null}
           </View>
-          <Text style={styles.mileTitle}>{content.programName}</Text>
-          <Text style={styles.mileSub}>{`${content.durationWeeks} weeks · ${content.frequencyPerWeek} days/week`}</Text>
+          <View style={styles.programMain}>
+            <View style={styles.programIcon}>
+              <DumbbellGlyph />
+            </View>
+            <View style={styles.programTextCol}>
+              <Text style={styles.programTitle} numberOfLines={1}>
+                {content.programName}
+              </Text>
+              {meta ? (
+                <Text style={styles.programMeta} numberOfLines={1}>
+                  {meta}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+          {cfg.programCTA ? (
+            <View style={styles.programFooter}>
+              <View style={styles.programSaveBtn}>
+                <BookmarkGlyph />
+                <Text style={styles.programSaveText}>{content.saveLabel ?? 'Save to Upcoming'}</Text>
+              </View>
+              {footNote ? <Text style={styles.programFootNote}>{footNote}</Text> : null}
+            </View>
+          ) : null}
         </View>
       )
+    }
     case 'media':
       return (
         <View style={styles.media}>
@@ -137,12 +192,41 @@ function FeedContent({ content }: { content: PostContent }) {
             <Rect x="0" y="0" width="100%" height="100%" fill={flColor.charcoal800} />
           </Svg>
           {content.mediaKind === 'video' ? (
-            <View style={styles.playBtn}>
-              <PlayGlyph />
-            </View>
+            <>
+              <View style={styles.playBtn}>
+                <PlayGlyph />
+              </View>
+              <View style={styles.videoTag}>
+                <Text style={styles.videoTagText}>Video{content.duration ? ` · ${content.duration}` : ''}</Text>
+              </View>
+            </>
           ) : (
             <Text style={styles.mediaHint}>Photo</Text>
           )}
+        </View>
+      )
+    case 'event':
+      return (
+        <View style={styles.eventCard}>
+          <View style={styles.eventDate}>
+            <Text style={styles.eventMonth}>{content.month}</Text>
+            <Text style={styles.eventDay}>{content.day}</Text>
+          </View>
+          <View style={styles.eventBody}>
+            <Text style={styles.eventTitle} numberOfLines={1}>
+              {content.title}
+            </Text>
+            <View style={styles.eventWhenRow}>
+              <ClockGlyph />
+              <Text style={styles.eventWhen}>{content.when}</Text>
+            </View>
+            <Text style={styles.eventGoing}>{content.going} going</Text>
+          </View>
+          {cfg.eventRSVP ? (
+            <Pressable onPress={() => {}} accessibilityRole="button" accessibilityLabel="RSVP" style={styles.rsvpBtn}>
+              <Text style={styles.rsvpText}>RSVP</Text>
+            </Pressable>
+          ) : null}
         </View>
       )
   }
@@ -176,8 +260,15 @@ function HonorGlyph() {
 }
 function DumbbellGlyph() {
   return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
       <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />
+    </Svg>
+  )
+}
+function ProgramKindGlyph() {
+  return (
+    <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M4 5.5h13a1.5 1.5 0 0 1 1.5 1.5v11.5H6a2 2 0 0 0-2 2zM4 5.5v14M8 9.5h7M8 13h7" />
     </Svg>
   )
 }
@@ -188,10 +279,25 @@ function PlayGlyph() {
     </Svg>
   )
 }
+function ClockGlyph() {
+  return (
+    <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <Circle cx={12} cy={12} r={9} />
+      <Path d="M12 7v5l3 2" />
+    </Svg>
+  )
+}
 function CommentGlyph() {
   return (
     <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
       <Path d="M20 11.5a7.5 7.5 0 0 1-10.9 6.7L4 19.5l1.3-4A7.5 7.5 0 1 1 20 11.5z" />
+    </Svg>
+  )
+}
+function BookmarkGlyph() {
+  return (
+    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M6 4h12v16l-6-4-6 4z" />
     </Svg>
   )
 }
@@ -223,6 +329,7 @@ const styles = StyleSheet.create({
   time: { fontSize: 11.5, color: flColor.gray600 },
   dot: { width: 2.5, height: 2.5, borderRadius: 1.25, backgroundColor: flColor.charcoal500 },
   audience: { fontSize: 11, color: flColor.gray600 },
+  typeLabel: { fontSize: 10.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.gray600 },
   optionsBtn: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
   roleBadge: {
     paddingVertical: 2,
@@ -236,6 +343,23 @@ const styles = StyleSheet.create({
 
   caption: { fontSize: 14, lineHeight: 21, color: flColor.cream100, marginTop: 11 },
 
+  // achievement / PR plate (gradient hero)
+  achPlate: {
+    marginTop: 12,
+    borderRadius: flRadius.md,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    overflow: 'hidden',
+    paddingVertical: 22,
+    alignItems: 'center',
+    backgroundColor: flColor.charcoal900,
+    boxShadow: flShadow.glowSubtle,
+  },
+  achValue: { fontFamily: flFont.display, fontSize: 44, fontWeight: '700', letterSpacing: 0.5, color: flColor.bronze300 },
+  achExercise: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.cream100, marginTop: 6 },
+  achLabel: { fontSize: 9.5, fontWeight: '600', letterSpacing: 2, textTransform: 'uppercase', color: flColor.bronze400, marginTop: 8 },
+
+  // honor plate
   milestone: {
     marginTop: 12,
     borderRadius: flRadius.md,
@@ -248,9 +372,67 @@ const styles = StyleSheet.create({
   mileHead: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 9 },
   mileKind: { fontSize: 10, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
   mileTitle: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
-  mileValue: { color: flColor.bronze300 },
   mileSub: { fontSize: 12, color: flColor.gray400, marginTop: 4 },
 
+  // program card
+  programCard: {
+    marginTop: 12,
+    borderRadius: flRadius.md,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    backgroundColor: flColor.charcoal900,
+    overflow: 'hidden',
+  },
+  programHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 13,
+    borderBottomWidth: 1,
+    borderBottomColor: flColor.bronzeBorderSubtle,
+    backgroundColor: flColor.bronzeTint,
+  },
+  programKind: { flex: 1, fontSize: 10, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  pricePill: {
+    paddingVertical: 2,
+    paddingHorizontal: 9,
+    borderRadius: flRadius.pill,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    backgroundColor: flColor.bronzeTint,
+  },
+  priceText: { fontSize: 10.5, fontWeight: '700', color: flColor.bronze300 },
+  programMain: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 13 },
+  programIcon: {
+    width: 44,
+    height: 44,
+    flexShrink: 0,
+    borderRadius: flRadius.round,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    backgroundColor: flColor.charcoal800,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  programTextCol: { flex: 1, minWidth: 0, gap: 3 },
+  programTitle: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.cream100 },
+  programMeta: { fontSize: 12, color: flColor.gray400 },
+  programFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 13,
+    borderTopWidth: 1,
+    borderTopColor: flColor.charcoal700,
+  },
+  programSaveBtn: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  programSaveText: { fontSize: 12, fontWeight: '600', color: flColor.bronze300 },
+  programFootNote: { flexShrink: 1, textAlign: 'right', fontSize: 11, color: flColor.gray600 },
+
+  // media band
   media: {
     marginTop: 12,
     height: 190,
@@ -272,9 +454,63 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  videoTag: {
+    position: 'absolute',
+    top: 11,
+    left: 11,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: flRadius.pill,
+    backgroundColor: 'rgba(10,10,10,0.6)',
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+  },
+  videoTagText: { fontSize: 10, fontWeight: '600', letterSpacing: 0.4, textTransform: 'uppercase', color: flColor.bronze300 },
+
+  // event card
+  eventCard: {
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: flRadius.md,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    backgroundColor: flColor.charcoal800,
+    padding: 12,
+  },
+  eventDate: {
+    width: 48,
+    height: 52,
+    flexShrink: 0,
+    borderRadius: flRadius.sm,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    backgroundColor: flColor.charcoal900,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  eventMonth: { fontSize: 9, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.bronze300 },
+  eventDay: { fontFamily: flFont.display, fontSize: 21, fontWeight: '700', lineHeight: 22, color: flColor.cream100 },
+  eventBody: { flex: 1, minWidth: 0, gap: 3 },
+  eventTitle: { fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
+  eventWhenRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  eventWhen: { fontSize: 12, color: flColor.gray400 },
+  eventGoing: { fontSize: 11, color: flColor.gray600 },
+  rsvpBtn: {
+    flexShrink: 0,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: flRadius.pill,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    backgroundColor: flColor.bronzeTint,
+  },
+  rsvpText: { fontSize: 12, fontWeight: '700', letterSpacing: 0.4, color: flColor.bronze300 },
 
   reactions: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 13 },
   reactItem: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  reactIconBtn: { padding: 2 },
   reactText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
   reactSpacer: { flex: 1 },
   shareBtn: { padding: 2 },

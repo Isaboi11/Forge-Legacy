@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -8,10 +9,13 @@ import { Avatar } from '@/components/forge/composites/Avatar';
 import { SectionHeader } from '@/components/forge/composites/SectionHeader';
 import { Pill } from '@/components/forge/composites/Pill';
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
+import { FeedPostCard } from '@/components/forge/compositions/FeedPostCard';
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 import { getSelfProfile } from '@/domain/profile/placeholder-data';
+import { useShareSheet } from '@/hooks/useShareSheet';
 import { COMMUNITY_DATA } from '@/data/community-placeholder';
+import { getCommunityFeed, type FeedPost } from '@/data/post-placeholder';
 import type {
   AboutInfo,
   ActiveChallenge,
@@ -19,7 +23,6 @@ import type {
   CommunityAction,
   CommunityEvent,
   CommunityMetaItem,
-  CommunityPost,
   Competition,
   ComposerShortcut,
   Contributor,
@@ -78,7 +81,15 @@ const TABS: { id: TabId; label: string }[] = [
 export default function CommunityScreen() {
   const profile = getSelfProfile();
   const data = COMMUNITY_DATA;
+  const router = useRouter();
+  const { openShare } = useShareSheet();
   const [tab, setTab] = useState<TabId>('feed');
+
+  const feedPosts = getCommunityFeed();
+  const openPost = (id: string) => router.push({ pathname: '/post/[id]', params: { id } });
+  // Only genuine keepsakes (a PR) carry an SH-1 share kind; the rest show an inert share icon.
+  const buildShare = (post: FeedPost) =>
+    post.shareType ? () => openShare({ shareType: post.shareType!, overrides: { athlete: post.author } }) : undefined;
 
   return (
     <View style={styles.root}>
@@ -146,7 +157,9 @@ export default function CommunityScreen() {
             shortcuts={data.composerShortcuts}
             selfName={profile.name}
             pinned={data.pinned}
-            posts={data.posts}
+            feedPosts={feedPosts}
+            onOpenPost={openPost}
+            buildShare={buildShare}
             challenges={data.activeChallenges}
             contributors={data.contributors}
           />
@@ -341,14 +354,18 @@ function FeedTab({
   shortcuts,
   selfName,
   pinned,
-  posts,
+  feedPosts,
+  onOpenPost,
+  buildShare,
   challenges,
   contributors,
 }: {
   shortcuts: ComposerShortcut[];
   selfName: string;
   pinned: PinnedAnnouncement;
-  posts: CommunityPost[];
+  feedPosts: FeedPost[];
+  onOpenPost: (id: string) => void;
+  buildShare: (post: FeedPost) => (() => void) | undefined;
   challenges: ActiveChallenge[];
   contributors: Contributor[];
 }) {
@@ -388,10 +405,11 @@ function FeedTab({
       {/* pinned announcement */}
       <PinnedCard pinned={pinned} />
 
-      {/* mixed post feed */}
+      {/* mixed post feed — the ONE shared FeedPostCard, community origin (save / RSVP / program
+          CTA / presence lit up by its origin config), each tapping through to Post Detail */}
       <View style={styles.postStack}>
-        {posts.map((p) => (
-          <PostCard key={p.id} post={p} />
+        {feedPosts.map((post) => (
+          <FeedPostCard key={post.id} post={post} origin="community" onOpen={() => onOpenPost(post.id)} onShare={buildShare(post)} />
         ))}
       </View>
 
@@ -486,163 +504,6 @@ function PinnedCard({ pinned }: { pinned: PinnedAnnouncement }) {
         <EngagementRow respectCount={pinned.respectCount} commentCount={pinned.commentCount} />
       </View>
     </View>
-  );
-}
-
-function PostCard({ post }: { post: CommunityPost }) {
-  return (
-    <Pressable
-      onPress={() => {
-        // Post Detail — not yet implemented.
-      }}
-      accessibilityRole="button"
-      accessibilityLabel={`Open post by ${post.author}`}
-      style={styles.postCard}
-    >
-      <View style={styles.postAuthorRow}>
-        <Avatar name={post.author} size="listRow" presence={post.kind === 'achievement'} />
-        <View style={styles.postAuthorText}>
-          <View style={styles.postAuthorNameRow}>
-            <Text style={styles.postAuthor} numberOfLines={1}>
-              {post.author}
-            </Text>
-            {post.role ? <RoleBadge role={post.role} /> : null}
-          </View>
-          <Text style={styles.postTime}>{post.time}</Text>
-        </View>
-        <Text style={styles.postType}>{post.typeLabel}</Text>
-      </View>
-
-      {post.body ? <Text style={styles.postText}>{post.body}</Text> : null}
-
-      {post.kind === 'event' ? (
-        <View style={styles.eventCard}>
-          <DateChip month={post.eventMonth} day={post.eventDay} />
-          <View style={styles.eventBody}>
-            <Text style={styles.eventTitle} numberOfLines={1}>
-              {post.eventTitle}
-            </Text>
-            <View style={styles.eventWhenRow}>
-              <ClockIcon size={13} />
-              <Text style={styles.eventWhen}>{post.eventWhen}</Text>
-            </View>
-            <Text style={styles.eventGoing}>{post.eventGoing} going</Text>
-          </View>
-          <Pressable onPress={() => {}} accessibilityRole="button" accessibilityLabel="RSVP" style={styles.rsvpBtn}>
-            <Text style={styles.rsvpText}>RSVP</Text>
-          </Pressable>
-        </View>
-      ) : null}
-
-      {post.kind === 'formcheck' ? (
-        // PENDING-ASSET video — charcoal placeholder + play glyph, never a fabricated frame.
-        <View style={styles.videoPlaceholder}>
-          <View style={styles.playButton}>
-            <PlayIcon />
-          </View>
-          <View style={styles.videoTag}>
-            <VideoTagIcon />
-            <Text style={styles.videoTagText}>Video · {post.videoDuration}</Text>
-          </View>
-        </View>
-      ) : null}
-
-      {post.kind === 'program' ? (
-        <ProgramCard
-          kindLabel={post.programKindLabel}
-          title={post.programTitle}
-          meta={post.programMeta}
-          footNote={post.savedNote}
-          saveLabel="Save to Upcoming"
-        />
-      ) : null}
-
-      {post.kind === 'programPaid' ? (
-        <ProgramCard
-          kindLabel={post.programKindLabel}
-          title={post.programTitle}
-          meta={post.programMeta}
-          footNote={post.footNote}
-          saveLabel="Get Program"
-          price={post.price}
-        />
-      ) : null}
-
-      {post.kind === 'achievement' ? (
-        // Text-based PR plate (no image needed — a typographic hero, nothing fabricated).
-        <View style={styles.plate}>
-          <LinearGradient
-            colors={['rgba(191,143,79,0.24)', 'rgba(23,17,11,0.96)'] as const}
-            locations={[0, 0.7] as const}
-            start={{ x: 0.5, y: 0.2 }}
-            end={{ x: 0.5, y: 1 }}
-            style={StyleSheet.absoluteFill}
-          />
-          <Text style={styles.plateValue}>{post.plateValue}</Text>
-          <Text style={styles.plateExercise}>{post.plateExercise}</Text>
-          <Text style={styles.plateLabel}>{post.plateLabel}</Text>
-        </View>
-      ) : null}
-
-      <EngagementRow respectCount={post.respectCount} commentCount={post.commentCount} />
-    </Pressable>
-  );
-}
-
-function ProgramCard({
-  kindLabel,
-  title,
-  meta,
-  footNote,
-  saveLabel,
-  price,
-}: {
-  kindLabel: string;
-  title: string;
-  meta: string;
-  footNote: string;
-  saveLabel: string;
-  price?: string;
-}) {
-  return (
-    <Pressable
-      onPress={() => {
-        // Program Detail (W-3) / external creator page — not yet implemented.
-      }}
-      accessibilityRole="button"
-      accessibilityLabel={title}
-      style={styles.programCard}
-    >
-      <View style={styles.programHeader}>
-        <ProgramKindIcon />
-        <Text style={styles.programKind}>{kindLabel}</Text>
-        {price ? (
-          <View style={styles.pricePill}>
-            <Text style={styles.priceText}>{price}</Text>
-          </View>
-        ) : null}
-      </View>
-      <View style={styles.programMain}>
-        <View style={styles.programIcon}>
-          <BarbellIcon size={22} />
-        </View>
-        <View style={styles.programTextCol}>
-          <Text style={styles.programTitle} numberOfLines={1}>
-            {title}
-          </Text>
-          <Text style={styles.programMeta} numberOfLines={1}>
-            {meta}
-          </Text>
-        </View>
-      </View>
-      <View style={styles.programFooter}>
-        <View style={styles.programSaveBtn}>
-          <BookmarkIcon />
-          <Text style={styles.programSaveText}>{saveLabel}</Text>
-        </View>
-        <Text style={styles.programFootNote}>{footNote}</Text>
-      </View>
-    </Pressable>
   );
 }
 
@@ -1073,28 +934,6 @@ function BookmarkIcon() {
     </Svg>
   );
 }
-function PlayIcon() {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill={flColor.cream100}>
-      <Path d="M8 5.5v13l11-6.5z" />
-    </Svg>
-  );
-}
-function VideoTagIcon() {
-  return (
-    <Svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      <Rect x={4} y={7} width={11} height={10} />
-      <Path d="M15 10l5-3v10l-5-3z" />
-    </Svg>
-  );
-}
-function ProgramKindIcon() {
-  return (
-    <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 5.5h13a1.5 1.5 0 0 1 1.5 1.5v11.5H6a2 2 0 0 0-2 2zM4 5.5v14M8 9.5h7M8 13h7" />
-    </Svg>
-  );
-}
 function LaurelIcon() {
   return (
     <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
@@ -1332,29 +1171,14 @@ const styles = StyleSheet.create({
   shortcutDivider: { borderLeftWidth: 1, borderLeftColor: flColor.charcoal700 },
   shortcutLabel: { fontSize: 10, fontWeight: '600', color: flColor.gray600 },
 
-  // post shared
+  // post feed stack + pinned-announcement author block (the mixed feed now renders the shared
+  // FeedPostCard; these remaining keys are used by PinnedCard)
   postStack: { gap: 12, marginTop: 14 },
-  postCard: {
-    borderRadius: flRadius.lg,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorderSubtle,
-    backgroundColor: flColor.charcoal900,
-    padding: 14,
-    boxShadow: flShadow.card,
-  },
   postAuthorRow: { flexDirection: 'row', alignItems: 'center', gap: 11 },
   postAuthorText: { flex: 1, minWidth: 0 },
   postAuthorNameRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   postAuthor: { flexShrink: 1, fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   postTime: { fontSize: 11.5, color: flColor.gray600 },
-  postType: {
-    flexShrink: 0,
-    fontSize: 9,
-    fontWeight: '600',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    color: flColor.gray600,
-  },
   postText: { fontSize: 14, lineHeight: 21, color: flColor.cream100, marginTop: 10 },
 
   // role badge
@@ -1408,33 +1232,9 @@ const styles = StyleSheet.create({
   },
   pinnedBody: { padding: 15 },
 
-  // event card (in feed post)
-  eventCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 13,
-    marginTop: 12,
-    padding: 13,
-    borderRadius: flRadius.md,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorderSubtle,
-    backgroundColor: flColor.base,
-  },
-  eventBody: { flex: 1, minWidth: 0, gap: 3 },
-  eventTitle: { fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
+  // event "when" row — shared by the Events tab list cards
   eventWhenRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   eventWhen: { fontSize: 11.5, color: flColor.gray400 },
-  eventGoing: { fontSize: 11, fontWeight: '600', color: flColor.gray600, marginTop: 1 },
-  rsvpBtn: {
-    flexShrink: 0,
-    paddingVertical: 9,
-    paddingHorizontal: 18,
-    borderRadius: flRadius.md,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
-    backgroundColor: flColor.bronzeTint,
-  },
-  rsvpText: { fontSize: 13, fontWeight: '700', letterSpacing: 0.5, color: flColor.bronze300 },
 
   // date chip
   dateChip: {
@@ -1451,156 +1251,6 @@ const styles = StyleSheet.create({
   dateMonth: { fontSize: 9, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.bronze300 },
   dateDay: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', color: flColor.cream100, lineHeight: 24 },
   dateDayLarge: { fontSize: 23 },
-
-  // form-check video (pending-asset)
-  videoPlaceholder: {
-    height: 196,
-    marginTop: 12,
-    borderRadius: flRadius.md,
-    borderWidth: 1,
-    borderColor: flColor.charcoal700,
-    backgroundColor: flColor.charcoal800,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  playButton: {
-    width: 54,
-    height: 54,
-    borderRadius: flRadius.round,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
-    backgroundColor: 'rgba(10,10,10,0.55)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  videoTag: {
-    position: 'absolute',
-    top: 11,
-    left: 11,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingVertical: 3,
-    paddingHorizontal: 8,
-    borderRadius: flRadius.pill,
-    borderWidth: 1,
-    borderColor: flColor.charcoal600,
-    backgroundColor: 'rgba(10,10,10,0.6)',
-  },
-  videoTagText: {
-    fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 0.4,
-    textTransform: 'uppercase',
-    color: flColor.bronze300,
-  },
-
-  // program card (in feed post)
-  programCard: {
-    marginTop: 12,
-    borderRadius: flRadius.md,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
-    backgroundColor: flColor.base,
-    overflow: 'hidden',
-    boxShadow: flShadow.card,
-  },
-  programHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: flColor.bronzeBorderSubtle,
-    backgroundColor: 'rgba(191,143,79,0.05)',
-  },
-  programKind: {
-    fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 1.4,
-    textTransform: 'uppercase',
-    color: flColor.bronze400,
-  },
-  pricePill: {
-    marginLeft: 'auto',
-    paddingVertical: 2,
-    paddingHorizontal: 9,
-    borderRadius: flRadius.pill,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
-    backgroundColor: flColor.bronzeTint,
-  },
-  priceText: { fontSize: 10.5, fontWeight: '700', letterSpacing: 0.3, color: flColor.bronze300 },
-  programMain: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingVertical: 13, paddingHorizontal: 14 },
-  programIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: flRadius.md,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
-    backgroundColor: flColor.charcoal900,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  programTextCol: { flex: 1, minWidth: 0, gap: 3 },
-  programTitle: { fontFamily: flFont.display, fontSize: 15.5, fontWeight: '600', color: flColor.cream100 },
-  programMeta: { fontSize: 12, color: flColor.gray400 },
-  programFooter: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingBottom: 13 },
-  programSaveBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    paddingVertical: 9,
-    paddingHorizontal: 15,
-    borderRadius: flRadius.md,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
-    backgroundColor: flColor.bronzeTint,
-  },
-  programSaveText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze300 },
-  programFootNote: { flexShrink: 1, fontSize: 11.5, color: flColor.gray600 },
-
-  // achievement plate
-  plate: {
-    height: 210,
-    marginTop: 12,
-    borderRadius: flRadius.md,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
-    backgroundColor: flColor.base,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  plateValue: {
-    fontFamily: flFont.display,
-    fontSize: 64,
-    fontWeight: '700',
-    letterSpacing: 1,
-    color: flColor.bronze300,
-    lineHeight: 66,
-    textShadowColor: 'rgba(191,143,79,0.55)',
-    textShadowOffset: { width: 0, height: 3 },
-    textShadowRadius: 26,
-  },
-  plateExercise: {
-    fontFamily: flFont.display,
-    fontSize: 17,
-    fontWeight: '600',
-    letterSpacing: 0.2,
-    color: flColor.cream100,
-    marginTop: 8,
-  },
-  plateLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 2.5,
-    textTransform: 'uppercase',
-    color: flColor.bronze400,
-    marginTop: 9,
-  },
 
   // active challenge strip
   challengeStripCard: {
