@@ -8,6 +8,7 @@ import { Button } from '@/components/forge/composites/Button';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
 import { flColor, flGradient } from '@/constants/foundation';
 import { useCeremony, useToast } from '@/hooks/useCeremony';
+import { useShareSheet } from '@/hooks/useShareSheet';
 import { PLACEHOLDER_RANK } from '@/domain/rank-artwork/resolver';
 import type { CeremonyEvent } from '@/domain/ceremony/types';
 import { chapterSealConfirm, destructiveConfirm, type ConfirmConfig } from '@/domain/ceremony/confirmations';
@@ -26,6 +27,7 @@ export default function CeremonyHarness() {
   const router = useRouter();
   const { enqueue } = useCeremony();
   const { showToast } = useToast();
+  const { openShare } = useShareSheet();
   const [confirm, setConfirm] = useState<ConfirmConfig | null>(null);
 
   const uid = () => `ev-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -93,6 +95,16 @@ export default function CeremonyHarness() {
         </Button>
         <Button variant="secondary" fullWidth onPress={() => setConfirm(destructiveConfirm.removeMember('Marcus Boone', 'Iron Vigil'))}>
           M-6 · Remove Member
+        </Button>
+
+        <View style={styles.divider} />
+        <Text style={styles.note}>SH-1 Share Configuration (direct preview):</Text>
+
+        <Button variant="secondary" fullWidth onPress={() => openShare({ shareType: 'honor' })}>
+          Open SH-1 · Honor
+        </Button>
+        <Button variant="secondary" fullWidth onPress={() => openShare({ shareType: 'pr' })}>
+          Open SH-1 · PR
         </Button>
       </ScrollView>
 

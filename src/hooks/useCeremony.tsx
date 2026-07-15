@@ -21,6 +21,9 @@ import { orderCeremonies } from '@/domain/ceremony/queue'
 import { ceremonyCopy } from '@/domain/ceremony/copy'
 import { resolveRankArtwork } from '@/domain/rank-artwork/resolver'
 import { resolveRankArtworkSource } from '@/domain/rank-artwork/rank-source'
+import { useShareSheet } from '@/hooks/useShareSheet'
+import { getSelfProfile } from '@/domain/profile/placeholder-data'
+import type { ShareKind } from '@/domain/share/content'
 
 export type CeremonyContextValue = {
   enqueue: (events: CeremonyEvent | CeremonyEvent[]) => void
@@ -54,7 +57,24 @@ function ceremonyArtwork(event: CeremonyEvent): React.ReactNode {
   return <Insignia size={ARTWORK_SIZE} />
 }
 
+/** The SH-1 share type a ceremony's "Share …" secondary opens — null for M-7 (no share). */
+function ceremonyShareType(event: CeremonyEvent): ShareKind | null {
+  switch (event.kind) {
+    case 'rankUp':
+      return 'rank'
+    case 'honorEarned':
+      return 'honor'
+    case 'goalAchieved':
+      return 'goal'
+    case 'programGraduated':
+      return 'program'
+    case 'premiumUpsell':
+      return null
+  }
+}
+
 export function CeremonyProvider({ children }: { children: React.ReactNode }) {
+  const { openShare } = useShareSheet()
   const [queue, setQueue] = useState<CeremonyEvent[]>([])
   const [toast, setToast] = useState<string | null>(null)
 
@@ -87,12 +107,23 @@ export function CeremonyProvider({ children }: { children: React.ReactNode }) {
             artwork={ceremonyArtwork(current)}
             footer={
               <>
-                {/* primary advances the queue; Share (secondary) opens SH-1 in unit ③ — advances for now */}
                 <Button variant="primary" fullWidth onPress={dismiss}>
                   {copy.primary}
                 </Button>
                 {copy.secondary ? (
-                  <Button variant="secondary" fullWidth onPress={dismiss}>
+                  <Button
+                    variant="secondary"
+                    fullWidth
+                    onPress={() => {
+                      // "Share …" opens SH-1 pre-scoped to this ceremony; the queue advances
+                      // like Continue (SH-1 §6.2). M-7's "Not Now" (no share type) just dismisses.
+                      const shareType = ceremonyShareType(current)
+                      if (shareType) {
+                        openShare({ shareType, overrides: { title: copy.title, athlete: getSelfProfile().name } })
+                      }
+                      dismiss()
+                    }}
+                  >
                     {copy.secondary}
                   </Button>
                 ) : null}
