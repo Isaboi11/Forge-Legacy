@@ -9,6 +9,7 @@ import { useColorScheme } from 'react-native';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import AppTabs from '@/components/app-tabs';
 import { WorkoutSessionProvider } from '@/hooks/useWorkoutSession';
+import { CeremonyProvider } from '@/hooks/useCeremony';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -24,8 +25,10 @@ export default function TabLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <WorkoutSessionProvider>
-        <AnimatedSplashOverlay />
-        <AppTabs />
+        <CeremonyProvider>
+          <AnimatedSplashOverlay />
+          <AppTabs />
+        </CeremonyProvider>
       </WorkoutSessionProvider>
     </ThemeProvider>
   );
