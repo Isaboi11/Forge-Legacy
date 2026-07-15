@@ -31,14 +31,18 @@ import type { Accomplishment, Chapter, FeaturedMoment, Goal, Honor, TimelineEntr
  * backend yet; nothing here is labeled real. The athlete name comes from the
  * placeholder profile (`getSelfProfile`).
  *
- * The hero seal now shows the REAL imported rank badge art (`rankArtwork`, resolved via
- * `src/domain/rank-artwork`); the TIER is still a placeholder (`PLACEHOLDER_RANK` — no
- * rank backend yet), and it falls back to the graceful bronze seal when unresolved.
+ * Hero identity (corrected — see FORGE_DELTAS §15): the LEFT slot is the athlete's PROFILE
+ * PORTRAIT (a photo, framed by a faint rank-seal ring). No profile-photo system exists yet, so it
+ * shows the initials placeholder inside the seal ring — a real photo drops into the same slot when
+ * that system lands. The RIGHT slot is the rank badge (the FoundationBadge) → Progress Hub: it now
+ * shows the REAL imported rank badge art (`rankArtwork`, resolved via `src/domain/rank-artwork`;
+ * TIER is a placeholder `PLACEHOLDER_RANK` — no rank backend), falling back to a faint pending-asset
+ * shield. (Earlier the rank badge was wrongly rendered in the LEFT portrait slot and the RIGHT
+ * badge was left an empty placeholder; that swap is fixed here.)
  *
- * Still pending-asset (NOT fabricated — graceful bronze placeholders): the Progress /
- * Foundation badge, and the Honors insignia (Honors is legitimately shown HERE — an
- * achievement context, unlike the workout card where it is reserved — but the honor art
- * was never imported).
+ * Still pending-asset (NOT fabricated — graceful placeholders): the Honors insignia (Honors is
+ * legitimately shown HERE — an achievement context, unlike the workout card where it is reserved —
+ * but the honor art was never imported).
  *
  * Deferred to a follow-up sub-phase (noted at the gate): the three bottom sheets
  * (L-11 Honor Detail, L-12 My Standard editor, L-13 Pin manager), the Toast, the
@@ -90,7 +94,7 @@ export default function LegacyScreen() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* ── HERO · identity ── */}
         <View style={styles.identityRow}>
-          <SealPortrait name={profile.name} rankArtwork={rankArtwork} />
+          <SealPortrait name={profile.name} />
           <View style={styles.identityText}>
             <Text style={styles.athleteName} numberOfLines={1}>
               {profile.name}
@@ -99,6 +103,7 @@ export default function LegacyScreen() {
             <Text style={styles.identitySub}>Forging a permanent record, one chapter at a time.</Text>
           </View>
           <ProgressBadge
+            rankArtwork={rankArtwork}
             onPress={() => {
               // P-2 Progress Hub — not yet implemented.
             }}
@@ -282,18 +287,12 @@ export default function LegacyScreen() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Hero rank seal. When the rank badge art resolves it renders the REAL badge (tier is a
- * placeholder — no rank backend). Fallback: the athlete's initials inside a faint bronze
- * rank-seal placeholder ring (never a fabricated badge).
+ * Hero PROFILE PORTRAIT — the athlete's photo, framed by a faint rank-seal ring. No profile-photo
+ * system exists yet, so it shows the initials placeholder (the sanctioned identity mark, per
+ * FORGE_DELTAS §10) inside the seal ring; a real photo drops into this same slot when that system
+ * lands. The rank BADGE lives in the right FoundationBadge slot (ProgressBadge) — never here.
  */
-function SealPortrait({ name, rankArtwork }: { name: string; rankArtwork?: number }) {
-  if (rankArtwork != null) {
-    return (
-      <View style={styles.portraitWrap} accessibilityElementsHidden importantForAccessibility="no">
-        <Image source={rankArtwork} style={styles.rankBadgeArt} contentFit="contain" />
-      </View>
-    );
-  }
+function SealPortrait({ name }: { name: string }) {
   const initials = name
     .split(' ')
     .map((w) => w[0])
@@ -302,7 +301,7 @@ function SealPortrait({ name, rankArtwork }: { name: string; rankArtwork?: numbe
     .toUpperCase();
   return (
     <View style={styles.portraitWrap}>
-      {/* pending-asset rank seal — faint geometric placeholder, not a fabricated badge */}
+      {/* decorative rank-seal ring framing the portrait (faint geometric, not a fabricated badge) */}
       <Svg width={90} height={90} viewBox="0 0 90 90" style={StyleSheet.absoluteFill}>
         <Circle cx={45} cy={45} r={43} stroke={flColor.bronze400} strokeWidth={1} opacity={0.16} fill="none" />
         <Circle cx={45} cy={45} r={37} stroke={flColor.bronze400} strokeWidth={1} opacity={0.1} fill="none" />
@@ -328,15 +327,23 @@ function RankLabel({ label, sub }: { label: string; sub: string }) {
   );
 }
 
-/** FoundationBadge placeholder (pending-asset) + "Progress" pill. */
-function ProgressBadge({ onPress }: { onPress: () => void }) {
+/**
+ * The rank badge — the FoundationBadge slot — with the "Progress" pill → Progress Hub. Shows the
+ * REAL imported rank badge art when it resolves; else a faint pending-asset shield placeholder
+ * (never a fabricated badge). This is the badge's correct home (not the left portrait).
+ */
+function ProgressBadge({ rankArtwork, onPress }: { rankArtwork?: number; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel="View your progress" style={styles.progressBadge}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel="View your rank and progress" style={styles.progressBadge}>
       <View style={styles.badgeShield}>
-        <Svg width={38} height={52} viewBox="0 0 38 52">
-          <Path d="M4 6 L34 6 L34 30 Q34 44 19 50 Q4 44 4 30 Z" stroke={flColor.bronze400} strokeWidth={1.2} opacity={0.4} fill="none" />
-          <Path d="M11 3 L13 9 L19 3 L25 9 L27 3" stroke={flColor.bronze400} strokeWidth={1} opacity={0.3} fill="none" strokeLinejoin="miter" />
-        </Svg>
+        {rankArtwork != null ? (
+          <Image source={rankArtwork} style={styles.badgeArt} contentFit="contain" />
+        ) : (
+          <Svg width={38} height={52} viewBox="0 0 38 52">
+            <Path d="M4 6 L34 6 L34 30 Q34 44 19 50 Q4 44 4 30 Z" stroke={flColor.bronze400} strokeWidth={1.2} opacity={0.4} fill="none" />
+            <Path d="M11 3 L13 9 L19 3 L25 9 L27 3" stroke={flColor.bronze400} strokeWidth={1} opacity={0.3} fill="none" strokeLinejoin="miter" />
+          </Svg>
+        )}
       </View>
       <View style={styles.progressPill}>
         <Text style={styles.progressPillText}>Progress</Text>
@@ -536,7 +543,6 @@ const styles = StyleSheet.create({
     paddingBottom: 2,
   },
   portraitWrap: { width: 90, height: 90, alignItems: 'center', justifyContent: 'center' },
-  rankBadgeArt: { width: 90, height: 90 },
   portrait: {
     width: 72,
     height: 72,
@@ -573,7 +579,8 @@ const styles = StyleSheet.create({
     color: flColor.bronze300,
   },
   progressBadge: { width: 76, alignItems: 'center', gap: 6 },
-  badgeShield: { width: 38, height: 52, alignItems: 'center', justifyContent: 'center' },
+  badgeShield: { width: 64, height: 72, alignItems: 'center', justifyContent: 'center' },
+  badgeArt: { width: 62, height: 70 },
   progressPill: {
     flexDirection: 'row',
     alignItems: 'center',

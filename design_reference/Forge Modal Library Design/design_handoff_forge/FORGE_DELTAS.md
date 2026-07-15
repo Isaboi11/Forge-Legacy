@@ -190,20 +190,58 @@ Each entry: **What changed · Why · What it supersedes.**
 
 ---
 
+## 15. Legacy hero — profile portrait (left) + rank badge (right), corrected
+- **What:** The Legacy hero identity row has two distinct slots, per `Forge Legacy.dc.html` (lines
+  73–89): the **LEFT** is the athlete's **profile portrait** (a photo `image-slot`, framed by a faint
+  rank-seal ring); the **RIGHT** is the **rank badge** — the tappable `FoundationBadge` → Progress Hub,
+  with the "Progress" pill. Same split as `Forge Public Profile.dc.html` (photo left, FoundationBadge
+  right).
+- **The bug (fixed):** commit `d5aeac0` imported the real rank badge art and wired it into the LEFT
+  (`SealPortrait`) slot, leaving the RIGHT `FoundationBadge` an empty placeholder shield — so the rank
+  badge sat in the profile-photo position and the badge's real slot was blank. Corrected: the badge
+  renders in the RIGHT slot; the LEFT is the initials-portrait-in-seal-ring (the sanctioned placeholder
+  until a photo system exists). **Home's `ChapterTitleBlock` was checked and IS correct** — its rank
+  medallion is an intentional faint top-right *watermark*, not a photo slot, so it was left untouched.
+- **Supersedes:** the prior wiring (badge-left / empty-right), which the status board's `d5aeac0` note
+  described as intended — it was not.
+
+---
+
 ## Still open (carry into implementation)
+
+**Two buckets, and the distinction is load-bearing** — do not let a fixable miss sit in the blocked
+pile:
+- **DROPPED-FREE** — the means are in hand (asset on disk, token exists, gradient/shadow available);
+  it just wasn't wired. Same bucket as a missed shadow. **Fixable now**, and fixed by CATEGORY across
+  all screens in one pass — never screen-by-screen whack.
+- **DEFERRED-HONEST / BLOCKED** — waits on a genuine external: an asset that does not exist, a
+  backend, or another domain. Cannot be closed now without fabricating.
+
+### ▸ DROPPED-FREE — fixable now (means in hand)
+- **Design backgrounds not imported** — the photographic/textured backgrounds EXIST in
+  `design_reference/Forge Modal Library Design/assets/` (`legacy-bg.png`, `hero-mountains.png`,
+  `forge-slate.png`, `squad-*-bg.png`); the app just renders the `bgAtmospheric` gradient instead.
+  **Not asset-blocked** — import into `assets/` + wire each screen (Legacy also has a scroll-fade).
+  Do it as one categorical pass. ⚠ Pending a full **per-screen `.dc` delta sweep** (starting with the
+  Squad Detail catalog) to surface *every* DROPPED-FREE miss before the fix pass, so we fix by
+  category, not by whatever we happened to notice.
+
+### ▸ DEFERRED-HONEST / BLOCKED — waits on an external
+- **Neutral artwork set** (§7) — code FIXED + tested; blocked on Phase-4 neutral assets (don't exist).
+- **Profile-photo system** — no per-athlete photo store; the `Avatar` `src` slot is everywhere and
+  the Legacy hero (§15) uses it correctly, but real photos need the upload/storage backend AND photos
+  that don't yet exist. **One system, not per-screen.**
+- **Squad crest** — owner-uploaded squad image (distinct from personal photos); needs owner-only
+  upload infra + content (`CrestGlyph` placeholder today; "Edit Identity · crest" is an inert shell).
+- **Per-kind ranking direction** (§11) — waits on the ranking/leaderboard domain (never retrofitted
+  onto the display strings).
+- **Public Athlete Profile — Path 2** (§14) — waits on an authored per-athlete dataset + the
+  visibility/Firewall clearance model.
+- **Squad Record History sheet** — per-holder PR **timeline** + **"beat this record"** write path
+  (no backend; read-only by design today).
+
+### ▸ Housekeeping / infra
 - Populate the structured fields across **all** programs/workouts (§6).
-- PR / achievement plates are now structured onto the real **`PersonalRecord`** model (§11 —
-  **DONE**). The next records-domain step is a per-kind ranking **direction** (load ↑ / time ↓ /
-  distance ↑ / reps ↑), added only when ranking/leaderboard lands — never retrofitted onto the
-  display strings.
-- Sex default → neutral is **FIXED + tested** in code (§7); **BLOCKED-ON** producing the real
-  **neutral** artwork set (Phase-4 assets) — the resolver serves male as a tested placeholder until then.
-- Build the real **asset manifest** with version/aspect/placement, and swap prototype crops for
-  high-res masters.
+- Build the real **asset manifest** (version/aspect/placement); swap prototype crops for high-res masters.
 - Implement the resolver **unit-test matrix** (resolver doc §16).
-- **Squad Record History sheet** (built) left two seams shut — intentional, not gaps: the per-holder
-  PR **timeline** (the sheet's Previous-Holders row tap is inert) and a **"beat this record"** write
-  affordance (claiming/breaking a squad record — no write path, read-only by design).
-- **Public Athlete Profile — Path 2** (§14): author a per-athlete dataset + port the
-  visibility/Firewall clearance model; the `app/athlete/[id]` route then enriches additively.
 - Reconcile / annotate the blueprint docs so no one treats the superseded sections as current.
