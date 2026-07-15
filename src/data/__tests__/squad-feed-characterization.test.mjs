@@ -16,6 +16,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { getSquadFeed, getPost } from '../post-placeholder.ts'
+import { getSquadCheckins, getSquadCompetition } from '../squad-feed-placeholder.ts'
 
 const GOLDEN = {
   iron: [
@@ -101,4 +102,37 @@ test('tap-through: every squad feed post resolves via getPost(id)', () => {
       assert.equal(resolved.id, post.id)
     }
   }
+})
+
+// ── Squad Detail chrome: check-in strip + competition banner (S-2 sections) ──
+
+test('check-in strip + competition banner: content locked', () => {
+  const iron = getSquadCheckins('iron')
+  assert.deepEqual(iron.map((c) => c.first), ['Dana', 'Marcus', 'Ada', 'Theo', 'Lena'])
+  assert.equal(iron.filter((c) => c.status === 'trained').length, 3)
+  const dana = iron.find((c) => c.id === 'dana')
+  assert.equal(dana.hasVideo, true)
+  assert.equal(dana.unread, true)
+
+  const comp = getSquadCompetition('iron')
+  assert.equal(comp.name, 'Forge League')
+  assert.equal(comp.place, '2nd')
+  assert.equal(comp.of, '5')
+  assert.equal(comp.workouts, 18)
+})
+
+test('FIREWALL: check-ins + competition are squad-scoped and isolated', () => {
+  const ironIds = new Set(getSquadCheckins('iron').map((c) => c.id))
+  const dawnIds = new Set(getSquadCheckins('dawn').map((c) => c.id))
+  for (const id of ironIds) assert.equal(dawnIds.has(id), false, `${id} check-in leaked iron→dawn`)
+  for (const id of dawnIds) assert.equal(ironIds.has(id), false, `${id} check-in leaked dawn→iron`)
+  // distinct competitions, never shared
+  assert.notEqual(getSquadCompetition('iron').name, getSquadCompetition('dawn').name)
+})
+
+test('FIREWALL: squads with no check-ins/competition return empty/null (never another squad’s)', () => {
+  assert.deepEqual(getSquadCheckins('proving'), [])
+  assert.deepEqual(getSquadCheckins('does-not-exist'), [])
+  assert.equal(getSquadCompetition('home'), null)
+  assert.equal(getSquadCompetition('does-not-exist'), null)
 })

@@ -70,6 +70,66 @@ export const SQUAD_FEED_IDENTITY: Record<string, SquadFeedIdentity> = {
   home: { name: 'Home Forge', members: 1 },
 }
 
+// ── Squad Detail chrome (S-2 sections above the feed): the daily check-in strip + the active-
+//    competition standing banner. Squad-scoped like the feed — a squad's check-ins/competition
+//    never leak to another squad. Placeholder; internally consistent with each squad's feed authors.
+
+export type CheckinStatus = 'trained' | 'pending'
+
+/** One member's daily check-in state for the "Today's Check-ins" strip. */
+export interface SquadCheckin {
+  id: string
+  name: string
+  first: string
+  status: CheckinStatus
+  hasVideo?: boolean
+  unread?: boolean
+}
+
+/** The squad's standing in its active competition (the banner above the feed). */
+export interface SquadCompetition {
+  name: string
+  place: string // '2nd'
+  of: string // '5'
+  workouts: number
+  gap: string // '2 workouts behind' / 'Leading'
+  ends: string // '4 days left'
+}
+
+export const SQUAD_CHECKINS: Record<string, SquadCheckin[]> = {
+  iron: [
+    { id: 'dana', name: 'Dana Cole', first: 'Dana', status: 'trained', hasVideo: true, unread: true },
+    { id: 'marcus', name: 'Marcus Vale', first: 'Marcus', status: 'trained' },
+    { id: 'ada', name: 'Ada Ridge', first: 'Ada', status: 'trained' },
+    { id: 'theo', name: 'Theo Brandt', first: 'Theo', status: 'pending' },
+    { id: 'lena', name: 'Lena Cross', first: 'Lena', status: 'pending' },
+  ],
+  dawn: [
+    { id: 'sana', name: 'Sana Okafor', first: 'Sana', status: 'trained', unread: true },
+    { id: 'ravi', name: 'Ravi Menon', first: 'Ravi', status: 'trained' },
+    { id: 'mara', name: 'Mara Lindqvist', first: 'Mara', status: 'pending' },
+  ],
+  proving: [],
+  home: [],
+}
+
+export const SQUAD_COMPETITION: Record<string, SquadCompetition | null> = {
+  iron: { name: 'Forge League', place: '2nd', of: '5', workouts: 18, gap: '2 workouts behind', ends: '4 days left' },
+  dawn: { name: 'Dawn Dash', place: '1st', of: '4', workouts: 24, gap: 'Leading', ends: '6 days left' },
+  proving: null,
+  home: null,
+}
+
+/** Squad-scoped — a squad's check-ins never leak to another squad (empty for unknown/none). */
+export function getSquadCheckins(squadId: string): SquadCheckin[] {
+  return SQUAD_CHECKINS[squadId] ?? []
+}
+
+/** Squad-scoped — the squad's active competition, or null when there is none. */
+export function getSquadCompetition(squadId: string): SquadCompetition | null {
+  return SQUAD_COMPETITION[squadId] ?? null
+}
+
 /** Each squad's OWN feed — distinct content proves there is no cross-squad leak. */
 export const SQUAD_SEED: Record<string, SquadPost[]> = {
   iron: [
