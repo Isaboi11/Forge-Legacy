@@ -19,7 +19,13 @@ export * from './TrainTogetherCard' // H-1
 // CLA-C31  export { ExerciseRow }        from './ExerciseRow'        // W-22–W-24, W-9–W-16
 // CLA-C32  export { MemberRow }          from './MemberRow'          // S-2
 // CLA-C33  export { TimelineEventRow }   from './TimelineEventRow'   // L-2
-// CLA-C34  export { PostCard }           from './PostCard'           // Friends/Squad/Community feeds
+// CLA-C34 — the shared feed post card for Friends/Squad/Community feeds; foundation-based
+// implementation lives at ./FeedPostCard, config-driven off source.kind + role + showAudience
+// (one card, not one per surface). Imported by SUBPATH (`@/components/forge/compositions/
+// FeedPostCard`) — NOT re-exported through this aggregate, because the pre-redesign LEGACY
+// `../cards/FeedPostCard` still occupies the `FeedPostCard` name in the top-level barrel. The
+// foundation card supersedes that legacy reference; retiring it from the barrel is deferred to
+// the legacy-library sunset (no deletion until replacements are verified).
 // CLA-C35  export { AccomplishmentRow }  from './AccomplishmentRow'  // L-12–L-14, P-1
 // CLA-C36  export { PhotoThumbnail }     from './PhotoThumbnail'     // L-15, L-16
 // CLA-C37  HomepagePrinciple — implemented; export from dedicated subfolder:
