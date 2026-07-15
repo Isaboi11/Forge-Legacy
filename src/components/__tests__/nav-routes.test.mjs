@@ -65,13 +65,16 @@ test('/workout (active session) is DISTINCT from the /workouts tab root', () => 
 });
 
 test("Home's Start Workout still routes to /workout (not the catalog)", () => {
-  const home = readFileSync(join(APP, 'index.tsx'), 'utf8');
+  // Tab routes live in the `(tabs)` group (root Stack); the group segment carries no URL.
+  const home = readFileSync(join(APP, '(tabs)', 'index.tsx'), 'utf8');
   assert.match(home, /router\.push\(['"]\/workout['"]\)/, 'Start Workout should push /workout');
   assert.ok(!/router\.push\(['"]\/workouts['"]\)/.test(home), 'Start Workout must not push /workouts');
 });
 
-test('every tab route file exists (+ the distinct /workout session route)', () => {
-  for (const f of ['index.tsx', 'workouts.tsx', 'legacy.tsx', 'squads.tsx', 'community.tsx', 'workout.tsx']) {
-    assert.ok(existsSync(join(APP, f)), `missing route: app/${f}`);
+test('every tab route file exists in (tabs)/ (+ the distinct /workout session route at app root)', () => {
+  for (const f of ['index.tsx', 'workouts.tsx', 'legacy.tsx', 'squads.tsx', 'community.tsx']) {
+    assert.ok(existsSync(join(APP, '(tabs)', f)), `missing tab route: app/(tabs)/${f}`);
   }
+  // /workout (active session) is a root-Stack sibling, NOT a tab — presents over the tabs full-screen.
+  assert.ok(existsSync(join(APP, 'workout.tsx')), 'missing route: app/workout.tsx');
 });
