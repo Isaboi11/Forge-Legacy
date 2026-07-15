@@ -1,0 +1,163 @@
+# Forge Legacy — Deltas & Decisions
+
+This document records where the **built screens diverge from the older architecture / blueprint
+docs** (`uploads/Forge-Design-Blueprint-*.md`) and the design decisions made during the design
+process. **The screens + this document are the source of truth.** The blueprint is superseded
+wherever it conflicts with what is written here.
+
+Each entry: **What changed · Why · What it supersedes.**
+
+---
+
+## 1. Artwork system introduced (new — not in the blueprint)
+- **What:** A full illustration system — an engraved, charcoal, bronze-restrained visual language;
+  a master reference (`Forge Artwork Reference.dc.html`); and activated collections: Training
+  Splits, Workout Modalities, Program Themes, Exercise Families, Legacy, Honors. Assets under
+  `assets/artwork/<collection>/<sex|shared>/<key>.png`.
+- **Why:** The app needs one consistent, premium illustration language instead of ad-hoc images.
+- **Supersedes:** The blueprint had no artwork taxonomy or asset system.
+
+## 2. Sex-specific artwork sets
+- **What:** Training Splits, Workout Modalities, Program Themes, and Exercise Families each ship a
+  **male** and **female** set. The set is chosen from the user's saved sex only.
+- **Why:** Athletes see figures that match their selected sex; both sets are one unified series.
+- **Rule:** Sex is **never inferred** from name, photo, behaviour, or body data — saved selection
+  only. Missing sex → neutral fallback (see §7).
+
+## 3. Honors — female set is a deliberate subset
+- **What:** The female **Honors** collection omits four figure-based emblems — **Strength,
+  Endurance, Transformation, Community** — that the male set includes. The female side shows the
+  remaining object/emblem honors (Consistency, Leadership, Completion, Milestones).
+- **Why:** Explicit direction during review; the omitted four were male-figure illustrations.
+- **Supersedes:** No prior spec addressed per-sex honor artwork.
+
+## 4. Legacy & Honors reserved from the workout card
+- **What:** Legacy and Honors artwork are shared (one set both sides) and **must never** appear on
+  an active "Start Workout" card. Reserved for Legacy, achievement, ceremony, and empty states.
+- **Why:** Keeps the workout card about *today's training*, not identity/achievement imagery.
+- **Enforcement:** Guard in the resolver; validated by a unit test.
+
+## 5. Home Workout Artwork Resolver (new system)
+- **What:** A centralized, deterministic resolver — `resolveHomeWorkoutArtwork()` in
+  `forge-artwork-resolver.js`, fully specified in `Forge Home Artwork Resolver.dc.html`. Chooses
+  the Home-card artwork by a fixed 7-rung precedence (override → non-strength modality → strength
+  split → dominant exercise family → program theme → generic fallback → neutral default), returns
+  a typed object `{ collection, key, sexVariant, confidence, reason, source, assetPath }`.
+- **Why:** Artwork must describe *today's* workout, deterministically, from structured data — not
+  scattered per-screen logic or title string-matching.
+- **Supersedes:** The Home card previously hard-coded a single placeholder ("Push Day A" /
+  `assets/workout-push.png`). It now consumes only the resolved object and holds no classification
+  logic.
+
+## 6. Data-model additions required (structured fields)
+- **What:** The resolver depends on structured fields that must be added to the real model:
+  `workout.modality`, `workout.split`, `workout.targetMuscleGroups[]`, `workout.artworkOverride`,
+  `program.theme`, `program.structure`, session-exercise `catalogKey`, and per-exercise
+  `workingSets`.
+- **Status:** Only the single active program (`usr-active-powerbuilding`) has
+  `modality/split/structure/theme` populated as a demonstration. All others still lack them.
+- **Why:** Deterministic resolution over inference. See resolver doc §14 (data-model audit) for
+  what exists / is inferred / must be added.
+- **Supersedes:** Blueprint program/workout schema did not carry these.
+
+## 7. Sex fallback = neutral (fixes a model default)
+- **What:** A missing sex selection must resolve to an explicit **neutral** artwork variant.
+- **Status (code): FIXED in the app implementation.** `src/domain/profile/schema.ts` defines
+  `Sex = 'male' | 'female' | 'unspecified'` and defaults to **`'unspecified'`** (never coerced to
+  male/female); `src/domain/home-artwork/resolver.ts` maps missing/`unspecified` → `sexVariant:
+  'neutral'`. Regression-tested: `resolver.test.mjs` ("Missing sex → neutral variant, served from
+  male placeholder (never guessed)"; male→male, female→female) + `asset-registry.test.mjs` (the
+  neutral asset resolves). The prototype `forge-user.js` (design-reference only) is superseded by
+  this implementation.
+- **BLOCKED-ON:** a real **neutral artwork set** (Phase-4 assets, never fabricated). Until it
+  exists the resolver serves the **male** set for neutral as a *documented, tested, auditable*
+  placeholder (`NEUTRAL_SERVED = 'male'`) while still reporting `sexVariant: 'neutral'`. This is a
+  waiting-on-an-asset state, not a code defect — the same board vocabulary as §11's waiting-on-a-
+  domain-model.
+- **Why:** Never guess or default a user's sex.
+
+## 8. Workout scheduling — queue-based, not day-bound
+- **Decision:** Programs remain an **ordered queue** ("next workout is always startable today"),
+  **not** date/weekday-bound. Rest is emergent (a day you don't train), not a scheduled slot.
+- **Why:** Never present a locked "come back tomorrow" card; matches the rank engine's *active-week*
+  consistency metric (any Mon–Sun with ≥1 session) rather than fixed training days; non-punitive.
+- **Optional (soft only):** Users may set *preferred* training days for suggestions/notifications —
+  never to gate the next workout.
+- **Supersedes:** Any reading of the blueprint implying fixed day assignment.
+
+## 9. Calendar — explored and dropped
+- **Decision:** No Calendar screen. A lean "consistency heat-map + upcoming sessions" version was
+  prototyped and **cut** as redundant: the flexible queue + Home "Today's Workout" + Legacy Timeline
+  already cover look-back and look-ahead; a date grid added weight against the app's restraint.
+- **Why:** Avoid crowding; the unique value (private consistency view) did not justify a full
+  surface.
+- **Supersedes:** The blueprint listed a cross-cutting **Calendar** surface. **Removed.** The
+  private consistency view can be reconsidered later as a small element, not a screen.
+
+## 10. Squad Detail check-ins — member avatars are initials, not blank tinted discs
+- **What:** The "Today's Check-ins" strip in Squad Detail (S-2) renders each member with the
+  **Avatar composite's initials**, ringed by status (bronze = trained; muted + dimmed = pending),
+  not the dc's blank tinted status disc.
+- **Why:** The design system's AvatarGlyph **initials fallback is the sanctioned identity mark**;
+  blank silhouettes/discs are not. Initials are more legible and consistent with every other member
+  surface (feed authors, roster, comments). A correction *toward* the system, not a divergence.
+- **Supersedes:** `Squad Detail.dc.html`'s check-in disc treatment (a preview simplification).
+
+## 11. Feed program plates carry the real Program schema; PR plates stay uniform strings (BLOCKED)
+- **What:** Feed / Post-Detail **program** plates now carry the real Phase-0 `Program` shape
+  (`durationWeeks` / `frequencyPerWeek` / `structure` enum), rendered via a shared
+  `formatProgramMeta`. **Every** program plate is structured — no free-text meta middle state — so
+  swapping in real programs is a **data change, not a renderer change**. **PR / achievement** plates
+  deliberately stay a **single uniform display-string convention** (`value` = magnitude+unit,
+  `exercise` = movement, `label` = descriptor) for weight and endurance alike.
+- **Why:** Programs have a real domain schema to back them. There is **no `PersonalRecord` domain
+  model** yet, and PR values are heterogeneous (weight / time / distance); inventing a PR schema
+  ahead of the records system would almost certainly disagree with it (units, endurance vs weight,
+  rep semantics) — the exact drift the superset rule exists to prevent. A display string is an
+  unambiguous placeholder, not a competing schema.
+- **BLOCKED-ON:** Structuring PR / achievement plates is gated on a real `PersonalRecord` /
+  records-domain model. Until it lands, all PR plates use the one display-string convention (a
+  single thing to migrate, not a spectrum).
+- **Supersedes:** The Community-convergence stopgap free-text program `meta` string.
+
+## 12. Modal-family surfaces are render-verified via temp inline render, not static export
+- **What:** BottomSheet / Modal / ceremony-overlay content (ConfirmSheet, ShareSheet, the Squad
+  Detail roster sheet, …) does **not** appear in `expo export` static HTML — a React Native `Modal`
+  renders into a portal the static export doesn't capture. These surfaces are render-verified by a
+  **temporary inline render** (swap the sheet for a plain `View` + `generateStaticParams`, grep the
+  output, then revert), not the static-export grep used for inline screens.
+- **Why:** So a reviewer does not read "absent from the export / no pre-rendered page" as
+  "unverified." The content *is* verified; only the verification path differs for the modal/sheet
+  family. (Third instance and counting — hence this note.)
+- **Supersedes:** n/a — a verification-method note.
+
+---
+
+## 13. Community shelved behind launch (reversible; 4-tab nav while dark)
+- **What:** Community is pulled from the app until there is a user base — a **reversible shelf, not a
+  deletion**. The tab is removed from `@/components/app-tabs` (→ **4 tabs**: Home · Workouts · Legacy
+  · Squads, which matches the design system's finalized TabBar), the screen is preserved **non-routed**
+  at `src/deferred/community.tsx`, and `/community` **soft-redirects to Home** (`app/community.tsx`).
+- **Why:** Hide the surface + its entry points only. Community was deliberately converged onto the
+  shared `FeedPostCard` / `FeedPost` model / origin-config, so it is **not a code island** — the
+  shared card/model, the community origin branch, `getCommunityFeed()`, and the community
+  characterization + origin-config **golden tests all stay live** (a community-origin post re-shared
+  into Friends still renders lean). The engine never left; only the surface is dark.
+- **RE-ENABLE:** move the screen back to `app/(tabs)/community.tsx` + re-add its `TabTrigger` (and the
+  still-defined `CommunityTabIcon`); delete the redirect stub. **BLOCKED-ON a design-system decision:**
+  returning Community makes it a **5th** tab, but the finalized TabBar is 4 — the emphasized-centre
+  (Legacy) math must be re-derived for 5 tabs (or Community returns somewhere other than the primary
+  bar) **before** the code goes back. That is a layout decision, not a nav toggle.
+- **Supersedes:** the earlier 5-tab (Home · Workouts · Legacy · Squads · Community) model — 4 tabs
+  while shelved.
+
+## Still open (carry into implementation)
+- Populate the structured fields across **all** programs/workouts (§6).
+- Structure **PR / achievement** feed plates — **BLOCKED on a real `PersonalRecord` domain model**
+  (§11). Until then they use one uniform display-string convention.
+- Sex default → neutral is **FIXED + tested** in code (§7); **BLOCKED-ON** producing the real
+  **neutral** artwork set (Phase-4 assets) — the resolver serves male as a tested placeholder until then.
+- Build the real **asset manifest** with version/aspect/placement, and swap prototype crops for
+  high-res masters.
+- Implement the resolver **unit-test matrix** (resolver doc §16).
+- Reconcile / annotate the blueprint docs so no one treats the superseded sections as current.
