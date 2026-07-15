@@ -35,6 +35,8 @@ export interface RankUpCeremony extends CeremonyBase {
 export interface GoalAchievedCeremony extends CeremonyBase {
   kind: 'goalAchieved';
   goalName: string;
+  /** The chapter the goal belonged to — shown under the goal name. */
+  chapterName?: string;
 }
 /** M-4 Program Graduated. */
 export interface ProgramGraduatedCeremony extends CeremonyBase {

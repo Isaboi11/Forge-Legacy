@@ -23,6 +23,8 @@ export interface ModalProps {
   onClose: () => void
   eyebrow?: string
   title: string
+  /** Secondary line under the title (e.g. M-3 chapter name). */
+  subtitle?: string
   /** Insignia artwork slot. */
   artwork?: React.ReactNode
   /** The locked ceremony line. */
@@ -31,7 +33,7 @@ export interface ModalProps {
   footer?: React.ReactNode
 }
 
-export function Modal({ open, onClose, eyebrow, title, artwork, children, footer }: ModalProps) {
+export function Modal({ open, onClose, eyebrow, title, subtitle, artwork, children, footer }: ModalProps) {
   const reduceMotion = useReducedMotion()
   return (
     <RNModal
@@ -47,6 +49,7 @@ export function Modal({ open, onClose, eyebrow, title, artwork, children, footer
           {artwork ? <View style={styles.artwork}>{artwork}</View> : null}
           {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
           <Text style={styles.title}>{title}</Text>
+          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
           {children != null ? <Text style={styles.body}>{children}</Text> : null}
           {footer ? <View style={styles.footer}>{footer}</View> : null}
         </View>
@@ -97,6 +100,15 @@ const styles = StyleSheet.create({
     lineHeight: 30,
     textAlign: 'center',
     color: flColor.cream100,
+  },
+  subtitle: {
+    fontFamily: flFont.display,
+    fontSize: 16,
+    fontWeight: '500',
+    letterSpacing: -0.1,
+    textAlign: 'center',
+    color: flColor.gray400,
+    marginTop: -6,
   },
   body: {
     fontSize: 14.5,

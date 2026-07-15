@@ -1,13 +1,16 @@
+import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
+import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
 import { flColor, flGradient } from '@/constants/foundation';
 import { useCeremony, useToast } from '@/hooks/useCeremony';
 import { PLACEHOLDER_RANK } from '@/domain/rank-artwork/resolver';
 import type { CeremonyEvent } from '@/domain/ceremony/types';
+import { chapterSealConfirm, destructiveConfirm, type ConfirmConfig } from '@/domain/ceremony/confirmations';
 
 /**
  * ⚠ DEV HARNESS — NOT a product screen and NOT in the tab bar. Reachable only via
@@ -23,11 +26,12 @@ export default function CeremonyHarness() {
   const router = useRouter();
   const { enqueue } = useCeremony();
   const { showToast } = useToast();
+  const [confirm, setConfirm] = useState<ConfirmConfig | null>(null);
 
   const uid = () => `ev-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
   const rankUp = (): CeremonyEvent => ({ id: uid(), kind: 'rankUp', rank: PLACEHOLDER_RANK });
-  const goal = (): CeremonyEvent => ({ id: uid(), kind: 'goalAchieved', goalName: 'Squat 315 lbs' });
+  const goal = (): CeremonyEvent => ({ id: uid(), kind: 'goalAchieved', goalName: 'Squat 315 lbs', chapterName: 'The Rebuild' });
   const honor = (): CeremonyEvent => ({ id: uid(), kind: 'honorEarned', honorName: 'Century Club', citation: '100 workouts logged.' });
 
   return (
@@ -74,7 +78,34 @@ export default function CeremonyHarness() {
         <Button variant="text" fullWidth onPress={() => showToast('Chapter I has started.')}>
           Show Toast
         </Button>
+
+        <View style={styles.divider} />
+        <Text style={styles.note}>M-5 / M-6 confirmations (BottomSheet):</Text>
+
+        <Button variant="secondary" fullWidth onPress={() => setConfirm(chapterSealConfirm('The Rebuild'))}>
+          M-5 · Seal Chapter
+        </Button>
+        <Button variant="secondary" fullWidth onPress={() => setConfirm(destructiveConfirm.memory('The Rebuild'))}>
+          M-6 · Delete Memory
+        </Button>
+        <Button variant="secondary" fullWidth onPress={() => setConfirm(destructiveConfirm.squad('Iron Vigil', 5))}>
+          M-6 · Delete Squad
+        </Button>
+        <Button variant="secondary" fullWidth onPress={() => setConfirm(destructiveConfirm.removeMember('Marcus Boone', 'Iron Vigil'))}>
+          M-6 · Remove Member
+        </Button>
       </ScrollView>
+
+      <ConfirmSheet
+        open={confirm != null}
+        onClose={() => setConfirm(null)}
+        onConfirm={() => setConfirm(null)}
+        headline={confirm?.headline ?? ''}
+        body={confirm?.body ?? ''}
+        confirmLabel={confirm?.confirmLabel ?? ''}
+        tone={confirm?.tone}
+        cancelLabel={confirm?.cancelLabel}
+      />
     </View>
   );
 }

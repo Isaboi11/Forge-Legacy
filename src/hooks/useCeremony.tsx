@@ -83,6 +83,7 @@ export function CeremonyProvider({ children }: { children: React.ReactNode }) {
             onClose={dismiss}
             eyebrow={copy.eyebrow}
             title={copy.title}
+            subtitle={copy.subtitle}
             artwork={ceremonyArtwork(current)}
             footer={
               <>
