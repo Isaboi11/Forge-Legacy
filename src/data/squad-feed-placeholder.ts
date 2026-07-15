@@ -294,6 +294,21 @@ export function getSquadRecords(squadId: string): SquadRecord[] {
   return SQUAD_RECORDS[squadId] ?? []
 }
 
+/**
+ * The record-history sheet's "New Record" banner honesty gate. Returns the prev→current pair ONLY
+ * when the record genuinely broke a real previous mark — it is flagged `isNew`, there IS a previous
+ * holder to have beaten, AND the value actually changed. Otherwise null: no banner, so the ceremony
+ * is never fabricated over a record with no prior mark or an unchanged value. Both values trace to
+ * the one SquadRecord (current = record.value, prev = history[0].value) — the same source the book
+ * row's inline "Previously …" and the sheet's first Previous-Holders entry render, so the three can
+ * never contradict.
+ */
+export function newRecordBanner(record: SquadRecord): { prev: string; current: string } | null {
+  const prev = record.history[0]
+  if (!record.isNew || !prev || prev.value === record.value) return null
+  return { prev: prev.value, current: record.value }
+}
+
 /** Each squad's OWN feed — distinct content proves there is no cross-squad leak. */
 export const SQUAD_SEED: Record<string, SquadPost[]> = {
   iron: [

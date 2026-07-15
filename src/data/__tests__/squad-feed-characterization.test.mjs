@@ -16,7 +16,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { getSquadFeed, getPost } from '../post-placeholder.ts'
-import { getSquadCheckins, getSquadCompetition, getSquadMembers, getSquadRecords } from '../squad-feed-placeholder.ts'
+import { getSquadCheckins, getSquadCompetition, getSquadMembers, getSquadRecords, newRecordBanner } from '../squad-feed-placeholder.ts'
 import { formatRecordValue } from '../../domain/records/format.ts'
 
 const GOLDEN = {
@@ -198,4 +198,29 @@ test('CONSISTENCY: every record holder (current + history) is a real roster memb
     // history is descending (most-recent previous first) and non-empty for the seeded book
     assert.ok(r.history.length > 0, `record "${r.label}" should carry history`)
   }
+})
+
+// ── Record history sheet: the "New Record" banner must never fabricate a milestone ──
+
+test('history sheet banner: only genuine improvements produce a banner, and prev/current trace to the record', () => {
+  for (const r of getSquadRecords('iron')) {
+    const banner = newRecordBanner(r)
+    if (r.isNew) {
+      assert.ok(banner, `isNew record "${r.label}" must produce a banner`)
+      assert.equal(banner.current, r.value, `${r.label}: banner current === record.value`)
+      assert.equal(banner.prev, r.history[0].value, `${r.label}: banner prev === most-recent previous holder's value`)
+      assert.notEqual(banner.prev, banner.current, `${r.label}: banner must show a real improvement (prev ≠ current)`)
+    } else {
+      assert.equal(banner, null, `non-new record "${r.label}" must NOT fabricate a New Record banner`)
+    }
+  }
+})
+
+test('history sheet banner: no previous mark → no banner (never a milestone over nothing)', () => {
+  // isNew but empty history: the gate cannot invent a "previous", so it yields null.
+  const noHistory = { key: 'x', label: 'X', holder: 'A', value: '10', unit: 'u', date: 'now', isNew: true, history: [] }
+  assert.equal(newRecordBanner(noHistory), null)
+  // isNew but the value did not actually change from the prior holder → not a real improvement.
+  const unchanged = { key: 'y', label: 'Y', holder: 'A', value: '10', unit: 'u', date: 'now', isNew: true, history: [{ holder: 'B', value: '10', date: 'then' }] }
+  assert.equal(newRecordBanner(unchanged), null)
 })

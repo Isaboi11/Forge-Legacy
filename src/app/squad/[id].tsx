@@ -11,7 +11,7 @@ import { FeedPostCard } from '@/components/forge/compositions/FeedPostCard';
 import { useShareSheet } from '@/hooks/useShareSheet';
 import { SQUADS_PLACEHOLDER } from '@/data/squads-placeholder';
 import { getSquadFeed, type FeedPost } from '@/data/post-placeholder';
-import { getSquadCheckins, getSquadCompetition, getSquadMembers, getSquadRecords, type SquadCheckin, type SquadCompetition, type SquadMember, type SquadRecord } from '@/data/squad-feed-placeholder';
+import { getSquadCheckins, getSquadCompetition, getSquadMembers, getSquadRecords, newRecordBanner, type SquadCheckin, type SquadCompetition, type SquadMember, type SquadRecord } from '@/data/squad-feed-placeholder';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 
 /**
@@ -28,10 +28,11 @@ import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/fou
  * PER-SQUAD ISOLATION: the feed comes from getSquadFeed(squadId) — squad-scoped, no cross-squad
  * leak (a tested contract). ALL content is PLACEHOLDER — no backend.
  *
- * Deferred to follow-up S-2 sub-units (noted, not faked): the member check-in strip, the active-
- * challenge standing banner, squad honors/stats, the member roster, squad records, settings, and
- * the composer. The crest is a pending-asset bronze geometric placeholder — never a fabricated
- * per-squad badge. The options action and taps to those unbuilt surfaces are inert.
+ * Built since: the member check-in strip, the active-challenge standing banner, the member roster,
+ * the squad record book + per-record history sheet (read-only), and the settings/composer inert
+ * shells. Still deferred (noted, not faked): squad honors/stats, and the deep taps with no
+ * destination yet — member profile, check-in detail, challenge detail — stay inert. The crest is a
+ * pending-asset bronze geometric placeholder — never a fabricated per-squad badge.
  */
 export default function SquadDetailRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -47,6 +48,7 @@ export default function SquadDetailRoute() {
   const records = getSquadRecords(squadId);
   const [rosterOpen, setRosterOpen] = useState(false);
   const [recordsOpen, setRecordsOpen] = useState(false);
+  const [openRecord, setOpenRecord] = useState<SquadRecord | null>(null); // the record whose full history sheet is open
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const openPost = (pid: string) => router.push({ pathname: '/post/[id]', params: { id: pid } });
@@ -169,14 +171,20 @@ export default function SquadDetailRoute() {
         </View>
       </BottomSheet>
 
-      {/* Records — read-only record book. Tapping a record is inert (full history is a deferred
-          sub-detail); the most-recent previous holder is shown inline. */}
+      {/* Records — read-only record book. Tapping a record opens its full holder history (read-only);
+          the book row still shows the most-recent previous holder inline (same source, no contradiction). */}
       <BottomSheet open={recordsOpen} onClose={() => setRecordsOpen(false)} title={`Squad Records · ${records.length}`}>
         <View style={styles.rosterList}>
           {records.map((r) => (
-            <RecordRow key={r.key} record={r} />
+            <RecordRow key={r.key} record={r} onPress={() => setOpenRecord(r)} />
           ))}
         </View>
+      </BottomSheet>
+
+      {/* Record history — read-only holder lineage for the tapped record. Rises over the still-open
+          book; dismiss returns to it. All fields derive from the one SquadRecord — nothing invented. */}
+      <BottomSheet open={openRecord != null} onClose={() => setOpenRecord(null)} title={openRecord?.label}>
+        {openRecord ? <RecordHistorySheet record={openRecord} /> : null}
       </BottomSheet>
 
       {/* Squad Settings — an INERT shell. Every row is a visibly-disabled management action; nothing
@@ -219,10 +227,10 @@ function SettingRow({ row }: { row: (typeof SETTINGS_ROWS)[number] }) {
   );
 }
 
-function RecordRow({ record }: { record: SquadRecord }) {
+function RecordRow({ record, onPress }: { record: SquadRecord; onPress: () => void }) {
   const prev = record.history[0];
   return (
-    <Pressable onPress={() => {}} accessibilityRole="button" accessibilityLabel={`${record.label}, held by ${record.holder}`} style={styles.recordRow}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${record.label}, held by ${record.holder}, view history`} style={styles.recordRow}>
       <View style={styles.recordTop}>
         <Text style={styles.recordLabel} numberOfLines={1}>
           {record.label}
@@ -252,6 +260,73 @@ function RecordRow({ record }: { record: SquadRecord }) {
         </Text>
       ) : null}
     </Pressable>
+  );
+}
+
+// ── Record history sheet — read-only holder lineage for one record. Optional "New Record" banner
+//    (only when a real prior mark was genuinely beaten — gated by newRecordBanner), the current
+//    holder, then the full descending list of previous holders. Every field is the record's own.
+function RecordHistorySheet({ record }: { record: SquadRecord }) {
+  const banner = newRecordBanner(record);
+  return (
+    <View style={styles.histBody}>
+      {banner ? (
+        <View style={styles.histBanner}>
+          <Text style={styles.histBannerLabel}>New Record</Text>
+          <View style={styles.histBannerVals}>
+            <Text style={styles.histBannerPrev} numberOfLines={1}>
+              {banner.prev}
+            </Text>
+            <ArrowRight />
+            <Text style={styles.histBannerCurrent} numberOfLines={1}>
+              {banner.current}
+            </Text>
+          </View>
+        </View>
+      ) : null}
+
+      <Text style={styles.histSectionLabel}>Current</Text>
+      <View style={styles.histCurrentCard}>
+        <Avatar name={record.holder} size="listRow" />
+        <View style={styles.histCurrentCol}>
+          <Text style={styles.histCurrentHolder} numberOfLines={1}>
+            {record.holder}
+          </Text>
+          <Text style={styles.histCurrentDate}>{record.date}</Text>
+        </View>
+        <View style={styles.histCurrentValCol}>
+          <Text style={styles.histCurrentVal}>{record.value}</Text>
+          <Text style={styles.histCurrentUnit}>{record.unit}</Text>
+        </View>
+      </View>
+
+      {record.history.length > 0 ? (
+        <>
+          <Text style={styles.histSectionLabel}>Previous Holders</Text>
+          <View>
+            {record.history.map((h, i) => (
+              <View key={`${i}-${h.holder}`} style={styles.histRow}>
+                <Avatar name={h.holder} size="listRow" />
+                <Text style={styles.histRowHolder} numberOfLines={1}>
+                  {h.holder}
+                </Text>
+                <Text style={styles.histRowDate}>{h.date}</Text>
+                <Text style={styles.histRowVal}>{h.value}</Text>
+              </View>
+            ))}
+          </View>
+        </>
+      ) : null}
+    </View>
+  );
+}
+
+function ArrowRight() {
+  return (
+    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M5 12h14" />
+      <Path d="M13 6l6 6-6 6" />
+    </Svg>
   );
 }
 
@@ -553,6 +628,61 @@ const styles = StyleSheet.create({
   recordValue: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', letterSpacing: -0.3, color: flColor.bronze300, lineHeight: 24 },
   recordUnit: { fontSize: 10, fontWeight: '600', letterSpacing: 0.3, color: flColor.gray600 },
   recordPrev: { fontSize: 11.5, color: flColor.gray600, marginTop: 9 },
+
+  // record history sheet
+  histBody: {},
+  histBanner: {
+    gap: 4,
+    padding: 16,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    backgroundColor: flColor.bronzeTint,
+    marginBottom: 18,
+  },
+  histBannerLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze300 },
+  histBannerVals: { flexDirection: 'row', alignItems: 'baseline', gap: 9 },
+  histBannerPrev: {
+    fontFamily: flFont.display,
+    fontSize: 17,
+    fontWeight: '600',
+    color: flColor.gray600,
+    textDecorationLine: 'line-through',
+    textDecorationColor: flColor.charcoal500,
+  },
+  histBannerCurrent: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', color: flColor.bronze300 },
+
+  histSectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase', color: flColor.bronze400, marginTop: 4, marginBottom: 10 },
+
+  histCurrentCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 13,
+    padding: 15,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    backgroundColor: flColor.charcoal900,
+    boxShadow: flShadow.card,
+  },
+  histCurrentCol: { flex: 1, minWidth: 0, gap: 2 },
+  histCurrentHolder: { fontSize: 15.5, fontWeight: '600', color: flColor.cream100 },
+  histCurrentDate: { fontSize: 11, color: flColor.gray600 },
+  histCurrentValCol: { flexShrink: 0, alignItems: 'flex-end', gap: 2 },
+  histCurrentVal: { fontFamily: flFont.display, fontSize: 24, fontWeight: '700', letterSpacing: -0.4, color: flColor.bronze300, lineHeight: 25 },
+  histCurrentUnit: { fontSize: 9, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray600 },
+
+  histRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 13,
+    paddingVertical: 13,
+    borderTopWidth: 1,
+    borderTopColor: flColor.charcoal800,
+  },
+  histRowHolder: { flex: 1, minWidth: 0, fontSize: 14, color: flColor.gray400 },
+  histRowDate: { flexShrink: 0, fontSize: 11, color: flColor.gray600 },
+  histRowVal: { flexShrink: 0, minWidth: 56, textAlign: 'right', fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.gray400 },
 
   // Squad Feed header + disabled composer (visibly-disabled shell)
   feedHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, marginBottom: 12 },
