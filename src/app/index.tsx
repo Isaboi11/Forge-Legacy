@@ -20,6 +20,8 @@ import { getSelfProfile } from '@/domain/profile/placeholder-data';
 import { getActiveProgram, getNextWorkout } from '@/domain/training/active-program';
 import { resolveHomeWorkoutArtwork } from '@/domain/home-artwork/resolver';
 import { enrichSessionExercises } from '@/domain/home-artwork/catalog';
+import { PLACEHOLDER_RANK, resolveRankArtwork } from '@/domain/rank-artwork/resolver';
+import { resolveRankArtworkSource } from '@/domain/rank-artwork/rank-source';
 
 /** AppBar wordmark — pillar mark + serif "Forge Legacy", left-aligned. */
 function HomeWordmark() {
@@ -54,7 +56,7 @@ export default function HomeScreen() {
   const { startWorkout } = useWorkoutSession();
 
   // Static this session (no athlete-progress backend) — resolve once.
-  const { profile, program, workout, resolved } = useMemo(() => {
+  const { profile, program, workout, resolved, rankArtwork } = useMemo(() => {
     const profile = getSelfProfile();
     const program = getActiveProgram();
     const workout = getNextWorkout();
@@ -64,7 +66,12 @@ export default function HomeScreen() {
       program,
       exercises: workout ? enrichSessionExercises(workout.exercises ?? []) : [],
     });
-    return { profile, program, workout, resolved };
+    // Rank badge for the chapter medallion. TIER is placeholder (no rank backend);
+    // sex only matters for the sex-specific Established family. undefined → placeholder seal.
+    const rankArtwork = resolveRankArtworkSource(
+      resolveRankArtwork({ ...PLACEHOLDER_RANK, sex: profile.sex }).assetPath,
+    );
+    return { profile, program, workout, resolved, rankArtwork };
   }, []);
 
   const { mission } = HOME_DATA;
@@ -93,6 +100,7 @@ export default function HomeScreen() {
           chapterName={HOME_CHAPTER.name}
           weekDay={HOME_CHAPTER.weekDay}
           principle={todaysPrinciple()}
+          rankArtwork={rankArtwork}
         />
 
         <View style={styles.content}>

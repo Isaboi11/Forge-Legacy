@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View, ScrollView, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'expo-image';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -9,6 +10,8 @@ import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 import { getSelfProfile } from '@/domain/profile/placeholder-data';
+import { PLACEHOLDER_RANK, resolveRankArtwork } from '@/domain/rank-artwork/resolver';
+import { resolveRankArtworkSource } from '@/domain/rank-artwork/rank-source';
 import { LEGACY_DATA } from '@/data/legacy-placeholder';
 import type { Accomplishment, Chapter, FeaturedMoment, Goal, Honor, TimelineEntry } from '@/types/legacy';
 
@@ -28,10 +31,14 @@ import type { Accomplishment, Chapter, FeaturedMoment, Goal, Honor, TimelineEntr
  * backend yet; nothing here is labeled real. The athlete name comes from the
  * placeholder profile (`getSelfProfile`).
  *
- * Pending-asset (NOT fabricated): the rank seal + Foundation badge artwork, and the
- * Honors insignia artwork — Honors is legitimately shown HERE (achievement context,
- * unlike the workout card where it is reserved), but the honor art was never imported,
- * so each renders as a graceful bronze placeholder.
+ * The hero seal now shows the REAL imported rank badge art (`rankArtwork`, resolved via
+ * `src/domain/rank-artwork`); the TIER is still a placeholder (`PLACEHOLDER_RANK` — no
+ * rank backend yet), and it falls back to the graceful bronze seal when unresolved.
+ *
+ * Still pending-asset (NOT fabricated — graceful bronze placeholders): the Progress /
+ * Foundation badge, and the Honors insignia (Honors is legitimately shown HERE — an
+ * achievement context, unlike the workout card where it is reserved — but the honor art
+ * was never imported).
  *
  * Deferred to a follow-up sub-phase (noted at the gate): the three bottom sheets
  * (L-11 Honor Detail, L-12 My Standard editor, L-13 Pin manager), the Toast, the
@@ -55,6 +62,11 @@ export default function LegacyScreen() {
   const data = LEGACY_DATA;
   const chapter = data.activeChapter;
   const [recentSeal, ...olderSeals] = data.sealedChapters;
+  // Rank badge for the hero seal. TIER is placeholder (no rank backend); sex only
+  // matters for the sex-specific Established family. undefined → placeholder seal.
+  const rankArtwork = resolveRankArtworkSource(
+    resolveRankArtwork({ ...PLACEHOLDER_RANK, sex: profile.sex }).assetPath,
+  );
 
   return (
     <View style={styles.root}>
@@ -78,7 +90,7 @@ export default function LegacyScreen() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* ── HERO · identity ── */}
         <View style={styles.identityRow}>
-          <SealPortrait name={profile.name} />
+          <SealPortrait name={profile.name} rankArtwork={rankArtwork} />
           <View style={styles.identityText}>
             <Text style={styles.athleteName} numberOfLines={1}>
               {profile.name}
@@ -269,8 +281,19 @@ export default function LegacyScreen() {
 // Local presentational pieces
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Portrait circle (real initials) inside a faint bronze rank-seal placeholder ring. */
-function SealPortrait({ name }: { name: string }) {
+/**
+ * Hero rank seal. When the rank badge art resolves it renders the REAL badge (tier is a
+ * placeholder — no rank backend). Fallback: the athlete's initials inside a faint bronze
+ * rank-seal placeholder ring (never a fabricated badge).
+ */
+function SealPortrait({ name, rankArtwork }: { name: string; rankArtwork?: number }) {
+  if (rankArtwork != null) {
+    return (
+      <View style={styles.portraitWrap} accessibilityElementsHidden importantForAccessibility="no">
+        <Image source={rankArtwork} style={styles.rankBadgeArt} contentFit="contain" />
+      </View>
+    );
+  }
   const initials = name
     .split(' ')
     .map((w) => w[0])
@@ -513,6 +536,7 @@ const styles = StyleSheet.create({
     paddingBottom: 2,
   },
   portraitWrap: { width: 90, height: 90, alignItems: 'center', justifyContent: 'center' },
+  rankBadgeArt: { width: 90, height: 90 },
   portrait: {
     width: 72,
     height: 72,

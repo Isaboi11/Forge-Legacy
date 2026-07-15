@@ -10,14 +10,15 @@
  * Data: chapter number/name + week/day = HOME_DATA placeholder (no Chapter/Legacy
  * backend yet); the principle is REAL (`todaysPrinciple`).
  *
- * ⚠ Rank medallion: the dc shows a faint rank-badge artwork top-right
- * (`assets/rank-foundation-i.png`) — that asset does NOT exist yet. Per PO, we do
- * NOT fabricate a rank badge; a graceful faint bronze seal placeholder holds the
- * space until the real rank artwork is produced (pending-asset, like the neutral art).
+ * ⚠ Rank medallion: now shows the REAL imported rank badge art (`rankArtwork`, resolved
+ * via `src/domain/rank-artwork`) as a top-right accent. The TIER is still a placeholder
+ * (`PLACEHOLDER_RANK` — no rank backend yet). When `rankArtwork` is absent it falls back
+ * to a graceful faint bronze seal (never a fabricated badge).
  */
 
 import React from 'react'
 import Svg, { Circle, Rect } from 'react-native-svg'
+import { Image } from 'expo-image'
 import { StyleSheet, Text, View } from 'react-native'
 import { flColor, flFont } from '@/constants/foundation'
 
@@ -26,17 +27,23 @@ export interface ChapterTitleBlockProps {
   chapterName: string
   weekDay: string
   principle: string
+  /** Resolved rank-badge image module (from `resolveRankArtworkSource`); omit → placeholder seal. */
+  rankArtwork?: number
 }
 
-/** Faint bronze seal — a placeholder for the pending rank-medallion artwork (not a real badge). */
-function RankMedallionPlaceholder() {
+/** Top-right rank medallion — the real badge art, or a faint bronze seal placeholder when absent. */
+function RankMedallion({ source }: { source?: number }) {
   return (
     <View pointerEvents="none" style={styles.medallion} accessibilityElementsHidden importantForAccessibility="no">
-      <Svg width={160} height={172} viewBox="0 0 100 108" fill="none" opacity={0.14}>
-        <Circle cx={50} cy={48} r={34} stroke={flColor.bronze400} strokeWidth={1} />
-        <Circle cx={50} cy={48} r={26} stroke={flColor.bronze600} strokeWidth={1} />
-        <Rect x={34} y={32} width={32} height={32} transform="rotate(45 50 48)" stroke={flColor.bronze400} strokeWidth={1} />
-      </Svg>
+      {source != null ? (
+        <Image source={source} style={styles.medallionArt} contentFit="contain" />
+      ) : (
+        <Svg width={160} height={172} viewBox="0 0 100 108" fill="none" opacity={0.14}>
+          <Circle cx={50} cy={48} r={34} stroke={flColor.bronze400} strokeWidth={1} />
+          <Circle cx={50} cy={48} r={26} stroke={flColor.bronze600} strokeWidth={1} />
+          <Rect x={34} y={32} width={32} height={32} transform="rotate(45 50 48)" stroke={flColor.bronze400} strokeWidth={1} />
+        </Svg>
+      )}
     </View>
   )
 }
@@ -51,10 +58,10 @@ function DiamondDivider() {
   )
 }
 
-export function ChapterTitleBlock({ chapterNumber, chapterName, weekDay, principle }: ChapterTitleBlockProps) {
+export function ChapterTitleBlock({ chapterNumber, chapterName, weekDay, principle, rankArtwork }: ChapterTitleBlockProps) {
   return (
     <View style={styles.root}>
-      <RankMedallionPlaceholder />
+      <RankMedallion source={rankArtwork} />
       <View style={styles.content}>
         <Text style={styles.chapterNumber}>{chapterNumber}</Text>
         <Text style={styles.chapterName}>{chapterName}</Text>
@@ -81,6 +88,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 6,
     right: 4,
+  },
+  // Real badge art as a faint top-right watermark (dc intent) — sits behind the title, not competing.
+  medallionArt: {
+    width: 128,
+    height: 138,
+    opacity: 0.42,
   },
   content: {
     position: 'relative',

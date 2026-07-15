@@ -17,6 +17,8 @@ const ART = join(REPO, 'assets', 'artwork');
 function walk(dir) {
   let out = [];
   for (const e of readdirSync(dir)) {
+    // `ranks/` is an identity surface owned by src/domain/rank-artwork (gen-rank-registry.mjs) — never a Home workout asset.
+    if (e === 'ranks') continue;
     const p = join(dir, e);
     if (statSync(p).isDirectory()) out = out.concat(walk(p));
     else if (p.endsWith('.png')) out.push(p);
