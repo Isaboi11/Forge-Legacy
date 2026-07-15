@@ -111,10 +111,19 @@ export default function CeremonyHarness() {
         <Text style={styles.note}>Post Detail (full-screen keepsake):</Text>
 
         <Button variant="secondary" fullWidth onPress={() => router.push({ pathname: '/post/[id]', params: { id: 'honor' } })}>
-          Open Post Detail · Honor
+          Open Post Detail · Honor (plate + comments)
         </Button>
         <Button variant="secondary" fullWidth onPress={() => router.push({ pathname: '/post/[id]', params: { id: 'pr' } })}>
-          Open Post Detail · PR
+          Open Post Detail · PR (achievement)
+        </Button>
+        <Button variant="secondary" fullWidth onPress={() => router.push({ pathname: '/post/[id]', params: { id: 'program' } })}>
+          Open Post Detail · Program
+        </Button>
+        <Button variant="secondary" fullWidth onPress={() => router.push({ pathname: '/post/[id]', params: { id: 'event' } })}>
+          Open Post Detail · Event
+        </Button>
+        <Button variant="secondary" fullWidth onPress={() => router.push({ pathname: '/post/[id]', params: { id: 'poll' } })}>
+          Open Post Detail · Poll
         </Button>
       </ScrollView>
 
