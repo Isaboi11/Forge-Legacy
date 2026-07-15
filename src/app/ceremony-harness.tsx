@@ -106,6 +106,16 @@ export default function CeremonyHarness() {
         <Button variant="secondary" fullWidth onPress={() => openShare({ shareType: 'pr' })}>
           Open SH-1 · PR
         </Button>
+
+        <View style={styles.divider} />
+        <Text style={styles.note}>Post Detail (full-screen keepsake):</Text>
+
+        <Button variant="secondary" fullWidth onPress={() => router.push({ pathname: '/post/[id]', params: { id: 'honor' } })}>
+          Open Post Detail · Honor
+        </Button>
+        <Button variant="secondary" fullWidth onPress={() => router.push({ pathname: '/post/[id]', params: { id: 'pr' } })}>
+          Open Post Detail · PR
+        </Button>
       </ScrollView>
 
       <ConfirmSheet
