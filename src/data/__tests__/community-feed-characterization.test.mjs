@@ -16,6 +16,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { COMMUNITY_DATA } from '../community-placeholder.ts'
 import { getCommunityFeed, getPost, formatProgramMeta } from '../post-placeholder.ts'
+import { formatRecordValue } from '../../domain/records/format.ts'
 
 /**
  * GOLDEN — today's committed Community feed, reduced to the fields that drive rendering. Authored
@@ -53,7 +54,7 @@ const GOLDEN = [
   {
     id: 'p_pr', author: 'Jasmine Rae', role: undefined, typeLabel: 'Achievement', hasBody: true,
     respect: 52, comment: 0, contentType: 'achievement', shareable: true,
-    achievement: { value: '405 lb', exercise: 'Bench Press', label: 'New Personal Record' },
+    achievement: { display: '405 lb', exercise: 'Bench Press', label: 'New Personal Record', measure: { kind: 'load', value: 405, unit: 'lb' } },
   },
 ]
 
@@ -82,9 +83,11 @@ test('merge preserves every rendered field: getCommunityFeed() matches the golde
     assert.equal(post.source.kind, 'community', `${g.id} source kind`)
 
     if (g.achievement) {
-      assert.equal(post.content.value, g.achievement.value, `${g.id} value`)
-      assert.equal(post.content.exercise, g.achievement.exercise, `${g.id} exercise`)
+      // structured PersonalRecord (the real shape) + the display it must still format to
+      assert.deepEqual(post.content.record.measure, g.achievement.measure, `${g.id} measure`)
+      assert.equal(post.content.record.exercise, g.achievement.exercise, `${g.id} exercise`)
       assert.equal(post.content.label, g.achievement.label, `${g.id} label`)
+      assert.equal(formatRecordValue(post.content.record.measure), g.achievement.display, `${g.id} display survives the swap`)
     }
     if (g.event) {
       assert.equal(post.content.month, g.event.month, `${g.id} event month`)

@@ -23,6 +23,7 @@ import { Avatar } from '../../composites/Avatar'
 import { FlameIcon } from '../../primitives/icons/HomeIcons'
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation'
 import { formatProgramMeta, type FeedPost, type PostContent, type PostRole } from '@/data/post-placeholder'
+import { formatRecordValue } from '@/domain/records/format'
 import { feedOriginConfig, type FeedOrigin, type FeedOriginConfig } from './origin-config'
 
 export interface FeedPostCardProps {
@@ -124,8 +125,8 @@ function FeedContent({ content, cfg }: { content: PostContent; cfg: FeedOriginCo
             end={{ x: 0.5, y: 1 }}
             style={StyleSheet.absoluteFill}
           />
-          <Text style={styles.achValue}>{content.value}</Text>
-          <Text style={styles.achExercise}>{content.exercise}</Text>
+          <Text style={styles.achValue}>{formatRecordValue(content.record.measure)}</Text>
+          <Text style={styles.achExercise}>{content.record.exercise}</Text>
           <Text style={styles.achLabel}>{content.label}</Text>
         </View>
       )

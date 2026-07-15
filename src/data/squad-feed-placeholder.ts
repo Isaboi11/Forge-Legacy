@@ -18,6 +18,8 @@
  * fabricated demo values.
  */
 
+import type { PersonalRecord } from '@/domain/records/schema'
+
 export type SquadRole = 'owner' | 'captain' | null
 
 export interface SquadReply {
@@ -51,7 +53,7 @@ interface SquadPostBase {
 /** Squad-appropriate post kinds only (mirrors forge-squad-posts.js TYPES that appear in the feed). */
 export type SquadPost =
   | (SquadPostBase & { type: 'checkin'; streak?: number })
-  | (SquadPostBase & { type: 'pr'; achievement: { value: string; exercise: string; label: string } })
+  | (SquadPostBase & { type: 'pr'; record: PersonalRecord; label: string })
   | (SquadPostBase & { type: 'formcheck'; media: { dur: string }; challengeContext?: string })
   | (SquadPostBase & { type: 'challenge'; challenge: { name: string; place: string; of: string; metric: string } })
   | (SquadPostBase & { type: 'announcement' })
@@ -326,7 +328,8 @@ export const SQUAD_SEED: Record<string, SquadPost[]> = {
       time: '5h ago',
       respect: 22,
       body: 'New squad best for the month. Bar speed felt easy, which is the scary part.',
-      achievement: { value: '315 lb', exercise: 'Bench Press', label: 'Squad PR' },
+      record: { exercise: 'Bench Press', measure: { kind: 'load', value: 315, unit: 'lb' } },
+      label: 'Squad PR',
       comments: [{ id: 'c1', author: 'Theo Brandt', role: null, time: '4h ago', respect: 2, body: 'Monster. That’s the one to beat now.', replies: [] }],
     },
     {
@@ -371,7 +374,8 @@ export const SQUAD_SEED: Record<string, SquadPost[]> = {
       time: '6h ago',
       respect: 19,
       body: 'Finally cracked it on a cold morning. Negative split the whole way.',
-      achievement: { value: '19:48', exercise: '5K', label: 'Squad PR' },
+      record: { exercise: '5K', measure: { kind: 'time', seconds: 1188 } }, // 19:48
+      label: 'Squad PR',
       comments: [{ id: 'c1', author: 'Sana Okafor', role: null, time: '5h ago', respect: 3, body: 'Sub-20 before sunrise. Absurd. Congrats.', replies: [] }],
     },
     {

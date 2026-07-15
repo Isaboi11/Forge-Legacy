@@ -10,6 +10,7 @@ import { Pill } from '@/components/forge/composites/Pill';
 import { FlameIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { useShareSheet } from '@/hooks/useShareSheet';
 import { formatProgramMeta, getPost, type FeedPost, type PostComment, type PostContent, type PostReply, type PostRole } from '@/data/post-placeholder';
+import { formatRecordValue } from '@/domain/records/format';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 
 /**
@@ -158,8 +159,8 @@ function ContentBlock({ content }: { content: PostContent }) {
     case 'achievement':
       return (
         <View style={styles.achievement}>
-          <Text style={styles.achValue}>{content.value}</Text>
-          <Text style={styles.achExercise}>{content.exercise}</Text>
+          <Text style={styles.achValue}>{formatRecordValue(content.record.measure)}</Text>
+          <Text style={styles.achExercise}>{content.record.exercise}</Text>
           <Text style={styles.achLabel}>{content.label}</Text>
         </View>
       );

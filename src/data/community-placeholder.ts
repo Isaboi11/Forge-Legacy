@@ -16,6 +16,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { ProgramStructure } from '@/domain/training/schema';
+import type { PersonalRecord } from '@/domain/records/schema';
 
 export type MemberRole = 'owner' | 'mod';
 
@@ -108,9 +109,9 @@ export interface FormCheckPost extends PostBase {
 
 export interface AchievementPost extends PostBase {
   kind: 'achievement';
-  plateValue: string;
-  plateExercise: string;
-  plateLabel: string;
+  // Structured PR mark (renderer derives the display via formatRecordValue) + the post's framing.
+  record: PersonalRecord;
+  label: string;
 }
 
 // Program posts carry the real Phase-0 structured shape (durationWeeks / frequencyPerWeek /
@@ -349,9 +350,8 @@ export const COMMUNITY_DATA: CommunityHomeData = {
       body: 'Hit a new PR today. 405 for a single. All glory to the process.',
       respectCount: 52,
       commentCount: 23,
-      plateValue: '405 lb',
-      plateExercise: 'Bench Press',
-      plateLabel: 'New Personal Record',
+      record: { exercise: 'Bench Press', measure: { kind: 'load', value: 405, unit: 'lb' } },
+      label: 'New Personal Record',
     },
   ],
 

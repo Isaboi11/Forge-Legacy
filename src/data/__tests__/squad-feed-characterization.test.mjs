@@ -17,17 +17,18 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { getSquadFeed, getPost } from '../post-placeholder.ts'
 import { getSquadCheckins, getSquadCompetition, getSquadMembers, getSquadRecords } from '../squad-feed-placeholder.ts'
+import { formatRecordValue } from '../../domain/records/format.ts'
 
 const GOLDEN = {
   iron: [
     { id: 'iv_fc', author: 'Dana Cole', role: undefined, typeLabel: 'Form Check', respect: 14, comment: 2, contentType: 'media', shareable: false, media: { mediaKind: 'video', duration: '0:31' }, challenge: 'Forge League · Week 3' },
-    { id: 'iv_pr', author: 'Marcus Vale', role: 'captain', typeLabel: 'PR', respect: 22, comment: 1, contentType: 'achievement', shareable: true, achievement: { value: '315 lb', exercise: 'Bench Press', label: 'Squad PR' } },
+    { id: 'iv_pr', author: 'Marcus Vale', role: 'captain', typeLabel: 'PR', respect: 22, comment: 1, contentType: 'achievement', shareable: true, achievement: { display: '315 lb', exercise: 'Bench Press', label: 'Squad PR', measure: { kind: 'load', value: 315, unit: 'lb' } } },
     { id: 'iv_ch', author: 'Ada Ridge', role: 'owner', typeLabel: 'Challenge Update', respect: 18, comment: 1, contentType: 'challengeUpdate', shareable: false, challengeUpdate: { name: 'Forge League', place: '2nd', of: '5', metric: '5 workouts' } },
     { id: 'iv_ann', author: 'Ada Ridge', role: 'owner', typeLabel: 'Announcement', respect: 9, comment: 0, contentType: 'text', shareable: false },
   ],
   dawn: [
     { id: 'dp_ci', author: 'Sana Okafor', role: undefined, typeLabel: 'Check-in', respect: 7, comment: 1, contentType: 'checkin', shareable: false, checkin: { streak: 11 } },
-    { id: 'dp_pr', author: 'Ravi Menon', role: 'captain', typeLabel: 'PR', respect: 19, comment: 1, contentType: 'achievement', shareable: true, achievement: { value: '19:48', exercise: '5K', label: 'Squad PR' } },
+    { id: 'dp_pr', author: 'Ravi Menon', role: 'captain', typeLabel: 'PR', respect: 19, comment: 1, contentType: 'achievement', shareable: true, achievement: { display: '19:48', exercise: '5K', label: 'Squad PR', measure: { kind: 'time', seconds: 1188 } } },
     { id: 'dp_tt', author: 'Mara Lindqvist', role: undefined, typeLabel: 'Train Together', respect: 5, comment: 0, contentType: 'traintogether', shareable: false },
   ],
 }
@@ -54,9 +55,11 @@ for (const [squadId, golden] of Object.entries(GOLDEN)) {
 
       if (g.challenge !== undefined) assert.equal(post.challenge, g.challenge, `${g.id} challenge context`)
       if (g.achievement) {
-        assert.equal(post.content.value, g.achievement.value, `${g.id} value`)
-        assert.equal(post.content.exercise, g.achievement.exercise, `${g.id} exercise`)
+        // structured PersonalRecord (load AND time forms) + the display each must still format to
+        assert.deepEqual(post.content.record.measure, g.achievement.measure, `${g.id} measure`)
+        assert.equal(post.content.record.exercise, g.achievement.exercise, `${g.id} exercise`)
         assert.equal(post.content.label, g.achievement.label, `${g.id} label`)
+        assert.equal(formatRecordValue(post.content.record.measure), g.achievement.display, `${g.id} display survives the swap`)
       }
       if (g.media) {
         assert.equal(post.content.mediaKind, g.media.mediaKind, `${g.id} media kind`)

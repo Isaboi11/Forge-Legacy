@@ -12,6 +12,8 @@ import type { ShareKind } from '@/domain/share/content'
 // backend swap is a data change, not a renderer change. Type-only import (erased at runtime, so
 // the zero-dep node --test suites don't need the `@/` alias resolved).
 import type { ProgramStructure } from '@/domain/training/schema'
+// The real PersonalRecord domain model backing the PR plates (§11 unblocked). Type-only (erased).
+import type { PersonalRecord } from '@/domain/records/schema'
 // Value import (explicit .ts so the zero-dep node --test suites resolve it); the app bundler
 // resolves it via allowImportingTsExtensions, same convention as domain/rank-artwork imports.
 import { COMMUNITY_DATA } from './community-placeholder.ts'
@@ -32,13 +34,11 @@ export interface PostSource {
 /** The typed content block a post carries (discriminated union — one per post, per the dc). */
 export type PostContent =
   | { type: 'text' }
-  // PR / achievement plate. DELIBERATELY a uniform display-string shape — `value` = magnitude+unit
-  // (weight OR time: '315 lb', '19:48'), `exercise` = movement, `label` = descriptor. NOT structured:
-  // there is no PersonalRecord domain model yet, and PR values are heterogeneous (weight/time/
-  // distance) — a structured shape invented here would likely disagree with the real records model.
-  // BLOCKED-ON a real PersonalRecord model before structuring (FORGE_DELTAS §11). Keep all PR plates
-  // to this one convention so there's a single thing to migrate, not a spectrum.
-  | { type: 'achievement'; value: string; exercise: string; label: string }
+  // PR / achievement plate — backed by the real PersonalRecord domain model (FORGE_DELTAS §11
+  // unblocked). `record` is the structured mark (load/time/distance/reps); `label` is the post's
+  // framing ("New Personal Record" / "Squad PR"). The renderer derives the display via
+  // `formatRecordValue(record.measure)` — the string migrates onto the model, not the reverse.
+  | { type: 'achievement'; record: PersonalRecord; label: string }
   | { type: 'honor'; label: string; title: string; sub?: string }
   // Program share = a snapshot of a real Program, carried as the real Phase-0 schema shape:
   // `programId` (the backend-swap ref), `durationWeeks`, `frequencyPerWeek`, and `structure`
@@ -157,7 +157,7 @@ const POSTS: Record<string, FeedPost> = {
     source: SQUAD,
     typeLabel: 'PR',
     body: 'Finally moved it. Squat has been a two-year grind.',
-    content: { type: 'achievement', value: '405 lb', exercise: 'Back Squat', label: 'New Personal Record' },
+    content: { type: 'achievement', record: { exercise: 'Back Squat', measure: { kind: 'load', value: 405, unit: 'lb' } }, label: 'New Personal Record' },
     respect: 71,
     commentCount: 1,
     shareType: 'pr',
@@ -249,7 +249,7 @@ function communityPostToFeedPost(p: CommunityPost): FeedPost {
       return {
         ...base,
         shareType: 'pr', // a PR keepsake is genuinely shareable via SH-1
-        content: { type: 'achievement', value: p.plateValue, exercise: p.plateExercise, label: p.plateLabel },
+        content: { type: 'achievement', record: p.record, label: p.label },
       }
     case 'program':
       return {
@@ -348,7 +348,7 @@ function squadPostToFeedPost(squadId: string, p: SquadPost): FeedPost {
     case 'checkin':
       return { ...base, content: { type: 'checkin', streak: p.streak } }
     case 'pr':
-      return { ...base, shareType: 'pr', content: { type: 'achievement', value: p.achievement.value, exercise: p.achievement.exercise, label: p.achievement.label } }
+      return { ...base, shareType: 'pr', content: { type: 'achievement', record: p.record, label: p.label } }
     case 'formcheck':
       return { ...base, challenge: p.challengeContext, content: { type: 'media', mediaKind: 'video', duration: p.media.dur } }
     case 'challenge':

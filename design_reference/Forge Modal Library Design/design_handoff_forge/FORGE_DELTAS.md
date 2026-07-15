@@ -103,22 +103,28 @@ Each entry: **What changed · Why · What it supersedes.**
   surface (feed authors, roster, comments). A correction *toward* the system, not a divergence.
 - **Supersedes:** `Squad Detail.dc.html`'s check-in disc treatment (a preview simplification).
 
-## 11. Feed program plates carry the real Program schema; PR plates stay uniform strings (BLOCKED)
-- **What:** Feed / Post-Detail **program** plates now carry the real Phase-0 `Program` shape
-  (`durationWeeks` / `frequencyPerWeek` / `structure` enum), rendered via a shared
-  `formatProgramMeta`. **Every** program plate is structured — no free-text meta middle state — so
-  swapping in real programs is a **data change, not a renderer change**. **PR / achievement** plates
-  deliberately stay a **single uniform display-string convention** (`value` = magnitude+unit,
-  `exercise` = movement, `label` = descriptor) for weight and endurance alike.
-- **Why:** Programs have a real domain schema to back them. There is **no `PersonalRecord` domain
-  model** yet, and PR values are heterogeneous (weight / time / distance); inventing a PR schema
-  ahead of the records system would almost certainly disagree with it (units, endurance vs weight,
-  rep semantics) — the exact drift the superset rule exists to prevent. A display string is an
-  unambiguous placeholder, not a competing schema.
-- **BLOCKED-ON:** Structuring PR / achievement plates is gated on a real `PersonalRecord` /
-  records-domain model. Until it lands, all PR plates use the one display-string convention (a
-  single thing to migrate, not a spectrum).
-- **Supersedes:** The Community-convergence stopgap free-text program `meta` string.
+## 11. Feed program + PR plates carry real domain models (both structured — DONE)
+- **What:** Feed / Post-Detail **program** plates carry the real Phase-0 `Program` shape
+  (`durationWeeks` / `frequencyPerWeek` / `structure` enum) via a shared `formatProgramMeta`; **PR /
+  achievement** plates now carry the real **`PersonalRecord`** model (`src/domain/records/` — a
+  `load | time | distance | reps` measure union) via a shared `formatRecordValue`. Both are fully
+  structured (no half-typed middle state) — swapping in real programs/PRs is a **data change, not a
+  renderer change**.
+- **Why (history):** Programs always had a schema to back them; PRs did **not**, so PR plates were
+  deliberately kept a single uniform display-string convention until a real model existed (inventing
+  one ahead of the records system would have risked drift — units, endurance vs weight, rep
+  semantics). That model now exists and the plates are migrated onto it.
+- **How the PR swap stayed honest:** the string migrated **onto** the model (sources carry a
+  structured `PersonalRecord`, not parsed strings), and a golden locks `formatRecordValue(measure)`
+  reproducing the exact prior display (`315 lb`, `405 lb × 3`, `19:48`, incl. **h:mm:ss** over an
+  hour) — the structuring is provably lossless.
+- **FORWARD (the ranking domain's job, NOT this):** a records/leaderboard/ranking domain will need a
+  per-kind comparison **direction** (load ↑ better, time ↓ better, distance ↑, reps ↑) to rank PRs.
+  Deliberately omitted from `PersonalRecord` — §11 is display-only; direction is added by the ranking
+  domain when it lands, never retrofitted onto the display strings or bolted onto the record shape.
+  Recorded in `src/domain/records/schema.ts`.
+- **Supersedes:** the Community-convergence stopgap free-text program `meta` string; the PR
+  uniform-display-string stopgap.
 
 ## 12. Modal-family surfaces are render-verified via temp inline render, not static export
 - **What:** BottomSheet / Modal / ceremony-overlay content (ConfirmSheet, ShareSheet, the Squad
@@ -153,8 +159,10 @@ Each entry: **What changed · Why · What it supersedes.**
 
 ## Still open (carry into implementation)
 - Populate the structured fields across **all** programs/workouts (§6).
-- Structure **PR / achievement** feed plates — **BLOCKED on a real `PersonalRecord` domain model**
-  (§11). Until then they use one uniform display-string convention.
+- PR / achievement plates are now structured onto the real **`PersonalRecord`** model (§11 —
+  **DONE**). The next records-domain step is a per-kind ranking **direction** (load ↑ / time ↓ /
+  distance ↑ / reps ↑), added only when ranking/leaderboard lands — never retrofitted onto the
+  display strings.
 - Sex default → neutral is **FIXED + tested** in code (§7); **BLOCKED-ON** producing the real
   **neutral** artwork set (Phase-4 assets) — the resolver serves male as a tested placeholder until then.
 - Build the real **asset manifest** with version/aspect/placement, and swap prototype crops for
