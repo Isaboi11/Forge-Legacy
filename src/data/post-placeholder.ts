@@ -151,3 +151,11 @@ const POSTS: Record<string, FeedPost> = {
 export function getPost(id: string): FeedPost | null {
   return POSTS[id] ?? null
 }
+
+/**
+ * The Friends Feed list (demo). Same posts open in Post Detail via `/post/[id]`, so the feed
+ * and detail stay consistent. Placeholder — no feed backend (real: GET /feed/friends).
+ */
+export function getFriendsFeed(): FeedPost[] {
+  return ['pr', 'honor', 'program', 'poll', 'event'].map((id) => POSTS[id]).filter((p): p is FeedPost => p != null)
+}

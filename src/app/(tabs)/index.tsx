@@ -142,12 +142,8 @@ export default function HomeScreen() {
             onJoinLive={() => {
               // S-2 Squad Detail / S-10 Train Together join flow — not yet implemented.
             }}
-            onFriendActivity={() => {
-              // Friends Feed post detail — not yet implemented.
-            }}
-            onSeeCircle={() => {
-              // Friends Feed — not yet implemented.
-            }}
+            onFriendActivity={() => router.push('/friends')}
+            onSeeCircle={() => router.push('/friends')}
           />
 
           <QuickActionsRow

@@ -125,6 +125,11 @@ export default function CeremonyHarness() {
         <Button variant="secondary" fullWidth onPress={() => router.push({ pathname: '/post/[id]', params: { id: 'poll' } })}>
           Open Post Detail · Poll
         </Button>
+
+        <View style={styles.divider} />
+        <Button variant="primary" fullWidth onPress={() => router.push('/friends')}>
+          Open Friends Feed
+        </Button>
       </ScrollView>
 
       <ConfirmSheet
