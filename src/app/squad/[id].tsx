@@ -47,6 +47,7 @@ export default function SquadDetailRoute() {
   const records = getSquadRecords(squadId);
   const [rosterOpen, setRosterOpen] = useState(false);
   const [recordsOpen, setRecordsOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const openPost = (pid: string) => router.push({ pathname: '/post/[id]', params: { id: pid } });
   const buildShare = (post: FeedPost) =>
@@ -66,7 +67,7 @@ export default function SquadDetailRoute() {
         serif
         onBack={() => router.back()}
         actions={
-          <Pressable onPress={() => {}} accessibilityRole="button" accessibilityLabel="Squad options" style={styles.iconBtn} hitSlop={8}>
+          <Pressable onPress={() => setSettingsOpen(true)} accessibilityRole="button" accessibilityLabel="Squad settings" style={styles.iconBtn} hitSlop={8}>
             <OverflowIcon />
           </Pressable>
         }
@@ -126,6 +127,23 @@ export default function SquadDetailRoute() {
           </View>
         ) : null}
 
+        {/* Squad Feed header + composer entry. The composer is the first squad WRITE path and is
+            intentionally a VISIBLY-DISABLED shell (dimmed + locked "Soon") — it does not open a form
+            that could accept a typed post and silently drop it. No write path exists in the data
+            layer. */}
+        {squad ? (
+          <View style={styles.feedHeaderRow}>
+            <Text style={styles.feedHeaderLabel}>Squad Feed</Text>
+            <Pressable disabled accessibilityState={{ disabled: true }} accessibilityLabel="New post — coming soon" style={styles.newPostDisabled}>
+              <LockGlyph />
+              <Text style={styles.newPostText}>New Post</Text>
+              <View style={styles.soonTag}>
+                <Text style={styles.soonTagText}>Soon</Text>
+              </View>
+            </Pressable>
+          </View>
+        ) : null}
+
         {/* the squad feed — shared FeedPostCard, squad origin */}
         {posts.length > 0 ? (
           <View style={styles.feed}>
@@ -160,6 +178,43 @@ export default function SquadDetailRoute() {
           ))}
         </View>
       </BottomSheet>
+
+      {/* Squad Settings — an INERT shell. Every row is a visibly-disabled management action; nothing
+          persists, and there is NO write path in the data layer (no updateSquadSettings stub). */}
+      <BottomSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} title="Squad Settings">
+        <Text style={styles.settingsNote}>Squad management is coming soon — these controls aren’t active yet.</Text>
+        <View style={styles.settingsList}>
+          {SETTINGS_ROWS.map((row) => (
+            <SettingRow key={row.id} row={row} />
+          ))}
+        </View>
+      </BottomSheet>
+    </View>
+  );
+}
+
+/** Static management actions — rendered visibly disabled (inert shell), no persisted state. */
+const SETTINGS_ROWS: { id: string; label: string; sub: string; destructive?: boolean }[] = [
+  { id: 'edit', label: 'Edit Identity', sub: 'Name, goal, crest' },
+  { id: 'privacy', label: 'Privacy', sub: 'Who can find and join' },
+  { id: 'rules', label: 'Rules', sub: 'Squad guidelines' },
+  { id: 'transfer', label: 'Transfer Ownership', sub: 'Hand the squad to another member' },
+  { id: 'delete', label: 'Delete Squad', sub: 'Permanently remove this squad', destructive: true },
+];
+
+function SettingRow({ row }: { row: (typeof SETTINGS_ROWS)[number] }) {
+  return (
+    <View
+      accessibilityRole="button"
+      accessibilityState={{ disabled: true }}
+      accessibilityLabel={`${row.label} — coming soon`}
+      style={styles.settingRow}
+    >
+      <View style={styles.settingText}>
+        <Text style={[styles.settingLabel, row.destructive ? styles.settingLabelDanger : null]}>{row.label}</Text>
+        <Text style={styles.settingSub}>{row.sub}</Text>
+      </View>
+      <LockGlyph />
     </View>
   );
 }
@@ -374,6 +429,14 @@ function TrendUp() {
     </Svg>
   );
 }
+function LockGlyph() {
+  return (
+    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M6 10V8a6 6 0 0 1 12 0v2" />
+      <Path d="M5 10h14v10H5z" />
+    </Svg>
+  );
+}
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
@@ -490,6 +553,47 @@ const styles = StyleSheet.create({
   recordValue: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', letterSpacing: -0.3, color: flColor.bronze300, lineHeight: 24 },
   recordUnit: { fontSize: 10, fontWeight: '600', letterSpacing: 0.3, color: flColor.gray600 },
   recordPrev: { fontSize: 11.5, color: flColor.gray600, marginTop: 9 },
+
+  // Squad Feed header + disabled composer (visibly-disabled shell)
+  feedHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, marginBottom: 12 },
+  feedHeaderLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  newPostDisabled: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    paddingVertical: 6,
+    paddingHorizontal: 11,
+    borderRadius: flRadius.pill,
+    borderWidth: 1,
+    borderColor: flColor.charcoal700,
+    backgroundColor: flColor.charcoal800,
+    opacity: 0.6,
+  },
+  newPostText: { fontSize: 11.5, fontWeight: '600', color: flColor.gray400 },
+  soonTag: {
+    paddingVertical: 1,
+    paddingHorizontal: 6,
+    borderRadius: flRadius.sm,
+    backgroundColor: flColor.charcoal700,
+  },
+  soonTagText: { fontSize: 8.5, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray600 },
+
+  // Squad Settings — inert shell
+  settingsNote: { fontSize: 12.5, lineHeight: 19, color: flColor.gray400, marginBottom: 14 },
+  settingsList: { gap: 2 },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: flColor.charcoal800,
+    opacity: 0.55,
+  },
+  settingText: { flex: 1, minWidth: 0, gap: 2 },
+  settingLabel: { fontSize: 14.5, fontWeight: '500', color: flColor.cream100 },
+  settingLabelDanger: { color: flColor.redMuted },
+  settingSub: { fontSize: 11.5, color: flColor.gray600 },
   metaText: { fontSize: 12, color: flColor.gray600 },
   dot: { width: 2.5, height: 2.5, borderRadius: 1.25, backgroundColor: flColor.charcoal500 },
 
