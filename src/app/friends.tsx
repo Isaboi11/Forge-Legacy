@@ -1,16 +1,17 @@
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
+import { ScreenBackground } from '@/components/screen-background';
+import { SCREEN_BG } from '@/constants/backgrounds';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { FeedPostCard } from '@/components/forge/compositions/FeedPostCard';
 import { getFriendsFeed } from '@/data/post-placeholder';
 import { getSelfProfile } from '@/domain/profile/placeholder-data';
 import { useShareSheet } from '@/hooks/useShareSheet';
-import { flColor, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { flColor, flRadius, flShadow } from '@/constants/foundation';
 
 /**
  * Friends Feed — the scrollable feed of friends' shared moments. Each post card taps through
@@ -37,13 +38,7 @@ export default function FriendsFeedRoute() {
 
   return (
     <View style={styles.root}>
-      <LinearGradient
-        colors={flGradient.bgAtmospheric.colors}
-        locations={flGradient.bgAtmospheric.locations}
-        start={flGradient.bgAtmospheric.start}
-        end={flGradient.bgAtmospheric.end}
-        style={StyleSheet.absoluteFill}
-      />
+      <ScreenBackground image={SCREEN_BG.slate} />
       <AppBar
         title="Friends"
         serif

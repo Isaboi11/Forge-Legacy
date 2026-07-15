@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
+import { ScreenBackground } from '@/components/screen-background';
+import { SCREEN_BG } from '@/constants/backgrounds';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { FeedPostCard } from '@/components/forge/compositions/FeedPostCard';
 import { useShareSheet } from '@/hooks/useShareSheet';
 import { SQUADS_PLACEHOLDER } from '@/data/squads-placeholder';
 import { getSquadFeed, type FeedPost } from '@/data/post-placeholder';
 import { getSquadCheckins, getSquadCompetition, getSquadMembers, getSquadRecords, newRecordBanner, type SquadCheckin, type SquadCompetition, type SquadMember, type SquadRecord } from '@/data/squad-feed-placeholder';
-import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 
 /**
  * Squad Detail (S-2) — feed-focused. Reached from a Squads Hub card; a root-Stack sibling so it
@@ -58,13 +59,7 @@ export default function SquadDetailRoute() {
 
   return (
     <View style={styles.root}>
-      <LinearGradient
-        colors={flGradient.bgAtmospheric.colors}
-        locations={flGradient.bgAtmospheric.locations}
-        start={flGradient.bgAtmospheric.start}
-        end={flGradient.bgAtmospheric.end}
-        style={StyleSheet.absoluteFill}
-      />
+      <ScreenBackground image={SCREEN_BG.squadDetail} />
       <AppBar
         title={squad?.name ?? 'Squad'}
         serif
@@ -77,13 +72,19 @@ export default function SquadDetailRoute() {
       />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* identity header — crest is a pending-asset bronze placeholder */}
+        {/* identity header — name/motto LEFT, squad crest RIGHT (per Squad Detail.dc.html). The crest
+            is the design's photo slot; with no squad-image upload it degrades to the pending-asset
+            bronze placeholder — never a fabricated per-squad badge. */}
         <View style={styles.identity}>
-          <View style={styles.crest}>
-            <CrestGlyph />
+          <View style={styles.identityHead}>
+            <View style={styles.identityText}>
+              <Text style={styles.squadName}>{squad?.name ?? 'Squad'}</Text>
+              {squad?.motto ? <Text style={styles.motto}>{squad.motto}</Text> : null}
+            </View>
+            <View style={styles.crest}>
+              <CrestGlyph />
+            </View>
           </View>
-          <Text style={styles.squadName}>{squad?.name ?? 'Squad'}</Text>
-          {squad?.motto ? <Text style={styles.motto}>{squad.motto}</Text> : null}
           <View style={styles.metaRow}>
             {/* "N members" derives from the single member source and taps through to the roster */}
             <Pressable
@@ -162,8 +163,8 @@ export default function SquadDetailRoute() {
         )}
       </ScrollView>
 
-      {/* Roster — read-only member list (single source). Tapping a member is inert (public
-          profile is a deferred surface). */}
+      {/* Roster — read-only member list (single source). Tapping a member opens their public
+          profile (/athlete/[id]). */}
       <BottomSheet open={rosterOpen} onClose={() => setRosterOpen(false)} title={`Members · ${members.length}`}>
         <View style={styles.rosterList}>
           {members.map((m) => (
@@ -519,12 +520,15 @@ const styles = StyleSheet.create({
   iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round },
   scroll: { paddingBottom: 44 },
 
-  identity: { alignItems: 'center', paddingHorizontal: 24, paddingTop: 12, paddingBottom: 20 },
+  identity: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 20 },
+  identityHead: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 },
+  identityText: { flex: 1, minWidth: 0, paddingTop: 6 },
   crest: {
-    width: 78,
-    height: 78,
+    width: 92,
+    height: 92,
+    flexShrink: 0,
     borderRadius: flRadius.round,
-    borderWidth: 2,
+    borderWidth: 2.5,
     borderColor: flColor.bronze400,
     backgroundColor: flColor.charcoal900,
     alignItems: 'center',
@@ -533,15 +537,26 @@ const styles = StyleSheet.create({
   },
   squadName: {
     fontFamily: flFont.display,
-    fontSize: 26,
+    fontSize: 30,
     fontWeight: '600',
-    letterSpacing: -0.4,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    lineHeight: 32,
     color: flColor.cream100,
-    marginTop: 14,
-    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.75)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 14,
   },
-  motto: { fontSize: 13.5, color: flColor.gray400, marginTop: 6, textAlign: 'center' },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 12 },
+  motto: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: flColor.gray400,
+    marginTop: 8,
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 8,
+  },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 18 },
   metaLink: { color: flColor.bronze400, fontWeight: '600' },
 
   // roster sheet

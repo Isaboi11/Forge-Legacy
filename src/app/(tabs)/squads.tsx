@@ -5,11 +5,13 @@ import { useRouter } from 'expo-router';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
+import { ScreenBackground } from '@/components/screen-background';
+import { SCREEN_BG } from '@/constants/backgrounds';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { SectionHeader } from '@/components/forge/composites/SectionHeader';
 import { Button } from '@/components/forge/composites/Button';
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
-import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { getSelfProfile } from '@/domain/profile/placeholder-data';
 import { INITIAL_FAVORITE_IDS, SQUADS_PLACEHOLDER } from '@/data/squads-placeholder';
 import type { Squad, SquadMember } from '@/data/squads-placeholder';
@@ -64,13 +66,7 @@ export default function SquadsScreen() {
 
   return (
     <View style={styles.root}>
-      <LinearGradient
-        colors={flGradient.bgAtmospheric.colors}
-        locations={flGradient.bgAtmospheric.locations}
-        start={flGradient.bgAtmospheric.start}
-        end={flGradient.bgAtmospheric.end}
-        style={StyleSheet.absoluteFill}
-      />
+      <ScreenBackground image={SCREEN_BG.squadsHub} />
 
       <AppBar
         title={<Text style={styles.barTitle}>Squads</Text>}

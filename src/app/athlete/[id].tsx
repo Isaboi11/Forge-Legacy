@@ -1,13 +1,14 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
+import { ScreenBackground } from '@/components/screen-background';
+import { SCREEN_BG } from '@/constants/backgrounds';
 import { getPublicProfile } from '@/data/athlete-profile-placeholder';
-import { flColor, flFont, flGradient, flRadius } from '@/constants/foundation';
+import { flColor, flFont, flRadius } from '@/constants/foundation';
 
 /**
  * Public Athlete Profile (/athlete/[id]) — the shared destination for the two seams that used to
@@ -103,15 +104,7 @@ export default function AthleteProfileRoute() {
 }
 
 function Bg() {
-  return (
-    <LinearGradient
-      colors={flGradient.bgAtmospheric.colors}
-      locations={flGradient.bgAtmospheric.locations}
-      start={flGradient.bgAtmospheric.start}
-      end={flGradient.bgAtmospheric.end}
-      style={StyleSheet.absoluteFill}
-    />
-  );
+  return <ScreenBackground image={SCREEN_BG.legacy} />;
 }
 
 /** A relationship action rendered visibly disabled — an honest inert shell, no write path. */

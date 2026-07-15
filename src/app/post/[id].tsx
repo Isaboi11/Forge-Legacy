@@ -1,17 +1,18 @@
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
+import { ScreenBackground } from '@/components/screen-background';
+import { SCREEN_BG } from '@/constants/backgrounds';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { Pill } from '@/components/forge/composites/Pill';
 import { FlameIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { useShareSheet } from '@/hooks/useShareSheet';
 import { formatProgramMeta, getPost, type FeedPost, type PostComment, type PostContent, type PostReply, type PostRole } from '@/data/post-placeholder';
 import { formatRecordValue } from '@/domain/records/format';
-import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 
 /**
  * Post Detail — the shared, READ-ONLY feed-post viewer (Post Detail.dc.html). Source-context
@@ -63,13 +64,7 @@ function PostDetail({
 
   return (
     <View style={styles.root}>
-      <LinearGradient
-        colors={flGradient.bgAtmospheric.colors}
-        locations={flGradient.bgAtmospheric.locations}
-        start={flGradient.bgAtmospheric.start}
-        end={flGradient.bgAtmospheric.end}
-        style={StyleSheet.absoluteFill}
-      />
+      <ScreenBackground image={SCREEN_BG.slate} />
       <AppBar
         title={<Text style={styles.barTitle}>Post</Text>}
         onBack={onBack}
@@ -429,13 +424,7 @@ function RoleBadge({ role }: { role: PostRole }) {
 function PostNotFound({ onBack }: { onBack: () => void }) {
   return (
     <View style={styles.root}>
-      <LinearGradient
-        colors={flGradient.bgAtmospheric.colors}
-        locations={flGradient.bgAtmospheric.locations}
-        start={flGradient.bgAtmospheric.start}
-        end={flGradient.bgAtmospheric.end}
-        style={StyleSheet.absoluteFill}
-      />
+      <ScreenBackground image={SCREEN_BG.slate} />
       <AppBar onBack={onBack} />
       <View style={styles.notFound}>
         <Text style={styles.notFoundTitle}>Post not found</Text>

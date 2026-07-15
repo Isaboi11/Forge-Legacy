@@ -205,29 +205,68 @@ Each entry: **What changed · Why · What it supersedes.**
 - **Supersedes:** the prior wiring (badge-left / empty-right), which the status board's `d5aeac0` note
   described as intended — it was not.
 
+## 16. Screen backgrounds wired — DROPPED-FREE categorical sweep (DONE)
+- **What:** Every product screen now renders its design background via one shared `ScreenBackground`
+  component (`src/components/screen-background.tsx`) — design artwork (cover) on a `#050505` base + a
+  darkening gradient for legibility — replacing the per-screen `bgAtmospheric` gradient. Assets copied
+  to `assets/backgrounds/` behind a `SCREEN_BG` require-map (`src/constants/backgrounds.ts`). Wired:
+  Home/Friends/Post/Community → slate; Workouts → slate2; Legacy/Athlete → legacy-bg; Squads Hub →
+  squads-hub-bg; Squad Detail → squad-bg-continued. **Legacy** gets `hero-mountains` as a distinct
+  **scroll-fading** layer (Animated `scrollY`). **Squad Detail's #4 hero was rebuilt with it**
+  (name-left / crest-right) since the header background and the hero are the same region.
+- **Asset finding (transport flatten):** the delivered `forge-slate.png` / `forge-slate2.png` /
+  `legacy-bg.png` are **byte-identical** (one md5) — the design export collapsed distinct textures into
+  one, the same class as the workout-art alpha flatten. So those screens faithfully share one slate
+  texture; the genuinely distinct art is `hero-mountains` / `squad-bg-continued` / `squads-hub-bg` /
+  `forge-bg-2`.
+- **Fidelity status:** base artwork wired ✓ · **per-screen darkening-gradient + overlay treatments
+  still open.** Not "none remain."
+- **Open — background sub-pass (source-specified `.dc` deltas, NOT cosmetics):** (1) **per-screen
+  darkening-gradient opacity** to each `.dc`'s exact stops — Home `rgba(5,5,5,0.15)` · Legacy `0.30` ·
+  Squad Detail 3-stop `0.12→0.26→0.38`; this pass uses one shared 3-stop `0.22→0.36→0.55`. (2) **Squad
+  Detail frame bronze radial-glows** (catalog #2). (3) the **Legacy scroll-driven mountain-fade** is
+  wired (base version) — refine the choreography to the `.dc`. `forge-bg-2` reserved for create/detail
+  screens not yet built.
+- **Supersedes:** the flat `bgAtmospheric` gradient on every screen; the "Design backgrounds not
+  imported" DROPPED-FREE item below is now closed (base layer).
+
 ---
 
 ## Still open (carry into implementation)
 
-**Two buckets, and the distinction is load-bearing** — do not let a fixable miss sit in the blocked
-pile:
-- **DROPPED-FREE** — the means are in hand (asset on disk, token exists, gradient/shadow available);
-  it just wasn't wired. Same bucket as a missed shadow. **Fixable now**, and fixed by CATEGORY across
-  all screens in one pass — never screen-by-screen whack.
+**Three buckets, and the distinction is load-bearing** — don't let a fixable miss (or a merely
+not-yet-authored one) sit in the blocked pile:
+- **DROPPED-FREE** — the means are in hand (asset on disk, token/gradient available); it just wasn't
+  wired. Fixed by CATEGORY across all screens in one pass — never screen-by-screen whack.
+- **AUTHORABLE** — not blocked; just not-yet-authored, exactly like Competition was (squad-scoped
+  getter + placeholder data + firewall golden). Buildable now; **derive from existing sources, don't
+  re-author** (a mission's "3/5" derives from the check-in count).
 - **DEFERRED-HONEST / BLOCKED** — waits on a genuine external: an asset that does not exist, a
   backend, or another domain. Cannot be closed now without fabricating.
 
 ### ▸ DROPPED-FREE — fixable now (means in hand)
-- **Design backgrounds not imported** — the photographic/textured backgrounds EXIST in
-  `design_reference/Forge Modal Library Design/assets/` (`legacy-bg.png`, `hero-mountains.png`,
-  `forge-slate.png`, `squad-*-bg.png`); the app just renders the `bgAtmospheric` gradient instead.
-  **Not asset-blocked** — import into `assets/` + wire each screen (Legacy also has a scroll-fade).
-  Do it as one categorical pass. ⚠ Pending a full **per-screen `.dc` delta sweep** (starting with the
-  Squad Detail catalog) to surface *every* DROPPED-FREE miss before the fix pass, so we fix by
-  category, not by whatever we happened to notice.
+- **Design base backgrounds** — ✅ **DONE (§16)** — base artwork wired via `ScreenBackground` across
+  every screen (incl. the Squad Detail #4 hero rebuild + the Legacy mountain-fade). **Still open — a
+  background sub-pass (source-specified, NOT cosmetics):** per-screen darkening-gradient opacity to each
+  `.dc`'s stops (Home 0.15 · Legacy 0.30 · Squad 0.12→0.26→0.38) · **Squad Detail frame bronze
+  radial-glows (catalog #2)** · mountain-fade choreography refinement. See §16.
+- **Squad-local cosmetics (held, genuinely cosmetic)** — #3 AppBar empty-title · #12 "Hall of Champions"
+  rename — a per-screen cosmetics pass, not now. *(#2 frame radials moved up into the background sub-pass —
+  it's source-specified, not cosmetic.)*
+
+### ▸ AUTHORABLE — buildable now (author squad-scoped placeholder + golden; derive, don't re-author)
+Surfaced by the Squad Detail catalog; the same shape as the shipped Competition, so **not blocked**:
+- **Squad Goal** — title + progress + count (Competition's shape) via a squad-scoped getter + golden.
+- **Squad Mission** — week + title + progress; **derive** the count from the check-in/member source
+  (the "3/5" relates to "3 trained today") — single source, not a re-authored number.
+- **Our Squad stats** — the analytics tiles; several derive from the member source (count, trained-today).
+- **Squad Honors (data)** — which honors the squad holds is authorable; only the honor **artwork** is
+  blocked (below) — split them, don't lump.
 
 ### ▸ DEFERRED-HONEST / BLOCKED — waits on an external
 - **Neutral artwork set** (§7) — code FIXED + tested; blocked on Phase-4 neutral assets (don't exist).
+- **Squad honor artwork** + **check-in video** — genuinely blocked assets (the honor *data* and the
+  check-in *summary* are authorable — see above; only the art/video wait on production).
 - **Profile-photo system** — no per-athlete photo store; the `Avatar` `src` slot is everywhere and
   the Legacy hero (§15) uses it correctly, but real photos need the upload/storage backend AND photos
   that don't yet exist. **One system, not per-screen.**

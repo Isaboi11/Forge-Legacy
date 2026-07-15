@@ -5,6 +5,8 @@ import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
+import { ScreenBackground } from '@/components/screen-background';
+import { SCREEN_BG } from '@/constants/backgrounds';
 import { SectionHeader } from '@/components/forge/composites/SectionHeader';
 import { Pill } from '@/components/forge/composites/Pill';
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
@@ -81,13 +83,7 @@ export default function WorkoutsScreen() {
 
   return (
     <View style={styles.root}>
-      <LinearGradient
-        colors={flGradient.bgAtmospheric.colors}
-        locations={flGradient.bgAtmospheric.locations}
-        start={flGradient.bgAtmospheric.start}
-        end={flGradient.bgAtmospheric.end}
-        style={StyleSheet.absoluteFill}
-      />
+      <ScreenBackground image={SCREEN_BG.slate2} />
 
       <AppBar
         title={<Text style={styles.barTitle}>Workouts</Text>}

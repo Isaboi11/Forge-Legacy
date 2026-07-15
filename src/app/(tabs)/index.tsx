@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
+import { ScreenBackground } from '@/components/screen-background';
+import { SCREEN_BG } from '@/constants/backgrounds';
 import { ForgeMarkIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { ChapterTitleBlock } from '@/components/forge/compositions/ChapterTitleBlock';
 import { TodaysWorkoutCard } from '@/components/forge/compositions/TodaysWorkoutCard';
@@ -14,7 +15,7 @@ import { QuickActionsRow } from '@/components/forge/compositions/QuickActionsRow
 import { FriendActionSheet } from '@/components/forge/compositions/TrainTogetherCard';
 import { FRIEND_ACTIVITY, HOME_CHAPTER, HOME_DATA, todaysPrinciple } from '@/data/home-placeholder';
 import { LIVE_TRAINING_USERS } from '@/data/live-training-placeholder';
-import { flColor, flGradient } from '@/constants/foundation';
+import { flColor } from '@/constants/foundation';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { getSelfProfile } from '@/domain/profile/placeholder-data';
 import { getActiveProgram, getNextWorkout } from '@/domain/training/active-program';
@@ -78,13 +79,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.root}>
-      <LinearGradient
-        colors={flGradient.bgAtmospheric.colors}
-        locations={flGradient.bgAtmospheric.locations}
-        start={flGradient.bgAtmospheric.start}
-        end={flGradient.bgAtmospheric.end}
-        style={StyleSheet.absoluteFill}
-      />
+      <ScreenBackground image={SCREEN_BG.slate} />
 
       <AppBar
         title={<HomeWordmark />}

@@ -1,14 +1,17 @@
-import { StyleSheet, Text, View, ScrollView, Pressable } from 'react-native';
+import { useState } from 'react';
+import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
+import { ScreenBackground } from '@/components/screen-background';
+import { SCREEN_BG } from '@/constants/backgrounds';
 import { SectionHeader } from '@/components/forge/composites/SectionHeader';
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
-import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { getSelfProfile } from '@/domain/profile/placeholder-data';
 import { PLACEHOLDER_RANK, resolveRankArtwork } from '@/domain/rank-artwork/resolver';
 import { resolveRankArtworkSource } from '@/domain/rank-artwork/rank-source';
@@ -71,16 +74,13 @@ export default function LegacyScreen() {
   const rankArtwork = resolveRankArtworkSource(
     resolveRankArtwork({ ...PLACEHOLDER_RANK, sex: profile.sex }).assetPath,
   );
+  // Scroll-driven artwork fade — the legacy background dissolves toward the dark base as the hero
+  // scrolls away (the .dc "premium scroll choreography"). Drives ScreenBackground's opacity.
+  const [scrollY] = useState(() => new Animated.Value(0));
 
   return (
     <View style={styles.root}>
-      <LinearGradient
-        colors={flGradient.bgAtmospheric.colors}
-        locations={flGradient.bgAtmospheric.locations}
-        start={flGradient.bgAtmospheric.start}
-        end={flGradient.bgAtmospheric.end}
-        style={StyleSheet.absoluteFill}
-      />
+      <ScreenBackground image={SCREEN_BG.legacy} fadeImage={SCREEN_BG.legacyMountains} scrollY={scrollY} />
 
       <AppBar
         title="Legacy"
@@ -91,7 +91,12 @@ export default function LegacyScreen() {
         }}
       />
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <Animated.ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+      >
         {/* ── HERO · identity ── */}
         <View style={styles.identityRow}>
           <SealPortrait name={profile.name} />
@@ -277,7 +282,7 @@ export default function LegacyScreen() {
           </View>
           <Text style={styles.closingText}>Memories can be added. History cannot be rewritten.</Text>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }
