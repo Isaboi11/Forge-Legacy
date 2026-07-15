@@ -16,7 +16,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { getSquadFeed, getPost } from '../post-placeholder.ts'
-import { getSquadCheckins, getSquadCompetition } from '../squad-feed-placeholder.ts'
+import { getSquadCheckins, getSquadCompetition, getSquadMembers } from '../squad-feed-placeholder.ts'
 
 const GOLDEN = {
   iron: [
@@ -135,4 +135,42 @@ test('FIREWALL: squads with no check-ins/competition return empty/null (never an
   assert.deepEqual(getSquadCheckins('does-not-exist'), [])
   assert.equal(getSquadCompetition('home'), null)
   assert.equal(getSquadCompetition('does-not-exist'), null)
+})
+
+// ── Single squad-member source (roster + check-in strip read the same list) ──
+
+test('member roster: per-squad counts are locked (drives "N members" === members.length)', () => {
+  assert.equal(getSquadMembers('iron').length, 5)
+  assert.equal(getSquadMembers('dawn').length, 6)
+  assert.equal(getSquadMembers('proving').length, 4)
+  assert.equal(getSquadMembers('home').length, 1)
+  assert.deepEqual(getSquadMembers('does-not-exist'), [])
+})
+
+test('SINGLE SOURCE: the check-in strip is a subset of the roster, with matching identity', () => {
+  for (const squadId of ['iron', 'dawn', 'proving', 'home']) {
+    const byId = new Map(getSquadMembers(squadId).map((m) => [m.id, m]))
+    for (const c of getSquadCheckins(squadId)) {
+      const m = byId.get(c.id)
+      assert.ok(m, `${squadId}: check-in ${c.id} must be a real roster member`)
+      assert.equal(c.name, m.name, `${squadId}/${c.id}: check-in name must match the roster (no same-screen contradiction)`)
+    }
+  }
+})
+
+test('absent-field honesty: only iron carries rich member detail; others are name + status only', () => {
+  for (const m of getSquadMembers('iron')) assert.ok(m.rank && m.athleteType, `iron/${m.id} should have rich detail`)
+  for (const squadId of ['dawn', 'proving', 'home']) {
+    for (const m of getSquadMembers(squadId)) {
+      assert.equal(m.rank, undefined, `${squadId}/${m.id} rank must not be invented`)
+      assert.equal(m.athleteType, undefined, `${squadId}/${m.id} athleteType must not be invented`)
+    }
+  }
+})
+
+test('FIREWALL: members are squad-scoped and disjoint (no cross-squad leak)', () => {
+  const ironIds = new Set(getSquadMembers('iron').map((m) => m.id))
+  const dawnIds = new Set(getSquadMembers('dawn').map((m) => m.id))
+  for (const id of ironIds) assert.equal(dawnIds.has(id), false, `${id} leaked iron→dawn`)
+  for (const id of dawnIds) assert.equal(ironIds.has(id), false, `${id} leaked dawn→iron`)
 })

@@ -76,7 +76,7 @@ export const SQUAD_FEED_IDENTITY: Record<string, SquadFeedIdentity> = {
 
 export type CheckinStatus = 'trained' | 'pending'
 
-/** One member's daily check-in state for the "Today's Check-ins" strip. */
+/** One member's daily check-in state for the "Today's Check-ins" strip (a VIEW of SquadMember). */
 export interface SquadCheckin {
   id: string
   name: string
@@ -84,6 +84,28 @@ export interface SquadCheckin {
   status: CheckinStatus
   hasVideo?: boolean
   unread?: boolean
+}
+
+/**
+ * The SINGLE source of truth for a squad's members. The roster renders all of it; the check-in
+ * strip is a derived VIEW (the members with a check-in record today). So the two Squad Detail
+ * sections can never disagree on who is in the squad, and "N members" derives from this list —
+ * the same single-source discipline as the comment count. Superset model: `checkin` carries what
+ * the strip needs; the roster fields (athleteType / rank / since / accolades) exist only where the
+ * squad has rich member data (iron, per Squad Detail.dc.html) — absent elsewhere (name + status
+ * only), never invented.
+ */
+export interface SquadMember {
+  id: string
+  name: string
+  first: string
+  isSelf?: boolean
+  /** Today's check-in — present only for members with a record today; drives the check-in strip. */
+  checkin?: { status: CheckinStatus; hasVideo?: boolean; unread?: boolean }
+  athleteType?: string
+  rank?: string
+  since?: string
+  accolades?: string[]
 }
 
 /** The squad's standing in its active competition (the banner above the feed). */
@@ -96,21 +118,34 @@ export interface SquadCompetition {
   ends: string // '4 days left'
 }
 
-export const SQUAD_CHECKINS: Record<string, SquadCheckin[]> = {
+export const SQUAD_MEMBERS: Record<string, SquadMember[]> = {
+  // iron — the one squad with rich member data (Squad Detail.dc.html MEMBERS). Names match the
+  // squad's feed authors + check-in strip. All five carry a check-in today (3 trained, 2 pending).
   iron: [
-    { id: 'dana', name: 'Dana Cole', first: 'Dana', status: 'trained', hasVideo: true, unread: true },
-    { id: 'marcus', name: 'Marcus Vale', first: 'Marcus', status: 'trained' },
-    { id: 'ada', name: 'Ada Ridge', first: 'Ada', status: 'trained' },
-    { id: 'theo', name: 'Theo Brandt', first: 'Theo', status: 'pending' },
-    { id: 'lena', name: 'Lena Cross', first: 'Lena', status: 'pending' },
+    { id: 'dana', name: 'Dana Cole', first: 'Dana', athleteType: 'Hybrid Athlete', rank: 'Craftsman', since: 'Jun 2023', accolades: ['Sub-20 5K', 'Century Club'], checkin: { status: 'trained', hasVideo: true, unread: true } },
+    { id: 'marcus', name: 'Marcus Vale', first: 'Marcus', athleteType: 'Bodybuilder', rank: 'Architect', since: 'Nov 2022', accolades: ['First Iron', 'Iron Will', '12-Week Cut'], checkin: { status: 'trained' } },
+    { id: 'ada', name: 'Ada Ridge', first: 'Ada', isSelf: true, athleteType: 'Powerlifter', rank: 'Architect', since: 'Mar 2023', accolades: ['405 lb Squat Club', '100-Day Streak', 'The Unbroken'], checkin: { status: 'trained' } },
+    { id: 'theo', name: 'Theo Brandt', first: 'Theo', athleteType: 'Strongman', rank: 'Legend', since: 'Aug 2021', accolades: ['Atlas Stone PR', 'The Unbroken', 'Century Club'], checkin: { status: 'pending' } },
+    { id: 'lena', name: 'Lena Cross', first: 'Lena', athleteType: 'Olympic Lifter', rank: 'Builder', since: 'Jan 2024', accolades: ['Bodyweight Snatch'], checkin: { status: 'pending' } },
   ],
+  // dawn — 6 members; only the three with a check-in record today carry `checkin` (the strip shows
+  // those). No rich member data at source → name + status only (absent fields never invented).
   dawn: [
-    { id: 'sana', name: 'Sana Okafor', first: 'Sana', status: 'trained', unread: true },
-    { id: 'ravi', name: 'Ravi Menon', first: 'Ravi', status: 'trained' },
-    { id: 'mara', name: 'Mara Lindqvist', first: 'Mara', status: 'pending' },
+    { id: 'sana', name: 'Sana Okafor', first: 'Sana', checkin: { status: 'trained', unread: true } },
+    { id: 'ravi', name: 'Ravi Menon', first: 'Ravi', checkin: { status: 'trained' } },
+    { id: 'mara', name: 'Mara Lindqvist', first: 'Mara', checkin: { status: 'pending' } },
+    { id: 'ines', name: 'Ines Duarte', first: 'Ines' },
+    { id: 'colt', name: 'Colt Bergman', first: 'Colt' },
+    { id: 'priya', name: 'Priya Anand', first: 'Priya' },
   ],
-  proving: [],
-  home: [],
+  // proving / home — no feed or check-in data; roster-only, name only.
+  proving: [
+    { id: 'kira', name: 'Kira Nash', first: 'Kira' },
+    { id: 'omar', name: 'Omar Diaz', first: 'Omar' },
+    { id: 'wren', name: 'Wren Holt', first: 'Wren' },
+    { id: 'cass', name: 'Cass Lem', first: 'Cass' },
+  ],
+  home: [{ id: 'iris', name: 'Iris Wong', first: 'Iris' }],
 }
 
 export const SQUAD_COMPETITION: Record<string, SquadCompetition | null> = {
@@ -120,9 +155,20 @@ export const SQUAD_COMPETITION: Record<string, SquadCompetition | null> = {
   home: null,
 }
 
-/** Squad-scoped — a squad's check-ins never leak to another squad (empty for unknown/none). */
+/** Squad-scoped single source — a squad's members never leak to another squad (empty for unknown). */
+export function getSquadMembers(squadId: string): SquadMember[] {
+  return SQUAD_MEMBERS[squadId] ?? []
+}
+
+/**
+ * The "Today's Check-ins" strip — DERIVED from the single member source (the members with a
+ * check-in record today). So the strip and the roster can never disagree on member identity.
+ */
 export function getSquadCheckins(squadId: string): SquadCheckin[] {
-  return SQUAD_CHECKINS[squadId] ?? []
+  const withCheckin = getSquadMembers(squadId).filter(
+    (m): m is SquadMember & { checkin: NonNullable<SquadMember['checkin']> } => m.checkin != null,
+  )
+  return withCheckin.map((m) => ({ id: m.id, name: m.name, first: m.first, status: m.checkin.status, hasVideo: m.checkin.hasVideo, unread: m.checkin.unread }))
 }
 
 /** Squad-scoped — the squad's active competition, or null when there is none. */

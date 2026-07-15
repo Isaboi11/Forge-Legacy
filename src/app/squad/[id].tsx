@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -6,11 +6,12 @@ import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
+import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { FeedPostCard } from '@/components/forge/compositions/FeedPostCard';
 import { useShareSheet } from '@/hooks/useShareSheet';
 import { SQUADS_PLACEHOLDER } from '@/data/squads-placeholder';
 import { getSquadFeed, type FeedPost } from '@/data/post-placeholder';
-import { getSquadCheckins, getSquadCompetition, type SquadCheckin, type SquadCompetition } from '@/data/squad-feed-placeholder';
+import { getSquadCheckins, getSquadCompetition, getSquadMembers, type SquadCheckin, type SquadCompetition, type SquadMember } from '@/data/squad-feed-placeholder';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 
 /**
@@ -42,6 +43,8 @@ export default function SquadDetailRoute() {
   const posts = getSquadFeed(squadId);
   const checkins = getSquadCheckins(squadId);
   const competition = getSquadCompetition(squadId);
+  const members = getSquadMembers(squadId); // single source: roster + check-in strip + "N members"
+  const [rosterOpen, setRosterOpen] = useState(false);
 
   const openPost = (pid: string) => router.push({ pathname: '/post/[id]', params: { id: pid } });
   const buildShare = (post: FeedPost) =>
@@ -76,7 +79,15 @@ export default function SquadDetailRoute() {
           <Text style={styles.squadName}>{squad?.name ?? 'Squad'}</Text>
           {squad?.motto ? <Text style={styles.motto}>{squad.motto}</Text> : null}
           <View style={styles.metaRow}>
-            <Text style={styles.metaText}>{squad ? squad.members.length : 0} members</Text>
+            {/* "N members" derives from the single member source and taps through to the roster */}
+            <Pressable
+              onPress={() => members.length > 0 && setRosterOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel={`${members.length} members, view roster`}
+              hitSlop={6}
+            >
+              <Text style={[styles.metaText, members.length > 0 ? styles.metaLink : null]}>{members.length} members</Text>
+            </Pressable>
             {squad ? (
               <>
                 <View style={styles.dot} />
@@ -106,7 +117,51 @@ export default function SquadDetailRoute() {
           </View>
         )}
       </ScrollView>
+
+      {/* Roster — read-only member list (single source). Tapping a member is inert (public
+          profile is a deferred surface). */}
+      <BottomSheet open={rosterOpen} onClose={() => setRosterOpen(false)} title={`Members · ${members.length}`}>
+        <View style={styles.rosterList}>
+          {members.map((m) => (
+            <MemberRow key={m.id} member={m} />
+          ))}
+        </View>
+      </BottomSheet>
     </View>
+  );
+}
+
+function MemberRow({ member }: { member: SquadMember }) {
+  const detail = [member.athleteType, member.rank].filter(Boolean).join(' · ');
+  return (
+    <Pressable
+      onPress={() => {}}
+      accessibilityRole="button"
+      accessibilityLabel={`${member.name}${member.isSelf ? ', you' : ''}`}
+      style={styles.memberRow}
+    >
+      <Avatar name={member.name} size="listRow" presence={member.checkin?.status === 'trained'} />
+      <View style={styles.memberText}>
+        <View style={styles.memberNameRow}>
+          <Text style={styles.memberName} numberOfLines={1}>
+            {member.name}
+          </Text>
+          {member.isSelf ? <Text style={styles.memberYou}>You</Text> : null}
+        </View>
+        {/* rich detail only where the squad has it (iron); others show name only — never invented */}
+        {detail ? <Text style={styles.memberDetail}>{detail}</Text> : null}
+        {member.accolades && member.accolades.length > 0 ? (
+          <View style={styles.accoladeRow}>
+            {member.accolades.map((a) => (
+              <View key={a} style={styles.accolade}>
+                <Text style={styles.accoladeText}>{a}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+      </View>
+      {member.since ? <Text style={styles.memberSince}>{member.since}</Text> : null}
+    </Pressable>
   );
 }
 
@@ -279,6 +334,40 @@ const styles = StyleSheet.create({
   },
   motto: { fontSize: 13.5, color: flColor.gray400, marginTop: 6, textAlign: 'center' },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 12 },
+  metaLink: { color: flColor.bronze400, fontWeight: '600' },
+
+  // roster sheet
+  rosterList: { gap: 4 },
+  memberRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
+  memberText: { flex: 1, minWidth: 0, gap: 3 },
+  memberNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  memberName: { flexShrink: 1, fontSize: 15, fontWeight: '500', color: flColor.cream100 },
+  memberYou: {
+    fontSize: 8.5,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    color: flColor.bronze400,
+    paddingVertical: 2,
+    paddingHorizontal: 7,
+    borderRadius: flRadius.sm,
+    backgroundColor: flColor.bronzeTint,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    overflow: 'hidden',
+  },
+  memberDetail: { fontSize: 12, color: flColor.gray400 },
+  accoladeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginTop: 2 },
+  accolade: {
+    paddingVertical: 2,
+    paddingHorizontal: 8,
+    borderRadius: flRadius.pill,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.charcoal800,
+  },
+  accoladeText: { fontSize: 10, fontWeight: '600', color: flColor.gray400 },
+  memberSince: { flexShrink: 0, fontSize: 11, color: flColor.gray600 },
   metaText: { fontSize: 12, color: flColor.gray600 },
   dot: { width: 2.5, height: 2.5, borderRadius: 1.25, backgroundColor: flColor.charcoal500 },
 
