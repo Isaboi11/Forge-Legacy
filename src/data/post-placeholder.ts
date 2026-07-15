@@ -218,6 +218,11 @@ const POSTS: Record<string, FeedPost> = {
 
 /** Map one committed CommunityPost onto the shared FeedPost — additive, no field dropped. */
 function communityPostToFeedPost(p: CommunityPost): FeedPost {
+  // The community seed carries no comment threads (empty is a fine placeholder). `commentCount`
+  // DERIVES from the thread — never an independent field that can disagree — so it is 0 here, not
+  // the seed's phantom count. (The feed card may show a stored count in the real backend; on
+  // seeded data it must equal comments.length, locked by comment-count-consistency.test.mjs.)
+  const comments: PostComment[] = []
   const base = {
     id: p.id,
     author: p.author,
@@ -227,8 +232,8 @@ function communityPostToFeedPost(p: CommunityPost): FeedPost {
     typeLabel: p.typeLabel,
     body: p.body,
     respect: p.respectCount,
-    commentCount: p.commentCount,
-    comments: [] as PostComment[], // no authored comment threads in the community seed
+    commentCount: comments.length,
+    comments,
   }
   switch (p.kind) {
     case 'discussion':

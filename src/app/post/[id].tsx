@@ -109,7 +109,9 @@ function PostDetail({ post, onBack, actions = {} }: { post: FeedPost; onBack: ()
         {/* comments */}
         <View style={styles.comments}>
           <View style={styles.commentsHeader}>
-            <Text style={styles.commentsCount}>{post.commentCount} Comments</Text>
+            {/* Detail ALWAYS derives the count from the loaded thread — so "N Comments" and the
+                "No comments yet." empty state below can never disagree (single source of truth). */}
+            <Text style={styles.commentsCount}>{post.comments.length} Comments</Text>
             <View style={styles.sortTabs}>
               <Text style={[styles.sortTab, styles.sortTabOn]}>Top</Text>
               <Text style={styles.sortTab}>Newest</Text>
