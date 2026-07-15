@@ -39,10 +39,26 @@ export default function PostDetailRoute() {
   const router = useRouter();
   const post = getPost(String(id ?? ''));
   if (!post) return <PostNotFound onBack={() => router.back()} />;
-  return <PostDetail post={post} onBack={() => router.back()} />;
+  return (
+    <PostDetail
+      post={post}
+      onBack={() => router.back()}
+      onAuthorPress={(name) => router.push({ pathname: '/athlete/[id]', params: { id: name } })}
+    />
+  );
 }
 
-function PostDetail({ post, onBack, actions = {} }: { post: FeedPost; onBack: () => void; actions?: PostDetailActions }) {
+function PostDetail({
+  post,
+  onBack,
+  onAuthorPress,
+  actions = {},
+}: {
+  post: FeedPost;
+  onBack: () => void;
+  onAuthorPress: (name: string) => void;
+  actions?: PostDetailActions;
+}) {
   const { openShare } = useShareSheet();
 
   return (
@@ -71,18 +87,25 @@ function PostDetail({ post, onBack, actions = {} }: { post: FeedPost; onBack: ()
         <SourceBar post={post} />
 
         <View style={styles.body}>
-          {/* author header */}
+          {/* author header — the identity taps through to the athlete's public profile */}
           <View style={styles.headerRow}>
-            <Avatar name={post.author} size="listRow" />
-            <View style={styles.headerText}>
-              <View style={styles.nameRow}>
-                <Text style={styles.author} numberOfLines={1}>
-                  {post.author}
-                </Text>
-                {post.role ? <RoleBadge role={post.role} /> : null}
+            <Pressable
+              onPress={() => onAuthorPress(post.author)}
+              accessibilityRole="button"
+              accessibilityLabel={`View ${post.author}'s profile`}
+              style={styles.headerIdentity}
+            >
+              <Avatar name={post.author} size="listRow" />
+              <View style={styles.headerText}>
+                <View style={styles.nameRow}>
+                  <Text style={styles.author} numberOfLines={1}>
+                    {post.author}
+                  </Text>
+                  {post.role ? <RoleBadge role={post.role} /> : null}
+                </View>
+                <Text style={styles.time}>{post.timestamp}</Text>
               </View>
-              <Text style={styles.time}>{post.timestamp}</Text>
-            </View>
+            </Pressable>
             {post.typeLabel ? (
               <Pill tone="muted" size="sm">
                 {post.typeLabel}
@@ -575,6 +598,7 @@ const styles = StyleSheet.create({
   // post body
   body: { paddingHorizontal: 18, paddingTop: 16 },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  headerIdentity: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 12 },
   headerText: { flex: 1, minWidth: 0 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   author: { flexShrink: 1, fontSize: 15, fontWeight: '500', color: flColor.cream100 },

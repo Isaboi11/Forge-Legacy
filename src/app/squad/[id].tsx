@@ -52,6 +52,7 @@ export default function SquadDetailRoute() {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const openPost = (pid: string) => router.push({ pathname: '/post/[id]', params: { id: pid } });
+  const openAthlete = (name: string) => router.push({ pathname: '/athlete/[id]', params: { id: name } });
   const buildShare = (post: FeedPost) =>
     post.shareType ? () => openShare({ shareType: post.shareType!, overrides: { athlete: post.author } }) : undefined;
 
@@ -150,7 +151,7 @@ export default function SquadDetailRoute() {
         {posts.length > 0 ? (
           <View style={styles.feed}>
             {posts.map((post) => (
-              <FeedPostCard key={post.id} post={post} origin="squad" onOpen={() => openPost(post.id)} onShare={buildShare(post)} />
+              <FeedPostCard key={post.id} post={post} origin="squad" onOpen={() => openPost(post.id)} onAuthorPress={() => openAthlete(post.author)} onShare={buildShare(post)} />
             ))}
           </View>
         ) : (
@@ -166,7 +167,7 @@ export default function SquadDetailRoute() {
       <BottomSheet open={rosterOpen} onClose={() => setRosterOpen(false)} title={`Members · ${members.length}`}>
         <View style={styles.rosterList}>
           {members.map((m) => (
-            <MemberRow key={m.id} member={m} />
+            <MemberRow key={m.id} member={m} onPress={() => openAthlete(m.name)} />
           ))}
         </View>
       </BottomSheet>
@@ -330,13 +331,13 @@ function ArrowRight() {
   );
 }
 
-function MemberRow({ member }: { member: SquadMember }) {
+function MemberRow({ member, onPress }: { member: SquadMember; onPress: () => void }) {
   const detail = [member.athleteType, member.rank].filter(Boolean).join(' · ');
   return (
     <Pressable
-      onPress={() => {}}
+      onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${member.name}${member.isSelf ? ', you' : ''}`}
+      accessibilityLabel={`${member.name}${member.isSelf ? ', you' : ''}, view profile`}
       style={styles.memberRow}
     >
       <Avatar name={member.name} size="listRow" presence={member.checkin?.status === 'trained'} />

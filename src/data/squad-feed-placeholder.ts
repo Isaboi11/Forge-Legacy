@@ -163,6 +163,23 @@ export function getSquadMembers(squadId: string): SquadMember[] {
 }
 
 /**
+ * The only per-athlete data that exists app-wide beyond a name: an athlete's PUBLIC identity markers
+ * (rank + athleteType), sourced from the squad rosters — the sole place they're authored in
+ * placeholder data. Returns ONLY the public-appropriate markers (which the design's public-profile
+ * hero shows to everyone); the squad-scoped fields — accolades (squad honors) and `since` (join
+ * date) — are deliberately NOT returned, so they can never leak onto a cross-context public profile.
+ * null when the name is not a known roster member (feed-only authors → identity only). Names are
+ * unique across the placeholder rosters, so the first match is authoritative.
+ */
+export function findSquadAthlete(name: string): { athleteType?: string; rank?: string } | null {
+  for (const members of Object.values(SQUAD_MEMBERS)) {
+    const m = members.find((x) => x.name === name)
+    if (m) return { athleteType: m.athleteType, rank: m.rank }
+  }
+  return null
+}
+
+/**
  * The "Today's Check-ins" strip — DERIVED from the single member source (the members with a
  * check-in record today). So the strip and the roster can never disagree on member identity.
  */

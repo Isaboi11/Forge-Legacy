@@ -37,11 +37,13 @@ export interface FeedPostCardProps {
   origin: FeedOrigin
   onOpen: () => void
   onShare?: () => void
+  /** Tap the author identity (avatar + name) → their public profile. Omit to leave it non-tappable. */
+  onAuthorPress?: () => void
   /** Override the audience-tag visibility; defaults to the surface config. */
   showAudience?: boolean
 }
 
-export function FeedPostCard({ post, origin, onOpen, onShare, showAudience }: FeedPostCardProps) {
+export function FeedPostCard({ post, origin, onOpen, onShare, onAuthorPress, showAudience }: FeedPostCardProps) {
   const cfg = feedOriginConfig(origin)
   const showTag = showAudience ?? cfg.audienceTag
   const presence = cfg.presenceOnAchievement && post.content.type === 'achievement'
@@ -50,24 +52,13 @@ export function FeedPostCard({ post, origin, onOpen, onShare, showAudience }: Fe
   return (
     <View style={styles.card}>
       <View style={styles.authorRow}>
-        <Avatar name={post.author} size="listRow" presence={presence} />
-        <View style={styles.authorText}>
-          <View style={styles.nameRow}>
-            <Text style={styles.authorName} numberOfLines={1}>
-              {post.author}
-            </Text>
-            {post.role ? <RoleBadge role={post.role} /> : null}
-          </View>
-          <View style={styles.authorMeta}>
-            <Text style={styles.time}>{post.timestamp}</Text>
-            {showTag ? (
-              <>
-                <View style={styles.dot} />
-                <Text style={styles.audience}>{post.source.tag}</Text>
-              </>
-            ) : null}
-          </View>
-        </View>
+        {onAuthorPress ? (
+          <Pressable onPress={onAuthorPress} accessibilityRole="button" accessibilityLabel={`View ${post.author}'s profile`} style={styles.identity}>
+            {authorIdentity(post, presence, showTag)}
+          </Pressable>
+        ) : (
+          <View style={styles.identity}>{authorIdentity(post, presence, showTag)}</View>
+        )}
         {cfg.showTypeLabel && post.typeLabel ? <Text style={styles.typeLabel}>{post.typeLabel}</Text> : null}
         <Pressable onPress={() => {}} accessibilityRole="button" accessibilityLabel="Post options" style={styles.optionsBtn} hitSlop={6}>
           <OverflowIcon />
@@ -106,6 +97,32 @@ export function FeedPostCard({ post, origin, onOpen, onShare, showAudience }: Fe
         ) : null}
       </View>
     </View>
+  )
+}
+
+/** The author avatar + name/meta block — shared by the tappable and non-tappable author render. */
+function authorIdentity(post: FeedPost, presence: boolean, showTag: boolean) {
+  return (
+    <>
+      <Avatar name={post.author} size="listRow" presence={presence} />
+      <View style={styles.authorText}>
+        <View style={styles.nameRow}>
+          <Text style={styles.authorName} numberOfLines={1}>
+            {post.author}
+          </Text>
+          {post.role ? <RoleBadge role={post.role} /> : null}
+        </View>
+        <View style={styles.authorMeta}>
+          <Text style={styles.time}>{post.timestamp}</Text>
+          {showTag ? (
+            <>
+              <View style={styles.dot} />
+              <Text style={styles.audience}>{post.source.tag}</Text>
+            </>
+          ) : null}
+        </View>
+      </View>
+    </>
   )
 }
 
@@ -392,6 +409,7 @@ const styles = StyleSheet.create({
     boxShadow: flShadow.card,
   },
   authorRow: { flexDirection: 'row', alignItems: 'center', gap: 11 },
+  identity: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 11 },
   authorText: { flex: 1, minWidth: 0 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   authorName: { flexShrink: 1, fontSize: 14.5, fontWeight: '500', color: flColor.cream100 },

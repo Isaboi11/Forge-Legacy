@@ -157,6 +157,39 @@ Each entry: **What changed · Why · What it supersedes.**
 - **Supersedes:** the earlier 5-tab (Home · Workouts · Legacy · Squads · Community) model — 4 tabs
   while shelved.
 
+## 14. Public Athlete Profile — thin, honest surface (Path 1); rich profile deferred (Path 2)
+- **What:** A single full-screen route `app/athlete/[id]` (root-Stack sibling) is the shared
+  destination for the two author seams that used to dead-end — the **squad roster row** and the
+  **feed-post author** (shared `FeedPostCard` via a new `onAuthorPress`, lit up on Friends + Squad,
+  plus the Post Detail author header). The `id` param is the athlete's **name** (the key every seam
+  already carries); it renders `getPublicProfile(name)` (`src/data/athlete-profile-placeholder.ts`).
+- **Deliberately THIN — honest to the data:** the app has no per-athlete profile store. Only three
+  inputs authoritatively exist — the **name**, the **self** identity (`getSelfProfile`), and the
+  public identity markers **rank + athleteType** (authored only on the squad rosters). So the profile
+  shows identity always, rank/athleteType when the subject is a known roster athlete, and **nothing
+  else**. Every rich Legacy section in `Forge Public Profile.dc.html` (Current Chapter, Highlights,
+  Featured Moment, Chapter History/Timeline, Transformation, Photos, Accomplishments, Honors, Trophy
+  Case, Training Stats) has **no data source and is OMITTED, not fabricated** — the dc's own code
+  admits "other athletes are representative mock."
+- **No Firewall leak:** the squad-scoped fields **accolades** (squad honors) + **since** (join date)
+  are stripped upstream (`findSquadAthlete`), so squad-internal detail never reaches this
+  cross-context public surface. rank + athleteType are shown because the design's hero shows them to
+  everyone (not visibility-gated).
+- **Write paths are inert shells:** the relationship actions (Challenge / Add Friend / Follow) render
+  visibly-disabled — never fake mutations.
+- **BLOCKED-ON / Path 2:** the full authored profile needs (a) a real **per-athlete dataset**
+  (`public-profile-placeholder.ts` with representative, internally-consistent profiles — the app's
+  established placeholder pattern) and (b) the **visibility/Firewall clearance model**
+  (`forge-visibility.js`: friend > squad-mate > stranger, per-section gating). Deferred as its own
+  PO-scoped unit; this route then enriches **additively** (the seams never re-point).
+- **Known limitations (noted, not gaps):** comment-author taps stay inert (dense secondary surface —
+  same deferral as the record history-row); a feed author that is an **org, not a person** (e.g.
+  "Iron Collective") resolves to a thin identity because the data carries no person/org flag; the
+  **Community** feed's author seam is wired with its §13 unshelving (the screen is shelved + non-routed).
+- **Supersedes:** the blueprint had no athlete-profile surface behind these seams; both seams were inert.
+
+---
+
 ## Still open (carry into implementation)
 - Populate the structured fields across **all** programs/workouts (§6).
 - PR / achievement plates are now structured onto the real **`PersonalRecord`** model (§11 —
@@ -168,4 +201,9 @@ Each entry: **What changed · Why · What it supersedes.**
 - Build the real **asset manifest** with version/aspect/placement, and swap prototype crops for
   high-res masters.
 - Implement the resolver **unit-test matrix** (resolver doc §16).
+- **Squad Record History sheet** (built) left two seams shut — intentional, not gaps: the per-holder
+  PR **timeline** (the sheet's Previous-Holders row tap is inert) and a **"beat this record"** write
+  affordance (claiming/breaking a squad record — no write path, read-only by design).
+- **Public Athlete Profile — Path 2** (§14): author a per-athlete dataset + port the
+  visibility/Firewall clearance model; the `app/athlete/[id]` route then enriches additively.
 - Reconcile / annotate the blueprint docs so no one treats the superseded sections as current.

@@ -33,6 +33,7 @@ export default function FriendsFeedRoute() {
   const posts = getFriendsFeed();
 
   const openPost = (id: string) => router.push({ pathname: '/post/[id]', params: { id } });
+  const openAthlete = (name: string) => router.push({ pathname: '/athlete/[id]', params: { id: name } });
 
   return (
     <View style={styles.root}>
@@ -67,6 +68,7 @@ export default function FriendsFeedRoute() {
             post={post}
             origin="friend"
             onOpen={() => openPost(post.id)}
+            onAuthorPress={() => openAthlete(post.author)}
             onShare={post.shareType ? () => openShare({ shareType: post.shareType!, overrides: { athlete: post.author } }) : undefined}
           />
         ))}
