@@ -1,10 +1,10 @@
 /**
  * nav-routes.test.mjs — STEP B route-mapping guard.
- * Asserts the 5-tab shell matches Forge Home.dc.html tabItems EXACTLY (order,
- * labels, hrefs), that the emphasized tab is Legacy, that every tab route file
- * exists, and — the specific bug we're guarding against — that `/workout` (the
- * active session Home's "Start Workout" pushes to) stays DISTINCT from the
- * `/workouts` tab root (never mis-routing Start Workout to the catalog).
+ * Asserts the 4-tab shell (Home · Workouts · Legacy · Squads — Community is shelved
+ * until launch) with correct order, labels, and hrefs, that the emphasized tab is
+ * Legacy, that every tab route file exists, and — the specific bug we're guarding
+ * against — that `/workout` (the active session Home's "Start Workout" pushes to)
+ * stays DISTINCT from the `/workouts` tab root (never mis-routing to the catalog).
  *
  * Run:  node --test src/components/__tests__/nav-routes.test.mjs
  */
@@ -34,12 +34,11 @@ const EXPECTED = [
   { name: 'workouts', href: '/workouts', label: 'Workouts' },
   { name: 'legacy', href: '/legacy', label: 'Legacy' },
   { name: 'squads', href: '/squads', label: 'Squads' },
-  { name: 'community', href: '/community', label: 'Community' },
 ];
 
-test('exactly 5 tabs in the handoff order, with correct names + hrefs', () => {
+test('exactly 4 tabs in order, with correct names + hrefs (Community shelved)', () => {
   const triggers = tabTriggers();
-  assert.equal(triggers.length, 5, 'expected 5 tabs');
+  assert.equal(triggers.length, 4, 'expected 4 tabs');
   assert.deepEqual(
     triggers,
     EXPECTED.map((e) => ({ name: e.name, href: e.href })),
@@ -54,7 +53,7 @@ test('labels match the dc (incl. "Workouts" plural)', () => {
 
 test('Legacy is the emphasized (centre) tab', () => {
   assert.match(tabs, /label="Legacy"\s+emphasized/);
-  // and it is positioned 3rd of 5 (the centre)
+  // and it is positioned 3rd of 4 (the emphasized centre tile)
   assert.equal(tabTriggers()[2].name, 'legacy');
 });
 
@@ -72,9 +71,21 @@ test("Home's Start Workout still routes to /workout (not the catalog)", () => {
 });
 
 test('every tab route file exists in (tabs)/ (+ the distinct /workout session route at app root)', () => {
-  for (const f of ['index.tsx', 'workouts.tsx', 'legacy.tsx', 'squads.tsx', 'community.tsx']) {
+  for (const f of ['index.tsx', 'workouts.tsx', 'legacy.tsx', 'squads.tsx']) {
     assert.ok(existsSync(join(APP, '(tabs)', f)), `missing tab route: app/(tabs)/${f}`);
   }
   // /workout (active session) is a root-Stack sibling, NOT a tab — presents over the tabs full-screen.
   assert.ok(existsSync(join(APP, 'workout.tsx')), 'missing route: app/workout.tsx');
+});
+
+test('Community is SHELVED (reversibly): no tab, screen preserved non-routed, /community redirects to Home', () => {
+  // no Community tab trigger
+  assert.ok(!tabTriggers().some((t) => t.name === 'community'), 'Community tab must be removed');
+  // the real screen is preserved outside the routed tree (for a clean re-enable)
+  assert.ok(existsSync(join(SRC, '..', 'deferred', 'community.tsx')), 'deferred Community screen must be preserved');
+  // it must NOT be back in the routed tab tree
+  assert.ok(!existsSync(join(APP, '(tabs)', 'community.tsx')), 'Community must not be a routed tab screen');
+  // stale /community links soft-redirect to Home instead of 404
+  const redirect = readFileSync(join(APP, 'community.tsx'), 'utf8');
+  assert.match(redirect, /Redirect\s+href="\/"/, '/community should soft-redirect to Home');
 });

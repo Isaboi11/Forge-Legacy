@@ -1,3 +1,11 @@
+/*
+ * ⚠️ SHELVED (not deleted) — Community is hidden from the app until launch. This screen is NOT
+ * routed (it lives outside `app/`); the tab is removed from `@/components/app-tabs` and
+ * `/community` soft-redirects to Home via `app/community.tsx`. It is kept here, compiling, so the
+ * feature can be restored by moving it back to `app/(tabs)/community.tsx` + re-adding the tab.
+ * It still renders through the SHARED FeedPostCard / FeedPost model / getCommunityFeed(), which
+ * remain live for Friends + Squad and the community golden tests — nothing shared was removed.
+ */
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
