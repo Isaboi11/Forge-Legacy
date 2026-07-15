@@ -176,6 +176,122 @@ export function getSquadCompetition(squadId: string): SquadCompetition | null {
   return SQUAD_COMPETITION[squadId] ?? null
 }
 
+// ── Squad records (the "record book"): a current holder + a descending history of previous
+//    holders per mark. Squad-scoped; holders are real roster members (records ↔ roster consistent).
+//    Only iron has a record book at source (per Forge Squad Records.dc.html) — others have none.
+
+export interface SquadRecordEntry {
+  holder: string
+  value: string
+  date: string
+}
+
+export interface SquadRecord {
+  key: string
+  label: string
+  holder: string
+  value: string
+  unit: string
+  date: string
+  isNew?: boolean
+  /** Previous holders, most-recent first. */
+  history: SquadRecordEntry[]
+}
+
+export const SQUAD_RECORDS: Record<string, SquadRecord[]> = {
+  iron: [
+    {
+      key: 'lift',
+      label: 'Heaviest Lift',
+      unit: 'lb deadlift',
+      isNew: true,
+      holder: 'Theo Brandt',
+      value: '455',
+      date: 'Jan 2026',
+      history: [
+        { holder: 'Marcus Vale', value: '440', date: 'Nov 2025' },
+        { holder: 'Dana Cole', value: '425', date: 'Aug 2025' },
+        { holder: 'Lena Cross', value: '410', date: 'Mar 2025' },
+      ],
+    },
+    {
+      key: 'session',
+      label: 'Biggest Single Session',
+      unit: 'lb volume',
+      isNew: true,
+      holder: 'Ada Ridge',
+      value: '31,200',
+      date: 'Feb 2026',
+      history: [
+        { holder: 'Marcus Vale', value: '29,800', date: 'Dec 2025' },
+        { holder: 'Theo Brandt', value: '27,500', date: 'Sep 2025' },
+        { holder: 'Dana Cole', value: '25,000', date: 'May 2025' },
+      ],
+    },
+    {
+      key: 'streak',
+      label: 'Longest Streak',
+      unit: 'days',
+      holder: 'Dana Cole',
+      value: '61',
+      date: 'Dec 2025',
+      history: [
+        { holder: 'Ada Ridge', value: '52', date: 'Aug 2025' },
+        { holder: 'Marcus Vale', value: '44', date: 'Apr 2025' },
+        { holder: 'Theo Brandt', value: '30', date: 'Jan 2025' },
+      ],
+    },
+    {
+      key: 'month',
+      label: 'Most Workouts / Month',
+      unit: 'in a month',
+      holder: 'Marcus Vale',
+      value: '26',
+      date: 'Nov 2025',
+      history: [
+        { holder: 'Ada Ridge', value: '24', date: 'Jul 2025' },
+        { holder: 'Lena Cross', value: '22', date: 'Mar 2025' },
+        { holder: 'Theo Brandt', value: '19', date: 'Nov 2024' },
+      ],
+    },
+    {
+      key: 'run',
+      label: 'Longest Run',
+      unit: 'miles',
+      holder: 'Lena Cross',
+      value: '18.2',
+      date: 'Oct 2025',
+      history: [
+        { holder: 'Dana Cole', value: '16.0', date: 'Jun 2025' },
+        { holder: 'Ada Ridge', value: '13.5', date: 'Feb 2025' },
+        { holder: 'Marcus Vale', value: '11.0', date: 'Oct 2024' },
+      ],
+    },
+    {
+      key: 'prs',
+      label: 'Most PRs / Month',
+      unit: 'in a month',
+      holder: 'Ada Ridge',
+      value: '11',
+      date: 'Feb 2026',
+      history: [
+        { holder: 'Theo Brandt', value: '9', date: 'Oct 2025' },
+        { holder: 'Marcus Vale', value: '7', date: 'May 2025' },
+        { holder: 'Dana Cole', value: '5', date: 'Dec 2024' },
+      ],
+    },
+  ],
+  // No record book at source for these squads — honest empty state, never invented.
+  dawn: [],
+  proving: [],
+  home: [],
+}
+
+/** Squad-scoped — a squad's record book (empty for squads/unknown ids with no records). */
+export function getSquadRecords(squadId: string): SquadRecord[] {
+  return SQUAD_RECORDS[squadId] ?? []
+}
+
 /** Each squad's OWN feed — distinct content proves there is no cross-squad leak. */
 export const SQUAD_SEED: Record<string, SquadPost[]> = {
   iron: [

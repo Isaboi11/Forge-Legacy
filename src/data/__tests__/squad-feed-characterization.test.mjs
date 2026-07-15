@@ -16,7 +16,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { getSquadFeed, getPost } from '../post-placeholder.ts'
-import { getSquadCheckins, getSquadCompetition, getSquadMembers } from '../squad-feed-placeholder.ts'
+import { getSquadCheckins, getSquadCompetition, getSquadMembers, getSquadRecords } from '../squad-feed-placeholder.ts'
 
 const GOLDEN = {
   iron: [
@@ -173,4 +173,26 @@ test('FIREWALL: members are squad-scoped and disjoint (no cross-squad leak)', ()
   const dawnIds = new Set(getSquadMembers('dawn').map((m) => m.id))
   for (const id of ironIds) assert.equal(dawnIds.has(id), false, `${id} leaked iron→dawn`)
   for (const id of dawnIds) assert.equal(ironIds.has(id), false, `${id} leaked dawn→iron`)
+})
+
+// ── Squad records (read-only record book) ──
+
+test('records: iron has the 6-mark book; other squads have none (absent, not invented)', () => {
+  assert.equal(getSquadRecords('iron').length, 6)
+  assert.deepEqual(getSquadRecords('dawn'), [])
+  assert.deepEqual(getSquadRecords('proving'), [])
+  assert.deepEqual(getSquadRecords('home'), [])
+  assert.deepEqual(getSquadRecords('does-not-exist'), [])
+})
+
+test('CONSISTENCY: every record holder (current + history) is a real roster member', () => {
+  const rosterNames = new Set(getSquadMembers('iron').map((m) => m.name))
+  for (const r of getSquadRecords('iron')) {
+    assert.ok(rosterNames.has(r.holder), `record "${r.label}" holder ${r.holder} must be a roster member`)
+    for (const h of r.history) {
+      assert.ok(rosterNames.has(h.holder), `record "${r.label}" history holder ${h.holder} must be a roster member`)
+    }
+    // history is descending (most-recent previous first) and non-empty for the seeded book
+    assert.ok(r.history.length > 0, `record "${r.label}" should carry history`)
+  }
 })

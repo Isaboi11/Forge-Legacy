@@ -11,7 +11,7 @@ import { FeedPostCard } from '@/components/forge/compositions/FeedPostCard';
 import { useShareSheet } from '@/hooks/useShareSheet';
 import { SQUADS_PLACEHOLDER } from '@/data/squads-placeholder';
 import { getSquadFeed, type FeedPost } from '@/data/post-placeholder';
-import { getSquadCheckins, getSquadCompetition, getSquadMembers, type SquadCheckin, type SquadCompetition, type SquadMember } from '@/data/squad-feed-placeholder';
+import { getSquadCheckins, getSquadCompetition, getSquadMembers, getSquadRecords, type SquadCheckin, type SquadCompetition, type SquadMember, type SquadRecord } from '@/data/squad-feed-placeholder';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 
 /**
@@ -44,7 +44,9 @@ export default function SquadDetailRoute() {
   const checkins = getSquadCheckins(squadId);
   const competition = getSquadCompetition(squadId);
   const members = getSquadMembers(squadId); // single source: roster + check-in strip + "N members"
+  const records = getSquadRecords(squadId);
   const [rosterOpen, setRosterOpen] = useState(false);
+  const [recordsOpen, setRecordsOpen] = useState(false);
 
   const openPost = (pid: string) => router.push({ pathname: '/post/[id]', params: { id: pid } });
   const buildShare = (post: FeedPost) =>
@@ -103,6 +105,27 @@ export default function SquadDetailRoute() {
         {/* Active Competition — the squad's standing (squad-scoped) */}
         {competition ? <CompetitionBanner competition={competition} /> : null}
 
+        {/* Squad Records — read-only record book (squad-scoped); only when the squad has records */}
+        {records.length > 0 ? (
+          <View style={styles.section}>
+            <Pressable
+              onPress={() => setRecordsOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel={`Squad Records, ${records.length} tracked`}
+              style={styles.navRow}
+            >
+              <View style={styles.navIcon}>
+                <TrophyGlyph />
+              </View>
+              <View style={styles.navText}>
+                <Text style={styles.navTitle}>Squad Records</Text>
+                <Text style={styles.navSub}>{records.length} tracked records</Text>
+              </View>
+              <ChevronMini />
+            </Pressable>
+          </View>
+        ) : null}
+
         {/* the squad feed — shared FeedPostCard, squad origin */}
         {posts.length > 0 ? (
           <View style={styles.feed}>
@@ -127,7 +150,53 @@ export default function SquadDetailRoute() {
           ))}
         </View>
       </BottomSheet>
+
+      {/* Records — read-only record book. Tapping a record is inert (full history is a deferred
+          sub-detail); the most-recent previous holder is shown inline. */}
+      <BottomSheet open={recordsOpen} onClose={() => setRecordsOpen(false)} title={`Squad Records · ${records.length}`}>
+        <View style={styles.rosterList}>
+          {records.map((r) => (
+            <RecordRow key={r.key} record={r} />
+          ))}
+        </View>
+      </BottomSheet>
     </View>
+  );
+}
+
+function RecordRow({ record }: { record: SquadRecord }) {
+  const prev = record.history[0];
+  return (
+    <Pressable onPress={() => {}} accessibilityRole="button" accessibilityLabel={`${record.label}, held by ${record.holder}`} style={styles.recordRow}>
+      <View style={styles.recordTop}>
+        <Text style={styles.recordLabel} numberOfLines={1}>
+          {record.label}
+        </Text>
+        {record.isNew ? (
+          <View style={styles.recordNew}>
+            <Text style={styles.recordNewText}>New</Text>
+          </View>
+        ) : null}
+      </View>
+      <View style={styles.recordMain}>
+        <Avatar name={record.holder} size="listRow" />
+        <View style={styles.recordHolderCol}>
+          <Text style={styles.recordHolder} numberOfLines={1}>
+            {record.holder}
+          </Text>
+          <Text style={styles.recordDate}>{record.date}</Text>
+        </View>
+        <View style={styles.recordValueCol}>
+          <Text style={styles.recordValue}>{record.value}</Text>
+          <Text style={styles.recordUnit}>{record.unit}</Text>
+        </View>
+      </View>
+      {prev ? (
+        <Text style={styles.recordPrev} numberOfLines={1}>
+          Previously {prev.value} · {prev.holder}
+        </Text>
+      ) : null}
+    </Pressable>
   );
 }
 
@@ -368,6 +437,59 @@ const styles = StyleSheet.create({
   },
   accoladeText: { fontSize: 10, fontWeight: '600', color: flColor.gray400 },
   memberSince: { flexShrink: 0, fontSize: 11, color: flColor.gray600 },
+
+  // records nav row
+  navRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 13,
+    padding: 14,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    backgroundColor: flColor.charcoal900,
+    boxShadow: flShadow.card,
+  },
+  navIcon: {
+    width: 40,
+    height: 40,
+    flexShrink: 0,
+    borderRadius: flRadius.md,
+    backgroundColor: flColor.bronzeTint,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navText: { flex: 1, minWidth: 0 },
+  navTitle: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
+  navSub: { fontSize: 11.5, color: flColor.gray600, marginTop: 2 },
+
+  // record row (in sheet)
+  recordRow: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: flColor.charcoal800,
+  },
+  recordTop: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+  recordLabel: { flex: 1, fontSize: 10.5, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronze400 },
+  recordNew: {
+    paddingVertical: 2,
+    paddingHorizontal: 7,
+    borderRadius: flRadius.sm,
+    backgroundColor: flColor.bronzeTint,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+  },
+  recordNewText: { fontSize: 8.5, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronze300 },
+  recordMain: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  recordHolderCol: { flex: 1, minWidth: 0, gap: 2 },
+  recordHolder: { fontSize: 15, fontWeight: '500', color: flColor.cream100 },
+  recordDate: { fontSize: 11.5, color: flColor.gray600 },
+  recordValueCol: { flexShrink: 0, alignItems: 'flex-end', gap: 1 },
+  recordValue: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', letterSpacing: -0.3, color: flColor.bronze300, lineHeight: 24 },
+  recordUnit: { fontSize: 10, fontWeight: '600', letterSpacing: 0.3, color: flColor.gray600 },
+  recordPrev: { fontSize: 11.5, color: flColor.gray600, marginTop: 9 },
   metaText: { fontSize: 12, color: flColor.gray600 },
   dot: { width: 2.5, height: 2.5, borderRadius: 1.25, backgroundColor: flColor.charcoal500 },
 
