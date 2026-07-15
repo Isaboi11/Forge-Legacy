@@ -22,7 +22,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { Avatar } from '../../composites/Avatar'
 import { FlameIcon } from '../../primitives/icons/HomeIcons'
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation'
-import type { FeedPost, PostContent, PostRole } from '@/data/post-placeholder'
+import { formatProgramMeta, type FeedPost, type PostContent, type PostRole } from '@/data/post-placeholder'
 import { feedOriginConfig, type FeedOrigin, type FeedOriginConfig } from './origin-config'
 
 export interface FeedPostCardProps {
@@ -141,11 +141,7 @@ function FeedContent({ content, cfg }: { content: PostContent; cfg: FeedOriginCo
         </View>
       )
     case 'program': {
-      const meta =
-        content.meta ??
-        (content.durationWeeks != null && content.frequencyPerWeek != null
-          ? `${content.durationWeeks} weeks · ${content.frequencyPerWeek} days/week`
-          : undefined)
+      const meta = formatProgramMeta(content)
       const footNote = content.footNote ?? content.savedNote
       return (
         <View style={styles.programCard}>

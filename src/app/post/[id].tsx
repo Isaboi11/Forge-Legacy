@@ -9,7 +9,7 @@ import { Avatar } from '@/components/forge/composites/Avatar';
 import { Pill } from '@/components/forge/composites/Pill';
 import { FlameIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { useShareSheet } from '@/hooks/useShareSheet';
-import { getPost, type FeedPost, type PostComment, type PostContent, type PostReply, type PostRole } from '@/data/post-placeholder';
+import { formatProgramMeta, getPost, type FeedPost, type PostComment, type PostContent, type PostReply, type PostRole } from '@/data/post-placeholder';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 
 /**
@@ -175,11 +175,7 @@ function ContentBlock({ content }: { content: PostContent }) {
         </View>
       );
     case 'program': {
-      const meta =
-        content.meta ??
-        (content.durationWeeks != null && content.frequencyPerWeek != null
-          ? `${content.durationWeeks} weeks · ${content.frequencyPerWeek} days/week`
-          : undefined);
+      const meta = formatProgramMeta(content);
       const footNote = content.footNote ?? content.savedNote;
       return (
         <View style={styles.program}>

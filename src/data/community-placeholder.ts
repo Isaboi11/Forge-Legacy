@@ -15,6 +15,8 @@
 // Types (local to the placeholder layer — no shared schema exists yet)
 // ─────────────────────────────────────────────────────────────────────────────
 
+import type { ProgramStructure } from '@/domain/training/schema';
+
 export type MemberRole = 'owner' | 'mod';
 
 /** A category tag shown under the community name (icon chosen by the screen). */
@@ -111,11 +113,16 @@ export interface AchievementPost extends PostBase {
   plateLabel: string;
 }
 
+// Program posts carry the real Phase-0 structured shape (durationWeeks / frequencyPerWeek /
+// structure enum), not a free meta string — the shared `formatProgramMeta` renders the line.
+// frequencyPerWeek is optional: omitted where the source program doesn't state a days/week.
 export interface ProgramPost extends PostBase {
   kind: 'program';
   programKindLabel: string;
   programTitle: string;
-  programMeta: string;
+  durationWeeks: number;
+  frequencyPerWeek?: number;
+  structure: ProgramStructure;
   savedNote: string;
 }
 
@@ -123,7 +130,9 @@ export interface PaidProgramPost extends PostBase {
   kind: 'programPaid';
   programKindLabel: string;
   programTitle: string;
-  programMeta: string;
+  durationWeeks: number;
+  frequencyPerWeek?: number;
+  structure: ProgramStructure;
   footNote: string;
   price: string;
 }
@@ -281,7 +290,9 @@ export const COMMUNITY_DATA: CommunityHomeData = {
       commentCount: 19,
       programKindLabel: 'Forge Program',
       programTitle: 'October Strength Block',
-      programMeta: '8 weeks · Upper / Lower · 4 days/wk',
+      durationWeeks: 8,
+      frequencyPerWeek: 4,
+      structure: 'upper_lower',
       savedNote: '214 saved',
     },
     {
@@ -313,7 +324,8 @@ export const COMMUNITY_DATA: CommunityHomeData = {
       commentCount: 41,
       programKindLabel: 'Paid Program',
       programTitle: 'Hypertrophy Foundations',
-      programMeta: '12 weeks · Push/Pull/Legs · imports to Forge',
+      durationWeeks: 12,
+      structure: 'ppl',
       footNote: 'Imports into Forge Legacy',
       price: '$29',
     },

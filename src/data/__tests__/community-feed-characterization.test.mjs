@@ -15,7 +15,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { COMMUNITY_DATA } from '../community-placeholder.ts'
-import { getCommunityFeed, getPost } from '../post-placeholder.ts'
+import { getCommunityFeed, getPost, formatProgramMeta } from '../post-placeholder.ts'
 
 /**
  * GOLDEN — today's committed Community feed, reduced to the fields that drive rendering. Authored
@@ -30,7 +30,7 @@ const GOLDEN = [
   {
     id: 'p_prog', author: 'Coach Halden', role: 'owner', typeLabel: 'Coaching', hasBody: true,
     respect: 64, comment: 19, contentType: 'program', shareable: false,
-    program: { name: 'October Strength Block', kindLabel: 'Forge Program', meta: '8 weeks · Upper / Lower · 4 days/wk', saveLabel: 'Save to Upcoming', savedNote: '214 saved', price: undefined },
+    program: { name: 'October Strength Block', kindLabel: 'Forge Program', durationWeeks: 8, frequencyPerWeek: 4, structure: 'upper_lower', formatted: '8 weeks · Upper / Lower · 4 days/week', saveLabel: 'Save to Upcoming', savedNote: '214 saved', price: undefined },
   },
   {
     id: 'p_ev', author: 'Coach Halden', role: 'owner', typeLabel: 'Event', hasBody: true,
@@ -40,7 +40,7 @@ const GOLDEN = [
   {
     id: 'p_progext', author: 'Elena Ruiz', role: 'mod', typeLabel: 'Coaching', hasBody: true,
     respect: 88, comment: 41, contentType: 'program', shareable: false,
-    program: { name: 'Hypertrophy Foundations', kindLabel: 'Paid Program', meta: '12 weeks · Push/Pull/Legs · imports to Forge', saveLabel: 'Get Program', footNote: 'Imports into Forge Legacy', price: '$29' },
+    program: { name: 'Hypertrophy Foundations', kindLabel: 'Paid Program', durationWeeks: 12, frequencyPerWeek: undefined, structure: 'ppl', formatted: '12 weeks · Push/Pull/Legs', saveLabel: 'Get Program', footNote: 'Imports into Forge Legacy', price: '$29' },
   },
   {
     id: 'p_fc', author: 'Theo Brandt', role: undefined, typeLabel: 'Form Check', hasBody: true,
@@ -97,7 +97,12 @@ test('merge preserves every rendered field: getCommunityFeed() matches the golde
     if (g.program) {
       assert.equal(post.content.programName, g.program.name, `${g.id} program name`)
       assert.equal(post.content.kindLabel, g.program.kindLabel, `${g.id} program kindLabel`)
-      assert.equal(post.content.meta, g.program.meta, `${g.id} program meta`)
+      // real Phase-0 structured shape (no free meta string) — backend swap = data change
+      assert.equal(post.content.durationWeeks, g.program.durationWeeks, `${g.id} durationWeeks`)
+      assert.equal(post.content.frequencyPerWeek, g.program.frequencyPerWeek, `${g.id} frequencyPerWeek`)
+      assert.equal(post.content.structure, g.program.structure, `${g.id} structure`)
+      // the renderer's meta line is formatted from the structured fields
+      assert.equal(formatProgramMeta(post.content), g.program.formatted, `${g.id} formatted meta`)
       assert.equal(post.content.saveLabel, g.program.saveLabel, `${g.id} program saveLabel`)
       assert.equal(post.content.footNote, g.program.footNote, `${g.id} program footNote`)
       assert.equal(post.content.savedNote, g.program.savedNote, `${g.id} program savedNote`)
@@ -112,4 +117,15 @@ test('tap-through consistency: every community feed post resolves via getPost(id
     assert.ok(resolved, `getPost('${post.id}') should resolve for feed↔detail consistency`)
     assert.equal(resolved.id, post.id)
   }
+})
+
+test('formatProgramMeta: structured fields → display line, absent parts omitted (never fabricated)', () => {
+  // Powerbuilding II — the friend program that already carried numbers (no structure at source)
+  assert.equal(formatProgramMeta({ durationWeeks: 12, frequencyPerWeek: 4 }), '12 weeks · 4 days/week')
+  // fully structured
+  assert.equal(formatProgramMeta({ durationWeeks: 8, frequencyPerWeek: 4, structure: 'upper_lower' }), '8 weeks · Upper / Lower · 4 days/week')
+  // source omits days/week → omitted, not invented
+  assert.equal(formatProgramMeta({ durationWeeks: 12, structure: 'ppl' }), '12 weeks · Push/Pull/Legs')
+  assert.equal(formatProgramMeta({ structure: 'full_body' }), 'Full Body')
+  assert.equal(formatProgramMeta({}), '')
 })

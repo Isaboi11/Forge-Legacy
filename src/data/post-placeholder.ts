@@ -8,6 +8,10 @@
  */
 
 import type { ShareKind } from '@/domain/share/content'
+// The real Phase-0 program structure enum — program plates carry the real schema shape so the
+// backend swap is a data change, not a renderer change. Type-only import (erased at runtime, so
+// the zero-dep node --test suites don't need the `@/` alias resolved).
+import type { ProgramStructure } from '@/domain/training/schema'
 // Value import (explicit .ts so the zero-dep node --test suites resolve it); the app bundler
 // resolves it via allowImportingTsExtensions, same convention as domain/rank-artwork imports.
 import { COMMUNITY_DATA } from './community-placeholder.ts'
@@ -28,27 +32,30 @@ export interface PostSource {
 /** The typed content block a post carries (discriminated union — one per post, per the dc). */
 export type PostContent =
   | { type: 'text' }
+  // PR / achievement plate. DELIBERATELY a uniform display-string shape — `value` = magnitude+unit
+  // (weight OR time: '315 lb', '19:48'), `exercise` = movement, `label` = descriptor. NOT structured:
+  // there is no PersonalRecord domain model yet, and PR values are heterogeneous (weight/time/
+  // distance) — a structured shape invented here would likely disagree with the real records model.
+  // BLOCKED-ON a real PersonalRecord model before structuring (FORGE_DELTAS §11). Keep all PR plates
+  // to this one convention so there's a single thing to migrate, not a spectrum.
   | { type: 'achievement'; value: string; exercise: string; label: string }
   | { type: 'honor'; label: string; title: string; sub?: string }
-  // Program share = a snapshot of a real Program. Uses the Phase-0 runtime `Program` field
-  // names (durationWeeks/frequencyPerWeek) so the backend swap is a data change, not a
-  // renderer change; the renderer formats the meta line. `programId` is the ref for the swap.
-  //
-  // ADDITIVE superset (Community convergence): structured duration/frequency are now optional,
-  // and a Community program may instead carry a free-form `meta` line + `kindLabel` (e.g. "Forge
-  // Program" / "Paid Program"), a `saveLabel` CTA ("Save to Upcoming" / "Get Program"), a
-  // `savedNote` ("214 saved") and a `footNote`. Renderers prefer `meta` when present, else format
-  // the numbers. Nothing existing loses meaning — the two committed structured posts still supply
-  // durationWeeks/frequencyPerWeek.
+  // Program share = a snapshot of a real Program, carried as the real Phase-0 schema shape:
+  // `programId` (the backend-swap ref), `durationWeeks`, `frequencyPerWeek`, and `structure`
+  // (the ProgramStructure enum). The renderer formats the meta line from these via
+  // `formatProgramMeta` — so swapping in real programs is a DATA change, not a renderer change.
+  // EVERY program plate is structured (no free-text `meta` middle state); a field absent at the
+  // source stays `undefined` and the formatter omits it (never fabricated). `kindLabel` /
+  // `saveLabel` / `savedNote` / `footNote` / `price` are display/CTA fields, not schema.
   | {
       type: 'program'
       programId?: string
       programName: string
       durationWeeks?: number
       frequencyPerWeek?: number
+      structure?: ProgramStructure
       price?: string
       kindLabel?: string
-      meta?: string
       saveLabel?: string
       savedNote?: string
       footNote?: string
@@ -103,6 +110,26 @@ export interface FeedPost {
   shareType?: ShareKind
 }
 
+/** Display labels for the ProgramStructure enum (the renderer never sees the enum directly). */
+const STRUCTURE_LABEL: Record<ProgramStructure, string> = {
+  upper_lower: 'Upper / Lower',
+  ppl: 'Push/Pull/Legs',
+  full_body: 'Full Body',
+}
+
+/**
+ * Format a program plate's meta line from the real structured fields — the ONE place program meta
+ * is rendered, so the feed card and Post Detail agree and a backend swap stays a data change.
+ * Omits any field the source didn't supply (never fabricated). Shared by both renderers.
+ */
+export function formatProgramMeta(p: { durationWeeks?: number; frequencyPerWeek?: number; structure?: ProgramStructure }): string {
+  const parts: string[] = []
+  if (p.durationWeeks != null) parts.push(`${p.durationWeeks} weeks`)
+  if (p.structure) parts.push(STRUCTURE_LABEL[p.structure])
+  if (p.frequencyPerWeek != null) parts.push(`${p.frequencyPerWeek} days/week`)
+  return parts.join(' · ')
+}
+
 const COMMUNITY: PostSource = { kind: 'community', name: 'Iron Collective', sub: 'Community · 2.4k members', tag: 'Community' }
 const SQUAD: PostSource = { kind: 'squad', name: 'Iron Vigil', sub: 'Squad · 5 members', tag: 'Squad' }
 
@@ -130,7 +157,7 @@ const POSTS: Record<string, FeedPost> = {
     source: SQUAD,
     typeLabel: 'PR',
     body: 'Finally moved it. Squat has been a two-year grind.',
-    content: { type: 'achievement', value: '405', exercise: 'Back Squat', label: 'lb × 3 · new PR' },
+    content: { type: 'achievement', value: '405 lb', exercise: 'Back Squat', label: 'New Personal Record' },
     respect: 71,
     commentCount: 1,
     shareType: 'pr',
@@ -222,12 +249,31 @@ function communityPostToFeedPost(p: CommunityPost): FeedPost {
     case 'program':
       return {
         ...base,
-        content: { type: 'program', programName: p.programTitle, kindLabel: p.programKindLabel, meta: p.programMeta, saveLabel: 'Save to Upcoming', savedNote: p.savedNote },
+        content: {
+          type: 'program',
+          programName: p.programTitle,
+          kindLabel: p.programKindLabel,
+          durationWeeks: p.durationWeeks,
+          frequencyPerWeek: p.frequencyPerWeek,
+          structure: p.structure,
+          saveLabel: 'Save to Upcoming',
+          savedNote: p.savedNote,
+        },
       }
     case 'programPaid':
       return {
         ...base,
-        content: { type: 'program', programName: p.programTitle, kindLabel: p.programKindLabel, meta: p.programMeta, price: p.price, saveLabel: 'Get Program', footNote: p.footNote },
+        content: {
+          type: 'program',
+          programName: p.programTitle,
+          kindLabel: p.programKindLabel,
+          durationWeeks: p.durationWeeks,
+          frequencyPerWeek: p.frequencyPerWeek,
+          structure: p.structure,
+          price: p.price,
+          saveLabel: 'Get Program',
+          footNote: p.footNote,
+        },
       }
   }
 }
