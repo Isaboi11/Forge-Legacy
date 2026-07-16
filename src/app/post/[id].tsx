@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
@@ -9,10 +9,10 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { Pill } from '@/components/forge/composites/Pill';
 import { FlameIcon } from '@/components/forge/primitives/icons/HomeIcons';
+import { BookmarkGlyph, CommentGlyph, PostContentBlock, RoleBadge, ShareGlyph } from '@/components/forge/compositions/PostContent';
 import { useShareSheet } from '@/hooks/useShareSheet';
-import { formatProgramMeta, getPost, type FeedPost, type PostComment, type PostContent, type PostReply, type PostRole } from '@/data/post-placeholder';
-import { formatRecordValue } from '@/domain/records/format';
-import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { getPost, type FeedPost, type PostComment, type PostReply } from '@/data/post-placeholder';
+import { flColor, flFont, flRadius } from '@/constants/foundation';
 
 /**
  * Post Detail — the shared, READ-ONLY feed-post viewer (Post Detail.dc.html). Source-context
@@ -116,7 +116,7 @@ function PostDetail({
 
           {post.body ? <Text style={styles.bodyText}>{post.body}</Text> : null}
 
-          <ContentBlock content={post.content} />
+          <PostContentBlock content={post.content} variant="detail" />
 
           <EngagementBar
             respect={post.respect}
@@ -167,177 +167,6 @@ function SourceBar({ post }: { post: FeedPost }) {
       </View>
     </View>
   );
-}
-
-// ── typed content blocks ──
-function ContentBlock({ content }: { content: PostContent }) {
-  switch (content.type) {
-    case 'text':
-      return null;
-    case 'achievement':
-      return (
-        <View style={styles.achievement}>
-          <Text style={styles.achValue}>{formatRecordValue(content.record.measure)}</Text>
-          <Text style={styles.achExercise}>{content.record.exercise}</Text>
-          <Text style={styles.achLabel}>{content.label}</Text>
-        </View>
-      );
-    case 'honor':
-      return (
-        <View style={styles.plate}>
-          <View style={styles.plateIcon}>
-            <HonorGlyph />
-          </View>
-          <View style={styles.plateText}>
-            <Text style={styles.plateLabel}>{content.label}</Text>
-            <Text style={styles.plateTitle}>{content.title}</Text>
-            {content.sub ? <Text style={styles.plateSub}>{content.sub}</Text> : null}
-          </View>
-        </View>
-      );
-    case 'program': {
-      const meta = formatProgramMeta(content);
-      const footNote = content.footNote ?? content.savedNote;
-      return (
-        <View style={styles.program}>
-          <View style={styles.programHead}>
-            <Text style={styles.programKind}>{content.kindLabel ?? 'Program'}</Text>
-            {content.price ? (
-              <View style={styles.pricePill}>
-                <Text style={styles.pricePillText}>{content.price}</Text>
-              </View>
-            ) : null}
-          </View>
-          <View style={styles.programBody}>
-            <View style={styles.plateIcon}>
-              <DumbbellGlyph />
-            </View>
-            <View style={styles.plateText}>
-              <Text style={styles.plateTitle}>{content.programName}</Text>
-              {meta ? <Text style={styles.plateSub}>{meta}</Text> : null}
-            </View>
-          </View>
-          {content.saveLabel ? (
-            <View style={styles.programFoot}>
-              <View style={styles.programSaveBtn}>
-                <BookmarkGlyph />
-                <Text style={styles.programSaveText}>{content.saveLabel}</Text>
-              </View>
-              {footNote ? <Text style={styles.programFootNote}>{footNote}</Text> : null}
-            </View>
-          ) : null}
-        </View>
-      );
-    }
-    case 'media':
-      return (
-        <View style={styles.media}>
-          {/* pending-asset — no real media; a toned band + (for video) a play glyph */}
-          <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
-            <Rect x="0" y="0" width="100%" height="100%" fill={flColor.charcoal800} />
-          </Svg>
-          {content.mediaKind === 'video' ? (
-            <>
-              <View style={styles.playBtn}>
-                <PlayGlyph />
-              </View>
-              <View style={styles.videoTag}>
-                <Text style={styles.videoTagText}>Video{content.duration ? ` · ${content.duration}` : ''}</Text>
-              </View>
-            </>
-          ) : (
-            <Text style={styles.mediaHint}>Photo</Text>
-          )}
-        </View>
-      );
-    case 'event':
-      return (
-        <View style={styles.event}>
-          <View style={styles.eventRow}>
-            <View style={styles.eventDate}>
-              <Text style={styles.eventMonth}>{content.month}</Text>
-              <Text style={styles.eventDay}>{content.day}</Text>
-            </View>
-            <View style={styles.eventText}>
-              <Text style={styles.eventTitle}>{content.title}</Text>
-              <View style={styles.eventWhenRow}>
-                <ClockGlyph />
-                <Text style={styles.eventWhen}>{content.when}</Text>
-              </View>
-              <Text style={styles.eventGoing}>{content.going} going</Text>
-            </View>
-          </View>
-          <Pressable onPress={() => {}} accessibilityRole="button" style={styles.rsvpBtn}>
-            <Text style={styles.rsvpText}>Interested</Text>
-          </Pressable>
-        </View>
-      );
-    case 'poll':
-      return (
-        <View style={styles.poll}>
-          {content.options.map((o, i) => (
-            <View key={i} style={styles.pollOption}>
-              <View style={[styles.pollFill, { width: `${o.pct}%` }]} />
-              <View style={styles.pollOptionInner}>
-                {o.chosen ? <CheckGlyph /> : null}
-                <Text style={styles.pollText}>{o.text}</Text>
-              </View>
-              <Text style={styles.pollPct}>{o.pct}%</Text>
-            </View>
-          ))}
-          <Text style={styles.pollFooter}>{content.footer}</Text>
-        </View>
-      );
-    case 'checkin':
-      return (
-        <View style={styles.checkin}>
-          <View style={styles.checkinIcon}>
-            <BigCheckGlyph />
-          </View>
-          <View style={styles.plateText}>
-            <Text style={styles.plateLabel}>Check-in</Text>
-            <Text style={styles.plateTitle}>Trained today</Text>
-          </View>
-          {content.streak != null ? (
-            <View style={styles.streakBadge}>
-              <FlameIcon size={14} color={flColor.bronze300} />
-              <Text style={styles.streakText}>{content.streak}-day streak</Text>
-            </View>
-          ) : null}
-        </View>
-      );
-    case 'challengeUpdate':
-      return (
-        <View style={styles.program}>
-          <View style={styles.programHead}>
-            <Text style={styles.programKind}>{content.name}</Text>
-          </View>
-          <View style={styles.cuStatsRow}>
-            <View style={styles.cuStat}>
-              <Text style={styles.cuPlace}>{content.place}</Text>
-              <Text style={styles.cuStatLabel}>of {content.of}</Text>
-            </View>
-            <View style={styles.cuDivider} />
-            <View style={styles.cuStat}>
-              <Text style={styles.cuMetric}>{content.metric}</Text>
-              <Text style={styles.cuStatLabel}>to close</Text>
-            </View>
-          </View>
-        </View>
-      );
-    case 'traintogether':
-      return (
-        <View style={styles.trainTog}>
-          <View style={styles.trainTogHead}>
-            <TrainGlyph />
-            <Text style={styles.trainTogText}>Train Together</Text>
-          </View>
-          <Pressable onPress={() => {}} accessibilityRole="button" accessibilityLabel="Join" style={styles.joinBtn} hitSlop={6}>
-            <Text style={styles.joinText}>Join</Text>
-          </Pressable>
-        </View>
-      );
-  }
 }
 
 // ── engagement bar (read-only: counts shown, respect/save inert; share → SH-1) ──
@@ -412,15 +241,6 @@ function ReplyItem({ reply }: { reply: PostReply }) {
   );
 }
 
-const ROLE_LABEL: Record<PostRole, string> = { owner: 'Owner', captain: 'Captain', mod: 'Mod' };
-function RoleBadge({ role }: { role: PostRole }) {
-  return (
-    <View style={styles.roleBadge}>
-      <Text style={styles.roleBadgeText}>{ROLE_LABEL[role]}</Text>
-    </View>
-  );
-}
-
 function PostNotFound({ onBack }: { onBack: () => void }) {
   return (
     <View style={styles.root}>
@@ -467,84 +287,6 @@ function SourceGlyph({ kind }: { kind: 'community' | 'squad' | 'friend' }) {
     </Svg>
   );
 }
-function HonorGlyph() {
-  return (
-    <Svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 3l7 3v5c0 4.4-3 7.4-7 9-4-1.6-7-4.6-7-9V6z" />
-      <Path d="M9 11l2 2 4-4" />
-    </Svg>
-  );
-}
-function DumbbellGlyph() {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />
-    </Svg>
-  );
-}
-function PlayGlyph() {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill={flColor.cream100}>
-      <Path d="M8 6.5l10 5.5-10 5.5z" />
-    </Svg>
-  );
-}
-function ClockGlyph() {
-  return (
-    <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={12} cy={12} r={9} />
-      <Path d="M12 7v5l3 2" />
-    </Svg>
-  );
-}
-function CheckGlyph() {
-  return (
-    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M20 6L9 17l-5-5" />
-    </Svg>
-  );
-}
-function CommentGlyph() {
-  return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 5h16v11H8l-4 4z" />
-    </Svg>
-  );
-}
-function BookmarkGlyph() {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M6 3h12v18l-6-4-6 4z" />
-    </Svg>
-  );
-}
-function ShareGlyph() {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={6} cy={12} r={2.4} />
-      <Circle cx={17} cy={6} r={2.4} />
-      <Circle cx={17} cy={18} r={2.4} />
-      <Path d="M8.1 10.9l6.8-3.8M8.1 13.1l6.8 3.8" />
-    </Svg>
-  );
-}
-function BigCheckGlyph() {
-  return (
-    <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M5 12.5l4.5 4.5L19 7" />
-    </Svg>
-  );
-}
-function TrainGlyph() {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={7.5} cy={8} r={2.4} />
-      <Circle cx={16.5} cy={8} r={2.4} />
-      <Path d="M3 19a4.5 4.5 0 0 1 9 0M12 19a4.5 4.5 0 0 1 9 0" />
-    </Svg>
-  );
-}
-
 const styles = StyleSheet.create({
   root: { flex: 1 },
   barTitle: { fontSize: 17, fontWeight: '600', color: flColor.cream100 },
@@ -592,15 +334,6 @@ const styles = StyleSheet.create({
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   author: { flexShrink: 1, fontSize: 15, fontWeight: '500', color: flColor.cream100 },
   time: { fontSize: 12, color: flColor.gray600 },
-  roleBadge: {
-    paddingVertical: 2,
-    paddingHorizontal: 7,
-    borderRadius: flRadius.sm,
-    backgroundColor: flColor.bronzeTint,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorderSubtle,
-  },
-  roleBadgeText: { fontSize: 8.5, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronze400 },
 
   challenge: {
     alignSelf: 'flex-start',
@@ -615,267 +348,6 @@ const styles = StyleSheet.create({
   challengeText: { fontSize: 11, fontWeight: '600', color: flColor.bronze300 },
 
   bodyText: { fontSize: 15.5, lineHeight: 24, color: flColor.cream100, marginTop: 13 },
-
-  // achievement / PR
-  achievement: {
-    marginTop: 14,
-    height: 200,
-    borderRadius: flRadius.md,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
-    backgroundColor: flColor.charcoal900,
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: flShadow.glowSubtle,
-  },
-  achValue: {
-    fontFamily: flFont.display,
-    fontSize: 64,
-    fontWeight: '700',
-    letterSpacing: 1,
-    lineHeight: 66,
-    color: flColor.bronze300,
-  },
-  achExercise: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', color: flColor.cream100, marginTop: 8 },
-  achLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 2.5, textTransform: 'uppercase', color: flColor.bronze400, marginTop: 9 },
-
-  // honor / program plate
-  plate: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    marginTop: 14,
-    padding: 16,
-    borderRadius: flRadius.md,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
-    backgroundColor: flColor.charcoal900,
-  },
-  plateIcon: {
-    width: 52,
-    height: 52,
-    flexShrink: 0,
-    borderRadius: flRadius.round,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
-    backgroundColor: flColor.charcoal800,
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: flShadow.glowSubtle,
-  },
-  plateText: { flex: 1, minWidth: 0, gap: 3 },
-  plateLabel: { fontSize: 9.5, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
-  plateTitle: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
-  plateSub: { fontSize: 12, color: flColor.gray400 },
-
-  // program
-  program: {
-    marginTop: 14,
-    borderRadius: flRadius.md,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
-    backgroundColor: flColor.charcoal900,
-    overflow: 'hidden',
-  },
-  programHead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: flColor.bronzeBorderSubtle,
-    backgroundColor: flColor.bronzeTint,
-  },
-  programKind: { flex: 1, fontSize: 10, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
-  pricePill: {
-    paddingVertical: 2,
-    paddingHorizontal: 9,
-    borderRadius: flRadius.pill,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
-    backgroundColor: flColor.bronzeTint,
-  },
-  pricePillText: { fontSize: 10.5, fontWeight: '700', color: flColor.bronze300 },
-  programBody: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 14 },
-  programFoot: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-    paddingVertical: 11,
-    paddingHorizontal: 14,
-    borderTopWidth: 1,
-    borderTopColor: flColor.charcoal700,
-  },
-  programSaveBtn: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  programSaveText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze300 },
-  programFootNote: { flexShrink: 1, textAlign: 'right', fontSize: 11.5, color: flColor.gray600 },
-
-  // media
-  media: {
-    marginTop: 14,
-    height: 220,
-    borderRadius: flRadius.md,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: flColor.charcoal700,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  mediaHint: { fontSize: 11, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase', color: flColor.gray600 },
-  playBtn: {
-    width: 56,
-    height: 56,
-    borderRadius: flRadius.round,
-    backgroundColor: 'rgba(10,10,10,0.55)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  videoTag: {
-    position: 'absolute',
-    top: 11,
-    left: 11,
-    paddingVertical: 3,
-    paddingHorizontal: 8,
-    borderRadius: flRadius.pill,
-    backgroundColor: 'rgba(10,10,10,0.6)',
-    borderWidth: 1,
-    borderColor: flColor.charcoal600,
-  },
-  videoTagText: { fontSize: 10, fontWeight: '600', letterSpacing: 0.4, textTransform: 'uppercase', color: flColor.bronze300 },
-
-  // event
-  event: {
-    marginTop: 14,
-    borderRadius: flRadius.md,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorderSubtle,
-    backgroundColor: flColor.charcoal900,
-    overflow: 'hidden',
-  },
-  eventRow: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 14 },
-  eventDate: {
-    width: 52,
-    height: 56,
-    flexShrink: 0,
-    borderRadius: flRadius.sm,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
-    backgroundColor: flColor.charcoal900,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  eventMonth: { fontSize: 9, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.bronze300 },
-  eventDay: { fontFamily: flFont.display, fontSize: 23, fontWeight: '700', lineHeight: 24, color: flColor.cream100 },
-  eventText: { flex: 1, minWidth: 0, gap: 3 },
-  eventTitle: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.cream100 },
-  eventWhenRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  eventWhen: { fontSize: 12, color: flColor.gray400 },
-  eventGoing: { fontSize: 11.5, color: flColor.gray600 },
-  rsvpBtn: {
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: flColor.bronzeBorderSubtle,
-    backgroundColor: flColor.bronzeTint,
-  },
-  rsvpText: { fontSize: 13, fontWeight: '700', letterSpacing: 0.4, color: flColor.bronze300 },
-
-  // squad check-in
-  checkin: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    marginTop: 14,
-    padding: 16,
-    borderRadius: flRadius.md,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
-    backgroundColor: flColor.charcoal900,
-  },
-  checkinIcon: {
-    width: 52,
-    height: 52,
-    flexShrink: 0,
-    borderRadius: flRadius.round,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
-    backgroundColor: flColor.charcoal800,
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: flShadow.glowSubtle,
-  },
-  streakBadge: {
-    flexShrink: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 5,
-    paddingHorizontal: 11,
-    borderRadius: flRadius.pill,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorderSubtle,
-    backgroundColor: flColor.bronzeTint,
-  },
-  streakText: { fontSize: 12, fontWeight: '700', color: flColor.bronze300 },
-
-  // squad challenge update (reuses the .program shell + head)
-  cuStatsRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 14 },
-  cuStat: { flex: 1, alignItems: 'center', gap: 3 },
-  cuDivider: { width: 1, alignSelf: 'stretch', backgroundColor: flColor.charcoal700 },
-  cuPlace: { fontFamily: flFont.display, fontSize: 28, fontWeight: '700', letterSpacing: -0.4, color: flColor.bronze300 },
-  cuMetric: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', color: flColor.cream100 },
-  cuStatLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase', color: flColor.gray600 },
-
-  // squad train-together
-  trainTog: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginTop: 14,
-    paddingVertical: 13,
-    paddingHorizontal: 15,
-    borderRadius: flRadius.md,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorderSubtle,
-    backgroundColor: flColor.charcoal900,
-  },
-  trainTogHead: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 9 },
-  trainTogText: { fontSize: 11.5, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronze400 },
-  joinBtn: {
-    flexShrink: 0,
-    paddingVertical: 9,
-    paddingHorizontal: 20,
-    borderRadius: flRadius.pill,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
-    backgroundColor: flColor.bronzeTint,
-  },
-  joinText: { fontSize: 12.5, fontWeight: '700', letterSpacing: 0.4, color: flColor.bronze300 },
-
-  // poll
-  poll: { marginTop: 14, gap: 9 },
-  pollOption: {
-    position: 'relative',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    overflow: 'hidden',
-    paddingVertical: 12,
-    paddingHorizontal: 13,
-    borderRadius: flRadius.md,
-    borderWidth: 1,
-    borderColor: flColor.charcoal600,
-    backgroundColor: flColor.charcoal900,
-  },
-  pollFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: flColor.bronzeTint },
-  pollOptionInner: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  pollText: { fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
-  pollPct: { fontSize: 12.5, fontWeight: '700', color: flColor.bronze300 },
-  pollFooter: { fontSize: 11.5, color: flColor.gray600, marginTop: 2 },
 
   // engagement
   engagement: {
