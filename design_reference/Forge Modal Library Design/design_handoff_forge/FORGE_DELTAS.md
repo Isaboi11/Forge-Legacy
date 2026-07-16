@@ -226,14 +226,26 @@ Each entry: **What changed · Why · What it supersedes.**
   one, the same class as the workout-art alpha flatten. So those screens faithfully share one slate
   texture; the genuinely distinct art is `hero-mountains` / `squad-bg-continued` / `squads-hub-bg` /
   `forge-bg-2`.
-- **Fidelity status:** base artwork wired ✓ · **per-screen darkening-gradient + overlay treatments
-  still open.** Not "none remain."
-- **Open — background sub-pass (source-specified `.dc` deltas, NOT cosmetics):** (1) **per-screen
-  darkening-gradient opacity** to each `.dc`'s exact stops — Home `rgba(5,5,5,0.15)` · Legacy `0.30` ·
-  Squad Detail 3-stop `0.12→0.26→0.38`; this pass uses one shared 3-stop `0.22→0.36→0.55`. (2) **Squad
-  Detail frame bronze radial-glows** (catalog #2). (3) the **Legacy scroll-driven mountain-fade** is
-  wired (base version) — refine the choreography to the `.dc`. `forge-bg-2` reserved for create/detail
-  screens not yet built.
+- **Fidelity status:** base artwork wired ✓ · **background sub-pass DONE (commit `f5915e9`).**
+- **Background sub-pass — DONE (commit `f5915e9`):** `ScreenBackground` now takes a **per-screen**
+  `overlay` (flat opacity OR stop list), elliptical bronze `radials[]` (SVG rx/ry), an `atmospheric`
+  mode (`--fl-bg-atmospheric` steel gradient + cool apex, for the photo-less screens), and a Legacy
+  `scrimFade`. (1) **Per-screen overlay opacity** ported verbatim — Home `0.15` · Legacy/Workouts/Athlete
+  `0.30` · Post `0.32` (flat) · Squads Hub `0.28/0.5@42%/0.82` on `#060708` · Squad Detail scroll
+  `0.12/0.26@38%/0.38`; the fabricated shared `0.22→0.36→0.55` is gone. (2) **Squad Detail frame bronze
+  radials** (catalog #2) + a **Friends apex radial** (the `.dc` has one too) — position-verified via a
+  high-opacity stress test. (3) **Friends** swapped slate photo → atmospheric gradient + apex radial
+  (Ruling A — the 0.05 radial only reads over the atmospheric base). (4) **Legacy scroll choreography**
+  fixed to the `.dc`: black scrim fades IN (`0→0.52` over `y/220`) instead of dissolving the artwork out,
+  plus hero parallax `translateY(-y*0.12)` + portrait `scale(1-0.24p)`. `forge-bg-2` reserved for
+  create/detail screens not yet built.
+- **Tracked follow-ups (out of scope for a backgrounds sweep):**
+  - **Squad Detail literal frame split** — the `.dc` layers a *top-anchored, natural-height*
+    `squad-bg-continued.png` over the atmospheric frame (atmospheric shows below on scroll). The app renders
+    the photo full-cover, so the atmospheric layer is occluded (kept as a graceful load/failure fallback,
+    per ruling). Replicating the exact top-band-photo-over-atmospheric split is a **layout change**, deferred.
+  - **Native-pass check** — eyeball Legacy's live scroll on device (scrim-in · hero parallax · portrait
+    scale); code-verified (native-driver interpolation), not statically screenshot-able.
 - **Supersedes:** the flat `bgAtmospheric` gradient on every screen; the "Design backgrounds not
   imported" DROPPED-FREE item below is now closed (base layer).
 
@@ -326,10 +338,10 @@ not-yet-authored one) sit in the blocked pile:
 
 ### ▸ DROPPED-FREE — fixable now (means in hand)
 - **Design base backgrounds** — ✅ **DONE (§16)** — base artwork wired via `ScreenBackground` across
-  every screen (incl. the Squad Detail #4 hero rebuild + the Legacy mountain-fade). **Still open — a
-  background sub-pass (source-specified, NOT cosmetics):** per-screen darkening-gradient opacity to each
-  `.dc`'s stops (Home 0.15 · Legacy 0.30 · Squad 0.12→0.26→0.38) · **Squad Detail frame bronze
-  radial-glows (catalog #2)** · mountain-fade choreography refinement. See §16.
+  every screen, then the **background sub-pass DONE (commit `f5915e9`):** per-screen overlay opacities +
+  Squad Detail's two frame radials + a Friends apex radial + Friends photo→atmospheric + Legacy
+  scrim-fade/parallax/portrait-scale. Two follow-ups remain (Squad Detail literal top-band split ·
+  native-pass Legacy live-scroll check) — see §16.
 - **Rank seal per-family COLOR (§17)** — **now PARTIAL (see §18):** the Legacy seal renders real
   per-rank ARTWORK (full distinct color) for the guard-clean families (established, legacy). Still open
   for the families on the **vector fallback** (foundation, craftsman, architect, builder, legend) + the
