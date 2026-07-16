@@ -1,5 +1,6 @@
-import { useState, type ReactNode } from 'react';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -67,7 +68,7 @@ import {
 
 export default function LegacyScreen() {
   const { profile } = useProfile();
-  const { data, loading, error, refetch } = useQuery(fetchLegacyData, []);
+  const { data, error, refetch } = useQuery(fetchLegacyData, []);
   // Scroll-driven hero choreography (the .dc "premium scroll choreography"): the background scrim
   // fades in (ScreenBackground `scrimFade`), the hero parallaxes up + fades, and the portrait scales
   // down from its left edge. All native-driver transform/opacity.
@@ -76,22 +77,25 @@ export default function LegacyScreen() {
   const heroOpacity = scrollY.interpolate({ inputRange: [0, 220], outputRange: [1, 0.1], extrapolate: 'clamp' }); // 1 - p*0.9
   const portraitScale = scrollY.interpolate({ inputRange: [0, 220], outputRange: [1, 0.76], extrapolate: 'clamp' }); // 1 - p*0.24
 
-  // Wait for both the live Legacy read and the shared profile; surface a retryable error.
-  if (loading || !data || !profile) {
+  // Refetch when the tab regains focus (e.g. returning from a just-logged workout) — the current data
+  // stays on screen during the reload, so a background refresh never flashes the spinner.
+  const firstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (firstFocus.current) {
+        firstFocus.current = false; // mount already fetched
+        return;
+      }
+      refetch();
+    }, [refetch]),
+  );
+
+  // First load only: wait for the live Legacy read + the shared profile, with a retryable error. Once
+  // data is in hand it stays rendered through any background refetch.
+  if (!data || !profile) {
     return (
       <LegacyShell scrollY={scrollY} avatarName={profile?.name ?? ''}>
-        {error ? (
-          <LegacyError onRetry={refetch} />
-        ) : (
-          <ActivityIndicator color={flColor.bronze400} />
-        )}
-      </LegacyShell>
-    );
-  }
-  if (error) {
-    return (
-      <LegacyShell scrollY={scrollY} avatarName={profile.name}>
-        <LegacyError onRetry={refetch} />
+        {error ? <LegacyError onRetry={refetch} /> : <ActivityIndicator color={flColor.bronze400} />}
       </LegacyShell>
     );
   }

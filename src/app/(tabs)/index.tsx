@@ -19,6 +19,7 @@ import { flColor } from '@/constants/foundation';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { getSelfProfile } from '@/domain/profile/placeholder-data';
 import { useProfile } from '@/lib/profile';
+import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { getActiveProgram, getNextWorkout } from '@/domain/training/active-program';
 import { resolveHomeWorkoutArtwork } from '@/domain/home-artwork/resolver';
 import { enrichSessionExercises } from '@/domain/home-artwork/catalog';
@@ -104,7 +105,10 @@ export default function HomeScreen() {
               focus={workout.focus}
               exerciseCount={workout.exerciseCount ?? workout.exercises?.length ?? 0}
               onStart={() => {
-                startWorkout(workout.name);
+                const lifts = (workout.exercises ?? [])
+                  .filter((e) => e.section === 'main' && !e.optional)
+                  .map((e) => ({ catalogKey: e.catalogKey, name: exerciseNameFor(e.catalogKey), workingSets: e.workingSets }));
+                startWorkout(workout.name, lifts);
                 router.push('/workout');
               }}
               onPreview={() => {

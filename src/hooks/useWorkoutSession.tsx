@@ -2,14 +2,22 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 
 import { DEFAULT_LIVE_TRAINING_PRIVACY } from '@/data/live-training-placeholder'
 
+/** One planned lift carried into the session so the Finish log sheet knows what to record. */
+export type SessionLift = {
+  catalogKey?: string
+  name: string
+  workingSets: number
+}
+
 export type WorkoutSession = {
   workoutName: string
   startedAt: string
+  lifts: SessionLift[]
 }
 
 export type WorkoutSessionContextValue = {
   session: WorkoutSession | null
-  startWorkout: (workoutName: string) => void
+  startWorkout: (workoutName: string, lifts?: SessionLift[]) => void
   finishWorkout: () => void
   abandonWorkout: () => void
 }
@@ -52,8 +60,8 @@ export function WorkoutSessionProvider({ children }: { children: React.ReactNode
   }, [clearStaleTimer])
 
   const startWorkout = useCallback(
-    (workoutName: string) => {
-      setSession({ workoutName, startedAt: new Date().toISOString() })
+    (workoutName: string, lifts: SessionLift[] = []) => {
+      setSession({ workoutName, startedAt: new Date().toISOString(), lifts })
       setLiveWorkoutPresence(true, workoutName)
 
       clearStaleTimer()

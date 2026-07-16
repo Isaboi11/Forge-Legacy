@@ -380,6 +380,46 @@ guarded for Node static render; `ProfileProvider`/`useQuery` run clean at render
 
 ---
 
+## 22. Log a workout → real write (Phase 3, DONE — the first mutation)
+
+"Finish Workout" is now a real write, not an inert session-end. One logged session becomes, via
+`src/domain/training/log-workout.ts`: `workouts`(state `saved`) → `workout_exercises` → performed
+`workout_sets` → **derived load PRs** (vs the athlete's current max) → an **`ACCOMPLISHMENT` timeline
+row per PR** → the active chapter's `workout_count` +1. Sequential-with-cleanup (no client transaction),
+so a mid-write failure deletes the parent (cascades children) and any PR/timeline rows — never a partial.
+
+**The reusable WRITE pattern** — `src/lib/useMutation.ts` (`{ mutate, pending, error, reset }`, the
+mutation counterpart to `useQuery`): pending tracking, error capture (never throws to the caller),
+double-submit guard, and caller-owned optimistic/rollback via `onSuccess`/`onError`. Every later write
+screen reuses it.
+
+**Honest scope (forced by the data):** the program prescribes only sets×reps — **no load** — so an
+honest load PR *requires* the athlete's real entered weight; there's nothing to fabricate one from. The
+full active-workout flow (W-9–W-16) isn't locked, so the Finish screen is a lean **top-set-per-lift**
+logger (weight × reps, blank = skip), not a full per-set UI and not prescribed-as-performed. Optimistic:
+Finish flips to the confirmation immediately and rolls back to editing if the write fails; the session
+ends only after a confirmed write. Legacy refetches on focus (keeping current data on screen — no
+spinner flash) so a new PR shows on return.
+
+**The timeline mapping is deliberate:** `flm_event_type` has no per-workout value — the timeline is
+milestone-based — so a logged workout surfaces there through its **PR → ACCOMPLISHMENT**, not a
+raw-workout row. A non-PR workout still persists and counts, it just isn't a timeline milestone.
+
+**Proven live (data round-trip, not pixels):**
+- `supabase/seed/log-roundtrip.mjs` — logs Back Squat 325 (beats seeded 315 → PR) + Deadlift 395 (below
+  405 → correctly NO PR); asserts rows persist, PR derives, the ACCOMPLISHMENT is the **top** timeline
+  entry `fetchLegacyData` reads, `workout_count` 47→48; cleans back to the seeded baseline. **PASS.**
+- `supabase/seed/rls-write-check.mjs` — every foreign-`athlete_id` insert (workout/PR/timeline) rejected
+  by `with check (athlete_id = auth.uid())` with Postgres `42501`. **PASS.**
+
+Verified: tsc 0 · eslint 0 · 183 tests · `expo export` 19 routes (SSR-safe).
+
+**Deferred to a Phase 3 follow-up (flagged, not silent):** Storage media wiring (avatar + workout/PR
+images) and the demo-persona swap (Ada Ridge → real subject, once media lands — logged in `seed.mjs`).
+Neither is on the write path; this gate is the log→persist→timeline loop.
+
+---
+
 ## Still open (carry into implementation)
 
 **Three buckets, and the distinction is load-bearing** — don't let a fixable miss (or a merely
