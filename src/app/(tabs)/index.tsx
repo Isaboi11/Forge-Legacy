@@ -73,7 +73,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.slate} />
+      <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.15)' }} />
 
       <AppBar
         title={<HomeWordmark />}

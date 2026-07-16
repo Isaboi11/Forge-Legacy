@@ -6,7 +6,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { ScreenBackground } from '@/components/screen-background';
-import { SCREEN_BG } from '@/constants/backgrounds';
+import { SCREEN_BG, BG_RADIAL } from '@/constants/backgrounds';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { FeedPostCard } from '@/components/forge/compositions/FeedPostCard';
 import { useShareSheet } from '@/hooks/useShareSheet';
@@ -59,7 +59,13 @@ export default function SquadDetailRoute() {
 
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.squadDetail} />
+      <ScreenBackground
+        image={SCREEN_BG.squadDetail}
+        imagePosition="top"
+        atmospheric
+        overlay={{ colors: ['rgba(5,5,5,0.12)', 'rgba(5,5,5,0.26)', 'rgba(5,5,5,0.38)'], locations: [0, 0.38, 1] }}
+        radials={[BG_RADIAL.squadTop, BG_RADIAL.squadBottom]}
+      />
       <AppBar
         title={squad?.name ?? 'Squad'}
         serif

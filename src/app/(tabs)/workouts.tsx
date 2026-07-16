@@ -83,7 +83,7 @@ export default function WorkoutsScreen() {
 
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.slate2} />
+      <ScreenBackground image={SCREEN_BG.slate2} overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
 
       <AppBar
         title={<Text style={styles.barTitle}>Workouts</Text>}

@@ -66,7 +66,12 @@ export default function SquadsScreen() {
 
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.squadsHub} />
+      <ScreenBackground
+        image={SCREEN_BG.squadsHub}
+        base="#060708"
+        imagePosition="top"
+        overlay={{ colors: ['rgba(6,7,8,0.28)', 'rgba(6,7,8,0.5)', 'rgba(6,7,8,0.82)'], locations: [0, 0.42, 1] }}
+      />
 
       <AppBar
         title={<Text style={styles.barTitle}>Squads</Text>}

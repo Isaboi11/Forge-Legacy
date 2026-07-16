@@ -5,7 +5,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
-import { SCREEN_BG } from '@/constants/backgrounds';
+import { BG_RADIAL } from '@/constants/backgrounds';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { FeedPostCard } from '@/components/forge/compositions/FeedPostCard';
 import { getFriendsFeed } from '@/data/post-placeholder';
@@ -38,7 +38,7 @@ export default function FriendsFeedRoute() {
 
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.slate} />
+      <ScreenBackground atmospheric overlay={null} radials={[BG_RADIAL.friendsApex]} />
       <AppBar
         title="Friends"
         serif

@@ -66,7 +66,7 @@ export default function AthleteProfileRoute() {
   if (!name) {
     return (
       <View style={styles.root}>
-        <ScreenBackground image={SCREEN_BG.legacy} />
+        <ScreenBackground image={SCREEN_BG.legacy} overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
         <AppBar title="" onBack={() => router.back()} />
         <View style={styles.empty}>
           <Text style={styles.emptyText}>Profile unavailable.</Text>
@@ -109,7 +109,7 @@ export default function AthleteProfileRoute() {
 
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.legacy} />
+      <ScreenBackground image={SCREEN_BG.legacy} overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
       <AppBar title="" onBack={() => router.back()} />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>

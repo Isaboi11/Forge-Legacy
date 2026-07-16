@@ -67,13 +67,17 @@ export default function LegacyScreen() {
   const data = LEGACY_DATA;
   const chapter = data.activeChapter;
   const [recentSeal, ...olderSeals] = data.sealedChapters;
-  // Scroll-driven artwork fade — the legacy background dissolves toward the dark base as the hero
-  // scrolls away (the .dc "premium scroll choreography"). Drives ScreenBackground's opacity.
+  // Scroll-driven hero choreography (the .dc "premium scroll choreography"): the background scrim
+  // fades in (ScreenBackground `scrimFade`), the hero parallaxes up + fades, and the portrait scales
+  // down from its left edge. All native-driver transform/opacity.
   const [scrollY] = useState(() => new Animated.Value(0));
+  const heroTranslateY = scrollY.interpolate({ inputRange: [0, 100], outputRange: [0, -12], extrapolate: 'extend' }); // -y*0.12
+  const heroOpacity = scrollY.interpolate({ inputRange: [0, 220], outputRange: [1, 0.1], extrapolate: 'clamp' }); // 1 - p*0.9
+  const portraitScale = scrollY.interpolate({ inputRange: [0, 220], outputRange: [1, 0.76], extrapolate: 'clamp' }); // 1 - p*0.24
 
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.legacy} fadeImage={SCREEN_BG.legacyMountains} scrollY={scrollY} />
+      <ScreenBackground image={SCREEN_BG.legacyMountains} overlay={{ flat: 'rgba(5,5,5,0.30)' }} scrimFade scrollY={scrollY} />
 
       <AppBar
         title="Legacy"
@@ -90,9 +94,11 @@ export default function LegacyScreen() {
         scrollEventThrottle={16}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
       >
-        {/* ── HERO · identity ── */}
-        <View style={styles.identityRow}>
-          <SealPortrait name={profile.name} />
+        {/* ── HERO · identity ── parallaxes up + fades; portrait scales from its left edge (.dc) */}
+        <Animated.View style={[styles.identityRow, { opacity: heroOpacity, transform: [{ translateY: heroTranslateY }] }]}>
+          <Animated.View style={{ transformOrigin: 'left center', transform: [{ scale: portraitScale }] }}>
+            <SealPortrait name={profile.name} />
+          </Animated.View>
           <View style={styles.identityText}>
             <Text style={styles.athleteName} numberOfLines={1}>
               {profile.name}
@@ -108,7 +114,7 @@ export default function LegacyScreen() {
               // P-2 Progress Hub — not yet implemented.
             }}
           />
-        </View>
+        </Animated.View>
 
         {/* My Standard — the creed (editable-inert: L-12 editor not yet implemented) */}
         <MyStandard standard={data.standard} onEdit={() => {}} />

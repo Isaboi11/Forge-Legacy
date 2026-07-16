@@ -64,7 +64,7 @@ function PostDetail({
 
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.slate} />
+      <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.32)' }} />
       <AppBar
         title={<Text style={styles.barTitle}>Post</Text>}
         onBack={onBack}
@@ -244,7 +244,7 @@ function ReplyItem({ reply }: { reply: PostReply }) {
 function PostNotFound({ onBack }: { onBack: () => void }) {
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.slate} />
+      <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.32)' }} />
       <AppBar onBack={onBack} />
       <View style={styles.notFound}>
         <Text style={styles.notFoundTitle}>Post not found</Text>
