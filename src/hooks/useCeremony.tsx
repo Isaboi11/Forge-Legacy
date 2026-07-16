@@ -19,8 +19,7 @@ import { Button } from '@/components/forge/composites/Button'
 import type { CeremonyEvent } from '@/domain/ceremony/types'
 import { orderCeremonies } from '@/domain/ceremony/queue'
 import { ceremonyCopy } from '@/domain/ceremony/copy'
-import { resolveRankArtwork } from '@/domain/rank-artwork/resolver'
-import { resolveRankArtworkSource } from '@/domain/rank-artwork/rank-source'
+import { RankSeal } from '@/components/forge/RankSeal'
 import { useShareSheet } from '@/hooks/useShareSheet'
 import { getSelfProfile } from '@/domain/profile/placeholder-data'
 import type { ShareKind } from '@/domain/share/content'
@@ -42,8 +41,7 @@ const ARTWORK_SIZE = 104
 /** The ceremony's Insignia: real rank badge for rank-ups, graceful placeholder otherwise. */
 function ceremonyArtwork(event: CeremonyEvent): React.ReactNode {
   if (event.kind === 'rankUp') {
-    const source = resolveRankArtworkSource(resolveRankArtwork({ ...event.rank }).assetPath)
-    return <Insignia source={source} size={ARTWORK_SIZE} />
+    return <RankSeal family={event.rank.family} level={event.rank.level} size={ARTWORK_SIZE} />
   }
   if (event.kind === 'honorEarned') {
     const initials = event.honorName

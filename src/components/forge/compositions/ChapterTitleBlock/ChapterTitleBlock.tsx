@@ -18,25 +18,28 @@
 
 import React from 'react'
 import Svg, { Circle, Rect } from 'react-native-svg'
-import { Image } from 'expo-image'
 import { StyleSheet, Text, View } from 'react-native'
 import { flColor, flFont } from '@/constants/foundation'
+import { RankSeal } from '@/components/forge/RankSeal'
 
 export interface ChapterTitleBlockProps {
   chapterNumber: string
   chapterName: string
   weekDay: string
   principle: string
-  /** Resolved rank-badge image module (from `resolveRankArtworkSource`); omit → placeholder seal. */
-  rankArtwork?: number
+  /** Rank tier for the medallion (the vector RankSeal); omit → placeholder seal. */
+  rankFamily?: string
+  rankLevel?: 1 | 2 | 3 | 4
 }
 
-/** Top-right rank medallion — the real badge art, or a faint bronze seal placeholder when absent. */
-function RankMedallion({ source }: { source?: number }) {
+/** Top-right rank medallion — the vector RankSeal (transparent by construction), or a faint placeholder. */
+function RankMedallion({ family, level }: { family?: string; level?: 1 | 2 | 3 | 4 }) {
   return (
     <View pointerEvents="none" style={styles.medallion} accessibilityElementsHidden importantForAccessibility="no">
-      {source != null ? (
-        <Image source={source} style={styles.medallionArt} contentFit="contain" />
+      {family ? (
+        <View style={styles.medallionArt}>
+          <RankSeal family={family} level={level ?? 1} size={150} />
+        </View>
       ) : (
         <Svg width={160} height={172} viewBox="0 0 100 108" fill="none" opacity={0.14}>
           <Circle cx={50} cy={48} r={34} stroke={flColor.bronze400} strokeWidth={1} />
@@ -58,10 +61,10 @@ function DiamondDivider() {
   )
 }
 
-export function ChapterTitleBlock({ chapterNumber, chapterName, weekDay, principle, rankArtwork }: ChapterTitleBlockProps) {
+export function ChapterTitleBlock({ chapterNumber, chapterName, weekDay, principle, rankFamily, rankLevel }: ChapterTitleBlockProps) {
   return (
     <View style={styles.root}>
-      <RankMedallion source={rankArtwork} />
+      <RankMedallion family={rankFamily} level={rankLevel} />
       <View style={styles.content}>
         <Text style={styles.chapterNumber}>{chapterNumber}</Text>
         <Text style={styles.chapterName}>{chapterName}</Text>
@@ -89,10 +92,10 @@ const styles = StyleSheet.create({
     top: 6,
     right: 4,
   },
-  // Real badge art as a faint top-right watermark (dc intent) — sits behind the title, not competing.
+  // Vector seal as a faint top-right watermark (dc intent) — sits behind the title, not competing.
   medallionArt: {
-    width: 128,
-    height: 138,
+    width: 150,
+    height: 150,
     opacity: 0.42,
   },
   content: {

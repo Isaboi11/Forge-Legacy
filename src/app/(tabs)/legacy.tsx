@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Image } from 'expo-image';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -13,8 +12,8 @@ import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { getSelfProfile } from '@/domain/profile/placeholder-data';
-import { PLACEHOLDER_RANK, resolveRankArtwork } from '@/domain/rank-artwork/resolver';
-import { resolveRankArtworkSource } from '@/domain/rank-artwork/rank-source';
+import { PLACEHOLDER_RANK } from '@/domain/rank-artwork/resolver';
+import { RankSeal } from '@/components/forge/RankSeal';
 import { LEGACY_DATA } from '@/data/legacy-placeholder';
 import type { Accomplishment, Chapter, FeaturedMoment, Goal, Honor, TimelineEntry } from '@/types/legacy';
 
@@ -69,11 +68,6 @@ export default function LegacyScreen() {
   const data = LEGACY_DATA;
   const chapter = data.activeChapter;
   const [recentSeal, ...olderSeals] = data.sealedChapters;
-  // Rank badge for the hero seal. TIER is placeholder (no rank backend); sex only
-  // matters for the sex-specific Established family. undefined → placeholder seal.
-  const rankArtwork = resolveRankArtworkSource(
-    resolveRankArtwork({ ...PLACEHOLDER_RANK, sex: profile.sex }).assetPath,
-  );
   // Scroll-driven artwork fade — the legacy background dissolves toward the dark base as the hero
   // scrolls away (the .dc "premium scroll choreography"). Drives ScreenBackground's opacity.
   const [scrollY] = useState(() => new Animated.Value(0));
@@ -108,7 +102,8 @@ export default function LegacyScreen() {
             <Text style={styles.identitySub}>Forging a permanent record, one chapter at a time.</Text>
           </View>
           <ProgressBadge
-            rankArtwork={rankArtwork}
+            rankFamily={PLACEHOLDER_RANK.family}
+            rankLevel={PLACEHOLDER_RANK.level}
             onPress={() => {
               // P-2 Progress Hub — not yet implemented.
             }}
@@ -334,15 +329,15 @@ function RankLabel({ label, sub }: { label: string; sub: string }) {
 
 /**
  * The rank badge — the FoundationBadge slot — with the "Progress" pill → Progress Hub. Shows the
- * REAL imported rank badge art when it resolves; else a faint pending-asset shield placeholder
- * (never a fabricated badge). This is the badge's correct home (not the left portrait).
+ * the vector RankSeal (transparent by construction — no alpha-flatten box); else a faint pending-asset
+ * shield placeholder. This is the badge's correct home (not the left portrait).
  */
-function ProgressBadge({ rankArtwork, onPress }: { rankArtwork?: number; onPress: () => void }) {
+function ProgressBadge({ rankFamily, rankLevel, onPress }: { rankFamily?: string; rankLevel?: 1 | 2 | 3 | 4; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel="View your rank and progress" style={styles.progressBadge}>
       <View style={styles.badgeShield}>
-        {rankArtwork != null ? (
-          <Image source={rankArtwork} style={styles.badgeArt} contentFit="contain" />
+        {rankFamily ? (
+          <RankSeal family={rankFamily} level={rankLevel ?? 1} size={68} />
         ) : (
           <Svg width={38} height={52} viewBox="0 0 38 52">
             <Path d="M4 6 L34 6 L34 30 Q34 44 19 50 Q4 44 4 30 Z" stroke={flColor.bronze400} strokeWidth={1.2} opacity={0.4} fill="none" />
@@ -585,7 +580,6 @@ const styles = StyleSheet.create({
   },
   progressBadge: { width: 76, alignItems: 'center', gap: 6 },
   badgeShield: { width: 64, height: 72, alignItems: 'center', justifyContent: 'center' },
-  badgeArt: { width: 62, height: 70 },
   progressPill: {
     flexDirection: 'row',
     alignItems: 'center',
