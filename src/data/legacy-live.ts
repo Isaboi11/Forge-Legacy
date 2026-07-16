@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { cap, dateRangeCompact, dateRangeFull, daysSince, fmtDate, fmtShort, roman } from '@/lib/format';
 import { CHAPTER_GOALS_PENDING, LEGACY_FIXTURE_PENDING } from './legacy-fixture-pending';
-import type { Chapter, FeaturedMoment, LegacyData, TimelineEntry } from '@/types/legacy';
+import type { Chapter, FeaturedMoment, LegacyData, Pin, PinKind, TimelineEntry } from '@/types/legacy';
 
 /**
  * Live Legacy read (Phase 2) — builds the exact `LegacyData` shape the Legacy components already
@@ -27,6 +27,15 @@ interface TimelineRow {
   object_name: string;
   occurred_at: string;
   chapter_id: string | null;
+}
+interface PinRow {
+  id: string;
+  kind: PinKind;
+  title: string;
+  subtitle: string | null;
+  media_url: string | null;
+  poster_url: string | null;
+  is_video: boolean;
 }
 
 const EVENT_LABEL: Record<string, string> = {
@@ -78,17 +87,29 @@ export async function fetchLegacyData(): Promise<LegacyData> {
   if (!user) throw new Error('not signed in');
   const uid = user.id;
 
-  const [{ data: prof, error: pe }, { data: chRows, error: ce }, { data: tlRows, error: te }] = await Promise.all([
-    supabase.from('profiles').select('rank_family, rank_level, standard').eq('id', uid).single(),
-    supabase.from('chapters').select('*').eq('athlete_id', uid),
-    supabase.from('timeline_events').select('*').eq('athlete_id', uid).order('occurred_at', { ascending: false }),
-  ]);
+  const [{ data: prof, error: pe }, { data: chRows, error: ce }, { data: tlRows, error: te }, { data: pinRows, error: pne }] =
+    await Promise.all([
+      supabase.from('profiles').select('rank_family, rank_level, standard').eq('id', uid).single(),
+      supabase.from('chapters').select('*').eq('athlete_id', uid),
+      supabase.from('timeline_events').select('*').eq('athlete_id', uid).order('occurred_at', { ascending: false }),
+      supabase.from('pins').select('*').eq('athlete_id', uid).order('position', { ascending: true }),
+    ]);
   if (pe) throw pe;
   if (ce) throw ce;
   if (te) throw te;
+  if (pne) throw pne;
 
   const chapters = (chRows ?? []) as ChapterRow[];
   const timeline = (tlRows ?? []) as TimelineRow[];
+  const pinned: Pin[] = ((pinRows ?? []) as PinRow[]).map((p) => ({
+    id: p.id,
+    kind: p.kind,
+    title: p.title,
+    subtitle: p.subtitle ?? undefined,
+    mediaUrl: p.media_url ?? undefined,
+    posterUrl: p.poster_url ?? undefined,
+    isVideo: p.is_video,
+  }));
   const active = chapters.find((c) => c.is_active) ?? null;
   const sealed = chapters
     .filter((c) => !c.is_active)
@@ -101,6 +122,7 @@ export async function fetchLegacyData(): Promise<LegacyData> {
     activeChapter: active ? toChapter(active) : null,
     dayCount: active ? daysSince(active.start_date) : 0,
     featuredMoment: deriveFeatured(timeline, chapters),
+    pinned,
     sealedChapters: sealed.map(toChapter),
     timelineEntries: timeline.slice(0, 3).map(
       (e): TimelineEntry => ({

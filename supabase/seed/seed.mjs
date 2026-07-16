@@ -7,9 +7,9 @@
 // env-overridable so the demo can become the REAL subject WITHOUT hardcoding anyone's identity here.
 // To go real, reseed with e.g.:
 //   SB_NAME="Jane Doe" SB_FIRST="Jane" SB_HANDLE="jane.forged" SB_INITIALS="JD" SB_SEX="female" \
-//   SB_AVATAR_URL="https://…/storage/v1/object/public/avatars/<uid>.jpg" \
 //   SB_EMAIL=… SB_PASS=… node supabase/seed/seed.mjs
-// (SB_AVATAR_URL needs the image uploaded to the public `avatars` bucket first; null → initials.)
+// The avatar is NOT set here — `upload-avatar.mjs` owns `avatar_url`, so a reseed never wipes the photo.
+// Likewise pin media lives in the `pins` table via `seed-media.mjs`, untouched by this baseline reseed.
 import { signedInClient } from './_client.mjs';
 
 const persona = {
@@ -18,7 +18,6 @@ const persona = {
   handle: process.env.SB_HANDLE ?? 'ada.forged',
   initials: process.env.SB_INITIALS ?? 'AR',
   sex: process.env.SB_SEX ?? 'unspecified',
-  avatar_url: process.env.SB_AVATAR_URL ?? null,
 };
 
 const { sb, uid } = await signedInClient();
@@ -54,7 +53,7 @@ const chId = Object.fromEntries(chRows.map((r) => [r.name, r.id]));
 // personal records (mirror fixture accomplishments/goals)
 const prs = [
   { exercise: 'Back Squat', achieved_on: '2026-05-15', measure_kind: 'load', load_value: 315, load_unit: 'lb' },
-  { exercise: 'Deadlift', achieved_on: '2026-02-20', measure_kind: 'load', load_value: 405, load_unit: 'lb' },
+  { exercise: 'Deadlift', achieved_on: '2026-02-20', measure_kind: 'load', load_value: 485, load_unit: 'lb' },
   { exercise: '5K', achieved_on: '2026-03-10', measure_kind: 'time', time_seconds: 1470 },
 ].map((p) => ({ ...p, athlete_id: uid }));
 const { error: pre } = await sb.from('personal_records').insert(prs);
@@ -74,5 +73,5 @@ const tl = [
 const { error: te } = await sb.from('timeline_events').insert(tl);
 if (te) throw new Error('timeline: ' + te.message);
 
-console.log(`✓ profile: ${persona.name} · Established III${persona.avatar_url ? ' · avatar set' : ''}`);
+console.log(`✓ profile: ${persona.name} · Established III`);
 console.log(`✓ chapters: ${chRows.length} (1 active + 3 sealed) · PRs: ${prs.length} · timeline: ${tl.length}`);

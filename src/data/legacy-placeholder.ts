@@ -87,6 +87,9 @@ export const LEGACY_DATA: LegacyData = {
     },
   ],
 
+  // Pinned Legacy — empty museum in the fixture (real pins come from the spine)
+  pinned: [],
+
   // Section 4 — Photos (colored placeholder squares)
   photos: [
     { id: 'p1', placeholderColor: '#2A2A32', chapterName: 'Into the Iron',  addedDate: 'Jun 28, 2026' },

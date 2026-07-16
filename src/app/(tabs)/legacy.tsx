@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -18,6 +19,7 @@ import { resolveRankBadge } from '@/domain/rank-artwork/badge-art';
 import { RankSeal } from '@/components/forge/RankSeal';
 import { fetchLegacyData } from '@/data/legacy-live';
 import { useQuery } from '@/lib/useQuery';
+import type { Pin } from '@/types/legacy';
 import {
   AccomplishmentCard,
   CompactChapterRow,
@@ -37,7 +39,9 @@ import {
  * (the pre-existing `components/legacy/*` are old `legacy-theme` and now bannered
  * legacy). Sections, top to bottom: the hero (identity + "My Standard" creed +
  * current chapter & primary goal), Pinned Legacy (empty museum), Featured Legacy
- * Moment, My Story (chapter history + timeline preview), What Endures
+ * Moment, My Story (chapter history + timeline preview), What Endures.
+ * Pinned Legacy renders real pins from the spine (video pins open the fullscreen player) + the inert
+ * "Pin an item" add-tile; the pin-curation sheet (L-13) is not yet built.
  * (Transformation/Photos/Trophy preview rows + Accomplishments + Honors), and the
  * closing inscription.
  *
@@ -67,6 +71,7 @@ import {
  */
 
 export default function LegacyScreen() {
+  const router = useRouter();
   const { profile } = useProfile();
   const { data, error, refetch } = useQuery(fetchLegacyData, []);
   // Scroll-driven hero choreography (the .dc "premium scroll choreography"): the background scrim
@@ -150,12 +155,21 @@ export default function LegacyScreen() {
         {/* What I'm Building — current chapter + primary goal */}
         {chapter ? <CurrentChapter chapter={chapter} dayCount={data.dayCount} onOpen={() => {}} /> : null}
 
-        {/* ── PINNED LEGACY · empty museum ── */}
+        {/* ── PINNED LEGACY · My Museum (real pins + inert add-tile) ── */}
         <View style={styles.section}>
           <View style={styles.sectionHeaderPad}>
             <SectionHeader label="Pinned Legacy" />
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stripPad}>
+            {data.pinned.map((pin) => (
+              <PinnedCard
+                key={pin.id}
+                pin={pin}
+                onPress={() => {
+                  if (pin.isVideo && pin.mediaUrl) router.push({ pathname: '/pin-video', params: { url: pin.mediaUrl } });
+                }}
+              />
+            ))}
             <Pressable
               onPress={() => {
                 // L-13 Pin manager — not yet implemented.
@@ -301,6 +315,45 @@ function LegacyError({ onRetry }: { onRetry: () => void }) {
         <Text style={styles.retryText}>Try again</Text>
       </Pressable>
     </>
+  );
+}
+
+/**
+ * Pinned Legacy card — the museum tile (Forge Legacy.dc.html §pinned): a 150×196 media card with a
+ * top+bottom scrim, the `kind` chip, and the `title`. Video pins carry the design's play affordance;
+ * tapping one opens the fullscreen player. Faithful to the .dc — not restyled.
+ */
+function PinnedCard({ pin, onPress }: { pin: Pin; onPress: () => void }) {
+  const media = pin.posterUrl ?? pin.mediaUrl;
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`Open ${pin.title}`} style={styles.pinCard}>
+      {media ? (
+        <>
+          <Image source={{ uri: media }} style={StyleSheet.absoluteFill} contentFit="cover" />
+          <LinearGradient
+            pointerEvents="none"
+            colors={['rgba(8,11,14,0.5)', 'rgba(8,11,14,0)', 'rgba(8,11,14,0)', 'rgba(8,11,14,0.92)']}
+            locations={[0, 0.34, 0.5, 1]}
+            style={StyleSheet.absoluteFill}
+          />
+          {pin.isVideo ? (
+            <View style={styles.pinPlay}>
+              <Svg width={14} height={14} viewBox="0 0 24 24" style={{ marginLeft: 2 }}>
+                <Path d="M9 7.5l8 4.5-8 4.5z" fill={flColor.bronze300} />
+              </Svg>
+            </View>
+          ) : null}
+        </>
+      ) : (
+        <View style={[StyleSheet.absoluteFill, styles.pinEmblem]} />
+      )}
+      <View style={styles.pinKind}>
+        <Text style={styles.pinKindText}>{pin.kind}</Text>
+      </View>
+      <Text style={styles.pinTitle} numberOfLines={2}>
+        {pin.title}
+      </Text>
+    </Pressable>
   );
 }
 
@@ -531,6 +584,57 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pinText: { fontSize: 11, fontWeight: '600', letterSpacing: 0.6, color: flColor.bronze400 },
+
+  // pinned media card (.dc §pinned)
+  pinCard: {
+    position: 'relative',
+    width: 150,
+    height: 196,
+    borderRadius: flRadius.lg,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    boxShadow: flShadow.card,
+  },
+  pinEmblem: { backgroundColor: flColor.charcoal800 },
+  pinPlay: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    width: 36,
+    height: 36,
+    marginTop: -18,
+    marginLeft: -18,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(8,11,14,0.66)',
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+  },
+  pinKind: {
+    position: 'absolute',
+    top: 9,
+    left: 9,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: flRadius.sm,
+    backgroundColor: 'rgba(8,11,14,0.72)',
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+  },
+  pinKindText: { fontSize: 8, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.bronze300 },
+  pinTitle: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    bottom: 12,
+    fontFamily: flFont.display,
+    fontSize: 15,
+    fontWeight: '600',
+    lineHeight: 17,
+    color: flColor.cream100,
+  },
 
   // my story
   storyStack: { gap: 12 },

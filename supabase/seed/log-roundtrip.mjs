@@ -2,7 +2,7 @@
 //
 // Exercises the same write sequence as src/domain/training/log-workout.ts against the live DB (authed,
 // RLS-scoped to self): logs a session with two lifts — Back Squat 325 (beats the seeded 315 → PR) and
-// Deadlift 395 (below the seeded 405 → NO PR) — then asserts the rows persisted, the PR was derived,
+// Deadlift 395 (below the seeded 485 → NO PR) — then asserts the rows persisted, the PR was derived,
 // an ACCOMPLISHMENT landed at the TOP of the timeline (what fetchLegacyData reads), and the active
 // chapter's workout_count incremented. Cleans everything up so the demo DB stays at the seeded baseline.
 //
@@ -74,9 +74,9 @@ try {
 
   check(exsAfter.length === 2, 'workout persisted with 2 exercises');
   check(setsAfter.length === 2, 'workout persisted with 2 performed sets');
-  check(prs.includes('Back Squat') && !prs.includes('Deadlift'), 'PR derived for Back Squat (325 > 315), NOT for Deadlift (395 < 405)');
+  check(prs.includes('Back Squat') && !prs.includes('Deadlift'), 'PR derived for Back Squat (325 > 315), NOT for Deadlift (395 < 485)');
   check(sqAfter?.[0]?.load_value === 325, 'Back Squat max is now 325');
-  check(dlAfter?.[0]?.load_value === 405, 'Deadlift max unchanged at 405');
+  check(dlAfter?.[0]?.load_value === 485, 'Deadlift max unchanged at 485');
   check(tlAfter[0].event_type === 'ACCOMPLISHMENT' && tlAfter[0].object_name === 'Back Squat — 325 lb PR', 'PR is the TOP timeline entry (what Legacy shows first)');
   check(chAfter.workout_count === (chapter.workout_count ?? 0) + 1, 'active chapter workout_count incremented');
 } finally {

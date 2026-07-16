@@ -65,6 +65,19 @@ export type Honor = {
   dateEarned: string
 }
 
+/** A Pinned Legacy item — the "My Museum" strip (Forge Legacy.dc.html §pinned). */
+export type PinKind = 'record' | 'chapter' | 'honor' | 'photo' | 'memory'
+export type Pin = {
+  id: string
+  kind: PinKind
+  title: string
+  subtitle?: string
+  /** Image (photo) or video URL; for a video pin this is the clip, `posterUrl` the still frame. */
+  mediaUrl?: string
+  posterUrl?: string
+  isVideo: boolean
+}
+
 export type LegacyData = {
   rankName: string
   rankSubTier: string
@@ -74,6 +87,8 @@ export type LegacyData = {
   dayCount: number
   featuredMoment: FeaturedMoment | null
   sealedChapters: Chapter[]
+  /** Pinned Legacy strip — real rows (spine), rendered before the "Pin an item" add-tile. */
+  pinned: Pin[]
   photos: LegacyPhoto[]
   totalPhotoCount: number
   timelineEntries: TimelineEntry[]

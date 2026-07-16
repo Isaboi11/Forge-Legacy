@@ -450,6 +450,35 @@ table (or a PR media column) + a video-display surface + the file. PO ruled: ava
 
 ---
 
+## 24. Pinned Legacy — real pins + the 485 deadlift video (Phase 3 follow-up, DONE)
+
+The "My Museum · Pinned Legacy" strip renders **real pins from the spine** — starting with the athlete's
+actual **485 lb Deadlift video**. This is the design's home for a record lift (the coach tip names exactly
+that); an earlier proposal for a new "Featured Record" band was **rejected by the PO as fabricated UI** —
+the Pinned strip already exists in `Forge Legacy.dc.html` with a native `isVideo` affordance. The
+`PinnedCard` is built faithfully to that `.dc` (150×196, top+bottom scrim, the play button, `kind` chip,
+`title`) — not restyled. Tapping a video pin opens a fullscreen player.
+
+- `0005_pins.sql` — a `pins` table (kind/title/media_url/poster_url/is_video/position) + owner RLS
+- `0006_storage_media.sql` — the public `media` bucket + owner-write policies (forces `public=true` even
+  if a private `media` bucket pre-existed from Phase 1's dashboard step — the bug we hit)
+- `PinnedCard` + fullscreen `pin-video` route via **`expo-video` ~56.1.4** (Expo Go-compatible; a custom
+  dev build needs one rebuild); `fetchLegacyData` reads pins; `seed-media.mjs` uploads clip + poster and
+  upserts the pin; Deadlift PR bumped to **485**
+- `avatar_url` is now owned solely by `upload-avatar.mjs` and pin media by `seed-media.mjs`, so a spine
+  reseed never wipes the photo or the pin
+- **Pinned is now REAL, superseding §21's "pinned transitional"** — the only remaining fixture-pending
+  Legacy sections are photos · accomplishments · honors · chapter goals
+
+**Proven live:** render-proof **20/20 match** (incl. `pinned[0] = 485 lb Deadlift · video`) + 1 sanctioned
+(`dayCount`) + 0 unexpected · round-trip PASS · RLS-write PASS · clip + poster public URLs return 200.
+tsc 0 · eslint 0 · `expo export` SSR-safe.
+
+The pin-curation sheet (L-13) stays inert (the "Pin an item" add-tile) — only the pins table + the real
+video pin need to exist for the demo.
+
+---
+
 ## Still open (carry into implementation)
 
 **Three buckets, and the distinction is load-bearing** — don't let a fixable miss (or a merely
@@ -511,6 +540,13 @@ Surfaced by the Squad Detail catalog; the same shape as the shipped Competition,
   (no backend; read-only by design today).
 
 ### ▸ Housekeeping / infra
+- **Return `media` to a private bucket + signed/RLS-gated URLs before multi-user.** `0006` flipped the
+  `media` bucket to `public=true` to serve the pin clip — but Phase 1's design had media PRIVATE
+  (visibility-gated). Public means a "private" pin's video is reachable by anyone with the URL, bypassing
+  the visibility firewall. So today **media is NOT governed by the firewall** — the one honest asterisk on
+  "the firewall is enforced." Fine for a single-user demo with the owner's own lift; **must be closed
+  before real users** (private bucket + `createSignedUrl` / RLS-scoped access, so visibility governs media
+  too). `avatars` staying public is fine (public identity); `media` is not.
 - **Wire a real migration runner before a second environment (staging/prod).** The Supabase migrations
   (`0001`–`0004`) are applied BY HAND via the SQL editor; the repo files are the source of record but
   nothing enforces they've been run. Fine at one environment — the moment there's a second DB,
