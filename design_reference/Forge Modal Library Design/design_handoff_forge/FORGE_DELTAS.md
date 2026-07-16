@@ -511,6 +511,10 @@ Surfaced by the Squad Detail catalog; the same shape as the shipped Competition,
   (no backend; read-only by design today).
 
 ### ▸ Housekeeping / infra
+- **Wire a real migration runner before a second environment (staging/prod).** The Supabase migrations
+  (`0001`–`0004`) are applied BY HAND via the SQL editor; the repo files are the source of record but
+  nothing enforces they've been run. Fine at one environment — the moment there's a second DB,
+  hand-applied migrations drift. Put the runner in place *before* that, not after something's out of sync.
 - Populate the structured fields across **all** programs/workouts (§6).
 - Build the real **asset manifest** (version/aspect/placement); swap prototype crops for high-res masters.
 - Implement the resolver **unit-test matrix** (resolver doc §16).
