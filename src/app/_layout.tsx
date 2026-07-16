@@ -7,6 +7,7 @@ import { useFonts } from 'expo-font';
 import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { AuthProvider, useAuth } from '@/lib/auth';
 import { WorkoutSessionProvider } from '@/hooks/useWorkoutSession';
 import { ShareProvider } from '@/hooks/useShareSheet';
 import { CeremonyProvider } from '@/hooks/useCeremony';
@@ -33,20 +34,39 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <WorkoutSessionProvider>
-        <ShareProvider>
-          <CeremonyProvider>
-            <AnimatedSplashOverlay />
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="post/[id]" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
-              <Stack.Screen name="squad/[id]" />
-              <Stack.Screen name="athlete/[id]" />
-              <Stack.Screen name="workout" options={{ presentation: 'fullScreenModal' }} />
-            </Stack>
-          </CeremonyProvider>
-        </ShareProvider>
-      </WorkoutSessionProvider>
+      <AuthProvider>
+        <WorkoutSessionProvider>
+          <ShareProvider>
+            <CeremonyProvider>
+              <AnimatedSplashOverlay />
+              <RootNavigator />
+            </CeremonyProvider>
+          </ShareProvider>
+        </WorkoutSessionProvider>
+      </AuthProvider>
     </ThemeProvider>
+  );
+}
+
+/**
+ * Auth gate: hold (splash) while the persisted session restores, then show the app if signed in or
+ * the sign-in screen if not. A real render-order dependency on auth state — not a preview shim.
+ */
+function RootNavigator() {
+  const { session, loading } = useAuth();
+  if (loading) return null;
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Protected guard={!!session}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="post/[id]" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
+        <Stack.Screen name="squad/[id]" />
+        <Stack.Screen name="athlete/[id]" />
+        <Stack.Screen name="workout" options={{ presentation: 'fullScreenModal' }} />
+      </Stack.Protected>
+      <Stack.Protected guard={!session}>
+        <Stack.Screen name="sign-in" />
+      </Stack.Protected>
+    </Stack>
   );
 }
