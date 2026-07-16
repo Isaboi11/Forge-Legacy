@@ -75,6 +75,13 @@ Each entry: **What changed · Why · What it supersedes.**
   waiting-on-an-asset state, not a code defect — the same board vocabulary as §11's waiting-on-a-
   domain-model.
 - **Why:** Never guess or default a user's sex.
+- **Rank seal (§17) is sex-NEUTRAL by design — a deliberate decision, consistent with this rule.**
+  The retired raster badges carried `established-m` / `established-f` variants; the vector `RankSeal`
+  is **one seal per family/level, no sex branch**. Leaning neutral (not sex-specific) is the correct
+  simplification under this section's principle — identity art should not branch on sex unless the
+  design is *emphatic*, and the `Forge Rank Seal.dc` is a single sex-neutral mark. Collapsing the
+  Established pair to one seal is therefore **not a fidelity gap**. Revisit ONLY if the design later
+  requires a sex-specific Established seal explicitly.
 
 ## 8. Workout scheduling — queue-based, not day-bound
 - **Decision:** Programs remain an **ordered queue** ("next workout is always startable today"),
@@ -232,6 +239,30 @@ Each entry: **What changed · Why · What it supersedes.**
 
 ---
 
+## 17. Rank badges — vector RankSeal replaces the alpha-flattened raster (DONE)
+- **What:** The raster hexagonal rank badges (`assets/artwork/ranks/<family>-<level>.png`) shipped
+  **alpha-flattened** (opaque dark backing → a black square around the hexagon) with **no clean master**
+  (the app PNGs were byte-identical to the design_reference "masters" — flattened at the design export,
+  same class as the workout-art / background flattens). Replaced by `src/components/forge/RankSeal.tsx`,
+  a react-native-svg port of the design's own `{{ seal }}` (`Forge Rank Seal.dc`): a **vector** frame
+  (machined rings, bevel gradient, curved family/tier text, recessed disc) + the flame **clipped to the
+  disc**. **Circular by construction → transparent corners → the black box is structurally impossible**
+  (not masked — the ornate silhouette + glow couldn't survive a clip-path anyway).
+- **The flame (hybrid, matching the .dc's own method):** RN-svg supports neither the .dc's CSS `filter`
+  on the raster flame nor `mix-blend-mode`. So the filter was **baked ONCE** onto `rank-bowlfire` (real
+  soft alpha, honestly un-flattened) → `assets/artwork/ranks/seal-flame.png`, composited clipped-to-disc;
+  the two blends (screen glow, multiply vignette) are **approximated in vector** (bronze radial / dark
+  stroke at opacity), screenshot-verified against the `.dc`. A **soft-alpha-retention test** guards the
+  flame so a future re-export flatten **fails loud**.
+- **Categorical swap (all 3 render sites — the pre-retirement grep caught 2 non-obvious ones):** Home
+  medallion (`ChapterTitleBlock`), Legacy hero (`ProgressBadge`), and the **rank-up ceremony**
+  (`useCeremony`). The 32 flattened PNGs + the raster resolver (`rank-source`/`rank-registry`/
+  `resolveRankArtwork`) were retired; `resolver.ts` keeps the tier vocabulary + `RANK_FAMILIES` (used by
+  `ceremony/queue` to order rank-ups) + `PLACEHOLDER_RANK`.
+- **Commits:** `008617e` (port + swap) · `36e66e8` (retirement).
+
+---
+
 ## Still open (carry into implementation)
 
 **Three buckets, and the distinction is load-bearing** — don't let a fixable miss (or a merely
@@ -250,6 +281,12 @@ not-yet-authored one) sit in the blocked pile:
   background sub-pass (source-specified, NOT cosmetics):** per-screen darkening-gradient opacity to each
   `.dc`'s stops (Home 0.15 · Legacy 0.30 · Squad 0.12→0.26→0.38) · **Squad Detail frame bronze
   radial-glows (catalog #2)** · mountain-fade choreography refinement. See §16.
+- **Rank seal per-family COLOR (§17)** — the vector `RankSeal` is DONE, but every family currently
+  renders the **Foundation bronze** palette; only the curved arc text differs family-to-family. The
+  `Forge Rank Seal.dc` families have **distinct color treatments** (Foundation bronze → … → Legacy).
+  A real fidelity gap, **not "done"** — but **DROPPED-FREE**: buildable now with the means in hand
+  (a family→palette map fed into the existing gradient stops — the *same shape* as the per-level
+  warmth modulation already proven in the seal). No blocker, just unbuilt.
 - **Squad-local cosmetics (held, genuinely cosmetic)** — #3 AppBar empty-title · #12 "Hall of Champions"
   rename — a per-screen cosmetics pass, not now. *(#2 frame radials moved up into the background sub-pass —
   it's source-specified, not cosmetic.)*
