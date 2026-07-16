@@ -342,12 +342,19 @@ not-yet-authored one) sit in the blocked pile:
   Squad Detail's two frame radials + a Friends apex radial + Friends photo→atmospheric + Legacy
   scrim-fade/parallax/portrait-scale. Two follow-ups remain (Squad Detail literal top-band split ·
   native-pass Legacy live-scroll check) — see §16.
-- **Rank seal per-family COLOR (§17)** — **now PARTIAL (see §18):** the Legacy seal renders real
-  per-rank ARTWORK (full distinct color) for the guard-clean families (established, legacy). Still open
-  for the families on the **vector fallback** (foundation, craftsman, architect, builder, legend) + the
-  Home medallion + ceremony seal, which all render the single **Foundation bronze** palette regardless of
-  family. **DROPPED-FREE**: a family→palette map fed into the existing gradient stops (same shape as the
-  per-level warmth already proven). No blocker, just unbuilt for the vector-rendered families.
+- **Rank seal per-family COLOR (§17/§18)** — **RESOLVED, and the DROPPED-FREE framing was a FALSE
+  PREMISE.** The design sources exactly ONE non-bronze family seal — **legend/hall = gold** (badge chrome:
+  diamonds `#D6AA5A`, rim `#F4DCA6→#9A7038`, text `#E4C489`/`#B98F4D`) — now built into the vector
+  `RankSeal` via a `family→accent` map (ruling A, commit `1a7fcc1`). Every other family is **bronze BY
+  SPEC** (`Forge Rank Seal.dc`: "held inside a machined bronze seal"; only *tier-warmth* varies, already
+  built) — **not a gap.** The imagined rich 7-family palette is **NOT sourced anywhere portable**: the
+  vector seal is monolithic bronze, the per-family raster art is alpha-flattened (mostly black boxes,
+  §18), and the Accent Palettes is a **global user theme** (`forge-theme.js`), *not* a per-rank scheme.
+  → **DEFERRED-until-authored** for the other six families (a distinct per-family palette is a design
+  authoring decision, not a port; mapping to the accent triples would be fabrication — rejected, ruling C).
+  *(Optional, derived-not-guess: established/legacy could be **sampled** from their clean raster if those
+  vector seals ever surface on a visible site — low payoff today (ceremony + the removed Home medallion).
+  Ruling B, held.)*
 - **Squad-local cosmetics (held, genuinely cosmetic)** — #3 AppBar empty-title · #12 "Hall of Champions"
   rename — a per-screen cosmetics pass, not now. *(#2 frame radials moved up into the background sub-pass —
   it's source-specified, not cosmetic.)*
