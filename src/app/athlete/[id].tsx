@@ -1,4 +1,4 @@
-import React from 'react';
+import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -7,35 +7,66 @@ import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
+import { SectionHeader } from '@/components/forge/composites/SectionHeader';
+import {
+  AccomplishmentCard,
+  CompactChapterRow,
+  CurrentChapter,
+  FeaturedMomentCard,
+  HonorInsignia,
+  MyStandard,
+  SealedChapterCard,
+  TimelineRow,
+} from '@/components/forge/profile-sections';
+import {
+  sectionVisible,
+  VISIBILITY_DEFAULTS,
+  type Audience,
+  type VisibilitySection,
+  type ViewerRelationship,
+} from '@/domain/visibility/profile-visibility';
 import { getPublicProfile } from '@/data/athlete-profile-placeholder';
+import { getSelfProfile } from '@/domain/profile/placeholder-data';
+import { LEGACY_DATA } from '@/data/legacy-placeholder';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 
 /**
- * Public Athlete Profile (/athlete/[id]) — the shared destination for the two seams that used to
- * dead-end: the squad roster row and the feed-post author. A root-Stack sibling, so it presents
- * full-screen. The `id` param is the athlete's NAME (the key every seam already carries).
+ * Public Athlete Profile (/athlete/[id]) — ONE renderer, driven by data, for every subject.
+ * Source of truth: Forge Public Profile.dc.html (sections + gating) + domain/visibility.
  *
- * DELIBERATELY THIN (honest to the data): the app has no per-athlete profile store, so this renders
- * ONLY what authoritatively exists — identity always, and the public identity markers rank +
- * athleteType when the athlete is a known roster member (see getPublicProfile). Every rich Legacy
- * section in the design (`Forge Public Profile.dc.html` — chapters, honors, stats, accomplishments,
- * transformation) has no data source and is OMITTED, not fabricated; building them means authoring a
- * per-athlete dataset + the visibility/Firewall model — a separate, PO-scoped unit ("Path 2").
+ * TWO-GATE section visibility: a gated section renders only if (a) the owner's per-section audience ×
+ * the viewer's relationship clears it (`sectionVisible`), AND (b) real data for it exists. Self bypasses
+ * gate (a) for its owned sections but still needs data. Core identity (rank, My Standard, Featured
+ * Moment, Honors) is always-shown, data permitting.
  *
- * The relationship actions (Challenge / Add Friend / Follow) are WRITE paths — rendered as
- * visibly-disabled inert shells, never fake mutations. Squad-scoped detail (accolades, join date)
- * never reaches here (findSquadAthlete strips it), so nothing squad-internal leaks onto this
- * cross-context public surface.
+ * DATA REALITY (honest, no fabrication): the app has a per-athlete dataset for exactly ONE subject —
+ * the signed-in athlete (`LEGACY_DATA`). So SELF renders rich; every OTHER athlete has no dataset and
+ * renders sparse (identity + inert actions only) — Path 2 (authoring per-athlete data) is deferred.
+ * Never invents sections. Reuses the SAME section components as the Legacy hub (profile-sections) — no
+ * fork. Squad-scoped accolades/since are stripped upstream (getPublicProfile), so nothing squad-internal
+ * leaks onto this cross-context surface.
+ *
+ * Prototype demo hooks (query params, no settings backend yet): `?as=<stranger|squadmate|friend|self>`
+ * overrides the viewer relationship (preview "how others see me"); `?<section>=<audience>` overrides one
+ * section's audience (e.g. `?chapter=private`) to demonstrate gating end-to-end.
  */
+
+const AUDIENCE_VALUES: readonly Audience[] = ['everyone', 'squads', 'friends', 'private'];
+const VIEWER_VALUES: readonly ViewerRelationship[] = ['self', 'friend', 'squadmate', 'stranger', 'following'];
+
+function firstParam(v: string | string[] | undefined): string | undefined {
+  return Array.isArray(v) ? v[0] : v;
+}
+
 export default function AthleteProfileRoute() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<Record<string, string | string[]>>();
   const router = useRouter();
-  const name = String(id ?? '').trim();
+  const name = String(firstParam(params.id) ?? '').trim();
 
   if (!name) {
     return (
       <View style={styles.root}>
-        <Bg />
+        <ScreenBackground image={SCREEN_BG.legacy} />
         <AppBar title="" onBack={() => router.back()} />
         <View style={styles.empty}>
           <Text style={styles.emptyText}>Profile unavailable.</Text>
@@ -44,16 +75,45 @@ export default function AthleteProfileRoute() {
     );
   }
 
+  const self = getSelfProfile();
+  const isSelfSubject = name === self.name;
   const profile = getPublicProfile(name);
-  const hasMarkers = Boolean(profile.rank || profile.athleteType);
+
+  // The one subject with an authored per-athlete dataset is self. Others are sparse (Path 2 deferred).
+  const data = isSelfSubject ? LEGACY_DATA : null;
+
+  // Viewer relationship (self → sees all owned; `?as=` previews another viewer). Non-self subjects are
+  // sparse regardless of relationship, so the derived value only matters for the self-as-other preview.
+  const asOverride = firstParam(params.as);
+  const viewer: ViewerRelationship =
+    asOverride && VIEWER_VALUES.includes(asOverride as ViewerRelationship)
+      ? (asOverride as ViewerRelationship)
+      : isSelfSubject
+        ? 'self'
+        : 'stranger';
+  const viewerIsSelf = viewer === 'self';
+
+  // Per-section audiences: launch defaults, with optional query overrides for the gating demo.
+  const audienceOf = (section: VisibilitySection): Audience => {
+    const override = firstParam(params[section]);
+    return override && AUDIENCE_VALUES.includes(override as Audience) ? (override as Audience) : VISIBILITY_DEFAULTS[section];
+  };
+  const show = (section: VisibilitySection, hasData: boolean) =>
+    sectionVisible({ audience: audienceOf(section), viewer, hasData, isSelf: viewerIsSelf });
+
+  const rankLabel = isSelfSubject
+    ? [LEGACY_DATA.rankName, LEGACY_DATA.rankSubTier].filter(Boolean).join(' · ')
+    : profile.rank;
+  const hasMarkers = Boolean(rankLabel || profile.athleteType);
+  const [recentSeal, ...olderSeals] = data ? data.sealedChapters : [];
 
   return (
     <View style={styles.root}>
-      <Bg />
+      <ScreenBackground image={SCREEN_BG.legacy} />
       <AppBar title="" onBack={() => router.back()} />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Identity hero — the only universally-public content. Avatar is initials (no photo store). */}
+        {/* ── Identity hero — the only universally-public content. Initials Avatar (no photo store). ── */}
         <View style={styles.hero}>
           <Avatar name={profile.name} size="profile" ring />
           <View style={styles.heroText}>
@@ -70,17 +130,16 @@ export default function AthleteProfileRoute() {
             <Text style={styles.handle}>{profile.handle}</Text>
             {hasMarkers ? (
               <View style={styles.markerRow}>
-                {profile.rank ? <Text style={styles.rank}>{profile.rank}</Text> : null}
-                {profile.rank && profile.athleteType ? <View style={styles.dot} /> : null}
+                {rankLabel ? <Text style={styles.rank}>{rankLabel}</Text> : null}
+                {rankLabel && profile.athleteType ? <View style={styles.dot} /> : null}
                 {profile.athleteType ? <Text style={styles.athleteType}>{profile.athleteType}</Text> : null}
               </View>
             ) : null}
           </View>
         </View>
 
-        {/* Relationship actions — WRITE paths, so visibly-disabled inert shells (never fake). Hidden
-            for self (you don't friend/challenge yourself). */}
-        {!profile.isSelf ? (
+        {/* Relationship actions — WRITE paths, so visibly-disabled inert shells (never fake). Self hidden. */}
+        {!isSelfSubject ? (
           <View style={styles.actionsSection}>
             <View style={styles.actionRow}>
               <InertAction glyph={<SwordsGlyph />} label="Challenge" />
@@ -91,7 +150,81 @@ export default function AthleteProfileRoute() {
           </View>
         ) : null}
 
-        {/* Footer flourish (design parity) — no fabricated Legacy sections above it. */}
+        {data ? (
+          <>
+            {/* My Standard — always-shown core identity, read-only on the public surface */}
+            {data.standard ? (
+              <View style={styles.standardPad}>
+                <MyStandard standard={data.standard} />
+              </View>
+            ) : null}
+
+            {/* Current Chapter — gated (chapter) */}
+            {show('chapter', Boolean(data.activeChapter)) && data.activeChapter ? (
+              <CurrentChapter chapter={data.activeChapter} dayCount={data.dayCount} />
+            ) : null}
+
+            {/* Featured Legacy Moment — always-shown */}
+            {data.featuredMoment ? (
+              <View style={styles.sectionPad}>
+                <Text style={styles.overline}>Featured Legacy Moment</Text>
+                <FeaturedMomentCard moment={data.featuredMoment} />
+              </View>
+            ) : null}
+
+            {/* Chapter History — gated (history) */}
+            {show('history', Boolean(recentSeal)) && recentSeal ? (
+              <View style={[styles.sectionPad, styles.storyStack]}>
+                <SealedChapterCard chapter={recentSeal} />
+                {olderSeals.map((c) => (
+                  <CompactChapterRow key={c.id} chapter={c} />
+                ))}
+              </View>
+            ) : null}
+
+            {/* Timeline — gated (timeline) */}
+            {show('timeline', data.timelineEntries.length > 0) ? (
+              <View style={styles.sectionPad}>
+                <Text style={styles.overlineTight}>Recent</Text>
+                <View>
+                  {data.timelineEntries.map((it) => (
+                    <TimelineRow key={it.id} entry={it} />
+                  ))}
+                </View>
+              </View>
+            ) : null}
+
+            {/* Accomplishments — gated (accomplishments) */}
+            {show('accomplishments', data.accomplishments.length > 0) ? (
+              <View style={styles.section}>
+                <View style={styles.sectionHeaderPad}>
+                  <SectionHeader label="Accomplishments" />
+                </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stripPad}>
+                  {data.accomplishments.map((a) => (
+                    <AccomplishmentCard key={a.id} item={a} />
+                  ))}
+                </ScrollView>
+              </View>
+            ) : null}
+
+            {/* Honors — always-shown */}
+            {data.honors.length > 0 ? (
+              <View style={styles.section}>
+                <View style={styles.sectionHeaderPad}>
+                  <SectionHeader label="Honors" />
+                </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.honorStripPad}>
+                  {data.honors.map((h) => (
+                    <HonorInsignia key={h.id} honor={h} />
+                  ))}
+                </ScrollView>
+              </View>
+            ) : null}
+          </>
+        ) : null}
+
+        {/* Footer flourish */}
         <View style={styles.footer}>
           <View style={styles.rule} />
           <View style={styles.diamond} />
@@ -103,12 +236,8 @@ export default function AthleteProfileRoute() {
   );
 }
 
-function Bg() {
-  return <ScreenBackground image={SCREEN_BG.legacy} />;
-}
-
 /** A relationship action rendered visibly disabled — an honest inert shell, no write path. */
-function InertAction({ glyph, label }: { glyph: React.ReactNode; label: string }) {
+function InertAction({ glyph, label }: { glyph: ReactNode; label: string }) {
   return (
     <View accessibilityRole="button" accessibilityState={{ disabled: true }} accessibilityLabel={`${label} — coming soon`} style={styles.action}>
       {glyph}
@@ -184,6 +313,33 @@ const styles = StyleSheet.create({
   },
   actionLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
   actionNote: { fontSize: 11.5, lineHeight: 17, color: flColor.gray600 },
+
+  // section scaffolding (matches the Legacy hub spacing)
+  standardPad: { paddingTop: 20 },
+  section: { marginTop: 40 },
+  sectionPad: { marginTop: 40, paddingHorizontal: 24 },
+  sectionHeaderPad: { paddingHorizontal: 24 },
+  stripPad: { gap: 12, paddingHorizontal: 24, paddingTop: 8 },
+  honorStripPad: { gap: 18, paddingHorizontal: 24, paddingTop: 10 },
+  storyStack: { gap: 12 },
+  overline: {
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 2.2,
+    textTransform: 'uppercase',
+    color: flColor.gray600,
+    paddingBottom: 12,
+    paddingHorizontal: 2,
+  },
+  overlineTight: {
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 1.8,
+    textTransform: 'uppercase',
+    color: flColor.gray600,
+    paddingHorizontal: 2,
+    paddingBottom: 4,
+  },
 
   footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 14, paddingHorizontal: 24, paddingTop: 40 },
   rule: { flex: 1, maxWidth: 90, height: 1, backgroundColor: flColor.bronzeBorderSubtle },
