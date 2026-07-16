@@ -12,7 +12,7 @@ import { SectionHeader } from '@/components/forge/composites/SectionHeader';
 import { Button } from '@/components/forge/composites/Button';
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { getSelfProfile } from '@/domain/profile/placeholder-data';
+import { useProfile } from '@/lib/profile';
 import { INITIAL_FAVORITE_IDS, SQUADS_PLACEHOLDER } from '@/data/squads-placeholder';
 import type { Squad, SquadMember } from '@/data/squads-placeholder';
 
@@ -44,7 +44,7 @@ import type { Squad, SquadMember } from '@/data/squads-placeholder';
  */
 
 export default function SquadsScreen() {
-  const selfName = getSelfProfile().name;
+  const selfName = useProfile().profile?.name ?? '';
   const router = useRouter();
   const [favoriteIds, setFavoriteIds] = useState<string[]>(INITIAL_FAVORITE_IDS);
 

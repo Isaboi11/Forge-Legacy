@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState, type ReactNode } from 'react';
+import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -10,12 +10,13 @@ import { SectionHeader } from '@/components/forge/composites/SectionHeader';
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { Image } from 'expo-image';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { getSelfProfile } from '@/domain/profile/placeholder-data';
+import { useProfile } from '@/lib/profile';
 import type { Sex } from '@/domain/profile/schema';
 import { PLACEHOLDER_RANK, type RankFamily, type RankLevel } from '@/domain/rank-artwork/resolver';
 import { resolveRankBadge } from '@/domain/rank-artwork/badge-art';
 import { RankSeal } from '@/components/forge/RankSeal';
-import { LEGACY_DATA } from '@/data/legacy-placeholder';
+import { fetchLegacyData } from '@/data/legacy-live';
+import { useQuery } from '@/lib/useQuery';
 import {
   AccomplishmentCard,
   CompactChapterRow,
@@ -39,9 +40,11 @@ import {
  * (Transformation/Photos/Trophy preview rows + Accomplishments + Honors), and the
  * closing inscription.
  *
- * ALL Legacy content is PLACEHOLDER (`LEGACY_DATA`) — there is no Chapters/Legacy
- * backend yet; nothing here is labeled real. The athlete name comes from the
- * placeholder profile (`getSelfProfile`).
+ * Data (Phase 2): the spine sections — rank · standard · active + sealed chapters · timeline ·
+ * featured moment — read LIVE from Supabase via `fetchLegacyData` (`useQuery`). The athlete identity
+ * comes from the live `useProfile`. Only four sections remain seeded — photos · accomplishments ·
+ * honors · chapter goals — marked in one place (`LEGACY_FIXTURE_PENDING`) because their tables aren't
+ * applied yet. So it's always known which half is real.
  *
  * Hero identity (corrected — see FORGE_DELTAS §15): the LEFT slot is the athlete's PROFILE
  * PORTRAIT (a photo, framed by a faint rank-seal ring). No profile-photo system exists yet, so it
@@ -63,10 +66,8 @@ import {
  */
 
 export default function LegacyScreen() {
-  const profile = getSelfProfile();
-  const data = LEGACY_DATA;
-  const chapter = data.activeChapter;
-  const [recentSeal, ...olderSeals] = data.sealedChapters;
+  const { profile } = useProfile();
+  const { data, loading, error, refetch } = useQuery(fetchLegacyData, []);
   // Scroll-driven hero choreography (the .dc "premium scroll choreography"): the background scrim
   // fades in (ScreenBackground `scrimFade`), the hero parallaxes up + fades, and the portrait scales
   // down from its left edge. All native-driver transform/opacity.
@@ -74,6 +75,29 @@ export default function LegacyScreen() {
   const heroTranslateY = scrollY.interpolate({ inputRange: [0, 100], outputRange: [0, -12], extrapolate: 'extend' }); // -y*0.12
   const heroOpacity = scrollY.interpolate({ inputRange: [0, 220], outputRange: [1, 0.1], extrapolate: 'clamp' }); // 1 - p*0.9
   const portraitScale = scrollY.interpolate({ inputRange: [0, 220], outputRange: [1, 0.76], extrapolate: 'clamp' }); // 1 - p*0.24
+
+  // Wait for both the live Legacy read and the shared profile; surface a retryable error.
+  if (loading || !data || !profile) {
+    return (
+      <LegacyShell scrollY={scrollY} avatarName={profile?.name ?? ''}>
+        {error ? (
+          <LegacyError onRetry={refetch} />
+        ) : (
+          <ActivityIndicator color={flColor.bronze400} />
+        )}
+      </LegacyShell>
+    );
+  }
+  if (error) {
+    return (
+      <LegacyShell scrollY={scrollY} avatarName={profile.name}>
+        <LegacyError onRetry={refetch} />
+      </LegacyShell>
+    );
+  }
+
+  const chapter = data.activeChapter;
+  const [recentSeal, ...olderSeals] = data.sealedChapters;
 
   return (
     <View style={styles.root}>
@@ -242,6 +266,39 @@ export default function LegacyScreen() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
+ * The Legacy chrome (background + AppBar) with a centered status slot — reused for the loading and
+ * error states so a slow/failed fetch still shows the framed screen, not a blank flash.
+ */
+function LegacyShell({
+  scrollY,
+  avatarName,
+  children,
+}: {
+  scrollY: Animated.Value;
+  avatarName: string;
+  children: ReactNode;
+}) {
+  return (
+    <View style={styles.root}>
+      <ScreenBackground image={SCREEN_BG.legacyMountains} overlay={{ flat: 'rgba(5,5,5,0.30)' }} scrimFade scrollY={scrollY} />
+      <AppBar title="Legacy" serif avatar={<Avatar name={avatarName} size="appBar" />} onAvatar={() => {}} />
+      <View style={styles.statusWrap}>{children}</View>
+    </View>
+  );
+}
+
+function LegacyError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <>
+      <Text style={styles.statusText}>Couldn&apos;t load your Legacy.</Text>
+      <Pressable onPress={onRetry} accessibilityRole="button" accessibilityLabel="Retry" style={styles.retryBtn}>
+        <Text style={styles.retryText}>Try again</Text>
+      </Pressable>
+    </>
+  );
+}
+
+/**
  * Hero PROFILE PORTRAIT — the athlete's photo, framed by a faint rank-seal ring. No profile-photo
  * system exists yet, so it shows the initials placeholder (the sanctioned identity mark, per
  * FORGE_DELTAS §10) inside the seal ring; a real photo drops into this same slot when that system
@@ -340,6 +397,12 @@ function PlusIcon({ color = flColor.bronze400 }: { color?: string }) {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { paddingBottom: 44 },
+
+  // loading / error status slot
+  statusWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, paddingHorizontal: 40 },
+  statusText: { color: flColor.gray400, fontFamily: flFont.sans, fontSize: 15, textAlign: 'center' },
+  retryBtn: { paddingVertical: 10, paddingHorizontal: 22, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronze400 },
+  retryText: { color: flColor.bronze400, fontFamily: flFont.sans, fontSize: 14, fontWeight: '600' },
 
   // hero identity
   identityRow: {

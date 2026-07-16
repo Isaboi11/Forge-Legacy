@@ -18,6 +18,7 @@ import { LIVE_TRAINING_USERS } from '@/data/live-training-placeholder';
 import { flColor } from '@/constants/foundation';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { getSelfProfile } from '@/domain/profile/placeholder-data';
+import { useProfile } from '@/lib/profile';
 import { getActiveProgram, getNextWorkout } from '@/domain/training/active-program';
 import { resolveHomeWorkoutArtwork } from '@/domain/home-artwork/resolver';
 import { enrichSessionExercises } from '@/domain/home-artwork/catalog';
@@ -54,6 +55,9 @@ export default function HomeScreen() {
   const [friendSheetOpen, setFriendSheetOpen] = useState(false);
   const router = useRouter();
   const { startWorkout } = useWorkoutSession();
+  // Live identity for the AppBar avatar. The artwork resolver below keeps its synchronous seed
+  // profile — it must resolve the hero art on the first frame, and the art is static regardless.
+  const { profile: liveProfile } = useProfile();
 
   // Static this session (no athlete-progress backend) — resolve once.
   const { profile, program, workout, resolved } = useMemo(() => {
@@ -77,7 +81,7 @@ export default function HomeScreen() {
 
       <AppBar
         title={<HomeWordmark />}
-        avatar={<Avatar name={profile.name} size="appBar" />}
+        avatar={<Avatar name={liveProfile?.name ?? profile.name} size="appBar" />}
         onAvatar={() => {
           // P-1 Profile is not yet implemented.
         }}

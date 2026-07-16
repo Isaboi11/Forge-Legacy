@@ -8,6 +8,7 @@ import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { ProfileProvider } from '@/lib/profile';
 import { WorkoutSessionProvider } from '@/hooks/useWorkoutSession';
 import { ShareProvider } from '@/hooks/useShareSheet';
 import { CeremonyProvider } from '@/hooks/useCeremony';
@@ -35,14 +36,16 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AuthProvider>
-        <WorkoutSessionProvider>
-          <ShareProvider>
-            <CeremonyProvider>
-              <AnimatedSplashOverlay />
-              <RootNavigator />
-            </CeremonyProvider>
-          </ShareProvider>
-        </WorkoutSessionProvider>
+        <ProfileProvider>
+          <WorkoutSessionProvider>
+            <ShareProvider>
+              <CeremonyProvider>
+                <AnimatedSplashOverlay />
+                <RootNavigator />
+              </CeremonyProvider>
+            </ShareProvider>
+          </WorkoutSessionProvider>
+        </ProfileProvider>
       </AuthProvider>
     </ThemeProvider>
   );

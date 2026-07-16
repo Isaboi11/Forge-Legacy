@@ -9,7 +9,7 @@ import { BG_RADIAL } from '@/constants/backgrounds';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { FeedPostCard } from '@/components/forge/compositions/FeedPostCard';
 import { getFriendsFeed } from '@/data/post-placeholder';
-import { getSelfProfile } from '@/domain/profile/placeholder-data';
+import { useProfile } from '@/lib/profile';
 import { useShareSheet } from '@/hooks/useShareSheet';
 import { flColor, flRadius, flShadow } from '@/constants/foundation';
 
@@ -30,7 +30,7 @@ import { flColor, flRadius, flShadow } from '@/constants/foundation';
 export default function FriendsFeedRoute() {
   const router = useRouter();
   const { openShare } = useShareSheet();
-  const profile = getSelfProfile();
+  const { profile } = useProfile();
   const posts = getFriendsFeed();
 
   const openPost = (id: string) => router.push({ pathname: '/post/[id]', params: { id } });
@@ -53,7 +53,7 @@ export default function FriendsFeedRoute() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* composer prompt — inert (compose is not part of this read-only viewer) */}
         <Pressable onPress={() => {}} accessibilityRole="button" accessibilityLabel="Share a moment" style={styles.composer}>
-          <Avatar name={profile.name} size="listRow" />
+          <Avatar name={profile?.name ?? ''} size="listRow" />
           <Text style={styles.composerText}>What’s worth remembering today?</Text>
         </Pressable>
 

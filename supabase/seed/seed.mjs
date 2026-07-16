@@ -25,12 +25,15 @@ const { error: pe } = await sb.from('profiles').update({
 }).eq('id', uid);
 if (pe) throw new Error('profile: ' + pe.message);
 
-// chapters — exactly one active (Into the Iron)
+// chapters — exactly one active (Into the Iron). Counts + end dates mirror the L-1 fixture (LEGACY_DATA)
+// so the live render matches it; sealed end dates are chosen so the computed compact spans equal the
+// fixture's (Power Block 110d, Foundations 71d). Only `dayCount` is intentionally live-derived (days
+// since the active chapter's start) and therefore differs from the fixture's stale hardcode.
 const chapters = [
-  { name: 'Into the Iron', start_date: '2026-04-06', end_date: null, sealed_at: null, is_active: true, workout_count: 0, honor_count: 0, reflection: null },
+  { name: 'Into the Iron', start_date: '2026-04-06', end_date: null, sealed_at: null, is_active: true, workout_count: 47, honor_count: 5, reflection: null },
   { name: 'Road to 405', start_date: '2026-01-15', end_date: '2026-04-04', sealed_at: '2026-06-27T00:00:00Z', is_active: false, workout_count: 47, honor_count: 3, reflection: 'I proved to myself that consistency over six weeks beats intensity over one.' },
-  { name: 'Power Block', start_date: '2025-11-01', end_date: '2026-02-01', sealed_at: '2026-02-28T00:00:00Z', is_active: false, workout_count: 62, honor_count: 7, reflection: null },
-  { name: 'Foundations', start_date: '2025-07-01', end_date: '2025-09-01', sealed_at: '2025-09-10T00:00:00Z', is_active: false, workout_count: 38, honor_count: 4, reflection: null },
+  { name: 'Power Block', start_date: '2025-11-01', end_date: '2026-02-19', sealed_at: '2026-02-28T00:00:00Z', is_active: false, workout_count: 62, honor_count: 7, reflection: null },
+  { name: 'Foundations', start_date: '2025-07-01', end_date: '2025-09-10', sealed_at: '2025-09-10T00:00:00Z', is_active: false, workout_count: 38, honor_count: 4, reflection: null },
 ].map((c) => ({ ...c, athlete_id: uid }));
 const { data: chRows, error: ce } = await sb.from('chapters').insert(chapters).select('id,name');
 if (ce) throw new Error('chapters: ' + ce.message);

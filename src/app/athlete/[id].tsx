@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
 
@@ -25,9 +25,10 @@ import {
   type VisibilitySection,
   type ViewerRelationship,
 } from '@/domain/visibility/profile-visibility';
-import { getPublicProfile } from '@/data/athlete-profile-placeholder';
-import { getSelfProfile } from '@/domain/profile/placeholder-data';
-import { LEGACY_DATA } from '@/data/legacy-placeholder';
+import { fetchPublicProfile } from '@/domain/profile/live';
+import { useProfile } from '@/lib/profile';
+import { fetchLegacyData } from '@/data/legacy-live';
+import { useQuery } from '@/lib/useQuery';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 
 /**
@@ -40,8 +41,8 @@ import { flColor, flFont, flRadius } from '@/constants/foundation';
  * Moment, Honors) is always-shown, data permitting.
  *
  * DATA REALITY (honest, no fabrication): the app has a per-athlete dataset for exactly ONE subject —
- * the signed-in athlete (`LEGACY_DATA`). So SELF renders rich; every OTHER athlete has no dataset and
- * renders sparse (identity + inert actions only) — Path 2 (authoring per-athlete data) is deferred.
+ * the signed-in athlete (live `fetchLegacyData`). So SELF renders rich; every OTHER athlete has no
+ * dataset and renders sparse (identity + inert actions only) — Path 2 (per-athlete data) is deferred.
  * Never invents sections. Reuses the SAME section components as the Legacy hub (profile-sections) — no
  * fork. Squad-scoped accolades/since are stripped upstream (getPublicProfile), so nothing squad-internal
  * leaks onto this cross-context surface.
@@ -62,25 +63,44 @@ export default function AthleteProfileRoute() {
   const params = useLocalSearchParams<Record<string, string | string[]>>();
   const router = useRouter();
   const name = String(firstParam(params.id) ?? '').trim();
+  const goBack = () => router.back();
 
-  if (!name) {
+  // Live (Phase 2): the shared self identity, the subject's public profile, and — for self only — the
+  // rich Legacy dataset. Non-self subjects have no per-athlete store (Path 2 deferred) → sparse.
+  const { profile: self, loading: selfLoading } = useProfile();
+  const { data: profile, loading: pLoading, error: pError } = useQuery(() => fetchPublicProfile(name), [name]);
+  const isSelfSubject = !!self && name === self.name;
+  const { data: legacy, loading: lLoading } = useQuery(
+    () => (isSelfSubject ? fetchLegacyData() : Promise.resolve(null)),
+    [isSelfSubject],
+  );
+
+  if (!name || pError) {
     return (
-      <View style={styles.root}>
-        <ScreenBackground image={SCREEN_BG.legacy} overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
-        <AppBar title="" onBack={() => router.back()} />
-        <View style={styles.empty}>
-          <Text style={styles.emptyText}>Profile unavailable.</Text>
-        </View>
-      </View>
+      <ProfileShell onBack={goBack}>
+        <Text style={styles.emptyText}>Profile unavailable.</Text>
+      </ProfileShell>
+    );
+  }
+  // Wait for the subject profile and — once we know it's self — the Legacy read, so the rich sections
+  // don't pop in after the identity hero.
+  if (!profile || selfLoading || pLoading) {
+    return (
+      <ProfileShell onBack={goBack}>
+        <ActivityIndicator color={flColor.bronze400} />
+      </ProfileShell>
+    );
+  }
+  if (isSelfSubject && (lLoading || !legacy)) {
+    return (
+      <ProfileShell onBack={goBack}>
+        <ActivityIndicator color={flColor.bronze400} />
+      </ProfileShell>
     );
   }
 
-  const self = getSelfProfile();
-  const isSelfSubject = name === self.name;
-  const profile = getPublicProfile(name);
-
   // The one subject with an authored per-athlete dataset is self. Others are sparse (Path 2 deferred).
-  const data = isSelfSubject ? LEGACY_DATA : null;
+  const data = isSelfSubject ? legacy : null;
 
   // Viewer relationship (self → sees all owned; `?as=` previews another viewer). Non-self subjects are
   // sparse regardless of relationship, so the derived value only matters for the self-as-other preview.
@@ -101,9 +121,8 @@ export default function AthleteProfileRoute() {
   const show = (section: VisibilitySection, hasData: boolean) =>
     sectionVisible({ audience: audienceOf(section), viewer, hasData, isSelf: viewerIsSelf });
 
-  const rankLabel = isSelfSubject
-    ? [LEGACY_DATA.rankName, LEGACY_DATA.rankSubTier].filter(Boolean).join(' · ')
-    : profile.rank;
+  const rankLabel =
+    isSelfSubject && data ? [data.rankName, data.rankSubTier].filter(Boolean).join(' · ') : profile.rank;
   const hasMarkers = Boolean(rankLabel || profile.athleteType);
   const [recentSeal, ...olderSeals] = data ? data.sealedChapters : [];
 
@@ -232,6 +251,17 @@ export default function AthleteProfileRoute() {
         </View>
         <Text style={styles.footerHandle}>{profile.handle}</Text>
       </ScrollView>
+    </View>
+  );
+}
+
+/** The profile chrome (background + back bar) with a centered slot — reused for empty/loading/error. */
+function ProfileShell({ onBack, children }: { onBack: () => void; children: ReactNode }) {
+  return (
+    <View style={styles.root}>
+      <ScreenBackground image={SCREEN_BG.legacy} overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
+      <AppBar title="" onBack={onBack} />
+      <View style={styles.empty}>{children}</View>
     </View>
   );
 }

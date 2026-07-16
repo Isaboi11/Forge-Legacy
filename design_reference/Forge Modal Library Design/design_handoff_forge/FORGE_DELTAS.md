@@ -347,6 +347,39 @@ Each entry: **What changed · Why · What it supersedes.**
 
 ---
 
+## 21. Legacy + Profile read from Supabase — live spine, one marked transitional half (Phase 2, DONE)
+
+The Legacy hub, the Public Athlete Profile (self), and every AppBar avatar now read **live from Supabase**
+instead of the fixtures. The presentation components are byte-for-byte unchanged — only the data source
+swapped, through one reusable hook (`src/lib/useQuery.ts` → `{ data, loading, error, refetch }`).
+
+**Live (spine):** rank · My Standard · active + sealed chapters · timeline · **featured moment** (derived
+from the most-recent `CHAPTER_SEALED` timeline event + that chapter's reflection, not hardcoded) · the
+signed-in identity (`useProfile`) · the self public-profile view.
+
+**The transitional half — the ONLY parts still on the fixture** (their tables are designed in
+`supabase/design/0002_full_model.sql` but NOT applied; spine-only through Phase 3). Kept in ONE
+clearly-named source so it's never ambiguous which half is real:
+- `src/data/legacy-fixture-pending.ts` → `LEGACY_FIXTURE_PENDING` (photos · accomplishments · honors +
+  their counts) and `CHAPTER_GOALS_PENDING` (chapter goals, keyed by name — the goals table isn't
+  applied; the chapters themselves are live). Every field carries a `// FIXTURE until <table> lands`
+  boundary comment.
+- When a table lands, delete its entry there and read it live. Nothing else on the screen is fixture.
+
+**Render-proof (data-equivalence, not pixels):** `supabase/seed/render-proof.mjs` runs the live spine
+query through the same mapping the app uses and diffs every *rendered* value against the fixture.
+Result: **18/19 rendered values byte-match; 0 unexpected diffs.** The single diff is **sanctioned and
+was pre-approved** — `dayCount` is now live-derived (days since the active chapter's start = 101) vs the
+fixture's stale hardcode (85); it cannot match without changing the "Began Apr 6, 2026" label, so the
+fixture value was simply wrong. The seed (`supabase/seed/seed.mjs`) was tightened to mirror the fixture
+exactly elsewhere (active-chapter counts; two sealed end dates chosen so the computed compact spans equal
+the fixture's 110d/71d). `fetchPublicProfile` was corrected to `@`-prefix the handle (fixture parity).
+
+Verified: tsc 0 · eslint 0 · 183 tests · `expo export` 19 routes (SSR-safe — the Supabase client is
+guarded for Node static render; `ProfileProvider`/`useQuery` run clean at render time).
+
+---
+
 ## Still open (carry into implementation)
 
 **Three buckets, and the distinction is load-bearing** — don't let a fixable miss (or a merely

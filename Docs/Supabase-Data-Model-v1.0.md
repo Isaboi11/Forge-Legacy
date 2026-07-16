@@ -414,6 +414,8 @@ Buckets: **`avatars`** (`avatars/<uid>.jpg`, public-read) · **`media`** (`media
 
 **SCHEMA-ONLY (design now, build later):** `workouts` · `workout_exercises` · `workout_sets` · `goals`(standalone) · `program_instances` · rank computation + `rank_events` · `friendships` · `visibility_settings`(persisted) · `honor_instances` · `media_assets` · `reactions`(relational) · squad goals/missions/streak · post `audience`/`community_id`/`milestone_type` · communities.
 
+**Phase 2 update (2026-07-16):** Legacy + Profile now read the DEMO-LIVE spine (`profiles`/`chapters`/`timeline_events`, incl. a derived featured moment) live from Supabase. The four still-placeholder Legacy sections above — **photos · accomplishments · honors · chapter goals** — are consolidated into a single explicitly-named transitional source, `src/data/legacy-fixture-pending.ts` (`LEGACY_FIXTURE_PENDING` + `CHAPTER_GOALS_PENDING`), each field carrying a `// FIXTURE until <table> lands` boundary. When `media_assets` / an accomplishments table / `honor_instances` / a standalone `goals` table is applied, delete its entry there and read it live. See FORGE_DELTAS §21.
+
 ---
 
 ## 12. Migration SQL
