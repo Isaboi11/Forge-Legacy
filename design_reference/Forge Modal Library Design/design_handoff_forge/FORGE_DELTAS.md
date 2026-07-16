@@ -293,6 +293,23 @@ Each entry: **What changed · Why · What it supersedes.**
   **conscious call**: does clean badge art propagate to Home/ceremony, or do those stay vector-watermark
   by design? Decide it deliberately — don't let it drift silently.
 
+## 19. Home hero rank medallion removed — INTENTIONAL-TEMPORARY (not a fidelity regression)
+- **What:** The Home hero's top-right rank medallion (the faint vector `RankSeal` watermark @0.42
+  opacity) is **removed** — `ChapterTitleBlock` gained a `showRankMedallion` flag (default true) and
+  Home passes `false`. **Product decision:** it was a placeholder; the user will supply **cycling
+  artwork** later. A future visual audit should read the empty top-right as *deliberate*, NOT a miss
+  vs `Forge Home.dc.html`.
+- **Scope:** Home only. **Legacy's hero seal is untouched** — it's a separate component
+  (`legacy.tsx` ProgressBadge, the real Established badge art from §18), not `ChapterTitleBlock`.
+  Confirmed still rendering after the change.
+- **Clean removal:** the medallion was `position:absolute` (a watermark behind the title), so the
+  chapter title / week-day / principle keep their exact layout — nothing reflows, and the whole
+  medallion (incl. the fallback ring) is gated off, so **no empty ring or placeholder box remains**.
+- **Reversal:** trivial — set `showRankMedallion` back to true (or wire the cycling artwork into the
+  medallion slot). `PLACEHOLDER_RANK` import dropped from Home; ChapterTitleBlock keeps the medallion
+  machinery behind the flag.
+- **Commit:** `chore(home): remove placeholder rank medallion pending cycling artwork`.
+
 ---
 
 ## Still open (carry into implementation)

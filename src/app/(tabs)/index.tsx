@@ -21,7 +21,6 @@ import { getSelfProfile } from '@/domain/profile/placeholder-data';
 import { getActiveProgram, getNextWorkout } from '@/domain/training/active-program';
 import { resolveHomeWorkoutArtwork } from '@/domain/home-artwork/resolver';
 import { enrichSessionExercises } from '@/domain/home-artwork/catalog';
-import { PLACEHOLDER_RANK } from '@/domain/rank-artwork/resolver';
 
 /** AppBar wordmark — pillar mark + serif "Forge Legacy", left-aligned. */
 function HomeWordmark() {
@@ -47,8 +46,9 @@ function HomeWordmark() {
  * (`getSelfProfile()`), and the principle (`todaysPrinciple`). PLACEHOLDER
  * (no backend yet): chapter/week (HOME_DATA + HOME_CHAPTER), the Mission tile
  * goal, live presence + friend activity (LIVE_TRAINING_USERS / FRIEND_ACTIVITY),
- * and the Quick Actions. The rank medallion is a pending-asset placeholder — no
- * rank artwork exists yet, so it is not fabricated.
+ * and the Quick Actions. The Home hero rank medallion is temporarily REMOVED
+ * (`showRankMedallion={false}`) pending user-supplied cycling artwork — see FORGE_DELTAS §19.
+ * (Legacy's hero seal is a separate component and stays.)
  */
 export default function HomeScreen() {
   const [friendSheetOpen, setFriendSheetOpen] = useState(false);
@@ -89,8 +89,7 @@ export default function HomeScreen() {
           chapterName={HOME_CHAPTER.name}
           weekDay={HOME_CHAPTER.weekDay}
           principle={todaysPrinciple()}
-          rankFamily={PLACEHOLDER_RANK.family}
-          rankLevel={PLACEHOLDER_RANK.level}
+          showRankMedallion={false}
         />
 
         <View style={styles.content}>

@@ -10,10 +10,11 @@
  * Data: chapter number/name + week/day = HOME_DATA placeholder (no Chapter/Legacy
  * backend yet); the principle is REAL (`todaysPrinciple`).
  *
- * ⚠ Rank medallion: now shows the REAL imported rank badge art (`rankArtwork`, resolved
- * via `src/domain/rank-artwork`) as a top-right accent. The TIER is still a placeholder
- * (`PLACEHOLDER_RANK` — no rank backend yet). When `rankArtwork` is absent it falls back
- * to a graceful faint bronze seal (never a fabricated badge).
+ * Rank medallion (top-right watermark): the vector `RankSeal` at low opacity, gated by
+ * `showRankMedallion` (default true). Home currently passes `false` — the medallion is a placeholder
+ * pending user-supplied cycling artwork (see FORGE_DELTAS); when false the whole medallion, including
+ * the fallback ring, is omitted so no empty box is left behind. (Legacy's hero seal is a separate
+ * component — `legacy.tsx` ProgressBadge — and is unaffected.)
  */
 
 import React from 'react'
@@ -30,6 +31,12 @@ export interface ChapterTitleBlockProps {
   /** Rank tier for the medallion (the vector RankSeal); omit → placeholder seal. */
   rankFamily?: string
   rankLevel?: 1 | 2 | 3 | 4
+  /**
+   * Show the top-right rank medallion (default true). When false the whole medallion — including the
+   * fallback ring — is omitted, leaving no empty box. Home passes false: the medallion is a placeholder
+   * pending user-supplied cycling artwork (FORGE_DELTAS).
+   */
+  showRankMedallion?: boolean
 }
 
 /** Top-right rank medallion — the vector RankSeal (transparent by construction), or a faint placeholder. */
@@ -61,10 +68,10 @@ function DiamondDivider() {
   )
 }
 
-export function ChapterTitleBlock({ chapterNumber, chapterName, weekDay, principle, rankFamily, rankLevel }: ChapterTitleBlockProps) {
+export function ChapterTitleBlock({ chapterNumber, chapterName, weekDay, principle, rankFamily, rankLevel, showRankMedallion = true }: ChapterTitleBlockProps) {
   return (
     <View style={styles.root}>
-      <RankMedallion family={rankFamily} level={rankLevel} />
+      {showRankMedallion ? <RankMedallion family={rankFamily} level={rankLevel} /> : null}
       <View style={styles.content}>
         <Text style={styles.chapterNumber}>{chapterNumber}</Text>
         <Text style={styles.chapterName}>{chapterName}</Text>
