@@ -10,9 +10,12 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { SectionHeader } from '@/components/forge/composites/SectionHeader';
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
+import { Image } from 'expo-image';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { getSelfProfile } from '@/domain/profile/placeholder-data';
-import { PLACEHOLDER_RANK } from '@/domain/rank-artwork/resolver';
+import type { Sex } from '@/domain/profile/schema';
+import { PLACEHOLDER_RANK, type RankFamily, type RankLevel } from '@/domain/rank-artwork/resolver';
+import { resolveRankBadge } from '@/domain/rank-artwork/badge-art';
 import { RankSeal } from '@/components/forge/RankSeal';
 import { LEGACY_DATA } from '@/data/legacy-placeholder';
 import type { Accomplishment, Chapter, FeaturedMoment, Goal, Honor, TimelineEntry } from '@/types/legacy';
@@ -36,11 +39,11 @@ import type { Accomplishment, Chapter, FeaturedMoment, Goal, Honor, TimelineEntr
  * Hero identity (corrected — see FORGE_DELTAS §15): the LEFT slot is the athlete's PROFILE
  * PORTRAIT (a photo, framed by a faint rank-seal ring). No profile-photo system exists yet, so it
  * shows the initials placeholder inside the seal ring — a real photo drops into the same slot when
- * that system lands. The RIGHT slot is the rank badge (the FoundationBadge) → Progress Hub: it now
- * shows the REAL imported rank badge art (`rankArtwork`, resolved via `src/domain/rank-artwork`;
- * TIER is a placeholder `PLACEHOLDER_RANK` — no rank backend), falling back to a faint pending-asset
- * shield. (Earlier the rank badge was wrongly rendered in the LEFT portrait slot and the RIGHT
- * badge was left an empty placeholder; that swap is fixed here.)
+ * that system lands. The RIGHT slot is the rank badge → Progress Hub: it renders the REAL per-rank
+ * badge ARTWORK when a guard-verified clean cutout exists (`resolveRankBadge` — the placeholder rank is
+ * `PLACEHOLDER_RANK` = Established III, sex-unspecified → served the clean established-m badge), and
+ * falls back to the vector `RankSeal` for any family whose art is a black-box matte (foundation,
+ * craftsman, architect, builder) or missing (legend) — so the retired black box can never return.
  *
  * Still pending-asset (NOT fabricated — graceful placeholders): the Honors insignia (Honors is
  * legitimately shown HERE — an achievement context, unlike the workout card where it is reserved —
@@ -104,6 +107,7 @@ export default function LegacyScreen() {
           <ProgressBadge
             rankFamily={PLACEHOLDER_RANK.family}
             rankLevel={PLACEHOLDER_RANK.level}
+            sex={profile.sex}
             onPress={() => {
               // P-2 Progress Hub — not yet implemented.
             }}
@@ -328,16 +332,24 @@ function RankLabel({ label, sub }: { label: string; sub: string }) {
 }
 
 /**
- * The rank badge — the FoundationBadge slot — with the "Progress" pill → Progress Hub. Shows the
- * the vector RankSeal (transparent by construction — no alpha-flatten box); else a faint pending-asset
- * shield placeholder. This is the badge's correct home (not the left portrait).
+ * The rank badge — the FoundationBadge slot — with the "Progress" pill → Progress Hub.
+ *
+ * Renders the REAL per-rank badge ARTWORK when a guard-verified clean cutout exists for the tier
+ * (`resolveRankBadge` — currently the Established + Legacy families), else falls back to the vector
+ * `RankSeal`. Foundation/craftsman/architect/builder art is an alpha-flattened black box and legend art
+ * is missing, so those families are absent from the registry and take the vector fallback — which makes
+ * the retired black box structurally impossible to reach. No rank ⇒ faint pending-asset shield.
  */
-function ProgressBadge({ rankFamily, rankLevel, onPress }: { rankFamily?: string; rankLevel?: 1 | 2 | 3 | 4; onPress: () => void }) {
+function ProgressBadge({ rankFamily, rankLevel, sex, onPress }: { rankFamily?: RankFamily; rankLevel?: RankLevel; sex?: Sex; onPress: () => void }) {
+  const level = rankLevel ?? 1;
+  const badge = rankFamily ? resolveRankBadge({ family: rankFamily, level, sex }) : null;
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel="View your rank and progress" style={styles.progressBadge}>
       <View style={styles.badgeShield}>
-        {rankFamily ? (
-          <RankSeal family={rankFamily} level={rankLevel ?? 1} size={68} />
+        {badge != null ? (
+          <Image source={badge} style={styles.badgeArt} contentFit="contain" />
+        ) : rankFamily ? (
+          <RankSeal family={rankFamily} level={level} size={68} />
         ) : (
           <Svg width={38} height={52} viewBox="0 0 38 52">
             <Path d="M4 6 L34 6 L34 30 Q34 44 19 50 Q4 44 4 30 Z" stroke={flColor.bronze400} strokeWidth={1.2} opacity={0.4} fill="none" />
@@ -579,7 +591,8 @@ const styles = StyleSheet.create({
     color: flColor.bronze300,
   },
   progressBadge: { width: 76, alignItems: 'center', gap: 6 },
-  badgeShield: { width: 64, height: 72, alignItems: 'center', justifyContent: 'center' },
+  badgeShield: { width: 66, height: 92, alignItems: 'center', justifyContent: 'center' },
+  badgeArt: { width: 66, height: 92 },
   progressPill: {
     flexDirection: 'row',
     alignItems: 'center',

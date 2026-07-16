@@ -6,10 +6,10 @@ import type { LegacyData, TimelineGroup } from '@/types/legacy'
  * chapter (State A), 2 older sealed chapters (State B), rich history.
  */
 export const LEGACY_DATA: LegacyData = {
-  // Placeholder rank aligned to the new 7-family taxonomy + the demo badge
-  // (`PLACEHOLDER_RANK` = Foundation III) so the hero label matches the wired art.
+  // Placeholder rank aligned to `PLACEHOLDER_RANK` (Established III) so the hero rank label matches the
+  // wired badge artwork (`resolveRankBadge` → established-m for the sex-unspecified athlete).
   // No rank backend yet — replace when real rank evaluation lands.
-  rankName:  'Foundation',
+  rankName:  'Established',
   rankSubTier: 'III',
 
   // Hero — "My Standard" creed (placeholder; no backend/editor yet)

@@ -30,7 +30,9 @@ export interface RankTier {
 
 /**
  * PLACEHOLDER current rank — there is NO rank backend yet (no RCM evaluation wired to an athlete).
- * The Home medallion, Legacy hero seal, and rank-up ceremony display THIS demo tier via `RankSeal`;
- * swap for the real evaluated rank when it lands.
+ * Set to Established III so the Legacy hero renders real, guard-verified badge ARTWORK
+ * (`resolveRankBadge` → `assets/artwork/ranks/established-*`, a clean cutout); the Home medallion and
+ * rank-up ceremony still render this tier via the vector `RankSeal`. Swap for the real evaluated rank
+ * when it lands. (Foundation art is an alpha-flattened black box — never wire it as raster.)
  */
-export const PLACEHOLDER_RANK: RankTier = { family: 'foundation', level: 3 };
+export const PLACEHOLDER_RANK: RankTier = { family: 'established', level: 3 };

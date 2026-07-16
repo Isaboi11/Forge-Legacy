@@ -261,6 +261,38 @@ Each entry: **What changed · Why · What it supersedes.**
   `ceremony/queue` to order rank-ups) + `PLACEHOLDER_RANK`.
 - **Commits:** `008617e` (port + swap) · `36e66e8` (retirement).
 
+## 18. Legacy hero seal → real badge artwork, guard-gated (partial reversal of §17, DONE)
+- **What:** The Legacy top-right rank seal now renders the **real per-rank badge ARTWORK** when a
+  guard-verified clean cutout exists, falling back to the vector `RankSeal` otherwise. `resolveRankBadge`
+  (`src/domain/rank-artwork/badge-art.ts`) holds a registry of ONLY alpha-clean families; every other
+  family returns null → vector fallback. This partially reverses §17 (RankSeal-as-primary) **for the
+  Legacy seal only** — Home medallion + rank-up ceremony still use the vector seal.
+- **Alpha forensics (the reason it's gated):** the retired badge PNGs split three ways —
+  **BLACK BOX** (opaque rectangular matte → the flatten): `foundation`, `craftsman`, `architect`,
+  `builder`(mixed); **CLEAN CUTOUT**: `established-m/f`, `legacy` (legacy is the only set with a true
+  soft antialiased rim); **MISSING**: `legend` (no art anywhere). Only the clean sets (12 PNGs) were
+  re-imported to `assets/artwork/ranks/`. **The current-rank family, `foundation`, is a black box** —
+  so the demo `PLACEHOLDER_RANK` was moved to **Established III** so real clean art actually renders now.
+- **Guard rewrite (important):** the committed alpha guard was a `nonOpaque/total > 0.2` FRACTION check
+  — which **false-passes a black box that carries a transparent margin** around its matte (foundation-3:
+  32% non-opaque, yet a box). Replaced with an **opaque bounding-box FILL-RATIO** guard (rectangular
+  matte ≈ 1.00 fill; shaped hexagon ≈ 0.80; threshold 0.90), run at build time over **every registered
+  asset**. `rank-art-alpha.test.mjs`. *(A simple corner probe is also fooled — a clean badge's base can
+  reach its bbox corners; fill-ratio measures the whole opaque region.)*
+- **Sex (do NOT reopen §7):** `established` has `-m`/`-f` variants, **both alpha-clean**. The
+  sex-`unspecified` athlete is served **`established-m`** — applying the existing §7 neutral→served-male
+  precedent (a documented served placeholder, not a guess). Because both variants are clean, this
+  **swaps trivially** the moment a real neutral decision lands — no asset work, one line in `badgeKey`.
+- **Guarantee:** the retired black box is structurally unreachable — boxed/missing families are absent
+  from the registry (vector fallback), and the build fails if any registered asset is a matte.
+- **Forward decision (log, not a blocker):** this makes the Legacy hero render *raster* badge art while
+  the **Home medallion + rank-up ceremony still render the vector `RankSeal`** for the same rank. Source
+  consistency is intact (all read `PLACEHOLDER_RANK`), so it is NOT the phantom-count class — it is a
+  representation *divergence across surfaces*, and defensible today (Home's rank is a faint @0.42
+  watermark by design; Legacy's is the prominent hero badge). When a real rank backend lands, make a
+  **conscious call**: does clean badge art propagate to Home/ceremony, or do those stay vector-watermark
+  by design? Decide it deliberately — don't let it drift silently.
+
 ---
 
 ## Still open (carry into implementation)
@@ -281,12 +313,12 @@ not-yet-authored one) sit in the blocked pile:
   background sub-pass (source-specified, NOT cosmetics):** per-screen darkening-gradient opacity to each
   `.dc`'s stops (Home 0.15 · Legacy 0.30 · Squad 0.12→0.26→0.38) · **Squad Detail frame bronze
   radial-glows (catalog #2)** · mountain-fade choreography refinement. See §16.
-- **Rank seal per-family COLOR (§17)** — the vector `RankSeal` is DONE, but every family currently
-  renders the **Foundation bronze** palette; only the curved arc text differs family-to-family. The
-  `Forge Rank Seal.dc` families have **distinct color treatments** (Foundation bronze → … → Legacy).
-  A real fidelity gap, **not "done"** — but **DROPPED-FREE**: buildable now with the means in hand
-  (a family→palette map fed into the existing gradient stops — the *same shape* as the per-level
-  warmth modulation already proven in the seal). No blocker, just unbuilt.
+- **Rank seal per-family COLOR (§17)** — **now PARTIAL (see §18):** the Legacy seal renders real
+  per-rank ARTWORK (full distinct color) for the guard-clean families (established, legacy). Still open
+  for the families on the **vector fallback** (foundation, craftsman, architect, builder, legend) + the
+  Home medallion + ceremony seal, which all render the single **Foundation bronze** palette regardless of
+  family. **DROPPED-FREE**: a family→palette map fed into the existing gradient stops (same shape as the
+  per-level warmth already proven). No blocker, just unbuilt for the vector-rendered families.
 - **Squad-local cosmetics (held, genuinely cosmetic)** — #3 AppBar empty-title · #12 "Hall of Champions"
   rename — a per-screen cosmetics pass, not now. *(#2 frame radials moved up into the background sub-pass —
   it's source-specified, not cosmetic.)*
