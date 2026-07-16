@@ -336,9 +336,11 @@ Each entry: **What changed · Why · What it supersedes.**
   1. **Canonical-path swaps** for the ~30 divergent ICON-MATCH glyphs (hand-rolled shape → the library's
      actual art). Its own pass — the library-id ambiguities (people-count `friend`/`squad`, doc→`notes`,
      shield-with-check, star-vs-`spark`, globe/`explore`) live here.
-  2. **Swords-drawn-as-trophy = BUG (priority, above the general path-swaps):** `SwordsGlyph`
-     (PostContent, athlete) + `SwordsIcon` (community) render a trophy CHALICE, not crossed swords — a
-     wrong-meaning Challenge glyph. Fix to the canonical `swords` path (QuickActionsRow already uses it).
+  2. **Swords-drawn-as-trophy = BUG — FIXED (commit `83068cf`)** for the 2 LIVE glyphs: `SwordsGlyph`
+     (PostContent + athlete) swapped from a trophy-chalice path to the canonical `swords`/"Challenge"
+     path (byte-identical to QuickActionsRow's, already correct). The SSoT id was unambiguous, so fixed
+     standalone rather than waiting on the path-swap pass. Community `SwordsIcon` still trophy — conforms
+     with the §13 un-shelve pass (community excluded from this work).
   3. **Author chrome glyphs into `forge-symbols.js`** (comment/bookmark/overflow/chevron/play/check/plus/
      star) — a real design action; DNA-conformant hand-rolled versions stand in meanwhile.
   4. **Community glyphs** — DNA-conform `src/deferred/community.tsx` when the surface un-shelves (§13).
