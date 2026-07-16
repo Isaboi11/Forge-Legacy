@@ -48,7 +48,7 @@ function minutesAgo(iso: string): number {
 function ProgressGlyph() {
   return (
     <View style={styles.glyphBadge}>
-      <Svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+      <Svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
         <Path d="M12 20V4" />
         <Path d="M6 10l6-6 6 6" />
       </Svg>

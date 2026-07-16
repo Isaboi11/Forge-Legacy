@@ -31,7 +31,7 @@ export interface AppBarProps {
 function BackChevron() {
   return (
     <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-      <Path d="M15 5l-7 7 7 7" stroke={flColor.cream100} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M15 5l-7 7 7 7" stroke={flColor.cream100} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8} />
     </Svg>
   )
 }
@@ -39,7 +39,7 @@ function BackChevron() {
 function CloseX() {
   return (
     <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-      <Path d="M6 6l12 12M18 6L6 18" stroke={flColor.cream100} strokeWidth={1.9} strokeLinecap="round" />
+      <Path d="M6 6l12 12M18 6L6 18" stroke={flColor.cream100} strokeWidth={2} strokeLinecap="square" />
     </Svg>
   )
 }

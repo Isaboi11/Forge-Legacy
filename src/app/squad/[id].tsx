@@ -331,7 +331,7 @@ function RecordHistorySheet({ record }: { record: SquadRecord }) {
 
 function ArrowRight() {
   return (
-    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Path d="M5 12h14" />
       <Path d="M13 6l6 6-6 6" />
     </Svg>
@@ -383,7 +383,7 @@ function OverflowIcon() {
 }
 function CrestGlyph() {
   return (
-    <Svg width={40} height={40} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={40} height={40} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z" />
       <Path d="M9 11l2 2 4-4" />
     </Svg>
@@ -493,7 +493,7 @@ function PlayMini() {
 }
 function ChevronMini() {
   return (
-    <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2.1} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Path d="M9 5l7 7-7 7" />
     </Svg>
   );
@@ -507,14 +507,14 @@ function TrophyGlyph() {
 }
 function TrendUp() {
   return (
-    <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Path d="M12 19V5M6 11l6-6 6 6" />
     </Svg>
   );
 }
 function LockGlyph() {
   return (
-    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Path d="M6 10V8a6 6 0 0 1 12 0v2" />
       <Path d="M5 10h14v10H5z" />
     </Svg>

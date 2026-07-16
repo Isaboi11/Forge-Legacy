@@ -74,7 +74,7 @@ export default function FriendsFeedRoute() {
 
 function FriendsGlyph() {
   return (
-    <Svg width={23} height={23} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={23} height={23} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Circle cx={7.5} cy={8} r={2.7} />
       <Circle cx={16.5} cy={8} r={2.7} />
       <Path d="M3 19a4.5 4.5 0 0 1 9 0M12 19a4.5 4.5 0 0 1 9 0" />

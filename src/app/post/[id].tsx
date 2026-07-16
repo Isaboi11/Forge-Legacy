@@ -265,7 +265,7 @@ function OverflowIcon() {
   );
 }
 function SourceGlyph({ kind }: { kind: 'community' | 'squad' | 'friend' }) {
-  const p = { stroke: flColor.bronze300, strokeWidth: 1.7, fill: 'none', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+  const p = { stroke: flColor.bronze300, strokeWidth: 2, fill: 'none', strokeLinecap: 'square' as const, strokeLinejoin: 'miter' as const, strokeMiterlimit: 8 };
   return (
     <Svg width={18} height={18} viewBox="0 0 24 24">
       {kind === 'community' ? (

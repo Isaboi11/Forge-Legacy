@@ -44,7 +44,7 @@ type GlyphProps = { size?: number; color?: string };
 /** CANONICALIZED to the detail version (design set is silent on it). */
 export function CommentGlyph({ size = 16, color = flColor.gray400 }: GlyphProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Path d="M4 5h16v11H8l-4 4z" />
     </Svg>
   );
@@ -52,14 +52,14 @@ export function CommentGlyph({ size = 16, color = flColor.gray400 }: GlyphProps)
 /** CANONICALIZED to the detail version (design set is silent on it). */
 export function BookmarkGlyph({ size = 17, color = flColor.gray400 }: GlyphProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Path d="M6 3h12v18l-6-4-6 4z" />
     </Svg>
   );
 }
 export function ShareGlyph({ size = 17, color = flColor.gray400 }: GlyphProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Circle cx={6} cy={12} r={2.4} />
       <Circle cx={17} cy={6} r={2.4} />
       <Circle cx={17} cy={18} r={2.4} />
@@ -69,7 +69,7 @@ export function ShareGlyph({ size = 17, color = flColor.gray400 }: GlyphProps) {
 }
 function HonorGlyph({ size = 26, color = flColor.bronze300 }: GlyphProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Path d="M12 3l7 3v5c0 4.4-3 7.4-7 9-4-1.6-7-4.6-7-9V6z" />
       <Path d="M9 11l2 2 4-4" />
     </Svg>
@@ -77,7 +77,7 @@ function HonorGlyph({ size = 26, color = flColor.bronze300 }: GlyphProps) {
 }
 function DumbbellGlyph({ size = 22, color = flColor.bronze300 }: GlyphProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />
     </Svg>
   );
@@ -91,7 +91,7 @@ function PlayGlyph({ size = 20, color = flColor.cream100 }: GlyphProps) {
 }
 function ClockGlyph({ size = 13, color = flColor.bronze400 }: GlyphProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Circle cx={12} cy={12} r={9} />
       <Path d="M12 7v5l3 2" />
     </Svg>
@@ -99,7 +99,7 @@ function ClockGlyph({ size = 13, color = flColor.bronze400 }: GlyphProps) {
 }
 function TrainGlyph({ size = 17, color = flColor.bronze300 }: GlyphProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Circle cx={7.5} cy={8} r={2.4} />
       <Circle cx={16.5} cy={8} r={2.4} />
       <Path d="M3 19a4.5 4.5 0 0 1 9 0M12 19a4.5 4.5 0 0 1 9 0" />
@@ -108,14 +108,14 @@ function TrainGlyph({ size = 17, color = flColor.bronze300 }: GlyphProps) {
 }
 function ProgramKindGlyph({ size = 13, color = flColor.bronze300 }: GlyphProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Path d="M4 5.5h13a1.5 1.5 0 0 1 1.5 1.5v11.5H6a2 2 0 0 0-2 2zM4 5.5v14M8 9.5h7M8 13h7" />
     </Svg>
   );
 }
 function SwordsGlyph({ size = 16, color = flColor.bronze300 }: GlyphProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Path d="M6 4v6a6 6 0 0 0 12 0V4M12 16v4M8.5 20h7" />
     </Svg>
   );
@@ -123,7 +123,7 @@ function SwordsGlyph({ size = 16, color = flColor.bronze300 }: GlyphProps) {
 /** The check-in confirm mark (feed CheckGlyph == detail BigCheckGlyph — same path, not drift). */
 function CheckinCheckGlyph({ size = 24, color = flColor.bronze300 }: GlyphProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Path d="M5 12.5l4.5 4.5L19 7" />
     </Svg>
   );
@@ -131,7 +131,7 @@ function CheckinCheckGlyph({ size = 24, color = flColor.bronze300 }: GlyphProps)
 /** The poll-choice tick (detail-only; feed never renders polls). */
 function PollTickGlyph({ size = 14, color = flColor.bronze300 }: GlyphProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Path d="M20 6L9 17l-5-5" />
     </Svg>
   );

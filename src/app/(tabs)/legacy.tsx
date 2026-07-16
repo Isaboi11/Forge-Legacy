@@ -332,7 +332,7 @@ function PreviewRow({ title, sub, count, onPress }: { title: string; sub: string
 // ── inline glyphs ──
 function PlusIcon({ color = flColor.bronze400 }: { color?: string }) {
   return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round">
+    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square">
       <Path d="M12 5v14M5 12h14" />
     </Svg>
   );

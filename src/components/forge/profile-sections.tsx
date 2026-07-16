@@ -218,7 +218,7 @@ export function HonorInsignia({ honor }: { honor: Honor }) {
 // ── inline glyphs (moved verbatim) ──
 export function SealIcon({ size = 17 }: { size?: number }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Circle cx={12} cy={9} r={6} />
       <Path d="M8.5 14l-1.5 7 5-3 5 3-1.5-7" />
     </Svg>
@@ -226,14 +226,14 @@ export function SealIcon({ size = 17 }: { size?: number }) {
 }
 export function CheckIcon() {
   return (
-    <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Path d="M20 6L9 17l-5-5" />
     </Svg>
   );
 }
 export function CalendarIcon() {
   return (
-    <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Rect x={3} y={5} width={18} height={16} rx={2} />
       <Path d="M3 9h18M8 3v4M16 3v4" />
     </Svg>
@@ -241,7 +241,7 @@ export function CalendarIcon() {
 }
 export function StarIcon() {
   return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Path d="M12 3l2.6 5.6 6 .5-4.6 4 1.4 6-5.4-3.2-5.4 3.2 1.4-6-4.6-4 6-.5z" />
     </Svg>
   );

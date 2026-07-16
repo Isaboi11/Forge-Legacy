@@ -372,14 +372,14 @@ function SquadCrestGlyph({ size }: { size: number }) {
 // ── inline glyphs (structural bronze marks) ──
 function PlusIcon({ color = flColor.bronze400, size = 22 }: { color?: string; size?: number }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Path d="M12 5v14M5 12h14" />
     </Svg>
   );
 }
 function SearchIcon({ color = flColor.bronze300 }: { color?: string }) {
   return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Circle cx={11} cy={11} r={7} />
       <Path d="M16 16l4.5 4.5" />
     </Svg>
@@ -393,9 +393,9 @@ function StarIcon({ filled }: { filled: boolean }) {
       viewBox="0 0 24 24"
       fill={filled ? flColor.bronze300 : 'none'}
       stroke={filled ? flColor.bronze300 : flColor.gray600}
-      strokeWidth={1.7}
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      strokeWidth={2}
+      strokeLinecap="square"
+      strokeLinejoin="miter" strokeMiterlimit={8}
     >
       <Path d="M12 2.6l2.65 6.02 6.55.55-4.98 4.3 1.5 6.4L12 16.9l-5.72 3.47 1.5-6.4-4.98-4.3 6.55-.55z" />
     </Svg>
@@ -403,7 +403,7 @@ function StarIcon({ filled }: { filled: boolean }) {
 }
 function MembersIcon() {
   return (
-    <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Circle cx={9} cy={8} r={3.2} />
       <Path d="M3.5 20a5.5 5.5 0 0 1 11 0" />
       <Path d="M16 5.2a3.2 3.2 0 0 1 0 5.6M18 20a5.5 5.5 0 0 0-2.5-4.6" />

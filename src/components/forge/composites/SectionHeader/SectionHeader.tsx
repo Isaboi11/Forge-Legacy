@@ -31,7 +31,7 @@ export function SectionHeader({ label, action, onAction }: SectionHeaderProps) {
         <Pressable accessibilityRole="button" onPress={onAction} style={styles.actionBtn} hitSlop={8}>
           <Text style={styles.actionText}>{action}</Text>
           <Svg width={13} height={13} viewBox="0 0 24 24" fill="none">
-            <Path d="M9 5l7 7-7 7" stroke={flColor.bronze400} strokeWidth={2.1} strokeLinecap="round" strokeLinejoin="round" />
+            <Path d="M9 5l7 7-7 7" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8} />
           </Svg>
         </Pressable>
       ) : null}

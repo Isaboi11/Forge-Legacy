@@ -248,14 +248,14 @@ function InertAction({ glyph, label }: { glyph: ReactNode; label: string }) {
 
 function SwordsGlyph() {
   return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Path d="M6 4v6a6 6 0 0 0 12 0V4M12 16v4M8.5 20h7" />
     </Svg>
   );
 }
 function AddFriendGlyph() {
   return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Circle cx={9} cy={8} r={3.4} />
       <Path d="M3.5 20a5.5 5.5 0 0 1 11 0M18 8v6M15 11h6" />
     </Svg>
@@ -263,7 +263,7 @@ function AddFriendGlyph() {
 }
 function FollowGlyph() {
   return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Path d="M12 5v14M5 12h14" />
     </Svg>
   );

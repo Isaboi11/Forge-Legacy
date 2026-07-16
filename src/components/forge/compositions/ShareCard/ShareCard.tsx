@@ -23,7 +23,7 @@ export interface ShareCardProps {
 }
 
 function KindGlyph({ kind }: { kind: ShareKind }) {
-  const p = { stroke: flColor.bronze300, strokeWidth: 1.6, fill: 'none', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+  const p = { stroke: flColor.bronze300, strokeWidth: 2, fill: 'none', strokeLinecap: 'square' as const, strokeLinejoin: 'miter' as const, strokeMiterlimit: 8 }
   const paths: Record<ShareKind, React.ReactNode> = {
     accomplishment: <Path d="M12 3l2.6 5.6 6 .5-4.6 4 1.4 6-5.4-3.2-5.4 3.2 1.4-6-4.6-4 6-.5z" {...p} />,
     honor: <><Path d="M12 3l7 3v5c0 4.4-3 7.4-7 9-4-1.6-7-4.6-7-9V6z" {...p} /><Path d="M9 11l2 2 4-4" {...p} /></>,

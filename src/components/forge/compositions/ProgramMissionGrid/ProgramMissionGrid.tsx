@@ -35,9 +35,9 @@ function TileHeader({ label }: { label: string }) {
 function TargetIcon() {
   return (
     <Svg width={17} height={17} viewBox="0 0 24 24" fill="none">
-      <Circle cx={12} cy={12} r={8} stroke={flColor.bronze400} strokeWidth={1.7} />
-      <Circle cx={12} cy={12} r={3} stroke={flColor.bronze400} strokeWidth={1.7} />
-      <Path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke={flColor.bronze400} strokeWidth={1.7} strokeLinecap="round" />
+      <Circle cx={12} cy={12} r={8} stroke={flColor.bronze400} strokeWidth={2} />
+      <Circle cx={12} cy={12} r={3} stroke={flColor.bronze400} strokeWidth={2} />
+      <Path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="square" />
     </Svg>
   )
 }
