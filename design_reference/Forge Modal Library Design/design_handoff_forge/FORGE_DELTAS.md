@@ -322,6 +322,27 @@ Each entry: **What changed · Why · What it supersedes.**
   machinery behind the flag.
 - **Commit:** `chore(home): remove placeholder rank medallion pending cycling artwork`.
 
+## 20. Icon system — Forged DNA sweep (DONE) + path-swaps deferred
+
+- **What (DONE, commit `3799751`):** every stroke-based ICON glyph app-wide conformed to the Symbol
+  Library's Forged DNA (`forge-symbols.js`): **stroke-width 2, square linecaps, miter joins, miterlimit
+  8** — the carved-from-steel language `NavIcons` already followed. 16 files, 58 glyphs. **Paths
+  byte-identical** (diff-proven; only stroke attrs changed); decorative/structural strokes (rank/seal
+  rings, hairlines, progress arcs — all `sw≤1.4`) untouched via element-level stroke-width gating; the
+  two object-spread DNA glyphs (`SourceGlyph`, `KindGlyph`) conformed too.
+- **Ruling (a)+(b):** adopt the DNA app-wide (round/lighter was per-file drift, not deliberate softening);
+  DNA-conform the chrome glyphs in place. Community (shelved, §13) excluded — conform when it un-shelves.
+- **Follow-ups (tracked, NOT done):**
+  1. **Canonical-path swaps** for the ~30 divergent ICON-MATCH glyphs (hand-rolled shape → the library's
+     actual art). Its own pass — the library-id ambiguities (people-count `friend`/`squad`, doc→`notes`,
+     shield-with-check, star-vs-`spark`, globe/`explore`) live here.
+  2. **Swords-drawn-as-trophy = BUG (priority, above the general path-swaps):** `SwordsGlyph`
+     (PostContent, athlete) + `SwordsIcon` (community) render a trophy CHALICE, not crossed swords — a
+     wrong-meaning Challenge glyph. Fix to the canonical `swords` path (QuickActionsRow already uses it).
+  3. **Author chrome glyphs into `forge-symbols.js`** (comment/bookmark/overflow/chevron/play/check/plus/
+     star) — a real design action; DNA-conformant hand-rolled versions stand in meanwhile.
+  4. **Community glyphs** — DNA-conform `src/deferred/community.tsx` when the surface un-shelves (§13).
+
 ---
 
 ## Still open (carry into implementation)
