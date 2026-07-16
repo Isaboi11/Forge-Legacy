@@ -15,7 +15,7 @@ import { StyleSheet, Text, View } from 'react-native'
 import { flColor, flFont, flShadow } from '@/constants/foundation'
 
 export interface InsigniaProps {
-  /** Resolved image module (e.g. from `resolveRankArtworkSource`). Omit → placeholder. */
+  /** A bundled image module for the insignia art (e.g. an honor badge). Omit → initials/placeholder. */
   source?: number
   /** Square edge in px. */
   size?: number
