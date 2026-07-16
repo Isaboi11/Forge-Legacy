@@ -3,11 +3,23 @@
 // app uses (which also proves the policies permit self-writes). Idempotent: clears first.
 // Run: SB_EMAIL=... SB_PASS=... node supabase/seed/seed.mjs
 //
-// ⚠ FOLLOW-UP (do when media wires in — Phase 3): the persona below is the FIXTURE identity
-// "Ada Ridge", but the demo account is the real user + real media (avatar, before/after, the 485
-// deadlift video). Swap this persona to the real subject (or a clean invented one) so the fixture
-// name + real face/lifts don't collide. Decide: demo = the real person, or a consistent invented one.
+// PERSONA (Phase 3 follow-up): defaults to the FIXTURE identity "Ada Ridge", but every field is
+// env-overridable so the demo can become the REAL subject WITHOUT hardcoding anyone's identity here.
+// To go real, reseed with e.g.:
+//   SB_NAME="Jane Doe" SB_FIRST="Jane" SB_HANDLE="jane.forged" SB_INITIALS="JD" SB_SEX="female" \
+//   SB_AVATAR_URL="https://…/storage/v1/object/public/avatars/<uid>.jpg" \
+//   SB_EMAIL=… SB_PASS=… node supabase/seed/seed.mjs
+// (SB_AVATAR_URL needs the image uploaded to the public `avatars` bucket first; null → initials.)
 import { signedInClient } from './_client.mjs';
+
+const persona = {
+  name: process.env.SB_NAME ?? 'Ada Ridge',
+  first_name: process.env.SB_FIRST ?? 'Ada',
+  handle: process.env.SB_HANDLE ?? 'ada.forged',
+  initials: process.env.SB_INITIALS ?? 'AR',
+  sex: process.env.SB_SEX ?? 'unspecified',
+  avatar_url: process.env.SB_AVATAR_URL ?? null,
+};
 
 const { sb, uid } = await signedInClient();
 console.log('seeding as', uid);
@@ -17,9 +29,9 @@ await sb.from('timeline_events').delete().eq('athlete_id', uid);
 await sb.from('personal_records').delete().eq('athlete_id', uid);
 await sb.from('chapters').delete().eq('athlete_id', uid);
 
-// profile — fill in the trigger-created bare row with the fixture identity
+// profile — fill in the trigger-created bare row with the persona identity (env-overridable)
 const { error: pe } = await sb.from('profiles').update({
-  name: 'Ada Ridge', first_name: 'Ada', handle: 'ada.forged', initials: 'AR', sex: 'unspecified',
+  ...persona,
   standard: 'Show up when it’s hard. The work is the promise I keep to myself.',
   rank_family: 'established', rank_level: 3, updated_at: new Date().toISOString(),
 }).eq('id', uid);
@@ -62,5 +74,5 @@ const tl = [
 const { error: te } = await sb.from('timeline_events').insert(tl);
 if (te) throw new Error('timeline: ' + te.message);
 
-console.log('✓ profile: Ada Ridge · Established III');
+console.log(`✓ profile: ${persona.name} · Established III${persona.avatar_url ? ' · avatar set' : ''}`);
 console.log(`✓ chapters: ${chRows.length} (1 active + 3 sealed) · PRs: ${prs.length} · timeline: ${tl.length}`);

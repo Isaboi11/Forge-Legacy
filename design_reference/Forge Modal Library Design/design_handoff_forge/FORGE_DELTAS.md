@@ -426,6 +426,30 @@ Neither is on the write path; this gate is the log→persist→timeline loop.
 
 ---
 
+## 23. Avatar from Storage + real persona (Phase 3 follow-up — built, migration-gated)
+
+The athlete's real photo now renders from Supabase Storage instead of initials, across the face
+surfaces: Home/Legacy AppBars, Friends, the Athlete profile hero, and the **Legacy hero portrait**
+(`SealPortrait` shows the photo inside the seal ring; initials remain the fallback). The `Avatar`
+composite already supported `src`, so each is a clean drop-in; `avatarUrl` threads through
+`fetchSelfProfile`/`fetchPublicProfile` → `UserProfile`/`PublicProfileView`.
+
+- **`0003_avatar.sql`** — a one-line spine migration adding `profiles.avatar_url` (public URL; the image
+  lives in the public `avatars` bucket from Phase 1). **Migration-gated:** the profile fetch now selects
+  `avatar_url`, so this must be applied (SQL editor, like Phase 1) before the live reads work — the
+  feature commit is held until it's applied + reseeded + verified.
+- **Persona swap is a mechanism, not a hardcode** — `seed.mjs` takes `SB_NAME`/`SB_HANDLE`/`SB_AVATAR_URL`/
+  etc. as env overrides (default = the Ada fixture), so the real subject drops in at reseed without
+  hardcoding anyone's identity. `upload-avatar.mjs` uploads an image to the `avatars` bucket and sets
+  `avatar_url` in one command.
+
+**Deferred (flagged, not silent):** the Squads roster self-avatar stays on initials (wiring it means
+threading a prop through the shared `SquadCard` — not worth it for a small stacked avatar); and the
+**PR media (the 485 deadlift video)** is its own fast-follow — it needs the schema-only `media_assets`
+table (or a PR media column) + a video-display surface + the file. PO ruled: avatar + persona first.
+
+---
+
 ## Still open (carry into implementation)
 
 **Three buckets, and the distinction is load-bearing** — don't let a fixable miss (or a merely

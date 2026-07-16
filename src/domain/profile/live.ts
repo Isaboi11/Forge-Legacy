@@ -16,11 +16,18 @@ export async function fetchSelfProfile(): Promise<UserProfile> {
   if (!user) throw new Error('not signed in');
   const { data, error } = await supabase
     .from('profiles')
-    .select('name, first_name, handle, initials, sex')
+    .select('name, first_name, handle, initials, sex, avatar_url')
     .eq('id', user.id)
     .single();
   if (error) throw error;
-  return { name: data.name, firstName: data.first_name, handle: data.handle, initials: data.initials, sex: data.sex as Sex };
+  return {
+    name: data.name,
+    firstName: data.first_name,
+    handle: data.handle,
+    initials: data.initials,
+    avatarUrl: data.avatar_url ?? null,
+    sex: data.sex as Sex,
+  };
 }
 
 /** Derive an '@'-handle from a name — byte-identical to the fixture's stranger fallback. */
@@ -41,7 +48,7 @@ export async function fetchPublicProfile(id: string): Promise<PublicProfileView>
   if (user) {
     const { data: self } = await supabase
       .from('profiles')
-      .select('name, handle, rank_family, rank_level, athlete_type')
+      .select('name, handle, rank_family, rank_level, athlete_type, avatar_url')
       .eq('id', user.id)
       .single();
     if (self && self.name === name) {
@@ -51,6 +58,7 @@ export async function fetchPublicProfile(id: string): Promise<PublicProfileView>
         isSelf: true,
         rank: self.rank_family ? cap(self.rank_family) : undefined,
         athleteType: self.athlete_type ?? undefined,
+        avatarUrl: self.avatar_url ?? null,
       };
     }
   }

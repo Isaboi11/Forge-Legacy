@@ -24,6 +24,8 @@ export interface PublicProfileView {
   handle: string
   /** True when this is the signed-in athlete's own profile. */
   isSelf: boolean
+  /** Public avatar image URL (present only when known — self today); null → render initials. */
+  avatarUrl?: string | null
   /** Public identity marker (design hero RankMarker) — present only for a known roster athlete. */
   rank?: string
   /** Public identity marker (design hero identity sub) — present only for a known roster athlete. */

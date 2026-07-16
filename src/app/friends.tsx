@@ -53,7 +53,7 @@ export default function FriendsFeedRoute() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* composer prompt — inert (compose is not part of this read-only viewer) */}
         <Pressable onPress={() => {}} accessibilityRole="button" accessibilityLabel="Share a moment" style={styles.composer}>
-          <Avatar name={profile?.name ?? ''} size="listRow" />
+          <Avatar name={profile?.name ?? ''} src={profile?.avatarUrl ?? undefined} size="listRow" />
           <Text style={styles.composerText}>What’s worth remembering today?</Text>
         </Pressable>
 

@@ -74,7 +74,8 @@ const FIX = {
     'Honor Earned · 10 Workouts in Chapter · Jun 20',
     'Program Graduated · Strength Foundation II · Jun 14',
   ],
-  handle: '@ada.forged', name: 'Ada Ridge', rankLabel: 'Established · III',
+  // identity: the real persona (swapped from the Ada fixture in the Phase 3 follow-up).
+  handle: '@Isaboi11', name: 'Isa Altamirano', rankLabel: 'Established · III', avatar: 'set',
 };
 
 const rows = [];
@@ -82,7 +83,7 @@ const push = (label, live, fixture, opts = {}) => rows.push({ label, live, fixtu
 
 const { sb, uid } = await signedInClient();
 const [{ data: prof, error: pe }, { data: chRows, error: ce }, { data: tlRows, error: te }] = await Promise.all([
-  sb.from('profiles').select('name, handle, rank_family, rank_level, standard, athlete_type').eq('id', uid).single(),
+  sb.from('profiles').select('name, handle, rank_family, rank_level, standard, athlete_type, avatar_url').eq('id', uid).single(),
   sb.from('chapters').select('*').eq('athlete_id', uid),
   sb.from('timeline_events').select('*').eq('athlete_id', uid).order('occurred_at', { ascending: false }),
 ]);
@@ -122,6 +123,7 @@ top3.forEach((t, i) => push(`timeline[${i}]`, t, FIX.timeline[i]));
 push('profile.name', prof.name, FIX.name);
 push('profile.handle', '@' + prof.handle, FIX.handle);
 push('profile.rankLabel', [cap(prof.rank_family), roman(prof.rank_level)].filter(Boolean).join(' · '), FIX.rankLabel);
+push('profile.avatar', prof.avatar_url && prof.avatar_url.includes('/avatars/') ? 'set' : 'missing', FIX.avatar);
 
 // ── report ──
 let match = 0, sanctioned = 0, bad = 0;

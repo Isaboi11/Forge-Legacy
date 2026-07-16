@@ -82,7 +82,7 @@ export default function HomeScreen() {
 
       <AppBar
         title={<HomeWordmark />}
-        avatar={<Avatar name={liveProfile?.name ?? profile.name} size="appBar" />}
+        avatar={<Avatar name={liveProfile?.name ?? profile.name} src={liveProfile?.avatarUrl ?? undefined} size="appBar" />}
         onAvatar={() => {
           // P-1 Profile is not yet implemented.
         }}

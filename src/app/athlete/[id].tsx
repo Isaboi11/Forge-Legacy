@@ -134,7 +134,7 @@ export default function AthleteProfileRoute() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* ── Identity hero — the only universally-public content. Initials Avatar (no photo store). ── */}
         <View style={styles.hero}>
-          <Avatar name={profile.name} size="profile" ring />
+          <Avatar name={profile.name} src={profile.avatarUrl ?? undefined} size="profile" ring />
           <View style={styles.heroText}>
             <View style={styles.nameRow}>
               <Text style={styles.name} numberOfLines={1}>

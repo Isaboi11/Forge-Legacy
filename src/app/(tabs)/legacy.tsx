@@ -94,7 +94,7 @@ export default function LegacyScreen() {
   // data is in hand it stays rendered through any background refetch.
   if (!data || !profile) {
     return (
-      <LegacyShell scrollY={scrollY} avatarName={profile?.name ?? ''}>
+      <LegacyShell scrollY={scrollY} avatarName={profile?.name ?? ''} avatarSrc={profile?.avatarUrl ?? undefined}>
         {error ? <LegacyError onRetry={refetch} /> : <ActivityIndicator color={flColor.bronze400} />}
       </LegacyShell>
     );
@@ -110,7 +110,7 @@ export default function LegacyScreen() {
       <AppBar
         title="Legacy"
         serif
-        avatar={<Avatar name={profile.name} size="appBar" />}
+        avatar={<Avatar name={profile.name} src={profile.avatarUrl ?? undefined} size="appBar" />}
         onAvatar={() => {
           // P-1 Profile / Account — not yet implemented.
         }}
@@ -125,7 +125,7 @@ export default function LegacyScreen() {
         {/* ── HERO · identity ── parallaxes up + fades; portrait scales from its left edge (.dc) */}
         <Animated.View style={[styles.identityRow, { opacity: heroOpacity, transform: [{ translateY: heroTranslateY }] }]}>
           <Animated.View style={{ transformOrigin: 'left center', transform: [{ scale: portraitScale }] }}>
-            <SealPortrait name={profile.name} />
+            <SealPortrait name={profile.name} src={profile.avatarUrl} />
           </Animated.View>
           <View style={styles.identityText}>
             <Text style={styles.athleteName} numberOfLines={1}>
@@ -276,16 +276,18 @@ export default function LegacyScreen() {
 function LegacyShell({
   scrollY,
   avatarName,
+  avatarSrc,
   children,
 }: {
   scrollY: Animated.Value;
   avatarName: string;
+  avatarSrc?: string;
   children: ReactNode;
 }) {
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.legacyMountains} overlay={{ flat: 'rgba(5,5,5,0.30)' }} scrimFade scrollY={scrollY} />
-      <AppBar title="Legacy" serif avatar={<Avatar name={avatarName} size="appBar" />} onAvatar={() => {}} />
+      <AppBar title="Legacy" serif avatar={<Avatar name={avatarName} src={avatarSrc} size="appBar" />} onAvatar={() => {}} />
       <View style={styles.statusWrap}>{children}</View>
     </View>
   );
@@ -308,7 +310,7 @@ function LegacyError({ onRetry }: { onRetry: () => void }) {
  * FORGE_DELTAS §10) inside the seal ring; a real photo drops into this same slot when that system
  * lands. The rank BADGE lives in the right FoundationBadge slot (ProgressBadge) — never here.
  */
-function SealPortrait({ name }: { name: string }) {
+function SealPortrait({ name, src }: { name: string; src?: string | null }) {
   const initials = name
     .split(' ')
     .map((w) => w[0])
@@ -324,7 +326,11 @@ function SealPortrait({ name }: { name: string }) {
         <Rect x={31} y={31} width={28} height={28} stroke={flColor.bronze400} strokeWidth={1} opacity={0.12} fill="none" transform="rotate(45 45 45)" />
       </Svg>
       <View style={styles.portrait}>
-        <Text style={styles.portraitInitials}>{initials}</Text>
+        {src ? (
+          <Image source={{ uri: src }} style={styles.portraitImage} contentFit="cover" accessibilityLabel={name} />
+        ) : (
+          <Text style={styles.portraitInitials}>{initials}</Text>
+        )}
       </View>
     </View>
   );
@@ -427,8 +433,10 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.charcoal800,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
     boxShadow: flShadow.glowSubtle,
   },
+  portraitImage: { width: '100%', height: '100%' },
   portraitInitials: {
     fontFamily: flFont.display,
     fontSize: 24,

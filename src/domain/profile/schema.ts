@@ -32,6 +32,8 @@ export interface UserProfile {
   handle: string;
   /** Avatar fallback initials, e.g. "AR". */
   initials: string;
+  /** Public URL of the avatar image in the `avatars` storage bucket; null → render initials. */
+  avatarUrl?: string | null;
   /** Saved sex selection; drives artwork variant. Defaults to `'unspecified'`. */
   sex: Sex;
 }
