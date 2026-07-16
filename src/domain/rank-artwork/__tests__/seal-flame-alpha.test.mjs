@@ -10,6 +10,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import zlib from 'node:zlib'
+import { Buffer } from 'node:buffer'
 
 function alphaStats(path) {
   const buf = readFileSync(path)
