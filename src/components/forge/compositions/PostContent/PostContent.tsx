@@ -116,7 +116,7 @@ function ProgramKindGlyph({ size = 13, color = flColor.bronze300 }: GlyphProps) 
 function SwordsGlyph({ size = 16, color = flColor.bronze300 }: GlyphProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
-      <Path d="M6 4v6a6 6 0 0 0 12 0V4M12 16v4M8.5 20h7" />
+      <Path d="M5 4.5L18 17.5M19 4.5L6 17.5M12.7 15.8L16.3 12.2M7.7 12.2L11.3 15.8" />
     </Svg>
   );
 }
