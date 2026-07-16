@@ -396,7 +396,13 @@ screen reuses it.
 **Honest scope (forced by the data):** the program prescribes only sets×reps — **no load** — so an
 honest load PR *requires* the athlete's real entered weight; there's nothing to fabricate one from. The
 full active-workout flow (W-9–W-16) isn't locked, so the Finish screen is a lean **top-set-per-lift**
-logger (weight × reps, blank = skip), not a full per-set UI and not prescribed-as-performed. Optimistic:
+logger (weight × reps, blank = skip), not a full per-set UI and not prescribed-as-performed.
+
+⚠ **INTERIM surface — the one genuinely-new front end in this phase.** It is built on the forged design
+system (`ScreenBackground` · `AppBar` · `Card` · `Button` · foundation tokens; forged inputs with a
+bronze focus accent; a hero `Card` PR confirmation) — a deliberate lean flow, NOT a bare form. But it is
+scaffolding to enable a real write today, **not** the designed W-9–W-16 logging UI, which is still owed
+to spec. Replace it when that surface locks. Optimistic:
 Finish flips to the confirmation immediately and rolls back to editing if the write fails; the session
 ends only after a confirmed write. Legacy refetches on focus (keeping current data on screen — no
 spinner flash) so a new PR shows on return.
