@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { Easing, Keyframe } from 'react-native-reanimated';
 
 import { Button } from '@/components/forge/composites/Button';
 import { ScreenBackground } from '@/components/screen-background';
@@ -9,15 +8,6 @@ import { WelcomeLogo } from '@/components/onboarding/WelcomeLogo';
 import { Field, Heading } from '@/components/onboarding/kit';
 import { useAuth } from '@/lib/auth';
 import { flColor, flFont } from '@/constants/foundation';
-
-/** The .dc `flRise` entrance — translateY 16→0 + fade, ~1200ms, staggered by `delay`. */
-const rise = (delay: number) =>
-  new Keyframe({
-    0: { opacity: 0, transform: [{ translateY: 16 }] },
-    100: { opacity: 1, transform: [{ translateY: 0 }], easing: Easing.out(Easing.cubic) },
-  })
-    .duration(1200)
-    .delay(delay);
 
 /**
  * The auth route (no session) — Welcome → Create Account → Sign In, the first 3 screens of the flow.
@@ -52,6 +42,9 @@ export default function AuthFlow() {
 
   return (
     <View style={styles.root}>
+      {/* Mobile-width frame — on desktop web the auth route renders as a centered phone-width column
+          (like the .dc frame), not stretched edge-to-edge. The atmosphere + content share the frame. */}
+      <View style={styles.frame}>
       {step === 'welcome' ? (
         <WelcomeAtmosphere />
       ) : (
@@ -63,19 +56,13 @@ export default function AuthFlow() {
         {step === 'welcome' ? (
           <View style={styles.welcome}>
             <View style={styles.welcomeContent}>
-              <Animated.View entering={rise(250)}>
-                <WelcomeLogo />
-              </Animated.View>
+              <WelcomeLogo />
               <View style={styles.brandText}>
-                <Animated.Text entering={rise(700)} style={styles.eyebrow}>
-                  Forge Legacy
-                </Animated.Text>
-                <Animated.Text entering={rise(900)} style={styles.brand}>
-                  Build your story.{'\n'}Forge your legacy.
-                </Animated.Text>
+                <Text style={styles.eyebrow}>Forge Legacy</Text>
+                <Text style={styles.brand}>Build your story.{'\n'}Forge your legacy.</Text>
               </View>
             </View>
-            <Animated.View entering={rise(1560)} style={styles.welcomeActions}>
+            <View style={styles.welcomeActions}>
               <Button variant="primary" fullWidth onPress={() => go('create')} accessibilityLabel="Begin Chapter I — create a new account">
                 Begin Chapter I
               </Button>
@@ -84,7 +71,7 @@ export default function AuthFlow() {
                   Returning athlete? <Text style={styles.signinAccent}>Sign in</Text>
                 </Text>
               </Pressable>
-            </Animated.View>
+            </View>
           </View>
         ) : (
           <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
@@ -143,12 +130,14 @@ export default function AuthFlow() {
           </ScrollView>
         )}
       </KeyboardAvoidingView>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  root: { flex: 1, alignItems: 'center', backgroundColor: '#08090B' },
+  frame: { flex: 1, width: '100%', maxWidth: 480, overflow: 'hidden' },
   flex: { flex: 1 },
   welcome: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 34, paddingHorizontal: 34, paddingTop: 44, paddingBottom: 74 },
   welcomeContent: { alignItems: 'center', gap: 48 },
