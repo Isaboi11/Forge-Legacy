@@ -8,7 +8,7 @@ import { Button } from '@/components/forge/composites/Button';
 import { Card } from '@/components/forge/composites/Surface';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
-import { ForgeMarkIcon } from '@/components/forge/primitives/icons/HomeIcons';
+import { BarbellIcon, ForgeMarkIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { ChapterTitleBlock } from '@/components/forge/compositions/ChapterTitleBlock';
 import { TodaysWorkoutCard } from '@/components/forge/compositions/TodaysWorkoutCard';
 import { ProgramMissionGrid } from '@/components/forge/compositions/ProgramMissionGrid';
@@ -35,6 +35,45 @@ function HomeWordmark() {
       <ForgeMarkIcon />
       <Text style={styles.wordmarkText}>Forge Legacy</Text>
     </View>
+  );
+}
+
+/**
+ * "Chapter I — Building Your Foundation" → { number, name }, from the live DB chapter name (no hardcode).
+ * Robust: split on the em dash and trim; no dash → the whole string is the name, number defaults to
+ * "Chapter I".
+ */
+function splitChapterTitle(full: string): { number: string; name: string } {
+  const parts = full.split('—');
+  if (parts.length >= 2) return { number: parts[0].trim(), name: parts.slice(1).join('—').trim() };
+  return { number: 'Chapter I', name: full.trim() };
+}
+
+/**
+ * ONB-D17 isNew hero — the fresh athlete's first-session empty state, up to Forge Home.dc's isNew card.
+ * Two real, distinct actions: Start Training (primary → the demo-workout logger, the working first-workout
+ * path) and Browse Programs (secondary → the catalog). No "build your own" copy until the Program Builder
+ * exists (fast-follow).
+ */
+function FirstSessionCard({ onStart, onBrowse }: { onStart: () => void; onBrowse: () => void }) {
+  return (
+    <Card padding={24} style={styles.firstCard}>
+      <View style={styles.firstIcon}>
+        <BarbellIcon size={24} color={flColor.bronze400} />
+      </View>
+      <View style={styles.firstText}>
+        <Text style={styles.firstTitle}>Forge your first program</Text>
+        <Text style={styles.firstCopy}>Start your first session now, or browse the Forge library to see what&apos;s ahead.</Text>
+      </View>
+      <View style={styles.firstActions}>
+        <Button variant="primary" fullWidth onPress={onStart} accessibilityLabel="Start Training — begin your first workout">
+          Start Training
+        </Button>
+        <Button variant="secondary" fullWidth onPress={onBrowse} accessibilityLabel="Browse Programs — explore the Forge library">
+          Browse Programs
+        </Button>
+      </View>
+    </Card>
   );
 }
 
@@ -95,38 +134,41 @@ export default function HomeScreen() {
 
   const { mission } = HOME_DATA;
 
-  // Fresh-athlete Home — the awaiting-first-workout hero (minimal ONB-D17; full hero is the fast-follow).
+  // Fresh-athlete Home — the ONB-D17 "awaiting first workout" empty state, built up to Forge Home.dc's
+  // isNew card (title block + "Forge your first program" hero). Two real, distinct actions:
+  //   Start Training (primary) → the demo-workout logger — the working first-workout path that fires the
+  //     comes-alive spine (the logger serves the demo workout; freestyle/add-exercise is ruled-deferred).
+  //   Browse Programs (secondary) → the catalog (Workouts tab) — browse-only for a fresh user.
+  // INTERIM DIVERGENCE from the .dc (tracked, not drift): the design puts Browse primary + "Build a
+  // Program" → Program Builder secondary. Neither the enroll funnel (W-3) nor the Program Builder exists,
+  // so the app ships Start-primary; it converges to the design's labels/emphasis when both land.
   if (awaiting) {
+    const { number: chapterNumber, name: chapterName } = splitChapterTitle(awaiting.chapterName);
     const startFirst = () => {
-      const w = getNextWorkout();
-      const lifts = (w?.exercises ?? [])
-        .filter((e) => e.section === 'main' && !e.optional)
-        .map((e) => ({ catalogKey: e.catalogKey, name: exerciseNameFor(e.catalogKey), workingSets: e.workingSets }));
-      startWorkout(w?.name ?? 'First Workout', lifts);
+      startWorkout('First Workout');
       router.push('/workout');
     };
+    const browsePrograms = () => router.push('/workouts');
     return (
       <View style={styles.root}>
-        <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.2)' }} />
+        <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.15)' }} />
         <AppBar
           title={<HomeWordmark />}
           avatar={<Avatar name={liveProfile?.name ?? ''} src={liveProfile?.avatarUrl ?? undefined} size="appBar" />}
           onAvatar={() => {}}
         />
-        <View style={styles.awaitingWrap}>
-          <Card variant="hero" style={styles.awaitingCard}>
-            <Text style={styles.awaitingKicker}>Active Chapter · awaiting first workout</Text>
-            <Text style={styles.awaitingName}>{awaiting.chapterName}</Text>
-            <Text style={styles.awaitingCopy}>
-              The first page of your Chapter is waiting to be written. Your story begins with one workout.
-            </Text>
-            <View style={styles.awaitingAction}>
-              <Button variant="primary" fullWidth onPress={startFirst} accessibilityLabel="Start Workout">
-                Start Workout
-              </Button>
-            </View>
-          </Card>
-        </View>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <ChapterTitleBlock
+            chapterNumber={chapterNumber}
+            chapterName={chapterName}
+            weekDay="Your first chapter"
+            principle={todaysPrinciple()}
+            showRankMedallion={false}
+          />
+          <View style={styles.content}>
+            <FirstSessionCard onStart={startFirst} onBrowse={browsePrograms} />
+          </View>
+        </ScrollView>
       </View>
     );
   }
@@ -225,12 +267,21 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
   },
-  awaitingWrap: { flex: 1, justifyContent: 'center', paddingHorizontal: 24, paddingBottom: 40 },
-  awaitingCard: { gap: 12 },
-  awaitingKicker: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
-  awaitingName: { fontFamily: flFont.display, fontSize: 26, fontWeight: '600', color: flColor.cream100 },
-  awaitingCopy: { fontFamily: flFont.sans, fontSize: 15, lineHeight: 23, color: flColor.gray400 },
-  awaitingAction: { marginTop: 10 },
+  firstCard: { alignItems: 'center', gap: 16 },
+  firstIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    backgroundColor: flColor.charcoal800,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  firstText: { alignItems: 'center', gap: 6 },
+  firstTitle: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100, textAlign: 'center' },
+  firstCopy: { fontFamily: flFont.sans, fontSize: 14, lineHeight: 20, color: flColor.gray400, textAlign: 'center', maxWidth: 260 },
+  firstActions: { width: '100%', gap: 10 },
   scrollContent: {
     paddingBottom: 44,
   },

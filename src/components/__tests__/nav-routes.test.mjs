@@ -63,11 +63,13 @@ test('/workout (active session) is DISTINCT from the /workouts tab root', () => 
   assert.ok(!hrefs.includes('/workout'), '/workout must NOT be a tab href');
 });
 
-test("Home's Start Workout still routes to /workout (not the catalog)", () => {
-  // Tab routes live in the `(tabs)` group (root Stack); the group segment carries no URL.
+test("Home's fresh-athlete hero: Start Training → /workout (logger) · Browse Programs → /workouts (catalog)", () => {
+  // The ONB-D17 isNew hero has two distinct actions. Start Training is the first-workout path — it must
+  // reach the active-session LOGGER (/workout), never the catalog tab. Browse Programs is a separate,
+  // intended affordance that DOES route to the catalog tab (/workouts). Both must be present and distinct.
   const home = readFileSync(join(APP, '(tabs)', 'index.tsx'), 'utf8');
-  assert.match(home, /router\.push\(['"]\/workout['"]\)/, 'Start Workout should push /workout');
-  assert.ok(!/router\.push\(['"]\/workouts['"]\)/.test(home), 'Start Workout must not push /workouts');
+  assert.match(home, /router\.push\(['"]\/workout['"]\)/, 'Start Training should push /workout (the logger)');
+  assert.match(home, /router\.push\(['"]\/workouts['"]\)/, 'Browse Programs should push /workouts (the catalog)');
 });
 
 test('every tab route file exists in (tabs)/ (+ the distinct /workout session route at app root)', () => {
