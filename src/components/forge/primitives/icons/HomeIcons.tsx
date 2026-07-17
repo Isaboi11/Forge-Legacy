@@ -12,7 +12,8 @@
  */
 
 import React from 'react'
-import Svg, { Circle, Defs, LinearGradient, Path, Polygon, Rect, Stop } from 'react-native-svg'
+import { StyleSheet, View } from 'react-native'
+import Svg, { Circle, Defs, LinearGradient, Path, Polygon, RadialGradient, Rect, Stop } from 'react-native-svg'
 import { flColor } from '@/constants/foundation'
 
 export interface HomeIconProps {
@@ -117,3 +118,31 @@ export function ForgeMarkIcon({ width = 19, height = 28 }: { width?: number; hei
     </Svg>
   )
 }
+
+/**
+ * The Forge mark inside its warm radial glow — the Welcome/entry hero lockup (matches the
+ * approved onboarding first-screen design: the pillar mark haloed in bronze light over the
+ * slate ground). `glow` sizes the halo box; the mark is centered and scaled within it.
+ */
+export function ForgeBrandMark({ glow = 220, mark = 96 }: { glow?: number; mark?: number }) {
+  const markWidth = mark * (68 / 102) // preserve the mark's 68:102 viewBox aspect
+  return (
+    <View style={[brandMarkStyles.wrap, { width: glow, height: glow }]}>
+      <Svg width={glow} height={glow} style={StyleSheet.absoluteFill}>
+        <Defs>
+          <RadialGradient id="forgeBrandGlow" cx="50%" cy="50%" r="50%">
+            <Stop offset="0%" stopColor="#F0C079" stopOpacity={0.5} />
+            <Stop offset="42%" stopColor="#C8853E" stopOpacity={0.16} />
+            <Stop offset="100%" stopColor="#C8853E" stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Rect width={glow} height={glow} fill="url(#forgeBrandGlow)" />
+      </Svg>
+      <ForgeMarkIcon width={markWidth} height={mark} />
+    </View>
+  )
+}
+
+const brandMarkStyles = StyleSheet.create({
+  wrap: { alignItems: 'center', justifyContent: 'center' },
+})

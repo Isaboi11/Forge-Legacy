@@ -5,6 +5,7 @@ import { Button } from '@/components/forge/composites/Button';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { Field, Heading } from '@/components/onboarding/kit';
+import { ForgeBrandMark } from '@/components/forge/primitives/icons/HomeIcons';
 import { useAuth } from '@/lib/auth';
 import { flColor, flFont } from '@/constants/foundation';
 
@@ -46,6 +47,7 @@ export default function AuthFlow() {
         {step === 'welcome' ? (
           <View style={styles.welcome}>
             <View style={styles.brandBlock}>
+              <ForgeBrandMark />
               <Text style={styles.eyebrow}>Forge Legacy</Text>
               <Text style={styles.brand}>Build your story.{'\n'}Forge your legacy.</Text>
             </View>
@@ -124,11 +126,11 @@ export default function AuthFlow() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   flex: { flex: 1 },
-  welcome: { flex: 1, justifyContent: 'space-between', paddingHorizontal: 28, paddingTop: 120, paddingBottom: 56 },
-  brandBlock: { gap: 14 },
-  eyebrow: { fontSize: 12, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.bronze400 },
-  brand: { fontFamily: flFont.display, fontSize: 38, fontWeight: '600', lineHeight: 44, color: flColor.cream100 },
-  welcomeActions: { gap: 16 },
+  welcome: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 28 },
+  brandBlock: { alignItems: 'center', gap: 14 },
+  eyebrow: { fontSize: 12, fontWeight: '700', letterSpacing: 3, textTransform: 'uppercase', color: flColor.bronze400, textAlign: 'center' },
+  brand: { fontFamily: flFont.display, fontSize: 40, fontWeight: '600', lineHeight: 46, color: flColor.cream100, textAlign: 'center' },
+  welcomeActions: { alignSelf: 'stretch', gap: 16, marginTop: 44 },
   signinLink: { alignItems: 'center', paddingVertical: 6 },
   signinText: { fontFamily: flFont.sans, fontSize: 14, color: flColor.gray400 },
   signinAccent: { color: flColor.bronze400, fontWeight: '600' },
