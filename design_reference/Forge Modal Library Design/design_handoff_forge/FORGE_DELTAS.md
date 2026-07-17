@@ -550,6 +550,40 @@ rest timer touch the session model.
 
 ---
 
+## 27. W-17 Workout Complete — 4-stage ceremony on committed data (minimal-real, DONE)
+
+W-9 Finish now hands off to a real W-17 completion (replacing the inline stub), canonical per the PO
+ruling (the standalone Seal/Record/Reflect/Share — the inline ceremony modal is a dead end, never built).
+
+**The seam — ruled (b):** the atomic commit stays at W-9 Finish; the workout is durable the instant
+logging ends. W-17 is a SEPARATE route (`workout-complete?id=…`, `router.replace` — active screen off the
+stack) that RE-FETCHES the committed workout (real render on committed data). The Reflect note is the one
+post-commit write — an optional single-row owner-scoped UPDATE (`0011` `workouts.reflection`, nullable,
+distinct from `chapters.reflection`; no RPC). Data durability > ceremony atomicity: abandoning the
+ceremony never costs logged effort.
+
+- **Stage 1 Seal** — seal medallion + volume/duration + a minimal real PR callout (or a forged quote);
+  press-&-hold to seal → Legacy.
+- **Stage 2 Record** — total volume + per-exercise top set + PR badge (real).
+- **Stage 3 Reflect** — "a note for future you" → persists to `workouts.reflection` on "Seal the Note"
+  (Skip → null).
+- **Stage 4 Share** — shareable card → RN `Share`.
+
+**Design consequence (flagged, not a bug):** Reflect sits on the secondary path (Seal→hold→home is
+primary), so most workouts intentionally carry a null reflection — fine for the nullable model, worth
+knowing when something later wants to surface reflections.
+
+**Deferred (ruled — don't fake):** honor hero moment (needs Honor Evaluation Service) · "How You Improved"
+deltas + resurfaced memory (need set-history + past reflections) · first-run onboarding ceremony variant
+(ONB-D18 — lights up on this foundation later) · Chapter-comes-alive animation fidelity.
+
+**Proven** (`workout-complete-roundtrip.mjs`): render-from-DB (volume/duration/PR) · reflection post-commit
+(null-on-skip → persists) · seam durability (all committed at Finish, before any W-17 interaction) ·
+post-commit invariant · off-awaiting. tsc 0 · eslint 0 · 196 tests · SSR-safe. Ceremony transitions
+(seal→home, see-details→reflect) are client-local — eyeball, like resume.
+
+---
+
 ## Still open (carry into implementation)
 
 **Three buckets, and the distinction is load-bearing** — don't let a fixable miss (or a merely

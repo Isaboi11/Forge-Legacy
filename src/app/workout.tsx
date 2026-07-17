@@ -13,10 +13,10 @@ import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { buildActiveSession } from '@/domain/workout/build-session';
 import { clearSession, loadSession, persistSession } from '@/domain/workout/autosave';
 import { doneSetCount, hasLoggedSet } from '@/domain/workout/metrics';
-import { saveWorkout, type SaveResult } from '@/domain/workout/save';
+import { saveWorkout } from '@/domain/workout/save';
 import type { ActiveSession } from '@/domain/workout/types';
 
-type Phase = 'loading' | 'resume' | 'active' | 'saving' | 'done';
+type Phase = 'loading' | 'resume' | 'active' | 'saving';
 type Picker = { exIdx: number; setIdx: number; field: 'weight' | 'reps' };
 
 function fmtElapsed(startedAt: string, now: number): string {
@@ -41,7 +41,6 @@ export default function WorkoutScreen() {
   const [phase, setPhase] = useState<Phase>('loading');
   const [picker, setPicker] = useState<Picker | null>(null);
   const [pickerValue, setPickerValue] = useState('');
-  const [result, setResult] = useState<SaveResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
@@ -113,8 +112,8 @@ export default function WorkoutScreen() {
       const r = await saveWorkout(session);
       await clearSession();
       finishWorkout();
-      setResult(r);
-      setPhase('done');
+      // Workout is durably committed — hand off to W-17 (active screen removed from the stack).
+      router.replace({ pathname: '/workout-complete', params: { id: r.workoutId } });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setPhase('active');
@@ -149,41 +148,7 @@ export default function WorkoutScreen() {
     );
   }
 
-  // ── completion (minimal W-17) ──
-  if (phase === 'done' && result) {
-    return (
-      <Shell>
-        <View style={styles.center}>
-          <Card variant="hero" style={styles.doneCard}>
-            <Text style={styles.kicker}>Workout Complete</Text>
-            <Text style={styles.doneTitle}>{session?.workoutName}</Text>
-            <View style={styles.statRow}>
-              <Stat n={result.volume.toLocaleString()} label="Volume · lb" />
-              <Stat n={result.sets} label="Sets" />
-              <Stat n={fmtElapsed(session?.startedAt ?? '', now)} label="Time" />
-            </View>
-            {result.prs.length > 0 ? (
-              <View style={styles.prBlock}>
-                <Text style={styles.prHeading}>New personal record{result.prs.length > 1 ? 's' : ''}</Text>
-                {result.prs.map((pr) => (
-                  <Text key={pr.exercise} style={styles.prLine}>
-                    {pr.exercise} · {pr.weight} lb × {pr.reps}
-                  </Text>
-                ))}
-              </View>
-            ) : null}
-            <View style={styles.doneAction}>
-              <Button variant="primary" fullWidth onPress={() => router.replace('/(tabs)/legacy')} accessibilityLabel="Save to Legacy">
-                Save to Legacy
-              </Button>
-            </View>
-          </Card>
-        </View>
-      </Shell>
-    );
-  }
-
-  if (phase === 'loading' || !session) {
+  if (phase === 'loading' || phase === 'saving' || !session) {
     return (
       <Shell>
         <View style={styles.center}>
@@ -285,14 +250,8 @@ export default function WorkoutScreen() {
 
         <View style={styles.actions}>
           {complete ? <Text style={styles.completeNote}>● All sets complete</Text> : null}
-          <Button
-            variant="primary"
-            fullWidth
-            disabled={phase === 'saving' || !hasLoggedSet(session)}
-            onPress={onFinish}
-            accessibilityLabel="Finish workout"
-          >
-            {phase === 'saving' ? 'Saving…' : hasLoggedSet(session) ? 'Finish Workout' : 'Log a set to finish'}
+          <Button variant="primary" fullWidth disabled={!hasLoggedSet(session)} onPress={onFinish} accessibilityLabel="Finish workout">
+            {hasLoggedSet(session) ? 'Finish Workout' : 'Log a set to finish'}
           </Button>
         </View>
       </ScrollView>
@@ -343,15 +302,6 @@ function Shell({ children }: { children: ReactNode }) {
     </View>
   );
 }
-function Stat({ n, label }: { n: number | string; label: string }) {
-  return (
-    <View style={styles.stat}>
-      <Text style={styles.statN}>{n}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   root: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
