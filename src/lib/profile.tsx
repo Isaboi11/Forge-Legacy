@@ -12,6 +12,8 @@ import type { UserProfile } from '@/domain/profile/schema';
 interface ProfileState {
   profile: UserProfile | null;
   loading: boolean;
+  /** Re-read the profile — e.g. after onboarding sets `onboarded_at`, so the boot router can swap. */
+  refetch: () => void;
 }
 
 const ProfileContext = createContext<ProfileState | undefined>(undefined);
@@ -19,11 +21,11 @@ const ProfileContext = createContext<ProfileState | undefined>(undefined);
 export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const { session } = useAuth();
   const uid = session?.user.id ?? null;
-  const { data, loading } = useQuery<UserProfile | null>(
+  const { data, loading, refetch } = useQuery<UserProfile | null>(
     async () => (uid ? fetchSelfProfile() : null),
     [uid],
   );
-  return <ProfileContext.Provider value={{ profile: data, loading }}>{children}</ProfileContext.Provider>;
+  return <ProfileContext.Provider value={{ profile: data, loading, refetch }}>{children}</ProfileContext.Provider>;
 }
 
 export function useProfile(): ProfileState {

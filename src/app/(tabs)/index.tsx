@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
@@ -65,7 +65,19 @@ export default function HomeScreen() {
   const { profile: liveProfile } = useProfile();
   // H-1 "awaiting first workout" (ONB-D17): a just-onboarded athlete (active chapter, 0 workouts) gets a
   // purpose-built hero instead of the static content, so a fresh user never lands on stale/blank Home.
-  const { data: awaiting } = useQuery(fetchAwaitingChapter, []);
+  const { data: awaiting, refetch: refetchAwaiting } = useQuery(fetchAwaitingChapter, []);
+  // Re-read on focus so the hero flips OFF awaiting after the first workout is committed (Home is a
+  // mounted tab; without this it fetches once and the awaiting hero would stick past workout #1).
+  const firstAwaitFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (firstAwaitFocus.current) {
+        firstAwaitFocus.current = false;
+        return;
+      }
+      refetchAwaiting();
+    }, [refetchAwaiting]),
+  );
 
   // Static this session (no athlete-progress backend) — resolve once.
   const { profile, program, workout, resolved } = useMemo(() => {

@@ -12,6 +12,7 @@ import { flColor, flFont, flRadius } from '@/constants/foundation';
 import type { EquipmentId, GoalId } from '@/domain/onboarding/derive';
 import { recommendProgram, type ProgramView } from '@/domain/onboarding/recommend';
 import { completeOnboarding, isHandleAvailable } from '@/domain/onboarding/service';
+import { useProfile } from '@/lib/profile';
 
 /**
  * The onboarding route (session, not-onboarded) — the design `.dc`'s setup flow, Account → Transition.
@@ -73,6 +74,7 @@ export default function Onboarding() {
   const [uStatus, setUStatus] = useState<UStatus>('idle');
   const [finishing, setFinishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { refetch: refetchProfile } = useProfile();
   const patch = (p: Partial<Data>) => setData((d) => ({ ...d, ...p }));
 
   const idx = SETUP.indexOf(step);
@@ -126,7 +128,9 @@ export default function Onboarding() {
         primaryGoal: data.primaryGoal,
         equipment: data.equipment,
       });
-      // success → onboarded_at set → boot router swaps to the app (no manual nav)
+      // Pull the new onboarded_at so the boot router swaps to the app (it fetched once per session and
+      // would otherwise stay stale on this screen — the "stuck on Opening your forge" bug).
+      refetchProfile();
     } catch (e) {
       setFinishing(false);
       setError(e instanceof Error ? e.message : String(e));
