@@ -101,20 +101,35 @@ export function FlameIcon({ size = 18, color = '#E0913F' }: HomeIconProps) {
   )
 }
 
-/** The Forge Legacy pillar mark — AppBar wordmark glyph, bronze gradient fill. */
-export function ForgeMarkIcon({ width = 19, height = 28 }: { width?: number; height?: number }) {
+/**
+ * The Forge Legacy pillar mark. Default: the AppBar wordmark glyph (compact 3-stop bronze fill).
+ * `rich`: the Welcome/entry hero variant — the design's 5-stop `obLogoA` gradient (a hotter, deeper
+ * forged-metal ramp). The AppBar keeps the default; only the Welcome lockup passes `rich`.
+ */
+export function ForgeMarkIcon({ width = 19, height = 28, rich = false }: { width?: number; height?: number; rich?: boolean }) {
+  const gradId = rich ? 'forgeMarkGradRich' : 'forgeMarkGrad'
   return (
     <Svg width={width} height={height} viewBox="16 0 68 102">
       <Defs>
-        <LinearGradient id="forgeMarkGrad" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0%" stopColor="#DCB57A" />
-          <Stop offset="52%" stopColor="#BF8F4F" />
-          <Stop offset="100%" stopColor="#835F32" />
-        </LinearGradient>
+        {rich ? (
+          <LinearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0%" stopColor="#FBE7B8" />
+            <Stop offset="18%" stopColor="#EAC585" />
+            <Stop offset="44%" stopColor="#C79A5A" />
+            <Stop offset="72%" stopColor="#9E7440" />
+            <Stop offset="100%" stopColor="#6A4620" />
+          </LinearGradient>
+        ) : (
+          <LinearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0%" stopColor="#DCB57A" />
+            <Stop offset="52%" stopColor="#BF8F4F" />
+            <Stop offset="100%" stopColor="#835F32" />
+          </LinearGradient>
+        )}
       </Defs>
-      <Polygon points="43,6 57,6 57,96 43,96" fill="url(#forgeMarkGrad)" />
-      <Polygon points="23,42 37,27 37,96 23,96" fill="url(#forgeMarkGrad)" />
-      <Polygon points="63,27 77,42 77,96 63,96" fill="url(#forgeMarkGrad)" />
+      <Polygon points="43,6 57,6 57,96 43,96" fill={`url(#${gradId})`} />
+      <Polygon points="23,42 37,27 37,96 23,96" fill={`url(#${gradId})`} />
+      <Polygon points="63,27 77,42 77,96 63,96" fill={`url(#${gradId})`} />
     </Svg>
   )
 }
@@ -124,8 +139,8 @@ export function ForgeMarkIcon({ width = 19, height = 28 }: { width?: number; hei
  * approved onboarding first-screen design: the pillar mark haloed in bronze light over the
  * slate ground). `glow` sizes the halo box; the mark is centered and scaled within it.
  */
-export function ForgeBrandMark({ glow = 220, mark = 96 }: { glow?: number; mark?: number }) {
-  const markWidth = mark * (68 / 102) // preserve the mark's 68:102 viewBox aspect
+export function ForgeBrandMark({ glow = 260, mark = 113 }: { glow?: number; mark?: number }) {
+  const markWidth = Math.round(mark * (77 / 113)) // design mark aspect 77×113
   return (
     <View style={[brandMarkStyles.wrap, { width: glow, height: glow }]}>
       <Svg width={glow} height={glow} style={StyleSheet.absoluteFill}>
@@ -138,7 +153,7 @@ export function ForgeBrandMark({ glow = 220, mark = 96 }: { glow?: number; mark?
         </Defs>
         <Rect width={glow} height={glow} fill="url(#forgeBrandGlow)" />
       </Svg>
-      <ForgeMarkIcon width={markWidth} height={mark} />
+      <ForgeMarkIcon rich width={markWidth} height={mark} />
     </View>
   )
 }

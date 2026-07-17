@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Button } from '@/components/forge/composites/Button';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
+import { WelcomeAtmosphere } from '@/components/onboarding/WelcomeAtmosphere';
 import { Field, Heading } from '@/components/onboarding/kit';
 import { ForgeBrandMark } from '@/components/forge/primitives/icons/HomeIcons';
 import { useAuth } from '@/lib/auth';
@@ -42,16 +44,28 @@ export default function AuthFlow() {
 
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.34)' }} />
+      {step === 'welcome' ? (
+        <WelcomeAtmosphere />
+      ) : (
+        <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.34)' }} />
+      )}
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {step === 'welcome' ? (
           <View style={styles.welcome}>
-            <View style={styles.brandBlock}>
-              <ForgeBrandMark />
-              <Text style={styles.eyebrow}>Forge Legacy</Text>
-              <Text style={styles.brand}>Build your story.{'\n'}Forge your legacy.</Text>
+            <View style={styles.welcomeContent}>
+              <Animated.View entering={FadeInDown.delay(250).duration(1100)}>
+                <ForgeBrandMark />
+              </Animated.View>
+              <View style={styles.brandText}>
+                <Animated.Text entering={FadeInDown.delay(700).duration(1100)} style={styles.eyebrow}>
+                  Forge Legacy
+                </Animated.Text>
+                <Animated.Text entering={FadeInDown.delay(900).duration(1100)} style={styles.brand}>
+                  Build your story.{'\n'}Forge your legacy.
+                </Animated.Text>
+              </View>
             </View>
-            <View style={styles.welcomeActions}>
+            <Animated.View entering={FadeInDown.delay(1560).duration(1100)} style={styles.welcomeActions}>
               <Button variant="primary" fullWidth onPress={() => go('create')} accessibilityLabel="Begin Chapter I — create a new account">
                 Begin Chapter I
               </Button>
@@ -60,7 +74,7 @@ export default function AuthFlow() {
                   Returning athlete? <Text style={styles.signinAccent}>Sign in</Text>
                 </Text>
               </Pressable>
-            </View>
+            </Animated.View>
           </View>
         ) : (
           <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
@@ -126,14 +140,15 @@ export default function AuthFlow() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   flex: { flex: 1 },
-  welcome: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 28 },
-  brandBlock: { alignItems: 'center', gap: 14 },
-  eyebrow: { fontSize: 12, fontWeight: '700', letterSpacing: 3, textTransform: 'uppercase', color: flColor.bronze400, textAlign: 'center' },
-  brand: { fontFamily: flFont.display, fontSize: 40, fontWeight: '600', lineHeight: 46, color: flColor.cream100, textAlign: 'center' },
-  welcomeActions: { alignSelf: 'stretch', gap: 16, marginTop: 44 },
+  welcome: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 34, paddingHorizontal: 34, paddingTop: 44, paddingBottom: 74 },
+  welcomeContent: { alignItems: 'center', gap: 48 },
+  brandText: { alignItems: 'center', gap: 26 },
+  eyebrow: { fontSize: 11.5, fontWeight: '600', letterSpacing: 5, textTransform: 'uppercase', color: flColor.gray400, textAlign: 'center' },
+  brand: { fontFamily: flFont.display, fontSize: 40, fontWeight: '600', lineHeight: 43, letterSpacing: -0.5, color: flColor.cream100, textAlign: 'center' },
+  welcomeActions: { alignSelf: 'stretch', gap: 16 },
   signinLink: { alignItems: 'center', paddingVertical: 6 },
-  signinText: { fontFamily: flFont.sans, fontSize: 14, color: flColor.gray400 },
-  signinAccent: { color: flColor.bronze400, fontWeight: '600' },
+  signinText: { fontFamily: flFont.sans, fontSize: 13.5, color: flColor.gray600 },
+  signinAccent: { color: flColor.bronze300, fontWeight: '600' },
 
   form: { paddingHorizontal: 28, paddingTop: 64, paddingBottom: 40, gap: 20 },
   backLink: { alignSelf: 'flex-start' },
