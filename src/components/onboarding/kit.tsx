@@ -70,11 +70,19 @@ export function SelectTile({
   );
 }
 
-/** A labeled forged text field. */
-export function Field({ label, hint, ...input }: { label: string; hint?: string } & TextInputProps) {
+/** A labeled forged text field. `showCount` renders an x/max counter by the label (needs `maxLength`). */
+export function Field({ label, hint, showCount, ...input }: { label: string; hint?: string; showCount?: boolean } & TextInputProps) {
+  const count = typeof input.value === 'string' ? input.value.length : 0;
   return (
     <View style={s.field}>
-      <Text style={s.fieldLabel}>{label}</Text>
+      <View style={s.fieldLabelRow}>
+        <Text style={s.fieldLabel}>{label}</Text>
+        {showCount && input.maxLength != null ? (
+          <Text style={s.fieldCount}>
+            {count}/{input.maxLength}
+          </Text>
+        ) : null}
+      </View>
       <TextInput style={s.input} placeholderTextColor={flColor.gray600} {...input} />
       {hint ? <Text style={s.hint}>{hint}</Text> : null}
     </View>
@@ -121,7 +129,9 @@ const s = StyleSheet.create({
   tileDesc: { fontFamily: flFont.sans, fontSize: 12.5, lineHeight: 17, color: flColor.gray400 },
 
   field: { gap: 7 },
+  fieldLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   fieldLabel: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray400 },
+  fieldCount: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '600', color: flColor.gray600 },
   input: {
     borderWidth: 1,
     borderColor: flColor.charcoal600,

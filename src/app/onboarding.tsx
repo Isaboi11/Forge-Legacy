@@ -5,8 +5,8 @@ import Svg, { Path } from 'react-native-svg';
 import { Button } from '@/components/forge/composites/Button';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { Pill } from '@/components/forge/composites/Pill';
+import { ForgeBrandMark } from '@/components/forge/primitives/icons/HomeIcons';
 import { ScreenBackground } from '@/components/screen-background';
-import { SCREEN_BG } from '@/constants/backgrounds';
 import { Field, Heading, ProgressHeader, SelectTile } from '@/components/onboarding/kit';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import type { EquipmentId, GoalId } from '@/domain/onboarding/derive';
@@ -141,11 +141,14 @@ export default function Onboarding() {
 
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.34)' }} />
+      {/* Form screens: the calm #08090B base (continuous with the auth forms, 0.2). The Transition is the
+          payoff that closes onboarding — atmospheric steel base, the bookend to Welcome's forged-hall. */}
+      {step === 'transition' ? <ScreenBackground atmospheric /> : <ScreenBackground base="#08090B" />}
       {idx >= 0 ? <ProgressHeader step={idx + 1} total={SETUP.length} onBack={idx > 0 || step === 'transition' ? back : undefined} /> : null}
 
       {step === 'transition' ? (
         <View style={styles.transition}>
+          <ForgeBrandMark glow={150} mark={74} />
           <Text style={styles.tEyebrow}>Your forge is ready</Text>
           <Text style={styles.tTitle}>Your next chapter{'\n'}begins now.</Text>
           <Text style={styles.tBody}>
@@ -167,7 +170,7 @@ export default function Onboarding() {
                 <Avatar name={data.name || '  '} size="profile" ring />
                 <Text style={styles.optional}>Add a photo — optional (add it later in Profile)</Text>
               </View>
-              <Field label="Your name" placeholder="e.g. Marcus Vale" maxLength={24} value={data.name} onChangeText={(t) => patch({ name: t.replace(/^\s+/, '') })} />
+              <Field label="Your name" placeholder="e.g. Marcus Vale" maxLength={24} showCount value={data.name} onChangeText={(t) => patch({ name: t.replace(/^\s+/, '') })} />
               <Group label="Sex" hint="Used to tailor your starting training load.">
                 <View style={styles.tileRow}>
                   <SelectTile fill title="Male" selected={data.sex === 'male'} onPress={() => patch({ sex: 'male' })} />
@@ -361,7 +364,7 @@ function StarIcon({ filled }: { filled: boolean }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  scroll: { paddingHorizontal: 24, paddingTop: 4, paddingBottom: 40, gap: 18 },
+  scroll: { paddingHorizontal: 30, paddingTop: 4, paddingBottom: 40, gap: 22 },
   continue: { marginTop: 8 },
 
   avatarRow: { alignItems: 'center', gap: 10, paddingVertical: 6 },
@@ -401,12 +404,12 @@ const styles = StyleSheet.create({
   statLabel: { fontFamily: flFont.sans, fontSize: 11, letterSpacing: 0.4, color: flColor.gray600 },
   changeHint: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray600, textAlign: 'center' },
 
-  transition: { flex: 1, justifyContent: 'center', paddingHorizontal: 28, gap: 14 },
-  tEyebrow: { fontSize: 11, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronze400 },
-  tTitle: { fontFamily: flFont.display, fontSize: 34, fontWeight: '600', lineHeight: 40, color: flColor.cream100 },
-  tBody: { fontFamily: flFont.sans, fontSize: 15, lineHeight: 23, color: flColor.gray400 },
+  transition: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 36, gap: 20 },
+  tEyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronze400, textAlign: 'center' },
+  tTitle: { fontFamily: flFont.display, fontSize: 34, fontWeight: '600', lineHeight: 40, color: flColor.cream100, textAlign: 'center' },
+  tBody: { fontFamily: flFont.sans, fontSize: 15, lineHeight: 23, color: flColor.gray400, textAlign: 'center' },
   tAccent: { color: flColor.bronze400, fontWeight: '600' },
-  tAction: { marginTop: 18 },
+  tAction: { alignSelf: 'stretch', marginTop: 8 },
 
   err: { fontFamily: flFont.sans, fontSize: 13, color: flColor.redMuted },
 });
