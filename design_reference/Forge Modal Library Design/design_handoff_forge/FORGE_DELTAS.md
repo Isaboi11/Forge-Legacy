@@ -584,6 +584,34 @@ post-commit invariant · off-awaiting. tsc 0 · eslint 0 · 196 tests · SSR-saf
 
 ---
 
+## 28. First-run ceremony — Chapter comes alive on Workout #1 (ONB-D18 minimal-real, DONE)
+
+Cashes in the payoff W-17 unblocked: a brand-new athlete's FIRST logged workout plays a distinct
+"Chapter comes alive" reveal instead of the generic seal — closing the **payoff half of onboarding Part
+III** (the arc peaks at Workout #1). No screen, no migration — a variant on the W-17 Seal stage.
+
+**Detection seam (ruled — id-scoped, not the counter):** `isFirstWorkout` = *this workout is the earliest
+saved workout in its chapter* (`fetchCompletion`: `order by saved_at, created_at limit 1` → id match).
+Because the completion route is `?id=…` + re-fetches, the predicate is **stable forever** — re-opening
+workout #1 after ten more workouts still reads first-run. Never a `workout_count` snapshot. No `chapter_id`
+→ false; ties by `created_at`.
+
+**The reveal (minimal-real):** the Seal stage swaps to the **real chapter name** as an animated hero
+(restrained bronze fade/scale-in) with **arrival** copy — "Your Chapter begins" / "The first page is
+written." Authored (not spec-quoted), deliberately **no reward/rank/honor/streak language** — it's the
+chapter arriving, not an achievement citation (honest against D22; leaves the First-Honor check for D19).
+Volume/duration + hold-to-seal remain. Workout #2+ = the generic seal, unchanged.
+
+**Deferred (ruled):** the full D18 multi-beat cinematic (title-rises → name → date → Workout-#1 → bring-to-
+life) · **First Honor (ONB-D19)** — gated on the Honor Evaluation Service, don't fake it.
+
+**Proven** (`workout-firstrun-roundtrip.mjs`): #1 → reveal · #2 → generic · **re-open #1 after #2 → still
+reveal** (id-scoped) · real chapter name · no progression fabricated (timeline holds only real PR
+accomplishments — no honor/rank/streak). tsc 0 · eslint 0 · 196 tests · SSR-safe. The animation itself is
+client-local (eyeball) — the 3rd such beat, walked by hand alongside resume + the W-17 transitions.
+
+---
+
 ## Still open (carry into implementation)
 
 **Three buckets, and the distinction is load-bearing** — don't let a fixable miss (or a merely

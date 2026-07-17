@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
@@ -34,6 +34,11 @@ export default function WorkoutComplete() {
   const [note, setNote] = useState('');
   const [sealed, setSealed] = useState(false);
   const [hold] = useState(() => new Animated.Value(0));
+  // First-run "Chapter comes alive" reveal (ONB-D18) — a restrained bronze fade/scale-in on workout #1.
+  const [reveal] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    if (data?.isFirstWorkout) Animated.timing(reveal, { toValue: 1, duration: 1100, useNativeDriver: true }).start();
+  }, [data?.isFirstWorkout, reveal]);
 
   const goHome = () => router.replace('/(tabs)/legacy');
 
@@ -77,6 +82,43 @@ export default function WorkoutComplete() {
   // ── Stage 1 · Seal ──
   if (step === 'seal') {
     const fillW = hold.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
+
+    // First-run reveal (ONB-D18): the chapter comes alive on workout #1. Arrival, not achievement — no
+    // reward/rank/honor/streak language (honest against D22; leaves the First-Honor check for ONB-D19).
+    if (data.isFirstWorkout) {
+      const scale = reveal.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1] });
+      return (
+        <Shell>
+          <Pressable style={styles.shareIcon} onPress={() => setStep('share')} accessibilityRole="button" accessibilityLabel="Share">
+            <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M4 12v8h16v-8M12 3v13M7 8l5-5 5 5" />
+            </Svg>
+          </Pressable>
+          <View style={styles.center}>
+            <Text style={styles.firstEyebrow}>Your Chapter begins</Text>
+            <Animated.View style={{ opacity: reveal, transform: [{ scale }] }}>
+              <Seal />
+            </Animated.View>
+            <Animated.Text style={[styles.revealChapter, { opacity: reveal, transform: [{ scale }] }]}>
+              {data.chapterName ?? 'Your Chapter'}
+            </Animated.Text>
+            <Animated.Text style={[styles.revealLine, { opacity: reveal }]}>The first page is written.</Animated.Text>
+            <View style={styles.sealStats}>
+              <Stat n={fmtDuration(data.durationSec)} label="Under Iron" />
+              <Stat n={data.volume.toLocaleString()} label="Volume · lb" />
+            </View>
+            <Pressable style={styles.holdBtn} onPressIn={startHold} onPressOut={cancelHold} accessibilityRole="button" accessibilityLabel="Press and hold to seal">
+              <Animated.View style={[styles.holdFill, { width: fillW }]} />
+              <Text style={styles.holdText}>{sealed ? 'Sealed' : 'Hold to Seal'}</Text>
+            </Pressable>
+            <Pressable onPress={() => setStep('record')} accessibilityRole="button" accessibilityLabel="See the details" style={styles.textLink}>
+              <Text style={styles.textLinkText}>See the details</Text>
+            </Pressable>
+          </View>
+        </Shell>
+      );
+    }
+
     return (
       <Shell>
         <Pressable style={styles.shareIcon} onPress={() => setStep('share')} accessibilityRole="button" accessibilityLabel="Share">
@@ -265,6 +307,9 @@ const styles = StyleSheet.create({
   sealInner: { width: '82%', height: '82%', borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.charcoal900 },
   sealDiamond: { width: 18, height: 18, transform: [{ rotate: '45deg' }], borderWidth: 1.5, borderColor: flColor.bronze300 },
 
+  firstEyebrow: { fontSize: 11, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.bronze400 },
+  revealChapter: { fontFamily: flFont.display, fontSize: 30, fontWeight: '600', color: flColor.cream100, textAlign: 'center', marginTop: 6, letterSpacing: -0.3 },
+  revealLine: { fontFamily: flFont.sans, fontSize: 14.5, color: flColor.gray400, textAlign: 'center', marginTop: 4 },
   sealStatus: { fontFamily: flFont.sans, fontSize: 13, letterSpacing: 0.5, color: flColor.gray400, marginTop: 4 },
   sealTitle: { fontFamily: flFont.display, fontSize: 34, fontWeight: '600', color: flColor.cream100, textAlign: 'center' },
   sealStats: { flexDirection: 'row', gap: 34, marginTop: 6 },

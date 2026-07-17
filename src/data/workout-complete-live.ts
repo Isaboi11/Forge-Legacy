@@ -21,6 +21,9 @@ export interface Completion {
   exercises: CompletionExercise[];
   prs: { exercise: string; weight: number; reps: number }[];
   reflection: string | null;
+  /** True iff this is the EARLIEST saved workout in its chapter — id-scoped + re-fetch-stable (ONB-D18
+   *  first-run reveal). Never a workout_count snapshot: re-opening workout #1 always reads true. */
+  isFirstWorkout: boolean;
 }
 
 interface WorkoutRow {
@@ -73,6 +76,21 @@ export async function fetchCompletion(workoutId: string): Promise<Completion> {
     ? ((await supabase.from('chapters').select('name').eq('id', workout.chapter_id).single()).data?.name ?? null)
     : null;
 
+  // First-run detection (ONB-D18): is THIS workout the earliest saved workout in its chapter? Id-scoped
+  // by identity, not the mutable counter — re-opening workout #1 after more workouts still reads true.
+  let isFirstWorkout = false;
+  if (workout.chapter_id) {
+    const { data: earliest } = await supabase
+      .from('workouts')
+      .select('id')
+      .eq('chapter_id', workout.chapter_id)
+      .eq('state', 'saved')
+      .order('saved_at', { ascending: true })
+      .order('created_at', { ascending: true })
+      .limit(1);
+    isFirstWorkout = earliest?.[0]?.id === workoutId;
+  }
+
   // PRs from this workout = today's load PRs for these exercises.
   const names = exercises.map((e) => e.name);
   const today = new Date().toISOString().slice(0, 10);
@@ -123,6 +141,7 @@ export async function fetchCompletion(workoutId: string): Promise<Completion> {
     exercises: completionExercises,
     prs: [...prByExercise.entries()].map(([exercise, v]) => ({ exercise, weight: v.weight, reps: v.reps })),
     reflection: workout.reflection ?? null,
+    isFirstWorkout,
   };
 }
 
