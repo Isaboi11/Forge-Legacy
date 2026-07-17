@@ -4,7 +4,6 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Button } from '@/components/forge/composites/Button';
 import { ScreenBackground } from '@/components/screen-background';
-import { SCREEN_BG } from '@/constants/backgrounds';
 import { WelcomeAtmosphere } from '@/components/onboarding/WelcomeAtmosphere';
 import { Field, Heading } from '@/components/onboarding/kit';
 import { ForgeBrandMark } from '@/components/forge/primitives/icons/HomeIcons';
@@ -47,7 +46,9 @@ export default function AuthFlow() {
       {step === 'welcome' ? (
         <WelcomeAtmosphere />
       ) : (
-        <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.34)' }} />
+        // Credentials + Sign In sit on the calm #08090B setup base — one continuous "creating your
+        // account" journey into onboarding (which shares this base). Welcome keeps its forged-hall.
+        <ScreenBackground base="#08090B" />
       )}
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {step === 'welcome' ? (
@@ -150,7 +151,7 @@ const styles = StyleSheet.create({
   signinText: { fontFamily: flFont.sans, fontSize: 13.5, color: flColor.gray600 },
   signinAccent: { color: flColor.bronze300, fontWeight: '600' },
 
-  form: { paddingHorizontal: 28, paddingTop: 64, paddingBottom: 40, gap: 20 },
+  form: { paddingHorizontal: 30, paddingTop: 64, paddingBottom: 40, gap: 22 },
   backLink: { alignSelf: 'flex-start' },
   backText: { fontFamily: flFont.sans, fontSize: 15, color: flColor.gray400 },
   fields: { gap: 16 },

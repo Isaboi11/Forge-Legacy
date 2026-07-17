@@ -135,8 +135,8 @@ const s = StyleSheet.create({
   },
   hint: { fontFamily: flFont.sans, fontSize: 12, color: flColor.gray600 },
 
-  headingWrap: { gap: 8, paddingBottom: 6 },
-  eyebrow: { fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
-  title: { fontFamily: flFont.display, fontSize: 27, fontWeight: '600', color: flColor.cream100, letterSpacing: -0.3 },
-  body: { fontFamily: flFont.sans, fontSize: 14.5, lineHeight: 21, color: flColor.gray400 },
+  headingWrap: { gap: 10, paddingBottom: 6 },
+  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronze400 },
+  title: { fontFamily: flFont.display, fontSize: 30, fontWeight: '600', lineHeight: 31, color: flColor.cream100, letterSpacing: -0.3 },
+  body: { fontFamily: flFont.sans, fontSize: 14, lineHeight: 22, color: flColor.gray400 },
 });
