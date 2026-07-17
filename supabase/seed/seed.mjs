@@ -24,6 +24,7 @@ const { sb, uid } = await signedInClient();
 console.log('seeding as', uid);
 
 // idempotent clear (timeline FKs chapters, so delete it first)
+await sb.from('honor_instances').delete().eq('athlete_id', uid); // FK chapters → clear before chapters
 await sb.from('timeline_events').delete().eq('athlete_id', uid);
 await sb.from('personal_records').delete().eq('athlete_id', uid);
 await sb.from('chapters').delete().eq('athlete_id', uid);
@@ -77,5 +78,11 @@ const tl = [
 const { error: te } = await sb.from('timeline_events').insert(tl);
 if (te) throw new Error('timeline: ' + te.message);
 
+// Evaluate honors retroactively (source='import' → silent, no timeline events). The demo athlete has
+// chapter workout_counts but no workout ROWS, so only the chapter-depth honors fire (account-level
+// first_workout_logged / _25 need real logged sessions) — an honest artifact of the seed shape.
+const { data: honors, error: hoe } = await sb.rpc('evaluate_honors', { p_source: 'import' });
+if (hoe) throw new Error('evaluate_honors: ' + hoe.message);
+
 console.log(`✓ profile: ${persona.name} · Established III`);
-console.log(`✓ chapters: ${chRows.length} (1 active + 3 sealed) · PRs: ${prs.length} · timeline: ${tl.length}`);
+console.log(`✓ chapters: ${chRows.length} (1 active + 3 sealed) · PRs: ${prs.length} · timeline: ${tl.length} · honors: ${(honors ?? []).length}`);

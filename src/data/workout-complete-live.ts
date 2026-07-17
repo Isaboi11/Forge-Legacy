@@ -24,6 +24,9 @@ export interface Completion {
   /** True iff this is the EARLIEST saved workout in its chapter — id-scoped + re-fetch-stable (ONB-D18
    *  first-run reveal). Never a workout_count snapshot: re-opening workout #1 always reads true. */
   isFirstWorkout: boolean;
+  /** Honors earned by THIS workout's commit — matched by awarded_at = saved_at (same transaction),
+   *  id-scoped + re-open-stable. The W-17 honor hero (minimal M-2). */
+  honorsEarned: { honorType: string; displayName: string }[];
 }
 
 interface WorkoutRow {
@@ -51,11 +54,11 @@ export async function fetchCompletion(workoutId: string): Promise<Completion> {
 
   const { data: wk, error: we } = await supabase
     .from('workouts')
-    .select('workout_name, duration_sec, chapter_id, reflection')
+    .select('workout_name, duration_sec, chapter_id, reflection, saved_at')
     .eq('id', workoutId)
     .single();
   if (we) throw we;
-  const workout = wk as WorkoutRow;
+  const workout = wk as WorkoutRow & { saved_at: string | null };
 
   const { data: exRows, error: ee } = await supabase
     .from('workout_exercises')
@@ -89,6 +92,17 @@ export async function fetchCompletion(workoutId: string): Promise<Completion> {
       .order('created_at', { ascending: true })
       .limit(1);
     isFirstWorkout = earliest?.[0]?.id === workoutId;
+  }
+
+  // Honors earned by THIS commit share the workout's saved_at (same transaction now()).
+  const honorsEarned: { honorType: string; displayName: string }[] = [];
+  if (workout.saved_at) {
+    const { data: hRows } = await supabase
+      .from('honor_instances')
+      .select('honor_type, display_name')
+      .eq('athlete_id', user.id)
+      .eq('awarded_at', workout.saved_at);
+    for (const h of hRows ?? []) honorsEarned.push({ honorType: h.honor_type, displayName: h.display_name });
   }
 
   // PRs from this workout = today's load PRs for these exercises.
@@ -142,6 +156,7 @@ export async function fetchCompletion(workoutId: string): Promise<Completion> {
     prs: [...prByExercise.entries()].map(([exercise, v]) => ({ exercise, weight: v.weight, reps: v.reps })),
     reflection: workout.reflection ?? null,
     isFirstWorkout,
+    honorsEarned,
   };
 }
 

@@ -1,5 +1,5 @@
 import { LEGACY_DATA } from './legacy-placeholder';
-import type { Accomplishment, Goal, Honor, LegacyPhoto } from '@/types/legacy';
+import type { Accomplishment, Goal, LegacyPhoto } from '@/types/legacy';
 
 /**
  * ⚠ THE TRANSITIONAL HALF OF LEGACY — the ONLY parts still seeded, not live.
@@ -16,8 +16,6 @@ export const LEGACY_FIXTURE_PENDING: {
   totalPhotoCount: number;
   accomplishments: Accomplishment[];
   totalAccomplishmentCount: number;
-  honors: Honor[];
-  totalHonorCount: number;
 } = {
   // FIXTURE until media_assets + chapter_photos land
   photos: LEGACY_DATA.photos,
@@ -25,9 +23,7 @@ export const LEGACY_FIXTURE_PENDING: {
   // FIXTURE until an accomplishments table lands
   accomplishments: LEGACY_DATA.accomplishments,
   totalAccomplishmentCount: LEGACY_DATA.totalAccomplishmentCount,
-  // FIXTURE until honor_instances lands
-  honors: LEGACY_DATA.honors,
-  totalHonorCount: LEGACY_DATA.totalHonorCount,
+  // honors: NOW LIVE (honor_instances) — see legacy-live.ts; retired from fixture in the honor slice.
 };
 
 /**

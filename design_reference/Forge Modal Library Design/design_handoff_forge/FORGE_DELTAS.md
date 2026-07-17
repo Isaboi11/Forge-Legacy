@@ -612,6 +612,58 @@ client-local (eyeball) — the 3rd such beat, walked by hand alongside resume + 
 
 ---
 
+## 29. Honor Evaluation Service — minimal slice (D19 + real Legacy honors, DONE)
+
+One system lights up three deferred surfaces: **D19 First Honor**, the **W-17 honor hero**, and **Legacy's
+Honors section** (retires `LEGACY_FIXTURE_PENDING.honors`). Delivers the "Earn Recognition" promise.
+Scope-disciplined: three count-honors off committed data only, NOT the 82-type pillar.
+
+**The slice (exact predicates, committed data only):**
+- `first_workout_logged` (one-time) — `count(workouts) ≥ 1`. **= D19** — fires on workout #1, inside the
+  first-run reveal (D18 + D19 together).
+- `workouts_in_chapter_10` (repeatable/chapter) — a chapter's `workout_count ≥ 10`.
+- `workouts_logged_25` (one-time) — `count(workouts) ≥ 25`.
+- **No "first PR" honor** — the catalog has none (its strength honors are absolute thresholds needing
+  canonical-exercise mapping + unit); inventing one needs a formal amendment, not a build decision. Held.
+
+**Idempotency — DB-enforced (headline invariant):** the natural key IS the idempotency key, via TWO
+partial unique indexes (`WHERE chapter_id IS NULL` / `WHERE chapter_id IS NOT NULL`) — a single 3-col
+index would let one-time honors dupe (Postgres NULL distinctness). `evaluate_honors` inserts
+`ON CONFLICT DO NOTHING`. Re-run → no second row.
+
+**Seam — inside the atomic commit** (`save_workout` calls `evaluate_honors`): honors commit with the
+workout (derived progression, like PRs). Doctrine set: *derived progression inside the atomic commit;
+user annotations (reflection) after.* Idempotent `ON CONFLICT` gives the spec's retry-safety without a
+worker. **Divergence flagged:** the LOCKED spec (ES-6) stages workout-commit from honor-eval; the minimal
+slice collapses them. Consequence proven: a malformed commit rolls back the workout AND its honors.
+
+**Surfacing:** honors earned in a commit share the workout's `saved_at` → `fetchCompletion` matches
+`awarded_at = saved_at` (id-scoped, re-open-stable) → the **W-17 honor hero**. Legacy reads
+`honor_instances` (fixture retired). Retroactive seed eval uses `source='import'` (silent, no timeline
+events) so Isa's demo timeline is untouched.
+
+**Honest artifact (flagged):** Isa's historical chapters carry counts but no workout rows, so her
+account-level honors don't fire — only the 4 chapter-depth ones. Sparse, not broken; the fresh user is the
+clean headline. Don't backfill speculatively.
+
+**Proven** (`honor-roundtrip.mjs`): rollback-covers-honors · D19 headline · no-fabrication · W-17 hero
+(awarded_at=saved_at) · DB idempotency (re-run → no dup) · repeatable-per-chapter (distinct chapter_id) ·
+Legacy-from-DB. tsc 0 · eslint 0 · 196 tests · SSR-safe.
+
+**⚠ OPEN — consolidation re-walk NOT done (named, not faked):** the four client-local ceremony beats
+(resume · the two W-17 transitions · the first-run reveal) **plus** the new honor hero need a hands-on
+Expo runtime, which is unavailable in this build/design environment. Landed as **`[ceremony re-walk
+pending]`** — a named open acceptance item, not folded in as passed. Whoever has the running app walks:
+resume-after-kill · seal→hold→Legacy · see-details→Record→Reflect · fresh #1 reveal + honor hero /
+#2 generic / re-open #1 still reveal · Legacy Honors reads real. Closes when walked; fix any broken beat
+before marking done. This is the consolidation pass deferred since D18 — four independent silent-regression
+risks, now five with the honor hero.
+
+**Deferred (ruled):** `bench_milestone_1` + all threshold/social/duration honors · full catalog · M-2
+modal fidelity · the honor→timeline for retroactive (kept silent).
+
+---
+
 ## Still open (carry into implementation)
 
 **Three buckets, and the distinction is load-bearing** — don't let a fixable miss (or a merely

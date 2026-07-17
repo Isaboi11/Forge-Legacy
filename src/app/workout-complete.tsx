@@ -107,6 +107,7 @@ export default function WorkoutComplete() {
               <Stat n={fmtDuration(data.durationSec)} label="Under Iron" />
               <Stat n={data.volume.toLocaleString()} label="Volume · lb" />
             </View>
+            <HonorHero honors={data.honorsEarned} />
             <Pressable style={styles.holdBtn} onPressIn={startHold} onPressOut={cancelHold} accessibilityRole="button" accessibilityLabel="Press and hold to seal">
               <Animated.View style={[styles.holdFill, { width: fillW }]} />
               <Text style={styles.holdText}>{sealed ? 'Sealed' : 'Hold to Seal'}</Text>
@@ -145,6 +146,7 @@ export default function WorkoutComplete() {
           ) : (
             <Text style={styles.quote}>History is permanent. Outcomes cannot change.</Text>
           )}
+          <HonorHero honors={data.honorsEarned} />
 
           <Pressable
             style={styles.holdBtn}
@@ -293,6 +295,20 @@ function Stat({ n, label }: { n: string; label: string }) {
     </View>
   );
 }
+/** Minimal M-2 — honors earned by this workout (the W-17 honor hero). */
+function HonorHero({ honors }: { honors: { honorType: string; displayName: string }[] }) {
+  if (honors.length === 0) return null;
+  return (
+    <View style={styles.honorHero}>
+      <Text style={styles.honorKicker}>Honor{honors.length > 1 ? 's' : ''} Earned</Text>
+      {honors.map((h) => (
+        <Text key={h.honorType} style={styles.honorName}>
+          {h.displayName}
+        </Text>
+      ))}
+    </View>
+  );
+}
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
@@ -317,6 +333,9 @@ const styles = StyleSheet.create({
   statN: { fontFamily: flFont.display, fontSize: 22, color: flColor.cream100 },
   statLabel: { fontFamily: flFont.sans, fontSize: 11, color: flColor.gray600 },
 
+  honorHero: { alignItems: 'center', gap: 3, marginTop: 12, paddingVertical: 12, paddingHorizontal: 20, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
+  honorKicker: { fontSize: 10, fontWeight: '800', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  honorName: { fontFamily: flFont.display, fontSize: 17, color: flColor.cream100 },
   prCallout: { alignItems: 'center', gap: 3, marginTop: 8 },
   prKicker: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.bronze400 },
   prLine: { fontFamily: flFont.display, fontSize: 18, color: flColor.bronze400 },

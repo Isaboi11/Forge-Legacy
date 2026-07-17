@@ -87,17 +87,31 @@ export async function fetchLegacyData(): Promise<LegacyData> {
   if (!user) throw new Error('not signed in');
   const uid = user.id;
 
-  const [{ data: prof, error: pe }, { data: chRows, error: ce }, { data: tlRows, error: te }, { data: pinRows, error: pne }] =
-    await Promise.all([
-      supabase.from('profiles').select('rank_family, rank_level, standard').eq('id', uid).single(),
-      supabase.from('chapters').select('*').eq('athlete_id', uid),
-      supabase.from('timeline_events').select('*').eq('athlete_id', uid).order('occurred_at', { ascending: false }),
-      supabase.from('pins').select('*').eq('athlete_id', uid).order('position', { ascending: true }),
-    ]);
+  const [
+    { data: prof, error: pe },
+    { data: chRows, error: ce },
+    { data: tlRows, error: te },
+    { data: pinRows, error: pne },
+    { data: honorRows, error: he },
+  ] = await Promise.all([
+    supabase.from('profiles').select('rank_family, rank_level, standard').eq('id', uid).single(),
+    supabase.from('chapters').select('*').eq('athlete_id', uid),
+    supabase.from('timeline_events').select('*').eq('athlete_id', uid).order('occurred_at', { ascending: false }),
+    supabase.from('pins').select('*').eq('athlete_id', uid).order('position', { ascending: true }),
+    supabase.from('honor_instances').select('id, display_name, date_earned').eq('athlete_id', uid).order('date_earned', { ascending: false }),
+  ]);
   if (pe) throw pe;
   if (ce) throw ce;
   if (te) throw te;
   if (pne) throw pne;
+  if (he) throw he;
+
+  // Honors are LIVE now (honor_instances) — retires LEGACY_FIXTURE_PENDING.honors.
+  const honors = ((honorRows ?? []) as { id: string; display_name: string; date_earned: string }[]).map((h) => ({
+    id: h.id,
+    name: h.display_name,
+    dateEarned: fmtDate(h.date_earned),
+  }));
 
   const chapters = (chRows ?? []) as ChapterRow[];
   const timeline = (tlRows ?? []) as TimelineRow[];
@@ -132,6 +146,9 @@ export async function fetchLegacyData(): Promise<LegacyData> {
         dateLabel: fmtShort(e.occurred_at),
       }),
     ),
+    // honors are LIVE (from honor_instances); override any fixture default
+    honors,
+    totalHonorCount: honors.length,
     // ── transitional half — see legacy-fixture-pending ──
     ...LEGACY_FIXTURE_PENDING,
   };
