@@ -36,4 +36,6 @@ export interface UserProfile {
   avatarUrl?: string | null;
   /** Saved sex selection; drives artwork variant. Defaults to `'unspecified'`. */
   sex: Sex;
+  /** When the first-time journey completed; null → the boot router sends the athlete to onboarding. */
+  onboardedAt?: string | null;
 }

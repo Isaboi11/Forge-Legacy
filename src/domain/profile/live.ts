@@ -16,7 +16,7 @@ export async function fetchSelfProfile(): Promise<UserProfile> {
   if (!user) throw new Error('not signed in');
   const { data, error } = await supabase
     .from('profiles')
-    .select('name, first_name, handle, initials, sex, avatar_url')
+    .select('name, first_name, handle, initials, sex, avatar_url, onboarded_at')
     .eq('id', user.id)
     .single();
   if (error) throw error;
@@ -27,6 +27,7 @@ export async function fetchSelfProfile(): Promise<UserProfile> {
     initials: data.initials,
     avatarUrl: data.avatar_url ?? null,
     sex: data.sex as Sex,
+    onboardedAt: data.onboarded_at ?? null,
   };
 }
 

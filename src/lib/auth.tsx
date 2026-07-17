@@ -14,6 +14,8 @@ interface AuthState {
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string) => Promise<{ error: string | null }>;
+  resetPassword: (email: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -36,11 +38,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error: error?.message ?? null };
   };
+  // Soft verification (O-1 Decision 4): a fresh signup gets a usable session immediately (the project's
+  // email-confirmation setting governs this) — the app is never gated on confirming. The `handle_new_user`
+  // trigger mints a bare profile with `onboarded_at` null, so the boot router sends them to onboarding.
+  const signUp = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signUp({ email, password });
+    return { error: error?.message ?? null };
+  };
+  // Forgot-password send (Gate B builds the screen; the function lives here now so it's a trivial wire-up).
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    return { error: error?.message ?? null };
+  };
   const signOut = async () => {
     await supabase.auth.signOut();
   };
 
-  return <AuthContext.Provider value={{ session, loading, signIn, signOut }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ session, loading, signIn, signUp, resetPassword, signOut }}>{children}</AuthContext.Provider>
+  );
 }
 
 export function useAuth(): AuthState {

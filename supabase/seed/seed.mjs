@@ -28,11 +28,15 @@ await sb.from('timeline_events').delete().eq('athlete_id', uid);
 await sb.from('personal_records').delete().eq('athlete_id', uid);
 await sb.from('chapters').delete().eq('athlete_id', uid);
 
-// profile — fill in the trigger-created bare row with the persona identity (env-overridable)
+// profile — fill in the trigger-created bare row with the persona identity (env-overridable).
+// The demo athlete is fully set up → mark onboarded so the boot router sends them to the app, not the
+// first-time journey (a fresh signup has onboarded_at null → onboarding).
 const { error: pe } = await sb.from('profiles').update({
   ...persona,
   standard: 'Show up when it’s hard. The work is the promise I keep to myself.',
-  rank_family: 'established', rank_level: 3, updated_at: new Date().toISOString(),
+  rank_family: 'established', rank_level: 3,
+  environment: 'commercial_gym', onboarded_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
 }).eq('id', uid);
 if (pe) throw new Error('profile: ' + pe.message);
 

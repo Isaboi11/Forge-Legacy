@@ -8,7 +8,8 @@ import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { AuthProvider, useAuth } from '@/lib/auth';
-import { ProfileProvider } from '@/lib/profile';
+import { ProfileProvider, useProfile } from '@/lib/profile';
+import { routeFor } from '@/lib/route-for';
 import { WorkoutSessionProvider } from '@/hooks/useWorkoutSession';
 import { ShareProvider } from '@/hooks/useShareSheet';
 import { CeremonyProvider } from '@/hooks/useCeremony';
@@ -52,15 +53,23 @@ export default function RootLayout() {
 }
 
 /**
- * Auth gate: hold (splash) while the persisted session restores, then show the app if signed in or
- * the sign-in screen if not. A real render-order dependency on auth state — not a preview shim.
+ * Boot router (Gate A): session × onboarded → auth / onboarding / app, held on a splash while either
+ * read resolves. The decision is the pure `routeFor` (unit-tested); this only maps it to Stack.Protected
+ * guards. A real render-order dependency on auth + onboarding state — not a preview shim.
  */
 function RootNavigator() {
   const { session, loading } = useAuth();
-  if (loading) return null;
+  const { profile, loading: profileLoading } = useProfile();
+  const route = routeFor({
+    authLoading: loading,
+    hasSession: !!session,
+    profileLoading,
+    onboardedAt: profile?.onboardedAt,
+  });
+  if (route === 'splash') return null;
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={!!session}>
+      <Stack.Protected guard={route === 'app'}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="post/[id]" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Screen name="squad/[id]" />
@@ -68,7 +77,10 @@ function RootNavigator() {
         <Stack.Screen name="workout" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="pin-video" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
       </Stack.Protected>
-      <Stack.Protected guard={!session}>
+      <Stack.Protected guard={route === 'onboarding'}>
+        <Stack.Screen name="onboarding" />
+      </Stack.Protected>
+      <Stack.Protected guard={route === 'auth'}>
         <Stack.Screen name="sign-in" />
       </Stack.Protected>
     </Stack>
