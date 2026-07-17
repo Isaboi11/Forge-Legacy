@@ -1,14 +1,23 @@
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { Easing, Keyframe } from 'react-native-reanimated';
 
 import { Button } from '@/components/forge/composites/Button';
 import { ScreenBackground } from '@/components/screen-background';
 import { WelcomeAtmosphere } from '@/components/onboarding/WelcomeAtmosphere';
+import { WelcomeLogo } from '@/components/onboarding/WelcomeLogo';
 import { Field, Heading } from '@/components/onboarding/kit';
-import { ForgeBrandMark } from '@/components/forge/primitives/icons/HomeIcons';
 import { useAuth } from '@/lib/auth';
 import { flColor, flFont } from '@/constants/foundation';
+
+/** The .dc `flRise` entrance — translateY 16→0 + fade, ~1200ms, staggered by `delay`. */
+const rise = (delay: number) =>
+  new Keyframe({
+    0: { opacity: 0, transform: [{ translateY: 16 }] },
+    100: { opacity: 1, transform: [{ translateY: 0 }], easing: Easing.out(Easing.cubic) },
+  })
+    .duration(1200)
+    .delay(delay);
 
 /**
  * The auth route (no session) — Welcome → Create Account → Sign In, the first 3 screens of the flow.
@@ -54,19 +63,19 @@ export default function AuthFlow() {
         {step === 'welcome' ? (
           <View style={styles.welcome}>
             <View style={styles.welcomeContent}>
-              <Animated.View entering={FadeInDown.delay(250).duration(1100)}>
-                <ForgeBrandMark />
+              <Animated.View entering={rise(250)}>
+                <WelcomeLogo />
               </Animated.View>
               <View style={styles.brandText}>
-                <Animated.Text entering={FadeInDown.delay(700).duration(1100)} style={styles.eyebrow}>
+                <Animated.Text entering={rise(700)} style={styles.eyebrow}>
                   Forge Legacy
                 </Animated.Text>
-                <Animated.Text entering={FadeInDown.delay(900).duration(1100)} style={styles.brand}>
+                <Animated.Text entering={rise(900)} style={styles.brand}>
                   Build your story.{'\n'}Forge your legacy.
                 </Animated.Text>
               </View>
             </View>
-            <Animated.View entering={FadeInDown.delay(1560).duration(1100)} style={styles.welcomeActions}>
+            <Animated.View entering={rise(1560)} style={styles.welcomeActions}>
               <Button variant="primary" fullWidth onPress={() => go('create')} accessibilityLabel="Begin Chapter I — create a new account">
                 Begin Chapter I
               </Button>
