@@ -24,3 +24,10 @@ export async function signedInClient() {
   if (error) throw new Error('sign-in failed: ' + error.message);
   return { sb, uid: data.user.id };
 }
+
+/** A fresh anon client with its own session slot — for signing up a throwaway account in a proof. */
+export function anonClient() {
+  return createClient(env.EXPO_PUBLIC_SUPABASE_URL, env.EXPO_PUBLIC_SUPABASE_ANON_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}

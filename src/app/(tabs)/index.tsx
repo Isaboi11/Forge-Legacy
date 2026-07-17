@@ -4,6 +4,8 @@ import { useRouter } from 'expo-router';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
+import { Button } from '@/components/forge/composites/Button';
+import { Card } from '@/components/forge/composites/Surface';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { ForgeMarkIcon } from '@/components/forge/primitives/icons/HomeIcons';
@@ -15,7 +17,9 @@ import { QuickActionsRow } from '@/components/forge/compositions/QuickActionsRow
 import { FriendActionSheet } from '@/components/forge/compositions/TrainTogetherCard';
 import { FRIEND_ACTIVITY, HOME_CHAPTER, HOME_DATA, todaysPrinciple } from '@/data/home-placeholder';
 import { LIVE_TRAINING_USERS } from '@/data/live-training-placeholder';
-import { flColor } from '@/constants/foundation';
+import { flColor, flFont } from '@/constants/foundation';
+import { useQuery } from '@/lib/useQuery';
+import { fetchAwaitingChapter } from '@/data/home-live';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { getSelfProfile } from '@/domain/profile/placeholder-data';
 import { useProfile } from '@/lib/profile';
@@ -59,6 +63,9 @@ export default function HomeScreen() {
   // Live identity for the AppBar avatar. The artwork resolver below keeps its synchronous seed
   // profile — it must resolve the hero art on the first frame, and the art is static regardless.
   const { profile: liveProfile } = useProfile();
+  // H-1 "awaiting first workout" (ONB-D17): a just-onboarded athlete (active chapter, 0 workouts) gets a
+  // purpose-built hero instead of the static content, so a fresh user never lands on stale/blank Home.
+  const { data: awaiting } = useQuery(fetchAwaitingChapter, []);
 
   // Static this session (no athlete-progress backend) — resolve once.
   const { profile, program, workout, resolved } = useMemo(() => {
@@ -75,6 +82,42 @@ export default function HomeScreen() {
   }, []);
 
   const { mission } = HOME_DATA;
+
+  // Fresh-athlete Home — the awaiting-first-workout hero (minimal ONB-D17; full hero is the fast-follow).
+  if (awaiting) {
+    const startFirst = () => {
+      const w = getNextWorkout();
+      const lifts = (w?.exercises ?? [])
+        .filter((e) => e.section === 'main' && !e.optional)
+        .map((e) => ({ catalogKey: e.catalogKey, name: exerciseNameFor(e.catalogKey), workingSets: e.workingSets }));
+      startWorkout(w?.name ?? 'First Workout', lifts);
+      router.push('/workout');
+    };
+    return (
+      <View style={styles.root}>
+        <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.2)' }} />
+        <AppBar
+          title={<HomeWordmark />}
+          avatar={<Avatar name={liveProfile?.name ?? ''} src={liveProfile?.avatarUrl ?? undefined} size="appBar" />}
+          onAvatar={() => {}}
+        />
+        <View style={styles.awaitingWrap}>
+          <Card variant="hero" style={styles.awaitingCard}>
+            <Text style={styles.awaitingKicker}>Active Chapter · awaiting first workout</Text>
+            <Text style={styles.awaitingName}>{awaiting.chapterName}</Text>
+            <Text style={styles.awaitingCopy}>
+              The first page of your Chapter is waiting to be written. Your story begins with one workout.
+            </Text>
+            <View style={styles.awaitingAction}>
+              <Button variant="primary" fullWidth onPress={startFirst} accessibilityLabel="Start Workout">
+                Start Workout
+              </Button>
+            </View>
+          </Card>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.root}>
@@ -170,6 +213,12 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
   },
+  awaitingWrap: { flex: 1, justifyContent: 'center', paddingHorizontal: 24, paddingBottom: 40 },
+  awaitingCard: { gap: 12 },
+  awaitingKicker: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  awaitingName: { fontFamily: flFont.display, fontSize: 26, fontWeight: '600', color: flColor.cream100 },
+  awaitingCopy: { fontFamily: flFont.sans, fontSize: 15, lineHeight: 23, color: flColor.gray400 },
+  awaitingAction: { marginTop: 10 },
   scrollContent: {
     paddingBottom: 44,
   },

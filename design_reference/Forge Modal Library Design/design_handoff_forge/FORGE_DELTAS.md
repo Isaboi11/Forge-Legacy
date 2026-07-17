@@ -479,6 +479,42 @@ video pin need to exist for the demo.
 
 ---
 
+## 25. Login + Onboarding on real Supabase auth (Gate A + Gate B, DONE)
+
+The bare stand-in sign-in is replaced by the real first-time journey, implemented against Supabase auth.
+Enumerated against `Forge Onboarding.dc.html` + the O-1 / Onboarding-First-Time-Journey architecture,
+two-gate split, PO-ruled at each gate.
+
+**Gate A — auth boundary (`44101bb`).** `routeFor` pure boot router (unit-tested): no session → auth ·
+session+not-onboarded → onboarding · session+onboarded → app. `signUp` + `resetPassword` added;
+`profiles.onboarded_at` + `environment` (`0007`); seed marks the demo user onboarded.
+
+**Gate B — the flow.** The design `.dc`'s 9 setup screens + the grafted email/password auth (the `.dc`
+has no real auth; O-1 supplies it): Welcome → Create Account → Sign In → Account → Username → Goals →
+Experience → Equipment → Schedule → Program → Transition. Answers accumulate in local state (ONB-D2,
+orchestration-only); nothing persists until "Enter Forge".
+
+- **Atomic finish** — `complete_onboarding` RPC (`0008`): derive athlete_type (ONB-D8 map) + environment,
+  then profile update + Chapter I "Building Your Foundation" (ONB-D14) + `onboarded_at`, ALL-OR-NOTHING
+  in one plpgsql transaction. Avatar upload stays outside (storage, orphan-harmless).
+- **Username** skippable → `handle` nullable (`0009`, Identity-Amendment-001); real Supabase uniqueness query.
+- **Recommendation** maps to the real 2-program catalog, SF I fallback (PO ruling).
+- **H-1** minimal awaiting-first-workout hero for a fresh athlete (0-workout active chapter) — never a
+  blank/stale Home. Full ONB-D17 hero is a fast-follow.
+
+**Proven live** (`onboarding-roundtrip.mjs`): (A) RPC rollback — force the Chapter I insert to fail →
+profile update + `onboarded_at` both roll back (atomic). (B) real-email signup → session → onboarded null
+→ onboarding → finish RPC → profile + Chapter I + onboarded_at → app → H-1 awaiting. Both green;
+Confirm-email confirmed OFF (soft verification, O-1 Decision 4). tsc 0 · eslint 0 · 191 tests · SSR-safe.
+
+**Deferred (scoped out, flagged):** Forgot-Password screen (function exists), onboarding photo picker
+(optional → initials), full ONB-D17 hero, program enrollment (no `program_instances`), Part III ceremony
+(D18) / First Honor (D19) / Part IV progressive discovery / Apple-Google social.
+
+**Setting of record:** Supabase Auth → "Confirm email" OFF (required for soft-verification signup).
+
+---
+
 ## Still open (carry into implementation)
 
 **Three buckets, and the distinction is load-bearing** — don't let a fixable miss (or a merely

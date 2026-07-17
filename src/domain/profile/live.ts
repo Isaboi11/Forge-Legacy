@@ -23,7 +23,7 @@ export async function fetchSelfProfile(): Promise<UserProfile> {
   return {
     name: data.name,
     firstName: data.first_name,
-    handle: data.handle,
+    handle: data.handle ?? '', // nullable since 0009 (username skippable) — render nothing, not "null"
     initials: data.initials,
     avatarUrl: data.avatar_url ?? null,
     sex: data.sex as Sex,
@@ -55,7 +55,7 @@ export async function fetchPublicProfile(id: string): Promise<PublicProfileView>
     if (self && self.name === name) {
       return {
         name: self.name,
-        handle: '@' + self.handle, // fixture prefixes '@' in getPublicProfile; the raw handle is stored
+        handle: self.handle ? '@' + self.handle : '', // fixture prefixes '@'; skip-users (0009) have no handle
         isSelf: true,
         rank: self.rank_family ? cap(self.rank_family) : undefined,
         athleteType: self.athlete_type ?? undefined,
