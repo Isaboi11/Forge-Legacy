@@ -1,281 +1,431 @@
-import { useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import Svg, { Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
 import { Card } from '@/components/forge/composites/Surface';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
-import { flColor, flFont, flRadius, flType } from '@/constants/foundation';
+import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
-import { useMutation } from '@/lib/useMutation';
-import { logWorkout, type LogWorkoutResult } from '@/domain/training/log-workout';
+import { buildActiveSession } from '@/domain/workout/build-session';
+import { clearSession, loadSession, persistSession } from '@/domain/workout/autosave';
+import { doneSetCount, hasLoggedSet } from '@/domain/workout/metrics';
+import { saveWorkout, type SaveResult } from '@/domain/workout/save';
+import type { ActiveSession } from '@/domain/workout/types';
 
-function minutesAgo(iso: string): number {
-  return Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60_000));
-}
-/** Positive number or null — an empty/invalid field logs no weight (and so never fabricates a PR). */
-function numOrNull(s: string | undefined): number | null {
-  const n = Number(s);
-  return s && Number.isFinite(n) && n > 0 ? n : null;
-}
-function intOrNull(s: string | undefined): number | null {
-  const n = parseInt(s ?? '', 10);
-  return Number.isFinite(n) && n > 0 ? n : null;
+type Phase = 'loading' | 'resume' | 'active' | 'saving' | 'done';
+type Picker = { exIdx: number; setIdx: number; field: 'weight' | 'reps' };
+
+function fmtElapsed(startedAt: string, now: number): string {
+  const s = Math.max(0, Math.floor((now - Date.parse(startedAt)) / 1000));
+  const m = Math.floor(s / 60);
+  return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`;
 }
 
 /**
- * Workout tab — the active session + the Finish LOG (Phase 3, the first real write).
- *
- * INTERIM surface: the full active-workout flow (W-9–W-16) isn't locked, so this is a lean top-set
- * logger built on the forged design system (ScreenBackground · AppBar · Card · Button · foundation
- * tokens), NOT the final designed logger. The program prescribes only sets×reps (no load), so an honest
- * load PR needs the athlete's real entered weight. Finish persists workout → exercises → performed sets
- * → derived PRs → an ACCOMPLISHMENT timeline row via `logWorkout`, through the reusable `useMutation`
- * write pattern (optimistic confirmation, rollback to editing on error).
+ * W-9 Active Workout (Strength) — the real inline set logger, replacing the interim top-set scaffold.
+ * Local-first: the session lives in AsyncStorage (autosave on every change, resume after a crash);
+ * nothing reaches the cloud until Finish runs the atomic `save_workout` commit. Deferred (ruled): rest
+ * timer, substitution/add-exercise, hero media, in-flow PR celebration, W-10..W-16 modalities, the
+ * 4-stage completion — this cut is inline logging → atomic finish → minimal summary → timeline/chapter.
  */
 export default function WorkoutScreen() {
   const router = useRouter();
-  const { session, finishWorkout, abandonWorkout } = useWorkoutSession();
-  const { mutate, pending, error } = useMutation(logWorkout);
-  const [entries, setEntries] = useState<Record<number, { weight: string; reps: string }>>({});
-  const [focused, setFocused] = useState<string | null>(null);
-  const [phase, setPhase] = useState<'editing' | 'done'>('editing');
-  const [result, setResult] = useState<LogWorkoutResult | null>(null);
+  const { finishWorkout, abandonWorkout } = useWorkoutSession();
+  const [session, setSession] = useState<ActiveSession | null>(null);
+  const [resumable, setResumable] = useState<ActiveSession | null>(null);
+  const [exIdx, setExIdx] = useState(0);
+  const [phase, setPhase] = useState<Phase>('loading');
+  const [picker, setPicker] = useState<Picker | null>(null);
+  const [pickerValue, setPickerValue] = useState('');
+  const [result, setResult] = useState<SaveResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [now, setNow] = useState(() => Date.now());
 
-  if (!session) {
-    return (
-      <View style={styles.root}>
-        <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.32)' }} />
-        <AppBar title="Workout" serif onClose={() => router.back()} />
-        <View style={styles.centerFill}>
-          <Text style={styles.emptyText}>No active session.</Text>
-        </View>
-      </View>
+  // resume-or-fresh on mount
+  useEffect(() => {
+    loadSession().then((saved) => {
+      if (saved && saved.exercises?.some((e) => e.sets.some((s) => s.done))) {
+        setResumable(saved);
+        setPhase('resume');
+      } else {
+        setSession(buildActiveSession());
+        setPhase('active');
+      }
+    });
+  }, []);
+
+  // elapsed ticker
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  // autosave on every change while active
+  useEffect(() => {
+    if (phase === 'active' && session) void persistSession(session);
+  }, [session, phase]);
+
+  const mutate = useCallback((fn: (s: ActiveSession) => ActiveSession) => setSession((s) => (s ? fn(s) : s)), []);
+
+  const completeSet = (ei: number, si: number) =>
+    mutate((s) => patchSet(s, ei, si, (set) => ({ ...set, done: true, actualReps: set.actualReps ?? set.targetReps })));
+  const uncompleteSet = (ei: number, si: number) => mutate((s) => patchSet(s, ei, si, (set) => ({ ...set, done: false })));
+  const addSet = (ei: number) =>
+    mutate((s) => {
+      const ex = s.exercises[ei];
+      const last = ex.sets[ex.sets.length - 1];
+      const next = { setIndex: ex.sets.length, weight: last?.weight ?? null, targetReps: last?.targetReps ?? 8, actualReps: null, done: false };
+      return replaceExercise(s, ei, { ...ex, sets: [...ex.sets, next] });
+    });
+  const removeSet = (ei: number) =>
+    mutate((s) => {
+      const ex = s.exercises[ei];
+      if (ex.sets.length <= 1) return s;
+      return replaceExercise(s, ei, { ...ex, sets: ex.sets.slice(0, -1) });
+    });
+
+  const openPicker = (exI: number, setI: number, field: 'weight' | 'reps') => {
+    const set = session?.exercises[exI]?.sets[setI];
+    setPickerValue(field === 'weight' ? (set?.weight != null ? String(set.weight) : '') : String(set?.actualReps ?? set?.targetReps ?? ''));
+    setPicker({ exIdx: exI, setIdx: setI, field });
+  };
+  const confirmPicker = () => {
+    if (!picker) return;
+    const num = Number(pickerValue);
+    const valid = pickerValue !== '' && Number.isFinite(num) && num >= 0;
+    mutate((s) =>
+      patchSet(s, picker.exIdx, picker.setIdx, (set) =>
+        picker.field === 'weight' ? { ...set, weight: valid ? num : null } : { ...set, actualReps: valid ? Math.round(num) : set.actualReps },
+      ),
     );
-  }
-
-  const lifts = session.lifts;
-  const setField = (i: number, field: 'weight' | 'reps', val: string) =>
-    setEntries((prev) => {
-      const cur = prev[i] ?? { weight: '', reps: '' };
-      return { ...prev, [i]: { ...cur, [field]: val.replace(/[^0-9.]/g, '') } };
-    });
-
-  const onFinish = () => {
-    const input = {
-      workoutName: session.workoutName,
-      startedAt: session.startedAt,
-      modality: 'strength',
-      lifts: lifts.map((l, i) => ({
-        catalogKey: l.catalogKey,
-        name: l.name,
-        weight: numOrNull(entries[i]?.weight),
-        reps: intOrNull(entries[i]?.reps),
-      })),
-    };
-    setPhase('done'); // optimistic — flip to the confirmation immediately…
-    mutate(input, {
-      onSuccess: (r) => setResult(r),
-      onError: () => setPhase('editing'), // …and roll back if the write fails
-    });
+    setPicker(null);
   };
 
-  const onDone = () => {
-    finishWorkout(); // end the session only after a confirmed write
-    router.replace('/(tabs)/legacy');
+  const onFinish = async () => {
+    if (!session) return;
+    setPhase('saving');
+    setError(null);
+    try {
+      const r = await saveWorkout(session);
+      await clearSession();
+      finishWorkout();
+      setResult(r);
+      setPhase('done');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setPhase('active');
+    }
   };
-  const onAbandon = () => {
+  const onAbandon = async () => {
+    await clearSession();
     abandonWorkout();
     router.replace('/(tabs)');
   };
 
-  // ── Confirmation (optimistic → reconciled with the server result) ──
-  if (phase === 'done') {
+  // ── resume prompt ──
+  if (phase === 'resume' && resumable) {
     return (
-      <View style={styles.root}>
-        <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.32)' }} />
-        <AppBar title="" serif />
-        <View style={styles.centerFill}>
-          {pending || !result ? (
-            <View style={styles.savingWrap}>
-              <ActivityIndicator color={flColor.bronze400} />
-              <Text style={styles.savingText}>Logging your session…</Text>
+      <Shell>
+        <View style={styles.center}>
+          <Card variant="hero" style={styles.resumeCard}>
+            <Text style={styles.kicker}>Session in progress</Text>
+            <Text style={styles.resumeName}>{resumable.workoutName}</Text>
+            <Text style={styles.resumeSub}>{doneSetCount(resumable)} sets logged. Resume where you left off?</Text>
+            <View style={styles.resumeActions}>
+              <Button variant="primary" fullWidth onPress={() => { setSession(resumable); setPhase('active'); }} accessibilityLabel="Resume workout">
+                Resume
+              </Button>
+              <Button variant="text" fullWidth onPress={async () => { await clearSession(); setSession(buildActiveSession()); setPhase('active'); }} accessibilityLabel="Discard and start fresh">
+                Discard &amp; start fresh
+              </Button>
             </View>
-          ) : (
-            <Card variant="hero" style={styles.doneCard}>
-              <Text style={styles.kicker}>Workout Logged</Text>
-              <Text style={styles.doneName}>{session.workoutName}</Text>
-              {result.prs.length > 0 ? (
-                <View style={styles.prBlock}>
-                  <Text style={styles.prHeading}>New personal record{result.prs.length > 1 ? 's' : ''}</Text>
-                  {result.prs.map((pr) => (
-                    <View key={pr.exercise} style={styles.prRow}>
-                      <View style={styles.prDot} />
-                      <Text style={styles.prLine}>
-                        {pr.exercise} · {pr.weight} {pr.unit}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                <Text style={styles.doneSub}>Saved to your history.</Text>
-              )}
-              <View style={styles.doneAction}>
-                <Button variant="primary" fullWidth onPress={onDone} accessibilityLabel="View in Legacy">
-                  View in Legacy
-                </Button>
-              </View>
-            </Card>
-          )}
+          </Card>
         </View>
-      </View>
+      </Shell>
     );
   }
 
-  // ── Editing (the log sheet) ──
+  // ── completion (minimal W-17) ──
+  if (phase === 'done' && result) {
+    return (
+      <Shell>
+        <View style={styles.center}>
+          <Card variant="hero" style={styles.doneCard}>
+            <Text style={styles.kicker}>Workout Complete</Text>
+            <Text style={styles.doneTitle}>{session?.workoutName}</Text>
+            <View style={styles.statRow}>
+              <Stat n={result.volume.toLocaleString()} label="Volume · lb" />
+              <Stat n={result.sets} label="Sets" />
+              <Stat n={fmtElapsed(session?.startedAt ?? '', now)} label="Time" />
+            </View>
+            {result.prs.length > 0 ? (
+              <View style={styles.prBlock}>
+                <Text style={styles.prHeading}>New personal record{result.prs.length > 1 ? 's' : ''}</Text>
+                {result.prs.map((pr) => (
+                  <Text key={pr.exercise} style={styles.prLine}>
+                    {pr.exercise} · {pr.weight} lb × {pr.reps}
+                  </Text>
+                ))}
+              </View>
+            ) : null}
+            <View style={styles.doneAction}>
+              <Button variant="primary" fullWidth onPress={() => router.replace('/(tabs)/legacy')} accessibilityLabel="Save to Legacy">
+                Save to Legacy
+              </Button>
+            </View>
+          </Card>
+        </View>
+      </Shell>
+    );
+  }
+
+  if (phase === 'loading' || !session) {
+    return (
+      <Shell>
+        <View style={styles.center}>
+          <ActivityIndicator color={flColor.bronze400} />
+        </View>
+      </Shell>
+    );
+  }
+
+  // ── active (W-9 logging) ──
+  const ex = session.exercises[exIdx];
+  const totalSets = session.exercises.reduce((n, e) => n + e.sets.length, 0);
+  const setsDone = doneSetCount(session);
+  const complete = hasLoggedSet(session) && session.exercises.every((e) => e.sets.every((s) => s.done));
+
   return (
-    <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.32)' }} />
-      <AppBar title="Log Workout" serif onClose={() => router.back()} />
+    <Shell>
+      <AppBar title="Workout" serif onClose={onAbandon} />
+      <View style={styles.progressBand}>
+        <Text style={styles.progressText}>
+          <Text style={styles.progressAccent}>{setsDone}</Text> / {totalSets} sets · {fmtElapsed(session.startedAt, now)}
+        </Text>
+        <View style={styles.track}>
+          <View style={[styles.fill, { width: `${totalSets ? (setsDone / totalSets) * 100 : 0}%` }]} />
+        </View>
+      </View>
 
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <View style={styles.liveRow}>
-            <View style={styles.liveDot} />
-            <Text style={styles.liveLabel}>Live · Training Now</Text>
+        <Text style={styles.exName}>{ex.name}</Text>
+        <Text style={styles.exMeta}>Exercise {exIdx + 1} of {session.exercises.length}</Text>
+
+        <View style={styles.table}>
+          <View style={styles.headRow}>
+            <Text style={[styles.h, styles.cSet]}>Set</Text>
+            <Text style={[styles.h, styles.cTarget]}>Target</Text>
+            <Text style={[styles.h, styles.cWeight]}>Weight</Text>
+            <Text style={[styles.h, styles.cActual]}>Actual</Text>
           </View>
-          <Text style={styles.sessionName}>{session.workoutName}</Text>
-          <Text style={styles.startedText}>Started {minutesAgo(session.startedAt)} min ago</Text>
+          {ex.sets.map((set, si) => (
+            <View key={si} style={[styles.row, set.done && styles.rowDone]}>
+              <View style={styles.cSet}>
+                <View style={[styles.setNum, set.done && styles.setNumDone]}>
+                  <Text style={[styles.setNumText, set.done && styles.setNumTextDone]}>{si + 1}</Text>
+                </View>
+              </View>
+              <Text style={[styles.cTarget, styles.targetText]}>{set.targetReps}<Text style={styles.repsLabel}> reps</Text></Text>
+              <Pressable style={styles.cWeight} onPress={() => openPicker(exIdx, si, 'weight')} accessibilityRole="button" accessibilityLabel={`Edit weight, set ${si + 1}`}>
+                <Text style={styles.weightText}>{set.weight != null ? set.weight : '—'}</Text>
+              </Pressable>
+              <View style={styles.cActual}>
+                <Pressable onPress={() => openPicker(exIdx, si, 'reps')} accessibilityRole="button" accessibilityLabel={`Edit actual reps, set ${si + 1}`}>
+                  <Text style={styles.actualText}>{set.actualReps ?? '—'}</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => (set.done ? uncompleteSet(exIdx, si) : completeSet(exIdx, si))}
+                  accessibilityRole="button"
+                  accessibilityLabel={set.done ? `Mark set ${si + 1} incomplete` : `Complete set ${si + 1}`}
+                  style={[styles.check, set.done ? styles.checkDone : styles.checkOpen]}
+                >
+                  {set.done ? (
+                    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.base} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                      <Path d="M20 6L9 17l-5-5" />
+                    </Svg>
+                  ) : null}
+                </Pressable>
+              </View>
+            </View>
+          ))}
+
+          <View style={styles.setBtns}>
+            <Pressable onPress={() => addSet(exIdx)} accessibilityRole="button" accessibilityLabel="Add set" style={styles.addSet}>
+              <Text style={styles.addSetText}>+ Add Set</Text>
+            </Pressable>
+            {ex.sets.length > 1 ? (
+              <Pressable onPress={() => removeSet(exIdx)} accessibilityRole="button" accessibilityLabel="Remove last set" style={styles.removeSet}>
+                <Text style={styles.removeSetText}>Remove</Text>
+              </Pressable>
+            ) : null}
+          </View>
         </View>
 
-        {error ? (
-          <View style={styles.errorBanner}>
-            <Text style={styles.errorText}>Couldn’t save — {error}. Try again.</Text>
+        {/* exercise nav */}
+        <View style={styles.nav}>
+          <Pressable disabled={exIdx === 0} onPress={() => setExIdx((i) => Math.max(0, i - 1))} accessibilityLabel="Previous exercise" style={styles.navArrow}>
+            <Text style={[styles.navArrowText, exIdx === 0 && styles.navDisabled]}>‹</Text>
+          </Pressable>
+          <View style={styles.dots}>
+            {session.exercises.map((e, i) => {
+              const eDone = e.sets.every((s) => s.done);
+              return <View key={i} style={[styles.dot, i === exIdx && styles.dotCurrent, eDone && styles.dotDone]} />;
+            })}
           </View>
-        ) : null}
+          <Pressable disabled={exIdx >= session.exercises.length - 1} onPress={() => setExIdx((i) => Math.min(session.exercises.length - 1, i + 1))} accessibilityLabel="Next exercise" style={styles.navArrow}>
+            <Text style={[styles.navArrowText, exIdx >= session.exercises.length - 1 && styles.navDisabled]}>›</Text>
+          </Pressable>
+        </View>
 
-        {lifts.length > 0 ? (
-          <Card variant="default" style={styles.sheetCard}>
-            <View style={styles.sheetHeadRow}>
-              <Text style={styles.sheetTitle}>Top set</Text>
-              <Text style={styles.sheetHint}>Leave a lift blank to skip</Text>
-            </View>
-            {lifts.map((l, i) => (
-              <View key={`${l.name}-${i}`} style={[styles.liftRow, i > 0 && styles.liftRowDivider]}>
-                <View style={styles.liftNameWrap}>
-                  <Text style={styles.liftName} numberOfLines={1}>
-                    {l.name}
-                  </Text>
-                  <Text style={styles.liftSets}>{l.workingSets} working sets</Text>
-                </View>
-                <TextInput
-                  style={[styles.input, focused === `${i}w` && styles.inputFocused]}
-                  placeholder="lb"
-                  placeholderTextColor={flColor.gray600}
-                  keyboardType="numeric"
-                  value={entries[i]?.weight ?? ''}
-                  onFocus={() => setFocused(`${i}w`)}
-                  onBlur={() => setFocused(null)}
-                  onChangeText={(v) => setField(i, 'weight', v)}
-                  accessibilityLabel={`${l.name} weight in pounds`}
-                />
-                <Text style={styles.times}>×</Text>
-                <TextInput
-                  style={[styles.input, focused === `${i}r` && styles.inputFocused]}
-                  placeholder="reps"
-                  placeholderTextColor={flColor.gray600}
-                  keyboardType="numeric"
-                  value={entries[i]?.reps ?? ''}
-                  onFocus={() => setFocused(`${i}r`)}
-                  onBlur={() => setFocused(null)}
-                  onChangeText={(v) => setField(i, 'reps', v)}
-                  accessibilityLabel={`${l.name} reps`}
-                />
-              </View>
-            ))}
-          </Card>
-        ) : (
-          <Card variant="default" style={styles.sheetCard}>
-            <Text style={styles.sheetHint}>No prescribed lifts — this logs the session to your history.</Text>
-          </Card>
-        )}
+        {error ? <Text style={styles.err}>Couldn’t save — {error}. Try again.</Text> : null}
 
         <View style={styles.actions}>
-          <Button variant="primary" fullWidth disabled={pending} onPress={onFinish} accessibilityLabel="Finish workout">
-            Finish Workout
-          </Button>
-          <Button variant="text" fullWidth onPress={onAbandon} accessibilityLabel="Abandon workout">
-            Abandon
+          {complete ? <Text style={styles.completeNote}>● All sets complete</Text> : null}
+          <Button
+            variant="primary"
+            fullWidth
+            disabled={phase === 'saving' || !hasLoggedSet(session)}
+            onPress={onFinish}
+            accessibilityLabel="Finish workout"
+          >
+            {phase === 'saving' ? 'Saving…' : hasLoggedSet(session) ? 'Finish Workout' : 'Log a set to finish'}
           </Button>
         </View>
       </ScrollView>
+
+      {/* numeric picker (simple; the wheel is a fidelity fast-follow) */}
+      {picker ? (
+        <View style={styles.pickerWrap}>
+          <View style={styles.picker}>
+            <Text style={styles.pickerTitle}>{picker.field === 'weight' ? 'Weight (lb)' : 'Actual reps'}</Text>
+            <TextInput
+              style={styles.pickerInput}
+              value={pickerValue}
+              onChangeText={(t) => setPickerValue(t.replace(/[^0-9.]/g, ''))}
+              keyboardType="numeric"
+              autoFocus
+              onSubmitEditing={confirmPicker}
+              accessibilityLabel="Value"
+            />
+            <View style={styles.pickerBtns}>
+              <Button variant="primary" fullWidth onPress={confirmPicker} accessibilityLabel="Set value">
+                Set
+              </Button>
+              <Button variant="text" fullWidth onPress={() => setPicker(null)} accessibilityLabel="Cancel">
+                Cancel
+              </Button>
+            </View>
+          </View>
+        </View>
+      ) : null}
+    </Shell>
+  );
+}
+
+// ── helpers ──
+function patchSet(s: ActiveSession, ei: number, si: number, fn: (set: ActiveSession['exercises'][0]['sets'][0]) => ActiveSession['exercises'][0]['sets'][0]): ActiveSession {
+  const ex = s.exercises[ei];
+  const sets = ex.sets.map((set, i) => (i === si ? fn(set) : set));
+  return replaceExercise(s, ei, { ...ex, sets });
+}
+function replaceExercise(s: ActiveSession, ei: number, ex: ActiveSession['exercises'][0]): ActiveSession {
+  return { ...s, exercises: s.exercises.map((e, i) => (i === ei ? ex : e)) };
+}
+function Shell({ children }: { children: ReactNode }) {
+  return (
+    <View style={styles.root}>
+      <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.32)' }} />
+      {children}
+    </View>
+  );
+}
+function Stat({ n, label }: { n: number | string; label: string }) {
+  return (
+    <View style={styles.stat}>
+      <Text style={styles.statN}>{n}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  centerFill: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28 },
-  emptyText: { color: flColor.gray400, fontFamily: flFont.sans, fontSize: 15 },
-  scroll: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 48 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
+  scroll: { paddingHorizontal: 20, paddingBottom: 40 },
 
-  header: { paddingHorizontal: 4, paddingBottom: 18 },
-  liveRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 8 },
-  liveDot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: flColor.greenMuted },
-  liveLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.greenMuted },
-  sessionName: { ...flType.displayTitle, color: flColor.cream100 },
-  startedText: { ...flType.bodySecondary, color: flColor.gray400, marginTop: 2 },
+  progressBand: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 12, gap: 8 },
+  progressText: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray400 },
+  progressAccent: { color: flColor.bronze400, fontWeight: '700' },
+  track: { height: 5, borderRadius: 3, backgroundColor: flColor.charcoal700, overflow: 'hidden' },
+  fill: { height: 5, borderRadius: 3, backgroundColor: flColor.bronze400 },
 
-  errorBanner: {
-    borderRadius: flRadius.md,
-    borderWidth: 1,
-    borderColor: flColor.redMuted,
-    backgroundColor: 'rgba(190,90,76,0.10)',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    marginBottom: 14,
-  },
-  errorText: { color: flColor.redMuted, fontFamily: flFont.sans, fontSize: 13 },
+  exName: { fontFamily: flFont.display, fontSize: 24, color: flColor.cream100, marginTop: 6 },
+  exMeta: { fontFamily: flFont.sans, fontSize: 12, color: flColor.gray600, marginTop: 2, marginBottom: 14 },
 
-  sheetCard: { gap: 2 },
-  sheetHeadRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 6 },
-  sheetTitle: { fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
-  sheetHint: { color: flColor.gray600, fontFamily: flFont.sans, fontSize: 12 },
-  liftRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12 },
-  liftRowDivider: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
-  liftNameWrap: { flex: 1, minWidth: 0 },
-  liftName: { color: flColor.cream100, fontFamily: flFont.sans, fontSize: 15, fontWeight: '600' },
-  liftSets: { color: flColor.gray600, fontFamily: flFont.sans, fontSize: 11, marginTop: 2 },
-  input: {
-    width: 60,
-    paddingVertical: 9,
-    paddingHorizontal: 8,
-    borderRadius: flRadius.md,
-    borderWidth: 1,
-    borderColor: flColor.charcoal600,
-    backgroundColor: flColor.charcoal900,
-    color: flColor.cream100,
-    fontFamily: flFont.sans,
-    fontSize: 15,
-    textAlign: 'center',
-  },
-  inputFocused: { borderColor: flColor.bronze400 },
-  times: { color: flColor.gray600, fontSize: 14 },
+  table: { gap: 2 },
+  headRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6, paddingBottom: 6 },
+  h: { fontSize: 10, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray600 },
+  row: { flexDirection: 'row', alignItems: 'center', minHeight: 52, paddingHorizontal: 6, borderRadius: flRadius.md, borderWidth: 1, borderColor: 'transparent' },
+  rowDone: { borderColor: 'rgba(90,158,104,0.35)', backgroundColor: 'rgba(90,158,104,0.06)' },
+  cSet: { width: 40 },
+  cTarget: { flex: 1 },
+  cWeight: { flex: 1 },
+  cActual: { flex: 1.1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  setNum: { width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: flColor.charcoal600, alignItems: 'center', justifyContent: 'center' },
+  setNumDone: { borderColor: flColor.greenMuted },
+  setNumText: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray400 },
+  setNumTextDone: { color: flColor.greenMuted },
+  targetText: { fontFamily: flFont.display, fontSize: 18, color: flColor.gray400 },
+  repsLabel: { fontFamily: flFont.sans, fontSize: 10, color: flColor.gray600 },
+  weightText: { fontFamily: flFont.display, fontSize: 18, color: flColor.cream100 },
+  actualText: { fontFamily: flFont.display, fontSize: 18, color: flColor.bronze400 },
+  check: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  checkOpen: { borderColor: flColor.bronze400 },
+  checkDone: { borderColor: flColor.greenMuted, backgroundColor: flColor.greenMuted },
 
-  actions: { width: '100%', gap: 6, marginTop: 26 },
+  setBtns: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10, paddingHorizontal: 6 },
+  addSet: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: flRadius.md, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronze400 },
+  addSetText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.bronze400 },
+  removeSet: { paddingVertical: 10, paddingHorizontal: 14 },
+  removeSetText: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray600 },
 
-  savingWrap: { alignItems: 'center', gap: 14 },
-  savingText: { color: flColor.gray400, fontFamily: flFont.sans, fontSize: 15 },
-  doneCard: { width: '100%', alignItems: 'flex-start' },
+  nav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, marginTop: 24 },
+  navArrow: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  navArrowText: { fontSize: 26, color: flColor.bronze400 },
+  navDisabled: { color: flColor.charcoal600 },
+  dots: { flexDirection: 'row', gap: 7, alignItems: 'center' },
+  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: flColor.charcoal600 },
+  dotCurrent: { width: 20, backgroundColor: flColor.bronze400 },
+  dotDone: { backgroundColor: flColor.greenMuted },
+
+  err: { fontFamily: flFont.sans, fontSize: 13, color: flColor.redMuted, marginTop: 16 },
+  actions: { marginTop: 24, gap: 8 },
+  completeNote: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.bronze400, textAlign: 'center' },
+
+  // resume + done
+  resumeCard: { width: '100%', gap: 10, alignItems: 'flex-start' },
   kicker: { fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
-  doneName: { ...flType.displayTitle, color: flColor.cream100, marginTop: 6 },
-  doneSub: { color: flColor.gray400, fontFamily: flFont.sans, fontSize: 14, marginTop: 10 },
-  prBlock: { marginTop: 16, gap: 8, alignSelf: 'stretch' },
+  resumeName: { fontFamily: flFont.display, fontSize: 24, color: flColor.cream100 },
+  resumeSub: { fontFamily: flFont.sans, fontSize: 14, color: flColor.gray400 },
+  resumeActions: { width: '100%', gap: 6, marginTop: 12 },
+  doneCard: { width: '100%', gap: 12, alignItems: 'flex-start' },
+  doneTitle: { fontFamily: flFont.display, fontSize: 26, color: flColor.cream100 },
+  statRow: { flexDirection: 'row', gap: 26, marginTop: 4 },
+  stat: { gap: 2 },
+  statN: { fontFamily: flFont.display, fontSize: 22, color: flColor.cream100 },
+  statLabel: { fontFamily: flFont.sans, fontSize: 11, color: flColor.gray600 },
+  prBlock: { marginTop: 8, gap: 4, alignSelf: 'stretch' },
   prHeading: { fontSize: 10.5, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase', color: flColor.gray400 },
-  prRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  prDot: { width: 5, height: 5, transform: [{ rotate: '45deg' }], borderWidth: 1, borderColor: flColor.bronze400 },
-  prLine: { color: flColor.bronze400, fontFamily: flFont.sans, fontSize: 16, fontWeight: '600' },
-  doneAction: { width: '100%', marginTop: 24 },
+  prLine: { fontFamily: flFont.sans, fontSize: 16, fontWeight: '600', color: flColor.bronze400 },
+  doneAction: { width: '100%', marginTop: 20 },
+
+  pickerWrap: { position: 'absolute', left: 0, right: 0, bottom: 0, top: 0, backgroundColor: 'rgba(5,5,5,0.55)', justifyContent: 'flex-end' },
+  picker: { backgroundColor: flColor.charcoal900, borderTopLeftRadius: flRadius.xl, borderTopRightRadius: flRadius.xl, borderTopWidth: 1, borderColor: flColor.charcoal600, padding: 24, gap: 14 },
+  pickerTitle: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  pickerInput: { borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800, borderRadius: flRadius.md, paddingVertical: 14, paddingHorizontal: 16, fontFamily: flFont.display, fontSize: 26, color: flColor.cream100, textAlign: 'center' },
+  pickerBtns: { gap: 4 },
 });

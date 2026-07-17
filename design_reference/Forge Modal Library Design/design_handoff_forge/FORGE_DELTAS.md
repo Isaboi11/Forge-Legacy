@@ -515,6 +515,41 @@ Confirm-email confirmed OFF (soft verification, O-1 Decision 4). tsc 0 · eslint
 
 ---
 
+## 26. W-9 Active Workout — real logging → atomic finish → timeline (DONE)
+
+The interim top-set scaffold is replaced by the real W-9 inline logger, enumerated against the LOCKED
+spec (`W9-A1..A3`) + `Forge Active Workout.dc.html`. Where spec and design diverged, PO-ruled:
+set entry = **design** inline table (Set/Target/Weight/Actual, tap-✓); rest timer = **spec** count-UP
+(W9-A3, deferred, default-OFF-sticky when it lands); in-flow PR = **spec** none (all at finish); canonical
+completion = the minimal W-17 now, the 4-stage Seal/Record/Reflect/Share later (the inline ceremony modal
+is a dead end — never build toward it).
+
+- **Local-first (spec §13):** the session lives in AsyncStorage, autosaved every change → crash/kill →
+  Resume prompt. Cloud only ever sees the committed workout.
+- **Atomic finish** — `save_workout` RPC (`0010`): workout + exercises + done-sets + PRs + timeline
+  (ACCOMPLISHMENT per PR) + chapter `workout_count` bump, all-or-nothing (function only, no table DDL —
+  the spine already fit: `section` exists, **no RPE / no per-set notes** in either source).
+- **Domain-side** (unit-tested): Epley e1RM, volume, PR detection; session seeded from the real program
+  prescription. PR/celebration belong to finish (W-17), not the flow (ONB-D22-consistent).
+- **Minimal W-17:** volume/sets/time + New Records → "Save to Legacy".
+
+**Proven** (`workout-roundtrip.mjs`): (A) atomic rollback — malformed PR fails mid-commit → nothing
+persists, chapter unchanged; (B) headline — a FRESH athlete logs → 3 sets persist → PR derived → a real
+Legacy-timeline ACCOMPLISHMENT is the top entry → chapter `workout_count` 0→1 (Home flips OFF "awaiting
+first workout"). tsc 0 · eslint 0 · 196 tests · SSR-safe.
+
+**Soft spot (on the record):** resume is asserted **client-local** (AsyncStorage eyeball), not in the
+suite — the one criterion of five not machine-proven. Re-verify resume by hand whenever W-10..W-16 or the
+rest timer touch the session model.
+
+**Removed here** (superseded, zero importers): the Phase-3 interim `logWorkout` (`log-workout.ts`) +
+`useMutation` — this cut is their replacement, so they retire in the same commit.
+
+**Deferred (ruled):** W-10..W-16 modalities · rest timer · substitution/add-exercise · hero media/How-To ·
+4-stage completion · partner/playlist/media/reflection.
+
+---
+
 ## Still open (carry into implementation)
 
 **Three buckets, and the distinction is load-bearing** — don't let a fixable miss (or a merely

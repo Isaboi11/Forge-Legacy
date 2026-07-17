@@ -28,7 +28,7 @@ const { data: tlBefore } = await sb.from('timeline_events').select('event_type, 
 const { data: sqBefore } = await sb.from('personal_records').select('load_value').eq('athlete_id', uid).eq('exercise', 'Back Squat').eq('measure_kind', 'load').order('load_value', { ascending: false }).limit(1);
 console.log('\n  BEFORE  timeline:', JSON.stringify(timelineTop(tlBefore)), '· Back Squat max:', sqBefore?.[0]?.load_value, '· workouts:', chapter?.workout_count);
 
-// ── WRITE (mirrors logWorkout) ──
+// ── WRITE (mirrors the interim write path, since superseded by save_workout / W-9) ──
 const prIds = [], tlIds = [];
 let workoutId = null;
 try {
