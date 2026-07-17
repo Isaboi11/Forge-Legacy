@@ -69,7 +69,7 @@ export default function AuthFlow() {
             </Pressable>
 
             {step === 'create' ? (
-              <Heading eyebrow="Create your account" title="Claim your name" body="Email and a password to protect your record — everything else comes next." />
+              <Heading eyebrow="Create your account" title="Secure your record" body="Email and a password to protect your record — everything else comes next." />
             ) : (
               <Heading eyebrow="Welcome back" title="Sign in to your record." />
             )}

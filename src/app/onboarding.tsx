@@ -280,7 +280,7 @@ export default function Onboarding() {
 
           {step === 'program' && rec ? (
             <>
-              <Heading eyebrow="Forge recommends" title="Where your legacy begins" body="Matched to your goal, experience, and equipment. It's a place to begin — never a cage." />
+              <Heading eyebrow="Forge recommends" title="Where your legacy begins" body="Matched to your goal, experience, equipment, and schedule. It's a place to begin — never a cage." />
               <View style={styles.programCard}>
                 <View style={styles.programPills}>
                   <Pill>{rec.family}</Pill>
@@ -299,6 +299,12 @@ export default function Onboarding() {
               </View>
               <Text style={styles.changeHint}>You can change this any time.</Text>
               <Continue label={`Start ${rec.name.length <= 18 ? rec.name : 'this program'}`} onPress={next} />
+              {/* Skip the recommendation — advances to the same finish (program is non-persisted), so this
+                  lands on the identical Chapter I / awaiting-Home as Start. "Build your own" is deferred to
+                  an awaiting-Home CTA (next unit). */}
+              <Pressable onPress={next} accessibilityRole="button" accessibilityLabel="Skip for now" style={styles.skip}>
+                <Text style={styles.skipText}>Skip for now</Text>
+              </Pressable>
             </>
           ) : null}
         </ScrollView>
