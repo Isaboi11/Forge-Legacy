@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 
 import { Button } from '@/components/forge/composites/Button';
 import { ScreenBackground } from '@/components/screen-background';
+import { SCREEN_BG } from '@/constants/backgrounds';
 import { WelcomeAtmosphere } from '@/components/onboarding/WelcomeAtmosphere';
 import { WelcomeLogo } from '@/components/onboarding/WelcomeLogo';
 import { Field, Heading } from '@/components/onboarding/kit';
@@ -45,13 +46,10 @@ export default function AuthFlow() {
       {/* Mobile-width frame — on desktop web the auth route renders as a centered phone-width column
           (like the .dc frame), not stretched edge-to-edge. The atmosphere + content share the frame. */}
       <View style={styles.frame}>
-      {step === 'welcome' ? (
-        <WelcomeAtmosphere />
-      ) : (
-        // Credentials + Sign In sit on the calm #08090B setup base — one continuous "creating your
-        // account" journey into onboarding (which shares this base). Welcome keeps its forged-hall.
-        <ScreenBackground base="#08090B" />
-      )}
+      {/* Shared slate base — the .dc device-frame texture (forge-slate.png darkened on #050505),
+          restored across the whole auth route. Welcome layers the forged-hall gradient on top. */}
+      <ScreenBackground image={SCREEN_BG.slate} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.3)' }} />
+      {step === 'welcome' ? <WelcomeAtmosphere /> : null}
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {step === 'welcome' ? (
           <View style={styles.welcome}>
@@ -136,7 +134,7 @@ export default function AuthFlow() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, alignItems: 'center', backgroundColor: '#08090B' },
+  root: { flex: 1, alignItems: 'center', backgroundColor: '#050505' },
   frame: { flex: 1, width: '100%', maxWidth: 480, overflow: 'hidden' },
   flex: { flex: 1 },
   welcome: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 34, paddingHorizontal: 34, paddingTop: 44, paddingBottom: 74 },

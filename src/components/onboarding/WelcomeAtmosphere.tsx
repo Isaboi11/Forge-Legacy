@@ -6,8 +6,9 @@ import Animated, { Easing, interpolate, useAnimatedStyle, useSharedValue, withRe
 
 /**
  * WelcomeAtmosphere — the exact `Forge Onboarding.dc` "forged hall" behind the Welcome (Tier C).
- * Gradient OPACITIES are reproduced verbatim from the .dc (no re-tuning — that's what read flat before):
- * base #08090B · forged-hall arch · pillar-edge shadows · a warm floor forge-glow · an inward vignette ·
+ * Gradient OPACITIES are reproduced verbatim from the .dc (no re-tuning — that's what read flat before).
+ * Transparent base — it layers OVER the shared slate ScreenBackground: forged-hall arch · pillar-edge
+ * shadows · a warm floor forge-glow · an inward vignette ·
  * a broad focal light in the stone · and the animated ember (flEmber, 8s). Each glow is positioned to its
  * .dc box with an SVG RadialGradient. Absolutely positioned, pointerEvents none.
  *
@@ -102,7 +103,9 @@ export function WelcomeAtmosphere() {
 }
 
 const styles = StyleSheet.create({
-  root: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#08090B', overflow: 'hidden' },
+  // Transparent base — the shared slate ScreenBackground sits UNDER this; the forged-hall gradients
+  // (arch, pillars, forge glow, vignette, focal, ember) layer over the slate texture (the .dc order).
+  root: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden' },
   arch: {
     position: 'absolute',
     top: '-34%',

@@ -7,6 +7,7 @@ import { Avatar } from '@/components/forge/composites/Avatar';
 import { Pill } from '@/components/forge/composites/Pill';
 import { ForgeBrandMark } from '@/components/forge/primitives/icons/HomeIcons';
 import { ScreenBackground } from '@/components/screen-background';
+import { SCREEN_BG } from '@/constants/backgrounds';
 import { Field, Heading, ProgressHeader, SelectTile } from '@/components/onboarding/kit';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import type { EquipmentId, GoalId } from '@/domain/onboarding/derive';
@@ -141,9 +142,14 @@ export default function Onboarding() {
 
   return (
     <View style={styles.root}>
-      {/* Form screens: the calm #08090B base (continuous with the auth forms, 0.2). The Transition is the
-          payoff that closes onboarding — atmospheric steel base, the bookend to Welcome's forged-hall. */}
-      {step === 'transition' ? <ScreenBackground atmospheric /> : <ScreenBackground base="#08090B" />}
+      {/* Form screens: the shared slate base — the .dc device-frame texture (forge-slate.png darkened on
+          #050505). The Transition keeps the atmospheric steel base — the .dc uses --fl-bg-atmospheric
+          there (opaque steel, not slate), per your earlier transition=atmospheric ruling. */}
+      {step === 'transition' ? (
+        <ScreenBackground atmospheric />
+      ) : (
+        <ScreenBackground image={SCREEN_BG.slate} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.3)' }} />
+      )}
       {idx >= 0 ? <ProgressHeader step={idx + 1} total={SETUP.length} onBack={idx > 0 || step === 'transition' ? back : undefined} /> : null}
 
       {step === 'transition' ? (
