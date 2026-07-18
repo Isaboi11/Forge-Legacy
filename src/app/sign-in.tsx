@@ -46,9 +46,9 @@ export default function AuthFlow() {
       {/* Mobile-width frame — on desktop web the auth route renders as a centered phone-width column
           (like the .dc frame), not stretched edge-to-edge. The atmosphere + content share the frame. */}
       <View style={styles.frame}>
-      {/* Shared slate base — the .dc device-frame texture (forge-slate.png darkened on #050505),
-          restored across the whole auth route. Welcome layers the forged-hall gradient on top. */}
-      <ScreenBackground image={SCREEN_BG.slate} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.3)' }} />
+      {/* The SAME background as the Home screen — SCREEN_BG.slate + flat rgba(5,5,5,0.15) — shared across
+          the whole auth route. Welcome layers the forged-hall gradient + carved logo on top of it. */}
+      <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.15)' }} />
       {step === 'welcome' ? <WelcomeAtmosphere /> : null}
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {step === 'welcome' ? (

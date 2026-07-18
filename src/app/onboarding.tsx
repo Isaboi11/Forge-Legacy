@@ -142,14 +142,9 @@ export default function Onboarding() {
 
   return (
     <View style={styles.root}>
-      {/* Form screens: the shared slate base — the .dc device-frame texture (forge-slate.png darkened on
-          #050505). The Transition keeps the atmospheric steel base — the .dc uses --fl-bg-atmospheric
-          there (opaque steel, not slate), per your earlier transition=atmospheric ruling. */}
-      {step === 'transition' ? (
-        <ScreenBackground atmospheric />
-      ) : (
-        <ScreenBackground image={SCREEN_BG.slate} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.3)' }} />
-      )}
+      {/* The SAME background as the Home screen — SCREEN_BG.slate + flat rgba(5,5,5,0.15) — across the
+          WHOLE onboarding flow, Transition included (supersedes the earlier atmospheric-transition). */}
+      <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.15)' }} />
       {idx >= 0 ? <ProgressHeader step={idx + 1} total={SETUP.length} onBack={idx > 0 || step === 'transition' ? back : undefined} /> : null}
 
       {step === 'transition' ? (
