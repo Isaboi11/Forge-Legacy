@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -23,6 +23,7 @@ import { fetchAwaitingChapter } from '@/data/home-live';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { getSelfProfile } from '@/domain/profile/placeholder-data';
 import { useProfile } from '@/lib/profile';
+import { useAuth } from '@/lib/auth';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { getActiveProgram, getNextWorkout } from '@/domain/training/active-program';
 import { resolveHomeWorkoutArtwork } from '@/domain/home-artwork/resolver';
@@ -77,6 +78,24 @@ function FirstSessionCard({ onStart, onBrowse }: { onStart: () => void; onBrowse
   );
 }
 
+/** Interim account menu (avatar tap) — name + Sign out. The real home is the deferred Account screen (P-9). */
+function AccountMenu({ open, name, onClose, onSignOut }: { open: boolean; name: string; onClose: () => void; onSignOut: () => void }) {
+  if (!open) return null;
+  return (
+    <Pressable style={styles.menuBackdrop} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close account menu">
+      <Pressable style={styles.menuCard} onPress={() => {}}>
+        <Text style={styles.menuName} numberOfLines={1}>
+          {name || 'Athlete'}
+        </Text>
+        <View style={styles.menuDivider} />
+        <Pressable onPress={onSignOut} accessibilityRole="button" accessibilityLabel="Sign out" style={styles.menuItem}>
+          <Text style={styles.menuItemText}>Sign out</Text>
+        </Pressable>
+      </Pressable>
+    </Pressable>
+  );
+}
+
 /**
  * H-1 Home — full-screen match of the design handoff "Forge Home.dc.html"
  * (Phase 2 core + STEP C follow-up).
@@ -97,8 +116,16 @@ function FirstSessionCard({ onStart, onBrowse }: { onStart: () => void; onBrowse
  */
 export default function HomeScreen() {
   const [friendSheetOpen, setFriendSheetOpen] = useState(false);
+  const [accountMenu, setAccountMenu] = useState(false);
   const router = useRouter();
   const { startWorkout } = useWorkoutSession();
+  const { signOut } = useAuth();
+  // Interim sign-out: on session flip the boot router swaps back to the auth route (Welcome). The real
+  // home for this is the deferred Account/Settings screen (P-9); this avatar menu is the stopgap.
+  const closeMenuAndSignOut = () => {
+    setAccountMenu(false);
+    void signOut();
+  };
   // Live identity for the AppBar avatar. The artwork resolver below keeps its synchronous seed
   // profile — it must resolve the hero art on the first frame, and the art is static regardless.
   const { profile: liveProfile } = useProfile();
@@ -155,7 +182,7 @@ export default function HomeScreen() {
         <AppBar
           title={<HomeWordmark />}
           avatar={<Avatar name={liveProfile?.name ?? ''} src={liveProfile?.avatarUrl ?? undefined} size="appBar" />}
-          onAvatar={() => {}}
+          onAvatar={() => setAccountMenu(true)}
         />
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <ChapterTitleBlock
@@ -169,6 +196,7 @@ export default function HomeScreen() {
             <FirstSessionCard onStart={startFirst} onBrowse={browsePrograms} />
           </View>
         </ScrollView>
+        <AccountMenu open={accountMenu} name={liveProfile?.name ?? ''} onClose={() => setAccountMenu(false)} onSignOut={closeMenuAndSignOut} />
       </View>
     );
   }
@@ -180,9 +208,7 @@ export default function HomeScreen() {
       <AppBar
         title={<HomeWordmark />}
         avatar={<Avatar name={liveProfile?.name ?? profile.name} src={liveProfile?.avatarUrl ?? undefined} size="appBar" />}
-        onAvatar={() => {
-          // P-1 Profile is not yet implemented.
-        }}
+        onAvatar={() => setAccountMenu(true)}
       />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -259,6 +285,7 @@ export default function HomeScreen() {
           // C-2 Create Challenge, FRIENDS context — not yet implemented.
         }}
       />
+      <AccountMenu open={accountMenu} name={liveProfile?.name ?? profile.name} onClose={() => setAccountMenu(false)} onSignOut={closeMenuAndSignOut} />
     </View>
   );
 }
@@ -267,6 +294,31 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
   },
+  menuBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(5,5,5,0.45)',
+    alignItems: 'flex-end',
+    paddingTop: 64,
+    paddingRight: 14,
+    zIndex: 50,
+  },
+  menuCard: {
+    minWidth: 190,
+    backgroundColor: flColor.charcoal800,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    borderRadius: 14,
+    paddingVertical: 4,
+    boxShadow: '0 12px 30px rgba(0,0,0,0.5)',
+  },
+  menuName: { fontFamily: flFont.sans, fontSize: 12.5, fontWeight: '600', color: flColor.gray400, paddingHorizontal: 14, paddingTop: 8, paddingBottom: 6 },
+  menuDivider: { height: 1, backgroundColor: flColor.charcoal600, marginHorizontal: 6 },
+  menuItem: { paddingVertical: 12, paddingHorizontal: 14 },
+  menuItemText: { fontFamily: flFont.sans, fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   firstCard: { alignItems: 'center', gap: 16 },
   firstIcon: {
     width: 52,
