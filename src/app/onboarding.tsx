@@ -14,6 +14,7 @@ import type { EquipmentId, GoalId } from '@/domain/onboarding/derive';
 import { recommendProgram, type ProgramView } from '@/domain/onboarding/recommend';
 import { completeOnboarding, isHandleAvailable } from '@/domain/onboarding/service';
 import { useProfile } from '@/lib/profile';
+import { setProgramIntent, type ProgramIntent } from '@/lib/program-intent';
 
 /**
  * The onboarding route (session, not-onboarded) — the design `.dc`'s setup flow, Account → Transition.
@@ -80,6 +81,12 @@ export default function Onboarding() {
 
   const idx = SETUP.indexOf(step);
   const next = () => setStep(step === 'program' ? 'transition' : SETUP[idx + 1]);
+  // Program step: record the choice (recommended vs build-own) so Home's isNew card shows the right
+  // variant, then advance. Enrollment itself isn't persisted at onboarding (by ruling) — just the intent.
+  const chooseProgram = (intent: ProgramIntent) => {
+    void setProgramIntent(intent);
+    next();
+  };
   const back = () => {
     setError(null);
     if (step === 'transition') setStep('program');
@@ -302,12 +309,11 @@ export default function Onboarding() {
                 </View>
               </View>
               <Text style={styles.changeHint}>You can change this any time.</Text>
-              <Continue label={`Start ${rec.name.length <= 18 ? rec.name : 'this program'}`} onPress={next} />
-              {/* Skip the recommendation — advances to the same finish (program is non-persisted), so this
-                  lands on the identical Chapter I / awaiting-Home as Start. "Build your own" is deferred to
-                  an awaiting-Home CTA (next unit). */}
-              <Pressable onPress={next} accessibilityRole="button" accessibilityLabel="Skip for now" style={styles.skip}>
-                <Text style={styles.skipText}>Skip for now</Text>
+              <Continue label={`Start ${rec.name.length <= 18 ? rec.name : 'this program'}`} onPress={() => chooseProgram('recommended')} />
+              {/* "I will build my own" — records the build-own intent so Home's isNew card shows the "Build
+                  program" variant, then advances to the same finish (enrollment isn't persisted here). */}
+              <Pressable onPress={() => chooseProgram('build_own')} accessibilityRole="button" accessibilityLabel="I will build my own program" style={styles.skip}>
+                <Text style={styles.skipText}>I will build my own</Text>
               </Pressable>
             </>
           ) : null}

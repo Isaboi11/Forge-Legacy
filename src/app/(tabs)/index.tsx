@@ -24,6 +24,7 @@ import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { getSelfProfile } from '@/domain/profile/placeholder-data';
 import { useProfile } from '@/lib/profile';
 import { useAuth } from '@/lib/auth';
+import { getProgramIntent } from '@/lib/program-intent';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { getActiveProgram, getNextWorkout } from '@/domain/training/active-program';
 import { resolveHomeWorkoutArtwork } from '@/domain/home-artwork/resolver';
@@ -56,7 +57,17 @@ function splitChapterTitle(full: string): { number: string; name: string } {
  * path) and Browse Programs (secondary → the catalog). No "build your own" copy until the Program Builder
  * exists (fast-follow).
  */
-function FirstSessionCard({ onStart, onBrowse }: { onStart: () => void; onBrowse: () => void }) {
+function FirstSessionCard({
+  buildOwn,
+  onStart,
+  onBrowse,
+  onBuild,
+}: {
+  buildOwn: boolean;
+  onStart: () => void;
+  onBrowse: () => void;
+  onBuild: () => void;
+}) {
   return (
     <Card padding={24} style={styles.firstCard}>
       <View style={styles.firstIcon}>
@@ -64,16 +75,33 @@ function FirstSessionCard({ onStart, onBrowse }: { onStart: () => void; onBrowse
       </View>
       <View style={styles.firstText}>
         <Text style={styles.firstTitle}>Forge your first program</Text>
-        <Text style={styles.firstCopy}>Start your first session now, or browse the Forge library to see what&apos;s ahead.</Text>
+        <Text style={styles.firstCopy}>
+          {buildOwn
+            ? 'Build your own program from the Forge library — or start a session now.'
+            : "Start your first session now, or browse the Forge library to see what's ahead."}
+        </Text>
       </View>
-      <View style={styles.firstActions}>
-        <Button variant="primary" fullWidth onPress={onStart} accessibilityLabel="Start Training — begin your first workout">
-          Start Training
-        </Button>
-        <Button variant="secondary" fullWidth onPress={onBrowse} accessibilityLabel="Browse Programs — explore the Forge library">
-          Browse Programs
-        </Button>
-      </View>
+      {buildOwn ? (
+        // build-own choice → "Build program" leads to the Program Builder; "Start workout" is the smaller,
+        // secondary path into the logger.
+        <View style={styles.firstActions}>
+          <Button variant="primary" fullWidth onPress={onBuild} accessibilityLabel="Build program — create your own program">
+            Build program
+          </Button>
+          <Pressable onPress={onStart} accessibilityRole="button" accessibilityLabel="Start workout" style={styles.firstStartSmall}>
+            <Text style={styles.firstStartSmallText}>Start workout</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <View style={styles.firstActions}>
+          <Button variant="primary" fullWidth onPress={onStart} accessibilityLabel="Start Training — begin your first workout">
+            Start Training
+          </Button>
+          <Button variant="secondary" fullWidth onPress={onBrowse} accessibilityLabel="Browse Programs — explore the Forge library">
+            Browse Programs
+          </Button>
+        </View>
+      )}
     </Card>
   );
 }
@@ -145,6 +173,9 @@ export default function HomeScreen() {
     }, [refetchAwaiting]),
   );
 
+  // Onboarding program choice → which isNew card to show ('build_own' → Build program + smaller Start).
+  const { data: programIntent } = useQuery(getProgramIntent, []);
+
   // Static this session (no athlete-progress backend) — resolve once.
   const { profile, program, workout, resolved } = useMemo(() => {
     const profile = getSelfProfile();
@@ -193,7 +224,12 @@ export default function HomeScreen() {
             showRankMedallion={false}
           />
           <View style={styles.content}>
-            <FirstSessionCard onStart={startFirst} onBrowse={browsePrograms} />
+            <FirstSessionCard
+              buildOwn={programIntent === 'build_own'}
+              onStart={startFirst}
+              onBrowse={browsePrograms}
+              onBuild={() => router.push('/program-builder')}
+            />
           </View>
         </ScrollView>
         <AccountMenu open={accountMenu} name={liveProfile?.name ?? ''} onClose={() => setAccountMenu(false)} onSignOut={closeMenuAndSignOut} />
@@ -334,6 +370,8 @@ const styles = StyleSheet.create({
   firstTitle: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100, textAlign: 'center' },
   firstCopy: { fontFamily: flFont.sans, fontSize: 14, lineHeight: 20, color: flColor.gray400, textAlign: 'center', maxWidth: 260 },
   firstActions: { width: '100%', gap: 10 },
+  firstStartSmall: { alignItems: 'center', paddingVertical: 8 },
+  firstStartSmallText: { fontFamily: flFont.sans, fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },
   scrollContent: {
     paddingBottom: 44,
   },

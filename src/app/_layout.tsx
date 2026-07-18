@@ -75,6 +75,7 @@ function RootNavigator() {
         <Stack.Screen name="squad/[id]" />
         <Stack.Screen name="athlete/[id]" />
         <Stack.Screen name="workout" options={{ presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="program-builder" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="workout-complete" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Screen name="pin-video" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
       </Stack.Protected>

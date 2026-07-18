@@ -18,3 +18,18 @@ export function exerciseNameFor(catalogKey: string | undefined): string {
   if (!catalogKey) return 'Exercise';
   return getIndex().get(catalogKey) ?? catalogKey.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
+
+/** One browsable catalog entry — the Program Builder's inline exercise picker (name + family, searchable). */
+export type CatalogExercise = { id: string; name: string; family: string; aliases: string[] };
+
+let catalog: CatalogExercise[] | null = null;
+
+/** The full exercise catalog (794), name-sorted — for the Program Builder picker. Built once, lazily. */
+export function listExercises(): CatalogExercise[] {
+  if (!catalog) {
+    catalog = (exercisesData as { id: string; name: string; family: string; aliases?: string[] }[])
+      .map((e) => ({ id: e.id, name: e.name, family: e.family, aliases: e.aliases ?? [] }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+  return catalog;
+}
