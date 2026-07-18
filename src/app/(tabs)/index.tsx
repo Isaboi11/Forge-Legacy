@@ -25,6 +25,8 @@ import { getSelfProfile } from '@/domain/profile/placeholder-data';
 import { useProfile } from '@/lib/profile';
 import { useAuth } from '@/lib/auth';
 import { getProgramIntent } from '@/lib/program-intent';
+import { FirstProgramCard } from '@/components/forge/compositions/FirstProgramCard';
+import { fetchMyPrograms, type SavedProgram } from '@/data/programs-live';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { getActiveProgram, getNextWorkout } from '@/domain/training/active-program';
 import { resolveHomeWorkoutArtwork } from '@/domain/home-artwork/resolver';
@@ -57,17 +59,7 @@ function splitChapterTitle(full: string): { number: string; name: string } {
  * path) and Browse Programs (secondary → the catalog). No "build your own" copy until the Program Builder
  * exists (fast-follow).
  */
-function FirstSessionCard({
-  buildOwn,
-  onStart,
-  onBrowse,
-  onBuild,
-}: {
-  buildOwn: boolean;
-  onStart: () => void;
-  onBrowse: () => void;
-  onBuild: () => void;
-}) {
+function FirstSessionCard({ onStart, onBrowse }: { onStart: () => void; onBrowse: () => void }) {
   return (
     <Card padding={24} style={styles.firstCard}>
       <View style={styles.firstIcon}>
@@ -75,33 +67,48 @@ function FirstSessionCard({
       </View>
       <View style={styles.firstText}>
         <Text style={styles.firstTitle}>Forge your first program</Text>
+        <Text style={styles.firstCopy}>Start your first session now, or browse the Forge library to see what&apos;s ahead.</Text>
+      </View>
+      <View style={styles.firstActions}>
+        <Button variant="primary" fullWidth onPress={onStart} accessibilityLabel="Start Training — begin your first workout">
+          Start Training
+        </Button>
+        <Button variant="secondary" fullWidth onPress={onBrowse} accessibilityLabel="Browse Programs — explore the Forge library">
+          Browse Programs
+        </Button>
+      </View>
+    </Card>
+  );
+}
+
+/**
+ * Interim "your program" reflection — shown once the athlete has built a program (no `.dc` yet; a simple
+ * card so building a program visibly changes Home). "Start workout" still runs the demo session — executing
+ * a user-authored program is the deeper BU-1 piece, deferred.
+ */
+function ProgramSavedCard({ program, onStart, onBuild }: { program: SavedProgram; onStart: () => void; onBuild: () => void }) {
+  const dayCount = program.structure.days.length;
+  const exCount = program.structure.days.reduce((n, d) => n + d.main.length, 0);
+  return (
+    <Card padding={24} style={styles.firstCard}>
+      <View style={styles.firstIcon}>
+        <BarbellIcon size={24} color={flColor.bronze400} />
+      </View>
+      <View style={styles.firstText}>
+        <Text style={styles.savedEyebrow}>Your program</Text>
+        <Text style={styles.firstTitle}>{program.name}</Text>
         <Text style={styles.firstCopy}>
-          {buildOwn
-            ? 'Build your own program from the Forge library — or start a session now.'
-            : "Start your first session now, or browse the Forge library to see what's ahead."}
+          {dayCount} day{dayCount === 1 ? '' : 's'} · {exCount} exercise{exCount === 1 ? '' : 's'}
         </Text>
       </View>
-      {buildOwn ? (
-        // build-own choice → "Build program" leads to the Program Builder; "Start workout" is the smaller,
-        // secondary path into the logger.
-        <View style={styles.firstActions}>
-          <Button variant="primary" fullWidth onPress={onBuild} accessibilityLabel="Build program — create your own program">
-            Build program
-          </Button>
-          <Pressable onPress={onStart} accessibilityRole="button" accessibilityLabel="Start workout" style={styles.firstStartSmall}>
-            <Text style={styles.firstStartSmallText}>Start workout</Text>
-          </Pressable>
-        </View>
-      ) : (
-        <View style={styles.firstActions}>
-          <Button variant="primary" fullWidth onPress={onStart} accessibilityLabel="Start Training — begin your first workout">
-            Start Training
-          </Button>
-          <Button variant="secondary" fullWidth onPress={onBrowse} accessibilityLabel="Browse Programs — explore the Forge library">
-            Browse Programs
-          </Button>
-        </View>
-      )}
+      <View style={styles.firstActions}>
+        <Button variant="primary" fullWidth onPress={onStart} accessibilityLabel="Start workout">
+          Start workout
+        </Button>
+        <Pressable onPress={onBuild} accessibilityRole="button" accessibilityLabel="Build another program" style={styles.firstStartSmall}>
+          <Text style={styles.firstStartSmallText}>Build another</Text>
+        </Pressable>
+      </View>
     </Card>
   );
 }
@@ -160,8 +167,12 @@ export default function HomeScreen() {
   // H-1 "awaiting first workout" (ONB-D17): a just-onboarded athlete (active chapter, 0 workouts) gets a
   // purpose-built hero instead of the static content, so a fresh user never lands on stale/blank Home.
   const { data: awaiting, refetch: refetchAwaiting } = useQuery(fetchAwaitingChapter, []);
-  // Re-read on focus so the hero flips OFF awaiting after the first workout is committed (Home is a
-  // mounted tab; without this it fetches once and the awaiting hero would stick past workout #1).
+  // Onboarding program choice → which isNew card ('build_own' → the First Program Card).
+  const { data: programIntent } = useQuery(getProgramIntent, []);
+  // The athlete's saved programs — if any, Home reflects them instead of the empty first-program card.
+  const { data: myPrograms, refetch: refetchPrograms } = useQuery(fetchMyPrograms, []);
+  // Re-read on focus so the hero flips OFF awaiting after the first workout AND reflects a program just
+  // built in the builder (Home is a mounted tab; without this it fetches once and stays stale).
   const firstAwaitFocus = useRef(true);
   useFocusEffect(
     useCallback(() => {
@@ -170,11 +181,9 @@ export default function HomeScreen() {
         return;
       }
       refetchAwaiting();
-    }, [refetchAwaiting]),
+      refetchPrograms();
+    }, [refetchAwaiting, refetchPrograms]),
   );
-
-  // Onboarding program choice → which isNew card to show ('build_own' → Build program + smaller Start).
-  const { data: programIntent } = useQuery(getProgramIntent, []);
 
   // Static this session (no athlete-progress backend) — resolve once.
   const { profile, program, workout, resolved } = useMemo(() => {
@@ -224,12 +233,13 @@ export default function HomeScreen() {
             showRankMedallion={false}
           />
           <View style={styles.content}>
-            <FirstSessionCard
-              buildOwn={programIntent === 'build_own'}
-              onStart={startFirst}
-              onBrowse={browsePrograms}
-              onBuild={() => router.push('/program-builder')}
-            />
+            {myPrograms && myPrograms.length > 0 ? (
+              <ProgramSavedCard program={myPrograms[0]} onStart={startFirst} onBuild={() => router.push('/program-builder')} />
+            ) : programIntent === 'build_own' ? (
+              <FirstProgramCard onBuild={() => router.push('/program-builder')} onStart={startFirst} />
+            ) : (
+              <FirstSessionCard onStart={startFirst} onBrowse={browsePrograms} />
+            )}
           </View>
         </ScrollView>
         <AccountMenu open={accountMenu} name={liveProfile?.name ?? ''} onClose={() => setAccountMenu(false)} onSignOut={closeMenuAndSignOut} />
@@ -372,6 +382,7 @@ const styles = StyleSheet.create({
   firstActions: { width: '100%', gap: 10 },
   firstStartSmall: { alignItems: 'center', paddingVertical: 8 },
   firstStartSmallText: { fontFamily: flFont.sans, fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },
+  savedEyebrow: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400, textAlign: 'center' },
   scrollContent: {
     paddingBottom: 44,
   },

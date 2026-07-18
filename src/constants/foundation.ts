@@ -50,6 +50,11 @@ export const flColor = {
   bronzeBorder: 'rgba(186, 146, 92, 0.40)',
   bronzeBorderSubtle: 'rgba(186, 146, 92, 0.19)',
   bronzeTint: 'rgba(186, 146, 92, 0.05)',
+
+  // Forged-metal button + engraved-medallion tokens (from foundation.css)
+  emberFlame: '#E0913F', //           --fl-ember-flame (heat/flame icon stroke)
+  bronzeMetalBorder: 'rgba(174, 136, 86, 0.55)', // --fl-bronze-metal-border
+  surfaceRecessed: '#09090B', //      --fl-surface-recessed (solid stand-in for the base→#0C0C0E gradient)
 } as const
 
 export const flText = {
@@ -123,6 +128,11 @@ export const flShadow = {
   elevated: `inset 0 1px 0 ${flColor.innerHighlightMd}, 0 4px 16px rgba(0, 0, 0, 0.5)`,
   ambient: '0 20px 60px rgba(0, 0, 0, 0.45)',
   glowSubtle: '0 0 20px rgba(186, 146, 92, 0.14)',
+  // Engraved-medallion + metal-button atomic tokens (from foundation.css)
+  borderInset: 'inset 0 1px 0 rgba(255, 255, 255, 0.04)', // --fl-border-inset
+  shadowImage: '0 6px 20px rgba(0, 0, 0, 0.55)', //          --fl-shadow-image
+  glowBadge: '0 0 16px rgba(186, 146, 92, 0.28)', //         --fl-glow-badge
+  bronzeMetalTopRim: 'inset 0 1px 0 rgba(222, 190, 148, 0.42)', // --fl-bronze-metal-top-rim
   /** Mission Card — bronze-edged hero container. */
   missionCard:
     'inset 0 1px 0 rgba(198,156,100,0.30), 0 18px 40px -24px rgba(0,0,0,0.82), 0 0 18px -6px rgba(186,146,92,0.11)',
