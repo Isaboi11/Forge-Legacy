@@ -1,0 +1,8 @@
+# EAS Hosting deploy manifest — overrides .gitignore for `eas deploy`.
+#
+# Without this, eas deploy inherits .gitignore (which ignores dist/, node_modules/, .expo/) and skips the
+# exported /_expo/ (JS) and /assets/ (images) folders, so the live site 404s all static assets — the
+# Welcome logo + onboarding slate backgrounds + favicon all vanished. An (almost) empty .easignore means
+# "upload the whole dist as exported." We only exclude the vestigial node_modules assets copied into the
+# export, which aren't referenced by the web bundle.
+dist/assets/node_modules/
