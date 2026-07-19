@@ -1,11 +1,12 @@
 import { getProgramDefinitions } from '@/domain/training/programs';
 import type { ProgramDefinition } from '@/domain/training/schema';
+import { FALLBACK_ID, resolveRecommendationId, type RecommendInput } from './recommend-core';
 
 /**
- * Program recommendation for the Recommended-Program screen. The design `.dc`'s goal×experience×equipment
- * map references a large catalog; ours is the two LOCKED Strength programs, so per the PO ruling we map
- * to real ids and fall back to Strength Foundation I (the design's own fallback) whenever a ranked id has
- * no catalog match — which, with a 2-program catalog, is most inputs.
+ * Program recommendation for the Home starting-point on-ramp. The goal × experience × equipment mechanism
+ * lives (pure + tested) in `recommend-core.ts`; this layer resolves the chosen id against the real catalog
+ * and shapes a `ProgramView`. With a 2-program catalog every input still resolves to Strength Foundation
+ * I or II — real mechanism, thin catalog.
  */
 export interface ProgramView {
   id: string;
@@ -17,9 +18,6 @@ export interface ProgramView {
   workouts: number;
   description: string;
 }
-
-const FALLBACK_ID = 'strength-foundation-i-3day';
-const ADVANCED_ID = 'strength-foundation-ii-4day';
 
 function toView(d: ProgramDefinition): ProgramView {
   const weeks = d.durationWeeks ?? 0;
@@ -36,12 +34,11 @@ function toView(d: ProgramDefinition): ProgramView {
   };
 }
 
-/** Rank the real catalog; SF II for intermediate/advanced, else SF I — always resolves to a real program. */
-export function recommendProgram(input: { experience?: string | null }): ProgramView {
+/** Recommend a real catalog program from the athlete's intake (experience + primary goal + equipment). */
+export function recommendProgram(input: RecommendInput): ProgramView {
   const defs = getProgramDefinitions();
   const byId = (id: string) => defs.find((d) => d.id === id);
-  const wantId = input.experience === 'intermediate' || input.experience === 'advanced' ? ADVANCED_ID : FALLBACK_ID;
-  const def = byId(wantId) ?? byId(FALLBACK_ID) ?? defs[0];
+  const def = byId(resolveRecommendationId(input)) ?? byId(FALLBACK_ID) ?? defs[0];
   return toView(def);
 }
 

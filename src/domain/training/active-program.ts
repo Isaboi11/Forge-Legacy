@@ -20,6 +20,11 @@ export function getActiveProgram(): Program | null {
   return activeProgramFrom(getProgramDefinitions());
 }
 
+/** A specific catalog program as the active runtime record (for a chosen/recommended program). */
+export function getActiveProgramById(id: string): Program | null {
+  return activeProgramFrom(getProgramDefinitions(), id);
+}
+
 /** Today's session on the active program — what Home resolves artwork for. */
 export function getNextWorkout(): Workout | null {
   return getActiveProgram()?.nextWorkout ?? null;

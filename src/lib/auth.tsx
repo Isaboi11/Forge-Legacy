@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabase';
+import { resetFirstRunFlags } from './first-run';
 
 /**
  * Auth session — the real identity the app runs on (Phase 1). `session.user.id` is `auth.uid()`,
@@ -24,13 +25,23 @@ const AuthContext = createContext<AuthState | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  // Last-seen auth user id. `undefined` = not yet observed (boot); on any real change to a DIFFERENT id
+  // (including → null on sign-out) we wipe the device-local first-run flags so a new account starts clean.
+  const prevUserId = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setLoading(false);
     });
-    const { data } = supabase.auth.onAuthStateChange((_event, next) => setSession(next));
+    const { data } = supabase.auth.onAuthStateChange((_event, next) => {
+      setSession(next);
+      const nextId = next?.user?.id ?? null;
+      if (prevUserId.current !== undefined && prevUserId.current !== nextId) {
+        void resetFirstRunFlags();
+      }
+      prevUserId.current = nextId;
+    });
     return () => data.subscription.unsubscribe();
   }, []);
 

@@ -24,12 +24,14 @@ import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { getSelfProfile } from '@/domain/profile/placeholder-data';
 import { useProfile } from '@/lib/profile';
 import { useAuth } from '@/lib/auth';
-import { ProgramSavedCard } from '@/components/forge/compositions/ProgramSavedCard';
-import { ExperienceLevelCard } from '@/components/forge/compositions/ExperienceLevelCard';
+import { ExperienceLevelCard, EXPERIENCE_FOR, type IntakeResult } from '@/components/forge/compositions/ExperienceLevelCard';
 import { getHomeLevel, setHomeLevel, clearHomeLevel } from '@/lib/home-level';
+import { getHomeIntake, setHomeIntake, clearHomeIntake } from '@/lib/home-intake';
 import { fetchMyPrograms } from '@/data/programs-live';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
-import { getActiveProgram, getNextWorkout } from '@/domain/training/active-program';
+import { getActiveProgram, getActiveProgramById } from '@/domain/training/active-program';
+import { resolveRecommendationId } from '@/domain/onboarding/recommend-core';
+import type { Program, Workout } from '@/domain/training/schema';
 import { resolveHomeWorkoutArtwork } from '@/domain/home-artwork/resolver';
 import { enrichSessionExercises } from '@/domain/home-artwork/catalog';
 
@@ -142,6 +144,8 @@ export default function HomeScreen() {
   // Opt-in Home experience-level LENS (local only, ONB-Amendment-002) — undefined = loading, null = not
   // chosen (show the question), a level = show the suggested starting program. No DB write; re-askable.
   const { data: homeLevel, refetch: refetchLevel } = useQuery(getHomeLevel, []);
+  // Goals + equipment intake (local only) — feeds the recommendation on the suggested face.
+  const { data: homeIntake, refetch: refetchIntake } = useQuery(getHomeIntake, []);
   // Re-read on focus so the hero flips OFF awaiting after the first workout AND reflects a program just
   // built in the builder (Home is a mounted tab; without this it fetches once and stays stale).
   const firstAwaitFocus = useRef(true);
@@ -153,49 +157,110 @@ export default function HomeScreen() {
       }
       refetchAwaiting();
       refetchPrograms();
-    }, [refetchAwaiting, refetchPrograms]),
+      refetchIntake();
+    }, [refetchAwaiting, refetchPrograms, refetchIntake]),
   );
 
-  // Static this session (no athlete-progress backend) — resolve once.
-  const { profile, program, workout, resolved } = useMemo(() => {
+  // The program that anchors Home's "Today's Workout" + "Current Program" slots. Precedence:
+  //   built program (myPrograms[0]) → the fresh athlete's chosen suggestion → the demo active program.
+  // Progress is 0/total (no athlete-progress backend); a built program has no catalog artwork, so the
+  // resolver reads its exercises' composition (program=null) and degrades to the split/neutral art.
+  const { profile, home } = useMemo(() => {
     const profile = getSelfProfile();
-    const program = getActiveProgram();
-    const workout = getNextWorkout();
+    const built = myPrograms && myPrograms.length > 0 ? myPrograms[0] : null;
+
+    let program: Program | null = null;
+    let workout: Workout | null = null;
+    let name = '';
+    let completed = 0;
+    let total = 0;
+
+    if (built) {
+      const day = built.structure.days.find((d) => d.main.length > 0) ?? built.structure.days[0] ?? null;
+      workout = day
+        ? {
+            name: day.name.trim() || `Day ${day.letter}`,
+            focus: day.name.trim() || undefined,
+            exerciseCount: day.main.length,
+            exercises: day.main.map((ex) => ({ catalogKey: ex.catalogKey, workingSets: 3, section: 'main' as const })),
+          }
+        : null;
+      name = built.name;
+      total = (built.structure.weeks || 0) * (built.structure.daysPerWeek || 0);
+    } else {
+      const prog =
+        awaiting && homeLevel != null
+          ? getActiveProgramById(
+              resolveRecommendationId({
+                experience: EXPERIENCE_FOR[homeLevel],
+                primaryGoal: homeIntake?.primaryGoal ?? null,
+                equipment: homeIntake?.equipment ?? [],
+              }),
+            )
+          : getActiveProgram();
+      program = prog;
+      workout = prog?.nextWorkout ?? null;
+      name = prog?.name ?? '';
+      completed = prog?.progress?.completed ?? 0;
+      total = prog?.progress?.total ?? 0;
+    }
+
     const resolved = resolveHomeWorkoutArtwork({
       user: profile,
-      workout,
+      workout: workout ?? ({} as Workout),
       program,
       exercises: workout ? enrichSessionExercises(workout.exercises ?? []) : [],
     });
-    return { profile, program, workout, resolved };
-  }, []);
+
+    return { profile, home: { workout, resolved, name, completed, total } };
+  }, [myPrograms, awaiting, homeLevel, homeIntake]);
 
   const { mission } = HOME_DATA;
 
-  // Fresh-athlete Home — the ONB-D17 "awaiting first workout" empty state, built up to Forge Home.dc's
-  // isNew card (title block + "Forge your first program" hero). Two real, distinct actions:
-  //   Start Training (primary) → the demo-workout logger — the working first-workout path that fires the
-  //     comes-alive spine (the logger serves the demo workout; freestyle/add-exercise is ruled-deferred).
-  //   Browse Programs (secondary) → the catalog (Workouts tab) — browse-only for a fresh user.
-  // INTERIM DIVERGENCE from the .dc (tracked, not drift): the design puts Browse primary + "Build a
-  // Program" → Program Builder secondary. Neither the enroll funnel (W-3) nor the Program Builder exists,
-  // so the app ships Start-primary; it converges to the design's labels/emphasis when both land.
-  if (awaiting) {
-    const { number: chapterNumber, name: chapterName } = splitChapterTitle(awaiting.chapterName);
-    const startFirst = () => {
-      startWorkout('First Workout');
-      router.push('/workout');
-    };
-    const openPrograms = () => router.push('/workouts');
-    const openBuilder = () => router.push('/program-builder');
-    const pickLevel = async (l: Parameters<typeof setHomeLevel>[0]) => {
-      await setHomeLevel(l);
-      refetchLevel();
-    };
-    const changeLevel = async () => {
-      await clearHomeLevel();
-      refetchLevel();
-    };
+  // Shared actions (used by both the still-collecting gate and the un-gated Home hero).
+  const startFirst = () => {
+    startWorkout('First Workout');
+    router.push('/workout');
+  };
+  const openPrograms = () => router.push('/workouts');
+  const openBuilder = () => router.push('/program-builder');
+  const completeIntake = async (r: IntakeResult) => {
+    await setHomeLevel(r.level);
+    await setHomeIntake({ goals: r.goals, primaryGoal: r.primaryGoal, equipment: r.equipment });
+    refetchLevel();
+    refetchIntake();
+  };
+  const changeIntake = async () => {
+    await clearHomeLevel();
+    await clearHomeIntake();
+    refetchLevel();
+    refetchIntake();
+  };
+  // Start the Home program's next workout (built / chosen / demo). The demo logger runs it (BU-1 deferred).
+  const startHomeWorkout = () => {
+    const w = home.workout;
+    if (!w) return;
+    const lifts = (w.exercises ?? [])
+      .filter((e) => e.section === 'main' && !e.optional)
+      .map((e) => ({ catalogKey: e.catalogKey, name: exerciseNameFor(e.catalogKey), workingSets: e.workingSets }));
+    startWorkout(w.name, lifts);
+    router.push('/workout');
+  };
+
+  const hasProgram = !!(myPrograms && myPrograms.length > 0);
+  // Chapter honesty: the full Home can now appear BEFORE the first workout (a suggestion/built program while
+  // still `awaiting`), so show the real active chapter then — not the "Chapter III" placeholder.
+  const chapter = awaiting
+    ? { ...splitChapterTitle(awaiting.chapterName), weekDay: 'Your first chapter' }
+    : { number: HOME_CHAPTER.number, name: HOME_CHAPTER.name, weekDay: HOME_CHAPTER.weekDay };
+
+  // Phase B un-gate: the full Home opens as soon as the athlete has a program signal — a built program OR a
+  // chosen level (a suggestion exists). The single-card gate remains ONLY while a fresh athlete is still
+  // collecting their starting point (no program, no level yet). The first-workout ceremony (ONB-D18) is
+  // unaffected — it lives in the workout-complete flow, not this gate.
+  const stillCollecting = !!awaiting && !hasProgram && homeLevel == null;
+
+  if (stillCollecting) {
     return (
       <View style={styles.root}>
         <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.15)' }} />
@@ -206,28 +271,19 @@ export default function HomeScreen() {
         />
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <ChapterTitleBlock
-            chapterNumber={chapterNumber}
-            chapterName={chapterName}
-            weekDay="Your first chapter"
+            chapterNumber={chapter.number}
+            chapterName={chapter.name}
+            weekDay={chapter.weekDay}
             principle={todaysPrinciple()}
             showRankMedallion={false}
           />
           <View style={styles.content}>
-            {myPrograms && myPrograms.length > 0 ? (
-              // A built program takes precedence (unchanged).
-              <ProgramSavedCard program={myPrograms[0]} onStart={startFirst} onBuild={openBuilder} />
-            ) : homeLevel === undefined ? (
-              // Level lens still loading — show the generic card only (no flash of the question).
+            {homeLevel === undefined ? (
+              // Level lens still loading — the first-session card (no flash of the stepper).
               <FirstSessionCard onStart={startFirst} onOpenPrograms={openPrograms} />
-            ) : homeLevel === null ? (
-              // Unset — the question card above the generic [Start Training][Programs] card.
-              <>
-                <ExperienceLevelCard level={null} onPick={pickLevel} onBuild={openBuilder} />
-                <FirstSessionCard onStart={startFirst} onOpenPrograms={openPrograms} />
-              </>
             ) : (
-              // Picked a level — the suggested starting program replaces the generic card.
-              <ExperienceLevelCard level={homeLevel} onStart={startFirst} onExplore={openPrograms} onChange={changeLevel} />
+              // Still collecting — the intake stepper (level → goals → equipment), ALONE.
+              <ExperienceLevelCard mode="collect" onComplete={completeIntake} onBuild={openBuilder} />
             )}
           </View>
         </ScrollView>
@@ -248,43 +304,38 @@ export default function HomeScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <ChapterTitleBlock
-          chapterNumber={HOME_CHAPTER.number}
-          chapterName={HOME_CHAPTER.name}
-          weekDay={HOME_CHAPTER.weekDay}
+          chapterNumber={chapter.number}
+          chapterName={chapter.name}
+          weekDay={chapter.weekDay}
           principle={todaysPrinciple()}
           showRankMedallion={false}
         />
 
         <View style={styles.content}>
-          {workout ? (
+          {/* Phase B.1: the built / chosen / demo program feeds the EXISTING slots — the Today's Workout hero
+              and the Current Program tile — not a separate card. */}
+          {home.workout ? (
             <TodaysWorkoutCard
-              resolved={resolved}
-              title={workout.name}
-              focus={workout.focus}
-              exerciseCount={workout.exerciseCount ?? workout.exercises?.length ?? 0}
-              onStart={() => {
-                const lifts = (workout.exercises ?? [])
-                  .filter((e) => e.section === 'main' && !e.optional)
-                  .map((e) => ({ catalogKey: e.catalogKey, name: exerciseNameFor(e.catalogKey), workingSets: e.workingSets }));
-                startWorkout(workout.name, lifts);
-                router.push('/workout');
-              }}
+              resolved={home.resolved}
+              title={home.workout.name}
+              focus={home.workout.focus}
+              exerciseCount={home.workout.exerciseCount ?? home.workout.exercises?.length ?? 0}
+              onStart={startHomeWorkout}
               onPreview={() => {
                 // W-3 Program Detail / workout preview — not yet implemented.
               }}
             />
           ) : null}
 
-          {program ? (
+          {home.name ? (
             <ProgramMissionGrid
-              programName={program.name}
-              completed={program.progress?.completed ?? 0}
-              total={program.progress?.total ?? 0}
+              programName={home.name}
+              completed={home.completed}
+              total={home.total}
               missionTarget={mission.goal.label}
               goalsRemaining={2}
-              onProgram={() => {
-                // W-3 Program Detail — not yet implemented.
-              }}
+              // Tap "Current Program": a fresh athlete's suggestion → re-pick (Change); otherwise browse programs.
+              onProgram={awaiting && homeLevel != null && !hasProgram ? changeIntake : openPrograms}
               onMission={() => {
                 // G-1 Goal Hub — not yet implemented.
               }}

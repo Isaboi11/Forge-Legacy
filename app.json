@@ -35,11 +35,19 @@
           }
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c1cd8e3d-53b7-4eb7-aa99-5d3c931a930a"
+      }
+    },
+    "owner": "isaiahaltamirano"
   }
 }

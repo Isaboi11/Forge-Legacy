@@ -44,17 +44,12 @@ export function TodaysWorkoutCard({ resolved, title, focus, exerciseCount, onSta
         style={StyleSheet.absoluteFill}
       />
 
-      {/* resolved workout art — faint, bleeds from the top-right; masked left by a fade */}
+      {/* resolved workout art — a figure bleeding from the top-right. The assets are pre-processed to
+          TRANSPARENT backgrounds (dark → alpha via luminance), so the figure lands directly on the card
+          with no panel, edge line, fade, blend, or crop — and it's uniform for every asset shape. */}
       {artSource != null ? (
         <View pointerEvents="none" style={styles.artLayer}>
           <Image source={artSource} style={styles.art} contentFit="contain" contentPosition="top right" />
-          <LinearGradient
-            colors={[flColor.charcoal900, 'rgba(12,16,19,0.65)', 'rgba(12,16,19,0)']}
-            locations={[0, 0.42, 1]}
-            start={{ x: 0, y: 0.5 }}
-            end={{ x: 1, y: 0.5 }}
-            style={StyleSheet.absoluteFill}
-          />
         </View>
       ) : null}
 
@@ -119,7 +114,7 @@ const styles = StyleSheet.create({
     right: -24,
     bottom: -18,
     width: '62%',
-    opacity: 0.55,
+    opacity: 1,
   },
   content: {
     padding: 22,

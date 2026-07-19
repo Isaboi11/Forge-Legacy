@@ -1,135 +1,428 @@
+import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Defs, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 
-import { Card } from '@/components/forge/composites/Surface';
 import { Button } from '@/components/forge/composites/Button';
-import { SelectTile } from '@/components/onboarding/kit';
-import { flColor, flFont } from '@/constants/foundation';
+import { BarbellIcon } from '@/components/forge/primitives/icons/HomeIcons';
+import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 import { recommendProgram } from '@/domain/onboarding/recommend';
+import type { GoalId, EquipmentId } from '@/domain/onboarding/derive';
 import type { HomeLevel } from '@/lib/home-level';
+import type { HomeIntake } from '@/lib/home-intake';
 
 /**
- * ExperienceLevelCard — the opt-in personalization on-ramp on Home (ONB-Amendment-002). ONE card, two
- * faces, built on the same `Card` container `FirstSessionCard` uses so it reads as always-part-of-the-app:
+ * ExperienceLevelCard — the opt-in personalization on-ramp on Home (ONB-Amendment-002). ONE card, rendered
+ * ALONE (Home never stacks it with FirstSessionCard). Built to `Forge Starting Point Card.dc.html`
+ * (Design b029488a): the forged hero shell + engraved 76px medallion + recessed rows.
  *
- *  • Question face (level == null): "Want us to point you somewhere?" + three level tiles + a clear
- *    "Build my own program" button (→ the Program Builder). No level is required to build.
- *  • Suggested face (level set): the recommended starting program for that level (via the existing
- *    `recommendProgram` — level→program mapping already exists), a Start Training primary, and two
- *    distinct exits — "Explore everything" (→ the catalog) and a low-emphasis "Change" (re-ask).
+ *  • mode="collect" — a local 3-step intake stepper: LEVEL → GOALS (≤3, one primary) → EQUIPMENT (multi).
+ *    All state is component-local; nothing persists until the final "See my program" → onComplete.
+ *  • mode="suggested" — the recommended starting program for the collected intake (via `recommendProgram`),
+ *    a Start Training primary, an "Explore everything" exit, and a quiet "Change" (re-ask).
  *
- * Honest notes: with only SF I + SF II authored, 'training' and 'experienced' both resolve to SF II — a
- * real mechanism over a thin catalog, not a stub. "Start Training" runs the existing demo logger (no
- * per-program enrollment exists — W-3/BU-1 deferred), so the suggested program is a signpost, not an enroll.
+ * Honest notes: with only SF I + SF II authored, most intakes resolve to one of those two — the goal ×
+ * experience × equipment mechanism is real (see recommend-core.ts), the catalog is thin. "Start Training"
+ * runs the existing demo logger (no per-program enrollment — W-3/BU-1 deferred).
  */
+
+export type IntakeResult = { level: HomeLevel; goals: GoalId[]; primaryGoal: GoalId | null; equipment: EquipmentId[] };
 
 const LEVELS: HomeLevel[] = ['new', 'training', 'experienced'];
 
-const LEVEL_META: Record<HomeLevel, { mark: string; title: string; desc: string; because: string }> = {
-  new: { mark: 'I', title: 'New to this', desc: 'New to training, or coming back.', because: "you're new to this" },
-  training: { mark: 'II', title: 'Been training a while', desc: 'Comfortable and consistent.', because: "you've been training a while" },
-  experienced: { mark: 'III', title: 'Very experienced', desc: 'Years of structured training.', because: "you're very experienced" },
+const LEVEL_META: Record<HomeLevel, { mark: string; title: string; subtitle: string; because: string }> = {
+  new: { mark: 'I', title: 'New to this', subtitle: 'New to training, or coming back.', because: "you're new to this" },
+  training: { mark: 'II', title: 'Been training a while', subtitle: 'Comfortable and consistent.', because: "you've been training a while" },
+  experienced: { mark: 'III', title: 'Very experienced', subtitle: 'Years of structured training.', because: "you're very experienced" },
 };
 
 /** The Home level ids map onto `recommendProgram`'s experience ids. */
-const EXPERIENCE_FOR: Record<HomeLevel, 'beginner' | 'intermediate' | 'advanced'> = {
+export const EXPERIENCE_FOR: Record<HomeLevel, 'beginner' | 'intermediate' | 'advanced'> = {
   new: 'beginner',
   training: 'intermediate',
   experienced: 'advanced',
 };
 
+/** Goal + equipment copy — verbatim from the design's Onboarding `.dc` Goals/Equipment screens. */
+const GOALS: { id: GoalId; title: string; subtitle: string }[] = [
+  { id: 'muscle', title: 'Build Muscle', subtitle: 'Add visible size and shape.' },
+  { id: 'strength', title: 'Get Stronger', subtitle: 'Move heavier weight. Build raw power.' },
+  { id: 'fatloss', title: 'Lose Fat', subtitle: 'Lean out while keeping your strength.' },
+  { id: 'endurance', title: 'Improve Endurance', subtitle: 'Go longer. Build your engine and stamina.' },
+  { id: 'health', title: 'General Health', subtitle: 'Feel good, move well, stay strong for life.' },
+  { id: 'athletic', title: 'Athletic Performance', subtitle: 'Power, speed, and conditioning together.' },
+];
+const EQUIPMENT: { id: EquipmentId; title: string; subtitle: string }[] = [
+  { id: 'fullgym', title: 'Full Gym', subtitle: 'Barbells, machines, the full floor.' },
+  { id: 'homegym', title: 'Home Gym', subtitle: 'A dedicated setup of your own.' },
+  { id: 'dumbbells', title: 'Dumbbells', subtitle: 'A pair or an adjustable set.' },
+  { id: 'bands', title: 'Bands', subtitle: 'Resistance bands, minimal space.' },
+  { id: 'bodyweight', title: 'Bodyweight', subtitle: 'No equipment. Train anywhere.' },
+];
+
+/** The forged hero shell — charcoal-900 + bronze border + radial card-hero wash + hero shadow. */
+function HeroShell({ children }: { children: ReactNode }) {
+  return (
+    <View style={styles.card}>
+      <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
+        <Defs>
+          <RadialGradient id="spc-wash" cx="50%" cy="0%" rx="120%" ry="90%">
+            <Stop offset="0" stopColor="rgba(191,143,79,0.16)" />
+            <Stop offset="0.62" stopColor="rgba(191,143,79,0)" />
+          </RadialGradient>
+        </Defs>
+        <Rect width="100%" height="100%" fill="url(#spc-wash)" />
+      </Svg>
+      <View style={styles.content}>{children}</View>
+    </View>
+  );
+}
+
+/** The engraved 76px medallion — bronze-metallic ring → recessed inner → dumbbell (mirrors FirstProgramCard). */
+function Medallion() {
+  return (
+    <LinearGradient
+      colors={flGradient.bronzeMetallic.colors}
+      locations={flGradient.bronzeMetallic.locations}
+      start={flGradient.bronzeMetallic.start}
+      end={flGradient.bronzeMetallic.end}
+      style={styles.medallionRing}
+    >
+      <View style={styles.medallionInner}>
+        <BarbellIcon size={32} color={flColor.bronze300} />
+      </View>
+    </LinearGradient>
+  );
+}
+
+/** Compact "Step N of 3" + back chevron (steps 2 & 3). */
+function StepHeader({ step, onBack }: { step: number; onBack: () => void }) {
+  return (
+    <View style={styles.stepHeader}>
+      <Pressable onPress={onBack} hitSlop={8} accessibilityRole="button" accessibilityLabel="Back" style={styles.backBtn}>
+        <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+          <Path d="M15 18l-6-6 6-6" stroke={flColor.gray400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+        </Svg>
+      </Pressable>
+      <Text style={styles.stepLabel}>Step {step} of 3</Text>
+    </View>
+  );
+}
+
+/** A recessed level row — roman numeral · title · subtitle · chevron (tap advances). */
+function LevelRow({ mark, title, subtitle, onPress }: { mark: string; title: string; subtitle: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={styles.rowOuter}>
+      <View style={styles.romanSlot}>
+        <Text style={styles.roman}>{mark}</Text>
+      </View>
+      <View style={styles.rowText}>
+        <Text style={styles.rowTitle}>{title}</Text>
+        <Text style={styles.rowSub}>{subtitle}</Text>
+      </View>
+      <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+        <Path d="M9 18l6-6-6-6" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+      </Svg>
+    </Pressable>
+  );
+}
+
+/** A recessed multi-select row (goals/equipment) — bronze edge when selected + a right indicator. */
+function OptionRow({ title, subtitle, selected, onPress, right }: { title: string; subtitle: string; selected: boolean; onPress: () => void; right?: ReactNode }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      accessibilityLabel={title}
+      style={[styles.rowOuter, selected && styles.rowOuterSel]}
+    >
+      <View style={styles.rowText}>
+        <Text style={styles.rowTitle}>{title}</Text>
+        <Text style={styles.rowSub}>{subtitle}</Text>
+      </View>
+      {right ?? <View style={styles.rightSlot} />}
+    </Pressable>
+  );
+}
+
+/** Primary-goal star — filled bronze on the primary, outline on other selected goals. */
+function StarButton({ filled, onPress }: { filled: boolean; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} hitSlop={8} accessibilityRole="button" accessibilityLabel={filled ? 'Main focus' : 'Make main focus'} style={styles.rightSlot}>
+      <Svg width={20} height={20} viewBox="0 0 24 24" fill={filled ? flColor.bronze300 : 'none'} stroke={filled ? flColor.bronze300 : flColor.gray400} strokeWidth={1.5} strokeLinejoin="round">
+        <Path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+      </Svg>
+    </Pressable>
+  );
+}
+
+/** Equipment multi-select checkbox. */
+function CheckBox({ checked }: { checked: boolean }) {
+  return (
+    <View style={[styles.checkbox, checked && styles.checkboxOn]}>
+      {checked ? (
+        <Svg width={13} height={13} viewBox="0 0 24 24" fill="none">
+          <Path d="M20 6L9 17l-5-5" stroke={flColor.base} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+        </Svg>
+      ) : null}
+    </View>
+  );
+}
+
 type Props =
-  | { level: null; onPick: (l: HomeLevel) => void; onBuild: () => void }
-  | { level: HomeLevel; onStart: () => void; onExplore: () => void; onChange: () => void };
+  | { mode: 'collect'; onComplete: (r: IntakeResult) => void; onBuild: () => void }
+  | { mode: 'suggested'; level: HomeLevel; intake: HomeIntake | null; onStart: () => void; onExplore: () => void; onChange: () => void };
 
 export function ExperienceLevelCard(props: Props) {
-  // ── question face ──
-  if (props.level === null) {
-    const { onPick, onBuild } = props;
+  if (props.mode === 'collect') return <IntakeStepper onComplete={props.onComplete} onBuild={props.onBuild} />;
+  return <SuggestedFace level={props.level} intake={props.intake} onStart={props.onStart} onExplore={props.onExplore} onChange={props.onChange} />;
+}
+
+/** The level → goals → equipment stepper (component-local state; persists only at the end). */
+function IntakeStepper({ onComplete, onBuild }: { onComplete: (r: IntakeResult) => void; onBuild: () => void }) {
+  const [step, setStep] = useState<0 | 1 | 2>(0);
+  const [level, setLevel] = useState<HomeLevel | null>(null);
+  const [goals, setGoals] = useState<GoalId[]>([]);
+  const [primaryGoal, setPrimaryGoal] = useState<GoalId | null>(null);
+  const [equipment, setEquipment] = useState<EquipmentId[]>([]);
+
+  const pickLevel = (l: HomeLevel) => {
+    setLevel(l);
+    setStep(1);
+  };
+
+  const toggleGoal = (g: GoalId) => {
+    if (goals.includes(g)) {
+      const next = goals.filter((x) => x !== g);
+      setGoals(next);
+      if (primaryGoal === g) setPrimaryGoal(next[0] ?? null);
+    } else if (goals.length < 3) {
+      setGoals([...goals, g]);
+      if (primaryGoal === null) setPrimaryGoal(g);
+    }
+    // a 4th pick is silently refused (≤3)
+  };
+
+  const toggleEquip = (e: EquipmentId) => {
+    setEquipment(equipment.includes(e) ? equipment.filter((x) => x !== e) : [...equipment, e]);
+  };
+
+  // ── step 1: level (the approved Starting Point Card) ──
+  if (step === 0) {
     return (
-      <Card padding={24} style={styles.card}>
-        <View style={styles.qWrap}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Want us to point you somewhere?</Text>
-            <Text style={styles.subline}>
-              Tell us roughly where you&apos;re at and we&apos;ll suggest a starting program — change it anytime.
-            </Text>
-          </View>
-
-          <View style={styles.tiles}>
-            {LEVELS.map((l) => (
-              <SelectTile
-                key={l}
-                mark={LEVEL_META[l].mark}
-                title={LEVEL_META[l].title}
-                desc={LEVEL_META[l].desc}
-                selected={false}
-                onPress={() => onPick(l)}
-              />
-            ))}
-          </View>
-
+      <HeroShell>
+        <Medallion />
+        <Text style={styles.title}>Want us to point you somewhere?</Text>
+        <Text style={styles.subline}>
+          Tell us roughly where you&apos;re at and we&apos;ll suggest a starting program — change it anytime.
+        </Text>
+        <View style={styles.rows}>
+          {LEVELS.map((l) => (
+            <LevelRow key={l} mark={LEVEL_META[l].mark} title={LEVEL_META[l].title} subtitle={LEVEL_META[l].subtitle} onPress={() => pickLevel(l)} />
+          ))}
+        </View>
+        <View style={styles.buttonWrap}>
           <Button variant="secondary" fullWidth onPress={onBuild} accessibilityLabel="Build my own program">
             Build my own program
           </Button>
         </View>
-      </Card>
+      </HeroShell>
     );
   }
 
-  // ── suggested face ──
-  const { level, onStart, onExplore, onChange } = props;
+  // ── step 2: goals (≤3, one primary) ──
+  if (step === 1) {
+    return (
+      <HeroShell>
+        <StepHeader step={2} onBack={() => setStep(0)} />
+        <Medallion />
+        <Text style={styles.title}>What are you working toward?</Text>
+        <Text style={styles.subline}>Pick up to three. Your first is your main focus — tap a star to change it.</Text>
+        <View style={styles.rows}>
+          {GOALS.map((g) => {
+            const selected = goals.includes(g.id);
+            return (
+              <OptionRow
+                key={g.id}
+                title={g.title}
+                subtitle={g.subtitle}
+                selected={selected}
+                onPress={() => toggleGoal(g.id)}
+                right={selected ? <StarButton filled={primaryGoal === g.id} onPress={() => setPrimaryGoal(g.id)} /> : undefined}
+              />
+            );
+          })}
+        </View>
+        <View style={styles.buttonWrap}>
+          <Button variant="primary" fullWidth disabled={goals.length === 0} onPress={() => setStep(2)} accessibilityLabel="Continue to equipment">
+            Continue
+          </Button>
+        </View>
+      </HeroShell>
+    );
+  }
+
+  // ── step 3: equipment (multi) ──
+  return (
+    <HeroShell>
+      <StepHeader step={3} onBack={() => setStep(1)} />
+      <Medallion />
+      <Text style={styles.title}>What do you train with?</Text>
+      <Text style={styles.subline}>Select everything you can use — we&apos;ll match a program to it.</Text>
+      <View style={styles.rows}>
+        {EQUIPMENT.map((e) => {
+          const selected = equipment.includes(e.id);
+          return (
+            <OptionRow key={e.id} title={e.title} subtitle={e.subtitle} selected={selected} onPress={() => toggleEquip(e.id)} right={<CheckBox checked={selected} />} />
+          );
+        })}
+      </View>
+      <View style={styles.buttonWrap}>
+        <Button
+          variant="primary"
+          fullWidth
+          disabled={equipment.length === 0 || level === null}
+          onPress={() => {
+            if (level) onComplete({ level, goals, primaryGoal, equipment });
+          }}
+          accessibilityLabel="See my program"
+        >
+          See my program
+        </Button>
+      </View>
+    </HeroShell>
+  );
+}
+
+/** The recommended-program face for the collected intake. */
+function SuggestedFace({
+  level,
+  intake,
+  onStart,
+  onExplore,
+  onChange,
+}: {
+  level: HomeLevel;
+  intake: HomeIntake | null;
+  onStart: () => void;
+  onExplore: () => void;
+  onChange: () => void;
+}) {
   const meta = LEVEL_META[level];
-  const rec = recommendProgram({ experience: EXPERIENCE_FOR[level] });
+  const rec = recommendProgram({ experience: EXPERIENCE_FOR[level], primaryGoal: intake?.primaryGoal ?? null, equipment: intake?.equipment ?? [] });
   const metaLine = [rec.family, rec.difficulty, rec.weeks ? `${rec.weeks} weeks` : null].filter(Boolean).join(' · ');
 
   return (
-    <Card padding={24} style={styles.card}>
-      <View style={styles.sWrap}>
-        <View style={styles.header}>
-          <Text style={styles.eyebrow}>Suggested for you</Text>
-          <Text style={styles.progName}>{rec.name}</Text>
-          {metaLine ? <Text style={styles.progMeta}>{metaLine}</Text> : null}
-          <Text style={styles.because}>Because {meta.because}.</Text>
-        </View>
+    <HeroShell>
+      <Medallion />
+      <Text style={styles.eyebrow}>Suggested for you</Text>
+      <Text style={styles.progName}>{rec.name}</Text>
+      {metaLine ? <Text style={styles.metaLine}>{metaLine}</Text> : null}
+      <Text style={styles.because}>Because {meta.because}.</Text>
 
-        <View style={styles.actions}>
-          <Button variant="primary" fullWidth onPress={onStart} accessibilityLabel="Start Training — begin your first workout">
-            Start Training
-          </Button>
-          <Button variant="secondary" fullWidth onPress={onExplore} accessibilityLabel="Explore everything — see all programs">
-            Explore everything
-          </Button>
-          <Pressable onPress={onChange} accessibilityRole="button" accessibilityLabel="Change your level" style={styles.change}>
-            <Text style={styles.changeText}>Change</Text>
-          </Pressable>
-        </View>
+      <View style={styles.actions}>
+        <Button variant="primary" fullWidth onPress={onStart} accessibilityLabel="Start Training — begin your first workout">
+          Start Training
+        </Button>
+        <Button variant="secondary" fullWidth onPress={onExplore} accessibilityLabel="Explore everything — see all programs">
+          Explore everything
+        </Button>
+        <Pressable onPress={onChange} accessibilityRole="button" accessibilityLabel="Change your answers" style={styles.change}>
+          <Text style={styles.changeText}>Change</Text>
+        </Pressable>
       </View>
-    </Card>
+    </HeroShell>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {},
-  qWrap: { gap: 18 },
-  sWrap: { gap: 18 },
-  header: { alignItems: 'center', gap: 6 },
-  title: {
-    fontFamily: flFont.display,
-    fontSize: 21,
-    fontWeight: '600',
-    letterSpacing: -0.2,
-    color: flColor.cream100,
-    textAlign: 'center',
+  // forged hero shell — mirrors FirstProgramCard / TodaysWorkoutCard
+  card: {
+    position: 'relative',
+    overflow: 'hidden',
+    borderRadius: flRadius.xl,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    backgroundColor: flColor.charcoal900,
+    boxShadow: flShadow.missionCard,
+    paddingTop: 30,
+    paddingHorizontal: 26,
+    paddingBottom: 26,
   },
-  subline: { fontFamily: flFont.sans, fontSize: 13.5, lineHeight: 20, color: flColor.gray400, textAlign: 'center', maxWidth: 300 },
-  tiles: { gap: 10 },
+  content: { position: 'relative', zIndex: 1 },
 
-  eyebrow: { fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400, textAlign: 'center' },
-  progName: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100, textAlign: 'center' },
-  progMeta: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray400, textAlign: 'center' },
-  because: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray600, textAlign: 'center' },
+  stepHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 20 },
+  backBtn: { width: 22, height: 22, alignItems: 'center', justifyContent: 'center' },
+  stepLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.gray600 },
 
-  actions: { gap: 10 },
-  change: { alignItems: 'center', paddingVertical: 6 },
+  // engraved medallion (76px)
+  medallionRing: {
+    alignSelf: 'flex-start',
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    padding: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: `${flShadow.borderInset}, ${flShadow.shadowImage}, ${flShadow.glowBadge}`,
+  },
+  medallionInner: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 32,
+    backgroundColor: flColor.surfaceRecessed,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.5)',
+    boxShadow: 'inset 0 2px 7px rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  title: { marginTop: 22, fontFamily: flFont.display, fontSize: 27, fontWeight: '600', letterSpacing: -0.4, lineHeight: 30, color: flColor.cream100 },
+  subline: { marginTop: 11, maxWidth: 320, fontFamily: flFont.sans, fontSize: 13.5, lineHeight: 21, color: flColor.gray400 },
+
+  rows: { marginTop: 24, gap: 12 },
+  rowOuter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    minHeight: 72,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: flRadius.lg,
+    backgroundColor: flColor.surfaceRecessed,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    boxShadow: flShadow.borderInset,
+  },
+  rowOuterSel: { borderColor: flColor.bronze400, backgroundColor: 'rgba(191,143,79,0.08)' },
+  romanSlot: { width: 28, alignItems: 'center', justifyContent: 'center' },
+  roman: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', letterSpacing: 1, lineHeight: 16, color: flColor.gray600 },
+  rowText: { flex: 1, minWidth: 0, gap: 3 },
+  rowTitle: { fontFamily: flFont.sans, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
+  rowSub: { fontFamily: flFont.sans, fontSize: 12.5, lineHeight: 16, color: flColor.gray400 },
+  rightSlot: { width: 24, alignItems: 'center', justifyContent: 'center' },
+
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: flColor.charcoal500,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxOn: { backgroundColor: flColor.bronze400, borderColor: flColor.bronze400 },
+
+  buttonWrap: { marginTop: 18 },
+
+  // suggested face
+  eyebrow: { marginTop: 22, fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  progName: { marginTop: 6, fontFamily: flFont.display, fontSize: 26, fontWeight: '600', letterSpacing: -0.3, lineHeight: 30, color: flColor.cream100 },
+  metaLine: { marginTop: 6, fontFamily: flFont.sans, fontSize: 13, color: flColor.gray400 },
+  because: { marginTop: 6, fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray600 },
+  actions: { marginTop: 22, gap: 10 },
+  change: { alignSelf: 'flex-start', paddingVertical: 6, paddingHorizontal: 2 },
   changeText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.gray400 },
 });
