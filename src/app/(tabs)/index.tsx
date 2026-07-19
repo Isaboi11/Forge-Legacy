@@ -25,6 +25,8 @@ import { getSelfProfile } from '@/domain/profile/placeholder-data';
 import { useProfile } from '@/lib/profile';
 import { useAuth } from '@/lib/auth';
 import { ProgramSavedCard } from '@/components/forge/compositions/ProgramSavedCard';
+import { ExperienceLevelCard } from '@/components/forge/compositions/ExperienceLevelCard';
+import { getHomeLevel, setHomeLevel, clearHomeLevel } from '@/lib/home-level';
 import { fetchMyPrograms } from '@/data/programs-live';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { getActiveProgram, getNextWorkout } from '@/domain/training/active-program';
@@ -137,6 +139,9 @@ export default function HomeScreen() {
   const { data: awaiting, refetch: refetchAwaiting } = useQuery(fetchAwaitingChapter, []);
   // The athlete's saved programs — if any, Home reflects them instead of the empty first-program card.
   const { data: myPrograms, refetch: refetchPrograms } = useQuery(fetchMyPrograms, []);
+  // Opt-in Home experience-level LENS (local only, ONB-Amendment-002) — undefined = loading, null = not
+  // chosen (show the question), a level = show the suggested starting program. No DB write; re-askable.
+  const { data: homeLevel, refetch: refetchLevel } = useQuery(getHomeLevel, []);
   // Re-read on focus so the hero flips OFF awaiting after the first workout AND reflects a program just
   // built in the builder (Home is a mounted tab; without this it fetches once and stays stale).
   const firstAwaitFocus = useRef(true);
@@ -182,6 +187,15 @@ export default function HomeScreen() {
       router.push('/workout');
     };
     const openPrograms = () => router.push('/workouts');
+    const openBuilder = () => router.push('/program-builder');
+    const pickLevel = async (l: Parameters<typeof setHomeLevel>[0]) => {
+      await setHomeLevel(l);
+      refetchLevel();
+    };
+    const changeLevel = async () => {
+      await clearHomeLevel();
+      refetchLevel();
+    };
     return (
       <View style={styles.root}>
         <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.15)' }} />
@@ -200,9 +214,20 @@ export default function HomeScreen() {
           />
           <View style={styles.content}>
             {myPrograms && myPrograms.length > 0 ? (
-              <ProgramSavedCard program={myPrograms[0]} onStart={startFirst} onBuild={() => router.push('/program-builder')} />
-            ) : (
+              // A built program takes precedence (unchanged).
+              <ProgramSavedCard program={myPrograms[0]} onStart={startFirst} onBuild={openBuilder} />
+            ) : homeLevel === undefined ? (
+              // Level lens still loading — show the generic card only (no flash of the question).
               <FirstSessionCard onStart={startFirst} onOpenPrograms={openPrograms} />
+            ) : homeLevel === null ? (
+              // Unset — the question card above the generic [Start Training][Programs] card.
+              <>
+                <ExperienceLevelCard level={null} onPick={pickLevel} onBuild={openBuilder} />
+                <FirstSessionCard onStart={startFirst} onOpenPrograms={openPrograms} />
+              </>
+            ) : (
+              // Picked a level — the suggested starting program replaces the generic card.
+              <ExperienceLevelCard level={homeLevel} onStart={startFirst} onExplore={openPrograms} onChange={changeLevel} />
             )}
           </View>
         </ScrollView>
