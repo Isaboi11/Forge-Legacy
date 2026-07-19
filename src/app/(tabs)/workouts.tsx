@@ -153,8 +153,8 @@ export default function WorkoutsScreen() {
           </View>
         ) : (
           <View style={styles.stack}>
-            {/* Build Your Own — primary creation CTA */}
-            <Pressable onPress={() => {}} accessibilityRole="button" accessibilityLabel="Build your own program" style={styles.buildCta}>
+            {/* Build Your Own — express creation path (skips the recommendation questions) → Program Builder */}
+            <Pressable onPress={() => router.push('/program-builder')} accessibilityRole="button" accessibilityLabel="Build your own program" style={styles.buildCta}>
               <View style={styles.buildIcon}>
                 <PlusIcon color={flColor.bronze300} />
               </View>

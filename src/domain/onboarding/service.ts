@@ -1,6 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { athleteTypeForGoal, firstNameOf, initialsOf } from './derive';
-import type { GoalId } from './derive';
+import { firstNameOf, initialsOf } from './derive';
 
 /** Canonical Chapter I title (ONB-D14; PO-ruled over the design's "Building your Legacy"). */
 export const CHAPTER_I_NAME = 'Chapter I — Building Your Foundation';
@@ -30,14 +29,14 @@ export interface OnboardingInput {
   handle: string | null; // null when "Skip for now"
   sex: 'male' | 'female';
   photoUri: string | null;
-  primaryGoal: GoalId | null;
 }
 
 /**
  * The finish transaction. Avatar upload first (storage, not transactional — an orphan is harmless), then
  * the atomic `complete_onboarding` RPC: profile update + Chapter I insert + onboarded_at, all-or-nothing.
- * athlete_type derives from the primary goal here (pure); environment is written null — equipment moved to
- * the post-Home Find-Your-Program flow (ONB-Amendment-002 / ONB-A2-D3), which fills it in later.
+ * athlete_type and environment are BOTH deferred (ONB-Amendment-002): type isn't asked, so it defaults to
+ * 'Hybrid' (the locked catch-all); environment is unknown until a program-recommendation flow captures
+ * equipment. Both are contextual/opt-in surfaces later, never a wall before the app.
  */
 export async function completeOnboarding(input: OnboardingInput): Promise<void> {
   const {
@@ -54,8 +53,8 @@ export async function completeOnboarding(input: OnboardingInput): Promise<void> 
     p_initials: initialsOf(input.name),
     p_sex: input.sex,
     p_avatar_url: avatarUrl,
-    p_athlete_type: athleteTypeForGoal(input.primaryGoal),
-    p_environment: null, // unknown until Find-Your-Program captures equipment (ONB-A2-D3)
+    p_athlete_type: 'Hybrid', // default — athlete type isn't asked in onboarding (ONB-Amendment-002)
+    p_environment: null, // unknown until a program-recommendation flow captures equipment (ONB-A2-D3)
     p_chapter_name: CHAPTER_I_NAME,
   });
   if (error) throw error;

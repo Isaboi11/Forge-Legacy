@@ -1,6 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 
 import { Button } from '@/components/forge/composites/Button';
 import { Avatar } from '@/components/forge/composites/Avatar';
@@ -9,44 +8,33 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { Field, Heading, ProgressHeader, SelectTile } from '@/components/onboarding/kit';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
-import type { GoalId } from '@/domain/onboarding/derive';
 import { completeOnboarding, isHandleAvailable } from '@/domain/onboarding/service';
 import { useProfile } from '@/lib/profile';
 
 /**
- * The onboarding route (session, not-onboarded) — a LEAN identity ramp (ONB-Amendment-002): Account →
- * Username → Goals → Transition. Experience/Equipment/Schedule/Recommended-Program are deferred OUT of
- * setup into the just-in-time "Find Your Program" flow reached from Home. Answers accumulate in local
- * `data` (journey-state, ONB-D2); nothing persists until "Enter Forge" runs the atomic finish
- * (`completeOnboarding`) — which still derives athlete_type from the primary goal and writes environment
- * as null (unknown until Find-Your-Program captures equipment). On success `onboarded_at` flips and the
- * boot router swaps to the app. The Welcome/Create-Account/Sign-In screens are the auth route, before this.
+ * The onboarding route (session, not-onboarded) — a MINIMAL identity ramp (ONB-Amendment-002): Account →
+ * Username → Transition, nothing else. Goals / Experience / Equipment / Schedule / Program / Athlete Type
+ * are all deferred to opt-in, post-Home surfaces — you answer them only if you want a suggested program
+ * (ONB-A2-D1). Answers accumulate in local `data`; nothing persists until "Enter Forge" runs the atomic
+ * finish (`completeOnboarding`), which writes athlete_type = Hybrid (the default — type isn't asked) and
+ * environment = null (unknown until a program-recommendation flow captures equipment). On success
+ * `onboarded_at` flips and the boot router swaps to the app. Welcome/Create/Sign-In are the auth route.
  */
-const SETUP: Step[] = ['account', 'username', 'goals'];
-type Step = 'account' | 'username' | 'goals' | 'transition';
+const SETUP: Step[] = ['account', 'username'];
+type Step = 'account' | 'username' | 'transition';
 type UStatus = 'idle' | 'short' | 'checking' | 'available' | 'taken';
 
-const GOALS: { id: GoalId; label: string; desc: string }[] = [
-  { id: 'muscle', label: 'Build Muscle', desc: 'Add visible size and shape.' },
-  { id: 'strength', label: 'Get Stronger', desc: 'Move heavier weight. Build raw power.' },
-  { id: 'fatloss', label: 'Lose Fat', desc: 'Lean out while keeping your strength.' },
-  { id: 'endurance', label: 'Improve Endurance', desc: 'Go longer. Build your engine and stamina.' },
-  { id: 'health', label: 'General Health', desc: 'Feel good, move well, stay strong for life.' },
-  { id: 'athletic', label: 'Athletic Performance', desc: 'Power, speed, and conditioning together.' },
-];
 interface Data {
   name: string;
   sex: 'male' | 'female' | null;
   units: 'imperial' | 'metric';
   username: string;
-  goals: GoalId[];
-  primaryGoal: GoalId | null;
 }
 
 export default function Onboarding() {
   const [step, setStep] = useState<Step>('account');
   const [data, setData] = useState<Data>({
-    name: '', sex: null, units: 'imperial', username: '', goals: [], primaryGoal: null,
+    name: '', sex: null, units: 'imperial', username: '',
   });
   const [uStatus, setUStatus] = useState<UStatus>('idle');
   const [finishing, setFinishing] = useState(false);
@@ -55,10 +43,10 @@ export default function Onboarding() {
   const patch = (p: Partial<Data>) => setData((d) => ({ ...d, ...p }));
 
   const idx = SETUP.indexOf(step);
-  const next = () => setStep(step === 'goals' ? 'transition' : SETUP[idx + 1]);
+  const next = () => setStep(step === 'username' ? 'transition' : SETUP[idx + 1]);
   const back = () => {
     setError(null);
-    if (step === 'transition') setStep('goals');
+    if (step === 'transition') setStep('username');
     else if (idx > 0) setStep(SETUP[idx - 1]);
   };
 
@@ -81,18 +69,6 @@ export default function Onboarding() {
     }, 450);
   };
 
-  const toggleGoal = (id: GoalId) => {
-    setData((d) => {
-      const has = d.goals.includes(id);
-      if (has) {
-        const goals = d.goals.filter((g) => g !== id);
-        return { ...d, goals, primaryGoal: d.primaryGoal === id ? (goals[0] ?? null) : d.primaryGoal };
-      }
-      if (d.goals.length >= 3) return d; // cap at 3
-      return { ...d, goals: [...d.goals, id], primaryGoal: d.primaryGoal ?? id };
-    });
-  };
-
   const onFinish = async () => {
     setFinishing(true);
     setError(null);
@@ -102,9 +78,8 @@ export default function Onboarding() {
         handle: data.username.length >= 3 ? data.username : null,
         sex: data.sex ?? 'male',
         photoUri: null, // optional photo picker is a fast-follow
-        primaryGoal: data.primaryGoal,
-        // environment is unknown here — Find-Your-Program (post-Home) captures equipment and writes it
-        // (ONB-Amendment-002 / ONB-A2-D3). athlete_type still derives from the primary goal below.
+        // athlete_type defaults to Hybrid (type isn't asked) and environment is null (unknown) — both are
+        // deferred to opt-in, post-Home surfaces per ONB-Amendment-002 (ONB-A2-D1).
       });
       // Pull the new onboarded_at so the boot router swaps to the app (it fetched once per session and
       // would otherwise stay stale on this screen — the "stuck on Opening your forge" bug).
@@ -184,31 +159,6 @@ export default function Onboarding() {
               </Pressable>
             </>
           ) : null}
-
-          {step === 'goals' ? (
-            <>
-              <Heading title="What are you training for?" body="Choose up to three. Tap the star to set the one that matters most — your primary goal shapes what we recommend." />
-              <View style={styles.stack}>
-                {GOALS.map((g) => (
-                  <SelectTile
-                    key={g.id}
-                    title={g.label}
-                    desc={g.desc}
-                    selected={data.goals.includes(g.id)}
-                    onPress={() => toggleGoal(g.id)}
-                    right={
-                      data.goals.includes(g.id) ? (
-                        <Pressable onPress={() => patch({ primaryGoal: g.id })} accessibilityRole="button" accessibilityLabel={`Set ${g.label} as primary`} hitSlop={8}>
-                          <StarIcon filled={data.primaryGoal === g.id} />
-                        </Pressable>
-                      ) : undefined
-                    }
-                  />
-                ))}
-              </View>
-              <Continue disabled={data.goals.length === 0} onPress={next} />
-            </>
-          ) : null}
         </ScrollView>
       )}
     </View>
@@ -245,13 +195,6 @@ function UsernameStatus({ status, username }: { status: UStatus; username: strin
   const m = map[status];
   return m.text ? <Text style={[styles.uStatus, { color: m.color }]}>{m.text}</Text> : <View style={styles.uStatusGap} />;
 }
-function StarIcon({ filled }: { filled: boolean }) {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill={filled ? flColor.bronze400 : 'none'} stroke={filled ? flColor.bronze400 : flColor.gray600} strokeWidth={1.6} strokeLinejoin="round">
-      <Path d="M12 3l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 18.4 6.2 21.4l1.1-6.5L2.6 9.8l6.5-.9z" />
-    </Svg>
-  );
-}
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
@@ -265,7 +208,6 @@ const styles = StyleSheet.create({
   groupLabel: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray400 },
   groupHint: { fontFamily: flFont.sans, fontSize: 12, color: flColor.gray600 },
   tileRow: { flexDirection: 'row', gap: 10 },
-  stack: { gap: 10 },
 
   handleRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
   at: { fontFamily: flFont.display, fontSize: 20, color: flColor.bronze400, paddingBottom: 12 },

@@ -24,8 +24,6 @@ import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { getSelfProfile } from '@/domain/profile/placeholder-data';
 import { useProfile } from '@/lib/profile';
 import { useAuth } from '@/lib/auth';
-import { getProgramIntent } from '@/lib/program-intent';
-import { FirstProgramCard } from '@/components/forge/compositions/FirstProgramCard';
 import { ProgramSavedCard } from '@/components/forge/compositions/ProgramSavedCard';
 import { fetchMyPrograms } from '@/data/programs-live';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
@@ -55,12 +53,13 @@ function splitChapterTitle(full: string): { number: string; name: string } {
 }
 
 /**
- * ONB-D17 isNew hero — the fresh athlete's first-session empty state, up to Forge Home.dc's isNew card.
- * Two real, distinct actions: Start Training (primary → the demo-workout logger, the working first-workout
- * path) and Browse Programs (secondary → the catalog). No "build your own" copy until the Program Builder
- * exists (fast-follow).
+ * ONB-D17 isNew hero — the fresh athlete's first-session empty state. Two real actions: Start Training
+ * (primary → the demo-workout logger, the working first-workout path) and Programs (secondary → the
+ * Programs tab, the hub for BOTH browsing prebuilt programs AND building your own). "Programs" — not
+ * "Browse Programs" — deliberately, so someone who wants to build their own doesn't read it as prebuilt-only
+ * (ONB-Amendment-002).
  */
-function FirstSessionCard({ onStart, onBrowse }: { onStart: () => void; onBrowse: () => void }) {
+function FirstSessionCard({ onStart, onOpenPrograms }: { onStart: () => void; onOpenPrograms: () => void }) {
   return (
     <Card padding={24} style={styles.firstCard}>
       <View style={styles.firstIcon}>
@@ -68,14 +67,14 @@ function FirstSessionCard({ onStart, onBrowse }: { onStart: () => void; onBrowse
       </View>
       <View style={styles.firstText}>
         <Text style={styles.firstTitle}>Forge your first program</Text>
-        <Text style={styles.firstCopy}>Start your first session now, or browse the Forge library to see what&apos;s ahead.</Text>
+        <Text style={styles.firstCopy}>Start your first session now, or head to Programs to browse the library or build your own.</Text>
       </View>
       <View style={styles.firstActions}>
         <Button variant="primary" fullWidth onPress={onStart} accessibilityLabel="Start Training — begin your first workout">
           Start Training
         </Button>
-        <Button variant="secondary" fullWidth onPress={onBrowse} accessibilityLabel="Browse Programs — explore the Forge library">
-          Browse Programs
+        <Button variant="secondary" fullWidth onPress={onOpenPrograms} accessibilityLabel="Programs — browse the library or build your own">
+          Programs
         </Button>
       </View>
     </Card>
@@ -136,8 +135,6 @@ export default function HomeScreen() {
   // H-1 "awaiting first workout" (ONB-D17): a just-onboarded athlete (active chapter, 0 workouts) gets a
   // purpose-built hero instead of the static content, so a fresh user never lands on stale/blank Home.
   const { data: awaiting, refetch: refetchAwaiting } = useQuery(fetchAwaitingChapter, []);
-  // Onboarding program choice → which isNew card ('build_own' → the First Program Card).
-  const { data: programIntent } = useQuery(getProgramIntent, []);
   // The athlete's saved programs — if any, Home reflects them instead of the empty first-program card.
   const { data: myPrograms, refetch: refetchPrograms } = useQuery(fetchMyPrograms, []);
   // Re-read on focus so the hero flips OFF awaiting after the first workout AND reflects a program just
@@ -184,7 +181,7 @@ export default function HomeScreen() {
       startWorkout('First Workout');
       router.push('/workout');
     };
-    const browsePrograms = () => router.push('/workouts');
+    const openPrograms = () => router.push('/workouts');
     return (
       <View style={styles.root}>
         <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.15)' }} />
@@ -204,10 +201,8 @@ export default function HomeScreen() {
           <View style={styles.content}>
             {myPrograms && myPrograms.length > 0 ? (
               <ProgramSavedCard program={myPrograms[0]} onStart={startFirst} onBuild={() => router.push('/program-builder')} />
-            ) : programIntent === 'build_own' ? (
-              <FirstProgramCard onBuild={() => router.push('/program-builder')} onStart={startFirst} />
             ) : (
-              <FirstSessionCard onStart={startFirst} onBrowse={browsePrograms} />
+              <FirstSessionCard onStart={startFirst} onOpenPrograms={openPrograms} />
             )}
           </View>
         </ScrollView>
