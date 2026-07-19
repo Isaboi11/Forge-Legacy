@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
-import { athleteTypeForGoal, environmentForEquipment, firstNameOf, initialsOf } from './derive';
-import type { EquipmentId, GoalId } from './derive';
+import { athleteTypeForGoal, firstNameOf, initialsOf } from './derive';
+import type { GoalId } from './derive';
 
 /** Canonical Chapter I title (ONB-D14; PO-ruled over the design's "Building your Legacy"). */
 export const CHAPTER_I_NAME = 'Chapter I — Building Your Foundation';
@@ -31,13 +31,13 @@ export interface OnboardingInput {
   sex: 'male' | 'female';
   photoUri: string | null;
   primaryGoal: GoalId | null;
-  equipment: EquipmentId[];
 }
 
 /**
  * The finish transaction. Avatar upload first (storage, not transactional — an orphan is harmless), then
  * the atomic `complete_onboarding` RPC: profile update + Chapter I insert + onboarded_at, all-or-nothing.
- * Deriving athlete_type + environment happens here (pure), then everything commits in one call.
+ * athlete_type derives from the primary goal here (pure); environment is written null — equipment moved to
+ * the post-Home Find-Your-Program flow (ONB-Amendment-002 / ONB-A2-D3), which fills it in later.
  */
 export async function completeOnboarding(input: OnboardingInput): Promise<void> {
   const {
@@ -55,7 +55,7 @@ export async function completeOnboarding(input: OnboardingInput): Promise<void> 
     p_sex: input.sex,
     p_avatar_url: avatarUrl,
     p_athlete_type: athleteTypeForGoal(input.primaryGoal),
-    p_environment: environmentForEquipment(input.equipment),
+    p_environment: null, // unknown until Find-Your-Program captures equipment (ONB-A2-D3)
     p_chapter_name: CHAPTER_I_NAME,
   });
   if (error) throw error;

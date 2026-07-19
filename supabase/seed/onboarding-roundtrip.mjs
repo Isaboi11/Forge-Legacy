@@ -57,15 +57,18 @@ if (se) {
   check(p0 != null && p0.onboarded_at == null, 'fresh account → trigger profile, onboarded_at null');
   check(routeFor({ ...base, onboardedAt: p0?.onboarded_at }) === 'onboarding', 'routes to onboarding');
 
+  // ONB-Amendment-002 / A1: the slimmed client sends p_environment = null (equipment moved to the
+  // post-Home Find-Your-Program flow). Prove the finish still commits cleanly with a null environment
+  // and Chapter I intact — environment is written null and filled in later.
   const { error: finErr } = await fresh.rpc('complete_onboarding', {
     p_name: 'Ada Test', p_first_name: 'Ada', p_handle: null, p_initials: 'AT',
-    p_sex: 'female', p_avatar_url: null, p_athlete_type: 'Strength', p_environment: 'home_gym',
+    p_sex: 'female', p_avatar_url: null, p_athlete_type: 'Strength', p_environment: null,
     p_chapter_name: 'Chapter I — Building Your Foundation',
   });
   if (finErr) console.log('    finish RPC error:', finErr.message);
   check(!finErr, 'finish RPC committed');
   const { data: p1 } = await fresh.from('profiles').select('name, athlete_type, environment, onboarded_at').eq('id', fid).single();
-  check(p1?.name === 'Ada Test' && p1?.athlete_type === 'Strength' && p1?.environment === 'home_gym' && !!p1?.onboarded_at, 'profile written + onboarded_at set');
+  check(p1?.name === 'Ada Test' && p1?.athlete_type === 'Strength' && p1?.environment === null && !!p1?.onboarded_at, 'profile written (environment null) + onboarded_at set');
   const { data: ch } = await fresh.from('chapters').select('name, is_active, workout_count').eq('athlete_id', fid);
   check(ch?.length === 1 && ch[0].is_active && ch[0].name === 'Chapter I — Building Your Foundation' && ch[0].workout_count === 0, 'Chapter I created (active, empty)');
   check(routeFor({ ...base, onboardedAt: p1?.onboarded_at }) === 'app', 'routes to app');

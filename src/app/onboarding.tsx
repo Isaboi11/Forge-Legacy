@@ -4,26 +4,26 @@ import Svg, { Path } from 'react-native-svg';
 
 import { Button } from '@/components/forge/composites/Button';
 import { Avatar } from '@/components/forge/composites/Avatar';
-import { Pill } from '@/components/forge/composites/Pill';
 import { ForgeBrandMark } from '@/components/forge/primitives/icons/HomeIcons';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { Field, Heading, ProgressHeader, SelectTile } from '@/components/onboarding/kit';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
-import type { EquipmentId, GoalId } from '@/domain/onboarding/derive';
-import { recommendProgram, type ProgramView } from '@/domain/onboarding/recommend';
+import type { GoalId } from '@/domain/onboarding/derive';
 import { completeOnboarding, isHandleAvailable } from '@/domain/onboarding/service';
 import { useProfile } from '@/lib/profile';
-import { setProgramIntent, type ProgramIntent } from '@/lib/program-intent';
 
 /**
- * The onboarding route (session, not-onboarded) — the design `.dc`'s setup flow, Account → Transition.
- * Answers accumulate in local `data` (journey-state, ONB-D2); nothing persists until "Enter Forge" runs
- * the atomic finish (`completeOnboarding`). On success `onboarded_at` flips and the boot router swaps to
- * the app. The Welcome/Create-Account/Sign-In screens are the auth route, reached before this.
+ * The onboarding route (session, not-onboarded) — a LEAN identity ramp (ONB-Amendment-002): Account →
+ * Username → Goals → Transition. Experience/Equipment/Schedule/Recommended-Program are deferred OUT of
+ * setup into the just-in-time "Find Your Program" flow reached from Home. Answers accumulate in local
+ * `data` (journey-state, ONB-D2); nothing persists until "Enter Forge" runs the atomic finish
+ * (`completeOnboarding`) — which still derives athlete_type from the primary goal and writes environment
+ * as null (unknown until Find-Your-Program captures equipment). On success `onboarded_at` flips and the
+ * boot router swaps to the app. The Welcome/Create-Account/Sign-In screens are the auth route, before this.
  */
-const SETUP: Step[] = ['account', 'username', 'goals', 'experience', 'equipment', 'schedule', 'program'];
-type Step = 'account' | 'username' | 'goals' | 'experience' | 'equipment' | 'schedule' | 'program' | 'transition';
+const SETUP: Step[] = ['account', 'username', 'goals'];
+type Step = 'account' | 'username' | 'goals' | 'transition';
 type UStatus = 'idle' | 'short' | 'checking' | 'available' | 'taken';
 
 const GOALS: { id: GoalId; label: string; desc: string }[] = [
@@ -34,26 +34,6 @@ const GOALS: { id: GoalId; label: string; desc: string }[] = [
   { id: 'health', label: 'General Health', desc: 'Feel good, move well, stay strong for life.' },
   { id: 'athletic', label: 'Athletic Performance', desc: 'Power, speed, and conditioning together.' },
 ];
-const EXPERIENCE = [
-  { id: 'beginner', mark: 'I', label: 'Beginner', desc: 'New to training, or back after a long break.' },
-  { id: 'intermediate', mark: 'II', label: 'Intermediate', desc: 'A year or two in. Comfortable under the bar.' },
-  { id: 'advanced', mark: 'III', label: 'Advanced', desc: 'Years of consistent, structured training.' },
-];
-const EQUIPMENT: { id: EquipmentId; label: string; desc: string }[] = [
-  { id: 'fullgym', label: 'Full Gym', desc: 'Barbells, machines, the full floor.' },
-  { id: 'homegym', label: 'Home Gym', desc: 'A dedicated setup of your own.' },
-  { id: 'dumbbells', label: 'Dumbbells', desc: 'A pair or an adjustable set.' },
-  { id: 'bands', label: 'Bands', desc: 'Resistance bands, minimal space.' },
-  { id: 'bodyweight', label: 'Bodyweight', desc: 'No equipment. Train anywhere.' },
-];
-const DAYS_COPY: Record<number, string> = {
-  2: 'Two full-body sessions a week — the minimum that still moves the needle, with plenty of recovery.',
-  3: 'Three days gives you real recovery while building genuine consistency.',
-  4: 'Four days lets us split your training and push meaningful volume.',
-  5: 'Five days is serious frequency — momentum you can feel.',
-  6: 'Six days is high volume. Recovery becomes part of the discipline.',
-};
-
 interface Data {
   name: string;
   sex: 'male' | 'female' | null;
@@ -61,17 +41,12 @@ interface Data {
   username: string;
   goals: GoalId[];
   primaryGoal: GoalId | null;
-  experience: string | null;
-  equipment: EquipmentId[];
-  days: number;
-  chosenProgramId: string | null;
 }
 
 export default function Onboarding() {
   const [step, setStep] = useState<Step>('account');
   const [data, setData] = useState<Data>({
     name: '', sex: null, units: 'imperial', username: '', goals: [], primaryGoal: null,
-    experience: null, equipment: [], days: 4, chosenProgramId: null,
   });
   const [uStatus, setUStatus] = useState<UStatus>('idle');
   const [finishing, setFinishing] = useState(false);
@@ -80,16 +55,10 @@ export default function Onboarding() {
   const patch = (p: Partial<Data>) => setData((d) => ({ ...d, ...p }));
 
   const idx = SETUP.indexOf(step);
-  const next = () => setStep(step === 'program' ? 'transition' : SETUP[idx + 1]);
-  // Program step: record the choice (recommended vs build-own) so Home's isNew card shows the right
-  // variant, then advance. Enrollment itself isn't persisted at onboarding (by ruling) — just the intent.
-  const chooseProgram = (intent: ProgramIntent) => {
-    void setProgramIntent(intent);
-    next();
-  };
+  const next = () => setStep(step === 'goals' ? 'transition' : SETUP[idx + 1]);
   const back = () => {
     setError(null);
-    if (step === 'transition') setStep('program');
+    if (step === 'transition') setStep('goals');
     else if (idx > 0) setStep(SETUP[idx - 1]);
   };
 
@@ -134,7 +103,8 @@ export default function Onboarding() {
         sex: data.sex ?? 'male',
         photoUri: null, // optional photo picker is a fast-follow
         primaryGoal: data.primaryGoal,
-        equipment: data.equipment,
+        // environment is unknown here — Find-Your-Program (post-Home) captures equipment and writes it
+        // (ONB-Amendment-002 / ONB-A2-D3). athlete_type still derives from the primary goal below.
       });
       // Pull the new onboarded_at so the boot router swaps to the app (it fetched once per session and
       // would otherwise stay stale on this screen — the "stuck on Opening your forge" bug).
@@ -144,8 +114,6 @@ export default function Onboarding() {
       setError(e instanceof Error ? e.message : String(e));
     }
   };
-
-  const rec: ProgramView | null = step === 'program' ? recommendProgram({ experience: data.experience }) : null;
 
   return (
     <View style={styles.root}>
@@ -241,82 +209,6 @@ export default function Onboarding() {
               <Continue disabled={data.goals.length === 0} onPress={next} />
             </>
           ) : null}
-
-          {step === 'experience' ? (
-            <>
-              <Heading title="How much have you trained?" body="This tunes your starting load and difficulty — nothing else. Everyone builds their legacy the same way." />
-              <View style={styles.stack}>
-                {EXPERIENCE.map((e) => (
-                  <SelectTile key={e.id} mark={e.mark} title={e.label} desc={e.desc} selected={data.experience === e.id} onPress={() => patch({ experience: e.id })} />
-                ))}
-              </View>
-              <Continue disabled={!data.experience} onPress={next} />
-            </>
-          ) : null}
-
-          {step === 'equipment' ? (
-            <>
-              <Heading title="What can you train with?" body="Pick everything you have access to — we only program movements you can actually do." />
-              <View style={styles.stack}>
-                {EQUIPMENT.map((eq) => (
-                  <SelectTile
-                    key={eq.id}
-                    title={eq.label}
-                    desc={eq.desc}
-                    selected={data.equipment.includes(eq.id)}
-                    onPress={() =>
-                      patch({ equipment: data.equipment.includes(eq.id) ? data.equipment.filter((x) => x !== eq.id) : [...data.equipment, eq.id] })
-                    }
-                  />
-                ))}
-              </View>
-              <Continue disabled={data.equipment.length === 0} onPress={next} />
-            </>
-          ) : null}
-
-          {step === 'schedule' ? (
-            <>
-              <Heading title="How many days a week?" body="Be honest about your week — consistency beats ambition. We build around it." />
-              <View style={styles.daysRow}>
-                {[2, 3, 4, 5, 6].map((n) => (
-                  <Pressable key={n} onPress={() => patch({ days: n })} accessibilityRole="button" accessibilityLabel={`${n} days`} style={[styles.dayTile, data.days === n && styles.dayTileOn]}>
-                    <Text style={[styles.dayNum, data.days === n && styles.dayNumOn]}>{n}</Text>
-                  </Pressable>
-                ))}
-              </View>
-              <Text style={styles.daysHint}>{DAYS_COPY[data.days]}</Text>
-              <Continue onPress={next} />
-            </>
-          ) : null}
-
-          {step === 'program' && rec ? (
-            <>
-              <Heading eyebrow="Forge recommends" title="Where your legacy begins" body="Matched to your goal, experience, equipment, and schedule. It's a place to begin — never a cage." />
-              <View style={styles.programCard}>
-                <View style={styles.programPills}>
-                  <Pill>{rec.family}</Pill>
-                  <Pill>{rec.difficulty}</Pill>
-                </View>
-                <Text style={styles.programLabel}>Your starting program</Text>
-                <Text style={styles.programName}>{rec.name}</Text>
-                <Text style={styles.programDesc} numberOfLines={3}>
-                  {rec.description}
-                </Text>
-                <View style={styles.programStats}>
-                  <Stat n={rec.weeks} label="Weeks" />
-                  <Stat n={`${rec.perWeek}×`} label="Per week" />
-                  <Stat n={rec.workouts} label="Workouts" />
-                </View>
-              </View>
-              <Text style={styles.changeHint}>You can change this any time.</Text>
-              <Continue label={`Start ${rec.name.length <= 18 ? rec.name : 'this program'}`} onPress={() => chooseProgram('recommended')} />
-              {/* "I will build my own" — records the build-own intent so Home's isNew card shows the "Build
-                  program" variant, then advances to the same finish (enrollment isn't persisted here). */}
-              <Pressable onPress={() => chooseProgram('build_own')} accessibilityRole="button" accessibilityLabel="I will build my own program" style={styles.skip}>
-                <Text style={styles.skipText}>I will build my own</Text>
-              </Pressable>
-            </>
-          ) : null}
         </ScrollView>
       )}
     </View>
@@ -339,14 +231,6 @@ function Continue({ disabled, onPress, label }: { disabled?: boolean; onPress: (
       <Button variant="primary" fullWidth disabled={disabled} onPress={onPress} accessibilityLabel={label ?? 'Continue'}>
         {label ?? 'Continue'}
       </Button>
-    </View>
-  );
-}
-function Stat({ n, label }: { n: number | string; label: string }) {
-  return (
-    <View style={styles.stat}>
-      <Text style={styles.statN}>{n}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
 }
@@ -392,24 +276,6 @@ const styles = StyleSheet.create({
   previewHandle: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray600, marginTop: 1 },
   skip: { alignItems: 'center', paddingVertical: 10 },
   skipText: { fontFamily: flFont.sans, fontSize: 14, color: flColor.gray400 },
-
-  daysRow: { flexDirection: 'row', gap: 10, justifyContent: 'space-between' },
-  dayTile: { flex: 1, aspectRatio: 1, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800, alignItems: 'center', justifyContent: 'center' },
-  dayTileOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
-  dayNum: { fontFamily: flFont.display, fontSize: 22, color: flColor.gray400 },
-  dayNumOn: { color: flColor.cream100 },
-  daysHint: { fontFamily: flFont.sans, fontSize: 13.5, lineHeight: 20, color: flColor.gray400 },
-
-  programCard: { padding: 20, borderRadius: flRadius.xl, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800, gap: 10 },
-  programPills: { flexDirection: 'row', gap: 8 },
-  programLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400, marginTop: 2 },
-  programName: { fontFamily: flFont.display, fontSize: 21, color: flColor.cream100 },
-  programDesc: { fontFamily: flFont.sans, fontSize: 13.5, lineHeight: 20, color: flColor.gray400 },
-  programStats: { flexDirection: 'row', gap: 26, marginTop: 6 },
-  stat: { gap: 2 },
-  statN: { fontFamily: flFont.display, fontSize: 20, color: flColor.cream100 },
-  statLabel: { fontFamily: flFont.sans, fontSize: 11, letterSpacing: 0.4, color: flColor.gray600 },
-  changeHint: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray600, textAlign: 'center' },
 
   transition: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 36, gap: 20 },
   tEyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronze400, textAlign: 'center' },
