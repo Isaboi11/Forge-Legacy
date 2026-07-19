@@ -17,13 +17,8 @@ import { BarbellIcon, FlameIcon } from '@/components/forge/primitives/icons/Home
 export function FirstProgramCard({ onBuild, onStart }: { onBuild: () => void; onStart: () => void }) {
   return (
     <View style={styles.card}>
-      {/* base surface → bronze top wash → grain (all clipped by the card's overflow:hidden) */}
-      <LinearGradient
-        colors={flGradient.surfaceCard.colors}
-        start={flGradient.surfaceCard.start}
-        end={flGradient.surfaceCard.end}
-        style={StyleSheet.absoluteFill}
-      />
+      {/* dark charcoal-900 base (from styles.card) → bronze top wash → grain — the same forged hero
+          surface as the active-program card (TodaysWorkoutCard), not the lighter gray surface-card. */}
       <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
         <Defs>
           <RadialGradient id="fpc-wash" cx="50%" cy="0%" rx="120%" ry="90%">
@@ -99,8 +94,8 @@ const styles = StyleSheet.create({
     borderRadius: flRadius.xl,
     borderWidth: 1,
     borderColor: flColor.bronzeBorder,
-    backgroundColor: flColor.charcoal800,
-    boxShadow: `${flShadow.elevated}, ${flShadow.glowSubtle}`,
+    backgroundColor: flColor.charcoal900,
+    boxShadow: flShadow.missionCard,
     paddingTop: 34,
     paddingHorizontal: 26,
     paddingBottom: 26,

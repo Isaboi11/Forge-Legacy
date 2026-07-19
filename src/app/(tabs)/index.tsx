@@ -26,7 +26,8 @@ import { useProfile } from '@/lib/profile';
 import { useAuth } from '@/lib/auth';
 import { getProgramIntent } from '@/lib/program-intent';
 import { FirstProgramCard } from '@/components/forge/compositions/FirstProgramCard';
-import { fetchMyPrograms, type SavedProgram } from '@/data/programs-live';
+import { ProgramSavedCard } from '@/components/forge/compositions/ProgramSavedCard';
+import { fetchMyPrograms } from '@/data/programs-live';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { getActiveProgram, getNextWorkout } from '@/domain/training/active-program';
 import { resolveHomeWorkoutArtwork } from '@/domain/home-artwork/resolver';
@@ -76,38 +77,6 @@ function FirstSessionCard({ onStart, onBrowse }: { onStart: () => void; onBrowse
         <Button variant="secondary" fullWidth onPress={onBrowse} accessibilityLabel="Browse Programs — explore the Forge library">
           Browse Programs
         </Button>
-      </View>
-    </Card>
-  );
-}
-
-/**
- * Interim "your program" reflection — shown once the athlete has built a program (no `.dc` yet; a simple
- * card so building a program visibly changes Home). "Start workout" still runs the demo session — executing
- * a user-authored program is the deeper BU-1 piece, deferred.
- */
-function ProgramSavedCard({ program, onStart, onBuild }: { program: SavedProgram; onStart: () => void; onBuild: () => void }) {
-  const dayCount = program.structure.days.length;
-  const exCount = program.structure.days.reduce((n, d) => n + d.main.length, 0);
-  return (
-    <Card padding={24} style={styles.firstCard}>
-      <View style={styles.firstIcon}>
-        <BarbellIcon size={24} color={flColor.bronze400} />
-      </View>
-      <View style={styles.firstText}>
-        <Text style={styles.savedEyebrow}>Your program</Text>
-        <Text style={styles.firstTitle}>{program.name}</Text>
-        <Text style={styles.firstCopy}>
-          {dayCount} day{dayCount === 1 ? '' : 's'} · {exCount} exercise{exCount === 1 ? '' : 's'}
-        </Text>
-      </View>
-      <View style={styles.firstActions}>
-        <Button variant="primary" fullWidth onPress={onStart} accessibilityLabel="Start workout">
-          Start workout
-        </Button>
-        <Pressable onPress={onBuild} accessibilityRole="button" accessibilityLabel="Build another program" style={styles.firstStartSmall}>
-          <Text style={styles.firstStartSmallText}>Build another</Text>
-        </Pressable>
       </View>
     </Card>
   );
@@ -380,9 +349,6 @@ const styles = StyleSheet.create({
   firstTitle: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100, textAlign: 'center' },
   firstCopy: { fontFamily: flFont.sans, fontSize: 14, lineHeight: 20, color: flColor.gray400, textAlign: 'center', maxWidth: 260 },
   firstActions: { width: '100%', gap: 10 },
-  firstStartSmall: { alignItems: 'center', paddingVertical: 8 },
-  firstStartSmallText: { fontFamily: flFont.sans, fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },
-  savedEyebrow: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400, textAlign: 'center' },
   scrollContent: {
     paddingBottom: 44,
   },
