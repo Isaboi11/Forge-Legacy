@@ -37,7 +37,7 @@ Persistence is device-local (AsyncStorage); no new Supabase column for the tour.
 |---|---|---|---|
 | 1 | **Non-Behavior — "No feature tour / no coach-mark gauntlet"** (ONB-D20/D21) | Prohibited | **Narrowed.** A feature tour is admitted **after the first move**, opt-out, one-time, dismissible, emitting no progression event. Still no *pre-Home* tour and no front-loading. |
 | 2 | **ONB-A2-D4(b)** — per-surface first-visit *banners* (single moment) | Friends/Squads one-line banners | **Escalated** to short auto-firing per-tab **walkthroughs** (2–3 cards) on first visit to Workouts, Legacy, Squads, Friends. |
-| 3 | **ONB-D22** — "choosing a recommended program contributes zero to Honor evaluation" | Binding | **Narrowed** — committing to a starting program (built OR chosen) earns the single **Initiative** honor (a persisted honor). Everything else in ONB-D22 is preserved (no XP/streak/shame/meter; Workout #1 remains the primary payoff). |
+| 3 | **ONB-D22** — "choosing a recommended program contributes zero to Honor evaluation" | Binding | **Narrowed (bounded)** — the single **Initiative** honor is earned by the athlete's **first move**: program **built**, **chosen**, OR **first workout logged** (whichever comes first; one honor, DB-idempotent). Only the pick/build *early-grant* narrows D22 — the workout path IS real progress and is fully D22-compliant. Everything else in D22 preserved (no XP/streak/shame/meter; Workout #1 remains the primary payoff). |
 
 ## Section 3 — Amendment Decisions
 
@@ -56,7 +56,7 @@ The tour is **not** presented as an upfront "Take the tour / Skip" choice — it
 ## Section 4 — Reconciliation with ONB-D22 (No Fake Progress) — NARROWED, not discarded
 ONB-D22 is preserved in spirit and in all but one clause:
 - **Preserved:** no welcome XP, no streak, no "days since," no countdown, no profile-completion meter, no shame. The tour and per-tab walkthroughs emit **no** progression event — each is one-time and dismissible. **Workout #1 (ONB-D18) remains the primary emotional payoff**, and the ONB-D18 "chapter comes alive" reveal is untouched (it lives in the workout-complete flow, not this gate).
-- **Narrowed (PO-directed):** ONB-D22's clause *"choosing a recommended program contributes zero to Honor evaluation"* is narrowed to admit the **single Initiative honor**, earned by committing to a starting program. This is the only planning-time progression event now permitted, and it is deliberate — the "you made your first move" recognition the PO asked for. The **Initiative honor precedes and does not replace** the first-workout honor (ONB-D19). The binding cross-references (CAL-D21, SOC-D13, CS-D4) govern their own systems and are **unaffected**.
+- **Narrowed (PO-directed, bounded):** ONB-D22's clause *"choosing a recommended program contributes zero to Honor evaluation"* is narrowed to admit the **single Initiative honor** — the athlete's "first move." Initiative is earned by whichever comes first: program **built**, program **chosen**, or **first workout logged** (Honor-Catalog-Amendment-003; DB-idempotent, one row). The **first-workout trigger is fully D22-compliant** (a logged session is real progress). Only the **pick/build early-grant** is the narrowing — the single planning-time progression event now permitted, deliberate, and the only one. The **Initiative honor precedes and does not replace** the first-workout honor (ONB-D19); both can co-occur on Workout #1 (Initiative if not already earned). The binding cross-references (CAL-D21, SOC-D13, CS-D4) govern their own systems and are **unaffected**.
 
 ## Section 5 — What This Amendment Does NOT Change
 - **ONB-D17/D18** first-workout gate and payoff; **ONB-D19** first-workout honor (distinct from Initiative).
@@ -78,6 +78,7 @@ ONB-D22 is preserved in spirit and in all but one clause:
 - [ ] "View Honor" → the Honors Hub (Initiative shown); leaving the hub resumes the guided tour.
 - [ ] First visit to Workouts/Legacy/Squads/Friends → a short walkthrough once each; suppressed during the guided tour; a completed tour pre-marks its covered tabs.
 - [ ] The tour + walkthroughs emit no progression event; only the Initiative honor is granted (once, DB-idempotent).
+- [ ] An athlete who **skips programs and just trains** earns Initiative on Workout #1 (alongside first_workout_logged), shown in the workout-complete honor hero.
 - [ ] Workout #1 payoff (ONB-D18) still fires and is unaffected.
 
 ---

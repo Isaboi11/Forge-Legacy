@@ -2,8 +2,8 @@
 // One fresh athlete, in order:
 //   5 ROLLBACK-COVERS-HONORS : save_workout with a malformed PR → rolls back the workout AND the honor
 //     that would have fired (first_workout_logged) — nothing persists.
-//   1 HEADLINE (D19) + 4 NO-FAB : first real workout earns first_workout_logged, and ONLY that (not _25
-//     nor _in_chapter_10 on a 1-workout, count-1 athlete).
+//   1 HEADLINE (D19) + 4 NO-FAB : first real workout earns first_workout_logged AND initiative (the
+//     first-move honor, 0015), and ONLY those (not _25 nor _in_chapter_10 on a 1-workout, count-1 athlete).
 //   hero : the earned honor is matched by awarded_at = saved_at (the W-17 honor hero, id-scoped).
 //   2 IDEMPOTENCY (DB) : re-run evaluate_honors → no second row (the two partial unique indexes do it).
 //   3 REPEATABLE/CHAPTER : _in_chapter_10 fires once per chapter — same chapter re-eval → no dup; a NEW
@@ -47,16 +47,16 @@ check(wc0 === 0 && hc0 === 0, 'no workout AND no honor persisted — honors roll
 console.log('\n  1) HEADLINE (D19) + 4) NO FABRICATION');
 const { data: r1 } = await fresh.rpc('save_workout', squat('Full Body A', [{ exercise: 'Back Squat', weight: 225, reps: 5 }]));
 const { data: h1 } = await fresh.from('honor_instances').select('honor_type').eq('athlete_id', fid);
-check(JSON.stringify(types(h1)) === JSON.stringify(['first_workout_logged']), 'earns first_workout_logged, and ONLY that (not _25 / _in_chapter_10)');
+check(JSON.stringify(types(h1)) === JSON.stringify(['first_workout_logged', 'initiative']), 'earns first_workout_logged + initiative, and ONLY those (not _25 / _in_chapter_10)');
 const { data: wk } = await fresh.from('workouts').select('saved_at').eq('id', r1.workout_id).single();
 const { data: hero } = await fresh.from('honor_instances').select('honor_type').eq('athlete_id', fid).eq('awarded_at', wk.saved_at);
-check(JSON.stringify(types(hero)) === JSON.stringify(['first_workout_logged']), 'W-17 hero: honor matched by awarded_at = saved_at (id-scoped)');
+check(JSON.stringify(types(hero)) === JSON.stringify(['first_workout_logged', 'initiative']), 'W-17 hero: both honors matched by awarded_at = saved_at (granted in the save txn)');
 
 // ── 2) DB idempotency ──
 console.log('\n  2) IDEMPOTENCY (DB-enforced)');
 const { data: again } = await fresh.rpc('evaluate_honors', { p_source: 'live_session' });
 const { count: hcAfter } = await fresh.from('honor_instances').select('id', { count: 'exact', head: true }).eq('athlete_id', fid);
-check((again ?? []).length === 0 && hcAfter === 1, 're-run evaluate_honors → nothing new, no second row (partial unique indexes)');
+check((again ?? []).length === 0 && hcAfter === 2, 're-run evaluate_honors → nothing new, still 2 rows (first_workout_logged + initiative; partial unique indexes)');
 
 // ── 3) repeatable per chapter ──
 console.log('\n  3) REPEATABLE PER CHAPTER');
