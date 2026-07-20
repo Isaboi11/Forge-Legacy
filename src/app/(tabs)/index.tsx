@@ -1,6 +1,7 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import Svg, { Circle, Path } from 'react-native-svg';
+import { useFocusEffect, useRouter, type Href } from 'expo-router';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
@@ -8,7 +9,8 @@ import { Button } from '@/components/forge/composites/Button';
 import { Card } from '@/components/forge/composites/Surface';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
-import { BarbellIcon, ForgeMarkIcon } from '@/components/forge/primitives/icons/HomeIcons';
+import { BarbellIcon, ForgeMarkIcon, ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
+import { WorkoutsTabIcon, LegacyTabIcon, SquadsTabIcon } from '@/components/forge/primitives/icons/NavIcons';
 import { ChapterTitleBlock } from '@/components/forge/compositions/ChapterTitleBlock';
 import { TodaysWorkoutCard } from '@/components/forge/compositions/TodaysWorkoutCard';
 import { ProgramMissionGrid } from '@/components/forge/compositions/ProgramMissionGrid';
@@ -17,7 +19,7 @@ import { QuickActionsRow } from '@/components/forge/compositions/QuickActionsRow
 import { FriendActionSheet } from '@/components/forge/compositions/TrainTogetherCard';
 import { FRIEND_ACTIVITY, HOME_CHAPTER, HOME_DATA, todaysPrinciple } from '@/data/home-placeholder';
 import { LIVE_TRAINING_USERS } from '@/data/live-training-placeholder';
-import { flColor, flFont } from '@/constants/foundation';
+import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { useQuery } from '@/lib/useQuery';
 import { fetchAwaitingChapter } from '@/data/home-live';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
@@ -27,6 +29,8 @@ import { useAuth } from '@/lib/auth';
 import { ExperienceLevelCard, EXPERIENCE_FOR, type IntakeResult } from '@/components/forge/compositions/ExperienceLevelCard';
 import { getHomeLevel, setHomeLevel, clearHomeLevel } from '@/lib/home-level';
 import { getHomeIntake, setHomeIntake, clearHomeIntake } from '@/lib/home-intake';
+import { claimInitiativeHonor } from '@/data/honors-live';
+import { useTour } from '@/hooks/useTour';
 import { fetchMyPrograms } from '@/data/programs-live';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { getActiveProgram, getActiveProgramById } from '@/domain/training/active-program';
@@ -103,6 +107,52 @@ function AccountMenu({ open, name, onClose, onSignOut }: { open: boolean; name: 
   );
 }
 
+/** Two overlapping figures — the "friends" mark (distinct from the Squads glyph). */
+function FriendsGlyph() {
+  return (
+    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
+      <Circle cx={7.5} cy={8} r={2.7} />
+      <Circle cx={16.5} cy={8} r={2.7} />
+      <Path d="M3 19a4.5 4.5 0 0 1 9 0M12 19a4.5 4.5 0 0 1 9 0" />
+    </Svg>
+  );
+}
+
+/** One "Explore Forge" tile — icon chip · label · one-line hint · chevron. */
+function ExploreTile({ label, sub, icon, onPress }: { label: string; sub: string; icon: ReactNode; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${label} — ${sub}`} style={styles.exploreTile}>
+      <View style={styles.exploreIcon}>{icon}</View>
+      <View style={styles.exploreTileText}>
+        <Text style={styles.exploreTileLabel}>{label}</Text>
+        <Text style={styles.exploreTileSub} numberOfLines={1}>
+          {sub}
+        </Text>
+      </View>
+      <ChevronRightIcon size={16} color={flColor.bronze400} />
+    </Pressable>
+  );
+}
+
+/**
+ * "Explore Forge" — the fresh athlete's invitation to the app's four pillars (ONB-A2-D4a). Four tiles that
+ * route to Programs / Legacy / Squads / Friends. Pure navigation; the destinations are the real tabs/routes.
+ */
+function ExploreForgeSection({ onOpen }: { onOpen: (route: Href) => void }) {
+  return (
+    <View style={styles.explore}>
+      <Text style={styles.exploreTitle}>Explore Forge</Text>
+      <Text style={styles.exploreSub}>Four corners of your legacy — wander in anytime.</Text>
+      <View style={styles.exploreGrid}>
+        <ExploreTile label="Programs" sub="Browse & build" icon={<WorkoutsTabIcon size={22} color={flColor.bronze300} />} onPress={() => onOpen('/workouts')} />
+        <ExploreTile label="Legacy" sub="Your record" icon={<LegacyTabIcon size={22} color={flColor.bronze300} />} onPress={() => onOpen('/legacy')} />
+        <ExploreTile label="Squads" sub="Train together" icon={<SquadsTabIcon size={22} color={flColor.bronze300} />} onPress={() => onOpen('/squads')} />
+        <ExploreTile label="Friends" sub="Your circle" icon={<FriendsGlyph />} onPress={() => onOpen('/friends')} />
+      </View>
+    </View>
+  );
+}
+
 /**
  * H-1 Home — full-screen match of the design handoff "Forge Home.dc.html"
  * (Phase 2 core + STEP C follow-up).
@@ -127,6 +177,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { startWorkout } = useWorkoutSession();
   const { signOut } = useAuth();
+  const { requestPrompt } = useTour();
   // Interim sign-out: on session flip the boot router swaps back to the auth route (Welcome). The real
   // home for this is the deferred Account/Settings screen (P-9); this avatar menu is the stopgap.
   const closeMenuAndSignOut = () => {
@@ -138,7 +189,7 @@ export default function HomeScreen() {
   const { profile: liveProfile } = useProfile();
   // H-1 "awaiting first workout" (ONB-D17): a just-onboarded athlete (active chapter, 0 workouts) gets a
   // purpose-built hero instead of the static content, so a fresh user never lands on stale/blank Home.
-  const { data: awaiting, refetch: refetchAwaiting } = useQuery(fetchAwaitingChapter, []);
+  const { data: awaiting, refetch: refetchAwaiting, loading: awaitingLoading } = useQuery(fetchAwaitingChapter, []);
   // The athlete's saved programs — if any, Home reflects them instead of the empty first-program card.
   const { data: myPrograms, refetch: refetchPrograms } = useQuery(fetchMyPrograms, []);
   // Opt-in Home experience-level LENS (local only, ONB-Amendment-002) — undefined = loading, null = not
@@ -227,6 +278,8 @@ export default function HomeScreen() {
   const completeIntake = async (r: IntakeResult) => {
     await setHomeLevel(r.level);
     await setHomeIntake({ goals: r.goals, primaryGoal: r.primaryGoal, equipment: r.equipment });
+    // First-move honor (accept/choose path): grant "Initiative" — best-effort, DB dedupes to one row.
+    void claimInitiativeHonor().catch(() => {});
     refetchLevel();
     refetchIntake();
   };
@@ -259,6 +312,18 @@ export default function HomeScreen() {
   // collecting their starting point (no program, no level yet). The first-workout ceremony (ONB-D18) is
   // unaffected — it lives in the workout-complete flow, not this gate.
   const stillCollecting = !!awaiting && !hasProgram && homeLevel == null;
+  // A real "first move" — the athlete has built OR chosen a program (the unlock ceremony's trigger).
+  const hasProgramSignal = hasProgram || homeLevel != null;
+
+  // First-move unlock (Onboarding-Amendment-003): once the full (un-gated) Home is settled AND a program
+  // exists, announce the "Legacy Unlocked" ceremony (which hands to the guided tour). Guarded on the awaiting
+  // query having resolved so the brief pre-load frame never fires early; `requestPrompt` is a no-op unless the
+  // tour is still pending, so it's safe on every settled focus. The real chapter feeds the ceremony's stats.
+  useFocusEffect(
+    useCallback(() => {
+      if (!awaitingLoading && !stillCollecting && hasProgramSignal) requestPrompt();
+    }, [awaitingLoading, stillCollecting, hasProgramSignal, requestPrompt]),
+  );
 
   if (stillCollecting) {
     return (
@@ -358,6 +423,10 @@ export default function HomeScreen() {
               // Competitions Hub — not yet implemented.
             }}
           />
+
+          {/* "Explore Forge" invitation (ONB-A2-D4a) — the fresh athlete's map to the four pillars. Shown
+              only while awaiting the first workout; a returning athlete has already found their way around. */}
+          {awaiting ? <ExploreForgeSection onOpen={(route) => router.push(route)} /> : null}
         </View>
       </ScrollView>
 
@@ -420,6 +489,41 @@ const styles = StyleSheet.create({
   firstTitle: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100, textAlign: 'center' },
   firstCopy: { fontFamily: flFont.sans, fontSize: 14, lineHeight: 20, color: flColor.gray400, textAlign: 'center', maxWidth: 260 },
   firstActions: { width: '100%', gap: 10 },
+
+  // "Explore Forge" invitation grid
+  explore: { gap: 4 },
+  exploreTitle: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
+  exploreSub: { fontFamily: flFont.sans, fontSize: 13, lineHeight: 19, color: flColor.gray400, marginBottom: 12 },
+  exploreGrid: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, rowGap: 12 },
+  exploreTile: {
+    flexBasis: '47%',
+    flexGrow: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.charcoal900,
+    boxShadow: flShadow.card,
+  },
+  exploreIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: flRadius.md,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    backgroundColor: flColor.charcoal800,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  exploreTileText: { flex: 1, minWidth: 0, gap: 2 },
+  exploreTileLabel: { fontFamily: flFont.sans, fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
+  exploreTileSub: { fontFamily: flFont.sans, fontSize: 11.5, color: flColor.gray400 },
+
   scrollContent: {
     paddingBottom: 44,
   },

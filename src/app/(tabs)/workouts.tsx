@@ -15,6 +15,7 @@ import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/fou
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { getActiveProgram, getPrograms } from '@/domain/training/active-program';
 import type { Program } from '@/domain/training/schema';
+import { ScreenTour } from '@/components/tour/ScreenTour';
 
 /**
  * Workouts tab root (plural) — W-2 Program Browse / Programs Catalog.
@@ -197,6 +198,8 @@ export default function WorkoutsScreen() {
           </View>
         )}
       </ScrollView>
+
+      <ScreenTour screenKey="workouts" />
     </View>
   );
 }

@@ -11,6 +11,7 @@ import { FeedPostCard } from '@/components/forge/compositions/FeedPostCard';
 import { getFriendsFeed } from '@/data/post-placeholder';
 import { useProfile } from '@/lib/profile';
 import { useShareSheet } from '@/hooks/useShareSheet';
+import { ScreenTour } from '@/components/tour/ScreenTour';
 import { flColor, flRadius, flShadow } from '@/constants/foundation';
 
 /**
@@ -68,6 +69,8 @@ export default function FriendsFeedRoute() {
           />
         ))}
       </ScrollView>
+
+      <ScreenTour screenKey="friends" />
     </View>
   );
 }

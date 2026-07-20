@@ -15,6 +15,7 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { useProfile } from '@/lib/profile';
 import { INITIAL_FAVORITE_IDS, SQUADS_PLACEHOLDER } from '@/data/squads-placeholder';
 import type { Squad, SquadMember } from '@/data/squads-placeholder';
+import { ScreenTour } from '@/components/tour/ScreenTour';
 
 /**
  * Squads tab root — S-1 Squads Hub.
@@ -178,6 +179,8 @@ export default function SquadsScreen() {
           </View>
         )}
       </ScrollView>
+
+      <ScreenTour screenKey="squads" />
     </View>
   );
 }

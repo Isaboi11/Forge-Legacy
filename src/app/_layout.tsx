@@ -13,6 +13,7 @@ import { routeFor } from '@/lib/route-for';
 import { WorkoutSessionProvider } from '@/hooks/useWorkoutSession';
 import { ShareProvider } from '@/hooks/useShareSheet';
 import { CeremonyProvider } from '@/hooks/useCeremony';
+import { TourProvider } from '@/hooks/useTour';
 
 /**
  * Root layout — a Stack over the whole app. The `(tabs)` group holds the 5-tab shell; every
@@ -20,8 +21,9 @@ import { CeremonyProvider } from '@/hooks/useCeremony';
  * OVER the tabs with NO tab bar — the full-screen takeover Post Detail + the active workout need.
  * `post/[id]` and `workout` use a full-screen-modal presentation; the rest are default cards.
  *
- * The overlay providers (ceremony queue / share sheet / workout session) wrap the Stack so every
- * route — tabbed or pushed — sees them.
+ * The overlay providers (ceremony queue / first-time tour / share sheet / workout session) wrap the
+ * Stack so every route — tabbed or pushed — sees them. TourProvider sits inside CeremonyProvider so its
+ * "Take the tour?" prompt can defer to a live ceremony (never stack over an earned moment).
  */
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -41,8 +43,10 @@ export default function RootLayout() {
           <WorkoutSessionProvider>
             <ShareProvider>
               <CeremonyProvider>
-                <AnimatedSplashOverlay />
-                <RootNavigator />
+                <TourProvider>
+                  <AnimatedSplashOverlay />
+                  <RootNavigator />
+                </TourProvider>
               </CeremonyProvider>
             </ShareProvider>
           </WorkoutSessionProvider>
@@ -74,6 +78,7 @@ function RootNavigator() {
         <Stack.Screen name="post/[id]" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Screen name="squad/[id]" />
         <Stack.Screen name="athlete/[id]" />
+        <Stack.Screen name="honors" />
         <Stack.Screen name="workout" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="program-builder" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="workout-complete" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />

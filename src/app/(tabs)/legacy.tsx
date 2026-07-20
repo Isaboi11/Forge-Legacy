@@ -30,6 +30,7 @@ import {
   SealedChapterCard,
   TimelineRow,
 } from '@/components/forge/profile-sections';
+import { ScreenTour } from '@/components/tour/ScreenTour';
 
 /**
  * Legacy tab root — L-1 Legacy Hub.
@@ -254,7 +255,7 @@ export default function LegacyScreen() {
           {data.honors.length > 0 ? (
             <View>
               <View style={styles.sectionHeaderPad}>
-                <SectionHeader label="Honors" action="View all" onAction={() => {}} />
+                <SectionHeader label="Honors" action="View all" onAction={() => router.push('/honors')} />
               </View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.honorStripPad}>
                 {data.honors.map((h) => (
@@ -275,6 +276,8 @@ export default function LegacyScreen() {
           <Text style={styles.closingText}>Memories can be added. History cannot be rewritten.</Text>
         </View>
       </Animated.ScrollView>
+
+      <ScreenTour screenKey="legacy" />
     </View>
   );
 }

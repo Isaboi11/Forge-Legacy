@@ -16,6 +16,8 @@ import { Modal } from '@/components/forge/composites/Modal'
 import { Toast } from '@/components/forge/composites/Toast'
 import { Insignia } from '@/components/forge/composites/Insignia'
 import { Button } from '@/components/forge/composites/Button'
+import { HonorCeremony } from '@/components/ceremony/HonorCeremony'
+import { HonorSymbol } from '@/components/ceremony/HonorSymbol'
 import type { CeremonyEvent } from '@/domain/ceremony/types'
 import { orderCeremonies } from '@/domain/ceremony/queue'
 import { ceremonyCopy } from '@/domain/ceremony/copy'
@@ -90,46 +92,63 @@ export function CeremonyProvider({ children }: { children: React.ReactNode }) {
 
   const copy = current ? ceremonyCopy(current) : null
 
+  // Shared footer: primary Continue + optional "Share …" (SH-1 pre-scoped to this ceremony; advances the
+  // queue like Continue — SH-1 §6.2; M-7's "Not Now" has no share type and just dismisses).
+  const ceremonyFooter =
+    current && copy ? (
+      <>
+        <Button variant="primary" fullWidth onPress={dismiss}>
+          {copy.primary}
+        </Button>
+        {copy.secondary ? (
+          <Button
+            variant="secondary"
+            fullWidth
+            onPress={() => {
+              const shareType = ceremonyShareType(current)
+              if (shareType) {
+                openShare({ shareType, overrides: { title: copy.title, athlete: getSelfProfile().name } })
+              }
+              dismiss()
+            }}
+          >
+            {copy.secondary}
+          </Button>
+        ) : null}
+      </>
+    ) : null
+
   return (
     <CeremonyContext.Provider value={ceremonyValue}>
       <ToastContext.Provider value={toastValue}>
         {children}
 
         {current && copy ? (
-          <Modal
-            open
-            onClose={dismiss}
-            eyebrow={copy.eyebrow}
-            title={copy.title}
-            subtitle={copy.subtitle}
-            artwork={ceremonyArtwork(current)}
-            footer={
-              <>
-                <Button variant="primary" fullWidth onPress={dismiss}>
-                  {copy.primary}
-                </Button>
-                {copy.secondary ? (
-                  <Button
-                    variant="secondary"
-                    fullWidth
-                    onPress={() => {
-                      // "Share …" opens SH-1 pre-scoped to this ceremony; the queue advances
-                      // like Continue (SH-1 §6.2). M-7's "Not Now" (no share type) just dismisses.
-                      const shareType = ceremonyShareType(current)
-                      if (shareType) {
-                        openShare({ shareType, overrides: { title: copy.title, athlete: getSelfProfile().name } })
-                      }
-                      dismiss()
-                    }}
-                  >
-                    {copy.secondary}
-                  </Button>
-                ) : null}
-              </>
-            }
-          >
-            {copy.body}
-          </Modal>
+          current.kind === 'honorEarned' ? (
+            // Honors earn the forged-medallion ceremony (Forge First Honor Ceremony): the per-honor SYMBOL
+            // swaps, the frame/coloring/glow stay constant. Every other ceremony keeps the centered Modal.
+            <HonorCeremony
+              open
+              eyebrow={copy.eyebrow}
+              honorName={current.honorName}
+              body={copy.body}
+              symbol={<HonorSymbol honorName={current.honorName} />}
+              footer={ceremonyFooter}
+              onRequestClose={dismiss}
+            />
+          ) : (
+            <Modal
+              open
+              onClose={dismiss}
+              eyebrow={copy.eyebrow}
+              title={copy.title}
+              subtitle={copy.subtitle}
+              artwork={ceremonyArtwork(current)}
+              footer={ceremonyFooter}
+            >
+              {copy.body}
+            </Modal>
+          )
         ) : null}
 
         <Toast open={toast != null} message={toast ?? ''} onDismiss={hideToast} />

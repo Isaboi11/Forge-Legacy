@@ -1,6 +1,7 @@
 import { Tabs, TabList, TabSlot, TabTrigger } from 'expo-router/ui';
 
 import { TabBar, TabBarButton } from '@/components/forge/composites/TabBar';
+import { TourOverlay } from '@/components/tour/TourOverlay';
 import {
   HomeTabIcon,
   LegacyTabIcon,
@@ -31,6 +32,8 @@ export default function AppTabs() {
   return (
     <Tabs style={{ flex: 1 }}>
       <TabSlot style={{ flex: 1 }} />
+      {/* First-time guided tour — a shell-level overlay (valid router context) that steps across the tabs. */}
+      <TourOverlay />
       <TabList asChild>
         <TabBar>
           <TabTrigger name="home" href="/" asChild>

@@ -7,6 +7,7 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { createProgram, type ProgramDay, type ProgramStructure } from '@/data/programs-live';
+import { claimInitiativeHonor } from '@/data/honors-live';
 import { listExercises, type CatalogExercise } from '@/domain/training/exercise-names';
 
 /**
@@ -50,6 +51,8 @@ export default function ProgramBuilderScreen() {
     try {
       const structure: ProgramStructure = { name: name.trim(), weeks: 8, daysPerWeek, vary: false, days, weekPlans: null };
       await createProgram(structure);
+      // First-move honor (build path): grant "Initiative" — best-effort, DB dedupes to one row.
+      void claimInitiativeHonor().catch(() => {});
       router.back();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
