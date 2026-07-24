@@ -33,3 +33,13 @@ function getIndex(): CatalogIndex {
 export function enrichSessionExercises(items: readonly SessionExercise[]): ResolvedExercise[] {
   return enrichWithIndex(getIndex(), items);
 }
+
+/**
+ * The catalog `equipmentId` for a single exercise (e.g. `'cable'`, `'barbell'`, `'dumbbell'`), or null
+ * if the key isn't in the catalog. Reuses the same cached index — used by the Active Workout weight
+ * picker to size its increment (cable stacks move in 2.5 lb steps, free weights in 5 lb).
+ */
+export function equipmentForCatalogKey(key: string | undefined): string | null {
+  if (!key) return null;
+  return getIndex().get(key)?.equipmentId ?? null;
+}

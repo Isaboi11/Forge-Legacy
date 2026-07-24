@@ -215,10 +215,19 @@ test('validation — generated corpus has zero definite (violation-tier) contrad
   }
 });
 
-test('store invariant — nothing is Approved/Published/Editor-Edited (automation never publishes)', () => {
-  // Holds whether the store is empty (pre-generation) or holds first-pass content.
+test('store invariant — automation never publishes; anything Approved/Published names a human', () => {
+  // The guard is on the PIPELINE, not the store's contents: generation may only ever emit Draft /
+  // Auto-Validated / Needs Review. A human promoting reviewed content to Published is the sanctioned
+  // path (schema.ts — "Approved and Published are HUMAN-ONLY transitions"), and the attestation is what
+  // distinguishes the two. Without `approvedBy` there is no human, which means automation published it.
   for (const r of loadStore()) {
-    assert.ok(r.contentStatus !== 'Approved' && r.contentStatus !== 'Published', `${r.exerciseId} is ${r.contentStatus}`);
+    if (r.contentStatus === 'Approved' || r.contentStatus === 'Published') {
+      assert.ok(r.approvedBy, `${r.exerciseId} is ${r.contentStatus} with no approver — automation cannot publish`);
+      assert.ok(r.approvedAt, `${r.exerciseId} is ${r.contentStatus} with no approval timestamp`);
+      const promoted = (r.history ?? []).some((h) => h.action === 'published' || h.action === 'approved');
+      assert.ok(promoted, `${r.exerciseId} was promoted without a history entry recording it`);
+    }
+    // Provenance is unchanged by approval — the copy is still machine-written, a human only vouched for it.
     assert.equal(r.source, 'Auto-Generated', `${r.exerciseId} source is ${r.source}`);
   }
 });

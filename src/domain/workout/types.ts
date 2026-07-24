@@ -26,4 +26,6 @@ export interface ActiveSession {
   activityType: string; // 'strength' for W-9
   startedAt: string; // ISO
   exercises: SessionExercise[];
+  /** Set when the session was launched from a program — attributes the saved workout to it (0018). */
+  programId?: string;
 }

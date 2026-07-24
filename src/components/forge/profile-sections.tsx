@@ -79,14 +79,26 @@ export function CurrentChapter({ chapter, dayCount, onOpen }: { chapter: Chapter
           {chapter.goal.kind === 'quantifiable' ? (
             <ProgressBar value={chapter.goal.progress} max={100} height={8} label={`${chapter.goal.progress}% to goal`} />
           ) : null}
-          <View style={s.beganRow}>
-            <CalendarIcon />
-            <Text style={s.beganText}>
-              Began {chapter.startDate} · Day {dayCount}
-            </Text>
-          </View>
         </View>
       ) : null}
+
+      {/*
+        The chapter's running tally. This sits OUTSIDE the goal block on purpose: it used to live inside
+        it, so a chapter with no goal (every new chapter) showed nothing but its name — sealing a workout
+        changed the count in the database and produced no visible change anywhere in the app.
+      */}
+      <View style={s.chapterStats}>
+        <Text style={s.chapterStatsText}>
+          {chapter.workoutCount} {chapter.workoutCount === 1 ? 'workout' : 'workouts'}
+          {chapter.honorCount > 0 ? ` · ${chapter.honorCount} ${chapter.honorCount === 1 ? 'honor' : 'honors'}` : ''}
+        </Text>
+      </View>
+      <View style={s.beganRow}>
+        <CalendarIcon />
+        <Text style={s.beganText}>
+          Began {chapter.startDate} · Day {dayCount}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -182,11 +194,11 @@ export function TimelineRow({ entry }: { entry: TimelineEntry }) {
   );
 }
 
-export function AccomplishmentCard({ item }: { item: Accomplishment }) {
+export function AccomplishmentCard({ item, onPress }: { item: Accomplishment; onPress?: () => void }) {
   return (
-    <Pressable onPress={() => {}} accessibilityRole="button" accessibilityLabel={item.text} style={s.accCard}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={item.text} style={s.accCard}>
       <View style={s.accStar}>
-        <StarIcon />
+        <StarIcon filled={item.featured} />
       </View>
       <View style={s.accBody}>
         <Text style={s.accTitle}>{item.text}</Text>
@@ -239,9 +251,9 @@ export function CalendarIcon() {
     </Svg>
   );
 }
-export function StarIcon() {
+export function StarIcon({ filled }: { filled?: boolean } = {}) {
   return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
+    <Svg width={17} height={17} viewBox="0 0 24 24" fill={filled ? flColor.bronze300 : 'none'} stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
       <Path d="M12 3l2.6 5.6 6 .5-4.6 4 1.4 6-5.4-3.2-5.4 3.2 1.4-6-4.6-4 6-.5z" />
     </Svg>
   );
@@ -296,7 +308,9 @@ const s = StyleSheet.create({
   goalRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10 },
   goalLabel: { flex: 1, fontFamily: flFont.display, fontSize: 19, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
   goalValue: { fontSize: 13, fontWeight: '600', color: flColor.bronze400 },
-  beganRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 3 },
+  chapterStats: { paddingTop: 10 },
+  chapterStatsText: { fontSize: 13, fontWeight: '600', color: flColor.bronze400 },
+  beganRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 6 },
   beganText: { fontSize: 11.5, color: flColor.gray600 },
 
   // featured moment

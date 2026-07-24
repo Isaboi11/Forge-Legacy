@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  * / `tour.ts`), no Supabase write, cleared on account switch by `first-run.ts`.
  */
 const KEY = 'forge_screen_prompts_seen_v1';
+const TIPS_KEY = 'forge_guided_tips_enabled_v1';
 
 export type ScreenKey = 'home' | 'workouts' | 'legacy' | 'squads' | 'friends';
 
@@ -41,5 +42,28 @@ export async function clearScreenPrompts(): Promise<void> {
     await AsyncStorage.removeItem(KEY);
   } catch {
     // best-effort
+  }
+}
+
+/**
+ * The Guided Tips master switch (Account Settings).
+ *
+ * Deliberately SEPARATE from the seen-set. Deriving "tips are on" from `seen.length === 0` would make
+ * the toggle appear to switch itself off as the athlete simply used the app — a control that lies about
+ * its own state. This is an explicit preference: absent means on, which is the first-run default.
+ */
+export async function getGuidedTipsEnabled(): Promise<boolean> {
+  try {
+    return (await AsyncStorage.getItem(TIPS_KEY)) !== 'off';
+  } catch {
+    return true;
+  }
+}
+
+export async function setGuidedTipsEnabled(on: boolean): Promise<void> {
+  try {
+    await AsyncStorage.setItem(TIPS_KEY, on ? 'on' : 'off');
+  } catch {
+    // best-effort; the prompts simply keep their previous behaviour
   }
 }

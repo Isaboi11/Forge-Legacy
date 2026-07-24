@@ -1,0 +1,100 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { convertMeasure, displayWeight, formatLoad, previewSquat } from '../units.ts';
+import {
+  AUDIENCES,
+  canSee,
+  sanitizeVisibility,
+  VISIBILITY_DEFAULTS,
+  VISIBILITY_SECTIONS,
+} from '../visibility.ts';
+import { NOTIF_DEFAULTS, NOTIF_SECTIONS, sanitizeNotif } from '../notifications.ts';
+import { APP_PREFS_DEFAULTS, EXPERIENCE_TOGGLES, sanitizePrefs } from '../preferences.ts';
+
+// ── units ─────────────────────────────────────────────────────────────────────
+
+test('a stored pound weight displays in the athlete’s system, storage unchanged', () => {
+  assert.deepEqual(displayWeight(315, 'imperial'), { value: 315, unit: 'lb' });
+  assert.deepEqual(displayWeight(315, 'metric'), { value: 143, unit: 'kg' }, '315 lb ≈ 143 kg');
+  assert.equal(formatLoad(405, 'imperial', 3), '405 lb × 3');
+  assert.equal(formatLoad(405, 'metric', 3), '184 kg × 3');
+  assert.equal(formatLoad(1000, 'imperial'), '1,000 lb', 'thousands read as gym numbers');
+});
+
+test('convertMeasure only touches a pounds measure, and only for metric', () => {
+  assert.equal(convertMeasure('315 lb', 'imperial'), '315 lb', 'imperial is a no-op');
+  assert.equal(convertMeasure('315 lb', 'metric'), '143 kg');
+  assert.equal(convertMeasure('225 lbs × 5', 'metric'), '102 kg × 5');
+  assert.equal(convertMeasure('19:48', 'metric'), '19:48', 'a time is not a weight');
+  assert.equal(convertMeasure('18.2 mi', 'metric'), '18.2 mi', 'a distance is left as authored');
+  assert.equal(convertMeasure('20 reps', 'metric'), '20 reps');
+});
+
+test('the preview matches what a real 315 lb squat would render', () => {
+  assert.equal(previewSquat('imperial'), '315 lb');
+  assert.equal(previewSquat('metric'), '143 kg');
+});
+
+// ── visibility ────────────────────────────────────────────────────────────────
+
+test('the seven sections carry the design’s defaults', () => {
+  assert.equal(VISIBILITY_SECTIONS.length, 7);
+  assert.equal(VISIBILITY_DEFAULTS.chapter, 'everyone');
+  assert.equal(VISIBILITY_DEFAULTS.transformation, 'friends');
+  assert.equal(VISIBILITY_DEFAULTS.stats, 'squads');
+  assert.equal(AUDIENCES.find((a) => a.id === 'private').label, 'Only me');
+});
+
+test('clearance resolves the audience ladder, and private is owner-only', () => {
+  assert.equal(canSee('everyone', 'stranger'), true);
+  assert.equal(canSee('squads', 'stranger'), false);
+  assert.equal(canSee('squads', 'squad'), true);
+  assert.equal(canSee('friends', 'squad'), false, 'a squad-mate is not a friend');
+  assert.equal(canSee('friends', 'friend'), true);
+  assert.equal(canSee('private', 'friend'), false, 'private means nobody but the owner');
+  assert.equal(canSee('private', 'owner'), true);
+  assert.equal(canSee('friends', 'owner'), true, 'the owner sees everything');
+});
+
+test('a stored visibility map merges over defaults and drops junk', () => {
+  const m = sanitizeVisibility({ chapter: 'private', stats: 'nonsense', ghost: 'everyone' });
+  assert.equal(m.chapter, 'private', 'a real change survives');
+  assert.equal(m.stats, 'squads', 'an invalid audience falls back to the default');
+  assert.ok(!('ghost' in m), 'an unknown section is dropped');
+  assert.deepEqual(sanitizeVisibility(null), VISIBILITY_DEFAULTS);
+});
+
+// ── notifications ──────────────────────────────────────────────────────────────
+
+test('nine toggles across three sections, personal on / squad off / requests on', () => {
+  assert.equal(NOTIF_SECTIONS.flatMap((s) => s.toggles).length, 9);
+  assert.equal(NOTIF_DEFAULTS.honor_earned, true);
+  assert.equal(NOTIF_DEFAULTS.squad_feed, false);
+  assert.equal(NOTIF_DEFAULTS.squad_invites, true);
+});
+
+test('a stored notification map merges over defaults and ignores junk', () => {
+  const m = sanitizeNotif({ squad_feed: true, honor_earned: 'yes', ghost: true });
+  assert.equal(m.squad_feed, true, 'a real change survives');
+  assert.equal(m.honor_earned, true, 'a non-boolean falls back to the default');
+  assert.ok(!('ghost' in m));
+  assert.deepEqual(sanitizeNotif(undefined), NOTIF_DEFAULTS);
+});
+
+// ── preferences ────────────────────────────────────────────────────────────────
+
+test('app prefs default to imperial, haptics/sound on, reduce-motion off', () => {
+  assert.deepEqual(APP_PREFS_DEFAULTS, { units: 'imperial', haptics: true, sound: true, reduceMotion: false });
+});
+
+test('exactly the toggles with a real consumer today are marked live', () => {
+  const live = EXPERIENCE_TOGGLES.filter((t) => t.live).map((t) => t.key);
+  assert.deepEqual(live, ['reduceMotion'], 'haptics and sound have no consumer on web — do not claim they fire');
+});
+
+test('sanitizePrefs coerces each field and survives a malformed blob', () => {
+  const p = sanitizePrefs({ units: 'metric', haptics: false, sound: 'loud', reduceMotion: true });
+  assert.deepEqual(p, { units: 'metric', haptics: false, sound: true, reduceMotion: true });
+  assert.deepEqual(sanitizePrefs('nope'), APP_PREFS_DEFAULTS);
+  assert.equal(sanitizePrefs({ units: 'stones' }).units, 'imperial', 'an unknown system falls back');
+});

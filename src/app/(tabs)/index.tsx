@@ -18,6 +18,7 @@ import { YourCircleCard } from '@/components/forge/compositions/YourCircleCard';
 import { QuickActionsRow } from '@/components/forge/compositions/QuickActionsRow';
 import { FriendActionSheet } from '@/components/forge/compositions/TrainTogetherCard';
 import { FRIEND_ACTIVITY, HOME_CHAPTER, HOME_DATA, todaysPrinciple } from '@/data/home-placeholder';
+import { fetchHomeGym, saveHomeGym } from '@/data/home-gym-live';
 import { LIVE_TRAINING_USERS } from '@/data/live-training-placeholder';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { useQuery } from '@/lib/useQuery';
@@ -25,19 +26,23 @@ import { fetchAwaitingChapter } from '@/data/home-live';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { getSelfProfile } from '@/domain/profile/placeholder-data';
 import { useProfile } from '@/lib/profile';
-import { useAuth } from '@/lib/auth';
 import { ExperienceLevelCard, EXPERIENCE_FOR, type IntakeResult } from '@/components/forge/compositions/ExperienceLevelCard';
 import { getHomeLevel, setHomeLevel, clearHomeLevel } from '@/lib/home-level';
 import { getHomeIntake, setHomeIntake, clearHomeIntake } from '@/lib/home-intake';
 import { claimInitiativeHonor } from '@/data/honors-live';
 import { useTour } from '@/hooks/useTour';
-import { fetchMyPrograms } from '@/data/programs-live';
+import { adoptCatalogProgram, fetchMyPrograms, fetchProgramCompletedCount, startProgram } from '@/data/programs-live';
+import { structureFromDefinition } from '@/domain/program/adopt-core';
+import { itemByName } from '@/domain/exercise-picker/data';
+import { getProgramDefinitions } from '@/domain/training/programs';
+import { nextSession, totalSessions } from '@/domain/program/progress-core';
+import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { getActiveProgram, getActiveProgramById } from '@/domain/training/active-program';
 import { resolveRecommendationId } from '@/domain/onboarding/recommend-core';
 import type { Program, Workout } from '@/domain/training/schema';
 import { resolveHomeWorkoutArtwork } from '@/domain/home-artwork/resolver';
-import { enrichSessionExercises } from '@/domain/home-artwork/catalog';
+import { enrichSessionExercises, equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
 
 /** AppBar wordmark — pillar mark + serif "Forge Legacy", left-aligned. */
 function HomeWordmark() {
@@ -86,24 +91,6 @@ function FirstSessionCard({ onStart, onOpenPrograms }: { onStart: () => void; on
         </Button>
       </View>
     </Card>
-  );
-}
-
-/** Interim account menu (avatar tap) — name + Sign out. The real home is the deferred Account screen (P-9). */
-function AccountMenu({ open, name, onClose, onSignOut }: { open: boolean; name: string; onClose: () => void; onSignOut: () => void }) {
-  if (!open) return null;
-  return (
-    <Pressable style={styles.menuBackdrop} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close account menu">
-      <Pressable style={styles.menuCard} onPress={() => {}}>
-        <Text style={styles.menuName} numberOfLines={1}>
-          {name || 'Athlete'}
-        </Text>
-        <View style={styles.menuDivider} />
-        <Pressable onPress={onSignOut} accessibilityRole="button" accessibilityLabel="Sign out" style={styles.menuItem}>
-          <Text style={styles.menuItemText}>Sign out</Text>
-        </Pressable>
-      </Pressable>
-    </Pressable>
   );
 }
 
@@ -173,17 +160,9 @@ function ExploreForgeSection({ onOpen }: { onOpen: (route: Href) => void }) {
  */
 export default function HomeScreen() {
   const [friendSheetOpen, setFriendSheetOpen] = useState(false);
-  const [accountMenu, setAccountMenu] = useState(false);
   const router = useRouter();
   const { startWorkout } = useWorkoutSession();
-  const { signOut } = useAuth();
-  const { requestPrompt } = useTour();
-  // Interim sign-out: on session flip the boot router swaps back to the auth route (Welcome). The real
-  // home for this is the deferred Account/Settings screen (P-9); this avatar menu is the stopgap.
-  const closeMenuAndSignOut = () => {
-    setAccountMenu(false);
-    void signOut();
-  };
+  const { requestPrompt, markAnnounced } = useTour();
   // Live identity for the AppBar avatar. The artwork resolver below keeps its synchronous seed
   // profile — it must resolve the hero art on the first frame, and the art is static regardless.
   const { profile: liveProfile } = useProfile();
@@ -192,11 +171,22 @@ export default function HomeScreen() {
   const { data: awaiting, refetch: refetchAwaiting, loading: awaitingLoading } = useQuery(fetchAwaitingChapter, []);
   // The athlete's saved programs — if any, Home reflects them instead of the empty first-program card.
   const { data: myPrograms, refetch: refetchPrograms } = useQuery(fetchMyPrograms, []);
+  // How far into the built program the athlete is, so Home previews the NEXT session rather than always
+  // day 1 — and so the card matches the session the workout screen will actually open.
+  // The ACTIVE program anchors Home, falling back to the most recent. Picking `[0]` alone meant starting
+  // an older program changed nothing here — Home kept showing whichever was created last.
+  const builtProgram = (myPrograms ?? []).find((p) => p.state === 'active') ?? myPrograms?.[0] ?? null;
+  const builtId = builtProgram?.id ?? null;
+  const { data: builtDone, refetch: refetchBuiltDone } = useQuery(
+    () => (builtId ? fetchProgramCompletedCount(builtId) : Promise.resolve(0)),
+    [builtId],
+  );
   // Opt-in Home experience-level LENS (local only, ONB-Amendment-002) — undefined = loading, null = not
   // chosen (show the question), a level = show the suggested starting program. No DB write; re-askable.
   const { data: homeLevel, refetch: refetchLevel } = useQuery(getHomeLevel, []);
   // Goals + equipment intake (local only) — feeds the recommendation on the suggested face.
   const { data: homeIntake, refetch: refetchIntake } = useQuery(getHomeIntake, []);
+  const { data: homeGymData, refetch: refetchHomeGym } = useQuery(fetchHomeGym, []);
   // Re-read on focus so the hero flips OFF awaiting after the first workout AND reflects a program just
   // built in the builder (Home is a mounted tab; without this it fetches once and stays stale).
   const firstAwaitFocus = useRef(true);
@@ -209,7 +199,8 @@ export default function HomeScreen() {
       refetchAwaiting();
       refetchPrograms();
       refetchIntake();
-    }, [refetchAwaiting, refetchPrograms, refetchIntake]),
+      refetchBuiltDone(); // a workout just finished → advance the card to the next session
+    }, [refetchAwaiting, refetchPrograms, refetchIntake, refetchBuiltDone]),
   );
 
   // The program that anchors Home's "Today's Workout" + "Current Program" slots. Precedence:
@@ -218,7 +209,7 @@ export default function HomeScreen() {
   // resolver reads its exercises' composition (program=null) and degrades to the split/neutral art.
   const { profile, home } = useMemo(() => {
     const profile = getSelfProfile();
-    const built = myPrograms && myPrograms.length > 0 ? myPrograms[0] : null;
+    const built = builtProgram;
 
     let program: Program | null = null;
     let workout: Workout | null = null;
@@ -227,17 +218,22 @@ export default function HomeScreen() {
     let total = 0;
 
     if (built) {
-      const day = built.structure.days.find((d) => d.main.length > 0) ?? built.structure.days[0] ?? null;
+      // The NEXT unfinished session, not always the first — otherwise Home would keep offering Day A
+      // forever while the program's progress moved on beneath it.
+      const done = builtDone ?? 0;
+      const next = nextSession(built.structure, done);
+      const day = next?.day ?? built.structure.days.find((d) => d.main.length > 0) ?? built.structure.days[0] ?? null;
       workout = day
         ? {
             name: day.name.trim() || `Day ${day.letter}`,
             focus: day.name.trim() || undefined,
             exerciseCount: day.main.length,
-            exercises: day.main.map((ex) => ({ catalogKey: ex.catalogKey, workingSets: 3, section: 'main' as const })),
+            exercises: day.main.map((ex) => ({ catalogKey: ex.catalogKey ?? '', workingSets: ex.sets ?? 3, section: 'main' as const })),
           }
         : null;
       name = built.name;
-      total = (built.structure.weeks || 0) * (built.structure.daysPerWeek || 0);
+      completed = done;
+      total = totalSessions(built.structure);
     } else {
       const prog =
         awaiting && homeLevel != null
@@ -264,7 +260,7 @@ export default function HomeScreen() {
     });
 
     return { profile, home: { workout, resolved, name, completed, total } };
-  }, [myPrograms, awaiting, homeLevel, homeIntake]);
+  }, [builtProgram, builtDone, awaiting, homeLevel, homeIntake]);
 
   const { mission } = HOME_DATA;
 
@@ -278,21 +274,56 @@ export default function HomeScreen() {
   const completeIntake = async (r: IntakeResult) => {
     await setHomeLevel(r.level);
     await setHomeIntake({ goals: r.goals, primaryGoal: r.primaryGoal, equipment: r.equipment });
-    // First-move honor (accept/choose path): grant "Initiative" — best-effort, DB dedupes to one row.
-    void claimInitiativeHonor().catch(() => {});
+    // The quick-picked gym, when they trained one out. Absent = skipped, which must leave the profile
+    // UNSET rather than empty — "I didn't answer" and "I own nothing" mean different things downstream.
+    if (r.homeGym) await saveHomeGym(r.homeGym).catch(() => {});
+    // NO honor here. Answering three questions about yourself is not a first move — Initiative is
+    // earned by actually committing to a program (`acceptSuggestion`) or building one. Granting it at
+    // intake meant the ceremony fired before the athlete had chosen anything at all.
     refetchLevel();
     refetchIntake();
+    refetchHomeGym();
   };
+  /**
+   * Accept the recommendation. It's a catalog definition, so adopt it into a real program row and start
+   * it — the same path as picking one from Discover. Without adoption the athlete would be "on" a program
+   * that has no record, no progress and nothing for their workouts to attach to.
+   */
+  const acceptSuggestion = async (defId: string) => {
+    const def = getProgramDefinitions().find((d) => d.id === defId);
+    if (!def) return;
+    try {
+      const equipFor = (key: string) => equipmentForCatalogKey(key) ?? undefined;
+      const adopted = await adoptCatalogProgram(def.id, structureFromDefinition(def, equipFor, (n) => itemByName(n)?.key));
+      await startProgram(adopted.id);
+      // NOW it's a first move: they picked a program and it's really started. Best-effort, DB dedupes
+      // to one row; if it was already held there is nothing to celebrate, so retire the ceremony
+      // rather than re-announcing an honor the athlete earned long ago.
+      void claimInitiativeHonor()
+        .then((newlyEarned) => {
+          if (!newlyEarned) markAnnounced();
+        })
+        .catch(() => {});
+      refetchPrograms();
+      refetchBuiltDone();
+    } catch {
+      // leave them on the suggestion rather than dropping them somewhere unexplained
+    }
+  };
+
   const changeIntake = async () => {
     await clearHomeLevel();
     await clearHomeIntake();
     refetchLevel();
     refetchIntake();
   };
-  // Start the Home program's next workout (built / chosen / demo). The demo logger runs it (BU-1 deferred).
-  const startHomeWorkout = () => {
+  // Start the Home program's next workout (built / chosen / demo). When it's a program the athlete built,
+  // stamp the launch context first so the finished session is attributed to it — without this the workout
+  // saves unattributed and the program's progress never moves.
+  const startHomeWorkout = async () => {
     const w = home.workout;
     if (!w) return;
+    if (builtId) await writeWorkoutLaunch({ programId: builtId });
     const lifts = (w.exercises ?? [])
       .filter((e) => e.section === 'main' && !e.optional)
       .map((e) => ({ catalogKey: e.catalogKey, name: exerciseNameFor(e.catalogKey), workingSets: e.workingSets }));
@@ -312,8 +343,19 @@ export default function HomeScreen() {
   // collecting their starting point (no program, no level yet). The first-workout ceremony (ONB-D18) is
   // unaffected — it lives in the workout-complete flow, not this gate.
   const stillCollecting = !!awaiting && !hasProgram && homeLevel == null;
+  /**
+   * Intake answered, but nothing chosen yet — show the recommendation and let the athlete decide.
+   * This step existed on the card (`mode="suggested"`) but was never rendered: finishing the intake
+   * dropped straight through to the full Home with a program silently assigned, so the athlete never
+   * saw what was picked for them or had any say in it.
+   */
+  const showSuggestion = !!awaiting && !hasProgram && homeLevel != null;
   // A real "first move" — the athlete has built OR chosen a program (the unlock ceremony's trigger).
-  const hasProgramSignal = hasProgram || homeLevel != null;
+  //
+  // This used to also accept `homeLevel != null`, which is only "they answered the experience question".
+  // So the ceremony fired the moment the intake finished — while the athlete was still looking at the
+  // suggestion, before they had picked anything. A program, and nothing less, is the first move.
+  const hasProgramSignal = hasProgram;
 
   // First-move unlock (Onboarding-Amendment-003): once the full (un-gated) Home is settled AND a program
   // exists, announce the "Legacy Unlocked" ceremony (which hands to the guided tour). Guarded on the awaiting
@@ -325,14 +367,14 @@ export default function HomeScreen() {
     }, [awaitingLoading, stillCollecting, hasProgramSignal, requestPrompt]),
   );
 
-  if (stillCollecting) {
+  if (stillCollecting || showSuggestion) {
     return (
       <View style={styles.root}>
         <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.15)' }} />
         <AppBar
           title={<HomeWordmark />}
           avatar={<Avatar name={liveProfile?.name ?? ''} src={liveProfile?.avatarUrl ?? undefined} size="appBar" />}
-          onAvatar={() => setAccountMenu(true)}
+          onAvatar={() => router.push('/account-settings')}
         />
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <ChapterTitleBlock
@@ -346,13 +388,23 @@ export default function HomeScreen() {
             {homeLevel === undefined ? (
               // Level lens still loading — the first-session card (no flash of the stepper).
               <FirstSessionCard onStart={startFirst} onOpenPrograms={openPrograms} />
+            ) : showSuggestion && homeLevel != null ? (
+              // Answered — show WHAT was recommended and why, with a real choice about it.
+              <ExperienceLevelCard
+                mode="suggested"
+                level={homeLevel}
+                intake={homeIntake ?? null}
+                homeGym={homeGymData ?? null}
+                onStart={(programId) => void acceptSuggestion(programId)}
+                onExplore={openPrograms}
+                onChange={changeIntake}
+              />
             ) : (
               // Still collecting — the intake stepper (level → goals → equipment), ALONE.
               <ExperienceLevelCard mode="collect" onComplete={completeIntake} onBuild={openBuilder} />
             )}
           </View>
         </ScrollView>
-        <AccountMenu open={accountMenu} name={liveProfile?.name ?? ''} onClose={() => setAccountMenu(false)} onSignOut={closeMenuAndSignOut} />
       </View>
     );
   }
@@ -364,7 +416,7 @@ export default function HomeScreen() {
       <AppBar
         title={<HomeWordmark />}
         avatar={<Avatar name={liveProfile?.name ?? profile.name} src={liveProfile?.avatarUrl ?? undefined} size="appBar" />}
-        onAvatar={() => setAccountMenu(true)}
+        onAvatar={() => router.push('/account-settings')}
       />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -399,8 +451,15 @@ export default function HomeScreen() {
               total={home.total}
               missionTarget={mission.goal.label}
               goalsRemaining={2}
-              // Tap "Current Program": a fresh athlete's suggestion → re-pick (Change); otherwise browse programs.
-              onProgram={awaiting && homeLevel != null && !hasProgram ? changeIntake : openPrograms}
+              // Tap "Current Program": a fresh athlete's suggestion → re-pick (Change); a program the
+              // athlete built → its detail (schedule, progress, log); otherwise browse programs.
+              onProgram={
+                awaiting && homeLevel != null && !hasProgram
+                  ? changeIntake
+                  : builtId
+                    ? () => router.push({ pathname: '/program/[id]', params: { id: builtId } })
+                    : openPrograms
+              }
               onMission={() => {
                 // G-1 Goal Hub — not yet implemented.
               }}
@@ -440,7 +499,6 @@ export default function HomeScreen() {
           // C-2 Create Challenge, FRIENDS context — not yet implemented.
         }}
       />
-      <AccountMenu open={accountMenu} name={liveProfile?.name ?? profile.name} onClose={() => setAccountMenu(false)} onSignOut={closeMenuAndSignOut} />
     </View>
   );
 }

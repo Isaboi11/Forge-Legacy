@@ -1,7 +1,8 @@
 import { clearHomeLevel } from './home-level';
 import { clearHomeIntake } from './home-intake';
-import { clearTourStatus } from './tour';
+import { clearTourStatus, clearUnlockAnnounced } from './tour';
 import { clearScreenPrompts } from './screen-prompts';
+import { clearRestTimerPref } from './rest-timer-pref';
 
 /**
  * Clear the device-local first-run flags. These live in AsyncStorage (localStorage on web) and are NOT
@@ -13,5 +14,12 @@ import { clearScreenPrompts } from './screen-prompts';
  * stay in step. Extend this as more local first-run flags land.
  */
 export async function resetFirstRunFlags(): Promise<void> {
-  await Promise.all([clearHomeLevel(), clearHomeIntake(), clearTourStatus(), clearScreenPrompts()]);
+  await Promise.all([
+    clearHomeLevel(),
+    clearHomeIntake(),
+    clearTourStatus(),
+    clearUnlockAnnounced(),
+    clearScreenPrompts(),
+    clearRestTimerPref(),
+  ]);
 }

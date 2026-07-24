@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useRef, useState, type ReactNode, useMemo } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,6 +18,8 @@ import { PLACEHOLDER_RANK, type RankFamily, type RankLevel } from '@/domain/rank
 import { resolveRankBadge } from '@/domain/rank-artwork/badge-art';
 import { RankSeal } from '@/components/forge/RankSeal';
 import { fetchLegacyData } from '@/data/legacy-live';
+import { fetchAccomplishments } from '@/data/accomplishments-live';
+import { formatAccDate } from '@/domain/legacy/accomplishments';
 import { useQuery } from '@/lib/useQuery';
 import type { Pin } from '@/types/legacy';
 import {
@@ -31,6 +33,7 @@ import {
   TimelineRow,
 } from '@/components/forge/profile-sections';
 import { ScreenTour } from '@/components/tour/ScreenTour';
+import { PinManagerSheet } from '@/components/forge/PinManagerSheet';
 
 /**
  * Legacy tab root — L-1 Legacy Hub.
@@ -39,10 +42,10 @@ import { ScreenTour } from '@/components/tour/ScreenTour';
  * Rebuilt on the foundation tokens + committed composites to match Home/Workouts
  * (the pre-existing `components/legacy/*` are old `legacy-theme` and now bannered
  * legacy). Sections, top to bottom: the hero (identity + "My Standard" creed +
- * current chapter & primary goal), Pinned Legacy (empty museum), Featured Legacy
+ * current chapter & primary goal), Pinned Legacy (curated cross-type museum), Featured Legacy
  * Moment, My Story (chapter history + timeline preview), What Endures.
- * Pinned Legacy renders real pins from the spine (video pins open the fullscreen player) + the inert
- * "Pin an item" add-tile; the pin-curation sheet (L-13) is not yet built.
+ * Pinned Legacy renders real pins (video pins open the fullscreen player); the L-13 pin manager
+ * (PinManagerSheet) curates them — accomplishments/honors/chapters pinnable, max 6 (migrations 0023/0024).
  * (Transformation/Photos/Trophy preview rows + Accomplishments + Honors), and the
  * closing inscription.
  *
@@ -66,7 +69,7 @@ import { ScreenTour } from '@/components/tour/ScreenTour';
  * but the honor art was never imported).
  *
  * Deferred to a follow-up sub-phase (noted at the gate): the three bottom sheets
- * (L-11 Honor Detail, L-12 My Standard editor, L-13 Pin manager), the Toast, the
+ * (L-11 Honor Detail, L-12 My Standard editor), the Toast, the
  * scroll-driven artwork fade, and Transformation/Trophy counts (no data). Taps to
  * unbuilt destinations are inert, consistent with Home/Workouts.
  */
@@ -75,6 +78,20 @@ export default function LegacyScreen() {
   const router = useRouter();
   const { profile } = useProfile();
   const { data, error, refetch } = useQuery(fetchLegacyData, []);
+  // Accomplishments are now LIVE (0023) — replacing the fixture. Newest first; the strip shows a few and
+  // "View all" opens the full L-12 screen. `featured` drives the filled star.
+  const { data: accData, refetch: refetchAcc } = useQuery(fetchAccomplishments, []);
+  const liveAccomplishments = useMemo(
+    () =>
+      (accData ?? []).map((a) => ({
+        id: a.id,
+        text: a.name,
+        monthYear: formatAccDate(a.date) || formatAccDate(a.createdAt),
+        featured: a.featured,
+      })),
+    [accData],
+  );
+  const [pinManager, setPinManager] = useState(false);
   // Scroll-driven hero choreography (the .dc "premium scroll choreography"): the background scrim
   // fades in (ScreenBackground `scrimFade`), the hero parallaxes up + fades, and the portrait scales
   // down from its left edge. All native-driver transform/opacity.
@@ -117,9 +134,7 @@ export default function LegacyScreen() {
         title="Legacy"
         serif
         avatar={<Avatar name={profile.name} src={profile.avatarUrl ?? undefined} size="appBar" />}
-        onAvatar={() => {
-          // P-1 Profile / Account — not yet implemented.
-        }}
+        onAvatar={() => router.push('/account-settings')}
       />
 
       <Animated.ScrollView
@@ -156,10 +171,10 @@ export default function LegacyScreen() {
         {/* What I'm Building — current chapter + primary goal */}
         {chapter ? <CurrentChapter chapter={chapter} dayCount={data.dayCount} onOpen={() => {}} /> : null}
 
-        {/* ── PINNED LEGACY · My Museum (real pins + inert add-tile) ── */}
+        {/* ── PINNED LEGACY · My Museum (real pins + L-13 pin manager) ── */}
         <View style={styles.section}>
           <View style={styles.sectionHeaderPad}>
-            <SectionHeader label="Pinned Legacy" />
+            <SectionHeader label="Pinned Legacy" action="Edit" onAction={() => setPinManager(true)} />
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stripPad}>
             {data.pinned.map((pin) => (
@@ -172,9 +187,7 @@ export default function LegacyScreen() {
               />
             ))}
             <Pressable
-              onPress={() => {
-                // L-13 Pin manager — not yet implemented.
-              }}
+              onPress={() => setPinManager(true)}
               accessibilityRole="button"
               accessibilityLabel="Pin an item to your Legacy"
               style={styles.pinTile}
@@ -237,15 +250,15 @@ export default function LegacyScreen() {
             <PreviewRow title="Trophy Case" sub="Championships & podium finishes" onPress={() => {}} />
           </View>
 
-          {/* Accomplishments */}
-          {data.accomplishments.length > 0 ? (
+          {/* Accomplishments — live (0023). Section hides entirely when the athlete has none. */}
+          {liveAccomplishments.length > 0 ? (
             <View>
               <View style={styles.sectionHeaderPad}>
-                <SectionHeader label="Accomplishments" action="View all" onAction={() => {}} />
+                <SectionHeader label="Accomplishments" action="View all" onAction={() => router.push('/accomplishments')} />
               </View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stripPad}>
-                {data.accomplishments.map((a) => (
-                  <AccomplishmentCard key={a.id} item={a} />
+                {liveAccomplishments.map((a) => (
+                  <AccomplishmentCard key={a.id} item={a} onPress={() => router.push('/accomplishments')} />
                 ))}
               </ScrollView>
             </View>
@@ -278,6 +291,17 @@ export default function LegacyScreen() {
       </Animated.ScrollView>
 
       <ScreenTour screenKey="legacy" />
+
+      <PinManagerSheet
+        open={pinManager}
+        onClose={(changed) => {
+          setPinManager(false);
+          if (changed) {
+            refetch(); // the museum strip (data.pinned) reflects the new curation
+            refetchAcc(); // a just-added accomplishment could have been pinned — keep the strip's stars in step
+          }
+        }}
+      />
     </View>
   );
 }
@@ -301,10 +325,11 @@ function LegacyShell({
   avatarSrc?: string;
   children: ReactNode;
 }) {
+  const router = useRouter();
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.legacyMountains} overlay={{ flat: 'rgba(5,5,5,0.30)' }} scrimFade scrollY={scrollY} />
-      <AppBar title="Legacy" serif avatar={<Avatar name={avatarName} src={avatarSrc} size="appBar" />} onAvatar={() => {}} />
+      <AppBar title="Legacy" serif avatar={<Avatar name={avatarName} src={avatarSrc} size="appBar" />} onAvatar={() => router.push('/account-settings')} />
       <View style={styles.statusWrap}>{children}</View>
     </View>
   );

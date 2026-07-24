@@ -5,6 +5,45 @@ import { resolveRecommendationId, intendedProgramId, accessFor, FALLBACK_ID, ADV
 const SF_I = FALLBACK_ID; // strength-foundation-i-3day
 const SF_II = ADVANCED_ID; // strength-foundation-ii-4day
 
+/**
+ * "Home Gym" is one checkbox spanning a pair of bands and a fully-kitted garage. Once a real profile
+ * exists, the gear decides the tier — otherwise both athletes get the same program.
+ */
+test('a real Home Gym profile refines the "homegym" answer instead of guessing', () => {
+  assert.equal(accessFor(['homegym'], null), 'home', 'no profile — the checkbox stands alone');
+  assert.equal(accessFor(['homegym'], ['barbell', 'rack']), 'gym', 'a bar and a rack runs barbell programming');
+  assert.equal(accessFor(['homegym'], ['barbell', 'bench']), 'gym');
+  assert.equal(accessFor(['homegym'], ['dumbbells']), 'home');
+  assert.equal(accessFor(['homegym'], ['barbell']), 'home', 'a loose bar with nothing to rack it on is not a gym');
+  assert.equal(accessFor(['homegym'], ['bands', 'mat', 'pullup']), 'bodyweight');
+  assert.equal(accessFor(['homegym'], []), 'bodyweight', 'an empty profile is a real answer');
+});
+
+test('a home profile never downgrades someone who said they have a full gym', () => {
+  assert.equal(accessFor(['fullgym'], []), 'gym', 'their commercial gym is not described by their garage');
+  assert.equal(accessFor(['fullgym', 'homegym'], []), 'gym');
+});
+
+/**
+ * The tier reaches a different INTENDED program — but with only SF I + SF II authored, the alias table
+ * collapses both onto Strength Foundation I today. Asserting the delivered program differs would be
+ * asserting a thin catalog's accident; asserting the intent differs is the real, durable claim.
+ */
+test('the refined tier reaches a different intended program (catalog willing)', () => {
+  const base = { experience: 'beginner', primaryGoal: 'strength' };
+  const bare = intendedProgramId({ ...base, equipment: ['homegym'], homeGym: ['bands'] });
+  const kitted = intendedProgramId({ ...base, equipment: ['homegym'], homeGym: ['barbell', 'rack', 'bench'] });
+  assert.notEqual(bare, kitted, 'otherwise the profile would be decorative');
+  assert.equal(kitted, 'strength-foundation-1');
+  assert.equal(bare, 'fbh-bodyweight-basics');
+
+  assert.equal(
+    resolveRecommendationId({ ...base, equipment: ['homegym'], homeGym: ['bands'] }),
+    resolveRecommendationId({ ...base, equipment: ['homegym'], homeGym: ['barbell', 'rack', 'bench'] }),
+    'both still resolve to SF I — a 2-program catalog, not a broken tier. Revisit when the catalog grows.',
+  );
+});
+
 test('accessFor — richest access wins', () => {
   assert.equal(accessFor(['fullgym']), 'gym');
   assert.equal(accessFor(['fullgym', 'bands']), 'gym');

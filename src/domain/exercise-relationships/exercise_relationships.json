@@ -2327,6 +2327,150 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "arm-circles__knee-to-wall-ankle-mobilization",
+    "sourceExerciseId": "arm-circles",
+    "targetExerciseId": "knee-to-wall-ankle-mobilization",
+    "type": "Substitute",
+    "rank": 1,
+    "compatibilityScore": 64,
+    "movementPattern": "Mobility",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the mobility pattern with a similar exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "arm-circles__shoulder-rolls",
+    "sourceExerciseId": "arm-circles",
+    "targetExerciseId": "shoulder-rolls",
+    "type": "Substitute",
+    "rank": 2,
+    "compatibilityScore": 64,
+    "movementPattern": "Mobility",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the mobility pattern with a similar exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "arm-circles__wall-angel",
+    "sourceExerciseId": "arm-circles",
+    "targetExerciseId": "wall-angel",
+    "type": "Substitute",
+    "rank": 3,
+    "compatibilityScore": 64,
+    "movementPattern": "Mobility",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the mobility pattern with a similar exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "arm-circles__90-90-hip-stretch",
+    "sourceExerciseId": "arm-circles",
+    "targetExerciseId": "90-90-hip-stretch",
+    "type": "Progression",
+    "rank": 4,
+    "compatibilityScore": 60.5,
+    "movementPattern": "Mobility",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding mobility progression with greater technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "arm-circles__90-90-hip-switch",
+    "sourceExerciseId": "arm-circles",
+    "targetExerciseId": "90-90-hip-switch",
+    "type": "Progression",
+    "rank": 5,
+    "compatibilityScore": 60.5,
+    "movementPattern": "Mobility",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding mobility progression with greater technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "arm-circles__ankle-car",
+    "sourceExerciseId": "arm-circles",
+    "targetExerciseId": "ankle-car",
+    "type": "Progression",
+    "rank": 6,
+    "compatibilityScore": 60.5,
+    "movementPattern": "Mobility",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding mobility progression with greater technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "arm-circles__ankle-dorsiflexion-mobilization",
+    "sourceExerciseId": "arm-circles",
+    "targetExerciseId": "ankle-dorsiflexion-mobilization",
+    "type": "Progression",
+    "rank": 7,
+    "compatibilityScore": 60.5,
+    "movementPattern": "Mobility",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding mobility progression with greater technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "arm-circles__band-shoulder-dislocate",
+    "sourceExerciseId": "arm-circles",
+    "targetExerciseId": "band-shoulder-dislocate",
+    "type": "Progression",
+    "rank": 8,
+    "compatibilityScore": 60.5,
+    "movementPattern": "Mobility",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding mobility progression with greater technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "arm-ergometer__jacobs-ladder",
     "sourceExerciseId": "arm-ergometer",
     "targetExerciseId": "jacobs-ladder",
@@ -56015,11 +56159,29 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "easy-run__treadmill-walk",
+    "sourceExerciseId": "easy-run",
+    "targetExerciseId": "treadmill-walk",
+    "type": "Substitute",
+    "rank": 2,
+    "compatibilityScore": 70,
+    "movementPattern": "Cardio / Locomotion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the conditioning pattern with a similar exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "easy-run__air-bike",
     "sourceExerciseId": "easy-run",
     "targetExerciseId": "air-bike",
     "type": "Progression",
-    "rank": 2,
+    "rank": 3,
     "compatibilityScore": 66.5,
     "movementPattern": "Cardio / Locomotion",
     "preservesPattern": true,
@@ -56037,7 +56199,7 @@
     "sourceExerciseId": "easy-run",
     "targetExerciseId": "air-bike-intervals",
     "type": "Progression",
-    "rank": 3,
+    "rank": 4,
     "compatibilityScore": 66.5,
     "movementPattern": "Cardio / Locomotion",
     "preservesPattern": true,
@@ -56055,7 +56217,7 @@
     "sourceExerciseId": "easy-run",
     "targetExerciseId": "brisk-walk",
     "type": "Progression",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 66.5,
     "movementPattern": "Cardio / Locomotion",
     "preservesPattern": true,
@@ -56073,7 +56235,7 @@
     "sourceExerciseId": "easy-run",
     "targetExerciseId": "elliptical",
     "type": "Progression",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 66.5,
     "movementPattern": "Cardio / Locomotion",
     "preservesPattern": true,
@@ -56091,7 +56253,7 @@
     "sourceExerciseId": "easy-run",
     "targetExerciseId": "elliptical-intervals",
     "type": "Progression",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 66.5,
     "movementPattern": "Cardio / Locomotion",
     "preservesPattern": true,
@@ -56108,24 +56270,6 @@
     "id": "easy-run__fartlek-run",
     "sourceExerciseId": "easy-run",
     "targetExerciseId": "fartlek-run",
-    "type": "Progression",
-    "rank": 7,
-    "compatibilityScore": 66.5,
-    "movementPattern": "Cardio / Locomotion",
-    "preservesPattern": true,
-    "samePrimaryMuscle": false,
-    "sharedPrimaryMuscleIds": [],
-    "equipmentChange": false,
-    "swapContexts": [
-      "Skill progression"
-    ],
-    "reason": "A more demanding conditioning progression with greater technical and stability demand.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "easy-run__interval-run",
-    "sourceExerciseId": "easy-run",
-    "targetExerciseId": "interval-run",
     "type": "Progression",
     "rank": 8,
     "compatibilityScore": 66.5,
@@ -71528,11 +71672,47 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "knee-to-wall-ankle-mobilization__arm-circles",
+    "sourceExerciseId": "knee-to-wall-ankle-mobilization",
+    "targetExerciseId": "arm-circles",
+    "type": "Substitute",
+    "rank": 1,
+    "compatibilityScore": 64,
+    "movementPattern": "Mobility",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the mobility pattern with a similar exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "knee-to-wall-ankle-mobilization__shoulder-rolls",
+    "sourceExerciseId": "knee-to-wall-ankle-mobilization",
+    "targetExerciseId": "shoulder-rolls",
+    "type": "Substitute",
+    "rank": 2,
+    "compatibilityScore": 64,
+    "movementPattern": "Mobility",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the mobility pattern with a similar exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "knee-to-wall-ankle-mobilization__wall-angel",
     "sourceExerciseId": "knee-to-wall-ankle-mobilization",
     "targetExerciseId": "wall-angel",
     "type": "Substitute",
-    "rank": 1,
+    "rank": 3,
     "compatibilityScore": 64,
     "movementPattern": "Mobility",
     "preservesPattern": true,
@@ -71550,7 +71730,7 @@
     "sourceExerciseId": "knee-to-wall-ankle-mobilization",
     "targetExerciseId": "90-90-hip-stretch",
     "type": "Progression",
-    "rank": 2,
+    "rank": 4,
     "compatibilityScore": 60.5,
     "movementPattern": "Mobility",
     "preservesPattern": true,
@@ -71568,7 +71748,7 @@
     "sourceExerciseId": "knee-to-wall-ankle-mobilization",
     "targetExerciseId": "90-90-hip-switch",
     "type": "Progression",
-    "rank": 3,
+    "rank": 5,
     "compatibilityScore": 60.5,
     "movementPattern": "Mobility",
     "preservesPattern": true,
@@ -71586,7 +71766,7 @@
     "sourceExerciseId": "knee-to-wall-ankle-mobilization",
     "targetExerciseId": "ankle-car",
     "type": "Progression",
-    "rank": 4,
+    "rank": 6,
     "compatibilityScore": 60.5,
     "movementPattern": "Mobility",
     "preservesPattern": true,
@@ -71604,7 +71784,7 @@
     "sourceExerciseId": "knee-to-wall-ankle-mobilization",
     "targetExerciseId": "ankle-dorsiflexion-mobilization",
     "type": "Progression",
-    "rank": 5,
+    "rank": 7,
     "compatibilityScore": 60.5,
     "movementPattern": "Mobility",
     "preservesPattern": true,
@@ -71621,42 +71801,6 @@
     "id": "knee-to-wall-ankle-mobilization__band-shoulder-dislocate",
     "sourceExerciseId": "knee-to-wall-ankle-mobilization",
     "targetExerciseId": "band-shoulder-dislocate",
-    "type": "Progression",
-    "rank": 6,
-    "compatibilityScore": 60.5,
-    "movementPattern": "Mobility",
-    "preservesPattern": true,
-    "samePrimaryMuscle": false,
-    "sharedPrimaryMuscleIds": [],
-    "equipmentChange": false,
-    "swapContexts": [
-      "Skill progression"
-    ],
-    "reason": "A more demanding mobility progression with greater technical and stability demand.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "knee-to-wall-ankle-mobilization__breathing-drill-90-90",
-    "sourceExerciseId": "knee-to-wall-ankle-mobilization",
-    "targetExerciseId": "breathing-drill-90-90",
-    "type": "Progression",
-    "rank": 7,
-    "compatibilityScore": 60.5,
-    "movementPattern": "Mobility",
-    "preservesPattern": true,
-    "samePrimaryMuscle": false,
-    "sharedPrimaryMuscleIds": [],
-    "equipmentChange": false,
-    "swapContexts": [
-      "Skill progression"
-    ],
-    "reason": "A more demanding mobility progression with greater technical and stability demand.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "knee-to-wall-ankle-mobilization__cat-cow",
-    "sourceExerciseId": "knee-to-wall-ankle-mobilization",
-    "targetExerciseId": "cat-cow",
     "type": "Progression",
     "rank": 8,
     "compatibilityScore": 60.5,
@@ -86892,11 +87036,29 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "recovery-ride__treadmill-walk",
+    "sourceExerciseId": "recovery-ride",
+    "targetExerciseId": "treadmill-walk",
+    "type": "Substitute",
+    "rank": 3,
+    "compatibilityScore": 64,
+    "movementPattern": "Cardio / Locomotion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the conditioning pattern with a similar exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "recovery-ride__air-bike",
     "sourceExerciseId": "recovery-ride",
     "targetExerciseId": "air-bike",
     "type": "Progression",
-    "rank": 3,
+    "rank": 4,
     "compatibilityScore": 60.5,
     "movementPattern": "Cardio / Locomotion",
     "preservesPattern": true,
@@ -86914,7 +87076,7 @@
     "sourceExerciseId": "recovery-ride",
     "targetExerciseId": "air-bike-intervals",
     "type": "Progression",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 60.5,
     "movementPattern": "Cardio / Locomotion",
     "preservesPattern": true,
@@ -86932,7 +87094,7 @@
     "sourceExerciseId": "recovery-ride",
     "targetExerciseId": "arc-trainer",
     "type": "Progression",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 60.5,
     "movementPattern": "Cardio / Locomotion",
     "preservesPattern": true,
@@ -86950,7 +87112,7 @@
     "sourceExerciseId": "recovery-ride",
     "targetExerciseId": "boxing-mitt-work",
     "type": "Progression",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 60.5,
     "movementPattern": "Cardio / Locomotion",
     "preservesPattern": true,
@@ -86967,24 +87129,6 @@
     "id": "recovery-ride__brisk-walk",
     "sourceExerciseId": "recovery-ride",
     "targetExerciseId": "brisk-walk",
-    "type": "Progression",
-    "rank": 7,
-    "compatibilityScore": 60.5,
-    "movementPattern": "Cardio / Locomotion",
-    "preservesPattern": true,
-    "samePrimaryMuscle": false,
-    "sharedPrimaryMuscleIds": [],
-    "equipmentChange": false,
-    "swapContexts": [
-      "Skill progression"
-    ],
-    "reason": "A more demanding conditioning progression with greater technical and stability demand.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "recovery-ride__cycling-intervals",
-    "sourceExerciseId": "recovery-ride",
-    "targetExerciseId": "cycling-intervals",
     "type": "Progression",
     "rank": 8,
     "compatibilityScore": 60.5,
@@ -87018,11 +87162,29 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "recovery-run__treadmill-walk",
+    "sourceExerciseId": "recovery-run",
+    "targetExerciseId": "treadmill-walk",
+    "type": "Substitute",
+    "rank": 2,
+    "compatibilityScore": 70,
+    "movementPattern": "Cardio / Locomotion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the conditioning pattern with a similar exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "recovery-run__air-bike",
     "sourceExerciseId": "recovery-run",
     "targetExerciseId": "air-bike",
     "type": "Progression",
-    "rank": 2,
+    "rank": 3,
     "compatibilityScore": 66.5,
     "movementPattern": "Cardio / Locomotion",
     "preservesPattern": true,
@@ -87040,7 +87202,7 @@
     "sourceExerciseId": "recovery-run",
     "targetExerciseId": "air-bike-intervals",
     "type": "Progression",
-    "rank": 3,
+    "rank": 4,
     "compatibilityScore": 66.5,
     "movementPattern": "Cardio / Locomotion",
     "preservesPattern": true,
@@ -87058,7 +87220,7 @@
     "sourceExerciseId": "recovery-run",
     "targetExerciseId": "brisk-walk",
     "type": "Progression",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 66.5,
     "movementPattern": "Cardio / Locomotion",
     "preservesPattern": true,
@@ -87076,7 +87238,7 @@
     "sourceExerciseId": "recovery-run",
     "targetExerciseId": "elliptical",
     "type": "Progression",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 66.5,
     "movementPattern": "Cardio / Locomotion",
     "preservesPattern": true,
@@ -87094,7 +87256,7 @@
     "sourceExerciseId": "recovery-run",
     "targetExerciseId": "elliptical-intervals",
     "type": "Progression",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 66.5,
     "movementPattern": "Cardio / Locomotion",
     "preservesPattern": true,
@@ -87111,24 +87273,6 @@
     "id": "recovery-run__fartlek-run",
     "sourceExerciseId": "recovery-run",
     "targetExerciseId": "fartlek-run",
-    "type": "Progression",
-    "rank": 7,
-    "compatibilityScore": 66.5,
-    "movementPattern": "Cardio / Locomotion",
-    "preservesPattern": true,
-    "samePrimaryMuscle": false,
-    "sharedPrimaryMuscleIds": [],
-    "equipmentChange": false,
-    "swapContexts": [
-      "Skill progression"
-    ],
-    "reason": "A more demanding conditioning progression with greater technical and stability demand.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "recovery-run__interval-run",
-    "sourceExerciseId": "recovery-run",
-    "targetExerciseId": "interval-run",
     "type": "Progression",
     "rank": 8,
     "compatibilityScore": 66.5,
@@ -91927,6 +92071,150 @@
       "General swap"
     ],
     "reason": "Preserves the mobility pattern with a similar exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "shoulder-rolls__arm-circles",
+    "sourceExerciseId": "shoulder-rolls",
+    "targetExerciseId": "arm-circles",
+    "type": "Substitute",
+    "rank": 1,
+    "compatibilityScore": 64,
+    "movementPattern": "Mobility",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the mobility pattern with a similar exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "shoulder-rolls__knee-to-wall-ankle-mobilization",
+    "sourceExerciseId": "shoulder-rolls",
+    "targetExerciseId": "knee-to-wall-ankle-mobilization",
+    "type": "Substitute",
+    "rank": 2,
+    "compatibilityScore": 64,
+    "movementPattern": "Mobility",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the mobility pattern with a similar exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "shoulder-rolls__wall-angel",
+    "sourceExerciseId": "shoulder-rolls",
+    "targetExerciseId": "wall-angel",
+    "type": "Substitute",
+    "rank": 3,
+    "compatibilityScore": 64,
+    "movementPattern": "Mobility",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the mobility pattern with a similar exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "shoulder-rolls__90-90-hip-stretch",
+    "sourceExerciseId": "shoulder-rolls",
+    "targetExerciseId": "90-90-hip-stretch",
+    "type": "Progression",
+    "rank": 4,
+    "compatibilityScore": 60.5,
+    "movementPattern": "Mobility",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding mobility progression with greater technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "shoulder-rolls__90-90-hip-switch",
+    "sourceExerciseId": "shoulder-rolls",
+    "targetExerciseId": "90-90-hip-switch",
+    "type": "Progression",
+    "rank": 5,
+    "compatibilityScore": 60.5,
+    "movementPattern": "Mobility",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding mobility progression with greater technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "shoulder-rolls__ankle-car",
+    "sourceExerciseId": "shoulder-rolls",
+    "targetExerciseId": "ankle-car",
+    "type": "Progression",
+    "rank": 6,
+    "compatibilityScore": 60.5,
+    "movementPattern": "Mobility",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding mobility progression with greater technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "shoulder-rolls__ankle-dorsiflexion-mobilization",
+    "sourceExerciseId": "shoulder-rolls",
+    "targetExerciseId": "ankle-dorsiflexion-mobilization",
+    "type": "Progression",
+    "rank": 7,
+    "compatibilityScore": 60.5,
+    "movementPattern": "Mobility",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding mobility progression with greater technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "shoulder-rolls__band-shoulder-dislocate",
+    "sourceExerciseId": "shoulder-rolls",
+    "targetExerciseId": "band-shoulder-dislocate",
+    "type": "Progression",
+    "rank": 8,
+    "compatibilityScore": 60.5,
+    "movementPattern": "Mobility",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding mobility progression with greater technical and stability demand.",
     "editorialStatus": "Auto-Generated"
   },
   {
@@ -112670,11 +112958,30 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "treadmill-incline-walk__treadmill-walk",
+    "sourceExerciseId": "treadmill-incline-walk",
+    "targetExerciseId": "treadmill-walk",
+    "type": "Regression",
+    "rank": 1,
+    "compatibilityScore": 81.5,
+    "movementPattern": "Cardio / Locomotion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "More stability",
+      "Skill regression"
+    ],
+    "reason": "An easier conditioning regression with lower technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "treadmill-incline-walk__air-bike",
     "sourceExerciseId": "treadmill-incline-walk",
     "targetExerciseId": "air-bike",
     "type": "Substitute",
-    "rank": 1,
+    "rank": 2,
     "compatibilityScore": 70,
     "movementPattern": "Cardio / Locomotion",
     "preservesPattern": true,
@@ -112692,7 +112999,7 @@
     "sourceExerciseId": "treadmill-incline-walk",
     "targetExerciseId": "air-bike-intervals",
     "type": "Substitute",
-    "rank": 2,
+    "rank": 3,
     "compatibilityScore": 70,
     "movementPattern": "Cardio / Locomotion",
     "preservesPattern": true,
@@ -112710,7 +113017,7 @@
     "sourceExerciseId": "treadmill-incline-walk",
     "targetExerciseId": "brisk-walk",
     "type": "Substitute",
-    "rank": 3,
+    "rank": 4,
     "compatibilityScore": 70,
     "movementPattern": "Cardio / Locomotion",
     "preservesPattern": true,
@@ -112728,7 +113035,7 @@
     "sourceExerciseId": "treadmill-incline-walk",
     "targetExerciseId": "elliptical",
     "type": "Substitute",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 70,
     "movementPattern": "Cardio / Locomotion",
     "preservesPattern": true,
@@ -112746,7 +113053,7 @@
     "sourceExerciseId": "treadmill-incline-walk",
     "targetExerciseId": "elliptical-intervals",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 70,
     "movementPattern": "Cardio / Locomotion",
     "preservesPattern": true,
@@ -112764,7 +113071,7 @@
     "sourceExerciseId": "treadmill-incline-walk",
     "targetExerciseId": "fartlek-run",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 70,
     "movementPattern": "Cardio / Locomotion",
     "preservesPattern": true,
@@ -112781,24 +113088,6 @@
     "id": "treadmill-incline-walk__interval-run",
     "sourceExerciseId": "treadmill-incline-walk",
     "targetExerciseId": "interval-run",
-    "type": "Substitute",
-    "rank": 7,
-    "compatibilityScore": 70,
-    "movementPattern": "Cardio / Locomotion",
-    "preservesPattern": true,
-    "samePrimaryMuscle": false,
-    "sharedPrimaryMuscleIds": [],
-    "equipmentChange": false,
-    "swapContexts": [
-      "General swap"
-    ],
-    "reason": "Preserves the conditioning pattern with a similar exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "treadmill-incline-walk__jump-rope",
-    "sourceExerciseId": "treadmill-incline-walk",
-    "targetExerciseId": "jump-rope",
     "type": "Substitute",
     "rank": 8,
     "compatibilityScore": 70,
@@ -112955,6 +113244,150 @@
       "General swap"
     ],
     "reason": "Preserves the conditioning pattern with a similar exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "treadmill-walk__treadmill-incline-walk",
+    "sourceExerciseId": "treadmill-walk",
+    "targetExerciseId": "treadmill-incline-walk",
+    "type": "Progression",
+    "rank": 1,
+    "compatibilityScore": 81.5,
+    "movementPattern": "Cardio / Locomotion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding conditioning progression with greater technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "treadmill-walk__easy-run",
+    "sourceExerciseId": "treadmill-walk",
+    "targetExerciseId": "easy-run",
+    "type": "Substitute",
+    "rank": 2,
+    "compatibilityScore": 70,
+    "movementPattern": "Cardio / Locomotion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the conditioning pattern with a similar exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "treadmill-walk__recovery-run",
+    "sourceExerciseId": "treadmill-walk",
+    "targetExerciseId": "recovery-run",
+    "type": "Substitute",
+    "rank": 3,
+    "compatibilityScore": 70,
+    "movementPattern": "Cardio / Locomotion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the conditioning pattern with a similar exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "treadmill-walk__air-bike",
+    "sourceExerciseId": "treadmill-walk",
+    "targetExerciseId": "air-bike",
+    "type": "Progression",
+    "rank": 4,
+    "compatibilityScore": 66.5,
+    "movementPattern": "Cardio / Locomotion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding conditioning progression with greater technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "treadmill-walk__air-bike-intervals",
+    "sourceExerciseId": "treadmill-walk",
+    "targetExerciseId": "air-bike-intervals",
+    "type": "Progression",
+    "rank": 5,
+    "compatibilityScore": 66.5,
+    "movementPattern": "Cardio / Locomotion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding conditioning progression with greater technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "treadmill-walk__brisk-walk",
+    "sourceExerciseId": "treadmill-walk",
+    "targetExerciseId": "brisk-walk",
+    "type": "Progression",
+    "rank": 6,
+    "compatibilityScore": 66.5,
+    "movementPattern": "Cardio / Locomotion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding conditioning progression with greater technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "treadmill-walk__elliptical",
+    "sourceExerciseId": "treadmill-walk",
+    "targetExerciseId": "elliptical",
+    "type": "Progression",
+    "rank": 7,
+    "compatibilityScore": 66.5,
+    "movementPattern": "Cardio / Locomotion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding conditioning progression with greater technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "treadmill-walk__elliptical-intervals",
+    "sourceExerciseId": "treadmill-walk",
+    "targetExerciseId": "elliptical-intervals",
+    "type": "Progression",
+    "rank": 8,
+    "compatibilityScore": 66.5,
+    "movementPattern": "Cardio / Locomotion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding conditioning progression with greater technical and stability demand.",
     "editorialStatus": "Auto-Generated"
   },
   {
@@ -114885,11 +115318,47 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "wall-angel__arm-circles",
+    "sourceExerciseId": "wall-angel",
+    "targetExerciseId": "arm-circles",
+    "type": "Substitute",
+    "rank": 1,
+    "compatibilityScore": 64,
+    "movementPattern": "Mobility",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the mobility pattern with a similar exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "wall-angel__knee-to-wall-ankle-mobilization",
     "sourceExerciseId": "wall-angel",
     "targetExerciseId": "knee-to-wall-ankle-mobilization",
     "type": "Substitute",
-    "rank": 1,
+    "rank": 2,
+    "compatibilityScore": 64,
+    "movementPattern": "Mobility",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the mobility pattern with a similar exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "wall-angel__shoulder-rolls",
+    "sourceExerciseId": "wall-angel",
+    "targetExerciseId": "shoulder-rolls",
+    "type": "Substitute",
+    "rank": 3,
     "compatibilityScore": 64,
     "movementPattern": "Mobility",
     "preservesPattern": true,
@@ -114907,7 +115376,7 @@
     "sourceExerciseId": "wall-angel",
     "targetExerciseId": "90-90-hip-stretch",
     "type": "Progression",
-    "rank": 2,
+    "rank": 4,
     "compatibilityScore": 60.5,
     "movementPattern": "Mobility",
     "preservesPattern": true,
@@ -114925,7 +115394,7 @@
     "sourceExerciseId": "wall-angel",
     "targetExerciseId": "90-90-hip-switch",
     "type": "Progression",
-    "rank": 3,
+    "rank": 5,
     "compatibilityScore": 60.5,
     "movementPattern": "Mobility",
     "preservesPattern": true,
@@ -114943,7 +115412,7 @@
     "sourceExerciseId": "wall-angel",
     "targetExerciseId": "ankle-car",
     "type": "Progression",
-    "rank": 4,
+    "rank": 6,
     "compatibilityScore": 60.5,
     "movementPattern": "Mobility",
     "preservesPattern": true,
@@ -114961,7 +115430,7 @@
     "sourceExerciseId": "wall-angel",
     "targetExerciseId": "ankle-dorsiflexion-mobilization",
     "type": "Progression",
-    "rank": 5,
+    "rank": 7,
     "compatibilityScore": 60.5,
     "movementPattern": "Mobility",
     "preservesPattern": true,
@@ -114978,42 +115447,6 @@
     "id": "wall-angel__band-shoulder-dislocate",
     "sourceExerciseId": "wall-angel",
     "targetExerciseId": "band-shoulder-dislocate",
-    "type": "Progression",
-    "rank": 6,
-    "compatibilityScore": 60.5,
-    "movementPattern": "Mobility",
-    "preservesPattern": true,
-    "samePrimaryMuscle": false,
-    "sharedPrimaryMuscleIds": [],
-    "equipmentChange": false,
-    "swapContexts": [
-      "Skill progression"
-    ],
-    "reason": "A more demanding mobility progression with greater technical and stability demand.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "wall-angel__breathing-drill-90-90",
-    "sourceExerciseId": "wall-angel",
-    "targetExerciseId": "breathing-drill-90-90",
-    "type": "Progression",
-    "rank": 7,
-    "compatibilityScore": 60.5,
-    "movementPattern": "Mobility",
-    "preservesPattern": true,
-    "samePrimaryMuscle": false,
-    "sharedPrimaryMuscleIds": [],
-    "equipmentChange": false,
-    "swapContexts": [
-      "Skill progression"
-    ],
-    "reason": "A more demanding mobility progression with greater technical and stability demand.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "wall-angel__cat-cow",
-    "sourceExerciseId": "wall-angel",
-    "targetExerciseId": "cat-cow",
     "type": "Progression",
     "rank": 8,
     "compatibilityScore": 60.5,

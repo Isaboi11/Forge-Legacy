@@ -16,6 +16,26 @@ interface QueryState<T> {
  * synchronously in the effect body (which cascades renders). The loading reset lives in `refetch`,
  * an event-time callback. `empty` is left to the caller (it's data-shape-specific).
  */
+/**
+ * Readable text for anything thrown. Supabase/PostgREST reject with a PLAIN OBJECT
+ * (`{ message, details, hint, code }`), not an `Error` — so the old `String(e)` fallback rendered every
+ * database failure as a useless "[object Object]", hiding the one piece of information worth having.
+ */
+function errorMessage(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  if (e && typeof e === 'object') {
+    const o = e as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown };
+    const parts = [o.message, o.details, o.hint].filter((x): x is string => typeof x === 'string' && x.length > 0);
+    if (parts.length) return o.code ? `${parts.join(' — ')} (${String(o.code)})` : parts.join(' — ');
+    try {
+      return JSON.stringify(e);
+    } catch {
+      return 'Unknown error';
+    }
+  }
+  return String(e);
+}
+
 export function useQuery<T>(
   fn: () => Promise<T>,
   deps: readonly unknown[] = [],
@@ -35,7 +55,7 @@ export function useQuery<T>(
         if (alive) setState({ data: result, loading: false, error: null });
       },
       (e: unknown) => {
-        if (alive) setState({ data: null, loading: false, error: e instanceof Error ? e.message : String(e) });
+        if (alive) setState({ data: null, loading: false, error: errorMessage(e) });
       },
     );
     return () => {

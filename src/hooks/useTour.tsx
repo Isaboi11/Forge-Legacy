@@ -30,8 +30,8 @@ import { HonorCeremony } from '@/components/ceremony/HonorCeremony';
 import { HonorSymbol } from '@/components/ceremony/HonorSymbol';
 import { Button } from '@/components/forge/composites/Button';
 import { flColor, flFont } from '@/constants/foundation';
-import { getTourStatus, setTourStatus } from '@/lib/tour';
-import { getSeenPrompts, markPromptSeen, type ScreenKey } from '@/lib/screen-prompts';
+import { getTourStatus, getUnlockAnnounced, setTourStatus, setUnlockAnnounced } from '@/lib/tour';
+import { getGuidedTipsEnabled, getSeenPrompts, markPromptSeen, setGuidedTipsEnabled, type ScreenKey } from '@/lib/screen-prompts';
 
 export interface TourStep {
   route: Href;
@@ -80,6 +80,8 @@ interface TourContextValue {
   currentStep: TourStep | null;
   /** Announce the athlete reached the open forge — shows the honor ceremony while the tour is `pending`. */
   requestPrompt: () => void;
+  /** Suppress the unlock ceremony for good — used when the honor turns out to be already held. */
+  markAnnounced: () => void;
   startTour: () => void;
   nextStep: () => void;
   skipTour: () => void;
@@ -89,6 +91,9 @@ interface TourContextValue {
   seen: ScreenKey[];
   seenLoaded: boolean;
   markSeen: (key: ScreenKey) => void;
+  /** The Guided Tips master switch (Account Settings). Off suppresses every first-visit banner. */
+  tipsEnabled: boolean;
+  setTipsEnabled: (on: boolean) => void;
 }
 
 const TourContext = createContext<TourContextValue | null>(null);
@@ -101,8 +106,10 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<UiStatus>('loading');
   const [stepIndex, setStepIndex] = useState(0);
   const [requested, setRequested] = useState(false);
+  const [announced, setAnnounced] = useState(true); // assume announced until storage says otherwise — never flash a repeat
   const [seen, setSeen] = useState<ScreenKey[]>([]);
   const [seenLoaded, setSeenLoaded] = useState(false);
+  const [tipsEnabled, setTips] = useState(true); // absent preference = on, the first-run default
 
   // Load persisted state on first mount; force in-memory defaults on any later account switch. The switch
   // path deliberately does NOT re-read storage (a race with `resetFirstRunFlags` clearing it) — it just
@@ -113,11 +120,18 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       prevId.current = userId;
       let alive = true;
       void (async () => {
-        const [persisted, seenList] = await Promise.all([getTourStatus(), getSeenPrompts()]);
+        const [persisted, seenList, wasAnnounced, tips] = await Promise.all([
+          getTourStatus(),
+          getSeenPrompts(),
+          getUnlockAnnounced(),
+          getGuidedTipsEnabled(),
+        ]);
         if (!alive) return;
         setStatus(persisted);
         setSeen(seenList);
         setSeenLoaded(true);
+        setAnnounced(wasAnnounced);
+        setTips(tips);
       })();
       return () => {
         alive = false;
@@ -128,21 +142,32 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       setStatus('pending');
       setStepIndex(0);
       setRequested(false);
+      setAnnounced(false); // a different account has not been told anything yet
       setSeen([]);
       setSeenLoaded(true);
+      setTips(true);
     }
   }, [userId]);
 
+  // Entering the tour is also the moment the ceremony has served its purpose — record it so an interrupted
+  // tour resumes without re-announcing the honor.
   const startTour = useCallback(() => {
     setStepIndex(0);
     setRequested(false);
     setStatus('running');
+    setAnnounced(true);
+    void setUnlockAnnounced();
   }, []);
 
   // Called by Home once the athlete reaches the open forge — shows the honor ceremony (only while `pending`).
   // Stable identity on purpose: it must NOT react to the tour status, or setting `deferred` in `viewHonor`
   // would re-fire Home's focus effect and start the tour on Home before the hub even opens (the View Honor bug).
   const requestPrompt = useCallback(() => setRequested(true), []);
+
+  const markAnnounced = useCallback(() => {
+    setAnnounced(true);
+    void setUnlockAnnounced();
+  }, []);
 
   const skipTour = useCallback(() => {
     setRequested(false);
@@ -157,6 +182,8 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const viewHonor = useCallback(() => {
     setRequested(false);
     setStatus('deferred');
+    setAnnounced(true);
+    void setUnlockAnnounced();
     router.navigate('/honors');
   }, []);
 
@@ -178,6 +205,11 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     }
   }, [stepIndex]);
 
+  const setTipsEnabled = useCallback((on: boolean) => {
+    setTips(on);
+    void setGuidedTipsEnabled(on);
+  }, []);
+
   const markSeen = useCallback((key: ScreenKey) => {
     setSeen((prev) => (prev.includes(key) ? prev : [...prev, key]));
     void markPromptSeen(key);
@@ -186,14 +218,20 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const currentStep = status === 'running' ? TOUR_STEPS[stepIndex] ?? null : null;
 
   const value = useMemo<TourContextValue>(
-    () => ({ status, stepIndex, currentStep, requestPrompt, startTour, nextStep, skipTour, resumeTour, seen, seenLoaded, markSeen }),
-    [status, stepIndex, currentStep, requestPrompt, startTour, nextStep, skipTour, resumeTour, seen, seenLoaded, markSeen],
+    () => ({ status, stepIndex, currentStep, requestPrompt, markAnnounced, startTour, nextStep, skipTour, resumeTour, seen, seenLoaded, markSeen, tipsEnabled, setTipsEnabled }),
+    [status, stepIndex, currentStep, requestPrompt, markAnnounced, startTour, nextStep, skipTour, resumeTour, seen, seenLoaded, markSeen, tipsEnabled, setTipsEnabled],
   );
 
   // The "first move" unlock ceremony: only while the tour is still owed (`pending`), announced by Home once
-  // a program exists, and no ceremony is showing (never stack over an earned moment — it re-appears after).
-  // Its single "Keep Building" hands straight to the guided tour — there is no skip-the-tour choice.
-  const showUnlock = requested && status === 'pending' && !ceremony;
+  // a program exists, no ceremony is showing (never stack over an earned moment — it re-appears after), and
+  // — critically — the honor has not already been announced. An honor is celebrated exactly once; without
+  // that last clause a mid-tour interruption (which intentionally leaves the tour `pending`) replayed the
+  // whole ceremony for an honor earned long ago.
+  //
+  // `tipsEnabled` gates it too, so the Account Settings "Guided Tips" switch is a TRUE global off-switch:
+  // off means no ceremony, no auto-tour, and (via `useScreenPrompt`) no first-visit banners — one control
+  // that silences every piece of the walkthrough, which is what "off" plainly promises.
+  const showUnlock = tipsEnabled && requested && status === 'pending' && !ceremony && !announced;
 
   return (
     <TourContext.Provider value={value}>
@@ -235,9 +273,9 @@ export function useTour(): TourContextValue {
  * forbid both, and this needs neither.
  */
 export function useScreenPrompt(key: ScreenKey): { shouldShow: boolean; dismiss: () => void } {
-  const { seen, seenLoaded, markSeen, status } = useTour();
+  const { seen, seenLoaded, markSeen, status, tipsEnabled } = useTour();
   const blocking = status === 'loading' || status === 'pending' || status === 'running' || status === 'deferred';
-  const shouldShow = seenLoaded && !blocking && !seen.includes(key);
+  const shouldShow = tipsEnabled && seenLoaded && !blocking && !seen.includes(key);
   const dismiss = useCallback(() => markSeen(key), [markSeen, key]);
   return { shouldShow, dismiss };
 }

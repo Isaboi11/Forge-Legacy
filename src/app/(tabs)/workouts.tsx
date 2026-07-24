@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -14,6 +14,16 @@ import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons'
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { getActiveProgram, getPrograms } from '@/domain/training/active-program';
+import { getProgramDefinitions } from '@/domain/training/programs';
+import { equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
+import { structureFromDefinition } from '@/domain/program/adopt-core';
+import { itemByName } from '@/domain/exercise-picker/data';
+import { adoptCatalogProgram, fetchMyPrograms, type SavedProgram } from '@/data/programs-live';
+import { fetchProgramCompletedCount } from '@/data/programs-live';
+import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { dayLabel, nextSession, sessionsPerWeek, viewForState } from '@/domain/program/progress-core';
+import { writeWorkoutLaunch } from '@/lib/workout-launch';
+import { useQuery } from '@/lib/useQuery';
 import type { Program } from '@/domain/training/schema';
 import { ScreenTour } from '@/components/tour/ScreenTour';
 
@@ -62,6 +72,39 @@ export default function WorkoutsScreen() {
   const [tab, setTab] = useState<'mine' | 'discover'>('mine');
   const [family, setFamily] = useState<string>('All');
 
+  // The athlete's own programs. Refetched on focus so a program just built, duplicated, or ended shows
+  // up the moment they come back to this tab.
+  const { data: myPrograms, refetch: refetchMine } = useQuery(fetchMyPrograms, []);
+  useFocusEffect(
+    useCallback(() => {
+      refetchMine();
+    }, [refetchMine]),
+  );
+  const mine = myPrograms ?? [];
+  const [adopting, setAdopting] = useState<string | null>(null);
+
+  /**
+   * Open a built-in program. It has no database row until now, so adopt it first — that is what gives it
+   * an id, a lifecycle and somewhere for finished workouts to attach. Idempotent, so re-opening one the
+   * athlete already started resumes the same row rather than forking a second copy.
+   */
+  const openCatalogProgram = async (p: Program) => {
+    if (adopting) return;
+    setAdopting(p.id);
+    try {
+      const def = getProgramDefinitions().find((d) => d.id === p.id);
+      if (!def) return;
+      const equipFor = (key: string) => equipmentForCatalogKey(key) ?? undefined;
+      const adopted = await adoptCatalogProgram(def.id, structureFromDefinition(def, equipFor, (n) => itemByName(n)?.key));
+      refetchMine();
+      router.push({ pathname: '/program/[id]', params: { id: adopted.id } });
+    } catch {
+      // leave the athlete where they are rather than dead-ending on an error screen
+    } finally {
+      setAdopting(null);
+    }
+  };
+
   const { active, catalog, families } = useMemo(() => {
     const programs = getPrograms();
     const active = getActiveProgram();
@@ -76,11 +119,34 @@ export default function WorkoutsScreen() {
     [family, catalog],
   );
 
-  const startToday = () => {
+  // The athlete's own active program wins over the built-in one — it's the thing actually tracking.
+  const myActive = mine.find((p) => p.state === 'active') ?? null;
+  const [startOpen, setStartOpen] = useState(false);
+
+  const startToday = async () => {
+    setStartOpen(false);
+    if (myActive) {
+      const next = nextSession(myActive.structure, await fetchProgramCompletedCount(myActive.id));
+      if (!next) return;
+      await writeWorkoutLaunch({ programId: myActive.id });
+      startWorkout(dayLabel(next.day, next.dayIndex));
+      router.push('/workout');
+      return;
+    }
     if (!active?.nextWorkout) return;
     startWorkout(active.nextWorkout.name);
     router.push('/workout');
   };
+
+  /** A one-off session, deliberately unattributed — it belongs to no program's progress. */
+  const startFreestyle = async () => {
+    setStartOpen(false);
+    await writeWorkoutLaunch({ freestyle: true });
+    startWorkout('Freestyle Workout');
+    router.push('/workout');
+  };
+
+  const todayLabel = myActive ? myActive.name : (active?.nextWorkout?.name ?? null);
 
   return (
     <View style={styles.root}>
@@ -90,7 +156,7 @@ export default function WorkoutsScreen() {
         title={<Text style={styles.barTitle}>Workouts</Text>}
         actions={
           <Pressable
-            onPress={startToday}
+            onPress={() => setStartOpen(true)}
             accessibilityRole="button"
             accessibilityLabel="Start training"
             style={styles.startBtn}
@@ -117,7 +183,7 @@ export default function WorkoutsScreen() {
               <SectionHeader label="Active" />
               <View style={styles.sectionBody}>
                 {active ? (
-                  <ActiveProgramCard program={active} onOpen={() => {}} />
+                  <ActiveProgramCard program={active} onOpen={() => void openCatalogProgram(active)} />
                 ) : (
                   <View style={styles.emptyCard}>
                     <Text style={styles.emptyTitle}>Forge Your Next Legacy</Text>
@@ -126,6 +192,24 @@ export default function WorkoutsScreen() {
                 )}
               </View>
             </View>
+
+            {/* MY PROGRAMS — everything the athlete has built, duplicated, or retired. Without this the
+                programs table was invisible: a saved program, a duplicate, and an ended-early program all
+                existed in the database with no surface in the app that listed them. */}
+            {mine.length > 0 ? (
+              <View>
+                <SectionHeader label="My Programs" />
+                <View style={[styles.sectionBody, styles.stackTight]}>
+                  {mine.map((p) => (
+                    <SavedProgramRow
+                      key={p.id}
+                      program={p}
+                      onPress={() => router.push({ pathname: '/program/[id]', params: { id: p.id } })}
+                    />
+                  ))}
+                </View>
+              </View>
+            ) : null}
 
             {/* LIBRARY — platform-level resources */}
             <View>
@@ -139,15 +223,15 @@ export default function WorkoutsScreen() {
                 />
                 <LibraryRow
                   title="Exercise Library"
-                  sub="Browse every exercise and create your own."
+                  sub="Browse every exercise, bookmark the ones you use."
                   icon={<DumbbellIcon />}
-                  onPress={() => {}}
+                  onPress={() => router.push('/exercise-library')}
                 />
                 <LibraryRow
                   title="Activity History"
                   sub="Every session you’ve logged, month by month."
                   icon={<HistoryIcon />}
-                  onPress={() => {}}
+                  onPress={() => router.push('/activity-history')}
                 />
               </View>
             </View>
@@ -186,7 +270,7 @@ export default function WorkoutsScreen() {
               </Text>
               <View style={styles.stackTight}>
                 {discover.map((p) => (
-                  <CompactProgramCard key={p.id} program={p} onOpen={() => {}} />
+                  <CompactProgramCard key={p.id} program={p} onOpen={() => void openCatalogProgram(p)} />
                 ))}
                 {discover.length === 0 ? (
                   <View style={styles.noResults}>
@@ -198,6 +282,51 @@ export default function WorkoutsScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Start Training — the `+`'s sheet (`openStart` in the .dc). Only the paths that really work are
+          offered: today's session, and building a program. The design's other-activity tiles (run, ride,
+          Train with others) need modality logging that doesn't exist yet, so they're absent rather than
+          present-and-dead. */}
+      <BottomSheet open={startOpen} onClose={() => setStartOpen(false)} title="Start Training">
+        <View style={styles.stackTight}>
+          {todayLabel ? (
+            <Pressable onPress={() => void startToday()} accessibilityRole="button" accessibilityLabel={`Start today's workout — ${todayLabel}`} style={styles.libRow}>
+              <View style={styles.rowBody}>
+                <Text style={styles.rowTitle}>Today’s Workout</Text>
+                <Text style={styles.rowSub} numberOfLines={1}>{todayLabel}</Text>
+              </View>
+              <ChevronRightIcon size={18} color={flColor.bronze400} />
+            </Pressable>
+          ) : null}
+          <Pressable
+            onPress={() => void startFreestyle()}
+            accessibilityRole="button"
+            accessibilityLabel="Start a freestyle workout"
+            style={styles.libRow}
+          >
+            <View style={styles.rowBody}>
+              <Text style={styles.rowTitle}>Freestyle Workout</Text>
+              <Text style={styles.rowSub}>A one-off. Log whatever you train.</Text>
+            </View>
+            <ChevronRightIcon size={18} color={flColor.bronze400} />
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              setStartOpen(false);
+              router.push('/program-builder');
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Build a program"
+            style={styles.libRow}
+          >
+            <View style={styles.rowBody}>
+              <Text style={styles.rowTitle}>Build a Program</Text>
+              <Text style={styles.rowSub}>Design your own week, day by day.</Text>
+            </View>
+            <ChevronRightIcon size={18} color={flColor.bronze400} />
+          </Pressable>
+        </View>
+      </BottomSheet>
 
       <ScreenTour screenKey="workouts" />
     </View>
@@ -294,6 +423,31 @@ function CompactProgramCard({ program, onOpen }: { program: Program; onOpen: () 
       <Pill tone="muted" size="sm">
         {program.difficulty}
       </Pill>
+    </Pressable>
+  );
+}
+
+/** One athlete-authored program: name, lifecycle, shape. Taps through to the existing Program Detail. */
+function SavedProgramRow({ program, onPress }: { program: SavedProgram; onPress: () => void }) {
+  const { pill } = viewForState(program.state, true);
+  const perWeek = sessionsPerWeek(program.structure);
+  const isActive = program.state === 'active';
+  const isRetired = program.state === 'ended_early' || program.state === 'graduated';
+
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${program.name}, ${pill}`} style={styles.libRow}>
+      <View style={styles.rowBody}>
+        <Text style={[styles.rowTitle, isRetired && styles.rowTitleRetired]} numberOfLines={1}>
+          {program.name}
+        </Text>
+        <Text style={styles.rowSub} numberOfLines={1}>
+          {program.structure.weeks} wk · {perWeek}/wk
+        </Text>
+      </View>
+      <View style={[styles.statePill, isActive && styles.statePillActive]}>
+        <Text style={[styles.statePillText, isActive && styles.statePillTextActive]}>{pill}</Text>
+      </View>
+      <ChevronRightIcon size={18} color={flColor.bronze400} />
     </Pressable>
   );
 }
@@ -521,6 +675,19 @@ const styles = StyleSheet.create({
   },
   rowBody: { flex: 1, minWidth: 0 },
   rowTitle: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
+  rowTitleRetired: { color: flColor.gray400 },
+  statePill: {
+    flexShrink: 0,
+    paddingVertical: 4,
+    paddingHorizontal: 9,
+    borderRadius: flRadius.pill,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.charcoal800,
+  },
+  statePillActive: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  statePillText: { fontSize: 9.5, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray600 },
+  statePillTextActive: { color: flColor.bronze300 },
   rowSub: { marginTop: 1, fontSize: 12.5, color: flColor.gray400 },
   buildCta: {
     flexDirection: 'row',

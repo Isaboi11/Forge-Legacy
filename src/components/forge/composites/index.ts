@@ -24,8 +24,10 @@ export * from './Pill'
 export * from './Avatar'
 // CLA-C12  ProgressBar (v2 — Claude Design visual system):
 export * from './ProgressBar'
-// CLA-C13/C14/C15  Inputs — implemented; export from dedicated subfolder:
+// CLA-C13/C14/C15  Inputs — LEGACY library, implemented; export from dedicated subfolder:
 export * from '../inputs'
+// CLA-C14  InputField (v2 — Claude Design visual system):
+export * from './InputField'
 // CLA-C06/C07  Cards — LEGACY library, implemented; export from dedicated subfolder:
 export * from '../cards'
 // Navigation Library v1.0 — implemented; export from dedicated subfolder:

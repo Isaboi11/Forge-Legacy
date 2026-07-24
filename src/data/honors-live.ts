@@ -12,13 +12,22 @@ import { supabase } from '@/lib/supabase';
  * accept/build re-attempts, and the DB dedupes. (Until migration 0014 is applied to the DB, the RPC 404s and
  * this throws — swallowed by the caller — so the on-ramp is unaffected.)
  */
-export async function claimInitiativeHonor(): Promise<void> {
+/**
+ * Grant "Initiative" if it isn't already held. Returns TRUE only when this call actually created it.
+ *
+ * The RPC already returns the newly-granted honors (an empty array when it was a no-op, thanks to the
+ * `honor_once` index); the client used to discard that, which is why an athlete who earned Initiative
+ * long ago could still be shown its ceremony again. The caller needs to know "was this a first" to
+ * decide whether to celebrate.
+ */
+export async function claimInitiativeHonor(): Promise<boolean> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return;
-  const { error } = await supabase.rpc('claim_initiative_honor');
+  if (!user) return false;
+  const { data, error } = await supabase.rpc('claim_initiative_honor');
   if (error) throw error;
+  return Array.isArray(data) && data.length > 0;
 }
 
 export interface EarnedHonor {

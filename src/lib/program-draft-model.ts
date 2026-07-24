@@ -1,0 +1,311 @@
+import type { ProgramDay, ProgramExercise, ProgramStructure, ProgramWeekPlan } from '@/data/programs-live';
+import type { BuilderInbox, BuilderSection } from '@/lib/builder-inbox';
+
+/**
+ * The Program Builder's in-progress draft — the device-local editing state (the RN analogue of the
+ * design's `forge_program_draft_v1` localStorage draft). Autosaved on every mutation; cleared on Save or
+ * Cancel. The *saved* program goes to the real `programs` table via `createProgram`; only this working
+ * copy is device-local so an interrupted build survives a reload.
+ *
+ * The mutation helpers below are pure (draft in → new draft out) so the screen stays presentational and
+ * the clamps / resize rules / picker hand-off are unit-testable. They mirror `Forge Program Builder.dc`'s
+ * `_makeDays` / `_days` / `_ensureWeeks` / inbox-absorption logic.
+ */
+export interface ProgramDraft {
+  name: string;
+  weeks: number;
+  daysPerWeek: number;
+  vary: boolean; // false = Repeat template · true = Customize per week
+  openWeek: number | null;
+  openDay: number | null;
+  days: ProgramDay[]; // the Repeat template (used when !vary)
+  weekPlans: ProgramWeekPlan[] | null; // per-week plans (used when vary)
+  mode: 'new' | 'edit' | 'dup';
+  editId: string | null; // program id being edited
+  srcId: string | null; // source id hydrated from (edit/dup)
+}
+
+export const DAY_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'] as const;
+
+// Clamps — design §14 / `setWeeks`,`setDays`,`bumpSets`,`bumpReps`.
+export const WEEKS_MIN = 4;
+export const WEEKS_MAX = 52;
+export const DAYS_MIN = 2;
+export const DAYS_MAX = 6;
+export const SETS_MIN = 1;
+export const SETS_MAX = 8;
+export const REPS_MIN = 1;
+export const REPS_MAX = 60;
+
+const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
+export const clampWeeks = (n: number) => clamp(Math.round(n), WEEKS_MIN, WEEKS_MAX);
+export const clampDays = (n: number) => clamp(Math.round(n), DAYS_MIN, DAYS_MAX);
+export const clampSets = (n: number) => clamp(Math.round(n), SETS_MIN, SETS_MAX);
+export const clampReps = (n: number) => clamp(Math.round(n), REPS_MIN, REPS_MAX);
+
+/** Per-section defaults when the Picker hands an exercise back: Main 3×10, Warm-up 2×12, Cool-down 1×30. */
+export const defaultSets = (s: BuilderSection) => (s === 'main' ? 3 : s === 'warmup' ? 2 : 1);
+export const defaultReps = (s: BuilderSection) => (s === 'cooldown' ? 30 : s === 'warmup' ? 12 : 10);
+
+let idSeq = 0;
+/** Stable-enough local id for a draft exercise row (React keys + move/remove targeting). */
+export const newExerciseId = (): string => `x${Date.now().toString(36)}${(idSeq++).toString(36)}`;
+
+export const emptyDay = (i: number): ProgramDay => ({
+  letter: DAY_LETTERS[i] ?? String(i + 1),
+  name: '',
+  warmup: [],
+  main: [],
+  cooldown: [],
+});
+
+/** Resize a day list to `n`, keeping existing days (and their exercises) by position. */
+export function makeDays(n: number, existing: ProgramDay[]): ProgramDay[] {
+  return Array.from({ length: n }, (_, i) => existing[i] ?? emptyDay(i));
+}
+
+export function newDraft(): ProgramDraft {
+  return {
+    name: '',
+    weeks: 8,
+    daysPerWeek: 4,
+    vary: false,
+    openWeek: null,
+    openDay: null,
+    days: makeDays(4, []),
+    weekPlans: null,
+    mode: 'new',
+    editId: null,
+    srcId: null,
+  };
+}
+
+/** The day list currently being edited: the open week's days in Customize mode, else the repeat template. */
+export function activeDays(d: ProgramDraft): ProgramDay[] {
+  if (d.vary && d.weekPlans && d.openWeek != null && d.weekPlans[d.openWeek]) return d.weekPlans[d.openWeek].days;
+  return d.days;
+}
+
+/** Write `days` back to wherever `activeDays` read them from. */
+export function withActiveDays(d: ProgramDraft, days: ProgramDay[]): ProgramDraft {
+  if (d.vary && d.weekPlans && d.openWeek != null && d.weekPlans[d.openWeek]) {
+    const weekPlans = d.weekPlans.map((w, i) => (i === d.openWeek ? { days } : w));
+    return { ...d, weekPlans };
+  }
+  return { ...d, days };
+}
+
+/** Size `weekPlans` to weeks × daysPerWeek. New weeks start EMPTY (seeded on demand via Copy). */
+export function ensureWeeks(d: ProgramDraft): ProgramDraft {
+  const base = d.weekPlans ?? [];
+  const weekPlans: ProgramWeekPlan[] = Array.from({ length: d.weeks }, (_, i) => ({
+    days: makeDays(d.daysPerWeek, base[i]?.days ?? []),
+  }));
+  const openWeek = d.openWeek != null && d.openWeek >= d.weeks ? null : d.openWeek;
+  return { ...d, weekPlans, openWeek };
+}
+
+const dayHasContent = (day: ProgramDay) => day.warmup.length > 0 || day.main.length > 0 || day.cooldown.length > 0;
+export const dayTotal = (day: ProgramDay) => day.warmup.length + day.main.length + day.cooldown.length;
+export const weekBuilt = (w: ProgramWeekPlan | undefined) => !!w && w.days.some(dayHasContent);
+export const weekComplete = (w: ProgramWeekPlan | undefined) => !!w && w.days.some((dd) => dd.main.length > 0);
+
+/** Would shrinking to `n` weeks destroy built weeks? (Customize mode only — the template has no weeks.) */
+export function weeksLoseContent(d: ProgramDraft, n: number): boolean {
+  return d.vary && (d.weekPlans ?? []).slice(n).some(weekBuilt);
+}
+
+/** Would shrinking to `n` training days destroy exercises, in any week? */
+export function daysLoseContent(d: ProgramDraft, n: number): boolean {
+  if (d.vary) return (d.weekPlans ?? []).some((w) => w.days.slice(n).some(dayHasContent));
+  return d.days.slice(n).some(dayHasContent);
+}
+
+export function applyWeeks(d: ProgramDraft, n: number): ProgramDraft {
+  const next = { ...d, weeks: clampWeeks(n) };
+  return next.vary ? ensureWeeks(next) : next;
+}
+
+export function applyDaysPerWeek(d: ProgramDraft, n: number): ProgramDraft {
+  const daysPerWeek = clampDays(n);
+  const next: ProgramDraft = {
+    ...d,
+    daysPerWeek,
+    days: makeDays(daysPerWeek, d.days),
+    openDay: d.openDay != null && d.openDay >= daysPerWeek ? null : d.openDay,
+  };
+  return next.vary ? ensureWeeks(next) : next;
+}
+
+/** Append the exercises the Picker handed back to the addressed week/day/section. */
+export function absorbBuilderInbox(draft: ProgramDraft, inbox: BuilderInbox): ProgramDraft {
+  let d = draft;
+  if (inbox.vary) d = ensureWeeks({ ...d, vary: true, openWeek: inbox.week });
+
+  const days = activeDays(d);
+  const day = days[inbox.day];
+  if (!day) return d;
+
+  const added: ProgramExercise[] = inbox.items.map((it) => ({
+    id: newExerciseId(),
+    catalogKey: it.catalogKey,
+    name: it.name,
+    equip: it.equip,
+    muscles: it.muscles ?? [],
+    type: it.type ?? '',
+    sets: defaultSets(inbox.section),
+    reps: defaultReps(inbox.section),
+  }));
+
+  const nextDay: ProgramDay = { ...day, [inbox.section]: [...day[inbox.section], ...added] };
+  return { ...withActiveDays(d, days.map((x, i) => (i === inbox.day ? nextDay : x))), openDay: inbox.day };
+}
+
+/** Switch to the repeating-template mode, closing any open week. */
+export function setRepeatMode(d: ProgramDraft): ProgramDraft {
+  return { ...d, vary: false, openWeek: null, openDay: null };
+}
+
+/**
+ * Switch to per-week mode. Week 1 is SEEDED from the repeating template rather than starting empty —
+ * an athlete who has already built their week and then chooses "customize" means "…and now let me vary
+ * it", not "throw that away and start over".
+ */
+export function setVaryMode(d: ProgramDraft): ProgramDraft {
+  const seeded = ensureWeeks({ ...d, vary: true, openDay: null, openWeek: 0 });
+  const plans = seeded.weekPlans ?? [];
+  const templateHasContent = d.days.some((day) => dayTotal(day) > 0);
+  if (!templateHasContent || weekBuilt(plans[0])) return seeded;
+  return { ...seeded, weekPlans: plans.map((w, i) => (i === 0 ? { days: cloneDays(d.days) } : w)) };
+}
+
+/** Deep-copy a day list, re-iding every exercise so the copy and its source never alias. */
+export function cloneDays(days: ProgramDay[]): ProgramDay[] {
+  const copy = (list: ProgramExercise[]) => list.map((x) => ({ ...x, id: newExerciseId() }));
+  return days.map((d) => ({
+    letter: d.letter,
+    name: d.name,
+    warmup: copy(d.warmup),
+    main: copy(d.main),
+    cooldown: copy(d.cooldown),
+  }));
+}
+
+/** Copy week `from` over week `to` (the Week sheet's "Copy from"). */
+export function copyWeek(d: ProgramDraft, from: number, to: number): ProgramDraft {
+  const plans = d.weekPlans;
+  if (!plans || !plans[from] || !plans[to] || from === to) return d;
+  return { ...d, weekPlans: plans.map((w, i) => (i === to ? { days: cloneDays(plans[from].days) } : w)) };
+}
+
+/** Empty a week back to its day skeleton. */
+export function clearWeek(d: ProgramDraft, index: number): ProgramDraft {
+  const plans = d.weekPlans;
+  if (!plans || !plans[index]) return d;
+  return { ...d, weekPlans: plans.map((w, i) => (i === index ? { days: makeDays(d.daysPerWeek, []) } : w)) };
+}
+
+/**
+ * The next week worth opening after finishing this one: the first incomplete week AFTER the current one,
+ * wrapping to any earlier gap, and null once every week is built (which closes back to the review list).
+ */
+export function nextIncompleteWeek(d: ProgramDraft, from: number): number | null {
+  const plans = d.weekPlans ?? [];
+  for (let i = from + 1; i < d.weeks; i++) if (!weekComplete(plans[i])) return i;
+  for (let i = 0; i < d.weeks; i++) if (!weekComplete(plans[i])) return i;
+  return null;
+}
+
+/** How many weeks are built out — drives the program-progress bar. */
+export function completedWeeks(d: ProgramDraft): number {
+  return (d.weekPlans ?? []).filter(weekComplete).length;
+}
+
+/**
+ * Is there anything in this draft worth not losing? Drives the leave-the-builder confirmation: a
+ * never-touched draft closes silently, anything the athlete actually typed or added asks first.
+ */
+export function draftHasContent(d: ProgramDraft): boolean {
+  if (d.name.trim().length > 0) return true;
+  const touched = (days: ProgramDay[]) => days.some((day) => day.name.trim().length > 0 || dayTotal(day) > 0);
+  if (touched(d.days)) return true;
+  return (d.weekPlans ?? []).some((w) => touched(w.days));
+}
+
+/** Save gate: a name and at least one main exercise somewhere (design `_isValid`). */
+export function isDraftValid(d: ProgramDraft): boolean {
+  return hasName(d) && hasMainExercise(d);
+}
+export const hasName = (d: ProgramDraft) => d.name.trim().length > 0;
+export const hasMainExercise = (d: ProgramDraft) =>
+  d.vary && d.weekPlans
+    ? d.weekPlans.some((w) => w.days.some((day) => day.main.length > 0))
+    : d.days.some((day) => day.main.length > 0);
+
+/** The persisted shape — the draft minus its editing-session bookkeeping. */
+export function draftToStructure(d: ProgramDraft): ProgramStructure {
+  return {
+    name: d.name.trim(),
+    weeks: d.weeks,
+    daysPerWeek: d.daysPerWeek,
+    vary: d.vary,
+    days: d.days,
+    weekPlans: d.vary ? d.weekPlans : null,
+  };
+}
+
+/**
+ * Seed a draft from an existing program — the builder's edit / duplicate entry. A program saved by this
+ * builder is already in draft shape, so it loads directly; duplicating re-ids every exercise and renames
+ * the copy so the original is never mutated by editing the fork.
+ */
+export function hydrateDraft(
+  source: { id: string; name: string; structure: ProgramStructure },
+  mode: 'edit' | 'dup',
+): ProgramDraft {
+  const s = source.structure;
+  const dup = mode === 'dup';
+  const copyDays = (days: ProgramDay[]): ProgramDay[] =>
+    days.map((d) => ({
+      letter: d.letter,
+      name: d.name,
+      warmup: copyExercises(d.warmup, dup),
+      main: copyExercises(d.main, dup),
+      cooldown: copyExercises(d.cooldown, dup),
+    }));
+
+  const draft: ProgramDraft = {
+    name: dup ? `${s.name || source.name} (Copy)` : s.name || source.name,
+    weeks: clampWeeks(s.weeks || 8),
+    daysPerWeek: clampDays(s.daysPerWeek || 4),
+    vary: !!s.vary,
+    openWeek: null,
+    openDay: null,
+    days: makeDays(clampDays(s.daysPerWeek || 4), copyDays(s.days ?? [])),
+    weekPlans: s.weekPlans ? s.weekPlans.map((w) => ({ days: copyDays(w.days) })) : null,
+    mode,
+    // A duplicate is a NEW program — it must never write back over the source.
+    editId: mode === 'edit' ? source.id : null,
+    srcId: source.id,
+  };
+  return draft.vary ? ensureWeeks(draft) : draft;
+}
+
+function copyExercises(list: ProgramExercise[], reId: boolean): ProgramExercise[] {
+  return (list ?? []).map((x) => ({ ...x, id: reId || !x.id ? newExerciseId() : x.id }));
+}
+
+/** Repair a draft read back from storage (older shapes, missing letters, legacy "Day A" names). */
+export function normalizeDraft(d: ProgramDraft): ProgramDraft {
+  const fix = (days: ProgramDay[]): ProgramDay[] =>
+    days.map((day, i) => ({
+      ...day,
+      letter: day.letter || DAY_LETTERS[i] || String(i + 1),
+      name: /^Day [A-F]$/.test(day.name ?? '') ? '' : (day.name ?? ''),
+      warmup: day.warmup ?? [],
+      main: day.main ?? [],
+      cooldown: day.cooldown ?? [],
+    }));
+  const next: ProgramDraft = { ...d, days: fix(d.days ?? []) };
+  return next.vary ? ensureWeeks(next) : next;
+}

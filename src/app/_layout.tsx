@@ -9,6 +9,7 @@ import { useColorScheme } from 'react-native';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { ProfileProvider, useProfile } from '@/lib/profile';
+import { SettingsProvider } from '@/lib/settings';
 import { routeFor } from '@/lib/route-for';
 import { WorkoutSessionProvider } from '@/hooks/useWorkoutSession';
 import { ShareProvider } from '@/hooks/useShareSheet';
@@ -40,6 +41,7 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AuthProvider>
         <ProfileProvider>
+          <SettingsProvider>
           <WorkoutSessionProvider>
             <ShareProvider>
               <CeremonyProvider>
@@ -50,6 +52,7 @@ export default function RootLayout() {
               </CeremonyProvider>
             </ShareProvider>
           </WorkoutSessionProvider>
+          </SettingsProvider>
         </ProfileProvider>
       </AuthProvider>
     </ThemeProvider>
@@ -79,7 +82,13 @@ function RootNavigator() {
         <Stack.Screen name="squad/[id]" />
         <Stack.Screen name="athlete/[id]" />
         <Stack.Screen name="honors" />
+        <Stack.Screen name="program/[id]" />
+        <Stack.Screen name="activity-history" />
+        <Stack.Screen name="activity/[id]" />
+        <Stack.Screen name="exercise/[id]" />
+        <Stack.Screen name="exercise-library" />
         <Stack.Screen name="workout" options={{ presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="exercise-picker" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="program-builder" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="workout-complete" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Screen name="pin-video" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />

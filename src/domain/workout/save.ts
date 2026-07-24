@@ -13,8 +13,11 @@ export interface SaveResult {
  * The Finish commit (W-9). Reads the athlete's current best e1RM per exercise, detects PRs domain-side,
  * then hands the whole session to the atomic `save_workout` RPC (workout + exercises + done sets + PRs +
  * timeline + chapter bump, all-or-nothing). Only DONE sets persist; skipped/pending sets are no data.
+ *
+ * `partners` are the "Trained With" tags (names) — attribution on the athlete's OWN workout row, written
+ * best-effort after the commit; a failure never fails the save (the session is already logged).
  */
-export async function saveWorkout(session: ActiveSession): Promise<SaveResult> {
+export async function saveWorkout(session: ActiveSession, partners: string[] = []): Promise<SaveResult> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -56,8 +59,18 @@ export async function saveWorkout(session: ActiveSession): Promise<SaveResult> {
     p_notes: null,
     p_exercises: exercises,
     p_prs: prs,
+    p_program_id: session.programId ?? null,
   });
   if (error) throw error;
+
+  // attribution (best-effort) — never fail the save over a partner tag
+  if (partners.length) {
+    try {
+      await supabase.from('workouts').update({ partners }).eq('id', data.workout_id);
+    } catch {
+      // ignore — the workout is already saved
+    }
+  }
 
   return { workoutId: data.workout_id, prs, volume: sessionVolume(session), sets: doneSetCount(session) };
 }

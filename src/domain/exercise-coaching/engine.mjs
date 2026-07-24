@@ -74,8 +74,11 @@ export const DUPLICATE_SIMILARITY_THRESHOLD = 0.95; // near-identical wording ac
 // ── Risk-token vocabularies ──────────────────────────────────────────────────
 const OLYMPIC_TOKENS = ['snatch', 'clean-and-jerk', 'clean & jerk', 'power-clean', 'hang-clean',
   'squat-clean', 'power-jerk', 'split-jerk', 'push-jerk', 'clean-pull', 'snatch-pull', 'clean', 'jerk'];
+// NOTE: no bare 'lever' — it matched `leverage-squat-machine`, a Beginner selectorized squat machine,
+// and classified it as an advanced gymnastics skill requiring expert review. The specific lever holds
+// are already listed explicitly.
 const GYMNASTICS_TOKENS = ['planche', 'front-lever', 'back-lever', 'iron-cross', 'muscle-up',
-  'handstand', 'skin-the-cat', 'human-flag', 'maltese', 'lever'];
+  'handstand', 'skin-the-cat', 'human-flag', 'maltese'];
 const STRONGMAN_TOKENS = ['atlas-stone', 'stone-load', 'tire-flip', 'keg', 'sandbag', 'yoke',
   'log-press', 'log-clean', 'farmers-walk-heavy', 'car-deadlift', 'viking-press', 'sled-drag',
   'sled-push', 'rope-pull'];
@@ -1057,8 +1060,16 @@ function equipmentSetupLine(node) {
       return 'Anchor the rope securely and take a stable, athletic stance with tension in the line.';
     case 'bodyweight':
       return null;
-    case 'cardio':
-      return 'Set the machine to your working effort and settle into a rhythm before pushing.';
+    case 'cardio': {
+      // The `cardio` tag covers "Cardio Equipment / Outdoors" — both an erg and a hill sprint. Telling
+      // someone to "set the machine" before a trail run is nonsense, so only machine-based work gets
+      // the machine line; everything else falls through to its movement coaching.
+      const id = String(node.id ?? '').toLowerCase();
+      const MACHINE = ['treadmill', 'rower', 'row-erg', 'erg', 'bike', 'cycle', 'elliptical', 'stair', 'ski', 'assault', 'arm-ergometer'];
+      return MACHINE.some((m) => id.includes(m))
+        ? 'Set the machine to your working effort and settle into a rhythm before pushing.'
+        : null;
+    }
     default:
       return null;
   }
@@ -1467,15 +1478,255 @@ function buildProgressionGuidance(node) {
  * Compose the coaching content body for a node. Deterministic, metadata-driven.
  * @returns the content-field subset of ExerciseCoachingContent (no editorial meta).
  */
+// ─────────────────────────────────────────────────────────────────────────────
+// VARIANT MODIFIERS — the axis that was missing
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Pattern + equipment + primary muscle + unilateral were the only differentiators, so every exercise
+// sharing those four produced byte-identical coaching: 15 push-up variants, 27 core movements, 44
+// mobility drills — 449 of 556 records shared a body with another exercise.
+//
+// What actually separates them is the MODIFIER in the name: archer, deficit, close-grip, incline,
+// paused. Each entry contributes at most one setup line, one execution line, one cue and one mistake —
+// enough to make the coaching specific without displacing the pattern fundamentals, which are correct.
+//
+// Matching is on id substrings, so `close-grip-bench-press` matches `close-grip`. The list is ordered by
+// priority and capped at two matches, so a long name can't stack five modifiers and drown the pattern.
+const SUPPLANT_BANK = [
+  // ── MOVEMENT SUB-TYPES ────────────────────────────────────────────────────
+  // Core, Mobility and Cardio each collapse to ONE pattern bank, but they aren't variants of a single
+  // movement — a dead bug and a dragon flag share nothing but a body region. These sub-types are
+  // matched first (and are specific enough to win the two-match cap) so the coaching reflects what the
+  // movement actually asks of you. Ordered most-specific-first: `side-plank` before `plank`.
+  //
+  // Unilateral leg work misfiled under "Squat / Knee Dominant". These are the records that made the
+  // problem visible: Barbell Step-Up and Barbell Walking Lunge were both being told to "descend until
+  // your thighs reach parallel" at confidence 100 — squat coaching on movements that aren't squats.
+  { match: ['step-up'],
+    setup: ['Set the box at a height where your working thigh is about parallel with your foot on it.',
+      'Stand close enough that you step up rather than forward.'],
+    execution: ['Place your whole foot on the box with your weight through the middle of it.',
+      'Drive through the top foot and stand tall without pushing off the trailing leg.',
+      'Lower under control until the trailing foot touches, then repeat.'],
+    tip: 'The trailing leg is not a helper — keep its toe light so the top leg does the work.',
+    mistake: { mistake: 'Pushing off the bottom foot to get up.', correction: 'Lower the box until you can rise without the trailing leg driving.' } },
+  { match: ['walking-lunge', 'reverse-lunge', 'forward-lunge', 'lunge'],
+    setup: ['Take a stride long enough that both knees can reach about ninety degrees.',
+      'Set your torso tall and your ribs down before the first rep.'],
+    execution: ['Step into the stride and lower straight down rather than forward.',
+      'Lower until your back knee is just off the floor.',
+      'Drive up through your front foot to return to standing.'],
+    tip: 'Stay tall through your torso — leaning forward turns this into a hinge.',
+    mistake: { mistake: 'Taking a stride so short the front knee travels well past the toes.', correction: 'Lengthen the stride until your front shin is close to vertical at the bottom.' } },
+];
+
+/**
+ * Modifiers that AUGMENT the pattern. Two kinds live here:
+ *   · true variants (close-grip, incline, paused) — the pattern archetype with a twist;
+ *   · movement sub-types (planks, stretches, intervals) whose pattern text is GENERIC but not wrong,
+ *     so adding to it differentiates them without discarding correct fundamentals.
+ * `group` keeps near-siblings from stacking: `side-plank` matches both the side-plank and plank
+ * entries, and taking both produced "stack your elbow" beside "set your elbows … forearms flat".
+ */
+const MODIFIER_BANK = [
+  // Core
+  { group: 'plank', match: ['copenhagen'], setup: 'Set your top leg on the bench and stack your shoulder over your elbow.',
+    execution: 'Lift your hips until your body is in a straight line and hold.',
+    tip: 'This is an adductor exercise as much as a side plank — expect the inner thigh to fatigue first.',
+    mistake: { mistake: 'Letting the hips sag toward the floor as the hold gets hard.', correction: 'End the set when your hips drop rather than pushing through.' } },
+  { group: 'plank', match: ['side-plank'], setup: 'Lie on your side and stack your elbow directly under your shoulder.',
+    execution: 'Lift your hips until your body forms a straight line from head to heels, and hold.',
+    tip: 'Push the floor away with your bottom elbow to keep your shoulder from sinking.',
+    mistake: { mistake: 'Rolling the top hip forward or back.', correction: 'Keep both hips stacked vertically as if pressed between two walls.' } },
+  { group: 'plank', match: ['rkc-plank', 'forearm-plank', 'plank'], setup: 'Set your elbows under your shoulders with your forearms flat.',
+    execution: 'Brace hard and hold a straight line from head to heels for the prescribed time.',
+    tip: 'Squeeze your glutes and pull your ribs down — a plank is a hard brace, not a rest position.',
+    mistake: { mistake: 'Letting the hips pike up or sag down.', correction: 'Set a straight line and end the hold when you lose it.' } },
+  { group: 'core', match: ['dead-bug', 'bird-dog'], setup: 'Set your lower back flat against the floor before you move a limb.',
+    execution: 'Extend opposite limbs slowly while keeping your torso completely still.',
+    tip: 'The goal is a trunk that does not move — go only as far as you can without your back arching.',
+    mistake: { mistake: 'Rushing the reps so the lower back lifts off the floor.', correction: 'Slow down and shorten the reach until your back stays flat.' } },
+  { group: 'core', match: ['hanging-leg-raise', 'hanging-knee-raise', 'toes-to-bar', 'l-sit'], setup: 'Hang from the bar with your shoulders pulled down away from your ears.',
+    execution: 'Raise your legs by curling your pelvis up, not just by bending at the hip.',
+    tip: 'Start each rep from a dead hang and stop swinging before you begin.',
+    mistake: { mistake: 'Using a swing to generate the lift.', correction: 'Pause at the bottom until you are still, then lift.' } },
+  { group: 'core', match: ['ab-wheel', 'dragon-flag', 'hollow-rock', 'v-up', 'v-sit'], setup: 'Set your ribs down and your lower back flat before the first rep.',
+    execution: 'Extend only as far as you can hold that flat back, then return under control.',
+    tip: 'Range is earned — the moment your lower back arches, you have gone past your working range.',
+    mistake: { mistake: 'Extending to full range before the trunk can hold it.', correction: 'Shorten the range and build it out over weeks.' } },
+  { group: 'core', match: ['crunch', 'sit-up', 'curl-up'], setup: 'Lie on your back with your feet flat and your lower back in a neutral position.',
+    execution: 'Curl your ribs toward your hips, lifting one vertebra at a time.',
+    tip: 'Move your ribs toward your pelvis rather than yanking on your neck.',
+    mistake: { mistake: 'Pulling on the head or neck to get up.', correction: 'Rest your hands lightly at your temples and lead with your ribs.' } },
+  { group: 'core', match: ['mountain-climber'], setup: 'Start in a push-up position with your shoulders over your hands.',
+    execution: 'Drive one knee toward your chest and switch, keeping your hips level.',
+    tip: 'Keep your hips low — the moment they bounce up this stops being a core exercise.',
+    mistake: null },
+  // Mobility
+  { group: 'mobility', match: ['foam-roll', 'lacrosse-ball', 'release'], setup: 'Place the roller or ball under the target area and support your weight with your hands.',
+    execution: 'Roll slowly, pausing for a few breaths on any spot that feels tight.',
+    tip: 'Slow is the whole point — fast rolling passes over the tissue you are trying to reach.',
+    mistake: { mistake: 'Rolling quickly back and forth over the area.', correction: 'Cover an inch at a time and pause where it is tender.' } },
+  { group: 'mobility', match: ['-car', 'car-', 'controlled-articular'], setup: 'Set the joint in a neutral position and keep the rest of your body still.',
+    execution: 'Move the joint slowly through the largest circle you can control.',
+    tip: 'Control is the goal — no momentum, and no other joint should move to help.',
+    mistake: { mistake: 'Letting the trunk or shoulder swing to make the circle bigger.', correction: 'Shrink the circle until only the target joint is moving.' } },
+  { group: 'mobility', match: ['breathing', 'crocodile'], setup: 'Settle into the position and let your shoulders relax.',
+    execution: 'Breathe slowly in through your nose and out for longer than you breathed in.',
+    tip: 'Feel the breath expand your ribs sideways, not just lift your chest.',
+    mistake: null },
+  { group: 'mobility', match: ['cat-cow', 'thread-the-needle', 'open-book', 'wall-angel', 'thoracic'], setup: 'Set a stable base and move only the segment you are targeting.',
+    execution: 'Move through the range slowly, one segment at a time.',
+    tip: 'Go for a smooth, even bend rather than forcing the end range in one place.',
+    mistake: null },
+  { group: 'mobility', match: ['dead-hang', 'active-hang'], setup: 'Take a shoulder-width grip and let your feet come off the floor.',
+    execution: 'Hang for the prescribed time, breathing steadily.',
+    tip: 'Let your shoulders relax up toward your ears on a dead hang; pull them down for an active hang.',
+    mistake: null },
+  { group: 'mobility', match: ['stretch', 'pose', 'toe-touch', 'inchworm'], setup: 'Ease into the position without forcing the range.',
+    execution: 'Move to the first point of tension and hold there, breathing steadily.',
+    tip: 'Tension, never pain — back off the moment it sharpens.',
+    mistake: { mistake: 'Bouncing or forcing into the end range.', correction: 'Hold a still position and let the tissue release on its own.' } },
+  // Cardio
+  { group: 'cardio', match: ['sprint', 'hill-repeat', 'track-repeat', 'interval'], setup: 'Warm up thoroughly before the first hard effort.',
+    execution: 'Run each repetition at the assigned effort and take the full recovery between them.',
+    tip: 'The recovery is part of the session — cutting it short turns the whole thing into a moderate run.',
+    mistake: { mistake: 'Starting the first repetition faster than you can repeat.', correction: 'Set the pace you could hold for the last rep and start there.' } },
+  { group: 'cardio', match: ['easy-run', 'recovery-run', 'long-run'], setup: 'Start easy and let the pace settle rather than forcing it.',
+    execution: 'Hold a conversational effort for the full duration.',
+    tip: 'If you could not hold a conversation, you are running this one too hard.',
+    mistake: { mistake: 'Drifting faster as you warm up until the easy run becomes a moderate one.', correction: 'Check your effort every few minutes and ease back.' } },
+  { group: 'cardio', match: ['fartlek', 'progression-run'], execution: 'Change pace on the plan rather than on how you feel.',
+    tip: 'Finish faster than you started — hold something back early.', mistake: null },
+
+  // ── grip / hand position ──
+  { match: ['close-grip', 'diamond'], setup: 'Set your hands narrower than shoulder-width, just inside your ribs.',
+    tip: 'The narrow grip shifts work onto your triceps — keep your elbows close to your sides.',
+    mistake: { mistake: 'Letting the elbows flare wide, which defeats the narrow grip.', correction: 'Keep your upper arms brushing past your ribs on every rep.' } },
+  { match: ['wide-grip'], setup: 'Take a grip wider than shoulder-width.',
+    tip: 'The wider grip shortens the range and biases the outer chest and back — control the stretch at the end.',
+    mistake: { mistake: 'Going so wide the shoulders roll forward at the bottom.', correction: 'Widen only until you can still keep your shoulder blades set.' } },
+  { match: ['reverse-grip', 'underhand', 'supinated'], setup: 'Take an underhand grip with your palms facing up.',
+    tip: 'The underhand grip brings your biceps and lower lats into the pull.',
+    mistake: { mistake: 'Curling the weight up with the arms instead of driving with the back.', correction: 'Lead with your elbows and think of your hands as hooks.' } },
+  { match: ['neutral-grip'], setup: 'Take a neutral grip with your palms facing each other.',
+    tip: 'The neutral grip is easier on the shoulders and wrists — use it to train around irritation.', mistake: null },
+  // ── angle / body position ──
+  { match: ['incline'], setup: 'Set the bench to a low incline, around 30 degrees.',
+    tip: 'The incline shifts work to the upper chest and front delts — keep your hips down on the bench.',
+    mistake: { mistake: 'Setting the bench so steep it becomes a shoulder press.', correction: 'Keep the incline at or below about 45 degrees.' } },
+  { match: ['decline'], setup: 'Set the bench to a slight decline and secure your legs.',
+    tip: 'The decline biases the lower chest and shortens the range slightly.', mistake: null },
+  { match: ['seated'], setup: 'Sit tall with your back supported and both feet flat on the floor.',
+    tip: 'Sitting takes the legs out of it — keep your torso still and let the target muscle work.',
+    mistake: { mistake: 'Rocking the torso to start the rep.', correction: 'Keep your back against the pad and move only the working joint.' } },
+  { match: ['prone', 'chest-supported'], setup: 'Lie chest-down so your torso is fully supported.',
+    tip: 'With your chest supported you cannot cheat with momentum — let that expose the honest weight.', mistake: null },
+  { match: ['half-kneeling', 'kneeling'], setup: 'Take a kneeling position with your hips stacked under your shoulders.',
+    tip: 'Kneeling narrows your base — squeeze the glute on the down leg to stay steady.', mistake: null },
+  { match: ['bent-over'], setup: 'Hinge at the hips until your torso is close to parallel with the floor.',
+    tip: 'Hold the hinge still for the whole set — your torso should not rise as you pull.',
+    mistake: { mistake: 'Standing up out of the hinge as the set gets hard.', correction: 'Pick a spot on the floor ahead of you and keep your eyes there.' } },
+  // ── range of motion ──
+  { match: ['deficit'], setup: 'Stand on a plate or low platform so you start below the usual position.',
+    tip: 'The deficit adds range — only use one you can reach without your back rounding.',
+    mistake: { mistake: 'Taking a deficit so large the start position collapses.', correction: 'Lower the platform until you can set your back flat at the bottom.' } },
+  { match: ['floor-press', 'floor'], setup: 'Set up lying on the floor so your upper arms stop against it.',
+    tip: 'The floor caps the range and takes the stretch off the shoulder — press from a dead stop.', mistake: null },
+  { match: ['pause', 'paused', 'dead-stop', 'deadstop', 'pin'], execution: 'Hold the bottom position still for a full count before you drive back.',
+    tip: 'The pause kills the bounce — each rep starts from a dead stop, not a rebound.',
+    mistake: { mistake: 'Shortening the pause as the set gets hard.', correction: 'Count the pause out loud so every rep gets the same hold.' } },
+  { match: ['box'], setup: 'Set the box at a height you can reach while keeping good position.',
+    tip: 'Touch the box under control rather than dropping onto it.',
+    mistake: { mistake: 'Relaxing or rocking back once you touch the box.', correction: 'Stay braced the whole time you are in contact.' } },
+  // ── tempo / intent ──
+  { match: ['explosive', 'jump', 'plyo', 'clap', 'speed'], execution: 'Move as fast as you can on the way up while staying in control.',
+    tip: 'Intent is the point — every rep should be maximally fast, and the set ends when speed drops.',
+    mistake: { mistake: 'Grinding out slow reps once fatigue sets in.', correction: 'End the set the moment bar or body speed visibly slows.' } },
+  { match: ['tempo', 'eccentric', 'negative'], execution: 'Lower deliberately over a slow count before reversing.',
+    tip: 'The lowering is the work — resist all the way rather than letting it fall.', mistake: null },
+  { match: ['isometric', 'hold'], execution: 'Hold the position without moving for the prescribed time.',
+    tip: 'Keep breathing through the hold rather than locking your breath down.',
+    mistake: { mistake: 'Letting position degrade as the hold gets hard.', correction: 'End the hold when your position breaks, not when the clock does.' } },
+  // ── direction ──
+  { match: ['lateral-raise', 'lateral'], tip: 'Lead with your elbow and stop around shoulder height.',
+    mistake: { mistake: 'Swinging the weight up with a hip drive.', correction: 'Slow it down and let the shoulder raise the weight on its own.' } },
+  { match: ['front-raise'], tip: 'Raise to about eye level and lower under control.', mistake: null },
+  { match: ['rear-delt', 'reverse'], tip: 'Think about pulling your shoulder blades apart at the top rather than yanking with your arms.', mistake: null },
+  { match: ['overhead'], setup: 'Set your ribs down and squeeze your glutes before you press overhead.',
+    tip: 'Finish with the weight stacked over the middle of your foot, not out in front.',
+    mistake: { mistake: 'Arching the lower back to get the weight up.', correction: 'Brace your midsection and stop the rep where your position holds.' } },
+  // ── stance ──
+  { match: ['sumo'], setup: 'Take a wide stance with your toes turned out and your hands inside your knees.',
+    tip: 'Push the floor apart with your feet as you start the pull.', mistake: null },
+  { match: ['split-squat', 'staggered', 'b-stance'], setup: 'Take a split stance with most of your weight through the front foot.',
+    tip: 'The back leg is for balance only — drive through the front foot.',
+    mistake: { mistake: 'Pushing off the back foot to complete the rep.', correction: 'Keep the back toe light and let the front leg do the work.' } },
+  { match: ['archer'], setup: 'Set your hands wider than normal so one arm straightens as the other bends.',
+    tip: 'The straight arm is a kickstand, not a pusher — the bending side does the work.',
+    mistake: { mistake: 'Sharing the load evenly between both arms.', correction: 'Shift your weight over the working side until the straight arm feels light.' } },
+  { match: ['pike'], setup: 'Walk your feet in and pike your hips high so your torso angles toward vertical.',
+    tip: 'The higher your hips, the more this becomes a shoulder press.', mistake: null },
+];
+
+// Supplanting entries are matched FIRST (a step-up should never fall through to squat coaching) and
+// carry the flag that tells composeContent to drop the pattern's setup and execution.
+const VARIANT_BANK = [...SUPPLANT_BANK.map((v) => ({ ...v, replaces: true })), ...MODIFIER_BANK];
+
+/**
+ * Modifier entries matching this exercise's id, highest-priority first.
+ *
+ * At most ONE supplanting entry: they each replace the pattern's setup and execution, so a second would
+ * contradict the first — `side-plank` matches both the side-plank sub-type and the generic plank one,
+ * and taking both produced "stack your elbow under your shoulder" alongside "set your elbows under your
+ * shoulders with your forearms flat". Modifiers stack fine, so up to two of those.
+ */
+function variantModifiers(node, limit = 2) {
+  const id = String(node.id ?? '').toLowerCase();
+  const matches = VARIANT_BANK.filter((v) => v.match.some((m) => id.includes(m)));
+  const supplant = matches.find((v) => v.replaces);
+  if (supplant) return [supplant];
+
+  // One per group, most specific first — `side-plank` beats the generic `plank` entry and the two
+  // never appear together.
+  const seen = new Set();
+  const picked = [];
+  for (const v of matches) {
+    if (v.group && seen.has(v.group)) continue;
+    if (v.group) seen.add(v.group);
+    picked.push(v);
+    if (picked.length >= limit) break;
+  }
+  return picked;
+}
+
+/** Variant setup/execution may be a single line or several — normalise to an array. */
+const variantLines = (variants, key) => variants.flatMap((v) => (Array.isArray(v[key]) ? v[key] : v[key] ? [v[key]] : []));
+
 export function composeContent(node) {
   const { bank, phrase } = selectProfile(node);
   const eqSetup = equipmentSetupLine(node);
+  // What makes THIS exercise different from its pattern-mates (archer, deficit, paused, incline …).
+  const variants = variantModifiers(node);
 
-  // setupInstructions: equipment setup first (if any) then pattern setup.
-  const setupInstructions = [...(eqSetup ? [eqSetup] : []), ...bank.setup];
+  // A `replaces` variant is one whose movement ISN'T the archetype of its pattern — a step-up filed
+  // under Squat, a dead bug under Core. For those the pattern's setup and execution are not a useful
+  // base to build on, they're simply wrong, so the variant supplants them. Grip/angle/tempo variants
+  // (close-grip, incline, paused) genuinely ARE the pattern plus a twist, so they augment instead.
+  const supplants = variants.some((v) => v.replaces);
 
-  // executionSteps
-  const executionSteps = [...bank.execution];
+  // setupInstructions: equipment setup → variant setup → pattern setup.
+  // Capped at the schema's ranges (setup 2-4, exec 3-6): equipment + two variants + pattern can
+  // otherwise overflow, as barbell-overhead-carry did at five setup lines.
+  const setupInstructions = [
+    ...(eqSetup ? [eqSetup] : []),
+    ...variantLines(variants, 'setup'),
+    ...(supplants ? [] : bank.setup),
+  ].slice(0, 4);
+
+  // executionSteps — a supplanting variant leads and the pattern steps are dropped entirely.
+  const variantExec = variantLines(variants, 'execution');
+  const executionSteps = (supplants ? [...variantExec] : [...bank.execution, ...variantExec]).slice(0, 6);
   if (node.unilateral) executionSteps.push('Complete all your reps on one side, then repeat with the other, matching the reps on your weaker side.');
 
   // deterministic differentiators
@@ -1485,8 +1736,10 @@ export function composeContent(node) {
   const focusCue = (cueMuscle ? MUSCLE_CUE[cueMuscle] : null)
     ?? (node.movementPattern === 'Cardio / Locomotion' ? cardioModalityCue(node) : null);
 
-  // coachingTips: pattern cues → focus cue → equipment flavour → unilateral, capped at 5.
-  const tips = [...bank.tips];
+  // coachingTips: variant cue leads (it's the one thing that isn't true of every pattern-mate), then
+  // pattern cues → focus cue → equipment flavour → unilateral, capped at 5.
+  const variantTips = variants.map((v) => v.tip).filter(Boolean);
+  const tips = [...variantTips, ...bank.tips];
   if (focusCue) tips.push(focusCue);
   if (eqTip) tips.push(eqTip);
   if (node.unilateral) tips.push('Resist the urge to twist toward the working side — keep your hips and shoulders square.');
@@ -1494,7 +1747,7 @@ export function composeContent(node) {
 
   // commonMistakes + 1:1 corrections (+ an equipment-specific mistake where relevant,
   // skipped when a pattern mistake already covers the same "slam/control-down" concept).
-  const mistakeList = [...bank.mistakes];
+  const mistakeList = [...variants.map((v) => v.mistake).filter(Boolean), ...bank.mistakes];
   const eqMistake = equipmentMistake(node);
   const eqDup = eqMistake && /slam/.test(eqMistake.mistake) && mistakeList.some((m) => /slam/.test(m.mistake));
   if (eqMistake && !eqDup && mistakeList.length < 5) mistakeList.push(eqMistake);
@@ -1507,6 +1760,7 @@ export function composeContent(node) {
 
   // cueHierarchy: lead pattern cue → focus cue → equipment → remaining pattern cues, capped at 5.
   const cueHierarchy = [
+    ...variantTips,
     bank.tips[0],
     ...(focusCue ? [focusCue] : []),
     ...(eqTip ? [eqTip] : []),

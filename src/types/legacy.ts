@@ -57,6 +57,8 @@ export type Accomplishment = {
   id: string
   text: string
   monthYear: string
+  /** "Featured on Profile" — a filled star vs an outline on the Legacy strip. */
+  featured?: boolean
 }
 
 export type Honor = {
@@ -66,7 +68,7 @@ export type Honor = {
 }
 
 /** A Pinned Legacy item — the "My Museum" strip (Forge Legacy.dc.html §pinned). */
-export type PinKind = 'record' | 'chapter' | 'honor' | 'photo' | 'memory'
+export type PinKind = 'record' | 'chapter' | 'honor' | 'photo' | 'memory' | 'accomplishment'
 export type Pin = {
   id: string
   kind: PinKind

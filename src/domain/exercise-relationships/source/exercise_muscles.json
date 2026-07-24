@@ -11644,5 +11644,29 @@
     "muscleId": "neck",
     "role": "Primary",
     "displayOrder": 1
+  },
+  {
+    "exerciseId": "arm-circles",
+    "muscleId": "mobility",
+    "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "shoulder-rolls",
+    "muscleId": "mobility",
+    "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "treadmill-walk",
+    "muscleId": "cardiovascular",
+    "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "treadmill-walk",
+    "muscleId": "quadriceps",
+    "role": "Secondary",
+    "displayOrder": 1
   }
 ]

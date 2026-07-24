@@ -20,17 +20,48 @@ export interface RecommendInput {
   experience?: string | null;
   primaryGoal?: GoalId | null;
   equipment?: readonly EquipmentId[] | null;
+  /**
+   * The athlete's Home Gym profile, when they've built one (`src/domain/home-gym/equipment.ts` ids).
+   * `null`/absent = never set up, and the coarse `equipment` answer stands on its own.
+   */
+  homeGym?: readonly string[] | null;
 }
 
 function expFor(e: string | null | undefined): Experience {
   return e === 'intermediate' || e === 'advanced' ? e : 'beginner';
 }
 
+/**
+ * "Home Gym" is one checkbox covering everything from a pair of bands to a fully-kitted garage, and
+ * those two athletes should not get the same program. When a real profile exists we read the tier off
+ * the gear itself: a bar with a rack or bench runs barbell programming, so it earns the `gym` tier
+ * even though the athlete trains alone in a garage.
+ *
+ * Deliberately only used to REFINE a `homegym` answer — never to downgrade someone who said they have
+ * a full commercial gym, whose access their home profile says nothing about.
+ */
+function accessFromGear(gym: readonly string[]): Access {
+  const has = (...ids: string[]) => ids.some((id) => gym.includes(id));
+  const bar = has('barbell', 'plates', 'trapbar', 'ezbar', 'smith');
+  if (bar && has('rack', 'bench', 'smith')) return 'gym';
+  if (bar || has('dumbbells', 'kettlebells', 'cable', 'latpulldown', 'legpress', 'legmachine')) return 'home';
+  return 'bodyweight'; // bands, a mat and a pull-up bar is bodyweight programming with resistance
+}
+
 /** Access tier from equipment — richest wins (matches derive.environmentForEquipment ordering). */
-export function accessFor(equipment: readonly EquipmentId[] | null | undefined): Access {
+export function accessFor(
+  equipment: readonly EquipmentId[] | null | undefined,
+  homeGym?: readonly string[] | null,
+): Access {
   const eq = equipment ?? [];
   if (eq.includes('fullgym')) return 'gym';
-  if (eq.includes('homegym') || eq.includes('dumbbells')) return 'home';
+  if (eq.includes('homegym')) {
+    // A profile is a better answer than the checkbox that prompted it — but an EMPTY one is a real
+    // "I own nothing", so it legitimately drops them to bodyweight.
+    if (homeGym != null) return accessFromGear(homeGym);
+    return 'home';
+  }
+  if (eq.includes('dumbbells')) return 'home';
   return 'bodyweight';
 }
 
@@ -48,7 +79,7 @@ const GYM_MAP: Record<GoalId, Record<Experience, string>> = {
 export function intendedProgramId(input: RecommendInput): string {
   const primary: GoalId = input.primaryGoal ?? 'health';
   const exp = expFor(input.experience);
-  const access = accessFor(input.equipment);
+  const access = accessFor(input.equipment, input.homeGym);
   if (access === 'bodyweight') return primary === 'endurance' ? 'run-c25k' : 'fbh-bodyweight-basics';
   if (access === 'home') {
     if (primary === 'endurance') return 'run-c25k';
