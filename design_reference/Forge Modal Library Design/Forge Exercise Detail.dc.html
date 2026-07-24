@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+  <script src="forge-exercise-catalog.js"></script>
+  <script>
+    (function () {
+      var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+      function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+      if (window.React && window.ReactDOM) { inject(); return; }
+      var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+    })();
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+    a { color: var(--fl-bronze-bright); text-decoration: none; }
+    a:hover { color: var(--fl-bronze-primary); }
+    .fl-scroll::-webkit-scrollbar { width:0; height:0; }
+    .fl-scroll { scrollbar-width: none; }
+    image-slot { display:block; width:100%; height:100%; }
+    @keyframes edRise { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:none; } }
+    @keyframes edDemo { 0%,100% { transform: translateX(0); } 50% { transform: translateX(3px); } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.001ms !important; } }
+  </style>
+</helmet>
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+  <div data-screen-label="Exercise Detail · Bench Press" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(6,7,8,0.3), rgba(6,7,8,0.3)), #060708 url('assets/forge-bg-2.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+        <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+      <!-- ═══ APP BAR ═══ -->
+      <div style="flex:none; position:relative; z-index:10;">
+        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="Exercise" on-back="{{ onBack }}" actions="{{ favBtn }}" hint-size="100%,56px"></x-import>
+      </div>
+
+      <div class="fl-scroll" ref="{{ setScrollEl }}" style="flex:1; min-height:0; overflow-y:auto; padding:0 0 34px;">
+
+        <!-- ── 1 · DEMONSTRATION (what it looks like) ── -->
+        <div style="padding:6px 18px 0; animation:edRise 500ms var(--fl-ease-out, ease-out) both;">
+          <div style="position:relative; width:100%; height:290px; border-radius:var(--fl-radius-xl); overflow:hidden; border:1px solid var(--fl-charcoal-600); background:radial-gradient(130% 100% at 50% 12%, #16181C 0%, #0A0B0D 80%); box-shadow:var(--fl-border-inset), var(--fl-shadow-image);">
+            <span aria-hidden="true" style="position:absolute; inset:0; z-index:0; display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-primary); opacity:0.11; animation:edDemo 3200ms var(--fl-ease-out, ease-out) infinite; animation-play-state:{{ demoPlayState }};"><svg width="168" height="168" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11"></path></svg></span>
+            <x-import component-from-global-scope="image-slot" id="benchDemoLoop" shape="rect" fit="{{ demoFit }}" placeholder="Drop demonstration loop" hint-size="100%,290px" style="position:absolute; inset:0; z-index:1;"></x-import>
+            <span aria-hidden="true" style="position:absolute; inset:0; z-index:2; pointer-events:none; background:linear-gradient(180deg, rgba(6,9,12,0) 48%, rgba(6,9,12,0.82) 100%);"></span>
+            <span style="position:absolute; top:12px; left:12px; z-index:3; pointer-events:none; display:inline-flex; align-items:center; gap:6px; padding:6px 11px; border-radius:var(--fl-radius-pill); background:rgba(6,9,12,0.55); border:1px solid var(--fl-bronze-border-subtle); backdrop-filter:blur(3px);"><span style="width:6px; height:6px; border-radius:50%; background:var(--fl-bronze-bright); box-shadow:var(--fl-glow-badge);"></span><span style="font-size:9px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-secondary);">Movement demo</span></span>
+            <!-- full-area tap: pause / play the loop -->
+            <button onClick="{{ onMediaToggle }}" aria-label="Pause or play demonstration" style="position:absolute; inset:0; z-index:4; background:transparent; border:none; cursor:pointer; padding:0;"></button>
+            <sc-if value="{{ mediaPaused }}" hint-placeholder-val="{{ false }}">
+              <span aria-hidden="true" style="position:absolute; inset:0; z-index:5; pointer-events:none; display:flex; align-items:center; justify-content:center;"><span style="width:54px; height:54px; border-radius:50%; background:rgba(6,9,12,0.55); border:1px solid var(--fl-bronze-border); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-bright); box-shadow:var(--fl-glow-subtle);"><svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor" style="margin-left:2px;"><path d="M8 5v14l11-7z"></path></svg></span></span>
+            </sc-if>
+            <span style="position:absolute; bottom:13px; left:15px; z-index:3; pointer-events:none; font-size:11.5px; font-weight:600; letter-spacing:0.3px; color:var(--fl-text-secondary);">Side view · Full ROM · Normal tempo</span>
+          </div>
+        </div>
+
+        <!-- ── 2 · WHAT IT IS (title, equipment, tags, one-line definition) ── -->
+        <div style="padding:18px 24px 4px; animation:edRise 560ms var(--fl-ease-out, ease-out) both; animation-delay:40ms;">
+          <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ tag }}</span>
+          <h1 style="margin:6px 0 0; font-family:var(--fl-font-display); font-size:32px; font-weight:600; letter-spacing:-0.5px; line-height:1.04; color:var(--fl-text-primary);">{{ name }}</h1>
+          <sc-if value="{{ actionable }}" hint-placeholder-val="{{ false }}">
+            <span style="display:inline-flex; align-items:center; gap:6px; margin-top:11px; padding:5px 11px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-bright)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h13l-3-3M20 17H7l3 3"></path></svg><span style="font-size:9.5px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-bronze-bright);">Replacing exercise</span></span>
+          </sc-if>
+          <div style="display:flex; align-items:center; gap:8px; margin-top:10px; color:var(--fl-text-secondary);">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" stroke-linejoin="miter"><path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11"></path></svg>
+            <span style="font-size:12px; font-weight:600; letter-spacing:1px; text-transform:uppercase;">{{ equip }}</span>
+          </div>
+          <p style="margin:14px 0 0; font-size:14px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">{{ definition }}</p>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:16px;">
+            <div style="display:flex; align-items:center; gap:11px; padding:11px 13px; border-radius:var(--fl-radius-lg); border:var(--fl-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-border-inset);"><span style="flex:none; display:flex; color:var(--fl-icon-bronze);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11"></path></svg></span><span style="display:flex; flex-direction:column; gap:1px; min-width:0;"><span style="font-size:8.5px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-tertiary);">Equipment</span><span style="font-size:13px; font-weight:600; color:var(--fl-text-primary);">{{ equip }}</span></span></div>
+            <div style="display:flex; align-items:center; gap:11px; padding:11px 13px; border-radius:var(--fl-radius-lg); border:var(--fl-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-border-inset);"><span style="flex:none; display:flex; color:var(--fl-icon-bronze);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20v-4M12 20v-9M19 20V6"></path></svg></span><span style="display:flex; flex-direction:column; gap:1px; min-width:0;"><span style="font-size:8.5px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-tertiary);">Difficulty</span><span style="font-size:13px; font-weight:600; color:var(--fl-text-primary);">{{ difficulty }}</span></span></div>
+            <div style="display:flex; align-items:center; gap:11px; padding:11px 13px; border-radius:var(--fl-radius-lg); border:var(--fl-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-border-inset);"><span style="flex:none; display:flex; color:var(--fl-icon-bronze);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6v12M9 12h10M15 8l4 4-4 4"></path></svg></span><span style="display:flex; flex-direction:column; gap:1px; min-width:0;"><span style="font-size:8.5px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-tertiary);">Pattern</span><span style="font-size:13px; font-weight:600; color:var(--fl-text-primary);">{{ pattern }}</span></span></div>
+            <div style="display:flex; align-items:center; gap:11px; padding:11px 13px; border-radius:var(--fl-radius-lg); border:var(--fl-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-border-inset);"><span style="flex:none; display:flex; color:var(--fl-icon-bronze);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="3.2"></circle></svg></span><span style="display:flex; flex-direction:column; gap:1px; min-width:0;"><span style="font-size:8.5px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-tertiary);">Prime target</span><span style="font-size:13px; font-weight:600; color:var(--fl-text-primary);">{{ primeTarget }}</span></span></div>
+          </div>
+        </div>
+
+        <!-- ── 3 · WHY IT MATTERS ── -->
+        <div style="padding:22px 22px 4px;">
+          <div style="padding:0 2px 10px;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Why it matters" hint-size="100%,20px"></x-import></div>
+          <div style="position:relative; overflow:hidden; border-radius:var(--fl-radius-xl); border:1px solid var(--fl-bronze-border); background:linear-gradient(180deg, rgba(191,143,79,0.08), transparent 58%), var(--fl-surface-card); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-card-soft); padding:18px 20px;">
+            <div aria-hidden="true" style="position:absolute; inset:0; background:radial-gradient(80% 70% at 10% 0%, rgba(191,143,79,0.12), transparent 58%);"></div>
+            <p style="position:relative; z-index:1; margin:0; font-size:13.5px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">{{ why }}</p>
+          </div>
+        </div>
+
+        <!-- ── 4 · WHAT IT TRAINS (muscles) ── -->
+        <div style="padding:22px 22px 4px;">
+          <div style="padding:0 2px 10px;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="What it trains" hint-size="100%,20px"></x-import></div>
+          <div style="border-radius:var(--fl-radius-xl); border:var(--fl-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); padding:16px 18px; display:flex; flex-direction:column; gap:16px;">
+            <div>
+              <span style="display:block; font-size:9px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:9px;">Prime movers</span>
+              <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                <sc-for list="{{ primary }}" as="m" hint-placeholder-count="2">
+                  <span style="display:inline-flex; align-items:center; gap:7px; padding:8px 13px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-tint);"><span style="width:7px; height:7px; flex:none; transform:rotate(45deg); background:var(--fl-bronze-primary);"></span><span style="font-size:12.5px; font-weight:600; color:var(--fl-text-primary);">{{ m }}</span></span>
+                </sc-for>
+              </div>
+            </div>
+            <div style="border-top:1px solid var(--fl-charcoal-700); padding-top:15px;">
+              <span style="display:block; font-size:9px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary); margin-bottom:9px;">Secondary muscles</span>
+              <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                <sc-for list="{{ secondary }}" as="m" hint-placeholder-count="2">
+                  <span style="display:inline-flex; align-items:center; gap:7px; padding:8px 13px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-charcoal-500); background:transparent;"><span style="width:6px; height:6px; flex:none; border-radius:50%; background:var(--fl-gray-600);"></span><span style="font-size:12.5px; font-weight:500; color:var(--fl-text-secondary);">{{ m }}</span></span>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── 5 · HOW TO DO IT ── -->
+        <div style="padding:22px 22px 4px;">
+          <div style="padding:0 2px 12px;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="How to do it" hint-size="100%,20px"></x-import></div>
+          <div style="display:flex; flex-direction:column; gap:2px;">
+            <sc-for list="{{ steps }}" as="s" hint-placeholder-count="5">
+              <div style="display:flex; gap:14px; padding:12px 4px;{{ s.divider }}">
+                <span style="flex:none; width:30px; height:30px; display:flex; align-items:center; justify-content:center; position:relative;">
+                  <span aria-hidden="true" style="position:absolute; inset:0; transform:rotate(45deg); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-tint); border-radius:4px;"></span>
+                  <span style="position:relative; font-family:var(--fl-font-display); font-size:14px; font-weight:700; color:var(--fl-bronze-bright);">{{ s.n }}</span>
+                </span>
+                <p style="margin:0; padding-top:4px; font-size:13.5px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">{{ s.text }}</p>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <!-- ── 5b · CUES ── -->
+        <div style="padding:16px 22px 4px;">
+          <div style="border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:linear-gradient(180deg, rgba(191,143,79,0.06), transparent 70%), var(--fl-surface-card); padding:15px 17px;">
+            <span style="display:flex; align-items:center; gap:7px; font-size:9px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:11px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.6L21 9.2l-5 4.3 1.6 6.8L12 16.9 6.4 20.3 8 13.5l-5-4.3 6.6-.6z"></path></svg>Coaching cues</span>
+            <div style="display:flex; flex-direction:column; gap:9px;">
+              <sc-for list="{{ cues }}" as="c" hint-placeholder-count="3">
+                <div style="display:flex; gap:10px; align-items:flex-start;"><span style="flex:none; margin-top:6px; width:5px; height:5px; transform:rotate(45deg); background:var(--fl-bronze-primary);"></span><span style="font-size:13px; line-height:1.5; color:var(--fl-text-secondary);">{{ c }}</span></div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── 5c · COMMON MISTAKES ── -->
+        <sc-if value="{{ showMistakes }}" hint-placeholder-val="{{ true }}">
+        <div style="padding:16px 22px 4px;">
+          <div style="padding:0 2px 10px;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Common mistakes" hint-size="100%,20px"></x-import></div>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <sc-for list="{{ mistakes }}" as="m" hint-placeholder-count="3">
+              <div style="display:flex; gap:11px; align-items:flex-start; padding:11px 14px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-recessed);">
+                <span style="flex:none; margin-top:1px; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:rgba(190,90,76,0.14); color:var(--fl-red-muted);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg></span>
+                <span style="font-size:13px; line-height:1.5; color:var(--fl-text-secondary); text-wrap:pretty;">{{ m }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+
+        <!-- ── 6 · ALTERNATIVES ── -->
+        <sc-if value="{{ showAlternatives }}" hint-placeholder-val="{{ true }}">
+        <div ref="{{ setAltsEl }}" style="padding:22px 22px 4px;">
+          <div style="padding:0 2px 10px;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Alternatives" hint-size="100%,20px"></x-import></div>
+          <div style="border-radius:var(--fl-radius-xl); border:var(--fl-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); overflow:hidden;">
+            <sc-for list="{{ alternatives }}" as="a" hint-placeholder-count="4">
+              <button type="button" onClick="{{ a.onTap }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:14px 16px; background:{{ a.bg }}; border:none;{{ a.divider }} cursor:pointer; text-align:left;">
+                <span style="flex:none; width:42px; height:42px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);">{{ a.iconNode }}</span>
+                <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                  <span style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:14.5px; font-weight:600; color:var(--fl-text-primary);">{{ a.name }}</span>
+                    <sc-if value="{{ a.recommended }}" hint-placeholder-val="{{ false }}"><span style="flex:none; display:inline-flex; align-items:center; padding:2px 8px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); font-size:8.5px; font-weight:700; letter-spacing:0.9px; text-transform:uppercase; color:var(--fl-bronze-bright);">Best substitute</span></sc-if>
+                  </span>
+                  <span style="font-size:12px; color:var(--fl-text-tertiary); line-height:1.4;">{{ a.equip }} · {{ a.note }}</span>
+                </span>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 6l6 6-6 6"></path></svg>
+              </button>
+            </sc-for>
+            <sc-if value="{{ hasMoreAlts }}" hint-placeholder-val="{{ false }}">
+              <button type="button" onClick="{{ onViewAllAlts }}" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:14px 16px; background:transparent; border:none; border-top:1px solid var(--fl-charcoal-700); cursor:pointer;">
+                <span style="font-size:11px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-bronze-bright);">View all {{ altTotal }}</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-bright)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+              </button>
+            </sc-if>
+          </div>
+        </div>
+        </sc-if>
+
+        <!-- ── ACTIONS (owned-program / workout context) ── -->
+        <sc-if value="{{ actionable }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:24px 22px 4px;">
+          <div style="padding:0 2px 10px;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Actions" hint-size="100%,20px"></x-import></div>
+          <div style="border-radius:var(--fl-radius-xl); border:1px solid var(--fl-bronze-border); background:linear-gradient(180deg, rgba(191,143,79,0.06), transparent 58%), var(--fl-surface-card); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); overflow:hidden;">
+            <button type="button" onClick="{{ onReplace }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:15px 16px; background:transparent; border:none; cursor:pointer; text-align:left;">
+              <span style="flex:none; width:40px; height:40px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-tint); display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-bright);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h13l-3-3M20 17H7l3 3"></path></svg></span>
+              <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;"><span style="font-size:15px; font-weight:700; color:var(--fl-bronze-bright);">Replace exercise</span><span style="font-size:12px; color:var(--fl-text-secondary); line-height:1.4;">Choose another exercise while keeping your workout structure.</span></span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 6l6 6-6 6"></path></svg>
+            </button>
+            <sc-if value="{{ showAlternatives }}" hint-placeholder-val="{{ true }}">
+            <button type="button" onClick="{{ onViewAlternatives }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:15px 16px; background:transparent; border:none; border-top:1px solid var(--fl-charcoal-700); cursor:pointer; text-align:left;">
+              <span style="flex:none; width:40px; height:40px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"></path></svg></span>
+              <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;"><span style="font-size:15px; font-weight:600; color:var(--fl-text-primary);">View alternatives</span><span style="font-size:12px; color:var(--fl-text-tertiary); line-height:1.4;">See close substitutes for this movement.</span></span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M18 15l-6-6-6 6"></path></svg>
+            </button>
+            </sc-if>
+          </div>
+        </div>
+        </sc-if>
+
+      </div>
+
+      <!-- grain -->
+      <div aria-hidden="true" style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.06; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;demoFit&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;cover&quot;,&quot;options&quot;:[&quot;cover&quot;,&quot;contain&quot;],&quot;tsType&quot;:&quot;'cover' | 'contain'&quot;,&quot;section&quot;:&quot;Demonstration&quot;},&quot;showMistakes&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Content&quot;},&quot;showAlternatives&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Content&quot;},&quot;startFavorited&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Content&quot;}}">
+class Component extends DCLogic {
+  state = { ready: false, favorite: false, paused: false, showAllAlts: false };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const cat = typeof window !== 'undefined' && window.ForgeExerciseCatalog;
+      if (r && ns && cat) this.setState({ ready: true });
+      else this._t = setTimeout(this._poll, 40);
+    };
+    if (this.props.startFavorited) this.setState({ favorite: true });
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) {
+      return { ready: false, notReady: true };
+    }
+    const h = React.createElement;
+    const fav = this.state.favorite;
+    // actionable context (opened from an owned program's schedule or a workout) unlocks Replace
+    const edHash = (typeof window !== 'undefined' && window.location.hash) || '';
+    const actionable = /replace/.test(edHash);
+    const edOrigin = (/o=([a-z]+)/.exec(edHash) || [])[1] || 'workout';
+    const edEx = (/[#&]ex=([^&]+)/.exec(edHash) || [])[1] || '';   // exercise being replaced, passed through to the picker
+    const edSlot = (/[#&]slot=([^&]+)/.exec(edHash) || [])[1] || '';
+    const edPid = (/[#&]pid=([^&]+)/.exec(edHash) || [])[1] || '';
+    const edBackDest = edOrigin === 'program' ? ('Forge%20Program.dc.html' + (edPid ? '#' + edPid : '')) : 'Forge%20Active%20Workout.dc.html';
+
+    // ── resolve which exercise to show — ?ex=<key> query, else #ex= hash (replace flow), else default ──
+    let qEx = null;
+    try { qEx = new URLSearchParams(window.location.search).get('ex'); } catch (e) {}
+    const exKey = qEx || (edEx ? decodeURIComponent(edEx) : '') || 'bench';
+    const CAT = window.ForgeExerciseCatalog;
+    const ex = CAT.get(exKey) || CAT.get('bench');
+    const exNav = (name) => { const rec = CAT.get(name); if (rec) window.location.href = 'Forge%20Exercise%20Detail.dc.html?ex=' + rec.key; };
+
+    const favBtn = h('button', {
+      type: 'button',
+      'aria-label': fav ? 'Saved' : 'Save exercise',
+      onClick: () => this.setState({ favorite: !this.state.favorite }),
+      style: { width: '34px', height: '34px', border: 'none', background: 'transparent', cursor: 'pointer', color: fav ? 'var(--fl-bronze-primary)' : 'var(--fl-text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+    }, h('svg', { width: 20, height: 20, viewBox: '0 0 24 24', fill: fav ? 'var(--fl-bronze-primary)' : 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M6 4h12v17l-6-4-6 4z' })));
+
+    const div = 'border-top:1px solid var(--fl-charcoal-700);';
+    const steps = (ex.steps || []).map((text, i) => ({ n: String(i + 1), text, divider: i === 0 ? '' : div }));
+
+    const S = (children, sw) => h('svg', { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw || 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, children);
+    const P = (d) => h('path', { key: d, d });
+    const altIcons = {
+      db: S([P('M7 8.5v7'), P('M17 8.5v7'), P('M4.5 10v4'), P('M19.5 10v4'), P('M7 12h10')]),
+      bar: S([P('M6.5 9v6'), P('M17.5 9v6'), P('M4 10.5v3'), P('M20 10.5v3'), P('M6.5 12h11')]),
+      machine: S([P('M5 3v18'), P('M5 7h9a3 3 0 0 1 0 6H9'), P('M9 13v5')]),
+      body: S([h('circle', { key: 'c', cx: 12, cy: 6, r: 2.4 }), P('M6 20c0-4.2 2.8-7 6-7s6 2.8 6 7')]),
+      cable: S([P('M12 3v6'), h('circle', { key: 'c', cx: 12, cy: 12, r: 2.6 }), P('M9.5 14l-2 7'), P('M14.5 14l2 7')]),
+    };
+    const rawAlts = ex.alternatives || [];
+    const baseAlts = rawAlts.map((a) => ({ ...a, iconNode: altIcons[a.ic] || altIcons.bar, onTap: () => exNav(a.name) }));
+    const ALT_CAP = 5;                                   // 0 → hide · 1–5 → full · 6+ → first five + View all
+    const hasMoreAlts = baseAlts.length > ALT_CAP && !this.state.showAllAlts;
+    const visibleAlts = hasMoreAlts ? baseAlts.slice(0, ALT_CAP) : baseAlts;
+    const alternatives = visibleAlts.map((a, i) => ({
+      ...a,
+      recommended: i === 0,
+      bg: i === 0 ? 'linear-gradient(90deg, rgba(191,143,79,0.07), transparent 72%)' : 'transparent',
+      divider: i === 0 ? '' : div,
+    }));
+
+    return {
+      ready: true,
+      notReady: false,
+      onBack: () => { (function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})() ? window.history.back() : (window.location.href = edBackDest); },
+      favBtn,
+      actionable,
+      onReplace: () => { window.location.href = 'Forge%20Exercise%20Picker.dc.html#o=' + edOrigin + (edPid ? '&pid=' + edPid : '') + (edSlot ? '&slot=' + edSlot : '') + (edEx ? '&ex=' + edEx : ''); },
+      setScrollEl: (el) => { this._scrollEl = el; },
+      setAltsEl: (el) => { this._altsEl = el; },
+      onViewAlternatives: () => { const sc = this._scrollEl, al = this._altsEl; if (sc && al) { const top = al.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop - 12; sc.scrollTo({ top: top, behavior: 'smooth' }); } },
+      mediaPaused: this.state.paused,
+      demoPlayState: this.state.paused ? 'paused' : 'running',
+      demoFit: this.props.demoFit ?? 'cover',   // per-exercise: 'cover' default, 'contain' for full-body movements
+      onMediaToggle: () => this.setState({ paused: !this.state.paused }),
+
+      // ── exercise identity, from the shared catalog ──
+      name: ex.name,
+      tag: ex.type + ' · ' + ex.cat,
+      equip: ex.equip,
+      difficulty: ex.difficulty,
+      pattern: ex.pattern,
+      primeTarget: (ex.primary && ex.primary[0]) || ex.cat,
+      definition: ex.definition,
+      why: ex.why,
+
+      primary: ex.primary || [],
+      secondary: ex.secondary || [],
+      steps,
+      cues: ex.cues || [],
+      mistakes: ex.mistakes || [],
+      showMistakes: (this.props.showMistakes ?? true) && (ex.mistakes || []).length > 0,
+      showAlternatives: (this.props.showAlternatives ?? true) && baseAlts.length > 0,
+      alternatives,
+      hasMoreAlts,
+      altTotal: baseAlts.length,
+      onViewAllAlts: () => this.setState({ showAllAlts: true }),
+    };
+  }
+}
+</script>
+</body>
+</html>

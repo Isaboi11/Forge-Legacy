@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&amp;display=swap">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+  <script>
+    (function () {
+      var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+      function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+      if (window.React && window.ReactDOM) { inject(); return; }
+      var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+    })();
+  </script>
+  <script src="forge-symbols.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin:0; background:#07090C; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+    .fl-scroll::-webkit-scrollbar { width:0; height:0; }
+    .fl-scroll { scrollbar-width: none; }
+  </style>
+</helmet>
+
+<sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+  <div style="min-height:100vh; display:flex; align-items:center; justify-content:center;">
+    <span style="width:44px; height:44px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:24px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+  </div>
+</sc-if>
+
+<sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+<div style="padding:56px 60px 90px; min-height:100vh;">
+
+  <!-- turn heading -->
+  <div style="max-width:920px; margin:0 0 36px;">
+    <span style="font-size:12px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:var(--fl-bronze-primary);">Forge Legacy · Endurance</span>
+    <h1 style="margin:12px 0 10px; font-family:var(--fl-font-display); font-size:40px; font-weight:700; letter-spacing:0.3px; color:var(--fl-text-primary);">Run Record — two directions</h1>
+    <p style="margin:0; max-width:640px; font-size:15px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">An imported run, not a logged one. Same forged material and ceremony as the strength side — a different instrument panel. Compare how much the <strong style="color:var(--fl-text-primary); font-weight:600;">route map</strong> should lead versus the <strong style="color:var(--fl-text-primary); font-weight:600;">data</strong>.</p>
+  </div>
+
+  <section>
+    <div style="display:flex; gap:48px; flex-wrap:wrap; align-items:flex-start;">
+
+      <!-- ═══════════════ 1A · MAP HERO ═══════════════ -->
+      <div id="1a" style="display:flex; flex-direction:column; gap:14px;">
+        <div style="display:flex; align-items:center; gap:11px;">
+          <span style="display:inline-flex; align-items:center; justify-content:center; min-width:30px; height:24px; padding:0 8px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-metallic); color:#1A1206; font-size:12px; font-weight:800; letter-spacing:1px;">1A</span>
+          <span style="font-family:var(--fl-font-display); font-size:17px; font-weight:600; color:var(--fl-text-primary);">Map Hero</span>
+          <span style="font-size:12.5px; color:var(--fl-text-tertiary);">— the route leads; immersive</span>
+        </div>
+
+        <div data-screen-label="Run Record" style="width:404px; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:var(--fl-bg-atmospheric); box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+          <!-- MAP · full-bleed hero -->
+          <div style="position:relative; height:398px; flex:none; overflow:hidden; background: repeating-linear-gradient(0deg, rgba(191,143,79,0.045) 0 1px, transparent 1px 44px), repeating-linear-gradient(90deg, rgba(191,143,79,0.045) 0 1px, transparent 1px 44px), radial-gradient(120% 92% at 50% 14%, #12171C 0%, #090D11 100%);">
+            <svg viewBox="0 0 404 398" preserveAspectRatio="xMidYMid slice" style="position:absolute; inset:0; width:100%; height:100%;">
+              <path d="M74 344 C 54 288 112 278 112 230 C 112 178 60 172 90 120 C 114 78 186 92 206 140 C 228 192 294 178 300 130 C 306 90 270 70 288 66" fill="none" stroke="var(--fl-bronze-bright)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 7px rgba(205,160,99,0.55));"></path>
+              <circle cx="74" cy="344" r="8" fill="var(--fl-bronze-bright)" stroke="#090D11" stroke-width="3"></circle>
+              <circle cx="288" cy="66" r="8" fill="none" stroke="var(--fl-bronze-bright)" stroke-width="3.4"></circle>
+              <circle cx="288" cy="66" r="2.8" fill="var(--fl-bronze-bright)"></circle>
+            </svg>
+
+            <!-- top scrim -->
+            <div style="position:absolute; top:0; left:0; right:0; height:96px; background:linear-gradient(180deg, rgba(6,9,12,0.85) 0%, transparent 100%); display:flex; align-items:flex-start; justify-content:space-between; padding:16px 16px 0;">
+              <button type="button" onClick="{{ goBack }}" aria-label="Back" style="width:40px; height:40px; display:flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:rgba(9,13,17,0.6); border:1px solid var(--fl-charcoal-600); cursor:pointer; color:var(--fl-text-primary);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>
+              <span style="display:inline-flex; align-items:center; gap:7px; padding:8px 12px; border-radius:var(--fl-radius-pill); background:rgba(9,13,17,0.6); border:1px solid var(--fl-charcoal-600); font-size:11px; font-weight:600; letter-spacing:0.4px; color:var(--fl-text-secondary);"><span style="width:6px; height:6px; border-radius:50%; background:var(--fl-bronze-bright); flex:none;"></span>Apple Watch</span>
+            </div>
+
+            <!-- bottom scrim -->
+            <div style="position:absolute; bottom:0; left:0; right:0; padding:44px 22px 20px; background:linear-gradient(0deg, rgba(6,9,12,0.94) 12%, transparent 100%);">
+              <span style="font-size:10.5px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--fl-bronze-primary);">Chapter III · The Rebuild</span>
+              <h2 style="margin:7px 0 4px; font-family:var(--fl-font-display); font-size:32px; font-weight:700; letter-spacing:0.3px; color:var(--fl-text-primary);">Tempo Run</h2>
+              <span style="font-size:13px; color:var(--fl-text-secondary);">Mar 15 · 6:24 AM</span>
+            </div>
+          </div>
+
+          <!-- BODY -->
+          <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:22px 20px 26px;">
+            <!-- distance hero -->
+            <div style="display:flex; align-items:flex-end; justify-content:space-between; padding-bottom:18px; border-bottom:1px solid var(--fl-charcoal-700);">
+              <div style="display:flex; flex-direction:column; gap:2px;">
+                <span style="display:flex; align-items:baseline; gap:6px;"><span style="font-family:var(--fl-font-display); font-size:52px; font-weight:600; line-height:0.85; color:var(--fl-text-primary);">6.21</span><span style="font-size:16px; font-weight:600; color:var(--fl-text-secondary);">mi</span></span>
+                <span style="font-size:10px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">Distance</span>
+              </div>
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;">
+                <span style="font-family:var(--fl-font-display); font-size:26px; font-weight:600; color:var(--fl-bronze-bright);">7:46</span>
+                <span style="font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Avg Pace /mi</span>
+              </div>
+            </div>
+
+            <!-- stat trio -->
+            <div style="display:flex; gap:10px; margin-top:16px;">
+              <div style="flex:1;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.StatBlock" value="48:12" label="Duration" icon="{{ iconDur }}" hint-size="100%,84px"></x-import></div>
+              <div style="flex:1;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.StatBlock" value="312 ft" label="Elevation" icon="{{ iconElev }}" hint-size="100%,84px"></x-import></div>
+              <div style="flex:1;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.StatBlock" value="158" label="Avg HR" icon="{{ iconHr }}" hint-size="100%,84px"></x-import></div>
+            </div>
+
+            <!-- splits -->
+            <span style="display:block; font-size:10px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:24px 0 8px;">Splits · per mile</span>
+            <div style="display:flex; flex-direction:column;">
+              <sc-for list="{{ splits }}" as="s" hint-placeholder-count="6">
+                <div style="display:flex; align-items:center; gap:12px; padding:8px 0;">
+                  <span style="width:16px; font-family:var(--fl-font-mono); font-size:12px; color:var(--fl-text-tertiary);">{{ s.mi }}</span>
+                  <div style="flex:1; height:8px; border-radius:99px; background:var(--fl-charcoal-700); overflow:hidden;"><div style="width:{{ s.pctW }}; height:100%; background:{{ s.color }};"></div></div>
+                  <span style="width:46px; text-align:right; font-family:var(--fl-font-mono); font-size:13px; font-weight:600; color:{{ s.paceColor }};">{{ s.pace }}</span>
+                </div>
+              </sc-for>
+            </div>
+
+            <!-- HR zones -->
+            <div style="display:flex; align-items:center; justify-content:space-between; margin:22px 0 9px;">
+              <span style="font-size:10px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Heart Rate</span>
+              <span style="font-size:12px; color:var(--fl-text-tertiary);">avg 158 · max 174 bpm</span>
+            </div>
+            <div style="display:flex; height:11px; border-radius:99px; overflow:hidden; gap:2px;">
+              <sc-for list="{{ hrZones }}" as="z" hint-placeholder-count="5">
+                <div style="width:{{ z.pctW }}; background:{{ z.color }};"></div>
+              </sc-for>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:7px;">
+              <span style="font-size:10px; color:var(--fl-text-tertiary);">Z1</span><span style="font-size:10px; color:var(--fl-text-tertiary);">Z2</span><span style="font-size:10px; color:var(--fl-text-tertiary);">Z3</span><span style="font-size:10px; color:var(--fl-text-tertiary);">Z4</span><span style="font-size:10px; color:var(--fl-text-tertiary);">Z5</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════ 1B · THE LEDGER ═══════════════ -->
+      <div id="1b" style="display:flex; flex-direction:column; gap:14px;">
+        <div style="display:flex; align-items:center; gap:11px;">
+          <span style="display:inline-flex; align-items:center; justify-content:center; min-width:30px; height:24px; padding:0 8px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-metallic); color:#1A1206; font-size:12px; font-weight:800; letter-spacing:1px;">1B</span>
+          <span style="font-family:var(--fl-font-display); font-size:17px; font-weight:600; color:var(--fl-text-primary);">The Ledger</span>
+          <span style="font-size:12.5px; color:var(--fl-text-tertiary);">— data leads; map is evidence</span>
+        </div>
+
+        <div data-screen-label="Run Record" style="width:404px; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:var(--fl-bg-atmospheric); box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+          <!-- header -->
+          <div style="height:56px; flex:none; display:flex; align-items:center; gap:8px; padding:0 14px 0 6px; border-bottom:1px solid var(--fl-charcoal-600);">
+            <button type="button" onClick="{{ goBack }}" aria-label="Back" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>
+            <span style="flex:1; font-size:13px; font-weight:700; letter-spacing:2.4px; text-transform:uppercase; color:var(--fl-text-primary);">Run</span>
+            <span style="display:inline-flex; align-items:center; gap:7px; padding:6px 11px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-charcoal-600); font-size:11px; font-weight:600; color:var(--fl-text-secondary);"><span style="width:6px; height:6px; border-radius:50%; background:var(--fl-bronze-bright); flex:none;"></span>Apple Watch</span>
+          </div>
+
+          <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:24px 20px 26px;">
+            <!-- editorial headline -->
+            <span style="font-size:10.5px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-bronze-primary);">Chapter III · The Rebuild</span>
+            <h2 style="margin:8px 0 3px; font-family:var(--fl-font-display); font-size:30px; font-weight:700; letter-spacing:0.2px; color:var(--fl-text-primary);">Tempo Run</h2>
+            <span style="font-size:12.5px; color:var(--fl-text-tertiary);">Mar 15 · 6:24 AM</span>
+
+            <div style="display:flex; gap:24px; margin-top:18px; padding-bottom:18px; border-bottom:1px solid var(--fl-charcoal-700);">
+              <div style="display:flex; flex-direction:column; gap:2px;">
+                <span style="display:flex; align-items:baseline; gap:5px;"><span style="font-family:var(--fl-font-display); font-size:40px; font-weight:600; line-height:0.85; color:var(--fl-text-primary);">6.21</span><span style="font-size:14px; font-weight:600; color:var(--fl-text-secondary);">mi</span></span>
+                <span style="font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Distance</span>
+              </div>
+              <div style="width:1px; background:var(--fl-charcoal-700);"></div>
+              <div style="display:flex; flex-direction:column; gap:2px;">
+                <span style="display:flex; align-items:baseline; gap:5px;"><span style="font-family:var(--fl-font-display); font-size:40px; font-weight:600; line-height:0.85; color:var(--fl-bronze-bright);">7:46</span><span style="font-size:14px; font-weight:600; color:var(--fl-text-secondary);">/mi</span></span>
+                <span style="font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Avg Pace</span>
+              </div>
+            </div>
+
+            <!-- contained map -->
+            <div style="position:relative; height:176px; margin-top:20px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-charcoal-600); overflow:hidden; background: repeating-linear-gradient(0deg, rgba(191,143,79,0.05) 0 1px, transparent 1px 34px), repeating-linear-gradient(90deg, rgba(191,143,79,0.05) 0 1px, transparent 1px 34px), radial-gradient(120% 100% at 50% 20%, #12171C 0%, #0A0E12 100%);">
+              <svg viewBox="0 0 364 176" preserveAspectRatio="xMidYMid slice" style="position:absolute; inset:0; width:100%; height:100%;">
+                <path d="M44 146 C 32 112 70 108 72 80 C 74 50 42 46 62 28 C 80 12 130 20 144 48 C 160 80 214 72 230 44 C 242 22 278 28 292 40" fill="none" stroke="var(--fl-bronze-bright)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 5px rgba(205,160,99,0.5));"></path>
+                <circle cx="44" cy="146" r="6.5" fill="var(--fl-bronze-bright)" stroke="#0A0E12" stroke-width="2.5"></circle>
+                <circle cx="292" cy="40" r="6.5" fill="none" stroke="var(--fl-bronze-bright)" stroke-width="3"></circle>
+                <circle cx="292" cy="40" r="2.3" fill="var(--fl-bronze-bright)"></circle>
+              </svg>
+              <span style="position:absolute; bottom:10px; left:12px; font-size:10.5px; font-weight:600; letter-spacing:0.5px; color:var(--fl-text-tertiary); background:rgba(9,13,17,0.55); padding:4px 9px; border-radius:var(--fl-radius-pill);">Riverside loop · 6.21 mi</span>
+            </div>
+
+            <!-- elevation profile (prominent) -->
+            <div style="display:flex; align-items:center; justify-content:space-between; margin:24px 0 10px;">
+              <span style="font-size:10px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Elevation</span>
+              <span style="font-size:12px; color:var(--fl-text-secondary);">+312 ft gain</span>
+            </div>
+            <div style="position:relative; height:96px; border-radius:var(--fl-radius-md); overflow:hidden; background:var(--fl-bg-primary); border:1px solid var(--fl-charcoal-700);">
+              <svg viewBox="0 0 364 96" preserveAspectRatio="none" style="position:absolute; inset:0; width:100%; height:100%;">
+                <defs><linearGradient id="elevFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(191,143,79,0.34)"></stop><stop offset="100%" stop-color="rgba(191,143,79,0)"></stop></linearGradient></defs>
+                <path d="M0 70 L36 60 L73 64 L109 44 L146 36 L182 52 L218 26 L255 36 L291 16 L328 32 L364 46 L364 96 L0 96 Z" fill="url(#elevFill)"></path>
+                <path d="M0 70 L36 60 L73 64 L109 44 L146 36 L182 52 L218 26 L255 36 L291 16 L328 32 L364 46" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </div>
+
+            <!-- stat grid -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:20px;">
+              <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.StatBlock" value="48:12" label="Duration" icon="{{ iconDur }}" hint-size="100%,84px"></x-import>
+              <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.StatBlock" value="86" label="Cadence spm" icon="{{ iconPace }}" hint-size="100%,84px"></x-import>
+              <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.StatBlock" value="312 ft" label="Elevation" icon="{{ iconElev }}" hint-size="100%,84px"></x-import>
+              <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.StatBlock" value="158" label="Avg HR" icon="{{ iconHr }}" hint-size="100%,84px"></x-import>
+            </div>
+
+            <!-- splits table -->
+            <span style="display:block; font-size:10px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:24px 0 8px;">Splits · per mile</span>
+            <div style="border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); overflow:hidden; background:var(--fl-bg-primary);">
+              <sc-for list="{{ splits }}" as="s" hint-placeholder-count="6">
+                <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-bottom:1px solid var(--fl-charcoal-700);">
+                  <span style="width:16px; font-family:var(--fl-font-mono); font-size:12px; color:var(--fl-text-tertiary);">{{ s.mi }}</span>
+                  <div style="flex:1; height:7px; border-radius:99px; background:var(--fl-charcoal-700); overflow:hidden;"><div style="width:{{ s.pctW }}; height:100%; background:{{ s.color }};"></div></div>
+                  <span style="width:46px; text-align:right; font-family:var(--fl-font-mono); font-size:13px; font-weight:600; color:{{ s.paceColor }};">{{ s.pace }}</span>
+                  <sc-if value="{{ s.fast }}" hint-placeholder-val="{{ false }}"><span style="font-size:8px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-bronze-bright);">PR</span></sc-if>
+                </div>
+              </sc-for>
+            </div>
+
+            <!-- HR zones -->
+            <div style="display:flex; align-items:center; justify-content:space-between; margin:24px 0 9px;">
+              <span style="font-size:10px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Heart Rate Zones</span>
+              <span style="font-size:12px; color:var(--fl-text-tertiary);">avg 158 · max 174</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:7px;">
+              <sc-for list="{{ hrZones }}" as="z" hint-placeholder-count="5">
+                <div style="display:flex; align-items:center; gap:11px;">
+                  <span style="width:20px; font-size:11px; font-weight:600; color:var(--fl-text-tertiary);">{{ z.label }}</span>
+                  <div style="flex:1; height:9px; border-radius:99px; background:var(--fl-charcoal-700); overflow:hidden;"><div style="width:{{ z.pctW }}; height:100%; background:{{ z.color }};"></div></div>
+                  <span style="width:34px; text-align:right; font-size:11px; font-family:var(--fl-font-mono); color:var(--fl-text-secondary);">{{ z.pctW }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { ready: false };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      if (r && ns && fs) this.setState({ ready: true });
+      else this._t = setTimeout(this._poll, 40);
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) {
+      return { ready: false, notReady: true };
+    }
+    const FS = window.ForgeSymbols;
+    const ic = (id) => FS.create(React, id, { size: 20, strokeWidth: 1.7 });
+
+    const bright = 'var(--fl-bronze-bright)';
+    const rawSplits = [
+      { mi: '1', pace: '7:52', pct: 0.80 },
+      { mi: '2', pace: '7:49', pct: 0.84 },
+      { mi: '3', pace: '7:44', pct: 0.90 },
+      { mi: '4', pace: '7:38', pct: 1.00, fast: true },
+      { mi: '5', pace: '7:51', pct: 0.82 },
+      { mi: '6', pace: '7:41', pct: 0.94 },
+    ];
+    const splits = rawSplits.map((s) => ({
+      mi: s.mi,
+      pace: s.pace,
+      pctW: Math.round(s.pct * 100) + '%',
+      color: s.fast ? '#CDA063' : '#7A5C30',
+      paceColor: s.fast ? bright : 'var(--fl-text-secondary)',
+      fast: !!s.fast,
+    }));
+
+    const zoneColors = ['#3A3E44', '#6E5326', '#97702F', '#BF8F4F', '#CDA063'];
+    const zonePct = [5, 18, 44, 28, 5];
+    const hrZones = zonePct.map((p, i) => ({
+      label: 'Z' + (i + 1),
+      pctW: p + '%',
+      color: zoneColors[i],
+    }));
+
+    return {
+      ready: true,
+      notReady: false,
+      iconDist: ic('shoe'),
+      iconPace: ic('stopwatch'),
+      iconDur: ic('clock'),
+      iconElev: ic('mountain'),
+      iconHr: ic('heart'),
+      splits: splits,
+      hrZones: hrZones,
+      goBack: () => { window.location.href = 'Forge%20Activity%20History.dc.html'; },
+    };
+  }
+}
+</script>
+</body>
+</html>

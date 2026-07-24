@@ -50,13 +50,13 @@ Columns: **A?** audited · **D?** deltas classified · **DF** DROPPED-FREE fixed
 
 | `.dc` file | Built route | Status | A? | D? | DF | BL |
 |---|---|---|:--:|:--:|:--:|:--:|
-| Forge Home | `src/app/(tabs)/index.tsx` | BUILT | | | | |
-| Forge Legacy | `src/app/(tabs)/legacy.tsx` | BUILT | | | | |
-| Squads Hub | `src/app/(tabs)/squads.tsx` | BUILT | | | | |
-| Forge Programs Catalog | `src/app/(tabs)/workouts.tsx` | BUILT (Workouts = W-2) | | | | |
-| Forge Public Profile | `src/app/athlete/[id].tsx` | BUILT (thin, Path 1) | | | | |
-| Forge Friends Feed | `src/app/friends.tsx` | BUILT | | | | |
-| Post Detail | `src/app/post/[id].tsx` | BUILT | | | | |
+| Forge Home | `src/app/(tabs)/index.tsx` | BUILT | ✓ | ✓ | — | — |
+| Forge Legacy | `src/app/(tabs)/legacy.tsx` | BUILT | ✓ | ✓ | — | ✓ |
+| Squads Hub | `src/app/(tabs)/squads.tsx` | BUILT | ✓ | ✓ | — | ✓ |
+| Forge Programs Catalog | `src/app/(tabs)/workouts.tsx` | BUILT (Workouts = W-2) | ✓ | ✓ | — | ✓ |
+| Forge Public Profile | `src/app/athlete/[id].tsx` | BUILT (thin, Path 1) | ✓ | ✓ | — | ✓ |
+| Forge Friends Feed | `src/app/friends.tsx` | BUILT | ✓ | ✓ | — | ✓ |
+| Post Detail | `src/app/post/[id].tsx` | BUILT | ✓ | ✓ | — | ✓ |
 | Squad Detail | `src/app/squad/[id].tsx` | BUILT | ✓ | ✓ | bg only | ✓ |
 
 ### 🟡 Built-as-sheet / partial / shelved (5)
@@ -134,3 +134,45 @@ Social Architecture Verification
 - **Built-as-sheet / partial** rows (Squad Records, Share Configuration) stay in the PARTIAL bucket,
   **not** the fully-built 8. **Squad Settings** is an inert shell → PARTIAL, not built. A reasoned sheet
   divergence (the app standardized on sheets), but not counted among the built screens.
+
+---
+
+## Cross-screen deferred categories (fixed as ONE pass, not per-screen)
+
+These are dimensions/features audited per-screen but tracked + fixed once, across all screens — like
+the backgrounds sweep. Logging them here so they don't fragment into N per-screen misses.
+
+- **Motion pass** — every screen's `.dc` specifies staggered entrance animations (`flRiseIn`), hover
+  states, and live pulses (`flLive`); the built app is static. Its own deferred category (an
+  Animated pass), audited per-screen, fixed once. First observed: Home.
+- **First-run / onboarding experience** — one unbuilt onboarding surface, tracked as a single gap:
+  the **Beginner Home / Day 2** hidden-unbuilt screens (manifest) + the **Home first-run coach-mark
+  tour** (Home audit #13) are the same missing first-run flow. Do not double-count.
+- **Background overlay sub-pass** (FORGE_DELTAS §16) — per-screen darkening-gradient opacity + frame
+  radial-glows + grain layer. Source-specified, fixed as one pass. First observed: Squad Detail + Home.
+
+## Method notes (calibration)
+
+- **Screenshots are of the WEB build** (headless Edge on the static export / dev server). **Gold for
+  visual fidelity** — colors, backgrounds, typography, imagery, bronze (caught Home's too-dark overlay,
+  which is real + platform-independent). **Unreliable for narrow-width LAYOUT** — RN-web flex ≠ native.
+- **RN-web narrow-viewport clipping class → CLOSED as web-only, on code root-cause** (ruling, 5 audited
+  screens: Home · Squad Detail · Legacy · Squads Hub · Workouts). Verbatim calibration record:
+  > **web-only — code-root-caused (fluid layout, `overflow:hidden`, no fixed-width overflow past
+  > viewport, no absolute escapes); physical-device confirmation outstanding, non-blocking.**
+  Evidence: every shrinkable row is the canonical `flex:1, minWidth:0` shrink-and-ellipsize pattern
+  (which yoga honors exactly on device); no screen has a row of fixed widths summing past ~412 (the only
+  thing that would force native overflow — absent on all five); the original "Home visibly broken /
+  content cut off" fear is affirmatively disproven by the code.
+- **Squads ghost (motto + "IW · 1 member" floating outside the card) → CLOSED, structurally impossible
+  on native.** The card is `position:'relative', overflow:'hidden'` with **zero `position:absolute`
+  anywhere** in `squads.tsx` — a child cannot render outside the card bounds on device (yoga strictly
+  clips). Deterministic, not statistical; it's an RN-web overflow-leak that native's clip forbids.
+- **Physical-device confirmation → downgraded from blocking gate to OPPORTUNISTIC.** First time anyone
+  has the app on a phone, glance at the five and confirm. What code cannot see is a font-metric /
+  RN-version device quirk — whose worst case on layouts this fluid is a minor cosmetic ellipsization
+  difference (self-revealing the instant anyone opens the app), not a broken screen.
+- **Take-away for the remaining audits:** trust screenshots for the visual dimensions; **treat
+  edge-clipping at 412px-web as pre-confirmed web-only** (do not re-flag as a bug — root-cause closed).
+  A LAYOUT delta only becomes a real item if code shows a native cause (fixed-width overflow, absolute
+  escape, a non-`minWidth:0` row that can't shrink).

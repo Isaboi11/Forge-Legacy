@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<script src="forge-theme.js"></script>
+<script src="forge-homegym.js"></script>
+<script>
+(function () {
+  var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+  function inject() {
+    if (window.__flBundleInjected) return;
+    window.__flBundleInjected = true;
+    var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s);
+  }
+  if (window.React && window.ReactDOM) { inject(); return; }
+  var tries = 0;
+  var iv = setInterval(function () {
+    if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); }
+  }, 25);
+})();
+</script>
+<script src="forge-programs.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background:#08090B; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  .fl-scroll::-webkit-scrollbar { width:0; height:0; }
+  input::placeholder { color: var(--fl-text-tertiary); }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  @keyframes flRise { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes flFade { from { opacity:0; } to { opacity:1; } }
+  @keyframes flSpin { to { transform:rotate(360deg); } }
+  @keyframes flEmber { 0%,100% { opacity:.85; transform:translateX(-50%) scale(1); } 50% { opacity:1; transform:translateX(-50%) scale(1.05); } }
+  @keyframes flBreath { 0%,100% { opacity:0.5; transform:scale(0.98); } 50% { opacity:0.88; transform:scale(1.04); } }
+  @keyframes flWarm { from { opacity:0; filter:brightness(0.58) saturate(0.6); } to { opacity:1; filter:brightness(1) saturate(1); } }
+  @keyframes flDrift { 0% { opacity:0; transform:translateY(14px); } 25% { opacity:0.85; } 75% { opacity:0.6; } 100% { opacity:0; transform:translateY(-52px); } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; } }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; flex-direction:column; align-items:center; gap:18px; padding:26px 16px 40px;">
+
+  <!-- ══ REVIEW CONTROL BAR (outside the device) ══ -->
+  <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; justify-content:center;">
+    <div onClick="{{ restart }}" role="button" tabindex="0" style="display:inline-flex; align-items:center; gap:7px; padding:7px 14px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-charcoal-600); font-size:12px; font-weight:600; color:var(--fl-text-secondary); cursor:pointer;" style-hover="border-color:var(--fl-bronze-border-subtle);">{{ restartIcon }} Restart flow</div>
+  </div>
+
+  <!-- ══ DEVICE FRAME ══ -->
+  <div data-screen-label="Onboarding" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:38px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.3), rgba(5,5,5,0.3)), #050505 url('assets/forge-slate.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <!-- pre-mount splash -->
+    <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary); z-index:50;">
+        <span style="width:44px; height:44px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"></path><path d="M7.6 7.1L9.6 5.8V15H7.6Z"></path><path d="M16.4 7.1L14.4 5.8V15H16.4Z"></path><path d="M6.8 15.4H17.2V16.2H6.8Z"></path><path d="M5.6 16.6H18.4V17.4H5.6Z"></path><path d="M4.4 17.8H19.6V18.6H4.4Z"></path></svg></span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+      <!-- ═══════════ 1 · WELCOME ═══════════ -->
+      <sc-if value="{{ isWelcome }}" hint-placeholder-val="{{ true }}">
+        <div data-screen-label="Welcome" style="position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; gap:34px; padding:44px 34px 74px; overflow:hidden; animation:flFade 900ms var(--fl-ease-out) both;">
+
+          <!-- ENVIRONMENT · a forged hall, almost hidden in the dark -->
+          <div aria-hidden="true" style="position:absolute; inset:0; pointer-events:none; overflow:hidden;">
+            <div style="position:absolute; top:-34%; left:50%; transform:translateX(-50%); width:124%; height:80%; border-radius:50% 50% 0 0 / 62% 62% 0 0; border:1px solid rgba(198,156,100,0.028); border-bottom:none; box-shadow:inset 0 10px 50px rgba(0,0,0,0.4);"></div>
+            <div style="position:absolute; top:-8%; bottom:0; left:0; width:54px; background:linear-gradient(90deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 100%); border-right:1px solid rgba(198,156,100,0.03);"></div>
+            <div style="position:absolute; top:-8%; bottom:0; right:0; width:54px; background:linear-gradient(270deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 100%); border-left:1px solid rgba(198,156,100,0.03);"></div>
+            <div style="position:absolute; left:50%; bottom:-2%; transform:translateX(-50%); width:150%; height:38%; background:radial-gradient(58% 82% at 50% 100%, rgba(201,128,44,0.055) 0%, rgba(120,70,20,0.028) 36%, rgba(0,0,0,0) 72%);"></div>
+            <div style="position:absolute; inset:0; background:radial-gradient(80% 68% at 50% 42%, rgba(0,0,0,0) 44%, rgba(4,6,8,0.5) 100%);"></div>
+            <!-- FOCAL LIGHT IN THE STONE — broad, centered behind the logo, fades before the text -->
+            <div style="position:absolute; top:6%; left:50%; transform:translateX(-50%); width:540px; height:540px; border-radius:50%; background:radial-gradient(circle at 50% 42%, rgba(201,128,44,0.11) 0%, rgba(163,112,52,0.05) 33%, rgba(0,0,0,0) 64%);"></div>
+          </div>
+
+          <!-- REFINED FORGE LIGHT (restrained — sharpen the logo, not haloed) -->
+          <div aria-hidden="true" style="position:absolute; top:20%; left:50%; transform:translateX(-50%); width:280px; height:340px; pointer-events:none; background:radial-gradient(46% 40% at 50% 44%, rgba(201,128,44,0.10) 0%, rgba(191,143,79,0.04) 42%, rgba(120,70,20,0) 72%); filter:blur(4px); animation:flEmber 8s var(--fl-ease-out) infinite;"></div>
+
+          <!-- CONTENT -->
+          <div style="position:relative; display:flex; flex-direction:column; align-items:center; gap:48px;">
+            <div style="position:relative; display:flex; align-items:center; justify-content:center; animation:flRise 1300ms var(--fl-ease-out) both; animation-delay:250ms;">
+              <div aria-hidden="true" style="position:absolute; width:140px; height:140px; border-radius:50%; background:radial-gradient(circle, rgba(201,128,44,0.10) 0%, rgba(191,143,79,0.035) 48%, rgba(0,0,0,0) 70%); filter:blur(4px); animation:flBreath 9s ease-in-out infinite;"></div>
+              <span style="position:relative; display:inline-block; animation:flWarm 1300ms var(--fl-ease-out) both; animation-delay:300ms;">
+                <svg width="77" height="113" viewBox="16 0 68 102" aria-hidden="true" style="display:block; filter:drop-shadow(0 0 5px rgba(198,156,100,0.11)) drop-shadow(0 5px 13px rgba(120,70,20,.30));"><defs><linearGradient id="obLogoA" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FBE7B8"></stop><stop offset="18%" stop-color="#EAC585"></stop><stop offset="44%" stop-color="#C79A5A"></stop><stop offset="72%" stop-color="#9E7440"></stop><stop offset="100%" stop-color="#6A4620"></stop></linearGradient><linearGradient id="obLogoSheen" x1="0" y1="0" x2="1" y2="0"><stop offset="0.30" stop-color="#FFF3D8" stop-opacity="0"></stop><stop offset="0.50" stop-color="#FFF7E6" stop-opacity="0.85"></stop><stop offset="0.70" stop-color="#FFF3D8" stop-opacity="0"></stop><animateTransform attributeName="gradientTransform" type="translate" values="-0.7 0; 0.7 0" dur="1150ms" begin="950ms" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1"></animateTransform></linearGradient><clipPath id="obLogoClip"><polygon points="43,6 57,6 57,96 43,96"></polygon><polygon points="23,42 37,27 37,96 23,96"></polygon><polygon points="63,27 77,42 77,96 63,96"></polygon></clipPath><filter id="obStoneTex" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.26 0.5" numOctaves="3" seed="9" result="t"></feTurbulence><feColorMatrix in="t" type="matrix" values="0.34 0.34 0.34 0 0 0.34 0.34 0.34 0 0 0.34 0.34 0.34 0 0 0 0 0 0 1" result="g"></feColorMatrix><feComponentTransfer in="g"><feFuncR type="gamma" amplitude="1.15" exponent="1.7" offset="-0.06"></feFuncR><feFuncG type="gamma" amplitude="1.15" exponent="1.7" offset="-0.06"></feFuncG><feFuncB type="gamma" amplitude="1.15" exponent="1.7" offset="-0.06"></feFuncB></feComponentTransfer></filter><filter id="obStoneCrack" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.09 0.55" numOctaves="2" seed="4" result="c"></feTurbulence><feColorMatrix in="c" type="matrix" values="0.34 0.34 0.34 0 0 0.34 0.34 0.34 0 0 0.34 0.34 0.34 0 0 0 0 0 0 1" result="cg"></feColorMatrix><feComponentTransfer in="cg"><feFuncR type="table" tableValues="0.12 1 1 1"></feFuncR><feFuncG type="table" tableValues="0.12 1 1 1"></feFuncG><feFuncB type="table" tableValues="0.12 1 1 1"></feFuncB></feComponentTransfer></filter></defs><g fill="url(#obLogoA)"><polygon points="43,6 57,6 57,96 43,96"></polygon><polygon points="23,42 37,27 37,96 23,96"></polygon><polygon points="63,27 77,42 77,96 63,96"></polygon></g><g clip-path="url(#obLogoClip)" style="mix-blend-mode:overlay;" opacity="0.4"><rect x="16" y="0" width="68" height="102" filter="url(#obStoneTex)"></rect></g><g clip-path="url(#obLogoClip)" style="mix-blend-mode:multiply;" opacity="0.2"><rect x="16" y="0" width="68" height="102" filter="url(#obStoneCrack)"></rect></g><g clip-path="url(#obLogoClip)" style="mix-blend-mode:screen;"><rect x="16" y="0" width="68" height="102" fill="url(#obLogoSheen)"></rect></g></svg>
+              </span>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:26px; text-align:center;">
+              <span style="font-size:11.5px; font-weight:600; letter-spacing:5px; text-transform:uppercase; color:var(--fl-text-secondary); animation:flRise 1200ms var(--fl-ease-out) both; animation-delay:700ms;">Forge Legacy</span>
+              <h1 style="margin:0; font-family:var(--fl-font-display); font-size:40px; line-height:1.07; font-weight:600; letter-spacing:-0.5px; color:var(--fl-text-primary); animation:flRise 1200ms var(--fl-ease-out) both; animation-delay:900ms;">Build your story.<br>Forge your legacy.</h1>
+            </div>
+          </div>
+
+          <!-- CTA -->
+          <div style="position:relative; display:flex; flex-direction:column; gap:16px; animation:flRise 1200ms var(--fl-ease-out) both; animation-delay:1560ms;">
+            <div style="transition:transform 140ms var(--fl-ease-out); will-change:transform;" style-active="transform:translateY(1.5px);">
+              <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" on-click="{{ beginLegacy }}" dc-props="{{ welcomeBtnProps }}" hint-size="100%,60px">Begin Chapter I</x-import>
+            </div>
+            <sc-if value="{{ showSignIn }}" hint-placeholder-val="{{ true }}">
+              <div style="text-align:center; font-size:13.5px;"><span style="color:var(--fl-text-tertiary); opacity:0.75;">Returning athlete?</span> <span onClick="{{ signIn }}" role="button" tabindex="0" style="color:var(--fl-bronze-bright); font-weight:600; cursor:pointer;">Sign in</span></div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ═══════════ SETUP WRAPPER (header + progress) ═══════════ -->
+      <sc-if value="{{ isOnboard }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; inset:0; display:flex; flex-direction:column; animation:flFade 380ms var(--fl-ease-out) both;">
+
+          <!-- header -->
+          <div style="flex:none; padding:16px 22px 14px; display:flex; align-items:center; gap:16px;">
+            <div onClick="{{ goBack }}" role="button" tabindex="0" aria-label="Back" style="width:40px; height:40px; flex:none; display:flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-elevated); color:var(--fl-text-secondary); cursor:pointer;" style-hover="border-color:var(--fl-bronze-border-subtle);">{{ chevLeft }}</div>
+            <div style="flex:1; min-width:0; height:5px; border-radius:999px; background:var(--fl-charcoal-600); overflow:hidden; box-shadow:inset 0 1px 2px rgba(0,0,0,.5);">
+              <div style="height:100%; width:{{ progressPct }}; background:var(--fl-bronze-metallic); border-radius:999px; box-shadow:0 0 8px rgba(186,146,92,.35); transition:width var(--fl-duration-ceremony) var(--fl-ease-out);"></div>
+            </div>
+            <span style="flex:none; font-size:11px; font-family:var(--fl-font-mono); color:var(--fl-text-tertiary); letter-spacing:0.5px;">{{ stepNum }}/{{ stepTotal }}</span>
+          </div>
+
+          <div style="flex:1; min-height:0; display:flex; flex-direction:column;">
+
+            <!-- ── 2 · ACCOUNT CREATION (name · username · photo · sex) ── -->
+            <sc-if value="{{ isAccount }}" hint-placeholder-val="{{ true }}">
+              <div data-screen-label="Account Creation" style="flex:1; min-height:0; display:flex; flex-direction:column;">
+                <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:14px 30px 0; display:flex; flex-direction:column; gap:22px;">
+                  <div style="display:flex; flex-direction:column; gap:10px;">
+                    <span style="font-size:11px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Create your account</span>
+                    <h1 style="margin:0; font-family:var(--fl-font-display); font-size:30px; line-height:1.05; font-weight:600; letter-spacing:-0.3px;">Claim your name</h1>
+                    <p style="margin:0; font-size:14px; line-height:1.55; color:var(--fl-text-secondary);">This is the name on your record and above every honor you earn.</p>
+                  </div>
+
+                  <!-- photo -->
+                  <div style="display:flex; flex-direction:column; align-items:center; gap:9px; padding:2px 0;">
+                    <label style="position:relative; cursor:pointer; display:inline-flex;">
+                      <input type="file" accept="image/*" onChange="{{ onPhoto }}" style="position:absolute; inset:0; opacity:0; cursor:pointer;">
+                      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Avatar" dc-props="{{ avatarProps }}" hint-size="88px,88px"></x-import>
+                      <span aria-hidden="true" style="position:absolute; right:-2px; bottom:-2px; width:30px; height:30px; border-radius:50%; border:2px solid var(--fl-charcoal-900); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; box-shadow:var(--fl-glow-subtle);">{{ cameraIcon }}</span>
+                    </label>
+                    <span style="font-size:12px; color:var(--fl-text-tertiary);">Add a photo — optional</span>
+                  </div>
+
+                  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.InputField" label="Your name" placeholder="e.g. Marcus Vale" value="{{ name }}" on-change="{{ onName }}" max-length="24" show-count="{{ true }}" hint-size="100%,84px"></x-import>
+
+                  <!-- sex -->
+                  <div style="display:flex; flex-direction:column; gap:9px;">
+                    <label style="font-size:11px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Sex</label>
+                    <div style="display:flex; gap:10px;">
+                      <sc-for list="{{ sexOpts }}" as="sx" hint-placeholder-count="2">
+                        <div onClick="{{ sx.pick }}" role="button" tabindex="0" style="position:relative; flex:1; text-align:center; padding:15px 12px; border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-md); background:var(--fl-surface-card); cursor:pointer; font-family:var(--fl-font-display); font-size:16px; font-weight:600; color:{{ sx.ink }}; transition:border-color 200ms var(--fl-ease-out);" style-hover="border-color:var(--fl-bronze-border-subtle);">
+                          <sc-if value="{{ sx.sel }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="position:absolute; inset:-1px; border:1.5px solid var(--fl-bronze-primary); border-radius:var(--fl-radius-md); box-shadow:var(--fl-glow-subtle); pointer-events:none;"></span></sc-if>
+                          <span style="position:relative;">{{ sx.label }}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                    <span style="font-size:12px; line-height:1.45; color:var(--fl-text-tertiary);">Used to tailor your starting training load.</span>
+                  </div>
+
+                  <!-- units -->
+                  <div style="display:flex; flex-direction:column; gap:9px;">
+                    <label style="font-size:11px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Units</label>
+                    <div style="display:flex; gap:10px;">
+                      <sc-for list="{{ unitOpts }}" as="u" hint-placeholder-count="2">
+                        <div onClick="{{ u.pick }}" role="button" tabindex="0" style="position:relative; flex:1; text-align:center; padding:15px 12px; border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-md); background:var(--fl-surface-card); cursor:pointer; font-family:var(--fl-font-display); font-size:16px; font-weight:600; color:{{ u.ink }}; transition:border-color 200ms var(--fl-ease-out);" style-hover="border-color:var(--fl-bronze-border-subtle);">
+                          <sc-if value="{{ u.sel }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="position:absolute; inset:-1px; border:1.5px solid var(--fl-bronze-primary); border-radius:var(--fl-radius-md); box-shadow:var(--fl-glow-subtle); pointer-events:none;"></span></sc-if>
+                          <span style="position:relative;">{{ u.label }}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                    <span style="font-size:12px; line-height:1.45; color:var(--fl-text-tertiary);">Weights, distance and pace across the app \u2014 change anytime in Settings.</span>
+                  </div>
+                </div>
+                <div style="flex:none; padding:16px 30px 34px;">
+                  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" disabled="{{ accountBlocked }}" on-click="{{ goNext }}" hint-size="100%,52px">Continue</x-import>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- ── 2b · USERNAME (distinct handle claim) ── -->
+            <sc-if value="{{ isUsername }}" hint-placeholder-val="{{ false }}">
+              <div data-screen-label="Username" style="flex:1; min-height:0; display:flex; flex-direction:column;">
+                <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:14px 30px 0; display:flex; flex-direction:column; gap:22px;">
+                  <div style="display:flex; flex-direction:column; gap:10px;">
+                    <span style="font-size:11px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Create your account</span>
+                    <h1 style="margin:0; font-family:var(--fl-font-display); font-size:30px; line-height:1.05; font-weight:600; letter-spacing:-0.3px;">Claim your handle</h1>
+                    <p style="margin:0; font-size:14px; line-height:1.55; color:var(--fl-text-secondary);">Your name is what people see. Your handle is how they find and tag you across Forge — it's yours alone.</p>
+                  </div>
+
+                  <!-- username -->
+                  <div style="display:flex; flex-direction:column; gap:9px;">
+                    <label style="font-size:11px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Username</label>
+                    <div style="position:relative; display:flex; align-items:center; border:1.5px solid {{ uBorder }}; border-radius:var(--fl-radius-md); background:var(--fl-surface-recessed); box-shadow:inset 0 2px 6px rgba(0,0,0,.45); transition:border-color 180ms var(--fl-ease-out);">
+                      <span style="padding-left:16px; font-family:var(--fl-font-mono); font-size:17px; color:var(--fl-text-tertiary);">@</span>
+                      <input value="{{ username }}" onChange="{{ onUsername }}" placeholder="marcusvale" maxlength="20" autocomplete="off" autocapitalize="off" spellcheck="false" style="flex:1; min-width:0; padding:14px 8px 14px 3px; border:none; outline:none; background:transparent; color:var(--fl-text-primary); font-family:var(--fl-font-mono); font-size:17px; letter-spacing:0.3px;">
+                      <span style="flex:none; padding-right:16px; display:inline-flex; align-items:center; justify-content:center; width:20px;">{{ uStatusIcon }}</span>
+                    </div>
+                    <div style="min-height:18px; display:flex; align-items:center; gap:7px;">
+                      <span style="font-size:12.5px; line-height:1.4; color:{{ uMsgColor }};">{{ uMsg }}</span>
+                    </div>
+                    <sc-if value="{{ uShowSuggest }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:flex; flex-wrap:wrap; gap:9px; margin-top:2px; animation:flRise 300ms var(--fl-ease-out) both;">
+                        <sc-for list="{{ uSuggestions }}" as="s" hint-placeholder-count="3">
+                          <div onClick="{{ s.pick }}" role="button" tabindex="0" style="display:inline-flex; align-items:center; padding:9px 14px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-charcoal-500); background:var(--fl-surface-elevated); font-family:var(--fl-font-mono); font-size:13px; color:var(--fl-text-secondary); cursor:pointer; box-shadow:var(--fl-border-inset); transition:border-color 200ms var(--fl-ease-out), color 200ms var(--fl-ease-out), background 200ms var(--fl-ease-out);" style-hover="border-color:var(--fl-bronze-border); color:var(--fl-text-primary); background:var(--fl-bronze-tint);">@{{ s.name }}</div>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                  </div>
+
+                  <!-- live identity preview: name (prev step) + handle -->
+                  <div style="display:flex; align-items:center; gap:13px; padding:14px 16px; border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-md); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card-soft);">
+                    <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Avatar" dc-props="{{ avatarPropsSm }}" hint-size="44px,44px"></x-import>
+                    <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                      <span style="font-family:var(--fl-font-display); font-size:15px; font-weight:600; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ nameOrYou }}</span>
+                      <span style="font-family:var(--fl-font-mono); font-size:13px; color:{{ handlePreviewColor }}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ handlePreview }}</span>
+                    </div>
+                  </div>
+                </div>
+                <div style="flex:none; padding:16px 30px 34px;">
+                  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" disabled="{{ usernameBlocked }}" on-click="{{ goNext }}" hint-size="100%,52px">Continue</x-import>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- ── 3 · GOALS (up to 3 · one primary) ── -->
+            <sc-if value="{{ isGoals }}" hint-placeholder-val="{{ false }}">
+              <div data-screen-label="Goals" style="flex:1; min-height:0; display:flex; flex-direction:column;">
+                <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:16px 30px 0; display:flex; flex-direction:column; gap:20px;">
+                  <div style="display:flex; flex-direction:column; gap:10px;">
+                    <h1 style="margin:0; font-family:var(--fl-font-display); font-size:30px; line-height:1.05; font-weight:600; letter-spacing:-0.3px;">What are you training for?</h1>
+                    <p style="margin:0; font-size:14px; line-height:1.55; color:var(--fl-text-secondary);">Choose up to three. Tap the star to set the one that matters most — your primary goal shapes what we recommend.</p>
+                  </div>
+                  <div style="display:flex; flex-direction:column; gap:11px;">
+                    <sc-for list="{{ goals }}" as="g" hint-placeholder-count="6">
+                      <div onClick="{{ g.pick }}" role="button" tabindex="0" style="position:relative; display:flex; align-items:center; gap:15px; padding:16px; border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); background:var(--fl-surface-card); cursor:pointer; box-shadow:var(--fl-shadow-card-soft); transition:border-color 200ms var(--fl-ease-out), transform 200ms var(--fl-ease-out);" style-hover="border-color:var(--fl-bronze-border-subtle); transform:translateY(-1px);">
+                        <sc-if value="{{ g.sel }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="position:absolute; inset:-1px; border:1.5px solid var(--fl-bronze-primary); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-glow-subtle); pointer-events:none;"></span></sc-if>
+                        <span style="width:44px; height:44px; flex:none; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);">{{ g.icon }}</span>
+                        <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                          <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-family:var(--fl-font-display); font-size:17px; font-weight:600; color:var(--fl-text-primary);">{{ g.label }}</span>
+                            <sc-if value="{{ g.primary }}" hint-placeholder-val="{{ false }}"><span style="flex:none; padding:2px 8px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-tint); font-size:8.5px; font-weight:700; letter-spacing:1.1px; text-transform:uppercase; color:var(--fl-bronze-bright);">Primary</span></sc-if>
+                          </div>
+                          <span style="font-size:12.5px; line-height:1.45; color:var(--fl-text-secondary);">{{ g.desc }}</span>
+                        </div>
+                        <sc-if value="{{ g.sel }}" hint-placeholder-val="{{ false }}">
+                          <div onClick="{{ g.star }}" role="button" tabindex="0" aria-label="Set as primary goal" style="flex:none; width:38px; height:38px; display:flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-md); cursor:pointer;">{{ g.starIcon }}</div>
+                        </sc-if>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+                <div style="flex:none; padding:18px 30px 34px;">
+                  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" disabled="{{ goalsBlocked }}" on-click="{{ goNext }}" hint-size="100%,52px">Continue</x-import>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- ── 4 · EXPERIENCE ── -->
+            <sc-if value="{{ isExp }}" hint-placeholder-val="{{ false }}">
+              <div data-screen-label="Experience" style="flex:1; min-height:0; display:flex; flex-direction:column;">
+                <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:16px 30px 0; display:flex; flex-direction:column; gap:22px;">
+                  <div style="display:flex; flex-direction:column; gap:10px;">
+                    <h1 style="margin:0; font-family:var(--fl-font-display); font-size:30px; line-height:1.05; font-weight:600; letter-spacing:-0.3px;">How much have you trained?</h1>
+                    <p style="margin:0; font-size:14px; line-height:1.55; color:var(--fl-text-secondary);">This tunes your starting load and difficulty — nothing else. Everyone builds their legacy the same way.</p>
+                  </div>
+                  <div style="display:flex; flex-direction:column; gap:12px;">
+                    <sc-for list="{{ exps }}" as="e" hint-placeholder-count="3">
+                      <div onClick="{{ e.pick }}" role="button" tabindex="0" style="position:relative; display:flex; align-items:center; gap:16px; padding:18px; border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); background:var(--fl-surface-card); cursor:pointer; box-shadow:var(--fl-shadow-card-soft); transition:border-color 200ms var(--fl-ease-out), transform 200ms var(--fl-ease-out);" style-hover="border-color:var(--fl-bronze-border-subtle); transform:translateY(-1px);">
+                        <sc-if value="{{ e.sel }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="position:absolute; inset:-1px; border:1.5px solid var(--fl-bronze-primary); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-glow-subtle); pointer-events:none;"></span></sc-if>
+                        <span style="width:40px; height:40px; flex:none; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; font-family:var(--fl-font-display); font-size:16px; font-weight:600; color:var(--fl-bronze-primary);">{{ e.mark }}</span>
+                        <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                          <span style="font-family:var(--fl-font-display); font-size:18px; font-weight:600; color:var(--fl-text-primary);">{{ e.label }}</span>
+                          <span style="font-size:12.5px; line-height:1.45; color:var(--fl-text-secondary);">{{ e.desc }}</span>
+                        </div>
+                        <sc-if value="{{ e.sel }}" hint-placeholder-val="{{ false }}"><span style="flex:none; color:var(--fl-bronze-primary);">{{ checkIcon }}</span></sc-if>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+                <div style="flex:none; padding:20px 30px 34px;">
+                  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" disabled="{{ expBlocked }}" on-click="{{ goNext }}" hint-size="100%,52px">Continue</x-import>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- ── 5 · EQUIPMENT (multi) ── -->
+            <sc-if value="{{ isEquipment }}" hint-placeholder-val="{{ false }}">
+              <div data-screen-label="Equipment" style="flex:1; min-height:0; display:flex; flex-direction:column;">
+                <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:16px 30px 0; display:flex; flex-direction:column; gap:20px;">
+                  <div style="display:flex; flex-direction:column; gap:10px;">
+                    <h1 style="margin:0; font-family:var(--fl-font-display); font-size:30px; line-height:1.05; font-weight:600; letter-spacing:-0.3px;">What can you train with?</h1>
+                    <p style="margin:0; font-size:14px; line-height:1.55; color:var(--fl-text-secondary);">Pick everything you have access to — we only program movements you can actually do.</p>
+                  </div>
+                  <div style="display:flex; flex-direction:column; gap:12px;">
+                    <sc-for list="{{ equipOpts }}" as="a" hint-placeholder-count="5">
+                      <div onClick="{{ a.pick }}" role="button" tabindex="0" style="position:relative; display:flex; align-items:center; gap:16px; padding:16px 18px; border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); background:var(--fl-surface-card); cursor:pointer; box-shadow:var(--fl-shadow-card-soft); transition:border-color 200ms var(--fl-ease-out), transform 200ms var(--fl-ease-out);" style-hover="border-color:var(--fl-bronze-border-subtle); transform:translateY(-1px);">
+                        <sc-if value="{{ a.sel }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="position:absolute; inset:-1px; border:1.5px solid var(--fl-bronze-primary); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-glow-subtle); pointer-events:none;"></span></sc-if>
+                        <span style="width:44px; height:44px; flex:none; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);">{{ a.icon }}</span>
+                        <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                          <span style="font-family:var(--fl-font-display); font-size:18px; font-weight:600; color:var(--fl-text-primary);">{{ a.label }}</span>
+                          <span style="font-size:12.5px; line-height:1.45; color:var(--fl-text-secondary);">{{ a.desc }}</span>
+                        </div>
+                        <span style="flex:none; width:24px; height:24px; border-radius:var(--fl-radius-xs); border:1.5px solid {{ a.boxBorder }}; background:{{ a.boxBg }}; display:flex; align-items:center; justify-content:center; color:#1A1206;">{{ a.checkEl }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+                <div style="flex:none; padding:18px 30px 34px;">
+                  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" disabled="{{ equipBlocked }}" on-click="{{ goNext }}" hint-size="100%,52px">Continue</x-import>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- ── 6 · SCHEDULE ── -->
+            <sc-if value="{{ isSchedule }}" hint-placeholder-val="{{ false }}">
+              <div data-screen-label="Schedule" style="flex:1; min-height:0; display:flex; flex-direction:column;">
+                <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:16px 30px 0; display:flex; flex-direction:column; gap:22px;">
+                  <div style="display:flex; flex-direction:column; gap:10px;">
+                    <h1 style="margin:0; font-family:var(--fl-font-display); font-size:30px; line-height:1.05; font-weight:600; letter-spacing:-0.3px;">How many days a week?</h1>
+                    <p style="margin:0; font-size:14px; line-height:1.55; color:var(--fl-text-secondary);">Be honest about your week — consistency beats ambition. We build around it.</p>
+                  </div>
+                  <div style="display:flex; gap:10px;">
+                    <sc-for list="{{ dayOpts }}" as="d" hint-placeholder-count="5">
+                      <div onClick="{{ d.pick }}" role="button" tabindex="0" style="position:relative; flex:1; aspect-ratio:1; display:flex; align-items:center; justify-content:center; border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-md); background:var(--fl-surface-card); cursor:pointer; font-family:var(--fl-font-display); font-size:24px; font-weight:600; color:var(--fl-text-primary); transition:border-color 200ms var(--fl-ease-out), transform 200ms var(--fl-ease-out);" style-hover="transform:translateY(-1px);">
+                        <sc-if value="{{ d.sel }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="position:absolute; inset:-1px; border:1.5px solid var(--fl-bronze-primary); border-radius:var(--fl-radius-md); box-shadow:var(--fl-glow-subtle); pointer-events:none;"></span></sc-if>
+                        <span style="position:relative;">{{ d.n }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <div style="display:flex; gap:12px; padding:15px 16px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600);">
+                    <span style="width:6px; height:6px; margin-top:6px; flex:none; border-radius:99px; background:var(--fl-bronze-primary);"></span>
+                    <span style="font-size:13px; line-height:1.5; color:var(--fl-text-secondary);">{{ daysHint }}</span>
+                  </div>
+                </div>
+                <div style="flex:none; padding:20px 30px 34px;">
+                  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" on-click="{{ goNext }}" hint-size="100%,52px">Continue</x-import>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- ── 7 · RECOMMENDED STARTING POINT ── -->
+            <sc-if value="{{ isProgram }}" hint-placeholder-val="{{ false }}">
+              <div data-screen-label="Recommended Program" style="flex:1; min-height:0; display:flex; flex-direction:column;">
+                <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:16px 30px 0; display:flex; flex-direction:column; gap:20px;">
+                  <div style="display:flex; flex-direction:column; gap:10px;">
+                    <span style="font-size:11px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Forge recommends</span>
+                    <h1 style="margin:0; font-family:var(--fl-font-display); font-size:30px; line-height:1.05; font-weight:600; letter-spacing:-0.3px;">Where your legacy begins</h1>
+                    <p style="margin:0; font-size:14px; line-height:1.55; color:var(--fl-text-secondary);">Matched to your goal, experience, equipment, and schedule. It's a place to begin — never a cage.</p>
+                  </div>
+                  <!-- program card -->
+                  <div style="position:relative; overflow:hidden; border:1px solid var(--fl-bronze-border); border-radius:var(--fl-radius-xl); background:var(--fl-card-hero-wash), var(--fl-bg-primary); box-shadow:var(--fl-shadow-card-hero); padding:22px;">
+                    <img src="assets/workout-push.png" alt="" aria-hidden="true" style="position:absolute; top:-28px; right:-84px; height:150px; width:auto; opacity:0.5; mix-blend-mode:screen; -webkit-mask-image:radial-gradient(120% 120% at 92% 30%, #000 45%, transparent 78%); mask-image:radial-gradient(120% 120% at 92% 30%, #000 45%, transparent 78%); pointer-events:none;">
+                    <div style="position:relative; display:flex; flex-direction:column; gap:16px;">
+                      <div style="display:flex; gap:8px;">
+                        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Pill" size="sm" hint-size="auto,26px">{{ recFamily }}</x-import>
+                        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Pill" size="sm" tone="muted" hint-size="auto,26px">{{ recDiff }}</x-import>
+                      </div>
+                      <div style="display:flex; flex-direction:column; gap:6px; max-width:80%;">
+                        <span style="font-size:10.5px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">Your starting program</span>
+                        <span style="font-family:var(--fl-font-display); font-size:26px; font-weight:600; letter-spacing:-0.3px; line-height:1.05;">{{ recName }}</span>
+                      </div>
+                      <p style="margin:0; font-size:13.5px; line-height:1.55; color:var(--fl-text-secondary);">{{ recDesc }}</p>
+                      <div style="height:1px; background:var(--fl-bronze-border-subtle);"></div>
+                      <div style="display:flex; gap:22px;">
+                        <div style="display:flex; flex-direction:column; gap:3px;"><span style="font-family:var(--fl-font-display); font-size:22px; font-weight:600; color:var(--fl-text-primary);">{{ recWeeks }}</span><span style="font-size:10px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--fl-text-tertiary);">Weeks</span></div>
+                        <div style="display:flex; flex-direction:column; gap:3px;"><span style="font-family:var(--fl-font-display); font-size:22px; font-weight:600; color:var(--fl-text-primary);">{{ recWpw }}×</span><span style="font-size:10px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--fl-text-tertiary);">Per week</span></div>
+                        <div style="display:flex; flex-direction:column; gap:3px;"><span style="font-family:var(--fl-font-display); font-size:22px; font-weight:600; color:var(--fl-text-primary);">{{ recTotal }}</span><span style="font-size:10px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--fl-text-tertiary);">Workouts</span></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- browse other compatible programs -->
+                  <div onClick="{{ toggleBrowse }}" role="button" tabindex="0" style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:15px 16px; border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); background:var(--fl-surface-recessed); cursor:pointer;" style-hover="border-color:var(--fl-bronze-border-subtle);">
+                    <span style="font-size:13.5px; font-weight:600; color:var(--fl-text-secondary);">Browse other compatible programs</span>
+                    <span style="flex:none; color:var(--fl-text-tertiary); transition:transform 200ms var(--fl-ease-out); transform:{{ browseChevRot }};">{{ chevDown }}</span>
+                  </div>
+                  <sc-if value="{{ browseOpen }}" hint-placeholder-val="{{ false }}">
+                    <div style="display:flex; flex-direction:column; gap:10px; animation:flRise 300ms var(--fl-ease-out) both;">
+                      <sc-for list="{{ alternatives }}" as="p" hint-placeholder-count="3">
+                        <div onClick="{{ p.pick }}" role="button" tabindex="0" style="position:relative; display:flex; align-items:center; gap:14px; padding:15px 16px; border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); background:var(--fl-surface-card); cursor:pointer; transition:border-color 200ms var(--fl-ease-out);" style-hover="border-color:var(--fl-bronze-border-subtle);">
+                          <sc-if value="{{ p.sel }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="position:absolute; inset:-1px; border:1.5px solid var(--fl-bronze-primary); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-glow-subtle); pointer-events:none;"></span></sc-if>
+                          <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                            <span style="font-family:var(--fl-font-display); font-size:16px; font-weight:600; color:var(--fl-text-primary);">{{ p.name }}</span>
+                            <span style="font-size:12px; color:var(--fl-text-tertiary);">{{ p.meta }}</span>
+                          </div>
+                          <sc-if value="{{ p.sel }}" hint-placeholder-val="{{ false }}"><span style="flex:none; color:var(--fl-bronze-primary);">{{ checkIcon }}</span></sc-if>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+                <div style="flex:none; padding:14px 30px 34px; display:flex; flex-direction:column; gap:8px;">
+                  <div style="text-align:center; font-size:12px; color:var(--fl-text-tertiary);">You can change this any time.</div>
+                  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" on-click="{{ goNext }}" hint-size="100%,52px">{{ recStartLabel }}</x-import>
+                </div>
+              </div>
+            </sc-if>
+
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ═══════════ 8 · TRANSITION → ENTER FORGE ═══════════ -->
+      <sc-if value="{{ isTransition }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Transition" style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:48px 36px; overflow:hidden; background:var(--fl-bg-atmospheric); animation:flFade 700ms var(--fl-ease-out) both;">
+
+          <!-- forge light -->
+          <div aria-hidden="true" style="position:absolute; top:24%; left:50%; transform:translateX(-50%); width:320px; height:360px; pointer-events:none; background:radial-gradient(46% 40% at 50% 44%, rgba(201,128,44,0.14) 0%, rgba(191,143,79,0.05) 44%, rgba(120,70,20,0) 72%); filter:blur(6px); animation:flEmber 8s var(--fl-ease-out) infinite;"></div>
+
+          <div style="position:relative; display:flex; flex-direction:column; align-items:center; gap:26px;">
+            <div style="position:relative; display:flex; align-items:center; justify-content:center; animation:flRise 1000ms var(--fl-ease-out) both; animation-delay:120ms;">
+              <div aria-hidden="true" style="position:absolute; width:132px; height:132px; border-radius:50%; background:radial-gradient(circle, rgba(201,128,44,0.16) 0%, rgba(191,143,79,0.06) 48%, rgba(0,0,0,0) 70%); filter:blur(4px); animation:flBreath 9s ease-in-out infinite;"></div>
+              <svg width="50" height="74" viewBox="16 0 68 102" aria-hidden="true" style="position:relative; display:block; filter:drop-shadow(0 0 10px rgba(198,156,100,0.24)) drop-shadow(0 6px 16px rgba(120,70,20,.4));"><defs><linearGradient id="obLogoT" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#DCB57A"></stop><stop offset="52%" stop-color="#BF8F4F"></stop><stop offset="100%" stop-color="#835F32"></stop></linearGradient></defs><g fill="url(#obLogoT)"><polygon points="43,6 57,6 57,96 43,96"></polygon><polygon points="23,42 37,27 37,96 23,96"></polygon><polygon points="63,27 77,42 77,96 63,96"></polygon></g></svg>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:18px; animation:flRise 1100ms var(--fl-ease-out) both; animation-delay:360ms;">
+              <span style="font-size:11px; font-weight:600; letter-spacing:2.6px; text-transform:uppercase; color:var(--fl-bronze-primary);">Your forge is ready</span>
+              <h1 style="margin:0; font-family:var(--fl-font-display); font-size:36px; line-height:1.12; font-weight:600; letter-spacing:-0.4px; color:var(--fl-text-primary); text-wrap:pretty;">Your next chapter<br>begins now.</h1>
+              <div style="display:flex; align-items:center; gap:12px; width:170px; margin:2px 0;">
+                <span style="flex:1; height:1px; background:linear-gradient(90deg, transparent, var(--fl-bronze-border));"></span>
+                <span style="width:6px; height:6px; flex:none; transform:rotate(45deg); border:1px solid var(--fl-bronze-primary);"></span>
+                <span style="flex:1; height:1px; background:linear-gradient(90deg, var(--fl-bronze-border), transparent);"></span>
+              </div>
+              <p style="margin:0; max-width:280px; font-size:14.5px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">We've opened <span style="color:var(--fl-bronze-bright); font-weight:600;">Chapter I — Building your Legacy</span>. Every legacy begins with a single workout.</p>
+            </div>
+          </div>
+
+          <div style="position:absolute; left:36px; right:36px; bottom:44px; animation:flRise 1000ms var(--fl-ease-out) both; animation-delay:640ms;">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" on-click="{{ enterForge }}" dc-props="{{ ctaBtnProps }}" hint-size="100%,52px">Enter Forge</x-import>
+          </div>
+        </div>
+      </sc-if>
+
+    </sc-if>
+  </div>
+</div>
+
+<!-- ══ TOAST (fixed) ══ -->
+<div style="position:absolute; width:0; height:0; overflow:visible;">
+  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Toast" open="{{ toastOpen }}" message="{{ toastMsg }}" icon="{{ checkIconToast }}" on-dismiss="{{ hideToast }}" hint-size="1px,1px"></x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:484,&quot;height&quot;:980},&quot;defaultDays&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:4,&quot;min&quot;:2,&quot;max&quot;:6,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Onboarding&quot;},&quot;signInLink&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Welcome&quot;},&quot;previewStep&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;flow&quot;,&quot;account&quot;,&quot;username&quot;,&quot;goals&quot;,&quot;experience&quot;,&quot;equipment&quot;,&quot;schedule&quot;,&quot;program&quot;,&quot;transition&quot;],&quot;default&quot;:&quot;flow&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Review&quot;}}">
+class Component extends DCLogic {
+  state = {
+    ready: false,
+    step: 'welcome',
+    uStatus: 'idle',
+    browseOpen: false,
+    toast: null,
+    data: { name:'', username:'', avatar:null, sex:null, goals:[], primaryGoal:null, experience:null, equipment:[], days:null, chosenProgramId:null },
+  };
+
+  componentDidMount() {
+    const check = () => {
+      if (window.ForgeLegacyVisualFoundation_5368b2 && window.ForgePrograms) {
+        this.setState({ ready: true });
+        const ps = this.props.previewStep;
+        if (ps && ps !== 'flow') this.setState({ step: this._psToStep(ps) });
+      } else this._t = setTimeout(check, 40);
+    };
+    check();
+  }
+  componentDidUpdate(prev) {
+    const ps = this.props.previewStep;
+    if (this.state.ready && ps && ps !== (prev && prev.previewStep) && ps !== 'flow') {
+      this.setState({ step: this._psToStep(ps) });
+    }
+  }
+  componentWillUnmount() { clearTimeout(this._t); if (this._uCheck) clearTimeout(this._uCheck); if (this._toast) clearTimeout(this._toast); }
+
+  _psToStep(ps) {
+    const map = { account:'account', username:'username', goals:'goals', experience:'experience', equipment:'equipment', schedule:'schedule', program:'program', transition:'transition' };
+    return map[ps] || 'welcome';
+  }
+
+  setData(patch) { this.setState(s => ({ data: { ...s.data, ...patch } })); }
+  go(step) { this.setState({ step }); }
+  showToast(msg) { this.setState({ toast: msg }); if (this._toast) clearTimeout(this._toast); this._toast = setTimeout(() => this.setState({ toast: null }), 2600); }
+
+  checkUsername(raw) {
+    const clean = (raw || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 20);
+    this.setData({ username: clean });
+    if (this._uCheck) clearTimeout(this._uCheck);
+    if (clean.length === 0) { this.setState({ uStatus: 'idle' }); return; }
+    if (clean.length < 3) { this.setState({ uStatus: 'short' }); return; }
+    this.setState({ uStatus: 'checking' });
+    this._uCheck = setTimeout(() => {
+      const taken = ['marcus','admin','forge','iron','athlete','test','coach','legacy','vale','anvil'];
+      this.setState({ uStatus: taken.includes(clean) ? 'taken' : 'available' });
+    }, 700);
+  }
+
+  // selected equipment ids -> canonical ForgeHomeGym labels
+  _ownedLabels(ids) {
+    const map = {
+      // Conservative seeds only — no fabricated specifics. The athlete details their exact
+      // inventory in the (now comprehensive) Home Gym editor; onboarding just gets them started.
+      fullgym: ['Barbell', 'Weight plates', 'Squat rack', 'Dumbbells', 'Bench', 'Pull-up bar', 'Cable machine', 'Lat pulldown', 'Leg press', 'Treadmill', 'Rowing machine'],
+      homegym: ['Dumbbells'],
+      dumbbells: ['Dumbbells'],
+      bands: ['Bands'],
+      bodyweight: [],
+    };
+    const out = [];
+    (ids || []).forEach(id => (map[id] || []).forEach(l => { if (out.indexOf(l) === -1) out.push(l); }));
+    return out;
+  }
+
+  renderVals() {
+    const NS = (typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2) || {};
+    const FP = (typeof window !== 'undefined' && window.ForgePrograms) || null;
+    const HG = (typeof window !== 'undefined' && window.ForgeHomeGym) || null;
+    const d = this.state.data;
+    const step = this.state.step;
+
+    // ---- icon helpers ----
+    const P = (dd) => React.createElement('path', { d: dd });
+    const svg = (kids, o) => React.createElement('svg', Object.assign({ width:22, height:22, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:1.7, strokeLinecap:'round', strokeLinejoin:'round' }, o||{}), ...kids);
+    const chevLeft = svg([P('M15 6l-6 6 6 6')], { width:20, height:20 });
+    const chevDown = svg([P('M6 9l6 6 6-6')], { width:18, height:18 });
+    const checkIcon = svg([P('M20 6L9 17l-5-5')], { width:20, height:20, strokeWidth:2.4 });
+    const checkIconToast = svg([P('M20 6L9 17l-5-5')], { width:16, height:16, strokeWidth:2.4 });
+    const checkBoxEl = svg([P('M20 6L9 17l-5-5')], { width:14, height:14, strokeWidth:2.8 });
+    const cameraIcon = svg([P('M4 8.5h3l1.4-2h7.2L18 8.5h2v9H4z'), React.createElement('circle',{key:'c',cx:12,cy:12.5,r:3})], { width:15, height:15, strokeWidth:1.8 });
+    const restartIcon = svg([P('M3 12a9 9 0 1 0 3-6.7'), P('M3 4v4h4')], { width:14, height:14 });
+    const starFilled = React.createElement('svg', { width:20, height:20, viewBox:'0 0 24 24', fill:'var(--fl-bronze-primary)', stroke:'var(--fl-bronze-primary)', strokeWidth:1.2, strokeLinejoin:'round' }, P('M12 3.2l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.7 6.8 19.4l1-5.9L3.5 9.4l5.9-.8z'));
+    const starOutline = React.createElement('svg', { width:20, height:20, viewBox:'0 0 24 24', fill:'none', stroke:'var(--fl-text-tertiary)', strokeWidth:1.6, strokeLinejoin:'round' }, P('M12 3.2l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.7 6.8 19.4l1-5.9L3.5 9.4l5.9-.8z'));
+
+    // ---- step machine ----
+    const setupOrder = ['account','username','goals','experience','equipment','schedule','program'];
+    const idx = setupOrder.indexOf(step);
+    const isOnboard = idx >= 0;
+    const backMap = { account:'welcome', username:'account', goals:'username', experience:'goals', equipment:'experience', schedule:'equipment', program:'schedule' };
+    const fwdMap = { account:'username', username:'goals', goals:'experience', experience:'equipment', equipment:'schedule', schedule:'program', program:'transition' };
+    const goBack = () => this.go(backMap[step] || 'welcome');
+    const goNext = () => this.go(fwdMap[step] || 'transition');
+
+    // ---- defaults ----
+    const days = d.days != null ? d.days : (this.props.defaultDays != null ? this.props.defaultDays : 4);
+
+    // ---- goals (up to 3, one primary) ----
+    const GOALS = [
+      { id:'muscle',   label:'Build Muscle',        desc:'Add visible size and shape.',                    ic: svg([P('M4 9v6M7 8v8M17 8v8M20 9v6M7 12h10')], { width:24, height:24 }) },
+      { id:'strength', label:'Get Stronger',        desc:'Move heavier weight. Build raw power.',           ic: svg([P('M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11')], { width:24, height:24, strokeLinecap:'square', strokeLinejoin:'miter' }) },
+      { id:'fatloss',  label:'Lose Fat',            desc:'Lean out while keeping your strength.',           ic: svg([P('M12 3c1 3 4 4.5 4 8a4 4 0 0 1-8 0c0-1.6.8-2.7 1.6-3.4C10 8 10.6 6 12 3z')], { width:24, height:24, strokeWidth:1.7 }) },
+      { id:'endurance',label:'Improve Endurance',   desc:'Go longer. Build your engine and stamina.',       ic: svg([P('M3 12h4l2-6 4 12 2-8 2 2h4')], { width:24, height:24, strokeWidth:1.8 }) },
+      { id:'health',   label:'General Health',      desc:'Feel good, move well, stay strong for life.',     ic: svg([P('M12 20.5s-6.8-4.2-9.2-8.6A4.5 4.5 0 0 1 12 6.5a4.5 4.5 0 0 1 9.2 5.4C18.8 16.3 12 20.5 12 20.5z')], { width:24, height:24, strokeWidth:1.7 }) },
+      { id:'athletic', label:'Athletic Performance',desc:'Power, speed, and conditioning together.',        ic: svg([P('M13 3L5 13h5l-1 8 8-11h-5z')], { width:24, height:24, strokeWidth:1.7, strokeLinejoin:'round' }) },
+    ];
+    const pickGoal = (id) => this.setState(s => {
+      const cur = s.data.goals || [];
+      let goals, primary = s.data.primaryGoal;
+      if (cur.includes(id)) {
+        goals = cur.filter(x => x !== id);
+        if (primary === id) primary = goals[0] || null;
+      } else {
+        if (cur.length >= 3) { this.showToast('Choose up to 3 goals'); return {}; }
+        goals = cur.concat(id);
+        if (!primary) primary = id;
+      }
+      return { data: { ...s.data, goals, primaryGoal: primary } };
+    });
+    const setPrimary = (id) => this.setState(s => ((s.data.goals || []).includes(id) ? { data: { ...s.data, primaryGoal: id } } : {}));
+    const goals = GOALS.map(g => {
+      const sel = (d.goals || []).includes(g.id);
+      const primary = d.primaryGoal === g.id;
+      return {
+        id: g.id, label: g.label, desc: g.desc, icon: g.ic, sel, primary,
+        starIcon: primary ? starFilled : starOutline,
+        pick: () => pickGoal(g.id),
+        star: (e) => { if (e && e.stopPropagation) e.stopPropagation(); setPrimary(g.id); },
+      };
+    });
+
+    // ---- experience ----
+    const exps = [
+      { id:'beginner',     mark:'I',   label:'Beginner',     desc:'New to training, or back after a long break.' },
+      { id:'intermediate', mark:'II',  label:'Intermediate', desc:'A year or two in. Comfortable under the bar.' },
+      { id:'advanced',     mark:'III', label:'Advanced',     desc:'Years of consistent, structured training.' },
+    ].map(e => ({ mark:e.mark, label:e.label, desc:e.desc, sel: d.experience === e.id, pick: () => this.setData({ experience: e.id }) }));
+
+    // ---- equipment (multi) ----
+    const EQUIP = [
+      { id:'fullgym',    label:'Full Gym',   desc:'Barbells, machines, the full floor.',      ic: svg([P('M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11')], { width:24, height:24, strokeLinecap:'square', strokeLinejoin:'miter' }) },
+      { id:'homegym',    label:'Home Gym',   desc:'A dedicated setup of your own.',            ic: svg([P('M4 11l8-6 8 6'), P('M6 10v9h12v-9'), P('M10 19v-5h4v5')], { width:24, height:24, strokeWidth:1.7 }) },
+      { id:'dumbbells',  label:'Dumbbells',  desc:'A pair or an adjustable set.',              ic: svg([P('M4 9v6M7 8v8M17 8v8M20 9v6M7 12h10')], { width:24, height:24 }) },
+      { id:'bands',      label:'Bands',      desc:'Resistance bands, minimal space.',          ic: svg([P('M3 12c3-5 6-5 9 0s6 5 9 0')], { width:24, height:24, strokeWidth:1.8 }) },
+      { id:'bodyweight', label:'Bodyweight', desc:'No equipment. Train anywhere.',             ic: svg([React.createElement('circle',{key:'h',cx:12,cy:5,r:2.2}), P('M12 7.4v6M12 9l-4.5 2M12 9l4.5 2M12 13.4l-3 6M12 13.4l3 6')], { width:24, height:24, strokeWidth:1.7 }) },
+    ];
+    const toggleEquip = (id) => this.setState(s => { const cur = s.data.equipment || []; return { data: { ...s.data, equipment: cur.includes(id) ? cur.filter(x => x !== id) : cur.concat(id) } }; });
+    const equipOpts = EQUIP.map(a => {
+      const sel = (d.equipment || []).includes(a.id);
+      return {
+        id: a.id, label: a.label, desc: a.desc, icon: a.ic, sel,
+        pick: () => toggleEquip(a.id),
+        boxBorder: sel ? 'var(--fl-bronze-primary)' : 'var(--fl-charcoal-500)',
+        boxBg: sel ? 'var(--fl-bronze-metallic)' : 'transparent',
+        checkEl: sel ? checkBoxEl : null,
+      };
+    });
+
+    // ---- schedule ----
+    const dayOpts = [2,3,4,5,6].map(n => ({ n, sel: days === n, pick: () => this.setData({ days: n }) }));
+    const daysCopy = {
+      2: 'Two full-body sessions a week — the minimum that still moves the needle, with plenty of recovery.',
+      3: 'Three days gives you real recovery while building genuine consistency.',
+      4: 'Four days lets us split your training and push meaningful volume.',
+      5: 'Five days is serious frequency — momentum you can feel.',
+      6: 'Six days is high volume. Recovery becomes part of the discipline.',
+    };
+
+    // ---- recommendation (primary goal × experience × equipment) ----
+    const primary = d.primaryGoal || (d.goals && d.goals[0]) || 'health';
+    const exp = d.experience || 'beginner';
+    const ownedLabels = this._ownedLabels(d.equipment || []);
+    const eq = d.equipment || [];
+    const access = eq.includes('fullgym') ? 'gym' : (eq.includes('homegym') || eq.includes('dumbbells')) ? 'home' : 'bodyweight';
+
+    let recId;
+    if (access === 'bodyweight') {
+      recId = primary === 'endurance' ? 'run-c25k' : 'fbh-bodyweight-basics';
+    } else if (access === 'home') {
+      if (primary === 'endurance') recId = 'run-c25k';
+      else if (primary === 'muscle') recId = 'fbh-dumbbell-only';
+      else if (primary === 'strength') recId = 'fbh-full-body-3';
+      else if (primary === 'fatloss' || primary === 'athletic') recId = 'cond-circuit';
+      else recId = 'fbh-home-minimalist';
+    } else {
+      const gymMap = {
+        strength:  { beginner:'strength-foundation-1', intermediate:'strength-powerbuilding-1', advanced:'strength-531' },
+        muscle:    { beginner:'mb-arms-aesthetics',    intermediate:'mb-hypertrophy-block',      advanced:'mb-ppl' },
+        endurance: { beginner:'run-c25k',              intermediate:'run-10k',                   advanced:'run-half-base' },
+        fatloss:   { beginner:'cond-hiit',             intermediate:'cond-circuit',              advanced:'cond-metcon' },
+        athletic:  { beginner:'cond-hiit',             intermediate:'cond-engine',               advanced:'cond-metcon' },
+        health:    { beginner:'fbh-full-body-3',       intermediate:'fbh-full-body-3',           advanced:'mb-upper-lower' },
+      };
+      recId = (gymMap[primary] || gymMap.health)[exp] || 'fbh-full-body-3';
+    }
+
+    const chosenId = d.chosenProgramId || recId;
+    let chosen = FP ? FP.byId(chosenId) : null;
+    chosen = chosen || { id:'fallback', name:'Strength Foundation I', family:'Strength', difficulty:'Beginner', durationWeeks:8, workoutsPerWeek:3, totalWorkouts:24, description:'Master the fundamental lifts and lay a base of strength everything else is built on.' };
+
+    // ---- alternatives (compatible, excludes chosen) ----
+    const famByGoal = { strength:'Strength', muscle:'Muscle Building', endurance:'Running', fatloss:'Conditioning', athletic:'Conditioning', health:'Full Body & Home' };
+    const diffLabel = { beginner:'Beginner', intermediate:'Intermediate', advanced:'Advanced' };
+    let alternatives = [];
+    if (FP) {
+      const catalog = FP.forgeCatalog();
+      const fits = catalog.filter(p => p.id !== chosenId && (!HG || HG.programFit(p, ownedLabels).fits));
+      const wantFam = famByGoal[primary];
+      const wantDiff = diffLabel[exp];
+      const score = (p) => (p.family === wantFam ? 2 : 0) + (p.difficulty === wantDiff ? 1 : 0);
+      fits.sort((a, b) => score(b) - score(a));
+      alternatives = fits.slice(0, 3).map(p => ({
+        id: p.id, name: p.name, meta: p.family + ' · ' + p.difficulty + ' · ' + p.durationWeeks + ' wks',
+        sel: d.chosenProgramId === p.id,
+        pick: () => this.setData({ chosenProgramId: p.id }),
+      }));
+    }
+
+    // ---- username availability ----
+    const uStatus = this.state.uStatus || 'idle';
+    const uname = d.username || '';
+    const spinnerEl = React.createElement('span', { style:{ width:'16px', height:'16px', borderRadius:'50%', border:'2px solid var(--fl-charcoal-500)', borderTopColor:'var(--fl-bronze-primary)', display:'inline-block', boxSizing:'border-box', animation:'flSpin 800ms linear infinite' } });
+    const availIcon = svg([P('M20 6L9 17l-5-5')], { width:17, height:17, strokeWidth:2.6, stroke:'var(--fl-green-muted)' });
+    const takenIcon = svg([P('M6 6l12 12M18 6L6 18')], { width:16, height:16, strokeWidth:2.2, stroke:'var(--fl-red-muted)' });
+    const uMap = {
+      idle:      { border:'var(--fl-charcoal-500)',     msg:'',                                 color:'var(--fl-text-tertiary)', icon:null },
+      short:     { border:'var(--fl-charcoal-500)',     msg:'At least 3 characters.',           color:'var(--fl-text-tertiary)', icon:null },
+      checking:  { border:'var(--fl-charcoal-500)',     msg:'Checking availability…',           color:'var(--fl-text-tertiary)', icon:spinnerEl },
+      available: { border:'var(--fl-green-muted)',      msg:'@' + uname + ' is available.',     color:'var(--fl-green-muted)',   icon:availIcon },
+      taken:     { border:'var(--fl-red-metal-border)', msg:'@' + uname + ' is already taken.', color:'var(--fl-red-muted)',     icon:takenIcon },
+    };
+    const uState = uMap[uStatus] || uMap.idle;
+    const uSuggestions = (uStatus === 'taken' ? [uname + '_', uname + '01', 'the_' + uname].map(n => n.slice(0, 20)) : []).map(n => ({ name:n, pick: () => this.checkUsername(n) }));
+
+    // ---- sex ----
+    const sexOpts = [
+      { id:'male', label:'Male' },
+      { id:'female', label:'Female' },
+    ].map(sx => ({ label: sx.label, sel: d.sex === sx.id, ink: d.sex === sx.id ? 'var(--fl-text-primary)' : 'var(--fl-text-secondary)', pick: () => this.setData({ sex: sx.id }) }));
+
+    // ---- units ----
+    const curUnit = d.units || 'imperial';
+    const unitOpts = [
+      { id: 'imperial', label: 'Imperial' },
+      { id: 'metric', label: 'Metric' },
+    ].map(u => ({ label: u.label, sel: curUnit === u.id, ink: curUnit === u.id ? 'var(--fl-text-primary)' : 'var(--fl-text-secondary)', pick: () => this.setData({ units: u.id }) }));
+
+    // ---- enter forge ----
+    const enterForge = () => {
+      try { if (HG) HG.write(ownedLabels); } catch (e) {}
+      try {
+        localStorage.setItem('forge_chapter', 'Building your Legacy');
+        localStorage.setItem('forge_unlocked', '0');
+        localStorage.setItem('forge_unlock_pending', '0');
+        localStorage.setItem('forge_tour_choice', '');
+        // Carry the athlete's identity into the app so every screen (via ForgeUser) reflects it.
+        if (d.name && d.name.trim()) localStorage.setItem('forge.profile.name', d.name.trim());
+        if (d.username && d.username.trim()) localStorage.setItem('forge.profile.handle', d.username.trim().replace(/^@/, ''));
+        if (d.sex) localStorage.setItem('forge.profile.sex', d.sex === 'female' ? 'f' : 'm');
+        // On-2: carry the athlete's onboarding selections into the app so the first session reflects them.
+        if (chosenId) localStorage.setItem('forge.onboarding.programId', chosenId);
+        try { localStorage.setItem('forge.onboarding.goals', JSON.stringify(d.goals || [])); } catch (e2) {}
+        if (d.primaryGoal) localStorage.setItem('forge.onboarding.primaryGoal', d.primaryGoal);
+        if (d.experience) localStorage.setItem('forge.onboarding.experience', d.experience);
+        if (d.days) localStorage.setItem('forge.onboarding.days', String(d.days));
+        localStorage.setItem('fl-unit', (d.units === 'metric') ? 'kg' : 'lb');
+      } catch (e) {}
+      window.location.href = 'Forge Beginner Home.dc.html?new=1';
+    };
+
+    return {
+      ready: this.state.ready,
+      notReady: !this.state.ready,
+
+      // welcome
+      isWelcome: step === 'welcome',
+      showSignIn: this.props.signInLink !== false,
+      beginLegacy: () => this.go('account'),
+      signIn: () => { window.location.href = 'Forge Home.dc.html'; },
+
+      // step flags
+      isOnboard,
+      isAccount: step === 'account',
+      isUsername: step === 'username',
+      isGoals: step === 'goals',
+      isExp: step === 'experience',
+      isEquipment: step === 'equipment',
+      isSchedule: step === 'schedule',
+      isProgram: step === 'program',
+      isTransition: step === 'transition',
+
+      // progress
+      stepNum: idx + 1,
+      stepTotal: setupOrder.length,
+      progressPct: ((idx + 1) / setupOrder.length * 100).toFixed(1) + '%',
+
+      // nav
+      goBack, goNext, enterForge,
+      restart: () => this.setState({ step:'welcome', uStatus:'idle', browseOpen:false, toast:null, data:{ name:'', username:'', avatar:null, sex:null, goals:[], primaryGoal:null, experience:null, equipment:[], days:null, chosenProgramId:null } }),
+
+      // account
+      name: d.name,
+      onName: (e) => this.setData({ name: e.target.value.replace(/^\s+/, '') }),
+      avatarProps: { src: d.avatar || undefined, name: d.name || 'You', size: 88, ring: true },
+      avatarPropsSm: { src: d.avatar || undefined, name: d.name || 'You', size: 44, ring: true },
+      nameOrYou: d.name.trim() || 'Your name',
+      handlePreview: uname ? '@' + uname : '@yourhandle',
+      handlePreviewColor: uname ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)',
+      onPhoto: (e) => { const f = e.target.files && e.target.files[0]; if (f) this.setData({ avatar: URL.createObjectURL(f) }); },
+      username: uname,
+      onUsername: (e) => this.checkUsername(e.target.value),
+      uBorder: uState.border,
+      uMsg: uState.msg,
+      uMsgColor: uState.color,
+      uStatusIcon: uState.icon,
+      uShowSuggest: uStatus === 'taken',
+      uSuggestions,
+      sexOpts,
+      unitOpts,
+      accountBlocked: !(d.name.trim() && d.sex),
+      usernameBlocked: uStatus !== 'available',
+
+      // goals
+      goals,
+      goalsBlocked: (d.goals || []).length === 0,
+
+      // experience
+      exps,
+      expBlocked: !d.experience,
+
+      // equipment
+      equipOpts,
+      equipBlocked: (d.equipment || []).length === 0,
+
+      // schedule
+      dayOpts,
+      daysHint: daysCopy[days] || daysCopy[4],
+
+      // recommended program
+      recName: chosen.name,
+      recFamily: chosen.family,
+      recDiff: chosen.difficulty,
+      recWeeks: chosen.durationWeeks,
+      recWpw: chosen.workoutsPerWeek,
+      recTotal: chosen.totalWorkouts != null ? chosen.totalWorkouts : chosen.durationWeeks * chosen.workoutsPerWeek,
+      recDesc: chosen.description,
+      recStartLabel: (chosen.name.length <= 18 ? 'Start ' + chosen.name : 'Start this program'),
+      browseOpen: this.state.browseOpen,
+      browseChevRot: this.state.browseOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+      toggleBrowse: () => this.setState(s => ({ browseOpen: !s.browseOpen })),
+      alternatives,
+
+      // toast
+      toastOpen: !!this.state.toast,
+      toastMsg: this.state.toast || '',
+      hideToast: () => this.setState({ toast: null }),
+
+      // icons
+      ctaBtnProps: { style: { border: '1px solid rgba(168,130,80,0.46)', boxShadow: 'inset 0 1px 0 rgba(222,190,148,0.30), var(--fl-bronze-metal-bottom-rim), var(--fl-bronze-metal-sides), var(--fl-shadow-card)' } },
+      welcomeBtnProps: { style: { padding: '19px 26px', borderRadius: 'var(--fl-radius-lg)', border: '1px solid rgba(176,136,84,0.52)', boxShadow: 'inset 0 1.5px 0 rgba(233,201,155,0.50), var(--fl-bronze-metal-bottom-rim), var(--fl-bronze-metal-sides), var(--fl-shadow-elevated), var(--fl-glow-forge)' } },
+      chevLeft, chevDown, checkIcon, checkIconToast, cameraIcon, restartIcon,
+    };
+  }
+}
+</script>
+</body>
+</html>

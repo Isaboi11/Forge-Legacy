@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&amp;display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+  <script src="forge-gate.js"></script>
+<script>
+  /* Gate the DS bundle on React being present: the bundle captures window.React at
+     eval time, but support.js loads React from a CDN asynchronously, so the local
+     bundle can win the race and every component crashes on .useState of undefined. */
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() {
+      if (window.__flBundleInjected) return;
+      window.__flBundleInjected = true;
+      var s = document.createElement("script");
+      s.src = SRC;
+      document.head.appendChild(s);
+    }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0;
+    var iv = setInterval(function () {
+      if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); }
+    }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<script src="forge-user.js"></script>
+<script src="forge-units.js"></script>
+<script src="forge-coach.js"></script>
+<script src="forge-programs.js"></script>
+<script src="forge-artwork-resolver.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  @keyframes flRiseIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes flLive { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  @keyframes flTourIn { from { opacity: 0; } to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+  <div data-screen-label="Home" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.15), rgba(5,5,5,0.15)), #050505 url('assets/forge-slate.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <!-- Loading splash (pre-mount) -->
+    <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+        <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+      </div>
+    </sc-if>
+
+    <!-- H-1 Home -->
+    <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="{{ logo }}" actions="{{ friendsEntry }}" avatar="{{ avatarEl }}" on-avatar="{{ openSelf }}" hint-size="100%,56px"></x-import>
+
+      <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto;">
+
+        <!-- ============ TITLE BLOCK · chapter as a title, with rank artwork ============ -->
+        <div style="position:relative; padding:16px 26px 8px; overflow:hidden;">
+          <!-- rank insignia · Forged Seal medallion, faint & etched (placeholder: Foundation I) -->
+          <img src="assets/rank-foundation-i.png" alt="" aria-hidden="true" style="position:absolute; top:6px; right:8px; width:192px; height:208px; opacity:0.42; pointer-events:none; z-index:0;">
+          <div style="display:flex; flex-direction:column; gap:9px; position:relative; z-index:1;">
+
+            <span style="font-size:12px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:var(--fl-text-secondary); animation: flRiseIn 900ms var(--fl-ease-out, ease-out) both;">{{ homeChapterNum }}</span>
+
+            <h1 style="margin:0; font-family:var(--fl-font-display); font-size:40px; line-height:0.98; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:var(--fl-text-primary); animation: flRiseIn 1100ms var(--fl-ease-out, ease-out) both; animation-delay:80ms;">{{ homeChapterName }}</h1>
+
+            <!-- diamond divider -->
+            <div style="display:flex; align-items:center; gap:14px; max-width:300px; animation: flRiseIn 1200ms var(--fl-ease-out, ease-out) both; animation-delay:180ms;">
+              <span style="flex:1; height:1px; background:linear-gradient(90deg, var(--fl-bronze-border) 0%, transparent 100%);"></span>
+              <span style="width:7px; height:7px; flex:none; transform:rotate(45deg); border:1px solid var(--fl-bronze-primary);"></span>
+              <span style="flex:1; height:1px; background:linear-gradient(90deg, var(--fl-bronze-border) 0%, transparent 100%);"></span>
+            </div>
+
+            <sc-if value="{{ notNew }}" hint-placeholder-val="{{ true }}"><span style="font-size:15px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:var(--fl-text-secondary); animation: flRiseIn 1300ms var(--fl-ease-out, ease-out) both; animation-delay:260ms;">Week 6 &nbsp;·&nbsp; Day 2</span></sc-if><sc-if value="{{ isNew }}" hint-placeholder-val="{{ false }}"><span style="font-size:15px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:var(--fl-text-secondary); animation: flRiseIn 1300ms var(--fl-ease-out, ease-out) both; animation-delay:260ms;">Your first chapter</span></sc-if>
+
+            <!-- rotating Forge Principle · italic inscription with a bronze rule -->
+            <div style="display:flex; gap:14px; padding-top:2px; animation: flRiseIn 1600ms var(--fl-ease-out, ease-out) both; animation-delay:420ms;">
+              <span style="width:2px; flex:none; background:linear-gradient(180deg, var(--fl-bronze-primary), transparent);"></span>
+              <span style="font-family:var(--fl-font-display); font-style:italic; font-size:17px; line-height:1.4; font-weight:500; color:var(--fl-bronze-bright); text-wrap:pretty; max-width:236px;">{{ principle }}</span>
+            </div>
+
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:20px; padding:2px 18px 40px;">
+
+          <!-- ============ TODAY'S WORKOUT ============ -->
+          <sc-if value="{{ isNew }}" hint-placeholder-val="{{ false }}">
+            <div style="position:relative; overflow:hidden; background:var(--fl-bg-primary); border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-xl); padding:26px 22px; box-shadow:var(--fl-shadow-card-soft); display:flex; flex-direction:column; gap:16px; align-items:center; text-align:center;">
+              <span style="width:52px; height:52px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" stroke-linejoin="miter"><path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11"></path></svg></span>
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <span style="font-family:var(--fl-font-display); font-size:22px; font-weight:600; letter-spacing:-0.2px;">Forge your first program</span>
+                <span style="font-size:13.5px; line-height:1.5; color:var(--fl-text-secondary); max-width:252px;">You have no active program yet. Browse the Forge library or build your own — your next session begins there.</span>
+              </div>
+              <div style="width:100%; display:flex; flex-direction:column; gap:10px;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" on-click="{{ goCatalog }}" hint-size="100%,50px">Browse Programs</x-import><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="secondary" full-width="{{ true }}" on-click="{{ goBuild }}" hint-size="100%,48px">Build a Program</x-import></div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ notNew }}" hint-placeholder-val="{{ true }}">
+          <div style="position:relative; overflow:hidden; background:var(--fl-card-hero-wash), var(--fl-bg-primary); border:1px solid var(--fl-bronze-border); border-radius:var(--fl-radius-xl); padding:20px 22px 20px; box-shadow: var(--fl-shadow-card-hero); display:flex; flex-direction:column; gap:16px;">
+
+            <!-- workout artwork · faint, swaps with the day (placeholder: Push) -->
+            <!-- workout artwork · resolved centrally, mounted only once src is known -->
+            {{ workoutArtImg }}
+
+            <div role="button" tabindex="0" aria-label="Preview workout" onClick="{{ goProgram }}" onKeyDown="{{ onKeyProgram }}" style="position:relative; z-index:1; display:flex; flex-direction:column; gap:12px; cursor:pointer; margin:0 -8px; padding:7px 8px; border-radius:var(--fl-radius-lg); transition:background 160ms var(--fl-ease-out, ease-out);" style-hover="background:rgba(191,143,79,0.06);">
+            <div style="display:flex; align-items:flex-start; gap:16px; max-width:74%;">
+              <span style="width:52px; height:52px; flex:none; margin-top:6px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border); background:var(--fl-icon-container-bg); box-shadow:var(--fl-glow-subtle); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" stroke-linejoin="miter"><path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11"></path></svg></span>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:6px;">
+                <span style="font-size:10.5px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">Today’s Workout</span>
+                <span style="font-family:var(--fl-font-display); font-size:30px; font-weight:600; letter-spacing:-0.3px; line-height:1.02;">{{ workoutTitle }}</span>
+                <span style="font-size:14px; color:var(--fl-text-secondary);">{{ workoutFocus }}</span>
+              </div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:9px;">
+              <div style="height:1px; background:var(--fl-bronze-border-subtle); max-width:150px;"></div>
+              <span style="display:flex; align-items:center; gap:9px; font-size:12px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-secondary);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--fl-icon-bronze)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><rect x="5" y="3" width="14" height="18" rx="2"></rect><path d="M9 3.5h6v2H9zM9 11h6M9 15h4"></path></svg>{{ workoutExercises }} Exercises<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none; margin-left:auto;"><path d="M9 6l6 6-6 6"></path></svg></span>
+            </div>
+            </div>
+
+            <div style="position:relative; z-index:1;">
+              <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" on-click="{{ startWorkout }}" hint-size="100%,52px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="square" stroke-linejoin="miter" style="flex:none; stroke:var(--fl-ember-flame);"><path d="M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z"></path></svg>Start Workout</x-import>
+            </div>
+
+          </div>
+          </sc-if>
+
+          <!-- ============ PROGRAM  |  MISSION ============ -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+
+            <!-- Program -->
+            <sc-if value="{{ isNew }}" hint-placeholder-val="{{ false }}">
+              <div role="button" tabindex="0" aria-label="Browse programs" onClick="{{ goCatalog }}" style="background:var(--fl-bg-primary); border:var(--fl-border-subtle); border-radius:var(--fl-radius-xl); padding:18px 16px; box-shadow:var(--fl-shadow-card-soft); cursor:pointer; transition:border-color 200ms var(--fl-ease-out, ease-out), background 200ms var(--fl-ease-out, ease-out), transform 200ms var(--fl-ease-out, ease-out); display:flex; flex-direction:column; gap:11px; min-height:132px;" style-hover="border-color:var(--fl-bronze-border); background:var(--fl-hover-wash); transform:translateY(-2px);">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                  <span style="font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Program</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 6l6 6-6 6"></path></svg>
+                </div>
+                <span style="font-family:var(--fl-font-display); font-size:18px; font-weight:600; letter-spacing:-0.2px; line-height:1.15;">No active program</span>
+                <span style="font-size:12.5px; color:var(--fl-bronze-primary); font-weight:600; margin-top:auto;">Choose a path →</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ notNew }}" hint-placeholder-val="{{ true }}">
+            <div role="button" tabindex="0" aria-label="View current program" onClick="{{ goProgram }}" onKeyDown="{{ onKeyProgram }}" style="background:var(--fl-bg-primary); border:var(--fl-border-subtle); border-radius:var(--fl-radius-xl); padding:18px 16px; box-shadow:var(--fl-shadow-card-soft); cursor:pointer; transition:border-color 200ms var(--fl-ease-out, ease-out), background 200ms var(--fl-ease-out, ease-out), transform 200ms var(--fl-ease-out, ease-out); display:flex; flex-direction:column; gap:11px;" style-hover="border-color:var(--fl-bronze-border); background:var(--fl-hover-wash); transform:translateY(-2px);">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                <span style="font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Current Program</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 6l6 6-6 6"></path></svg>
+              </div>
+              <span style="font-family:var(--fl-font-display); font-size:18px; font-weight:600; letter-spacing:-0.2px; line-height:1.15;">Powerbuilding II</span>
+              <div style="display:flex; flex-direction:column; gap:8px; margin-top:3px;">
+                <div style="display:flex; align-items:baseline; gap:5px;">
+                  <span style="font-family:var(--fl-font-display); font-size:27px; font-weight:600; line-height:0.9; color:var(--fl-text-primary);">12</span>
+                  <span style="font-size:14px; font-weight:500; color:var(--fl-text-secondary);">/ 32</span>
+                  <span style="margin-left:auto; font-size:10px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--fl-text-tertiary);">Workouts</span>
+                </div>
+                <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ProgressBar" value="12" max="32" hint-size="100%,8px"></x-import>
+              </div>
+            </div>
+            </sc-if>
+
+            <!-- Mission -->
+            <div role="button" tabindex="0" aria-label="View mission and goals" onClick="{{ goMission }}" onKeyDown="{{ onKeyMission }}" style="background:var(--fl-bg-primary); border:var(--fl-border-subtle); border-radius:var(--fl-radius-xl); padding:18px 16px; box-shadow:var(--fl-shadow-card-soft); cursor:pointer; transition:border-color 200ms var(--fl-ease-out, ease-out), background 200ms var(--fl-ease-out, ease-out), transform 200ms var(--fl-ease-out, ease-out); display:flex; flex-direction:column; gap:12px;" style-hover="border-color:var(--fl-bronze-border); background:var(--fl-hover-wash); transform:translateY(-2px);">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                <span style="font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Mission</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 6l6 6-6 6"></path></svg>
+              </div>
+              <span style="font-family:var(--fl-font-display); font-size:19px; font-weight:600; letter-spacing:-0.2px; line-height:1.15;">{{ missionTarget }}</span>
+              <span style="font-size:12.5px; color:var(--fl-text-secondary); margin-top:2px;">Your long-term objective</span>
+              <div style="height:1px; background:var(--fl-bronze-border-subtle); margin:2px 0;"></div>
+              <span style="display:flex; align-items:center; gap:8px; font-size:12px; color:var(--fl-text-secondary);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--fl-icon-bronze)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg>2 goals remaining</span>
+            </div>
+
+          </div>
+
+          <!-- ============ TRAIN TOGETHER ============ -->
+          <div>
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Your Circle" hint-size="100%,20px"></x-import>
+
+            <!-- one living card · Live Now (hero) over Choose Someone (secondary) -->
+            <div style="background:var(--fl-bg-primary); border:var(--fl-border-subtle); border-radius:var(--fl-radius-xl); box-shadow:var(--fl-shadow-card-soft); padding:16px; position:relative; display:flex; flex-direction:column;">
+
+              <!-- bronze active ring · earns the accent only when someone is live -->
+              <sc-if value="{{ hasLive }}" hint-placeholder-val="{{ true }}">
+                <span aria-hidden="true" style="position:absolute; inset:-1px; border:1px solid var(--fl-bronze-border); border-radius:var(--fl-radius-xl); pointer-events:none;"></span>
+              </sc-if>
+
+              <!-- WORKOUT INVITE · a friend invited you to a shared session (top of the card so it's seen first) -->
+              <sc-if value="{{ hasInvite }}" hint-placeholder-val="{{ false }}">
+                <div role="button" tabindex="0" aria-label="{{ inviteA11y }}" onClick="{{ openInvite }}" style="display:flex; align-items:center; gap:12px; margin-bottom:14px; padding:13px 14px; border-radius:var(--fl-radius-lg); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border); cursor:pointer; transition:border-color 200ms var(--fl-ease-out, ease-out);" style-hover="border-color:var(--fl-bronze-primary);">
+                  <span style="width:40px; height:40px; flex:none; border-radius:var(--fl-radius-round); background:{{ inviteTint }}; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#1A1206;">{{ inviteInitials }}</span>
+                  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                    <span style="font-size:10px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-bronze-primary);">Workout Invite</span>
+                    <span style="font-size:13.5px; font-weight:600; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ inviteText }}</span>
+                  </div>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 6l6 6-6 6"></path></svg>
+                </div>
+              </sc-if>
+
+              <!-- LIVE NOW · shown only when someone is actually training (never a permanent empty state) -->
+              <sc-if value="{{ hasLive }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex; flex-direction:column; gap:12px; padding:14px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-recessed); border:1px solid var(--fl-bronze-border-subtle);">
+                  <div style="display:flex; align-items:center; gap:9px;">
+                    <span style="width:8px; height:8px; flex:none; border-radius:50%; background:var(--fl-status-online); box-shadow:var(--fl-status-online-glow); animation:flLive 2.6s var(--fl-ease-out, ease-out) infinite;"></span>
+                    <span style="font-size:10.5px; font-weight:600; letter-spacing:1.7px; text-transform:uppercase; color:var(--fl-bronze-primary);">Live Now</span>
+                    <sc-if value="{{ isMultiple }}" hint-placeholder-val="{{ false }}">
+                      <span style="margin-left:auto; font-size:12px; font-weight:500; color:var(--fl-text-secondary);">{{ othersText }}</span>
+                    </sc-if>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:13px; min-height:40px;">
+                    <div role="button" tabindex="0" aria-label="{{ liveProfileA11y }}" onClick="{{ openLiveProfile }}" style="display:flex; align-items:center; gap:13px; flex:1; min-width:0; cursor:pointer;">
+                      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Avatar" name="{{ liveName }}" size="listRow" hint-size="40px,40px"></x-import>
+                      <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                        <span style="font-family:var(--fl-font-display); font-size:18px; font-weight:600; letter-spacing:-0.2px; line-height:1.05; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ liveName }}</span>
+                        <span style="font-size:12.5px; color:var(--fl-text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ liveMeta }}</span>
+                      </div>
+                    </div>
+                    <div role="button" tabindex="0" aria-label="Join workout" onClick="{{ joinLive }}" style="flex:none; display:inline-flex; align-items:center; justify-content:center; padding:9px 18px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-tint); color:var(--fl-bronze-bright); font-size:12px; font-weight:700; letter-spacing:1px; text-transform:uppercase; cursor:pointer; white-space:nowrap; transition:background 200ms var(--fl-ease-out, ease-out), border-color 200ms var(--fl-ease-out, ease-out);" style-hover="background:rgba(191,143,79,0.12); border-color:var(--fl-bronze-primary);">Join</div>
+                  </div>
+                </div>
+              </sc-if>
+
+              <!-- FRIEND ACTIVITY · a person, reads like a miniature post; the whole block opens it -->
+              <div role="button" tabindex="0" aria-label="See Diego's update" onClick="{{ goFriendsPost }}" style="display:flex; align-items:flex-start; gap:13px; margin:16px -8px 0; padding:8px; border-radius:var(--fl-radius-lg); cursor:pointer; transition:background 200ms var(--fl-ease-out, ease-out);" style-hover="background:var(--fl-hover-wash);">
+                <span style="position:relative; flex:none; width:40px; height:40px;">
+                  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Avatar" name="{{ latestName }}" size="listRow" hint-size="40px,40px"></x-import>
+                  <!-- post-type glyph (progress comparison) — tells you what you're about to open -->
+                  <span style="position:absolute; right:-3px; bottom:-3px; width:19px; height:19px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-charcoal-900); border:1px solid var(--fl-bronze-border); color:var(--fl-bronze-bright); box-shadow:0 1px 4px rgba(0,0,0,0.5);"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V4"></path><path d="M6 10l6-6 6 6"></path></svg></span>
+                </span>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:7px;">
+                  <span style="font-size:15px; font-weight:600; letter-spacing:-0.1px; color:var(--fl-text-primary); line-height:1.1;">{{ latestName }}</span>
+                  <span style="font-size:15px; font-style:italic; line-height:1.55; color:var(--fl-text-primary); opacity:0.9;">{{ latestQuote }}</span>
+                </div>
+              </div>
+
+              <!-- footer · grouped-table style conclusion into the feed -->
+              <div role="button" tabindex="0" aria-label="See your circle" onClick="{{ goFriends }}" style="display:flex; align-items:center; gap:7px; margin:16px -16px -16px; padding:14px 16px; background:var(--fl-surface-recessed); border-top:1px solid var(--fl-bronze-border-subtle); border-bottom-left-radius:var(--fl-radius-xl); border-bottom-right-radius:var(--fl-radius-xl); cursor:pointer; color:var(--fl-text-secondary); transition:color 200ms var(--fl-ease-out, ease-out), background 200ms var(--fl-ease-out, ease-out);" style-hover="color:var(--fl-bronze-primary); background:var(--fl-hover-wash);">
+                <span style="font-size:13px; font-weight:600; letter-spacing:0.2px;">See your circle</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg>
+              </div>
+
+            </div>
+
+            <!-- QUICK ACTIONS · utilities, deliberately lighter than the people above -->
+            <div style="display:flex; gap:10px; margin-top:12px;">
+              <div role="button" tabindex="0" aria-label="Challenge a friend" onClick="{{ goChallenge }}" style="flex:1.25; display:flex; align-items:center; justify-content:center; gap:9px; padding:12px 13px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-tint); cursor:pointer; transition:background 200ms var(--fl-ease-out, ease-out), border-color 200ms var(--fl-ease-out, ease-out);" style-hover="background:rgba(191,143,79,0.14); border-color:var(--fl-bronze-primary);">
+                <span style="display:inline-flex; color:var(--fl-bronze-bright);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4.5L18 17.5M19 4.5L6 17.5M12.7 15.8L16.3 12.2M7.7 12.2L11.3 15.8"></path></svg></span>
+                <span style="flex:none; font-size:13px; font-weight:700; letter-spacing:0.3px; color:var(--fl-bronze-bright);">Challenge</span>
+              </div>
+              <div role="button" tabindex="0" aria-label="View competitions" onClick="{{ goCompetitions }}" style="flex:1; display:flex; align-items:center; gap:9px; padding:12px 13px; border-radius:var(--fl-radius-lg); border:var(--fl-border-subtle); background:var(--fl-bg-primary); cursor:pointer; transition:border-color 200ms var(--fl-ease-out, ease-out);" style-hover="border-color:var(--fl-bronze-border);">
+                <span style="display:inline-flex; color:var(--fl-icon-bronze);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v6a6 6 0 0 0 12 0V4M12 16v4M8.5 20h7"></path></svg></span>
+                <span style="flex:1; min-width:0; font-size:13px; font-weight:600; color:var(--fl-text-secondary);">Competitions</span>
+                <span style="flex:none; display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; padding:0 5px; border-radius:var(--fl-radius-round); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); font-size:10px; font-weight:800; color:var(--fl-bronze-bright);">2</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.TabBar" items="{{ tabItems }}" active-id="{{ activeTab }}" on-change="{{ setTab }}" hint-size="100%,74px"></x-import>
+
+      <!-- First-run coach-marks · the 4 tabs -->
+      <sc-if value="{{ tourActive }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; inset:0; z-index:40; background:rgba(4,6,8,0.74); animation:flTourIn 320ms ease-out both;">
+          <div aria-hidden="true" style="position:absolute; bottom:8px; left:{{ tourLeft }}; transform:translateX(-50%); width:66px; height:60px; border-radius:18px; border:1.5px solid var(--fl-bronze-primary); box-shadow:0 0 0 4px rgba(191,143,79,0.16), var(--fl-glow-badge); pointer-events:none; transition:left 340ms var(--fl-ease-out, ease-out);"></div>
+          <div style="position:absolute; left:22px; right:22px; bottom:98px; padding:22px; border-radius:var(--fl-radius-xl); background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-ambient); display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+              <span style="font-size:10.5px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ tourStepNum }} of {{ tourStepTotal }}</span>
+              <span onClick="{{ skipTour }}" role="button" tabindex="0" style="font-size:12.5px; font-weight:500; color:var(--fl-text-tertiary); cursor:pointer;">Skip</span>
+            </div>
+            <span style="font-family:var(--fl-font-display); font-size:22px; font-weight:600; letter-spacing:-0.2px; color:var(--fl-text-primary);">{{ tourTabName }}</span>
+            <p style="margin:0; font-size:14px; line-height:1.55; color:var(--fl-text-secondary);">{{ tourCaption }}</p>
+            <div onClick="{{ nextTour }}" role="button" tabindex="0" style="margin-top:4px; align-self:flex-end; display:inline-flex; align-items:center; gap:8px; padding:11px 22px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-metal-border); color:#F7F5F1; font-size:13px; font-weight:700; letter-spacing:0.6px; text-transform:uppercase; cursor:pointer; box-shadow:var(--fl-bronze-metal-top-rim), var(--fl-shadow-card); text-shadow:0 1px 1px rgba(8,5,2,0.5);">{{ tourNextLabel }}</div>
+          </div>
+        </div>
+      </sc-if>
+
+    </sc-if>
+
+    <!-- Forged grain -->
+    <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.08; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;liveState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;multiple&quot;,&quot;single&quot;,&quot;none&quot;],&quot;default&quot;:&quot;single&quot;,&quot;tsType&quot;:&quot;'multiple' | 'single' | 'none'&quot;,&quot;section&quot;:&quot;Train Together&quot;,&quot;label&quot;:&quot;Who's live&quot;}}">
+class Component extends DCLogic {
+  state = { ready: false, activeTab: 'home', tourActive: false, tourStep: 0 };
+  componentDidMount() {
+    // If an initiative just opened the forge elsewhere (an in-place squad/community
+    // join), pay off the moment with the unlock ceremony before showing Home.
+    try { if (window.ForgeGate && window.ForgeGate.consumePending()) { window.location.href = 'Forge%20Legacy%20Unlocked.dc.html?reason=' + encodeURIComponent(window.ForgeGate.reason()); return; } } catch (e) {}
+    // Claude Design preview-runtime shim only (see CLAUDE.md): defer mounting the
+    // bound components until React AND the design-system bundle are on window, so
+    // the first paint can't lose the load race. Not a production pattern.
+    this._pollReady = () => {
+      const reactReady = typeof React !== 'undefined' && React && React.createElement;
+      const nsReady = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const symReady = typeof window !== 'undefined' && window.ForgeSymbols;
+      if (reactReady && nsReady && symReady) {
+        this.setState({ ready: true });
+        try { var _new = /[?&]new=1/.test((typeof location !== 'undefined' && location.search) || ''); var _tipsOn = !window.ForgeCoach || window.ForgeCoach.enabled(); if (_tipsOn && (_new || !localStorage.getItem('forge_home_tour_v1'))) this.setState({ tourActive: true, tourStep: 0 }); } catch (e) {}
+        if (!this._offUnits && window.ForgeUnits) this._offUnits = window.ForgeUnits.subscribe(() => this.setState(s => ({ unitTick: (s.unitTick || 0) + 1 })));
+      } else {
+        this._readyTimer = setTimeout(this._pollReady, 40);
+      }
+    };
+    this._pollReady();
+  }
+
+  componentWillUnmount() {
+    if (this._readyTimer) clearTimeout(this._readyTimer);
+    if (this._offUnits) this._offUnits();
+  }
+
+  renderVals() {
+    // Do not touch React until the gate is open — avoids first-paint createElement race.
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) {
+      return { ready: false, notReady: true, activeTab: this.state.activeTab };
+    }
+    const NS = (typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2) || {};
+    const U = (typeof window !== 'undefined' && window.ForgeUnits) || null;
+    const Avatar = NS.Avatar;
+
+    const ic = (paths) => React.createElement('svg', { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }, ...paths.map((d, i) => React.createElement('path', { key: i, d })));
+
+    const forgeMark = React.createElement('svg', { width: 19, height: 28, viewBox: '16 0 68 102', style: { flex: 'none', display: 'block' }, 'aria-hidden': true },
+      React.createElement('defs', null,
+        React.createElement('linearGradient', { id: 'forgeMarkGrad', x1: '0', y1: '0', x2: '0', y2: '1' },
+          React.createElement('stop', { offset: '0%', stopColor: '#DCB57A' }),
+          React.createElement('stop', { offset: '52%', stopColor: '#BF8F4F' }),
+          React.createElement('stop', { offset: '100%', stopColor: '#835F32' }))),
+      React.createElement('g', { fill: 'url(#forgeMarkGrad)' },
+        React.createElement('polygon', { points: '43,6 57,6 57,96 43,96' }),
+        React.createElement('polygon', { points: '23,42 37,27 37,96 23,96' }),
+        React.createElement('polygon', { points: '63,27 77,42 77,96 63,96' })));
+
+    const logo = React.createElement('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '8px' } },
+      forgeMark,
+      React.createElement('span', { style: { fontFamily: 'var(--fl-font-display)', fontSize: '16px', fontWeight: 600, letterSpacing: '-0.2px', color: 'var(--fl-text-primary)' } }, 'Forge Legacy'));
+
+    const avatarEl = Avatar ? React.createElement('div', { role: 'button', tabIndex: 0, 'aria-label': 'Account settings', style: { cursor: 'pointer', display: 'flex' }, onClick: () => { window.location.href = 'Forge%20Account%20Settings.dc.html'; } }, React.createElement(Avatar, { name: (window.ForgeUser ? window.ForgeUser.get().name : 'Ada Ridge'), size: 'appBar' })) : null;
+
+    // Friends entry — opens the private Friends feed (badge = pending friend requests).
+    const friendsEntry = React.createElement('button', {
+      type: 'button', 'aria-label': 'Friends',
+      onClick: () => { window.location.href = 'Forge%20Friends%20Feed.dc.html?view=requests'; },
+      style: { position: 'relative', width: '40px', height: '40px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--fl-icon-bronze)', borderRadius: 'var(--fl-radius-round)' },
+    },
+      React.createElement('svg', { width: 23, height: 23, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' },
+        React.createElement('circle', { cx: 7.5, cy: 8, r: 2.7 }),
+        React.createElement('circle', { cx: 16.5, cy: 8, r: 2.7 }),
+        React.createElement('path', { d: 'M3 19a4.5 4.5 0 0 1 9 0' }),
+        React.createElement('path', { d: 'M12 19a4.5 4.5 0 0 1 9 0' })),
+      React.createElement('span', { style: { position: 'absolute', top: '4px', right: '4px', minWidth: '15px', height: '15px', padding: '0 4px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--fl-radius-round)', background: 'var(--fl-bronze-metallic)', color: '#1A1206', fontSize: '9px', fontWeight: 800, border: '1.5px solid var(--fl-bg-primary)' } }, '2'));
+
+    const navIcon = (id) => window.ForgeSymbols.create(React, id, { size: 22, strokeWidth: 2 });
+    const legacyIcon = React.createElement('span', { style: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '48px', height: '32px', borderRadius: 'var(--fl-radius-md)', background: 'var(--fl-bronze-tint)', border: '1px solid var(--fl-bronze-border)', boxShadow: 'var(--fl-glow-subtle)', color: 'var(--fl-bronze-bright)' } }, navIcon('legacy'));
+    const tabItems = [
+      { id: 'home', label: 'Home', icon: navIcon('home') },
+      { id: 'workouts', label: 'Workouts', icon: navIcon('workouts') },
+      { id: 'legacy', label: 'Legacy', icon: legacyIcon },
+      { id: 'squads', label: 'Squads', icon: navIcon('squads') },
+      { id: 'community', label: 'Community', icon: navIcon('explore') },
+    ];
+
+    const principles = [
+      'You are the protagonist. This is only the record.',
+      'You are not counting workouts. You are becoming someone.',
+      'History is permanent. Outcomes cannot change.',
+      'Train for the person you intend to become.',
+      'The number fades. The discipline remains.',
+      'A legacy is built in the sessions no one applauds.',
+      'Strength is the habit that outlives the motivation.',
+      'What you forge today, you carry for years.',
+    ];
+    const dayIndex = Math.floor(Date.now() / 86400000);
+    const principle = principles[dayIndex % principles.length];
+
+    // Train Together · who can I train with right now?
+    // liveState drives the whole card; height stays fixed across all three.
+    const liveState = (this.props && this.props.liveState) || 'multiple';
+    const hasLive = liveState === 'single' || liveState === 'multiple';
+    const isMultiple = liveState === 'multiple';
+    const isNone = liveState === 'none';
+    const liveName = 'Marcus Vale';
+    const liveMeta = 'Pull Day A · Live for 4 min';
+    const othersText = '+2 training now';
+
+    // Pending shared-workout invite (surfaced as a banner atop the squad card)
+    let _inv = null; try { _inv = JSON.parse(localStorage.getItem('forge_shared_invite_v1') || 'null'); } catch (e) {}
+    const _hasInvite = !!(_inv && _inv.fromName);
+    const _inviteInitials = _hasInvite ? _inv.fromName.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase() : '';
+    const _inviteText = _hasInvite ? (_inv.fromName + ' · ' + (_inv.workoutName || 'a workout')) : '';
+    const _inviteA11y = _hasInvite ? ('Open workout invite from ' + _inv.fromName) : 'Workout invite';
+
+    const tabTour = [
+      { name: 'Home', text: 'Where each day begins \u2014 your next session, your program, and your mission, held in one place.' },
+      { name: 'Workouts', text: 'The forge floor. Every program and session lives here. Choose your work and begin.' },
+      { name: 'Legacy', text: 'Everything you have earned, carved in permanent record \u2014 every chapter closed, every rank won, every mark that outlasts the day.' },
+      { name: 'Squads', text: 'Those who forge beside you. Train together, and hold the line when your discipline wavers.' },
+      { name: 'Community', text: 'The wider circle — larger, open groups around a gym, a training style, a city. Find your people beyond the squad.' },
+    ];
+    const tourStep = this.state.tourStep || 0;
+    const finishTour = () => { try { localStorage.setItem('forge_home_tour_v1', '1'); } catch (e) {} this.setState({ tourActive: false }); };
+
+    const homeParams = (typeof location !== 'undefined' && location.search) || '';
+    const isNew = /[?&]new=1/.test(homeParams);
+    let homeChapter = 'Foundation';
+    try { homeChapter = localStorage.getItem('forge_chapter') || 'Foundation'; } catch (e) {}
+    const goCatalog = () => { window.location.href = 'Forge%20Programs%20Catalog.dc.html'; };
+
+    // ── Home-card artwork: resolved centrally, deterministically (see resolver spec) ──
+    const PROG = (typeof window !== 'undefined' && window.ForgePrograms) || null;
+    const RES = (typeof window !== 'undefined' && window.ForgeArtworkResolver) || null;
+    const activeProg = PROG ? PROG.active() : null;
+    const nextW = (activeProg && activeProg.nextWorkout) || {};
+    let _art = null;
+    if (RES) {
+      _art = RES.resolveHomeWorkoutArtwork({
+        user: (typeof ForgeUser !== 'undefined' && ForgeUser) ? ForgeUser.get() : null,
+        workout: nextW,
+        program: activeProg,
+        exercises: [],
+      });
+    }
+    const workoutArt = (_art && _art.assetPath) || 'assets/workout-push.png';
+    const workoutArtImg = React.createElement('img', {
+      src: workoutArt, alt: '', 'aria-hidden': 'true',
+      style: { position: 'absolute', top: '-34px', right: '-98px', height: 'calc(100% + 92px)', width: 'auto', objectFit: 'contain', objectPosition: 'right top', opacity: 0.72, mixBlendMode: 'screen', WebkitMaskImage: 'radial-gradient(115% 130% at 96% 44%, #000 52%, transparent 82%)', maskImage: 'radial-gradient(115% 130% at 96% 44%, #000 52%, transparent 82%)', pointerEvents: 'none', zIndex: 0 },
+    });
+    const workoutTitle = nextW.name || 'Today’s Workout';
+    const workoutFocus = nextW.focus || (activeProg ? activeProg.family : '');
+    const workoutExercises = nextW.exerciseCount || 6;
+
+    return {
+      workoutArtImg, workoutTitle, workoutFocus, workoutExercises,
+      ready: this.state.ready,
+      notReady: !this.state.ready,
+      logo, avatarEl, friendsEntry, tabItems,
+      activeTab: this.state.activeTab,
+      isNew, notNew: !isNew,
+      homeChapterNum: isNew ? 'Chapter I' : 'Chapter III',
+      homeChapterName: isNew ? homeChapter : 'The Rebuild',
+      goCatalog,
+      goBuild: () => { window.location.href = 'Forge%20Programs%20Catalog.dc.html'; },
+      tourActive: this.state.tourActive,
+      tourStepNum: tourStep + 1,
+      tourStepTotal: tabTour.length,
+      tourTabName: tabTour[tourStep].name,
+      tourCaption: tabTour[tourStep].text,
+      tourLeft: ((tourStep + 0.5) * 20).toFixed(1) + '%',
+      tourNextLabel: tourStep >= 4 ? 'Enter Forge' : 'Next',
+      nextTour: () => { if (tourStep >= 4) finishTour(); else this.setState({ tourStep: tourStep + 1 }); },
+      skipTour: finishTour,
+      missionTarget: 'Squat ' + (U ? U.fmt(405) : '405 lb'),
+      setTab: (id) => { if (id === 'workouts') { window.location.href = 'Forge%20Programs%20Catalog.dc.html'; return; } if (id === 'legacy') { window.location.href = 'Forge%20Legacy.dc.html'; return; } if (id === 'squads') { window.location.href = 'Squads%20Hub.dc.html'; return; } if (id === 'community') { window.location.href = 'Community%20Home.dc.html'; return; } this.setState({ activeTab: id }); },
+      goProgram: () => { window.location.href = 'Forge%20Program.dc.html'; },
+      startWorkout: () => { window.location.href = 'Forge%20Active%20Workout.dc.html'; },
+      goMission: () => { window.location.href = 'Forge%20Mission.dc.html'; },
+      onKeyProgram: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); window.location.href = 'Forge%20Program.dc.html'; } },
+      onKeyMission: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); window.location.href = 'Forge%20Mission.dc.html'; } },
+      principle,
+      hasLive, isMultiple, isNone, liveName, liveMeta, othersText,
+      hasInvite: _hasInvite, inviteText: _inviteText, inviteInitials: _inviteInitials, inviteTint: 'var(--fl-bronze-metallic)', inviteA11y: _inviteA11y,
+      openInvite: () => { window.location.href = 'Forge%20Workout%20Invite.dc.html'; },
+      liveProfileA11y: 'View ' + liveName + '’s profile',
+      openLiveProfile: () => { window.location.href = 'Forge%20Public%20Profile.dc.html?name=' + encodeURIComponent(liveName) + '&id=marcus&squad=1'; },
+      joinLive: () => { window.location.href = 'Forge%20Active%20Workout.dc.html?train=1&with=marcus'; },
+      openSelf: () => { window.location.href = 'Forge%20Public%20Profile.dc.html?self=1'; },
+      goCompetitions: () => { window.location.href = 'Forge%20Competitions.dc.html'; },
+      compSub: '2 Active · View leaderboard',
+      latestName: 'Diego Salas',
+      latestQuote: '“12 weeks apart. Same shorts, different engine.”',
+      goFriends: () => { window.location.href = 'Forge%20Friends%20Feed.dc.html'; },
+      goFriendsPost: () => { window.location.href = 'Forge%20Friends%20Feed.dc.html?post=p1'; },
+      goChallenge: () => { try { localStorage.setItem('forge_challenge_ctx_v1', JSON.stringify({ launchContext: 'Standalone' })); } catch (e) {} window.location.href = 'Forge%20Create%20Challenge.dc.html'; },
+    };
+  }
+}
+</script>
+</body>
+</html>

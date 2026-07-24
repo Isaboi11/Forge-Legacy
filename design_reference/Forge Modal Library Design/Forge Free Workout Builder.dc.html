@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+  <script src="forge-templates.js"></script>
+  <script>
+    (function () {
+      var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+      function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+      if (window.React && window.ReactDOM) { inject(); return; }
+      var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+    })();
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+    a { color: var(--fl-bronze-bright); text-decoration: none; }
+    a:hover { color: var(--fl-bronze-primary); }
+    .fl-scroll::-webkit-scrollbar { width:0; height:0; }
+    .fl-scroll { scrollbar-width: none; }
+    @keyframes fwRise { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
+    @keyframes fwScrim { from { opacity:0; } to { opacity:1; } }
+    @keyframes fwSheet { from { transform: translateY(24px); opacity:0; } to { transform:none; opacity:1; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.001ms !important; } }
+  </style>
+</helmet>
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+  <div data-screen-label="W-25 Free Workout Builder" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(6,7,8,0.32), rgba(6,7,8,0.32)), #060708 url('assets/forge-bg-2.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+        <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+      <!-- app bar -->
+      <div style="flex:none; height:56px; display:flex; align-items:center; gap:2px; padding:0 8px; border-bottom:1px solid var(--fl-charcoal-700); position:relative; z-index:10;">
+        <button type="button" onClick="{{ onCancel }}" aria-label="Cancel" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+        <span style="flex:1; font-size:16px; font-weight:600; letter-spacing:0.2px; color:var(--fl-text-primary);">{{ headerTitle }}</span>
+      </div>
+
+      <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:14px 18px 26px; position:relative; z-index:1; animation:fwRise 360ms var(--fl-ease-out, ease-out) both;">
+
+        <div style="margin-bottom:18px; padding:0 2px;">
+          <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.InputField" label="Template name" placeholder="e.g. Push Day" value="{{ name }}" max-length="40" show-count="{{ true }}" on-change="{{ onName }}" hint-size="100%,74px"></x-import>
+          <sc-if value="{{ hasSummary }}" hint-placeholder-val="{{ false }}"><span style="display:block; margin-top:9px; font-size:12px; color:var(--fl-bronze-primary);">{{ summaryLine }}</span></sc-if>
+          <sc-if value="{{ isBlank }}" hint-placeholder-val="{{ true }}"><span style="display:block; margin-top:9px; font-size:12px; color:var(--fl-text-tertiary);">Add exercises to build a reusable workout.</span></sc-if>
+        </div>
+
+        <sc-for list="{{ sections }}" as="sec" hint-placeholder-count="3">
+          <div style="{{ sec.wrap }}">
+            <div style="display:flex; align-items:baseline; gap:9px; padding:0 2px 10px;">
+              <span style="font-size:{{ sec.labelSize }}; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:{{ sec.labelColor }};">{{ sec.label }}</span>
+              <span style="font-size:9px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ sec.req }}</span>
+              <span style="flex:1;"></span>
+              <span style="font-size:10px; font-weight:600; color:var(--fl-text-tertiary);">{{ sec.count }}</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <sc-if value="{{ sec.empty }}" hint-placeholder-val="{{ true }}"><span style="display:block; padding:0 2px 2px; font-size:12.5px; color:var(--fl-text-tertiary);">{{ sec.emptyLabel }}</span></sc-if>
+              <sc-for list="{{ sec.items }}" as="it" hint-placeholder-count="0">
+                <div style="border-radius:var(--fl-radius-lg); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-card); box-shadow:var(--fl-border-inset); overflow:hidden;">
+                  <div style="display:flex; align-items:center; gap:11px; padding:12px 13px;">
+                    <span style="flex:none; width:36px; height:36px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);">{{ it.icon }}</span>
+                    <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;"><span style="font-size:14px; font-weight:600; color:var(--fl-text-primary);">{{ it.name }}</span><span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ it.equip }}</span></span>
+                    <span style="display:flex; align-items:center; gap:4px;">
+                      <button type="button" onClick="{{ it.onUp }}" aria-label="Move up" disabled="{{ it.upOff }}" style="width:26px; height:26px; border-radius:var(--fl-radius-sm); border:1px solid var(--fl-charcoal-600); background:transparent; color:{{ it.upColor }}; cursor:{{ it.upCursor }}; display:flex; align-items:center; justify-content:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"></path></svg></button>
+                      <button type="button" onClick="{{ it.onDown }}" aria-label="Move down" disabled="{{ it.downOff }}" style="width:26px; height:26px; border-radius:var(--fl-radius-sm); border:1px solid var(--fl-charcoal-600); background:transparent; color:{{ it.downColor }}; cursor:{{ it.downCursor }}; display:flex; align-items:center; justify-content:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></button>
+                      <button type="button" onClick="{{ it.onRemove }}" aria-label="Remove exercise" style="width:26px; height:26px; border-radius:var(--fl-radius-sm); border:1px solid var(--fl-charcoal-600); background:transparent; color:var(--fl-red-muted); cursor:pointer; display:flex; align-items:center; justify-content:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14M9 7V5h6v2M8 7l1 13h6l1-13"></path></svg></button>
+                    </span>
+                  </div>
+                  <div style="display:flex; border-top:1px solid var(--fl-charcoal-700);">
+                    <div style="flex:1; display:flex; align-items:center; justify-content:center; gap:10px; padding:9px 0; border-right:1px solid var(--fl-charcoal-700);">
+                      <button type="button" onClick="{{ it.onSetsDown }}" aria-label="Fewer sets" style="width:26px; height:26px; border-radius:50%; border:1px solid var(--fl-charcoal-500); background:transparent; color:var(--fl-text-secondary); cursor:pointer; font-size:16px; line-height:1; display:flex; align-items:center; justify-content:center;">−</button>
+                      <span style="min-width:58px; text-align:center; font-size:12.5px; color:var(--fl-text-secondary);"><span style="font-family:var(--fl-font-display); font-size:15px; font-weight:600; color:var(--fl-text-primary);">{{ it.sets }}</span> sets</span>
+                      <button type="button" onClick="{{ it.onSetsUp }}" aria-label="More sets" style="width:26px; height:26px; border-radius:50%; border:1px solid var(--fl-charcoal-500); background:transparent; color:var(--fl-text-secondary); cursor:pointer; font-size:16px; line-height:1; display:flex; align-items:center; justify-content:center;">+</button>
+                    </div>
+                    <div style="flex:1; display:flex; align-items:center; justify-content:center; gap:10px; padding:9px 0;">
+                      <button type="button" onClick="{{ it.onRepsDown }}" aria-label="Fewer reps" style="width:26px; height:26px; border-radius:50%; border:1px solid var(--fl-charcoal-500); background:transparent; color:var(--fl-text-secondary); cursor:pointer; font-size:16px; line-height:1; display:flex; align-items:center; justify-content:center;">−</button>
+                      <span style="min-width:58px; text-align:center; font-size:12.5px; color:var(--fl-text-secondary);"><span style="font-family:var(--fl-font-display); font-size:15px; font-weight:600; color:var(--fl-text-primary);">{{ it.reps }}</span> {{ it.repUnit }}</span>
+                      <button type="button" onClick="{{ it.onRepsUp }}" aria-label="More reps" style="width:26px; height:26px; border-radius:50%; border:1px solid var(--fl-charcoal-500); background:transparent; color:var(--fl-text-secondary); cursor:pointer; font-size:16px; line-height:1; display:flex; align-items:center; justify-content:center;">+</button>
+                    </div>
+                  </div>
+                </div>
+              </sc-for>
+              <button type="button" onClick="{{ sec.onAdd }}" style="width:100%; display:flex; align-items:center; justify-content:center; gap:7px; padding:10px; border-radius:var(--fl-radius-md); border:1px dashed var(--fl-bronze-border); background:var(--fl-bronze-tint); color:var(--fl-bronze-bright); font-size:12.5px; font-weight:600; letter-spacing:0.3px; cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>Add {{ sec.addLabel }}</button>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- footer · validity + save -->
+      <div style="flex:none; padding:12px 18px calc(14px + env(safe-area-inset-bottom)); border-top:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(6,7,8,0.4), rgba(6,7,8,0.86)); position:relative; z-index:5;">
+        <sc-if value="{{ saveDisabled }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; flex-direction:column; gap:7px; margin-bottom:12px;">
+            <sc-for list="{{ checks }}" as="ck" hint-placeholder-count="2">
+              <span style="display:flex; align-items:center; gap:8px; font-size:12px; color:{{ ck.ink }};">{{ ck.mark }}{{ ck.label }}</span>
+            </sc-for>
+          </div>
+        </sc-if>
+        <button type="button" onClick="{{ onSave }}" disabled="{{ saveDisabled }}" style="width:100%; display:flex; align-items:center; justify-content:center; gap:9px; padding:15px; border-radius:var(--fl-radius-md); border:1px solid {{ saveBorder }}; background:{{ saveBg }}; color:{{ saveColor }}; font-size:14px; font-weight:700; letter-spacing:0.5px; cursor:{{ saveCursor }}; box-shadow:{{ saveShadow }}; text-shadow:0 1px 1px rgba(8,5,2,0.5);">{{ saveLabel }}</button>
+      </div>
+
+      <!-- discard confirm -->
+      <sc-if value="{{ discardOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ onKeepEditing }}" style="position:absolute; inset:0; z-index:40; background:rgba(4,5,7,0.66); backdrop-filter:blur(2px); animation:fwScrim 180ms ease-out;"></div>
+        <div style="position:absolute; left:0; right:0; bottom:0; z-index:41; background:var(--fl-surface-panel, #12100d); border:1px solid var(--fl-charcoal-600); border-bottom:none; border-radius:24px 24px 0 0; box-shadow:0 -24px 60px rgba(0,0,0,0.5); padding:22px 24px calc(24px + env(safe-area-inset-bottom)); animation:fwSheet 260ms var(--fl-ease-out, ease-out);">
+          <div style="display:flex; justify-content:center; margin-bottom:16px;"><span style="width:44px; height:5px; border-radius:99px; background:var(--fl-charcoal-500);"></span></div>
+          <h2 style="margin:0 0 8px; font-family:var(--fl-font-display); font-size:21px; font-weight:700; color:var(--fl-text-primary);">Discard changes?</h2>
+          <p style="margin:0 0 20px; font-size:13.5px; line-height:1.55; color:var(--fl-text-secondary);">This template hasn’t been saved. Leaving now loses your edits.</p>
+          <div style="display:flex; gap:10px;">
+            <button type="button" onClick="{{ onKeepEditing }}" style="flex:1; padding:14px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:transparent; color:var(--fl-text-secondary); font-size:14px; font-weight:600; cursor:pointer;">Keep editing</button>
+            <button type="button" onClick="{{ onConfirmDiscard }}" style="flex:1; padding:14px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-red-metal-border); background:rgba(190,90,76,0.14); color:var(--fl-red-muted); font-size:14px; font-weight:700; cursor:pointer;">Discard</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <div aria-hidden="true" style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.06; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { ready: false, draft: null, discardOpen: false };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const store = typeof window !== 'undefined' && window.ForgeTemplates;
+      if (r && ns && store) { this._boot(); this.setState({ ready: true }); }
+      else this._t = setTimeout(this._poll, 40);
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); }
+
+  _DRAFT() { return 'forge_template_draft_v1'; }
+  _INBOX() { return 'forge_template_inbox_v1'; }
+  _id() { try { return new URLSearchParams(window.location.search).get('id') || ''; } catch (e) { return ''; } }
+  _uid() { return 'x' + Date.now().toString(36) + Math.round(Math.random() * 1e6).toString(36); }
+  _clone(arr) { return (arr || []).map((it) => Object.assign({}, it, { id: this._uid(), muscles: (it.muscles || []).slice() })); }
+
+  _boot() {
+    const T = window.ForgeTemplates;
+    let draft = null;
+    try { const raw = localStorage.getItem(this._DRAFT()); if (raw) draft = JSON.parse(raw); } catch (e) {}
+    if (!draft) {
+      const id = this._id();
+      if (id) {
+        const t = T.get(id);
+        if (t) draft = { id: t.id, name: t.name, warmup: this._clone(t.warmup), main: this._clone(t.main), cooldown: this._clone(t.cooldown), history: t.history || [], createdAt: t.createdAt, useCount: t.useCount, lastUsedAt: t.lastUsedAt };
+      }
+      if (!draft) draft = { id: null, name: '', warmup: [], main: [], cooldown: [] };
+    }
+    // absorb an exercise handed back by the picker
+    try {
+      const raw = localStorage.getItem(this._INBOX());
+      if (raw) {
+        const inbox = JSON.parse(raw);
+        localStorage.removeItem(this._INBOX());
+        const sec = inbox.section;
+        if (sec && draft[sec]) {
+          const dSets = sec === 'main' ? 3 : (sec === 'warmup' ? 2 : 1);
+          const dReps = sec === 'cooldown' ? 30 : (sec === 'warmup' ? 12 : 10);
+          const list = (inbox.items && inbox.items.length) ? inbox.items : [{ name: inbox.name, equip: inbox.equip, muscles: inbox.muscles, type: inbox.type }];
+          list.forEach((it) => draft[sec].push({ id: this._uid(), name: it.name, equip: it.equip, muscles: it.muscles || [], type: it.type || '', sets: dSets, reps: dReps }));
+        }
+      }
+    } catch (e) {}
+    this._draft = draft;
+    this._save();
+  }
+  _save() { try { localStorage.setItem(this._DRAFT(), JSON.stringify(this._draft)); } catch (e) {} this.setState({ draft: this._draft }); }
+  _mutate(fn) { fn(this._draft); this._save(); }
+  _val(e) { return (e && e.target && typeof e.target.value === 'string') ? e.target.value : e; }
+
+  onName = (e) => { const v = this._val(e); this._mutate((d) => { d.name = v; }); };
+  addExercise = (section) => {
+    this._save();
+    window.location.href = 'Forge%20Exercise%20Picker.dc.html#o=template&day=0&section=' + section;
+  };
+  removeEx = (section, idx) => this._mutate((d) => { d[section].splice(idx, 1); });
+  moveEx = (section, idx, dir) => this._mutate((d) => { const arr = d[section]; const j = idx + dir; if (j < 0 || j >= arr.length) return; const t = arr[idx]; arr[idx] = arr[j]; arr[j] = t; });
+  bumpSets = (section, idx, delta) => this._mutate((d) => { const it = d[section][idx]; it.sets = Math.max(1, Math.min(8, it.sets + delta)); });
+  bumpReps = (section, idx, delta) => this._mutate((d) => { const it = d[section][idx]; it.reps = Math.max(1, Math.min(60, it.reps + delta)); });
+
+  _dirty() { const d = this._draft; return !!(d && (d.name.trim() || d.warmup.length || d.main.length || d.cooldown.length)); }
+  onCancel = () => { if (this._dirty() && !this._draft.id) this.setState({ discardOpen: true }); else this._leave(); };
+  _leave = () => { try { localStorage.removeItem(this._DRAFT()); localStorage.removeItem(this._INBOX()); } catch (e) {} window.location.href = 'Forge%20Workout%20Templates.dc.html'; };
+  onValid() { const d = this._draft; return !!(d && d.name.trim() && d.main.length > 0); }
+  onSave = () => {
+    if (!this.onValid()) return;
+    const d = this._draft;
+    const rec = window.ForgeTemplates.save({ id: d.id || undefined, name: d.name.trim(), warmup: d.warmup, main: d.main, cooldown: d.cooldown, history: d.history || [], createdAt: d.createdAt, useCount: d.useCount, lastUsedAt: d.lastUsedAt });
+    try { localStorage.removeItem(this._DRAFT()); localStorage.removeItem(this._INBOX()); } catch (e) {}
+    window.location.href = 'Forge%20Workout%20Template%20Detail.dc.html?id=' + encodeURIComponent(rec.id);
+  };
+
+  _icon(equip) {
+    const h = React.createElement;
+    const EQ = {
+      Barbell: ['M6.5 9v6', 'M17.5 9v6', 'M4 10.5v3', 'M20 10.5v3', 'M6.5 12h11'],
+      Dumbbell: ['M7 8.5v7', 'M17 8.5v7', 'M4.5 10v4', 'M19.5 10v4', 'M7 12h10'],
+      Cable: ['M12 3v6', 'M8.5 9h7l-1 5a2.5 2.5 0 0 1-5 0z'],
+      Machine: ['M5 3v18', 'M5 7h9a3 3 0 0 1 0 6H9', 'M9 13v5'],
+      Bodyweight: ['M6 20c0-4.2 2.8-7 6-7s6 2.8 6 7'],
+    };
+    const paths = EQ[equip] || ['M6 20c0-4.2 2.8-7 6-7s6 2.8 6 7'];
+    const kids = paths.map((p) => h('path', { key: p, d: p }));
+    if (!EQ[equip] || equip === 'Bodyweight' || equip === 'Custom') kids.unshift(h('circle', { key: 'c', cx: 12, cy: 6, r: 2.4 }));
+    return h('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, kids);
+  }
+  _check(ok) {
+    const h = React.createElement;
+    return h('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: ok ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)', strokeWidth: 2.4, strokeLinecap: 'round', strokeLinejoin: 'round' }, ok ? h('path', { key: 'k', d: 'M20 6L9 17l-5-5' }) : h('path', { key: 'k', d: 'M18 6L6 18M6 6l12 12' }));
+  }
+
+  renderVals() {
+    if (!this.state.ready) return { ready: false, notReady: true };
+    const d = this.state.draft;
+    const total = d.warmup.length + d.main.length + d.cooldown.length;
+    const est = Math.max(5, Math.round((d.main.length * 9 + d.warmup.length * 4 + d.cooldown.length * 4) / 5) * 5);
+
+    const SECS = [
+      { key: 'warmup', label: 'Warm-up', addLabel: 'warm-up', req: 'Optional', emptyLabel: 'No warm-up yet', labelColor: 'var(--fl-text-tertiary)', labelSize: '10px', wrap: 'margin-bottom:20px;' },
+      { key: 'main', label: 'Main', addLabel: 'exercise', req: 'Required', emptyLabel: 'Add at least one main exercise', labelColor: 'var(--fl-text-bronze-label)', labelSize: '11px', wrap: 'margin-bottom:22px; padding-top:18px; border-top:1px solid var(--fl-charcoal-700);' },
+      { key: 'cooldown', label: 'Cool-down', addLabel: 'cool-down', req: 'Optional', emptyLabel: 'No cool-down yet', labelColor: 'var(--fl-text-tertiary)', labelSize: '10px', wrap: 'margin-bottom:8px; padding-top:18px; border-top:1px solid var(--fl-charcoal-700);' },
+    ];
+    const sections = SECS.map((sc) => {
+      const items = d[sc.key];
+      return {
+        label: sc.label, addLabel: sc.addLabel, req: sc.req, emptyLabel: sc.emptyLabel, labelColor: sc.labelColor, labelSize: sc.labelSize, wrap: sc.wrap,
+        count: items.length ? String(items.length) : '',
+        empty: items.length === 0,
+        onAdd: () => this.addExercise(sc.key),
+        items: items.map((it, idx) => ({
+          name: it.name, equip: it.equip, icon: this._icon(it.equip),
+          sets: String(it.sets), reps: String(it.reps), repUnit: sc.key === 'cooldown' ? 'sec' : 'reps',
+          upOff: idx === 0, downOff: idx === items.length - 1,
+          upColor: idx === 0 ? 'var(--fl-charcoal-500)' : 'var(--fl-text-secondary)',
+          downColor: idx === items.length - 1 ? 'var(--fl-charcoal-500)' : 'var(--fl-text-secondary)',
+          upCursor: idx === 0 ? 'default' : 'pointer',
+          downCursor: idx === items.length - 1 ? 'default' : 'pointer',
+          onUp: () => this.moveEx(sc.key, idx, -1),
+          onDown: () => this.moveEx(sc.key, idx, 1),
+          onRemove: () => this.removeEx(sc.key, idx),
+          onSetsUp: () => this.bumpSets(sc.key, idx, 1),
+          onSetsDown: () => this.bumpSets(sc.key, idx, -1),
+          onRepsUp: () => this.bumpReps(sc.key, idx, 1),
+          onRepsDown: () => this.bumpReps(sc.key, idx, -1),
+        })),
+      };
+    });
+
+    const nameOk = !!d.name.trim();
+    const mainOk = d.main.length > 0;
+    const valid = nameOk && mainOk;
+    const checks = [{ label: 'Add a template name', ok: nameOk }, { label: 'Add at least one main exercise', ok: mainOk }].map((c) => ({ label: c.label, mark: this._check(c.ok), ink: c.ok ? 'var(--fl-text-secondary)' : 'var(--fl-text-tertiary)' }));
+
+    return {
+      ready: true, notReady: false,
+      headerTitle: d.id ? 'Edit Template' : 'New Template',
+      name: d.name, onName: this.onName,
+      hasSummary: total > 0,
+      isBlank: total === 0,
+      summaryLine: total + (total === 1 ? ' exercise' : ' exercises') + ' · ~' + est + ' min',
+      sections,
+      checks,
+      saveDisabled: !valid,
+      saveLabel: d.id ? 'Save Changes' : 'Save Template',
+      saveBg: valid ? 'var(--fl-bronze-fill)' : 'var(--fl-bronze-fill-disabled)',
+      saveBorder: valid ? 'var(--fl-bronze-metal-border)' : 'var(--fl-bronze-border-disabled)',
+      saveColor: valid ? '#F7F5F1' : 'var(--fl-text-tertiary)',
+      saveCursor: valid ? 'pointer' : 'default',
+      saveShadow: valid ? 'var(--fl-bronze-metal-top-rim), var(--fl-shadow-card)' : 'none',
+      onSave: this.onSave,
+      onCancel: this.onCancel,
+      discardOpen: this.state.discardOpen,
+      onKeepEditing: () => this.setState({ discardOpen: false }),
+      onConfirmDiscard: this._leave,
+    };
+  }
+}
+</script>
+</body>
+</html>

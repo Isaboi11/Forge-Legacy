@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&amp;display=swap">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+  <script src="forge-gate.js"></script>
+  <script>
+    (function () {
+      var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+      function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+      if (window.React && window.ReactDOM) { inject(); return; }
+      var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+    })();
+  </script>
+  <script src="forge-symbols.js"></script>
+  <script src="forge-units.js"></script>
+  <script src="forge-quotes.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+    .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+    .fl-scroll { scrollbar-width: none; }
+    textarea::placeholder { color: var(--fl-text-tertiary); }
+    @keyframes flRise { from { opacity:0; transform: translateY(14px); } to { opacity:1; transform:none; } }
+    @keyframes flSealIn { 0% { opacity:0; transform: scale(0.82); } 60% { opacity:1; } 100% { opacity:1; transform: scale(1); } }
+    @keyframes flGlow { 0%,100% { opacity:0.5; } 50% { opacity:0.9; } }
+    @keyframes flStamp { 0% { opacity:0.9; transform: scale(0.85); } 100% { opacity:0; transform: scale(1.3); } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+  </style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+  <div data-screen-label="Workout Complete" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.3), rgba(5,5,5,0.3)), #050505 url('assets/forge-slate.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+        <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+      </div>
+    </sc-if>
+
+    <!-- ══════════════ STAGE 1 · EMOTION · THE SEAL ══════════════ -->
+    <sc-if value="{{ isSeal }}" hint-placeholder-val="{{ false }}">
+      <div class="fl-scroll" style="position:relative; flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:52px 34px 40px;">
+
+        <button onClick="{{ goShare }}" aria-label="Share this session" style="position:absolute; top:16px; right:16px; z-index:3; width:40px; height:40px; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-tertiary);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" stroke-linejoin="miter"><circle cx="6" cy="12" r="2.5"></circle><circle cx="17" cy="6" r="2.5"></circle><circle cx="17" cy="18" r="2.5"></circle><path d="M8.2 10.8l6.6-3.6M8.2 13.2l6.6 3.6"></path></svg></button>
+
+        <span style="font-size: 13px; font-weight: 600; letter-spacing: 2.6px; text-transform: uppercase; color: var(--fl-text-secondary); animation: flRise 800ms var(--fl-ease-out, ease-out) both">Chapter III · The Rebuild</span>
+
+        <!-- forged seal -->
+        <div style="margin:28px 0 24px; position:relative; width:132px; height:132px; flex:none; display:flex; align-items:center; justify-content:center; animation:flSealIn 900ms var(--fl-ease-out, ease-out) both; animation-delay:120ms;">
+          <span style="position:absolute; inset:-14px; border-radius:50%; background:var(--fl-glow-ember); opacity:0.6; animation:flGlow 3.4s ease-in-out infinite; pointer-events:none;"></span>
+          <div style="position:absolute; inset:0; border-radius:50%; border:1px solid var(--fl-bronze-border); background:var(--fl-icon-container-bg); box-shadow:var(--fl-glow-subtle), var(--fl-border-inset);"></div>
+          <div style="position:absolute; inset:10px; border-radius:50%; border:1px solid var(--fl-bronze-border-subtle);"></div>
+          <span style="position:relative; z-index:1; color:var(--fl-bronze-bright); display:flex; align-items:center; justify-content:center;">{{ sealMark }}</span>
+          <sc-if value="{{ sealed }}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute; inset:-14px; border-radius:50%; border:2px solid var(--fl-bronze-bright); animation:flStamp 700ms var(--fl-ease-out, ease-out) both; pointer-events:none;"></span>
+          </sc-if>
+        </div>
+
+        <sc-if value="{{ notSealed }}" hint-placeholder-val="{{ true }}">
+          <span style="font-size:12px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--fl-bronze-primary); animation:flRise 900ms var(--fl-ease-out, ease-out) both; animation-delay:300ms;">Session Complete</span>
+        </sc-if>
+        <sc-if value="{{ sealed }}" hint-placeholder-val="{{ false }}">
+          <span style="font-size:12px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--fl-bronze-bright);">Session Sealed</span>
+        </sc-if>
+        <h1 style="margin:10px 0 0; font-family:var(--fl-font-display); font-size:38px; line-height:1.04; font-weight:700; letter-spacing:0.4px; animation:flRise 1000ms var(--fl-ease-out, ease-out) both; animation-delay:380ms;">Push Day A</h1>
+        <span style="margin-top:10px; font-size:14px; letter-spacing:1px; color:var(--fl-text-secondary); animation:flRise 1000ms var(--fl-ease-out, ease-out) both; animation-delay:460ms;">Week 6 · Day 2 · {{ dateLabel }}</span>
+
+        <div style="display:flex; gap:14px; margin:22px 0 0; animation:flRise 1100ms var(--fl-ease-out, ease-out) both; animation-delay:560ms;">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:3px; padding:0 18px;">
+            <span style="font-family:var(--fl-font-display); font-size:24px; font-weight:600; color:var(--fl-text-primary);">{{ duration }}</span>
+            <span style="font-size:9.5px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Under Iron</span>
+          </div>
+          <div style="width:1px; background:var(--fl-bronze-border-subtle);"></div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:3px; padding:0 18px;">
+            <span style="font-family:var(--fl-font-display); font-size:24px; font-weight:600; color:var(--fl-text-primary);">{{ totalVol }}</span>
+            <span style="font-size:9.5px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Volume</span>
+          </div>
+        </div>
+
+        <!-- HERO MOMENT · one true thing. Featured (honor/PR) dominates and the quote steps aside; standard (milestone/consistency) is a quiet line beside the quote. -->
+        <sc-if value="{{ hero.featured }}" hint-placeholder-val="{{ false }}">
+          <div style="width:100%; max-width:312px; margin-top:26px; display:flex; align-items:center; gap:14px; padding:16px 18px; border-radius:var(--fl-radius-lg); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border); box-shadow:var(--fl-glow-subtle); animation:flRise 1100ms var(--fl-ease-out, ease-out) both; animation-delay:660ms;">
+            <span style="flex:none; color:var(--fl-bronze-bright); display:flex;">{{ hero.icon }}</span>
+            <div style="text-align:left; display:flex; flex-direction:column; gap:2px; min-width:0;">
+              <span style="font-size:9.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-bronze-primary);">{{ hero.eyebrow }}</span>
+              <span style="font-family:var(--fl-font-display); font-size:20px; font-weight:600; color:var(--fl-text-primary); line-height:1.05;">{{ hero.title }}</span>
+              <span style="font-size:11.5px; color:var(--fl-text-secondary);">{{ hero.note }}</span>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ hero.standard }}" hint-placeholder-val="{{ true }}">
+          <div style="width:100%; max-width:290px; margin-top:24px; display:flex; align-items:center; gap:12px; padding:12px 15px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); animation:flRise 1100ms var(--fl-ease-out, ease-out) both; animation-delay:660ms;">
+            <span style="flex:none; color:var(--fl-bronze-primary); display:flex;">{{ hero.icon }}</span>
+            <div style="text-align:left; display:flex; flex-direction:column; gap:1px; min-width:0;">
+              <span style="font-size:9px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ hero.eyebrow }}</span>
+              <span style="font-family:var(--fl-font-display); font-size:16px; font-weight:600; color:var(--fl-text-primary); line-height:1.1;">{{ hero.title }}</span>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showQuote }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; gap:12px; padding-top:24px; max-width:300px; animation:flRise 1300ms var(--fl-ease-out, ease-out) both; animation-delay:760ms;">
+            <span style="width:2px; flex:none; background:linear-gradient(180deg, var(--fl-bronze-primary), transparent);"></span>
+            <span style="font-family:var(--fl-font-display); font-style:italic; font-size:16px; line-height:1.4; font-weight:500; color:var(--fl-bronze-bright); text-wrap:pretty;">{{ sealQuote }}</span>
+          </div>
+        </sc-if>
+
+        <div style="width:100%; max-width:320px; margin-top:32px; animation:flRise 1300ms var(--fl-ease-out, ease-out) both; animation-delay:860ms;">
+          <!-- return hook: tomorrow's session -->
+          <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:15px; font-size:12px; color:var(--fl-text-tertiary);">
+            <span style="width:5px; height:5px; flex:none; transform:rotate(45deg); background:var(--fl-bronze-primary);"></span>
+            Up next · {{ nextName }} · {{ nextWhen }}
+          </div>
+
+          <!-- press &amp; hold to seal -->
+          <div role="button" tabindex="0" aria-label="Press and hold to seal the session" onPointerDown="{{ startHold }}" onPointerUp="{{ endHold }}" onPointerLeave="{{ endHold }}" onPointerCancel="{{ endHold }}" onKeyDown="{{ onSealKey }}" style="position:relative; overflow:hidden; height:54px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border); background:var(--fl-charcoal-800); display:flex; align-items:center; justify-content:center; cursor:pointer; user-select:none; touch-action:none; box-shadow:var(--fl-border-inset);">
+            <div style="position:absolute; left:0; top:0; bottom:0; width:{{ holdPct }}; background:var(--fl-bronze-metallic); box-shadow:var(--fl-glow-subtle);"></div>
+            <span style="position:relative; z-index:1; display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:{{ sealLabelColor }};">{{ sealLabel }}</span>
+          </div>
+
+          <div style="margin-top:8px; display:flex; justify-content:center;">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="text" on-click="{{ goRecord }}" hint-size="auto,38px">See the details</x-import>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══════════════ STAGE 2 · EVIDENCE → MEANING · THE RECORD ══════════════ -->
+    <sc-if value="{{ isRecord }}" hint-placeholder-val="{{ false }}">
+      <div style="height:56px; flex:none; display:flex; align-items:center; gap:8px; padding:0 14px 0 6px; border-bottom:1px solid var(--fl-charcoal-600);">
+        <button onClick="{{ goSeal }}" aria-label="Back to the seal" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>
+        <span style="flex:none; color:var(--fl-bronze-primary); display:flex; align-items:center;">{{ chapterMark }}</span>
+        <span style="font-size:13px; font-weight:700; letter-spacing:2.4px; text-transform:uppercase; color:var(--fl-text-primary);">The Record</span>
+      </div>
+      <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:26px 22px 28px;">
+
+        <!-- EVIDENCE · the headline dominates -->
+        <span style="display:block; font-size:10px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-tertiary); margin-bottom:12px;">Push Day A · Sealed {{ dateLabel }}</span>
+        <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:12px;">
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <span style="font-family:var(--fl-font-display); font-size:46px; font-weight:600; line-height:0.9; color:var(--fl-text-primary);">{{ totalVol }}</span>
+            <span style="font-size:12.5px; color:var(--fl-text-secondary);">Total volume · <span style="color:var(--fl-green-muted); font-weight:600;">{{ volDelta }}</span> vs last</span>
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; padding-bottom:4px;">
+            <span style="font-family:var(--fl-font-display); font-size:22px; font-weight:600; color:var(--fl-bronze-bright);">{{ duration }}</span>
+            <span style="font-size:9.5px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-tertiary);">Under Iron</span>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:7px; margin-top:12px; padding:8px 12px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); width:fit-content;">
+          <span style="width:5px; height:5px; flex:none; transform:rotate(45deg); background:var(--fl-bronze-primary);"></span>
+          <span style="font-size:12px; font-weight:600; color:var(--fl-bronze-bright);">{{ volTangible }}</span>
+        </div>
+
+        <span style="display:block; font-size:10px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:28px 0 10px;">How You Improved</span>
+        <div style="display:flex; flex-direction:column; gap:2px; border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); overflow:hidden; background:var(--fl-bg-primary);">
+          <sc-for list="{{ exercises }}" as="ex" hint-placeholder-count="5">
+            <div style="display:flex; align-items:center; gap:12px; padding:14px 15px; border-bottom:1px solid var(--fl-charcoal-700);">
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                <span style="display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600; color:var(--fl-text-primary);">{{ ex.name }}<sc-if value="{{ ex.pr }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex; align-items:center; padding:1px 7px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border); font-size:8.5px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--fl-bronze-bright);">PR</span></sc-if></span>
+                <span style="font-size:12px; color:var(--fl-text-tertiary);">{{ ex.sets }} · top {{ ex.top }}</span>
+              </div>
+              <span style="flex:none; font-size:12.5px; font-weight:600; color:{{ ex.deltaColor }};">{{ ex.delta }}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <!-- MEANING · the close (an open chapter, framed forward — never a measurable bar) -->
+        <div style="margin-top:32px; padding-top:26px; border-top:1px solid var(--fl-bronze-border-subtle);">
+          <span style="display:block; font-size:10px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-bronze-primary); margin-bottom:8px;">The Long Game</span>
+          <p style="margin:0 0 16px; font-size:14px; line-height:1.5; color:var(--fl-text-secondary); text-wrap:pretty;">This session is now permanent — another entry in a chapter still being written.</p>
+          <div style="border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); padding:15px 16px; background:var(--fl-bg-primary); display:flex; align-items:center; gap:13px;">
+            <span style="width:40px; height:40px; flex:none; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-primary);">{{ chapterMark }}</span>
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+              <span style="font-family:var(--fl-font-display); font-size:16px; font-weight:600; color:var(--fl-text-primary);">Chapter III · The Rebuild</span>
+              <span style="font-size:12px; color:var(--fl-text-tertiary);">Your 13th session in this chapter · ongoing</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:26px;">
+          <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" on-click="{{ goReflect }}" hint-size="100%,50px">Done</x-import>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══════════════ CLOSING BEAT · REFLECTION · A NOTE FOR FUTURE YOU ══════════════ -->
+    <sc-if value="{{ isReflect }}" hint-placeholder-val="{{ false }}">
+      <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:44px 34px;">
+        <span style="font-size:11px; font-weight:600; letter-spacing:2.6px; text-transform:uppercase; color:var(--fl-text-tertiary); animation:flRise 700ms var(--fl-ease-out, ease-out) both;">One Last Thing</span>
+        <h2 style="margin:14px 0 6px; font-family:var(--fl-font-display); font-size:27px; font-weight:600; letter-spacing:0.2px; animation:flRise 800ms var(--fl-ease-out, ease-out) both; animation-delay:120ms;">A note for future you</h2>
+        <p style="margin:0 0 20px; max-width:270px; font-size:13px; line-height:1.5; color:var(--fl-text-secondary); animation:flRise 900ms var(--fl-ease-out, ease-out) both; animation-delay:220ms;">One line. You’ll read it again someday.</p>
+
+        <!-- resurfaced memory · closes the loop -->
+        <div style="width:100%; max-width:320px; margin-bottom:18px; padding:13px 15px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); border-left:2px solid var(--fl-bronze-primary); text-align:left; animation:flRise 950ms var(--fl-ease-out, ease-out) both; animation-delay:300ms;">
+          <span style="display:block; font-size:9px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--fl-text-tertiary); margin-bottom:5px;">{{ pastRefLabel }}</span>
+          <span style="font-family:var(--fl-font-display); font-style:italic; font-size:14px; line-height:1.4; color:var(--fl-text-secondary);">{{ pastRefText }}</span>
+        </div>
+
+        <textarea value="{{ reflection }}" onChange="{{ onReflect }}" placeholder="Today I…" rows="3" style="width:100%; max-width:320px; resize:none; background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); padding:14px 15px; color:var(--fl-text-primary); font-family:var(--fl-font-display); font-style:italic; font-size:16px; line-height:1.45; outline:none; animation:flRise 1000ms var(--fl-ease-out, ease-out) both; animation-delay:380ms;"></textarea>
+        <div style="width:100%; max-width:320px; margin-top:18px; animation:flRise 1050ms var(--fl-ease-out, ease-out) both; animation-delay:460ms;">
+          <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" on-click="{{ done }}" hint-size="100%,52px">Seal the Note</x-import>
+          <div style="margin-top:8px; display:flex; justify-content:center;">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="text" on-click="{{ done }}" hint-size="auto,38px">Skip for today</x-import>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══════════════ SHARE · THE SEALED CARD ══════════════ -->
+    <sc-if value="{{ isShare }}" hint-placeholder-val="{{ false }}">
+      <div style="height:56px; flex:none; display:flex; align-items:center; gap:6px; padding:0 14px 0 6px; border-bottom:1px solid var(--fl-charcoal-600);">
+        <button onClick="{{ goSeal }}" aria-label="Back to the seal" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>
+        <span style="font-size:13px; font-weight:700; letter-spacing:2.4px; text-transform:uppercase; color:var(--fl-text-primary);">Share</span>
+      </div>
+      <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px 22px 28px;">
+
+        <!-- the shareable artifact -->
+        <div style="width:302px; border-radius:24px; border:1px solid var(--fl-bronze-border); background:radial-gradient(120% 78% at 50% -8%, rgba(191,143,79,0.13) 0%, rgba(191,143,79,0) 46%), linear-gradient(180deg, #0E1216 0%, #070A0C 100%); box-shadow:var(--fl-shadow-card-hero); padding:36px 26px 26px; display:flex; flex-direction:column; align-items:center; text-align:center;">
+          <div style="position:relative; width:96px; height:96px; display:flex; align-items:center; justify-content:center;">
+            <div style="position:absolute; inset:0; border-radius:50%; border:1px solid var(--fl-bronze-border); background:var(--fl-icon-container-bg); box-shadow:var(--fl-border-inset);"></div>
+            <div style="position:absolute; inset:8px; border-radius:50%; border:1px solid var(--fl-bronze-border-subtle);"></div>
+            <span style="position:relative; color:var(--fl-bronze-bright); display:flex;">{{ shareMark }}</span>
+          </div>
+          <span style="margin-top:18px; font-size:10.5px; font-weight:600; letter-spacing:2.6px; text-transform:uppercase; color:var(--fl-bronze-primary);">Session Sealed</span>
+          <span style="margin-top:8px; font-family:var(--fl-font-display); font-size:29px; font-weight:700; letter-spacing:0.3px; color:var(--fl-text-primary); line-height:1;">Push Day A</span>
+          <span style="margin-top:7px; font-size:12.5px; color:var(--fl-text-secondary);">Chapter III · {{ dateLabel }}</span>
+          <div style="width:54px; height:1px; background:var(--fl-bronze-border); margin:20px 0;"></div>
+          <div style="display:flex; gap:26px;">
+            <div style="display:flex; flex-direction:column; gap:3px;">
+              <span style="font-family:var(--fl-font-display); font-size:20px; font-weight:600; color:var(--fl-text-primary);">{{ totalVol }}</span>
+              <span style="font-size:9px; font-weight:600; letter-spacing:1.3px; text-transform:uppercase; color:var(--fl-text-tertiary);">Volume</span>
+            </div>
+            <div style="width:1px; background:var(--fl-bronze-border-subtle);"></div>
+            <div style="display:flex; flex-direction:column; gap:3px;">
+              <span style="font-family:var(--fl-font-display); font-size:20px; font-weight:600; color:var(--fl-text-primary);">{{ duration }}</span>
+              <span style="font-size:9px; font-weight:600; letter-spacing:1.3px; text-transform:uppercase; color:var(--fl-text-tertiary);">Under Iron</span>
+            </div>
+          </div>
+          <div style="margin-top:24px; display:flex; flex-direction:column; align-items:center; gap:3px;">
+            <span style="font-family:var(--fl-font-display); font-size:15px; font-weight:700; letter-spacing:3px; color:var(--fl-bronze-bright);">FORGE LEGACY</span>
+            <span style="font-size:9.5px; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Build your story.</span>
+          </div>
+        </div>
+
+        <div style="width:100%; max-width:302px; margin-top:22px;">
+          <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" on-click="{{ doShare }}" hint-size="100%,50px">Share</x-import>
+          <div style="margin-top:8px; display:flex; justify-content:center;">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="text" on-click="{{ goSeal }}" hint-size="auto,38px">Back</x-import>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868},&quot;heroState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;consistency&quot;,&quot;options&quot;:[&quot;consistency&quot;,&quot;milestone&quot;,&quot;pr&quot;,&quot;honor&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Completion&quot;,&quot;label&quot;:&quot;Hero moment&quot;}}">
+class Component extends DCLogic {
+  state = { ready: false, step: 'seal', reflection: '', unitTick: 0, holdProgress: 0, sealed: false };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      const u = typeof window !== 'undefined' && window.ForgeUnits;
+      const q = typeof window !== 'undefined' && window.ForgeQuotes;
+      if (r && ns && fs && u && q) {
+        this.setState({ ready: true });
+        if (!this._offUnits) this._offUnits = window.ForgeUnits.subscribe(() => this.setState(s => ({ unitTick: (s.unitTick || 0) + 1 })));
+      } else this._t = setTimeout(this._poll, 40);
+    };
+    this._poll();
+  }
+  componentWillUnmount() {
+    if (this._t) clearTimeout(this._t);
+    if (this._sealTO) clearTimeout(this._sealTO);
+    if (this._holdRAF) cancelAnimationFrame(this._holdRAF);
+    if (this._offUnits) this._offUnits();
+  }
+
+  goHome = () => {
+    // First completed workout is an act of initiative — it opens the sealed forge.
+    try { if (window.ForgeGate && !window.ForgeGate.isUnlocked()) { window.ForgeGate.unlockAndCelebrate('first_workout'); return; } } catch (e) {}
+    window.location.href = 'Forge%20Home.dc.html';
+  };
+
+  // Press &amp; hold to seal — a deliberate ritual, not a tap.
+  startHold = () => {
+    if (this.state.sealed || this._holdRAF) return;
+    const now = () => (window.performance && performance.now) ? performance.now() : Date.now();
+    this._holdStart = now();
+    const D = 900;
+    const tick = () => {
+      const p = Math.min(1, (now() - this._holdStart) / D);
+      this.setState({ holdProgress: p });
+      if (p >= 1) { this._holdRAF = null; this.completeSeal(); return; }
+      this._holdRAF = requestAnimationFrame(tick);
+    };
+    this._holdRAF = requestAnimationFrame(tick);
+  };
+  endHold = () => {
+    if (this._holdRAF) { cancelAnimationFrame(this._holdRAF); this._holdRAF = null; }
+    if (!this.state.sealed) this.setState({ holdProgress: 0 });
+  };
+  completeSeal = () => {
+    if (this.state.sealed) return;
+    this.setState({ sealed: true, holdProgress: 1 });
+    try { if (navigator.vibrate) navigator.vibrate([10, 28, 45]); } catch (e) {}
+    this._sealTO = setTimeout(() => this.goHome(), 850);
+  };
+  onSealKey = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.completeSeal(); } };
+  doShare = () => { try { if (navigator.share) navigator.share({ title: 'Forge Legacy', text: 'Push Day A — sealed.' }); } catch (e) {} };
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) {
+      return { ready: false, notReady: true };
+    }
+    const FS = window.ForgeSymbols;
+    const U = window.ForgeUnits;
+    const step = this.state.step;
+
+    // One quote per session — chosen once, stable across re-renders (e.g. unit toggle).
+    if (!this._quote) this._quote = (window.ForgeQuotes ? window.ForgeQuotes.random() : 'History is permanent. Outcomes cannot change.');
+
+    const up = 'var(--fl-green-muted)';
+    const flat = 'var(--fl-text-tertiary)';
+
+    // Canonical weights in POUNDS (lb). Display converts via ForgeUnits.
+    const raw = [
+      { name: 'Bench Press',            sets: '4 sets', w: 185, reps: 10, pw: 180,          pr: true,  d: { t: 'w', n: 5 } },
+      { name: 'Incline Dumbbell Press', sets: '4 sets', w: 70,  reps: 12, pw: 65,           pr: false, d: { t: 'w', n: 5 } },
+      { name: 'Overhead Press',         sets: '3 sets', w: 135, reps: 8,  pw: 135,          pr: false, d: { t: 'hold' } },
+      { name: 'Cable Fly',              sets: '3 sets', w: 55,  reps: 15, pw: 50,           pr: false, d: { t: 'w', n: 5 } },
+      { name: 'Triceps Pushdown',       sets: '3 sets', w: 90,  reps: 14, pw: 90, ppr: 12,  pr: false, d: { t: 'reps', n: 2 } },
+    ];
+    const deltaStr = (d) => d.t === 'hold' ? 'Held' : d.t === 'reps' ? ('+' + d.n + ' reps') : ('+' + U.toDisplay(d.n) + ' ' + U.label);
+    const exercises = raw.map((e) => ({
+      name: e.name,
+      sets: e.sets,
+      top: U.toDisplay(e.w) + ' × ' + e.reps,
+      delta: deltaStr(e.d),
+      deltaColor: e.d.t === 'hold' ? flat : up,
+      pr: e.pr,
+    }));
+
+    // Canonical session volume in lb.
+    const volNow = 18140, volLast = 17560;
+
+    // ---- Hero ladder · anchored on consistency (repeatable forever); honor/PR take precedence when true ----
+    const heroState = (this.props && this.props.heroState) || 'consistency';
+    const H = {
+      honor:       { icon: 'laurel', eyebrow: 'Honor Earned',       title: 'The Unbroken',       note: 'Thirty sessions · no missed week', featured: true },
+      pr:          { icon: 'spark',  eyebrow: 'New Personal Record', title: 'Bench · ' + U.toDisplay(185) + ' × 10', note: '+' + U.toDisplay(5) + ' ' + U.label + ' over your best', featured: true },
+      milestone:   { icon: 'medal',  eyebrow: 'Milestone',          title: '50th Session',       note: 'Chapter III, and climbing', featured: false },
+      consistency: { icon: 'flame',  eyebrow: '12-Week Streak',     title: '12 Weeks, Unbroken', note: 'Your 34th session this chapter', featured: false },
+    };
+    const hd = H[heroState] || H.consistency;
+    const hero = {
+      icon: FS.create(React, hd.icon, { size: hd.featured ? 26 : 22, strokeWidth: 1.7 }),
+      eyebrow: hd.eyebrow,
+      title: hd.title,
+      note: hd.note,
+      featured: !!hd.featured,
+      standard: !hd.featured,
+    };
+
+    const hp = Math.round(this.state.holdProgress * 100);
+
+    return {
+      ready: true,
+      notReady: false,
+      isSeal: step === 'seal',
+      isRecord: step === 'record',
+      isReflect: step === 'reflect',
+      isShare: step === 'share',
+      goSeal: () => this.setState({ step: 'seal' }),
+      goRecord: () => this.setState({ step: 'record' }),
+      goReflect: () => this.setState({ step: 'reflect' }),
+      goShare: () => this.setState({ step: 'share' }),
+      done: this.goHome,
+      startHold: this.startHold,
+      endHold: this.endHold,
+      onSealKey: this.onSealKey,
+      doShare: this.doShare,
+      holdPct: hp + '%',
+      sealLabel: this.state.sealed ? 'Sealed' : (hp > 0 ? 'Keep holding…' : 'Hold to Seal'),
+      sealLabelColor: (this.state.sealed || hp > 55) ? '#1A1206' : 'var(--fl-bronze-bright)',
+      sealed: this.state.sealed,
+      notSealed: !this.state.sealed,
+      onReflect: (e) => this.setState({ reflection: e && e.target ? e.target.value : '' }),
+      reflection: this.state.reflection,
+      sealMark: FS.create(React, 'forge-mark', { size: 66 }),
+      shareMark: FS.create(React, 'forge-mark', { size: 60 }),
+      chapterMark: FS.create(React, 'book', { size: 22, strokeWidth: 1.7 }),
+      sealQuote: this._quote,
+      showQuote: !hd.featured,
+      hero: hero,
+      dateLabel: 'Mar 14',
+      duration: '52:18',
+      totalVol: U.fmt(volNow),
+      volDelta: '+' + U.fmt(volNow - volLast),
+      volTangible: 'Heaviest Push in 8 weeks',
+      exercises: exercises,
+      nextName: 'Pull Day',
+      nextWhen: 'Tomorrow',
+      pastRefLabel: 'A year ago today, you wrote',
+      pastRefText: '“Couldn’t press the empty bar without pain. Showed up anyway.”',
+    };
+  }
+}
+</script>
+</body>
+</html>

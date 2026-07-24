@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+  <script src="forge-gate.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<script src="image-slot.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  image-slot::part(ring) { border-color: var(--fl-bronze-border); }
+  image-slot::part(empty) { color: var(--fl-text-tertiary); }
+  image-slot::part(frame) { background: rgba(191,143,79,0.06); }
+  .pv-skel { background:linear-gradient(90deg, var(--fl-charcoal-800) 25%, var(--fl-charcoal-700) 40%, var(--fl-charcoal-800) 60%); background-size:200% 100%; animation:pvShimmer 1.5s ease-in-out infinite; border-radius:var(--fl-radius-sm); }
+  @keyframes pvRise { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:none; } }
+  @keyframes pvFade { from { opacity:0; } to { opacity:1; } }
+  @keyframes pvBar { from { width:0; } }
+  @keyframes pvShimmer { 0% { background-position:150% 0; } 100% { background-position:-150% 0; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } .pv-skel { animation:none !important; background:var(--fl-charcoal-800); } }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+<div data-screen-label="Squad Preview" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.3), rgba(5,5,5,0.3)), #050505 url('assets/forge-slate.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column; font-family:var(--fl-font-sans);">
+
+  <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+      <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+    <div style="flex:none; position:relative; z-index:5;">
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="" on-back="{{ goBack }}" hint-size="100%,56px"></x-import>
+    </div>
+
+    <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:4px 20px 34px;">
+
+      <!-- ═══ LOADING SKELETON ═══ -->
+      <sc-if value="{{ showSkeleton }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex; flex-direction:column; align-items:center;">
+          <span class="pv-skel" style="width:80px; height:80px; border-radius:var(--fl-radius-round);"></span>
+          <span class="pv-skel" style="width:66%; height:22px; margin-top:16px;"></span>
+          <span class="pv-skel" style="width:50%; height:13px; margin-top:11px;"></span>
+          <span class="pv-skel" style="width:180px; height:24px; margin-top:14px; border-radius:var(--fl-radius-pill);"></span>
+        </div>
+        <span class="pv-skel" style="display:block; width:100%; height:64px; margin-top:22px; border-radius:var(--fl-radius-lg);"></span>
+        <span class="pv-skel" style="display:block; width:100%; height:104px; margin-top:26px; border-radius:var(--fl-radius-lg);"></span>
+        <span class="pv-skel" style="display:block; width:100%; height:150px; margin-top:26px; border-radius:var(--fl-radius-lg);"></span>
+      </sc-if>
+
+      <sc-if value="{{ showBody }}" hint-placeholder-val="{{ false }}">
+
+      <!-- ═══ HERO ═══ -->
+      <div style="display:flex; flex-direction:column; align-items:center; text-align:center; animation:pvRise 420ms var(--fl-ease-out) both;">
+        <div style="position:relative; width:80px; height:80px; flex:none; border-radius:var(--fl-radius-round); box-shadow:0 0 0 2.5px var(--fl-bronze-primary), 0 8px 22px rgba(0,0,0,0.6), 0 0 18px rgba(191,143,79,0.3);">
+          <image-slot id="squad-preview-crest" shape="circle" placeholder="Squad Crest" style="position:absolute; inset:0; width:100%; height:100%; border-radius:var(--fl-radius-round); overflow:hidden;"></image-slot>
+        </div>
+        <span style="display:block; font-family:var(--fl-font-display); font-size:26px; font-weight:600; letter-spacing:0.3px; text-transform:uppercase; color:var(--fl-text-primary); line-height:1.08; margin-top:13px; max-width:300px;">{{ squadName }}</span>
+        <span style="display:block; font-size:14px; line-height:1.4; color:var(--fl-text-secondary); margin-top:7px; max-width:280px;">{{ motto }}</span>
+        <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:10px; margin-top:12px;">
+          <span style="{{ tagStyle }}"><span style="display:inline-flex;">{{ tagIcon }}</span>{{ tagLabel }}</span>
+          <span style="display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:var(--fl-radius-pill); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); font-size:11px; font-weight:600; letter-spacing:0.3px; color:var(--fl-text-secondary);"><span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ catIcon }}</span>{{ category }}</span>
+          <sc-if value="{{ hasCapacity }}" hint-placeholder-val="{{ false }}">
+            <span style="{{ capacityStyle }}"><span style="display:inline-flex;">{{ capacityIcon }}</span>{{ capacityLabel }}</span>
+          </sc-if>
+        </div>
+      </div>
+
+      <!-- ═══ STAT STRIP ═══ -->
+      <div style="display:flex; margin-top:20px; background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+        <sc-for list="{{ stats }}" as="st" hint-placeholder-count="3">
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; padding:15px 6px; border-left:{{ st.divider }};">
+            <span style="font-family:var(--fl-font-display); font-size:21px; font-weight:700; color:var(--fl-text-primary); line-height:1;">{{ st.value }}</span>
+            <span style="font-size:10px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ st.label }}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- ═══ CURRENT GOAL ═══ -->
+      <div style="margin:22px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Current Goal</span></div>
+      <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); padding:16px 15px;">
+        <span style="display:block; font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:7px;">{{ goalLabel }}</span>
+        <span style="display:block; font-family:var(--fl-font-display); font-size:18px; font-weight:600; color:var(--fl-text-primary); line-height:1.28;">{{ goalTitle }}</span>
+        <div style="margin-top:14px; height:10px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-700); overflow:hidden; box-shadow:inset 0 1px 3px rgba(0,0,0,0.6);">
+          <div style="width:{{ goalPct }}; height:100%; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-metallic); box-shadow:var(--fl-glow-subtle); animation:pvBar 900ms var(--fl-ease-out) both;"></div>
+        </div>
+        <span style="display:block; font-size:12px; font-weight:500; letter-spacing:0.3px; color:var(--fl-text-secondary); margin-top:9px;">{{ goalCount }}</span>
+      </div>
+
+      <!-- ═══ ABOUT (hidden when no description) ═══ -->
+      <sc-if value="{{ hasAbout }}" hint-placeholder-val="{{ true }}">
+        <div style="margin:22px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">About</span></div>
+        <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); padding:15px;">
+          <span style="display:block; font-size:13.5px; line-height:1.55; color:var(--fl-text-secondary);">{{ about }}</span>
+        </div>
+      </sc-if>
+
+      <!-- ═══ MEMBERS PEEK ═══ -->
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin:22px 4px 12px;">
+        <span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Members</span>
+        <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ memberCountLabel }}</span>
+      </div>
+      <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+        <sc-for list="{{ members }}" as="m" hint-placeholder-count="3">
+          <div style="display:flex; align-items:center; gap:13px; padding:12px 14px; border-top:{{ m.divider }};">
+            <span style="position:relative; width:40px; height:40px; flex:none;">
+              <span style="position:absolute; inset:0; border-radius:var(--fl-radius-round); background:{{ m.tint }}; border:1px solid var(--fl-bronze-border-subtle); box-shadow:inset 0 1px 3px rgba(0,0,0,0.55);"></span>
+              <sc-if value="{{ m.online }}" hint-placeholder-val="{{ false }}">
+                <span style="position:absolute; right:-1px; bottom:-1px; width:11px; height:11px; border-radius:var(--fl-radius-round); background:#6E8E74; border:2px solid var(--fl-surface-card);"></span>
+              </sc-if>
+            </span>
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+              <span style="font-size:14.5px; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ m.name }}</span>
+              <span style="display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--fl-text-tertiary);">{{ m.role }}<sc-if value="{{ m.hasActivity }}" hint-placeholder-val="{{ false }}"><span style="color:var(--fl-charcoal-500);">·</span><span style="color:{{ m.activityColor }};">{{ m.activity }}</span></sc-if></span>
+            </div>
+            <sc-if value="{{ m.isOwner }}" hint-placeholder-val="{{ false }}">
+              <span style="flex:none; display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); font-size:10px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-bronze-bright);">{{ crownIcon }}Owner</span>
+            </sc-if>
+          </div>
+        </sc-for>
+        <div style="padding:12px 14px; border-top:1px solid var(--fl-charcoal-700); text-align:center;">
+          <span style="font-size:12px; color:var(--fl-text-tertiary);">{{ moreMembers }}</span>
+        </div>
+      </div>
+
+      <!-- ═══ PRIVACY NOTE ═══ -->
+      <div style="display:flex; align-items:flex-start; gap:11px; margin-top:22px; padding:14px 15px; background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-700); border-radius:var(--fl-radius-lg);">
+        <span style="flex:none; display:inline-flex; margin-top:1px; color:var(--fl-icon-bronze);">{{ noteIcon }}</span>
+        <span style="flex:1; min-width:0; font-size:12.5px; line-height:1.5; color:var(--fl-text-secondary);">{{ joinNote }}</span>
+      </div>
+
+      </sc-if>
+
+    </div>
+
+    <!-- ═══ COMMIT BAR ═══ -->
+    <div style="flex:none; position:relative; z-index:5; padding:14px 20px calc(16px + env(safe-area-inset-bottom)); border-top:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(9,9,9,0.55), rgba(9,9,9,0.86)); box-shadow:0 -10px 26px rgba(0,0,0,0.4);">
+      <button type="button" onClick="{{ action }}" style="{{ commitStyle }}" style-active="transform:scale(0.99); opacity:0.9;"><span style="display:inline-flex;">{{ commitIcon }}</span>{{ commitLabel }}</button>
+    </div>
+  </sc-if>
+
+  <!-- TOAST -->
+  <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; left:50%; bottom:96px; transform:translateX(-50%); z-index:1300; display:inline-flex; align-items:center; gap:11px; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-radius:var(--fl-radius-pill); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-float); padding:13px 20px; color:var(--fl-text-primary); font-size:14px; font-weight:500; white-space:nowrap; animation:pvRise 260ms var(--fl-ease-out) both;">
+      <span style="display:inline-flex; color:{{ toastIconColor }}; flex:none;">{{ toastIcon }}</span>{{ toastMsg }}
+    </div>
+  </sc-if>
+
+  <!-- Forged grain -->
+  <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.08; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868}}">
+class Component extends DCLogic {
+  state = { ready: false, toastMsg: null, joinState: null, loading: true };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      if (r && ns && fs) { this.setState({ ready: true }); this._ldT = setTimeout(() => this.setState({ loading: false }), 600); }
+      else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); if (this._toastT) clearTimeout(this._toastT); if (this._navT) clearTimeout(this._navT); if (this._ldT) clearTimeout(this._ldT); }
+
+  _toast(msg, tone) { if (this._toastT) clearTimeout(this._toastT); this.setState({ toastMsg: msg, toastTone: tone || 'bronze' }); this._toastT = setTimeout(() => this.setState({ toastMsg: null }), 2400); }
+
+  _tint(seed) {
+    const T = [
+      'radial-gradient(circle at 42% 32%, #4a3826, #1c1510)',
+      'radial-gradient(circle at 45% 35%, #34302a, #17130f)',
+      'radial-gradient(circle at 40% 30%, #40301f, #17120c)',
+      'radial-gradient(circle at 48% 38%, #2d2822, #141210)',
+    ];
+    return T[seed % T.length];
+  }
+
+  _squad() {
+    const CATALOG = {
+      ironforge: { name: 'Ironforge Barbell', motto: 'Strength is earned, never given.', cat: 'Powerlifting', crest: 'dumbbell', members: 34, today: 12, founded: '1 yr', join: 'approval', goalLabel: 'Monthly Goal', goal: 'Total 10,000 kg as a squad this month', goalPct: 62, goalNow: 6180, goalTarget: 10000, goalUnit: 'kg', about: 'Powerlifters committed to building strength together. Train consistently, compete often, and hold each other accountable under the bar.', roster: [ { name: 'Garrett Cole', role: 'Architect \u00b7 Powerlifter', owner: true, activity: 'Active today' }, { name: 'Priya Anand', role: 'Legend \u00b7 Powerlifter', online: true, activity: 'Online' }, { name: 'Sam Reyes', role: 'Craftsman \u00b7 Powerlifter', activity: 'Trained 2h ago' } ] },
+      dawn: { name: 'Dawn Runners', motto: 'Chase the sunrise.', cat: 'Running', crest: 'shoe', members: 22, today: 9, founded: '7 mo', join: 'open', cap: 25, goalLabel: 'Seasonal Goal', goal: 'Log 1,000 collective miles before spring', goalPct: 48, goalNow: 482, goalTarget: 1000, goalUnit: 'mi', about: 'An early-morning running crew that meets at first light. All paces welcome \u2014 the only rule is you show up.', roster: [ { name: 'Mara Lin', role: 'Legend \u00b7 Runner', owner: true, online: true, activity: 'Online' }, { name: 'Devon Okafor', role: 'Builder \u00b7 Runner', activity: 'Active today' }, { name: 'Ivy Chen', role: 'Craftsman \u00b7 Runner', activity: 'Trained 5h ago' } ] },
+      apex: { name: 'Apex Hybrid', motto: 'Do it all, and do it well.', cat: 'Hybrid', crest: 'mountain', members: 48, today: 20, founded: '2 yr', join: 'approval', goalLabel: 'Squad Goal', goal: 'Every member finishes a hybrid benchmark', goalPct: 71, goalNow: 34, goalTarget: 48, goalUnit: 'athletes', about: 'Hybrid athletes who refuse to specialize. Strength, engine, and skill \u2014 built in equal measure.', roster: [ { name: 'Cole Vasquez', role: 'Architect \u00b7 Hybrid', owner: true, activity: 'Active today' }, { name: 'Tara Bhatt', role: 'Legend \u00b7 Hybrid', online: true, activity: 'Online' }, { name: 'Noah Frost', role: 'Craftsman \u00b7 Hybrid', activity: 'Trained 1h ago' } ] },
+      atlas: { name: 'Atlas Stones', motto: 'Lift what others call impossible.', cat: 'Strongman', crest: 'trophy', members: 17, today: 6, founded: '5 mo', join: 'open', cap: 40, goalLabel: 'Monthly Goal', goal: 'Move 50,000 lb of atlas stones this month', goalPct: 39, goalNow: 19500, goalTarget: 50000, goalUnit: 'lb', about: 'Strongman training for the events that matter \u2014 stones, yoke, and log. Heavy, loud, and relentless.', roster: [ { name: 'Bjorn Hale', role: 'Legend \u00b7 Strongman', owner: true, activity: 'Active today' }, { name: 'Rosa Diaz', role: 'Builder \u00b7 Strongman', activity: 'Trained 3h ago' }, { name: 'Kane Mercer', role: 'Craftsman \u00b7 Strongman' } ] },
+      meridian: { name: 'Meridian Lifting', motto: 'Precision over ego.', cat: 'Olympic', crest: 'medal', members: 29, today: 11, founded: '1 yr', join: 'approval', goalLabel: 'Squad Goal', goal: 'Add 5 kg to every member\u2019s snatch', goalPct: 55, goalNow: 16, goalTarget: 29, goalUnit: 'athletes', about: 'Olympic weightlifting with an obsession for technique. We chase clean bar paths, not just heavier numbers.', roster: [ { name: 'Yuki Tanaka', role: 'Architect \u00b7 Olympic', owner: true, online: true, activity: 'Online' }, { name: 'Elias Cross', role: 'Legend \u00b7 Olympic', activity: 'Active today' }, { name: 'Nadia Vale', role: 'Craftsman \u00b7 Olympic', activity: 'Trained 4h ago' } ] },
+      vanguard: { name: 'Vanguard AM', motto: 'First light, first rep.', cat: 'Running', crest: 'shoe', members: 15, today: 7, founded: '3 mo', join: 'open', cap: 15, goalLabel: '30-Day Goal', goal: 'A dawn check-in from all 15, 30 days straight', goalPct: 44, goalNow: 13, goalTarget: 30, goalUnit: 'days', about: '', roster: [ { name: 'Iris Vaughn', role: 'Legend \u00b7 Runner', owner: true, activity: 'Active today' }, { name: 'Marcus Webb', role: 'Builder \u00b7 Runner', online: true, activity: 'Online' }, { name: 'Lena Ford', role: 'Craftsman \u00b7 Runner' } ] },
+    };
+    let id = 'ironforge';
+    try { const s = window.localStorage.getItem('forge.preview.squad'); if (s && CATALOG[s]) id = s; } catch (e) {}
+    return CATALOG[id];
+  }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) { return { ready: false, notReady: true }; }
+    const h = React.createElement;
+    const FS = window.ForgeSymbols;
+    const S = this.state;
+    const ic = (id, size, sw) => FS.create(React, id, { size: size || 18, strokeWidth: sw || 1.8 });
+
+    const sq = this._squad();
+    const isOpen = sq.join === 'open';
+    // Open squads carry a soft size ceiling so they stay squad-sized (never balloon into a community).
+    const cap = (isOpen && sq.cap) ? sq.cap : null;
+    const spotsLeft = cap ? Math.max(0, cap - sq.members) : null;
+    const isFull = cap ? sq.members >= cap : false;
+    const nearlyFull = cap ? (!isFull && spotsLeft <= 5) : false;
+    // A full open squad falls back to request/approval — that's the ceiling doing its job.
+    const effectiveApproval = !isOpen || isFull;
+
+    const globeIcon = h('svg', { width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('circle', { cx: 12, cy: 12, r: 8.5 }), h('path', { d: 'M3.5 12h17' }), h('path', { d: 'M12 3.5c2.4 2.3 3.7 5.3 3.7 8.5S14.4 18.2 12 20.5c-2.4-2.3-3.7-5.3-3.7-8.5S9.6 5.8 12 3.5z' }));
+    const lockIcon = h('svg', { width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('rect', { x: 5, y: 10.5, width: 14, height: 9, rx: 2 }), h('path', { d: 'M8 10.5V8a4 4 0 0 1 8 0v2.5' }));
+    const crownIcon = h('span', { style: { display: 'inline-flex' } }, h('svg', { width: 11, height: 11, viewBox: '0 0 24 24', fill: 'currentColor' }, h('path', { d: 'M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z' })));
+    const plusIcon = h('svg', { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M12 5v14M5 12h14' }));
+    const checkIcon = h('svg', { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.3, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M5 12.5l4 4 10-10' }));
+
+    // Tag (uniform width for alignment)
+    const tagBase = { display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '5px 12px', borderRadius: 'var(--fl-radius-pill)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.3px' };
+    const tagStyle = isOpen
+      ? Object.assign({}, tagBase, { background: 'rgba(110,142,116,0.13)', border: '1px solid rgba(110,142,116,0.34)', color: '#8FB295' })
+      : Object.assign({}, tagBase, { background: 'var(--fl-bronze-tint)', border: '1px solid var(--fl-bronze-border-subtle)', color: 'var(--fl-bronze-bright)' });
+
+    // Stats
+    const fmt = (n) => n >= 1000 ? (n / 1000).toFixed(n % 1000 === 0 ? 0 : 1) + 'k' : ('' + n);
+    const stats = [
+      { key: 'members', value: '' + sq.members, label: 'Members', divider: 'none' },
+      { key: 'today', value: '' + sq.today, label: 'Training Today', divider: '1px solid var(--fl-charcoal-700)' },
+      { key: 'founded', value: sq.founded, label: 'Founded', divider: '1px solid var(--fl-charcoal-700)' },
+    ];
+
+    // Members peek
+    const members = sq.roster.map((m, i) => ({
+      key: m.name, name: m.name, role: m.role, isOwner: !!m.owner, online: !!m.online,
+      hasActivity: !!m.activity, activity: m.activity || '', activityColor: m.online ? '#8FB295' : 'var(--fl-text-tertiary)',
+      tint: this._tint(m.name.length + i), divider: i === 0 ? 'none' : '1px solid var(--fl-charcoal-700)',
+    }));
+    const moreMembers = 'and ' + (sq.members - sq.roster.length) + ' more members';
+
+    // Join state / CTA
+    const state = S.joinState;
+    let commitStyle, commitLabel, commitIcon, action;
+    const filled = { width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '9px', padding: '15px', borderRadius: 'var(--fl-radius-md)', fontSize: '15px', fontWeight: 600, border: '1px solid var(--fl-bronze-border)', background: 'var(--fl-bronze-fill)', color: 'var(--fl-bronze-bright)', boxShadow: 'var(--fl-glow-subtle)', cursor: 'pointer', transition: 'transform 120ms var(--fl-ease-out), opacity 120ms ease, background 180ms ease' };
+    const done = { width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '9px', padding: '15px', borderRadius: 'var(--fl-radius-md)', fontSize: '15px', fontWeight: 600, border: '1px solid var(--fl-charcoal-600)', background: 'var(--fl-charcoal-800)', color: 'var(--fl-text-secondary)', cursor: 'pointer', transition: 'background 160ms ease' };
+
+    if (state === 'joined') {
+      commitStyle = done; commitLabel = 'Open Squad'; commitIcon = checkIcon;
+      action = () => { try { window.localStorage.setItem('forge.squad.role', 'member'); window.localStorage.setItem('forge.squad', 'iron'); } catch (e) {} window.location.href = 'Squad%20Detail.dc.html'; };
+    } else if (state === 'requested') {
+      commitStyle = done; commitLabel = 'Request Sent'; commitIcon = checkIcon;
+      action = () => { this.setState({ joinState: null }); this._toast('Request to ' + sq.name + ' withdrawn', 'bronze'); };
+    } else if (!effectiveApproval) {
+      commitStyle = filled; commitLabel = 'Join Squad'; commitIcon = plusIcon;
+      action = () => { this.setState({ joinState: 'joined' }); this._toast('You joined ' + sq.name, 'positive'); try { if (window.ForgeGate) window.ForgeGate.unlock('squad_joined'); } catch (e) {} };
+    } else {
+      commitStyle = filled; commitLabel = 'Request to Join'; commitIcon = plusIcon;
+      action = () => { this.setState({ joinState: 'requested' }); this._toast('Request sent to ' + sq.name, 'bronze'); };
+    }
+
+    const joinNote = isFull
+      ? 'This open squad has reached its size limit. New members join by request as spots open up \u2014 this keeps the squad small enough to train as one.'
+      : nearlyFull
+      ? 'This is an open squad with only ' + spotsLeft + ' spot' + (spotsLeft === 1 ? '' : 's') + ' left \u2014 join now and start training with them today.'
+      : isOpen
+      ? 'This is an open squad \u2014 you\u2019ll join instantly and can start training with them today.'
+      : 'This squad reviews new members. Your request goes to the owner, who approves or declines it.';
+
+    // Capacity pill (hero) — only when it matters
+    const capBase = { display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '5px 12px', borderRadius: 'var(--fl-radius-pill)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.3px' };
+    const capFull = Object.assign({}, capBase, { background: 'var(--fl-charcoal-800)', border: '1px solid var(--fl-charcoal-600)', color: 'var(--fl-text-tertiary)' });
+    const capNear = Object.assign({}, capBase, { background: 'var(--fl-bronze-tint)', border: '1px solid var(--fl-bronze-border-subtle)', color: 'var(--fl-bronze-bright)' });
+    const usersIcon = h('svg', { width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('circle', { cx: 9, cy: 8, r: 3.2 }), h('path', { d: 'M3.4 19a5.6 5.6 0 0 1 11.2 0' }), h('path', { d: 'M16 5.3a3.2 3.2 0 0 1 0 5.4' }), h('path', { d: 'M18.2 19a5.6 5.6 0 0 0-3-4.9' }));
+
+    const toastColor = S.toastTone === 'positive' ? '#6E8E74' : 'var(--fl-icon-bronze)';
+
+    return {
+      ready: true, notReady: false,
+      showSkeleton: S.loading, showBody: !S.loading,
+      crest: h('span', { style: { display: 'inline-flex' } }, ic(sq.crest, 42, 1.5)),
+      squadName: sq.name, motto: sq.motto,
+      tagStyle: tagStyle, tagIcon: h('span', { style: { display: 'inline-flex' } }, isOpen ? globeIcon : lockIcon), tagLabel: isOpen ? 'Open' : 'Approval',
+      catIcon: h('span', { style: { display: 'inline-flex' } }, ic('flame', 12, 1.9)), category: sq.cat,
+      hasCapacity: isFull || nearlyFull,
+      capacityStyle: isFull ? capFull : capNear,
+      capacityIcon: h('span', { style: { display: 'inline-flex' } }, usersIcon),
+      capacityLabel: isFull ? 'Full' : (spotsLeft + ' spot' + (spotsLeft === 1 ? '' : 's') + ' left'),
+
+      stats: stats,
+      goalLabel: sq.goalLabel || 'Squad Goal',
+      goalTitle: sq.goal, goalPct: sq.goalPct + '%', goalCount: fmt(sq.goalNow) + ' / ' + fmt(sq.goalTarget) + ' ' + sq.goalUnit + ' \u00b7 ' + sq.goalPct + '%',
+
+      hasAbout: !!(sq.about && sq.about.trim()), about: sq.about || '',
+
+      memberCountLabel: sq.members + ' Members', members: members, moreMembers: moreMembers, crownIcon: crownIcon,
+
+      noteIcon: h('span', { style: { display: 'inline-flex' } }, isOpen ? globeIcon : lockIcon), joinNote: joinNote,
+
+      commitStyle: commitStyle, commitLabel: commitLabel, commitIcon: h('span', { style: { display: 'inline-flex' } }, commitIcon), action: action,
+
+      goBack: () => { (function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})() ? window.history.back() : (window.location.href = 'Discover%20Squads.dc.html'); },
+      toastOpen: !!S.toastMsg, toastMsg: S.toastMsg || '', toastIcon: ic('squad', 18, 1.7), toastIconColor: toastColor,
+    };
+  }
+}
+</script>
+</body>
+</html>

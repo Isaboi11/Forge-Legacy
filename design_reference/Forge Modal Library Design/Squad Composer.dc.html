@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+  <script src="forge-squad-posts.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<script src="image-slot.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  .cc-in { width:100%; font-family:var(--fl-font-sans); font-size:14.5px; color:var(--fl-text-primary); background:var(--fl-charcoal-900); border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-md); padding:12px 13px; outline:none; transition:border-color 160ms ease; }
+  .cc-in:focus { border-color:var(--fl-bronze-border); background:var(--fl-charcoal-800); box-shadow:0 0 0 3px rgba(191,143,79,0.1); }
+  .cc-in::placeholder { color:var(--fl-text-tertiary); }
+  textarea.cc-in { resize:none; line-height:1.5; }
+  image-slot::part(ring) { border-color: var(--fl-bronze-border); }
+  image-slot::part(empty) { color: var(--fl-text-tertiary); font-size: 11px; }
+  @keyframes ccRise { from { opacity:0; transform: translateY(9px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+<div data-screen-label="Squad Composer" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.34), rgba(5,5,5,0.34)), #050505 url('assets/forge-slate.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column; font-family:var(--fl-font-sans);">
+
+  <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+      <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+    <!-- APP BAR -->
+    <div style="flex:none; position:relative; z-index:6; display:flex; align-items:center; gap:10px; padding:14px; border-bottom:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(9,9,9,0.9), rgba(7,7,7,0.82));">
+      <button type="button" onClick="{{ onLeftAction }}" style="width:36px; height:36px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); color:var(--fl-text-primary); cursor:pointer;">{{ leftIcon }}</button>
+      <div style="flex:1; min-width:0; display:flex; flex-direction:column;">
+        <span style="font-family:var(--fl-font-display); font-size:17px; font-weight:600; color:var(--fl-text-primary); line-height:1.1;">{{ barTitle }}</span>
+        <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ barSub }}</span>
+      </div>
+      <sc-if value="{{ isCompose }}" hint-placeholder-val="{{ false }}">
+        <button type="button" onClick="{{ submitPost }}" style="{{ postBtnStyle }}">Post</button>
+      </sc-if>
+    </div>
+
+    <!-- STEP 1 · TYPE PICKER -->
+    <sc-if value="{{ isPick }}" hint-placeholder-val="{{ true }}">
+      <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:18px 18px 28px;">
+        <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:0 2px 12px;">Anyone in the squad</span>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <sc-for list="{{ memberTypes }}" as="t" hint-placeholder-count="7">
+            <button type="button" onClick="{{ t.select }}" style="display:flex; flex-direction:column; align-items:flex-start; gap:9px; padding:14px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); cursor:pointer; text-align:left; transition:border-color 160ms ease, transform 120ms var(--fl-ease-out);" style-active="transform:scale(0.98); border-color:var(--fl-bronze-border);">
+              <span style="width:38px; height:38px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-md); background:radial-gradient(circle at 50% 34%, rgba(191,143,79,0.18), transparent 72%), var(--fl-surface-recessed); border:1px solid var(--fl-bronze-border-subtle); color:var(--fl-bronze-bright);">{{ t.icon }}</span>
+              <span style="font-size:14px; font-weight:600; color:var(--fl-text-primary);">{{ t.label }}</span>
+            </button>
+          </sc-for>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:8px; margin:24px 2px 12px;">
+          <span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Captain only</span>
+          <sc-if value="{{ viewerCanCap }}" hint-placeholder-val="{{ false }}">
+            <span style="display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); font-size:9px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:var(--fl-bronze-bright);">Your access</span>
+          </sc-if>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <sc-for list="{{ capTypes }}" as="t" hint-placeholder-count="1">
+            <button type="button" onClick="{{ t.select }}" style="{{ t.cardStyle }}" style-active="transform:scale(0.98);">
+              <span style="width:38px; height:38px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-md); background:{{ t.iconBg }}; border:1px solid {{ t.iconBorder }}; color:{{ t.iconColor }};">{{ t.icon }}</span>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:14px; font-weight:600; color:{{ t.labelColor }};">{{ t.label }}</span>
+                <sc-if value="{{ t.locked }}" hint-placeholder-val="{{ true }}">
+                  <span style="display:inline-flex; color:var(--fl-text-tertiary);">{{ lockIcon }}</span>
+                </sc-if>
+              </div>
+              <sc-if value="{{ t.locked }}" hint-placeholder-val="{{ true }}">
+                <span style="font-size:10.5px; color:var(--fl-text-tertiary);">Captain only</span>
+              </sc-if>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- STEP 2 · COMPOSE -->
+    <sc-if value="{{ isCompose }}" hint-placeholder-val="{{ false }}">
+      <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:16px 18px 28px;">
+
+        <div style="display:flex; align-items:center; gap:11px; margin-bottom:16px;">
+          <span style="width:40px; height:40px; flex:none; border-radius:var(--fl-radius-round); background:radial-gradient(circle at 44% 34%, #453322, #1a140e); border:1px solid var(--fl-bronze-border-subtle);"></span>
+          <div style="flex:1; min-width:0;">
+            <span style="display:block; font-size:14.5px; font-weight:500; color:var(--fl-text-primary);">You</span>
+            <span style="display:inline-flex; align-items:center; gap:5px; font-size:11.5px; color:var(--fl-text-tertiary);"><span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ typeIcon }}</span>{{ typeLabel }} · {{ squadName }}</span>
+          </div>
+        </div>
+
+        <sc-if value="{{ hasMediaField }}" hint-placeholder-val="{{ false }}">
+          <div style="position:relative; height:200px; border-radius:var(--fl-radius-md); overflow:hidden; border:1px solid var(--fl-charcoal-700); margin-bottom:14px;">
+            <image-slot id="sqc-media" shape="rect" placeholder="{{ mediaPlaceholder }}" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+          </div>
+        </sc-if>
+
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <sc-for list="{{ fields }}" as="f" hint-placeholder-count="2">
+            <div>
+              <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:0 2px 7px;">{{ f.label }}</span>
+              <sc-if value="{{ f.isArea }}" hint-placeholder-val="{{ true }}">
+                <textarea class="cc-in" rows="{{ f.rows }}" placeholder="{{ f.ph }}" value="{{ f.value }}" onInput="{{ f.onInput }}"></textarea>
+              </sc-if>
+              <sc-if value="{{ f.isText }}" hint-placeholder-val="{{ false }}">
+                <input class="cc-in" type="text" placeholder="{{ f.ph }}" value="{{ f.value }}" onInput="{{ f.onInput }}">
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+
+        <sc-if value="{{ showAchPreview }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:18px;">
+            <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:0 2px 9px;">Preview</span>
+            <div style="position:relative; height:170px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border); overflow:hidden; display:flex; align-items:center; justify-content:center; background:radial-gradient(circle at 50% 42%, rgba(191,143,79,0.32), rgba(23,17,11,0.96) 68%), var(--fl-surface-recessed);">
+              <div style="position:relative; display:flex; flex-direction:column; align-items:center;">
+                <span style="font-family:var(--fl-font-display); font-size:46px; font-weight:700; color:var(--fl-bronze-bright); line-height:1; text-shadow:0 3px 20px rgba(191,143,79,0.5);">{{ achValuePreview }}</span>
+                <span style="margin-top:8px; font-family:var(--fl-font-display); font-size:15px; font-weight:600; color:var(--fl-text-primary);">{{ achExercisePreview }}</span>
+                <span style="margin-top:8px; font-size:9px; font-weight:600; letter-spacing:2.5px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ achLabelPreview }}</span>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showGateNote }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; align-items:flex-start; gap:9px; margin-top:18px; padding:12px 13px; border-radius:var(--fl-radius-md); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-700);">
+            <span style="flex:none; display:inline-flex; margin-top:1px; color:var(--fl-icon-bronze);">{{ shieldIcon }}</span>
+            <span style="flex:1; min-width:0; font-size:11.5px; line-height:1.5; color:var(--fl-text-secondary);">{{ gateNote }}</span>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+  </sc-if>
+
+  <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; left:50%; bottom:32px; transform:translateX(-50%); z-index:1300; display:inline-flex; align-items:center; gap:11px; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-radius:var(--fl-radius-pill); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-float); padding:12px 19px; color:var(--fl-text-primary); font-size:13.5px; font-weight:500; white-space:nowrap; animation:ccRise 240ms var(--fl-ease-out);">
+      <span style="display:inline-flex; color:{{ toastIconColor }}; flex:none;">{{ toastIcon }}</span>{{ toastMsg }}
+    </div>
+  </sc-if>
+
+  <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.06; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868},&quot;viewerRole&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;captain&quot;,&quot;options&quot;:[&quot;member&quot;,&quot;captain&quot;,&quot;owner&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Permissions&quot;}}">
+class Component extends DCLogic {
+  state = { ready: false, toastMsg: null, step: 'pick', type: null, form: {} };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = window.ForgeLegacyVisualFoundation_5368b2;
+      if (r && ns && window.ForgeSymbols && window.ForgeSquadPosts) {
+        let pre = null; try { pre = localStorage.getItem('forge.squad.compose.type'); localStorage.removeItem('forge.squad.compose.type'); } catch (e) {}
+        const role = this._role();
+        if (pre && window.ForgeSquadPosts.canPost(role, pre)) this.setState({ ready: true, step: 'compose', type: pre, form: this._defaults(pre) });
+        else this.setState({ ready: true });
+      } else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); if (this._toastT) clearTimeout(this._toastT); if (this._navT) clearTimeout(this._navT); }
+
+  _role() { const v = this.props.viewerRole; return (v === 'owner' || v === 'captain') ? v : 'member'; }
+  _toast(msg, tone) { if (this._toastT) clearTimeout(this._toastT); this.setState({ toastMsg: msg, toastTone: tone || 'bronze' }); this._toastT = setTimeout(() => this.setState({ toastMsg: null }), 2200); }
+  _defaults(type) { return type === 'pr' ? { label: 'Squad PR' } : {}; }
+  _pick(type) { this.setState({ step: 'compose', type, form: this._defaults(type) }); }
+  _set(key, val) { this.setState(st => ({ form: Object.assign({}, st.form, { [key]: val }) })); }
+
+  _valid() {
+    const S = this.state, f = S.form;
+    switch (S.type) {
+      case 'checkin': case 'formcheck': return true;
+      case 'recap': case 'discussion': case 'announcement': return !!(f.body || '').trim();
+      case 'pr': return !!(f.exercise || '').trim() && !!(f.value || '').trim();
+      case 'challenge': return !!(f.body || '').trim();
+      case 'traintogether': return !!(f.when || '').trim();
+      default: return false;
+    }
+  }
+
+  _submit() {
+    if (!this._valid()) { this._toast('Add a little more first', 'bronze'); return; }
+    const S = this.state, f = S.form, role = this._role();
+    const authorRole = role === 'member' ? null : role;
+    let post = { type: S.type, author: 'You', role: authorRole, body: (f.body || '').trim() };
+    if (S.type === 'pr') post.achievement = { value: f.value.trim(), exercise: f.exercise.trim(), label: (f.label || 'Squad PR').trim() };
+    else if (S.type === 'formcheck') post.media = { dur: (f.dur || '0:20').trim() };
+    else if (S.type === 'challenge') { post.challengeContext = (f.challenge || '').trim() || 'Active competition'; }
+    else if (S.type === 'traintogether') { post.body = ('Train together — ' + (f.when || '').trim() + (f.body ? '\n' + f.body.trim() : '')); }
+    else if (S.type === 'checkin' && !post.body) post.body = 'Checked in — trained today.';
+    try { const p = window.ForgeSquadPosts.add(window.ForgeSquadPosts.activeId(), post); localStorage.setItem('forge.justPosted', p.id); } catch (e) {}
+    this._toast('Posted to your squad', 'positive');
+    this._navT = setTimeout(() => { window.location.href = 'Squad%20Detail.dc.html'; }, 700);
+  }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) return { ready: false, notReady: true };
+    const h = React.createElement;
+    const FS = window.ForgeSymbols, PS = window.ForgeSquadPosts, S = this.state;
+    const ic = (id, size, sw) => FS.create(React, id, { size: size || 18, strokeWidth: sw || 1.9 });
+    const sv = (d, size, sw) => h('svg', { width: size || 18, height: size || 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw || 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, (Array.isArray(d) ? d : [d]).map((p, i) => h('path', { key: i, d: p })));
+    const w = (el) => h('span', { style: { display: 'inline-flex' } }, el);
+    const role = this._role();
+    const squadName = PS.meta(PS.activeId()).name;
+
+    const typeGlyph = (tid, size, sw) => {
+      const M = {
+        check: sv('M5 12.5l4 4 10-10', size, sw),
+        dumbbell: ic('dumbbell', size, sw),
+        trophy: sv(['M7 5h10v3a5 5 0 0 1-10 0z', 'M7 6H4v1.5a3.5 3.5 0 0 0 3.5 3.5', 'M17 6h3v1.5A3.5 3.5 0 0 1 16.5 11', 'M9.5 14h5', 'M12 11v3', 'M8.5 18.5h7'], size, sw),
+        video: sv(['M3.5 7h11v10h-11z', 'M14.5 10.2l6-3.2v10l-6-3.2z'], size, sw),
+        swords: ic('swords', size, sw),
+        train: ic('train', size, sw),
+        message: sv('M20 11.5a7.5 7.5 0 0 1-10.9 6.7L4 19.5l1.3-4A7.5 7.5 0 1 1 20 11.5z', size, sw),
+        banner: ic('banner', size, sw)
+      };
+      return M[tid] || M.message;
+    };
+
+    const lockIcon = w(sv(['M6 11V8a4 4 0 0 1 8 0', 'M5 11h10v7H5z'], 12, 1.9));
+    const shieldIcon = w(ic('shield', 15, 1.9));
+
+    const allTypes = PS.TYPES;
+    const memberTypes = allTypes.filter(t => t.gate === 'member').map(t => ({ key: t.id, label: t.label, icon: w(typeGlyph(t.icon, 20, 1.8)), select: () => this._pick(t.id) }));
+    const capList = allTypes.filter(t => t.gate === 'captain');
+    const canCap = role === 'owner' || role === 'captain';
+    const capTypes = capList.map(t => {
+      const locked = !canCap;
+      return {
+        key: t.id, label: t.label, locked, icon: w(typeGlyph(t.icon, 20, 1.8)),
+        iconBg: locked ? 'var(--fl-charcoal-800)' : 'radial-gradient(circle at 50% 34%, rgba(191,143,79,0.18), transparent 72%), var(--fl-surface-recessed)',
+        iconBorder: locked ? 'var(--fl-charcoal-600)' : 'var(--fl-bronze-border-subtle)',
+        iconColor: locked ? 'var(--fl-text-tertiary)' : 'var(--fl-bronze-bright)',
+        labelColor: locked ? 'var(--fl-text-secondary)' : 'var(--fl-text-primary)',
+        cardStyle: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '9px', padding: '14px', borderRadius: 'var(--fl-radius-lg)', border: '1px solid ' + (locked ? 'var(--fl-charcoal-700)' : 'var(--fl-bronze-border-subtle)'), background: locked ? 'var(--fl-surface-recessed)' : 'var(--fl-surface-card)', boxShadow: locked ? 'none' : 'var(--fl-shadow-card)', opacity: locked ? 0.72 : 1, cursor: 'pointer', textAlign: 'left', transition: 'transform 120ms var(--fl-ease-out)' },
+        select: () => { if (locked) this._toast('Only the captain can post announcements', 'bronze'); else this._pick(t.id); }
+      };
+    });
+
+    const F = S.form;
+    const field = (key, label, ph, area, rows) => ({ key, label, ph, isArea: !!area, isText: !area, rows: rows || 3, value: F[key] || '', onInput: (e) => this._set(key, e.target.value) });
+    let fields = [], hasMediaField = false, mediaPlaceholder = 'Add a video', showAchPreview = false;
+    switch (S.type) {
+      case 'checkin': fields = [field('body', 'Note (optional)', 'How did today go?\u2026', true, 3)]; break;
+      case 'recap': fields = [field('body', 'Recap', 'Sets, load, how it felt\u2026', true, 5)]; break;
+      case 'pr': showAchPreview = true; fields = [field('exercise', 'Lift / movement', 'Bench Press'), field('value', 'Result', '315 lb'), field('label', 'Label', 'Squad PR'), field('body', 'Say something (optional)', 'Bar speed felt easy\u2026', true, 2)]; break;
+      case 'formcheck': hasMediaField = true; fields = [field('dur', 'Clip length', '0:27'), field('body', 'What should the squad look at?', 'e.g. Does my hip rise look early?', true, 3)]; break;
+      case 'challenge': fields = [field('challenge', 'Competition', 'Forge League \u00b7 Week 3'), field('body', 'Progress update', 'Where we stand and what closes it\u2026', true, 3)]; break;
+      case 'traintogether': fields = [field('when', 'When & where', 'Sat \u00b7 9:00 AM \u00b7 Main Floor'), field('body', 'Details (optional)', 'Warm-up starts sharp\u2026', true, 2)]; break;
+      case 'discussion': fields = [field('body', 'Note to the squad', 'Keep it short\u2026', true, 4)]; break;
+      case 'announcement': fields = [field('body', 'Announcement', 'Pins to the top of the squad feed\u2026', true, 4)]; break;
+    }
+
+    const TYPE = PS.type(S.type) || {};
+    const valid = this._valid();
+    const postBtnStyle = { flex: 'none', padding: '9px 18px', borderRadius: 'var(--fl-radius-md)', border: '1px solid ' + (valid ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)'), background: valid ? 'var(--fl-bronze-fill)' : 'var(--fl-charcoal-800)', color: valid ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)', fontSize: '13.5px', fontWeight: 700, letterSpacing: '0.3px', cursor: valid ? 'pointer' : 'default', boxShadow: valid ? 'var(--fl-glow-subtle)' : 'none' };
+    const toastColor = S.toastTone === 'positive' ? '#6E8E74' : 'var(--fl-icon-bronze)';
+    const capGate = TYPE.gate === 'captain';
+
+    return {
+      ready: true, notReady: false,
+      isPick: S.step === 'pick', isCompose: S.step === 'compose',
+      leftIcon: w(S.step === 'compose' ? sv('M15 5l-7 7 7 7', 19, 2) : sv('M6 6l12 12M18 6L6 18', 19, 2)),
+      onLeftAction: () => { if (S.step === 'compose') this.setState({ step: 'pick', type: null }); else this._close(); },
+      barTitle: S.step === 'compose' ? (TYPE.label || 'Post') : 'Post to Squad',
+      barSub: S.step === 'compose' ? squadName : 'Training, recognition & coordination',
+      squadName: squadName,
+      submitPost: () => this._submit(), postBtnStyle,
+      memberTypes, capTypes, viewerCanCap: canCap,
+      lockIcon, shieldIcon,
+      typeIcon: w(typeGlyph(TYPE.icon || 'message', 12, 1.9)), typeLabel: TYPE.label || '',
+      hasMediaField, mediaPlaceholder, fields,
+      showAchPreview, achValuePreview: (F.value || '').trim() || '315 lb', achExercisePreview: (F.exercise || '').trim() || 'Bench Press', achLabelPreview: (F.label || 'Squad PR').trim(),
+      showGateNote: capGate && S.step === 'compose', gateNote: 'You\u2019re posting a squad announcement as ' + (role === 'owner' ? 'the owner' : 'the captain') + '. It pins to the top of the squad feed for every member.',
+      toastOpen: !!S.toastMsg, toastMsg: S.toastMsg || '', toastIcon: w(ic('squad', 17, 1.9)), toastIconColor: toastColor
+    };
+  }
+
+  _close() { if ((function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})()) window.history.back(); else window.location.href = 'Squad%20Detail.dc.html'; }
+}
+</script>
+</body>
+</html>

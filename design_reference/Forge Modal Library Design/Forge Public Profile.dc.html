@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<script src="forge-user.js"></script>
+<script src="forge-visibility.js"></script>
+<script src="image-slot.js"></script>
+<script src="forge-accomplishments.js"></script>
+<script src="forge-legacy-pins.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  .fl-strip::-webkit-scrollbar { height: 0; }
+  .fl-strip { scrollbar-width: none; }
+  @keyframes flRise { from { opacity:0; transform: translateY(14px); } to { opacity:1; transform:none; } }
+  @keyframes flSealRise { 0% { opacity:0; transform: translateY(12px) scale(0.965); } 100% { opacity:1; transform:none; } }
+  @keyframes flFade { from { opacity:0; } to { opacity:1; } }
+  @keyframes flSheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+  <div data-screen-label="Public Profile" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.3), rgba(5,5,5,0.3)), #050505 url('assets/legacy-bg.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <!-- Mountain artwork fade during scroll (driven in JS) -->
+    <div ref="{{ setArtworkFade }}" aria-hidden="true" style="position:absolute; inset:0; z-index:-1; pointer-events:none; background:#050505; opacity:0;"></div>
+
+    <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+        <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="" on-back="{{ goBack }}" actions="{{ overflowBtn }}" hint-size="100%,56px"></x-import>
+
+      <div class="fl-scroll" ref="{{ setScroll }}" style="flex:1; min-height:0; overflow-y:auto;">
+
+        <!-- ═══════════ HERO · identity (no card, artwork flows behind) ═══════════ -->
+        <div ref="{{ setHero }}" style="position:relative; overflow:hidden; padding:6px 0 2px; will-change:transform, opacity;">
+          <div aria-hidden="true" style="position:absolute; inset:0; z-index:0; pointer-events:none; background:linear-gradient(180deg, rgba(8,11,14,0.5) 0%, rgba(8,11,14,0.16) 60%, transparent 100%);"></div>
+
+          <div style="position:relative; z-index:1;">
+            <div style="display:flex; align-items:center; gap:14px; padding:18px 20px 2px;">
+              <div ref="{{ setPortrait }}" style="flex:none; will-change:transform;">
+                <div style="position:relative; width:90px; height:90px; animation:flSealRise 900ms var(--fl-ease-out, ease-out) both; filter:drop-shadow(0 14px 22px rgba(0,0,0,0.6));">
+                  <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center;"><div style="transform:scale(0.83); transform-origin:center; display:flex;">{{ seal }}</div></div>
+                  <image-slot id="profile-portrait" shape="circle" placeholder="Photo" style="position:absolute; inset:4px; width:82px; height:82px;"></image-slot>
+                  <span style="position:absolute; inset:0; border-radius:50%; pointer-events:none; border:1.5px solid var(--fl-bronze-border); box-shadow:0 0 0 3px rgba(8,11,14,0.5), var(--fl-glow-badge), var(--fl-border-inset);"></span>
+                </div>
+              </div>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:7px; animation:flRise 950ms var(--fl-ease-out, ease-out) both; animation-delay:140ms;">
+                <h1 style="margin:0; font-family:var(--fl-font-display); font-size:24px; font-weight:700; letter-spacing:-0.3px; line-height:1.0; color:var(--fl-text-primary);">{{ name }}</h1>
+                <span style="font-size:12px; font-weight:600; letter-spacing:0.3px; color:var(--fl-text-tertiary);">{{ handle }}</span>
+                <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.RankMarker" label="{{ rankLabel }}" hint-size="auto,20px"></x-import>
+              </div>
+              <div aria-label="Rank" style="flex:none; width:68px; display:flex; align-items:center; justify-content:center; opacity:0.65; filter:saturate(0.88) drop-shadow(0 6px 12px rgba(0,0,0,0.4));">
+                <dc-import name="FoundationBadge" tier="{{ badgeTier }}" hint-size="68px,108px"></dc-import>
+              </div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:10px; padding:6px 24px 0; animation:flRise 950ms var(--fl-ease-out, ease-out) both; animation-delay:200ms;">
+              <span style="font-size:11.5px; font-weight:500; letter-spacing:0.3px; color:var(--fl-text-secondary);">{{ identitySub }}</span>
+              <span style="width:3px; height:3px; border-radius:50%; background:var(--fl-bronze-primary);"></span>
+              <span style="font-size:11.5px; font-weight:500; letter-spacing:0.3px; color:var(--fl-text-tertiary);">{{ since }}</span>
+            </div>
+
+            <!-- Actions · the primary thing to do here (Challenge for friends & squad-mates). Hidden if nothing to do. -->
+            <sc-if value="{{ hasActions }}" hint-placeholder-val="{{ true }}">
+              <div style="{{ actionRowStyle }}">
+                <sc-for list="{{ actions }}" as="a" hint-placeholder-count="2">
+                  <div style="{{ a.wrapStyle }}">
+                    <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="{{ a.variant }}" full-width="{{ true }}" icon="{{ a.icon }}" on-click="{{ a.action }}" hint-size="100%,48px">{{ a.label }}</x-import>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <!-- Relationship status · secondary metadata, lives beneath the action -->
+            <sc-if value="{{ hasMetaChips }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; flex-wrap:wrap; gap:8px; padding:10px 24px 0; animation:flRise 950ms var(--fl-ease-out, ease-out) both; animation-delay:300ms;">
+                <sc-for list="{{ metaChips }}" as="c" hint-placeholder-count="1">
+                  <span role="{{ c.role }}" tabindex="{{ c.tab }}" onClick="{{ c.onClick }}" style="{{ c.chipStyle }}">
+                    <span style="display:flex;">{{ c.icon }}</span>
+                    <span style="font-size:11px; font-weight:600; letter-spacing:0.4px;">{{ c.label }}</span>
+                  </span>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <!-- My Standard · read-only creed (always public) -->
+            <div style="position:relative; z-index:1; padding:26px 24px 4px;">
+              <span style="display:block; font-family:var(--fl-font-display); font-size:14px; font-weight:600; letter-spacing:0.2px; color:var(--fl-text-bronze-label); padding-bottom:11px;">My Standard</span>
+              <p style="margin:0; font-family:var(--fl-font-display); font-style:italic; font-size:19px; line-height:1.5; font-weight:500; color:var(--fl-text-primary); text-wrap:pretty;">{{ myStandard }}</p>
+            </div>
+
+            <!-- Current Chapter (visibility-gated) -->
+            <sc-if value="{{ seeChapter }}" hint-placeholder-val="{{ true }}">
+              <div style="position:relative; z-index:1; padding:32px 24px 26px;">
+                <div style="height:1px; background:var(--fl-bronze-border-subtle); margin-bottom:22px;"></div>
+                <div style="display:flex; align-items:center; gap:9px;">
+                  <span style="font-size:10.5px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">Current Chapter</span>
+                  <span style="display:inline-flex; align-items:center; gap:6px;">
+                    <span style="width:6px; height:6px; border-radius:50%; background:var(--fl-status-online); box-shadow:var(--fl-status-online-glow);"></span>
+                    <span style="font-size:9px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-bronze-bright);">Active</span>
+                  </span>
+                </div>
+                <span style="display:block; font-family:var(--fl-font-display); font-size:28px; font-weight:600; letter-spacing:-0.4px; line-height:1.05; color:var(--fl-text-primary); padding:6px 0 16px;">{{ acName }}</span>
+                <div style="display:flex; flex-direction:column; gap:9px;">
+                  <span style="font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Primary Goal</span>
+                  <div style="display:flex; align-items:baseline; gap:10px;">
+                    <span style="font-family:var(--fl-font-display); font-size:19px; font-weight:600; letter-spacing:-0.2px; color:var(--fl-text-primary);">{{ acGoalLabel }}</span>
+                    <span style="margin-left:auto; font-size:13px; font-weight:600; color:var(--fl-bronze-primary);">{{ acGoalValue }}</span>
+                  </div>
+                  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ProgressBar" value="{{ acGoalDone }}" max="{{ acGoalMax }}" hint-size="100%,8px"></x-import>
+                  <span style="display:flex; align-items:center; gap:8px; font-size:11.5px; color:var(--fl-text-tertiary); padding-top:3px;">{{ icoCal }}<span>{{ acBegan }}</span></span>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+
+        <!-- content flow -->
+        <div style="display:flex; flex-direction:column; gap:46px; padding:32px 0 8px;">
+
+          <!-- ══ Highlights (always shown — curated by owner) ══ -->
+          <div>
+            <div style="padding:0 24px;">
+              <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); padding:0 2px 2px;">Highlights</span>
+            </div>
+            <div class="fl-strip" style="display:flex; gap:12px; padding:8px 24px 4px; overflow-x:auto;">
+              <sc-for list="{{ pinned }}" as="p" hint-placeholder-count="4">
+                <div role="button" tabindex="0" onClick="{{ p.open }}" style="position:relative; width:150px; height:196px; flex:none; border-radius:var(--fl-radius-lg); overflow:hidden; border:1px solid var(--fl-bronze-border-subtle); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); cursor:pointer; transition:transform 240ms var(--fl-ease-out, ease-out);" style-active="transform:scale(0.97);">
+                  <sc-if value="{{ p.isPhoto }}" hint-placeholder-val="{{ true }}">
+                    <image-slot id="{{ p.mediaId }}" shape="rect" placeholder="{{ p.kind }}" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+                    <span aria-hidden="true" style="position:absolute; inset:0; pointer-events:none; background:linear-gradient(180deg, rgba(8,11,14,0.5) 0%, transparent 34%, transparent 50%, rgba(8,11,14,0.92) 100%);"></span>
+                    <sc-if value="{{ p.isVideo }}" hint-placeholder-val="{{ false }}">
+                      <span style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:rgba(8,11,14,0.66); border:1px solid var(--fl-bronze-border-subtle);"><svg width="14" height="14" viewBox="0 0 24 24" style="margin-left:2px;"><path d="M9 7.5l8 4.5-8 4.5z" fill="var(--fl-bronze-bright)"></path></svg></span>
+                    </sc-if>
+                  </sc-if>
+                  <sc-if value="{{ p.isEmblem }}" hint-placeholder-val="{{ false }}">
+                    <span aria-hidden="true" style="position:absolute; inset:0; background:var(--fl-surface-recessed);"></span>
+                    <span aria-hidden="true" style="position:absolute; inset:0; background:radial-gradient(70% 55% at 50% 38%, rgba(191,143,79,0.18), transparent 72%);"></span>
+                    <div style="position:absolute; top:0; left:0; right:0; bottom:46px; display:flex; align-items:center; justify-content:center;">
+                      <span style="width:66px; height:66px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--fl-bronze-metallic); box-shadow:var(--fl-border-inset), var(--fl-glow-badge);">
+                        <span style="width:55px; height:55px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--fl-surface-recessed); color:var(--fl-bronze-bright);">{{ p.glyph }}</span>
+                      </span>
+                    </div>
+                  </sc-if>
+                  <span style="position:absolute; top:9px; left:9px; z-index:2; padding:3px 8px; border-radius:var(--fl-radius-sm); font-size:8px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--fl-bronze-bright); background:rgba(8,11,14,0.72); border:1px solid var(--fl-bronze-border-subtle);">{{ p.kind }}</span>
+                  <span style="position:absolute; left:12px; right:12px; bottom:12px; z-index:2; font-family:var(--fl-font-display); font-size:15px; font-weight:600; letter-spacing:-0.1px; line-height:1.15; color:var(--fl-text-primary);">{{ p.title }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <!-- ══ Featured Legacy Moment (always shown) ══ -->
+          <div style="padding:0 24px;">
+            <span style="display:block; font-size:10px; font-weight:600; letter-spacing:2.2px; text-transform:uppercase; color:var(--fl-text-tertiary); padding:0 2px 12px;">Featured Legacy Moment</span>
+            <div role="button" tabindex="0" onClick="{{ openFeatured }}" style="position:relative; overflow:hidden; background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border); border-radius:var(--fl-radius-xl); padding:24px; box-shadow:var(--fl-border-inset-md), var(--fl-shadow-elevated), var(--fl-glow-subtle); display:flex; flex-direction:column; gap:15px; cursor:pointer; transition:transform 260ms var(--fl-ease-out, ease-out);" style-active="transform:scale(0.985);">
+              <div aria-hidden="true" style="position:absolute; inset:0; z-index:0; pointer-events:none; background:radial-gradient(130% 100% at 84% 4%, rgba(191,143,79,0.14), transparent 58%);"></div>
+              <div aria-hidden="true" style="position:absolute; top:-48px; right:-42px; width:226px; height:226px; z-index:0; opacity:0.07; color:var(--fl-bronze-primary); pointer-events:none;">{{ flmMark }}</div>
+              <div style="position:relative; z-index:1; display:flex; align-items:center; gap:13px;">
+                <span style="width:46px; height:46px; flex:none; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border); background:var(--fl-icon-container-bg); box-shadow:var(--fl-glow-subtle); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);">{{ flmGlyph }}</span>
+                <div style="min-width:0;">
+                  <span style="display:block; font-size:10px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ flmKind }}</span>
+                  <span style="display:block; font-family:var(--fl-font-display); font-size:21px; font-weight:600; letter-spacing:-0.2px; line-height:1.1; color:var(--fl-text-primary); margin-top:3px;">{{ flmTitle }}</span>
+                </div>
+              </div>
+              <div style="position:relative; z-index:1; display:flex; gap:14px; padding-top:2px;">
+                <span style="width:2px; flex:none; background:linear-gradient(180deg, var(--fl-bronze-primary), transparent);"></span>
+                <span style="font-family:var(--fl-font-display); font-style:italic; font-size:16px; line-height:1.5; font-weight:500; color:var(--fl-bronze-bright); text-wrap:pretty;">{{ flmExcerpt }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ══ Chapter History + Timeline (visibility-gated) ══ -->
+          <sc-if value="{{ seeHistory }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:0 24px; display:flex; flex-direction:column; gap:12px;">
+              <div role="button" tabindex="0" onClick="{{ openChapterArchived }}" style="position:relative; overflow:hidden; background:var(--fl-surface-card); border:var(--fl-border-subtle); border-radius:var(--fl-radius-xl); padding:20px; box-shadow:var(--fl-border-inset), var(--fl-shadow-card); display:flex; flex-direction:column; gap:12px; cursor:pointer; transition:transform 260ms var(--fl-ease-out, ease-out);" style-active="transform:scale(0.985);">
+                <div style="display:flex; align-items:baseline; gap:10px;">
+                  <span style="font-family:var(--fl-font-display); font-size:20px; font-weight:600; letter-spacing:-0.2px; line-height:1.1; color:var(--fl-text-primary);">{{ caName }}</span>
+                  <span style="margin-left:auto; display:inline-flex; align-items:center; gap:6px; flex:none; font-size:10px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ icoSeal }}Sealed</span>
+                </div>
+                <span style="font-size:12px; font-weight:500; letter-spacing:0.5px; color:var(--fl-text-secondary);">{{ caRange }}</span>
+                <div style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--fl-text-secondary);">{{ icoCheck }}<span style="color:var(--fl-text-primary); font-weight:600;">{{ caGoal }}</span></div>
+                <div style="display:flex; gap:12px; padding:4px 0 2px;">
+                  <span style="width:2px; flex:none; background:linear-gradient(180deg, var(--fl-bronze-primary), transparent);"></span>
+                  <span style="font-family:var(--fl-font-display); font-style:italic; font-size:14.5px; line-height:1.5; color:var(--fl-bronze-bright); text-wrap:pretty;">{{ caExcerpt }}</span>
+                </div>
+                <div style="height:1px; background:var(--fl-bronze-border-subtle);"></div>
+                <span style="font-size:11px; font-weight:500; letter-spacing:0.6px; color:var(--fl-text-tertiary);">{{ caFooter }}</span>
+              </div>
+
+              <sc-for list="{{ historyCompact }}" as="c" hint-placeholder-count="1">
+                <div role="button" tabindex="0" onClick="{{ openChapterArchived }}" style="display:flex; align-items:center; gap:14px; padding:14px 6px; border-radius:var(--fl-radius-lg); cursor:pointer; transition:background 200ms var(--fl-ease-out, ease-out);" style-hover="background:var(--fl-hover-wash);">
+                  <span style="width:9px; height:9px; flex:none; transform:rotate(45deg); border:1px solid var(--fl-bronze-primary); background:var(--fl-bronze-tint);"></span>
+                  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                    <span style="font-family:var(--fl-font-display); font-size:15px; font-weight:600; letter-spacing:-0.1px; color:var(--fl-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ c.name }}</span>
+                    <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ c.meta }}</span>
+                  </div>
+                  <span style="flex:none; font-size:11.5px; font-weight:600; color:var(--fl-bronze-primary);">{{ c.goal }}</span>
+                </div>
+              </sc-for>
+
+              <sc-if value="{{ seeTimeline }}" hint-placeholder-val="{{ true }}">
+                <div style="padding-top:16px;">
+                  <span style="display:block; font-size:10px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-tertiary); padding:0 2px 4px;">Recent</span>
+                  <div style="display:flex; flex-direction:column; gap:1px; padding-top:4px;">
+                    <sc-for list="{{ timelineItems }}" as="it" hint-placeholder-count="3">
+                      <div style="display:flex; align-items:center; gap:12px; padding:9px 6px;">
+                        <span style="width:30px; height:30px; flex:none; border-radius:var(--fl-radius-round); display:flex; align-items:center; justify-content:center; border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); color:var(--fl-icon-bronze);">{{ it.glyph }}</span>
+                        <span style="flex:1; min-width:0; font-size:13.5px; font-weight:600; color:var(--fl-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ it.title }}</span>
+                        <span style="flex:none; font-size:11.5px; color:var(--fl-text-tertiary);">{{ it.date }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <!-- ══ Transformation + Photos (each visibility-gated) ══ -->
+          <sc-if value="{{ seeArchiveGroup }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:0 18px;">
+              <sc-if value="{{ seeTransformation }}" hint-placeholder-val="{{ false }}">
+                <div role="button" tabindex="0" onClick="{{ goXform }}" style="display:flex; align-items:center; gap:14px; padding:14px 8px; border-radius:var(--fl-radius-lg); cursor:pointer; transition:background 200ms var(--fl-ease-out, ease-out);" style-hover="background:var(--fl-hover-wash);">
+                  <span style="width:40px; height:40px; flex:none; border-radius:var(--fl-radius-round); display:flex; align-items:center; justify-content:center; border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); color:var(--fl-icon-bronze);">{{ icoXform }}</span>
+                  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                    <span style="font-size:15px; font-weight:600; color:var(--fl-text-primary);">Transformation</span>
+                    <span style="font-size:11.5px; color:var(--fl-text-tertiary);">Physique &amp; progress footage</span>
+                  </div>
+                  <span style="flex:none; font-size:12.5px; font-weight:600; color:var(--fl-bronze-primary);">{{ transformCount }} entries</span>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 5l7 7-7 7"></path></svg>
+                </div>
+              </sc-if>
+              <sc-if value="{{ seeBothArchive }}" hint-placeholder-val="{{ false }}">
+                <div style="height:1px; background:var(--fl-bronze-border-subtle); margin:0 8px;"></div>
+              </sc-if>
+              <sc-if value="{{ seePhotos }}" hint-placeholder-val="{{ false }}">
+                <div role="button" tabindex="0" onClick="{{ goPhotos }}" style="display:flex; align-items:center; gap:14px; padding:14px 8px; border-radius:var(--fl-radius-lg); cursor:pointer; transition:background 200ms var(--fl-ease-out, ease-out);" style-hover="background:var(--fl-hover-wash);">
+                  <span style="width:40px; height:40px; flex:none; border-radius:var(--fl-radius-round); display:flex; align-items:center; justify-content:center; border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); color:var(--fl-icon-bronze);">{{ icoPhoto }}</span>
+                  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                    <span style="font-size:15px; font-weight:600; color:var(--fl-text-primary);">Photos</span>
+                    <span style="font-size:11.5px; color:var(--fl-text-tertiary);">Every chapter, one archive</span>
+                  </div>
+                  <span style="flex:none; font-size:12.5px; font-weight:600; color:var(--fl-bronze-primary);">{{ photosCount }} photos</span>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 5l7 7-7 7"></path></svg>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <!-- ══ Accomplishments (visibility-gated) ══ -->
+          <sc-if value="{{ seeAccomplishments }}" hint-placeholder-val="{{ true }}">
+            <div>
+              <div style="padding:0 24px;">
+                <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); padding:0 2px 2px;">Accomplishments</span>
+              </div>
+              <div class="fl-strip" style="display:flex; gap:12px; padding:8px 24px 4px; overflow-x:auto;">
+                <sc-for list="{{ accomplishments }}" as="a" hint-placeholder-count="3">
+                  <div role="button" tabindex="0" onClick="{{ a.onOpen }}" style="position:relative; width:184px; height:252px; flex:none; border-radius:var(--fl-radius-lg); overflow:hidden; border:1px solid var(--fl-bronze-border-subtle); background:linear-gradient(160deg, var(--fl-bronze-tint), transparent 58%), var(--fl-surface-card); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); cursor:{{ a.cursor }}; display:flex; flex-direction:column; justify-content:space-between; padding:16px 15px; transition:transform 240ms var(--fl-ease-out, ease-out);" style-active="transform:scale(0.97);">
+                    <sc-if value="{{ a.hasPhoto }}" hint-placeholder-val="{{ false }}">
+                      {{ a.photoBgEl }}
+                      <span aria-hidden="true" style="position:absolute; inset:0; z-index:1; background:linear-gradient(180deg, rgba(8,11,14,0.45) 0%, transparent 30%, transparent 42%, rgba(8,11,14,0.94) 100%);"></span>
+                    </sc-if>
+                    <div style="position:relative; z-index:2; display:flex; align-items:center; justify-content:space-between;">
+                      <span style="flex:none; width:34px; height:34px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6 .5-4.6 4 1.4 6-5.4-3.2-5.4 3.2 1.4-6-4.6-4 6-.5z"></path></svg></span>
+                    </div>
+                    <div style="position:relative; z-index:2; display:flex; flex-direction:column; gap:6px;">
+                      <span style="font-family:var(--fl-font-display); font-size:18px; font-weight:600; letter-spacing:-0.2px; line-height:1.14; color:var(--fl-text-primary); text-wrap:pretty;">{{ a.title }}</span>
+                      <span style="font-size:11px; font-weight:600; letter-spacing:0.3px; color:var(--fl-bronze-bright);">{{ a.sub }}</span>
+                      <sc-if value="{{ a.hasChapter }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px; color:var(--fl-text-tertiary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ a.chapterLabel }}</span></sc-if>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- ══ Honors (always shown) ══ -->
+          <div>
+            <div style="padding:0 24px;">
+              <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); padding:0 2px 2px;">Honors</span>
+            </div>
+            <div class="fl-strip" style="display:flex; gap:18px; padding:10px 24px 6px; overflow-x:auto;">
+              <sc-for list="{{ honors }}" as="hon" hint-placeholder-count="4">
+                <div role="button" tabindex="0" onClick="{{ hon.onOpen }}" style="flex:none; cursor:pointer;">
+                  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Insignia" variant="honor" size="lg" artwork="{{ hon.artwork }}" label="{{ hon.label }}" sublabel="{{ hon.date }}" hint-size="96px,120px"></x-import>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <!-- ══ Trophy Case ══ -->
+          <div style="padding:24px 24px 0;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; padding:0 2px 12px;">
+              <span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Trophy Case</span>
+              <span role="button" tabindex="0" onClick="{{ viewTrophies }}" style="display:inline-flex; align-items:center; gap:3px; font-size:11px; font-weight:600; color:var(--fl-bronze-primary); cursor:pointer;">View all<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></span>
+            </div>
+            <div role="button" tabindex="0" onClick="{{ viewTrophies }}" style="display:flex; align-items:stretch; border-radius:var(--fl-radius-lg); background:linear-gradient(180deg, rgba(191,143,79,0.08), transparent 62%), var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); overflow:hidden; cursor:pointer;" style-active="transform:scale(0.99);">
+              <sc-for list="{{ trophyTally }}" as="m" hint-placeholder-count="3">
+                <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; padding:15px 6px; border-right:{{ m.br }};">
+                  <span style="display:inline-flex;">{{ m.glyph }}</span>
+                  <span style="font-family:var(--fl-font-display); font-size:22px; font-weight:700; color:{{ m.color }}; line-height:1;">{{ m.count }}</span>
+                  <span style="font-size:8.5px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ m.label }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <!-- ══ Training Stats (visibility-gated) ══ -->
+          <sc-if value="{{ seeStats }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:0 24px;">
+              <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); padding:0 2px 12px;">Training Stats</span>
+              <div style="display:grid; grid-template-columns:repeat(3, 1fr);">
+                <sc-for list="{{ stats }}" as="st" hint-placeholder-count="3">
+                  <div style="display:flex; flex-direction:column; align-items:center; gap:9px; text-align:center; padding:14px 8px; border-right:{{ st.br }};">
+                    <span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ st.icon }}</span>
+                    <span style="font-family:var(--fl-font-display); font-size:26px; font-weight:700; letter-spacing:-0.5px; color:var(--fl-text-stat); line-height:1;">{{ st.value }}</span>
+                    <span style="font-size:9.5px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-text-bronze-label); line-height:1.35;">{{ st.label }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- Footer -->
+          <div style="padding:6px 24px 40px; display:flex; flex-direction:column; align-items:center; gap:15px;">
+            <div style="display:flex; align-items:center; gap:14px; width:100%; max-width:220px;">
+              <span style="flex:1; height:1px; background:linear-gradient(90deg, transparent, var(--fl-bronze-border));"></span>
+              <span style="width:6px; height:6px; flex:none; transform:rotate(45deg); border:1px solid var(--fl-bronze-primary);"></span>
+              <span style="flex:1; height:1px; background:linear-gradient(90deg, var(--fl-bronze-border), transparent);"></span>
+            </div>
+            <span style="font-size:11px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ handle }} · {{ since }}</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Overflow options sheet -->
+      <sc-if value="{{ optionsOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ closeOptions }}" style="position:absolute; inset:0; z-index:60; display:flex; align-items:flex-end; justify-content:center; background:var(--fl-overlay-dark); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); animation:flFade 200ms var(--fl-ease-out, ease-out) both;">
+          <div onClick="{{ stopProp }}" style="width:100%; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-bottom:none; border-radius:var(--fl-radius-xl) var(--fl-radius-xl) 0 0; box-shadow:var(--fl-border-inset-md), var(--fl-shadow-ambient); padding:0 16px 24px; animation:flSheetUp 320ms var(--fl-ease-out, ease-out) both;">
+            <div style="display:flex; justify-content:center; padding:12px 0 8px;"><span style="width:40px; height:4px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-500);"></span></div>
+            <sc-for list="{{ optionRows }}" as="o" hint-placeholder-count="4">
+              <button type="button" onClick="{{ o.action }}" style="width:100%; display:flex; align-items:center; gap:14px; padding:15px 8px; background:transparent; border:none; border-top:{{ o.divider }}; cursor:pointer; text-align:left;">
+                <span style="display:inline-flex; flex:none; color:{{ o.color }};">{{ o.icon }}</span>
+                <span style="font-size:15px; color:{{ o.color }};">{{ o.label }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- Toast -->
+      <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; left:50%; bottom:34px; transform:translateX(-50%); z-index:80; display:inline-flex; align-items:center; gap:11px; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-radius:var(--fl-radius-pill); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-float); padding:13px 20px; color:var(--fl-text-primary); font-size:14px; font-weight:500; white-space:nowrap; animation:flRise 260ms var(--fl-ease-out, ease-out) both;">
+          <span style="display:inline-flex; color:var(--fl-icon-bronze); flex:none;">{{ toastIcon }}</span>{{ toastMsg }}
+        </div>
+      </sc-if>
+
+    </sc-if>
+
+    <!-- Forged grain -->
+    <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.08; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868},&quot;relationship&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Stranger&quot;,&quot;Following&quot;,&quot;Requested&quot;,&quot;Friend&quot;],&quot;default&quot;:&quot;Stranger&quot;,&quot;tsType&quot;:&quot;'Stranger' | 'Following' | 'Requested' | 'Friend'&quot;,&quot;section&quot;:&quot;Viewer&quot;,&quot;label&quot;:&quot;Friend / follow status&quot;},&quot;inSquad&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Viewer&quot;,&quot;label&quot;:&quot;Squad member&quot;},&quot;challengeState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;None&quot;,&quot;Sent&quot;,&quot;Active&quot;,&quot;Completed&quot;],&quot;default&quot;:&quot;None&quot;,&quot;tsType&quot;:&quot;'None' | 'Sent' | 'Active' | 'Completed'&quot;,&quot;section&quot;:&quot;Challenge&quot;,&quot;label&quot;:&quot;Challenge state&quot;}}">
+class Component extends DCLogic {
+  state = { ready: false, openHonor: null, optionsOpen: false, toastMsg: null, toastIconId: 'legacy', vis: null, friendState: 'none', followState: false, challenge: 'none' };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      const vz = typeof window !== 'undefined' && window.ForgeVisibility;
+      const ac = typeof window !== 'undefined' && window.ForgeAccomplishments;
+      const lp = typeof window !== 'undefined' && window.ForgeLegacyPins;
+      if (r && ns && fs && vz && ac && lp) {
+        this.setState({ ready: true, vis: window.ForgeVisibility.get() });
+        this._syncRel();
+        if (!this._off) this._off = window.ForgeVisibility.subscribe((v) => this.setState({ vis: v }));
+        this._onFocus = () => { if (window.ForgeVisibility) this.setState({ vis: window.ForgeVisibility.get() }); };
+        window.addEventListener('focus', this._onFocus);
+      } else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+  componentDidUpdate(prevProps) {
+    if (prevProps && (prevProps.relationship !== this.props.relationship || prevProps.challengeState !== this.props.challengeState)) this._syncRel();
+  }
+  componentWillUnmount() {
+    if (this._t) clearTimeout(this._t);
+    if (this._toastT) clearTimeout(this._toastT);
+    if (this._off) this._off();
+    if (this._onFocus) window.removeEventListener('focus', this._onFocus);
+    if (this.scrollEl && this._onScroll) this.scrollEl.removeEventListener('scroll', this._onScroll);
+  }
+
+  // Seed friend / follow chips from the viewer relationship.
+  _syncRel() {
+    let urlRel = null; try { urlRel = new URLSearchParams(location.search).get('rel'); } catch (e) {}
+    const rel = urlRel || (this.props && this.props.relationship) || 'Stranger';
+    const cs = String((this.props && this.props.challengeState) || 'None').toLowerCase();
+    this.setState({
+      friendState: rel === 'Friend' ? 'friends' : (rel === 'Requested' ? 'requested' : 'none'),
+      followState: rel === 'Following' || rel === 'Friend',
+      challenge: (cs === 'sent' || cs === 'active' || cs === 'completed') ? cs : 'none',
+    });
+  }
+
+  _toast(msg, iconId) {
+    if (this._toastT) clearTimeout(this._toastT);
+    this.setState({ toastMsg: msg, toastIconId: iconId || 'legacy' });
+    this._toastT = setTimeout(() => this.setState({ toastMsg: null }), 2400);
+  }
+
+  _attachScroll() {
+    if (!this.scrollEl || this._scrollBound) return;
+    this._scrollBound = true;
+    let ticking = false;
+    this._onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        const el = this.scrollEl; if (!el) return;
+        const y = el.scrollTop;
+        const p = Math.min(y / 220, 1);
+        if (this.heroEl) { this.heroEl.style.opacity = String(1 - p * 0.9); this.heroEl.style.transform = 'translateY(' + (-y * 0.12).toFixed(1) + 'px)'; }
+        if (this.portraitEl) { this.portraitEl.style.transform = 'scale(' + (1 - p * 0.24).toFixed(3) + ')'; this.portraitEl.style.transformOrigin = 'left center'; }
+        if (this.fadeEl) this.fadeEl.style.opacity = (p * 0.52).toFixed(3);
+      });
+    };
+    this.scrollEl.addEventListener('scroll', this._onScroll, { passive: true });
+  }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) {
+      return { ready: false, notReady: true };
+    }
+    const h = React.createElement;
+    if (!this._setScroll) {
+      this._setScroll = (el) => { if (el) { this.scrollEl = el; this._attachScroll(); } };
+      this._setHero = (el) => { if (el) this.heroEl = el; };
+      this._setPortrait = (el) => { if (el) this.portraitEl = el; };
+      this._setArtworkFade = (el) => { if (el) this.fadeEl = el; };
+    }
+    const FS = window.ForgeSymbols;
+    const NS = window.ForgeLegacyVisualFoundation_5368b2 || {};
+    const VZ = window.ForgeVisibility;
+    const ico = (id, size, sw) => FS.create(React, id, { size: size || 18, strokeWidth: sw || 1.7 });
+
+    // ── Rank seal (Foundation IV art — matches the badge) ──
+    const tier = { rim1: '#A57C4A', rim2: '#E7C98E', ring: 'rgba(231,201,142,0.98)', flame: '#E7C98E', glow: 0.9, badge: '4' };
+    const flamePath = 'M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z';
+    const seal = h('svg', { width: 108, height: 108, viewBox: '0 0 140 140', role: 'img', 'aria-label': 'Rank seal' },
+      h('defs', null,
+        h('radialGradient', { id: 'ppSealDisc', cx: '50%', cy: '34%', r: '76%' },
+          h('stop', { offset: '0%', stopColor: '#26262C' }), h('stop', { offset: '46%', stopColor: '#16181B' }), h('stop', { offset: '100%', stopColor: '#090B0D' })),
+        h('linearGradient', { id: 'ppSealBevel', x1: '0', y1: '0', x2: '0', y2: '1' },
+          h('stop', { offset: '0%', stopColor: '#DDB578' }), h('stop', { offset: '18%', stopColor: tier.rim2 }), h('stop', { offset: '55%', stopColor: tier.rim1 }), h('stop', { offset: '100%', stopColor: '#463526' })),
+        h('radialGradient', { id: 'ppSealFlame', cx: '50%', cy: '50%', r: '50%' },
+          h('stop', { offset: '0%', stopColor: 'rgba(205,160,99,' + tier.glow + ')' }), h('stop', { offset: '60%', stopColor: 'rgba(191,143,79,0.14)' }), h('stop', { offset: '100%', stopColor: 'rgba(191,143,79,0)' }))),
+      h('circle', { cx: 70, cy: 70, r: 67, fill: 'none', stroke: tier.rim1, strokeWidth: 5, strokeDasharray: '1.6 3.2' }),
+      h('circle', { cx: 70, cy: 70, r: 63, fill: 'none', stroke: '#2A2016', strokeWidth: 8 }),
+      h('circle', { cx: 70, cy: 70, r: 63, fill: 'none', stroke: 'url(#ppSealBevel)', strokeWidth: 6 }),
+      h('path', { d: 'M40 26 A56 56 0 0 1 100 26', fill: 'none', stroke: 'rgba(240,220,180,0.42)', strokeWidth: 2, strokeLinecap: 'round', opacity: 0.5 }),
+      h('circle', { cx: 70, cy: 70, r: 53, fill: 'url(#ppSealDisc)' }),
+      h('circle', { cx: 70, cy: 70, r: 53, fill: 'none', stroke: tier.ring, strokeWidth: 1.5 }),
+      h('circle', { cx: 70, cy: 66, r: 34, fill: 'url(#ppSealFlame)', style: { mixBlendMode: 'screen' } }),
+      h('g', { transform: 'translate(70,73) scale(2.4) translate(-12,-12)', fill: tier.flame }, h('path', { d: flamePath })),
+      h('circle', { cx: 70, cy: 70, r: 53, fill: 'none', stroke: 'rgba(0,0,0,0.5)', strokeWidth: 18, style: { mixBlendMode: 'multiply' } }));
+
+    // ── Viewer relationship — three independent axes: friend · follow · squad ──
+    const isFriend = this.state.friendState === 'friends';
+    const isRequested = this.state.friendState === 'requested';
+    const isFollowing = !!this.state.followState;
+    const inSquad = !!(this.props && this.props.inSquad) || (function () { try { return new URLSearchParams(location.search).get('squad') === '1'; } catch (e) { return false; } })();
+
+    // Visibility clearance takes the highest relationship (friend > squad-mate > everyone else).
+    const effRel = isFriend ? 'Friend' : (inSquad ? 'Squad-mate' : 'Stranger');
+    let isSelf = false; try { const q = new URLSearchParams(location.search); isSelf = q.get('self') === '1' || q.get('id') === 'self' || q.get('id') === 'me'; } catch (e) {}
+    const vis = this.state.vis || (VZ ? VZ.get() : {});
+    const see = (key) => VZ ? VZ.canSee(vis[key], effRel) : true;
+    const seeChapter = see('chapter');
+    const seeHistory = see('history');
+    const seeTimeline = see('timeline');
+    const seeTransformation = see('transformation');
+    const seePhotos = see('photos');
+    const seeAccomplishments = isSelf || see('accomplishments');
+    const seeStats = see('stats');
+
+    // ── Profile subject (name/id can be passed in; rest is representative mock) ──
+    // Self reads canonical identity (ForgeUser); other athletes are representative,
+    // with the recurring rival standardized to "Marcus Vale" (never "Vance").
+    const FU = window.ForgeUser ? window.ForgeUser.get() : null;
+    let name = 'Marcus Vale', subjId = 'marcus';
+    if (isSelf && FU) { name = FU.name; subjId = 'self'; }
+    try { const q = new URLSearchParams(location.search); name = q.get('name') || name; subjId = q.get('id') || subjId; } catch (e) {}
+    const firstName = name.split(' ')[0];
+    const handle = (isSelf && FU) ? ('@' + FU.handle) : ('@' + name.toLowerCase().replace(/[^a-z0-9]+/g, ''));
+
+    // ── Action bar (relationship-aware) ──
+    const iconWrap = (node) => h('span', { style: { display: 'inline-flex', color: 'currentColor' } }, node);
+    const svg = (d, sw) => h('svg', { width: 17, height: 17, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw || 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, (Array.isArray(d) ? d : [d]).map((p, i) => h('path', { key: i, d: p })));
+    const checkIcon = iconWrap(svg('M5 12.5l4 4 10-10', 2.2));
+    const addFriendIcon = iconWrap(svg(['M9 8a3.2 3.2 0 1 0 0-6.4A3.2 3.2 0 0 0 9 8z', 'M3.2 19a5.8 5.8 0 0 1 11.6 0', 'M18 7v6', 'M15 10h6']));
+    const clockIcon = iconWrap(svg(['M12 7v5l3 2', 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z']));
+    const followIcon = iconWrap(svg('M12 5v14M5 12h14', 2.1));
+    const followingIcon = iconWrap(svg('M5 12.5l4 4 10-10', 2.2));
+    const challengeIcon = iconWrap(FS.create(React, 'swords', { size: 17, strokeWidth: 1.9 }));
+    const resultsIcon = iconWrap(FS.create(React, 'trophy', { size: 17, strokeWidth: 1.8 }));
+    const trainWithIcon = iconWrap(FS.create(React, 'dumbbell', { size: 17, strokeWidth: 1.8 }));
+
+    // ── Relationship metadata chips (completed = bronze; pending = neutral) ──
+    const chipBase = 'display:inline-flex; align-items:center; gap:7px; padding:6px 12px; border-radius:var(--fl-radius-pill);';
+    const bronzeChip = chipBase + ' border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-bronze-tint); color:var(--fl-bronze-bright);';
+    const pendingChip = chipBase + ' border:1px dashed var(--fl-charcoal-500); background:transparent; color:var(--fl-text-secondary); cursor:pointer;';
+    const chkSm = h('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.4, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M5 12.5l4 4 10-10' }));
+    const clkSm = h('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M12 7.5V12l3 2' }), h('path', { d: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z' }));
+    const metaChips = [];
+    if (inSquad) metaChips.push({ key: 'squad', icon: ico('squads', 14, 1.8), label: 'In your squad \u00B7 Iron Vigil', chipStyle: bronzeChip, role: null, tab: null, onClick: null });
+    if (isFriend) metaChips.push({ key: 'friends', icon: chkSm, label: 'Friends', chipStyle: bronzeChip, role: null, tab: null, onClick: null });
+    if (isFollowing) metaChips.push({ key: 'following', icon: chkSm, label: 'Following', chipStyle: bronzeChip, role: null, tab: null, onClick: null });
+    if (isRequested) metaChips.push({ key: 'pending', icon: clkSm, label: 'Friend Request Sent', chipStyle: pendingChip, role: 'button', tab: 0, onClick: () => { this.setState({ friendState: 'none' }); this._toast('Request canceled', 'legacy'); } });
+
+    // ── Available actions (large buttons) — reserved for what the viewer can still do ──
+    // Challenge is earned: it only appears once a real connection exists (friend or squad-mate),
+    // and becomes the primary action there — the whole point of visiting a teammate's profile.
+    const canChallenge = isFriend || inSquad;
+    const canAddFriend = !isFriend && !isRequested;
+    const canFollow = !isFollowing && !isFriend && !inSquad;
+    const actions = [];
+    if (canChallenge) {
+      // One slot, four states — the label / emphasis change, the layout never does.
+      const cs = this.state.challenge || 'none';
+      if (cs === 'sent') actions.push({ key: 'challenge', variant: 'secondary', label: 'Challenge Sent', icon: clockIcon, action: () => { this.setState({ challenge: 'none' }); this._toast('Challenge canceled', 'legacy'); } });
+      else if (cs === 'active') actions.push({ key: 'challenge', variant: 'primary', label: 'Active Competition', icon: challengeIcon, action: () => { window.location.href = 'Forge%20Challenge.dc.html'; } });
+      else if (cs === 'completed') actions.push({ key: 'challenge', variant: 'secondary', label: 'View Results', icon: resultsIcon, action: () => { window.location.href = 'Forge%20Podium%20Reveal.dc.html'; } });
+      else actions.push({ key: 'challenge', variant: 'primary', label: 'Challenge', icon: challengeIcon, action: () => { try { localStorage.setItem('forge_challenge_ctx_v1', JSON.stringify({ launchContext: 'From Profile', opponentName: name })); } catch (e) {} window.location.href = 'Forge%20Create%20Challenge.dc.html'; } });
+    }
+    if (canChallenge) actions.push({ key: 'trainwith', variant: 'secondary', label: 'Train With', icon: trainWithIcon, action: () => { window.location.href = 'Forge%20Programs%20Catalog.dc.html?train=1&with=' + encodeURIComponent(subjId); } });
+    if (!canChallenge && canAddFriend) actions.push({ key: 'add', variant: 'primary', label: 'Add Friend', icon: addFriendIcon, action: () => { this.setState({ friendState: 'requested' }); this._toast('Friend request sent', 'squads'); } });
+    if (!canChallenge && canFollow) actions.push({ key: 'follow', variant: 'secondary', label: 'Follow', icon: followIcon, action: () => { this.setState({ followState: true }); this._toast('Following ' + firstName, 'legacy'); } });
+
+    // A lone CTA gets a calmer 78%-wide centered footprint; two actions split the row full-width.
+    const singleAction = actions.length === 1;
+    const actionRowStyle = 'display:flex; gap:10px; padding:18px 22px 4px; animation:flRise 950ms var(--fl-ease-out, ease-out) both; animation-delay:220ms;' + (singleAction ? ' justify-content:center;' : '');
+    actions.forEach(function (a) { a.wrapStyle = singleAction ? 'flex:0 1 78%; display:flex;' : 'flex:1; display:flex;'; });
+
+    // ── Overflow options ──
+    const optIcon = (node, color) => h('span', { style: { display: 'inline-flex', color: color || 'var(--fl-icon-bronze)' } }, node);
+    const shareGlyph = svg(['M8.5 13.5l7-4M8.5 10.5l7 4', 'M6 14.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z', 'M18 8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z', 'M18 20.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z'], 1.8);
+    const inviteGlyph = svg(['M9 8a3.2 3.2 0 1 0 0-6.4A3.2 3.2 0 0 0 9 8z', 'M3.2 19a5.8 5.8 0 0 1 11.6 0', 'M18 7v6', 'M15 10h6'], 1.8);
+    const challengeGlyph = svg(['M6 4l4 8-4 8', 'M18 4l-4 8 4 8', 'M4 12h16'], 1.8);
+    const reportGlyph = svg(['M5 21V4', 'M5 5h11l-1.6 3.2L16 12H5'], 1.8);
+    const blockGlyph = svg(['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z', 'M5.6 5.6l12.8 12.8'], 1.9);
+    const divT = '1px solid var(--fl-charcoal-700)';
+    const optionRows = [
+      { key: 'invite', label: 'Invite to a Squad', icon: optIcon(inviteGlyph), color: 'var(--fl-text-primary)', divider: 'none', action: () => { this.setState({ optionsOpen: false }); this._toast('Invite ' + firstName + ' to a squad', 'squads'); } },
+      { key: 'share', label: 'Share Profile', icon: optIcon(shareGlyph), color: 'var(--fl-text-primary)', divider: divT, action: () => { this.setState({ optionsOpen: false }); this._toast('Profile link copied', 'legacy'); } },
+      { key: 'report', label: 'Report', icon: optIcon(reportGlyph), color: 'var(--fl-text-primary)', divider: divT, action: () => { this.setState({ optionsOpen: false }); this._toast('Reported', 'legacy'); } },
+      { key: 'block', label: 'Block ' + firstName, icon: optIcon(blockGlyph, 'var(--fl-red-muted)'), color: 'var(--fl-red-muted)', divider: divT, action: () => { this.setState({ optionsOpen: false }); this._toast('Blocked', 'legacy'); } },
+    ];
+    const overflowBtn = h('button', {
+      type: 'button', 'aria-label': 'More options', onClick: () => this.setState({ optionsOpen: true }),
+      style: { width: '40px', height: '40px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--fl-icon-bronze)', borderRadius: 'var(--fl-radius-round)' },
+    }, h('svg', { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'currentColor' }, h('circle', { cx: 5, cy: 12, r: 1.8 }), h('circle', { cx: 12, cy: 12, r: 1.8 }), h('circle', { cx: 19, cy: 12, r: 1.8 })));
+
+    // ── Highlights (curated museum) ──
+    // Self view mirrors the athlete's own Pinned Legacy curation (shared forge.legacy.pins
+    // via forge-legacy-pins.js), so editing pins on the Legacy hub reflects here. Other
+    // athletes show a representative, read-only highlight set.
+    const FLP = window.ForgeLegacyPins;
+    let pinned;
+    if (isSelf && FLP) {
+      pinned = FLP.resolve(FLP.read()).map((c) => Object.assign({}, c, { glyph: c.icon ? ico(c.icon, 30, 1.7) : null }));
+    } else {
+      pinned = [
+        { kind: 'Transformation', title: '16 Weeks Out', isPhoto: true, isEmblem: false, isVideo: false, mediaId: 'pp-pin-1' },
+        { kind: 'Accomplishment', title: 'Deadlift 495', isPhoto: true, isEmblem: false, isVideo: true, mediaId: 'pp-pin-2' },
+        { kind: 'Honor', title: 'The Relentless', isPhoto: false, isEmblem: true, glyph: ico('laurel', 30, 1.7) },
+        { kind: 'Chapter', title: 'Ironclad', isPhoto: false, isEmblem: true, glyph: ico('chapter-seal', 30, 1.7) },
+      ];
+    }
+    const PIN_ROUTE = { Transformation: 'Forge%20Transformation.dc.html', Accomplishment: 'Forge%20Accomplishments.dc.html', Honor: 'Forge%20Honors%20Hub.dc.html', Chapter: 'Forge%20Chapter%20Detail.dc.html' };
+    pinned.forEach((p) => { p.open = () => { window.location.href = PIN_ROUTE[p.kind] || 'Forge%20Legacy%20Timeline.dc.html'; }; });
+
+    // My Standard — self view reflects the athlete's own editable creed (forge.legacy.standard).
+    const SELF_STD_DEFAULT = 'Show up before I feel like it. Leave nothing in the tank. The person I\u2019m building doesn\u2019t negotiate with comfort.';
+    let selfStandard = 'Discipline is remembering what you want most, not what you want now. Show up on the days it would be reasonable not to.';
+    if (isSelf) { try { const s = window.localStorage.getItem('forge.legacy.standard'); selfStandard = (s != null && s.trim() !== '') ? s : SELF_STD_DEFAULT; } catch (e) { selfStandard = SELF_STD_DEFAULT; } }
+
+    // ── Featured Legacy Moment ──
+    const flmGlyph = ico('chapter-seal', 23, 1.7);
+    const flmMark = ico('banner', 226, 1.2);
+
+    // ── Chapter history + timeline ──
+    const caName = 'Chapter III \u00B7 Ironclad';
+    const caRange = 'Aug 2025 \u2013 Feb 2026 \u00B7 6 months';
+    const caGoal = 'Deadlift 495 achieved';
+    const caExcerpt = 'I quit waiting to feel ready. Readiness turned out to be a thing you build.';
+    const caFooter = '54 workouts \u00B7 5 honors \u00B7 Sealed Feb 8';
+    const historyCompact = [
+      { name: 'Chapter II \u00B7 Groundwork', meta: 'Feb \u2013 Jul 2025 \u00B7 5 months', goal: '405 Squat \u2713' },
+    ];
+    const timelineRaw = [
+      { type: 'chapter-open', date: 'Feb 12', title: 'Began Chapter IV', subtitle: 'The Ascent' },
+      { type: 'chapter-seal', date: 'Feb 8', title: 'Sealed Chapter III', subtitle: 'Ironclad \u00B7 54 workouts' },
+      { type: 'honor', date: 'Jan 30', title: 'Earned \u201CThe Relentless\u201D', subtitle: '40 sessions \u00B7 no missed week' },
+    ];
+    const evGlyph = { 'chapter-open': 'book', 'chapter-seal': 'flame', 'honor': 'laurel' };
+    const timelineItems = timelineRaw.map((e, i) => ({ date: e.date, title: e.title, glyph: ico(evGlyph[e.type] || 'flame', 16, 1.7) }));
+
+    // ── Archive rows ──
+    const icoXform = h('svg', { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('rect', { x: 3, y: 5, width: 18, height: 14, rx: 2 }), h('path', { d: 'M10 9.5l5 2.5-5 2.5z', fill: 'currentColor', stroke: 'none' }));
+    const icoPhoto = h('svg', { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('rect', { x: 3.5, y: 6, width: 17, height: 13, rx: 2 }), h('circle', { cx: 12, cy: 12.5, r: 3 }), h('path', { d: 'M8 6l1.3-2h5.4L16 6' }));
+
+    // ── Accomplishments · featured top-3 (self reads the live store; other athletes show representative) ──
+    const acFmt = (iso) => { try { const d = new Date(iso + 'T00:00:00'); if (isNaN(d)) return iso; return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); } catch (e) { return iso; } };
+    let accomplishments;
+    if (isSelf && window.ForgeAccomplishments) {
+      const AC = window.ForgeAccomplishments;
+      const feat = AC.featured(); const base = (feat.length ? feat : AC.all()).slice(0, 3);
+      accomplishments = base.map((a) => {
+        const ch = a.chapterId ? AC.chapter(a.chapterId) : null;
+        return { title: a.name, sub: acFmt(a.date), hasPhoto: !!a.photo, photoBgEl: a.photo ? h('img', { src: a.photo, style: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 } }) : null, hasChapter: !!ch, chapterLabel: ch ? ch.label : '', cursor: 'pointer', onOpen: () => { window.location.href = 'Forge%20Accomplishments.dc.html?id=' + encodeURIComponent(a.id); } };
+      });
+    } else {
+      accomplishments = [
+        { title: 'Deadlift · 495 lb', sub: 'Feb 6, 2026', hasPhoto: false, photoBgEl: null, hasChapter: false, chapterLabel: '', cursor: 'default', onOpen: () => {} },
+        { title: 'Squat · 405 lb', sub: 'Jul 18, 2025', hasPhoto: false, photoBgEl: null, hasChapter: false, chapterLabel: '', cursor: 'default', onOpen: () => {} },
+        { title: '120 Days Consistent', sub: 'Jan 2, 2026', hasPhoto: false, photoBgEl: null, hasChapter: false, chapterLabel: '', cursor: 'default', onOpen: () => {} },
+      ];
+    }
+
+    // ── Honors ──
+    const HONORS = [
+      { artwork: ico('laurel', 30, 1.7), label: 'The Relentless', date: 'Jan 30' },
+      { artwork: ico('medal', 30, 1.7), label: 'Century', date: 'Sep 12' },
+      { artwork: ico('shield', 30, 1.7), label: 'First Iron', date: 'Jul 2024' },
+      { artwork: ico('spark', 30, 1.7), label: 'Ironwill', date: 'Nov 2025' },
+    ];
+    const honors = HONORS.map((hn, i) => ({ artwork: hn.artwork, label: hn.label, date: hn.date, onOpen: () => this._toast(hn.label, 'legacy') }));
+
+    // ── Trophy Case ──
+    const crownG = (c, s) => h('svg', { width: s, height: s, viewBox: '0 0 24 24', fill: c }, h('path', { d: 'M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z' }));
+    const medalG = (c, s) => h('svg', { width: s, height: s, viewBox: '0 0 24 24', fill: 'none', stroke: c, strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('circle', { cx: 12, cy: 14.5, r: 4.8 }), h('circle', { cx: 12, cy: 14.5, r: 1.8 }), h('path', { d: 'M8.8 10.4L6 4h4l2 3.2L14 4h4l-2.8 6.4' }));
+    const trophyTally = [
+      { key: 'g', glyph: crownG('#CDA063', 16), count: 3, label: 'Gold', color: 'var(--fl-bronze-bright)', br: '1px solid var(--fl-charcoal-700)' },
+      { key: 's', glyph: medalG('#C7CAD0', 17), count: 4, label: 'Silver', color: '#C7CAD0', br: '1px solid var(--fl-charcoal-700)' },
+      { key: 'b', glyph: medalG('#C08A54', 17), count: 2, label: 'Bronze', color: '#C08A54', br: 'none' },
+    ];
+    const viewTrophies = () => { window.location.href = 'Forge%20Trophy%20Case.dc.html'; };
+
+    // ── Stats ──
+    const statIco = (id) => ico(id, 20, 1.7);
+    const stats = [
+      { value: '412', label: 'Total Workouts', icon: statIco('dumbbell'), br: '1px solid var(--fl-charcoal-700)' },
+      { value: '18', label: 'Day Streak', icon: statIco('flame'), br: '1px solid var(--fl-charcoal-700)' },
+      { value: '11', label: 'Records Set', icon: statIco('trophy'), br: 'none' },
+    ];
+
+    return {
+      ready: true, notReady: false,
+      setScroll: this._setScroll, setHero: this._setHero, setPortrait: this._setPortrait, setArtworkFade: this._setArtworkFade,
+      goBack: () => { (function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})() ? window.history.back() : (window.location.href = 'Squads%20Hub.dc.html'); },
+      overflowBtn,
+      stopProp: (e) => { if (e && e.stopPropagation) e.stopPropagation(); },
+
+      // identity
+      seal, badgeTier: tier.badge,
+      name, handle,
+      rankLabel: (isSelf && FU) ? (FU.rankFull.replace(/\s*·\s*/, ' ') + ' · The Hearth') : 'Foundation IV · The Hearth',
+      identitySub: 'Strength Athlete',
+      since: (isSelf && FU) ? FU.joinedLabel : 'Forging since 2022',
+      // relationship metadata + available actions
+      hasMetaChips: metaChips.length > 0, metaChips,
+      hasActions: actions.length > 0, actions, actionRowStyle,
+      optionsOpen: this.state.optionsOpen, closeOptions: () => this.setState({ optionsOpen: false }), optionRows,
+
+      // standard — self view reflects the athlete's own editable creed (forge.legacy.standard)
+      myStandard: selfStandard,
+
+      // current chapter
+      seeChapter,
+      acName: 'The Ascent',
+      acGoalLabel: 'Deadlift 500 lb', acGoalValue: '470 / 500 lb', acGoalDone: 470, acGoalMax: 500, acBegan: 'Started Feb 12',
+      icoCal: h('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('rect', { x: 4, y: 5, width: 16, height: 16, rx: 2 }), h('path', { d: 'M4 9h16M8 3v4M16 3v4' })),
+
+      // highlights
+      pinned,
+
+      // featured
+      flmGlyph, flmMark, flmKind: 'Chapter Sealed', flmTitle: 'Ironclad',
+      openFeatured: () => { window.location.href = 'Forge%20Chapter%20Detail.dc.html'; },
+      openChapterArchived: () => { try { window.localStorage.setItem('forge.chapter.state', 'archived'); } catch (e) {} window.location.href = 'Forge%20Chapter%20Detail.dc.html'; },
+      goXform: () => { window.location.href = 'Forge%20Transformation.dc.html'; },
+      goPhotos: () => { window.location.href = 'Forge%20Photos%20Gallery.dc.html'; },
+      flmExcerpt: '\u201CThe chapter that taught me consistency beats intensity. Every time.\u201D',
+
+      // history + timeline
+      seeHistory, caName, caRange, caGoal, caExcerpt, caFooter,
+      icoSeal: ico('chapter-seal', 13, 1.7),
+      icoCheck: h('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'var(--fl-icon-bronze)', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M5 12.5l4.5 4.5L19 6.5' })),
+      historyCompact, seeTimeline, timelineItems,
+
+      // archive
+      seeTransformation, seePhotos,
+      seeArchiveGroup: seeTransformation || seePhotos,
+      seeBothArchive: seeTransformation && seePhotos,
+      transformCount: '11', photosCount: '18', icoXform, icoPhoto,
+
+      // accomplishments
+      seeAccomplishments, accomplishments,
+
+      // honors
+      honors,
+      trophyTally, viewTrophies,
+
+      // stats
+      seeStats, stats,
+
+      // toast
+      toastOpen: !!this.state.toastMsg, toastMsg: this.state.toastMsg || '', toastIcon: ico(this.state.toastIconId || 'legacy', 18, 1.7),
+    };
+  }
+}
+</script>
+</body>
+</html>

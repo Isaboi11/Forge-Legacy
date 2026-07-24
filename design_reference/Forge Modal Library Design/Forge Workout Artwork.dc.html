@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&amp;display=swap">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+  <script src="image-slot.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+    ::selection { background: rgba(191,143,79,0.28); }
+    /* Theme the drop-slot for the dark ground (component defaults are for light bg) */
+    image-slot::part(ring) { border-color: var(--fl-bronze-border); }
+    image-slot::part(empty) { color: var(--fl-text-tertiary); }
+    image-slot::part(frame) { background: rgba(191,143,79,0.025); }
+    /* The workout-push.png placement treatment — faint, screen-blended, radial-faded, off-center. Applied to the filled art only, so empty slots stay visible/fillable. */
+    image-slot::part(image) { opacity:0.85; mix-blend-mode:screen; -webkit-mask-image:radial-gradient(140% 125% at 72% 42%, #000 40%, transparent 82%); mask-image:radial-gradient(140% 125% at 72% 42%, #000 40%, transparent 82%); }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0.001ms !important; } }
+  </style>
+</helmet>
+
+<div style="min-height:100vh; padding:56px 32px 110px;">
+  <div style="max-width:1180px; margin:0 auto;">
+
+    <!-- ============ HEADER ============ -->
+    <div style="display:flex; flex-direction:column; gap:14px; margin-bottom:32px;">
+      <span style="font-size:12px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:var(--fl-bronze-primary);">Forge Legacy · Design System</span>
+      <h1 style="margin:0; font-family:var(--fl-font-display); font-size:46px; font-weight:700; letter-spacing:0.4px;">Workout Artwork Library</h1>
+      <p style="margin:0; max-width:640px; font-size:15px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">Hand-drawn anatomical studies that sit behind workout cards — burnished bronze linework on matte black, carved from shadow. Drop an illustration onto any slot: it takes the placement treatment automatically, stays subtle behind the UI, and persists.</p>
+      <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:2px;">
+        <span style="padding:5px 11px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-bronze-border-subtle); font-size:11px; letter-spacing:0.3px; color:var(--fl-text-tertiary);">Single subject</span>
+        <span style="padding:5px 11px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-bronze-border-subtle); font-size:11px; letter-spacing:0.3px; color:var(--fl-text-tertiary);">Three-quarter body</span>
+        <span style="padding:5px 11px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-bronze-border-subtle); font-size:11px; letter-spacing:0.3px; color:var(--fl-text-tertiary);">Off-center silhouette</span>
+        <span style="padding:5px 11px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-bronze-border-subtle); font-size:11px; letter-spacing:0.3px; color:var(--fl-text-tertiary);">Large negative space</span>
+        <span style="padding:5px 11px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-bronze-border-subtle); font-size:11px; letter-spacing:0.3px; color:var(--fl-text-tertiary);">Low-contrast bronze</span>
+        <span style="padding:5px 11px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-bronze-border-subtle); font-size:11px; letter-spacing:0.3px; color:var(--fl-text-tertiary);">No borders or framing</span>
+      </div>
+    </div>
+
+    <!-- ============ IN CONTEXT ============ -->
+    <span style="display:block; font-size:10px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-tertiary); margin-bottom:12px;">In Context</span>
+    <div style="display:grid; grid-template-columns:minmax(0,380px) 1fr; gap:22px; align-items:center; margin-bottom:44px;">
+      <div style="position:relative; overflow:hidden; background:var(--fl-card-hero-wash), var(--fl-bg-primary); border:1px solid var(--fl-bronze-border); border-radius:var(--fl-radius-xl); padding:20px 22px; box-shadow:var(--fl-shadow-card-hero); min-height:150px; display:flex; flex-direction:column; justify-content:center;">
+        <img src="assets/workout-push.png" alt="" aria-hidden="true" style="position:absolute; top:-34px; right:-98px; height:calc(100% + 92px); width:auto; object-fit:contain; object-position:right top; opacity:0.72; mix-blend-mode:screen; -webkit-mask-image:radial-gradient(115% 130% at 96% 44%, #000 52%, transparent 82%); mask-image:radial-gradient(115% 130% at 96% 44%, #000 52%, transparent 82%); pointer-events:none; z-index:0;">
+        <div style="position:relative; z-index:1;">
+          <span style="font-size:10.5px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">Today’s Workout</span>
+          <div style="font-family:var(--fl-font-display); font-size:30px; font-weight:600; letter-spacing:-0.3px; line-height:1.02; margin-top:6px;">Push Day A</div>
+          <div style="font-size:14px; color:var(--fl-text-secondary); margin-top:6px;">Chest · Shoulders</div>
+        </div>
+      </div>
+      <p style="margin:0; max-width:440px; font-size:14px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">This is the only piece drawn so far — <span style="color:var(--fl-text-primary);">workout-push.png</span> — shown behind the real Today’s Workout card. Faint, screen-blended, masked to fade off the right edge, never touching the text. <span style="color:var(--fl-text-primary);">Every slot below applies this exact treatment</span> the moment you drop art in.</p>
+    </div>
+
+    <div style="height:1px; background:var(--fl-bronze-border-subtle); margin-bottom:8px;"></div>
+    <div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:36px;">
+      <span style="font-size:13px; color:var(--fl-text-secondary);">The library — <span style="color:var(--fl-bronze-primary); font-weight:600;">{{ total }}</span> composition slots across six categories. Drop a PNG/JPEG/WebP onto any slot.</span>
+      <span style="font-size:12px; color:var(--fl-text-tertiary);">Multiple compositions per family for daily variety.</span>
+    </div>
+
+    <!-- ============ TAXONOMY ============ -->
+    <sc-for list="{{ categories }}" as="c" hint-placeholder-count="5">
+      <section style="margin-bottom:48px;">
+        <div style="display:flex; align-items:baseline; gap:12px; margin-bottom:22px; padding-bottom:12px; border-bottom:1px solid var(--fl-bronze-border-subtle);">
+          <h2 style="margin:0; font-family:var(--fl-font-display); font-size:26px; font-weight:700; letter-spacing:0.3px; color:var(--fl-text-primary);">{{ c.cat }}</h2>
+          <span style="font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ c.count }} slots</span>
+        </div>
+
+        <sc-for list="{{ c.fams }}" as="f" hint-placeholder-count="4">
+          <div style="margin-bottom:28px;">
+            <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-bronze-primary); margin-bottom:13px;">{{ f.fam }}</span>
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(188px, 1fr)); gap:14px;">
+              <sc-for list="{{ f.items }}" as="it" hint-placeholder-count="3">
+                <div style="position:relative; min-height:152px; border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); background:var(--fl-bg-primary); overflow:hidden; box-shadow:var(--fl-shadow-card-soft);">
+                  <image-slot id="art-{{ it.slug }}" src="{{ it.src }}" fit="cover" placeholder="Drop illustration" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+                  <div style="position:absolute; left:0; right:0; bottom:0; z-index:2; padding:22px 12px 11px; pointer-events:none; background:linear-gradient(0deg, rgba(6,9,12,0.9) 15%, transparent);">
+                    <span style="font-size:12.5px; font-weight:600; letter-spacing:0.2px; color:var(--fl-text-primary);">{{ it.name }}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </section>
+    </sc-for>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    const comp = (n) => ['Composition I', 'Composition II', 'Composition III'].slice(0, n);
+
+    const TAX = [
+      { cat: 'Strength', fams: [
+        { fam: 'Push', items: ['Bench Press', 'Incline Press', 'Overhead Press', 'Dumbbell Press', 'Dips'] },
+        { fam: 'Pull', items: ['Pull-Up', 'Barbell Row', 'Cable Row', 'Lat Pulldown'] },
+        { fam: 'Legs', items: ['Back Squat', 'Front Squat', 'Romanian Deadlift', 'Walking Lunge', 'Leg Press'] },
+        { fam: 'Upper Body', items: comp(3) },
+        { fam: 'Lower Body', items: comp(3) },
+        { fam: 'Full Body', items: comp(3) },
+        { fam: 'Olympic Lifting', items: comp(3) },
+        { fam: 'Powerlifting', items: comp(3) },
+        { fam: 'Functional Strength', items: comp(3) },
+      ]},
+      { cat: 'Cardio', fams: [
+        { fam: 'Running', items: ['Sprint', 'Distance Run', 'Trail Running'] },
+        { fam: 'Walking', items: comp(3) },
+        { fam: 'Cycling', items: comp(3) },
+        { fam: 'Swimming', items: comp(3) },
+        { fam: 'Rowing', items: comp(3) },
+        { fam: 'Stair Climber', items: comp(2) },
+        { fam: 'Jump Rope', items: comp(2) },
+      ]},
+      { cat: 'Performance', fams: [
+        { fam: 'HIIT', items: comp(3) },
+        { fam: 'Circuit Training', items: comp(3) },
+        { fam: 'Athletic Conditioning', items: comp(3) },
+        { fam: 'Explosive Training', items: comp(3) },
+      ]},
+      { cat: 'Combat', fams: [
+        { fam: 'Boxing', items: comp(3) },
+        { fam: 'Kickboxing', items: comp(3) },
+        { fam: 'MMA', items: comp(3) },
+      ]},
+      { cat: 'Recovery', fams: [
+        { fam: 'Stretching', items: comp(3) },
+        { fam: 'Mobility', items: comp(3) },
+        { fam: 'Yoga', items: comp(3) },
+        { fam: 'Foam Rolling', items: comp(2) },
+      ]},
+    ];
+
+    // The one illustration drawn so far — seeds its slot as the exemplar.
+    const SEED = { 'strength-push-bench-press': 'assets/workout-push.png' };
+
+    let total = 0;
+    const categories = TAX.map((c) => {
+      let count = 0;
+      const fams = c.fams.map((f) => {
+        count += f.items.length;
+        return {
+          fam: f.fam,
+          items: f.items.map((name) => {
+            const s = slug(c.cat) + '-' + slug(f.fam) + '-' + slug(name);
+            return { name: name, slug: s, src: SEED[s] || '' };
+          }),
+        };
+      });
+      total += count;
+      return { cat: c.cat, count: count, fams: fams };
+    });
+
+    return { categories: categories, total: total };
+  }
+}
+</script>
+</body>
+</html>

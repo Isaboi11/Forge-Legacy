@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<script src="forge-theme.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  @keyframes crRise { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform:none; } }
+  @keyframes crCrown { from { opacity:0; transform:translateY(10px) scale(0.97); } to { opacity:0.52; transform:translateY(0) scale(1); } }
+  @keyframes crGlow { 0%,100% { box-shadow:var(--fl-border-inset), var(--fl-shadow-card), 0 0 14px rgba(191,143,79,0.16); } 50% { box-shadow:var(--fl-border-inset), var(--fl-shadow-card), 0 0 24px rgba(191,143,79,0.30); } }
+  @keyframes crSeal { from { opacity:0; transform:scale(0.9); } to { opacity:1; transform:scale(1); } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+<div data-screen-label="C-4 Challenge Results" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.3), rgba(5,5,5,0.3)), #050505 url('assets/forge-slate2.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column; font-family:var(--fl-font-sans);">
+
+  <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+      <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+    <div style="flex:none; position:relative; z-index:5;">
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="Final Results" on-back="{{ goBack }}" hint-size="100%,56px"></x-import>
+    </div>
+
+    <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:0 16px 30px;">
+
+      <!-- ═══ WINNER HERO ═══ -->
+      <div style="position:relative; overflow:hidden; margin:0 -16px; padding:14px 24px 28px; background:radial-gradient(185px 170px at 50% 96px, rgba(6,7,9,0.97), rgba(6,7,9,0.72) 54%, transparent 84%);">
+        <!-- forged championship crown, settled and fully revealed -->
+        <div aria-hidden="true" style="position:absolute; top:6px; left:50%; transform:translateX(-50%); width:308px; height:200px; z-index:0; pointer-events:none;">
+          <div style="position:absolute; inset:0; opacity:1; filter:brightness(1.18) contrast(1.05); background:url('assets/competition-crown.png') center top / contain no-repeat; -webkit-mask-image:linear-gradient(to bottom, #000 66%, transparent 100%); mask-image:linear-gradient(to bottom, #000 66%, transparent 100%); animation:crCrown 1000ms var(--fl-ease-out) both;"></div>
+        </div>
+        <!-- content -->
+        <div style="position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; text-align:center; padding-top:120px; animation:crRise 460ms var(--fl-ease-out) both;">
+          <span style="display:inline-flex; align-items:center; gap:8px; padding:5px 14px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border); font-size:10px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-bronze-bright);">Season Closed</span>
+          <span style="font-family:var(--fl-font-display); font-size:31px; font-weight:700; letter-spacing:-0.4px; color:var(--fl-text-primary); line-height:1.02; margin-top:16px;">{{ name }}</span>
+          <span style="display:block; margin-top:8px; font-size:11.5px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ seasonLabel }}</span>
+        </div>
+      </div>
+
+      <!-- ═══ CHAMPION SPOTLIGHT ═══ -->
+      <div style="position:relative; overflow:hidden; background:linear-gradient(180deg, rgba(191,143,79,0.16), rgba(191,143,79,0.03) 62%), var(--fl-surface-card); border:1px solid var(--fl-bronze-primary); border-radius:var(--fl-radius-lg); padding:22px 20px 20px; display:flex; flex-direction:column; align-items:center; text-align:center; animation:crGlow 5s ease-in-out infinite;">
+        <span style="font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--fl-bronze-bright);">Season Champion</span>
+        <div style="position:relative; width:96px; height:96px; margin-top:18px;">
+          <span style="position:absolute; inset:0; border-radius:var(--fl-radius-round); background:{{ champion.tint }}; border:2px solid var(--fl-bronze-primary); display:flex; align-items:center; justify-content:center; font-family:var(--fl-font-display); font-size:35px; font-weight:700; color:var(--fl-bronze-bright); box-shadow:inset 0 1px 5px rgba(0,0,0,0.55), 0 0 20px rgba(191,143,79,0.34);">{{ champion.initials }}</span>
+          <span style="position:absolute; top:-21px; left:50%; transform:translateX(-50%); display:inline-flex; color:var(--fl-bronze-bright); filter:drop-shadow(0 2px 4px rgba(0,0,0,0.7));"><svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z"></path></svg></span>
+        </div>
+        <span style="font-family:var(--fl-font-display); font-size:25px; font-weight:600; letter-spacing:-0.3px; color:var(--fl-text-primary); line-height:1.1; margin-top:14px;">{{ champion.name }}</span>
+        <div style="margin-top:9px;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.RankMarker" label="{{ champion.rankLabel }}" hint-size="auto,18px"></x-import></div>
+        <div style="display:flex; align-items:baseline; gap:7px; margin-top:8px;">
+          <span style="font-family:var(--fl-font-display); font-size:28px; font-weight:700; letter-spacing:-0.5px; color:var(--fl-bronze-bright); line-height:1;">{{ champion.score }}</span>
+          <span style="font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--fl-text-tertiary);">Workouts</span>
+        </div>
+        <span style="margin-top:12px; font-size:12.5px; color:var(--fl-text-secondary);">{{ champion.margin }}</span>
+      </div>
+
+      <!-- ═══ YOUR RESULT + HONOR ═══ -->
+      <div style="margin-top:14px; background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border); border-radius:var(--fl-radius-lg); box-shadow:0 0 9px rgba(191,143,79,0.09), var(--fl-shadow-card); overflow:hidden;">
+        <div style="display:flex; align-items:center; gap:16px; padding:18px 18px 16px;">
+          <div style="flex:none; position:relative; width:56px; height:56px; display:flex; align-items:center; justify-content:center;">
+            <span style="position:absolute; inset:0; border-radius:var(--fl-radius-round); background:radial-gradient(circle at 42% 34%, rgba(196,200,208,0.16), rgba(120,124,132,0.04)); border:1px solid rgba(185,188,194,0.5); box-shadow:inset 0 1px 4px rgba(0,0,0,0.5), 0 0 12px rgba(185,188,194,0.14);"></span>
+            <span style="position:relative; display:inline-flex;">{{ silverMedal }}</span>
+          </div>
+          <div style="width:1px; align-self:stretch; background:var(--fl-bronze-border-subtle);"></div>
+          <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:5px;">
+            <div style="display:flex; align-items:baseline; gap:10px;">
+              <span style="font-family:var(--fl-font-display); font-size:22px; font-weight:700; letter-spacing:-0.3px; color:var(--fl-text-primary); line-height:1;">{{ you.finishLabel }}</span>
+              <span style="font-size:10px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ you.placeLine }}</span>
+            </div>
+            <span style="font-size:12.5px; line-height:1.5; color:var(--fl-text-secondary);">{{ you.detail }}</span>
+          </div>
+        </div>
+        <!-- honor earned tie-in -->
+        <sc-if value="{{ you.earnedHonor }}" hint-placeholder-val="{{ true }}">
+          <div role="button" tabindex="0" onClick="{{ openHonor }}" style="display:flex; align-items:center; gap:14px; padding:14px 18px; border-top:1px solid var(--fl-bronze-border-subtle); background:linear-gradient(180deg, rgba(191,143,79,0.10), transparent 70%); cursor:pointer;" style-hover="background:linear-gradient(180deg, rgba(191,143,79,0.16), transparent 70%);">
+            <span style="width:42px; height:42px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border); color:var(--fl-bronze-bright); animation:crSeal 500ms var(--fl-ease-out) 300ms both;">{{ honorIcon }}</span>
+            <div style="flex:1; min-width:0;">
+              <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-bronze-bright);">Honor Earned</span>
+              <span style="display:block; font-size:14.5px; font-weight:600; color:var(--fl-text-primary); margin-top:2px;">{{ you.honorName }}</span>
+              <span style="display:block; font-size:11.5px; color:var(--fl-text-tertiary); margin-top:1px;">Added to your Legacy &middot; tap to view</span>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 6l6 6-6 6"></path></svg>
+          </div>
+        </sc-if>
+      </div>
+
+      <!-- ═══ SEASON SUMMARY ═══ -->
+      <div style="margin-top:26px; background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+        <div style="padding:13px 16px 11px; border-bottom:1px solid var(--fl-charcoal-700);">
+          <span style="font-size:12px; font-weight:700; letter-spacing:1.7px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Season Summary</span>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--fl-charcoal-700);">
+          <sc-for list="{{ summary }}" as="m" hint-placeholder-count="4">
+            <div style="display:flex; align-items:center; gap:12px; padding:14px 16px; background:var(--fl-surface-card);">
+              <span style="flex:none; display:inline-flex; color:var(--fl-bronze-bright);">{{ m.icon }}</span>
+              <div style="display:flex; flex-direction:column; min-width:0;">
+                <span style="font-family:var(--fl-font-display); font-size:31px; font-weight:700; letter-spacing:-0.8px; color:var(--fl-text-primary); line-height:1;">{{ m.value }}</span>
+                <span style="font-size:10.5px; font-weight:600; letter-spacing:0.4px; color:var(--fl-text-tertiary); margin-top:5px;">{{ m.label }}</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex; align-items:center; gap:9px; padding:12px 16px; border-top:1px solid var(--fl-charcoal-700);">
+          <span style="flex:none; display:inline-flex; color:var(--fl-text-tertiary);">{{ durationIcon }}</span>
+          <span style="font-size:12px; color:var(--fl-text-secondary);">{{ durationLine }}</span>
+        </div>
+      </div>
+
+      <!-- ═══ FINAL STANDINGS ═══ -->
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin:26px 4px 12px;">
+        <span style="font-size:12px; font-weight:700; letter-spacing:1.7px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Final Standings</span>
+        <span style="font-size:10.5px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ standingsMeta }}</span>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <sc-for list="{{ standings }}" as="s" hint-placeholder-count="5">
+          <div style="position:relative; display:flex; align-items:center; gap:13px; background:{{ s.rowBg }}; border:{{ s.rowBorder }}; border-radius:var(--fl-radius-lg); box-shadow:{{ s.rowShadow }}; padding:{{ s.rowPad }};">
+            <span style="width:26px; flex:none; display:inline-flex; align-items:center; justify-content:center;">{{ s.rankEl }}</span>
+            <div style="position:relative; width:40px; height:40px; flex:none;">
+              <span style="position:absolute; inset:0; border-radius:var(--fl-radius-round); background:{{ s.tint }}; border:1px solid {{ s.ring }}; display:flex; align-items:center; justify-content:center; font-family:var(--fl-font-display); font-size:14px; font-weight:700; color:var(--fl-bronze-bright); box-shadow:inset 0 1px 3px rgba(0,0,0,0.55);">{{ s.initials }}</span>
+            </div>
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+              <div style="display:flex; align-items:center; gap:7px; min-width:0;">
+                <span style="font-size:15px; font-weight:{{ s.nameWeight }}; color:{{ s.nameColor }}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ s.name }}</span>
+                {{ s.youPill }}
+              </div>
+              <span style="font-size:11.5px; color:{{ s.subColor }};">{{ s.sub }}</span>
+            </div>
+            <div style="flex:none; display:flex; flex-direction:column; align-items:flex-end; gap:1px;">
+              <span style="font-family:var(--fl-font-display); font-size:19px; font-weight:700; color:{{ s.scoreColor }}; line-height:1;">{{ s.score }}</span>
+              <span style="font-size:9px; font-weight:600; letter-spacing:0.9px; text-transform:uppercase; color:var(--fl-text-tertiary);">Wkts</span>
+              <span style="font-size:10.5px; color:var(--fl-text-tertiary); margin-top:4px;">{{ s.hours }}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- ═══ SEASON MOMENTS ═══ -->
+      <div style="margin-top:26px;">
+        <div style="margin:0 4px 12px;">
+          <span style="font-size:12px; font-weight:700; letter-spacing:1.7px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Season Moments</span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <sc-for list="{{ moments }}" as="mo" hint-placeholder-count="3">
+            <div style="display:flex; align-items:center; gap:13px; background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); padding:13px 15px;">
+              <span style="flex:none; width:38px; height:38px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); color:var(--fl-bronze-bright);">{{ mo.icon }}</span>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                <span style="font-size:9.5px; font-weight:700; letter-spacing:1.3px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ mo.title }}</span>
+                <span style="font-size:14.5px; font-weight:600; color:var(--fl-text-primary);">{{ mo.who }}</span>
+              </div>
+              <span style="flex:none; font-size:11.5px; line-height:1.35; color:var(--fl-text-tertiary); text-align:right; max-width:118px;">{{ mo.detail }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- ═══ LEGACY NOTE + CTA ═══ -->
+      <div style="margin-top:26px; display:flex; flex-direction:column; gap:14px;">
+        <div style="display:flex; align-items:center; gap:11px; padding:13px 15px; border-radius:var(--fl-radius-lg); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle);">
+          <span style="flex:none; display:inline-flex; color:var(--fl-bronze-bright);">{{ sealIcon }}</span>
+          <span style="font-size:12.5px; line-height:1.4; color:var(--fl-text-secondary);">This season has been recorded in your <span style="color:var(--fl-bronze-bright); font-weight:600;">Legacy</span>.</span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div role="button" tabindex="0" onClick="{{ rematch }}" style="display:flex; align-items:center; justify-content:center; gap:9px; padding:15px; border-radius:var(--fl-radius-lg); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-border); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); cursor:pointer; color:var(--fl-bronze-bright); font-size:14.5px; font-weight:600; letter-spacing:0.3px;" style-hover="background:var(--fl-bronze-fill-hover, var(--fl-bronze-fill));">{{ swordsIcon }}Start New Season</div>
+          <div role="button" tabindex="0" onClick="{{ goBack }}" style="display:flex; align-items:center; justify-content:center; padding:13px; border-radius:var(--fl-radius-lg); background:transparent; border:1px solid var(--fl-charcoal-600); cursor:pointer; color:var(--fl-text-secondary); font-size:13.5px; font-weight:600;" style-hover="background:var(--fl-hover-wash); color:var(--fl-text-primary);">Back to Squad</div>
+        </div>
+      </div>
+
+    </div>
+  </sc-if>
+
+  <div style="position:absolute; inset:0; pointer-events:none; z-index:90; opacity:0.09; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868}}">
+class Component extends DCLogic {
+  state = { ready: false };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      if (r && ns && fs) { this.setState({ ready: true }); }
+      else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); }
+
+  _tint(seed) {
+    const T = [
+      'radial-gradient(circle at 42% 32%, #4a3826, #1c1510)',
+      'radial-gradient(circle at 45% 35%, #34302a, #17130f)',
+      'radial-gradient(circle at 40% 30%, #40301f, #17120c)',
+      'radial-gradient(circle at 48% 38%, #2d2822, #141210)',
+      'radial-gradient(circle at 44% 34%, #453322, #1a140e)',
+    ];
+    return T[seed % T.length];
+  }
+  _initials(name) { return name.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase(); }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) { return { ready: false, notReady: true }; }
+    const h = React.createElement;
+    const FS = window.ForgeSymbols;
+    const crownGlyph = (size) => h('svg', { width: size || 15, height: size || 15, viewBox: '0 0 24 24', fill: 'currentColor' }, h('path', { d: 'M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z' }));
+    const medalGlyph = (color) => h('svg', { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('circle', { cx: 12, cy: 14.5, r: 4.8 }), h('circle', { cx: 12, cy: 14.5, r: 1.8 }), h('path', { d: 'M8.8 10.4L6 4h4l2 3.2L14 4h4l-2.8 6.4' }));
+
+    // Final order (workouts desc). Marcus champion; Ada = viewer, 2nd; top 3 earn a Forge League honor.
+    const FINAL = [
+      { name: 'Marcus Vale', workouts: 7, hours: '14h 12m', rank: 'Architect \u00b7 II', note: 'Led wire to wire' },
+      { name: 'Ada Ridge', you: true, workouts: 5, hours: '9h 48m', rank: 'Craftsman \u00b7 IV', note: 'Closed 3 in the final week' },
+      { name: 'Dana Cole', workouts: 4, hours: '8h 05m', rank: 'Craftsman \u00b7 I', note: 'Rest-day discipline' },
+      { name: 'Theo Brandt', workouts: 4, hours: '7h 30m', rank: 'Builder \u00b7 III', note: 'Faded late' },
+      { name: 'Lena Cross', workouts: 2, hours: '3h 20m', rank: 'Builder \u00b7 I', note: 'Off the pace' },
+    ];
+
+    const youPill = h('span', { style: { flex: 'none', display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 'var(--fl-radius-pill)', background: 'var(--fl-bronze-tint)', border: '1px solid var(--fl-bronze-border)', fontSize: '8.5px', fontWeight: 700, letterSpacing: '1.1px', textTransform: 'uppercase', color: 'var(--fl-bronze-bright)' } }, 'You');
+
+    const medalColors = ['#CDA063', '#B9BCC2', '#B07C4E']; // gold-bronze / steel-silver / copper
+    const standings = FINAL.map((s, i) => {
+      const podium = i <= 2;
+      let rowBg = 'var(--fl-surface-card)';
+      let rowBorder = '1px solid var(--fl-bronze-border-subtle)';
+      let rowShadow = 'var(--fl-shadow-card)';
+      if (i === 0) { rowBg = 'linear-gradient(180deg, rgba(191,143,79,0.10), rgba(191,143,79,0.02)), var(--fl-surface-card)'; rowBorder = '1px solid var(--fl-bronze-border)'; }
+      else if (podium) { rowBg = 'linear-gradient(180deg, rgba(191,143,79,0.05), transparent 60%), var(--fl-surface-card)'; }
+      else { rowBorder = '1px solid var(--fl-charcoal-700)'; }
+      if (s.you) { rowBorder = '1px solid var(--fl-bronze-primary)'; rowShadow = '0 0 0 1px var(--fl-bronze-primary), 0 0 18px rgba(191,143,79,0.22), var(--fl-shadow-card)'; }
+      return {
+        key: s.name,
+        rankEl: i === 0
+          ? h('span', { style: { display: 'inline-flex', color: 'var(--fl-bronze-bright)' } }, crownGlyph(17))
+          : (podium
+            ? h('span', { style: { display: 'inline-flex' } }, medalGlyph(medalColors[i]))
+            : h('span', { style: { fontFamily: 'var(--fl-font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--fl-text-tertiary)' } }, String(i + 1))),
+        initials: this._initials(s.name),
+        tint: this._tint(s.name.length + i),
+        ring: s.you ? 'var(--fl-bronze-primary)' : (i === 0 ? 'var(--fl-bronze-border)' : 'var(--fl-bronze-border-subtle)'),
+        name: s.name,
+        nameWeight: (s.you || i === 0) ? 700 : 500,
+        nameColor: s.you ? 'var(--fl-bronze-bright)' : 'var(--fl-text-primary)',
+        youPill: s.you ? youPill : '',
+        sub: s.note,
+        subColor: s.you ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)',
+        score: String(s.workouts),
+        scoreColor: i === 0 ? 'var(--fl-bronze-bright)' : 'var(--fl-text-stat)',
+        hours: s.hours,
+        rowPad: i === 0 ? '17px 15px' : '12px 15px',
+        rowBg, rowBorder, rowShadow,
+      };
+    });
+
+    const champ = FINAL[0];
+    const total = FINAL.reduce((a, s) => a + s.workouts, 0);
+    const goHonors = () => {
+      try {
+        localStorage.setItem('forge_honor_engrave_v1', JSON.stringify({
+          honorName: 'Forge League \u2014 Silver', tier: 'silver', challengeName: 'Forge League', seasonLabel: 'Season 3',
+          placeLabel: '2nd of 5', glyph: 'medal', rankAfter: 'Craftsman \u00b7 IV',
+        }));
+      } catch (e) {}
+      window.location.href = 'Forge%20Honor%20Engraved.dc.html';
+    };
+
+    return {
+      ready: true, notReady: false,
+      name: 'Forge League',
+      seasonLabel: 'Season 3 \u2022 Closed Jul 6',
+      champion: {
+        name: champ.name, initials: this._initials(champ.name),
+        tint: this._tint(champ.name.length), score: String(champ.workouts),
+        rankLabel: champ.rank,
+        margin: 'Finished 2 workouts ahead of Ada Ridge',
+      },
+      silverMedal: h('svg', { width: 26, height: 26, viewBox: '0 0 24 24', fill: 'none', stroke: '#C7CAD0', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('circle', { cx: 12, cy: 14.5, r: 4.8 }), h('circle', { cx: 12, cy: 14.5, r: 1.8 }), h('path', { d: 'M8.8 10.4L6 4h4l2 3.2L14 4h4l-2.8 6.4' })),
+      you: {
+        finishLabel: 'Silver Finish',
+        placeLine: '2nd of 5',
+        detail: 'You surged late, closing the gap to a single workout in the final week \u2014 but ran out of days.',
+        earnedHonor: true,
+        honorName: 'Forge League \u2014 Silver',
+      },
+      summary: [
+        { key: 'w', icon: FS.create(React, 'dumbbell', { size: 20, strokeWidth: 1.8 }), value: '22', label: 'Workouts logged' },
+        { key: 'a', icon: FS.create(React, 'squad', { size: 20, strokeWidth: 1.8 }), value: '5', label: 'Athletes competed' },
+        { key: 'p', icon: FS.create(React, 'spark', { size: 20, strokeWidth: 1.8 }), value: '18', label: 'PRs set' },
+        { key: 'h', icon: FS.create(React, 'laurel', { size: 20, strokeWidth: 1.6 }), value: '6', label: 'Honors earned' },
+      ],
+      durationIcon: FS.create(React, 'calendar', { size: 15, strokeWidth: 1.8 }),
+      durationLine: '28-day season \u00b7 opened Jun 8, closed Jul 6',
+      moments: [
+        { key: 'comeback', icon: FS.create(React, 'spark', { size: 18, strokeWidth: 1.8 }), title: 'Biggest Comeback', who: 'Ada Ridge', detail: '+3 workouts, final week' },
+        { key: 'consistent', icon: FS.create(React, 'shield', { size: 18, strokeWidth: 1.8 }), title: 'Most Consistent', who: 'Marcus Vale', detail: 'Never lost the lead' },
+        { key: 'streak', icon: FS.create(React, 'flame', { size: 18, strokeWidth: 1.8 }), title: 'Longest Streak', who: 'Dana Cole', detail: '8 consecutive days' },
+      ],
+      sealIcon: FS.create(React, 'book', { size: 16, strokeWidth: 1.8 }),
+      honorIcon: FS.create(React, 'laurel', { size: 22, strokeWidth: 1.6 }),
+      openHonor: goHonors,
+      standings,
+      standingsMeta: '5 Competitors',
+      swordsIcon: h('span', { style: { display: 'inline-flex', color: 'var(--fl-bronze-bright)' } }, FS.create(React, 'swords', { size: 17, strokeWidth: 1.9 })),
+      rematch: () => { window.location.href = 'Forge%20Challenge.dc.html'; },
+      goBack: () => { (function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})() ? window.history.back() : (window.location.href = 'Squad%20Detail.dc.html'); },
+    };
+  }
+}
+</script>
+</body>
+</html>

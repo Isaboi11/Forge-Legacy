@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<script src="forge-theme.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width:0; height:0; }
+  .fl-scroll { scrollbar-width: none; }
+  @keyframes ccRise { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform:none; } }
+  @keyframes ccGlow { 0%,100% { box-shadow:var(--fl-border-inset), var(--fl-shadow-card), 0 0 12px rgba(191,143,79,0.16); } 50% { box-shadow:var(--fl-border-inset), var(--fl-shadow-card), 0 0 20px rgba(191,143,79,0.30); } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+  <div data-screen-label="C-7 Current Champions" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.3), rgba(5,5,5,0.3)), #050505 url('assets/forge-slate2.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+        <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+      <!-- AppBar -->
+      <div style="height:56px; flex:none; display:flex; align-items:center; gap:6px; padding:0 8px; border-bottom:1px solid var(--fl-charcoal-600); position:relative; z-index:5;">
+        <button onClick="{{ back }}" aria-label="Back" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>
+        <span style="flex:1; font-size:13px; font-weight:700; letter-spacing:2.4px; text-transform:uppercase; color:var(--fl-text-primary);">Current Champions</span>
+        <span style="width:44px;"></span>
+      </div>
+
+      <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:20px 20px 34px; animation:ccRise 440ms var(--fl-ease-out, ease-out) both;">
+
+        <!-- Intro -->
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:18px;">
+          <div style="flex:1; min-width:0;">
+            <span style="display:block; font-family:var(--fl-font-display); font-size:22px; font-weight:600; letter-spacing:-0.3px; color:var(--fl-text-primary); line-height:1.1;">{{ squadName }}</span>
+            <span style="display:block; font-size:12px; color:var(--fl-text-tertiary); margin-top:3px;">{{ seasonLabel }}</span>
+          </div>
+          <span style="display:inline-flex; align-items:center; gap:6px; flex:none; padding:6px 12px; border-radius:var(--fl-radius-pill); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); font-size:10px; font-weight:600; letter-spacing:0.4px; color:var(--fl-text-tertiary); white-space:nowrap;"><span style="width:6px; height:6px; border-radius:50%; background:var(--fl-status-online); box-shadow:var(--fl-status-online-glow);"></span>{{ freshness }}</span>
+        </div>
+
+        <!-- Featured champion (the title that most recently changed hands) -->
+        <div role="button" tabindex="0" onClick="{{ featured.open }}" style="position:relative; overflow:hidden; display:flex; flex-direction:column; border-radius:var(--fl-radius-xl); border:1px solid var(--fl-bronze-primary); background:linear-gradient(180deg, rgba(191,143,79,0.14), rgba(191,143,79,0.03) 60%), var(--fl-surface-card); padding:18px 18px 16px; cursor:pointer; margin-bottom:14px; animation:ccGlow 4.5s ease-in-out infinite;" style-active="transform:scale(0.99);">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:15px;">
+            <span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ featured.typeIcon }}</span>
+            <span style="font-size:10px; font-weight:700; letter-spacing:1.3px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ featured.type }}</span>
+            <span style="margin-left:auto; display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border); font-size:9px; font-weight:700; letter-spacing:0.9px; text-transform:uppercase; color:var(--fl-bronze-bright); white-space:nowrap;"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z"></path></svg>{{ featured.flag }}</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:14px;">
+            <span style="position:relative; width:58px; height:58px; flex:none;">
+              <span style="position:absolute; inset:0; border-radius:50%; background:{{ featured.tint }}; border:1px solid var(--fl-bronze-primary); display:flex; align-items:center; justify-content:center; font-family:var(--fl-font-display); font-size:22px; font-weight:700; color:var(--fl-bronze-bright); box-shadow:inset 0 1px 4px rgba(0,0,0,0.55), 0 0 12px rgba(191,143,79,0.28);">{{ featured.initials }}</span>
+              <span style="position:absolute; top:-11px; left:50%; transform:translateX(-50%); display:inline-flex; color:var(--fl-bronze-bright); filter:drop-shadow(0 1px 2px rgba(0,0,0,0.7));"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z"></path></svg></span>
+            </span>
+            <div style="flex:1; min-width:0;">
+              <span style="display:block; font-family:var(--fl-font-display); font-size:24px; font-weight:600; letter-spacing:-0.3px; color:var(--fl-text-primary); line-height:1.1;">{{ featured.champion }}</span>
+              <div style="display:flex; align-items:baseline; gap:6px; margin-top:5px;">
+                <span style="font-family:var(--fl-font-display); font-size:24px; font-weight:700; letter-spacing:-0.4px; color:var(--fl-bronze-bright); line-height:1;">{{ featured.value }}</span>
+                <span style="font-size:11px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ featured.unit }}</span>
+              </div>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none; align-self:center;"><path d="M9 6l6 6-6 6"></path></svg>
+          </div>
+        </div>
+
+        <!-- Champion grid -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <sc-for list="{{ tiles }}" as="t" hint-placeholder-count="5">
+            <div role="button" tabindex="0" onClick="{{ t.open }}" style="position:relative; overflow:hidden; display:flex; flex-direction:column; border-radius:var(--fl-radius-xl); border:1px solid var(--fl-bronze-border-subtle); background:linear-gradient(180deg, rgba(191,143,79,0.06), transparent 58%), var(--fl-surface-card); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); padding:15px 15px 14px; cursor:pointer; transition:transform 200ms var(--fl-ease-out, ease-out);" style-active="transform:scale(0.98);">
+              <div style="display:flex; align-items:center; gap:7px; margin-bottom:14px;">
+                <span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ t.typeIcon }}</span>
+                <span style="font-size:9px; font-weight:700; letter-spacing:1.1px; text-transform:uppercase; color:var(--fl-text-tertiary); line-height:1.2;">{{ t.type }}</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="position:relative; width:40px; height:40px; flex:none;">
+                  <span style="position:absolute; inset:0; border-radius:50%; background:{{ t.tint }}; border:1px solid var(--fl-bronze-border); display:flex; align-items:center; justify-content:center; font-family:var(--fl-font-display); font-size:15px; font-weight:700; color:var(--fl-bronze-bright); box-shadow:inset 0 1px 3px rgba(0,0,0,0.5);">{{ t.initials }}</span>
+                  <span style="position:absolute; top:-7px; left:50%; transform:translateX(-50%); display:inline-flex; color:var(--fl-bronze-bright); filter:drop-shadow(0 1px 2px rgba(0,0,0,0.6));"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z"></path></svg></span>
+                </span>
+                <div style="flex:1; min-width:0;">
+                  <span style="display:block; font-size:14px; font-weight:600; color:var(--fl-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ t.champion }}</span>
+                  <span style="display:block; font-size:10.5px; color:var(--fl-text-tertiary); margin-top:1px;">Champion</span>
+                </div>
+              </div>
+              <div style="margin-top:13px; padding-top:12px; border-top:1px solid var(--fl-charcoal-700); display:flex; align-items:baseline; gap:5px;">
+                <span style="font-family:var(--fl-font-display); font-size:20px; font-weight:700; letter-spacing:-0.3px; color:var(--fl-bronze-bright); line-height:1;">{{ t.value }}</span>
+                <span style="font-size:10px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ t.unit }}</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <p style="margin:20px 4px 0; font-size:11.5px; line-height:1.55; color:var(--fl-text-tertiary); text-wrap:pretty;">Champions are held until a squadmate takes the lead. Tap any title to see the full standings.</p>
+
+      </div>
+    </sc-if>
+
+    <!-- Standings sheet -->
+    <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ closeSheet }}" style="position:absolute; inset:0; z-index:70; display:flex; align-items:flex-end; justify-content:center; background:var(--fl-overlay-dark); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); animation:ccRise 220ms var(--fl-ease-out, ease-out) both;">
+        <div onClick="{{ stopProp }}" style="width:100%; max-height:82%; display:flex; flex-direction:column; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-bottom:none; border-radius:var(--fl-radius-xl) var(--fl-radius-xl) 0 0; box-shadow:var(--fl-border-inset-md), var(--fl-shadow-ambient);">
+          <div style="display:flex; justify-content:center; padding:10px 0 4px;"><span style="width:40px; height:4px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-500);"></span></div>
+          <div style="display:flex; align-items:center; gap:11px; padding:8px 22px 14px;">
+            <span style="width:38px; height:38px; flex:none; border-radius:var(--fl-radius-md); background:var(--fl-icon-container-bg); border:1px solid var(--fl-icon-container-border); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);">{{ sheetIcon }}</span>
+            <div style="flex:1; min-width:0;">
+              <span style="display:block; font-family:var(--fl-font-display); font-size:20px; font-weight:600; color:var(--fl-text-primary); line-height:1.1;">{{ sheetTitle }}</span>
+              <span style="display:block; font-size:11px; color:var(--fl-text-tertiary); margin-top:2px;">Current standings</span>
+            </div>
+          </div>
+          <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:0 18px 26px;">
+            <sc-for list="{{ standings }}" as="s" hint-placeholder-count="5">
+              <div style="display:flex; align-items:center; gap:13px; padding:12px 12px; border-radius:var(--fl-radius-lg); background:{{ s.rowBg }}; border:{{ s.rowBorder }}; margin-bottom:8px;">
+                <span style="width:24px; flex:none; display:inline-flex; align-items:center; justify-content:center; font-family:var(--fl-font-display); font-size:16px; font-weight:700; color:{{ s.rankColor }};">{{ s.rankEl }}</span>
+                <span style="width:34px; height:34px; flex:none; border-radius:50%; background:{{ s.tint }}; border:1px solid var(--fl-bronze-border-subtle); display:flex; align-items:center; justify-content:center; font-family:var(--fl-font-display); font-size:12px; font-weight:700; color:var(--fl-bronze-bright); box-shadow:inset 0 1px 3px rgba(0,0,0,0.5);">{{ s.initials }}</span>
+                <span style="flex:1; min-width:0; font-size:14.5px; font-weight:{{ s.nameWeight }}; color:var(--fl-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ s.name }}</span>
+                <div style="flex:none; text-align:right;">
+                  <span style="font-family:var(--fl-font-display); font-size:16px; font-weight:700; color:{{ s.valueColor }}; line-height:1;">{{ s.value }}</span>
+                  <span style="display:block; font-size:9px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; color:var(--fl-text-tertiary); margin-top:2px;">{{ s.unit }}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868}}">
+class Component extends DCLogic {
+  state = { ready: false, openType: null };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      if (r && ns && fs) { this.setState({ ready: true }); }
+      else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); }
+
+  back = () => { (function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})() ? window.history.back() : (window.location.href = 'Squad%20Detail.dc.html'); };
+
+  _tint(seed) {
+    const T = [
+      'radial-gradient(circle at 42% 32%, #4a3826, #1c1510)',
+      'radial-gradient(circle at 45% 35%, #34302a, #17130f)',
+      'radial-gradient(circle at 40% 30%, #40301f, #17120c)',
+      'radial-gradient(circle at 48% 38%, #2d2822, #141210)',
+      'radial-gradient(circle at 44% 34%, #453322, #1a140e)',
+    ];
+    return T[seed % T.length];
+  }
+  _initials(name) { return name.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase(); }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) { return { ready: false, notReady: true }; }
+    const h = React.createElement;
+    const TYPE_PATHS = {
+      'Most Workouts': ['M6.5 9v6', 'M17.5 9v6', 'M4 10.5v3', 'M20 10.5v3', 'M6.5 12h11'],
+      'Most Volume': ['M4 20V10', 'M9 20V4', 'M14 20v-8', 'M19 20v-5'],
+      'Most Duration': ['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z', 'M12 7.5V12l3 2'],
+      'Max Lift': ['M12 20V6', 'M6 12l6-6 6 6'],
+      'Most PRs': ['M12 3.4l2.1 4.7 5.1.5-3.8 3.4 1.1 5L12 14l-4.6 2.4 1.1-5-3.8-3.4 5.1-.5z'],
+      'Longest Streak': ['M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z'],
+    };
+    const typeIcon = (type, size) => {
+      const paths = TYPE_PATHS[type] || ['M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0'];
+      return h('svg', { width: size || 15, height: size || 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, paths.map((d, i) => h('path', { key: i, d })));
+    };
+
+    // Each title carries its full standings; champion is rank 1. "you" flags the viewer (Ada).
+    const DATA = [
+      { type: 'Most Volume', unit: 'lb', featured: true, flag: 'New leader \u00B7 3m ago',
+        standings: [ ['Ada Ridge', '86,400', true], ['Marcus Vale', '82,100'], ['Theo Brandt', '79,300'], ['Dana Cole', '61,200'], ['Lena Cross', '58,400'] ] },
+      { type: 'Most Workouts', unit: 'this month',
+        standings: [ ['Marcus Vale', '23'], ['Lena Cross', '21'], ['Theo Brandt', '19'], ['Ada Ridge', '18', true], ['Dana Cole', '16'] ] },
+      { type: 'Longest Streak', unit: 'days',
+        standings: [ ['Dana Cole', '41'], ['Ada Ridge', '38', true], ['Marcus Vale', '30'], ['Theo Brandt', '22'], ['Lena Cross', '14'] ] },
+      { type: 'Max Lift', unit: 'lb squat',
+        standings: [ ['Theo Brandt', '435'], ['Marcus Vale', '405'], ['Ada Ridge', '385', true], ['Dana Cole', '315'], ['Lena Cross', '245'] ] },
+      { type: 'Most PRs', unit: 'this season',
+        standings: [ ['Ada Ridge', '9', true], ['Theo Brandt', '7'], ['Marcus Vale', '6'], ['Dana Cole', '4'], ['Lena Cross', '3'] ] },
+      { type: 'Most Duration', unit: 'this month',
+        standings: [ ['Lena Cross', '38h'], ['Dana Cole', '31h'], ['Ada Ridge', '24h', true], ['Marcus Vale', '20h'], ['Theo Brandt', '18h'] ] },
+    ];
+
+    const open = (type) => () => this.setState({ openType: type });
+    const toCard = (d) => {
+      const champ = d.standings[0];
+      return {
+        key: d.type, type: d.type, typeIcon: typeIcon(d.type),
+        champion: champ[0], initials: this._initials(champ[0]),
+        tint: this._tint(champ[0].length + d.type.length),
+        value: champ[1], unit: d.unit, flag: d.flag,
+        open: open(d.type),
+      };
+    };
+
+    const featuredData = DATA.find((d) => d.featured);
+    const featured = toCard(featuredData);
+    const tiles = DATA.filter((d) => !d.featured).map(toCard);
+
+    // Standings sheet
+    const openData = this.state.openType ? DATA.find((d) => d.type === this.state.openType) : null;
+    const standings = openData ? openData.standings.map((row, i) => {
+      const [name, value, you] = row;
+      const leader = i === 0;
+      return {
+        key: name,
+        rankEl: leader
+          ? h('span', { style: { display: 'inline-flex', color: 'var(--fl-bronze-bright)' } }, h('svg', { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'currentColor' }, h('path', { d: 'M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z' })))
+          : String(i + 1),
+        rankColor: leader ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)',
+        initials: this._initials(name),
+        tint: this._tint(name.length + i),
+        name: you ? name + ' (You)' : name,
+        nameWeight: (leader || you) ? 700 : 500,
+        value, unit: openData.unit,
+        valueColor: leader ? 'var(--fl-bronze-bright)' : 'var(--fl-text-stat)',
+        rowBg: you ? 'var(--fl-bronze-tint)' : (leader ? 'linear-gradient(180deg, rgba(191,143,79,0.07), transparent 70%), var(--fl-surface-recessed)' : 'var(--fl-surface-recessed)'),
+        rowBorder: you ? '1px solid var(--fl-bronze-primary)' : (leader ? '1px solid var(--fl-bronze-border)' : '1px solid var(--fl-charcoal-700)'),
+      };
+    }) : [];
+
+    return {
+      ready: true, notReady: false,
+      back: this.back,
+      squadName: 'Iron Vigil',
+      seasonLabel: '6 active titles \u00B7 March season',
+      freshness: 'Updated 3m ago',
+      featured, tiles,
+      sheetOpen: !!openData,
+      sheetTitle: openData ? openData.type : '',
+      sheetIcon: openData ? typeIcon(openData.type, 19) : null,
+      standings,
+      closeSheet: () => this.setState({ openType: null }),
+      stopProp: (e) => { if (e && e.stopPropagation) e.stopPropagation(); },
+    };
+  }
+}
+</script>
+</body>
+</html>

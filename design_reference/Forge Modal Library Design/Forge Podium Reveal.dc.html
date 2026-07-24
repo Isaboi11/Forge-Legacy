@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  @keyframes pFade { from { opacity:0; } to { opacity:1; } }
+  @keyframes pRise { from { opacity:0; transform: translateY(14px); } to { opacity:1; transform:none; } }
+  @keyframes pCount { 0% { opacity:0; transform: translate(-50%,-50%) scale(1.7); } 24% { opacity:1; transform: translate(-50%,-50%) scale(1); } 78% { opacity:1; } 100% { opacity:0; transform: translate(-50%,-50%) scale(0.85); } }
+  @keyframes pPedestal { 0% { opacity:0; transform: scaleY(0.12); } 70% { opacity:1; } 100% { opacity:1; transform: scaleY(1); } }
+  @keyframes pDrop { 0% { opacity:0; transform: translateY(-58px); } 68% { opacity:1; transform: translateY(6px); } 84% { transform: translateY(-3px); } 100% { opacity:1; transform: translateY(0); } }
+  @keyframes pSlam { 0% { opacity:0; transform: translateY(-96px) scale(1.16); } 56% { opacity:1; } 74% { transform: translateY(9px) scale(0.96); } 88% { transform: translateY(-2px) scale(1.02); } 100% { opacity:1; transform: translateY(0) scale(1); } }
+  @keyframes pFlash { 0%,40% { opacity:0; transform: translate(-50%,-50%) scale(0.4); } 54% { opacity:0.9; transform: translate(-50%,-50%) scale(1.05); } 100% { opacity:0; transform: translate(-50%,-50%) scale(1.7); } }
+  @keyframes pCrown { 0% { opacity:0; transform: translateX(-50%) translateY(-42px) scale(0.8); } 52% { opacity:1; transform: translateX(-50%) translateY(3px) scale(1.0); } 68% { transform: translateX(-50%) translateY(-5px) scale(1.03); } 84% { transform: translateX(-50%) translateY(2px) scale(1.0); } 100% { opacity:1; transform: translateX(-50%) translateY(0) scale(1); } }
+  @keyframes pGlow { 0%,100% { opacity:0.4; } 50% { opacity:0.85; } }
+  @keyframes pEmber { 0% { opacity:0; transform: translateY(0) scale(1); } 30% { opacity:0.9; } 100% { opacity:0; transform: translateY(-120px) translateX(var(--dx,0)) scale(0.5); } }
+  @keyframes pEngrave { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+  @keyframes pZoom { from { transform: scale(1.075); } to { transform: scale(1); } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.001ms !important; } .p-ember, .p-flash { display:none !important; } }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+<div data-screen-label="Podium Reveal" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(6,7,8,0.42), rgba(4,5,6,0.6)), #060708 url('assets/forge-bg-2.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column; font-family:var(--fl-font-sans);">
+
+  <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+      <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+    <!-- ambient forge glow from above -->
+    <div aria-hidden="true" style="position:absolute; top:-14%; left:50%; transform:translateX(-50%); width:380px; height:380px; border-radius:50%; background:radial-gradient(circle, rgba(191,143,79,0.18), transparent 66%); pointer-events:none; z-index:0; animation:pGlow 5.5s ease-in-out infinite;"></div>
+
+    <!-- skip -->
+    <div style="flex:none; position:relative; z-index:6; height:52px; display:flex; align-items:center; justify-content:space-between; padding:0 10px 0 20px;">
+      <span style="font-size:10px; font-weight:700; letter-spacing:2.2px; text-transform:uppercase; color:var(--fl-text-bronze-label); animation:pFade 800ms var(--fl-ease-out) both;">{{ eyebrow }}</span>
+      <button type="button" onClick="{{ skip }}" style="display:inline-flex; align-items:center; gap:5px; padding:8px 12px; background:transparent; border:none; cursor:pointer; color:var(--fl-text-tertiary); font-size:12px; font-weight:600;">Skip<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 5l7 7-7 7M13 5l7 7-7 7"></path></svg></button>
+    </div>
+
+    <!-- reveal headline -->
+    <div style="flex:none; position:relative; z-index:4; text-align:center; padding:6px 24px 0;">
+      <span style="display:block; font-size:10px; font-weight:700; letter-spacing:2.4px; text-transform:uppercase; color:var(--fl-bronze-bright); opacity:0; animation:pFade 700ms var(--fl-ease-out) 4850ms both;">Season Champion</span>
+      <span style="display:inline-block; font-family:var(--fl-font-display); font-size:26px; font-weight:700; letter-spacing:-0.4px; color:var(--fl-text-primary); line-height:1.1; margin-top:5px; animation:pEngrave 780ms var(--fl-ease-out) 5050ms both;">{{ championName }}</span>
+    </div>
+
+    <!-- stage -->
+    <div style="flex:1; min-height:0; position:relative; z-index:2; display:flex; align-items:flex-end; justify-content:center; padding:0 14px 30px;">
+
+      <!-- countdown -->
+      <sc-for list="{{ countdown }}" as="c" hint-placeholder-count="0">
+        <span aria-hidden="true" style="position:absolute; top:42%; left:50%; font-family:var(--fl-font-display); font-size:96px; font-weight:700; color:var(--fl-bronze-bright); text-shadow:0 4px 20px rgba(0,0,0,0.7); opacity:0; animation:pCount 620ms var(--fl-ease-out) {{ c.delay }} both;">{{ c.n }}</span>
+      </sc-for>
+
+      <!-- victory glow behind champion (large ambient halo) -->
+      <span aria-hidden="true" style="position:absolute; bottom:96px; left:50%; transform:translateX(-50%); width:300px; height:300px; border-radius:50%; background:radial-gradient(circle, rgba(191,143,79,0.32), rgba(191,143,79,0.1) 42%, transparent 68%); opacity:0; animation:pFade 1000ms var(--fl-ease-out) 4100ms both, pGlow 4s ease-in-out 4600ms infinite; pointer-events:none;"></span>
+
+      <!-- podium row (subtle camera zoom-out) -->
+      <div style="position:relative; width:100%; max-width:360px; display:flex; align-items:flex-end; justify-content:center; gap:8px; transform-origin:center bottom; animation:pZoom 5200ms var(--fl-ease-out) both;">
+        <sc-for list="{{ podium }}" as="p" hint-placeholder-count="3">
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center;">
+            <!-- athlete -->
+            <div style="position:relative; display:flex; flex-direction:column; align-items:center; {{ p.dropStyle }}">
+              <sc-if value="{{ p.isChamp }}" hint-placeholder-val="{{ false }}">
+                <span style="position:absolute; top:-30px; left:50%; color:var(--fl-bronze-bright); filter:drop-shadow(0 2px 5px rgba(0,0,0,0.7)); opacity:0; animation:pCrown 720ms var(--fl-ease-out) 4650ms both;"><svg width="42" height="42" viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z"></path></svg></span>
+              </sc-if>
+              <sc-if value="{{ p.isChamp }}" hint-placeholder-val="{{ false }}">
+                <span aria-hidden="true" class="p-flash" style="position:absolute; top:{{ p.flashTop }}; left:50%; width:170px; height:170px; border-radius:50%; background:radial-gradient(circle, rgba(230,202,156,0.55), transparent 66%); opacity:0; animation:pFlash 900ms var(--fl-ease-out) 4100ms both;"></span>
+              </sc-if>
+              <span style="position:relative; width:{{ p.avatarPx }}; height:{{ p.avatarPx }}; border-radius:var(--fl-radius-round); background:{{ p.tint }}; border:2px solid {{ p.ring }}; display:flex; align-items:center; justify-content:center; font-family:var(--fl-font-display); font-weight:700; font-size:{{ p.avatarFs }}; color:var(--fl-bronze-bright); box-shadow:inset 0 1px 5px rgba(0,0,0,0.55), {{ p.avatarGlow }};">{{ p.initials }}</span>
+              <span style="display:inline-flex; margin-top:9px;">{{ p.medal }}</span>
+              <span style="display:flex; align-items:center; gap:5px; margin-top:7px; max-width:108px;"><span style="font-size:{{ p.nameFs }}; font-weight:{{ p.nameWeight }}; color:{{ p.nameColor }}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ p.name }}</span>{{ p.youPill }}</span>
+              <span style="margin-top:2px; font-size:11px; font-weight:600; color:var(--fl-text-tertiary);">{{ p.scoreLine }}</span>
+            </div>
+            <!-- pedestal -->
+            <div style="width:100%; height:{{ p.pedestalH }}; margin-top:12px; border-radius:6px 6px 0 0; background:{{ p.pedestalBg }}; border:1px solid {{ p.pedestalBorder }}; border-bottom:none; box-shadow:{{ p.pedestalShadow }}; display:flex; align-items:flex-start; justify-content:center; padding-top:12px; transform-origin:bottom; {{ p.pedestalStyle }}">
+              <span style="font-family:var(--fl-font-display); font-size:{{ p.rankFs }}; font-weight:700; color:{{ p.rankColor }}; line-height:1;">{{ p.rank }}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- embers rising near champion -->
+      <span aria-hidden="true" class="p-ember" style="--dx:-14px; position:absolute; bottom:150px; left:47%; width:3px; height:3px; border-radius:50%; background:var(--fl-bronze-bright); box-shadow:0 0 6px 1px rgba(205,160,99,0.7); animation:pEmber 2600ms ease-out 4400ms infinite;"></span>
+      <span aria-hidden="true" class="p-ember" style="--dx:16px; position:absolute; bottom:160px; left:53%; width:2.5px; height:2.5px; border-radius:50%; background:var(--fl-bronze-bright); box-shadow:0 0 6px 1px rgba(205,160,99,0.6); animation:pEmber 3000ms ease-out 4800ms infinite;"></span>
+      <span aria-hidden="true" class="p-ember" style="--dx:4px; position:absolute; bottom:145px; left:50%; width:2px; height:2px; border-radius:50%; background:var(--fl-bronze-bright); box-shadow:0 0 5px 1px rgba(205,160,99,0.6); animation:pEmber 3400ms ease-out 5200ms infinite;"></span>
+    </div>
+
+    <!-- CTA -->
+    <div style="flex:none; position:relative; z-index:5; padding:0 24px calc(26px + env(safe-area-inset-bottom)); opacity:0; animation:pRise 800ms var(--fl-ease-out) 5400ms both;">
+      <button type="button" onClick="{{ seeResults }}" style="display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:16px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-metal-border, var(--fl-bronze-border)); color:var(--fl-bronze-bright); font-size:15px; font-weight:700; letter-spacing:0.3px; cursor:pointer; box-shadow:var(--fl-glow-subtle), var(--fl-shadow-card);">See Full Results<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+    </div>
+  </sc-if>
+
+  <!-- grain -->
+  <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.06; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868}}">
+class Component extends DCLogic {
+  state = { ready: false };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      if (r && ns && fs) { this.setState({ ready: true }); }
+      else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); }
+
+  _initials(n) { const p = (n || '?').trim().split(/\s+/); return (((p[0] || '')[0] || '') + ((p[1] || '')[0] || '')).toUpperCase(); }
+  _tint(seed) {
+    const T = ['radial-gradient(circle at 42% 32%, #4a3826, #1c1510)', 'radial-gradient(circle at 45% 35%, #34302a, #17130f)', 'radial-gradient(circle at 40% 30%, #40301f, #17120c)'];
+    return T[seed % T.length];
+  }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) { return { ready: false, notReady: true }; }
+    const h = React.createElement;
+    const medal = (color, sz) => h('svg', { width: sz || 20, height: sz || 20, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('circle', { cx: 12, cy: 14.5, r: 4.8 }), h('circle', { cx: 12, cy: 14.5, r: 1.8 }), h('path', { d: 'M8.8 10.4L6 4h4l2 3.2L14 4h4l-2.8 6.4' }));
+    const youPill = h('span', { style: { flex: 'none', display: 'inline-flex', alignItems: 'center', padding: '1px 6px', borderRadius: 'var(--fl-radius-pill)', background: 'var(--fl-bronze-tint)', border: '1px solid var(--fl-bronze-border)', fontSize: '8px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--fl-bronze-bright)' } }, 'You');
+
+    // top three (final order)
+    const TOP = [
+      { place: 1, name: 'Marcus Vale', score: 7 },
+      { place: 2, name: 'Ada Ridge', score: 5, you: true },
+      { place: 3, name: 'Dana Cole', score: 4 },
+    ];
+    const byPlace = (n) => TOP.find(t => t.place === n);
+
+    const GOLD = '#CDA063', SILVER = '#C7CAD0', BRONZE = '#B07C4E';
+    const meta = {
+      1: { avatarPx: '78px', avatarFs: '28px', ring: 'var(--fl-bronze-primary)', avatarGlow: '0 0 26px rgba(191,143,79,0.5)', medalC: GOLD, pedestalH: '128px', pedestalBg: 'linear-gradient(180deg, #3a2c1a, #241a0f)', pedestalBorder: 'var(--fl-bronze-border)', pedestalShadow: 'inset 0 1px 0 rgba(191,143,79,0.35), 0 -2px 14px rgba(191,143,79,0.18)', rankColor: 'var(--fl-bronze-bright)', rankFs: '30px', nameFs: '15px', isChamp: true, drop: 'animation:pSlam 900ms var(--fl-ease-out) 4100ms both;', ped: 'animation:pPedestal 560ms var(--fl-ease-out) 3900ms both;', flashTop: '30px' },
+      2: { avatarPx: '60px', avatarFs: '21px', ring: 'rgba(190,193,199,0.75)', avatarGlow: '0 0 14px rgba(185,188,194,0.18)', medalC: SILVER, pedestalH: '92px', pedestalBg: 'linear-gradient(180deg, var(--fl-charcoal-600), var(--fl-charcoal-800))', pedestalBorder: 'var(--fl-charcoal-500)', pedestalShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)', rankColor: 'var(--fl-text-secondary)', rankFs: '24px', nameFs: '13.5px', isChamp: false, drop: 'animation:pDrop 640ms var(--fl-ease-out) 2950ms both;', ped: 'animation:pPedestal 520ms var(--fl-ease-out) 2800ms both;' },
+      3: { avatarPx: '56px', avatarFs: '19px', ring: 'rgba(196,140,90,0.7)', avatarGlow: '0 0 12px rgba(176,124,78,0.16)', medalC: BRONZE, pedestalH: '68px', pedestalBg: 'linear-gradient(180deg, var(--fl-charcoal-600), var(--fl-charcoal-800))', pedestalBorder: 'var(--fl-charcoal-500)', pedestalShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)', rankColor: 'var(--fl-text-tertiary)', rankFs: '22px', nameFs: '13px', isChamp: false, drop: 'animation:pDrop 640ms var(--fl-ease-out) 2250ms both;', ped: 'animation:pPedestal 520ms var(--fl-ease-out) 2100ms both;' },
+    };
+
+    // display order: 2nd (left), 1st (center), 3rd (right)
+    const order = [2, 1, 3];
+    const podium = order.map((pl) => {
+      const t = byPlace(pl);
+      const m = meta[pl];
+      return {
+        key: 'p' + pl,
+        rank: String(pl), rankFs: m.rankFs, rankColor: m.rankColor,
+        avatarPx: m.avatarPx, avatarFs: m.avatarFs, tint: this._tint(t.name.length + pl), ring: m.ring, avatarGlow: m.avatarGlow,
+        initials: this._initials(t.name),
+        medal: medal(m.medalC, pl === 1 ? 24 : 20),
+        name: t.name, nameFs: m.nameFs, nameWeight: (pl === 1 || t.you) ? 700 : 500, nameColor: t.you ? 'var(--fl-bronze-bright)' : 'var(--fl-text-primary)',
+        youPill: t.you ? youPill : '',
+        scoreLine: t.score + ' wkts',
+        isChamp: m.isChamp, flashTop: m.flashTop || '10px',
+        pedestalH: m.pedestalH, pedestalBg: m.pedestalBg, pedestalBorder: m.pedestalBorder, pedestalShadow: m.pedestalShadow,
+        dropStyle: m.drop, pedestalStyle: m.ped,
+      };
+    });
+
+    const countdown = [
+      { key: 'c3', n: '3', delay: '300ms' },
+      { key: 'c2', n: '2', delay: '900ms' },
+      { key: 'c1', n: '1', delay: '1500ms' },
+    ];
+
+    return {
+      ready: true, notReady: false,
+      eyebrow: 'Forge League \u00b7 Season 3',
+      championName: byPlace(1).name,
+      countdown, podium,
+      skip: () => { window.location.href = 'Forge%20Challenge%20Results.dc.html'; },
+      seeResults: () => { window.location.href = 'Forge%20Challenge%20Results.dc.html'; },
+    };
+  }
+}
+</script>
+</body>
+</html>
