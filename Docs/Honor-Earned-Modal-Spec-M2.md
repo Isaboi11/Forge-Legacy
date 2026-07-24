@@ -1,7 +1,8 @@
 # M-2 Honor Earned Modal
-## Wireframe Specification v1.1 | June 2026
+## Wireframe Specification v1.2 | June 2026
 
 **Authority:** L-10 Honors Architecture (all 16 decisions locked), W-17 Workout Summary Spec v1.0, Master PRD § 13, Product DNA.
+**Component contracts:** CLA-C20 (Modal), CLA-C08 (Button) — see [`Component-Library-Architecture-v1.0.md`](Component-Library-Architecture-v1.0.md)
 
 ---
 
@@ -68,7 +69,9 @@ When exactly one honor is earned this session:
 │   A permanent part of your         │  ← Acknowledgment copy
 │   legacy.                          │
 │                                    │
-│         [ Continue ]               │  ← Single dismiss CTA, centered
+│         [ Continue ]               │  ← Primary CTA, centered
+│                                    │
+│       Share this honor             │  ← Subordinate text action, centered
 │                                    │
 └────────────────────────────────────┘
 ```
@@ -76,7 +79,8 @@ When exactly one honor is earned this session:
 **Content:**
 - Honor name — large primary weight, centered
 - Acknowledgment copy below the honor name (see Section 4.1)
-- Single CTA: `"Continue"` — centered, primary style
+- Primary CTA: `"Continue"` — centered, primary style
+- Subordinate text action: `"Share this honor"` — below `"Continue"`, per WSR-001 §8.2. Opens SH-1 with `HONOR_EARNED` pre-selected, scoped to this single honor.
 
 **No honor icon. No trophy imagery. No confetti. No sound by default.**
 
@@ -107,7 +111,9 @@ When two or more honors are earned this session:
 │   First Chapter Sealed          ›  │  ← Honor row, tappable → L-11
 │   50 Workouts Logged            ›  │  ← Honor row, tappable → L-11
 │                                    │
-│         [ Continue ]               │  ← Single dismiss CTA, centered
+│         [ Continue ]               │  ← Primary CTA, centered
+│                                    │
+│       Share this honor             │  ← Subordinate text action, centered
 │                                    │
 └────────────────────────────────────┘
 ```
@@ -116,7 +122,8 @@ When two or more honors are earned this session:
 - Section label: `"Honors Earned"` — secondary weight, muted, above the list
 - Vertical text list of honor names, one per row, with trailing `›`
 - Each row is tappable → opens L-11 for that specific honor
-- Single CTA: `"Continue"` — centered, primary style
+- Primary CTA: `"Continue"` — centered, primary style
+- Subordinate text action: `"Share this honor"` — below `"Continue"`, per WSR-001 §8.2 and §5.2. Opens SH-1 with `HONOR_EARNED` pre-selected; if multiple honors were earned, the athlete selects which one to feature (or shares all) within SH-1 itself (per SH-1 §4.2) — M-2 does not perform this selection.
 
 **Order:** Honors listed in the order awarded by the evaluation service. No sorting by category or significance.
 
@@ -129,6 +136,7 @@ When two or more honors are earned this session:
 | Action | Result |
 |--------|--------|
 | `"Continue"` tap | Dismiss M-2. W-17 fully revealed and interactive. |
+| `"Share this honor"` tap | Dismiss M-2 (ceremony-sequence treats this identically to "Continue," per SH-1 §6.2). SH-1 opens with `HONOR_EARNED` pre-selected. |
 | Tap outside modal (dimmed region) | No action. M-2 remains open. |
 | Drag gesture | No action. M-2 is a centered modal, not a bottom sheet. |
 | Android hardware back | No action. M-2 remains open. |
@@ -147,6 +155,7 @@ The only way to dismiss M-2 is the `"Continue"` CTA. This is deliberate — acci
 | Action | Destination |
 |--------|------------|
 | `"Continue"` tap | W-17 (M-2 dismissed, W-17 revealed) |
+| `"Share this honor"` tap | SH-1 (M-2 dismissed; queue advances as `"Continue"` would, per SH-1 §6.2) |
 | Honor row tap (multi-honor, tappable) | L-11 for that specific honor (M-2 dismissed) |
 | Hardware back (Android) | No navigation — M-2 remains open |
 
@@ -184,6 +193,7 @@ The honor is permanently in L-10. The ceremony (M-2) does not occur for that ses
 - Honor name(s) announced at heading level
 - Acknowledgment copy (single-honor) announced as static text
 - `"Continue"` CTA is the default focus target when modal opens
+- `"Share this honor"` announced as a link: `"Share this honor, double-tap to share"`
 - In multi-honor modal: each honor row announced as a link — `"[Honor Name], double-tap for details"`
 - Focus is trapped within the modal while open (standard modal behavior)
 - After dismissal, focus returns to W-17
@@ -229,7 +239,7 @@ M-2 does not and will never:
 - Fire for chapter-sealing honors
 - Show a sequential second modal for the same session
 - Show an honor icon or trophy imagery
-- Show a share CTA
+- Render the share card image itself, or create a `WorkoutShare` record without the athlete tapping "Share this honor" (delegated to SH-1 and the Share Card Renderer, per WSR-001 §7, §9)
 - Show rank contribution messaging
 - Show a "next honor" progress tease
 - Play confetti or particle animation
@@ -256,6 +266,8 @@ M-2 does not and will never:
 - [ ] M-2 does not fire mid-session (W-9–W-16)
 - [ ] Single-honor: honor name visible, acknowledgment copy visible, `"Continue"` CTA present
 - [ ] Multi-honor: `"Honors Earned"` label visible, all honor names listed, `"Continue"` CTA present
+- [ ] `"Share this honor"` present below `"Continue"` in both single- and multi-honor states
+- [ ] `"Share this honor"` tap opens SH-1 with `HONOR_EARNED` pre-selected; multi-honor selection happens within SH-1, not M-2
 - [ ] Multi-honor honor rows are tappable → L-11
 - [ ] L-11 opens on honor row tap; M-2 does not reappear after L-11 dismissal
 - [ ] `"Continue"` dismisses M-2; W-17 fully revealed
@@ -266,7 +278,6 @@ M-2 does not and will never:
 - [ ] M-2 does not fire for import-retroactive honors
 - [ ] M-2 does not re-fire after dismissal for the same session
 - [ ] No icon or trophy imagery present
-- [ ] No share CTA present
 - [ ] No rank contribution message present
 - [ ] No next-honor tease present
 - [ ] `"Continue"` is default focus when modal opens (accessibility)
@@ -283,8 +294,9 @@ M-2 does not and will never:
 |---------|------|--------|
 | v1.0 | June 2026 | Initial specification |
 | v1.1 | June 2026 | Updated catalog count reference from 12 to 53 types |
+| v1.2 | June 2026 | WSR-001 Downstream Reconciliation Pass. Added "Share this honor" subordinate text action below "Continue" in both single- and multi-honor states (§4, §5, §6, §7, §9, §13), per WSR-001 §8.2 and §5.2. Multi-honor selection (one vs. all) happens within SH-1 (per SH-1 §4.2), not M-2. Removed the contradictory "Show a share CTA" line from §11 Non-Behaviors and the corresponding "No share CTA present" checklist item. No other M-2 behavior changed. |
 
 ---
 
-*M-2 Honor Earned Modal — Wireframe Specification v1.1*
+*M-2 Honor Earned Modal — Wireframe Specification v1.2*
 *Forge Legacy | June 2026*

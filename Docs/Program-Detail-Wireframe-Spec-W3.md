@@ -1,9 +1,11 @@
 # Forge Legacy — Program Detail Wireframe Specification
-## W-3 | Phase 2B | Version 1.5 — June 2026
+## W-3 | Phase 2B | Version 1.6 — June 2026
 
 **Status:** Locked
 **Authority:** Program-Architecture-Amendment-001-Active-Program-Rule.md
 **PRD Authority:** Section 11 (Program System), Section 8 (Workout System — Programs), Section 5 (MVP — W-3)
+
+> **Governing-authority pointer — `Calendar-System-Architecture-v1.0` (LOCKED, June 2026).** The Calendar **projects** a program's relative schedule (`ProgramSlot.weekNumber` / `dayOfWeek`) onto calendar dates as a **read-only** view (CAL-D9). The Calendar **owns no schedule**, edits no slot, never triggers graduation (W-17 → M-4 is unchanged), and links back to W-3 for any program action (CAL-D17). W-3 remains the single source of truth for program schedule and progress; the Calendar is only a date-indexed lens onto it.
 
 ---
 
@@ -1297,6 +1299,15 @@ These are different operations. Restart Program is Amendment 001 compliant. No r
 - [ ] Share picker "Share" → sheet dismisses; "Program shared with squad." toast; W-3 stays on current state
 - [ ] Share picker "Cancel" → sheet dismisses; no action; W-3 stays on current state
 
+### Workout Schedule — Build/Edit Workout Entry (W3-Amendment-001)
+- [ ] Future state: any row with zero exercises taps → W-24 "Build Workout" entry
+- [ ] Future state: any row with ≥1 exercise taps → W-24 "Edit Workout" entry, existing exercises loaded
+- [ ] Active state: upcoming (not-next) row taps → W-24 "Edit Workout" entry
+- [ ] Active state: next row still initiates the workout (W-24 entry does not override "Start Next Workout")
+- [ ] Ended Early state: not-reached row taps → W-24 "Edit Workout" entry
+- [ ] Preview state: rows remain no-action; W-24 is unreachable from a Forge Program's own W-3 (only via W-5 Fork first)
+- [ ] Secondary row text reflects exercise count and action hint ("0 exercises · Build Workout" / "[N] exercises · Tap to edit")
+
 ### Mobile UX
 - [ ] All tap targets meet minimums (workout rows ≥ 56dp, CTAs ≥ 48dp, sheet buttons ≥ 52dp)
 - [ ] Portrait orientation
@@ -1307,13 +1318,17 @@ These are different operations. Restart Program is Amendment 001 compliant. No r
 ---
 
 *Forge Legacy Program Detail Wireframe Specification — W-3*
-*v1.5 — June 2026*
+*v1.6 — June 2026*
 *Authority: Program-Architecture-Amendment-001-Active-Program-Rule.md*
 *PRD: Section 11 (Program System), Section 8 (Workout System), Section 5 (MVP)*
 
 ---
 
 ## Change Log
+
+### v1.6 — June 2026
+
+**W3-Amendment-001 (administrative):** W-24 Workout Builder's §22 named W3-A1 as a required amendment targeting "W-3 v1.2" — stale by the time of this entry, since W3-A1's behavior was already fully specified at v1.3 (Build/Edit Workout row-tap behavior, Section 10.4) and never gained explicit Validation Checklist coverage. Added seven checklist items under new subsection "Workout Schedule — Build/Edit Workout Entry," confirming the already-locked row-tap behavior across Future, Active, and Ended Early states. No body text, layout, navigation, or state-model change — additive checklist coverage only. See Docs/Amendments/W3-Amendment-001-Workout-Builder-Integration.md for the full audit.
 
 ### v1.5 — June 2026
 

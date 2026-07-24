@@ -6,6 +6,7 @@
 **Reads from:** Session records written by W-9 / W-17
 **Navigated from:** W-1 Workouts Hub ("View All" from Recent Workouts section)
 **Navigates to:** W-1 (back), W-19 Activity Detail (per session row tap)
+**Component contracts:** CLA-C30 (WorkoutSessionCard), CLA-C17 (SectionHeader), CLA-C23 (Skeleton) — see [`Component-Library-Architecture-v1.0.md`](Component-Library-Architecture-v1.0.md)
 
 ---
 
@@ -561,7 +562,7 @@ W-18 does not and will never:
 | Allow deleting sessions — training records are permanent; History Cannot Be Rewritten |
 | Display trend analytics, volume summaries, or PR indicators |
 | Display motivational copy, coaching insights, or training recommendations |
-| Show a "streak" counter, week summary bar, or calendar heat map |
+| Show a "streak" counter, week summary bar, or calendar heat map — these belong to the **Calendar surface**, not W-18 (see reconciliation note below) |
 | Display program attribution in session rows — program context is W-19 |
 | Make the chapter attribution text independently tappable within the row |
 | Show total session count for a month in the section header |
@@ -577,7 +578,9 @@ W-18 does not and will never:
 | Reset filter state when the athlete returns from W-19 — filter is preserved within the W-18 navigation session |
 | Surface the "Partial" indicator with any visual alarm — partial sessions are factual records, not errors |
 | Display a "No Activity" row for training gaps — missing months are simply absent |
-| Provide a "Jump to date" or calendar navigation control in MVP (V1.1) |
+| Provide a "Jump to date" or calendar navigation control **within W-18** — date navigation now lives on the Calendar surface (see reconciliation note below) |
+
+> **Reconciliation note — `Calendar-System-Architecture-v1.0` (LOCKED, June 2026).** Two capabilities W-18 lists above as out-of-scope/V1.1 — a **calendar heat map / consistency view** and **"Jump to date" / calendar navigation** — are **resolved by the Calendar**, not added to W-18. W-18 remains exactly what it is: a strictly read-only, reverse-chronological **linear list** of completed sessions grouped by month. The **Calendar** (`Calendar-System-Architecture-v1.0` §18 search-by-date, §19 consistency visualization) is the separate **date-indexed lens** over the same sessions. The Calendar reads W-18's session records as read-throughs (it owns no copy) and its consistency visualization is private, backward-looking, and shame-free (no "days since," no broken-streak alarm). W-18's own screen rules are unchanged.
 
 ---
 

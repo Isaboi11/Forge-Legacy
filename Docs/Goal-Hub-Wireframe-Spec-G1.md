@@ -1,9 +1,13 @@
 # Forge Legacy — Goal Hub Wireframe Specification
-## G-1 | Phase 2B | Version 1.1 — June 2026
+## G-1 | Phase 2B | Version 1.2 — June 2026 (amended 2026-07-10)
 
 **Status:** Locked
 **Authority:** Forge Legacy Master PRD Section 9 (Goal System), Product DNA, Program-Architecture-Amendment-001
 **PRD Authority:** Section 9 (Goals), Section 6 (Chapters), Section 5 (MVP)
+
+> **Governing-authority pointer — `Calendar-System-Architecture-v1.0` (LOCKED, June 2026).** The Calendar surfaces goals as **date markers** and may write **only a milestone / target date** onto an existing goal (CAL-D4/CAL-D10). It **never** creates a goal, **never** marks a goal achieved (achievement still flows through the goal/workout systems → M-3), and **never** edits a sealed/archived goal. Goal management remains owned by G-1/G-2/G-3; the Calendar reads them and links back in (CAL-D17). The Goals system is unchanged.
+
+**Component contracts:** CLA-C27 (GoalCard), CLA-C12 (ProgressBar), CLA-C24 (EmptyState) — see [`Component-Library-Architecture-v1.0.md`](Component-Library-Architecture-v1.0.md)
 
 ---
 
@@ -192,14 +196,14 @@ Secondary goals achieved within this chapter, while the chapter is still active.
 G-1 is a screen within the app's navigation hierarchy. It is not a tab.
 
 **G-1 is entered from:**
-- W-1 Workouts Hub → Chapter Context Card (tapping the goal name or progress element)
+- W-1 Workouts Hub → Chapter Context Card (tapping the goal name or progress element) — **⚠ STALE:** W-1 was retired 2026-07-08; this entry point has no reassigned home. See §23 Conflict 1 and Master Status Decision Queue #16.
 - H-1 Home → Chapter Hero Card (tapping the goal element in the chapter block)
 - L-3 Chapter Detail → Goals section header (tapping "Goals" section label or "View Goals" link)
 
 **G-1 is not a tab in the bottom navigation.** Goals are always anchored to a chapter. Surfacing them as a standalone tab would suggest they exist independently, which they do not.
 
 **G-1 navigates to:**
-- G-2 Goal Detail → tapping a goal card (post-MVP; if unavailable, no action)
+- G-2 Goal Detail → tapping a goal card. **G-2 is MVP, not post-MVP** (corrected 2026-07-10 — see Change Log v1.2; G-2's own spec already flagged this as stale but it was never propagated back into this document)
 - G-3 Goal Create/Edit → "Add a Supporting Goal" CTA, "Add a Primary Goal" empty state CTA
 - L-5 Create Chapter → "Start a Chapter" CTA in no-chapter empty state
 - Back to entering screen → back arrow
@@ -505,7 +509,7 @@ The primary goal card renders in one of two display models depending on whether 
 ```
 
 **Card behavior:**
-- Full card is tappable → G-2 Goal Detail (post-MVP; no action if G-2 unavailable)
+- Full card is tappable → G-2 Goal Detail
 - No swipe actions
 - No delete or remove action
 
@@ -540,7 +544,7 @@ Secondary goal cards are smaller than the primary goal card. No target/context l
 └──────────────────────────────────────────────────────────┘
 ```
 
-No progress bar. Date of achievement shown. Full card is tappable → G-2 (post-MVP; no action if unavailable).
+No progress bar. Date of achievement shown. Full card is tappable → G-2.
 
 ### 12.4 Goal Card Fields
 
@@ -553,7 +557,7 @@ No progress bar. Date of achievement shown. Full card is tappable → G-2 (post-
 | "In Progress" label | No | 13sp, secondary, muted | No | 12sp, muted |
 | Program association | Optional — 12sp, muted | Optional — 12sp, muted | No | No |
 | Achievement marker | "✓ Achieved [date]" replaces bar | "✓ Achieved [date]" replaces label | "✓ [date]" replaces bar | "✓ [date]" replaces label |
-| Tap behavior | G-2 Goal Detail (post-MVP) | G-2 Goal Detail (post-MVP) | G-2 Goal Detail (post-MVP) | G-2 Goal Detail (post-MVP) |
+| Tap behavior | G-2 Goal Detail | G-2 Goal Detail | G-2 Goal Detail | G-2 Goal Detail |
 
 **What determines the display model:** The target field in G-3 Goal Create/Edit. If a numeric target is set: quantifiable display. If the target field is left blank: narrative display. There is no goal-type selector. The data model determines the display model.
 
@@ -670,7 +674,7 @@ When a program graduates (via W-17 workout summary / M-4 modal), the goal associ
 
 ### 16.1 How Primary Goals Are Completed
 
-Primary goal completion is triggered from G-2 Goal Detail (post-MVP: manual completion action). For MVP, completion may be triggered from a dedicated "Mark as Achieved" action surfaced in G-2.
+Primary goal completion is triggered from G-2 Goal Detail's "Mark as Achieved" action (G-2 §9, LOCKED).
 
 Completion flow:
 1. Athlete triggers "Mark as Achieved" from G-2
@@ -701,7 +705,7 @@ Before M-3 fires, a lightweight confirmation:
 
 ### 16.3 How Secondary Goals Are Completed
 
-Secondary goal completion is triggered from G-2 (post-MVP). No modal fires for secondary goals. The goal card transitions to achieved state on G-1 and moves to the Achieved section. No home hero change. No Legacy Timeline entry for secondary goals.
+Secondary goal completion is triggered from G-2. No modal fires for secondary goals. The goal card transitions to achieved state on G-1 and moves to the Achieved section. No home hero change. No Legacy Timeline entry for secondary goals.
 
 ### 16.4 Reversibility
 
@@ -753,7 +757,7 @@ Post-MVP consideration: allowing a goal to be replaced within an active chapter 
 
 | Entering From | State Shown |
 |--------------|-------------|
-| W-1 Workouts Hub → Chapter Context Card (goal element) | Active chapter's goals |
+| ~~W-1 Workouts Hub → Chapter Context Card (goal element)~~ | **STALE — W-1 retired 2026-07-08, no replacement decided. See §23 Conflict 1, Decision Queue #16.** |
 | H-1 Home → Chapter Hero Card (goal element) | Active chapter's goals |
 | L-3 Chapter Detail → Goals section header | Active chapter's goals |
 
@@ -762,7 +766,7 @@ Post-MVP consideration: allowing a goal to be replaced within an active chapter 
 | Action | Destination |
 |--------|------------|
 | Back arrow | Returns to entering screen |
-| Goal card tap | G-2 Goal Detail (post-MVP; no action if unavailable) |
+| Goal card tap | G-2 Goal Detail |
 | "Add a Supporting Goal" CTA | G-3 Goal Create (secondary goal) |
 | "Add a Goal" CTA (empty state) | G-3 Goal Create (primary goal) |
 | "Start a Chapter" CTA (no-chapter empty state) | L-5 Create Chapter |
@@ -894,13 +898,11 @@ Same as 20.10. Program name shown. Graduation state not surfaced on G-1.
 
 ## Section 21 — Architecture Risks
 
-### Risk 1 — Naming Conflict: L-7 / L-8 vs G-2 / G-3
+### Risk 1 — Naming Conflict: L-7 / L-8 vs G-2 / G-3 — RESOLVED
 
-**Issue:** The existing Master PRD names Goal Detail as L-7 and Goal Create/Edit as L-8. This spec establishes G-1 with a G- prefix for goals screens, implying G-2 (Goal Detail) and G-3 (Goal Create/Edit) as downstream screens. This creates a naming conflict that must be resolved before downstream specs are written.
+**Decision (confirmed 2026-07-10):** The G- prefix recommendation was adopted. `Goal-Detail-Wireframe-Spec-G2.md` (v1.0, LOCKED) and `Goal-Create-Edit-Wireframe-Spec-G3.md` (v1.1, LOCKED) both exist under the G- naming convention; no `L-7`/`L-8` files exist anywhere in the repository. This risk sat unmarked as resolved in the LOCKED v1.1 spec despite the downstream screens already confirming the decision — corrected for the record.
 
-**Recommendation:** Adopt G- prefix for all goal screens. Rename L-7 → G-2 and L-8 → G-3. Update all document references. This is a naming convention correction, not an architectural change — the screens' purpose and behavior remain identical.
-
-**Risk level:** Medium. Causes cross-document confusion if not resolved before G-2/G-3 specs are written.
+**Risk level:** Resolved.
 
 ---
 
@@ -924,13 +926,13 @@ Same as 20.10. Program name shown. Graduation state not surfaced on G-1.
 
 ---
 
-### Risk 4 — Goal Achievement Trigger Not Specified
+### Risk 4 — Goal Achievement Trigger Not Specified — RESOLVED
 
-**Issue:** G-1 shows primary goals in Achieved state after completion, but the trigger for completion is defined as "from G-2" (post-MVP). For MVP, there is no clear path for the athlete to mark a goal as achieved from within the app. This creates a state (Achieved) that cannot be reached.
+**Decision (`Goal-Detail-Wireframe-Spec-G2.md` v1.0, LOCKED):** G-2 is MVP, not post-MVP. Its own spec explicitly corrects the record: "G-1 v1.1 labeled the G-2 destination as 'post-MVP'... This designation was provisional... G-2 is that surface. G-2 is MVP." G-2 §9 (Mark as Achieved Flow) specifies the full completion path: a confirmation modal ("Mark Goal as Achieved?") → M-3 for primary goals.
 
-**Recommendation:** For MVP, include a "Mark as Achieved" action within G-2 Goal Detail. If G-2 is post-MVP, the completion path must be surfaced somewhere — either G-1 goal card long-press, or a confirmation flow within the workout summary path. This must be resolved before MVP ships.
+**For G-1:** No change to behavior was required — G-1 already described the downstream M-3/Legacy Timeline/Home hero effects correctly in §16. The only correction needed was removing the stale "post-MVP" qualifier from G-1's own references to G-2, applied throughout this document 2026-07-10 (see Change Log v1.2). This fix was already documented in G-2's own spec but never propagated back into this one — the same "amendment not reconciled into parent doc" pattern flagged elsewhere in Master Status.
 
-**Risk level:** High. The M-3 modal and Home hero Priority 1 state both depend on this trigger.
+**Risk level:** Resolved.
 
 ---
 
@@ -970,29 +972,15 @@ This decision does not require any G-1 changes for MVP. When the backlog item is
 
 ## Section 22 — Downstream Dependencies
 
-### G-2 — Goal Detail
+### G-2 — Goal Detail — AUTHORED, LOCKED
 
-Screens referenced as "post-MVP" in this spec. Must specify:
-- Full goal detail layout (name, target, progress history, program association)
-- "Mark as Achieved" action (primary goal and secondary goals)
-- Progress update mechanism (manual entry, workout attribution)
-- Edit goal action → G-3
-
-**Naming note:** If G- prefix is adopted, G-2 replaces L-7 in all documentation.
+`Goal-Detail-Wireframe-Spec-G2.md` v1.0, LOCKED. Specifies: full goal detail layout, "Mark as Achieved" action (primary and secondary goals, §9), progress update mechanism, edit goal action → G-3. G- prefix adopted; no L-7 reference exists anywhere in the repository.
 
 ---
 
-### G-3 — Goal Create / Edit
+### G-3 — Goal Create / Edit — AUTHORED, LOCKED
 
-Minimum fields confirmed (name + target). Must specify:
-- Full create flow for primary goal vs. secondary goal
-- Target field as optional — determines quantifiable vs. narrative display model
-- Optional program association selection
-- Edit flow (same screen, different mode)
-- Validation rules (name required; target optional)
-- How G-3 is entered during chapter creation (OB / L-5) vs. from G-1
-
-**Naming note:** If G- prefix is adopted, G-3 replaces L-8 in all documentation.
+`Goal-Create-Edit-Wireframe-Spec-G3.md` v1.1, LOCKED. Specifies: full create flow for primary vs. secondary goal, optional target field (determines display model), optional program association, edit flow, validation rules, entry during chapter creation vs. from G-1. G- prefix adopted; no L-8 reference exists anywhere in the repository.
 
 ---
 
@@ -1028,11 +1016,9 @@ After chapter archival, goals move from G-1 to L-4. L-4 must render goal outcome
 
 ## Section 23 — Conflicts with Existing Architecture
 
-### Conflict 1 — W-1 Chapter Context Card
+### Conflict 1 — W-1 Chapter Context Card — SUPERSEDED, STILL UNRESOLVED
 
-W-1 currently shows the primary goal name in the Chapter Context Card. G-1 now exists as the full goals surface. The Chapter Context Card tap behavior must be reconciled: does tapping the chapter card navigate to L-3 Chapter Detail, or to G-1? Current spec says L-3.
-
-**Recommendation:** Chapter Context Card tap → G-1 if the athlete taps specifically on the goal element; → L-3 if they tap elsewhere on the chapter card. This requires W-1 to be updated to route goal taps to G-1. This is a W-1 update, not a conflict resolution — W-1 v1.1 should be amended.
+This conflict was never resolved while W-1 existed — the recommendation below was never applied. **W-1 Workouts Hub was retired entirely 2026-07-08** (`Workouts-Navigation-Amendment-001-Retire-Workouts-Hub.md`; the Workouts tab root is now W-2 Program Browse). The Chapter Context Card this conflict describes no longer exists, so the conflict is moot in its original form — but G-1 has lost one of its three entry points as a direct result, and no replacement has been decided. Tracked in Master Status Decision Queue #16 ("Goal Hub's entry point and a pre-existing unresolved routing conflict"). Original recommendation, preserved for reference: Chapter Context Card tap → G-1 if the athlete taps specifically on the goal element; → L-3 if they tap elsewhere on the chapter card.
 
 ---
 
@@ -1096,7 +1082,7 @@ See Architecture Risk 1. L-7 and L-8 references must be updated to G-2 and G-3 a
 - [ ] Program association shown on primary card only, 12sp muted, absent if no association
 - [ ] Secondary goal card: name 15sp, progress bar + %
 - [ ] Achieved state: "✓ Achieved [date]" replaces progress bar on both primary and secondary
-- [ ] Full card tappable → G-2 (post-MVP; no action if unavailable)
+- [x] Full card tappable → G-2 (LOCKED — G-2 is MVP)
 - [ ] No swipe actions
 - [ ] No delete action on any goal card
 
@@ -1107,7 +1093,7 @@ See Architecture Risk 1. L-7 and L-8 references must be updated to G-2 and G-3 a
 - [ ] Program association shown on primary card only, 12sp muted, absent if no association
 - [ ] Secondary goal card: name 15sp, "In Progress" label 12sp muted — no progress bar
 - [ ] Achieved state: "✓ Achieved [date]" replaces "In Progress" label — identical to quantifiable achieved state
-- [ ] Full card tappable → G-2 (post-MVP; no action if unavailable)
+- [x] Full card tappable → G-2 (LOCKED — G-2 is MVP)
 - [ ] No swipe actions
 - [ ] No delete action on any goal card
 
@@ -1133,7 +1119,7 @@ See Architecture Risk 1. L-7 and L-8 references must be updated to G-2 and G-3 a
 - [ ] Goals shown normally when no program exists
 
 ### Goal Completion
-- [ ] "Mark as Achieved" trigger deferred to G-2 (flag if MVP ships without this path)
+- [x] "Mark as Achieved" trigger lives in G-2 §9 (LOCKED, MVP) — resolved 2026-07-10
 - [ ] Primary goal completion → M-3 modal fires
 - [ ] Primary goal card transitions to Achieved state
 - [ ] Secondary goal completion → no modal
@@ -1149,7 +1135,7 @@ See Architecture Risk 1. L-7 and L-8 references must be updated to G-2 and G-3 a
 
 ### Navigation
 - [ ] Back arrow returns to entering screen (W-1, H-1, or L-3)
-- [ ] Goal card tap → G-2 (post-MVP; no action if unavailable)
+- [x] Goal card tap → G-2 (LOCKED — G-2 is MVP)
 - [ ] "Add a Supporting Goal" → G-3 (secondary goal creation)
 - [ ] "Add a Goal" (empty state) → G-3 (primary goal creation)
 - [ ] "Start a Chapter" → L-5
@@ -1163,15 +1149,20 @@ See Architecture Risk 1. L-7 and L-8 references must be updated to G-2 and G-3 a
 - [ ] "Not Achieved" language not present anywhere on G-1
 
 ### Architecture Risks Acknowledged
-- [ ] L-7 / L-8 naming decision logged as open — must resolve before G-2/G-3 specs written
-- [ ] Goal progress update mechanism flagged — must resolve before G-2 spec
-- [ ] Chapter archival + active program intersection flagged — must resolve before archival UX
-- [ ] Goal achievement trigger (MVP path) flagged — must resolve before MVP ships
+- [x] L-7 / L-8 naming — RESOLVED, G- prefix adopted, G-2/G-3 authored and LOCKED
+- [x] Goal progress update mechanism — RESOLVED (Critical Decisions Amendment 001, Hybrid Progress Model)
+- [x] Chapter archival + active program intersection — RESOLVED (Critical Decisions Amendment 001, Independent Systems)
+- [x] Goal achievement trigger (MVP path) — RESOLVED, lives in G-2 §9 (LOCKED, MVP)
 - [ ] Deprioritized state (secondary goals only) logged as architecture backlog — no MVP changes required
+- [ ] **New (2026-07-10):** W-1 entry point retired, no replacement decided — see §23 Conflict 1, Decision Queue #16
 
 ---
 
 ## Change Log
+
+### v1.2 — 2026-07-10
+
+Documentation-accuracy correction pass, no product/design behavior changed. Removed stale "post-MVP; no action if unavailable" qualifiers on all G-2 references throughout this document (§4, §12.1–12.4, §16.1, §16.3, §18.2, §22, §24) — `Goal-Detail-Wireframe-Spec-G2.md` (v1.0) and `Goal-Create-Edit-Wireframe-Spec-G3.md` (v1.1) are both authored and LOCKED; G-2's own spec already stated "G-2 is MVP" and flagged G-1's language as stale, but the correction was never propagated back into this document until now. Marked Architecture Risk 1 (L-7/L-8 naming) and Risk 4 (goal achievement trigger) RESOLVED — both were de facto resolved by G-2/G-3 shipping but the risk entries were never updated. Flagged §4 and §18.1's W-1 entry point and §23 Conflict 1 as stale following W-1 Workouts Hub's retirement (2026-07-08) — no replacement entry point has been decided; tracked in Master Status Decision Queue #16. Validation checklist updated to reflect all of the above.
 
 ### v1.1 — June 2026
 

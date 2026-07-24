@@ -1,5 +1,7 @@
 # Forge Legacy — Workout Summary & Completion Experience Specification
-## W-17 | Phase 2B | Version 1.1 — June 2026
+## W-17 | Phase 2B | Version 1.3 — June 2026
+
+**Component contracts:** CLA-C30 (WorkoutSessionCard), CLA-C20 (Modal), CLA-C08 (Button) — see [`Component-Library-Architecture-v1.0.md`](Component-Library-Architecture-v1.0.md)
 
 ---
 
@@ -76,7 +78,7 @@ If the session was program-driven: the program's updated position. Clear, compac
 Workout With Friend tagging. Optional. Calm. The moment to record who trained alongside. Not a social feed. Not a sharing prompt. A clean, optional record of presence.
 
 **TIER 5 — Session Notes (reflection)**
-Exercise notes and workout-level notes from the session. Reviewable, editable, addable here. The post-workout reflection window.
+Exercise notes and workout-level notes from the session. Reviewable, editable, addable here. The post-workout reflection window. The optional workout playlist link (attached via "⋯ Options" during the workout, or added here) lives alongside notes in this tier — see Section 8A.
 
 **Tier 6 — Navigation (where to go next)**
 "Done" returns to W-1. "View in Chapter" opens L-3 for deeper context. Secondary paths available but not prominent.
@@ -105,7 +107,7 @@ Back gesture from W-17 navigates to W-1. The active workout screen has been remo
 │  │                                                 │   │
 │  │  This session belongs to your chapter.          │   │
 │  │                                                 │   │
-│  │  315lb Squat                          67%       │   │  ← Goal + updated %
+│  │  315lb Back Squat                     67%       │   │  ← Goal + updated %
 │  └─────────────────────────────────────────────────┘   │
 │                                                         │
 │  ─────────────────────────────────────────────────────  │
@@ -118,8 +120,8 @@ Back gesture from W-17 navigates to W-1. The active workout screen has been remo
 │  │  WARM-UP                                        │   │  ← Section label (if warm-up had exercises)
 │  │  Light Row       2 sets  ·  45 lb × 12          │   │
 │  │  MAIN WORKOUT                                   │   │  ← Section label
-│  │  Bench Press     5 sets  ·  95 lb × 5           │   │
-│  │  Squat           5 sets  ·  135 lb × 5          │   │
+│  │  Barbell Bench Press  5 sets  ·  95 lb × 5      │   │
+│  │  Back Squat      5 sets  ·  135 lb × 5          │   │
 │  │  Barbell Row     3 sets  ·  85 lb × 5           │   │
 │  │  [+ 2 more  ↓]                                  │   │  ← Collapsed exercise rows
 │  └─────────────────────────────────────────────────┘   │
@@ -138,11 +140,18 @@ Back gesture from W-17 navigates to W-1. The active workout screen has been remo
 │                                                         │
 │  ┌─────────────────────────────────────────────────┐   │
 │  │  SESSION NOTES                  [Tier 5 — opt]  │   │  ← Notes section
-│  │  Bench Press: Felt strong. Try 100 lb next.     │   │
+│  │  Barbell Bench Press: Felt strong. Try 100 lb.  │   │
 │  │  [+ Add session note]                           │   │
 │  └─────────────────────────────────────────────────┘   │
 │                                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │  PLAYLIST                       [Tier 5 — opt]  │   │  ← Playlist section (§8A)
+│  │  🎵 Leg Day Bangers                  Open ›      │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
 │  [              Done              ]                     │  ← Primary CTA → W-1
+│                                                         │
+│  [             Share             ]                      │  ← Secondary → SH-1 (WSR-001 §8.4)
 │                                                         │
 │  [      View in Chapter      ]                          │  ← Secondary → L-3
 │                                                         │
@@ -408,7 +417,7 @@ Exercise notes added during the workout are surfaced in the Notes section. The a
 ┌───────────────────────────────────────────────────────────┐
 │  Session Notes                                            │  ← Section label
 │  ─────────────────────────────────────────────────────    │
-│  Bench Press                                              │  ← Exercise name header
+│  Barbell Bench Press                                      │  ← Exercise name header
 │  Felt strong. Shoulder stable at 95 lb.                   │  ← Note content (secondary text)
 │  ─────────────────────────────────────────────────────    │
 │  Workout note: Felt tired by the end. Left hip tight.     │  ← Workout-level note (if exists)
@@ -448,6 +457,50 @@ Notes survive to:
 
 ---
 
+## Section 8A — Playlist Specification (Workout-Playlist-Amendment-001)
+
+### 8A.1 Playlist Section Anatomy
+
+If a playlist was attached during the workout via "⋯ Options" (Active-Workout-Flow-Spec-W9-W16 §8.5):
+
+```
+┌───────────────────────────────────────────────────────────┐
+│  PLAYLIST                                                  │  ← Section label
+│  ─────────────────────────────────────────────────────    │
+│  🎵 Leg Day Bangers                            Open ›      │  ← Playlist chip, tappable
+└───────────────────────────────────────────────────────────┘
+```
+
+If no playlist was attached during the workout:
+
+```
+┌───────────────────────────────────────────────────────────┐
+│  [+ Attach a playlist]                                     │  ← Sole element
+└───────────────────────────────────────────────────────────┘
+```
+
+**What appears:** A single playlist chip with a music note glyph, the athlete-typed display name (or a generic "Spotify Playlist" / "Apple Music Playlist" label if no name was given), and an "Open ›" affordance. If no playlist exists, only the "+ Attach a playlist" CTA appears — no empty-state copy.
+
+**What does not appear:** Track listings, cover art, an embedded player, playback controls, or any "Connect Spotify" / "Connect Apple Music" account prompt.
+
+### 8A.2 Attaching or Editing on W-17
+
+Tapping "+ Attach a playlist" (or tapping an existing chip's secondary edit affordance) opens the same Playlist sheet defined in Active-Workout-Flow-Spec-W9-W16 §8.5 — URL field, optional display-name field, "Save Playlist." Saving updates the session record immediately, independent of "Done," matching note persistence behavior (§9.2).
+
+The athlete may remove an attached playlist via a [×] control on the chip, identical in placement and behavior to the partner-tag removal control (§7.1).
+
+### 8A.3 Opening the Playlist
+
+Tapping the chip's "Open ›" affordance opens the link via the OS — the installed Spotify or Apple Music app if present, the browser otherwise. Forge Legacy performs no playback action; this is a standard external-link open, identical in kind to any other outbound link in the product.
+
+### 8A.4 Playlist Visibility After W-17
+
+The playlist link survives to:
+- W-19 Activity Detail (read-only display, Section 9A)
+- Any `WorkoutShare` created from this session (WSR-001 §9.3) — subject to the athlete's share configuration
+
+---
+
 ## Section 9 — Save Behavior Specification
 
 ### 9.1 What Has Already Happened by the Time W-17 Loads
@@ -462,9 +515,10 @@ W-17 is a read-and-augment screen. The athlete reviews what was saved and can ad
 
 ### 9.2 What W-17 Saves
 
-Two types of additions are made on W-17:
+Three types of additions are made on W-17:
 1. **Partner tag:** fires when the athlete taps "Done" with a tagged partner
 2. **Notes added/edited on W-17:** saved immediately on "Save Note" confirmation within the notes sheet
+3. **Playlist link attached/edited/removed on W-17:** saved immediately on "Save Playlist" confirmation (§8A.2), independent of "Done"
 
 There is no "Save" button on W-17. There is no save state. The core session is already saved. Additions on W-17 save at the moment they are confirmed — incrementally, not deferred to "Done."
 
@@ -650,7 +704,15 @@ W-1 reflects the completed session immediately:
 - Program progress bar (if applicable) reflects the updated count
 - Chapter context card shows the updated goal percentage
 
-### 14.2 Secondary Path: View in Chapter → L-3
+### 14.2 Secondary Path: Share → SH-1
+
+"Share" navigates to SH-1 (Share Configuration Step), pre-selected to `WORKOUT_COMPLETE` per WSR-001 §8.1, §8.4. It is always visible regardless of `AthleteShareSettings.globalVisibility` — external sharing is available to all athletes; squad-sharing options within SH-1 are conditional on settings (WSR-001 §8.4).
+
+If a ceremony (M-1, M-2, or M-4) fired during this W-17 load, that ceremony presented its own "Share this [X]" action. The W-17 "Share" CTA does not duplicate that share type — it always defaults to `WORKOUT_COMPLETE`. An athlete who shares from a ceremony and then again from W-17's "Share" CTA creates two separate `WorkoutShare` records (WSR-001 §8.4).
+
+"Share" is Secondary class, positioned directly below "Done." It does not compete with "Done."
+
+### 14.3 Secondary Path: View in Chapter → L-3
 
 "View in Chapter" navigates to L-3 Chapter Detail (Active state), where the athlete can see their workout in the full chapter timeline and context. This is the bridge between W-17's summary and the chapter's ongoing story.
 
@@ -658,7 +720,7 @@ The athlete who has sealed this chapter because the primary goal reached 100% an
 
 "View in Chapter" is Secondary class. It is available for the athlete who wants it. It does not compete with "Done."
 
-### 14.3 Tertiary Path: Tab Bar Navigation
+### 14.4 Tertiary Path: Tab Bar Navigation
 
 Because the Tab Bar is restored on W-17, the athlete can navigate to any tab directly:
 - Legacy tab → L-1 Legacy Hub
@@ -667,11 +729,11 @@ Because the Tab Bar is restored on W-17, the athlete can navigate to any tab dir
 
 These are valid paths. The athlete who finishes a workout and immediately wants to see their Legacy Hub is making a natural and supported choice. They do not need to pass through "Done" first.
 
-### 14.4 Back Gesture
+### 14.5 Back Gesture
 
 Back gesture from W-17 navigates to W-1. The active workout is closed. Back does not re-enter the workout screen.
 
-### 14.5 W-17 Is Not the Navigation Entry to W-18 or W-19
+### 14.6 W-17 Is Not the Navigation Entry to W-18 or W-19
 
 W-17 does not contain a "View full activity record" link to W-18 or W-19. The session is fresh. The full history is accessible via W-1 → W-18 at any time. W-17 is not a gateway to the activity archive — it is the closing of one session.
 
@@ -785,7 +847,9 @@ The athlete should see the chapter attribution and the beginning of their sessio
 | Tagged partner remove [×] | 44×44dp |
 | "+ Add session note" CTA | Full-width × 44dp |
 | Exercise note tap-to-edit rows | Full-width × 44dp |
+| "+ Attach a playlist" CTA / playlist chip | Full-width × 44dp |
 | "Done" Primary CTA | Full-width × 56dp |
+| "Share" Secondary CTA | Full-width × 48dp |
 | "View in Chapter" Secondary CTA | Full-width × 48dp |
 
 ### 16.6 The Goal Percentage as Visual Anchor
@@ -876,10 +940,22 @@ W-17 supports portrait orientation only — matching the Active Workout Flow. Th
 - [ ] No "no notes" empty state copy — "+ Add session note" alone when empty
 - [ ] Notes truncate at 3 lines with "Read more" expansion for long entries
 
+### Playlist Section (Tier 5)
+- [ ] Playlist chip shown if a playlist was attached during the workout; "+ Attach a playlist" CTA shown otherwise
+- [ ] Chip shows display name (or generic service label) — never the raw URL
+- [ ] Tapping "Open ›" opens the link externally (installed app or browser) — no in-app playback
+- [ ] Attach/edit opens the same Playlist sheet defined in Active-Workout-Flow-Spec-W9-W16 §8.5
+- [ ] [×] removal control available, identical placement to partner-tag removal
+- [ ] Playlist link saves immediately on "Save Playlist" — not deferred to "Done"
+- [ ] No track listing, cover art, embedded player, or account-connection UI
+
 ### Save and Navigation
 - [ ] Session record is already saved by the time W-17 loads — W-17 does not re-save
 - [ ] "Done" fires partner tag (if pending) and navigates to W-1
 - [ ] "Done" is full-width × 56dp minimum — not sticky (positioned at bottom of content)
+- [ ] "Share" Secondary CTA present directly below "Done", full-width × 48dp (WSR-001 §8.4)
+- [ ] "Share" navigates to SH-1 with `WORKOUT_COMPLETE` pre-selected, always visible regardless of `globalVisibility`
+- [ ] "Share" does not duplicate a ceremony's share type if a ceremony already fired this load
 - [ ] "View in Chapter" is Secondary class, full-width × 48dp — positioned above "Done"
 - [ ] No "discard session" action on W-17
 - [ ] W-1 shows updated Recent Workouts and program progress immediately after returning from W-17
@@ -943,6 +1019,20 @@ W-17 supports portrait orientation only — matching the Active Workout Flow. Th
 
 ## Change Log
 
+### v1.3 — June 2026
+
+**Workout-Playlist-Amendment-001 merged.** New §8A "Playlist Specification": optional Spotify/Apple Music playlist link, attachable during the workout (Active-Workout-Flow-Spec-W9-W16 §8.5) or here on W-17, editable/removable, saved immediately (independent of "Done"). §2 Tier 5 hierarchy note updated. §3 wireframe adds the Playlist card. §9.2 "What W-17 Saves" updated to three addition types. §16.5 Tap Targets and §17 Validation Checklist updated. Survives to W-19 (read-only) and WSR-001 `WorkoutShare` per the amendment.
+
+### v1.2 — June 2026
+
+**WSR-001 Downstream Reconciliation Pass:**
+- **§3 Wireframe** — Added "Share" Secondary CTA directly below "Done," above "View in Chapter"
+- **§14** — New §14.2 "Secondary Path: Share → SH-1" documenting navigation to SH-1 with `WORKOUT_COMPLETE` pre-selected; renumbered subsequent §14.x sections
+- **§16.5** — Tap Targets table: added "Share" Secondary CTA row
+- **§17** — Validation Checklist: added Share CTA items under "Save and Navigation"
+
+This closes the W-17 row of WSR-001 §14's Downstream Impact table. No other W-17 behavior changed.
+
 ### v1.1 — June 2026
 
 **WS-A3 (Workout Structure Amendment 001):**
@@ -953,7 +1043,8 @@ W-17 supports portrait orientation only — matching the Active Workout Flow. Th
 ---
 
 *Forge Legacy Workout Summary & Completion Experience Specification — W-17*
-*v1.1 — June 2026*
+*v1.3 — June 2026*
 *All decisions derived from the Phase 2A locked architecture, the Forge Legacy Master PRD, the Forge Legacy UX Framework v1.0, and the approved H-1, L-1, L-3/L-4, W-1, and W-9–W-16 wireframe specifications.*
 *WS-A3 applied June 2026: section grouping in exercise summary; empty sections absent from W-17.*
+*Workout-Playlist-Amendment-001 applied June 2026: optional Spotify/Apple Music playlist link, attach/edit/remove on W-17.*
 *This document is the authority for all Workout Summary implementation in Phase 2B.*

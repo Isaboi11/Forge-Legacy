@@ -3,6 +3,7 @@
 
 **Status:** LOCKED
 **Authority:** Chapter-Detail-Wireframe-Spec-L3-L4.md §14.1, Chapter-Reflection-Wireframe-Spec-L6.md, Honor-Evaluation-Service-Architecture-v1.0.md §8.3, Critical-Decisions-Amendment-001.md Decision 2, Featured-Legacy-Moment-Standards.md, Amendments/FLM-Sealed-Chapter-Amendment-001.md, Rank-Up-Modal-Spec-M1.md, Master PRD §10
+**Component contracts:** CLA-C20 (Modal), CLA-C08 (Button) — see [`Component-Library-Architecture-v1.0.md`](Component-Library-Architecture-v1.0.md)
 
 ---
 

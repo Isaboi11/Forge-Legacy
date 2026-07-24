@@ -1,10 +1,10 @@
 # Forge Legacy — Legacy Hub Wireframe Specification
-## L-1 | Phase 2C | Version 1.0 — June 2026
+## L-1 | Phase 2C | Version 1.1 — July 2026
 
 **Status:** Lock-Ready
-**Tab:** Legacy (5th tab)
-**Authority:** Forge Legacy Master PRD Section 12, FLM Standards v1.0, FLM/Sealed Chapter Amendment 001 (June 2026), Accomplishments Architecture Note v1.0, Product DNA
-**Depends on:** H-1, L-3, L-4, G-2, W-3, O-3
+**Tab:** Legacy — 3rd of 5 bottom-navigation tabs (Home, Workouts, **Legacy**, Squads, Communities). *Corrected 2026-07-02: this line previously read "Legacy (5th tab)," a stale reference that predates and contradicts the then-confirmed 4-tab model locked by `Forge-Legacy-Master-PRD.md` §6 and `Onboarding-First-Time-Journey-Architecture-v1.0.md`. Updated again 2026-07-07: Communities was promoted to a 5th bottom-navigation tab (`Docs/Amendments/Community-Architecture-Amendment-002-Fifth-Tab.md`), so the bar is now 5 tabs — Legacy's own position (3rd) is unchanged. Profile is reached via the App Bar avatar, never a tab.*
+**Authority:** Forge Legacy Master PRD Section 12, FLM Standards v1.0, FLM/Sealed Chapter Amendment 001 (June 2026), Accomplishments Architecture Note v1.0, Product DNA, `Transformation-Gallery-Architecture-v1.0.md` (2026-07-02)
+**Depends on:** H-1, L-3, L-4, G-2, W-3, O-3, `Transformation-Gallery-Wireframe-Spec-L17-L18.md`
 
 ---
 
@@ -199,6 +199,13 @@ The full scroll order of L-1 with visual separation and behavioral notes:
 │  [Horizontal photo strip]                              │
 │  View All 12 Photos ›                                  │
 │  (omitted when no photos)                              │
+│                                                         │
+├ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┤
+│                                                         │
+│  TRANSFORMATION GALLERY  8     ← Section 4a (2026-07-02)│
+│  [Horizontal transformation strip]                      │
+│  View All 8 Entries ›                                   │
+│  (omitted when no entries)                              │
 │                                                         │
 ├ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┤
 │                                                         │
@@ -631,6 +638,35 @@ Section omitted entirely when the athlete has added zero photos. No label. No pl
 
 ---
 
+## Section 8a — Transformation Gallery (added 2026-07-02)
+
+Governed by `Transformation-Gallery-Architecture-v1.0.md` and `Transformation-Gallery-Wireframe-Spec-L17-L18.md`. The Transformation Gallery is a permanent, chronological, chapter-organized visual archive of the athlete's physical transformation — photos and videos, before/progress/after, physique check-ins, posing videos, competition videos, and milestone videos. It is distinct from the Photos section (Section 4/8), which is a general, unorganized photo strip; the Transformation Gallery is specifically about documenting physical change over time, and supports video in addition to photos.
+
+```
+TRANSFORMATION GALLERY  8
+┌─────┐ ┌─────┐ ┌─────┐
+│ ▓▓▓ │ │ ▶▓▓ │ │ ▓▓▓ │   ← ▶ marks a video entry
+│ ▓▓▓ │ │ ▓▓▓ │ │ ▓▓▓ │
+└─────┘ └─────┘ └─────┘
+View All 8 Entries ›
+```
+
+**Section label:** "TRANSFORMATION GALLERY [N]" — 11sp, muted, caps, left-aligned. Count is navigational context, not a metric (same convention as PHOTOS).
+
+**Preview strip:** Horizontal scroll, 3–5 square thumbnails, most recently added entry first (any chapter, account-wide — same ordering convention as the Photos strip). Video entries show a small play-glyph overlay on the thumbnail; photo entries do not.
+
+**Footer:** "View All [N] Entries ›" — 13sp, primary/link color — → L-17 (Transformation Gallery).
+
+**Tap on a thumbnail:** → L-18 (Transformation Entry Detail) for that specific entry — unlike the Photos strip's chapter-detail fallback, the Transformation Gallery has its own dedicated detail screen from the start (L-18).
+
+**Position:** Placed immediately after the Photos section (Section 4/8) — both are chapter-tied visual archives and sit adjacently in the scroll, with the Transformation Gallery being the more specific, physical-transformation-focused sibling.
+
+**Empty state:** Section omitted entirely when the athlete has zero Transformation Gallery entries. No label. No placeholder. No "document your progress" prompt on L-1 — that invitation, if any, lives on L-17 itself.
+
+**No social/comparison behavior:** consistent with the rest of L-1, the Transformation Gallery preview carries no likes, comments, view counts, or any comparison to other athletes.
+
+---
+
 ## Section 9 — Timeline Teaser (Section 5)
 
 ### 9.1 Overview
@@ -806,6 +842,7 @@ If the athlete completed O-3 with a chapter, Section 1 shows the active chapter 
 | Section 2 | No FLM eligible event | Section omitted entirely (per FLM Standards Section 5) |
 | Section 3 | No sealed chapters | Section omitted entirely |
 | Section 4 | No photos (count = 0) | Section omitted entirely |
+| Section 4a | No Transformation Gallery entries (added 2026-07-02) | Section omitted entirely |
 | Section 5 | No timeline entries | Section omitted entirely |
 | Section 6 | No accomplishments (count = 0) | Section omitted entirely |
 | Section 7 | No honors (count = 0) | Section omitted entirely |
@@ -845,6 +882,8 @@ L-1 is the navigation root of the Legacy tab. It owns navigation to all Legacy s
 | State B sealed chapter card | L-4 (Archived Chapter Detail) | Specced |
 | Photo thumbnail | L-4 (chapter the photo belongs to) — MVP fallback | See Risk 5 |
 | "View All [N] Photos ›" | L-15 (Photos) | Unspecced — see Risk 5 |
+| Transformation Gallery thumbnail *(added 2026-07-02)* | L-18 (Transformation Entry Detail) | Specced — `Transformation-Gallery-Wireframe-Spec-L17-L18.md` |
+| "View All [N] Entries ›" (Transformation Gallery) *(added 2026-07-02)* | L-17 (Transformation Gallery) | Specced — `Transformation-Gallery-Wireframe-Spec-L17-L18.md` |
 | "View Full Timeline ›" | L-2 (Timeline) | Unspecced — see Risk 2 |
 | "View All [N] Accomplishments ›" | L-12 (Accomplishments Detail) | Unspecced — see Risk 4 |
 | "View All [N] Honors ›" | L-10 (Honors List) | Unspecced — see Risk 3 |
@@ -931,6 +970,8 @@ L-1 is portrait-only.
 | State B sealed chapter card | Full width × 60dp minimum |
 | Photo thumbnail | 64×64dp minimum |
 | "View All Photos" footer | Full width × 44dp |
+| Transformation Gallery thumbnail *(added 2026-07-02)* | 64×64dp minimum |
+| "View All Entries" footer (Transformation Gallery) *(added 2026-07-02)* | Full width × 44dp |
 | Timeline entry row | Full width × 44dp |
 | "View Full Timeline" footer | Full width × 44dp |
 | Accomplishment row | Full width × 44dp |
@@ -1268,6 +1309,16 @@ Photo count in section header ("PHOTOS 50") is the natural display. No warning b
 - [ ] Footer: "View All [N] Photos ›" → L-15
 - [ ] Section omitted when photo count = 0
 
+### Section 4a — Transformation Gallery (added 2026-07-02)
+- [ ] Section label: "TRANSFORMATION GALLERY [N]" (11sp, muted, caps)
+- [ ] 3–5 most recently added entries shown (account-wide, any chapter)
+- [ ] Video entries show a play-glyph overlay; photo entries do not
+- [ ] Horizontal scroll, positioned immediately after the Photos section
+- [ ] Tap on thumbnail → L-18 (Transformation Entry Detail) — dedicated detail screen, no chapter-detail fallback
+- [ ] Footer: "View All [N] Entries ›" → L-17 (Transformation Gallery)
+- [ ] Section omitted when entry count = 0
+- [ ] No likes, comments, view counts, or comparison to other athletes
+
 ### Section 5 — Timeline Teaser
 - [ ] Section label: "TIMELINE" (11sp, muted, caps)
 - [ ] 2–3 most recent timeline entries shown
@@ -1321,6 +1372,7 @@ Photo count in section header ("PHOTOS 50") is the natural display. No warning b
 | L-10 Honors List | "View All Honors" destination; Honor Earned FLM tap | Unspecced — Phase 2C |
 | L-12 Accomplishments Detail | "View All Accomplishments" destination | Unspecced — Phase 2C |
 | L-15 Photos | "View All Photos" destination; photo detail screen | Unspecced — Phase 2C |
+| L-17/L-18 Transformation Gallery *(added 2026-07-02)* | "View All Entries" destination; thumbnail tap destination | Specced — `Transformation-Gallery-Wireframe-Spec-L17-L18.md` |
 | G-2 Goal Detail | FLM Goal Achieved tap | Specced — locked |
 | W-3 Program Detail | FLM Program Graduated tap | Specced — locked |
 | P-1 Profile Modal | FLM Rank Up and Major Accomplishment fallback tap | Specced — locked |
@@ -1333,6 +1385,12 @@ Photo count in section header ("PHOTOS 50") is the natural display. No warning b
 
 ## Change Log
 
+### v1.1 — July 2026 (2026-07-02)
+
+**Transformation Gallery added** (new Section 8a / Section 4a in scroll order), per `Transformation-Gallery-Architecture-v1.0.md` and `Transformation-Gallery-Wireframe-Spec-L17-L18.md` — a permanent, chronological, chapter-organized photo-and-video archive of physical transformation, positioned immediately after the Photos section. Information Hierarchy (§3), Empty State Map (§12.3), Navigation (§13.1), Tap Targets (§15.5), Validation Checklist (§19), and Downstream Dependencies (§20) all updated. **Tab header corrected:** "Tab: Legacy (5th tab)" was a stale reference predating and contradicting the confirmed 4-tab bottom-navigation model (Home, Workouts, Legacy, Squads) — corrected to reflect Legacy as the 3rd of 4 tabs. No other existing section, decision, or pixel spec was altered by this revision.
+
+**Note on pre-existing staleness (not addressed by this revision):** this document's Architecture Risks (§18) and Downstream Dependencies (§20) still describe L-2, L-10, L-12, and L-15 as "unspecced" and reference a placeholder rank name ("Apprentice · I") — all of these have since been specced/locked elsewhere in the repository (per `Forge-Legacy-Master-Status.md`) but this document was never reconciled to reflect that. This is flagged, not fixed, as it is outside the scope of the Communities/Transformation Gallery formalization this revision performs.
+
 ### v1.0 — June 2026
 
 Initial specification. L-1 Legacy Hub defined as a Legacy Summary Surface answering "What have I built?" Seven-section scroll order locked: (1) Active Chapter summary card (not H-1 hero format) or invitation card; (2) Featured Legacy Moment, per FLM Standards v1.0 and FLM/Sealed Chapter Amendment 001, with FLM card visual format defined here for the first time including per-event-type card layouts and tap destination map; (3) Chapter History using State A/B per FLM/Sealed Chapter Amendment 001 with no section label; (4) Photos horizontal strip; (5) Timeline Teaser (2–3 entries + CTA); (6) Accomplishments preview; (7) Honors preview. Accomplishments ordered before Honors per FLM Standards priority hierarchy and Product DNA (athlete-authored declarations before system recognition). Identity strip (rank name + sub-tier, no progress bar) anchors the screen above the first section. All absent sections silently omitted — silence is the correct empty state. Eight architecture risks documented; L-5, L-2, L-10, L-12, L-15 are unspecced Phase 2C dependencies. FLM Honor Earned tap is inert for MVP v1.0. Emotional outcome: Earned.
@@ -1340,5 +1398,5 @@ Initial specification. L-1 Legacy Hub defined as a Legacy Summary Surface answer
 ---
 
 *Forge Legacy Legacy Hub Wireframe Specification — L-1*
-*v1.0 — June 2026*
-*Authority: Master PRD Section 12, FLM Standards v1.0, FLM/Sealed Chapter Amendment 001, Accomplishments Architecture Note v1.0, Product DNA*
+*v1.1 — July 2026*
+*Authority: Master PRD Section 12, FLM Standards v1.0, FLM/Sealed Chapter Amendment 001, Accomplishments Architecture Note v1.0, Product DNA, Transformation-Gallery-Architecture-v1.0*

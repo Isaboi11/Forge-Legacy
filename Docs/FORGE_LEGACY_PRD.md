@@ -270,13 +270,16 @@ Squads provide accountability through visibility, not shame. The Squad Activity 
 
 ```
 App Shell
-├── Bottom Navigation (4 tabs — always visible except during active workout)
+├── Bottom Navigation (5 tabs — always visible except during active workout)
 │   ├── Tab 1: Home
 │   ├── Tab 2: Workouts
 │   ├── Tab 3: Legacy
-│   └── Tab 4: Squads
+│   ├── Tab 4: Squads
+│   └── Tab 5: Communities (added 2026-07-07, see below)
 └── Top-Right Avatar → Profile Sheet (modal overlay, accessible from any tab)
 ```
+
+**Note:** this document predates the Communities subsystem (`Community-System-Architecture-v1.0.md`, June 2026) and was not reconciled when it was added — `Forge-Legacy-Master-PRD.md` is the copy that has been kept current with that work and all subsequent amendments. The edits here bring only the navigation/tab-count references up to date; a full reconciliation of this document against the newer one remains a separate, not-yet-scheduled cleanup item.
 
 ## Tab: Home
 
@@ -298,18 +301,34 @@ App Shell
 
 ## Tab: Squads
 
+> **Governing-authority pointer — Social-System-Architecture-v1.0 (LOCKED, June 2026).** This PRD is the Phase 2A high-level IA. **All social behavior** — Friends, Squads, Challenges, Profiles, Posts, the Friends Feed, audience selection, reactions/comments, friend discovery, and the Privacy Firewall's social application — is now governed by **`Social-System-Architecture-v1.0`, the single governing authority for Forge Legacy's social architecture.** Where this PRD's high-level social descriptions differ from the locked downstream specs (the persistent mutual **Friend** relationship `Friend-Relationship-Architecture-Amendment-001`; Workout With Friend outside Squads, WwF v1.2 FR-D5; participant-based Challenges, CA3 v1.2; the intentional **Posts / Friends Feed**, SOC-D7/D9), **the specs and `Social-System-Architecture-v1.0` control.** No social rule here is a governing definition.
+
 **Purpose:** Accountability and connection. Shared workouts, check-ins, squad activity.
 
 **Why it exists:** Athletes don't train alone. Squads give athletes a small, trusted group for accountability. No public feeds. No follower counts. Just the people you actually train with.
+
+## Tab: Communities *(added 2026-07-07)*
+
+> **Governing-authority pointer — `Community-System-Architecture-v1.0` (LOCKED, June 2026; COM-D18 revised 2026-07-07, `Docs/Amendments/Community-Architecture-Amendment-002-Fifth-Tab.md`).** Communities is Forge Legacy's fourth relationship pillar (Legacy / Friends / Squads / Communities) and the 5th bottom-navigation tab.
+
+**Purpose:** The large-scale, interest-based social layer — announcements and member posts, checked daily, distinct from the small private Squad circle.
+
+**Why it exists:** Communities is designed as a high-frequency destination, not an occasional directory, so it earned a tab on the same grounds as the other four.
 
 ## Profile (Modal Sheet via Avatar)
 
 **Purpose:** Identity and settings. Who you are, your rank, your subscription, your privacy.
 
-**Why it exists:** Profile is not a destination tab. It is a utility sheet. Accessible from anywhere via the top-right avatar. This keeps all four tabs focused on the athlete's journey rather than their settings.
+**Why it exists:** Profile is not a destination tab. It is a utility sheet. Accessible from anywhere via the top-right avatar. This keeps all five tabs focused on the athlete's journey rather than their settings.
+
+## Calendar (Cross-Cutting Surface — not a tab)
+
+> **Governing-authority pointer — `Calendar-System-Architecture-v1.0` (LOCKED, June 2026).** The Calendar is a **read/write timeline layer, not a domain and not a bottom-navigation tab** — the 5-tab architecture (Home, Workouts, Legacy, Squads, Communities) is unrelated to and unchanged by the Calendar. It **owns no data**; it aggregates dated events from existing systems and may schedule **only** workouts, goal-milestone dates, and rest days, **never duplicating or replacing** Program, Workout, Goal, Challenge, Honor, or Social logic. Reached from the Workouts Hub (forward schedule) and Legacy (long-term by-date history); every event taps into its owning system. Streak/consistency is a **private, backward-looking visualization only** (DNA §10 review = `Calendar-System-Architecture-v1.0` §19). Out of V1: hour-by-hour scheduling, meal planning, sleep tracking, habit tracking, daily notes, Google/Apple Calendar sync. See `Docs/Calendar-System-Architecture-v1.0.md`.
 
 ## Navigation Rules
 
+- The Calendar is a surface, not a tab — it opens within the launching stack and is dismissible back to it; it never appears during an active workout.
+- Communities is a bottom-navigation tab (see above) — not a Home/Squads discovery entry point, per `Docs/Amendments/Community-Architecture-Amendment-002-Fifth-Tab.md`.
 - Tab root screens replace on tap (do not push).
 - Each tab maintains its own independent navigation stack.
 - Profile is a modal sheet — dismissible, does not replace tab context.
@@ -926,13 +945,14 @@ Premium unlocks future storage and future features. It does not restrict what th
 | Workouts | 20 | 8 |
 | Legacy | 16 | — |
 | Squads | 10 | — |
+| Communities | Architecture-only — screen count TBD *(promoted to its own bottom-navigation tab 2026-07-07; no pixel wireframe authored yet)* | — |
 | Profile | 9 | — |
 | Global Modals | 9 | — |
-| **Total** | **~76** | **8** |
+| **Total** | **~76** (+ Communities tab, count TBD) | **8** |
 
 ## Navigation Structure
 
-- 4-tab bottom navigation: Home, Workouts, Legacy, Squads.
+- 5-tab bottom navigation: Home, Workouts, Legacy, Squads, Communities *(Communities added 2026-07-07, `Docs/Amendments/Community-Architecture-Amendment-002-Fifth-Tab.md`)*.
 - Profile as modal sheet via top-right avatar.
 - Each tab has independent navigation stack.
 - Active workout is full-screen (no top bar, no bottom nav).
@@ -1170,7 +1190,7 @@ Athletes log workouts, complete programs, and achieve goals. All of that raw mat
 
 ## Core Navigation
 
-4-tab bottom navigation: **Home | Workouts | Legacy | Squads**
+5-tab bottom navigation: **Home | Workouts | Legacy | Squads | Communities** *(Communities added 2026-07-07, `Docs/Amendments/Community-Architecture-Amendment-002-Fifth-Tab.md`)*
 
 Profile is a modal sheet accessed via top-right avatar — not a tab.
 

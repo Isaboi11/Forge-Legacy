@@ -1,7 +1,7 @@
 # Rank Computation Model
-## Sessions 1–3 | DRAFT — June 2026
+## Sessions 1–5 | LOCKED v1.0 — June 2026
 
-**Status:** DRAFT — Session 3
+**Status:** LOCKED v1.0
 **Type:** Computational Authority Document
 **Date:** June 2026
 
@@ -9,6 +9,10 @@
 - Rank-System-Architecture.md v1.0 (LOCKED — architectural authority)
 - FORGE_LEGACY_PRODUCT_DNA.md
 - MVP-Architecture-Audit-v1.0.md
+
+> **Downstream pointer — `Calendar-System-Architecture-v1.0` (LOCKED, June 2026).** The Calendar has **no Rank/Legacy-Score integration** (CAL-D21, mirroring SOC-D13 / CS-D4): it reads no part of this model and writes **no** rank- or legacy-contributing signal. Scheduling a workout, marking a rest day, attaching a milestone date, jumping to a date, or viewing the Calendar's **private backward-looking consistency visualization** (CAL-D19) contributes **nothing** to the Legacy Score. Consistent with this model's stance that the score rewards **breadth and depth, not daily streaks**, the consistency view is history/memory only and never a streak input. No change to this document is required; this pointer records the non-integration.
+
+> **Consuming-authority pointer — `Backend-Data-Model-Architecture-v1.0.md` (LOCK-CANDIDATE, June 2026).** Section 11.5 of that document fixes the `Rank`/`RankCategory` entity *shape* (fields, types, the 7-family/never-decreases enum) as the canonical schema, but explicitly defers every numeric threshold, the confirmed-vs-candidate trigger-event question, and every other TBD still tracked in this document to this document's own ongoing authority. No TBD listed here is resolved by the Backend doc — it only formalizes what an already-locked `Rank` record looks like once these TBDs are eventually settled.
 
 **Relationship to Rank-System-Architecture.md:**
 This document is the computational authority for the rank system. It fills the TBD placeholders established in Rank-System-Architecture.md v1.0 without amending that document's architectural decisions. When decisions here are locked, they fill TBD references in the architecture document by reference — they do not overwrite it.
@@ -70,7 +74,7 @@ This session resolves the threshold layer for three TBD items:
 **Session 3 Explicitly Excludes:**
 - Rank evaluation trigger events (TBD-1)
 - Sub-tier advancement surfacing mechanism (TBD-2)
-- Icon display format (TBD-11)
+- Legacy display format (TBD-11)
 - Rank data model schema (TBD-12)
 - Rank Evaluation Service architecture (TBD-16)
 - Partial credit rate for imported training signals (formula territory — deferred)
@@ -82,6 +86,58 @@ This session resolves the threshold layer for three TBD items:
 
 **Remaining Open TBDs (carry to future sessions):**
 TBD-1, TBD-2, TBD-11, TBD-12, TBD-16
+
+---
+
+**Session 4 Scope:**
+This session resolves the service layer for two TBD items:
+
+| TBD | Item | Status |
+|-----|------|--------|
+| TBD-1 | Rank evaluation trigger events | Resolved — see Section 19 |
+| TBD-16 | Rank Evaluation Service architecture | Resolved — see Section 20 |
+
+**Session 4 Explicitly Excludes:**
+- New thresholds, formulas, or scoring values (resolved in Sessions 1–3)
+- Sub-tier surfacing mechanism (TBD-2 — P-2 scope, deferred)
+- Legacy display format (TBD-11 — UI scope, deferred)
+- Rank data model schema (TBD-12 — unlocked by this session; scheduled for Session 5)
+- UI behavior for any promotion, sub-tier advance, or rank display
+- Background job scheduling specifics (platform-dependent — Q17, flagged for Session 5)
+- Offline sync architecture (Q16, flagged for Session 5)
+- Any TBD not listed in the Session 4 scope table above
+
+**Remaining Open TBDs (carry to Session 5):**
+TBD-2, TBD-11, TBD-12
+
+---
+
+**Session 5 Scope:**
+This session resolves the data model layer for one TBD item, using Q15 and Q16 pre-decisions provided by the user.
+
+**Pre-decisions applied this session:**
+
+| Question | Decision |
+|----------|----------|
+| Q15 | Promotion queue must be persistent server-side state |
+| Q16 | Offline events sync to server when online. Rank Evaluation Service runs server-side after sync. Client must not independently award rank. |
+
+| TBD | Item | Status |
+|-----|------|--------|
+| TBD-12 | Rank data model schema | Resolved — see Section 23 |
+
+**Session 5 Explicitly Excludes:**
+- UI behavior for any rank surface, promotion, or sub-tier display
+- Sub-tier surfacing mechanism (TBD-2 — P-2 scope, deferred)
+- Legacy display format (TBD-11 — UI scope, deferred)
+- New thresholds, formulas, or scoring values (resolved in Sessions 1–3)
+- Background job scheduling specifics (Q17 — platform-dependent, deferred)
+- Error handling strategy (Q19 — deferred)
+- Sync conflict resolution protocol (addressed conceptually in Section 23; full protocol is server infrastructure scope)
+- Any TBD not listed in the Session 5 scope table above
+
+**Remaining Open TBDs (carry to Session 6):**
+TBD-2, TBD-11
 
 ---
 
@@ -487,7 +543,7 @@ Structural definition:
 
 2. **Not Achieved is valid participation**: The product explicitly frames "Not Achieved" as neutral — "I pursued this and my chapter closed; the goal wasn't completed; that is the full meaning." An athlete who pursued a hard primary goal and missed it should receive Goal Participation credit. Excluding Not Achieved outcomes would incentivize athletes to set only easy primary goals. That creates wrong behavior and conflicts with the product's Accountability Without Shame principle.
 
-3. **Achievement as a quality signal, not a binary gate**: The identity tests for Established ("goals set and achieved, not merely set") and Icon ("repeated goal fulfillment over many years") introduce achievement as a higher-weight quality dimension at upper ranks. This is handled through threshold-setting and scoring (Session 2+), not through the category definition. The definition of participation is "did you engage in the goal lifecycle." The quality of that engagement (how many were achieved) is evaluated at the scoring layer.
+3. **Achievement as a quality signal, not a binary gate**: The identity tests for Established ("goals set and achieved, not merely set") and Legacy ("repeated goal fulfillment over many years") introduce achievement as a higher-weight quality dimension at upper ranks. This is handled through threshold-setting and scoring (Session 2+), not through the category definition. The definition of participation is "did you engage in the goal lifecycle." The quality of that engagement (how many were achieved) is evaluated at the scoring layer.
 
 4. **Preventing inflation**: Tying participation events to chapter sealing prevents an athlete from creating many secondary goals in a perpetually active chapter without ever completing the commitment cycle. The gate is sealing — a deliberate, ceremony-level transaction.
 
@@ -856,8 +912,8 @@ The Identity Credibility Principle (RSA §4) governs all timing and pacing decis
 
 - Architect: "I'm intentionally shaping my development."
 - Established: "I've built something real."
-- Legacy: "My journey has become a meaningful story."
-- Icon: "I repeatedly become the person I intend to become."
+- Legend: "My journey has become a meaningful story."
+- Legacy: "I repeatedly become the person I intend to become."
 
 None of these can be credibly claimed by an athlete who has been completely inactive for an extended period. An athlete who trained intensively for two years, earned Craftsman, went dormant for three years, and then immediately attempted promotion to Architect — without having resumed training — does not reflect the Architect identity.
 
@@ -1136,9 +1192,9 @@ The threshold should also be evaluated against the promotion timeline targets (R
 
 **Q10 — Different Recent Engagement Thresholds per Prestige Rank?**
 
-Should Architect, Established, Legacy, and Icon have the same recent engagement threshold, or should the threshold scale with rank?
+Should Architect, Established, Legend, and Legacy have the same recent engagement threshold, or should the threshold scale with rank?
 
-*Context*: The case for scaling: "I repeatedly become the person I intend to become" (Icon) requires more evidence of sustained current engagement than "I'm intentionally shaping my development" (Architect). A higher threshold at Legacy and Icon would require more recent training density for the most identity-demanding ranks.
+*Context*: The case for scaling: "I repeatedly become the person I intend to become" (Legacy) requires more evidence of sustained current engagement than "I'm intentionally shaping my development" (Architect). A higher threshold at Legend and Legacy would require more recent training density for the most identity-demanding ranks.
 
 The case for uniform: simplicity and predictability. Athletes understand one recent engagement standard; varying it per rank adds complexity and potential for confusion.
 
@@ -1154,7 +1210,7 @@ The case for uniform: simplicity and predictability. Athletes understand one rec
 
 ### 13.1 Problem
 
-Every rank family except Icon contains four sub-tiers (I · II · III · IV). Sub-tiers are locked structural elements — they exist in the architecture as progress markers and expressions of increasing maturity within a family identity. But what triggers advancement from sub-tier I to II, II to III, III to IV is entirely undefined.
+Every rank family except Legacy contains four sub-tiers (I · II · III · IV). Sub-tiers are locked structural elements — they exist in the architecture as progress markers and expressions of increasing maturity within a family identity. But what triggers advancement from sub-tier I to II, II to III, III to IV is entirely undefined.
 
 Without sub-tier thresholds, the rank system has no internal structure within families. Athletes have no short-term development signal. The P-2 What's Next surface cannot compute sub-tier progress. The "sub-tier progress" dimension of R-D47 (both rank progress dimensions visible simultaneously) cannot be implemented.
 
@@ -1232,7 +1288,7 @@ Active weeks (AW) are accumulated since entering the current rank family. The AW
 | Craftsman | 4 AW | 8 AW | 14 AW | II → III: first improvement event on primary signal |
 | Architect | 6 AW | 12 AW | 20 AW | II → III: 1 completed program graduation |
 | Established | 8 AW | 16 AW | 26 AW | III → IV: 1 additional completed and sealed chapter |
-| Legacy | 10 AW | 22 AW | 36 AW | III → IV: 1 additional program graduation |
+| Legend | 10 AW | 22 AW | 36 AW | III → IV: 1 additional program graduation |
 
 **AW = active weeks within the current rank family since family entry**
 
@@ -1242,7 +1298,7 @@ Active weeks (AW) are accumulated since entering the current rank family. The AW
 - Craftsman · II → Craftsman · III requires 8 active weeks in Craftsman AND the first improvement event on the athlete's primary signal having been registered at any point
 - Architect · II → Architect · III requires 12 active weeks in Architect AND 1 completed program graduation at any point
 - Established · III → Established · IV requires 26 active weeks in Established AND 1 sealed chapter beyond what was required for the Architect signature milestone (i.e., an additional sealed chapter completed during the Established journey or prior)
-- Legacy · III → Legacy · IV requires 36 active weeks in Legacy AND 1 program graduation beyond what was required at the Established milestone
+- Legend · III → Legend · IV requires 36 active weeks in Legend AND 1 program graduation beyond what was required at the Established milestone
 
 **Timeline calibration:**
 
@@ -1255,7 +1311,7 @@ At a normally engaged athlete's pace (~3 active weeks per month):
 | Craftsman | 14 AW | ~4.7 months | Moderate ✓ |
 | Architect | 20 AW | ~6.7 months | Slow ✓ |
 | Established | 26 AW | ~8.7 months | Very Slow ✓ |
-| Legacy | 36 AW | ~12 months | Extremely Slow ✓ |
+| Legend | 36 AW | ~12 months | Extremely Slow ✓ |
 
 These timings are consistent with the cadence descriptions in RSA §11.1.
 
@@ -1289,7 +1345,7 @@ For sub-tier thresholds specifically, this import treatment is simpler than for 
 
 ### 14.1 Problem
 
-Family promotion thresholds are the most critical numeric gap in the entire rank system. The architecture defines 6 family promotion transitions (Foundation→Builder through Legacy→Icon), each requiring multi-requirement convergence across up to 5 requirement types (RSA §5.2). Not a single numeric value exists for any threshold in any category at any transition.
+Family promotion thresholds are the most critical numeric gap in the entire rank system. The architecture defines 6 family promotion transitions (Foundation→Builder through Legend→Legacy), each requiring multi-requirement convergence across up to 5 requirement types (RSA §5.2). Not a single numeric value exists for any threshold in any category at any transition.
 
 Without these thresholds, the rank evaluation layer cannot determine promotion eligibility for any family transition. Sub-tier thresholds (Section 13) provide internal progress markers, but the family promotion is the definitive rank advancement event — it triggers M-1, changes the athlete's identity, and is permanently recorded.
 
@@ -1301,7 +1357,7 @@ Family promotions are governed by the hybrid model from RSA §5.2: all applicabl
 
 For each family transition, the applicable requirement types are:
 
-| Requirement Type | F→B | B→C | C→A | A→E | E→L | L→I |
+| Requirement Type | F→B | B→C | C→A | A→E | E→L | L→G |
 |-----------------|-----|-----|-----|-----|-----|-----|
 | Development evidence | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Category requirements | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
@@ -1326,8 +1382,8 @@ At this baseline:
 - Builder→Craftsman: ~6 months ✓ (target: 2-6 months)
 - Craftsman→Architect: ~12 months ✓ (target: 1-2 years)
 - Architect→Established: ~24 months ✓ (target: 2-4 years)
-- Established→Legacy: ~60 months ✓ (target: 5-8 years, early end)
-- Legacy→Icon: ~96 months ✓ (target: 8+ years)
+- Established→Legend: ~70 months ✓ (target: 5-8 years)
+- Legend→Legacy: ~96 months ✓ (target: 7+ years)
 
 Very active athletes (4-5 sessions/week) will be held at upper ranks by time gates, not by category thresholds — consistent with the Identity Credibility Principle. Less active athletes (~2 sessions/week) may take longer than the target timeline — which is acceptable given the targets are expected ranges, not hard windows.
 
@@ -1345,8 +1401,8 @@ Import treatment (per R-D46): for Foundation through pre-Architect thresholds, i
 | B→C | 18 | — |
 | C→A | 36 | 18 |
 | A→E | 72 | 36 |
-| E→L | 180 | 90 |
-| L→I | 288 | 144 |
+| E→L | 210 | 105 |
+| L→G | 288 | 144 |
 
 **The Forge-native floor** means: regardless of imported history, the athlete must have logged at least this many Forge-native active weeks before becoming eligible for the prestige rank transition. For Craftsman→Architect, a minimum of 18 Forge-native active weeks is required (~6 months of native active training). This operationalizes R-D46's "Forge-native confirmation" requirement at the first prestige gate.
 
@@ -1359,8 +1415,8 @@ At 3 AW/month, the cumulative thresholds arrive at:
 - 18 AW: 6 months (B→C)
 - 36 AW: 12 months (C→A — AW threshold binding; time gate = 9 months means AW is the constraint at normal pace)
 - 72 AW: 24 months (A→E — AW threshold binding; time gate = 18 months means AW is the constraint at normal pace)
-- 180 AW: 60 months / 5 years (E→L — AW binding at 5 years; time gate = 48 months means AW binding at normal pace)
-- 288 AW: 96 months / 8 years (L→I — AW binding at 8 years; time gate = 84 months means AW binding at normal pace)
+- 210 AW: 70 months / 5.8 years (E→L — AW binding at 5.8 years; time gate = 48 months means AW binding at normal pace)
+- 288 AW: 96 months / 8 years (L→G — AW binding at 8 years; time gate = 84 months means AW binding at normal pace)
 
 Very active athletes (4+ AW/month) will be time-gate-constrained at prestige ranks.
 
@@ -1377,7 +1433,7 @@ For imported athletes, journey start = earliest imported session date (consisten
 | C→A | First meaningful gate | 270 days (9 months) |
 | A→E | Meaningful gate | 540 days (18 months) |
 | E→L | Major gate | 1460 days (48 months / 4 years) |
-| L→I | Exceptional gate | 2555 days (84 months / 7 years) |
+| L→G | Exceptional gate | 2555 days (84 months / 7 years) |
 
 **Notes on time gate values:**
 
@@ -1387,9 +1443,9 @@ For imported athletes, journey start = earliest imported session date (consisten
 
 - Architect→Established (540 days / 18 months): "I've built something real" requires more than a year. 18 months is the minimum; the AW threshold at normal pace requires 24 months (2 years), making the AW binding in typical cases.
 
-- Established→Legacy (1460 days / 4 years): "My journey has become a meaningful story" cannot be reached in under 4 years. Even the most active athlete cannot shortcut this. At normal pace, the AW threshold binds at 5 years — the time gate protects the identity at the floor.
+- Established→Legend (1460 days / 4 years): "My journey has become a meaningful story" cannot be reached in under 4 years. At normal pace (3 AW/month), the AW threshold binds at 5.8 years. For highly active athletes (5+ AW/month), the time gate provides the binding floor at 4 years — ensuring even the most active athlete cannot shortcut a 4-year minimum journey to Legend.
 
-- Legacy→Icon (2555 days / 7 years): "I repeatedly become the person I intend to become" over a 7-year minimum documented journey. The "exceptional" classification is warranted: a 7-year journey is genuinely exceptional.
+- Legend→Legacy (2555 days / 7 years): "I repeatedly become the person I intend to become" over a 7-year minimum documented journey. The "exceptional" classification is warranted: a 7-year journey is genuinely exceptional.
 
 ### 14.6 Personal Improvement Thresholds
 
@@ -1402,14 +1458,14 @@ Personal Improvement is evaluated using the Personal Best Progression model from
 | C→A | Demonstrated improvement pattern — multiple personal best advancements across distinct time periods |
 | A→E | Repeated improvement — a pattern of growth evidenced across multiple evaluation periods, not a single improvement phase |
 | E→L | Multi-year improvement — sustained advancement across at least two distinct years of training history |
-| L→I | Multi-phase improvement — multiple distinct phases of growth spanning years, evidencing continued development into advanced training |
+| L→G | Multi-phase improvement — multiple distinct phases of growth spanning years, evidencing continued development into advanced training |
 
 These qualitative descriptions align directly with the Major Rank Identity Tests (RSA §15):
 - Craftsman identity test: "Meaningful improvement — demonstrable progress in at least one primary signal" → met by B→C's first improvement event
 - Architect identity test: "Meaningful improvement" → met by C→A's demonstrated pattern
 - Established identity test: "Repeated improvement — a pattern of growth, not a single peak" → matches A→E description
-- Legacy identity test: "Repeated improvement across different time periods" → matches E→L description
-- Icon identity test: "Sustained growth — improvement that continues rather than plateauing" → matches L→I description
+- Legend identity test: "Repeated improvement across different time periods" → matches E→L description
+- Legacy identity test: "Sustained growth — improvement that continues rather than plateauing" → matches L→G description
 
 The exact numeric thresholds (how many personal best events, across how many months) for the "pattern" and "multi-year" requirements are deferred to Session 4 as Q13. The structural model — Personal Best Progression with time-distributed evidence — is resolved here.
 
@@ -1424,16 +1480,16 @@ Program Progression (#3 category). Program Graduation is the primary signal (sta
 | C→A | 1 — at least 1 completed program graduation |
 | A→E | 3 — multiple programs as part of the Established signature milestone |
 | E→L | 6 — multiple structured journeys across distinct development phases |
-| L→I | 10 — extensive program history representing multiple development cycles |
+| L→G | 10 — extensive program history representing multiple development cycles |
 
 **Defining "multiple" in the Established signature milestone:**
 RSA §14 states "multiple completed programs + multiple completed and sealed Chapters." This document defines:
 - **"Multiple programs" for Established = 3 program graduations**
 - This is the structural definition that fills the "Multiple" placeholder in RSA §14 for Established.
 
-**Defining "multiple" and related terms for Legacy and Icon signature milestones:**
-- **Legacy milestone** ("multiple programs representing distinct development phases"): 6 program graduations, spanning at least 2 different programs (not 6 repetitions of the same program). Distinct development phase requirement: at least 3 of the 6 graduations must be from different program categories or significantly different program designs.
-- **Icon milestone** ("repeated cycles of commitment, development, achievement, reflection, and fulfillment"): 10 program graduations across multiple years.
+**Defining "multiple" and related terms for Legend and Legacy signature milestones:**
+- **Legend milestone** ("multiple programs representing distinct development phases"): 6 program graduations, spanning at least 2 different programs (not 6 repetitions of the same program). Distinct development phase requirement: at least 3 of the 6 graduations must be from different program categories or significantly different program designs.
+- **Legacy milestone** ("repeated cycles of commitment, development, achievement, reflection, and fulfillment"): 10 program graduations across multiple years.
 
 These definitions fill the placeholder descriptions in RSA §14 for the combination and pattern milestones.
 
@@ -1450,14 +1506,14 @@ Import treatment: imported sessions count toward volume at full credit for Found
 | C→A | 90 sessions |
 | A→E | 200 sessions |
 | E→L | 400 sessions |
-| L→I | 700 sessions |
+| L→G | 700 sessions |
 
 **Calibration check** at 3 sessions/active week × 3 active weeks/month = 9 sessions/month:
 - 12 sessions: ~1.3 months (binding before AW threshold at F→B — appropriate: very early development check)
 - 36 sessions: ~4 months (binding before AW threshold; AW binds at month 6 for B→C)
 - 90 sessions: ~10 months (AW binds at month 12 for C→A; volume binds slightly earlier)
 - 200 sessions: ~22 months (AW binds at month 24 for A→E; volume binds slightly earlier)
-- 400 sessions: ~44 months (time gate binds at month 48; volume already met)
+- 400 sessions: ~44 months (AW threshold binds at month 70; volume and time gate are confirming floors met well before AW)
 - 700 sessions: ~78 months (time gate binds at month 84; volume already met)
 
 Volume is the binding constraint at Foundation and early Builder. At upper ranks, the AW threshold and time gate are binding; volume is a confirming floor. This is the correct design — volume confirms accumulated work but doesn't independently govern prestige promotions.
@@ -1474,8 +1530,8 @@ These combine the Chapter Progression secondary category (TBD-13), Goal Particip
 | B→C | 0 — not required |
 | C→A | 1 — Architect signature milestone (RSA §14: "First completed and sealed Chapter") |
 | A→E | 2 — Established signature milestone ("multiple completed and sealed Chapters" = 2 minimum) |
-| E→L | 3 — Legacy signature milestone requires chapter progression |
-| L→I | 5 — Icon signature milestone requires "multiple meaningful journeys" |
+| E→L | 3 — Legend signature milestone requires chapter progression |
+| L→G | 5 — Legacy signature milestone requires "multiple meaningful journeys" |
 
 **Defining "multiple" in the Established signature milestone (sealed chapters):**
 - **"Multiple sealed chapters" for Established = 2 sealed chapters minimum**
@@ -1491,11 +1547,11 @@ This fills the second "multiple" placeholder in RSA §14 for Established.
 | C→A | 1 participation event | 0 achieved required (any resolution qualifies) |
 | A→E | 2 participation events | ≥1 primary goal achieved |
 | E→L | 4 participation events | ≥2 primary goals achieved |
-| L→I | 6 participation events | ≥4 primary goals achieved |
+| L→G | 6 participation events | ≥4 primary goals achieved |
 
 **Goal participation events** = primary or secondary goal resolution events through chapter sealing (TBD-15 definition). A chapter sealed with a primary goal defined constitutes 1 primary participation event plus any secondary event count.
 
-**Primary goals achieved** = the count of primary goals that reached the Achieved outcome through chapter sealing. This satisfies the Established identity test ("goal fulfillment — goals set and achieved, not merely set") and scales through Legacy ("repeated goal fulfillment") and Icon ("repeated goal fulfillment over many years").
+**Primary goals achieved** = the count of primary goals that reached the Achieved outcome through chapter sealing. This satisfies the Established identity test ("goal fulfillment — goals set and achieved, not merely set") and scales through Legend ("repeated goal fulfillment") and Legacy ("repeated goal fulfillment over many years").
 
 The ratio of achieved goals to total participation events is not a hard-coded formula here. The minimum achievement counts ensure that at upper ranks, the athlete has demonstrated genuine goal fulfillment — not merely goal participation. An athlete with 4 participation events and 0 achieved goals cannot be Established, regardless of how many total events they have.
 
@@ -1513,11 +1569,11 @@ For import treatment: whether imported sessions satisfy recent engagement is Q7,
 
 This table consolidates all threshold types per transition. Requirements marked — are not applicable at that transition.
 
-| Requirement | F → B | B → C | C → A | A → E | E → L | L → I |
+| Requirement | F → B | B → C | C → A | A → E | E → L | L → G |
 |-------------|-------|-------|-------|-------|-------|-------|
 | **Time gate (minimum)** | None | 60 days | 270 days | 540 days | 1,460 days | 2,555 days |
-| **Cumulative active weeks (total)** | 6 | 18 | 36 | 72 | 180 | 288 |
-| **Forge-native AW floor** | — | — | 18 | 36 | 90 | 144 |
+| **Cumulative active weeks (total)** | 6 | 18 | 36 | 72 | 210 | 288 |
+| **Forge-native AW floor** | — | — | 18 | 36 | 105 | 144 |
 | **Personal improvement** | — | First event | Multi-period pattern | Repeated | Multi-year | Multi-phase |
 | **Program graduations** | 0 | 0 | 1 | 3 | 6 | 10 |
 | **Volume (meaningful work sessions)** | 12 | 36 | 90 | 200 | 400 | 700 |
@@ -1527,7 +1583,7 @@ This table consolidates all threshold types per transition. Requirements marked 
 | **Recent engagement** | — | — | Required | Required | Required | Required |
 | **Signature milestone** | None | None | 1st sealed chapter | 3 programs + 2 chapters | 6 programs + 3 chapters | 10 programs + 5 chapters |
 
-F = Foundation, B = Builder, C = Craftsman, A = Architect, E = Established, L = Legacy, I = Icon
+F = Foundation, B = Builder, C = Craftsman, A = Architect, E = Established, L = Legend, G = Legacy
 
 **Every row is a hard requirement.** An athlete who satisfies all rows except one is not eligible for family promotion. There are no substitute paths — this is the multi-requirement convergence model. The value in any cell is the minimum that must be met; exceeding a threshold does not compensate for a deficit in another.
 
@@ -1537,8 +1593,8 @@ The signature milestone column consolidates the Chapter + Program requirements i
 
 - **Craftsman→Architect signature milestone**: first completed and sealed chapter. Satisfied by: sealed chapters ≥ 1.
 - **Architect→Established signature milestone**: multiple programs + multiple chapters. Satisfied by: program graduations ≥ 3 AND sealed chapters ≥ 2. This operationalizes the RSA's two "multiple" placeholders as 3 + 2.
-- **Established→Legacy signature milestone**: multi-year development + program progression + chapter progression + sustained improvement. Satisfied by: time gate (4 years) + 6 program graduations + 3 sealed chapters + multi-year improvement pattern. Each of these is individually checked; the combined satisfaction constitutes the milestone.
-- **Legacy→Icon signature milestone**: repeated pattern milestone. Satisfied by: 10 program graduations + 5 sealed chapters + 4 primary goals achieved + multi-phase improvement + time gate (7 years). The convergence of all these requirements is the "repeated cycles of commitment, development, achievement, reflection, and fulfillment" pattern described in RSA §14.
+- **Established→Legend signature milestone**: multi-year development + program progression + chapter progression + sustained improvement. Satisfied by: time gate (4 years) + 6 program graduations + 3 sealed chapters + multi-year improvement pattern. Each of these is individually checked; the combined satisfaction constitutes the milestone.
+- **Legend→Legacy signature milestone**: repeated pattern milestone. Satisfied by: 10 program graduations + 5 sealed chapters + 4 primary goals achieved + multi-phase improvement + time gate (7 years). The convergence of all these requirements is the "repeated cycles of commitment, development, achievement, reflection, and fulfillment" pattern described in RSA §14.
 
 ### 14.13 Import Treatment at the Family Promotion Level
 
@@ -1570,7 +1626,7 @@ R-D46 establishes that imported history provides partial credit and contextual r
 
 - **Import pipeline completeness**: The evaluation service must be able to determine, per session record, whether it is native or imported. The Forge-native floor requires distinguishing native active weeks from imported ones. This is an import pipeline data requirement.
 
-- **D-RCM-13 dependency**: The definitions of "multiple" in the Established milestone (3 programs, 2 chapters) and "multiple" in the Legacy milestone (6 programs, 3 chapters) fill placeholders in RSA §14. These definitions become load-bearing once the document is locked — changing them would require an amendment.
+- **D-RCM-13 dependency**: The definitions of "multiple" in the Established milestone (3 programs, 2 chapters) and "multiple" in the Legend milestone (6 programs, 3 chapters) fill placeholders in RSA §14. These definitions become load-bearing once the document is locked — changing them would require an amendment.
 
 ---
 
@@ -1601,7 +1657,7 @@ The spacing clock starts when the previous promotion fires. A promotion waiting 
 Every promotion, regardless of rank or type (sub-tier vs. family), has the same minimum spacing (e.g., 7 days between any two promotions).
 
 **Option B — Rank-scaled spacing**
-Spacing increases with rank: Foundation promotions fire quickly; Established and Legacy promotions fire slowly. Reflects the increasing weight and identity significance of upper-rank promotions.
+Spacing increases with rank: Foundation promotions fire quickly; Established and Legend promotions fire slowly. Reflects the increasing weight and identity significance of upper-rank promotions.
 
 **Option C — Type-differentiated spacing (sub-tier vs. family)**
 Sub-tier advances have shorter spacing than family promotions. Within a family, there are multiple sub-tier advances that should be paced appropriately; family promotions are less frequent and more significant, warranting longer spacing.
@@ -1613,9 +1669,9 @@ Spacing is different for sub-tier advances vs. family promotions, AND scales wit
 
 | Option | Pro | Con |
 |--------|-----|-----|
-| A — Flat | Simplest to implement and communicate. | All promotions treated equally. A Foundation sub-tier advance and a Legacy family promotion feel the same in the queue. This is wrong — they are not equally significant. |
+| A — Flat | Simplest to implement and communicate. | All promotions treated equally. A Foundation sub-tier advance and a Legend family promotion feel the same in the queue. This is wrong — they are not equally significant. |
 | B — Rank-scaled | Correctly weights upper-rank promotions as more significant and deliberate. | Does not distinguish sub-tier from family promotions, which have meaningfully different significance (M-1 fires on family only; sub-tiers have no ceremony). |
-| C — Type-differentiated | Correctly reflects the ceremony difference. Sub-tier advances are progress markers; family promotions are identity shifts. Different spacing for each. | Does not account for rank level. A Foundation sub-tier and a Legacy sub-tier should feel different, but flat type-differentiation treats them the same. |
+| C — Type-differentiated | Correctly reflects the ceremony difference. Sub-tier advances are progress markers; family promotions are identity shifts. Different spacing for each. | Does not account for rank level. A Foundation sub-tier and a Legend sub-tier should feel different, but flat type-differentiation treats them the same. |
 | D — Rank + type (combined) | Most precisely calibrated. Sub-tier advances increase in spacing with rank; family promotions increase in spacing with rank; and family promotions are always longer than same-rank sub-tier spacing. | More complex spacing table. But the table itself is simple to implement as a lookup — complexity is only in the authoring, not the execution. |
 
 ### 15.5 Recommendation
@@ -1626,7 +1682,7 @@ Spacing is different for sub-tier advances vs. family promotions, AND scales wit
 
 1. Foundation and Builder sub-tier advances should feel encouraging and frequent. A Foundation athlete who earns Foundation · II after their first 2 active weeks should experience that quickly — the encouragement is the product. Spacing these too long would make early rank feel stagnant.
 
-2. Legacy sub-tier advances are meaningful events. An athlete who spends 10 active weeks to reach Legacy · II has been training for many weeks at the most demanding rank. The delivery of that advance should feel deliberate, not rushed. A 30-day spacing is appropriate for this level.
+2. Legend sub-tier advances are meaningful events. An athlete who spends 10 active weeks to reach Legend · II has been training for many weeks at the most demanding rank. The delivery of that advance should feel deliberate, not rushed. A 30-day spacing is appropriate for this level.
 
 3. Family promotions always warrant more deliberateness than sub-tier advances. The M-1 ceremony fires on family promotions only. The sub-tier before the family promotion (sub-tier IV) is the final progress marker before the identity shift. After it fires, the athlete needs enough time to experience that state before the M-1 family promotion can follow.
 
@@ -1643,7 +1699,7 @@ Spacing is different for sub-tier advances vs. family promotions, AND scales wit
 | Craftsman | 7 days |
 | Architect | 14 days |
 | Established | 21 days |
-| Legacy | 30 days |
+| Legend | 30 days |
 
 **Family promotion spacing** (minimum time after the previous promotion of any kind before a family promotion can fire):
 
@@ -1653,8 +1709,8 @@ Spacing is different for sub-tier advances vs. family promotions, AND scales wit
 | →Craftsman | 7 days |
 | →Architect | 21 days |
 | →Established | 30 days |
-| →Legacy | 45 days |
-| →Icon | 60 days |
+| →Legend | 45 days |
+| →Legacy | 60 days |
 
 **Critical rule:** Family promotion spacing is measured from the last queue event, not from the last family promotion. If an athlete earns Foundation · IV and then Foundation→Builder in rapid succession, the Foundation · IV sub-tier fires (1-day spacing after previous event), and then Builder family promotion cannot fire until 1 day (its minimum) after the sub-tier advance. In practice, the M-1 ceremony requires the athlete to dismiss it — so the family promotion fires when the athlete next opens the app post-spacing.
 
@@ -1704,9 +1760,9 @@ Three high-priority TBD items have been resolved:
 
 | TBD | Decision Summary |
 |-----|-----------------|
-| TBD-3 | Sub-tier thresholds = active weeks within current rank family as primary signal, with confirming evidence at specific sub-tiers for Craftsman and above. Threshold table provided: Foundation I→II at 2 AW through Legacy III→IV at 36 AW. Confirming evidence required at Craftsman II→III, Architect II→III, Established III→IV, Legacy III→IV. |
-| TBD-4 | Family promotion thresholds defined across all 6 family transitions. Multi-requirement convergence model: all 5 requirement types must simultaneously be satisfied. Comprehensive threshold table provided. Time gates concretized. "Multiple" defined: 3 programs + 2 chapters for Established; 6 programs + 3 chapters for Legacy. Forge-native AW floors defined for prestige rank transitions (50% of total AW threshold must be native). |
-| TBD-5 | Promotion spacing = rank-scaled and type-differentiated. Sub-tier spacing: 1 day (Foundation) to 30 days (Legacy). Family promotion spacing: 1 day (→Builder) to 60 days (→Icon). Spacing clock starts from previous promotion fire, not from queue entry. Spacing is invisible in normal progression; critical in post-import queue scenarios. |
+| TBD-3 | Sub-tier thresholds = active weeks within current rank family as primary signal, with confirming evidence at specific sub-tiers for Craftsman and above. Threshold table provided: Foundation I→II at 2 AW through Legend III→IV at 36 AW. Confirming evidence required at Craftsman II→III, Architect II→III, Established III→IV, Legend III→IV. |
+| TBD-4 | Family promotion thresholds defined across all 6 family transitions. Multi-requirement convergence model: all 5 requirement types must simultaneously be satisfied. Comprehensive threshold table provided. Time gates concretized. "Multiple" defined: 3 programs + 2 chapters for Established; 6 programs + 3 chapters for Legend. Forge-native AW floors defined for prestige rank transitions (50% of total AW threshold must be native). |
+| TBD-5 | Promotion spacing = rank-scaled and type-differentiated. Sub-tier spacing: 1 day (Foundation) to 30 days (Legend). Family promotion spacing: 1 day (→Builder) to 60 days (→Legacy). Spacing clock starts from previous promotion fire, not from queue entry. Spacing is invisible in normal progression; critical in post-import queue scenarios. |
 
 ### 16.2 Structural Coherence Check
 
@@ -1723,7 +1779,7 @@ Three high-priority TBD items have been resolved:
 
 All seven prior-session decisions are expressed in the threshold table. The table is the convergence point of the entire Computation Model.
 
-**TBD-5 builds on RSA §11 and §12**: Spacing values implement the philosophy in RSA §11.2 ("spacing increases with rank") and the queue rules in RSA §12 (sequential, no skipping). The two-dimensional structure (rank × type) is not explicitly required by the architecture but is the natural extension of the cadence descriptions (Fast for Foundation, Final for Icon) to the queue level.
+**TBD-5 builds on RSA §11 and §12**: Spacing values implement the philosophy in RSA §11.2 ("spacing increases with rank") and the queue rules in RSA §12 (sequential, no skipping). The two-dimensional structure (rank × type) is not explicitly required by the architecture but is the natural extension of the cadence descriptions (Fast for Foundation, Final for Legacy) to the queue level.
 
 **TBD-3 and TBD-4 are correctly separated**: Sub-tier thresholds (active weeks within family) and family promotion thresholds (cumulative active weeks since journey start + multi-requirement convergence) use different counters and different models. Sub-tier progress and major rank progress are the two distinct dimensions R-D47 requires to be visible simultaneously in P-2 — the separation of TBD-3 and TBD-4 into two different measurement models makes those two dimensions genuinely independent.
 
@@ -1737,21 +1793,21 @@ The active weeks counter for sub-tier progress is anchored to the current family
 **D-RCM-12: Forge-native active week floor is 50% of total AW threshold at all prestige ranks.**
 For Craftsman→Architect: 18 of 36 required AW must be Forge-native.
 For Architect→Established: 36 of 72.
-For Established→Legacy: 90 of 180.
-For Legacy→Icon: 144 of 288.
+For Established→Legend: 105 of 210.
+For Legend→Legacy: 144 of 288.
 This 50% native floor is the structural operationalization of R-D46's "Forge-native confirmation" requirement. It cannot be reduced without amending R-D46.
 
 **D-RCM-13: "Multiple" in the Established signature milestone = 3 program graduations + 2 sealed chapters.**
 RSA §14 used "multiple" as a placeholder. This document resolves it to specific numbers. These numbers become the authoritative definition of the Established milestone. Any reference to "multiple programs" or "multiple chapters" for Established now means 3 and 2 respectively.
 
-**D-RCM-14: "Multiple" in the Legacy signature milestone = 6 program graduations + 3 sealed chapters.**
-RSA §14 used qualitative language for the Legacy milestone. This document resolves the program and chapter components to 6 and 3. The full Legacy milestone also requires multi-year improvement and the time gate (4 years).
+**D-RCM-14: "Multiple" in the Legend signature milestone = 6 program graduations + 3 sealed chapters.**
+RSA §14 used qualitative language for the Legend milestone. This document resolves the program and chapter components to 6 and 3. The full Legend milestone also requires multi-year improvement and the time gate (4 years).
 
 **D-RCM-15: Promotion spacing applies to the entire queue — sub-tier advances and family promotions share the same spacing clock.**
 After any promotion fires (sub-tier or family), the spacing interval for the next queue item begins. There is no separate spacing clock for sub-tier vs. family. The table values reflect the type and rank of the promotion being fired, not the next promotion waiting. This means a Foundation sub-tier advance (1-day spacing) is followed immediately by the next queue item's timer — if the next item is a Builder family promotion (1-day spacing after Builder's sub-tier fire), the total gap is Foundation sub-tier advance + 1 day (Foundation spacing) + Builder sub-tier advances at 3-day spacing each + 1 day (Builder family spacing).
 
-**D-RCM-16: Icon has no sub-tiers and therefore no sub-tier spacing.**
-Icon is a single rank level. When an athlete earns Legacy→Icon, the Icon promotion enters the queue with 60-day spacing. There are no subsequent promotions. Icon is the final state.
+**D-RCM-16: Legacy has no sub-tiers and therefore no sub-tier spacing.**
+Legacy is a single rank level. When an athlete earns Legend→Legacy, the Legacy promotion enters the queue with 60-day spacing. There are no subsequent promotions. Legacy is the final state.
 
 **D-RCM-17: Primary goals achieved is a hard minimum at Established and above, not a weighted signal.**
 An athlete with goal participation events but zero primary goals achieved cannot be Established, regardless of other category development. This operationalizes "goals set and achieved, not merely set" (Established identity test) as a hard gate. Achievement count is not a scoring weight — it is a binary requirement that must be satisfied.
@@ -1766,8 +1822,8 @@ The threshold table was calibrated against the RSA §10 timeline targets using a
 | B→C | Active weeks (minor time gate of 60 days rarely binds) |
 | C→A | Active weeks and volume (time gate binds for highly active athletes) |
 | A→E | Active weeks (time gate binds for highly active athletes) |
-| E→L | Time gate and active weeks bind simultaneously at baseline pace |
-| L→I | Time gate and active weeks bind simultaneously at baseline pace |
+| E→L | Active weeks (AW binding at month 70 / 5.8 years; time gate non-binding at baseline) |
+| L→G | Active weeks (AW binding at month 96 / 8 years; time gate at month 84 non-binding at baseline) |
 
 For very active athletes (4-5 sessions/week), time gates are the binding constraint at every prestige rank. This is the intended design — the Identity Credibility Principle requires real elapsed time for the upper identities regardless of training intensity.
 
@@ -1782,7 +1838,7 @@ For very active athletes (4-5 sessions/week), time gates are the binding constra
 - Recent engagement numeric thresholds (Q9 — still open from Session 2)
 - Athlete type declaration (Q8 — still open from Session 2)
 - Recent engagement import eligibility (Q7 — still open from Session 2)
-- Icon display format (TBD-11)
+- Legacy display format (TBD-11)
 - Sub-tier surfacing mechanism (TBD-2)
 - Rank evaluation trigger events (TBD-1)
 - Rank data model (TBD-12)
@@ -1800,7 +1856,7 @@ The following questions require user decisions before Session 4 can proceed. The
 
 What is the minimum elapsed session duration for a session to qualify as meaningful work?
 
-*Context*: Numeric floor that makes TBD-7 operational. Candidates: 5, 10, 15, 20 minutes. Affects active week computation, volume accumulation, and the validity of the volume thresholds in Section 14. If the floor is very low (5 minutes), 700 sessions at Icon is achievable more quickly; if higher (20 minutes), it represents more genuine training investment.
+*Context*: Numeric floor that makes TBD-7 operational. Candidates: 5, 10, 15, 20 minutes. Affects active week computation, volume accumulation, and the validity of the volume thresholds in Section 14. If the floor is very low (5 minutes), 700 sessions at Legacy is achievable more quickly; if higher (20 minutes), it represents more genuine training investment.
 
 *What you need to decide:* A specific minute value.
 
@@ -1838,7 +1894,7 @@ Does the import pipeline carry goal records from pre-Forge history? If yes, how 
 
 At the scoring layer, should Achieved primary goal resolutions carry more weight than Not Achieved resolutions?
 
-*Context:* Section 14.9 requires minimum primary goals achieved (≥1 for Established, ≥2 for Legacy, ≥4 for Icon). The minimum count is a hard gate, not a weight. If achievement amplification exists AT THE SCORING layer (not the threshold layer), it would affect rank evaluation between athletes who both meet the minimum but have different achievement rates.
+*Context:* Section 14.9 requires minimum primary goals achieved (≥1 for Established, ≥2 for Legend, ≥4 for Legacy). The minimum count is a hard gate, not a weight. If achievement amplification exists AT THE SCORING layer (not the threshold layer), it would affect rank evaluation between athletes who both meet the minimum but have different achievement rates.
 
 *What you need to decide:* Whether achievement amplification exists at the scoring layer.
 
@@ -1886,9 +1942,9 @@ How long is the lookback window for recent engagement, and how many active weeks
 
 **Q10 — Different Recent Engagement Thresholds per Prestige Rank?** *(carried from Session 2)*
 
-Should Architect, Established, Legacy, and Icon have the same recent engagement requirement, or should it scale with rank?
+Should Architect, Established, Legend, and Legacy have the same recent engagement requirement, or should it scale with rank?
 
-*Context:* The case for scaling: Icon requires "I repeatedly become the person I intend to become" — a higher recent engagement bar for this identity is defensible. The case for uniform: simplicity and predictability. If thresholds do scale, the family promotion threshold table (Section 14.11) would need a Recent Engagement row that shows per-rank values rather than a uniform "Required" marker.
+*Context:* The case for scaling: Legacy requires "I repeatedly become the person I intend to become" — a higher recent engagement bar for this identity is defensible. The case for uniform: simplicity and predictability. If thresholds do scale, the family promotion threshold table (Section 14.11) would need a Recent Engagement row that shows per-rank values rather than a uniform "Required" marker.
 
 *What you need to decide:* Uniform or scaled recent engagement thresholds across prestige ranks.
 
@@ -1933,7 +1989,7 @@ The family promotion table defines Personal Improvement requirements qualitative
 - "Multi-period pattern" (C→A): ≥3 personal best advancements, at least 2 separated by 30+ days
 - "Repeated" (A→E): ≥6 personal best advancements, spread across at least 6 months of training history
 - "Multi-year" (E→L): ≥10 personal best advancements, with at least 1 registered in each of 2 separate calendar years
-- "Multi-phase" (L→I): ≥15 personal best advancements, with advancements registered in at least 3 separate calendar years
+- "Multi-phase" (L→G): ≥15 personal best advancements, with advancements registered in at least 3 separate calendar years
 
 These are proposed starting points for discussion, not final recommendations. The numbers should be validated against athlete population modeling or product intuition about what a genuinely improving athlete at each rank would be expected to have.
 
@@ -1941,24 +1997,1484 @@ These are proposed starting points for discussion, not final recommendations. Th
 
 ---
 
-**Q14 — Legacy Signature Milestone: "Distinct Development Phases" Operationalization**
+**Q14 — Legend Signature Milestone: "Distinct Development Phases" Operationalization**
 
-Section 14.7 states that Legacy requires 6 program graduations spanning "at least 3 of the 6 from different program categories or significantly different program designs." How should "distinct" and "significantly different" be defined?
+Section 14.7 states that Legend requires 6 program graduations spanning "at least 3 of the 6 from different program categories or significantly different program designs." How should "distinct" and "significantly different" be defined?
 
-*Context:* The intent is that a Legacy athlete cannot graduate the same 6-week Strength program 6 times and satisfy the Legacy milestone — they must have engaged with multiple types of structured development. But a formal definition of "distinct" requires either a category tag on programs or a minimum time separation between repeated programs.
+*Context:* The intent is that a Legend athlete cannot graduate the same 6-week Strength program 6 times and satisfy the Legend milestone — they must have engaged with multiple types of structured development. But a formal definition of "distinct" requires either a category tag on programs or a minimum time separation between repeated programs.
 
 Options: (a) program category tag (program must have a labeled category; 3+ distinct categories required), (b) time-separation rule (at least 12 months between any two graduations from the same program), (c) program authoring standard category field (PAS v1.1 already defines program activity type — 3+ different activity types in the 6-program set).
 
-*What you need to decide:* The operationalization of "distinct development phases" for the Legacy program milestone.
+*What you need to decide:* The operationalization of "distinct development phases" for the Legend program milestone.
+
+---
+
+---
+
+## 18. Timeline Validation Audit
+
+### 18.1 Purpose and Methodology
+
+This section validates that the threshold tables in Sections 13 and 14 produce rank progression timelines consistent with the target windows listed below. Three athlete profiles are modeled. All athletes are assumed to be fully Forge-native (no imported history) and to have consistently declared athlete types.
+
+**Target windows for validation:**
+
+| Family | User Target (original) | Revised Target (post-audit) | RSA §10 Range |
+|--------|------------------------|------------------------------|---------------|
+| Foundation | "Weeks" | "Weeks" (unchanged) | 0–2 months |
+| Builder | "Months" | "Months" (unchanged) | 2–6 months |
+| Craftsman | "~1 year" | "~1 year" (unchanged) | 6–12 months |
+| Architect | "~2 years" | "~2 years" (unchanged) | 1–2 years |
+| Established | "~3–4 years" | "~3–4 years" (unchanged) | 2–4 years |
+| Legend | "~5–6 years" | "~5–6 years" (unchanged) | 5–8 years |
+| Legacy | "~6–8 years" | **"~7–10 years" (CD-2 applied)** | 8+ years |
+
+**Athlete profiles:**
+
+| Profile | AW/month | Sessions/month | Programs | Sealed chapters |
+|---------|----------|----------------|----------|-----------------|
+| Baseline | 3.0 | 9 | 1 per 4 months | 1 per 8 months; 1 goal event/chapter; 70% primary goals achieved |
+| Active | 3.5 | 12 | 1 per 3 months | 1 per 6 months; 1 goal event/chapter; 70% achieved |
+| Moderate | 2.5 | 6 | 1 per 6 months | 1 per 12 months; 1 goal event/chapter; 70% achieved |
+
+**Computation model:** cumulative months from journey start to when each family promotion becomes eligible. All thresholds evaluated simultaneously — first month at which ALL requirements for a given transition are satisfied is the promotion-eligible month. Promotion fires after the applicable spacing window following the prior promotion, but spacing is negligible in the normal progression case (< 1 day) and is excluded from the timeline calculation.
+
+---
+
+### 18.2 Binding Constraint Analysis Per Transition
+
+For each transition, the binding constraint is the requirement that takes longest to satisfy. All other requirements are verified as met before or at the binding constraint.
+
+---
+
+**F → B**
+
+| Requirement | Baseline | Active | Moderate | Notes |
+|-------------|----------|--------|----------|-------|
+| 6 cumulative AW | **2.0 mo** | **1.7 mo** | **2.4 mo** | Binding for all profiles |
+| 12 sessions | 1.3 mo | 1.0 mo | 2.0 mo | Met before AW |
+| Time gate | None | None | None | Not applicable |
+| Other | — | — | — | No other requirements |
+
+Binding: **AW threshold.** No other requirement competes at any profile.
+
+Sub-tier advance timing within Foundation (baseline, 3 AW/month):
+- I → II (2 AW): ~3 weeks
+- II → III (4 AW): ~5–6 weeks
+- III → IV (6 AW): ~8 weeks → F→B eligible immediately after (1-day spacing)
+
+---
+
+**B → C**
+
+| Requirement | Baseline | Active | Moderate | Notes |
+|-------------|----------|--------|----------|-------|
+| 18 cumulative AW | **6.0 mo** | **5.1 mo** | **7.2 mo** | Binding for all profiles |
+| 36 sessions | 4.0 mo | 3.0 mo | 6.0 mo | Met before AW |
+| 60-day time gate | 2.0 mo | 1.7 mo | 2.4 mo | Met before AW |
+| First improvement event | ~2–3 mo | ~2 mo | ~3–4 mo | Met before AW |
+
+Binding: **AW threshold.**
+
+---
+
+**C → A**
+
+| Requirement | Baseline | Active | Moderate | Notes |
+|-------------|----------|--------|----------|-------|
+| 36 cumulative AW | 12.0 mo | 10.3 mo | 14.4 mo | |
+| 18 native AW floor | 12.0 mo | 10.3 mo | 14.4 mo | Satisfied when total AW is met (all native) |
+| 90 sessions | 10.0 mo | 7.5 mo | **15.0 mo** | Moderate: sessions bind |
+| 270-day time gate | 9.0 mo | 8.6 mo | 9.0 mo | Met before AW/sessions |
+| 1 program graduation | 4 mo | 3 mo | 6 mo | Met well before binding constraint |
+| 1 sealed chapter | 8 mo | 6 mo | 12 mo | Met before binding constraint |
+| 1 goal participation event | 8 mo | 6 mo | 12 mo | Met before binding |
+| Multi-period improvement | ~9 mo | ~7 mo | ~12 mo | Assumed met before binding |
+
+Binding: **AW threshold** for baseline and active (12.0 and 10.3 months). **Sessions** for moderate (15.0 months — 90 sessions at 6/month = 15 months; AW at 14.4 months means sessions bind by 0.6 months). Sealed chapter at month 12 for moderate is met before the session binding at month 15. ✓
+
+---
+
+**A → E**
+
+| Requirement | Baseline | Active | Moderate | Notes |
+|-------------|----------|--------|----------|-------|
+| 72 cumulative AW | **24.0 mo** | **20.6 mo** | 28.8 mo | |
+| 36 native AW floor | Met at 12.0 mo | Met | Met | Already satisfied at Architect entry |
+| 200 sessions | 22.2 mo | 16.7 mo | **33.3 mo** | Moderate: sessions bind |
+| 540-day time gate | 18.0 mo | 18.0 mo | 18.0 mo | Met before binding |
+| 3 program graduations | 12 mo | 9 mo | 18 mo | Met before binding |
+| 2 sealed chapters | 16 mo | 12 mo | 24 mo | Met before binding |
+| 2 goal participation events | 16 mo | 12 mo | 24 mo | Met before binding |
+| ≥1 primary goal achieved | ~16 mo | ~12 mo | ~24 mo | Met before binding |
+| Repeated improvement | ~18 mo | ~15 mo | ~24 mo | Met before binding |
+
+Binding: **AW threshold** for baseline (24.0 months) and active (20.6 months). **Sessions** for moderate (33.3 months — 200 sessions at 6/month; AW binding would be at 28.8 months but sessions don't reach 200 until month 33.3). Sealed chapters (2 needed) for moderate are met at month 24, before the session binding at 33.3. ✓
+
+---
+
+**E → L**
+
+| Requirement | Baseline | Active | Moderate | Notes |
+|-------------|----------|--------|----------|-------|
+| **210 cumulative AW** *(CD-1)* | **70.0 mo** | **60.0 mo** | **84.0 mo** | Binding for all profiles |
+| 105 native AW floor *(CD-1)* | 35.0 mo | 30.0 mo | 42.0 mo | Met before AW binding |
+| 400 sessions | 44.4 mo | 33.3 mo | 66.7 mo | Met before AW binding (all profiles) |
+| 1,460-day time gate | 48.0 mo | 48.0 mo | 48.0 mo | Met before AW binding (all profiles) |
+| 6 program graduations | 24 mo | 18 mo | 36 mo | Met before binding |
+| 3 sealed chapters | 24 mo | 18 mo | 36 mo | Met before binding |
+| 4 goal participation events | 32 mo | 24 mo | 48 mo | Met before binding |
+| ≥2 primary goals achieved | ~32 mo | ~24 mo | ~48 mo | Met before binding |
+| Multi-year improvement | ~36 mo | ~30 mo | ~48 mo | Met before binding |
+
+Binding: **AW threshold** for all profiles. The time gate (48 months) is non-binding since AW binds later (70, 60, 84 months respectively). At 5 AW/month (maximum consistency), 210/5 = 42 months — time gate at 48 months becomes the floor, enforcing a 4-year minimum for extremely active athletes.
+
+---
+
+**L → G**
+
+| Requirement | Baseline | Active | Moderate | Notes |
+|-------------|----------|--------|----------|-------|
+| 288 cumulative AW | 96.0 mo | 82.3 mo | 115.2 mo | |
+| 144 native AW floor | Met at ~48 mo | Met | Met | Satisfied before Legacy entry |
+| 700 sessions | 77.8 mo | 58.3 mo | 116.7 mo | |
+| 2,555-day time gate | **84.0 mo** | **84.0 mo** | 84.0 mo | Binding for active; non-binding for baseline/moderate |
+| 10 program graduations | 40 mo | 30 mo | 60 mo | Met before binding |
+| 5 sealed chapters | 40 mo | 30 mo | 60 mo | Met before binding |
+| 6 goal participation events | 48 mo | 36 mo | 72 mo | Met before binding |
+| ≥4 primary goals achieved | ~56 mo | ~42 mo | ~84 mo | Met before or at binding |
+| Multi-phase improvement | ~60 mo | ~48 mo | ~72 mo | Met before binding |
+
+Binding:
+- **Baseline**: AW (96 months). Time gate at 84 months is non-binding.
+- **Active**: Time gate (84 months). AW would bind at 82.3 months but time gate at 84 is binding by 1.7 months.
+- **Moderate**: AW (115.2 months) and sessions (116.7 months) — essentially co-binding. Time gate non-binding.
+
+---
+
+### 18.3 Cumulative Promotion Timeline
+
+**When each family promotion fires (months from journey start):**
+
+| Promotion | Baseline | Active | Moderate |
+|-----------|----------|--------|----------|
+| F → B | **Month 2** | Month 1.7 | Month 2.4 |
+| B → C | **Month 6** | Month 5.1 | Month 7.2 |
+| C → A | **Month 12** | Month 10.3 | Month 15 |
+| A → E | **Month 24** | Month 20.6 | Month 33.3 |
+| E → L | **Month 70** *(CD-1)* | Month 60 *(CD-1)* | Month 84 *(CD-1)* |
+| L → G | **Month 96** | Month 84 *(time-gate bound)* | Month ~116 |
+
+**Family tenure (time in each family):**
+
+| Family | Baseline | Active | Moderate |
+|--------|----------|--------|----------|
+| Foundation | 2 months | 1.7 months | 2.4 months |
+| Builder | 4 months | 3.4 months | 4.8 months |
+| Craftsman | 6 months | 5.2 months | 7.8 months |
+| Architect | 12 months | 10.3 months | 18.3 months |
+| Established | 46 months *(CD-1)* | 39.4 months *(CD-1)* | 50.7 months *(CD-1)* |
+| Legend | 26 months *(CD-1)* | 24 months *(CD-1)* | ~32 months *(CD-1)* |
+
+---
+
+### 18.4 Target Window Comparison
+
+The validation framework: each user target describes when a typical athlete is *in* that family — not when they entered it. At "weeks," you're in Foundation. At "months," you're in Builder. At "~1 year," you're in Craftsman. The following table checks whether that description is true for the baseline athlete at the center of each target window.
+
+| Target Window | User Label | Baseline Family at That Time | Match? |
+|---------------|------------|------------------------------|--------|
+| Weeks (1–8 weeks) | "Foundation" | Foundation (exits at ~8 weeks) | ✓ Borderline |
+| Months (2–6 months) | "Builder" | Builder (months 2–6) | ✓ Pass |
+| ~1 year (month 10–14) | "Craftsman" | Craftsman until month 12, Architect from month 12 | ✓ Pass |
+| ~2 years (month 20–28) | "Architect" | Architect until month 24, Established from month 24 | ✓ Pass |
+| ~3–4 years (months 36–48) | "Established" | Established (months 24–70) — solidly Established at 3–4 years | ✓ Pass |
+| ~5–6 years (months 60–72) | "Legend" | Established until month 70 (5.8 yr), Legend from month 70 | ✓ Pass *(baseline enters Legend at 5.8 yr; active at exactly 5 yr)* |
+| ~7–10 years *(CD-2)* | "Legacy" | Legend until month 96; baseline Legacy at month 96 (8 yr); active at month 84 (7 yr) | ✓ Pass |
+
+---
+
+### 18.5 Findings
+
+**FINDING 1 — Foundation "weeks" target: borderline**
+
+*Status: ⚠ Borderline pass at baseline; pass at active.*
+
+Foundation sub-tier advances occur at 3, 6, and 8 weeks (baseline). The within-Foundation experience is unambiguously measured in weeks. However, F→B fires at 2 months (8 weeks) for the baseline athlete. Whether 8 weeks reads as "weeks" or "months" depends on framing.
+
+The minimum possible Foundation tenure is 6 consecutive active calendar weeks (~1.4 months) — achievable only for athletes who are active every single week. Athletes at 3.5 AW/month exit Foundation in 7 weeks. The threshold cannot produce Foundation exits in under 6 weeks for any athlete.
+
+RSA §10 specifies Foundation at 0–2 months. The current thresholds are consistent with RSA — but the user target of "weeks" is tighter than RSA's stated range. No threshold change is required for RSA alignment; a "weeks" target would require reducing the F→B AW threshold from 6 to 4 (producing a ~5-week exit at baseline).
+
+**No action required for RSA compliance. Flag for user decision if "weeks" is a strict target.**
+
+---
+
+**FINDING 2 — Legacy target: resolved by CD-2**
+
+*Status: ✓ Resolved. Original "6–8 years" lower bound was structurally impossible; target revised to "7–10 years" (CD-2 applied).*
+
+The L→G time gate is 2,555 days = 7.0 years. No athlete can reach Legacy before 7 years regardless of activity level. The original "6–8 years" lower bound of 6 years was impossible.
+
+**CD-2 applied — revised target: "~7–10 years."**
+
+Achievable Legacy timeline under current thresholds:
+- Minimum possible: 7 years (time gate floor, applies to any athlete active ≥ 4 AW/month)
+- Active profile (3.5 AW/month): 7 years (time gate bound at month 84) ✓
+- Baseline profile (3 AW/month): 8 years (AW bound at month 96) ✓
+- Moderate profile (2.5 AW/month): ~9.7 years (AW bound at month ~116) ✓
+
+All three profiles now land within the revised 7–10 year window. Legacy at 7 years (active) through ~10 years (moderate) is the correct product range: fast enough to feel achievable for highly consistent athletes over a long career; far enough away to preserve Legacy's exceptional status.
+
+RSA §10 target of "8+" years is compatible — the revised range of 7–10 years contains RSA's 8-year midpoint. No threshold change required.
+
+---
+
+**FINDING 3 — Legend floor for active athletes: resolved by CD-1**
+
+*Status: ✓ Resolved. E→L AW threshold raised from 180 to 210 (CD-1 applied).*
+
+Before CD-1: active athletes (3.5 AW/month) reached Legend at 51.4 months = 4.3 years, undershooting the RSA §10 5-year floor.
+
+**CD-1 applied — E→L AW threshold: 180 → 210. Forge-native floor: 90 → 105.**
+
+Post-CD-1 Legend timeline:
+- Active profile (3.5 AW/month): 210 / 3.5 = 60 months = **5.0 years** ✓ (exactly at RSA floor)
+- Baseline profile (3 AW/month): 210 / 3 = 70 months = **5.8 years** ✓ (within RSA 5–8 year range)
+- Moderate profile (2.5 AW/month): 210 / 2.5 = 84 months = **7.0 years** ✓ (within RSA 5–8 year range)
+- Extremely active (5 AW/month): 210 / 5 = 42 months → time gate (48 months / 4 years) becomes the binding floor ✓ (4-year minimum preserved)
+
+All profiles now satisfy RSA §10's 5–8 year Legend window. The time gate remains structurally meaningful as a floor for very active athletes.
+
+---
+
+**FINDING 4 — Moderate athlete and Legacy: resolved by CD-2**
+
+*Status: ✓ Resolved. With the revised target of "~7–10 years" (CD-2), moderate athletes reaching Legacy at ~9.7 years are within the target window.*
+
+Moderate athletes (2.5 AW/month) reach Legacy at ~9.7 years. Under the original "6–8 years" target this was a fail. Under the revised "~7–10 years" target it passes. RSA §10 ("8+") remains satisfied.
+
+Legacy is a lifetime achievement rank. The RSA's "exceptional gate" classification for L→G explicitly frames Legacy as not time-capped. Moderate athletes reaching Legacy at ~10 years is intended product behavior: Legacy takes as long as it takes, with a 7-year minimum floor.
+
+---
+
+### 18.6 Audit Summary Table
+
+| Transition | Baseline Result | Target (revised) | RSA §10 | Verdict |
+|-----------|----------------|------------------|---------|---------|
+| F→B | 2 months / 8 weeks | "Weeks" | 0–2 months | ⚠ RSA ✓ / sub-tiers in weeks; F→B at 8 weeks |
+| B→C | 6 months | "Months" | 2–6 months | ✓ Pass |
+| C→A | 12 months (1 yr) | "~1 year" | 6–12 months | ✓ Pass |
+| A→E | 24 months (2 yr) | "~2 years" | 1–2 years | ✓ Pass |
+| E→L | 70 months (5.8 yr) *(CD-1)* | "~5–6 years" | 5–8 years | ✓ Pass — all profiles in RSA range |
+| L→G | 96 months (8 yr) | "~7–10 years" *(CD-2)* | 8+ years | ✓ Pass — all profiles in revised range |
+
+**All transitions pass against their current targets.** Foundation sub-tier advances occur at 3, 6, and 8 weeks — the within-Foundation experience is genuinely measured in weeks even though the F→B family promotion fires at ~8 weeks (2 months). This is the one ongoing borderline note: the sub-tier experience is "weeks"; the family promotion is at the boundary of "weeks" and "months."
+
+**CD-1 impact:** E→L raised from 180 to 210 AW. Active athletes now reach Legend at 5.0 years (exactly RSA's floor), baseline at 5.8 years, moderate at 7.0 years. All within RSA's 5–8 year window.
+
+**CD-2 impact:** Legacy target revised from "6–8 years" (lower bound impossible) to "7–10 years." All three profiles land within this range: 7 years (active, time-gate bound), 8 years (baseline, AW-bound), ~10 years (moderate).
+
+### 18.7 Calibration Decision Status
+
+**CD-1 — Raise E→L AW threshold from 180 to 210: ✓ APPLIED**
+
+Applied throughout:
+- Section 14.4 AW threshold table: E→L row updated (180 → 210; native floor 90 → 105)
+- Section 14.4 calibration check: updated (180 AW / 60 months → 210 AW / 70 months)
+- Section 14.5 time gate note: updated to reference 5.8-year AW binding at baseline
+- Section 14.8 volume calibration: updated (400 sessions note references AW at month 70)
+- Section 14.11 comprehensive table: E→L cumulative AW and native floor cells updated
+- Section 16.3 D-RCM-12: updated (90 of 180 → 105 of 210 for Established→Legend)
+- Section 16.4 calibration summary: E→L binding constraint description updated
+- Section 18.2 E→L analysis: updated AW threshold and binding months
+- Section 18.3 timeline and tenure tables: updated
+- Section 18.4 and 18.6 comparison tables: updated
+
+Result: All three modeled profiles (baseline, active, moderate) now reach Legend within RSA §10's 5–8 year window. The 50% Forge-native floor rule (D-RCM-12) is preserved: 105 of 210 AW must be native at E→L.
+
+---
+
+**CD-2 — Revise Legacy target language from "6–8 years" to "~7–10 years": ✓ APPLIED**
+
+Applied throughout Section 18:
+- Section 18.1 target table: Legacy row updated to "~7–10 years (CD-2 applied)"
+- Section 18.4 comparison table: Legacy window updated to "~7–10 years (months 84–120)"
+- Section 18.5 Finding 2: rewritten as resolved
+- Section 18.6 audit summary: Legacy row updated
+- Section 14.3 baseline calibration: L→G target updated from "8+" to "7+"
+
+No threshold change required. The 7-year time gate and 288 AW threshold remain unchanged. The revised language accurately describes the achievable range: 7 years (active, time-gate bound) to ~10 years (moderate, AW-bound). Legacy remains Legacy: a 7-year minimum journey to reach the highest rank is genuinely exceptional.
+
+---
+
+**CD-3 — Reduce F→B threshold from 6 AW to 4 AW: ✗ NOT APPLIED**
+
+Per user direction: Foundation threshold unchanged. Foundation sub-tier advances (I→II at 3 weeks, II→III at 6 weeks, III→IV at 8 weeks) already constitute a weeks-duration sub-tier experience. The F→B family promotion at ~8 weeks is consistent with RSA §10's 0–2 month Foundation window. Reducing the threshold was not approved.
+
+---
+
+### 18.8 New Conflicts Introduced by CD-1 and CD-2
+
+**No new architectural conflicts introduced.**
+
+**CD-1 (210 AW for E→L) — coherence check:**
+- The 50% Forge-native rule (D-RCM-12) scales correctly: 105 is exactly 50% of 210. ✓
+- The time gate (4 years / 48 months) remains non-binding for baseline and active athletes (70 and 60 months respectively), and becomes the binding floor only for extremely active athletes (5+ AW/month). This is the intended behavior. ✓
+- The E→L Established tenure lengthens: baseline 46 months, active 39.4 months, moderate 50.7 months. This means athletes spend more time in Established — which is appropriate. Established is "I've built something real." More time to build something real is correct. ✓
+- Legend tenure shortens correspondingly (baseline 26 months, active 24 months, moderate ~32 months). Athletes arrive at Legend later but Legacy timing is unchanged — so Legend tenure compresses. This is acceptable: Legend's identity ("my journey has become a meaningful story") doesn't require years in Legend, it requires years to reach Legend. The time spent IN Legend before promoting to Legacy is not a distinct identity requirement. ✓
+- No downstream impact on sub-tier thresholds (Section 13). Sub-tier AW counters are within-family and independent. ✓
+- No downstream impact on TBD-5 spacing values (Section 15). Spacing is not tied to E→L AW threshold. ✓
+
+**CD-2 (revised Legacy language) — coherence check:**
+- No threshold was changed. No numerical downstream impact. ✓
+- RSA §10's "8+" target remains compatible with the revised "7–10 year" range. The 8-year baseline result sits at the center of the revised range. ✓
+- The 7-year lower bound is structurally enforced by the L→G time gate (2,555 days). The language "~7 years minimum" is more honest and accurate than "~6–8 years" was. ✓
+- The moderate athlete reaching Legacy at ~9.7 years is within the revised 7–10 year window. ✓
+
+---
+
+---
+
+## 19. TBD-1 — Rank Evaluation Trigger Events
+
+### 19.1 Problem
+
+The rank system evaluates seven categories, five requirement types, and a promotion queue. None of this can run without answers to two prerequisite questions:
+
+1. **When does evaluation run?** What external signal causes the Rank Evaluation Service to check whether an athlete has earned a promotion?
+2. **How are time-based requirements handled?** Time gates (which mature with calendar time) and recent engagement (which is evaluated against a rolling lookback window) do not correspond to athlete actions. Are they handled through the same trigger mechanism as category signals, or differently?
+
+Without defined trigger events, the service has no entry point. It cannot compute, update, or evaluate any rank signal. TBD-1 resolves both questions.
+
+### 19.2 Signal-Event Mapping
+
+Before defining trigger events, the relationship between domain events and the signals they update must be made explicit. This mapping is the structural foundation of the trigger model.
+
+| Category | Signal | Domain Event That Updates It |
+|----------|--------|------------------------------|
+| Training Consistency | Cumulative AW (since journey start) | MeaningfulWorkSessionSaved |
+| Training Consistency | Within-family AW (since family entry) | MeaningfulWorkSessionSaved |
+| Personal Improvement | Personal bests per athlete type and exercise | MeaningfulWorkSessionSaved |
+| Program Progression | Graduation count; graduation history | ProgramGraduated |
+| Training Volume | Meaningful work session count | MeaningfulWorkSessionSaved |
+| Chapter Progression | Sealed chapter count | ChapterSealed |
+| Goal Participation | Participation event count; achievement count | ChapterSealed |
+| Longevity | Earliest record date; most recent session date | MeaningfulWorkSessionSaved; ImportCompleted |
+| Time gates | Elapsed time since journey start | *No event — time passes passively* |
+| Recent engagement | Active weeks within lookback window | *No event — derived from existing AW history* |
+
+Three structural patterns emerge:
+
+**Pattern 1 — Session-driven signals (5 of 7 categories):** Training Consistency, Personal Improvement, Training Volume, and Longevity all update when a meaningful work session is saved. A single session save is the highest-frequency event and the most important trigger.
+
+**Pattern 2 — Event-specific signals (2 of 7 categories):** Program Progression updates on program graduation. Chapter Progression and Goal Participation update on chapter sealing. Each of these events is less frequent than a session save and changes a specific subset of signals.
+
+**Pattern 3 — Passive signals (time gates + recent engagement):** These are not updated by events. Time gates become satisfied through the passage of calendar time. Recent engagement is derived from the active week history already maintained by the ConsistencyModule. Neither requires a dedicated trigger event — they are checked at the moment of queue processing.
+
+### 19.3 Options Evaluated
+
+**Option A — Event-driven only**
+The service subscribes to domain events. Each event triggers incremental signal updates and an eligibility check. No background job. Time-based requirements handled at queue-processing time.
+
+**Option B — Periodic scheduled evaluation**
+A background job runs on a recurring schedule (daily or weekly) and re-evaluates all athletes. Catches time gates automatically through the schedule.
+
+**Option C — Hybrid: event-driven signals + periodic time-gate check**
+Category signals update on events. A separate periodic background job watches for time gates becoming satisfied.
+
+**Option D — Demand-driven: evaluation on app open only**
+All evaluation — including signal updates and eligibility checks — runs when the athlete opens the app.
+
+**Option E — Event-driven with opportunistic passive evaluation at queue-processing time**
+Same as Option A for signal updates. Adds: the queue processor runs on app foreground entry (in addition to running after trigger events). Time gates and recent engagement are checked within the queue processor — not as separate triggers. No background job.
+
+### 19.4 Tradeoffs
+
+| Option | Pro | Con |
+|--------|-----|-----|
+| A — Event-driven only | Deterministic, responsive, no background job. Evaluation runs exactly when something changes. | Time gates have no event. Without app-open queue processing, an athlete approaching a time gate must trigger an event before the gate is checked. |
+| B — Periodic | Catches time gates automatically without special handling. | Extremely expensive — re-evaluates all athletes on a fixed schedule regardless of activity. Most evaluations find nothing changed. Background jobs on mobile are constrained by iOS/Android battery management. |
+| C — Hybrid | Time gates get dedicated handling. Signal updates remain responsive. | Two evaluation paths to maintain. Background job complexity. Platform background execution limits (iOS background refresh is not guaranteed). |
+| D — Demand-driven | No infrastructure beyond app open. Catches everything at once on open. | No real-time feedback. Athlete saves a session and receives no promotion notification until next app open — even if the promotion could fire immediately. |
+| E — Event-driven + app-open queue processing | Responsive for signal updates (promotions fire as soon as eligible after an event). Catches time-gate eligibility on every app open. No dedicated background job. No separate time-gate trigger. | Queue processor runs on app open even when nothing in the queue is ready to fire — a minor inefficiency, but the cost of a no-op queue processing run is negligible. |
+
+### 19.5 Recommendation and Canonical Trigger Set
+
+**Option E — Event-driven signal updates with opportunistic passive evaluation at queue-processing time.**
+
+**Canonical trigger event set:**
+
+| Event | Fires When | Signals Updated |
+|-------|------------|----------------|
+| `MeaningfulWorkSessionSaved` | A saved session meets the meaningful work criteria (TBD-7: completed state + duration floor) | ConsistencyModule, ImprovementModule, VolumeModule, LongevityModule |
+| `ProgramGraduated` | An athlete completes and graduates a program | ProgramModule |
+| `ChapterSealed` | The M-5 chapter sealing transaction completes | ChapterModule, GoalModule |
+| `ImportCompleted` | The import pipeline finishes processing all records for the athlete | All modules (full recompute — see Section 19.8) |
+
+**Why these four and not others:**
+
+- Chapter creation (L-5) is not a trigger. Chapters contribute to rank only at sealing (D-RCM-1).
+- Goal creation is not a trigger. Goal lifecycle credit fires at chapter sealing (TBD-15).
+- Program start is not a trigger. Only graduation counts (RSA §8.2).
+- Account creation is not a trigger. It contributes no rank signal.
+- Session abandonment (an in-progress session that is discarded) is not a trigger. Only saved sessions meeting the meaningful work criteria qualify.
+- The four listed events collectively cover every rank signal that can change through athlete action. Nothing is missed.
+
+**D-RCM-18:** The canonical trigger event set is: `MeaningfulWorkSessionSaved`, `ProgramGraduated`, `ChapterSealed`, `ImportCompleted`. No other event type triggers rank evaluation.
+
+### 19.6 Time Gates and Recent Engagement: Passive Evaluation
+
+**Time gates** are conditions of the form: `(current date − journey start date) ≥ time gate value`. They become satisfied through the passage of calendar time, with no athlete action required. The Rank Evaluation Service evaluates time gate conditions within the queue processor — specifically, at Phase 5A of the evaluation lifecycle (Section 20.6) — each time it processes a promotion at the head of the queue. If the time gate is not yet satisfied, the promotion remains at the head of the queue and is re-checked on the next queue processor run.
+
+The queue processor runs after every trigger event and on every app foreground entry (D-RCM-21). This means that at most, an athlete waits until their next session save or app open for a time-gate eligibility check — typically a very short interval.
+
+**Recent engagement** is a derived condition checked against the active week history maintained by the ConsistencyModule. It does not require a separate signal update event. When the queue processor reaches a prestige rank promotion, it reads the current active week history from ConsistencyModule and evaluates the lookback window. This is evaluated at queue-firing time (D-RCM-10), not at the time the promotion entered the queue.
+
+**D-RCM-19:** Time gates and recent engagement are passive conditions. They have no trigger events. They are checked within the queue processor at Phase 5A and Phase 5B respectively, each time a promotion is at the head of the queue.
+
+### 19.7 Queue Processing Occasions
+
+The queue processor runs in exactly three situations:
+
+1. **After every trigger event** (synchronous): immediately after signal updates complete from any trigger event. Ensures that promotions earned by a triggering event are checked for firing eligibility without delay.
+
+2. **On app foreground entry**: each time the athlete opens the app or returns to it from background. Catches spacing elapsed while the app was closed, time gates that matured between sessions, and recent engagement satisfied since the last queue run.
+
+3. **After each promotion fires**: immediately, within the same processing cycle. After a promotion is delivered, the next queue item is immediately checked for eligibility. This ensures sequential promotions separated by very short spacing (e.g., Foundation sub-tier advances at 1-day spacing) are processed promptly without waiting for the next event or app open.
+
+**D-RCM-21:** Queue processor runs (a) after every trigger event, (b) on app foreground entry, and (c) immediately after each promotion fires. No background job or OS-scheduled timer is required.
+
+### 19.8 Import Treatment
+
+`ImportCompleted` differs from the other three trigger events in one critical way: it requires full signal recomputation across all modules rather than an incremental update. This is because:
+
+- Imported sessions may predate native sessions, changing the longevity span start date
+- Imported sessions in prior calendar weeks retroactively make those weeks active, changing cumulative AW and potentially within-family AW
+- Imported personal bests may change the improvement baseline across the athlete's history
+- Imported chapter, goal, and program records may add participation events not previously counted
+
+After full recompute, the eligibility check runs against the freshly computed state and newly-eligible promotions are added to the queue. The queue then processes per the spacing rules from Section 15 (post-import spacing is the primary scenario those rules were designed for).
+
+**D-RCM-20:** `ImportCompleted` is the only trigger event that causes full signal recomputation across all seven category modules. All other trigger events use incremental updates affecting only relevant modules.
+
+### 19.9 Downstream Impacts
+
+- **Domain event emission**: each triggering system must emit its event correctly.
+  - Session logging (W-9–W-16): emit `MeaningfulWorkSessionSaved` only for sessions that pass the meaningful work quality gate (completed state + duration floor met). Sessions that fail the gate are saved but do not trigger evaluation.
+  - Program completion flow: emit `ProgramGraduated` at graduation confirmation.
+  - M-5 (chapter sealing): emit `ChapterSealed` after all chapter and goal records are fully written. Timing is critical — the event must fire after the seal is complete, not during the transaction.
+  - Import pipeline: emit `ImportCompleted` after all imported records are persisted and queryable. Not during the import.
+
+- **App lifecycle integration**: the host Expo application must invoke the queue processor on foreground entry. This is an integration requirement between the RES and the app lifecycle, not a background job.
+
+- **Athlete type dependency**: `MeaningfulWorkSessionSaved` triggers ImprovementModule, which requires athlete type (Q8 — still open). ImprovementModule must degrade gracefully when type is not yet declared — returning "insufficient data" without blocking ConsistencyModule, VolumeModule, or LongevityModule from updating.
+
+---
+
+## 20. TBD-16 — Rank Evaluation Service Architecture
+
+### 20.1 Problem
+
+Sessions 1–3 defined all threshold values, all category definitions, and the promotion queue philosophy. TBD-1 (Section 19) defined when evaluation runs. TBD-16 defines how the service is structured to implement all of this: the components, the data flow between them, the computation model, and the extensibility approach.
+
+Without TBD-16, the system has complete specifications but no blueprint for how to build them into a working service. TBD-16 is the implementation-facing layer of the Rank Computation Model.
+
+### 20.2 Architectural Constraints
+
+The following locked decisions directly constrain the service architecture. Any proposed architecture must satisfy all of them simultaneously.
+
+| Constraint | Source |
+|-----------|--------|
+| All applicable threshold rows must be simultaneously satisfied for family promotion eligibility | Section 14.2, D-RCM-23 |
+| Sub-tier AW counter is distinct from cumulative AW counter; both must be maintained per athlete | D-RCM-11 |
+| Personal best tracking is per athlete type and per modality | D-RCM-7 |
+| Recent engagement evaluates at queue-firing time, not queue-entry time | D-RCM-10 |
+| Promotion queue is sequential; no skipping | RSA §12 |
+| Sub-tier advances have no ceremony; family promotions trigger M-1 | RS-D14 |
+| `ImportCompleted` requires full signal recomputation | D-RCM-20 |
+| Canonical trigger set is four named events | D-RCM-18 |
+| Queue processor runs after events, on app open, and after each fire | D-RCM-21 |
+
+### 20.3 Options Evaluated
+
+**Option A — Monolithic evaluation function**
+A single function, triggered by any rank-relevant event, reads the athlete's full training history from storage and recomputes all signals from scratch on every invocation. Returns current rank state and any newly-eligible promotions.
+
+**Option B — Category-modular with incremental state**
+Seven independent modules, each responsible for one category's signal state. Trigger events route to relevant modules only. Each module maintains a running computed state and updates it incrementally rather than re-reading full history on each invocation.
+
+**Option C — Event sourcing**
+The service maintains an immutable log of all domain events. Rank state is derived by replaying the event log from the beginning. No computed state is stored — state is always derived on demand from the event log.
+
+**Option D — Hybrid: category-modular incremental with full recompute on import**
+Normal operation: incremental state updates per relevant modules (Option B behavior). On `ImportCompleted`: full recompute of all modules from the complete athlete history (bounded Option A behavior).
+
+### 20.4 Tradeoffs
+
+| Option | Pro | Con |
+|--------|-----|-----|
+| A — Monolithic | Always correct — reads full history, no state drift possible. Simple to test and reason about. | Reads full history on every trigger. An athlete with 5+ years of daily sessions has tens of thousands of records. Recomputing everything from scratch on every session save is prohibitively expensive and does not scale. |
+| B — Modular incremental | Efficient: each trigger updates only affected modules. State is constant-time to read. Modular and extensible. | Requires careful state management. Historical imports break incremental assumptions (imported records predate current state and cannot be appended). |
+| C — Event sourcing | Perfect auditability. No state drift. Replayable from any historical point. | Full replay is expensive for long histories. Import events alone can produce thousands of records requiring replay on every evaluation. Overkill for a mobile fitness application. |
+| D — Hybrid | Efficient for the 99% case (normal operation). Correct for the 1% case (import, where incremental assumptions break). Two paths, but import is well-bounded, rare, and can be tested independently. | Requires implementing and maintaining two distinct computation paths. |
+
+### 20.5 Recommendation
+
+**Option D — Category-modular incremental service with full recompute on `ImportCompleted`.**
+
+**Rationale:**
+
+1. **Incremental updates are correct and necessary for scale.** A session save updates ConsistencyModule, ImprovementModule, VolumeModule, and LongevityModule. ChapterModule, GoalModule, and ProgramModule are untouched. Reading only what changed — rather than full history — is the correct default for an event that fires on every training session.
+
+2. **Full recompute on import is necessary and bounded.** Import is a one-time or rare event per athlete. Retroactive session records break incremental assumptions — an imported session from three years ago changes the starting point of cumulative AW, the earliest longevity date, and potentially historical personal bests. Full recompute is the only correct response. Because import is rare, the per-athlete cost of full recompute is acceptable.
+
+3. **Modular architecture directly satisfies extensibility requirements.** Future athlete types add an evaluator within ImprovementModule. Future categories add a new module. Neither change affects existing modules, the Eligibility Checker, or the queue system.
+
+4. **Event sourcing is not justified.** Full audit trail is not a rank system requirement. The athlete's training records (which persist in the main data store) provide sufficient history for debugging and recovery. Maintaining a separate event log for rank computation adds complexity without a corresponding benefit.
+
+**D-RCM-22:** The Rank Evaluation Service uses a category-modular architecture with incremental state updates for normal operation and a full-recompute path for `ImportCompleted`. Seven independent category modules each maintain their own computed signal state. New categories are added as new modules without changing existing modules.
+
+### 20.6 Evaluation Lifecycle Flow
+
+The following describes the complete evaluation lifecycle from trigger event to promotion firing. This flow applies to all four trigger events; differences between the incremental and full-recompute paths are noted.
+
+---
+
+**PHASE 1 — EVENT RECEPTION**
+
+The Event Receiver is subscribed to the four canonical trigger events. When an event fires, it receives the payload and routes to Phase 2.
+
+Event payloads:
+- `MeaningfulWorkSessionSaved`: athlete ID, session date, session duration, activity type, session data (exercises, distance, rounds, etc. per activity type)
+- `ProgramGraduated`: athlete ID, program ID, graduation date
+- `ChapterSealed`: athlete ID, chapter ID, seal date, primary goal state (Achieved / Not Achieved / Not Set), secondary goal outcomes
+- `ImportCompleted`: athlete ID, import batch ID
+
+---
+
+**PHASE 2 — SIGNAL UPDATE**
+
+*Incremental path (MeaningfulWorkSessionSaved, ProgramGraduated, ChapterSealed):*
+
+Route the event to the relevant modules only. Each invoked module reads its current state, applies the incremental update from the event payload, and writes the updated state.
+
+| Event | Modules Invoked |
+|-------|----------------|
+| MeaningfulWorkSessionSaved | ConsistencyModule, ImprovementModule, VolumeModule, LongevityModule |
+| ProgramGraduated | ProgramModule |
+| ChapterSealed | ChapterModule, GoalModule |
+
+Modules not listed for a given event are not invoked and do not update. Their state is unchanged.
+
+*Full-recompute path (ImportCompleted only):*
+
+All seven modules recompute from the athlete's complete history as it exists in the main data store after import. Records are processed chronologically. Each module processes all relevant records in the same order they would have been processed if the athlete had logged natively from the beginning.
+
+After full recompute, all module states reflect the correct current values accounting for the entire athlete history including imported records.
+
+---
+
+**PHASE 3 — ELIGIBILITY CHECK**
+
+After signal updates complete, the Eligibility Checker reads current state from all modules and evaluates promotion eligibility. This phase is stateless — it reads from module state and writes only to the Queue Manager.
+
+**Step 3A — Sub-tier check:**
+1. Read ConsistencyModule: within-family AW count (since current family entry)
+2. Read athlete rank state: current family and sub-tier
+3. Check the sub-tier threshold for the next advance in the current family (Section 13 table)
+4. If confirming evidence is required at this sub-tier (Craftsman II→III and above): check the relevant module for that evidence
+5. If the threshold is satisfied AND this sub-tier advance is not already queued: mark as newly eligible
+
+Sub-tier check repeats for each subsequent sub-tier in the current family until a threshold is not met or all sub-tiers in the family are either satisfied or already queued.
+
+**Step 3B — Family promotion check:**
+1. Read all applicable threshold rows for the next family transition (Section 14 table)
+2. Simultaneously evaluate: time gate (elapsed time vs. journey start), cumulative AW (vs. total threshold), native AW floor (vs. floor threshold), personal improvement state, graduation count, volume count, sealed chapter count, goal participation count, primary goal achievement count
+3. If ALL applicable requirements are satisfied AND the family promotion is not already queued: mark as newly eligible
+
+**Step 3C — Duplication guard:**
+A promotion that is already in the queue is not re-added. The Eligibility Checker checks the current queue contents before marking any promotion as newly eligible.
+
+**D-RCM-23:** All applicable threshold rows are evaluated simultaneously for family promotion eligibility. Partial satisfaction — satisfying some rows but not all — does not produce queue eligibility. A promotion enters the queue only when every applicable threshold is met in the same evaluation cycle.
+
+---
+
+**PHASE 4 — QUEUE MANAGEMENT**
+
+Newly eligible promotions from Phase 3 are appended to the athlete's promotion queue.
+
+**Queue ordering rule:** promotions are ordered by rank level ascending. Sub-tier advances within a family precede the family promotion out of that family. Within the same rank level, the sub-tier advance precedes the family promotion.
+
+*Example:* if a session triggers simultaneous eligibility for Builder · IV sub-tier advance AND Builder → Craftsman family promotion, the queue receives them in this order: Builder · IV first, then Builder → Craftsman. The sub-tier advances within Craftsman (if also newly eligible) append after.
+
+This ordering reflects natural rank progression and satisfies RSA §12's sequential, no-skipping requirement.
+
+---
+
+**PHASE 5 — QUEUE PROCESSING**
+
+The queue processor runs after Phase 4 completes, and also on app foreground entry and after each promotion fires (D-RCM-21). It processes queue items until it reaches an item that cannot yet fire.
+
+*For each item at the head of the queue:*
+
+**Step 5A — Spacing check:**
+Compute: `elapsed = now() − lastPromotionFireTimestamp`
+Look up: `required = spacing_table[promotionType][family]` (Section 15 table)
+If `elapsed < required`: stop processing. The queue will be re-checked on the next queue processor run.
+If `elapsed ≥ required`: continue to 5B.
+
+**Step 5B — Prestige gate check (Architect and above only):**
+If the promotion target is Architect, Established, Legend, or Legacy:
+Compute: `recentAW = ConsistencyModule.activeWeeksInWindow(lookbackWindow, athleteId)`
+Compare: `recentAW ≥ recentEngagementThreshold` (threshold values pending Q9/Q10 resolution)
+If not satisfied: hold the promotion at queue head. Stop processing. Re-check on next queue processor run.
+If satisfied: continue to 5C.
+(Recent engagement is always evaluated against the most current ConsistencyModule state — not against any snapshot taken at queue-entry time. This implements D-RCM-10.)
+
+**Step 5F — Fire:**
+Execute the promotion: athlete rank state advances to the new rank/sub-tier. Record the fire timestamp (starts the spacing clock for the next queue item). Proceed to Phase 6.
+
+**D-RCM-24:** Queue processing is strictly sequential by rank order. A prestige promotion held at queue head — because recent engagement is not satisfied — blocks all subsequent queue items until the hold resolves. Items later in the queue do not fire while a prestige hold is in place. This is the queue-level expression of RSA §12's no-skipping rule.
+
+*Hold behavior note:* If an athlete has a prestige promotion held and subsequently trains enough to satisfy recent engagement, the promotion fires on the next queue processor run (triggered by the session save or app open that restores engagement). There is no expiry — queued promotions do not expire.
+
+---
+
+**PHASE 6 — PROMOTION FIRING**
+
+When a promotion fires, the Promotion Emitter:
+
+1. Updates the athlete's rank state record: new rank family + sub-tier
+2. Records the fire timestamp in the Queue Manager (starts the spacing clock)
+3. Removes the fired item from the queue head
+4. Emits `PromotionFired` event with: athlete ID, promotion type (sub-tier advance OR family promotion), target rank/sub-tier, fire timestamp
+
+Downstream consumers of `PromotionFired`:
+- **Sub-tier advances**: consumed by the sub-tier surfacing mechanism (TBD-2, out of scope here)
+- **Family promotions**: consumed by M-1 (ceremony trigger). M-1 is responsible for presenting the family promotion to the athlete. The Promotion Emitter does not interact with M-1 directly — it fires the event; M-1 subscribes.
+
+After Phase 6 completes, the queue processor immediately re-enters Phase 5 with the next queue item (if any). This loop continues until no item can fire, then terminates.
+
+---
+
+*End of lifecycle. The cycle re-enters at Phase 1 with the next trigger event.*
+
+---
+
+### 20.7 Service Components
+
+Five distinct components constitute the Rank Evaluation Service:
+
+**Component 1 — Event Receiver**
+Subscribes to the four canonical trigger events. Receives event payloads. Routes to the Signal Computation Layer. Does not update state, evaluate eligibility, or manage the queue.
+
+**Component 2 — Signal Computation Layer (seven modules)**
+Seven category modules, each responsible for one category's signal state. Each module defines: (a) which trigger events it responds to, (b) what state it maintains, (c) how it updates state incrementally, and (d) how it recomputes state from full history (for the import path). Module interface: `incrementalUpdate(eventPayload) → void` and `fullRecompute(athleteHistory) → void`. Current state is always readable via `getState(athleteId)`.
+
+**Component 3 — Eligibility Checker**
+Reads current state from all modules. Evaluates sub-tier thresholds (Section 13) and family promotion thresholds (Section 14). Returns a list of newly-eligible promotions. The Eligibility Checker is stateless — it reads, does not write. It has no state of its own.
+
+**Component 4 — Queue Manager**
+Maintains the ordered promotion queue per athlete. Appends newly-eligible promotions (in rank-ascending order). Tracks the last-fire timestamp per athlete (spacing clock). Exposes the queue head to the queue processor. Maintains the set of currently-queued promotions (for the duplication guard in Phase 3C).
+
+**Component 5 — Promotion Emitter**
+Receives fire authorization from the queue processor. Updates athlete rank state. Records fire timestamp in the Queue Manager. Emits `PromotionFired`. Does not directly interact with M-1, P-2, or any display system.
+
+### 20.8 Category Module Definitions
+
+| Module | State Maintained | Trigger Events | Notes |
+|--------|-----------------|---------------|-------|
+| **ConsistencyModule** | Cumulative AW (journey start to now); within-family AW (family entry to now); ordered list of active calendar week start-dates (for recent engagement derivation) | MeaningfulWorkSessionSaved | Must maintain two independent AW counters (D-RCM-11). Resets within-family counter when athlete's family changes. Active week list enables recent engagement check at queue-firing time without a separate module. |
+| **ImprovementModule** | Personal bests per type: per-exercise best (Strength); best pace + best distance (Running); best HIIT rounds + best Strength load (Boxing L1 + L2); per-modality bests (Hybrid) | MeaningfulWorkSessionSaved | Athlete type dependency (Q8). If type not declared: return "insufficient data" without blocking other modules. Dispatches to a type-specific evaluator; adding a new type adds a new evaluator. |
+| **ProgramModule** | Total graduation count; graduation history (program ID + date + program category/type, for Legend distinct-phase check per Q14) | ProgramGraduated | Graduation history is required for Q14 resolution (Legend distinct development phases). Storing program type at graduation time avoids a future join. |
+| **VolumeModule** | Total meaningful work session count | MeaningfulWorkSessionSaved | Single counter. The simplest module. |
+| **ChapterModule** | Total sealed chapter count | ChapterSealed | Single counter. |
+| **GoalModule** | Total goal participation events (primary + secondary resolutions via chapter sealing); primary goal achievement count | ChapterSealed | Reads primary goal state and secondary goal count from the ChapterSealed payload. Does not read chapter or goal records directly — all needed information is in the event. |
+| **LongevityModule** | Earliest training record date; most recent meaningful work session date | MeaningfulWorkSessionSaved; ImportCompleted | Earliest date: set on first session save; updated only if a newly processed record has an earlier date (primarily relevant during import full-recompute). Most recent: updated on every meaningful work session save. |
+
+### 20.9 Queue Processor Design
+
+The queue processor is a function, not a persistent background process. It runs on demand per D-RCM-21.
+
+```
+function processQueue(athleteId, now):
+  loop:
+    item = QueueManager.head(athleteId)
+    if item is null: return  // Queue empty
+    
+    // Phase 5A: Spacing check
+    elapsed = now - QueueManager.lastFireTimestamp(athleteId)
+    required = Section15SpacingTable[item.type][item.targetFamily]
+    if elapsed < required: return  // Spacing not elapsed; re-check later
+    
+    // Phase 5B: Prestige gate check (Architect and above only)
+    if item.targetFamily in {Architect, Established, Legend, Legacy}:
+      window  = recentEngagementLookbackWindow  // Q9: pending resolution
+      minAW   = recentEngagementMinActiveWeeks  // Q9: pending resolution
+      recentAW = ConsistencyModule.activeWeeksInWindow(athleteId, now, window)
+      if recentAW < minAW: return  // Held; re-check on next session or app open
+    
+    // Phase 5C: Fire
+    PromotionEmitter.fire(athleteId, item, now)
+    QueueManager.dequeue(athleteId)
+    // Loop immediately to check next item
+```
+
+**Hold semantics:** when `return` is executed in Step 5B (prestige gate not satisfied), the promotion remains at the queue head. No items after it in the queue can fire (D-RCM-24). The function re-enters Phase 5 with this same item on the next invocation, until recent engagement is satisfied.
+
+**Idempotency:** the queue processor is designed to be safe to run multiple times in rapid succession. If the queue head has not changed between runs (no event, no firing), Phase 5A or 5B will return early. No duplicate promotions can be fired.
+
+### 20.10 Import Full-Recompute Path
+
+`ImportCompleted` triggers a distinct evaluation path that replaces incremental updates:
+
+1. **Signal wipe**: all seven module states for the athlete are cleared to zero/empty
+2. **Full read**: all athlete training records (sessions, programs, chapters, goals) are read from the main data store in chronological order, post-import
+3. **Sequential replay**: records are processed chronologically, invoking each module's `fullRecompute` method with the complete record set. Modules rebuild state as if every record were processed in native order from the beginning
+4. **State write**: all seven modules write their recomputed states as the new authoritative signal state
+5. **Eligibility check** (Phase 3) runs against the freshly recomputed state
+6. **Queue append**: newly-eligible promotions from Phase 3 are appended to the existing queue in rank-ascending order
+
+**Existing queue is not cleared.** Previously-queued promotions that remain valid stay in the queue. Previously-fired promotions are reflected in the fire timestamp history, which preserves the spacing clock integrity. The post-import recompute may add new queue items but never removes or reorders existing valid items.
+
+### 20.11 Extensibility Model
+
+**Future athlete types:** ImprovementModule dispatches to a type-specific evaluator based on the athlete's declared type. Adding a new athlete type requires adding a new evaluator function (defining what personal bests mean for the new type and which session data to read). No changes to: the module's trigger event subscription, the module interface, the Eligibility Checker, or the queue system.
+
+**Future category expansion:** adding a new rank category requires:
+1. A new module implementing the standard module interface (`incrementalUpdate`, `fullRecompute`, `getState`)
+2. Registration of the module's relevant trigger events with the Event Receiver
+3. Addition of the module's state to the Eligibility Checker's input
+4. Addition of new threshold rows to the threshold table (Section 14) for the new category
+
+No existing module, the Eligibility Checker structure, the Queue Manager, or the queue processor requires modification. The system is additive — new categories extend the architecture without replacing any part of it.
+
+**Future trigger events:** if a new domain event becomes rank-relevant in a future release (e.g., a social activity type with its own session category), it can be added to the trigger set by registering the new event with the Event Receiver and adding it to the relevant module's trigger list. No structural change to the service.
+
+### 20.12 Downstream Impacts
+
+- **TBD-12 (Rank data model)**: Session 4 defines the entities the RES requires. The data model must represent: (1) AthleteRankState — current family, current sub-tier, journey start date; (2) seven module signal state records per athlete; (3) PromotionQueue — ordered list of QueueItems per athlete; (4) QueueItem — target rank/sub-tier, type, queue-entry timestamp; (5) FireRecord — promotion type, target rank, fire timestamp (one per delivered promotion, retained for spacing and audit). TBD-12 can proceed in Session 5 with this entity set as input.
+
+- **M-1 (family promotion ceremony)**: M-1 must subscribe to `PromotionFired` and filter for family promotion type. Sub-tier `PromotionFired` events do not trigger M-1. M-1 is responsible for its own presentation timing — the RES fires the event and records the advancement; the ceremony layer handles delivery.
+
+- **Domain event emission**: session logging (W-9–W-16), program completion, M-5 (chapter sealing), and the import pipeline each have an integration requirement to emit their respective trigger events correctly and at the right moment (post-write, not pre-write).
+
+- **App lifecycle**: the Expo application shell must invoke the queue processor (specifically `processQueue(currentAthleteId, now)`) on every foreground entry. This is a shallow integration — one function call in the app foreground hook.
+
+- **Q8 (athlete type)**: ImprovementModule requires athlete type. Until Q8 is resolved, all athletes without a declared type receive "insufficient data" for the Personal Improvement signal. The Personal Improvement rows in the eligibility check gracefully degrade — they do not block evaluation of the other six modules, and they do not block promotions where Personal Improvement is not required (F→B).
+
+- **Q9/Q10 (recent engagement thresholds)**: Queue Processor Phase 5B requires the lookback window duration and minimum active week count. These values are placeholders until Q9/Q10 are resolved. The queue processor architecture is complete; the threshold values it checks against are the only missing operands.
+
+---
+
+## 21. Session 4 Refinement Report
+
+### 21.1 What This Session Resolved
+
+| TBD | Decision Summary |
+|-----|-----------------|
+| TBD-1 | Canonical trigger events: `MeaningfulWorkSessionSaved`, `ProgramGraduated`, `ChapterSealed`, `ImportCompleted`. Time gates and recent engagement are passive conditions evaluated at queue-processing time, not triggered by events. Queue processor runs after every trigger event, on app foreground entry, and after each promotion fires. |
+| TBD-16 | Category-modular incremental evaluation service. Five components: Event Receiver, Signal Computation Layer (7 modules), Eligibility Checker, Queue Manager, Promotion Emitter. Incremental updates for normal operation; full recompute for `ImportCompleted`. Queue processor is sequential with spacing enforcement (D-RCM-21) and prestige gate hold behavior (D-RCM-24). |
+
+### 21.2 Structural Coherence Check
+
+**TBD-1 and TBD-16 are mutually defining and were resolved as an integrated pair.** The canonical trigger events (TBD-1) are the inputs to the service architecture (TBD-16). The service architecture determines what can be processed incrementally vs. what requires full recompute, which informs the trigger model.
+
+**Every prior-session decision maps cleanly to a specific lifecycle phase:**
+
+| Prior Decision | Service Expression |
+|---------------|-------------------|
+| D-RCM-1: ChapterSealed credits Chapter Progression and Goal Participation | Phase 2: ChapterSealed routes to ChapterModule and GoalModule |
+| D-RCM-3: Longevity anchored to most recent meaningful work session | LongevityModule: updates most-recent date on every MeaningfulWorkSessionSaved |
+| D-RCM-10: Recent engagement at queue-firing time | Phase 5B: ConsistencyModule.activeWeeksInWindow() called at fire time, not entry time |
+| D-RCM-11: Two independent AW counters | ConsistencyModule maintains both; neither counter proxies the other |
+| D-RCM-20: Import triggers full recompute | Phase 2 full-recompute path, invoked only on ImportCompleted |
+| D-RCM-23: Multi-requirement convergence | Phase 3B: all threshold rows evaluated simultaneously; partial satisfaction blocked |
+| Section 15 spacing values | Phase 5A: spacing table lookup by promotion type and family |
+
+**ConsistencyModule state enables recent engagement without a separate module.** The active week history that ConsistencyModule already maintains — a list of active calendar week start-dates — is exactly the data Phase 5B needs to evaluate the lookback window. No additional module, no additional trigger, no additional state.
+
+**The Queue Manager + Queue Processor together operationalize RSA §12.** RSA §12 requires sequential delivery, no skipping, and spacing. Queue Manager provides ordering and spacing state. Queue Processor enforces spacing in Phase 5A and the prestige hold in Phase 5B. D-RCM-24 makes the no-skipping rule explicit at the implementation level.
+
+### 21.3 Decisions That Carry Architectural Weight
+
+**D-RCM-18:** Canonical trigger event set: `MeaningfulWorkSessionSaved`, `ProgramGraduated`, `ChapterSealed`, `ImportCompleted`.
+
+**D-RCM-19:** Time gates and recent engagement are passive — evaluated at queue-processing time (Phases 5A and 5B). No trigger events exist for these conditions.
+
+**D-RCM-20:** `ImportCompleted` is the only trigger event that causes full signal recomputation across all seven modules. All other trigger events use incremental updates.
+
+**D-RCM-21:** Queue processor runs (a) after every trigger event, (b) on app foreground entry, and (c) after each promotion fires.
+
+**D-RCM-22:** Category-modular architecture. Seven independent modules, each owning one category's signal state. New categories add new modules; existing modules are not changed.
+
+**D-RCM-23:** Eligibility check evaluates all applicable threshold rows simultaneously. Partial satisfaction never produces queue eligibility.
+
+**D-RCM-24:** Queue processing is strictly sequential by rank order. A prestige promotion held at queue head (recent engagement not satisfied) blocks all subsequent queue items until the hold resolves.
+
+### 21.4 What This Session Did Not Resolve
+
+- **Q9/Q10** (recent engagement thresholds): Phase 5B architecture is complete; threshold values are pending user decision
+- **Q8** (athlete type declaration): ImprovementModule degrades gracefully until resolved
+- **Q1/Q2** (meaningful work duration floor, active month count): referenced as thresholds within modules; architecture is complete pending threshold values
+- **Q11** (import partial credit rate): referenced in the import full-recompute path as a signal-level weighting; architecture is complete pending the rate value
+- **TBD-12** (rank data model): now unblocked — required entities are defined in Sections 20.8 and 20.12; ready for Session 5
+- **TBD-2** (sub-tier surfacing mechanism): downstream consumer of sub-tier `PromotionFired` events; P-2 scope, out of scope here
+- **TBD-11** (Legacy display format): UI scope, out of scope
+- **Q15–Q19** (platform-specific implementation questions): flagged in Section 22 below
+
+---
+
+## 22. Open Questions for Session 5
+
+The following questions require user decisions before or during Session 5. Q1–Q14 from prior sessions remain open; questions specific to Session 5 scope begin at Q15.
+
+---
+
+**Q15 — Queue Persistence Model**
+
+The promotion queue (including queued items and the fire timestamp that drives the spacing clock) must survive app restarts and device loss. Where is the queue state persisted?
+
+*Context:* Three options: (a) local device only — simple, but queue is lost on uninstall; spacing history is lost, which could allow promotions to fire without correct spacing after reinstall; (b) server-side with sync — durable, correct, but requires a backend; (c) local as authoritative source with server backup on connectivity.
+
+The fire timestamp is the most critical field to preserve — without it, the spacing clock resets.
+
+*Impact on:* TBD-12 (data model must indicate storage location for each entity), app architecture.
+
+*What you need to decide:* Persistence strategy for the promotion queue and fire history.
+
+---
+
+**Q16 — Offline Trigger Event Handling**
+
+Athletes may save sessions in offline mode (common in gyms). A session save fires `MeaningfulWorkSessionSaved`. If the RES runs on a server and the session hasn't synced yet, the event cannot be processed until connectivity is restored.
+
+*Context:* Two architectural positions: (a) RES runs entirely client-side (on-device) — evaluation and queue management happen locally, no network dependency; (b) RES runs server-side — offline sessions are held locally and trigger evaluation when they sync. A client-side RES simplifies offline behavior but raises multi-device sync complexity (Q18). A server-side RES simplifies multi-device sync but requires careful offline event queuing.
+
+*Impact on:* TBD-12, app architecture, import pipeline integration.
+
+*What you need to decide:* Client-side vs. server-side RES, or hybrid.
+
+---
+
+**Q17 — Background Queue Processing**
+
+The queue processor runs on app foreground entry (D-RCM-21). For athletes who haven't opened the app in several days, pending promotions accumulate and only fire on next open. Is any mechanism used to process the queue when the app is in the background?
+
+*Context:* iOS and Android impose strict limits on background execution. Options: (a) accept foreground-only processing — promotions wait until the athlete opens the app (simplest, most reliable); (b) use a push notification from the server to prompt app open when a promotion is ready to fire (requires backend, connection to push infrastructure); (c) use platform background fetch if available (iOS: BGAppRefreshTask; Android: WorkManager) with the understanding that delivery is not guaranteed.
+
+For a rank system where promotions are meaningful but not time-critical, foreground-only processing is likely acceptable. The athlete will see their promotion the next time they open the app.
+
+*What you need to decide:* Foreground-only vs. server-prompted vs. background fetch strategy.
+
+---
+
+**Q18 — TBD-12 Data Model Scope for Session 5**
+
+Session 4 has defined the entities the RES requires (Section 20.12). TBD-12 (rank data model schema) is now ready to proceed. Before Session 5 can lock the schema, the following inputs must be confirmed:
+
+- Q15 resolution (persistence strategy affects whether entities include sync metadata)
+- Q16 resolution (client-side vs. server-side affects where entities live)
+- Q8 resolution (athlete type is a field in the ImprovementModule state entity)
+- Q9/Q10 resolution (recent engagement thresholds are embedded in the queue processor logic, not in the schema, but confirmation avoids schema revision later)
+
+*What you need to decide:* Which of Q8, Q9/Q10, Q15, Q16 will be resolved before Session 5, and which will be left as schema design constraints to note but not block on.
+
+---
+
+**Q19 — RES Error Handling and State Recovery**
+
+If a trigger event is processed and a module update fails partway (e.g., ImprovementModule crashes mid-update while ConsistencyModule has already updated), the signal state may be partially incorrect. How should the RES recover?
+
+*Context:* Three approaches: (a) transactional module updates — either all relevant modules update atomically or none do; requires a transaction coordinator; (b) retry on failure — re-process the trigger event in full; requires that all module updates are idempotent (safe to apply twice); (c) recovery flag — mark the athlete's rank state as "needs recompute" and trigger the import full-recompute path on the next app open; simple but introduces a delay.
+
+Idempotent module updates (option b) are the simplest path and align with the incremental-update model, provided each module can detect that it has already processed a given event.
+
+*What you need to decide:* Error handling strategy for partial module update failures.
+
+---
+
+---
+
+## 23. TBD-12 — Rank Data Model Schema
+
+### 23.1 Problem
+
+Sessions 1–4 defined what the rank system computes, when it computes it, and how the service is structured. None of that can be persisted without a data model. TBD-12 defines the schema — the entities, fields, relationships, and persistence boundaries — that give the Rank Evaluation Service durable state.
+
+Q15 and Q16 pre-decisions establish the context for every persistence decision in this section:
+
+- **Q15:** Promotion queue is persistent server-side state. Queued promotions, fire timestamps, and promotion history survive app restarts, reinstalls, and device loss because they live on the server — not on the client.
+- **Q16:** The RES runs server-side. The client has read-only rank views derived from server state. The client never independently awards rank. Offline session saves are held locally and synced when connectivity is restored; evaluation runs after sync completes.
+
+These two decisions together determine the authority model: the server is the single source of truth for all rank state. The client receives and displays rank state; it does not compute or mutate it.
+
+### 23.2 Entity Overview
+
+The rank data model comprises seven entities:
+
+| Entity | Purpose | Lives On |
+|--------|---------|----------|
+| `AthleteRankState` | Current rank (family + sub-tier), journey start date | Server (authoritative) |
+| `CategorySignalState` | Seven module states per athlete — the computed signals that drive eligibility | Server (authoritative) |
+| `PromotionQueue` | Ordered list of pending promotions awaiting fire | Server (authoritative) |
+| `QueueItem` | A single pending promotion in the queue | Server, child of PromotionQueue |
+| `PromotionRecord` | Immutable record of every fired promotion | Server (authoritative) |
+| `RankEvaluationEvent` | Log of trigger events received and processed, for idempotency and recovery | Server |
+| `ClientRankSnapshot` | Cached read view of server rank state, held on device | Client only |
+
+### 23.3 Entity: AthleteRankState
+
+One record per athlete. The current rank family and sub-tier as awarded by the RES.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `athleteId` | FK → Athlete | Primary key relationship. One record per athlete. |
+| `currentFamily` | Enum | `FOUNDATION \| BUILDER \| CRAFTSMAN \| ARCHITECT \| ESTABLISHED \| LEGEND \| LEGACY` |
+| `currentSubTier` | Integer (1–4) | Sub-tier within the current family. Legacy has one level: always 1. |
+| `rankLevel` | Integer (1–25) | Derived: (familyIndex × 4) + subTier − 3, clamped. Stored for read efficiency; always derivable from family + subTier. |
+| `journeyStartDate` | Date | The earliest record date used by LongevityModule: either the first native session date or the earliest imported session date post-import. Set at account creation; potentially revised downward on `ImportCompleted`. |
+| `familyEntryDate` | Date | The date the athlete was promoted into the current family. Used to compute within-family tenure (display only — not a rank signal). |
+| `lastModifiedAt` | Timestamp | Server-assigned. Updated every time a promotion fires. Used for client cache invalidation. |
+| `schemaVersion` | Integer | Schema migration sentinel. Incremented when the entity structure changes. |
+
+**Constraint:** `currentFamily` + `currentSubTier` must correspond to exactly one valid rank level in the 25-level table. The RES enforces this at write time; no direct mutation of this entity is permitted outside the Promotion Emitter.
+
+### 23.4 Entity: CategorySignalState
+
+One record per athlete per module. Seven records total per athlete (one per category module defined in Section 20.8). This entity is the persisted form of the Signal Computation Layer's in-memory state.
+
+Rather than a single wide table, each module owns its own signal state record. This directly maps to the modular architecture (D-RCM-22): adding a new category adds a new record type, not new columns on an existing table.
+
+---
+
+**23.4.1 ConsistencySignalState**
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `athleteId` | FK → Athlete | |
+| `cumulativeActiveWeeks` | Integer | Total active calendar weeks (Mon–Sun, ≥1 meaningful work session) since journey start. Includes imported weeks. |
+| `withinFamilyActiveWeeks` | Integer | Active weeks accumulated since the athlete entered their current family. Resets to 0 on family promotion. |
+| `withinFamilyResetDate` | Date | The date `withinFamilyActiveWeeks` was last reset (i.e., the date of the last family promotion). Used for audit and recovery. |
+| `activeWeekIndex` | JSON Array of Date | Ordered list of calendar week start-dates (Monday) for which the athlete has at least one meaningful work session. Used by queue processor Phase 5B (recent engagement lookback). Dates are ISO 8601 (YYYY-MM-DD). |
+| `lastUpdatedAt` | Timestamp | Server-assigned on every incremental update. |
+| `lastEventIdProcessed` | FK → RankEvaluationEvent | Idempotency anchor — see Section 23.8. |
+
+**On `withinFamilyActiveWeeks` reset:** when a family promotion fires (Promotion Emitter, Phase 6), `withinFamilyActiveWeeks` is set to 0 and `withinFamilyResetDate` is set to the promotion fire date. The athlete immediately begins accumulating within-family AW toward the first sub-tier advance in the new family.
+
+**On `activeWeekIndex`:** this is the authoritative list for recent engagement evaluation. Weeks are deduplicated (a week already in the index is not added again). Maximum realistic size at Legacy (~288 AW weeks active out of ~520 total weeks): ~288 entries — a small array. Index is append-only during incremental updates; rebuilt from full history during import full-recompute.
+
+---
+
+**23.4.2 ImprovementSignalState**
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `athleteId` | FK → Athlete | |
+| `athleteType` | Enum (nullable) | `STRENGTH \| RUNNING \| BOXING \| HYBRID`. Null until declared (Q8). Null causes "insufficient data" state for this module. |
+| `personalBests` | JSON Object | Keyed by modality/exercise within athlete type. Structure is type-specific (see below). |
+| `improvementEventCount` | Integer | Total count of personal best advancement events recorded since journey start. Used as the improvement signal in family promotion eligibility. |
+| `lastUpdatedAt` | Timestamp | |
+| `lastEventIdProcessed` | FK → RankEvaluationEvent | |
+
+**`personalBests` structure by athlete type:**
+
+*STRENGTH:*
+```
+{
+  "byExercise": {
+    "<exerciseDefinitionId>": {
+      "bestLoad": Float,         // in kg
+      "bestReps": Integer,       // at best load
+      "bestDate": Date
+    }
+  }
+}
+```
+
+*RUNNING:*
+```
+{
+  "bestPace": {                  // fastest pace ever (lower is better)
+    "value": Float,              // min/km
+    "achievedDate": Date
+  },
+  "bestDistance": {              // longest run ever
+    "value": Float,              // km
+    "achievedDate": Date
+  }
+}
+```
+
+*BOXING:*
+```
+{
+  "bestHiitRounds": {
+    "value": Integer,
+    "achievedDate": Date
+  },
+  "bestStrengthLoad": {
+    "exerciseDefinitionId": String,
+    "value": Float,              // kg
+    "achievedDate": Date
+  }
+}
+```
+
+*HYBRID:*
+```
+{
+  "byModality": {
+    "STRENGTH": { /* same structure as STRENGTH above */ },
+    "RUNNING": { /* same structure as RUNNING above */ },
+    "BOXING": { /* same structure as BOXING above */ }
+  }
+}
+```
+
+**Why JSON for personal bests:** the structure is type-specific and the STRENGTH variant is unbounded (one entry per exercise definition an athlete has ever logged). A relational sub-table per athlete per exercise is the alternative and is equally valid — the JSON representation is specified here as the schema definition; implementation may normalize to a sub-table if the platform ORM favors it. The semantic contract (what is stored and how improvement is detected) is what this document locks; the physical storage form is an implementation decision.
+
+---
+
+**23.4.3 ProgramSignalState**
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `athleteId` | FK → Athlete | |
+| `totalGraduations` | Integer | Total count of graduated programs since journey start. Includes imported graduations. |
+| `graduationHistory` | JSON Array | One entry per graduated program. Each entry: `{ programId, programCategory, graduationDate, isImported }`. `programCategory` captured at graduation time for Q14 (distinct development phases at Legend). |
+| `lastUpdatedAt` | Timestamp | |
+| `lastEventIdProcessed` | FK → RankEvaluationEvent | |
+
+---
+
+**23.4.4 VolumeSignalState**
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `athleteId` | FK → Athlete | |
+| `totalMeaningfulWorkSessions` | Integer | Count of all meaningful work sessions since journey start. Includes imported sessions that meet the meaningful work criteria (TBD-7). |
+| `lastUpdatedAt` | Timestamp | |
+| `lastEventIdProcessed` | FK → RankEvaluationEvent | |
+
+---
+
+**23.4.5 ChapterSignalState**
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `athleteId` | FK → Athlete | |
+| `totalSealedChapters` | Integer | Count of all sealed chapters since journey start. |
+| `lastUpdatedAt` | Timestamp | |
+| `lastEventIdProcessed` | FK → RankEvaluationEvent | |
+
+---
+
+**23.4.6 GoalSignalState**
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `athleteId` | FK → Athlete | |
+| `totalGoalParticipationEvents` | Integer | Total goal participation events. One event per sealed chapter that had any primary or secondary goal set (regardless of outcome). Derived from the ChapterSealed event payload (Section 19.6). |
+| `totalPrimaryGoalAchievements` | Integer | Count of sealed chapters where the primary goal was marked Achieved. |
+| `lastUpdatedAt` | Timestamp | |
+| `lastEventIdProcessed` | FK → RankEvaluationEvent | |
+
+---
+
+**23.4.7 LongevitySignalState**
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `athleteId` | FK → Athlete | |
+| `earliestRecordDate` | Date | The earliest training record date in the athlete's full history, including imported records. Set on first session; may be revised downward on `ImportCompleted` full-recompute. |
+| `mostRecentMeaningfulWorkDate` | Date | Date of the most recent session that qualifies as meaningful work. Updated on every `MeaningfulWorkSessionSaved`. Used by time gate derivation (elapsed = today − earliestRecordDate; longevity gap = today − mostRecentMeaningfulWorkDate for possible future gap penalty). |
+| `lastUpdatedAt` | Timestamp | |
+| `lastEventIdProcessed` | FK → RankEvaluationEvent | |
+
+### 23.5 Entity: PromotionQueue
+
+One record per athlete. The athlete's ordered list of pending promotions.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `athleteId` | FK → Athlete | One queue per athlete. |
+| `items` | JSON Array (ordered) | Ordered list of `QueueItem` records, ascending by rank level. See Section 23.6. |
+| `lastFireTimestamp` | Timestamp (nullable) | Timestamp of the most recently fired promotion for this athlete. Null if no promotion has ever fired. This is the spacing clock: `elapsed = now() − lastFireTimestamp`. |
+| `holdReason` | Enum (nullable) | `SPACING \| PRESTIGE_ENGAGEMENT \| null`. Populated by the queue processor when processing is blocked; cleared when the hold resolves. For diagnostic visibility only — does not gate processing (the queue processor re-derives hold state from live signals on each run). |
+| `lastProcessedAt` | Timestamp | Timestamp of the most recent queue processor run for this athlete. Used for audit and debugging. |
+| `lastModifiedAt` | Timestamp | Server-assigned. Updated whenever queue contents change. |
+
+**`lastFireTimestamp` is the single spacing authority.** It is set at the moment a promotion fires (Phase 6). All subsequent queue items are checked against `now() − lastFireTimestamp` in Phase 5A. Spacing thresholds from Section 15 are not persisted in the queue — they are read from the static table at processing time.
+
+### 23.6 Entity: QueueItem
+
+QueueItems are stored as an ordered array within `PromotionQueue.items`. They are not a separate top-level table; they are elements of the queue, with no independent identity outside it.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `queueItemId` | UUID | Stable identifier for this queue entry. Used in the duplication guard (Phase 3C) and idempotency checks. |
+| `targetFamily` | Enum | The family this promotion targets. |
+| `targetSubTier` | Integer (1–4) | The sub-tier this promotion targets. Together with `targetFamily`, uniquely identifies a rank level. |
+| `promotionType` | Enum | `SUB_TIER_ADVANCE \| FAMILY_PROMOTION`. |
+| `targetRankLevel` | Integer (1–25) | Derived from targetFamily + targetSubTier. Stored for sort-order enforcement. |
+| `queuedAt` | Timestamp | When this item was appended to the queue. Used for audit; does not affect processing order (order is always by `targetRankLevel`). |
+| `eligibilitySnapshot` | JSON Object | Snapshot of the signal values at queue-entry time. Not used for processing decisions (the queue processor always evaluates recent engagement at fire time from live state per D-RCM-10). Used for debugging and post-hoc audit: "why did this enter the queue?" |
+
+**Queue ordering invariant:** `items` is always sorted ascending by `targetRankLevel`. The Queue Manager enforces this invariant on every append. The queue processor always reads `items[0]` (the head) and never processes index > 0 until index 0 fires.
+
+### 23.7 Entity: PromotionRecord
+
+One record per fired promotion. Immutable — never updated after creation. The authoritative history of every rank advancement the athlete has received.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `promotionRecordId` | UUID | |
+| `athleteId` | FK → Athlete | |
+| `promotionType` | Enum | `SUB_TIER_ADVANCE \| FAMILY_PROMOTION` |
+| `fromFamily` | Enum | The family the athlete was in before this promotion. |
+| `fromSubTier` | Integer | The sub-tier before this promotion. |
+| `toFamily` | Enum | The family after this promotion. Same as `fromFamily` for sub-tier advances. |
+| `toSubTier` | Integer | The sub-tier after this promotion. |
+| `toRankLevel` | Integer (1–25) | The rank level achieved. |
+| `firedAt` | Timestamp | Server-assigned at fire time. The authoritative timestamp for this promotion. |
+| `queueItemId` | FK (soft) | The `queueItemId` of the QueueItem that generated this record. Enables audit linkage back to the queue entry. |
+| `signalSnapshotAtFire` | JSON Object | Snapshot of all seven module signal states at the exact moment this promotion fired. Captures the full evidence set that satisfied eligibility. |
+
+**`signalSnapshotAtFire` is the audit anchor.** Because signal state is mutable (it updates with each new session), the snapshot preserves the exact values that satisfied the threshold rows at promotion time. This is the evidence record for disputes, debugging, and future tooling.
+
+**PromotionRecord is append-only.** The RES never updates or deletes promotion records. Corrections (if a promotion was fired in error) are handled by a compensating record, not a modification — this protocol is out of scope for this document and would require a separate process with manual oversight.
+
+### 23.8 Entity: RankEvaluationEvent
+
+One record per processed trigger event. Serves two purposes: idempotency (prevent double-processing of the same event) and recovery (identify which events were processed successfully vs. which were interrupted).
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `evaluationEventId` | UUID | |
+| `athleteId` | FK → Athlete | |
+| `triggerEventType` | Enum | `MEANINGFUL_WORK_SESSION_SAVED \| PROGRAM_GRADUATED \| CHAPTER_SEALED \| IMPORT_COMPLETED` |
+| `sourceEventId` | UUID | The ID of the originating domain event (e.g., the session save ID, program graduation ID, chapter ID, import batch ID). Used as the idempotency key. If an event with this `sourceEventId` has already been processed, the RES skips processing entirely. |
+| `receivedAt` | Timestamp | When the RES received the event. |
+| `processingStatus` | Enum | `PENDING \| PROCESSING \| COMPLETED \| FAILED` |
+| `completedAt` | Timestamp (nullable) | When processing finished successfully. |
+| `failedAt` | Timestamp (nullable) | When processing failed (if applicable). |
+| `failureReason` | String (nullable) | Error description if `FAILED`. |
+| `modulesUpdated` | JSON Array of String | Which module names were updated in Phase 2. For incremental events: the subset that were invoked. For import: all seven. |
+| `promotionsQueued` | JSON Array of UUID | The `queueItemId` values appended to the queue as a result of this event's Phase 3 evaluation. Empty array if no new items were queued. |
+
+**Idempotency contract:** before processing any trigger event, the RES checks whether a `RankEvaluationEvent` with the same `sourceEventId` and `COMPLETED` status already exists. If yes: skip. If no: create a new record with `PENDING` status, then proceed. On completion: update to `COMPLETED`. On failure: update to `FAILED`.
+
+**D-RCM-25:** Every trigger event processed by the RES must have a corresponding `RankEvaluationEvent` record. The `sourceEventId` field is the idempotency key. An event with a `sourceEventId` matching an existing `COMPLETED` record is a no-op.
+
+**Recovery behavior:** a `FAILED` or stale `PROCESSING` record (processing started but no completion or failure recorded — e.g., server crash mid-cycle) is a signal that the event's processing was interrupted. Q19 (error handling strategy) is deferred, but the schema supports two recovery approaches: (a) re-process the trigger event from scratch (requires module updates to be idempotent — safe if each module checks `lastEventIdProcessed` before updating); (b) flag the athlete's rank state as needing full recompute (using the import full-recompute path). The schema's `processingStatus` field enables either approach.
+
+### 23.9 Entity: ClientRankSnapshot
+
+The client must display rank state without requiring a live server round-trip on every screen load. `ClientRankSnapshot` is the client-side read cache of the server's authoritative rank state.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `athleteId` | String | Local identifier. |
+| `currentFamily` | Enum | Mirrored from server `AthleteRankState`. |
+| `currentSubTier` | Integer | Mirrored from server `AthleteRankState`. |
+| `rankLevel` | Integer (1–25) | Mirrored from server `AthleteRankState`. |
+| `journeyStartDate` | Date | Mirrored from server `AthleteRankState`. |
+| `snapshotTimestamp` | Timestamp | When this snapshot was last fetched from the server. |
+| `serverLastModifiedAt` | Timestamp | The server's `AthleteRankState.lastModifiedAt` at the time of the last sync. Used to detect staleness: if server `lastModifiedAt` > snapshot `serverLastModifiedAt`, the snapshot is stale and must be refreshed. |
+| `pendingPromotionCount` | Integer | Count of items currently in `PromotionQueue.items` on the server. Drives UI state (e.g., a pending promotion indicator). Null if not fetched. |
+
+**The client never writes rank state.** `ClientRankSnapshot` is read-only from the client's perspective. It is populated by server responses to: (a) explicit rank fetch requests, (b) push notification payloads carrying updated rank state after a promotion fires, (c) sync completion responses.
+
+**Stale snapshot behavior:** if `snapshotTimestamp` is older than a defined threshold (implementation detail — not specified here) or `serverLastModifiedAt` has advanced, the client fetches a fresh snapshot. The client displays the cached snapshot in the interim rather than showing nothing.
+
+**D-RCM-26:** The client never independently computes or modifies rank state. `ClientRankSnapshot` is a read cache derived from server state. All rank mutations originate on the server via the Rank Evaluation Service.
+
+### 23.10 Relationships
+
+```
+Athlete (1)
+  ├── (1) AthleteRankState
+  ├── (1) ConsistencySignalState
+  ├── (1) ImprovementSignalState
+  ├── (1) ProgramSignalState
+  ├── (1) VolumeSignalState
+  ├── (1) ChapterSignalState
+  ├── (1) GoalSignalState
+  ├── (1) LongevitySignalState
+  ├── (1) PromotionQueue
+  │     └── (0..N) QueueItem       [ordered array, ascending by rankLevel]
+  ├── (0..N) PromotionRecord        [append-only; one per fired promotion]
+  └── (0..N) RankEvaluationEvent   [one per processed trigger event]
+
+Client device
+  └── (0..1) ClientRankSnapshot     [read cache; derived from AthleteRankState]
+```
+
+All seven `CategorySignalState` records have a 1:1 relationship with Athlete. This is structurally equivalent to a single wide athlete-state table with all signal fields, but modeled as separate records to maintain module independence (D-RCM-22).
+
+### 23.11 Persistence Boundaries
+
+| Entity | Server | Client | Notes |
+|--------|--------|--------|-------|
+| `AthleteRankState` | Authoritative | Never stored | |
+| `ConsistencySignalState` | Authoritative | Never stored | `activeWeekIndex` may be large; stored server-side only |
+| `ImprovementSignalState` | Authoritative | Never stored | `personalBests` JSON may be large for STRENGTH athletes |
+| `ProgramSignalState` | Authoritative | Never stored | |
+| `VolumeSignalState` | Authoritative | Never stored | |
+| `ChapterSignalState` | Authoritative | Never stored | |
+| `GoalSignalState` | Authoritative | Never stored | |
+| `LongevitySignalState` | Authoritative | Never stored | |
+| `PromotionQueue` + `QueueItem` | Authoritative | Never stored | |
+| `PromotionRecord` | Authoritative | Never stored | |
+| `RankEvaluationEvent` | Authoritative | Never stored | |
+| `ClientRankSnapshot` | Not stored | Read cache only | Populated from server responses; does not persist on server |
+
+**Everything above `ClientRankSnapshot` lives exclusively on the server.** This is the direct expression of Q16: the client receives state; it does not own or compute it.
+
+### 23.12 Import-Related Fields
+
+The import full-recompute path (Section 20.10) touches several fields across multiple entities. These are called out explicitly:
+
+| Field | Entity | Import Behavior |
+|-------|--------|----------------|
+| `journeyStartDate` | AthleteRankState | May be set earlier if imported records predate the earliest native session. Write is a server-side mutation triggered by the import full-recompute. |
+| `cumulativeActiveWeeks` | ConsistencySignalState | Rebuilt from full week history. Imported weeks that are active (≥1 meaningful work session) are included in the count. |
+| `withinFamilyActiveWeeks` | ConsistencySignalState | Rebuilt as the count of active weeks since the current `familyEntryDate`. Imported weeks that fall after `familyEntryDate` contribute. |
+| `activeWeekIndex` | ConsistencySignalState | Fully rebuilt from complete session history post-import. All active weeks, native and imported, included. |
+| `personalBests` | ImprovementSignalState | Rebuilt from full session history. Imported sessions may establish earlier or higher personal bests. |
+| `improvementEventCount` | ImprovementSignalState | Rebuilt from full history. The count reflects improvements detectable across the merged native + imported record set. |
+| `totalGraduations` | ProgramSignalState | Rebuilt. Imported graduated programs add to count. `isImported: true` flag in `graduationHistory` for traceability. |
+| `totalMeaningfulWorkSessions` | VolumeSignalState | Rebuilt. Imported sessions meeting meaningful work criteria add to count. |
+| `totalSealedChapters` | ChapterSignalState | Rebuilt. Imported sealed chapters add to count. |
+| `totalGoalParticipationEvents` | GoalSignalState | Rebuilt from imported chapter records' goal states. |
+| `totalPrimaryGoalAchievements` | GoalSignalState | Rebuilt from imported chapter records' primary goal outcomes. |
+| `earliestRecordDate` | LongevitySignalState | Potentially revised earlier if imported records predate the current value. |
+
+**Import partial credit (Q11 — pending):** the schema does not embed a partial credit weighting field in signal state because the credit rate (Q11) is unresolved. When Q11 is resolved, the implementation of `fullRecompute` in each module will apply the credit rate to imported signals at computation time. The schema does not change — only the computation logic changes. The `isImported` flag in `ProgramSignalState.graduationHistory` provides the hook for module-level credit differentiation per R-D46.
+
+**D-RCM-27:** Signal state fields that include imported data must be fully recomputed from the combined native + imported history on every `ImportCompleted` event. No additive merge is permitted — the full-recompute path wipes and rebuilds all seven module states to avoid import/native signal interleaving errors.
+
+### 23.13 Queue State and Offline Sync
+
+**Offline session saves** (Q16 behavior) require the following flow:
+
+1. Athlete saves a session while offline. Session record is persisted locally on the device in the main app data store (not in rank state — in the session log).
+2. When connectivity is restored, the local session records sync to the server.
+3. Sync completion triggers `MeaningfulWorkSessionSaved` event emission on the server side (one event per synced meaningful work session, or a batch event with one RES invocation per session).
+4. The RES processes each event via the standard evaluation lifecycle (Phase 1–6).
+5. The server updates `AthleteRankState` and `PromotionQueue` as needed.
+6. The server notifies the client (via push or sync response) that rank state has changed.
+7. The client updates `ClientRankSnapshot`.
+
+**The client never processes `MeaningfulWorkSessionSaved` for rank purposes.** The session is saved locally for the athlete's training log, but rank evaluation does not happen locally. The client may display pending indicators ("syncing...") but must not optimistically compute or award rank advances.
+
+**Sync ordering:** if multiple offline sessions accumulated, they sync and trigger RES evaluation in chronological order. The RES processes events one at a time (idempotency via `RankEvaluationEvent` prevents double-processing if sync retries deliver the same event twice). The queue state reflects the result of all synced events when sync is complete.
+
+**`PromotionQueue.lastFireTimestamp` and offline spacing:** spacing is always evaluated against `now()` at queue-processing time on the server. Offline periods naturally allow spacing to elapse — when sync completes and the queue processor runs, `now() − lastFireTimestamp` may already exceed the required spacing, so the promotion fires immediately. This is correct behavior (the athlete earned the promotion; the spacing requirement was met during the offline period).
+
+### 23.14 Recovery and Idempotency Requirements
+
+**D-RCM-25** (idempotency key) means the schema supports safe retry on failure. If an event processing cycle fails after Phase 2 (signal updates) but before Phase 4 (queue append), re-processing the event would run Phase 2 again. For this to be safe, each module update must be idempotent: if the module's `lastEventIdProcessed` already equals the incoming `evaluationEventId`, the module must skip the update. This is the standard idempotent consumer pattern.
+
+**Requirements on module updates:**
+
+| Requirement | Mechanism |
+|-------------|-----------|
+| Detect duplicate event | Compare incoming `evaluationEventId` to `lastEventIdProcessed` |
+| Skip duplicate | If equal: return without modifying signal state |
+| Update idempotency anchor | On successful update: set `lastEventIdProcessed` to current `evaluationEventId` |
+
+**Queue idempotency:** the duplication guard in Phase 3C (checking whether a promotion is already in the queue before appending) combined with the `promotionsQueued` field on `RankEvaluationEvent` provides queue idempotency. On retry, if Phase 3 finds the promotion already queued (from the previous attempt), it does not append a duplicate.
+
+**`PromotionRecord` idempotency:** a promotion fires if and only if it is at the queue head and all Phase 5 conditions are met. Because the queue head is determined by `PromotionQueue.items[0]` and items are removed after firing (Phase 6), re-running the queue processor on a queue from which the item has already been removed will not re-fire the promotion. The fire is idempotent at the queue level.
+
+**D-RCM-28:** All seven category module updates must be idempotent. A module that has already processed a given `evaluationEventId` (identified by `lastEventIdProcessed`) must skip re-processing without modifying its state. This enables safe retry on partial failure without requiring a distributed transaction.
+
+### 23.15 Downstream Impacts
+
+- **TBD-2 (sub-tier surfacing):** the surfacing mechanism for sub-tier advances is a consumer of `PromotionRecord` and the sub-tier `PromotionFired` event. `PromotionRecord.promotionType` distinguishes sub-tier advances from family promotions, and `PromotionRecord.firedAt` provides the timestamp for ordering. P-2 must read from `PromotionRecord`; the schema supports this without modification.
+
+- **M-1 (family promotion ceremony):** M-1 subscribes to `PromotionFired` filtered to `FAMILY_PROMOTION`. `AthleteRankState` reflects the new rank by the time M-1 reads it. `PromotionRecord.signalSnapshotAtFire` provides the evidence for any ceremony content that references the athlete's achievement (e.g., "You completed X programs" — readable from the snapshot).
+
+- **P-2 (Progress Hub):** the Progress Hub will display the athlete's current rank, rank history, and development indicators. `AthleteRankState` provides current rank. `PromotionRecord` provides rank history (ordered by `firedAt`). `ConsistencySignalState.cumulativeActiveWeeks` and `.withinFamilyActiveWeeks` provide the consistency progress signals. All needed data is accessible from server-side entities; P-2 reads via API, not from `ClientRankSnapshot`.
+
+- **Q8 (athlete type):** `ImprovementSignalState.athleteType` is the field where Q8's resolution lands. When the athlete declares their type, the type is written here. Before declaration, the field is null and the ImprovementModule returns "insufficient data." Schema does not change when Q8 is resolved — only the mechanism that sets `athleteType` is defined.
+
+- **Q9/Q10 (recent engagement thresholds):** these thresholds are used by the queue processor at Phase 5B to query `ConsistencySignalState.activeWeekIndex`. The schema already supports this query — `activeWeekIndex` is the authoritative source. When Q9/Q10 are resolved, the threshold values become constants in the queue processor logic, not new schema fields.
+
+- **Q11 (import partial credit rate):** applied in module full-recompute logic. The `isImported` flag in `ProgramSignalState.graduationHistory` provides the hook. For other modules (sessions, chapters, goals), imported status is derivable from the source records in the main data store — no additional schema field is needed in the rank data model.
+
+- **Q14 (Legend distinct development phases):** `ProgramSignalState.graduationHistory` stores `programCategory` at graduation time. When Q14 defines what constitutes "distinct development phases," the Eligibility Checker can evaluate the `graduationHistory` array to count distinct categories. Schema supports this without modification.
+
+---
+
+## 24. Session 5 Refinement Report
+
+### 24.1 What This Session Resolved
+
+| TBD | Decision Summary |
+|-----|-----------------|
+| TBD-12 | Rank data model schema. Seven server-authoritative entities + one client read cache. All category signal states modeled as independent records per athlete per module. PromotionQueue with per-athlete `lastFireTimestamp` as spacing clock. PromotionRecord as immutable promotion history. RankEvaluationEvent as idempotency and recovery log. ClientRankSnapshot as read-only client cache. |
+
+**Pre-decisions applied:** Q15 (server-side persistent queue) and Q16 (server-side RES, client read-only) directly determined the persistence boundary table (Section 23.11) and the offline sync flow (Section 23.13).
+
+### 24.2 Structural Coherence Check
+
+**Every prior-session decision maps cleanly to a schema field or design constraint:**
+
+| Prior Decision | Schema Expression |
+|---------------|------------------|
+| D-RCM-11: Two independent AW counters | `cumulativeActiveWeeks` and `withinFamilyActiveWeeks` as separate fields on `ConsistencySignalState` |
+| D-RCM-10: Recent engagement at queue-firing time | `activeWeekIndex` stored on server; read at Phase 5B, not snapshotted at queue entry |
+| D-RCM-20: Import triggers full recompute | `withinFamilyResetDate`, `earliestRecordDate`, `isImported` flag — all support the wipe-and-rebuild path |
+| D-RCM-23: All thresholds simultaneously | No schema impact — this is an Eligibility Checker logic constraint; confirmed by the design of `ConsistencySignalState` (both AW counters available in the same record) |
+| D-RCM-24: Queue head blocks subsequent items | `PromotionQueue.items` is ordered; processor always reads `items[0]`; hold clears before `items[1]` is ever reached |
+| Section 15 spacing values | `PromotionQueue.lastFireTimestamp` is the sole spacing state; thresholds from Section 15 are constants in queue processor logic, not persisted |
+| R-D46: Import partial credit | `isImported` flag on `ProgramSignalState.graduationHistory`; derivable from main data store for session-level modules |
+| Q15: Server-side queue | All rank entities live exclusively on server; client has `ClientRankSnapshot` only |
+| Q16: RES server-side, client read-only | `D-RCM-26` formalizes this; `ClientRankSnapshot` has no write path from client |
+
+**`eligibilitySnapshot` on QueueItem vs. `signalSnapshotAtFire` on PromotionRecord** are distinct by design. Queue entry snapshot answers "why was this queued?" Fire snapshot answers "what evidence existed when this fired?" The distinction matters because recent engagement is re-evaluated at fire time (D-RCM-10), so the two snapshots may differ — and the PromotionRecord snapshot is the legally authoritative one.
+
+**Module-per-record vs. wide table:** the choice to model the seven signal state records as independent entities (rather than a single wide `AthleteSignalState` table) directly operationalizes D-RCM-22. Each module can update its record without touching the others. Adding a new category adds a new record type — no ALTER TABLE on an existing entity.
+
+### 24.3 Decisions That Carry Architectural Weight
+
+**D-RCM-25:** Every trigger event processed by the RES must have a corresponding `RankEvaluationEvent` record. The `sourceEventId` field is the idempotency key. An event matching an existing `COMPLETED` record is a no-op.
+
+**D-RCM-26:** The client never independently computes or modifies rank state. `ClientRankSnapshot` is a read cache. All rank mutations originate on the server via the RES.
+
+**D-RCM-27:** Signal state fields including imported data must be fully recomputed on every `ImportCompleted` event. No additive merge is permitted.
+
+**D-RCM-28:** All seven category module updates must be idempotent. A module that has already processed a given `evaluationEventId` (identified by `lastEventIdProcessed`) skips re-processing without modifying its state.
+
+### 24.4 Open Questions Resolved This Session
+
+| Question | Resolution |
+|----------|-----------|
+| Q15 | Server-side persistent queue (user pre-decision). Expressed as `PromotionQueue` + `QueueItem` living exclusively on server. |
+| Q16 | Server-side RES, client read-only (user pre-decision). Expressed as D-RCM-26, persistence boundary table (Section 23.11), and offline sync flow (Section 23.13). |
+
+### 24.5 What This Session Did Not Resolve
+
+- **Q17** (background queue processing strategy): deferred. The schema is neutral to this decision — the queue processor can be triggered by server-side push or foreground fetch; neither changes the data model.
+- **Q19** (error handling strategy): deferred. The schema supports both recovery approaches (idempotent retry and full-recompute-on-failure) via `RankEvaluationEvent.processingStatus` and module `lastEventIdProcessed` fields.
+- **Q8** (athlete type declaration mechanism): deferred. `ImprovementSignalState.athleteType` is the landing field; the mechanism is product/UX scope.
+- **Q9/Q10** (recent engagement thresholds): deferred. Schema supports the query; threshold values are queue processor constants.
+- **Q11** (import partial credit rate): deferred. Schema provides hooks (`isImported` flag, derivable from main data store); rate is applied in module logic.
+- **Q14** (Legend distinct development phases): deferred. `ProgramSignalState.graduationHistory` with `programCategory` supports any Q14 resolution.
+- **TBD-2** (sub-tier surfacing mechanism): P-2 scope; schema provides the `PromotionRecord` data it will need.
+- **TBD-11** (Legacy display format): UI scope; no schema dependency.
+
+---
+
+## 25. Carried-Forward Items (Non-Blocking)
+
+Of Q1–Q14, only Q3, Q4, Q5, and Q6 remain open — Q1, Q2, Q7 through Q14 were resolved by Rank-Calibration-Decisions.md (LOCKED). The items below (Q3–Q6, plus Q17, Q19–Q22 carried from Sessions 4–5) are not active work items awaiting a future session — they are explicitly non-blocking items, each deferred to the future workstream noted against it. No Session 6 is planned; see the Q23 resolution below.
+
+---
+
+**Q17 — Background Queue Processing (carried from Session 4)**
+
+The queue processor runs on app foreground entry (D-RCM-21). With the server-side RES established by Q16, background processing now means a server-side push mechanism rather than a mobile background job. Three approaches:
+
+- (a) **Foreground-only**: the server processes the queue when triggered by a client-initiated sync or foreground fetch. Promotions are available on next app open.
+- (b) **Server push on promotion eligibility**: after a trigger event resolves and a promotion becomes queue-eligible, the server sends a push notification to the client. The push prompts the client to open the app and fetch the updated rank state. The queue processor on the server fires the promotion at push time; the client fetches the result.
+- (c) **Scheduled server job**: a lightweight server-side job runs on a schedule (e.g., hourly) and processes any queued items for any athlete whose spacing has elapsed. Decoupled from app activity.
+
+Approach (b) is the highest-value option: athletes receive real-time promotion notification even if they don't open the app, which reinforces the Identity Credibility Principle (promotions feel like a meaningful moment). Approach (c) is simpler operationally but delayed. Approach (a) requires the athlete to open the app before a promotion is delivered.
+
+*What you need to decide:* Server push on promotion eligibility vs. scheduled job vs. foreground-only delivery.
+
+---
+
+**Q19 — RES Error Handling and State Recovery (carried from Session 4)**
+
+`RankEvaluationEvent.processingStatus` and module `lastEventIdProcessed` fields support two recovery strategies. Which is adopted determines implementation behavior on partial failure:
+
+- (a) **Idempotent retry**: re-process the failed event from Phase 1. Each module checks `lastEventIdProcessed` before updating. Modules already updated skip. Modules not yet updated apply the event. Queue append is also idempotent (duplication guard). This recovers to a fully consistent state with no full-recompute cost.
+- (b) **Full-recompute on failure**: mark the athlete's rank state as needing recompute (a flag on `AthleteRankState` or a special `RankEvaluationEvent` record). On next interaction, trigger the import full-recompute path. Simple but introduces a latency between failure and recovery.
+
+Approach (a) is recommended: it is lower-latency, uses infrastructure already defined in the schema, and the idempotency requirements are already captured in D-RCM-28.
+
+*What you need to decide:* Idempotent retry vs. full-recompute-on-failure, or hybrid.
+
+---
+
+**Q20 — Rank Schema Migration Strategy**
+
+`AthleteRankState.schemaVersion` is defined in the schema as a migration sentinel. The data model will evolve as open questions (Q8, Q9/Q10, Q11, Q14) resolve and new athlete types or categories are added. A migration strategy governs how existing rank state records are updated when the schema changes.
+
+Two approaches:
+- (a) **Lazy migration**: existing records are migrated when first read after a schema version increment. The RES detects `schemaVersion < current` and runs a migration function before normal processing.
+- (b) **Eager migration**: a one-time server migration runs before the new code deploys. All athlete records are migrated in bulk.
+
+For MVP-scale athlete counts, either approach is viable. At scale, lazy migration is safer (avoids a blocking bulk migration at deploy time).
+
+*What you need to decide:* Lazy vs. eager migration strategy, or delegate to platform-standard ORM migrations (which is typically eager).
+
+---
+
+**Q21 — `activeWeekIndex` Storage Optimization**
+
+`ConsistencySignalState.activeWeekIndex` is modeled as a JSON array of date strings. For a typical Established athlete (~72+ active weeks) this is a small array. For a Legacy athlete (~288 active weeks) it remains manageable. However, the array is read by the queue processor on every prestige promotion check (Phase 5B) and rebuilt in full during import full-recompute.
+
+If the server platform stores JSON in a column type that doesn't support efficient range queries, recent engagement evaluation (counting active weeks within a date range) requires deserializing the full array. Two options:
+
+- (a) **Keep as JSON**: simple; sufficient for MVP-scale. Deserialize and filter in application code at Phase 5B.
+- (b) **Normalize to a sub-table**: `ConsistencyActiveWeek(athleteId, weekStartDate)` with an index on `(athleteId, weekStartDate)`. Enables SQL range queries for recent engagement. Better at scale.
+
+*What you need to decide:* JSON column vs. normalized sub-table for active week index. (Can be deferred to implementation; the semantic contract is stable either way.)
+
+---
+
+**Q22 — `personalBests` Storage Optimization**
+
+Same structural decision as Q21, applied to `ImprovementSignalState.personalBests`. STRENGTH athletes accumulate one entry per exercise definition ever logged. At MVP scale (200–225 exercises, typical athlete touches a fraction of them): JSON is fine. At scale or for HYBRID athletes tracking across all modalities, a sub-table `AthletePersonalBest(athleteId, exerciseDefinitionId, metricType, bestValue, achievedDate)` is more efficient.
+
+*What you need to decide:* JSON column vs. normalized sub-table for personal bests. (Can be deferred to implementation; the semantic contract is stable either way.)
+
+---
+
+**Q23 — Scope of Session 6**
+
+With TBD-12 resolved, only TBD-2 and TBD-11 remain from the original TBD list:
+
+- **TBD-2** (sub-tier surfacing mechanism): P-2 scope. Requires Progress Hub architecture decisions to be made first. Depends on P-2 spec being locked.
+- **TBD-11** (Legacy display format): UI scope. Depends on Legacy identity design and L-1 / P-1 display decisions.
+
+Neither TBD-2 nor TBD-11 is a computational authority item — both are UX/display decisions. The Rank Computation Model may have reached its natural scope limit with Session 5. The remaining open Q items (Q1, Q2, Q8, Q9/Q10, Q11, Q14, Q17, Q19) are threshold-value, definitional, and operational decisions, not new computational structures.
+
+*What you need to decide:* Whether to continue in this document with a Session 6 to resolve remaining Q items, or to close this document as computationally complete and resolve Q items in their respective architectural documents (P-2 spec, athlete type spec, operations spec).
+
+**Resolved by Rank-Computation-Model-Amendment-001.md (June 2026):** Closing as computationally complete. No Session 6 is planned. The computational model reached its natural scope limit at Session 5, as this question itself anticipated. Q3–Q6, Q17, Q19–Q22, and TBD-11 are carried forward as non-blocking items for their respective future workstreams (import spec, display implementation, Rank Evaluation Service implementation, future UI work), not as unfinished business of this document.
 
 ---
 
 ## Amendment Log
 
-*None. All decisions in this document are draft-status pending user review and lock.*
+### v1.0 — June 2026 (Lock)
+
+Sessions 1–5 resolved 14 of the 16 TBDs carried from Rank-System-Architecture.md: TBD-1, TBD-3, TBD-4, TBD-5, TBD-6, TBD-7, TBD-8, TBD-9 (via RSA Amendment 001, not this document), TBD-10, TBD-12, TBD-13, TBD-14, TBD-15, TBD-16. TBD-2 (sub-tier surfacing mechanism) was correctly scoped out of this document and resolved by P-2-Progress-Hub-Spec.md (LOCKED). TBD-11 (Legacy display format) remains open as a minor, low-priority future UI decision.
+
+Of the Q-items carried forward within this document: Q1, Q2, Q7, Q8, Q9, Q10, Q11, Q12, Q13, Q14 were resolved by Rank-Calibration-Decisions.md (LOCKED) — see that document's closing line: "Resolves: Q1, Q2, Q7, Q8, Q9, Q10, Q11, Q12, Q13, Q14 from Rank-Computation-Model.md." Q15, Q16, and Q18 were resolved within this document during Session 5 (Section 24).
+
+Remaining items — TBD-11, Q3, Q4, Q5, Q6, Q17, Q19, Q20, Q21, Q22 — are carried forward as explicitly non-blocking per Section 25, each deferred to its own future workstream (import spec, display implementation, Rank Evaluation Service implementation, future UI work). None require this document to remain open.
+
+Locked per Rank-Computation-Model-Amendment-001.md (June 2026), following the lock conditions originally specified in Rank-Implementation-Readiness-Review.md and verified against current state by Rank-Computation-Model-Lock-Audit.md.
+
+### v1.0.1 — June 2026 (TBD-11 Formal Closure)
+
+**TBD-11 (Legacy display format) — formally closed as deferred to implementation.**
+
+The ceremony display format for rank advancement is fully governed by `Rank-Up-Modal-Spec-M1.md` (LOCKED v1.1), which defines M-1 as the family-promotion ceremony and specifies the "Rank Up · [Rank Name]" Timeline Event it writes to L-1/L-2. The Legacy Timeline display of rank events is governed by `Legacy-Timeline-Wireframe-Spec-L2.md` (LOCKED). No additional computational decision from this document is required — TBD-11 is resolved at the display-implementation layer by these two locked specs.
+
+This amendment records that closure. No computational decision, threshold, evaluation architecture, or schema changes. **All 16 original TBDs are now fully resolved or formally closed.** Architecture Freeze row 15 (Rank) is ✅ Complete as of 2026-06-30.
 
 ---
 
-*Rank Computation Model — Sessions 1–3 DRAFT*
+*Rank Computation Model — Sessions 1–5 LOCKED v1.0 (CD-1, CD-2 Applied)*
 *June 2026*
 *Computational Authority for Rank-System-Architecture.md v1.0 (LOCKED)*

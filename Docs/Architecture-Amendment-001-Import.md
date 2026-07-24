@@ -5,6 +5,10 @@
 **Amendment Authority:** Product decision, locked.
 **PRD Integration:** This amendment is incorporated into the Forge Legacy Master PRD v1.0 as an extension of Section 8 (Workout System) and Section 5 (MVP Definition). All references to import as Post-MVP or Future Roadmap are superseded by this amendment.
 
+> **Consuming-authority pointer — `Backend-Data-Model-Architecture-v1.0.md` (LOCK-CANDIDATE, June 2026).** This amendment's import model (formats, `ProgramDefinition(source = IMPORTED)` output, EP-A1 fields arriving null with no inference, MAIN-section-only placement, no retained external reference) is formalized as the canonical Import model in that document's Section 16.1 and assigned to the Import Service (Section 2). This document remains the sole authority on the import feature's product behavior — the Backend doc only formalizes the resulting data shape.
+
+> **Retirement pointer — `Docs/Amendments/Workouts-Navigation-Amendment-001-Retire-Workouts-Hub.md` (LOCKED, 2026-07-08).** W-1 Workouts Hub — one of this amendment's three import entry points (Section 2, Section 3 below) — is retired. Its "Import Training" Secondary CTA has no reassigned home as of the retirement amendment; this is named there as an explicit open item (WNA-D5), not resolved here. The remaining two entry points (W-2 Programs Browse, L-5 Create Chapter) are unaffected. The W-1-specific flow and impact descriptions below are left intact as historical record of what this amendment originally specified — they no longer describe a live entry point.
+
 ---
 
 ## Section 1 — Feature Summary
@@ -261,7 +265,26 @@ This behavior is consistent with the "Option A" decision from Workout Structure 
 
 ---
 
+## Section 7 — EP-A1: ExercisePrescription Field Import Rule
+
+**Applied: June 2026 (ExercisePrescription-Amendment-001)**
+
+All imported exercises arrive with the three EP-A1 `ExercisePrescription` fields set to null:
+
+```
+distanceValue:  null   // import does not infer distance prescription
+distanceUnit:   null   // import does not infer distance unit
+restSeconds:    null   // import does not infer rest prescription
+```
+
+No inference of rest or distance from external source structure — parallel to WS-A6 (Section 6 above), which applies the same no-inference principle to section placement. Athletes may populate `restSeconds`, `distanceValue`, and `distanceUnit` post-import via W-25 (template edit) or W-24 (slot edit).
+
+**Rationale:** Inference of rest periods and distances from imported external training files is unreliable and would create false prescriptions. Athletes who want rest and distance on imported programs set them manually post-import.
+
+---
+
 *Forge Legacy Architecture Amendment 001 — Program / Chapter Import*
 *Status: Approved | MVP | Locked | June 2026*
 *WS-A6 applied June 2026: imported exercises map to MAIN section; no optional sections created at import time.*
+*EP-A1 applied June 2026: imported ExercisePrescription records arrive with restSeconds, distanceValue, distanceUnit set to null; no inference.*
 *This amendment is incorporated into the Forge Legacy Master PRD v1.0. All wireframe and implementation work should treat this feature as locked MVP scope.*

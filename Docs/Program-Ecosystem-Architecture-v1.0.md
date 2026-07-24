@@ -1,5 +1,5 @@
 # Forge Legacy — Program Ecosystem Architecture
-## Version 1.2 | June 2026
+## Version 1.4 | June 2026
 
 **Status:** LOCKED
 **Authority:** Program-Catalog-Architecture-v1.0.md (v1.1), Program-Architecture-Amendment-001-Active-Program-Rule.md
@@ -36,8 +36,8 @@ Each family has:
 
 | Family | Primary Athlete Type | Environment(s) | Programs |
 |--------|---------------------|----------------|---------|
-| Strength | Strength, Hybrid | GYM | Strength Foundation I/II/III + Powerbuilding Foundation/Intermediate |
-| Hypertrophy | Bodybuilding, Strength | GYM | Hypertrophy Foundation/Intermediate/Advanced + Lower Body Foundation/Intermediate |
+| Strength | Strength, Hybrid | GYM | Strength Foundation I/II/III + Powerbuilding Foundation |
+| Muscle Building | Bodybuilding, Strength | GYM | Muscle Building Foundation/Intermediate/Advanced + Lower Body Foundation/Intermediate |
 | Running | Running | OUTDOOR | Running Base I/II |
 | Conditioning | Hybrid, General | GYM + MIXED | Athletic Conditioning Foundation, Body Recomposition Foundation/Intermediate, Conditioning Intermediate, Hybrid Foundation/Intermediate |
 | Full Body & Home | General | HOME | Bodyweight Foundation/Strength/Performance + Home Conditioning + Home Strength Foundation |
@@ -52,7 +52,7 @@ When a family reaches 5 programs, adding another program requires a governance r
 
 The Conditioning family currently has 6 programs (exceeds the raw cap). This exception is approved: the 6 programs span 3 distinct sub-goals (athletic conditioning, recomposition, hybrid) with distinct goal alignments, environments, and athlete types. No Conditioning sub-goal duplicates another. This exception is recorded; future Conditioning additions still require governance review.
 
-The Hypertrophy family currently has 5 programs (at the governance cap). The addition of Lower Body Foundation and Lower Body Intermediate alongside the general Hypertrophy ladder is approved: the lower-body-focused programs serve a distinct athlete goal (lower body / glute development) with different structural emphasis and distinct naming. Any further additions to the Hypertrophy family require governance review.
+The Muscle Building family currently has 5 programs (at the governance cap). The addition of Lower Body Foundation and Lower Body Intermediate alongside the general Muscle Building ladder is approved: the lower-body-focused programs serve a distinct athlete goal (lower body / glute development) with different structural emphasis and distinct naming. Any further additions to the Muscle Building family require governance review.
 
 The Full Body & Home family currently has 5 programs (at the governance cap). Future additions require governance review.
 
@@ -67,7 +67,7 @@ Every `ProgramDefinition` has a `successorProgramId: uuid | null` field (added i
 **Rules:**
 - `successorProgramId` is set only for Forge-sourced programs. Athlete-created and imported programs have `null`.
 - The successor must be a published Forge program (`publishedAt` non-null).
-- A program may have only one successor. Branching progressions (e.g., from Powerbuilding Foundation, athlete could go to either Powerbuilding Intermediate or Strength Foundation II) are resolved by choosing the most logical direct successor. The athlete can always browse W-2 for alternatives.
+- A program may have only one successor. Where a program could plausibly feed into more than one downstream program, the most logical direct successor is locked and the athlete can always browse W-2 for alternatives. Worked example: Powerbuilding Foundation's successor is Strength Foundation II directly (Program Ecosystem Amendment 001) — Powerbuilding Intermediate, which would have been the other candidate, was retired because it did not serve a distinct athlete, goal, progression profile, volume profile, or recovery profile from Strength Foundation II.
 - Successor links are directional. Strength Foundation II pointing to Strength Foundation III does not imply III points back to II.
 - Terminal programs (no logical successor) have `successorProgramId: null`.
 
@@ -88,11 +88,10 @@ See W-3 v1.5 §7.1 for full display specification.
 **Strength Foundation Ladder:**
 Strength Foundation I → Strength Foundation II → Strength Foundation III
 
-**Powerbuilding Ladder:**
-Powerbuilding Foundation → Powerbuilding Intermediate
+Powerbuilding Foundation is an alternate BEGINNER entry point into this same ladder, per Program Ecosystem Amendment 001: Powerbuilding Foundation → Strength Foundation II → Strength Foundation III. An athlete who begins at Powerbuilding Foundation and an athlete who begins at Strength Foundation I converge at Strength Foundation II.
 
-**Hypertrophy Ladder:**
-Hypertrophy Foundation → Hypertrophy Intermediate → Hypertrophy Advanced
+**Muscle Building Ladder:**
+Muscle Building Foundation → Muscle Building Intermediate → Muscle Building Advanced
 
 **Lower Body Ladder:**
 Lower Body Foundation → Lower Body Intermediate
@@ -116,7 +115,7 @@ Bodyweight Foundation → Bodyweight Strength → Bodyweight Performance
 Mobility Foundation → Mobility Intermediate
 
 **Terminal programs (no successor):**
-Strength Foundation III, Powerbuilding Intermediate, Hypertrophy Advanced, Lower Body Intermediate, Running Base II, Conditioning Intermediate, Body Recomposition Intermediate, Hybrid Intermediate, Bodyweight Performance, Home Conditioning, Home Strength Foundation, Mobility Intermediate
+Strength Foundation III, Muscle Building Advanced, Lower Body Intermediate, Running Base II, Conditioning Intermediate, Body Recomposition Intermediate, Hybrid Intermediate, Bodyweight Performance, Home Conditioning, Home Strength Foundation, Mobility Intermediate
 
 ---
 
@@ -148,17 +147,17 @@ All Forge Programs must be built on established, evidence-based training methodo
 
 ### 5.1 Summary
 
-25 Forge Programs across 8 families, covering all 7 athlete types, all 10 goal alignments, and all 4 environments.
+24 Forge Programs across 6 families, covering all 7 athlete types, all 10 goal alignments, and all 4 environments.
 
 | Metric | Value |
 |--------|-------|
-| Total programs | 25 |
+| Total programs | 24 |
 | Families | 6 |
 | Athlete types with Forge programs | 5 of 7 (Cycling and Combat deferred to creator marketplace) |
 | Goal alignments covered by Forge | 8 of 10 (IMPROVE_CYCLING and SPORT_PERFORMANCE deferred) |
 | Environments covered | 4 of 4 |
 | Programs with successors | 13 |
-| Terminal programs | 12 |
+| Terminal programs | 11 |
 | Featured programs | 2 |
 
 ### 5.2 Catalog Table
@@ -168,35 +167,34 @@ All Forge Programs must be built on established, evidence-based training methodo
 | 1 | Strength Foundation I | STRENGTH | BEGINNER | GYM | 8 | 3 | BUILD_STRENGTH | → Sort 2 |
 | 2 | Strength Foundation II | STRENGTH | INTERMEDIATE | GYM | 10 | 4 | BUILD_STRENGTH, BUILD_MUSCLE | → Sort 3 |
 | 3 | Strength Foundation III | STRENGTH | ADVANCED | GYM | 12 | 4 | BUILD_STRENGTH | — |
-| 4 | Powerbuilding Foundation | STRENGTH | BEGINNER | GYM | 10 | 4 | BUILD_STRENGTH, BUILD_MUSCLE | → Sort 5 |
-| 5 | Powerbuilding Intermediate | STRENGTH | INTERMEDIATE | GYM | 12 | 4 | BUILD_STRENGTH, BUILD_MUSCLE | — |
-| 6 | Hypertrophy Foundation | HYPERTROPHY | BEGINNER | GYM | 8 | 4 | BUILD_MUSCLE | → Sort 7 |
-| 7 | Hypertrophy Intermediate | HYPERTROPHY | INTERMEDIATE | GYM | 10 | 4 | BUILD_MUSCLE | → Sort 8 |
-| 8 | Hypertrophy Advanced | HYPERTROPHY | ADVANCED | GYM | 12 | 5 | BUILD_MUSCLE | — |
-| 9 | Lower Body Foundation | HYPERTROPHY | BEGINNER | GYM | 8 | 3 | BUILD_MUSCLE | → Sort 10 |
-| 10 | Lower Body Intermediate | HYPERTROPHY | INTERMEDIATE | GYM | 10 | 4 | BUILD_MUSCLE | — |
-| 11 | Running Base I | RUNNING | BEGINNER | OUTDOOR | 8 | 4 | IMPROVE_RUNNING, IMPROVE_ENDURANCE | → Sort 12 |
-| 12 | Running Base II | RUNNING | INTERMEDIATE | OUTDOOR | 10 | 5 | IMPROVE_RUNNING, IMPROVE_ENDURANCE | — |
-| 13 | Athletic Conditioning Foundation | CONDITIONING | BEGINNER | GYM | 8 | 3 | IMPROVE_CONDITIONING, GENERAL_FITNESS | → Sort 15 |
-| 14 | Body Recomposition Foundation | CONDITIONING | BEGINNER | GYM | 8 | 4 | LOSE_FAT, BUILD_MUSCLE | → Sort 16 |
-| 15 | Conditioning Intermediate | CONDITIONING | INTERMEDIATE | GYM | 10 | 4 | IMPROVE_CONDITIONING | — |
-| 16 | Body Recomposition Intermediate | CONDITIONING | INTERMEDIATE | GYM | 10 | 4 | LOSE_FAT, BUILD_MUSCLE | — |
-| 17 | Hybrid Foundation | CONDITIONING | BEGINNER | MIXED | 8 | 4 | BUILD_STRENGTH, IMPROVE_CONDITIONING | → Sort 18 |
-| 18 | Hybrid Intermediate | CONDITIONING | INTERMEDIATE | MIXED | 10 | 4 | BUILD_STRENGTH, IMPROVE_CONDITIONING | — |
-| 19 | Bodyweight Foundation | FULL_BODY | BEGINNER | HOME | 6 | 3 | GENERAL_FITNESS | → Sort 20 |
-| 20 | Bodyweight Strength | FULL_BODY | INTERMEDIATE | HOME | 8 | 4 | BUILD_STRENGTH, GENERAL_FITNESS | → Sort 21 |
-| 21 | Bodyweight Performance | FULL_BODY | ADVANCED | HOME | 10 | 4 | BUILD_STRENGTH, GENERAL_FITNESS | — |
-| 22 | Home Conditioning | FULL_BODY | BEGINNER | HOME | 6 | 3 | LOSE_FAT, IMPROVE_CONDITIONING | — |
-| 23 | Home Strength Foundation | FULL_BODY | BEGINNER | HOME | 8 | 3 | BUILD_STRENGTH, GENERAL_FITNESS | — |
-| 24 | Mobility Foundation | MOBILITY | BEGINNER | HOME | 4 | 5 | IMPROVE_MOBILITY | → Sort 25 |
-| 25 | Mobility Intermediate | MOBILITY | INTERMEDIATE | HOME | 6 | 5 | IMPROVE_MOBILITY | — |
+| 4 | Powerbuilding Foundation | STRENGTH | BEGINNER | GYM | 10 | 4 | BUILD_STRENGTH, BUILD_MUSCLE | → Sort 2 |
+| 5 | Muscle Building Foundation | HYPERTROPHY | BEGINNER | GYM | 8 | 4 | BUILD_MUSCLE | → Sort 6 |
+| 6 | Muscle Building Intermediate | HYPERTROPHY | INTERMEDIATE | GYM | 10 | 4 | BUILD_MUSCLE | → Sort 7 |
+| 7 | Muscle Building Advanced | HYPERTROPHY | ADVANCED | GYM | 12 | 5 | BUILD_MUSCLE | — |
+| 8 | Lower Body Foundation | HYPERTROPHY | BEGINNER | GYM | 8 | 3 | BUILD_MUSCLE | → Sort 9 |
+| 9 | Lower Body Intermediate | HYPERTROPHY | INTERMEDIATE | GYM | 10 | 4 | BUILD_MUSCLE | — |
+| 10 | Running Base I | RUNNING | BEGINNER | OUTDOOR | 8 | 4 | IMPROVE_RUNNING, IMPROVE_ENDURANCE | → Sort 11 |
+| 11 | Running Base II | RUNNING | INTERMEDIATE | OUTDOOR | 10 | 5 | IMPROVE_RUNNING, IMPROVE_ENDURANCE | — |
+| 12 | Athletic Conditioning Foundation | CONDITIONING | BEGINNER | GYM | 8 | 3 | IMPROVE_CONDITIONING, GENERAL_FITNESS | → Sort 14 |
+| 13 | Body Recomposition Foundation | CONDITIONING | BEGINNER | GYM | 8 | 4 | LOSE_FAT, BUILD_MUSCLE | → Sort 15 |
+| 14 | Conditioning Intermediate | CONDITIONING | INTERMEDIATE | GYM | 10 | 4 | IMPROVE_CONDITIONING | — |
+| 15 | Body Recomposition Intermediate | CONDITIONING | INTERMEDIATE | GYM | 10 | 4 | LOSE_FAT, BUILD_MUSCLE | — |
+| 16 | Hybrid Foundation | CONDITIONING | BEGINNER | MIXED | 8 | 4 | BUILD_STRENGTH, IMPROVE_CONDITIONING | → Sort 17 |
+| 17 | Hybrid Intermediate | CONDITIONING | INTERMEDIATE | MIXED | 10 | 4 | BUILD_STRENGTH, IMPROVE_CONDITIONING | — |
+| 18 | Bodyweight Foundation | FULL_BODY | BEGINNER | HOME | 6 | 3 | GENERAL_FITNESS | → Sort 19 |
+| 19 | Bodyweight Strength | FULL_BODY | INTERMEDIATE | HOME | 8 | 4 | BUILD_STRENGTH, GENERAL_FITNESS | → Sort 20 |
+| 20 | Bodyweight Performance | FULL_BODY | ADVANCED | HOME | 10 | 4 | BUILD_STRENGTH, GENERAL_FITNESS | — |
+| 21 | Home Conditioning | FULL_BODY | BEGINNER | HOME | 6 | 3 | LOSE_FAT, IMPROVE_CONDITIONING | — |
+| 22 | Home Strength Foundation | FULL_BODY | BEGINNER | HOME | 8 | 3 | BUILD_STRENGTH, GENERAL_FITNESS | — |
+| 23 | Mobility Foundation | MOBILITY | BEGINNER | HOME | 4 | 5 | IMPROVE_MOBILITY | → Sort 24 |
+| 24 | Mobility Intermediate | MOBILITY | INTERMEDIATE | HOME | 6 | 5 | IMPROVE_MOBILITY | — |
 
 ### 5.3 Featured Programs
 
 | Sort | Name | isFeatured | Rationale |
 |------|------|-----------|-----------|
 | 1 | Strength Foundation I | true | Most broadly applicable starting point for Strength and Hybrid athletes; largest athlete type segment at launch |
-| 19 | Bodyweight Foundation | true | Zero equipment barrier; entry point for General and home-gym athletes with no access or cost constraints |
+| 18 | Bodyweight Foundation | true | Zero equipment barrier; entry point for General and home-gym athletes with no access or cost constraints |
 
 Featured flag has no visible effect in W-2 MVP. It is reserved for post-MVP editorial surfaces (featured carousel, etc.). Featured programs sort first within their sort tier.
 
@@ -206,8 +204,8 @@ Featured flag has no visible effect in W-2 MVP. It is reserved for post-MVP edit
 
 | Athlete Type | Primary Programs |
 |-------------|-----------------|
-| Strength | Strength Foundation I/II/III, Powerbuilding Foundation/Intermediate |
-| Bodybuilding | Hypertrophy Foundation/Intermediate/Advanced, Powerbuilding Foundation/Intermediate |
+| Strength | Strength Foundation I/II/III, Powerbuilding Foundation |
+| Bodybuilding | Muscle Building Foundation/Intermediate/Advanced, Powerbuilding Foundation |
 | Running | Running Base I/II |
 | Cycling | *(no Forge programs — deferred to creator marketplace; CYCLING category enum retained for athlete-created and imported programs)* |
 | Combat | *(no Forge programs — deferred to creator marketplace; COMBAT_SPORTS category enum retained for athlete-created and imported programs)* |
@@ -220,10 +218,10 @@ Featured flag has no visible effect in W-2 MVP. It is reserved for post-MVP edit
 
 | Environment | Program Count | Programs |
 |------------|-------------|---------|
-| GYM | 14 | Sorts 1–10, 13–16 |
-| HOME | 7 | Sorts 19–25 |
-| OUTDOOR | 2 | Sorts 11–12 |
-| MIXED | 2 | Sorts 17–18 |
+| GYM | 13 | Sorts 1–9, 12–15 |
+| HOME | 7 | Sorts 18–24 |
+| OUTDOOR | 2 | Sorts 10–11 |
+| MIXED | 2 | Sorts 16–17 |
 
 ---
 
@@ -347,7 +345,7 @@ Note: Lower Body Foundation, Lower Body Intermediate, Home Strength Foundation, 
 - Catalog is not a content platform. Quantity growth is not a success metric.
 
 **Projected trajectory:**
-- Launch: 25 programs
+- Launch: 24 programs
 - Year 1 (with demand validation): ~28–30 programs
 - Year 2: ~35–40 programs
 - Year 3: ~45–55 programs
@@ -363,7 +361,7 @@ Program sharing for Forge Programs was introduced in MVP via Amendment PS-A1. Se
 
 | Decision | Value |
 |----------|-------|
-| PE-D1 — 25-program launch catalog | 25 programs is the right balance: enough to serve all athlete types with progression ladders; not so many that the catalog feels like a content platform. Covers all 7 athlete types, all 10 goal alignments, all 4 environments. |
+| PE-D1 — 24-program launch catalog | 24 programs is the right balance: enough to serve all athlete types with progression ladders; not so many that the catalog feels like a content platform. Covers all 7 athlete types, all 10 goal alignments, all 4 environments. Originally locked at 25 programs; reduced to 24 by Program Ecosystem Amendment 001 (Powerbuilding Intermediate Retirement). |
 | PE-D2 — Succession at graduation only | "What's Next" is shown only in the Graduated state, not during Preview or Active. Displaying it earlier creates distraction (active training) or premature commitment (preview). Graduation is the natural moment to surface the next step. |
 | PE-D3 — Single successor per program | Programs have one recommended successor. Branching progression would require the product to choose between paths on the athlete's behalf, which conflicts with athlete autonomy. Alternative paths are discoverable via W-2. |
 | PE-D4 — No Women's program category | Women are served within existing families. Gendered programs create implicit exclusions and conflict with Product DNA's evidence-based methodology principle. The gender-neutral content rule (§4.1) ensures descriptions serve all athletes without assumption. |
@@ -380,14 +378,14 @@ Program sharing for Forge Programs was introduced in MVP via Amendment PS-A1. Se
 ## Section 9 — Validation Checklist
 
 ### Catalog
-- [ ] 25 programs defined across 6 families
+- [ ] 24 programs defined across 6 families
 - [ ] 5 of 7 athlete types covered by Forge programs (Cycling and Combat deferred to creator marketplace)
 - [ ] 8 of 10 goal alignments covered (IMPROVE_CYCLING and SPORT_PERFORMANCE deferred)
 - [ ] All 4 environments covered
 - [ ] 13 programs have `successorProgramId` set; 12 have `null`
 - [ ] Succession chains are consistent: Sort 2 references Sort 1's UUID; Sort 3 references Sort 2's UUID; etc.
 - [ ] Duplicate category + level + environment combinations carry approved governance exceptions: CONDITIONING family, HYPERTROPHY family (general vs. lower-body-focused), STRENGTH BEGINNER GYM pair
-- [ ] 2 programs flagged `isFeatured: true` (Sorts 1 and 19)
+- [ ] 2 programs flagged `isFeatured: true` (Sorts 1 and 18)
 - [ ] All names use final locked values (Athletic Conditioning Foundation, Bodyweight Foundation, Lower Body Foundation, Lower Body Intermediate, Bodyweight Performance, Home Strength Foundation)
 
 ### Content
@@ -539,6 +537,8 @@ Shares surface in squad members' S-2 Squad Detail in a bounded "SQUAD PROGRAMS" 
 
 | Version | Date | Change |
 |---------|------|--------|
+| v1.4 | June 2026 | Muscle Building Rename Amendment 001 applied. Renamed the Hypertrophy family → "Muscle Building" (§2.1 family roster, §2.2 governance note, §3.3 succession-chain heading + chain, §3 terminal-programs list) and the three general programs (Hypertrophy Foundation/Intermediate/Advanced → Muscle Building Foundation/Intermediate/Advanced) in §2.1, §3.3, §5 catalog table (Sort 5–7), and the §5 Bodybuilding athlete-coverage row. The stored category enum `HYPERTROPHY` is unchanged (no schema change, no migration); Lower Body Foundation/Intermediate unchanged. The v1.2 historical change-log entry below is a snapshot and is left as written. Status: LOCKED. |
+| v1.3 | June 2026 | Program Ecosystem Amendment 001 (Powerbuilding Intermediate Retirement) applied. Removed Powerbuilding Intermediate (old Sort 5) — found by the Strength family Blueprint sequence to share every training-content axis with Strength Foundation II with no documented rationale for its duration/deload outlier. Powerbuilding Foundation's successor redirected from Powerbuilding Intermediate to Strength Foundation II (now Sort 2). Renumbered every program at old Sort 6+ down by one (new roster: Sort 1–24). Total programs 25→24; terminal programs 12→11; programs with successors unchanged at 13. Updated §2.1 family table (Strength family: 5→4 programs), §3.1 (resolved the branching example into a worked statement), §3.3 (folded the Powerbuilding ladder into the Strength Foundation ladder as an alternate entry point; removed from terminal-programs list), §5.1 (also corrected a pre-existing stale "8 families" reference to "6 families," per the documentation-lag finding in Program-Catalog-Production-Standard-v1.0.md §1), §5.2 catalog table, §5.4 athlete-type coverage. Status: LOCKED. |
 | v1.2 | June 2026 | Catalog Revision Amendment applied. Families reduced from 8 to 6: Cycling and Combat families removed (programs removed from launch catalog; CYCLING and COMBAT_SPORTS enums retained for athlete-created/imported programs). Removed programs: Cycling Base (old Sort 11), Cycling Development (old Sort 12), Combat Foundation (old Sort 19), Combat Conditioning (old Sort 20). Added programs: Lower Body Foundation (HYPERTROPHY, BEGINNER, GYM, Sort 9), Lower Body Intermediate (HYPERTROPHY, INTERMEDIATE, GYM, Sort 10), Bodyweight Performance (FULL_BODY, ADVANCED, HOME, Sort 21), Home Strength Foundation (FULL_BODY, BEGINNER, HOME, Sort 23). Renumbered: Running Base I → Sort 11, Running Base II → Sort 12; Bodyweight Foundation → Sort 19 (successor updated from Sort 22 to Sort 20); Bodyweight Strength → Sort 20 (successor updated from null to Sort 21). Programs with successors: 14 → 13. Terminal programs: 11 → 12. Updated §2.1 family table, §2.2 governance notes (Hypertrophy and Full Body & Home now at cap), §3.3 succession chains, §5.1 summary, §5.2 catalog table, §5.3 featured sortOrder, §5.4 athlete/environment coverage, §7.1 Year 1 candidates, §8 PE-D5 and PE-D6, §9 validation checklist. Status: LOCKED. |
 | v1.0 | June 2026 | Initial specification. Defines 8 program families, succession architecture via `successorProgramId`, 25-program launch catalog with all succession chains, athlete/goal/environment coverage verification, Forge Content Import Architecture (CSV pipeline), long-term roadmap (Year 1 candidates, 50–60 program cap, projected trajectory), 9 architecture decisions, and governance rules. Created following Program Ecosystem Architecture Planning (PE-1 through PE-9) and Review Pass 002 (PE-R002) — final catalog revisions: "General Physical Preparedness" renamed to "Athletic Conditioning Foundation" (Sort 13); "Full Body Foundation" renamed to "Bodyweight Foundation" (Sort 21); gender-neutral content rule added (PE-FR3); future catalog candidates documented (PE-FR4). |
 | v1.1 | June 2026 | PS-A1 amendment applied. Added Section 11: Program Sharing Architecture — ProgramShare entity definition, share eligibility rules, shareContext capture logic, UI summary (W-3 share picker), feed card summary (S-2 PROGRAM_RECOMMENDATION), and future compatibility notes. Added PE-D10 and PE-D11 to architecture decisions. Added Program Sharing validation checklist (§9). Updated §7.3 to forward-reference Section 11. Updated Non-Behaviors (§10) to include squad-scoped-only and no user-created-sharing rules. Downstream impact updated to include W-3 v1.5 share action and S-2 v1.4 feed card. |

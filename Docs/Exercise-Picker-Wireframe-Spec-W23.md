@@ -6,6 +6,7 @@
 **Implements:** ED-4 (Context-Aware Behavior — LOCKED), ED-5 (GIF Autoplay Policy — LOCKED), Exercise entity model, Custom Exercise architecture
 **Navigated from:** W-24 (Workout Builder), W-9 (Active Workout), future surfaces
 **Navigates to:** Caller screen (exercise selected), W-22 (detail sheet above W-23), Custom Exercise creation (sheet above W-23)
+**Component contracts:** CLA-C13 (SearchBar), CLA-C31 (ExerciseRow), CLA-C09 (Chip), CLA-C21 (BottomSheet) — see [`Component-Library-Architecture-v1.0.md`](Component-Library-Architecture-v1.0.md)
 
 ---
 
@@ -230,7 +231,6 @@ ALL EXERCISES
   Push (Upper Body)      12 exercises  ›
   Pull (Upper Body)       9 exercises  ›
   Legs & Glutes          18 exercises  ›
-  Hinge                   6 exercises  ›
   Core & Stability        8 exercises  ›
   Carry & Full Body       5 exercises  ›
   Mobility & Flexibility  9 exercises  ›
@@ -270,7 +270,8 @@ Section label "Favorites" is left-aligned, 13sp, secondary muted text. The "›"
 │              │
 │  [56×56 img] │  ← gifThumbnailUrl, static (ED-5: no autoplay in W-23)
 │              │
-│  Bench Press │  ← 12sp, primary weight, max 2 lines, center-aligned
+│  Barbell     │  ← 12sp, primary weight, max 2 lines, center-aligned
+│  Bench Press │
 │              │
 └──────────────┘
 ```
@@ -346,7 +347,6 @@ ALL EXERCISES
   Push (Upper Body)      12 exercises  ›
   Pull (Upper Body)       9 exercises  ›
   Legs & Glutes          18 exercises  ›
-  Hinge                   6 exercises  ›
   Core & Stability        8 exercises  ›
   Carry & Full Body       5 exercises  ›
   Mobility & Flexibility  9 exercises  ›
@@ -384,13 +384,13 @@ Categories with 0 exercises in the current context are not shown.
 
 ### 10.1 Purpose
 
-The exercise row is the primary content unit in W-23 search results, filtered results, browse category results, and the "see all" favorites view. It contains enough information to confidently identify an exercise and take one of three actions: select, favorite, or view detail.
+The exercise row is the primary content unit in W-23 search results, filtered results, browse category results, and the "see all" favorites view. It contains enough information to confidently identify an exercise and take one of three actions: select, view detail, or favorite (via long-press — § 10.3a).
 
 ### 10.2 Row Layout
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│ [img ] Exercise Name                      [♡]  [ⓘ]  │
+│ [img ] Exercise Name                            [ⓘ]  │
 │        [Chest] [Triceps]                            │
 └──────────────────────────────────────────────────────┘
 ```
@@ -398,17 +398,35 @@ The exercise row is the primary content unit in W-23 search results, filtered re
 - **Thumbnail:** 48pt × 48pt, rounded corners 4pt, static gifThumbnailUrl. If null: dark placeholder with exercise name initial, 16sp, warm muted text.
 - **Exercise Name:** 15sp, primary weight, leading text. Single line preferred; wraps to 2 lines max for long names.
 - **Primary Muscle Chips:** 11sp, max 2 chips. If more than 2 primary muscles exist, first 1 is named + "[+N]" condensed chip. Muted filled chips (lighter than W-22 filled chips — compact context).
-- **Favorite icon (♡/♥):** 24pt icon, 44pt × 44pt touch target. Outline = not favorited (muted). Filled warm accent = favorited. Tap → toggle favorite. Does NOT trigger row selection.
 - **Detail icon (ⓘ):** 24pt icon, 44pt × 44pt touch target. Opens W-22 as a sheet above W-23. Does NOT trigger row selection.
 - **Row height:** 72pt minimum (accommodates name + 1 chip line + padding).
+
+No visible favorite icon appears on the W-23 exercise row, per Exercise-003-Exercise-Favorites-Architecture.md § 4.1.3 (EX-003-D4) — favoriting from W-23 is a long-press action, not a tap target on the row (§ 10.3a).
 
 ### 10.3 Tap Zones
 
 | Tap Zone | Action |
 |----------|--------|
 | Row body (thumbnail, name, chips) | Select exercise → returns exerciseId to caller, W-23 dismisses |
-| Favorite icon | Toggle favorite state (no navigation) |
 | Detail icon | Open W-22 detail sheet above W-23 (no selection, no navigation from W-23) |
+| Row body, long-press (≥ 500ms) | Opens the favorite contextual action sheet (§ 10.3a) — does NOT select the exercise |
+
+### 10.3a Favorite Action (Long-Press)
+
+Per Exercise-003-Exercise-Favorites-Architecture.md § 4.1.3 (EX-003-D4): a long-press (≥ 500ms) on any exercise row or compact card in W-23 opens a contextual action sheet rather than exposing a visible heart icon — this avoids a second tap target on every row during high-frequency exercise selection.
+
+```
+┌──────────────────────────────────────────────┐
+│  [Exercise Name]                             │
+│  ────────────────────────────────────────    │
+│  View Exercise                               │
+│  Favorite                                    │
+│  ────────────────────────────────────────    │
+│  Cancel                                      │
+└──────────────────────────────────────────────┘
+```
+
+The "Favorite" label becomes "Unfavorite" when the exercise is already favorited. **View Exercise** pushes W-22 (full-screen). **Favorite/Unfavorite** toggles favorite state without leaving W-23; the sheet dismisses and the row updates inline if visible. **Cancel** dismisses with no action. Available on: browse/search exercise rows, Recently Used compact cards, and Favorites compact cards (long-press there offers "Unfavorite" + "View Exercise"). Not available on category browse tiles or section header labels. Full specification, including rationale: Exercise-003-Exercise-Favorites-Architecture.md § 4.1.3.
 
 ### 10.4 Custom Exercise Indicator
 
@@ -416,7 +434,7 @@ Custom exercises show a "Custom" label below the exercise name:
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│ [img ] My Custom Exercise                 [♡]  [ⓘ]  │
+│ [img ] My Custom Exercise                       [ⓘ]  │
 │        Custom   [Chest] [Triceps]                    │
 └──────────────────────────────────────────────────────┘
 ```
@@ -448,9 +466,9 @@ A search query runs against the following exercise fields, in priority order:
 
 | Field | Match Weight | Notes |
 |-------|-------------|-------|
-| `name` — exact match | Highest | "Bench Press" finds Bench Press immediately |
-| `name` — prefix match | High | "Bench" finds Bench Press, Bench Row, etc. |
-| `name` — contains match | Medium | "Press" finds Bench Press, Overhead Press, Incline Press |
+| `name` — exact match | Highest | "Barbell Bench Press" finds Barbell Bench Press immediately |
+| `name` — prefix match | High | "Barbell" finds Barbell Bench Press, Barbell Row, etc. |
+| `name` — contains match | Medium | "Press" finds Barbell Bench Press, Overhead Press, Incline Press |
 | `primaryMuscles` | Low | "Chest" finds all exercises targeting chest |
 | `equipment` | Low | "Barbell" finds all barbell exercises |
 | `tags` (if present) | Low | General keyword matching |
@@ -528,8 +546,8 @@ The Filter button in the W-23 header (§ 5.2) opens the Filter Sheet — a botto
 ├──────────────────────────────────────────────┤
 │                                              │
 │  MUSCLE GROUP                                │
-│  [Chest] [Back] [Shoulders] [Arms]           │
-│  [Legs] [Core] [Full Body]                   │
+│  [Chest] [Back] [Shoulders] [Biceps]         │
+│  [Triceps] [Glutes] [Quads] [Core] [...]     │
 │                                              │
 │  EQUIPMENT                                   │
 │  [Barbell] [Dumbbell] [Bodyweight]           │
@@ -611,8 +629,8 @@ Exercise Name *
 [__________________________________]
 
 Muscle Groups (optional)
-[Chest] [Back] [Shoulders] [Arms]
-[Legs] [Core]
+[Chest] [Back] [Shoulders] [Biceps]
+[Glutes] [Quads] [Core] [...]
 
 Equipment (optional)
 [Barbell] [Dumbbell] [Bodyweight]
@@ -781,7 +799,7 @@ If the athlete navigates to the See All Favorites view (§ 7.4) but has no Favor
 ```
 No favorites yet.
 
-Tap ♡ on any exercise to add it here.
+Long-press any exercise to add it here.
 ```
 
 ---
@@ -912,7 +930,6 @@ If the athlete taps the detail icon on an exercise while offline:
 | Filter button | 44pt |
 | Search bar | 44pt height |
 | Exercise row (body) | 44pt height (row is 72pt, exceeds minimum) |
-| Favorite icon | 44pt × 44pt touch target |
 | Detail icon | 44pt × 44pt touch target |
 | Compact Favorites/Recents card | 48pt height |
 | Category row | 52pt height |
@@ -932,8 +949,6 @@ If the athlete taps the detail icon on an exercise while offline:
 | Recents section | "Recently used, [N] exercises" |
 | Compact card | "[Exercise Name], double-tap to select" |
 | Exercise row (body) | "[Exercise Name], [Primary Muscles], double-tap to select" |
-| Favorite icon (unfavorited) | "Add [Exercise Name] to Favorites" |
-| Favorite icon (favorited) | "Remove [Exercise Name] from Favorites" |
 | Detail icon | "View [Exercise Name] detail" |
 | Custom exercise row | "[Exercise Name], Custom exercise, [Primary Muscles], double-tap to select" |
 | Category row | "[Category Name], [N] exercises, double-tap to browse" |
@@ -991,7 +1006,7 @@ W-23 is presented as a full-screen modal. Standard modal presentation transition
 | W-23 (any) | Cancel button | W-23 dismisses, caller receives nil |
 | W-23 (any) | Back gesture | Same as Cancel |
 | W-23 row/card | Tap body | W-23 dismisses, caller receives exerciseId |
-| W-23 row | Tap favorite icon | Favorite toggled, no navigation |
+| W-23 row | Long-press (≥ 500ms) | Favorite contextual action sheet opens (§ 10.3a) |
 | W-23 row | Tap detail icon | W-22 sheet opens above W-23 |
 | W-23 Favorites › | Tap section header | See-all Favorites view opens within W-23 (header changes to "Favorites" + back arrow) |
 | W-23 Recents › | Tap section header | See-all Recents view opens within W-23 (header changes to "Recently Used" + back arrow) |
@@ -1113,9 +1128,10 @@ W-23 does not and will never:
 - [ ] Thumbnail: 48pt, static gifThumbnailUrl (ED-5)
 - [ ] Name: 15sp primary weight
 - [ ] Primary muscle chips: max 2, 11sp
-- [ ] Favorite icon: 44pt touch target, toggles without navigating
+- [ ] No visible favorite icon on the row (EX-003-D4)
+- [ ] Long-press (≥ 500ms) opens favorite contextual action sheet (View Exercise / Favorite or Unfavorite / Cancel)
 - [ ] Detail icon: 44pt touch target, opens W-22 sheet
-- [ ] Row body tap → selects exercise (not detail icon or favorite icon)
+- [ ] Row body tap → selects exercise (not detail icon, not long-press)
 - [ ] Custom exercises: "Custom" label in chips row
 - [ ] Difficulty NOT displayed in row
 - [ ] Equipment NOT displayed in row
@@ -1227,6 +1243,8 @@ W-23 does not and will never:
 |---------|------|--------|
 | v1.0 | June 2026 | Initial specification. Implements ED-4 (context-aware behavior), ED-5 (GIF thumbnail policy), custom exercise architecture. Defines full-screen modal presentation, context parameter model, compact card + row dual format, filter architecture, W-22 integration with "Select This Exercise" CTA injection. |
 | v1.0 (R1) | June 2026 | W23-R1 resolved. W23-D3 (search auto-focus) confirmed: keyboard closed by default; auto-focus only when both Favorites and Recents are empty. § 20.5 amended: auto-focus exception respects system accessibility settings that suppress automatic keyboard presentation. Status: LOCKED. |
+| v1.0 (R2 — Documentation Reconciliation) | June 2026 | Taxonomy correction only, no behavioral change: § 6 and § 9.1's "ALL EXERCISES" mock showed a standalone "Hinge" row alongside the six locked `ExerciseCategory` rows. `HINGE` is a `MovementPattern` value folded into `LEGS_AND_GLUTES` per Exercise-Library-Architecture-v1.0.md R1-1 — it is not a top-level category and was never one of the six rows W-21's BROWSE tab defines. Row removed from both mocks; ALL EXERCISES now shows exactly the six locked categories (Push, Pull, Legs & Glutes, Core & Stability, Carry & Full Body, Mobility & Flexibility), matching W-21. |
+| v1.0 (R3 — Documentation Reconciliation) | June 2026 | Applies the one outstanding addition flagged by Exercise-003-Exercise-Favorites-Architecture.md § 15 (EX-003-D4): § 10's exercise row anatomy showed a visible tap-to-toggle heart icon, contradicting the locked Exercise-003 decision that W-23 rows carry **no visible favorite icon** and expose favoriting only via a long-press contextual action sheet (View Exercise / Favorite or Unfavorite / Cancel). Removed the heart icon from § 10.2/§ 10.4 row diagrams and § 10.3 tap zones; added § 10.3a documenting the long-press action per EX-003-D4; updated § 17.8 empty-state copy, § 20 accessibility tables, § 21.2 navigation matrix, and the § 23 validation checklist accordingly. No new behavior introduced — this brings W-23 into agreement with the already-locked Exercise-003 architecture. |
 
 ---
 

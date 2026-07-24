@@ -1,11 +1,12 @@
 # W-19 Activity Detail
-## Wireframe Specification v1.1 | June 2026
+## Wireframe Specification v1.4 | June 2026
 
 **Status:** LOCK CANDIDATE
-**Authority:** W-9 v1.1 (LOCKED), W-17 v1.1 (LOCKED), W-18 v1.0 (LOCKED), W-24 v1.1 (LOCKED), WwF Architecture v1.1 (LOCKED), Exercise Domain Architecture v1.0 + Amendment 001 (LOCKED), ED-5 (LOCKED), L-3/L-4 v1.0 (LOCKED), Product DNA (LOCKED)
+**Authority:** W-9 v1.5 (LOCKED), W-17 v1.3 (LOCKED), W-18 v1.0 (LOCKED), W-24 v1.1 (LOCKED), WwF Architecture v1.1 (LOCKED), Exercise Domain Architecture v1.0 + Amendment 001 (LOCKED), ED-5 (LOCKED), L-3/L-4 v1.0 (LOCKED), Product DNA (LOCKED), Workout-Playlist-Amendment-001 (LOCKED)
 **Reads from:** Session record written by W-9 / W-17
 **Navigated from:** W-18 Activity History (session row tap)
-**Navigates to:** W-18 (back), Limited Athlete Profile modal (Trained With row), L-3 or L-4 (chapter link), W-3 (program link)
+**Navigates to:** W-18 (back), Limited Athlete Profile modal (Trained With row), L-3 or L-4 (chapter link), W-3 (program link), SH-1 (overflow "Share" action, per WSR-001 §8.5), external Spotify/Apple Music app or browser (Playlist row, per Workout-Playlist-Amendment-001)
+**Component contracts:** CLA-C16 (ListItem), CLA-C12 (ProgressBar) — see [`Component-Library-Architecture-v1.0.md`](Component-Library-Architecture-v1.0.md) (accessibility pattern: §18)
 
 ---
 
@@ -70,8 +71,10 @@ W-19 is not a modal, not a sheet. The athlete navigates into it through intentio
 | L-3 (Active Chapter Detail) | Chapter attribution tap — chapter is active |
 | L-4 (Archived Chapter Detail) | Chapter attribution tap — chapter is archived |
 | W-3 (Program Detail) | Program attribution tap |
+| SH-1 (Share Configuration Step) | Overflow (⋯) → "Share" |
+| External app / browser | Playlist row tap (opens Spotify or Apple Music link) |
 
-W-19 has no other exit points. All actions are read-only. No CTAs, no modals beyond Limited Athlete Profile.
+W-19 is otherwise read-only — every other action remains a read-only navigation or attribution link. The "Share" overflow action is the one exception, per WSR-001 §8.1, §8.5 and SH-1 §2: it opens SH-1, not an editor, and does not modify the session record.
 
 ---
 
@@ -81,7 +84,7 @@ W-19 has no other exit points. All actions are read-only. No CTAs, no modals bey
 
 ```
 ┌────────────────────────────────────────────────────┐
-│  [←]                                               │
+│  [←]                                          [⋯]  │
 ├────────────────────────────────────────────────────┤
 │                                                    │
 │  [activity icon 40pt]  Leg Day A                   │
@@ -104,6 +107,11 @@ W-19 has no other exit points. All actions are read-only. No CTAs, no modals bey
 │                                                    │
 │  ────────────────────────────────────────────────  │
 │                                                    │
+│  PLAYLIST                                          │
+│  🎵 Leg Day Bangers                Open ›          │
+│                                                    │
+│  ────────────────────────────────────────────────  │
+│                                                    │
 │  CHAPTER                                           │
 │  Season 1 — The Foundation        [›]              │
 │                                                    │
@@ -123,11 +131,12 @@ The content of W-19 flows top to bottom in the following order:
 2. Exercise List or Activity Data, depending on activity type (§ 7)
 3. Notes — per-exercise, inline in Exercise List (§ 8)
 4. Workout With Friend Attribution (§ 12) — omitted if no confirmed partners
-5. Chapter Attribution (§ 11) — omitted if unchaptered
-6. Program Attribution (§ 10) — omitted if not a program workout
-7. Import Origin (§ 13) — omitted if not imported
+5. Playlist (§ 9A) — omitted if no playlist was attached
+6. Chapter Attribution (§ 11) — omitted if unchaptered
+7. Program Attribution (§ 10) — omitted if not a program workout
+8. Import Origin (§ 13) — omitted if not imported
 
-Sections with no content are **absent** — no placeholder, no empty label, no "—". A W-19 with no WwF partners and no chapter and no program shows only the session hero and the exercise list.
+Sections with no content are **absent** — no placeholder, no empty label, no "—". A W-19 with no WwF partners, no playlist, no chapter, and no program shows only the session hero and the exercise list.
 
 ---
 
@@ -254,7 +263,7 @@ EXERCISES
 **Exercise Card:**
 
 ```
-[thumbnail 40pt]  Bench Press
+[thumbnail 40pt]  Barbell Bench Press
 
    Set 1    135 lbs × 8
    Set 2    135 lbs × 8
@@ -281,8 +290,11 @@ EXERCISES
 | Weight only | "135 lbs × —" |
 | Neither (exercise present but no sets logged) | "No sets logged" (13sp, muted italic) |
 | Duration-based set (MOBILITY slot exercise) | "45 sec" |
+| Distance prescribed (`distanceValue`/`distanceUnit` non-null) | Distance shown alongside the set row (e.g., "40m") |
 
 No PR indicators. No comparisons to previous sessions. A number is what it is.
+
+**EP-A1 fields (ExercisePrescription-Amendment-001):** W-19 displays non-null `distanceValue` and `distanceUnit` as part of the exercise set row when the session log contains distance data. W-19 does not display `restSeconds` — rest is a planning value; the completed session shows logged execution, not prescribed rest.
 
 **Weight unit:** Displayed in the unit as logged at session time — `weightUnit` from the session record. Not converted. Not normalized. If the athlete logged in lbs, the record shows lbs. If in kg, kg.
 
@@ -369,6 +381,37 @@ Session-attributed photos are **not displayed in W-19 (MVP).**
 The Forge Legacy photo system is chapter-level in MVP. Photos are not captured at the session level during W-9, and no session-to-photo association exists in the current data model. If the athlete wants to see photos from the chapter that included this session, they navigate to L-3 or L-4 via the Chapter attribution link (§ 11).
 
 Session-attributed photo capture and display in W-19 is a V1.1 enhancement contingent on session-level photo architecture being defined.
+
+---
+
+## 9A. Playlist (Workout-Playlist-Amendment-001)
+
+### 9A.1 Display
+
+If a playlist was attached to the session (via Active-Workout-Flow-Spec-W9-W16 §8.5 or Workout-Summary-Spec-W17 §8A):
+
+```
+PLAYLIST
+──────────────────────────────────────────
+🎵 Leg Day Bangers                    Open ›
+```
+
+- Section header: "PLAYLIST", 12sp, muted uppercase
+- Row: music note glyph + display name (or generic "Spotify Playlist" / "Apple Music Playlist" label if no display name was given), 15sp, primary color
+- Trailing affordance: "Open ›", 13sp, muted, right-aligned
+- Full row is tappable → opens the link externally (installed Spotify/Apple Music app, or browser fallback)
+
+### 9A.2 Why This Is the One Interactive Exception Beyond Share
+
+W19-D1 establishes W-19 as completely read-only — no field can be edited. Opening the playlist link does not edit, delete, or reinterpret the session record; it reads a stored URL and hands it to the OS, exactly as the overflow "Share" action (§3, W19-D17) reads the record to produce a share without modifying it. Tapping the playlist row is navigation, not editing.
+
+### 9A.3 No Embedded Playback
+
+W-19 never embeds a player, shows track listings, or fetches playlist metadata beyond what was stored at attach time (service + URL + optional display name). This is consistent with Workout-Playlist-Amendment-001's V1 scope: a reference link, not an integration.
+
+### 9A.4 Absent Playlist
+
+If no playlist was attached to the session, the PLAYLIST section is entirely absent — no section header, no row, no placeholder.
 
 ---
 
@@ -663,9 +706,11 @@ Limited Athlete Profile modal for Trained With partners: if partner profile data
 | Element | Minimum |
 |---------|---------|
 | Back button | 44pt |
+| Overflow (⋯) button | 44pt |
 | Chapter attribution row | 44pt height |
 | Program attribution row | 44pt height |
 | Trained With partner row | 44pt height |
+| Playlist row | 44pt height |
 | Exercise cards | Not independently tappable — no navigation |
 
 Exercise cards are not tappable in W-19. There is no W-22 link from W-19 for exercises. The athlete is reviewing history, not researching exercises. W-22 is accessible from W-23 or W-24 context only.
@@ -675,11 +720,14 @@ Exercise cards are not tappable in W-19. There is no W-22 link from W-19 for exe
 | Element | Accessible Label |
 |---------|----------------|
 | Back button | "Back to Activity History" |
+| Overflow (⋯) button | "More actions" |
+| "Share" overflow item | "Share, opens share options" |
 | Hero | "[Session Name]. [Activity Type]. [Full date and time]. [Duration]. [Activity stats]." |
 | Exercise card | "[Exercise Name]. [N] sets." followed by each set as a sub-element |
 | Set row | "Set [N], [weight] [unit], [reps] reps" or "Set [N], [reps] reps" for bodyweight |
 | Exercise note | "Note: [note text]" |
 | Trained With row | "[Partner Name]. Double-tap to view profile." |
+| Playlist row | "Playlist: [Display Name or service label]. Double-tap to open." |
 | Chapter row | "Chapter: [Chapter Name]. Double-tap to view chapter detail." |
 | Program row | "Program: [Program Name], [Slot Name]. Double-tap to view program." |
 | "Partial" label | Announced as part of hero: "Partial session." |
@@ -695,8 +743,9 @@ Exercise cards are not tappable in W-19. There is no W-22 link from W-19 for exe
    - Each set row
    - Note (if present)
 5. For each Trained With partner row
-6. Chapter attribution row
-7. Program attribution row
+6. Playlist row (if present)
+7. Chapter attribution row
+8. Program attribution row
 
 ### 18.4 No Independent Exercise Taps
 
@@ -723,18 +772,21 @@ Exercise card text scales with system font size. At larger sizes, the "Set [N]  
 | W-19 | Back button | W-18 restored at prior scroll position |
 | W-19 | Trained With partner row tap | Limited Athlete Profile modal opens |
 | Limited Athlete Profile modal | Dismiss (back gesture or X) | Modal dismisses, W-19 restored |
+| W-19 | Playlist row tap | Opens the link externally (installed Spotify/Apple Music app, or browser) |
 | W-19 | Chapter row tap — active chapter | L-3 opens (push navigation) |
 | W-19 | Chapter row tap — archived chapter | L-4 opens (push navigation) |
 | W-19 | Program row tap | W-3 opens (push navigation) |
+| W-19 | Overflow (⋯) → "Share" | SH-1 opens (bottom sheet) |
+| SH-1 | Dismiss or Share | Returns to W-19 |
 | L-3 / L-4 / W-3 | Back | Returns to W-19 |
 
 ### 19.2 Header
 
 | Header Left | Header Title | Header Right |
 |-------------|-------------|-------------|
-| ← (back arrow) | — (no title) | — (no overflow) |
+| ← (back arrow) | — (no title) | ⋯ (overflow — "Share") |
 
-The header has a back arrow only. No title in the navigation bar — the session name in the hero content area serves as the screen identity. No overflow (⋯) — there are no actions on W-19.
+The header has a back arrow and an overflow (⋯) menu. No title in the navigation bar — the session name in the hero content area serves as the screen identity. The overflow menu contains exactly one item: "Share," which opens SH-1 (per WSR-001 §8.1, §8.5: "Athletes may share any past session from W-19 via the overflow menu... There is no time limit on retrospective sharing"). Per SH-1 §2, the share defaults to `WORKOUT_COMPLETE`; if the session also produced a program graduation or honors, those additional share types are available from the same overflow menu, per WSR-001 §8.5.
 
 ### 19.3 Tab Bar
 
@@ -768,7 +820,6 @@ W-19 does not and will never:
 | Provide coaching copy, suggestions, or improvement prompts |
 | Display unstarted planned exercises — only what was logged is shown |
 | Allow collapsing exercise cards — the exercise list is always fully expanded |
-| Display a "Share" CTA (V1.1) |
 | Display photos — the photo system is chapter-level, not session-level in MVP |
 | Make exercise thumbnails tappable or link to W-22 from W-19 |
 | Display a "Replay Workout" or "Repeat This Workout" CTA — repeating is initiated from W-3 |
@@ -780,6 +831,7 @@ W-19 does not and will never:
 | Show a "Loading…" indicator for exercise cards if the session record and catalog are cached — renders instantly |
 | Highlight the current session as "most recent" relative to the training history — W-19 has no awareness of other sessions |
 | Access deleted sessions — session records are permanent; if a sessionId is invalid, the unavailable state (§ 15.1) renders |
+| Embed playback, a player, or track listings for an attached playlist — the playlist row only opens the link externally (§ 9A.3) |
 
 ---
 
@@ -789,8 +841,10 @@ W-19 does not and will never:
 - [ ] W-19 is push navigation within Workouts tab (not modal, not sheet)
 - [ ] Tab bar remains visible
 - [ ] Back button → W-18 at prior scroll position
-- [ ] Header: back arrow only — no title, no overflow icon
+- [ ] Header: back arrow + overflow (⋯) containing "Share" — no title
+- [ ] Overflow "Share" opens SH-1 with `WORKOUT_COMPLETE` pre-selected; additional types available if the session also produced graduation/honors (WSR-001 §8.5)
 - [ ] Navigation back from L-3/L-4/W-3 → W-19 at preserved scroll position
+- [ ] Navigation back from SH-1 (dismiss or Share) → W-19 at preserved scroll position
 
 ### Session Hero
 - [ ] Activity type icon: 40pt, category tint color, left-aligned
@@ -864,6 +918,14 @@ W-19 does not and will never:
 - [ ] Declined partners absent (not in session record)
 - [ ] Section absent if no confirmed partners
 
+### Playlist
+- [ ] Section header: "PLAYLIST", 12sp, muted uppercase
+- [ ] Row: music note glyph + display name (or generic service label), 15sp, primary, tappable
+- [ ] Trailing "Open ›" affordance, 13sp, muted
+- [ ] Tap opens the link externally (installed app or browser) — no in-app playback
+- [ ] No track listing, cover art, embedded player, or metadata fetch
+- [ ] Section absent if no playlist was attached — no placeholder
+
 ### Imported Session Handling
 - [ ] "Imported" label: 13sp, muted secondary italic, below hero separator
 - [ ] No banner, no badge, no outlined chip
@@ -926,6 +988,8 @@ W-19 does not and will never:
 | W19-D14 — No "Repeat This Workout" CTA | W-19 is a historical record surface, not a dispatch surface. Initiating a workout is the role of W-1 (Log Activity CTA) and W-3 ("Start Next Workout"). Adding a repeat CTA to W-19 conflates review with execution. The athlete who wants to repeat a program workout does so from W-3 which has the correct program context. |
 | W19-D15 — No tab bar suppression | W-19 is push navigation within the Workouts tab stack. Unlike W-9 (active workout, full-screen) which suppresses the tab bar during execution, W-19 is a review surface where the tab bar remains visible. The athlete may want to navigate to Legacy tab after reviewing a session. |
 | W19-D16 — Section labels within exercise list (WS-A4) | The session record's section structure is reflected in W-19 as compact read-only dividers within the EXERCISES section. This preserves the workout structure the athlete planned and executed — reviewing a W-19 for a session with WARM-UP / MAIN / COOL-DOWN sections shows that structure. Single-section and free-form sessions use the existing flat list. Empty sections (plan had the section, athlete logged no exercises in it) produce no entry — consistent with "W-19 shows what happened, not what was planned." Section labels are not interactive — no controls, no navigation, no tap targets. |
+| W19-D17 — Overflow "Share" action (WSR-001 reconciliation) | WSR-001 §8.1, §8.5 and SH-1 §2 name W-19 as a required retrospective sharing entry point, with no time limit on how old the session may be. The W19-D1 read-only principle governs the session *record* (no field is editable); it does not prohibit a navigation action that reads the record to produce a share. The single overflow item opens SH-1 — it does not return any value to W-19, modify the session, or introduce an editor. This corrects the prior "Display a 'Share' CTA (V1.1)" Non-Behavior, which contradicted WSR-001 (LOCKED) and SH-1 (LOCKED), both of which name W-19 as an MVP entry point. |
+| W19-D18 — Playlist row opens externally; no embedded playback (Workout-Playlist-Amendment-001) | An athlete may attach a Spotify or Apple Music playlist link to a session (Active-Workout-Flow-Spec-W9-W16 §8.5, Workout-Summary-Spec-W17 §8A). W-19 displays it read-only and the row opens the link via the OS, the same read-without-modifying precedent as W19-D17's Share action. No player, no track list, no metadata fetch — the link is a stored reference, not an integration. Section absent if no playlist was attached, consistent with W-19's section-absent pattern (W19-D6). |
 
 ---
 
@@ -935,8 +999,11 @@ W-19 does not and will never:
 |---------|------|--------|
 | v1.0 | June 2026 | Initial specification. Complete session detail record. Read-only throughout — no editing, no deletion. Fully expanded exercise list for STRENGTH (sets with weight × reps, per-exercise notes inline, deleted exercise graceful degradation). Activity Data section for non-STRENGTH types (type-appropriate captured stats). No session photos (chapter-level photo system only). WwF "Trained With" section (confirmed partners, display names, Limited Athlete Profile modal). Chapter attribution tappable → L-3 or L-4 by chapter state. Program attribution tappable → W-3. Imported session origin label (13sp italic muted). Partial sessions: hero "Partial" label in stats line, neutral treatment, unstarted exercises absent. Section-absent pattern for all optional sections (no placeholders). 15 decisions (W19-D1 through W19-D15). |
 | v1.1 | June 2026 | WS-A4 applied (Workout Structure Amendment 001): section grouping within EXERCISES list. Section labels (WARM-UP, MAIN WORKOUT, COOL-DOWN) rendered as compact read-only dividers for multi-section sessions. Empty sections absent. Single-section/free-form sessions: flat list unchanged. W19-D16 added. Authority references updated to v1.1 for W-9, W-17, W-24. |
+| v1.2 (EP-A1) | June 2026 | ExercisePrescription-Amendment-001 merged. § 7.1 Set Display Formats: added the distance row and the EP-A1 display rule — non-null `distanceValue`/`distanceUnit` shown as part of the exercise set row; `restSeconds` never shown (rest is a planning value, not a logged execution value). Closes the one EP-A1 downstream-update item that had not yet been merged into this document. No behavior change beyond the new display rule itself, no new decisions. |
+| v1.3 | June 2026 | WSR-001 Downstream Reconciliation Pass. Added overflow (⋯) menu with a single "Share" item, opening SH-1 (§2, §3, §19.2, §18). Removed the contradictory "Display a 'Share' CTA (V1.1)" line from §20 Non-Behaviors — WSR-001 (LOCKED) and SH-1 (LOCKED) both name W-19 as a required MVP retrospective-sharing entry point with no time limit. Added W19-D17. No other W-19 behavior changed; the screen remains otherwise strictly read-only. |
+| v1.4 | June 2026 | Workout-Playlist-Amendment-001 merged. New § 9A "Playlist": read-only display of an optional attached Spotify/Apple Music link; row tap opens the link externally (no embedded playback). § 4.2 section order, § 1 navigation header, § 3 exit points, § 18 accessibility (touch targets, screen reader labels, focus order), § 19.1 navigation matrix, § 20 Non-Behaviors, and § 21 Validation Checklist all updated. Added W19-D18. No change to W-19's read-only principle (W19-D1) — opening the link is navigation, not editing, per the same precedent as the Share action (W19-D17). |
 
 ---
 
-*W-19 Activity Detail — Wireframe Specification v1.0*
+*W-19 Activity Detail — Wireframe Specification v1.4*
 *Forge Legacy | June 2026*

@@ -1,10 +1,12 @@
 # Forge Design System Architecture v1.0
 
 **Status:** LOCKED
-**Version:** 1.0
+**Version:** 1.1
 **Created:** 2026-07-01
 **Author:** Architecture session, 2026-07-01
-**Amendment Log:** Initial.
+**Amendment Log:**
+- v1.0 — Initial.
+- v1.1 (2026-07-02) — Documentation-consistency audit reconciliation, per §16 Maintenance: this document's own mandate that it "must never become stale" had been violated — §14 was missing the already-committed Navigation Library v1.0 (`9d199a6`) and Progress Library v1.0 (`374563f`), and §15 still listed both (plus the also-already-committed Modal & Overlay Library) as "Not started"/"Remaining." Added Navigation and Progress subsections to §14 (matching the existing Button/Input/Card/Modal pattern); moved Modal, Navigation, and Progress from §15's "Remaining" tables into "Completed"; removed Navigation/Progress from §14's "Planned Libraries" table. Also strengthened the §15 Roadmap Notes' `ProgressRing` exclusion language for consistency with `Component-Library-Architecture-v1.0.md` and `Rest-Timer-Architecture-v1.0.md`. No design/behavioral decisions changed — implementation-status bookkeeping only.
 
 ---
 
@@ -751,14 +753,42 @@ The following libraries are locked and committed to the repository. Each has com
 | **Lint fix commit** | `3ac04ce` — Fix lint errors across Forge button, input, and card libraries |
 | **Design source** | Claude Design (card library project, ID `da2530d2-ccd3-4c3b-b4cb-62a1e338e7c3`) |
 
+### Navigation Library v1.0
+
+| Item | Value |
+|---|---|
+| **Status** | LOCKED |
+| **Path** | `src/components/forge/navigation/` |
+| **Components** | `ForgeTopBar`, `ForgeBottomNav`, `ForgeBackButton`, `ForgeTabNavigation`, `ForgeSegmentedControl`, `ForgeStepNavigation`, `ForgePagination`, `ForgeBreadcrumbs`, `ForgeOverflowMenu`, `ForgeSearchHeader` |
+| **Implementation commit** | `9d199a6` — Add Forge Navigation Library v1.0 |
+| **Design source** | Claude Design (Forge Navigation Library project) |
+
+### Modal & Overlay Library v1.0
+
+| Item | Value |
+|---|---|
+| **Status** | LOCKED |
+| **Path** | `src/components/forge/modals/` |
+| **Components** | `ForgeModal`, `ForgeConfirmationModal`, `ForgeBottomSheet`, `ForgeActionSheet`, `ForgePickerModal`, `ForgeMediaModal`, `ForgeLoadingModal`, `ForgeSuccessModal`, `ForgeErrorModal`, `ForgePremiumModal`, `ForgeFormModal` |
+| **Implementation commit** | `39f8529` — Add Forge Modal Library v1.0; updated in place to the latest Claude Design export (spec §14 motion, swipe-to-dismiss sheet, picker date mode, media video chrome, determinate loading, 44pt touch targets) |
+| **Design source** | Claude Design (Forge Modal Library Design project, ID `b029488a-201b-432f-b04c-b0df5228381e`, file `Forge Modal Library.dc.html`) |
+
+### Progress Library v1.0
+
+| Item | Value |
+|---|---|
+| **Status** | LOCKED |
+| **Path** | `src/components/forge/progress/` |
+| **Components** | `ForgeProgressBar`, `ForgeXPProgressBar`, `ForgeProgramProgress`, `ForgeWorkoutProgress`, `ForgeCircularProgress`, `ForgeGoalProgress`, `ForgeChallengeProgress`, `ForgeRankProgress`, `ForgeStreakIndicator`, `ForgeCountdownProgress`, `ForgeLoadingProgress`, `InlineSpinner`, `ForgeMilestoneProgress` |
+| **Implementation commit** | `374563f` — feat(design-system): add forge progress components library |
+| **Design source** | Claude Design (Forge Progress Library project) |
+| **Note** | `ProgressRing` is **not** a component in this library and is not exported from it — it is a distinct, standalone component owned exclusively by `Rest-Timer-Architecture-v1.0.md` (§9) and excluded from this catalog by that document's own governance. No file in this library implements or claims that name. |
+
 ### Planned Libraries (Not Yet Started)
 
 | Library | Folder | Status |
 |---|---|---|
-| Navigation | `src/components/forge/navigation/` | Not started |
-| Modals | `src/components/forge/modals/` | Not started |
 | Badges | `src/components/forge/badges/` | Not started |
-| Progress | `src/components/forge/progress/` | Not started |
 | Avatars | `src/components/forge/avatars/` | Not started |
 | Lists | `src/components/forge/lists/` | Not started |
 | Charts | `src/components/forge/charts/` | Not started |
@@ -777,6 +807,9 @@ The following libraries are locked and committed to the repository. Each has com
 | Button Library v1.0 | 6 button variants | ✅ LOCKED |
 | Input Library v1.0 | 10 input controls | ✅ LOCKED |
 | Card Library v1.0 | 13 card variants | ✅ LOCKED |
+| Modal & Overlay Library v1.0 | 11 modal/overlay components | ✅ LOCKED |
+| Navigation Library v1.0 | 10 navigation components | ✅ LOCKED |
+| Progress Library v1.0 | 13 progress components | ✅ LOCKED |
 
 ### Remaining — Priority Order
 
@@ -786,7 +819,6 @@ The following libraries are the logical next steps to enable implementation of t
 
 | Library | Rationale |
 |---|---|
-| **Navigation** (AppBar, TabBar) | Every screen needs an AppBar; the root layout needs a TabBar |
 | **Avatars** | Used in squad surfaces, feed, profile header, and activity rows |
 | **Badges / Chips** | Used in program cards, honor catalog, exercise library, and challenge surfaces |
 
@@ -794,7 +826,6 @@ The following libraries are the logical next steps to enable implementation of t
 
 | Library | Rationale |
 |---|---|
-| **Progress** (ProgressBar, ProgressRing) | Workout screens, program cards, challenge cards |
 | **Lists** (ListItem, SectionHeader) | Exercise library (W-21), settings (P-4/P-5/P-6), most catalog screens |
 | **Empty States** | Every data screen needs an empty-state treatment |
 
@@ -802,15 +833,16 @@ The following libraries are the logical next steps to enable implementation of t
 
 | Library | Rationale |
 |---|---|
-| **Modals** (BottomSheet, CeremonyModal) | M-1 Rank Up, M-2 Honor Earned, M-6 Destructive Confirm |
 | **Feedback** (Toast) | Workout logging confirmations, action feedback |
 | **Charts** | Progress analytics (P-2 Progress Hub) |
+
+> Navigation, Progress, and Modals have all since been completed (§14) and are no longer part of this remaining-work list.
 
 ### Roadmap Notes
 
 - Each library must complete the full validation workflow (§12) before commit.
 - Libraries may be built in parallel if there are no cross-library dependencies.
-- The ProgressRing component is owned by `Rest-Timer-Architecture-v1.0.md` — it is not part of the Progress library; it is a standalone component governed by that document.
+- `ProgressRing` is owned exclusively by `Rest-Timer-Architecture-v1.0.md` — it is not part of, and must never be added to, the Progress library (§14); it is a standalone component governed entirely by that document and may not be reused elsewhere without a formal amendment.
 - When a new library is completed, this document's §14 must be updated to reflect its locked status and commit hash.
 
 ---

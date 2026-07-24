@@ -1,21 +1,21 @@
-# Forge Legacy — W-24: Create / Edit Custom Exercise
-## Version 1.0 | June 2026
+# Forge Legacy — W-28: Create / Edit Custom Exercise
+## Version 1.0 (Media Field Reconciliation) | June 2026
 
 **Status:** LOCKED
-**Authority:** Exercise-001-Custom-Exercise-Architecture.md (LOCKED), Exercise-Library-Architecture-v1.0.md (LOCKED), FORGE_LEGACY_PRODUCT_DNA.md (LOCKED), M-6-Destructive-Action-Confirmation-Spec.md (LOCKED)
-**Downstream impact:** W-21 (entry path: [+ New Exercise] navigates to W-24 CREATE mode), W-22 (pen icon edit destination confirmed as W-24), W-23 (post-creation "Add Details" CTA opens W-24 EDIT mode)
+**Authority:** Exercise-001-Custom-Exercise-Architecture.md (LOCKED), Exercise-Library-Architecture-v1.0.md (LOCKED), FORGE_LEGACY_PRODUCT_DNA.md (LOCKED), M-6-Destructive-Action-Confirmation-Spec.md (LOCKED), Exercise-Media-Architecture-v1.0.md (LOCKED)
+**Downstream impact:** W-21 (entry path: [+ New Exercise] navigates to W-28 CREATE mode), W-22 (pen icon edit destination confirmed as W-28), W-23 (post-creation "Add Details" CTA opens W-28 EDIT mode)
 
-> **Screen Numbering:** W-24 = Create / Edit Custom Exercise (this document). Program Slot Builder = W-28. Resolved June 2026.
+> **Screen Numbering:** W-28 = Create / Edit Custom Exercise (this document). Workout Builder (Program Slot Builder) retains its existing W-24 designation, unchanged. This document's own number is corrected from the originally drafted "W-24" to "W-28" to eliminate the collision. Resolution executed June 2026 (Repository Correction Pass) — supersedes the unactioned v1.0 R1 change-log claim below.
 
 ---
 
 ## Section 1 — Screen Purpose
 
-### 1.1 What W-24 Is
+### 1.1 What W-28 Is
 
-W-24 is the full-screen creation and editing experience for Custom Exercises. It is the rich counterpart to the lightweight inline creation sheet used in W-23 and W-21. W-24 exists so that athletes who want to record more than just a name have a dedicated, unhurried space to do so.
+W-28 is the full-screen creation and editing experience for Custom Exercises. It is the rich counterpart to the lightweight inline creation sheet used in W-23 (W-21's `[+ New Exercise]` entry point goes directly to this full-screen W-28 CREATE mode — W-21 has no inline sheet of its own). W-28 exists so that athletes who want to record more than just a name have a dedicated, unhurried space to do so.
 
-W-24 serves two modes within a single screen architecture:
+W-28 serves two modes within a single screen architecture:
 
 | Mode | Trigger | State |
 |------|---------|-------|
@@ -24,25 +24,25 @@ W-24 serves two modes within a single screen architecture:
 
 Both modes share the same layout, field structure, and validation rules. They differ only in initialization state, navigation bar title, and the presence of the Delete action (EDIT only).
 
-### 1.2 What W-24 Is Not
+### 1.2 What W-28 Is Not
 
-- **Not a replacement for the W-23 inline creation sheet.** The inline sheet (name-only, appears over W-23 mid-workout) remains the fastest creation path. W-24 is the intentional, deliberate path for athletes who want to add context at creation time or enrich existing exercises.
-- **Not an editor for Forge exercises.** `source: 'FORGE'` exercises are Forge-team-authored. W-24 operates exclusively on `source: 'CUSTOM'` exercises. FORGE exercises never show an Edit action.
-- **Not a discovery surface.** W-24 is reached through an explicit action; it is never browsed to.
-- **Not a media studio.** Media upload (GIF, video, image) is deferred to post-MVP per the decision in Section 7.
-- **Not a restore surface.** Exercise restoration is available only from the `[Deleted Exercise]` tombstone in template and program edit surfaces (EX-001-D7). W-24 has no restore capability.
+- **Not a replacement for the W-23 inline creation sheet.** The inline sheet (name-only, appears over W-23 mid-workout) remains the fastest creation path. W-28 is the intentional, deliberate path for athletes who want to add context at creation time or enrich existing exercises.
+- **Not an editor for Forge exercises.** `source: 'FORGE'` exercises are Forge-team-authored. W-28 operates exclusively on `source: 'CUSTOM'` exercises. FORGE exercises never show an Edit action.
+- **Not a discovery surface.** W-28 is reached through an explicit action; it is never browsed to.
+- **Not a media studio.** Media upload (GIF, video, image, muscle target image) is deferred to post-MVP per the decision in Section 7.
+- **Not a restore surface.** Exercise restoration is available only from the `[Deleted Exercise]` tombstone in template and program edit surfaces (EX-001-D7). W-28 has no restore capability.
 
 ### 1.3 Relationship to W-21
 
-W-21 (Exercise Library Hub, My Exercises section) is the entry point to W-24 CREATE mode. When an athlete creates an exercise in W-24, the result appears in their My Exercises list in W-21. W-21 is also the destination after a successful delete action in W-24 EDIT mode.
+W-21 (Exercise Library Hub, My Exercises section) is the entry point to W-28 CREATE mode. When an athlete creates an exercise in W-28, the result appears in their My Exercises list in W-21. W-21 is also the destination after a successful delete action in W-28 EDIT mode.
 
 ### 1.4 Relationship to W-22
 
-W-22 (Exercise Detail) is the entry point to W-24 EDIT mode. The pen icon in W-22's sticky header — visible only for CUSTOM exercises viewed by their author — navigates to W-24 pre-populated with the exercise's current data. After a successful save in W-24 EDIT mode, the athlete returns to W-22 with updated data displayed.
+W-22 (Exercise Detail) is the entry point to W-28 EDIT mode. The pen icon in W-22's sticky header — visible only for CUSTOM exercises viewed by their author — navigates to W-28 pre-populated with the exercise's current data. After a successful save in W-28 EDIT mode, the athlete returns to W-22 with updated data displayed.
 
 ### 1.5 Relationship to W-23
 
-W-23 (Exercise Picker) contains an inline creation sheet for name-only exercise creation. After saving via the inline sheet, an optional "Add Details" CTA within the post-save confirmation opens W-24 in EDIT mode for the newly created exercise. This is the enrichment path for athletes who create an exercise mid-workout and want to add detail afterward.
+W-23 (Exercise Picker) contains an inline creation sheet for name-only exercise creation. After saving via the inline sheet, an optional "Add Details" CTA within the post-save confirmation opens W-28 in EDIT mode for the newly created exercise. This is the enrichment path for athletes who create an exercise mid-workout and want to add detail afterward.
 
 ---
 
@@ -50,23 +50,23 @@ W-23 (Exercise Picker) contains an inline creation sheet for name-only exercise 
 
 ### 2.1 From W-21 My Exercises — [+ New Exercise]
 
-The `[+ New Exercise]` action in the My Exercises section header navigates to W-24 in CREATE mode.
+The `[+ New Exercise]` action in the My Exercises section header navigates to W-28 in CREATE mode.
 
-**Context passed:** None. W-24 opens with a blank form.
+**Context passed:** None. W-28 opens with a blank form.
 
-**Behavior at 500-exercise limit:** The `[+ New Exercise]` action is disabled and shows a static tooltip: "Exercise limit reached (500). Delete unused exercises to create new ones." W-24 is not opened. See Section 8.3.
+**Behavior at 500-exercise limit:** The `[+ New Exercise]` action is disabled and shows a static tooltip: "Exercise limit reached (500). Delete unused exercises to create new ones." W-28 is not opened. See Section 8.3.
 
-**Behavior at 480–499 exercises:** W-24 opens normally. A warning banner is shown at the top of the form: "You're approaching the exercise limit (X/500)."
+**Behavior at 480–499 exercises:** W-28 opens normally. A warning banner is shown at the top of the form: "You're approaching the exercise limit (X/500)."
 
 ### 2.2 From W-22 Exercise Detail — Edit Action (Pen Icon)
 
-The pen icon in W-22's sticky header navigates to W-24 in EDIT mode. This action is visible only when:
+The pen icon in W-22's sticky header navigates to W-28 in EDIT mode. This action is visible only when:
 - `source: 'CUSTOM'`
 - `authorId = viewing athlete`
 
 FORGE exercises never show this action. Other athletes' CUSTOM exercises never show this action.
 
-**Context passed:** `{ exerciseId: uuid }`. W-24 fetches and pre-populates all fields from the ExerciseDefinition record.
+**Context passed:** `{ exerciseId: uuid }`. W-28 fetches and pre-populates all fields from the ExerciseDefinition record.
 
 ### 2.3 From W-23 Inline Creation Sheet — "Add Details" CTA
 
@@ -79,15 +79,15 @@ After an athlete creates a Custom Exercise via the W-23 inline creation sheet (n
 └──────────────────────────────────────────────────────┘
 ```
 
-Tapping "Add Details" navigates to W-24 in EDIT mode for the newly created exercise. The exercise is pre-populated with only its name (all metadata still null). The athlete continues their workout or returns to their prior context after W-24 is dismissed.
+Tapping "Add Details" navigates to W-28 in EDIT mode for the newly created exercise. The exercise is pre-populated with only its name (all metadata still null). The athlete continues their workout or returns to their prior context after W-28 is dismissed.
 
-This CTA is optional. Dismissing the confirmation (via timeout or swipe) proceeds without opening W-24.
+This CTA is optional. Dismissing the confirmation (via timeout or swipe) proceeds without opening W-28.
 
 ### 2.4 Post-Import Enrichment
 
 Import auto-creates Custom Exercises for unmatched exercise names (EX-001-D12). These exercises appear in W-21 My Exercises with name only (all metadata null). The enrichment path is:
 
-`W-21 → tap imported exercise → W-22 (minimal display) → pen icon → W-24 EDIT mode`
+`W-21 → tap imported exercise → W-22 (minimal display) → pen icon → W-28 EDIT mode`
 
 There is no dedicated "enrichment flow" specifically for imported exercises. The standard edit path handles all enrichment.
 
@@ -97,7 +97,7 @@ There is no dedicated "enrichment flow" specifically for imported exercises. The
 
 ### 3.1 Single Screen, Two Modes
 
-W-24 is one screen with two initialization states. The layout, field structure, scroll behavior, validation, and save mechanics are identical. What differs:
+W-28 is one screen with two initialization states. The layout, field structure, scroll behavior, validation, and save mechanics are identical. What differs:
 
 | Element | CREATE mode | EDIT mode |
 |---------|------------|-----------|
@@ -131,7 +131,7 @@ In EDIT mode: the keyboard does not appear automatically. The athlete taps a fie
 
 ### 4.1 Screen Layout
 
-W-24 is a scrollable form. The navigation bar is fixed (does not scroll). The Delete action (EDIT mode only) is anchored at the bottom of the scrollable content, below all fields and above the safe area.
+W-28 is a scrollable form. The navigation bar is fixed (does not scroll). The Delete action (EDIT mode only) is anchored at the bottom of the scrollable content, below all fields and above the safe area.
 
 ```
 ┌───────────────────────────────────────────────────────┐
@@ -220,7 +220,7 @@ The form uses two visual section dividers:
 
 Per EX-001-D3: `name` is the only required field for a Custom Exercise. All other fields are optional.
 
-W-24 enforces this by disabling the Save button until the name field contains at least one non-whitespace character. The form does NOT require any other field before saving. An athlete may enter a name and immediately save — W-24 is "fast enough to create in seconds."
+W-28 enforces this by disabling the Save button until the name field contains at least one non-whitespace character. The form does NOT require any other field before saving. An athlete may enter a name and immediately save — W-28 is "fast enough to create in seconds."
 
 ### 5.2 Name Field Specifications
 
@@ -275,7 +275,7 @@ No "required" asterisk or "optional" label is added to individual optional field
 **Options:** 18 values from the EquipmentTag enum.
 **UI:** Tap-to-open selection sheet.
 
-**Row appearance on W-24 main form:**
+**Row appearance on W-28 main form:**
 ```
 Equipment                                 [3 selected  ›]
 ```
@@ -403,7 +403,7 @@ Notes
 - Notes are private to the athlete — appear in W-22's description section for CUSTOM exercises (when non-null)
 - Labeled "Notes" — not "Description," "Instructions," or "About." Communicates personal, not public-facing.
 
-**What Notes is not:** The editorial fields `whyItMatters`, `instructions`, `tips`, and `commonMistakes` are always null/[] for CUSTOM exercises (EX-001 §5.1). W-24 does not present these fields. Notes is the single free-text field available to athletes.
+**What Notes is not:** The editorial fields `whyItMatters`, `instructions`, `tips`, and `commonMistakes` are always null/[] for CUSTOM exercises (EX-001 §5.1). W-28 does not present these fields. Notes is the single free-text field available to athletes.
 
 ---
 
@@ -411,13 +411,13 @@ Notes
 
 ### 7.1 Decision: Media Deferred to Post-MVP
 
-**W24-D7: Media upload (gifUrl, videoUrl, imageUrl) is deferred to post-MVP. W-24 MVP does not include any media capture or upload functionality.**
+**W28-D7: Media upload (gifUrl, videoUrl, imageUrl, muscleTargetImageUrl) is deferred to post-MVP. W-28 MVP does not include any media capture or upload functionality.**
 
 **Rationale:**
 
 The media fields are reserved in the schema and confirmed accessible via Exercise-001 §5.1. The schema is ready. The UI is not.
 
-Media upload requires camera/photo library permissions, platform-specific file handling, an upload pipeline, and preview/crop UX — significant implementation scope. An athlete creating a custom exercise — especially mid-workout — wants to record a name and possibly some notes. Media enrichment is a refinement, not a creation-time need. Deferring media keeps W-24 focused on the naming and organization tasks that deliver immediate value.
+Media upload requires camera/photo library permissions, platform-specific file handling, an upload pipeline, and preview/crop UX — significant implementation scope. An athlete creating a custom exercise — especially mid-workout — wants to record a name and possibly some notes. Media enrichment is a refinement, not a creation-time need. Deferring media keeps W-28 focused on the naming and organization tasks that deliver immediate value.
 
 ### 7.2 Post-MVP Media Addition
 
@@ -425,11 +425,12 @@ When media is added in a future version:
 - A "Photo" or "Media" section is added below Notes
 - Single image (imageUrl) ships first — simpler capture
 - Video/GIF (videoUrl, gifUrl) follow in a subsequent iteration
+- muscleTargetImageUrl is a FORGE-editorial-style asset (bespoke anatomical diagram); for CUSTOM exercises it remains a low-priority optional enrichment field, addressed in the same future "Photo/Media" section alongside imageUrl rather than as a separate W-28 flow
 - No schema changes required
 
 ### 7.3 MVP Media Preservation Rule
 
-If an exercise record already has media (populated post-MVP and then viewed in MVP), W-24 EDIT mode does not display or allow editing of that media. The save action passes only the fields W-24 controls — media fields are excluded from the PATCH payload. Existing media is preserved on the record.
+If an exercise record already has media (populated post-MVP and then viewed in MVP), W-28 EDIT mode does not display or allow editing of that media. The save action passes only the fields W-28 controls — media fields are excluded from the PATCH payload. Existing media is preserved on the record.
 
 ---
 
@@ -470,8 +471,8 @@ Per EX-001-D4: name uniqueness within the athlete's own CUSTOM library is a **so
 | State | Behavior |
 |-------|----------|
 | Under 480 exercises | No message shown |
-| 480–499 exercises | Warning banner at top of W-24 CREATE mode form only |
-| 500 exercises | CREATE mode blocked at entry point; [+ New Exercise] shows tooltip; W-24 not opened. EDIT mode unaffected. |
+| 480–499 exercises | Warning banner at top of W-28 CREATE mode form only |
+| 500 exercises | CREATE mode blocked at entry point; [+ New Exercise] shows tooltip; W-28 not opened. EDIT mode unaffected. |
 
 ### 8.4 Field-Level Validation
 
@@ -494,7 +495,7 @@ All metadata fields have no validation failures. The only constraints are:
 
 ### 9.1 No Draft Persistence
 
-W-24 does not auto-save or maintain a draft. If the athlete backgrounds the app before saving, changes are lost. Unsaved changes are protected only by the discard confirmation prompt.
+W-28 does not auto-save or maintain a draft. If the athlete backgrounds the app before saving, changes are lost. Unsaved changes are protected only by the discard confirmation prompt.
 
 **Rationale:** Custom Exercises are simple records. Draft persistence adds complexity without proportional benefit — unlike workout sessions or program structures where partial state has inherent value, an unsaved exercise name is trivially re-entered.
 
@@ -538,12 +539,12 @@ PATCH /exercises/:exerciseId
 }
 ```
 
-**Fields never sent by W-24:**
+**Fields never sent by W-28:**
 - `source` — immutable (EX-001-D1)
 - `authorId` — immutable (EX-001-D1)
-- `movementPattern` — not athlete-editable in W-24 (W24-D9)
+- `movementPattern` — not athlete-editable in W-28 (W28-D9)
 - `difficulty` — always null for CUSTOM (EX-001 §5.1)
-- `gifUrl`, `videoUrl`, `imageUrl` — deferred to post-MVP (W24-D7)
+- `gifUrl`, `videoUrl`, `imageUrl`, `muscleTargetImageUrl` — deferred to post-MVP (W28-D7)
 - `isActive` — controlled only by delete/restore, not the edit form
 
 ### 9.3 Cancel Behavior
@@ -606,7 +607,7 @@ Tapping "Delete Exercise" opens a confirmation sheet (per M-6 Destructive Action
 
 1. `PATCH /exercises/:exerciseId { isActive: false }` (soft-delete per EX-001-D7)
 2. On success: Navigate to W-21. Deleted exercise is absent from My Exercises (active-only scope). No success toast — absence is the feedback.
-3. On failure: Toast "Couldn't delete. Try again." Return to W-24 EDIT mode.
+3. On failure: Toast "Couldn't delete. Try again." Return to W-28 EDIT mode.
 
 ### 10.4 Cascade Behavior After Deletion
 
@@ -621,16 +622,16 @@ Per EX-001 §7.2:
 
 ## Section 11 — Restore Workflow
 
-### 11.1 W-24 Does Not Surface Restore
+### 11.1 W-28 Does Not Surface Restore
 
-Per EX-001-D7: Restore is initiated from the `[Deleted Exercise]` tombstone — wherever it appears (W-27 Template Detail, program edit surfaces). There is no restore surface in W-24, W-21, or W-22.
+Per EX-001-D7: Restore is initiated from the `[Deleted Exercise]` tombstone — wherever it appears (W-27 Template Detail, program edit surfaces). There is no restore surface in W-28, W-21, or W-22.
 
-W-24 is a creation and editing surface, not a lifecycle manager. Restore at the tombstone is the correct UX because the athlete encounters the problem and the solution in the same place.
+W-28 is a creation and editing surface, not a lifecycle manager. Restore at the tombstone is the correct UX because the athlete encounters the problem and the solution in the same place.
 
-### 11.2 Restore Is Not Reachable From W-24
+### 11.2 Restore Is Not Reachable From W-28
 
-- W-24 CREATE mode: Exercise being created is not yet deleted; no restore surface exists.
-- W-24 EDIT mode: The Edit action in W-22 is shown only for `isActive: true` exercises. A deleted exercise does not surface an Edit action; therefore W-24 EDIT mode is never reached for a deleted exercise.
+- W-28 CREATE mode: Exercise being created is not yet deleted; no restore surface exists.
+- W-28 EDIT mode: The Edit action in W-22 is shown only for `isActive: true` exercises. A deleted exercise does not surface an Edit action; therefore W-28 EDIT mode is never reached for a deleted exercise.
 
 ### 11.3 How an Athlete Restores a Deleted Exercise
 
@@ -650,7 +651,7 @@ This is an intentional tradeoff, not an oversight:
 - The practical loss is **metadata re-entry only**, not history loss. `ExerciseLog.exerciseName` is snapshotted at write time and is permanent. The athlete's completed workout history shows the exercise name correctly, regardless of deletion.
 - If the athlete regrets the deletion: they can recreate the exercise with the same name in seconds (name-only is the creation floor). Any category, equipment, muscle, or notes metadata must be re-entered — this is the actual cost.
 
-W-24 does not attempt to solve this gap. Doing so would require a "Deleted Exercises" recovery surface that Exercise-001 explicitly rejected. The tradeoff is documented here so the decision is clear to all implementers and reviewers. See W24-D11 for the architecture decision record.
+W-28 does not attempt to solve this gap. Doing so would require a "Deleted Exercises" recovery surface that Exercise-001 explicitly rejected. The tradeoff is documented here so the decision is clear to all implementers and reviewers. See W28-D11 for the architecture decision record.
 
 ---
 
@@ -677,7 +678,7 @@ After a successful save in CREATE mode, the newly created exercise row in W-21 M
 
 ### 12.3 Stack Behavior
 
-W-24 is a full-screen push on the navigation stack — not a modal or bottom sheet. This ensures system back gestures (iOS swipe-from-edge, Android back button) work naturally and deep stacks (W-21 → W-22 → W-24) have a clear hierarchical return path.
+W-28 is a full-screen push on the navigation stack — not a modal or bottom sheet. This ensures system back gestures (iOS swipe-from-edge, Android back button) work naturally and deep stacks (W-21 → W-22 → W-28) have a clear hierarchical return path.
 
 ---
 
@@ -693,22 +694,22 @@ Placeholder text: "Form cues, setup notes, coaching reminders..." Disappears whe
 
 ### 13.3 No Media Section (MVP)
 
-Media upload is deferred. W-24 has no media section and therefore no media empty state in MVP.
+Media upload is deferred. W-28 has no media section and therefore no media empty state in MVP.
 
 ### 13.4 EDIT Mode — Imported or Inline-Created Exercises
 
-Exercises created via import or W-23 inline creation have name-only data. Opening W-24 EDIT mode shows the name pre-populated and all other fields empty/unselected. No special "enrichment opportunity" message — the optional fields are already visible.
+Exercises created via import or W-23 inline creation have name-only data. Opening W-28 EDIT mode shows the name pre-populated and all other fields empty/unselected. No special "enrichment opportunity" message — the optional fields are already visible.
 
 ---
 
 ## Section 14 — Non-Behaviors
 
-W-24 does not and will not:
+W-28 does not and will not:
 
 | Non-Behavior | Reason |
 |-------------|--------|
 | Edit FORGE exercises | EL-D1: source immutable; FORGE authorship is Forge-team only. Pen icon in W-22 is never shown for FORGE exercises. |
-| Expose movementPattern for athlete selection | EL-D3 and W22-D5: MovementPattern is internal taxonomy; never displayed to athletes in W-24 or any current surface. The UI restriction is scoped to W-24 only. Post-MVP systems (coach tooling, AI enrichment, exercise intelligence services) may write movementPattern to Custom Exercise records; that is not restricted here. (W24-D9.) |
+| Expose movementPattern for athlete selection | EL-D3 and W22-D5: MovementPattern is internal taxonomy; never displayed to athletes in W-28 or any current surface. The UI restriction is scoped to W-28 only. Post-MVP systems (coach tooling, AI enrichment, exercise intelligence services) may write movementPattern to Custom Exercise records; that is not restricted here. (W28-D9.) |
 | Expose difficulty for athlete assignment | EX-001 §5.1: difficulty is always null for CUSTOM. Difficulty is editorial metadata. |
 | Surface whyItMatters, instructions, tips, or commonMistakes fields | FORGE editorial fields; always null/[] for CUSTOM. Notes (description) is the single free-text field available to athletes. |
 | Expose alternativeExerciseIds, progressionExerciseIds, regressionExerciseIds | FORGE-editorial relationships; CUSTOM exercises always have empty arrays. |
@@ -716,14 +717,14 @@ W-24 does not and will not:
 | Public sharing or visibility controls | Custom Exercises are private to their author in MVP. No sharing, no visibility toggle. (EX-001-D2.) |
 | Publish to FORGE catalog | FORGE promotion is a deliberate Forge-team action. An athlete cannot publish their exercise to the shared library. |
 | Hard delete | Soft-delete only (isActive: false). No permanent deletion. (EX-001-D7.) |
-| Restore a deleted exercise from W-24 | Restore is tombstone-only (EX-001-D7). W-24 has no restore capability. If an athlete deleted an exercise with no remaining template or program references, the tombstone never appears and no restore path exists. The workaround is exercise recreation. See W24-D11 and Section 11.4 for full tradeoff analysis. |
+| Restore a deleted exercise from W-28 | Restore is tombstone-only (EX-001-D7). W-28 has no restore capability. If an athlete deleted an exercise with no remaining template or program references, the tombstone never appears and no restore path exists. The workaround is exercise recreation. See W28-D11 and Section 11.4 for full tradeoff analysis. |
 | "Deleted Exercises" or "Recently Deleted" surface | EX-001 §17 non-behavior. A trash section adds surface area without improving recovery UX; restore belongs at the tombstone. |
-| Batch edit or bulk delete | W-24 operates on a single exercise at a time. |
+| Batch edit or bulk delete | W-28 operates on a single exercise at a time. |
 | Draft persistence or auto-save | Form is in-memory only. Changes are protected by the discard confirmation prompt. |
 | Rate or review an exercise | Social proof mechanics conflict with the personal nature of the exercise library. |
 | Display exercise usage count | Not MVP. No "Used in 3 workouts" data shown. |
-| Show workout history for the exercise | History belongs in W-18/W-19; W-24 is the editing surface. |
-| Media upload or capture | Deferred to post-MVP (W24-D7). |
+| Show workout history for the exercise | History belongs in W-18/W-19; W-28 is the editing surface. |
+| Media upload or capture | Deferred to post-MVP (W28-D7). |
 
 ---
 
@@ -731,25 +732,25 @@ W-24 does not and will not:
 
 | Decision | Rule |
 |----------|------|
-| **W24-D1 — Single screen, two modes** | CREATE and EDIT are the same screen with two initialization states. A split implementation would duplicate field definitions, validation logic, and save mechanics. The only meaningful differences are initialization state, nav title, and delete affordance — all manageable with a single mode flag. |
-| **W24-D2 — Approach B: Name-first, all-optional single form** | W-24 uses a single scrollable form with name required and all other fields optional and immediately visible. A wizard (progressive step-by-step) was evaluated and rejected: it forces athletes through unnecessary screens even when they want to save name-only. A collapsed "Add Details" accordion was evaluated and rejected: it hides available fields behind an expand action, creating a false impression that enrichment is obscured. The single open form communicates: "here is everything you can add; add only what you want." The floor is name-only; the ceiling is all metadata. This aligns with EX-001-D3 and Product DNA's low-friction principle. |
-| **W24-D3 — Full-screen push, not a sheet** | W-24 is a full-screen push on the navigation stack, not a bottom sheet or modal. The form may be long when all optional fields are expanded; a sheet creates awkward scrolling behavior. Full-screen navigation is consistent with other edit experiences in the app (W-22, W-5). The inline creation sheet (W-23) remains separate — it is specifically designed for mid-workout name-only creation where a full-screen context switch is undesirable. |
-| **W24-D4 — No draft persistence** | Custom Exercises are simple records. The creation effort is trivially re-doable if state is lost. Draft persistence adds complexity without meaningful benefit for this use case. Unsaved changes are protected by the discard confirmation prompt. |
-| **W24-D5 — Soft delete from W-24, not hard delete** | Consistent with EX-001-D7. W-24 surfaces the delete action because it is the natural editing home for a Custom Exercise. The delete action initiates a soft-delete (isActive: false). Hard delete is not available anywhere in the system. |
-| **W24-D6 — Static delete confirmation copy** | The confirmation dialog uses static copy describing the general consequence without a pre-check API call to determine if the exercise is currently referenced. A pre-check adds a round-trip for what feels like a simple action. The static copy is accurate for all cases: if no references exist, the note is harmless; if references exist, the note is informative. |
-| **W24-D7 — Media deferred to post-MVP** | GIF, video, and image upload capabilities are not included in MVP W-24. The schema is ready. The upload pipeline and media UX are not MVP scope. Media is a "someday enrichment" — valuable, not blocking. When added, a "Photo" field appears below Notes; imageUrl ships first. |
-| **W24-D8 — Equipment and Muscles use selection sheets** | Equipment (18 options) and Muscles (14 options each) exceed the count where inline chip grids remain scannable on a form. A selection sheet allows the full option list to breathe with grouping headers. Category (6 options) and Environment (3 options) use inline chips because their option counts are small. |
-| **W24-D9 — movementPattern is never athlete-editable in W-24** | Per EL-D3 and W22-D5: MovementPattern is internal taxonomy, never displayed to athletes in any current surface. W-24 does not expose movementPattern for athlete selection — the restriction is scoped to W-24, not to the system. Assignment of movementPattern on Custom Exercises by internal tooling, coach systems, AI-assisted enrichment, or future exercise intelligence services is explicitly preserved as a post-MVP concern. Nothing in this spec prevents those systems from writing movementPattern to a CUSTOM ExerciseDefinition record. The field schema already supports it (EX-001 §5.1: `movementPattern: Optional`). |
-| **W24-D10 — Notes labeled "Notes," not "Description"** | "Description" carries connotations of public-facing editorial copy (as it is for FORGE exercises). For Custom Exercises, this field is personal coaching notes. The label "Notes" accurately communicates the informal, personal nature of the field. |
-| **W24-D11 — Restore not surfaced in W-24; tombstone-only gap acknowledged** | EX-001-D7 establishes that restore is tombstone-initiated. Surfacing restore in W-24 would require a "Deleted Exercises" section or a separate recovery flow — both non-behaviors per EX-001 §17. The tombstone model is superior for the primary use case: the athlete encounters the problem and the solution in the same place. There is a known gap: an athlete who deletes a Custom Exercise with no remaining template or program references has no tombstone to trigger restore from. This is an accepted tradeoff — the practical loss is metadata re-entry only, not history loss; the workaround is to recreate the exercise; and adding a recovery surface would contradict a locked Exercise-001 decision. See Section 11.4 for full analysis. |
-| **W24-D12 — EDIT mode unreachable for deleted exercises** | The Edit action (pen icon) in W-22 is shown only for exercises where `isActive: true`. A deleted exercise does not surface the edit action; therefore W-24 EDIT mode will never receive a deleted exercise as input. No defensive handling of this edge case is required. |
+| **W28-D1 — Single screen, two modes** | CREATE and EDIT are the same screen with two initialization states. A split implementation would duplicate field definitions, validation logic, and save mechanics. The only meaningful differences are initialization state, nav title, and delete affordance — all manageable with a single mode flag. |
+| **W28-D2 — Approach B: Name-first, all-optional single form** | W-28 uses a single scrollable form with name required and all other fields optional and immediately visible. A wizard (progressive step-by-step) was evaluated and rejected: it forces athletes through unnecessary screens even when they want to save name-only. A collapsed "Add Details" accordion was evaluated and rejected: it hides available fields behind an expand action, creating a false impression that enrichment is obscured. The single open form communicates: "here is everything you can add; add only what you want." The floor is name-only; the ceiling is all metadata. This aligns with EX-001-D3 and Product DNA's low-friction principle. |
+| **W28-D3 — Full-screen push, not a sheet** | W-28 is a full-screen push on the navigation stack, not a bottom sheet or modal. The form may be long when all optional fields are expanded; a sheet creates awkward scrolling behavior. Full-screen navigation is consistent with other edit experiences in the app (W-22, W-5). The inline creation sheet (W-23) remains separate — it is specifically designed for mid-workout name-only creation where a full-screen context switch is undesirable. |
+| **W28-D4 — No draft persistence** | Custom Exercises are simple records. The creation effort is trivially re-doable if state is lost. Draft persistence adds complexity without meaningful benefit for this use case. Unsaved changes are protected by the discard confirmation prompt. |
+| **W28-D5 — Soft delete from W-28, not hard delete** | Consistent with EX-001-D7. W-28 surfaces the delete action because it is the natural editing home for a Custom Exercise. The delete action initiates a soft-delete (isActive: false). Hard delete is not available anywhere in the system. |
+| **W28-D6 — Static delete confirmation copy** | The confirmation dialog uses static copy describing the general consequence without a pre-check API call to determine if the exercise is currently referenced. A pre-check adds a round-trip for what feels like a simple action. The static copy is accurate for all cases: if no references exist, the note is harmless; if references exist, the note is informative. |
+| **W28-D7 — Media deferred to post-MVP** | GIF, video, image, and muscle target image upload capabilities are not included in MVP W-28. The schema is ready. The upload pipeline and media UX are not MVP scope. Media is a "someday enrichment" — valuable, not blocking. When added, a "Photo" field appears below Notes; imageUrl ships first. |
+| **W28-D8 — Equipment and Muscles use selection sheets** | Equipment (18 options) and Muscles (14 options each) exceed the count where inline chip grids remain scannable on a form. A selection sheet allows the full option list to breathe with grouping headers. Category (6 options) and Environment (3 options) use inline chips because their option counts are small. |
+| **W28-D9 — movementPattern is never athlete-editable in W-28** | Per EL-D3 and W22-D5: MovementPattern is internal taxonomy, never displayed to athletes in any current surface. W-28 does not expose movementPattern for athlete selection — the restriction is scoped to W-28, not to the system. Assignment of movementPattern on Custom Exercises by internal tooling, coach systems, AI-assisted enrichment, or future exercise intelligence services is explicitly preserved as a post-MVP concern. Nothing in this spec prevents those systems from writing movementPattern to a CUSTOM ExerciseDefinition record. The field schema already supports it (EX-001 §5.1: `movementPattern: Optional`). |
+| **W28-D10 — Notes labeled "Notes," not "Description"** | "Description" carries connotations of public-facing editorial copy (as it is for FORGE exercises). For Custom Exercises, this field is personal coaching notes. The label "Notes" accurately communicates the informal, personal nature of the field. |
+| **W28-D11 — Restore not surfaced in W-28; tombstone-only gap acknowledged** | EX-001-D7 establishes that restore is tombstone-initiated. Surfacing restore in W-28 would require a "Deleted Exercises" section or a separate recovery flow — both non-behaviors per EX-001 §17. The tombstone model is superior for the primary use case: the athlete encounters the problem and the solution in the same place. There is a known gap: an athlete who deletes a Custom Exercise with no remaining template or program references has no tombstone to trigger restore from. This is an accepted tradeoff — the practical loss is metadata re-entry only, not history loss; the workaround is to recreate the exercise; and adding a recovery surface would contradict a locked Exercise-001 decision. See Section 11.4 for full analysis. |
+| **W28-D12 — EDIT mode unreachable for deleted exercises** | The Edit action (pen icon) in W-22 is shown only for exercises where `isActive: true`. A deleted exercise does not surface the edit action; therefore W-28 EDIT mode will never receive a deleted exercise as input. No defensive handling of this edge case is required. |
 
 ---
 
 ## Section 16 — Validation Checklist
 
 ### Screen Architecture
-- [ ] W-24 is a full-screen push on the navigation stack (not a sheet or modal)
+- [ ] W-28 is a full-screen push on the navigation stack (not a sheet or modal)
 - [ ] Two modes: CREATE (no exerciseId context) and EDIT (exerciseId context)
 - [ ] CREATE mode: form opens with empty state, name field auto-focused, keyboard visible
 - [ ] EDIT mode: form opens with all fields pre-populated from ExerciseDefinition fetch; keyboard not auto-shown
@@ -772,7 +773,7 @@ W-24 does not and will not:
 ### Validation Behaviors
 - [ ] Duplicate name warning (soft warning only, not a block): triggered on blur when trimmed name matches any isActive CUSTOM exercise by same athlete (case-insensitive); EDIT mode excludes current exercise from check
 - [ ] 480–499 exercises: warning banner at top of form in CREATE mode
-- [ ] 500 exercises: CREATE mode blocked at entry ([+ New Exercise] shows tooltip; W-24 not opened); EDIT mode unaffected
+- [ ] 500 exercises: CREATE mode blocked at entry ([+ New Exercise] shows tooltip; W-28 not opened); EDIT mode unaffected
 - [ ] Notes: 300-char max; counter turns warning at 280; input blocked at 300
 
 ### Section Dividers
@@ -814,8 +815,8 @@ W-24 does not and will not:
 - [ ] Labeled "Notes" (not "Description")
 
 ### Media
-- [ ] No media UI in MVP (W24-D7)
-- [ ] EDIT mode save does NOT overwrite existing media fields (gifUrl, videoUrl, imageUrl)
+- [ ] No media UI in MVP (W28-D7)
+- [ ] EDIT mode save does NOT overwrite existing media fields (gifUrl, videoUrl, imageUrl, muscleTargetImageUrl)
 
 ### Save Behavior
 - [ ] Name trimmed before persistence
@@ -832,8 +833,8 @@ W-24 does not and will not:
 - [ ] "Delete Exercise" row visible only in EDIT mode; absent in CREATE mode
 - [ ] Confirmation sheet follows M-6 pattern: exercise name in title, three-line static consequence copy
 - [ ] "Delete": PATCH /exercises/:exerciseId { isActive: false }; navigate to W-21 on success
-- [ ] "Cancel": closes sheet; returns to W-24 EDIT mode
-- [ ] On delete API failure: toast "Couldn't delete. Try again."; return to W-24
+- [ ] "Cancel": closes sheet; returns to W-28 EDIT mode
+- [ ] On delete API failure: toast "Couldn't delete. Try again."; return to W-28
 
 ### Post-Delete Cascade (verified by spec, not UI)
 - [ ] ExerciseLog records: unaffected (snapshotted name permanent)
@@ -843,27 +844,27 @@ W-24 does not and will not:
 - [ ] W-21 My Exercises: exercise excluded (active-only scope)
 
 ### Restore
-- [ ] W-24 has NO restore affordance (W24-D11)
-- [ ] W-24 EDIT mode is unreachable for isActive: false exercises
+- [ ] W-28 has NO restore affordance (W28-D11)
+- [ ] W-28 EDIT mode is unreachable for isActive: false exercises
 - [ ] Restore remains tombstone-initiated only (EX-001-D7)
 - [ ] Acknowledged gap: exercises deleted with no template/program references have no restore path (Section 11.4); this is an accepted tradeoff, not an implementation error
 - [ ] No "Deleted Exercises" section added to W-21 or any other surface (EX-001 §17 non-behavior)
 
 ### Entry Paths
-- [ ] W-21 [+ New Exercise] → W-24 CREATE mode
-- [ ] W-21 [+ New Exercise] disabled at 500-exercise limit (tooltip shown; W-24 not opened)
-- [ ] W-22 pen icon (CUSTOM, authorId = viewer, isActive: true) → W-24 EDIT mode
+- [ ] W-21 [+ New Exercise] → W-28 CREATE mode
+- [ ] W-21 [+ New Exercise] disabled at 500-exercise limit (tooltip shown; W-28 not opened)
+- [ ] W-22 pen icon (CUSTOM, authorId = viewer, isActive: true) → W-28 EDIT mode
 - [ ] W-22 pen icon absent for FORGE exercises
-- [ ] W-23 inline creation post-save "Add Details" CTA → W-24 EDIT mode for new exercise
-- [ ] Post-import enrichment path: W-21 → W-22 → pen icon → W-24 EDIT mode
+- [ ] W-23 inline creation post-save "Add Details" CTA → W-28 EDIT mode for new exercise
+- [ ] Post-import enrichment path: W-21 → W-22 → pen icon → W-28 EDIT mode
 
 ### Non-Behaviors Confirmed
-- [ ] movementPattern not athlete-editable in W-24 (restriction scoped to W-24 only; future system enrichment via coach/AI/tooling not restricted — W24-D9)
-- [ ] difficulty not exposed in W-24 UI
-- [ ] FORGE exercises inaccessible in W-24
+- [ ] movementPattern not athlete-editable in W-28 (restriction scoped to W-28 only; future system enrichment via coach/AI/tooling not restricted — W28-D9)
+- [ ] difficulty not exposed in W-28 UI
+- [ ] FORGE exercises inaccessible in W-28
 - [ ] No media upload UI in MVP
 - [ ] No public sharing or visibility controls
-- [ ] No restore affordance in W-24
+- [ ] No restore affordance in W-28
 - [ ] No draft persistence
 - [ ] No batch edit or bulk delete
 
@@ -873,12 +874,12 @@ W-24 does not and will not:
 
 | Document | Impact |
 |----------|--------|
-| `Exercise-001-Custom-Exercise-Architecture.md` | W-24 is now specified. The "future" reference in §4.4 and §20 is resolved. No edits to Exercise-001 required — W-24 honors all locked decisions. |
-| `Exercise-Library-Architecture-v1.0.md` | Screen numbering collision noted (see top of document). Confirm whether Program Slot Builder retains W-24 designation or is renumbered. No behavioral changes to Exercise Library Architecture. |
-| `Exercise-Library-Hub-Wireframe-Spec-W21.md` | When W-21 is written: [+ New Exercise] entry point in My Exercises section navigates to W-24 CREATE mode. |
-| `Exercise-Detail-Wireframe-Spec-W22.md` | No edits required. The pen icon edit action already points to "edit flow" — W-24 is now that destination. |
-| `Exercise-Picker-Wireframe-Spec-W23.md` | Minor addition: post-inline-creation confirmation state should include optional "Add Details" CTA that opens W-24 EDIT mode for the newly created exercise. |
-| `M-6-Destructive-Action-Confirmation-Spec.md` | W-24's delete confirmation implements the M-6 pattern. No edits to M-6 required. |
+| `Exercise-001-Custom-Exercise-Architecture.md` | W-28 is now specified. The "future" reference in §4.4 and §20 is resolved. No edits to Exercise-001 required — W-28 honors all locked decisions. |
+| `Exercise-Library-Architecture-v1.0.md` | No edits required. Program Slot Builder retains its W-24 designation, confirmed authoritative and unchanged by the Repository Correction Pass (see v1.0 R2 below). No behavioral changes to Exercise Library Architecture. |
+| `Exercise-Library-Hub-Wireframe-Spec-W21.md` | When W-21 is written: [+ New Exercise] entry point in My Exercises section navigates to W-28 CREATE mode. |
+| `Exercise-Detail-Wireframe-Spec-W22.md` | No edits required. The pen icon edit action already points to "edit flow" — W-28 is now that destination. |
+| `Exercise-Picker-Wireframe-Spec-W23.md` | Minor addition: post-inline-creation confirmation state should include optional "Add Details" CTA that opens W-28 EDIT mode for the newly created exercise. |
+| `M-6-Destructive-Action-Confirmation-Spec.md` | W-28's delete confirmation implements the M-6 pattern. No edits to M-6 required. |
 
 ---
 
@@ -893,7 +894,7 @@ Future evaluation may include:
 - Duplicate name cleanup tools
 - Merge workflows for athletes with large imported exercise libraries
 
-**MVP impact:** None. No architecture changes required now. No behavior in W-24 changes. This is a future operational enhancement intended for athletes who accumulate large custom exercise libraries via repeated imports. It is recorded here so future W-21 and exercise management workstreams have awareness of the planned enhancement.
+**MVP impact:** None. No architecture changes required now. No behavior in W-28 changes. This is a future operational enhancement intended for athletes who accumulate large custom exercise libraries via repeated imports. It is recorded here so future W-21 and exercise management workstreams have awareness of the planned enhancement.
 
 ---
 
@@ -901,12 +902,15 @@ Future evaluation may include:
 
 | Version | Date | Change |
 |---------|------|--------|
-| v1.0 | June 2026 | Initial specification. Defines W-24 as the full-screen Create / Edit Custom Exercise experience. Two modes (CREATE/EDIT) on a single screen. Approach B (name-first, all-optional single form) selected. Full-screen push navigation. 12 architecture decisions (W24-D1 through W24-D12). Media deferred to post-MVP (W24-D7). Delete workflow aligned to M-6 and EX-001-D7. Restore explicitly absent from W-24. All Exercise-001 rules honored. Screen numbering conflict with Program Slot Builder noted for resolution. |
-| v1.0 R1 | June 2026 | Refinement pass R1 applied. R1-1 (Restore Accessibility): tombstone-only restore confirmed; restore gap for free-workout-only exercises explicitly acknowledged and documented as an intentional tradeoff (Section 11.4, W24-D11 updated). No new recovery surface added — EX-001 §17 non-behavior preserved. R1-2 (Movement Pattern Future Compatibility): W24-D9 reworded to scope the restriction to W-24 only; future movementPattern enrichment by coach systems, AI, or internal tooling explicitly preserved. Non-behaviors and validation checklist updated for both items. EX-R2 future backlog recorded. Screen numbering conflict resolved: W-24 confirmed as Create / Edit Custom Exercise; Program Slot Builder renumbered to W-28. |
+| v1.0 | June 2026 | Initial specification. Defines W-28 as the full-screen Create / Edit Custom Exercise experience. Two modes (CREATE/EDIT) on a single screen. Approach B (name-first, all-optional single form) selected. Full-screen push navigation. 12 architecture decisions (W28-D1 through W28-D12). Media deferred to post-MVP (W28-D7). Delete workflow aligned to M-6 and EX-001-D7. Restore explicitly absent from W-28. All Exercise-001 rules honored. Screen numbering conflict with Program Slot Builder noted for resolution. |
+| v1.0 R1 | June 2026 | Refinement pass R1 applied. R1-1 (Restore Accessibility): tombstone-only restore confirmed; restore gap for free-workout-only exercises explicitly acknowledged and documented as an intentional tradeoff (Section 11.4, W28-D11 updated). No new recovery surface added — EX-001 §17 non-behavior preserved. R1-2 (Movement Pattern Future Compatibility): W28-D9 reworded to scope the restriction to this document's screen only; future movementPattern enrichment by coach systems, AI, or internal tooling explicitly preserved. Non-behaviors and validation checklist updated for both items. EX-R2 future backlog recorded. Screen numbering conflict: this entry originally asserted that this document would keep "W-24" and that Program Slot Builder would be renumbered to "W-28." That renumbering was never executed against any other document — see v1.0 R2. |
+| v1.0 R2 | June 2026 | **Repository Correction Pass.** Verified directly: the R1 renumbering claim above was never actioned anywhere else in the repository. `Workout-Builder-Wireframe-Spec-W24.md` and every other ecosystem document (W-21, W-22, W-23, W-3, W3-Amendment-001, W9-Amendment-001, Program-Authoring-Standard-v1.0, Workout-Template-Detail-Spec-W27, Free-Workout-Builder-Spec-W25, ExercisePrescription-Amendment-001, Exercise-002, Global-Architecture-Status-Audit) used "W-24" exclusively for the Program Slot Builder, with no corroborating reference to "W-28" anywhere. Program Slot Builder's W-24 designation is confirmed ecosystem-wide and authoritative. **This document is corrected to W-28** instead — reusing the number this document itself had already proposed for the other screen, so no new screen number is introduced. Filename changed from `W-24-Create-Edit-Custom-Exercise.md` to `W-28-Create-Edit-Custom-Exercise.md`. All in-body self-references and decision IDs (W24-D1 through W24-D12 → W28-D1 through W28-D12) updated accordingly. `Exercise-001-Custom-Exercise-Architecture.md` and `Exercise-Library-Wireframe-Spec-W21.md` updated to reference W-28 in the specific locations that pointed to this screen. `Workout-Builder-Wireframe-Spec-W24.md` was not touched. No behavior, ownership boundary, or architecture decision changed by this pass — numbering only. |
+| v1.0 (Documentation Reconciliation) | June 2026 | Wording correction only, no behavioral change: § 1.1 described W-28 as "the rich counterpart to the lightweight inline creation sheet used in W-23 **and W-21**." W-21 has no inline creation sheet of its own — its `[+ New Exercise]` entry point navigates directly to this full-screen W-28 CREATE mode (§ 2, § 9 Navigation Table). Only W-23 has the lightweight inline sheet. § 1.1 corrected accordingly. |
+| v1.0 (Media Field Reconciliation) | June 2026 | Schema reconciliation only, no behavioral change: all references to the deferred media field set (gifUrl, videoUrl, imageUrl) updated to include the new muscleTargetImageUrl field (§ 1.2, W28-D7 decision text, § 7.2, § 9 excluded-fields list, § 15 decision table, § 8/19 validation checklist). W-28 MVP behavior is unchanged — no media capture UI of any kind, for any of the 4 media fields, ships at MVP. Companion to `Exercise-Media-Architecture-v1.0.md`. |
 
 ---
 
-*Forge Legacy — W-24: Create / Edit Custom Exercise — v1.0*
+*Forge Legacy — W-28: Create / Edit Custom Exercise — v1.0*
 *June 2026*
 *Implements Exercise-001-Custom-Exercise-Architecture.md.*
 *Authority for all Custom Exercise creation and editing UX decisions.*

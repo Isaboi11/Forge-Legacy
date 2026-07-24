@@ -186,7 +186,7 @@ Squads provide accountability through visibility, not shame. The Squad Activity 
 - Hero priority system (highest priority wins): Goal Achieved → Program Graduation → Major Accomplishment → No Active Chapter → Default
 
 ### Workouts
-- Workouts Hub (W-1)
+- Workouts tab opens directly to Program Browse (W-2) — the former Workouts Hub (W-1) dispatch screen is retired, `Docs/Amendments/Workouts-Navigation-Amendment-001-Retire-Workouts-Hub.md` (2026-07-08)
 - Programs: Browse, Detail, Create, Fork/Edit (W-2 through W-5)
 - Templates: List, Detail (W-6, W-7)
 - Activity Logging: 8 types — Strength, Run, Walk, Bike, Swim, Mobility, Yoga, Other (W-8 through W-16)
@@ -271,11 +271,12 @@ Squads provide accountability through visibility, not shame. The Squad Activity 
 
 ```
 App Shell
-├── Bottom Navigation (4 tabs — always visible except during active workout)
+├── Bottom Navigation (5 tabs — always visible except during active workout)
 │   ├── Tab 1: Home
 │   ├── Tab 2: Workouts
 │   ├── Tab 3: Legacy
-│   └── Tab 4: Squads
+│   ├── Tab 4: Squads
+│   └── Tab 5: Communities (promoted from a Home/Squads entry point 2026-07-07)
 └── Top-Right Avatar → Profile Sheet (modal overlay, accessible from any tab)
 ```
 
@@ -287,30 +288,54 @@ App Shell
 
 ## Tab: Workouts
 
+> **Governing-authority pointer — `Docs/Amendments/Workouts-Navigation-Amendment-001-Retire-Workouts-Hub.md` (LOCKED, 2026-07-08).** The Workouts tab root is **W-2 Program Browse** — the former W-1 Workouts Hub dispatch screen is retired. W-1's chapter-context, quick-start, and next-session responsibilities are covered by Home's (H-1) existing Chapter Card / Active Program Card / Workout CTA tiers and by W-2's own Active Program section — no replacement screen was built to imitate W-1's layout. Workout logging launches from Home's Workout CTA (→ W-8 directly) and from a program's next-session action (W-2/W-3 → W-9 through W-16), not from a dedicated Workouts-tab landing screen.
+
 **Purpose:** Performance engine. Logging, programs, templates, history.
 
 **Why it exists:** Workouts are the raw material that feeds the Legacy. This tab is purpose-built for the act of training — fast, focused, distraction-free.
 
 ## Tab: Legacy
 
-**Purpose:** The story. Chapters, timeline, honors, accomplishments, photos.
+**Purpose:** The story. Chapters, timeline, honors, accomplishments, photos, and (added 2026-07-02) the Transformation Gallery.
 
 **Why it exists:** This is the reason the workout tracker exists. The Legacy tab is where every logged workout becomes part of something permanent. It is the most emotionally valuable tab in the app.
 
+**Transformation Gallery (added 2026-07-02):** A permanent, chapter-organized, chronological visual archive of the athlete's physical transformation — photos and videos, before/progress/after, no social or comparison mechanics. Governed by `Transformation-Gallery-Architecture-v1.0.md` and `Transformation-Gallery-Wireframe-Spec-L17-L18.md`; reached from `Legacy-Hub-Wireframe-Spec-L1.md` §8a. See Amendment Log entry 004.
+
 ## Tab: Squads
+
+> **Governing-authority pointer — Social-System-Architecture-v1.0 (LOCKED, June 2026).** This is the high-level master overview. **All social behavior** — Friends, Squads, Challenges, Profiles, Posts, the Friends Feed, audience selection, reactions/comments, friend discovery, and the Privacy Firewall's social application — is governed by **`Social-System-Architecture-v1.0`, the single governing authority for Forge Legacy's social architecture.** Where this overview differs from the locked downstream specs (persistent **Friend** relationship `Friend-Relationship-Architecture-Amendment-001`; WwF outside Squads v1.2; participant-based Challenges CA3 v1.2; intentional **Posts / Friends Feed** SOC-D7/D9), the specs and `Social-System-Architecture-v1.0` control. No social rule here is a governing definition.
 
 **Purpose:** Accountability and connection. Shared workouts, check-ins, squad activity.
 
 **Why it exists:** Athletes don't train alone. Squads give athletes a small, trusted group for accountability. No public feeds. No follower counts. Just the people you actually train with.
 
+## Tab: Communities *(promoted from a Home/Squads entry point — 2026-07-07)*
+
+> **Governing-authority pointer — `Community-System-Architecture-v1.0` (LOCKED, June 2026; COM-D18 revised 2026-07-07).** Communities are Forge Legacy's fourth relationship pillar (Legacy / Friends / Squads / Communities). All Community behavior — types, ownership, membership/monetization, visibility, posting, feed content, roles, moderation, discovery — is governed by `Community-System-Architecture-v1.0` and its three subordinate documents (`Community-Feed-Specification-v1.0`, `Community-Discovery-and-Search-v1.0`, `Community-Roles-and-Moderation-v1.0`); no rule stated here is a governing definition.
+
+**Purpose:** The large-scale, interest-based social layer. Announcements, member posts, discussion — a feed people are expected to check daily, distinct from the small, private, trained-with circle of a Squad.
+
+**Why it exists as a tab (not a Home/Squads entry point):** Communities was originally reached only via a discovery module on Home and a secondary row on Squads (`Docs/Amendments/Community-Architecture-Amendment-001-Navigation-Entry-Points.md`, 2026-07-02), on the assumption it functioned as an occasional directory. That assumption was revised: Communities is meant to be a high-frequency, checked-every-session destination — the same bar that earns Home, Workouts, Legacy, and Squads their tabs — so it was promoted to a full tab (`Docs/Amendments/Community-Architecture-Amendment-002-Fifth-Tab.md`, 2026-07-07). The Home module and Squads row are retired as redundant.
+
 ## Profile (Modal Sheet via Avatar)
 
 **Purpose:** Identity and settings. Who you are, your rank, your subscription, your privacy.
 
-**Why it exists:** Profile is not a destination tab. It is a utility sheet. Accessible from anywhere via the top-right avatar. This keeps all four tabs focused on the athlete's journey rather than their settings.
+**Why it exists:** Profile is not a destination tab. It is a utility sheet. Accessible from anywhere via the top-right avatar. This keeps all five tabs focused on the athlete's journey rather than their settings.
+
+## Calendar (Cross-Cutting Surface — not a tab)
+
+> **Governing-authority pointer — `Calendar-System-Architecture-v1.0` (LOCKED, June 2026).** The Calendar is a **read/write timeline layer, not a domain and not a bottom-navigation tab.** The 5-tab architecture above (updated 2026-07-07 to include Communities) is unrelated to and unchanged by the Calendar. The Calendar **owns no data** — it aggregates dated events from existing systems (workouts, programs, goals, Challenges, honors, PRs) and may schedule **only** workouts, goal-milestone dates, and rest days. It **never duplicates or replaces** Program, Workout, Goal, Challenge, Honor, or Social logic. It is reached from existing entry points — primarily the **Workouts tab header (W-2 Program Browse — the tab root as of `Docs/Amendments/Workouts-Navigation-Amendment-001-Retire-Workouts-Hub.md`, 2026-07-08; the former W-1 Workouts Hub header carried this affordance before retirement)** for the forward-looking schedule and **Legacy (L-1/L-2)** for the long-term by-date history lens — and every event on it navigates into its owning system. Streak/consistency is a **private, backward-looking visualization only** (the DNA §10 formal review is `Calendar-System-Architecture-v1.0` §19); streak-pressure and "days since" shame mechanics remain prohibited. The Calendar emits no progression signal. Hour-by-hour scheduling, meal planning, sleep tracking, habit tracking, daily notes, and Google/Apple Calendar sync are **out of V1.** See `Docs/Calendar-System-Architecture-v1.0.md` for the complete specification. **(v1.1, June 2026)** The Calendar may render the read-only date-envelope of a `COMMUNITY`-context Challenge or a Community Event exactly as it already does for Squad/Friend challenges and goal milestones (CAL-D11-equivalent treatment) — no change to this document's Calendar architecture was required to support Communities.
+
+## Communities — superseded section
+
+**Superseded 2026-07-07.** ~~Communities (Cross-Cutting Entry Point — not a tab)~~ — Communities was reached via a Home discovery module and a secondary Squads entry point on the assumption it was an occasional-use directory. See the new **"## Tab: Communities"** section above — Communities is now the 5th bottom-navigation tab (`Docs/Amendments/Community-Architecture-Amendment-002-Fifth-Tab.md`), and the Home/Squads entry points described in the original text of this section are retired.
 
 ## Navigation Rules
 
+- The Calendar is a surface, not a tab — it opens within the stack that launched it and is dismissible back to it. It never appears during an active workout.
+- **Communities is a bottom-navigation tab** (`Community-System-Architecture-v1.0` COM-D18, revised 2026-07-07; `Docs/Amendments/Community-Architecture-Amendment-002-Fifth-Tab.md`) — the 5-tab architecture above.
 - Tab root screens replace on tap (do not push).
 - Each tab maintains its own independent navigation stack.
 - Profile is a modal sheet — dismissible, does not replace tab context.
@@ -323,6 +348,8 @@ App Shell
 ---
 
 # SECTION 7 — HOME SYSTEM
+
+> **Pointer (2026-07-02):** The authoritative, current Home layout is `Home-Screen-Wireframe-Spec-H1.md` (v1.3), which supersedes this section's narrative description with a locked six-tier Information Hierarchy. Most relevant to this update: Home now carries a permanent **Tier 6 — Explore Communities module**, the primary discovery surface into Communities (`Docs/Amendments/Community-Architecture-Amendment-001-Navigation-Entry-Points.md`). This section is not rewritten to match H-1 tier-for-tier (a pre-existing documentation-generation gap, noted rather than resolved here); this pointer exists so the Communities navigation decision is not missed by a reader of this section alone.
 
 ## Purpose
 
@@ -467,7 +494,7 @@ Program / Chapter Import is an approved MVP feature (Architecture Amendment 001)
 
 **Core principle:** Review and confirmation always required. No program or chapter is created automatically from an import.
 
-**Entry points:** W-1 Workouts Hub ("Import Training" Secondary CTA), W-2 Programs Browse, L-5 Create Chapter.
+**Entry points:** W-2 Programs Browse, L-5 Create Chapter. *(W-1 Workouts Hub's "Import Training" Secondary CTA was a third entry point before W-1's 2026-07-08 retirement — see `Docs/Amendments/Workouts-Navigation-Amendment-001-Retire-Workouts-Hub.md` WNA-D5. Its replacement surface is an explicitly acknowledged open item, not yet decided.)*
 
 **New screens:** W-IM-1 (Import Upload), W-IM-2 (Import Review & Destination), W-IM-3 (Chapter Setup — conditional on Chapter path), W-IM-4 (Import Confirm).
 
@@ -926,7 +953,7 @@ Downgrade never deletes history or previously created content. Athletes retain e
 - 4th custom program creation attempt (W-4)
 - Photo 51 upload attempt (L-15)
 - 2nd squad creation/join attempt (S-1, S-3)
-- 2nd import attempt (W-1, W-2, L-5 import entry points)
+- 2nd import attempt (W-2, L-5 import entry points — W-1's import entry point retired 2026-07-08, replacement not yet decided, see `Docs/Amendments/Workouts-Navigation-Amendment-001-Retire-Workouts-Hub.md` WNA-D5)
 
 ---
 
@@ -939,17 +966,18 @@ Downgrade never deletes history or previously created content. Athletes retain e
 | Area | MVP Screens | Post-MVP Screens |
 |------|------------|-----------------|
 | Onboarding | 11 | — |
-| Home | 1 (5 hero states) | — |
-| Workouts | 24 | 8 |
-| Legacy | 16 | — |
-| Squads | 10 | — |
+| Home | 1 (5 hero states) *(Tier 6 Explore Communities module added 2026-07-02, retired 2026-07-07 — see Amendment 005)* | — |
+| Workouts | 23 *(W-1 Workouts Hub retired 2026-07-08 — Workouts tab now opens directly to W-2 Program Browse, `Docs/Amendments/Workouts-Navigation-Amendment-001-Retire-Workouts-Hub.md`)* | 8 |
+| Legacy | 18 *(+2, Transformation Gallery L-17/L-18, 2026-07-02)* | — |
+| Squads | 10 *(secondary Explore Communities entry point added 2026-07-02, retired 2026-07-07 — see Amendment 005)* | — |
+| Communities | Architecture-only — screen count TBD *(promoted to its own bottom-navigation tab 2026-07-07, Amendment 005; no pixel wireframe authored yet)* | — |
 | Profile | 9 | — |
 | Global Modals | 9 | — |
-| **Total** | **~80** | **8** |
+| **Total** | **~81** (+ Communities tab, count TBD) | **8** |
 
 ## Navigation Structure
 
-- 4-tab bottom navigation: Home, Workouts, Legacy, Squads.
+- 5-tab bottom navigation: Home, Workouts, Legacy, Squads, Communities *(Communities added 2026-07-07, `Docs/Amendments/Community-Architecture-Amendment-002-Fifth-Tab.md`)*.
 - Profile as modal sheet via top-right avatar.
 - Each tab has independent navigation stack.
 - Active workout is full-screen (no top bar, no bottom nav).
@@ -963,7 +991,7 @@ src/app/
 ├── (tabs)/
 │   ├── index.tsx                          # H-1 Home
 │   ├── workouts/
-│   │   ├── index.tsx                      # W-1 Workouts Hub
+│   │   ├── index.tsx                      # W-2 Program Browse (tab root — W-1 Workouts Hub retired 2026-07-08)
 │   │   ├── programs/[id].tsx              # W-3 Program Detail
 │   │   ├── log/[type].tsx                 # W-9 through W-16
 │   │   ├── summary.tsx                    # W-17
@@ -1028,6 +1056,10 @@ Full file structure with all paths is documented in the Phase 2A IA document (20
 | Import — file formats | CSV, XLSX, structured copy/paste. PDF and image: post-MVP. |
 | Import — automation | None. Review + confirmation always required. |
 | Import — Chapter Name/Goal | Always athlete-entered in W-IM-3. Never inferred by the system. |
+| Calendar | Cross-cutting **surface, not a 5th tab**. Aggregation-only timeline layer; owns no data. |
+| Calendar — write scope | May schedule only workouts, goal-milestone dates, and rest days. Everything else read-only. |
+| Calendar — streak | Private, backward-looking consistency visualization only. No streak pressure / "days since" shame. |
+| Calendar — V1 exclusions | No hour-by-hour, meal, sleep, habit, daily notes, or Google/Apple sync. |
 
 ---
 
@@ -1200,9 +1232,11 @@ Athletes log workouts, complete programs, and achieve goals. All of that raw mat
 
 ## Core Navigation
 
-4-tab bottom navigation: **Home | Workouts | Legacy | Squads**
+5-tab bottom navigation: **Home | Workouts | Legacy | Squads | Communities**
 
 Profile is a modal sheet accessed via top-right avatar — not a tab.
+
+Communities are a fourth relationship pillar (Legacy / Friends / Squads / **Communities**) and — as of 2026-07-07 — the 5th bottom-navigation tab. This reverses the 2026-07-02 position (reached only via Home's "Explore Communities" module and a Squads secondary entry point, "like the Calendar, not a tab"): Communities is designed as a high-frequency, checked-daily feed, not an occasional directory, so it earned a tab on the same frequency-of-use grounds as Home, Workouts, Legacy, and Squads. See `Community-System-Architecture-v1.0.md` (COM-D18) and `Docs/Amendments/Community-Architecture-Amendment-002-Fifth-Tab.md`.
 
 ---
 
@@ -1231,6 +1265,7 @@ Profile is a modal sheet accessed via top-right avatar — not a tab.
 | Never charge for history | Principle. Never negotiable. |
 | Program / Chapter Import | MVP. CSV, XLSX, structured paste. Program or Chapter destination. |
 | Import — automation | None. Review + confirm always required. Name/goal never inferred. |
+| Communities | MVP. Fourth relationship pillar. Public/Private visibility; no Hidden. Free = 1 joined / Premium = unlimited; 1 owned community per athlete, all tiers. Not a 5th tab. |
 
 ---
 
@@ -1248,14 +1283,15 @@ Profile is a modal sheet accessed via top-right avatar — not a tab.
 - 11 onboarding screens (two paths: New to Fitness / Experienced Athlete)
 - 1 Home screen (5 D-Lite hero states)
 - 24 Workouts screens (8 activity types, programs, templates, logging, history, Workout With Friend, import)
-- 16 Legacy screens (chapters, goals, timeline, honors, accomplishments, photos)
-- 10 Squads screens (create, invite, activity feed, train together)
+- 18 Legacy screens (chapters, goals, timeline, honors, accomplishments, photos, **Transformation Gallery L-17/L-18, added 2026-07-02**)
+- 10 Squads screens (create, invite, activity feed, train together — the secondary "Explore Communities" entry point on S-1, added 2026-07-02, was retired 2026-07-07 when Communities became its own tab)
+- Communities: its own bottom-navigation tab as of 2026-07-07 (Community Hub, feed, discovery) — architecture-only, no pixel wireframe authored yet, so not yet counted in this screen inventory
 - 9 Profile screens (athlete card, rank, settings, subscription, delete account)
 - 9 Global modals (rank up, honor earned, goal achieved, program graduation, chapter complete, destructive confirm, premium upsell, WwF squad notification, WwF non-squad request)
 
-**Total: ~80 MVP screens and states**
+**Total: ~82 MVP screens and states**
 
-*(+4 screens from Architecture Amendment 001 — Program / Chapter Import)*
+*(+4 screens from Architecture Amendment 001 — Program / Chapter Import; +2 screens from Amendment 004 — Transformation Gallery, 2026-07-02)*
 
 ---
 
@@ -1295,6 +1331,14 @@ Before designing, engineering, or planning any Forge Legacy feature, ask:
 | Amendment | Feature | Status | Date |
 |-----------|---------|--------|------|
 | 001 | Program / Chapter Import (CSV, XLSX, structured paste) | Approved / MVP / Locked | June 2026 |
+| 002 | Communities — fourth relationship pillar; §6 Navigation gains a Home entry point (not a 5th tab); §6 Calendar pointer notes Community Event/Challenge date-envelope rendering | Approved / MVP / Locked — see `Community-System-Architecture-v1.0.md` | June 2026 |
+| 003 | Communities navigation entry points finalized — Home "Explore Communities" module named as primary; Squads gains a secondary "Explore Communities" entry point; §6/§19 updated | Approved / MVP / Locked — see `Docs/Amendments/Community-Architecture-Amendment-001-Navigation-Entry-Points.md` | 2026-07-02 |
+| 004 | Transformation Gallery — new Legacy feature (L-17/L-18); chapter-organized, chronological photo/video archive of physical transformation; §19 Legacy screen count updated (16 → 18, total ~80 → ~82) | Approved / MVP / Locked — see `Transformation-Gallery-Architecture-v1.0.md`, `Transformation-Gallery-Wireframe-Spec-L17-L18.md` | 2026-07-02 |
+| 005 | Communities promoted to the 5th bottom-navigation tab (reverses Amendments 002/003's "not a tab" position) — designed as a high-frequency, checked-daily feed rather than an occasional directory; Home's "Explore Communities" module and Squads' secondary entry point both retired; §6/§19 updated | Approved / MVP / Locked — see `Docs/Amendments/Community-Architecture-Amendment-002-Fifth-Tab.md` | 2026-07-07 |
+| 006 | W-1 Workouts Hub retired — the Workouts tab root is now W-2 Program Browse; H-1's existing tiers and W-2's existing Active Program section already cover W-1's chapter-context/quick-start/next-session responsibilities, no replacement screen built; two W-1 features (Workout With Friend management queue, Import Training entry point) explicitly acknowledged as not yet given a new home; §5/§6/§8/§17/§19 updated | Approved / Locked — see `Docs/Amendments/Workouts-Navigation-Amendment-001-Retire-Workouts-Hub.md` | 2026-07-08 |
+| Calendar-System-Architecture-v1.0 | Calendar timeline layer (aggregation-only surface) | LOCKED | June 2026 |
+| Homepage-Principles-Architecture-v1.0 | Rotating digital-inscription library on Home (H-1); canonical library + deterministic per-athlete daily rotation | LOCKED | June 2026 |
+| Component-Library-Architecture-v1.0 | V1 UI component contract — 37 canonical components (CLA-C01–C37), 3-tier hierarchy (Primitives/Composites/Screen-level), 6 governing principles, 20 CLA-D decisions; dark-only V1, Phosphor Icons, system font; closes Architecture Freeze Row 18 | LOCKED | June 2026 |
 
 *Full amendment documents are in Docs/Architecture-Amendment-[N]-[Name].md*
 

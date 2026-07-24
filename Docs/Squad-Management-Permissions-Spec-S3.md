@@ -1,5 +1,7 @@
 # Forge Legacy — Squad Management & Permissions Specification
-## S-3 | Phase 2B | Version 1.1 — June 2026
+## S-3 | Phase 2B | Version 1.3 — June 2026
+
+> **Governing-authority pointer — `Squad-System-Architecture-v1.0` (LOCKED, June 2026).** Adds the Squad Commitment field to Squad Identity (§6.5, SQ-D14) and confirms Goal/Mission edit rights follow the existing "any member" identity-editing pattern (§4.1, SQ-D3.2/SQ-D4.3). The two-tier Owner/Member model, the 10-member cap, and every other rule in this document are unchanged.
 
 ---
 
@@ -212,6 +214,9 @@ No moderator tier. No admin tier. No co-owner. Two tiers only.
 |------------|-------|--------|
 | Edit squad name | Yes | Yes |
 | Edit squad purpose | Yes | Yes |
+| Edit squad Commitment | Yes | Yes |
+| Set/edit the active Goal | Yes | Yes |
+| Set/edit the active Mission | Yes | Yes |
 | Select/edit squad icon | Yes | Yes |
 | Invite new members | Yes | Yes |
 | Cancel their own pending invites | Yes | Yes |
@@ -240,6 +245,8 @@ The two-tier model answers every governance need:
 - Deletion: owner only (irreversible, squad-ending)
 
 The only actions that are owner-only are the ones with significant or irreversible consequences. Everything else is open to all members.
+
+**Challenge System note (Squad-Architecture-Amendment-001 SA-D3):** The two-tier model is unchanged by the Challenge System. The challenge "commissioner" maps to a **challenge-scoped creator role**, not a third squad governance tier. Any member may create a challenge (the same openness as inviting, §4.4); the creator's authority is scoped entirely to the challenge object and confers **no** squad-level power over members. The squad Owner may cancel a challenge as squad cleanup but gains no scoring or standing privilege.
 
 **Settings vs. governance actions:**
 Identity settings (squad name, purpose, icon) are shared — any member can edit them because they belong to the squad as a collective. Governance actions (remove member, transfer ownership, delete squad) are owner-only because they have significant or irreversible consequences for the group. This distinction is intentional: the squad's identity is co-owned; its governance responsibility is held by one person.
@@ -457,7 +464,22 @@ When set, the squad icon is displayed on:
 - S-1 squad card — alongside squad name and member avatars
 - S-2 squad header — alongside squad name and purpose
 
-**Note:** S-1 v1.1 and S-2 v1.2 do not currently define squad icon display behavior. Those specs require amendments before implementation to define icon placement, sizing, and display rules on squad cards and squad headers.
+**Note:** S-1 v1.5 and S-2 v1.6 do not currently define squad icon display behavior. Those specs require amendments before implementation to define icon placement, sizing, and display rules on squad cards and squad headers.
+
+### 6.5 Squad Commitment Field *(new — `Squad-System-Architecture-v1.0` SQ-D14)*
+
+- Text input field, full-width, multiline (short list or short paragraph)
+- Label: "Squad Commitment"
+- Pre-populated with existing Commitment text, or a small set of suggested starter values (e.g., "Show up," "Encourage others," "Stay respectful," "Train consistently") for a newly created squad
+- Editable by all members, same governance as squad name and purpose (§4.3) — included in the Save Changes flow (§6.3)
+
+**Why a Commitment field exists:** the Commitment is the squad's short, accepted values statement — distinct from Purpose (a descriptive "why we train together," §6.2) and distinct from the Goal/Mission (measurable targets, owned by `Squad-System-Architecture-v1.0`). It reinforces accountability and squad identity without introducing an enforcement mechanism — there is no violation-reporting or scoring tied to it in V1.
+
+**Acceptance at join:** an athlete accepting a squad invitation is shown the current Commitment text and acknowledges it before completing the join. This is a requirement on the Squad Invite Flow (S-XX, to be defined, per §8.1) — flagged here so that flow satisfies it when authored; S-3 itself only owns the editing of the Commitment text, not the join-time acceptance UI.
+
+### 6.6 Goal and Mission Edit Rights *(new — `Squad-System-Architecture-v1.0` SQ-D3.2, SQ-D4.3)*
+
+Setting or editing the squad's active Goal and active Mission is **not** a field on this screen — the Goal and Mission cards live on S-2 (§§15–16 of `Squad-Detail-Wireframe-Spec-S2.md`). This section exists only to confirm the governing permission: any member may set or edit the active Goal and active Mission, the same openness already granted for squad name, purpose, Commitment, and icon (§4.3). Neither Goal nor Mission editing is Owner-gated, and neither introduces a new permission tier.
 
 ---
 
@@ -876,7 +898,8 @@ Portrait only — consistent with all Forge Legacy screens.
 - [ ] Icon selection is optional — squad can be saved without selecting an icon
 - [ ] Icon selection change enables Save Changes CTA
 - [ ] Icon saved with Save Changes — not auto-saved on selection
-- [ ] All members (owner and non-owner) can edit squad name, purpose, and icon
+- [ ] All members (owner and non-owner) can edit squad name, purpose, Commitment, and icon
+- [ ] Squad Commitment field present, editable by all members, included in Save Changes flow
 - [ ] Save Changes CTA: disabled when no changes exist; enabled when changes are present
 - [ ] Save Changes blocked if squad name is empty; inline error message shown
 - [ ] After successful save: Save Changes returns to disabled state
@@ -1004,13 +1027,31 @@ Custom squad image uploads (user-provided photos) remain deferred to V1.1+ — c
 ---
 
 *Forge Legacy Squad Management & Permissions Specification — S-3*
-*v1.1 — June 2026*
-*All decisions derived from the Phase 2A locked architecture, the Forge Legacy Master PRD, the Forge Legacy UX Framework v1.0, and all approved Phase 2B wireframe specifications including S-1 v1.1 and S-2 v1.2.*
+*v1.3 — June 2026*
+*All decisions derived from the Phase 2A locked architecture, the Forge Legacy Master PRD, the Forge Legacy UX Framework v1.0, `Squad-System-Architecture-v1.0` (governing, §§6.5–6.6), and all approved Phase 2B wireframe specifications including S-1 v1.5 and S-2 v1.6.*
 *This document is the authority for all Squad Management & Permissions implementation in Phase 2B.*
 
 ---
 
 ## Change Log
+
+### v1.3 — June 2026
+
+**Squad System Architecture reconciliation**
+
+Per `Squad-System-Architecture-v1.0` (LOCKED): added §6.5 Squad Commitment field (editable by all members, same governance as name/purpose/icon; acceptance-at-join flagged for the future Squad Invite Flow) and §6.6 confirming Goal/Mission edit rights follow the existing all-members pattern (no new permission tier). Permission table (§4.1) updated with three new rows: Edit squad Commitment, Set/edit the active Goal, Set/edit the active Mission — all Owner: Yes / Member: Yes. No change to the two-tier governance model, the 10-member cap, removal/transfer/deletion rules, or any other section.
+
+---
+
+### v1.2 — June 2026
+
+**Section 4.2 — Challenge System alignment (inline edit per Squad-Architecture-Amendment-001 SA-D3)**
+
+Added a Challenge System note confirming the two-tier model is unchanged: the challenge "commissioner" is a challenge-scoped creator role (any member may create; no squad-governance power), not a third tier. Squad Owner may cancel a challenge for cleanup only. No new design decision; reflects already-approved architecture.
+
+**Participant-based reconciliation (Challenge-Architecture-Amendment-003 v1.1 / CA3-D5):** Challenges are now **participant-based** (a challenge's roster is a Squad or a set of accepted Friends). This **strengthens, and does not alter, S-3's two-tier model.** The challenge-creator role is fully **squad-independent**: for **Friend Challenges (`context = FRIENDS`)** there is no squad and no Squad Owner — the **creator is the sole governance** (configure pre-lock, cancel pre-COMPLETED, invite from accepted Friends). The **Squad Owner cancel hook applies only to SQUAD-context** challenges (squad cleanup). No squad permission, tier, or rationale (§4.2 "why two tiers, not three") changes; the creator role remains orthogonal to squad governance, with no authority over people in either context.
+
+---
 
 ### v1.1 — June 2026
 

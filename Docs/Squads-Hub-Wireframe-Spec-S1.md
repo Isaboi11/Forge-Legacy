@@ -1,5 +1,13 @@
 # Forge Legacy — Squads Hub Wireframe Specification
-## S-1 | Phase 2B | Version 1.2 — June 2026
+## S-1 | Phase 2B | Version 1.6 — July 2026
+
+> **Governing-authority pointer — `Docs/Amendments/Community-Architecture-Amendment-002-Fifth-Tab.md` (2026-07-07).** The secondary "Explore Communities" entry point added to S-1 by `Community-Architecture-Amendment-001-Navigation-Entry-Points.md` (2026-07-02, formerly Section 2 Tier 3 / Section 9a) is **retired**: Communities was promoted to its own bottom-navigation tab, making a secondary entry point from Squads redundant. S-1 reverts to its pre-amendment tier model. This does not change S-1's squad-card content, presence-only rules, or "never a feed/leaderboard" framing in any way.
+
+> **Governing-authority pointer — `Squad-System-Architecture-v1.0` (LOCKED, June 2026).** Squad Goals, Missions, Streak, Momentum, the Squad Feed, Honors, Competition standings, Analytics, and Commitment are now governed by that document and surface on **S-2 Squad Detail only**. S-1 is unchanged by it: the squad card remains presence-only (aggregate "X of Y trained this week"), and none of the new Squad-System content appears on the Hub card. The Firewall lift (`Squad-System-Architecture-v1.0` SQ-D2) applies to S-2 and the per-squad Competitions section there — it does not extend the S-1 card.
+
+> **Governing-authority pointer — `Calendar-System-Architecture-v1.0` (LOCKED, June 2026).** The Calendar may render an **optional, off-by-default** Squad layer (CAL-D15) that surfaces **only** the presence/accountability signals squads already expose (e.g., the date of a check-in or shared event), exactly as the Squad surfaces define them. It **never** surfaces failure data of any kind — **no missed workouts, no broken streaks, no inactivity, no comparison metrics** — and challenge performance is never routed through it (Performance Firewall, CS-D2). It is a read-through that links into the Squad surface (CAL-D17) and manufactures no new squad data. S-1's content and rules are unchanged.
+
+**Component contracts:** CLA-C29 (SquadCard), CLA-C11 (Avatar), CLA-C24 (EmptyState) — see [`Component-Library-Architecture-v1.0.md`](Component-Library-Architecture-v1.0.md)
 
 ---
 
@@ -67,11 +75,13 @@ The athlete's squads. Each card is a complete picture of one squad: its name, it
 **TIER 2 — Create a Squad CTA**
 A single Secondary CTA at the bottom of the content area. Available at all times — even when the athlete is in squads, they can always form a new one. Present but unobtrusive.
 
-**Tier 3 — Empty State / First Experience**
+**TIER 3 — Empty State / First Experience**
 Appears only when the athlete has no squads. Replaces Tiers 1 and 2 with an invitation. Not a gate; not a requirement. An explanation of what squads are and a clear path to forming one.
 
 **Hierarchy principle:**
 The squad cards carry all the meaningful content. The Create CTA is always available but never competes with the cards. S-1 has no persistent Top App Bar actions that distract — the screen is the list of squads and the invitation to add more.
+
+**Retired (2026-07-07):** A secondary "Explore Communities →" entry point previously occupied Tier 3 here (added 2026-07-02, `Community-Architecture-Amendment-001-Navigation-Entry-Points.md`). It is retired now that Communities is its own bottom-navigation tab — see `Docs/Amendments/Community-Architecture-Amendment-002-Fifth-Tab.md` and former Section 9a (below, marked retired).
 
 ---
 
@@ -330,7 +340,6 @@ When the athlete belongs to no squads:
 │                                                         │
 │  [  Create a Squad  ]                                   │  ← Primary CTA
 │                                                         │
-│                                                         │
 ├─────────────────────────────────────────────────────────┤
 │  BOTTOM TAB BAR                                         │
 └─────────────────────────────────────────────────────────┘
@@ -471,6 +480,26 @@ When the athlete opens S-1, the presence indicator reflects the current state. I
 
 ---
 
+## Section 9a — Explore Communities (Tier 3, added 2026-07-02, RETIRED 2026-07-07)
+
+**Retired.** Communities was promoted to its own bottom-navigation tab (`Docs/Amendments/Community-Architecture-Amendment-002-Fifth-Tab.md`), making this secondary Squads entry point redundant. Preserved below as historical record only — none of it renders on S-1 anymore.
+
+~~Governed by `Community-System-Architecture-v1.0.md` COM-D18 (as it read prior to 2026-07-07) and `Docs/Amendments/Community-Architecture-Amendment-001-Navigation-Entry-Points.md`. S-1 was the **secondary** discovery surface for Communities — Home was primary.~~
+
+```
+[  + Create a Squad  ]
+
+Explore Communities →   ← retired 2026-07-07
+```
+
+~~**Presentation:** A single tertiary text row, 15sp, muted, right-facing arrow — deliberately the lowest-visual-weight interactive element on S-1. Not a card. Not a tile row.~~
+
+~~**Presence:** Unconditional — renders in both the populated squad-list state (Section 3) and the empty state (Section 6), because it does not depend on squad membership.~~
+
+~~**Tap behavior:** → Community Hub (hub root, not scoped to any particular community).~~
+
+---
+
 ## Section 10 — Presence vs Performance Rules
 
 This section establishes the philosophical boundary enforced throughout S-1.
@@ -510,8 +539,11 @@ Forge Legacy is built on Accountability Without Shame. Presence enables accounta
 | Member count | Goal completion % |
 | Collective presence count | PR indicators |
 | — | Any rank or comparison |
+| — | Challenge standings, scores, or champion recognition |
 
 This line does not move. It is not contextual. It is not overridden for premium users, coaches, or squad admins.
+
+**Challenge System note (Comparison-Philosophy-Amendment-001 CC-D2; Squad-Architecture-Amendment-001 SA-D2; Squad-Architecture-Amendment-002 SA2-D1/D2):** S-1 squad cards remain presence-only. Challenge data — standings, scores, win/loss, badges, and **champion recognition (name/category/badge)** — never renders on an S-1 card. S-1 may host only a **neutral, person-agnostic entry affordance** (e.g., "Champions ›" / "Challenges ›") that names no member and shows no outcome, linking into the C-series Challenge surfaces.
 
 ---
 
@@ -528,7 +560,8 @@ This line does not move. It is not contextual. It is not overridden for premium 
 | Tab Bar — Home | H-1 Home |
 | Tab Bar — Legacy | L-1 Legacy Hub |
 | Tab Bar — Workouts | W-1 Workouts Hub |
-| Tab Bar — Profile | Profile modal |
+| Tab Bar — Communities *(added 2026-07-07)* | Community Hub |
+| Profile (App Bar avatar) | Profile modal |
 
 ### 11.2 S-1 Is Not Reachable from Active Workout
 
@@ -683,6 +716,9 @@ S-1 supports portrait orientation only — consistent with all other Forge Legac
 - [ ] CTA scrolls with content — not sticky
 - [ ] CTA minimum 44dp height
 
+### Explore Communities (Tier 3, added 2026-07-02, RETIRED 2026-07-07)
+- [x] Retired — Communities is now its own bottom-navigation tab (`Docs/Amendments/Community-Architecture-Amendment-002-Fifth-Tab.md`); none of this checklist block applies to S-1 anymore
+
 ### Empty State
 - [ ] Empty state shown when athlete belongs to no squads
 - [ ] Muted squad icon (no illustration)
@@ -759,13 +795,37 @@ S-1 supports portrait orientation only — consistent with all other Forge Legac
 ---
 
 *Forge Legacy Squads Hub Wireframe Specification — S-1*
-*v1.2 — June 2026*
-*All decisions derived from the Phase 2A locked architecture, the Forge Legacy Master PRD, the Forge Legacy UX Framework v1.0, the WwF System Spec v1.1, and the approved H-1, L-1, L-3/L-4, W-1, W-9–W-16, and W-17 wireframe specifications.*
+*v1.6 — July 2026*
+*All decisions derived from the Phase 2A locked architecture, the Forge Legacy Master PRD, the Forge Legacy UX Framework v1.0, the WwF System Spec v1.1, the approved H-1, L-1, L-3/L-4, W-1, W-9–W-16, and W-17 wireframe specifications, and `Community-Architecture-Amendment-002-Fifth-Tab`.*
 *This document is the authority for all Squads Hub implementation in Phase 2B.*
 
 ---
 
 ## Change Log
+
+### v1.6 — July 2026 (2026-07-07)
+
+**Explore Communities secondary entry point retired**, per `Docs/Amendments/Community-Architecture-Amendment-002-Fifth-Tab.md`, reversing v1.5. Communities was promoted from a Home/Squads discovery entry point to its own bottom-navigation tab, on the grounds that it is designed as a high-frequency, checked-daily feed rather than an occasional directory. Former Tier 3 (Section 2) and Section 9a are retired (preserved as historical record, marked superseded); the "Explore Communities →" row is removed from the full scroll order (Section 3) and the empty state (Section 6). Navigation Paths (§11), Tap Targets (§13.4), and the Validation Checklist (§14) updated accordingly. No existing squad-card content, presence rule, or Firewall boundary (Sections 9, 10) was altered.
+
+### v1.5 — July 2026 (2026-07-02, superseded 2026-07-07 — see v1.6)
+
+**Explore Communities secondary entry point added**, per `Docs/Amendments/Community-Architecture-Amendment-001-Navigation-Entry-Points.md`, formalizing what had previously been documented only in `Docs/Forge-Design-Blueprint-v1.0.md`. New Tier 3 (Section 2), new Section 9a, and a single "Explore Communities →" tertiary row added to the full scroll order (Section 3) and the empty state (Section 6), present unconditionally in both. Navigation Paths (§11), Tap Targets (§13.4), and the Validation Checklist (§14) updated accordingly. This is the **secondary** Communities discovery entry point — Home (`Home-Screen-Wireframe-Spec-H1.md` Section 9a) is primary. No existing squad-card content, presence rule, or Firewall boundary (Sections 9, 10) was altered.
+
+### v1.4 — June 2026
+
+**Governing-authority pointer (no content change)**
+
+Added a pointer to `Squad-System-Architecture-v1.0` (LOCKED) at the top of this document. That document locks Squad Goals, Missions, Streak, Momentum, Weekly Summary, the Squad Feed, Honors integration, Competition standings, Analytics, and Commitment — all of which surface on **S-2 Squad Detail**, not here. S-1's card content, visibility rules (§9–§10), and "must never become a feed/leaderboard" framing are unchanged: the Firewall lift in `Squad-System-Architecture-v1.0` SQ-D2 is scoped to S-2 and does not reach the S-1 card. No section, wireframe, or checklist item in this document changes as a result of the new Squad System Architecture.
+
+### v1.3 — June 2026
+
+**Section 10.3 — Challenge System Firewall alignment (inline edit per approved Challenge amendments)**
+
+Aligns S-1 with the finalized Challenge System. Per Comparison-Philosophy-Amendment-001 (CC-D2 Performance Firewall), Squad-Architecture-Amendment-001 (SA-D2), and Squad-Architecture-Amendment-002 (SA2-D1/D2): added "Challenge standings, scores, or champion recognition" to the "Never shows on S-1" line, and a note confirming S-1 cards stay presence-only while permitting only a neutral, person-agnostic entry affordance into the C-series Challenge surfaces. No new design decision; reflects already-approved architecture.
+
+**Participant-based reconciliation (Challenge-Architecture-Amendment-003 v1.1 / CA3-D11):** Challenges are now **participant-based** — a challenge's roster is a **Squad** (`context = SQUAD`) **or** a set of accepted Friends (`context = FRIENDS`). This **does not change S-1**: the squad challenge entry affordance is unchanged, S-1 hosts only **SQUAD-context** challenge entry, and **Friend Challenges have no always-on surface and never appear on S-1** (they are entered from a participant-level surface — H-1 recommended — not from the squads hub). The Firewall, SA-D2, and SA2-D1/D2 are fully preserved; friend challenges simply have no squad surface at all.
+
+---
 
 ### v1.2 — June 2026
 

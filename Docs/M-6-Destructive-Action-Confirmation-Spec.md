@@ -3,6 +3,7 @@
 
 **Status:** LOCKED
 **Authority:** Forge-Legacy-Master-PRD.md §9, MVP-Architecture-Audit-v1.0.md, Chapter-Detail-Wireframe-Spec-L3-L4.md, Squad-Detail-Wireframe-Spec-S2.md, Squad-Management-Permissions-Spec-S3.md
+**Component contracts:** CLA-C20 (Modal), CLA-C08 (Button) — see [`Component-Library-Architecture-v1.0.md`](Component-Library-Architecture-v1.0.md)
 
 ---
 

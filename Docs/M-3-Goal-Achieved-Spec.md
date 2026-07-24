@@ -1,8 +1,9 @@
 # M-3 Goal Achieved Modal
-## Ceremony Specification v1.0 | June 2026
+## Ceremony Specification v1.1 | June 2026
 
 **Status:** LOCKED
 **Authority:** Goal-Detail-Wireframe-Spec-G2.md v1.0, Goal-Hub-Wireframe-Spec-G1.md v1.1, Rank-Up-Modal-Spec-M1.md, Honor-Evaluation-Service-Architecture-v1.0.md, MVP-Architecture-Audit-v1.0.md, Master PRD §9
+**Component contracts:** CLA-C20 (Modal), CLA-C08 (Button) — see [`Component-Library-Architecture-v1.0.md`](Component-Library-Architecture-v1.0.md)
 
 ---
 
@@ -98,6 +99,8 @@ M-3 is a centered modal overlay. It appears over the originating surface (G-2), 
 │                                                     │
 │              [    Continue    ]                     │  ← Primary CTA, always present
 │                                                     │
+│            Share this achievement                   │  ← Subordinate text action, always present
+│                                                     │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -105,6 +108,8 @@ M-3 is a centered modal overlay. It appears over the originating surface (G-2), 
 
 ```
 │              [    Continue    ]                     │
+│                                                     │
+│            Share this achievement                   │
 │                                                     │
 │       View Your Goals    View Your Legacy           │  ← Secondary text links, only when final
 │                                                     │
@@ -123,6 +128,7 @@ M-3 is a centered modal overlay. It appears over the originating surface (G-2), 
 | Dividers | Horizontal separators between copy and context rows, and between context rows and CTA |
 | Context rows | Left-aligned label, right-aligned value; 3 rows: Chapter, Goal Set, Achieved |
 | Continue | Primary CTA, full-width, always present |
+| Share action | Text-link style: "Share this achievement"; always present below Continue, regardless of queue position (per WSR-001 §8.2). Opens SH-1 with `GOAL_ACHIEVED` pre-selected; queue advances exactly as "Continue" would (per SH-1 §6.2) |
 | Secondary links | Two text-link style: "View Your Goals" and "View Your Legacy"; visible only when M-3 is the final ceremony |
 
 ### Context Row Values
@@ -152,6 +158,7 @@ M-3 is the only ceremony queued. The secondary links are visible beneath "Contin
 [ Context rows ]
 ──────────────────
 [ Continue ]
+Share this achievement
 View Your Goals    View Your Legacy
 ```
 
@@ -168,9 +175,10 @@ Additional ceremonies remain (M-4 or M-2 pending). Secondary links are suppresse
 [ Context rows ]
 ──────────────────
 [ Continue ]
+Share this achievement
 ```
 
-"Continue" advances to the next queued ceremony (M-4 or M-2 per priority).
+"Continue" advances to the next queued ceremony (M-4 or M-2 per priority). "Share this achievement" remains present and behaves identically (opens SH-1, advances the queue) regardless of queue position.
 
 ### 5.3 M-3 as Final Ceremony After Prior Ceremonies
 
@@ -185,6 +193,7 @@ M-1 fired before M-3 (same session). M-3 is now the last item in queue. Secondar
 [ Context rows ]
 ──────────────────
 [ Continue ]
+Share this achievement
 View Your Goals    View Your Legacy
 ```
 
@@ -240,24 +249,29 @@ M-3 appears over G-2, which remains the current screen beneath the overlay. G-2 
 
 "Continue" dismisses M-3. The athlete returns to G-2 in Achieved state. The back arrow from G-2 returns to G-1, where the primary goal card shows the Achieved state.
 
-### 7.4 "View Your Goals" — Secondary Link
+### 7.4 "Share this achievement" — Share Action
+
+Per WSR-001 §8.2, tapping "Share this achievement" is treated identically to tapping "Continue" for ceremony-sequence purposes (SH-1 §6.2): M-3 dismisses, the queue advances exactly as it would have, and SH-1 (Share Configuration Step) presents on top of whatever that advancement reveals, with `shareType: GOAL_ACHIEVED` pre-selected. Unlike the secondary links below, this action is always present regardless of queue position.
+
+### 7.5 "View Your Goals" — Secondary Link
 
 Dismisses M-3 and navigates to G-1 Goal Hub. Available only when M-3 is the final ceremony. Ceremony session is complete.
 
-### 7.5 "View Your Legacy" — Secondary Link
+### 7.6 "View Your Legacy" — Secondary Link
 
 Dismisses M-3 and navigates to L-1 Legacy Hub. Available only when M-3 is the final ceremony. Ceremony session is complete.
 
-### 7.6 No Other Dismissal Paths
+### 7.7 No Other Dismissal Paths
 
-Tapping the dimmed background behind M-3 does nothing. Drag gestures do nothing. The Android hardware back button does nothing. M-3 can only be dismissed by tapping "Continue" or a secondary text link.
+Tapping the dimmed background behind M-3 does nothing. Drag gestures do nothing. The Android hardware back button does nothing. M-3 can only be dismissed by tapping "Continue," "Share this achievement," or a secondary text link.
 
-### 7.7 Navigation Summary
+### 7.8 Navigation Summary
 
 | Action | Queue State | Destination |
 |--------|------------|------------|
 | "Continue" | More ceremonies pending | Next queued ceremony |
 | "Continue" | M-3 is final | G-2 (Achieved state) |
+| "Share this achievement" | Any | SH-1 (`GOAL_ACHIEVED` pre-selected); queue advances as "Continue" would |
 | "View Your Goals" | M-3 is final | G-1 Goal Hub |
 | "View Your Legacy" | M-3 is final | L-1 Legacy Hub |
 | Tap dimmed background | Any | No action — M-3 remains open |
@@ -317,6 +331,7 @@ Once M-3 fires and is dismissed for a given goal, it cannot be re-triggered. The
 | Ceremony copy | Read as body text |
 | Context rows | Announced as: "[Label], [Value]" for each row |
 | Continue | Announced as: "Continue, button" |
+| Share this achievement | Announced as: "Share this achievement, button" |
 | "View Your Goals" | Announced as: "View Your Goals, button" |
 | "View Your Legacy" | Announced as: "View Your Legacy, button" |
 | Dimmed background | Not focusable; no accessible action (dismissed by "Continue" only) |
@@ -353,7 +368,8 @@ M-3 does not and will never:
 | Display the athlete's total workout count, days forging, or account age (that context belongs to M-1) |
 | Show what honors were earned as a result of goal achievement |
 | Fire M-2 for goal completion honors |
-| Show a share or export CTA |
+| Render the share card image itself, or create a `WorkoutShare` record without the athlete tapping "Share this achievement" (delegated to SH-1 and the Share Card Renderer, per WSR-001 §7, §9) |
+| Show an export CTA |
 | Show a "next goal" prompt or tease |
 | Show the goal's supporting workouts or program history |
 | Display other athletes' reactions or acknowledgment |
@@ -418,6 +434,8 @@ M-3 does not and will never:
 - [ ] Hardware back button does nothing — modal stays open
 - [ ] "Continue" (final ceremony) returns to G-2 Achieved state
 - [ ] "Continue" (ceremonies remaining) advances to next queued ceremony
+- [ ] "Share this achievement" present below "Continue", regardless of queue position
+- [ ] "Share this achievement" tap opens SH-1 with `GOAL_ACHIEVED` pre-selected and advances the queue as "Continue" would
 - [ ] "View Your Goals" (secondary link) navigates to G-1
 - [ ] "View Your Legacy" (secondary link) navigates to L-1
 
@@ -431,7 +449,7 @@ M-3 does not and will never:
 ### Non-Behaviors
 - [ ] No confetti, particle effects, or trophy imagery
 - [ ] No "Congratulations" copy
-- [ ] No share or export CTA
+- [ ] No export CTA
 - [ ] No progress data displayed (no percentage, units, or target value in modal)
 - [ ] Cannot re-trigger for same goal after dismissal
 
@@ -449,8 +467,9 @@ M-3 does not and will never:
 | Version | Date | Change |
 |---------|------|--------|
 | v1.0 | June 2026 | Initial specification — establishes M-3 Goal Achieved ceremony; closes Architecture Audit H-08; locks queue position (Priority 2), trigger source, anatomy, navigation, and decision record |
+| v1.1 | June 2026 | WSR-001 Downstream Reconciliation Pass. Added "Share this achievement" subordinate text action below "Continue," always present regardless of queue position (§4, §5, §7, §9), per WSR-001 §8.2. Removed the contradictory "Show a share or export CTA" line from §10 Non-Behaviors (replaced with an export-only exclusion and an explicit note that the share artifact itself is rendered by SH-1/the Share Card Renderer, not M-3). Renumbered §7.4–§7.7 to §7.5–§7.8. No other M-3 behavior changed. |
 
 ---
 
-*M-3 Goal Achieved Modal — Ceremony Specification v1.0*
+*M-3 Goal Achieved Modal — Ceremony Specification v1.1*
 *Forge Legacy | June 2026*

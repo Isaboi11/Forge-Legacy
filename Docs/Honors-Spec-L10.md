@@ -1,8 +1,10 @@
 # L-10 Honors Hub
-## Wireframe Specification v1.0 | June 2026
+## Wireframe Specification v1.1 | June 2026
 
 **Status:** LOCKED
-**Authority:** Honor-Catalog-v1.0-LOCKED.md, HonorInstance-Architecture-v1.0.md, Honor-Evaluation-Service-Architecture-v1.0.md, M-2 Honor Earned Modal Spec v1.1, L-11 Honor Detail Sheet Spec v1.1, FLM Standards v1.0, Master PRD §13, Product DNA
+**Authority:** Honor-Catalog-v1.0-LOCKED.md (v1.5), HonorInstance-Architecture-v1.0.md (v1.1), Honor-Evaluation-Service-Architecture-v1.0.md (v1.1), M-2 Honor Earned Modal Spec v1.1, L-11 Honor Detail Sheet Spec v1.1, FLM Standards v1.0, Master PRD §13, Product DNA, `Honors-Architecture-V1-Final-v1.0.md` (LOCKED)
+**Component contracts:** CLA-C17 (SectionHeader — collapsible category rows), CLA-C28 (HonorCard), CLA-C24 (EmptyState) — see [`Component-Library-Architecture-v1.0.md`](Component-Library-Architecture-v1.0.md)
+**v1.1 note:** this document was discovered stale relative to the catalog even before this pass — §5.1's category table still listed only the original 7 display categories and the original 53-type total, never updated for the v1.1/v1.3/v1.4 Competition/Communities/Squad additions. This pass fixes §5.1 and §18 to the full, current category list. §3's ASCII mockup and §7.2's per-category progression-order subsections remain unbackfilled for Partnership/Competition/Communities/Squad — a separate, pre-existing gap, flagged here rather than silently expanded into.
 
 ---
 
@@ -168,22 +170,32 @@ Reasoning: Recent Honors is sourced directly from HonorInstance records. Each Ho
 
 ## 5. Category Section Architecture
 
-### 5.1 Seven Display Categories
+### 5.1 Thirteen Display Categories
 
-L-10 organizes all 53 MVP honor types into seven display categories, in this fixed order:
+L-10 organizes all 167 MVP honor types into thirteen display categories, in this fixed order:
 
 | # | Display Category | Catalog Families Included | Honor Type Count |
 |---|-----------------|--------------------------|-----------------|
-| 1 | Training | Training | 12 |
-| 2 | Strength | Strength + Club | 18 |
-| 3 | Goals | Goals | 4 |
-| 4 | Programs | Programs | 4 |
-| 5 | Community | Community | 3 |
-| 6 | Chapters | Chapter Count + Chapter Depth | 8 |
-| 7 | Longevity | Longevity | 4 |
-| | **Total** | | **53** |
+| 1 | Training | Origin + Workout Count + Hours Forged + Consistency | 23 |
+| 2 | Strength | Bench + Squat + Deadlift + Club + Overhead Press + Pull-Up | 26 |
+| 3 | Endurance | Running + Walking + Cycling + Swimming (Single-Session + Lifetime Distance) | 38 |
+| 4 | Goals | Goals | 6 |
+| 5 | Programs | Graduation Volume + Family Mastery | 7 |
+| 6 | Partnership | Partnership | 3 |
+| 7 | Chapters | Chapter Count + Chapter Depth + Chapter Duration | 14 |
+| 8 | Longevity | Longevity | 7 |
+| 9 | Competition | Wins + Participation + Participation Streak | 9 |
+| 10 | Communities | Communities | 5 |
+| 11 | Squad | Founder + Perfect Week + Squad Streak + Mission Complete + Team Player + Squad Workouts + Program | 15 |
+| 12 | Prestige | Breadth Ladder + Named Combinations | 8 |
+| 13 | Hidden | Hidden | 6 |
+| | **Total** | | **167** |
 
-**Club honors (merged into Strength):** The Honor Catalog defines Club as a separate family (combined lift totals). L-10 groups Club honors under the Strength display category. This represents the full strength narrative — individual lift milestones and combined total milestones — in one section. The catalog family separation is an architecture detail; the display category is Strength.
+**Deferred to V2 (not in the 167):** two additional Strength families — Sex-Specific Milestones (12) and Relative Strength Milestones (12) — were designed during the V1 architecture pass and deferred to V2 by PO decision. Full design preserved in `Honor-Catalog-v1.0-LOCKED.md` § DEFERRED TO V2. No L-10 display change ships for them in V1.
+
+**Category order rationale (v1.1):** the original seven categories keep their relative order; Endurance is inserted immediately after Strength (the two largest performance-based categories, grouped together); Partnership/Competition/Communities/Squad retain the order they were locked in at v1.1/v1.3/v1.4; Prestige and Hidden are appended last as the two "meta" categories — Prestige because it is built entirely from other categories' top tiers, Hidden because surprise is its whole point. This ordering is a presentation judgment, not an architecture fact, and may be revisited without an architecture amendment.
+
+**Club honors (merged into Strength):** The Honor Catalog defines Club as a separate family (combined lift totals). L-10 groups Club honors under the Strength display category. This represents the full strength narrative — individual lift milestones, combined total milestones, and the two new sex-specific/relative-strength milestone families — in one section. The catalog family separation is an architecture detail; the display category is Strength.
 
 ### 5.2 Default State
 
@@ -721,13 +733,13 @@ L-10 does not and will never:
 - [ ] Sorted by `dateEarned` DESC
 - [ ] Same-session tiebreaker by `awardedAt` DESC
 - [ ] Recent Honors section absent on empty state
-- [ ] All 53 honor types can appear in Recent Honors
+- [ ] All 167 honor types can appear in Recent Honors
 - [ ] No placeholders when athlete has 1–4 honors
 - [ ] Multiple repeatable honors earned in the same session each appear as separate cards (no deduplication, no grouping)
 
 ### Category Sections
-- [ ] All 7 display categories present when athlete has earned honors in those categories
-- [ ] Category display order: Training → Strength → Goals → Programs → Community → Chapters → Longevity
+- [ ] All 13 display categories present when athlete has earned honors in those categories
+- [ ] Category display order: Training → Strength → Endurance → Goals → Programs → Partnership → Chapters → Longevity → Competition → Communities → Squad → Prestige → Hidden
 - [ ] Categories with 0 earned honors are entirely absent from screen
 - [ ] All categories start collapsed on every L-10 load
 - [ ] Category expand/collapse state not persisted between L-10 visits
@@ -737,14 +749,20 @@ L-10 does not and will never:
 - [ ] Repeatable chapter depth honors counted once per earned instance in category count
 
 ### Catalog Coverage
-- [ ] Training: all 12 types covered and orderable
-- [ ] Strength: all 18 types covered (12 Strength + 6 Club) and orderable
-- [ ] Goals: all 4 types covered and orderable
-- [ ] Programs: all 4 types covered and orderable
-- [ ] Community: all 3 types covered and orderable
-- [ ] Chapters: all 8 types covered (4 Count + 4 Depth) and orderable
-- [ ] Longevity: all 4 types covered and orderable
-- [ ] Total: 53 types ✓
+- [ ] Training: all 23 types covered (Origin + Workout Count + Hours Forged + Consistency) and orderable
+- [ ] Strength: all 26 types covered (Bench + Squat + Deadlift + Club + Overhead Press + Pull-Up) and orderable
+- [ ] Endurance: all 38 types covered (Running + Walking + Cycling + Swimming, Single-Session + Lifetime Distance) and orderable
+- [ ] Goals: all 6 types covered and orderable
+- [ ] Programs: all 7 types covered (Graduation Volume + Family Mastery) and orderable
+- [ ] Partnership: all 3 types covered and orderable
+- [ ] Chapters: all 14 types covered (Count + Depth + Duration) and orderable
+- [ ] Longevity: all 7 types covered and orderable
+- [ ] Competition: all 9 types covered and orderable
+- [ ] Communities: all 5 types covered and orderable
+- [ ] Squad: all 15 types covered and orderable
+- [ ] Prestige: all 8 types covered (Breadth Ladder + Named Combinations) and orderable
+- [ ] Hidden: all 6 types covered and orderable
+- [ ] Total: 167 types ✓ (Sex-Specific Milestones and Relative Strength Milestones deferred to V2 — not in this total)
 
 ### Expanded Category Sort Order
 - [ ] Training: workout count family (50→100→250→500→1000) then hours forged family (100→250→500→1000→2500→5000)
@@ -766,7 +784,7 @@ L-10 does not and will never:
 - [ ] Honor name sourced from `HonorInstance.displayName` (no catalog lookup performed)
 - [ ] Date sourced from `HonorInstance.dateEarned` (never `awardedAt`)
 - [ ] Date formatted as "Month D, YYYY"
-- [ ] Preview line renders correctly for all 53 honor types (see Section 8.2 tables)
+- [ ] Preview line renders correctly for the 53 honor types with authored §8.2 templates; the 114 honor types added at v1.1/v1.3/v1.4/this-pass use the §8.3 fallback (`"Earned [dateEarned]"`) until their own preview-line templates are authored in the future descriptive-content pass
 - [ ] `metadata.weightDisplay` resolves for strength milestone previews
 - [ ] `metadata.chapterName` resolves for chapter honor previews
 - [ ] `metadata.goalName` resolves for `first_goal_achieved` preview
@@ -848,11 +866,12 @@ L-10 does not and will never:
 
 | Dependency | Status |
 |-----------|--------|
-| Honor Catalog v1.0 — 53 types | LOCKED |
-| HonorInstance Architecture v1.0 | LOCKED |
-| Honor Evaluation Service Architecture v1.0 | LOCKED |
+| Honor Catalog v1.5 — 167 types, 13 categories | LOCKED |
+| HonorInstance Architecture v1.1 | LOCKED |
+| Honor Evaluation Service Architecture v1.1 | LOCKED |
 | M-2 Honor Earned Modal v1.1 | LOCKED |
 | L-11 Honor Detail Sheet v1.1 | LOCKED |
+| Honors-Architecture-V1-Final-v1.0.md | LOCKED |
 
 ### Contradictions Found
 
@@ -860,13 +879,13 @@ L-10 does not and will never:
 
 All locked decisions (L10-D1 through L10-D10) are internally consistent and non-contradictory.
 
-**Design note — Club honors merged into Strength:** The Honor Catalog defines Club as a separate family (8th family) and L10-D4 defines 7 display categories. Club honors are merged into the Strength display category in L-10. This is a display decision consistent with L10-D4 (which lists Strength but not Club as a separate category). All 53 honor types are accounted for across the 7 display categories. No catalog types are orphaned.
+**Design note — Club honors merged into Strength:** The Honor Catalog defines Club as a separate family and L10-D4 originally defined 7 display categories. Club honors are merged into the Strength display category in L-10. This is a display decision consistent with L10-D4's original intent (Strength carries Club without it becoming a separate category) and is unchanged by the v1.1 category-list expansion. All 167 honor types are accounted for across the 13 display categories (§5.1). No catalog types are orphaned.
 
 ### Architecture Coverage
 
 | Area | Covered |
 |------|---------|
-| All 53 honor types categorized and orderable | ✓ |
+| All 167 honor types categorized and orderable | ✓ |
 | Repeatable chapter depth honors handled correctly | ✓ |
 | Empty state philosophy (no catalog exposure) | ✓ |
 | Category counts = earned HonorInstances only | ✓ |
@@ -893,8 +912,9 @@ All locked decisions (L10-D1 through L10-D10) are internally consistent and non-
 |---------|------|--------|
 | v1.0 | June 2026 | Initial specification — full L-10 Honors Hub architecture |
 | v1.0.1 | June 2026 | Added §4.6: repeatable honors each display as separate cards in Recent Honors; no deduplication |
+| v1.1 | June 2026 | `Honors-Architecture-V1-Final-v1.0.md` reconciled. **Discovered and fixed significant pre-existing staleness:** §5.1's category table still showed only the original 7 display categories and 53-type total, never updated for the v1.1/v1.3/v1.4 Competition/Communities/Squad catalog additions. §5.1 and §18 now reflect the full, current 13-category / 167-type catalog (Training 23, Strength 26, Endurance 38 [new], Goals 6, Programs 7, Partnership 3, Chapters 14, Longevity 7, Competition 9, Communities 5, Squad 15, Prestige 8 [new], Hidden 6 [new]). New category display order documented with rationale. §19 Dependencies Confirmed updated to current doc versions. Two additional Strength families (Sex-Specific Milestones, Relative Strength Milestones — 24 types) were designed in this pass and deferred to V2 by PO decision before final lock; no L-10 category change ships for them in V1. **Not fixed this pass, flagged for a future pass:** §3's ASCII mockup and §7.2's per-category progression-order subsections remain unbackfilled for Partnership/Competition/Communities/Squad — pre-existing gaps that predate this pass, not introduced by it. |
 
 ---
 
-*L-10 Honors Hub — Wireframe Specification v1.0*
+*L-10 Honors Hub — Wireframe Specification v1.1*
 *Forge Legacy | June 2026*

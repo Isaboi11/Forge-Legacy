@@ -1,9 +1,9 @@
 # Forge Legacy — Workout Share Result Architecture
-## WSR-001 | Version 1.0 | June 2026
+## WSR-001 | Version 1.2 | June 2026
 
 **Status:** LOCKED
 **Authority:** This document governs all workout sharing, squad check-in, external share card, and share reaction architecture for Forge Legacy MVP.
-**Downstream impact:** W-17 (Share CTA), W-19 (Share in overflow), M-1 / M-2 / M-3 / M-4 (Share action in ceremony modals), L-11 (Share honor), S-2 (Check-ins section), AthleteShareSettings (new entity), P-settings (future: share preference surface)
+**Downstream impact:** W-17 (Share CTA), W-19 (Share in overflow), M-1 / M-2 / M-3 / M-4 (Share action in ceremony modals), L-11 (Share honor), S-2 (Check-ins section), AthleteShareSettings (new entity), P-settings (future: share preference surface), Workout-Playlist-Amendment-001 (optional playlist link on `ShareContent`)
 
 ---
 
@@ -29,6 +29,8 @@ Specifically, this architecture does not create:
 - Algorithmic content ranking
 - Streak pressure ("you haven't shared in 7 days")
 - Performance comparison between athletes
+
+> **Reconciliation note — Social-System-Architecture-v1.0 (LOCKED, June 2026; governing social authority).** The exclusions in §1.2 describe **WSR-001's own scope** — WSR-001 is, and remains, the **lightweight presence / check-in** channel — not a product-wide prohibition. The intentional **Posts / Friends Feed** media-sharing channel (photos, videos, PR media, captions, milestone sharing) is a **distinct, coexisting primitive** governed by `Social-System-Architecture-v1.0` (SOC-D9), where audience-scoped reactions/comments are permitted under the DNA §10 narrowing (SOC-D4). **The two remain separate systems serving different intents: WSR-001 never becomes a media system, and Posts never replace lightweight check-ins.** WSR-001's squad check-in entities, settings, and behaviors are unchanged. (WSR-001's optional default-OFF squad-reaction model is the precedent Social-System-Architecture's optional Post Reactions mirror.)
 
 ### 1.3 Why It Exists
 
@@ -82,6 +84,7 @@ Shareable content is organized into three detail levels that govern external sha
 | Rank name (new rank) | — | ✓ | ✓ | ✓ (RANK_UP) |
 | "Forging since [Month Year]" | opt-in | opt-in | opt-in | — |
 | Full exercise list (sets/reps/weights) | — | — | ✓ | — |
+| Playlist link (if attached) | ✓ opt-out | ✓ opt-out | ✓ opt-out | ✓ opt-out |
 
 **opt-out:** Included by default; athlete unchecks in share configuration step.
 **opt-in:** Not included by default; athlete checks in share configuration step.
@@ -89,7 +92,13 @@ Shareable content is organized into three detail levels that govern external sha
 
 ### 2.2 Duration in Squad Context
 
-Duration is permitted in squad check-in cards (e.g., "Jordan completed a workout · 1h 15m"). Duration is a presence-quality signal — it communicates showing up and sustaining effort, not strength, speed, or output. It does not create a comparison vector in the way exercise weights do. This is the single exception to the presence-only rule on squad cards and is consistent with how training partners naturally speak about workouts ("I trained for over an hour today").
+Duration is permitted in squad check-in cards (e.g., "Jordan completed a workout · 1h 15m"). Duration is a presence-quality signal — it communicates showing up and sustaining effort, not strength, speed, or output. It does not create a comparison vector in the way exercise weights do. This was the single exception to the presence-only rule on squad cards; § 2.2A adds a second.
+
+### 2.2A Playlist Link (Workout-Playlist-Amendment-001)
+
+An optional Spotify or Apple Music playlist link, attached to the source `WorkoutSession` per Workout-Playlist-Amendment-001, is permitted on squad check-in cards and at all three external detail levels. Like duration, a playlist is not a performance metric — it reveals nothing about strength, speed, output, or progress. It is shareable context, the same category as "Building → [Chapter Name]."
+
+The link appears as a tappable chip wherever the surface is interactive (squad check-in card in S-2, the in-app Share Configuration preview). On the flattened image handed to the native OS share sheet, the chip renders as static art for context only — it is not tappable, because a PNG has no interaction model. See § 7.1.
 
 ### 2.3 Content That Is Never Shareable
 
@@ -216,6 +225,7 @@ Each share type generates a type-specific `ShareContent` payload:
 - Context: "Building → [Chapter Name]" if chapter active
 - Highlights: duration (Summary+), program position if program-launched (Summary+), exercise count (Summary+)
 - ExerciseData: full exercise list (Detailed only)
+- PlaylistLink: included at all levels (Achievement+) if attached to the source session and not opted out (Workout-Playlist-Amendment-001)
 
 **PROGRAM_GRADUATED:**
 - Headline: "Program Graduated"
@@ -254,6 +264,8 @@ The following types are reserved but not implemented in MVP:
 
 ## Section 6 — Internal Share Architecture
 
+> **SUPERSEDED for Squad surfaces — `Squad-System-Architecture-v1.0.md` SQ-D5 (June 2026).** §6.1–§6.4's bounded, share-triggered Check-ins model (max 5 cards, 48h TTL, populated only when an athlete explicitly shares a `WorkoutShare`) is replaced on S-2 by (a) a persistent "Today's Check-ins" daily status card (Trained / Rest Day / Missed, with optional video), and (b) the Squad Feed, which now natively carries workout-completion, PR, and Honor shares. The rest of this document — external share cards, Friends-level sharing, the `AthleteShareSettings` entity, and the share-configuration UI reachable from W-17/M-1–M-4/L-11 — is unaffected; only the squad-internal delivery surface described below changes. The section is retained for historical/architectural record.
+
 ### 6.1 Squad Check-in Surface
 
 A **Check-ins** section is added to S-2 Squad Detail. This section provides the accountability visibility that notification-only sharing cannot reliably deliver — squad members who are offline when a notification fires would otherwise miss the signal entirely.
@@ -287,6 +299,7 @@ Check-in cards contain presence and achievement signals only. Performance data i
 
 Below the primary line:
 - Athlete's optional message (if provided, ≤140 chars)
+- Playlist chip (if attached and not opted out): "🎵 [Display Name or service label]    Open ›" — tappable, opens the link externally (Workout-Playlist-Amendment-001)
 - Time elapsed ("2 hours ago", "Yesterday")
 - Reactions: shown only if reactions exist; displays "[Name], [Name2] reacted 🔥💪" — never an aggregate count
 
@@ -354,8 +367,10 @@ A rendered image generated client-side from the `ShareContent` payload. Three vi
 | Template | Used For |
 |----------|----------|
 | WorkoutComplete Card | `WORKOUT_COMPLETE` shares |
-| Achievement Card | `PROGRAM_GRADUATED`, `HONOR_EARNED`, `GOAL_ACHIEVED`, `RANK_UP` |
-| Rank Card | `RANK_UP` (alternative high-emphasis template) |
+| Achievement Card | `PROGRAM_GRADUATED`, `HONOR_EARNED`, `GOAL_ACHIEVED` |
+| Rank Card | `RANK_UP` (sole template for this type) |
+
+`RANK_UP` renders exclusively via the Rank Card, its dedicated high-emphasis template. It does not also render via the Achievement Card — each share type maps to exactly one template.
 
 Card design principles (visual spec deferred to future share card design system — see Section 11.5):
 - Dark background, typographic-first, minimal visual elements
@@ -364,6 +379,7 @@ Card design principles (visual spec deferred to future share card design system 
 - Forge Legacy app attribution is always present and legible
 - At Detailed level, exercise data renders as a clean typographic list — not a database table, not a grid
 - The card should feel earned and substantial — not a screenshot of a data screen
+- If a playlist is attached, it renders as a small static chip (🎵 + display name) for context. The rendered image is not interactive — tapping it does nothing, because a PNG has no tap targets. Interactive playlist-open behavior exists only on live UI surfaces: the in-app Share Configuration preview (§ 8.3) and the squad check-in card (§ 6.3)
 
 **2. Text Snippet — Plain text fallback**
 
@@ -439,6 +455,7 @@ When an athlete taps any Share action, a share configuration step opens within t
    - Include name (on by default per `AthleteShareSettings.includeNameByDefault`)
    - Include chapter context (on by default per `AthleteShareSettings.includeChapterByDefault`)
    - Include "Forging since" (off by default)
+   - Include playlist (on by default if the source session has an attached playlist link; toggle absent if no playlist was attached)
 4. **Destination section:**
    - Share to squad toggle (visible only if `globalVisibility` is SQUAD_ONLY) — shows squad picker if athlete is in multiple squads
    - Optional squad message field (≤140 chars; appears when squad share is enabled)
@@ -527,8 +544,15 @@ ShareContent {
   exerciseData:     ShareExercise[] | null  // DETAILED level only; null at other levels
   athleteName:      string | null        // null if athlete opted out of name inclusion
   forgingSince:     string | null        // "January 2025" if opted in; null otherwise
+  playlistLink:     SharePlaylistLink | null  // null if no playlist attached or athlete opted out (Workout-Playlist-Amendment-001)
   date:             date                 // calendar date of the share (not the source event)
   appAttribution:   'Forge Legacy'       // always present; literal string
+}
+
+SharePlaylistLink {
+  service:       'SPOTIFY' | 'APPLE_MUSIC'
+  url:           string
+  displayName:   string | null   // athlete-typed label; falls back to a generic service label when null
 }
 
 ShareHighlight {
@@ -764,6 +788,12 @@ Achievement (default), Summary, Detailed. The athlete selects the detail level i
 
 This decision resolves the R1-2 tension: the original restriction (no performance data in any share) was too broad. An athlete who chooses to share their exercise data is exercising control over their own story. The detail level selector ensures this is always an active choice, not a default behavior.
 
+### WSR-D17 — Playlist link is a second squad-card exception to WSR-D6 (Workout-Playlist-Amendment-001)
+
+WSR-D6 restricts squad check-in cards to presence-and-achievement signals, with duration as the sole permitted exception because it is not a performance metric. An optional Spotify or Apple Music playlist link, attached per Workout-Playlist-Amendment-001, is the same category of non-performance context — it says nothing about strength, speed, output, or progress. It is permitted on squad cards and at every external detail level (§ 2.1, § 2.2A), opt-out by default like chapter name.
+
+Interactivity is bounded by surface, not by this decision: the link is tappable wherever the UI is live (squad card, in-app preview) and inert on the flattened share-card image handed to the OS share sheet, because a rendered PNG cannot carry a tap target. This is a platform constraint (§ 7.1), not a privacy or product restriction.
+
 ### WSR-D16 — Squad check-in surface is bounded, ephemeral, and presence-only
 
 A Check-ins section in S-2 Squad Detail shows opt-in check-in cards from squad members. Rules: 48h TTL, max 5 cards per squad, no "load more," most-recent-first, no performance data (WSR-D6), reactions available (WSR-D14). Section disappears entirely when no active cards exist.
@@ -785,6 +815,7 @@ This is not a feed. The defining characteristics of a feed — automatic, infini
 - [ ] `WorkoutShare.visibility` immutable after creation
 - [ ] `ShareContent` is embedded snapshot; not a linked entity
 - [ ] `ShareContent.exerciseData` null at Achievement and Summary levels
+- [ ] `ShareContent.playlistLink` (`SharePlaylistLink | null`) defined; null when no playlist attached or athlete opted out
 - [ ] `ShareReaction` entity defined with uniqueness constraint `(workoutShareId, reactorAthleteId, squadId)`
 - [ ] `ShareReaction` cascade-deleted at check-in card TTL expiry
 - [ ] WorkoutShare does not create referential integrity constraints into source entities
@@ -825,6 +856,7 @@ This is not a feed. The defining characteristics of a feed — automatic, infini
 - [ ] Card text varies by share type (5 type-specific formats)
 - [ ] Tapping card opens Limited Athlete Profile modal (no deep link to workout data)
 - [ ] Athlete's optional message shown on card (≤140 chars)
+- [ ] Playlist chip shown if attached and not opted out; tappable, opens externally (WSR-D17)
 
 ### Reactions
 - [ ] Fixed set: 🔥 💪 🎯 ❤️ only
@@ -845,6 +877,7 @@ This is not a feed. The defining characteristics of a feed — automatic, infini
 - [ ] Summary level: adds type, duration, notable stat
 - [ ] Detailed level: adds full exercise list
 - [ ] Athlete name and chapter context are opt-out (on by default)
+- [ ] Playlist link opt-out (on by default when attached); rendered as static (non-tappable) art on the share-card image
 - [ ] App attribution ("Forge Legacy") always present on all cards
 - [ ] Public recap page reserved for post-MVP (URL scheme defined)
 
@@ -898,6 +931,8 @@ This is not a feed. The defining characteristics of a feed — automatic, infini
 | `AthleteShareSettings` | New entity. Created with default values on account creation. Settings surface needed (deferred to post-MVP settings spec). |
 | Share configuration step | New in-app screen/sheet between "Share" tap and OS share sheet. Preview, detail level selector, content toggles, destination picker. |
 | Share card renderer | New client-side component. Renders ShareContent to image at specified detail level. Three card templates. |
+| `S-2` (Squad Detail, Check-ins section) | Playlist chip rendering + tap-to-open, per Workout-Playlist-Amendment-001 (WSR-D17). |
+| Active-Workout-Flow-Spec-W9-W16 / W-17 / W-19 | Source of `WorkoutSession.playlistLink`, snapshotted into `ShareContent.playlistLink` at share creation time. See Workout-Playlist-Amendment-001. |
 
 ---
 
@@ -905,10 +940,13 @@ This is not a feed. The defining characteristics of a feed — automatic, infini
 
 | Version | Date | Change |
 |---------|------|--------|
+| v1.2 | June 2026 | **Superseded banner added to §6** per `Squad-System-Architecture-v1.0.md` SQ-D5: the bounded, share-triggered Squad Check-in Surface (§6.1–§6.4) is replaced on S-2 by a persistent daily Today's Check-ins card and the new Squad Feed for Squad surfaces. No other section changed; external sharing, Friends-level sharing, and `AthleteShareSettings` are unaffected. |
 | v1.0 | June 2026 | Initial specification. Defines WorkoutShare, AthleteShareSettings, ShareContent, ShareReaction data model. Establishes five MVP share types (WORKOUT_COMPLETE, PROGRAM_GRADUATED, HONOR_EARNED, GOAL_ACHIEVED, RANK_UP). Defines three-tier privacy architecture. Defines three external detail levels (Achievement/Summary/Detailed). Defines squad check-in surface (48h TTL, max 5 cards, presence-only). Defines squad reactions (fixed set, individual names, no counts, 48h TTL). Specifies entry points at W-17, W-19, M-1–M-4, L-11. Records WSR-D1 through WSR-D16. Includes R1 refinement pass (reactions, detail levels, squad check-in surface, performance data philosophy revision). |
+| v1.0.1 | June 2026 | Clarification only (OD-1, raised by Share-Card-Renderer-Architecture.md). §7.1 template table corrected: `RANK_UP` removed from the Achievement Card row; Rank Card is now stated as `RANK_UP`'s sole template. One explanatory sentence added. No schema change, no new field, no new behavior, no change to any other section. |
+| v1.1 | June 2026 | Workout-Playlist-Amendment-001 merged. Adds `ShareContent.playlistLink` (`SharePlaylistLink | null`) — an optional Spotify/Apple Music link snapshotted from the source `WorkoutSession`. New §2.2A names the playlist link as a second squad-card exception to WSR-D6 (alongside duration), since it carries no performance signal. §2.1 content table, §5.2 WORKOUT_COMPLETE mapping, §6.3 squad card content, §7.1 (non-interactive on the flattened share image; tappable on live UI surfaces only), §8.3 share configuration toggles, §9.3 data model, §13 validation checklist, and §14 downstream impact all updated. New decision WSR-D17. No change to any existing share type, privacy tier, or non-behavior. |
 
 ---
 
-*Forge Legacy Workout Share Result Architecture — WSR-001 v1.0*
+*Forge Legacy Workout Share Result Architecture — WSR-001 v1.2*
 *June 2026*
 *Authority for all workout sharing, squad check-in, external share card, and share reaction decisions.*

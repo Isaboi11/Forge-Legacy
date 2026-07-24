@@ -1,7 +1,7 @@
 # Forge Legacy — Program Browse Wireframe Specification
-## W-2 | Phase 2B | Version 1.1 — June 2026
+## W-2 | Phase 2B | Version 1.2 — 2026-07-08
 
-**Authority:** Program-Architecture-Amendment-001-Active-Program-Rule.md
+**Authority:** Program-Architecture-Amendment-001-Active-Program-Rule.md; `Docs/Amendments/Workouts-Navigation-Amendment-001-Retire-Workouts-Hub.md` (LOCKED, 2026-07-08 — W-2 is now the Workouts tab root)
 **PRD Authority:** Section 11 (Program System), Section 8 (Workout System — Programs), Section 5 (MVP — W-2 through W-5)
 
 ---
@@ -18,7 +18,7 @@ The athlete's active program is surfaced immediately and prominently. Past progr
 W-2 is a management and discovery screen. It is not a statistics page. Program records show what the athlete committed to and how far they got — not performance data extracted from those sessions.
 
 **W-2 is entered from:**
-- W-1 Workouts Hub (Program section or "Browse Programs" link)
+- **The Workouts tab (root)** — direct tab tap. W-2 is the Workouts tab's root screen as of `Workouts-Navigation-Amendment-001-Retire-Workouts-Hub.md` (2026-07-08), which retired the former W-1 Workouts Hub dispatch screen. See Section 13.1 for the resulting dual entry-context chrome.
 - W-17 Workout Summary (after graduation — "Find Next Program" CTA)
 - M-4 Program Graduation Modal (after modal — "Find Next Program" CTA)
 
@@ -552,7 +552,7 @@ Deletion of Active, Graduated, and Ended Early programs is not permitted (Progra
 | "+ Create" CTA (no-active-program state) | W-4 Program Create |
 | "See all →" Upcoming | Full list view — W-2 filtered to Future state |
 | "See all →" Legacy Programs | Full list view — W-2 filtered to Graduated + Ended Early |
-| Back | Returns to W-1, W-17, or M-4 (wherever the athlete entered from) |
+| Back | **Conditional (see §13.1).** Present only when W-2 was reached by push (from W-17 or M-4) — returns to the entering screen. Absent when W-2 was reached as the Workouts tab root (direct tab tap); there is nothing to return to within the tab's own stack. |
 
 ---
 
@@ -560,7 +560,16 @@ Deletion of Active, Graduated, and Ended Early programs is not permitted (Progra
 
 ### 13.1 Screen Type
 
-W-2 is a standard navigation stack screen — not a modal sheet. It has a Top App Bar with a back button and the "+ Create" action. The Tab Bar is visible at the bottom (Workouts tab active).
+W-2 is a standard navigation stack screen — not a modal sheet. The Tab Bar is visible at the bottom (Workouts tab active) in both entry contexts below.
+
+**As of `Workouts-Navigation-Amendment-001-Retire-Workouts-Hub.md` (2026-07-08), W-2 has two entry contexts with different Top App Bar chrome:**
+
+| Entry context | Back button | Same convention as |
+|---|---|---|
+| Workouts tab tap (root) | Absent — nothing to return to within the tab's own stack | H-1, L-1, S-1 (other tab roots) |
+| Pushed from W-17 (post-graduation) or M-4 (Program Graduation Modal) | Present — returns to the entering screen | W-3, W-4 (other pushed stack screens) |
+
+The "+ Create" action (Top App Bar, right) is present in both contexts.
 
 ### 13.2 Top App Bar
 
@@ -677,7 +686,7 @@ Progress bar on the Active Program card must have an accessible label: "[X] of [
 - [ ] "+ Create" → W-4 Program Create
 - [ ] "Browse Programs" CTA → scrolls to Forge Programs section
 - [ ] "See all →" links work for both Upcoming and Legacy Programs
-- [ ] Back navigation returns to entering screen (W-1, W-17, or M-4)
+- [ ] No back button when reached as the Workouts tab root; back navigation returns to the entering screen (W-17 or M-4) when reached by push
 
 ### Mobile UX
 - [ ] All tap targets ≥ 44dp (cards ≥ 72dp height)
@@ -688,13 +697,17 @@ Progress bar on the Active Program card must have an accessible label: "[X] of [
 ---
 
 *Forge Legacy Program Browse Wireframe Specification — W-2*
-*v1.1 — June 2026*
-*Authority: Program-Architecture-Amendment-001-Active-Program-Rule.md*
+*v1.2 — 2026-07-08*
+*Authority: Program-Architecture-Amendment-001-Active-Program-Rule.md; Workouts-Navigation-Amendment-001-Retire-Workouts-Hub*
 *PRD: Section 11 (Program System), Section 8 (Workout System), Section 5 (MVP)*
 
 ---
 
 ## Change Log
+
+### v1.2 — 2026-07-08
+
+W-2 becomes the Workouts tab root, per `Docs/Amendments/Workouts-Navigation-Amendment-001-Retire-Workouts-Hub.md`, which retires the former W-1 Workouts Hub dispatch screen. "Entered from" list (Preamble) updated: Workouts tab (root, direct tab tap) replaces the former W-1 entry. §12 Navigation "Back" row made conditional on entry context. §13.1 Screen Type rewritten to specify the two entry contexts (tab root — no back button, same convention as H-1/L-1/S-1; pushed from W-17 or M-4 — back button present). No change to W-2's content tiers, program states, or any Program-Architecture-Amendment-001 rule.
 
 ### v1.1 — June 2026
 

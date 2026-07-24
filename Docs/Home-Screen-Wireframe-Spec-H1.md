@@ -1,8 +1,11 @@
 # Forge Legacy — Home Screen Wireframe Specification
-## H-1 | v1.0 — June 2026
+## H-1 | v1.6 — 2026-07-12
 
 **Status:** Lock-Ready
-**Authority:** Forge Legacy Master PRD Section 5 (MVP), Product DNA, O-3 v1.0, G-1 v1.1, W-1 v1.0, W-3 v1.0, S-1 v1.2, P-1 v1.0, Critical Decisions Amendment 001
+**Authority:** `Onboarding-First-Time-Journey-Architecture-v1.0.md` (governing; first-run hero sub-state ONB-D17/D17a), Forge Legacy Master PRD Section 5 (MVP), Product DNA, ~~O-3 v1.0~~ (superseded — see Onboarding architecture), G-1 v1.1, W-2 v1.2, W-3 v1.0, S-1 v1.6, P-1 v1.0, Critical Decisions Amendment 001, Homepage-Principles-Architecture-v1.0, `Docs/Amendments/Community-Architecture-Amendment-002-Fifth-Tab.md`, `Docs/Amendments/Workouts-Navigation-Amendment-001-Retire-Workouts-Hub.md`
+**Component contracts:** CLA-C25 (ChapterCard), CLA-C26 (ProgramCard), CLA-C37 (HomepagePrinciple), CLA-C19 (TabBar), CLA-C18 (AppBar) — see [`Component-Library-Architecture-v1.0.md`](Component-Library-Architecture-v1.0.md)
+
+> **Governing-authority pointer — `Docs/Amendments/Community-Architecture-Amendment-002-Fifth-Tab.md` (2026-07-07).** Communities was promoted from a Home discovery module to its own bottom-navigation tab, reversing `Community-Architecture-Amendment-001-Navigation-Entry-Points.md`. Tier 6 ("Explore Communities Module," Decision 13, Section 9a) is **retired** — Home reverts to its original five-tier model. This section and all Tier 6 references below are preserved as historical record with superseded markers rather than deleted.
 
 ---
 
@@ -38,7 +41,7 @@ H-1 is a **Daily Focus Surface** — a focused, personal screen that gives the a
 
 ## Architecture Decisions
 
-Twelve decisions were required to complete this specification.
+Thirteen decisions were required to complete this specification (Decision 13, added 2026-07-02, superseded 2026-07-07 — see below).
 
 ---
 
@@ -69,6 +72,10 @@ Twelve decisions were required to complete this specification.
 | 5 | Squad Card | Athlete belongs to at least one squad |
 
 Scroll order follows Tiers 1–5 exactly. No reordering. No athlete customization in MVP.
+
+**Amendment note (2026-07-02, superseded 2026-07-07):** A sixth tier, Explore Communities, was added to this Information Hierarchy per `Docs/Amendments/Community-Architecture-Amendment-001-Navigation-Entry-Points.md`. **That tier is retired as of 2026-07-07** — Communities was promoted to its own bottom-navigation tab (`Docs/Amendments/Community-Architecture-Amendment-002-Fifth-Tab.md`), making a Home discovery module redundant. H-1 reverts to its original five-tier model; Tiers 1–5 were never altered by either amendment.
+
+**The Homepage Principle is not a sixth tier.** A fixed, non-tiered inscription element (governed by `Homepage-Principles-Architecture-v1.0`) renders between Tier 1 and Tier 2, regardless of which tiers are present below it. Unlike the five tiers, it has no data dependency and is never omitted — see Section 5a.
 
 ---
 
@@ -198,13 +205,25 @@ H-1 does not celebrate — it focuses. Celebration lives in the event itself (L-
 
 ---
 
+### Decision 13 — Communities Navigation (2026-07-02, superseded 2026-07-07)
+
+**Superseded.** ~~Architecture: Communities is not a 5th bottom-navigation tab. Home carries a permanent, unconditional "Explore Communities" module (Tier 6) as the primary discovery surface into the Community Hub.~~
+
+This decision originally formalized, at the H-1 level, the navigation locked in `Docs/Amendments/Community-Architecture-Amendment-001-Navigation-Entry-Points.md`. It is reversed by `Docs/Amendments/Community-Architecture-Amendment-002-Fifth-Tab.md` (2026-07-07): Communities is now the 5th bottom-navigation tab, on the grounds that it is designed as a high-frequency, checked-daily feed rather than an occasional discovery surface. **Tier 6 and the Explore Communities module (Section 9a) are retired** — Home no longer carries any Communities-specific content; the module's job is now done by Communities' own tab.
+
+**Bottom navigation is now exactly 5 tabs: Home, Workouts, Legacy, Squads, Communities.** Profile is reached only via the App Bar avatar (Section 4), never a tab. This document's own Section 12.3 Tab Bar table and Section 10 mockup are updated accordingly.
+
+Section 9a below is preserved as historical record of the retired module, marked superseded.
+
+---
+
 ## Section 1 — Purpose
 
 H-1 is the Daily Focus Surface for Forge Legacy athletes.
 
 Its purpose is singular: orient the athlete to what they're building and surface the action that moves them forward today.
 
-H-1 does not compete with any other screen. It does not replicate L-3 (chapter detail), G-1 (goals), W-1 (workouts hub), or S-2 (squad detail). It shows just enough of each to ground the athlete and invite action.
+H-1 does not compete with any other screen. It does not replicate L-3 (chapter detail), G-1 (goals), W-2 (program browse), or S-2 (squad detail). It shows just enough of each to ground the athlete and invite action.
 
 **The one question H-1 answers:** "What should I focus on today?"
 
@@ -233,7 +252,7 @@ Every element on H-1 must earn its presence by contributing to that answer.
 
 ## Section 3 — Information Hierarchy
 
-H-1 has five ordered content tiers. Each tier is present only when its data applies. When absent, a tier leaves no trace.
+H-1 has five ordered content tiers. *(A sixth tier, Explore Communities, was added 2026-07-02 and retired 2026-07-07 when Communities was promoted to its own bottom-navigation tab — see Decision 13.)* Tiers 1–5 are present only when their data applies; when absent, a tier leaves no trace.
 
 **TIER 1 — Chapter Card (Hero)**
 The athlete's current chapter, including their primary goal. The most important context on H-1. Either shown in full or replaced entirely by the Chapter Invitation Card (No Active Chapter state). No alternative partial state.
@@ -249,6 +268,8 @@ Meaningful milestones from the last 7 days. Maximum 3 events. Present only when 
 
 **TIER 5 — Squad Card**
 Squad presence. One squad shown. Present only when athlete is in at least one squad. No activity feed. Omitted entirely otherwise.
+
+**TIER 6 — Explore Communities Module — retired 2026-07-07.** ~~The primary discovery surface into Communities — recommended/trending community tiles and an entry point into the Community Hub.~~ Communities is now reached via its own bottom-navigation tab instead (`Docs/Amendments/Community-Architecture-Amendment-002-Fifth-Tab.md`). See Section 9a for the retired module's historical spec.
 
 ---
 
@@ -295,7 +316,7 @@ The goal block tap target occupies the lower portion of the card. The upper chap
 │  ────────────────────────────────────────────────────    │
 │                                                          │
 │  GOAL                                    [11sp, muted]  │
-│  Squat 405 lbs                           [15sp, primary] │
+│  Back Squat 405 lbs                           [15sp, primary] │
 │  ▓▓▓▓▓▓▓▓▓░░░░░░░  72%                 [bar + 13sp]   │
 │                                                          │
 └──────────────────────────────────────────────────────────┘
@@ -341,11 +362,60 @@ The lack of a goal is not visually flagged as incomplete or problematic. The cha
 
 ```
 │  GOAL                                    [11sp, muted]  │
-│  Squat 405 lbs              ✓ Achieved   [accent color] │
+│  Back Squat 405 lbs              ✓ Achieved   [accent color] │
 │  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  100%               [bar + 13sp]   │
 ```
 
 Progress bar shows 100% in accent color. "✓ Achieved" label at 13sp in accent color. This state is informational — no action is presented. The athlete may continue their chapter after goal achievement; H-1 shows the result.
+
+### 5.5 Active Chapter State — Awaiting First Workout (first-run)
+
+**Added by the Onboarding reconciliation. Governed by `Onboarding-First-Time-Journey-Architecture-v1.0.md` ONB-D17 / ONB-D17a (§27-G).** This is a distinct hero sub-state of the Active Chapter Card, shown to a **brand-new athlete who has just completed onboarding and has not yet logged Workout #1.** Their Chapter I was created silently (ONB-D14) and is genuinely empty. It is distinct from both the "No Active Chapter" invitation (Section 10) and the chapter-with-history states (5.1–5.4).
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  Chapter I                              [11sp, muted]    │  ← bronze outline on card
+│  Building Your Foundation      [18sp, primary weight]   │
+│                                                          │
+│  The first page of your Chapter          [15sp, light]  │
+│  is waiting to be written.                              │
+│  Your story begins with one workout.     [13sp, muted]  │
+└──────────────────────────────────────────────────────────┘
+
+              [  Start Workout  ]        ← Primary CTA, never disabled
+```
+
+- **Chapter identity:** "Chapter I · Building Your Foundation" in the Chapter Card hero (the silently-created, still-empty chapter).
+- **Anticipation copy (locked):** "The first page of your Chapter is waiting to be written." with the supporting line "Your story begins with one workout."
+- **Subtle bronze outline** on the card.
+- **No progress bar. No countdown. No streak. No shame. No fake accomplishment.** An empty-but-ready chapter is presented as *anticipation*, never as a deficit (DNA §2/§10; ONB-D22). There is no goal block, no "0 workouts" counter, and no completion meter.
+- **Primary CTA:** "Start Workout" (Decision 6 — never disabled). All other tiers (Program Card, Legacy, Squad, etc.) follow their normal rules but are **visually secondary** to the chapter + Start Workout.
+- **Returning before Workout #1 (ONB-D17a):** if the athlete leaves and returns still having logged no workout, the status copy softens to a calm acknowledgement — **"Your first workout is ready whenever you are."** This is **not** a reminder, re-engagement nudge, "welcome back" hook, streak, countdown, or shame surface. The anticipation framing and the Start Workout CTA are otherwise unchanged.
+- **Exit from this sub-state:** once Workout #1 is logged, the first-run earned payoff fires (ONB-D18, layered on the W-17 summary), after which H-1 shows the normal Active Chapter states (5.1–5.4) with real history. This sub-state never reappears for that chapter.
+- **Experienced athletes are not addressed with beginner-only language.** Experience (collected in O-2 v2.0) shapes the recommendation and copy tone elsewhere; the empty Forge record itself still begins at zero for everyone, framed as anticipation rather than novice hand-holding.
+
+---
+
+## Section 5a — Homepage Principle (Inscription)
+
+Governed by `Homepage-Principles-Architecture-v1.0.md` (HP-D1–HP-D11). H-1 owns only this element's placement on the screen — its content rules, rotation logic, and editorial process belong entirely to that architecture.
+
+```
+│  Forge Legacy                              [●]          │  ← App Bar
+│                                                          │
+│  Quiet consistency wins.                  [13sp, muted] │  ← Homepage Principle
+│                                                          │
+│  ┌──────────────────────────────────────────────────┐   │
+│  │  Road to 405                                      │   │  ← Chapter Card (Tier 1)
+```
+
+**Position:** Between the Chapter Card (Tier 1) and the Active Program Card (Tier 2) — below the App Bar and Chapter Card, above the Workout CTA and any Tier-2 content. Present unconditionally, in the same position, whether or not Tier 2 exists.
+
+**Visual spec:** per `Homepage-Principles-Architecture-v1.0.md` HP-D3 — single line, small/low-contrast (13sp, muted/tertiary), no icon, no border, no background, no CTA, no animation. Truncates rather than wraps if it does not fit at the standard content width. This document does not duplicate that spec; it only fixes the element's position on H-1.
+
+**Tap behavior:** none. The inscription is never tappable and has no destination.
+
+**Empty/error states:** none. The element is unconditional and content-independent — it is never omitted, and it never shows a placeholder, loading, or error state distinct from its normal text.
 
 ---
 
@@ -430,7 +500,7 @@ Present only when qualifying milestone events exist within the last 7 calendar d
 ```
 Recent                                      View All →
 ────────────────────────────────────────────────────────
-✓   Goal achieved — Squat 405 lbs               Today
+✓   Goal achieved — Back Squat 405 lbs               Today
 🏅  Honor earned — Press 225 lbs           2 days ago
 🎓  Power Block — Cycle 1 graduated         5 days ago
 ```
@@ -516,6 +586,33 @@ The card says: "You have accountability partners and they are named [Squad Name]
 
 ---
 
+## Section 9a — Explore Communities Module (Tier 6, added 2026-07-02, RETIRED 2026-07-07)
+
+**Retired.** Communities was promoted to its own bottom-navigation tab (`Docs/Amendments/Community-Architecture-Amendment-002-Fifth-Tab.md`), making this Home discovery module redundant. This section is preserved below as historical record only — none of it renders on H-1 anymore.
+
+Governed by `Community-System-Architecture-v1.0.md` COM-D18 (as it read prior to 2026-07-07) and `Docs/Amendments/Community-Architecture-Amendment-001-Navigation-Entry-Points.md`. Home was the **primary discovery surface** for Communities; this module was the entry point.
+
+```
+────────────────────────────────────────────────────────
+Explore Communities                          View All →
+────────────────────────────────────────────────────────
+[ Community tile ]  [ Community tile ]  [ Community tile ]
+```
+
+**Section header:** "Explore Communities" — 13sp, uppercase, muted (same visual weight as other section headers, e.g. Recent Legacy Activity). Right: "View All →" — tertiary text link → Community Hub.
+
+**Content:** A horizontal, non-scrolling-priority preview row of 2–3 recommended/trending community tiles (Card, CLA-C07 — same primitive as other Tier cards, not a bespoke component). Each tile shows the community name, category, and member count only — no leaderboard, no ranking, no "trending" numeric score.
+
+**Tap behavior:** Tapping a community tile or "View All →" both navigate to the Community Hub (community-scoped for a tile; hub root for "View All →"). The Community Hub itself is a dedicated destination, not duplicated per entry point — see `Community-System-Architecture-v1.0.md`.
+
+**Presence:** Unlike Tiers 2, 4, and 5, this module is **present unconditionally** — it is a permanent discovery surface, not conditioned on the athlete's own data (chapter, program, or squad state). If fewer than 2–3 communities can be recommended (e.g., a very early platform state), the module still renders with however many are available; it is never replaced with a "no communities yet" message (consistent with H-1's Decision 11 "communicate absence as a problem" prohibition).
+
+**What this module does not do:** it does not show a leaderboard, ranking, follower count, or any comparison metric between communities or between athletes; it does not surface community feed content or posts; it does not notify or badge the athlete toward it.
+
+**Position:** Last in scroll order, after the Squad Card (Tier 5). Vertical gap from Squad Card: 12dp (consistent with inter-card spacing elsewhere on H-1).
+
+---
+
 ## Section 10 — No Active Chapter State
 
 When no Active Chapter exists, the Chapter Card is replaced by the Chapter Invitation Card. All other tiers follow their normal rules (Program Card: absent; Workout CTA: "Start Workout"; Recent Legacy: present if applicable; Squad: present if applicable).
@@ -544,7 +641,7 @@ When no Active Chapter exists, the Chapter Card is replaced by the Chapter Invit
 │  [Squad Card — if in squads]                           │
 │                                                         │
 ├─────────────────────────────────────────────────────────┤
-│  Home  ·  Workouts  ·  Legacy  ·  Squads  ·  Profile   │
+│  Home · Workouts · Legacy · Squads · Communities       │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -592,13 +689,16 @@ Section entirely absent. No "Nothing recent to show." No "Your legacy activity w
 
 Section entirely absent. No "Join a squad" prompt. No "Connect with others." No social invitation. The athlete will encounter squads naturally through S-1 when they choose to explore.
 
-### 11.5 Day 1 State (Post-O-3, New Athlete)
+### 11.5 Explore Communities Module (Tier 6, added 2026-07-02, retired 2026-07-07)
+
+**Retired** — see Section 9a. This subsection is preserved as historical record only: ~~not an empty-state case — this module is present unconditionally and never omitted, regardless of the athlete's own chapter/program/squad state.~~
+
+### 11.6 Day 1 State (Post-O-3, New Athlete)
 
 The most minimal valid H-1 configuration:
 - Chapter Card (with goal or "Add a primary goal →")
 - "Start Workout" CTA
-
-Nothing else. No program. No recent activity. No squad. This is a valid, intentional, correctly-functioning H-1 state. It is not broken, sparse, or incomplete — it is focused. The athlete has declared their chapter and now the question is simple: "Start Workout."
+No program. No recent activity. No squad. This is a valid, intentional, correctly-functioning H-1 state. It is not broken, sparse, or incomplete — it is focused. The athlete has declared their chapter and now the question is simple: "Start Workout."
 
 ---
 
@@ -629,24 +729,28 @@ Nothing else. No program. No recent activity. No squad. This is a valid, intenti
 | "Squads ([N]) · View all →" | S-1 (Squads Hub) |
 | "Create Chapter" (Invitation Card) | L-5 (Post-Onboarding Chapter Creation) |
 | Avatar (App Bar) | P-1 (Profile) |
-| Tab bar | H-1, W-1, L-1, S-1, P-1 |
+| Tab bar | H-1, W-2, L-1, S-1, Community Hub |
+
+*(The "Community tile" / "View All →" (Explore Communities) rows previously here are retired along with Tier 6 — see Section 9a. Communities is now reached via its own tab, not a tap-through from H-1.)*
 
 ### 12.3 Tab Bar
 
-H-1 is Tab 1. Standard persistent bottom navigation, visible on H-1.
+H-1 is Tab 1. Standard persistent bottom navigation, visible on H-1. **Bottom navigation is exactly 5 tabs — updated 2026-07-07** (previously corrected to 4 on 2026-07-02, then Communities was promoted to a genuine 5th tab per `Docs/Amendments/Community-Architecture-Amendment-002-Fifth-Tab.md`). Profile is never a bottom-nav tab; it is reached only via the App Bar avatar (Section 4).
 
 | Tab | Screen |
 |-----|--------|
 | 1 — Home | H-1 |
-| 2 — Workouts | W-1 (Workouts Hub) |
+| 2 — Workouts | W-2 (Program Browse) *(tab root changed 2026-07-08 — W-1 Workouts Hub retired, `Docs/Amendments/Workouts-Navigation-Amendment-001-Retire-Workouts-Hub.md`)* |
 | 3 — Legacy | L-1 (Legacy Hub) |
 | 4 — Squads | S-1 (Squads Hub) |
-| 5 — Profile | P-1 (Profile) |
+| 5 — Communities | Community Hub *(added 2026-07-07)* |
+
+Profile (P-1) is reached via the App Bar avatar from any tab — never a tab itself.
 
 ### 12.4 What H-1 Does Not Navigate To Directly
 
 - G-2 (Goal Detail) — reached via G-1 or L-3
-- W-2 (Program Browse) — reached via W-1
+- W-2 (Program Browse) — reached via the Workouts tab (its root screen as of the 2026-07-08 retirement amendment; not via any H-1 on-screen element)
 - L-3 (Chapter Detail) except via Chapter Card tap
 - Any onboarding screen — onboarding is complete by the time H-1 is shown
 - Settings — accessed via P-1
@@ -676,6 +780,7 @@ When H-1 is opened and the athlete has not scrolled: they see the Chapter Card (
 | Vertical gap between cards | 12dp |
 | Gap between CTA and card above | 16dp |
 | Section separator (Recent, Squad) | Full-width rule, 1dp, secondary color |
+| Gap above/below Homepage Principle (inscription) | 12dp above (from App Bar), 12dp below (to Chapter Card) |
 
 ### 13.4 Tap Targets
 
@@ -763,6 +868,9 @@ No H-1 change. Rank is on P-1. If a rank advancement notification is added in MV
 - Wordmark: `accessibilityLabel` = "Forge Legacy, Home"
 - Avatar: `accessibilityLabel` = "[Athlete Display Name], Profile"
 
+**Homepage Principle (Inscription):**
+- Static text, not a button: `accessibilityLabel` = "[Principle or Reflection Question text]". No `accessibilityRole` of "button" or "link" — it is announced and nothing else.
+
 **Chapter Card (Quantifiable Goal):**
 - `accessibilityLabel` = "[Chapter Name]. Active, [N] days. Goal: [Goal Name], [percentage]% complete. Double-tap to view chapter."
 
@@ -792,6 +900,8 @@ No H-1 change. Rank is on P-1. If a rank advancement notification is added in MV
 **Squad Card:**
 - `accessibilityLabel` = "[Squad Name], [N] members. Double-tap to view squad."
 - "View all →" (multi-squad): `accessibilityLabel` = "View all [N] squads"
+
+*(The Explore Communities Module accessibility spec previously here is retired along with Tier 6 — see Section 9a. Communities' own accessibility spec now lives with its tab/screen, not H-1.)*
 
 **Progress Bars:**
 - All progress bars: `accessibilityValue` = { min: 0, max: 100, now: [percentage] }
@@ -859,11 +969,15 @@ Toast auto-dismisses after 3 seconds. If the athlete immediately switches apps a
 
 ### Risk 1 — H-1 and W-1 Workout CTA Redundancy
 
-**Issue:** Both H-1 and W-1 (Workouts Hub) surface a "Start Workout" CTA. An athlete can initiate a workout from either screen.
+**Status: RESOLVED 2026-07-08 — W-1 retired.** See `Docs/Amendments/Workouts-Navigation-Amendment-001-Retire-Workouts-Hub.md`. Original risk text preserved below as historical record; the redundancy it describes no longer exists because W-1 no longer exists.
 
-**Assessment:** This redundancy is intentional and correct. H-1's CTA is a direct path to the most common action without requiring navigation to W-1. W-1 serves athletes who want to browse programs, review history, or explore workout options — not just start immediately. The two CTAs serve different contexts, not duplicate the same action. No spec change required.
+~~**Issue:** Both H-1 and W-1 (Workouts Hub) surface a "Start Workout" CTA. An athlete can initiate a workout from either screen.~~
 
-**Risk level:** Low. Intentional design.
+~~**Assessment:** This redundancy is intentional and correct. H-1's CTA is a direct path to the most common action without requiring navigation to W-1. W-1 serves athletes who want to browse programs, review history, or explore workout options — not just start immediately. The two CTAs serve different contexts, not duplicate the same action. No spec change required.~~
+
+~~**Risk level:** Low. Intentional design.~~
+
+**Current state:** The Workouts tab now opens directly to W-2 Program Browse, which carries no general-purpose "Start Workout" CTA (only per-program "Next: [Workout] →" / "Start Next Workout" actions reached via W-3). H-1's Workout CTA is now the sole quick-start entry point for spontaneous (non-program) workout logging.
 
 ---
 
@@ -936,6 +1050,11 @@ Toast auto-dismisses after 3 seconds. If the athlete immediately switches apps a
 - [ ] Right: Athlete avatar, 36dp circular, navigates to P-1
 - [ ] No search, no notification bell, no hamburger, no additional icons
 
+### Homepage Principle (Inscription)
+- [ ] Renders unconditionally between Tier 1 (Chapter Card) and Tier 2 (Program Card) — never omitted, never a sixth tier
+- [ ] Small, low-contrast, single-line static text — no icon, border, card, CTA, animation, or interaction
+- [ ] Content, rotation, and editorial rules are owned entirely by `Homepage-Principles-Architecture-v1.0.md` — not duplicated here
+
 ### Chapter Card (Tier 1)
 - [ ] Chapter name: 24sp, primary weight, wraps to max 2 lines
 - [ ] Status: "Active · [N] days" or "Active · Day 1" — 13sp, muted
@@ -979,6 +1098,9 @@ Toast auto-dismisses after 3 seconds. If the athlete immediately switches apps a
 - [ ] No activity feed, no member names, no member activity
 - [ ] No "join a squad" prompt in empty state
 
+### Explore Communities Module (Tier 6, added 2026-07-02, RETIRED 2026-07-07)
+- [x] Retired — Communities is now its own bottom-navigation tab (`Docs/Amendments/Community-Architecture-Amendment-002-Fifth-Tab.md`); none of this checklist block applies to H-1 anymore
+
 ### No Active Chapter State
 - [ ] Invitation Card replaces Chapter Card
 - [ ] Invitation: "Your training builds your legacy. Start a chapter to give it a name."
@@ -1006,7 +1128,7 @@ Toast auto-dismisses after 3 seconds. If the athlete immediately switches apps a
 - [ ] "Squads ([N]) · View all →" → S-1
 - [ ] "Create Chapter" → L-5
 - [ ] Avatar → P-1
-- [ ] Tab bar: 5 tabs, Home selected
+- [ ] Tab bar: 5 tabs (Home, Workouts, Legacy, Squads, Communities), Home selected — Profile is never a tab
 
 ### Post-State Behavior
 - [ ] O-3 completion: toast "[Chapter Name] has started." (3s auto-dismiss, non-tappable)
@@ -1062,8 +1184,34 @@ Initial specification. H-1 established as a Daily Focus Surface — the athlete'
 
 **H-1-A1:** Goal area in Chapter Card independently tappable → G-1. The Chapter Card now has two distinct tap zones: (1) the goal block (GOAL label + goal name + progress bar) → G-1 (Goal Hub), providing a direct path to goal management from H-1; (2) the chapter identity area (name + status line) and card background → L-3 (Active Chapter Detail), unchanged. "Add a primary goal →" link → G-1 unchanged. Navigation matrix (§12.2), validation checklist (§18), and tap behavior description (§5) updated.
 
+### v1.2 — June 2026
+
+**Homepage Principle (Inscription) added**, governed by the new `Homepage-Principles-Architecture-v1.0.md`. A fixed, non-tiered inscription element — small, low-contrast, single-line static text, never tappable — now renders unconditionally between the Chapter Card (Tier 1) and the Active Program Card (Tier 2). It is explicitly not a sixth tier of H-1's Information Hierarchy: it has no data dependency and is never omitted. New Section 5a added; Information Hierarchy (§3), Mobile UX spacing (§13.3), Accessibility (§15), and the Validation Checklist (§18) updated. No existing H-1 tier, decision, or pixel spec was altered.
+
+### v1.3 — July 2026 (2026-07-02, superseded 2026-07-07 — see v1.4)
+
+**Communities navigation finalized** per `Docs/Amendments/Community-Architecture-Amendment-001-Navigation-Entry-Points.md`, formalizing what had previously been documented only in `Docs/Forge-Design-Blueprint-v1.0.md`:
+- **New Decision 13** and **new Tier 6 — Explore Communities Module** (new Section 9a): a permanent, unconditionally-present discovery surface for recommended/trending communities, routing to the Community Hub. Information Hierarchy (§2, §3), Mobile UX spacing (§13.3), Accessibility (§15), Navigation (§12.2), the Validation Checklist (§18), and Downstream Dependencies (§19) all updated accordingly.
+- **Tab Bar corrected from 5 tabs to 4 tabs** (Section 10 mockup, Section 12.2, Section 12.3, Section 18): this document had drifted to show Profile as a 5th bottom-navigation tab, contradicting both Section 4 (App Bar avatar → Profile) and the governing `Forge-Legacy-Master-PRD.md` §6 / `Onboarding-First-Time-Journey-Architecture-v1.0.md` 4-tab model. Bottom navigation is now consistently documented as exactly 4 tabs — Home, Workouts, Legacy, Squads — with Profile reached only via the App Bar avatar.
+- No existing Tier 1–5 content, decision, or pixel spec was altered by this revision.
+
+### v1.4 — July 2026 (2026-07-07)
+
+**Communities promoted to the 5th bottom-navigation tab**, reversing v1.3, per `Docs/Amendments/Community-Architecture-Amendment-002-Fifth-Tab.md`:
+- **Decision 13 superseded** and **Tier 6 — Explore Communities Module (Section 9a) retired**: Communities is designed as a high-frequency, checked-daily feed rather than an occasional directory, so it earned its own tab instead of a Home discovery module. Information Hierarchy (§2, §3) reverts to five tiers; Mobile UX spacing (§13.3), Accessibility (§15), Navigation (§12.2), the Validation Checklist (§18), and Downstream Dependencies (§19) all updated to remove Tier 6 content.
+- **Tab Bar updated from 4 tabs to 5 tabs** (Section 10 mockup, Section 12.2, Section 12.3, Section 18): Home, Workouts, Legacy, Squads, Communities. Profile is still reached only via the App Bar avatar, never a tab.
+- No existing Tier 1–5 content, decision, or pixel spec was altered by this revision — only Tier 6 (added and retired within the same amendment lineage) was affected.
+
+### v1.5 — 2026-07-08
+
+**W-1 Workouts Hub retired**, per `Docs/Amendments/Workouts-Navigation-Amendment-001-Retire-Workouts-Hub.md`: the Workouts tab's root screen is now W-2 Program Browse. All W-1 cross-references corrected to W-2 (Authority line; §9 sentence on screens H-1 does not replicate; §12.2 CTA-destination table; §12.3 Tab Bar table; §12.4 "does not navigate to directly" list). Section 17 Risk 1 (H-1/W-1 CTA redundancy) marked resolved — the redundancy no longer exists because W-2 has no general-purpose "Start Workout" CTA. No Tier 1–5 content, decision, or pixel spec altered — this is a cross-reference correction only.
+
+### v1.6 — 2026-07-12 (Onboarding reconciliation)
+
+**Added Section 5.5 — Active Chapter State: Awaiting First Workout (first-run)**, reconciling H-1 to the governing `Onboarding-First-Time-Journey-Architecture-v1.0.md` (ONB-D17 / ONB-D17a, §27-G). A distinct Active-Chapter hero sub-state for the brand-new athlete whose silently-created Chapter I (ONB-D14) is still empty: bronze-outlined Chapter Card showing "Chapter I · Building Your Foundation," anticipation copy ("The first page of your Chapter is waiting to be written." / "Your story begins with one workout."), the returning-before-Workout-#1 line ("Your first workout is ready whenever you are."), **no progress bar / countdown / streak / shame / fake accomplishment**, Start Workout primary, all other tiers secondary; exits to the normal Active Chapter states once Workout #1 is logged (earned payoff per ONB-D18). Authority line updated: **O-3 marked superseded** (its silent-Chapter-I successor is the Onboarding architecture). **No governing product decision changed; no existing Tier 1–5 content, decision, or pixel spec altered** — this adds one first-run sub-state and one authority correction.
+
 ---
 
 *Forge Legacy Home Screen Wireframe Specification — H-1*
-*v1.1 — June 2026*
-*Authority: Master PRD Section 5 (MVP), Product DNA, O-3 v1.0, G-1 v1.1, W-1 v1.0, W-3 v1.0, S-1 v1.2, P-1 v1.0, Critical Decisions Amendment 001*
+*v1.6 — 2026-07-12*
+*Authority: Onboarding-First-Time-Journey-Architecture-v1.0 (governing), Master PRD Section 5 (MVP), Product DNA, O-3 v1.0 (superseded), G-1 v1.1, W-2 v1.2, W-3 v1.0, S-1 v1.6, P-1 v1.0, Critical Decisions Amendment 001, Homepage-Principles-Architecture-v1.0, Community-Architecture-Amendment-002-Fifth-Tab, Workouts-Navigation-Amendment-001-Retire-Workouts-Hub*

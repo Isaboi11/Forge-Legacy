@@ -1,10 +1,10 @@
 # Forge Legacy — Monetization Architecture Amendment 001
 ## MVP Monetization Framework
-### Status: Locked — MVP Approved Assumption | June 2026
+### Status: Locked — MVP Approved Assumption | June 2026 (Amendment 002 merged)
 
-**Authority:** Forge Legacy Master PRD Section 18 | Forge Legacy Product DNA
+**Authority:** Forge Legacy Master PRD Section 18 | Forge Legacy Product DNA | **Amendment 002 (June 2026):** `Community-System-Architecture-v1.0.md` COM-D4
 **Supersedes:** PRD Section 18 monetization prose where they conflict
-**Scope:** All screens where premium limits apply — W-4 (program creation), S-1/S-3 (squad creation/join), W-1/W-2/L-5 (import entry points), L-15 (photo counter), M-7 (upsell sheet)
+**Scope:** All screens where premium limits apply — W-4 (program creation), S-1/S-3 (squad creation/join), W-1/W-2/L-5 (import entry points), L-15 (photo counter), M-7 (upsell sheet), **Community Hub / Community Page join CTA (Amendment 002)**
 
 This amendment is the authoritative monetization reference for Forge Legacy MVP. All numerical limits are initial assumptions — subject to future revision. All principles are locked.
 
@@ -66,10 +66,11 @@ Free tier includes:
 | Photos | 50 | Account-wide (not per-chapter). Counter shown on L-15: "X of 50 photos" |
 | Squads | 2 | Athlete may belong to or create up to 2 squads. Account-wide. |
 | Imports | 1 lifetime import | One completed import flow (one W-IM-4 confirmation). See Section 8. |
+| **Community memberships** *(Amendment 002)* | **1** | Athlete may **join** 1 community. No limit on the size of any community at any tier. Community **ownership** is capped at 1 for **all** tiers — a non-monetized product constraint, not a paywall. See Section 15. |
 
 **All numerical limits are flagged as Initial MVP Assumptions — Subject to Future Revision.**
 
-The 3-program limit, 50-photo limit, 2-squad limit, and 1-import model reflect initial MVP monetization assumptions. They may change based on user feedback, retention data, conversion data, storage costs, and business needs. The principles in Section 2 and Section 9 do not change.
+The 3-program limit, 50-photo limit, 2-squad limit, 1-import model, and 1-community-membership limit reflect initial MVP monetization assumptions. They may change based on user feedback, retention data, conversion data, storage costs, and business needs. The principles in Section 2 and Section 9 do not change.
 
 ---
 
@@ -82,6 +83,7 @@ Premium includes everything in Free, plus:
 - Unlimited photos
 - Unlimited squads
 - Unlimited imports (W-IM-1 through W-IM-4)
+- **Unlimited community memberships** *(Amendment 002)* — community **ownership** remains capped at 1 for all tiers; this is not unlocked by Premium (Section 15)
 - Future: AI features (deferred to post-MVP)
 - Future: Advanced analytics (deferred to post-MVP)
 - Future: Premium legacy tools (deferred to post-MVP)
@@ -167,6 +169,21 @@ Charging for the first import creates a gap in the "Never Charge For History" pr
 
 ---
 
+## Section 8A — Community Limit Behavior *(Amendment 002, June 2026 — `Community-System-Architecture-v1.0` COM-D4)*
+
+| Scenario | Behavior |
+|---|---|
+| Free user in 1 community attempts to join a second | M-7 Premium Upsell Sheet fires |
+| Free user upgrades, joins more communities, then downgrades | Remains a member of all of them. Cannot join an additional community while at or above 1. No removal on downgrade (Section 2). |
+| Community invitation/approval received by a free user already in 1 community | Visible but cannot be completed until the athlete upgrades or leaves their current community |
+| Free user who leaves their one community | Free slot restored. May join another until reaching the 1-community limit again. |
+| Community ownership (max 1, **all tiers**) | **Not a monetization gate.** Capped at 1 for every tier including Premium — a product-design constraint (same category as "one Active program"), not a paywall. |
+| Member count within any community | **No limit at any tier**, regardless of ownership or membership tier. |
+
+**Flagged as Initial MVP Assumption — Subject to Future Revision** (the "1" figure only; the behaviors are locked). Full detail: `Monetization-Architecture-Amendment-002-Communities.md`.
+
+---
+
 ## Section 9 — Monetization Philosophy (Locked)
 
 **Forge Legacy monetizes:**
@@ -246,6 +263,7 @@ A proposed monetization change that fails Questions 1, 2, or 3 should not be app
 - [ ] Photos: capped at 50 — flagged as provisional
 - [ ] Squads: capped at 2 — locked by Critical Decisions Amendment 001 (June 2026)
 - [ ] Imports: 1 lifetime completed import — flagged as provisional
+- [ ] Community memberships: capped at 1 — flagged as provisional (Amendment 002); community ownership capped at 1 for all tiers, non-monetized; no community member-count cap at any tier
 - [ ] M-7 fires at program 4 attempt, photo 51 attempt, squad 3 attempt, and second import attempt
 - [ ] First import attempt: full W-IM flow accessible to free user
 - [ ] Abandoned/failed imports do not consume the free import

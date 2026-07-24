@@ -1,8 +1,9 @@
 # M-4 Program Graduated Modal
-## Ceremony Specification v1.0 | June 2026
+## Ceremony Specification v1.1 | June 2026
 
 **Status:** LOCKED
 **Authority:** Program-Architecture-Amendment-001-Active-Program-Rule.md, Workout-Summary-Spec-W17.md (§11.3), Rank-Up-Modal-Spec-M1.md, M-3-Goal-Achieved-Spec.md, Honor-Evaluation-Service-Architecture-v1.0.md, MVP-Architecture-Audit-v1.0.md [H-16, C-11], Master PRD §11, §15, Product DNA.
+**Component contracts:** CLA-C20 (Modal), CLA-C08 (Button) — see [`Component-Library-Architecture-v1.0.md`](Component-Library-Architecture-v1.0.md)
 
 ---
 
@@ -107,6 +108,8 @@ M-4 is a centered modal overlay. The underlying surface (W-17) is visible and di
 │                                                     │
 │              [    Continue    ]                     │  ← Primary CTA, always present
 │                                                     │
+│            Share this graduation                    │  ← Subordinate text action, always present
+│                                                     │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -114,6 +117,8 @@ M-4 is a centered modal overlay. The underlying surface (W-17) is visible and di
 
 ```
 │              [    Continue    ]                     │
+│                                                     │
+│            Share this graduation                    │
 │                                                     │
 │     View Your Programs    View Your Legacy          │  ← Secondary text links, only when final
 │                                                     │
@@ -131,6 +136,7 @@ M-4 is a centered modal overlay. The underlying surface (W-17) is visible and di
 | Dividers | Horizontal separators between copy and context rows, and between context rows and CTA |
 | Context rows | Left-aligned label, right-aligned value; 4 rows |
 | Continue | Primary CTA, full-width, always present; always the only button-class element |
+| Share action | Text-link style: "Share this graduation"; always present below Continue, regardless of queue position (per WSR-001 §8.2). Opens SH-1 with `PROGRAM_GRADUATED` pre-selected; queue advances exactly as "Continue" would (per SH-1 §6.2) |
 | Secondary links | Two text-link style (not buttons): "View Your Programs" and "View Your Legacy"; visible only when M-4 is the final ceremony in queue |
 
 ### Context Row Values
@@ -160,6 +166,7 @@ M-4 is the only ceremony queued. Secondary links are visible beneath "Continue."
 [ Context rows ]
 ──────────────────
 [ Continue ]
+Share this graduation
 View Your Programs    View Your Legacy
 ```
 
@@ -175,9 +182,10 @@ M-2 (Honor Earned) is pending after M-4. Secondary links are suppressed.
 [ Context rows ]
 ──────────────────
 [ Continue ]
+Share this graduation
 ```
 
-"Continue" advances to M-2.
+"Continue" advances to M-2. "Share this graduation" remains present and behaves identically (opens SH-1, advances the queue) regardless of queue position.
 
 ### 5.3 M-4 as Final Ceremony After Prior Ceremonies
 
@@ -191,6 +199,7 @@ M-1 and/or M-3 fired before M-4 in the same queue. M-4 is now the last item. Sec
 [ Context rows ]
 ──────────────────
 [ Continue ]
+Share this graduation
 View Your Programs    View Your Legacy
 ```
 
@@ -256,24 +265,29 @@ M-4 appears over W-17, which remains the current screen beneath the overlay. W-1
 
 "Continue" dismisses M-4. The athlete returns to W-17, which is fully interactive. The athlete taps "Done" on W-17 to continue to their home screen.
 
-### 7.4 "View Your Programs" — Secondary Link
+### 7.4 "Share this graduation" — Share Action
+
+Per WSR-001 §8.2, tapping "Share this graduation" is treated identically to tapping "Continue" for ceremony-sequence purposes (SH-1 §6.2): M-4 dismisses, the queue advances exactly as it would have, and SH-1 (Share Configuration Step) presents on top of whatever that advancement reveals, with `shareType: PROGRAM_GRADUATED` pre-selected. Unlike the secondary links below, this action is always present regardless of queue position.
+
+### 7.5 "View Your Programs" — Secondary Link
 
 Dismisses M-4 and navigates to W-2 (Program Browse). Available only when M-4 is the final ceremony. Ceremony session is complete.
 
-### 7.5 "View Your Legacy" — Secondary Link
+### 7.6 "View Your Legacy" — Secondary Link
 
 Dismisses M-4 and navigates to L-1 (Legacy Hub). Available only when M-4 is the final ceremony. Ceremony session is complete.
 
-### 7.6 No Other Dismissal Paths
+### 7.7 No Other Dismissal Paths
 
-Tapping the dimmed background behind M-4 does nothing. Drag gestures do nothing. The Android hardware back button does nothing. M-4 can only be dismissed by tapping "Continue" or a secondary text link.
+Tapping the dimmed background behind M-4 does nothing. Drag gestures do nothing. The Android hardware back button does nothing. M-4 can only be dismissed by tapping "Continue," "Share this graduation," or a secondary text link.
 
-### 7.7 Navigation Summary
+### 7.8 Navigation Summary
 
 | Action | Queue State | Destination |
 |--------|------------|------------|
 | "Continue" | More ceremonies pending | Next queued ceremony (M-2) |
 | "Continue" | M-4 is final | W-17 (fully interactive) |
+| "Share this graduation" | Any | SH-1 (`PROGRAM_GRADUATED` pre-selected); queue advances as "Continue" would |
 | "View Your Programs" | M-4 is final | W-2 Program Browse |
 | "View Your Legacy" | M-4 is final | L-1 Legacy Hub |
 | Tap dimmed background | Any | No action — M-4 remains open |
@@ -340,6 +354,7 @@ Once M-4 fires and is dismissed for a given program graduation, it cannot be re-
 | Ceremony copy | Read as body text |
 | Context rows | Announced as: "[Label], [Value]" for each row |
 | Continue | Announced as: "Continue, button" |
+| Share this graduation | Announced as: "Share this graduation, button" |
 | "View Your Programs" | Announced as: "View Your Programs, button" |
 | "View Your Legacy" | Announced as: "View Your Legacy, button" |
 | Dimmed background | Not focusable; no accessible action (dismissed by "Continue" only) |
@@ -374,7 +389,7 @@ M-4 does not and will never:
 | Display confetti, particle effects, trophy, star, or badge imagery |
 | Display the athlete's account-wide workout count or rank context — that belongs to M-1 |
 | Display a chapter name or chapter progress |
-| Display sharing UI in MVP |
+| Render the share card image itself, or create a `WorkoutShare` record without the athlete tapping "Share this graduation" (delegated to SH-1 and the Share Card Renderer, per WSR-001 §7, §9) |
 | Be dismissible by tap-outside, drag gesture, or Android hardware back button |
 | Re-trigger after dismissal for the same graduation event |
 | Fire mid-session (W-9 through W-16 suppress all non-workout surfaces) |
@@ -453,6 +468,8 @@ M-4 does not and will never:
 - [ ] Android hardware back button does nothing — modal stays open
 - [ ] "Continue" (ceremonies remaining) advances to next queued ceremony (M-2)
 - [ ] "Continue" (M-4 final) returns to W-17, fully interactive
+- [ ] "Share this graduation" present below "Continue", regardless of queue position
+- [ ] "Share this graduation" tap opens SH-1 with `PROGRAM_GRADUATED` pre-selected and advances the queue as "Continue" would
 - [ ] "View Your Programs" navigates to W-2 and completes ceremony session
 - [ ] "View Your Legacy" navigates to L-1 and completes ceremony session
 - [ ] No "Run This Program Again" CTA present anywhere in M-4
@@ -482,7 +499,7 @@ M-4 does not and will never:
 - [ ] No honor display
 - [ ] No confetti, particle effects, or gamification imagery
 - [ ] No "Congratulations" copy
-- [ ] No sharing UI
+- [ ] No share artifact rendered by M-4 itself (delegated to SH-1/Share Card Renderer)
 - [ ] Cannot re-trigger for the same graduation after dismissal
 
 ---
@@ -492,6 +509,7 @@ M-4 does not and will never:
 | Version | Date | Change |
 |---------|------|--------|
 | v1.0 | June 2026 | Initial specification — promotes M-4 from inline references to dedicated spec; closes Architecture Audit C-11 (missing M-4 spec) and H-16 (program state transition timing); locks queue position (Priority 3), trigger, anatomy, deferred delivery model (M4-D4), navigation, and decision record |
+| v1.1 | June 2026 | WSR-001 Downstream Reconciliation Pass. Added "Share this graduation" subordinate text action below "Continue," always present regardless of queue position (§4, §5, §7, §9), per WSR-001 §8.2. Removed the contradictory "Display sharing UI in MVP" line from §10 Non-Behaviors. Renumbered §7.4–§7.7 to §7.5–§7.8. No other M-4 behavior changed. |
 
 ---
 
@@ -516,5 +534,5 @@ M-4 does not and will never:
 
 ---
 
-*M-4 Program Graduated Modal — Ceremony Specification v1.0*
+*M-4 Program Graduated Modal — Ceremony Specification v1.1*
 *Forge Legacy | June 2026*

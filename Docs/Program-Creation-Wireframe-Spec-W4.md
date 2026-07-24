@@ -1,5 +1,5 @@
 # Forge Legacy — Program Creation Wireframe Specification
-## W-4 | Phase 2B | Version 1.1 — June 2026
+## W-4 | Phase 2B | Version 1.3 — June 2026
 
 **Authority:** Program-Architecture-Amendment-001-Active-Program-Rule.md
 **PRD Authority:** Section 11 (Program System), Section 5 (MVP — W-4), Section 8 (Workout System)
@@ -631,6 +631,10 @@ Program names are not required to be unique within an athlete's collection. Mult
 
 W-4 has no reactive error states for MVP. Validation is handled preventively (disabled CTAs, blocked input at max length). No red error messages, no inline error text, no shake animations. The athlete should never reach a failed creation attempt — the CTA is only enabled when requirements are already met.
 
+### 16.5 Free-Tier Program Limit (M-7)
+
+Per M-7-Premium-Upsell-Spec.md § 2–3: athletes at the free-tier custom program limit (3 programs) cannot reach W-4 at all — the gate in § 18.1a fires M-7 Premium Upsell Sheet before W-4 opens, for all three entry points. Required server-side validation on the Create Program save endpoint: the athlete has not reached the free-tier program limit. This mirrors the equivalent server-side check already required on W-5's Duplicate save endpoint (Program-Fork-Edit-Wireframe-Spec-W5.md § 15).
+
 ---
 
 ## Section 17 — Mobile UX
@@ -710,6 +714,23 @@ Portrait only.
 | W-2 Top App Bar — "+ Create" | Standard program creation entry |
 | W-2 Empty invitation card — "+ Create" CTA | No active program; invitation to create |
 | M-4 Program Graduation Modal — "Create New Program" | Post-graduation; invitation to build next program |
+
+### 18.1a Free-Tier Program Limit Gate (M-7)
+
+Before W-4 opens from any of the three entry points above, the system checks the athlete's free-tier program limit:
+
+```
+Athlete taps "+ Create" (or "Create New Program")
+          ↓
+System checks: athlete at free-tier program limit?
+       ↙                         ↘
+      NO                        YES
+       ↓                         ↓
+W-4 opens normally          M-7 Premium Upsell Sheet
+                             No W-4 opened; no record created
+```
+
+If `customProgramCount >= 3`, M-7 Premium Upsell Sheet fires instead of opening W-4. This applies identically at all three entry points in Section 18.1. Per M-7-Premium-Upsell-Spec.md § 2–3, which names this gate's required behavior and self-flags this document as the unmerged target. Mirrors the equivalent, already-applied gate on Program-Fork-Edit-Wireframe-Spec-W5.md § 7.1 (Duplicate Program).
 
 ### 18.2 Exit Points
 
@@ -847,6 +868,7 @@ The following W-5 requirements flow directly from W-4 decisions and must be hono
 - [ ] Single vertical scroll — no tabs, no step indicators
 - [ ] Tab Bar visible at bottom (Workouts tab active)
 - [ ] Program Name field auto-focuses on screen entry; keyboard opens immediately
+- [ ] Program limit check: M-7 fires if at free-tier limit (3 programs); no W-4 opened; no record created
 
 ### Program Name
 - [ ] Required field — Create disabled if empty or whitespace-only
@@ -999,6 +1021,10 @@ All required decisions are resolved, documented, and justified. The specificatio
 ---
 
 ## Change Log
+
+### v1.3 (M-7) — June 2026
+
+M-7-Premium-Upsell-Spec.md gate merged. M-7's own spec self-flagged this document as not yet documenting the program-count limit gate (§ "W-4 gap note"). Added § 18.1a: free-tier program limit gate (`customProgramCount >= 3` fires M-7 Premium Upsell Sheet instead of opening W-4) applied to all three Section 18.1 entry points. Added § 16.5: required server-side validation on the Create Program save endpoint, mirroring the equivalent check on W-5's Duplicate save endpoint. Added Validation Checklist item under Screen Structure. Corrected this header's stale "Version 1.1" to match the Change Log's actual v1.2 (WS-A5) state before bumping to v1.3. No monetization redesign, no pricing change, no new creation paths — the gate reuses M-7's existing rule verbatim.
 
 ### v1.2 — June 2026 (WS-A5)
 

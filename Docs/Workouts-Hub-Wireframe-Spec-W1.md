@@ -1,5 +1,9 @@
 # Forge Legacy — Workouts Hub Wireframe Specification
-## W-1 | Phase 2B | Version 1.0 — June 2026
+## W-1 | Phase 2B | Version 1.1 — SUPERSEDED/RETIRED 2026-07-08
+
+> **RETIRED — see `Docs/Amendments/Workouts-Navigation-Amendment-001-Retire-Workouts-Hub.md` (LOCKED, 2026-07-08).** W-1 is no longer a live navigational destination anywhere in the product. The Workouts tab root now opens directly to `Program-Browse-Wireframe-Spec-W2.md`. W-1's chapter-context, quick-start, and next-session responsibilities are covered by Home's (H-1) existing tiers and W-2's existing Active Program section — no replacement screen recreates W-1's layout. Two W-1 features have no reassigned home as of the retirement amendment and are tracked as open items there, not resolved: the Workout With Friend management queue (§7 below) and the "Import Training" Secondary CTA (§5.4 below, added by `Architecture-Amendment-001-Import.md`). The remainder of this document is preserved unmodified below as historical record — it no longer describes a buildable screen.
+
+> **Governing-authority pointer — `Calendar-System-Architecture-v1.0` (LOCKED, June 2026), historical.** W-1 was the **primary forward-looking entry point** to the Calendar (CAL-D2): a calendar affordance in the hub header opened the Calendar surface ("what's scheduled"). As of the retirement above, that affordance's new home is W-2's header (`Calendar-System-Architecture-v1.0` CAL-D2, revised 2026-07-08). The Calendar is a **surface, not a 5th tab**, and **owns no data** — it aggregates and may schedule only workouts, goal-milestone dates, and rest days.
 
 ---
 
@@ -570,7 +574,7 @@ The screen transitions naturally from beginning to continuing.
 ```
 Athlete taps Workouts tab → W-1 loads
         ↓
-Chapter context: "Building → Chapter 3: The Rebuild | 315lb Squat  63%"
+Chapter context: "Building → Chapter 3: The Rebuild | 315lb Back Squat  63%"
         ↓
 Taps quick-select chip: "Strength"
         ↓
@@ -946,3 +950,5 @@ W-1 must not feel dense. 24dp minimum vertical spacing between section groups. T
 *Amendment B: Post-architecture-review spec clarifications (June 2026). Three additions: (1) Quick-select chip minimum touch target specified as 8dp vertical padding to reach 44dp — no longer deferred to implementation. (2) Recent Workouts rows explicitly ordered newest first. (3) Program card "Brief Description" field capped at 40 characters. No structural changes, no product decisions altered.*
 
 *Amendment C (W1-A1 — June 2026): W-18 Activity History is now a LOCKED spec (Phase 2B, June 2026). The "→ W-18" reference in §8.1 ("View All →" tertiary link) and all other W-18 references in this document are now fully backed by the locked W-18 specification. No W-1 decisions or content altered — this is a reference confirmation only.*
+
+*Amendment D — RETIRED (Workouts-Navigation-Amendment-001, 2026-07-08): W-1 is retired as a navigational destination. The Workouts tab root now opens directly to W-2 Program Browse. See the retirement banner at the top of this document for the full reassignment and the two acknowledged open items (Workout With Friend management queue; Import Training entry point). Everything above this line is preserved unmodified as historical record.*

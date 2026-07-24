@@ -1,9 +1,13 @@
 # Honor Evaluation Service Architecture
-## v1.0 — LOCKED | June 2026
+## v1.1 — LOCKED | June 2026
 
 **Status:** LOCKED
 **Type:** Architecture Note
-**Authority:** Honor-Catalog-v1.0-LOCKED.md, HonorInstance-Architecture-v1.0.md, L-10 Honors Hub Spec v1.1, L-11 Honor Detail Sheet Spec v1.1, M-2 Honor Earned Modal Spec v1.1, Master PRD § 13, Product DNA
+**Authority:** Honor-Catalog-v1.0-LOCKED.md (v1.5), HonorInstance-Architecture-v1.0.md, L-10 Honors Hub Spec, L-11 Honor Detail Sheet Spec v1.1, M-2 Honor Earned Modal Spec v1.1, Master PRD § 13, Product DNA, `Honors-Architecture-V1-Final-v1.0.md` (LOCKED)
+
+> **Consuming-authority pointer — `Calendar-System-Architecture-v1.0` (LOCKED, June 2026).** The Calendar reads each earned `HonorInstance` as a **read-only date-anchored marker** on the day it was earned (CAL-D12). It **never** evaluates honor conditions, **never** awards or un-awards, and **never** alters a `HonorInstance` — this Service remains the sole evaluator/awarder, and earning still flows through the engine → M-2 unchanged. A Calendar honor marker links into Honor Detail (L-11) (CAL-D17). No change to this document is required.
+
+> **Consuming-authority pointer — `Backend-Data-Model-Architecture-v1.0.md` (LOCK-CANDIDATE, June 2026).** Line 16's statement that "this document does not define database schemas" is now resolved: the `HonorInstance` schema is formalized in that document's Section 3.6, the `AthleteStatistics`/`PRRecord` supporting entities are formalized in Section 11.4, and the 7-step evaluation pipeline (Section 5 here) is restated as Section 11.3 there with Firestore transaction-batching guidance added (Section 4.2). This document remains the sole authority on evaluation *philosophy*, trigger mapping, and evaluator-family logic — the Backend doc only formalizes the data shapes this document already implied.
 
 ---
 
@@ -17,7 +21,7 @@ This document does not define database schemas, API contracts, or implementation
 
 ## 2. Evaluation Philosophy
 
-**Event-specific evaluation.** The evaluation service does not evaluate all 53 honor types on every event. Each trigger invokes only the evaluator families capable of producing new honors given that event type. A session save cannot produce goal honors; it never runs `GoalEvaluator`. A goal completion cannot produce strength honors; it never runs `StrengthEvaluator`. See ES-1.
+**Event-specific evaluation.** The evaluation service does not evaluate every honor type on every event. Each trigger invokes only the evaluator families capable of producing new honors given that event type. A session save cannot produce goal honors; it never runs `GoalEvaluator`. A goal completion cannot produce strength honors; it never runs `StrengthEvaluator`. See ES-1.
 
 **Immediate post-event evaluation.** Evaluation occurs immediately after the source event is persisted. No background evaluation workers exist in MVP. The pipeline runs synchronously as part of the triggering transaction. See ES-2.
 
@@ -45,6 +49,12 @@ This document does not define database schemas, API contracts, or implementation
 | WwF Session Save (standalone) | `Community`, `Longevity` | See note | If WwF save triggers separately from session save: M-2 behavior follows session save rules |
 | Import Completion | Retroactive pass — all relevant families | No | source = `import`; honors delivered silently to L-10; see Section 8 |
 | Offline Sync | Deferred evaluation — same families as original session type | No | Treated as deferred session save; M-2 does not fire |
+| Challenge Completion (winner) | `Challenge`, `Longevity` | No | *(v1.1 — Honor-Catalog-Amendment-001)* `ChallengeEvaluator` reads finalized `challenges_won_count`; honors delivered silently to L-10; co-winners each credited fully (CA2-D2) |
+| Challenge Enrollment Finalized | `Challenge` (Participation + Participation Streak families) | No | *(v1.1)* reads finalized `challenges_entered_count` and `max_participation_streak`; counts entry, not outcome |
+
+**`ChallengeEvaluator` (v1.1):** invoked only by the two Challenge triggers above; reads finalized challenge statistics after they are updated (ES-4 pattern); event-specific (ES-1) — does not run Strength/Training/Goal/Program evaluators. HonorInstance `source` = `challenge`. No rank effect (AD-27).
+
+> **Participant-based reconciliation (Challenge-Architecture-Amendment-003 v1.1 / CA3-D9 — no change to this service):** Both Challenge triggers are **context-agnostic and participant-based** — a `context = SQUAD` **or** `context = FRIENDS` challenge emits the **same** Challenge Completion / Challenge Enrollment Finalized events to `ChallengeEvaluator`, which reads the same finalized counters. `challenges_won_count` and `challenges_entered_count` accrue from **both** contexts; `max_participation_streak` is finalized from **SQUAD-context challenges only** (CS-D27), so friend challenges never affect streak honors. No new trigger, no schema change, no evaluator change.
 
 ### 3.2 Events That Are NOT Triggers
 
@@ -269,6 +279,74 @@ No scheduler exists. The honor is awarded on the first qualifying evaluation eve
 
 ---
 
+### 4.9 EnduranceEvaluator *(v1.5, new)*
+
+**Domain:** Single-session distance milestones and lifetime cumulative distance, per activity type (Running, Walking, Cycling, Swimming).
+
+**Honors evaluated (38 types):** the full Endurance category — see `Honor-Catalog-v1.0-LOCKED.md` § ENDURANCE.
+
+**Invoked by:** Session Save
+
+**Data source:** Single-Session family reads `distanceValue`/`distanceUnit` directly from the session record being saved. Lifetime Distance family reads `lifetimeDistance` per `(athleteId, activityType)`, defined and updated per `Endurance-Statistics-Architecture-Amendment-001.md` (post-update value, after pipeline step [2]).
+
+**Evaluation logic:** For each activity type the session matches, compare the session's logged distance against that activity's Single-Session thresholds, and compare the athlete's post-update `lifetimeDistance` for that activity against the Lifetime Distance thresholds. Award any not yet held.
+
+Hiking and Rowing thresholds are defined in the source content but are not evaluated by this service until `HIKE`/`ROW` are added to the `ActivityType` enum — no honor type for those activities exists in the locked catalog yet (see `Honors-Architecture-V1-Final-v1.0.md` §9).
+
+**Uniqueness key:** `(athleteId, honorType)` — one-time honors.
+
+---
+
+> **Deferred to V2:** `SexSpecificStrengthEvaluator` and `RelativeStrengthEvaluator` were designed during this pass to support the Sex-Specific Milestones and Relative Strength Milestones families. Both families were deferred to V2 by PO decision before final lock (see `Honor-Catalog-v1.0-LOCKED.md` § DEFERRED TO V2). Neither evaluator exists in the V1 pipeline.
+
+### 4.10 ConsistencyEvaluator *(v1.5, new)*
+
+**Domain:** Cumulative Active Weeks (Training category).
+
+**Honors evaluated (5 types):** `consistency_active_weeks_1/2/3/4/5`
+
+**Invoked by:** Session Save
+
+**Data source:** Athlete statistics record — `cumulativeActiveWeeks` (post-update value, after pipeline step [2]; see § 9.1).
+
+**Evaluation logic:** Check if `cumulativeActiveWeeks` has crossed each threshold the athlete does not yet hold. Cumulative and never-revocable — there is no "current streak" concept anywhere in this evaluator; a week, once counted, is never un-counted.
+
+**Uniqueness key:** `(athleteId, honorType)` — one-time honors.
+
+---
+
+### 4.11 PrestigeEvaluator *(v1.5, new)*
+
+**Domain:** Cross-category breadth recognition and named multi-honor combinations.
+
+**Honors evaluated (8 types):** the full Prestige category — see `Honor-Catalog-v1.0-LOCKED.md` § PRESTIGE.
+
+**Invoked by:** runs at the new pipeline step **[4.5]**, after every other evaluator family in the same Session Save transaction (see § 5).
+
+**Data source:** The athlete's full existing `HonorInstance` history, plus the set of honors this same transaction's other evaluators (§ 4.1–4.10) have already determined qualify. **This is not a violation of § 9.5's invariant** — `HonorInstance` records are the Honors system's own derived output, not a source-entity query (session history, goal records, program records, chapter records); reading them is consistent with "read only precomputed state," not an exception to it.
+
+**Evaluation logic:** For the Breadth Ladder, count how many of the 7 solo-achievable categories (Strength, Training, Programs, Goals, Chapters, Longevity, Endurance) the athlete holds a top-tier honor in, including any newly qualified in this same transaction, then check against each tier's category-count + Longevity co-requirement. For Named Combinations, check whether the athlete holds (or newly qualifies for, in this same transaction) every constituent honor listed for that combination. No-Prestige-on-Prestige: a Prestige honor is never itself counted as a qualifying category top-tier for another Prestige honor.
+
+**Uniqueness key:** `(athleteId, honorType)` — one-time honors.
+
+---
+
+### 4.12 HiddenEvaluator *(v1.5, new)*
+
+**Domain:** Six honors using only data already available at the Session Save event being evaluated.
+
+**Honors evaluated (6 types):** the full Hidden category — see `Honor-Catalog-v1.0-LOCKED.md` § HIDDEN.
+
+**Invoked by:** Session Save
+
+**Data source:** The session save event's own timestamp (for `hidden_early_forge`, `hidden_midnight_forge`, `hidden_new_years_forge`, `hidden_leap_day_forge`); `athlete.accountCreationDate` (for `hidden_full_circle`, computed via calendar math — no new statistic); this same transaction's set of qualifying honors from every other evaluator family that has already run (for `hidden_triple_threat`, identical data source to `PrestigeEvaluator`'s in-transaction pool). **No new persistent statistic is introduced for any Hidden honor.**
+
+**Evaluation logic:** Each of the six checks a simple, self-contained condition against the data sources above — no cross-evaluator dependency beyond the same in-transaction qualifying-honor list `PrestigeEvaluator` also reads.
+
+**Uniqueness key:** `(athleteId, honorType)` — one-time honors.
+
+---
+
 ## 5. Evaluation Pipeline
 
 The evaluation pipeline is a fixed, deterministic sequence. Evaluators always operate against finalized state. See ES-4.
@@ -323,6 +401,15 @@ The evaluation pipeline is a fixed, deterministic sequence. Evaluators always op
 ║  LongevityEvaluator     ║                                   ║
 ║  always runs.           ║                                   ║
 ╠═════════════════════════╩═══════════════════════════════════╣
+║  [4.5] RUN PRESTIGE EVALUATOR  (v1.5, new)                  ║
+║  Runs after every other evaluator family in this same       ║
+║  transaction. Reads the athlete's full existing              ║
+║  HonorInstance history + this transaction's newly-           ║
+║  qualifying honors (the union of both is the qualification   ║
+║  pool for Breadth Ladder / Named Combination checks).        ║
+║  Not a violation of § 9.5 — HonorInstance is this system's   ║
+║  own derived output, not a source-entity query.               ║
+╠═════════════════════════════════════════════════════════════╣
 ║  [5] CREATE HONORINSTANCES                                  ║
 ║  For each qualifying honor returned by evaluators:          ║
 ║  • Create HonorInstance with all fields per AD-33/AD-50–58  ║
@@ -349,6 +436,8 @@ The evaluation pipeline is a fixed, deterministic sequence. Evaluators always op
 │  Control returns to the originating event handler           │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+> **Reconciliation note — Social-System-Architecture-v1.0 (LOCKED, June 2026; governing social authority).** An **earned Honor is a milestone trigger** for an **optional automatic milestone Post** (SOC-D9 / SOC-D12 / SOC-D16), gated by the athlete's account-level **Automatically-Share-Milestones** setting (default ON). This hook is **owned by Social-System-Architecture-v1.0, not by this service**, and is strictly a **post-commit, read-only consumer** of the honor-earned event — it is **not** a step in the atomic transaction above (steps [4]–[7]), it creates **no** `HonorInstance` and **no** schema change, and **posting an honor never alters the HonorInstance and never affects honor evaluation** (SOC-D13: no social action affects any progression). Honors remain **account-based**. If the milestone post fails or is disabled, honor evaluation, ceremony, and timeline behavior are completely unaffected.
 
 ---
 
@@ -476,10 +565,14 @@ The following counters are maintained on the athlete's statistics record and upd
 | `goalsAchieved` | Goal Completion | `GoalEvaluator` |
 | `programsGraduated` | Program Graduation | `ProgramEvaluator` |
 | `workoutsWithFriend` | WwF Session Save | `CommunityEvaluator` |
+| `lifetimeDistance` (per `activityType`) | Session Save | `EnduranceEvaluator` *(v1.5; defined in `Endurance-Statistics-Architecture-Amendment-001.md`)* |
+| `cumulativeActiveWeeks` | Session Save — mirrored from Rank Computation Model's existing locked Active Week computation, at the same step that updates every statistic above | `ConsistencyEvaluator` *(v1.5)* |
+
+**v1.5 note on `cumulativeActiveWeeks`:** "Active Week" is defined and computed inside the Rank Computation Model, not natively inside this service's own statistics. Rather than have `ConsistencyEvaluator` reach into RCM directly — which would violate § 9.5's invariant — RCM's existing, already-locked cumulative count is mirrored **into** the Athlete Statistics Record at pipeline step [2], identically to how every other statistic above is populated. `ConsistencyEvaluator` reads it from there like any other evaluator (AD-V1-7).
 
 ### 9.2 PR Records
 
-One record per canonical qualifying lift (bench press, squat, deadlift). Each record stores the athlete's all-time maximum weight in their unit system.
+One record per canonical qualifying lift — **bench press, squat, deadlift, overhead press, pull-up** *(v1.5: extended from three lifts to five; pull-up qualifies on added-weight PR, not bodyweight reps, preserving AD-30's actual-weight-only rule — resolves the original Pre-Authoring-Audit's Finding F7)*. Each record stores the athlete's all-time maximum weight (or, for pull-up, maximum added weight) in their unit system.
 
 PR records are updated in pipeline step [3] before `StrengthEvaluator` and `ClubEvaluator` run. Evaluators read post-update PR state — they never compute session maxima from raw logged sets.
 
@@ -494,6 +587,8 @@ A session counter on the chapter record, incremented at session save in pipeline
 ### 9.5 Invariant
 
 **Evaluators never query session history, goal records, program records, or chapter records to perform threshold comparisons.** They read only from the precomputed state listed above. This invariant enables consistent evaluation performance regardless of legacy size.
+
+**v1.5 clarification:** `PrestigeEvaluator` (§ 4.13) and `HiddenEvaluator`'s `hidden_triple_threat` check (§ 4.14) read `HonorInstance` records — the Honors system's own derived output — and this same transaction's in-flight qualifying-honor list. This is consistent with this invariant, not an exception to it: `HonorInstance` is precomputed state the Honors system itself produced, not a source-entity query into session/goal/program/chapter records.
 
 ---
 
@@ -512,6 +607,9 @@ A session counter on the chapter record, incremented at session save in pipeline
 | ES-9 | Trigger sources: Session Save, Goal Completion, Program Graduation, Chapter Seal, WwF Session Save, Import Completion, Offline Sync |
 | ES-10 | `LongevityEvaluator` runs on every evaluation-triggering event; no anniversary scheduler; first qualifying event after anniversary awards the honor |
 | ES-11 | Evaluators read precomputed statistics and PR records — never raw history; statistics updated before evaluators run |
+| ES-12 | *(v1.5)* `PrestigeEvaluator` runs at new pipeline step [4.5], after every other evaluator in the same transaction; reads `HonorInstance` history + this transaction's in-flight qualifying pool; not an ES-11 violation (§ 9.5 clarification) |
+| ES-13 | *(v1.5)* `cumulativeActiveWeeks` is mirrored into the Athlete Statistics Record at pipeline step [2] from RCM's existing locked computation — never cross-read directly, preserving ES-11 |
+| ES-14 | *(v1.5)* PR-record storage covers five lifts (bench, squat, deadlift, overhead press, pull-up), not three — resolves the original Pre-Authoring-Audit's Finding F7 |
 
 ---
 
@@ -541,7 +639,7 @@ The Honors Architecture workstream is complete.
 | `Docs/HonorInstance-Architecture-v1.0.md` | LOCKED |
 | `Docs/Honor-Evaluation-Service-Architecture-v1.0.md` | LOCKED |
 
-### Completed Spec Documents (Updated to reflect 53-type catalog)
+### Completed Spec Documents (L-10 updated to reflect the current 167-type catalog as of this pass; L-11/M-2 still reflect the original 53-type design and have not been re-verified against the v1.5 catalog)
 
 | Document | Version |
 |----------|---------|
@@ -553,7 +651,7 @@ The Honors Architecture workstream is complete.
 
 | Area | Status |
 |------|--------|
-| 53-type catalog defined and locked | ✓ |
+| Catalog defined and locked (167 types as of v1.5) | ✓ |
 | All evaluator families defined | ✓ |
 | All trigger sources defined | ✓ |
 | Evaluation pipeline order defined | ✓ |
@@ -583,8 +681,10 @@ Outstanding items are **implementation concerns**, not architecture concerns:
 | Version | Date | Change |
 |---------|------|--------|
 | v1.0 | June 2026 | Initial lock |
+| v1.0.1 | June 2026 | Reconciliation pass for `Social-System-Architecture-v1.0`. Added a post-pipeline reconciliation note: an earned Honor is a milestone trigger for an optional automatic milestone Post (owned by Social-System-Architecture, post-commit read-only consumer, gated by Automatically-Share-Milestones). No schema change; honors remain account-based; posting never alters the HonorInstance or affects evaluation (SOC-D13). No existing decision changed. |
+| v1.1 | June 2026 | `Honors-Architecture-V1-Final-v1.0.md` reconciled. Added four new evaluator families (§ 4.9–4.12): `EnduranceEvaluator`, `ConsistencyEvaluator`, `PrestigeEvaluator`, `HiddenEvaluator`. Added new pipeline step `[4.5] RUN PRESTIGE EVALUATOR` (§ 5). Extended § 9.1's Statistics Source of Truth with `lifetimeDistance` and `cumulativeActiveWeeks` (the latter mirrored from RCM, not cross-read). Extended § 9.2's PR storage scope from three lifts to five (resolves Pre-Authoring-Audit Finding F7). Added one clarifying sentence to § 9.5 confirming Prestige/Hidden's HonorInstance-history reads are not an invariant violation. Added ES-12/13/14 to the Decision Index. `SexSpecificStrengthEvaluator` and `RelativeStrengthEvaluator` were designed in this pass and then deferred to V2 by PO decision before final lock (§ 4.9 deferral note) — neither exists in the V1 pipeline. No existing evaluator, trigger, or pipeline step changed. |
 
 ---
 
-*Honor Evaluation Service Architecture — v1.0 — LOCKED*
+*Honor Evaluation Service Architecture — v1.1 — LOCKED*
 *Forge Legacy | June 2026*

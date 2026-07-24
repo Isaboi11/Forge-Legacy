@@ -1,5 +1,8 @@
 # Forge Legacy — Active Workout Flow Specification
-## W-9 through W-16 | Phase 2B | Version 1.1 — June 2026
+## W-9 through W-16 | Phase 2B | Version 1.5 — June 2026
+
+**Status:** LOCKED
+**Component contracts:** CLA-C08 (Button), CLA-C12 (ProgressBar), CLA-C16 (ListItem), CLA-C18 (AppBar), CLA-C20 (Modal) — see [`Component-Library-Architecture-v1.0.md`](Component-Library-Architecture-v1.0.md)
 
 ---
 
@@ -161,7 +164,7 @@ W-9 is the primary active workout screen and the most complex activity type. All
 │  MAIN WORKOUT                                           │  ← Section header (always rendered if has exercises)
 │                                                         │
 │  ┌─────────────────────────────────────────────────┐   │
-│  │  Bench Press                         [Notes ○]  │   │  ← Active exercise card
+│  │  Barbell Bench Press                 [Notes ○]  │   │  ← Active exercise card
 │  │  5 × 95 lb  (program target)                    │   │
 │  ├─────────────────────────────────────────────────┤   │
 │  │  Set 1   95 lb × 5   ✓                          │   │  ← Logged set
@@ -172,7 +175,7 @@ W-9 is the primary active workout screen and the most complex activity type. All
 │  └─────────────────────────────────────────────────┘   │
 │                                                         │
 │  ┌─────────────────────────────────────────────────┐   │
-│  │  Squat                               [Notes ○]  │   │  ← Upcoming exercise card
+│  │  Back Squat                          [Notes ○]  │   │  ← Upcoming exercise card
 │  │  5 × 135 lb  (program target)                   │   │
 │  │  Set 1–5   —                                    │   │
 │  └─────────────────────────────────────────────────┘   │
@@ -191,7 +194,7 @@ W-9 is the primary active workout screen and the most complex activity type. All
 **Workout Action Bar (persistent, not the system Top App Bar):**
 - "← Exit" icon — left-anchored; initiates abandonment confirmation (Section 12)
 - Workout name — center: activity type for free workouts, program workout name for program workouts
-- "⋯ Options" — right-anchored; opens workout options sheet (workout-level notes, timer preferences, workout name edit for free workouts)
+- "⋯ Options" — right-anchored; opens workout options sheet (workout-level notes, workout playlist link — see §8.5, timer preferences — see §7.6 for the Rest Progress Ring toggle defined there, workout name edit for free workouts)
 - This is the workout's own header, not the system tab bar. It carries no tab identity. Tab identity is irrelevant during a session.
 
 **Chapter Context Strip:**
@@ -291,7 +294,7 @@ Each exercise in the workout has three display states.
 **Active (contains the next unlogged set):**
 ```
 ┌───────────────────────────────────────────────────────────┐
-│  Bench Press                                  [Notes ○]   │  ← Name + notes access
+│  Barbell Bench Press                  [Notes ○] [⋯]      │  ← Name + notes + overflow (§5.8)
 │  5 × 95 lb  (program target)                              │  ← Target line (program only)
 ├───────────────────────────────────────────────────────────┤
 │  Set 1   95 lb × 5    ✓                                   │  ← Logged
@@ -305,7 +308,7 @@ Each exercise in the workout has three display states.
 **Completed (all sets logged):**
 ```
 ┌───────────────────────────────────────────────────────────┐
-│  Bench Press  ✓   5 sets · 95 lb × 5                 [↓]  │  ← Collapsed summary + expand
+│  Barbell Bench Press  ✓   5 sets · 95 lb × 5         [↓]  │  ← Collapsed summary + expand
 └───────────────────────────────────────────────────────────┘
 ```
 
@@ -314,13 +317,15 @@ Collapses automatically when the last set is logged. The summary shows set count
 **Upcoming (no sets logged, not yet active):**
 ```
 ┌───────────────────────────────────────────────────────────┐
-│  Squat                                        [Notes ○]   │  ← Name + notes access
+│  Back Squat                             [Notes ○] [⋯]    │  ← Name + notes + overflow (§5.8)
 │  5 sets  ·  program: 135 lb × 5                           │  ← Set count + target (if program)
 │  Set 1–5   —                                              │  ← Pending rows, de-emphasized
 └───────────────────────────────────────────────────────────┘
 ```
 
 Upcoming exercises show structure and targets but are visually de-emphasized. They are not the current action.
+
+**Completed exercise cards do not show the "⋯" overflow** — see §5.8. There is nothing remaining to substitute once all sets are logged.
 
 ### 5.2 Set Row States
 
@@ -367,6 +372,38 @@ Sections from the program slot's `sections[]` array are rendered in W-9 subject 
 
 The WARM-UP → MAIN WORKOUT → COOL-DOWN display order is always preserved. The section headers are read-only in W-9. No interactive controls appear on section headers during an active session.
 
+### 5.8 Exercise Substitution (W9-A2)
+
+Every Active and Upcoming exercise card has a per-exercise "⋯" overflow icon (§5.1) with a single item: **"Replace Exercise."** Completed cards do not show this icon — there are no remaining sets to redirect once an exercise is fully logged.
+
+**Flow:**
+1. Tapping "Replace Exercise" opens W-23 in REPLACEMENT context, with `replacingExerciseId` set to the current exercise's `id` (per Exercise-002-Exercise-Substitution-Architecture.md §7.2 — unmodified).
+2. The athlete selects a substitute in W-23, which dismisses back to W-9.
+3. A **Persistence Choice sheet** appears:
+
+```
+┌───────────────────────────────────────────────────────────┐
+│  Replace Barbell Bench Press with Incline Press?          │
+│                                                             │
+│  ◉  This session only                                     │
+│  ○  Update my template            ← shown only if eligible│
+│  ○  Update my program              ← shown only if eligible│
+│                                                             │
+│  [              Confirm              ]                    │
+│  [               Cancel              ]                    │
+└───────────────────────────────────────────────────────────┘
+```
+
+"This session only" is always available and pre-selected by default. "Update my template" appears only when the session was launched from a personal template; "Update my program" appears only when the session is from an ATHLETE_CREATED or IMPORTED program. A FORGE program workout shows only "This session only" — the other rows are absent entirely, not shown-disabled. All options and their availability rules are defined by Exercise-002-Exercise-Substitution-Architecture.md §7.3 and are not redefined here.
+
+4. "Confirm" applies the substitution exactly per Exercise-002 §7.4–§7.6: prescription quantities (sets, reps, weight, duration, distance, rest, notes) carry forward unchanged to the substitute; a `SubstitutionRecord` is created with the appropriate `scope`; `ExerciseSessionData` is enriched with `prescribedExerciseId`/`prescribedExerciseName`. "Cancel" — at the W-23 step or on this sheet — returns to W-9 with the original exercise card completely unchanged.
+
+**Card-level result:**
+- If zero sets were logged for the original exercise yet, the card is replaced in place — same position, new exercise name and prescription, no leftover entry.
+- If some sets were already logged, the original card collapses to its completed-style summary (showing only the sets logged under it) and remains in the list at its original position; a new Active card for the substitute exercise appears immediately after it, inheriting the remaining unlogged sets. Both exercises appear in the session summary and W-19 Activity Detail, per Exercise-002 §7.4.
+
+**No automatic substitution** (Exercise-002 §7.7) and **no undo after persisting to a template or program** (Exercise-002 §8.2) — both reused unmodified.
+
 ---
 
 ## Section 6 — Set Logging UX
@@ -380,7 +417,7 @@ Tapping the "Log Set" row for the current set opens the **Set Input Sheet** — 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                                                         │
-│  Bench Press  ·  Set 3 of 5                             │  ← Context header
+│  Barbell Bench Press  ·  Set 3 of 5                     │  ← Context header
 │  Program target: 95 lb × 5                              │  ← Program target line (if applicable)
 │                                                         │
 │  ┌────────────────────────┐   ┌──────────────────────┐ │
@@ -471,14 +508,16 @@ After a set is logged, a rest overlay appears over the exercise list. It is not 
 │                                                         │
 │              Rest.                                      │  ← Single word, large, primary
 │                                                         │
-│              [  01:23  ]                                │  ← Count-up timer (not countdown)
+│                 ╭─────╮                                 │  ← Optional bronze ring (§7.6)
+│                 │01:23│                                 │  ← Count-up timer (not countdown)
+│                 ╰─────╯                                 │
 │                                                         │
 │  ─────────────────────────────────────────────────────  │
 │  Next: Set 4  ·  target 95 lb × 5                       │  ← Next action preview (program only)
 │  — OR —                                                 │
 │  Next: Set 4                                            │  ← Free workout version
 │  — OR —                                                 │
-│  Next: Squat                                            │  ← Last set of exercise
+│  Next: Back Squat                                       │  ← Last set of exercise
 │  — OR —                                                 │
 │  All sets logged.                                       │  ← Last set of workout
 │                                                         │
@@ -491,8 +530,11 @@ After a set is logged, a rest overlay appears over the exercise list. It is not 
 - Logged set confirmation: "Set 3 logged. [weight × reps]" in secondary text — brief acknowledgment, not celebration
 - "Rest." — a single word. Present tense. Not a countdown. Not a prescription. The athlete is resting. The product names it and steps back.
 - Count-up timer — counts upward from 0:00. Neutral. Informational. The athlete who rests 3 minutes sees "3:00." No inference is drawn. No judgment is presented.
+- Optional Rest Progress Ring — a thin bronze ring around the timer, present only when enabled and a reference duration resolves. See §7.6. Off by default; absent entirely otherwise.
 - Next action preview — "Next: Set 4 · target 95 lb × 5" for program workouts; "Next: Set 4" for free workouts; "Next: [Exercise Name]" after the last set of an exercise; "All sets logged" after the last set of a program-complete workout.
 - "Ready" — Primary CTA; dismisses the overlay, advances to the next set or exercise
+
+**restSeconds reference display (EP-A1):** When the exercise's `ExercisePrescription.restSeconds` is non-null, the overlay may display it as a reference value in muted secondary text alongside the count-up timer (e.g., "Target: 1:30"). The count-up timer itself is unaffected — it is not constrained, stopped, or modified by this value. Display is optional per ExercisePrescription-Amendment-001.md § 4.4; implementations may omit it without violating this spec.
 
 **What does not appear:**
 - Countdown timer
@@ -518,6 +560,46 @@ Tapping anywhere on the exercise list visible behind the overlay also dismisses 
 
 When the last set of a program-prescribed workout is logged, the "Ready" button is replaced with a single action: "Workout Complete — Save." Tapping proceeds directly to the workout completion confirmation (Section 14). The athlete can still dismiss to the exercise list by tapping behind the overlay if they want to add exercises.
 
+### 7.6 Optional Rest Progress Ring (W9-A3)
+
+A thin bronze ring may render around the count-up timer (§7.2), filling as rest elapses. It is **off by default** and exists purely as an opt-in visual companion to the timer — it never replaces, stops, or reinterprets the count-up timer's behavior defined in §7.2–§7.3.
+
+**The ring fills toward a reference; it never drains toward zero.** A draining ring is a countdown without numerals and would violate the Timer Design Principle (§7.3). A filling ring shows accumulation, consistent with the count-up timer it surrounds.
+
+**Reference source, in priority order:**
+1. The athlete's own personal rest reference time, set in Timer Preferences (below). Applies to every exercise, program or free workout.
+2. If no personal reference is set, the current exercise's program-prescribed `restSeconds` (ExercisePrescription-Amendment-001.md §4.4), if present.
+3. If neither exists, no reference resolves and the ring is not rendered — the overlay looks exactly as in §7.2 with the ring omitted.
+
+**Reaching the reference duration produces no event.** No color change, no pulse, no haptic, no message. The ring simply holds full while the count-up timer continues counting upward, unaffected. The reference is something the athlete chose to watch, not a deadline the product enforces.
+
+**Timer Preferences (new contents of the existing "⋯ Options → Timer preferences" entry, §4.2):**
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  Timer Preferences                                      │
+│  ─────────────────────────────────────────────────────  │
+│  Show rest progress ring              [ Off ●○ On ]    │  ← Default Off
+│  My rest reference time      [  90  ] sec               │  ← Optional, blank by default
+│                                                         │
+│  [              Done              ]                      │
+└─────────────────────────────────────────────────────────┘
+```
+
+Both fields are account-level preferences (parallel to the weight-unit setting, §6.4) — not per-session or per-exercise. An athlete who never opens this sheet sees no behavior change: no ring, count-up timer exactly as in the base spec.
+
+**Visual treatment:**
+- Thin stroke (2–3dp), circumscribing the timer's existing numerals — not a separate competing element
+- Diameter sized to the timer's own footprint plus a small margin (roughly 72–84dp total)
+- Bronze accent — the same accent already used for the Chapter Context Strip (§4.2)
+- Track (unfilled portion) renders in a muted neutral
+- Fill animates smoothly and continuously, at the same update cadence as the timer numerals — ring and numerals never disagree
+- No numerals, percentage, or text on the ring itself
+
+**Why this satisfies "Accountability Without Shame":** when a reference is used, it is either the athlete's own self-chosen number or an already-optional program reference (EP-A1) — never a value the product asserts is correct. Holding at full past the reference, with no further cue, keeps the ring purely informational, exactly as the count-up timer already is.
+
+> **Architecture pointer:** ProgressRing component contract (visual spec, render conditions, scope restriction, accessibility): `Rest-Timer-Architecture-v1.0.md` §9. Timer mechanism (lifecycle, state machine, background/foreground strategy, persistence): `Rest-Timer-Architecture-v1.0.md` §3–§5.
+
 ---
 
 ## Section 8 — Notes UX
@@ -530,7 +612,7 @@ Tapping the notes icon opens the **Exercise Notes Sheet**:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  Bench Press  ·  Notes                                  │  ← Context header
+│  Barbell Bench Press  ·  Notes                          │  ← Context header
 │  ─────────────────────────────────────────────────────  │
 │  ┌───────────────────────────────────────────────────┐  │
 │  │  Felt strong today. Shoulder stable at this        │  │  ← Freeform text area
@@ -561,6 +643,33 @@ When a note exists for an exercise, the notes icon changes from hollow (○) to 
 ### 8.4 Note Persistence
 
 Notes are saved immediately on "Save Note" tap. They survive through to W-17 Workout Summary, W-18 Activity History, and W-19 Activity Detail. Notes from prior sessions appear in W-19 and inform last-session reference values shown in Section 5.5.
+
+### 8.5 Workout Playlist Link (Workout-Playlist-Amendment-001)
+
+Accessible via the "⋯ Options" menu in the Workout Action Bar, alongside workout-level notes. Lets the athlete attach a Spotify or Apple Music playlist link to the session they're about to train — a reference, not a player.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  Playlist                                                │  ← Context header
+│  ─────────────────────────────────────────────────────  │
+│  [ Paste a Spotify or Apple Music link ]                │  ← URL field
+│  [ Playlist name (optional) ]                            │  ← Display name field
+│                                                         │
+│  [              Save Playlist              ]             │  ← Primary CTA
+└─────────────────────────────────────────────────────────┘
+```
+
+**What appears:** A single URL field and an optional display-name field. "Save Playlist" Primary CTA.
+
+**What does not appear:** Track listings, cover art, an embedded player, a "Connect Spotify" or "Connect Apple Music" account link. No playback controls of any kind.
+
+**Service detection:** The service (`SPOTIFY` or `APPLE_MUSIC`) is auto-detected from the URL domain (`open.spotify.com` / `music.apple.com`). A URL matching neither domain is rejected with an inline message — Forge Legacy does not guess.
+
+**One link per session:** Saving a new playlist link replaces any existing one for this session. There is no list and no history of prior links.
+
+**Why this is in the Options menu and not a more prominent entry point:** Attaching a playlist is the same category of optional, session-wide addition as a workout-level note — it doesn't belong to a specific exercise, and it shouldn't add friction to starting the workout. The athlete who wants music queued before training opens the menu once; the athlete who doesn't care never sees it.
+
+**Persistence:** The playlist link is saved immediately on "Save Playlist" tap and survives through to W-17 (editable), W-19 Activity Detail (read-only display), and any `WorkoutShare` created from this session (WSR-001).
 
 ---
 
@@ -952,6 +1061,8 @@ The sheet opens to 40–50% of screen height. It does not cover the exercise car
 
 The rest overlay covers the lower 60% of the screen. The upper 40% shows the exercise list — specifically the just-logged set row, confirming the logged value. The overlay is not full-screen.
 
+The optional Rest Progress Ring (§7.6), when rendered, sits within this existing overlay footprint around the timer — it introduces no new layout region and does not change the 60/40 split.
+
 ### 16.7 Tap Target Sizes
 
 | Element | Minimum Size |
@@ -1019,6 +1130,19 @@ W-9 through W-16 support portrait orientation only. Landscape is not supported f
 - [ ] No overflow, no removal controls, no interactive elements on section headers in W-9
 - [ ] "+ Add Exercise" mid-workout appends to MAIN section (no section picker shown)
 
+### Exercise Substitution (W9-A2)
+- [ ] "⋯" overflow icon present on Active and Upcoming exercise cards; absent on Completed cards
+- [ ] "Replace Exercise" is the only item in the overflow action sheet
+- [ ] Tapping "Replace Exercise" opens W-23 in REPLACEMENT context with `replacingExerciseId` set
+- [ ] Persistence Choice sheet shows only the options the current workout source qualifies for (Exercise-002 §7.3)
+- [ ] FORGE program workouts show only "This session only" — no other option rendered
+- [ ] "This session only" pre-selected by default
+- [ ] Confirm: prescription quantities carry forward unchanged to substitute; `SubstitutionRecord` created; `ExerciseSessionData` enriched with `prescribedExerciseId`/`prescribedExerciseName`
+- [ ] Cancel (at W-23 or the Persistence Choice sheet) leaves the original exercise card unchanged
+- [ ] Mid-exercise substitution: original card collapses to completed-style summary with only its logged sets; substitute card becomes active for remaining sets
+- [ ] Both exercises (original partial + substitute) appear in session summary and W-19 Activity Detail
+- [ ] No automatic substitution; no undo after persisting to a template or program
+
 ### Set Logging
 - [ ] Tapping "Log Set" row opens Set Input Sheet — not a new screen, not full-screen
 - [ ] Set Input Sheet content: exercise name + set number + program target (if applicable) + weight input + reps input + last session reference + "Log Set" + "Skip Set"
@@ -1041,12 +1165,25 @@ W-9 through W-16 support portrait orientation only. Landscape is not supported f
 - [ ] No recommended rest time displayed
 - [ ] No indication that rest duration is long, short, or incorrect
 
+### Rest Progress Ring (W9-A3)
+- [ ] Ring is off by default; no behavior change for athletes who do not opt in
+- [ ] Ring fills (count-up direction) — never drains toward empty
+- [ ] Ring renders only when enabled AND a reference duration resolves (personal preference, else program `restSeconds`)
+- [ ] Reaching the reference produces no color change, pulse, haptic, or message
+- [ ] Ring is bronze accent, thin stroke, sized to the timer's own footprint, no numerals on the ring itself
+- [ ] Timer Preferences reached from existing "⋯ Options" entry — no new top-level navigation
+- [ ] Ring sits within the existing Rest Overlay footprint — no new layout region
+
 ### Notes
 - [ ] Notes icon on every exercise card regardless of card state
 - [ ] Notes icon changes from hollow to filled when a note exists
 - [ ] Exercise notes open as a bottom sheet (not a new screen)
 - [ ] Notes are per-exercise, not per-set
 - [ ] Workout-level notes accessible from "⋯ Options" menu
+- [ ] Workout playlist link accessible from "⋯ Options" menu (§8.5)
+- [ ] Playlist service auto-detected from URL domain; non-matching domains rejected inline
+- [ ] Saving a new playlist link replaces the prior one — no list, no history
+- [ ] No playback controls, track listing, or account connection UI anywhere in the playlist sheet
 - [ ] Notes saved immediately on "Save Note" tap
 - [ ] Notes appear in W-17, W-18, and W-19 Activity Detail
 
@@ -1144,6 +1281,22 @@ W-9 through W-16 support portrait orientation only. Landscape is not supported f
 
 ## Change Log
 
+### v1.5 — June 2026
+
+**Workout-Playlist-Amendment-001 merged.** Added new §8.5 "Workout Playlist Link": optional Spotify/Apple Music link attach via the existing "⋯ Options" menu, alongside workout-level notes. Auto-detects service from URL domain, one link per session (replaces, not appends), no playback/SDK integration of any kind. §3 Workout Action Bar description updated to mention the new Options entry. Persists to W-17 (editable), W-19 (read-only), and WSR-001 `WorkoutShare`. See Docs/Amendments/Workout-Playlist-Amendment-001.md for full rationale.
+
+### v1.4 — June 2026
+
+**W9-A3 (Optional Rest Progress Ring) merged.** Added new §7.6 "Optional Rest Progress Ring": a thin bronze ring around the count-up timer that fills (never drains) toward an optional reference duration (personal preference, else program `restSeconds`), off by default, with no behavior change for athletes who don't opt in. Reconciles a countdown-ring request with §7.3's count-up-only Timer Design Principle by making the ring fill-direction and reference-based rather than a deadline countdown. §4.2 cross-references the new Timer Preferences contents. §7.2 wireframe and "what appears" list updated. §16.6 notes the ring stays within the existing overlay footprint. New "Rest Progress Ring (W9-A3)" Validation Checklist block added to §17. See Docs/Amendments/W9-Amendment-003-Optional-Rest-Progress-Ring.md for full rationale.
+
+### v1.3 — June 2026
+
+**EP-A1 (ExercisePrescription-Amendment-001) merged.** §7.2 Rest State Overlay: added the optional `restSeconds` reference-display note (target rest shown as muted secondary text alongside the count-up timer when non-null; timer behavior itself unaffected). This closes the one EP-A1 downstream-update item that had not yet been merged into this document. No behavior change, no new decisions.
+
+### v1.2 — June 2026
+
+**W9-A2 (Exercise Substitution Integration):** Closes a real, confirmed gap found during the W9-A1 audit — Exercise-002-Exercise-Substitution-Architecture.md required W-9 to implement a substitution-trigger affordance, persistence-choice UI, and the resulting data behaviors, but no such affordance existed anywhere in this document. Added new §5.8 "Exercise Substitution": a per-exercise "⋯" overflow icon on Active and Upcoming exercise cards (absent on Completed cards) with a single "Replace Exercise" action, opening W-23 in REPLACEMENT context, followed by a new Persistence Choice sheet (This session only / Update my template / Update my program, availability per Exercise-002 §7.3). §5.1's exercise card wireframes updated to show the new icon. New "Exercise Substitution (W9-A2)" Validation Checklist block added to §17. All flow, persistence, and data-model behavior (W-23 entry, `SubstitutionRecord`, `ExerciseSessionData` enrichment, carry-forward, FORGE session-only restriction) reused verbatim from Exercise-002 — not redesigned. See Docs/Amendments/W9-Amendment-002-Exercise-Substitution-Integration.md for the full audit and design rationale.
+
 ### v1.1 — June 2026
 
 **WS-A2 (Workout Structure Amendment 001) + W9-A1:**
@@ -1157,7 +1310,7 @@ W-9 through W-16 support portrait orientation only. Landscape is not supported f
 ---
 
 *Forge Legacy Active Workout Flow Specification — W-9 through W-16*
-*v1.1 — June 2026*
+*v1.5 — June 2026*
 *All decisions derived from the Phase 2A locked architecture, the Forge Legacy Master PRD, the Forge Legacy UX Framework v1.0, and the approved H-1, L-1, L-3/L-4, and W-1 wireframe specifications.*
 *WS-A2 applied June 2026: section-first data model incorporated; section rendering rules for W-9 defined.*
 *This document is the authority for all Active Workout Flow implementation in Phase 2B.*

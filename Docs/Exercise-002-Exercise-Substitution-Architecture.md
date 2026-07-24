@@ -95,7 +95,7 @@ An alternative exercise serves the same training purpose with a different execut
 - Equipment swaps: Barbell Bench Press → Dumbbell Bench Press
 - Environment swaps: Barbell Back Squat → Goblet Squat for home
 - Preference or access variants: Pull-Up → Lat Pulldown
-- Biomechanically equivalent movements: Romanian Deadlift → Stiff-Leg Deadlift
+- Biomechanically equivalent movements: Barbell Romanian Deadlift → Stiff-Leg Deadlift
 
 **Relationship semantics:**
 - Same or similar `movementPattern`
@@ -251,7 +251,7 @@ GYM PRESCRIPTION              HOME / TRAVEL ALTERNATIVES
 Barbell Back Squat       ↔   Goblet Squat, Bulgarian Split Squat
 Barbell Bench Press      ↔   Dumbbell Bench Press, Push-Up
 Seated Cable Row         ↔   Dumbbell Row, Band Row
-Leg Press                ↔   Goblet Squat, Step-Up
+Leg Press                ↔   Goblet Squat, Box Step-Up
 ```
 
 The content team should prioritize authoring cross-environment alternatives for all high-frequency exercises at launch. These serve the majority of real-world substitution scenarios.

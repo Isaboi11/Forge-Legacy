@@ -352,7 +352,7 @@ Favorites do not and will not (without a new architecture decision):
 | Surface favorites in the Honors system | Honors evaluate workout behavior, not library curation preferences. |
 | Apply favorites to exercise categories, programs, or workout templates | Favorites is exercise-scoped. Other entity types have their own organizational surfaces. |
 | Show the athlete when they favorited an exercise | `createdAt` is server data used for ordering only; it is not surfaced in the UI. |
-| Allow athletes to annotate or name their favorites | Favorites are a presence/absence toggle. Notes belong on the exercise itself (Custom Exercise Notes field in W-24). |
+| Allow athletes to annotate or name their favorites | Favorites are a presence/absence toggle. Notes belong on the exercise itself (Custom Exercise Notes field in W-28). |
 | Apply visible heart icons or badges to W-23 exercise rows | Picker rows have no visible favorite controls. Long-press is the only favorite affordance in W-23. |
 
 ---
@@ -462,7 +462,7 @@ Favorites do not and will not (without a new architecture decision):
 | `Exercise-Library-Architecture-v1.0.md` | EL-D2 (`isFavorite` as computed join) and §2.5 (`UserFavoriteExercise` schema sketch) are now formally ratified and extended by Exercise-003. No edits to that document required. |
 | `Exercise-001-Custom-Exercise-Architecture.md` | §7.2 cascade behavior (`UserFavoriteExercise` removed on soft-delete) is referenced and honored. No edits required. |
 | `Exercise-Detail-Wireframe-Spec-W22.md` | W-22 §13 favorite behavior is now backed by this architecture document. No edits required. |
-| `Exercise-Picker-Wireframe-Spec-W23.md` | W-23 §7 (Favorites row), §11.3 (search ranking), and W23-D14 (Source: Favorites filter) are now backed by this architecture. **One addition required:** document that W-23 exercise rows and compact cards support a long-press contextual action ("View Exercise" / "Favorite" / "Unfavorite") per EX-003-D4. No visible UI changes to W-23 row layout. |
+| `Exercise-Picker-Wireframe-Spec-W23.md` | W-23 §7 (Favorites row), §11.3 (search ranking), and W23-D14 (Source: Favorites filter) are now backed by this architecture. **Addition applied (v1.0 R3, June 2026):** W-23 §10.3a now documents the long-press contextual action ("View Exercise" / "Favorite" / "Unfavorite") per EX-003-D4, and the row anatomy's previously-shown visible heart icon (a pre-existing inconsistency with this decision) has been removed to match. |
 | `Exercise-Library-Hub-Wireframe-Spec-W21.md` (not yet authored) | When W-21 is written, it must implement: (1) Favorites row in MY EXERCISES section (`createdAt DESC`, "Favorites ›" header, full Favorites browse view); (2) Recently Used row ordered by WorkoutSession history (distinct from W-23 Recently Used); (3) trailing heart icon toggle on all exercise rows; (4) Favorites browse view with search support and empty state. All Favorites and Recently Used behaviors for W-21 are defined here. |
 
 ---

@@ -52,7 +52,7 @@ This document does NOT govern:
 
 ### 2.1 Family Structure
 
-The Forge Legacy rank system consists of seven rank families. Six families contain four sub-tiers each. The final family (Icon) has no sub-tiers.
+The Forge Legacy rank system consists of seven rank families. Six families contain four sub-tiers each. The final family (Legacy) has no sub-tiers.
 
 | Order | Rank Family | Sub-Tiers | Total Levels |
 |-------|-------------|-----------|--------------|
@@ -61,8 +61,8 @@ The Forge Legacy rank system consists of seven rank families. Six families conta
 | 3 | Craftsman | I · II · III · IV | 4 |
 | 4 | Architect | I · II · III · IV | 4 |
 | 5 | Established | I · II · III · IV | 4 |
-| 6 | Legacy | I · II · III · IV | 4 |
-| 7 | Icon | — | 1 |
+| 6 | Legend | I · II · III · IV | 4 |
+| 7 | Legacy | — | 1 |
 | | **Total** | | **25** |
 
 ### 2.2 Rank Identities
@@ -76,8 +76,8 @@ Each rank family carries a locked identity statement — a single sentence that 
 | Craftsman | "I know how to train." |
 | Architect | "I'm intentionally shaping my development." |
 | Established | "I've built something real." |
-| Legacy | "My journey has become a meaningful story." |
-| Icon | "I repeatedly become the person I intend to become." |
+| Legend | "My journey has become a meaningful story." |
+| Legacy | "I repeatedly become the person I intend to become." |
 
 ### 2.3 Display Format
 
@@ -86,9 +86,9 @@ Rank is displayed as "[Family] · [Sub-tier]" across all surfaces that show the 
 Examples:
 - Foundation · II
 - Craftsman · III
-- Legacy · I
+- Legend · I
 
-Icon has no sub-tier. The Icon display format in the M-1 ceremony context is **TBD-11** (see Section 22).
+Legacy has no sub-tier. The Legacy display format in the M-1 ceremony context is **TBD-11** (see Section 22).
 
 ---
 
@@ -299,7 +299,7 @@ Programs are major development signals in rank evaluation.
 
 - Programs are not universal promotion requirements — not every rank transition requires program graduation
 - Programs materially accelerate development evidence across multiple primary categories (Training Consistency accumulates during active programs; Program Progression is directly contributed; Training Volume accumulates)
-- Program graduation contributes as a component of signature milestone requirements for Established and Legacy (Section 14)
+- Program graduation contributes as a component of signature milestone requirements for Established and Legend (Section 14)
 - Terminology: "Program Graduation" is the standard term for the event of completing a program, matching M-4 (Program Graduated modal) and Program Authoring Standard usage
 
 The distinction between goals and programs in the rank evaluation context:
@@ -320,7 +320,7 @@ Imported pre-Forge training history receives partial credit and contextual recog
 
 **What imported history may not independently grant:**
 
-Imported history cannot independently grant Architect, Established, Legacy, or Icon. These are prestige ranks that require Forge-native confirmation. Architect and above require Forge-native evidence after import. Imported history alone cannot satisfy prestige-rank eligibility regardless of its volume or duration.
+Imported history cannot independently grant Architect, Established, Legend, or Legacy. These are prestige ranks that require Forge-native confirmation. Architect and above require Forge-native evidence after import. Imported history alone cannot satisfy prestige-rank eligibility regardless of its volume or duration.
 
 **Rationale:** This model preserves the Identity Credibility Principle while honoring the "Never Charge For History" principle (Monetization Amendment 001). An athlete with decades of pre-Forge training has a real development history — that history deserves recognition in Training Volume and contextual background. But "I'm intentionally shaping my development" (Architect) and above require demonstrated intentionality within Forge Legacy itself. Prestige rank identity is forged here, not imported.
 
@@ -339,8 +339,8 @@ Timeline targets (Section 10) describe the expected duration for an athlete to r
 | Craftsman | Minimal time gate | A light time constraint begins to appear, reinforcing that "I know how to train" requires some accumulated experience to be credible. |
 | Architect | First meaningful time gate | The first gate that carries real weight. Athletes cannot arrive at Architect quickly regardless of activity intensity. |
 | Established | Meaningful time gate | A substantive time requirement. "I've built something real" requires real years, not months. |
-| Legacy | Major time gate | Multi-year eligibility requirement. "My journey has become a meaningful story" cannot be reached in a few years of activity. |
-| Icon | Exceptional time gate | The most stringent time gate in the system. Icon requires sustained excellence over many years. |
+| Legend | Major time gate | Multi-year eligibility requirement. "My journey has become a meaningful story" cannot be reached in a few years of activity. |
+| Legacy | Exceptional time gate | The most stringent time gate in the system. Legacy requires sustained excellence over many years. |
 
 Specific time gate values (minimum months or years per family): subsumed under **TBD-4** (family promotion thresholds — see Section 22).
 
@@ -359,8 +359,8 @@ These are targets, not gates. Exceptional engagement may accelerate progression 
 | Craftsman | 6–12 months |
 | Architect | 1–2 years |
 | Established | 2–4 years |
-| Legacy | 5–8 years |
-| Icon | 8+ years |
+| Legend | 5–8 years |
+| Legacy | 8+ years |
 
 ---
 
@@ -377,10 +377,10 @@ Promotion cadence describes how frequently rank promotions are expected to occur
 | Craftsman | Moderate |
 | Architect | Slow |
 | Established | Very Slow |
-| Legacy | Extremely Slow |
-| Icon | Final |
+| Legend | Extremely Slow |
+| Legacy | Final |
 
-Icon has a cadence of Final — there is exactly one Icon promotion. It cannot be repeated.
+Legacy has a cadence of Final — there is exactly one Legacy promotion. It cannot be repeated.
 
 ### 11.2 Promotion Spacing
 
@@ -444,8 +444,8 @@ No signature milestone is required for Foundation, Builder, or Craftsman. Signat
 | Craftsman | None |
 | Architect | First completed and sealed Chapter |
 | Established | Combination milestone: multiple completed programs + multiple completed and sealed Chapters |
-| Legacy | Combination milestone: multi-year development + program progression + chapter progression + sustained improvement |
-| Icon | Repeated pattern milestone: repeated cycles of commitment, development, achievement, reflection, and fulfillment over many years |
+| Legend | Combination milestone: multi-year development + program progression + chapter progression + sustained improvement |
+| Legacy | Repeated pattern milestone: repeated cycles of commitment, development, achievement, reflection, and fulfillment over many years |
 
 "Multiple" in the Established milestone: specific program and chapter counts are subsumed under **TBD-4** (family promotion thresholds — see Section 22).
 
@@ -490,7 +490,7 @@ Evidence required:
 - Goal fulfillment — goals set and achieved, not merely set
 - A substantial body of work
 
-### Legacy — Identity Test
+### Legend — Identity Test
 
 Evidence required:
 - Multi-year consistency
@@ -500,7 +500,7 @@ Evidence required:
 - Repeated goal fulfillment
 - Narrative depth — the athlete's training history constitutes a genuine journey, not merely a collection of sessions
 
-### Icon — Identity Test
+### Legacy — Identity Test
 
 Evidence required:
 - Exceptional longevity
@@ -579,11 +579,11 @@ Primary surface: P-2 Progress Hub What's Next section (consistent with the five-
 | System | Integration Type | Details |
 |---|---|---|
 | P-2 Progress Hub | Primary display and transparency surface | Current rank display (identity strip), Rank Journey Preview (sub-tier progress + family progress — R-D47), What's Next (development guidance, no-hidden-blockers surfacing). |
-| M-1 Rank Up Ceremony | Family promotion recognition | Fires on family-level promotion only. Priority 1 in ceremony queue. No sub-tier ceremony (RS-D14). Displays "[Family] · [Sub-tier]" format. Final rank variant applies at Icon. |
+| M-1 Rank Up Ceremony | Family promotion recognition | Fires on family-level promotion only. Priority 1 in ceremony queue. No sub-tier ceremony (RS-D14). Displays "[Family] · [Sub-tier]" format. Final rank variant applies at Legacy. |
 | M-5 Chapter Sealing | Confirmed rank evaluation trigger | Rank evaluation runs as part of the M-5 sealing transaction (step 7 in M-5 architecture). One confirmed trigger. Additional trigger events: TBD-1. |
 | Chapter Architecture | Signature milestone input | Sealed chapters are required for Architect (first sealed) and Established (multiple sealed) milestone requirements. Chapter Progression is a secondary category. Reflection is inherited through chapter sealing (not a standalone category). |
 | Reflection Architecture | Indirect input only | Inherited through Chapter Progression. No standalone rank signal. L-6 reflection is part of the chapter sealing lifecycle; no separate rank credit for reflection. |
-| Goal Architecture | Secondary category + supporting signal | Goal Participation is a secondary category. Goals positively influence rank. Goals are not mandatory gates at most ranks. Goal fulfillment contributes to Established and Legacy identity tests. |
+| Goal Architecture | Secondary category + supporting signal | Goal Participation is a secondary category. Goals positively influence rank. Goals are not mandatory gates at most ranks. Goal fulfillment contributes to Established and Legend identity tests. |
 | Program Architecture | Primary category (#3) + major signal | Program Progression is primary category #3. Program Graduation is the primary signal. Programs are major development signals that materially accelerate rank advancement. Programs are not universal gates. |
 | Honors Architecture | No direct rank integration | Honors are NOT direct rank inputs (RS-D17). Honors and rank are separate recognition systems with a clean boundary explicitly preserved at MVP. |
 | P-3 Rank Detail | Downstream dependent — not yet authored | P-3 will display rank family, sub-tier, promotion history, and development trajectory. Cannot be authored until TBD-12 (rank data model) is resolved. |
@@ -607,7 +607,7 @@ Primary surface: P-2 Progress Hub What's Next section (consistent with the five-
 | RS-D10 | Time gate weight increases from Architect onward | Foundation and Builder are driven by development evidence; time is not a meaningful barrier. The Identity Credibility Principle requires real elapsed time for Architect and above — the identities are not credible at a fast cadence. |
 | RS-D11 | Promotion cadence decreases with rank (Fast → Final) | Higher ranks require more accumulated evidence, longer sustained behavior, and deeper identity formation. Cadence reflects the increasing maturity threshold at each level. |
 | RS-D12 | Promotions are queued and delivered sequentially | Every promotion must be individually experienced. Bulk promotion would bypass the M-1 ceremony architecture and violate the principle that each rank identity is individually acknowledged and felt. |
-| RS-D13 | Four sub-tiers per family; Icon has no sub-tiers | Four sub-tiers provide sufficient granularity to mark within-family progress without making the structure feel arbitrary. Icon has one final, absolute state — sub-tiers would undermine its definiteness. |
+| RS-D13 | Four sub-tiers per family; Legacy has no sub-tiers | Four sub-tiers provide sufficient granularity to mark within-family progress without making the structure feel arbitrary. Legacy has one final, absolute state — sub-tiers would undermine its definiteness. |
 | RS-D14 | Sub-tier advancement triggers no ceremony | M-1 fires on family-level changes only. Sub-tier advancement is a progress signal, not an identity shift. Ceremony frequency must remain meaningful; sub-tier ceremonies would dilute the significance of family-level promotions. |
 | RS-D15 | Guided Transparency: athletes see direction, not formulas | Exposing scoring formulas invites optimization of inputs rather than authentic development. Athletes are guided toward growth areas without knowing the precise calculation behind their evaluation. |
 | RS-D16 | No hidden blockers | Surprise requirements erode trust. If a future advancement requirement exists, it must be visible before it becomes a gate. Athletes must be able to prepare — they must not be ambushed by a requirement they had no way to anticipate. |
@@ -630,7 +630,7 @@ All locked decisions were cross-referenced against: Rank-Up-Modal-Spec-M1.md, P-
 
 **Source:** Rank-Up-Modal-Spec-M1.md uses "Apprentice" as an example rank name in the "[Rank] · [Sub-tier]" display format.
 
-**Analysis:** The actual rank system uses Foundation, Builder, Craftsman, Architect, Established, Legacy, Icon. "Apprentice" is a placeholder used during M-1 authoring before the rank system was finalized. No contradiction exists between locked systems — M-1's structural and ceremony design is correct; only the example name in the copy is outdated.
+**Analysis:** The actual rank system uses Foundation, Builder, Craftsman, Architect, Established, Legend, Legacy. "Apprentice" is a placeholder used during M-1 authoring before the rank system was finalized. No contradiction exists between locked systems — M-1's structural and ceremony design is correct; only the example name in the copy is outdated.
 
 **Action required:** M-1 must be updated to replace the "Apprentice" placeholder with representative actual rank names in all examples. This is a copy update, not a structural change to M-1.
 
@@ -662,15 +662,15 @@ All locked decisions were cross-referenced against: Rank-Up-Modal-Spec-M1.md, P-
 
 ---
 
-### C-4: Icon Display Format in M-1 Integration
+### C-4: Legacy Display Format in M-1 Integration
 
-**Source:** M-1 displays "[Rank] · [Sub-tier]" for all rank promotions (locked format). Icon has no sub-tiers (locked).
+**Source:** M-1 displays "[Rank] · [Sub-tier]" for all rank promotions (locked format). Legacy has no sub-tiers (locked).
 
-**Analysis:** When an athlete reaches Icon, M-1 must fire for the final family promotion. The standard display format cannot apply as written because no sub-tier value exists for Icon. M-1 already has a Final Rank Variant specification with special artwork and copy ("Your legacy has been forged.") — but the rank display string format within that variant is undefined.
+**Analysis:** When an athlete reaches Legacy, M-1 must fire for the final family promotion. The standard display format cannot apply as written because no sub-tier value exists for Legacy. M-1 already has a Final Rank Variant specification with special artwork and copy ("Your legacy has been forged.") — but the rank display string format within that variant is undefined.
 
-**Action required:** TBD-11 — Icon display format must be specified. Options: "Icon" alone with no separator, a unique format exclusive to the final variant, or the M-1 Final Rank Variant overrides the standard string. Should be resolved when M-1 is next amended.
+**Action required:** TBD-11 — Legacy display format must be specified. Options: "Legacy" alone with no separator, a unique format exclusive to the final variant, or the M-1 Final Rank Variant overrides the standard string. Should be resolved when M-1 is next amended.
 
-**Status: GAP — minor. Requires TBD-11. Low priority; Icon is far-future.**
+**Status: GAP — minor. Requires TBD-11. Low priority; Legacy is far-future.**
 
 ---
 
@@ -705,7 +705,7 @@ All locked decisions were cross-referenced against: Rank-Up-Modal-Spec-M1.md, P-
 | C-1: M-1 placeholder rank names | Downstream copy update needed | Resolved — M-1 copy update required |
 | C-2: Rank evaluation trigger events | Architectural gap | Gap — requires TBD-1 |
 | C-3: Sub-tier advancement surfacing | Architectural gap | Gap — requires TBD-2 |
-| C-4: Icon display format | Minor format gap | Gap — requires TBD-11 (low priority) |
+| C-4: Legacy display format | Minor format gap | Gap — requires TBD-11 (low priority) |
 | C-5: Program completion terminology | Terminology inconsistency | Resolved — standardized here |
 | C-6: Weighted order terminology | Terminology ambiguity | Resolved — disambiguated here |
 
@@ -735,7 +735,7 @@ All locked decisions were cross-referenced against: Rank-Up-Modal-Spec-M1.md, P-
 
 **Assessment:** Architecture Amendment 001 (Import) allows athletes to import pre-Forge training history. The tension between the Identity Credibility Principle (prestige ranks must feel earned within Forge Legacy) and the "Never Charge For History" principle (Monetization Amendment 001) required an explicit architectural decision.
 
-**Resolution (R-D46):** Imported history receives partial credit and contextual recognition. It may contribute to Training Volume, Training Consistency, Historical Improvement, Timeline History, P-2 Progress Context, and Athlete Background. It may not independently grant Architect, Established, Legacy, or Icon. Prestige ranks require Forge-native confirmation — imported history alone cannot satisfy prestige-rank eligibility regardless of volume or duration.
+**Resolution (R-D46):** Imported history receives partial credit and contextual recognition. It may contribute to Training Volume, Training Consistency, Historical Improvement, Timeline History, P-2 Progress Context, and Athlete Background. It may not independently grant Architect, Established, Legend, or Legacy. Prestige ranks require Forge-native confirmation — imported history alone cannot satisfy prestige-rank eligibility regardless of volume or duration.
 
 This model resolves the tension: athletes with genuine pre-Forge development history receive recognition in the categories that reflect accumulated work and context, while the Identity Credibility Principle is preserved for the ranks where self-identification with the Forge Legacy journey is what gives the rank meaning.
 
@@ -804,13 +804,13 @@ The following decisions are deferred to Rank-Computation-Model.md. They are comp
 | TBD-1 | Rank evaluation trigger events — when does rank evaluation run? (session save, chapter seal, program graduation, goal completion, periodic schedule, or combination) | HIGH | M-5 is the only confirmed trigger. Training Consistency (#1 category) requires more frequent evaluation. See C-2. |
 | TBD-2 | Sub-tier advancement surfacing — how does an athlete discover a sub-tier promotion? (P-2 What's Next, Rank Journey Preview, silent update, notification) | MEDIUM | No ceremony (RS-D14). Discovery mechanism is undefined. See C-3. |
 | TBD-3 | Sub-tier thresholds — what triggers Foundation I→II, II→III, III→IV (and equivalents across all six sub-tier families)? | HIGH | Sub-tiers are locked structural elements with no defined advancement thresholds anywhere. |
-| TBD-4 | Family promotion thresholds — specific numeric or metric thresholds for each primary category per family transition (Foundation→Builder through Legacy→Icon), including time gate minimum values | HIGH | The most critical numeric gap. No threshold value exists for any family-level promotion. |
+| TBD-4 | Family promotion thresholds — specific numeric or metric thresholds for each primary category per family transition (Foundation→Builder through Legend→Legacy), including time gate minimum values | HIGH | The most critical numeric gap. No threshold value exists for any family-level promotion. |
 | TBD-5 | Promotion spacing values — minimum time between successive rank promotions within the promotion queue | MEDIUM | Philosophy is locked (spacing increases with rank); specific values are not. |
 | TBD-6 | "Active week" / "Active month" definitions — what constitutes an active week or active month for Training Consistency evaluation? | HIGH | #1 primary category cannot be evaluated without a definition of its core signals. |
 | TBD-7 | "Meaningful work" definition — what counts as meaningful work for Training Volume? (minimum session duration, minimum effort threshold, activity type inclusions/exclusions) | HIGH | Training Volume (#4 primary category) cannot be computed without this definition. |
 | TBD-8 | Personal Improvement metrics by athlete type — how is improvement measured for Strength, Running, Boxing, and Hybrid athlete types respectively? | HIGH | #2 primary category cannot be evaluated without per-type improvement metrics. |
 | TBD-10 | "Recent engagement" definition — what time window and activity level qualifies as "recent" for the recent engagement promotion requirement? | MEDIUM | Applies where applicable (Section 5.2). Cannot be evaluated without a definition. |
-| TBD-11 | Icon display format — how is Icon displayed in M-1's "[Rank] · [Sub-tier]" format given Icon has no sub-tiers? | LOW | Only surfaces when M-1 fires the final family promotion. See C-4. |
+| TBD-11 | Legacy display format — how is Legacy displayed in M-1's "[Rank] · [Sub-tier]" format given Legacy has no sub-tiers? | LOW | Only surfaces when M-1 fires the final family promotion. See C-4. |
 | TBD-12 | Rank data model — schema for athlete rank state (current family, current sub-tier, promotion history, evaluation state, fields available to P-3 and other consumers) | HIGH | P-3 cannot be authored without this. Rank Evaluation Service cannot be designed without this. |
 | TBD-13 | Chapter Progression category definition — sealed chapters only, or all chapters (started and unsealed)? | MEDIUM | Signature milestones explicitly require "sealed" chapters; the secondary category definition is currently imprecise. |
 | TBD-14 | Longevity secondary category definition — account age, continuous active months, a combination? How does this differ from Training Consistency's "active months" signal to avoid double-counting? | MEDIUM | Both reference time-based signals; the boundary between them must be explicitly defined. |
@@ -830,7 +830,7 @@ The following decisions are deferred to Rank-Computation-Model.md. They are comp
 The following are locked, fully specified, and ready to inform downstream work:
 
 - All 7 rank families and their identity statements
-- Sub-tier count (4 per family; Icon exception)
+- Sub-tier count (4 per family; Legacy exception)
 - All four rank philosophy principles (Earned, Permanent, Identity-based, Multi-dimensional)
 - Identity Credibility Principle and its governing scope
 - Rank-never-decreases rule (no exceptions)
@@ -869,7 +869,7 @@ The following items were pending at draft completion. They are computational and
 | TBD-7 | Meaningful work definition |
 | TBD-8 | Personal Improvement metrics per athlete type |
 | TBD-10 | Recent engagement definition |
-| TBD-11 | Icon display format |
+| TBD-11 | Legacy display format |
 | TBD-12 | Rank data model |
 | TBD-13 | Chapter Progression category definition |
 | TBD-14 | Longevity secondary category definition |

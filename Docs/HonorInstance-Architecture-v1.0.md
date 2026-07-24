@@ -1,9 +1,9 @@
 # HonorInstance Architecture
-## v1.0 — LOCKED | June 2026
+## v1.1 — LOCKED | June 2026
 
 **Status:** LOCKED
 **Type:** Architecture Note
-**Authority:** Honor-Catalog-v1.0-LOCKED.md, L-10 Honors Hub Spec v1.1, L-11 Honor Detail Sheet Spec v1.1, M-2 Honor Earned Modal Spec v1.1, Master PRD § 13, Product DNA
+**Authority:** Honor-Catalog-v1.0-LOCKED.md (v1.5), L-10 Honors Hub Spec, L-11 Honor Detail Sheet Spec v1.1, M-2 Honor Earned Modal Spec v1.1, Master PRD § 13, Product DNA, `Honors-Architecture-V1-Final-v1.0.md` (LOCKED)
 
 ---
 
@@ -44,6 +44,7 @@ This architecture is the prerequisite for honor evaluation service design, L-10 
 | `live_session` | Awarded during a live (online) session save |
 | `offline_sync` | Awarded when an offline session synced to the server |
 | `import` | Awarded during retroactive evaluation of imported historical data |
+| `challenge` | Awarded by `ChallengeEvaluator` on Challenge Completion / Enrollment Finalized *(Honor-Catalog-Amendment-001)*. **(Challenge-Architecture-Amendment-003 v1.1 / CA3-D9)** Covers **both** `context = SQUAD` and `context = FRIENDS` challenges — HonorInstances are **account-based**, never squad-scoped, so no new `source` value and no schema change are needed for Friend Challenges. |
 
 `source` is internal only. It is never surfaced to the athlete or displayed in any UI surface.
 
@@ -63,7 +64,7 @@ No derived fields are stored on `HonorInstance`. See AD-50.
 
 `displayName` is a top-level field on `HonorInstance`. It is not in `metadata`.
 
-**Rationale:** `displayName` is universal — present on every one of the 53 honor types. It is an identity-adjacent field, not type-specific contextual data. Placing a universal field inside a sparse metadata object would contradict the sparse metadata principle (AD-51) and would force L-10 to dig into a nested object to render every row. As a top-level field, L-10 renders from `displayName` directly without a metadata lookup or catalog lookup.
+**Rationale:** `displayName` is universal — present on every one of the 167 honor types. It is an identity-adjacent field, not type-specific contextual data. Placing a universal field inside a sparse metadata object would contradict the sparse metadata principle (AD-51) and would force L-10 to dig into a nested object to render every row. As a top-level field, L-10 renders from `displayName` directly without a metadata lookup or catalog lookup.
 
 **Snapshotting:** `displayName` is snapshotted at earn time by the evaluation service. For unit-adaptive strength honors, it captures the unit-specific name at the time of earning:
 
@@ -233,18 +234,81 @@ The anniversary date is the `dateEarned` field (top-level, per AD-33). All longe
 
 ---
 
+> **Deferred to V2:** Sex-Specific Milestones and Relative Strength Milestones metadata shapes (`weightDisplay`/`unitSystem`/`biologicalSexAtEarn` and `weightDisplay`/`bodyweightDisplay`/`ratioDisplay`/`unitSystem` respectively) were designed during this pass and are preserved in `Honor-Catalog-v1.0-LOCKED.md` § DEFERRED TO V2. Neither family ships in V1 — no `HonorInstance` records of these shapes exist in V1.
+
+#### ENDURANCE — All Types (38 types) *(v1.1, new)*
+
+Applies to: every Single-Session and Lifetime Distance honor across Running, Walking, Cycling, Swimming (`run_*`, `walk_*`, `bike_*`, `swim_*`)
+
+| Field | Type | Definition |
+|-------|------|-----------|
+| `distanceDisplay` | string | Pre-formatted distance at earn time (e.g. `"5K"`, `"1,000 lifetime miles"`) |
+| `unitSystem` | `'mi'` \| `'km'` | Athlete's distance-unit preference at earn time |
+| `activityType` | `'RUN'` \| `'WALK'` \| `'BIKE'` \| `'SWIM'` | Which activity this honor was earned in |
+
+---
+
+#### TRAINING — Consistency Family (5 types) *(v1.1, new)*
+
+Applies to: `consistency_active_weeks_1/2/3/4/5`
+
+```
+metadata: {}
+```
+
+Self-contained — identical pattern to the rest of the Training category. The cumulative count is not itself displayed in `metadata`; the achieved threshold is communicated by `displayName` alone.
+
+---
+
+#### PRESTIGE — Breadth Ladder (4 types) *(v1.1, new)*
+
+Applies to: `prestige_breadth_1/2/3/4`
+
+```
+metadata: {}
+```
+
+Self-contained — the qualifying category count is communicated by `displayName` alone; no per-instance snapshot of which categories qualified is stored (the rule is general, not athlete-specific).
+
+#### PRESTIGE — Named Combinations (4 types) *(v1.1, new)*
+
+Applies to: `prestige_complete_lifter`, `prestige_three_disciplines`, `prestige_built_by_the_plan`, `prestige_life_in_chapters`
+
+```
+metadata: {}
+```
+
+No metadata required — each `honorType`'s constituent honors are fixed in the catalog definition itself and can be narrated from there; no per-instance snapshot needed.
+
+---
+
+#### HIDDEN — All Types (6 types) *(v1.1, new)*
+
+Applies to: `hidden_early_forge`, `hidden_midnight_forge`, `hidden_new_years_forge`, `hidden_leap_day_forge`, `hidden_full_circle`, `hidden_triple_threat`
+
+```
+metadata: {}
+```
+
+Self-contained — each is narratable from `displayName` and `dateEarned` alone.
+
+---
+
 ### 4.2 Metadata Summary Table
 
 | Honor Types | metadata fields |
 |-------------|----------------|
 | Bench/squat/deadlift milestones (12) | `weightDisplay`, `unitSystem` |
 | Club honors (6) | `unitSystem`, `benchPR`, `squatPR`, `deadliftPR` |
-| Chapter count honors (4) | `chapterName` |
-| Chapter depth honors (4) | `chapterName` |
+| Chapter count honors (5) | `chapterName` |
+| Chapter depth honors (5) | `chapterName` |
+| Chapter duration honors (4) *(v1.1, new)* | `chapterName` |
 | `first_goal_achieved` | `goalId`, `goalName` |
 | `first_program_graduated` | `programId`, `programName` |
 | `first_workout_with_friend` | `partnerId`, `partnerDisplayName` |
-| All remaining 24 types | `{}` |
+| Program Family Mastery (2) *(v1.1, new)* | `lineageId`, `lineageName` |
+| Endurance (38) *(v1.1, new)* | `distanceDisplay`, `unitSystem`, `activityType` |
+| All remaining types (Training, Goals/Programs volume milestones, Longevity, Consistency, Prestige, Hidden, and all categories not otherwise listed — Partnership volume, Competition, Communities, Squad) | `{}` |
 
 ---
 
@@ -274,11 +338,15 @@ Entity IDs (`goalId`, `programId`, `partnerId`) are immutable — IDs do not cha
 
 `chapterId` (top-level) is immutable — chapter IDs do not change when chapters are renamed. It is stored for attribution navigation (L-11 tap → L-3/L-4). `metadata.chapterName` is the snapshot for display.
 
+### 5.3 Relationship to Pinned Legacy (P-1 Amendment 004)
+
+A `HonorInstance.id` is a valid `targetId` for a `PinnedLegacyItem` with `targetType = HONOR`, per `P-1-Amendment-004-Pinned-Legacy.md` PL-D3 (merged into `Profile-Wireframe-Spec-P1.md` v1.3, Section 4A). Any earned Honor — including Strength Club totals — may be pinned to the athlete's profile by the athlete. Pinning is a reference-only operation owned entirely by the Pinned Legacy surface: it reads `HonorInstance.displayName`/`metadata` for display exactly as L-10/L-11 do, writes nothing to `HonorInstance`, and has no effect on evaluation, `dateEarned`/`awardedAt`, snapshot data, or any other field on this record. No "Featured Honors" flag or sub-schema exists on `HonorInstance` — pinning state lives entirely in `PinnedLegacyItem`, outside this document's domain.
+
 ---
 
 ## 6. Uniqueness Model
 
-### 6.1 One-Time Honors (49 types)
+### 6.1 One-Time Honors (158 types as of Honor-Catalog-v1.0-LOCKED.md v1.5)
 
 An honor is earned at most once per athlete, across the athlete's entire legacy.
 
@@ -286,9 +354,9 @@ An honor is earned at most once per athlete, across the athlete's entire legacy.
 
 The `chapterId` is `null` for all one-time honors.
 
-### 6.2 Repeatable Honors (4 types)
+### 6.2 Repeatable Honors (9 types as of v1.5)
 
-The chapter depth family (`workouts_in_chapter_10/25/50/100`) is earned at most once per chapter per athlete. The same honor can be re-earned when the athlete begins a new chapter and reaches the same session count.
+The chapter depth family (`workouts_in_chapter_10/25/50/100/250`) and the chapter duration family (`chapter_duration_6_months/1_year/2_years/3_years`, new at v1.5) are each earned at most once per chapter per athlete. The same honor can be re-earned when the athlete begins a new chapter and reaches the same session count or elapsed duration.
 
 **Uniqueness key:** `(athleteId, honorType, chapterId)`
 
@@ -370,7 +438,7 @@ All MVP records are written with `schemaVersion: 1`.
 | AD-51 (new) | `metadata` is a sparse object — only fields required by the `honorType` are present; no null placeholder fields |
 | AD-52 (new) | All display strings referenced by L-11 templates must be snapshotted at earn time; the display layer never queries live entities |
 | AD-53 (new) | Timeline Events reference `HonorInstance` by `id`; `HonorInstance` has no back-reference to Timeline |
-| AD-54 (new) | `source` field (`live_session` \| `offline_sync` \| `import`) — internal audit field; never displayed to the athlete |
+| AD-54 (new) | `source` field (`live_session` \| `offline_sync` \| `import` \| `challenge`) — internal audit field; never displayed to the athlete (`challenge` added by Honor-Catalog-Amendment-001) |
 | AD-55 (new) | `chapterId` (top-level) is the second uniqueness key component for repeatable honors; `null` for all one-time honors |
 | AD-56 (new) | `metadata.chapterName` is always snapshotted when `chapterId` is set, regardless of whether the L-11 template references it |
 | AD-57 (new) | `schemaVersion` field (`= 1` for all MVP records) enables future migration scripts to identify record format; governs top-level structure only |
@@ -394,8 +462,10 @@ The following are out of scope for this architecture note and are deferred:
 | Version | Date | Change |
 |---------|------|--------|
 | v1.0 | June 2026 | Initial lock |
+| v1.0.1 | June 2026 | Added §5.3: pointer-only reconciliation note for `P-1-Amendment-004-Pinned-Legacy.md` (merged into `Profile-Wireframe-Spec-P1.md` v1.3). Confirms `HonorInstance.id` is a valid Pinned Legacy `targetId` and that pinning has zero effect on this record. No field, decision, or evaluation behavior changed. |
+| v1.1 | June 2026 | `Honors-Architecture-V1-Final-v1.0.md` reconciled. Added metadata definitions for four new honor families: Endurance, Consistency, Prestige (both sub-families), Hidden. Updated §6.1/§6.2 counts to reflect Honor-Catalog-v1.0-LOCKED.md v1.5 (158 one-time / 9 repeatable). Two additional families — Sex-Specific Strength Milestones, Relative Strength Milestones — were designed in this pass and then deferred to V2 by PO decision before final lock; their metadata shapes are preserved in `Honor-Catalog-v1.0-LOCKED.md` § DEFERRED TO V2, not in this document's active spec. No top-level field added or changed — `schemaVersion` remains `1` per §10's existing rule that new honor types and new metadata fields on new types do not require a schema-version bump. |
 
 ---
 
-*HonorInstance Architecture — v1.0 — LOCKED*
+*HonorInstance Architecture — v1.1 — LOCKED*
 *Forge Legacy | June 2026*

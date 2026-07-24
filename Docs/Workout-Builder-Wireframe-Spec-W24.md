@@ -1,11 +1,12 @@
 # W-24 Workout Builder
-## Wireframe Specification v1.0 | June 2026
+## Wireframe Specification v1.2 | June 2026
 
 **Status:** LOCKED
 **Authority:** W-4 v1.1 (LOCKED), W-23 v1.0 (LOCKED), Exercise Domain Architecture v1.0 + Amendment 001 (LOCKED), ED-1–ED-6 (LOCKED), W-9 v1.0 (LOCKED), W-3 v1.2 (LOCKED), Product DNA (LOCKED)
 **Implements:** Copy-Semantics slot data model (W-4 Decision 2), PickerContext `WORKOUT_BUILDER` (W-23 § 4.2), ED-5 (GIF Autoplay Policy), ExercisePrescription data model (§ 7.6)
 **Navigated from:** W-3 Program Detail (workout slot card)
 **Navigates to:** W-3 (back), W-23 (exercise picker modal), W-22 (detail sheet)
+**Component contracts:** CLA-C08 (Button), CLA-C16 (ListItem), CLA-C14 (InputField), CLA-C21 (BottomSheet) — see [`Component-Library-Architecture-v1.0.md`](Component-Library-Architecture-v1.0.md)
 
 ---
 
@@ -122,7 +123,7 @@ W-24 has three regions: Header, Sectioned Content Area (scrollable), and Footer 
 │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─        │
 │                                                    │
 │  MAIN WORKOUT                                      │  ← Required section, no overflow
-│  1.  [img] Bench Press                   [⋯] [≡]  │
+│  1.  [img] Barbell Bench Press           [⋯] [≡]  │
 │            Sets  [ 3 ]  Reps  [ 8 ]  135 lbs       │
 │  2.  [img] Incline Dumbbell Press        [⋯] [≡]  │
 │            Sets  [ 3 ]  Reps  [10 ]  60 lbs        │
@@ -390,9 +391,14 @@ ExercisePrescription {
   durationSeconds:  number | null // populated for MOBILITY/YOGA slots; null otherwise
   weightValue:      number | null // null for bodyweight or unset
   weightUnit:       'lbs' | 'kg' | null
+  distanceValue:    number | null // EP-A1
+  distanceUnit:     'm' | 'km' | 'mi' | null  // EP-A1; per-exercise
+  restSeconds:      number | null // EP-A1; reference value only
   notes:            string | null // athlete planning notes; max 200 chars
 }
 ```
+
+`restSeconds`, `distanceValue`, and `distanceUnit` are governed by ExercisePrescription-Amendment-001.md (EP-A1) — not redefined here. All three are optional (null is valid); `distanceValue` and `distanceUnit` are always both null or both non-null.
 
 **Section invariants:**
 - A new slot is initialized with `sections: [{ type: 'MAIN', exercises: [] }]` — one MAIN section, no exercises.
@@ -535,7 +541,7 @@ This matches standard native drag behavior on iOS and Android.
 **Has prescription data (any field non-null, or notes present):** Confirmation sheet:
 
 ```
-Remove Bench Press?
+Remove Barbell Bench Press?
 
 Prescription data will be deleted.
 
@@ -917,7 +923,7 @@ W-9 receives from the program slot:
 In W-9, W-24 prescriptions appear as **muted reference text** in the set input panel:
 
 ```
-Bench Press
+Barbell Bench Press
 Set 1 of 3
 ──────────────────────────────────
   Target: 8 reps × 135 lbs       ← 13sp, muted secondary text
@@ -1174,8 +1180,9 @@ Two additive amendments:
 | v1.0 | June 2026 | Initial specification. Workout Builder for program workout slots. Push navigation, auto-save, simple prescription model (sets × reps × weight — uniform across sets), optional fields, MOBILITY/YOGA adaptation (Duration field / Weight hidden). W-23 integration with PickerContext WORKOUT_BUILDER. W-22 opened in reference mode (no Select CTA). W-9 pre-loaded exercise list and muted reference prescription display. Two upstream amendments: W3-A1 (entry point) and W9-A1 (pre-loaded list + reference prescription). 15 decisions (W24-D1 through W24-D15). |
 | v1.0 (Final Lock) | June 2026 | R1–R5 amendments applied. § 7.6 added: `ExercisePrescription` and `ProgramSlot.exercises[]` data model formalized; `reps` / `durationSeconds` mutually exclusive fields defined. § 10.5 added: cancelled drag snaps back to original position, no save triggered. § 20 expanded: (1) W-9 logged values never write back to W-24 `ExercisePrescription` records — plan and execution are permanently independent; (2) "Custom" label absent from W-24 exercise cards — source labeling is W-23's concern. § 22 W9-A1 scope expanded: pre-loaded exercise behavior applies from all valid program-start entry points (W-1 Program Card, W-3 "Start Next Workout," H-1 "Continue Program"), not W-3 only. Status: LOCKED. |
 | v1.1 (WS-A1) | June 2026 | Workout Structure Amendment 001 applied. **Core data model change:** `ProgramSlot.exercises: ExercisePrescription[]` replaced by `ProgramSlot.sections: WorkoutSection[]` where `WorkoutSection { type: 'WARM_UP' \| 'MAIN' \| 'COOL_DOWN', exercises: ExercisePrescription[] }`. Three fixed sections: Warm-Up (optional), Main Workout (required), Cool-Down (optional). `ExercisePrescription.order` is now per-section. § 5.1 updated: layout diagram with section headers. § 5.3–5.5 updated: section architecture, per-section Add CTA, section creation/removal model. § 6.3 updated: per-exercise overflow gains "Move to [Section]" options. § 9.3 updated: exercise appended to calling section. § 10.2–10.3 updated: reorder is within-section only; accessibility announces section. § 11.4 added: section removal via header overflow — immediate for empty, confirmation for non-empty; MAIN cannot be removed. § 14.1 updated: empty state is section-aware (MAIN header + "No exercises added yet."). § 14.5 added: empty section state for optional sections. § 17, § 18.1, § 19, § 20, § 21, § 22, § 23 updated accordingly. Decision W24-D16 added. WS-R1 persistence rule applied: optional sections persist when created; removed only by explicit athlete action. |
+| v1.2 (EP-A1) | June 2026 | ExercisePrescription-Amendment-001 merged. § 7.6 `ExercisePrescription` schema extended with `restSeconds`, `distanceValue`, `distanceUnit` (all optional; EP-A1 governs definitions and invariants — not redefined here). Closes the W-24/W-25 schema discrepancy (W-25 already referenced these fields; W-24, the canonical schema owner, did not yet contain them). No behavior change, no new decisions. |
 
 ---
 
-*W-24 Workout Builder — Wireframe Specification v1.0*
+*W-24 Workout Builder — Wireframe Specification v1.2*
 *Forge Legacy | June 2026*

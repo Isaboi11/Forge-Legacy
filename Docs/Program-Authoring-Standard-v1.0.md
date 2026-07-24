@@ -1,5 +1,5 @@
 # Forge Legacy — Program Authoring Standard
-## Version 1.1 | June 2026
+## Version 1.4 | June 2026
 
 **Status:** LOCKED
 **Authority:** Program-Catalog-Architecture-v1.0.md, Program-Ecosystem-Architecture-v1.0.md, ExercisePrescription-Amendment-001.md, Exercise-Library-Architecture-v1.0.md, FORGE_LEGACY_PRODUCT_DNA.md
@@ -10,13 +10,13 @@
 
 ### 1.1 What This Document Is
 
-The Program Authoring Standard (PAS) is the internal rulebook governing how every Forge Legacy program is authored, validated, and imported. It is the sole operational authority between the locked architecture documents and the people who create the 25 launch programs.
+The Program Authoring Standard (PAS) is the internal rulebook governing how every Forge Legacy program is authored, validated, and imported. It is the sole operational authority between the locked architecture documents and the people who create the 24 launch programs.
 
 Before any program is exported to CSV and submitted to the import pipeline, it must conform to this standard in full.
 
 ### 1.2 What This Document Is Not
 
-- **Not the 25 programs.** No programs are authored here.
+- **Not the 24 programs.** No programs are authored here.
 - **Not a schema definition.** The data model is locked in Program-Catalog-Architecture-v1.0.md and ExercisePrescription-Amendment-001.md. This document references those schemas; it does not redefine them.
 - **Not the import tool specification.** The technical behavior of the Forge Admin Import Tool is defined in Program-Ecosystem-Architecture-v1.0.md §6.
 - **Not a public document.** It is an internal content-team resource.
@@ -24,7 +24,7 @@ Before any program is exported to CSV and submitted to the import pipeline, it m
 
 ### 1.3 Why This Document Exists
 
-The 25 launch programs will be authored by one or more content creators, potentially in parallel. Without a shared standard, programs will diverge in:
+The 24 launch programs will be authored by one or more content creators, potentially in parallel. Without a shared standard, programs will diverge in:
 
 - Naming conventions
 - Difficulty calibration across categories
@@ -39,7 +39,7 @@ A divergent catalog feels arbitrary to athletes. The PAS exists so that every Fo
 
 ### 1.4 Audience
 
-Content creators authoring the 25 Forge launch programs. Product reviewers approving programs before publish.
+Content creators authoring the 24 Forge launch programs. Product reviewers approving programs before publish.
 
 ### 1.5 Authority Chain
 
@@ -48,7 +48,7 @@ This document operates within, and is subordinate to:
 | Authority Document | Governs |
 |--------------------|---------|
 | Program-Catalog-Architecture-v1.0.md | Data model, taxonomy, content rules, catalog governance |
-| Program-Ecosystem-Architecture-v1.0.md | Import pipeline, succession, catalog structure, 25-program names |
+| Program-Ecosystem-Architecture-v1.0.md | Import pipeline, succession, catalog structure, 24-program names |
 | ExercisePrescription-Amendment-001.md | ExercisePrescription schema, field semantics |
 | Exercise-Library-Architecture-v1.0.md | ExerciseDefinition schema, equipment tags, environment tags |
 | FORGE_LEGACY_PRODUCT_DNA.md | Brand, UX philosophy, prohibited patterns |
@@ -208,7 +208,7 @@ Forge program names follow a two-part structure:
 
 ### 4.3 Locked Names
 
-The canonical names for all 25 launch programs are locked in Program-Ecosystem-Architecture-v1.0.md §6.5. See Section 13. Future programs beyond the 25 follow the PAS-D1 pattern.
+The canonical names for all 24 launch programs are locked in Program-Ecosystem-Architecture-v1.0.md §6.5. See Section 13. Future programs beyond the 24 follow the PAS-D1 pattern.
 
 ---
 
@@ -311,9 +311,9 @@ A dedicated `rpe: integer | null` field on `ExercisePrescription` is the correct
 
 ## Section 7 — Progression Models
 
-### 7.1 Approved MVP Progression Models (PAS-D6)
+### 7.1 Progression Models Used in the Launch Catalog (PAS-D6)
 
-Five progression models are approved for MVP Forge programs. Additional models require a PAS amendment before use.
+Five progression models are used across the 24 launch Forge programs. Additional evidence-supported progression models may be used when justified in the program Blueprint and approved through Group C review.
 
 ---
 
@@ -352,7 +352,7 @@ reps: 8
 notes: Rep target: 8–12. Add weight when all sets reach 12.
 ```
 
-**Programs:** Hypertrophy Foundation, Hypertrophy Intermediate, Hypertrophy Advanced, Strength Foundation II, Strength Foundation III (accessory work), Powerbuilding Intermediate, Conditioning Intermediate, Body Recomposition Foundation, Body Recomposition Intermediate
+**Programs:** Muscle Building Foundation, Muscle Building Intermediate, Muscle Building Advanced, Strength Foundation II, Strength Foundation III (accessory work), Conditioning Intermediate, Body Recomposition Foundation, Body Recomposition Intermediate
 
 ---
 
@@ -371,7 +371,7 @@ Week 9 — Lower Body: Realization
 
 For running: slots use `durationSeconds` or `distanceValue`/`distanceUnit`. Weekly mileage increases per the 10% rule (see Section 11.4).
 
-**Programs:** Strength Foundation III, Hypertrophy Advanced, Running Base I, Running Base II
+**Programs:** Strength Foundation III, Muscle Building Advanced, Running Base I, Running Base II
 
 ---
 
@@ -389,7 +389,7 @@ Weeks 7–9: sets: 5
 Week 10 (deload): sets: 2
 ```
 
-**Programs:** Hypertrophy Foundation, Hypertrophy Intermediate (within double-progression structure), Lower Body Foundation, Lower Body Intermediate, Home Conditioning
+**Programs:** Muscle Building Foundation, Muscle Building Intermediate (within double-progression structure), Lower Body Foundation, Lower Body Intermediate, Home Conditioning
 
 ---
 
@@ -425,6 +425,8 @@ Week 5 — Hip Flexor Stretch: durationSeconds: 60
 | MOBILITY | Time-Based Progression |
 
 Layering models is acceptable (e.g., STRENGTH ADVANCED uses Block Periodization for phase structure and Double Progression for accessory work within each phase).
+
+This table reflects the models used by the launch catalog. A Blueprint proposing a different evidence-supported model for a given category/level follows the Group C review path described in §7.1.
 
 ---
 
@@ -535,6 +537,8 @@ The following ranges govern the **MAIN section only**. WARM_UP and COOL_DOWN are
 
 Programs authored outside these ranges require a written deviation note in the authoring sheet. The quality reviewer (Section 16, Group C) confirms the deviation is justified.
 
+Volume distribution pattern, including even distribution versus concentrated body-part-split distribution, is a methodology choice. Deviations from the category default require a written rationale and Group C reviewer confirmation.
+
 ### 10.2 Estimated Session Duration (Quality Guideline)
 
 The following ranges are **quality-review guidelines, not import rules**. The import tool does not enforce them. They exist because volume guardrails (exercise count × set count) do not capture session duration — two programs can both satisfy PAS-D11 and yet produce sessions of 35 minutes or 95 minutes depending on rest periods and exercise complexity.
@@ -578,9 +582,9 @@ Estimates assume: the athlete sets up promptly, follows prescribed rest periods,
 
 ### 11.1 STRENGTH
 
-**Session structure:** Foundation programs: 3 days/week. Intermediate: 4 days, Upper/Lower split. Advanced: 4 days, block-structured phases. Every MAIN section includes at minimum one Squat or Hip Hinge pattern and one horizontal push or pull.
+**Default session structure:** Foundation programs: 3 days/week. Intermediate: 4 days, Upper/Lower split. Advanced: 4 days, block-structured phases. Every MAIN section includes at minimum one Squat or Hip Hinge pattern and one horizontal push or pull. A Blueprint may specify an alternative structure with a stated rationale, subject to §10.1 deviation-note review and Group C approval.
 
-**Core compound movements:** Back Squat, Front Squat, Deadlift, Romanian Deadlift, Bench Press, Overhead Press, Barbell Row, Pull-Up. At least two must appear in every MAIN section.
+**Core compound movements:** Back Squat, Front Squat, Deadlift, Barbell Romanian Deadlift, Barbell Bench Press, Overhead Press, Barbell Row, Pull-Up. At least two must appear in every MAIN section.
 
 **Exercise order:** Primary compound first (highest neurological demand). Secondary compound second. Accessory work last. Never open with isolation or machine exercises.
 
@@ -599,11 +603,11 @@ Estimates assume: the athlete sets up promptly, follows prescribed rest periods,
 
 ### 11.2 HYPERTROPHY
 
-**Session structure:** 4 days/week at BEGINNER and INTERMEDIATE; 5 days at ADVANCED. Push/Pull/Legs or Upper/Lower split.
+**Default session structure:** 4 days/week at BEGINNER and INTERMEDIATE; 5 days at ADVANCED. Push/Pull/Legs or Upper/Lower split. A Blueprint may specify an alternative structure — including a body-part-split rotation — with a stated rationale, subject to §10.1 deviation-note review and Group C approval.
 
 **Volume target:** 10–20 sets per muscle group per week. Distribute across sessions; do not concentrate all sets for one muscle group into a single session.
 
-**Exercise order:** Compound movements first (Bench Press, Barbell Row, Squat variations, RDL). Isolation work last (dumbbell fly, leg curl, lateral raise). Cable and machine exercises are appropriate — do not avoid them.
+**Exercise order:** Compound movements first (Barbell Bench Press, Barbell Row, Squat variations, Barbell Romanian Deadlift). Isolation work last (dumbbell fly, leg curl, lateral raise). Cable and machine exercises are appropriate — do not avoid them.
 
 **Load prescription:** Double progression (Model 2) with volume accumulation layered across the program (Model 4). RPE notes permitted at INTERMEDIATE and ADVANCED levels.
 
@@ -616,7 +620,7 @@ Estimates assume: the athlete sets up promptly, follows prescribed rest periods,
 
 ### 11.3 CONDITIONING
 
-**Session structure:** Sessions alternate or combine strength and cardio elements. Work-to-rest ratios are a primary prescription variable. Always populate `restSeconds` for CONDITIONING programs.
+**Default session structure:** Sessions alternate or combine strength and cardio elements. Work-to-rest ratios are a primary prescription variable. Always populate `restSeconds` for CONDITIONING programs. A Blueprint may specify an alternative structure with a stated rationale, subject to §10.1 deviation-note review and Group C approval.
 
 **Circuit encoding:** If the session is a circuit, indicate this in the slot name: `"Week 3 — AMRAP 20 Min Circuit"` or `"Week 5 — 5 Rounds: Strength Circuit"`. Note circuit intent in exercise `notes`: `"Move directly to the next exercise. Rest only after completing all exercises in the circuit."` Set `restSeconds` on the circuit's final exercise to indicate between-round rest.
 
@@ -628,7 +632,7 @@ Estimates assume: the athlete sets up promptly, follows prescribed rest periods,
 
 ### 11.4 RUNNING
 
-**Session structure:** 4 sessions/week at BEGINNER; 5 at INTERMEDIATE. Mix of easy pace runs (duration-based), tempo runs (distance-based), and long runs. One easy or rest day between intensity sessions.
+**Default session structure:** 4 sessions/week at BEGINNER; 5 at INTERMEDIATE. Mix of easy pace runs (duration-based), tempo runs (distance-based), and long runs. One easy or rest day between intensity sessions. A Blueprint may specify an alternative structure with a stated rationale, subject to §10.1 deviation-note review and Group C approval.
 
 **Prescription format:** Use `durationSeconds` for easy/recovery runs. Use `distanceValue`/`distanceUnit` for tempo and long runs where distance is the target. Use `notes` for pace guidance: `"Easy conversational pace. You should be able to speak in full sentences."` or `"Tempo pace. Comfortably hard — a few words, not full sentences."`
 
@@ -645,7 +649,7 @@ Estimates assume: the athlete sets up promptly, follows prescribed rest periods,
 
 ### 11.5 CYCLING
 
-**Session structure:** 4 sessions/week at BEGINNER; 5 at INTERMEDIATE. Mix of easy aerobic rides (duration-based), interval sessions, and longer steady rides.
+**Default session structure:** 4 sessions/week at BEGINNER; 5 at INTERMEDIATE. Mix of easy aerobic rides (duration-based), interval sessions, and longer steady rides. A Blueprint may specify an alternative structure with a stated rationale, subject to §10.1 deviation-note review and Group C approval.
 
 **Prescription format:** Use `durationSeconds` for ride duration. Use `distanceValue`/`distanceUnit` for distance targets. For interval sessions, encode each interval type as an exercise row:
 
@@ -664,7 +668,7 @@ Exercise: Threshold Intervals (5 × 4 min) — sets: 5, durationSeconds: 240
 
 ### 11.6 COMBAT_SPORTS
 
-**Session structure:** 3 sessions/week at BEGINNER (GYM); 4 at INTERMEDIATE (MIXED). Sessions combine technical conditioning drills, strength work, and metabolic conditioning.
+**Default session structure:** 3 sessions/week at BEGINNER (GYM); 4 at INTERMEDIATE (MIXED). Sessions combine technical conditioning drills, strength work, and metabolic conditioning. A Blueprint may specify an alternative structure with a stated rationale, subject to §10.1 deviation-note review and Group C approval.
 
 **Drill encoding:** Shadowboxing, bag work, pad work, and grappling drills are encoded as `sets × durationSeconds`. Each round = one set.
 
@@ -685,7 +689,7 @@ restSeconds: 60         (1 minute between rounds)
 
 ### 11.7 FULL_BODY
 
-**Session structure:** 3 sessions/week at BEGINNER (Bodyweight Foundation, Home Conditioning); 4 at INTERMEDIATE (Bodyweight Strength). HOME environment requires no barbells, squat racks, or cable machines.
+**Default session structure:** 3 sessions/week at BEGINNER (Bodyweight Foundation, Home Conditioning); 4 at INTERMEDIATE (Bodyweight Strength). HOME environment requires no barbells, squat racks, or cable machines. A Blueprint may specify an alternative structure with a stated rationale, subject to §10.1 deviation-note review and Group C approval.
 
 **Equipment constraints for HOME programs:**
 - Available: bodyweight, pull-up bar, resistance bands, limited dumbbells (if specified)
@@ -702,7 +706,7 @@ restSeconds: 60         (1 minute between rounds)
 
 ### 11.8 MOBILITY
 
-**Session structure:** 5 sessions/week (daily or near-daily practice). Sessions are 10–30 minutes. `MAIN` section only — no `WARM_UP` or `COOL_DOWN` sections.
+**Default session structure:** 5 sessions/week (daily or near-daily practice). Sessions are 10–30 minutes. `MAIN` section only — no `WARM_UP` or `COOL_DOWN` sections. A Blueprint may specify an alternative structure with a stated rationale, subject to §10.1 deviation-note review and Group C approval.
 
 **Prescription format:** Static holds use `durationSeconds`. Dynamic movements use `sets × reps`. Never use `sets` for static hold prescriptions.
 
@@ -803,13 +807,13 @@ Exercise names in Tab 3 are resolved to `exerciseId` UUIDs at import. The import
 
 If an exercise name does not resolve, the import tool reports it as a validation error. The author must verify the name in the exercise library and correct the sheet before re-importing.
 
-**Best practice:** Keep the exercise library catalog open alongside the authoring sheet. Do not abbreviate exercise names. Use "Romanian Deadlift" not "RDL". Use "Pull-Up" not "Pullup" or "Pull Up".
+**Best practice:** Keep the exercise library catalog open alongside the authoring sheet. Do not abbreviate exercise names. Use "Barbell Romanian Deadlift" not "RDL" or "Romanian Deadlift". Use "Pull-Up" not "Pullup" or "Pull Up".
 
 ---
 
-## Section 13 — The 25 Launch Programs Reference Table
+## Section 13 — The 24 Launch Programs Reference Table
 
-All 25 Forge launch programs are locked in Program-Ecosystem-Architecture-v1.0.md §5.2. Authors must use the exact values in this table.
+All 24 Forge launch programs are locked in Program-Ecosystem-Architecture-v1.0.md §5.2. Authors must use the exact values in this table.
 
 `Total` = `Weeks × /Week` (computed). Verify that the number of unique `slotIndex` groups in Tab 3 equals `Total` before export.
 
@@ -818,38 +822,37 @@ All 25 Forge launch programs are locked in Program-Ecosystem-Architecture-v1.0.m
 | 1 | Strength Foundation I | STRENGTH | BEG | GYM | 8 | 3 | 24 | BUILD_STRENGTH | Strength Foundation II | TRUE |
 | 2 | Strength Foundation II | STRENGTH | INT | GYM | 10 | 4 | 40 | BUILD_STRENGTH, BUILD_MUSCLE | Strength Foundation III | FALSE |
 | 3 | Strength Foundation III | STRENGTH | ADV | GYM | 12 | 4 | 48 | BUILD_STRENGTH | — | FALSE |
-| 4 | Powerbuilding Foundation | STRENGTH | BEG | GYM | 10 | 4 | 40 | BUILD_STRENGTH, BUILD_MUSCLE | Powerbuilding Intermediate | FALSE |
-| 5 | Powerbuilding Intermediate | STRENGTH | INT | GYM | 12 | 4 | 48 | BUILD_STRENGTH, BUILD_MUSCLE | — | FALSE |
-| 6 | Hypertrophy Foundation | HYPERTROPHY | BEG | GYM | 8 | 4 | 32 | BUILD_MUSCLE | Hypertrophy Intermediate | FALSE |
-| 7 | Hypertrophy Intermediate | HYPERTROPHY | INT | GYM | 10 | 4 | 40 | BUILD_MUSCLE | Hypertrophy Advanced | FALSE |
-| 8 | Hypertrophy Advanced | HYPERTROPHY | ADV | GYM | 12 | 5 | 60 | BUILD_MUSCLE | — | FALSE |
-| 9 | Lower Body Foundation | HYPERTROPHY | BEG | GYM | 8 | 3 | 24 | BUILD_MUSCLE | Lower Body Intermediate | FALSE |
-| 10 | Lower Body Intermediate | HYPERTROPHY | INT | GYM | 10 | 4 | 40 | BUILD_MUSCLE | — | FALSE |
-| 11 | Running Base I | RUNNING | BEG | OUT | 8 | 4 | 32 | IMPROVE_RUNNING, IMPROVE_ENDURANCE | Running Base II | FALSE |
-| 12 | Running Base II | RUNNING | INT | OUT | 10 | 5 | 50 | IMPROVE_RUNNING, IMPROVE_ENDURANCE | — | FALSE |
-| 13 | Athletic Conditioning Foundation | CONDITIONING | BEG | GYM | 8 | 3 | 24 | IMPROVE_CONDITIONING, GENERAL_FITNESS | Conditioning Intermediate | FALSE |
-| 14 | Body Recomposition Foundation | CONDITIONING | BEG | GYM | 8 | 4 | 32 | LOSE_FAT, BUILD_MUSCLE | Body Recomposition Intermediate | FALSE |
-| 15 | Conditioning Intermediate | CONDITIONING | INT | GYM | 10 | 4 | 40 | IMPROVE_CONDITIONING | — | FALSE |
-| 16 | Body Recomposition Intermediate | CONDITIONING | INT | GYM | 10 | 4 | 40 | LOSE_FAT, BUILD_MUSCLE | — | FALSE |
-| 17 | Hybrid Foundation | CONDITIONING | BEG | MIX | 8 | 4 | 32 | BUILD_STRENGTH, IMPROVE_CONDITIONING | Hybrid Intermediate | FALSE |
-| 18 | Hybrid Intermediate | CONDITIONING | INT | MIX | 10 | 4 | 40 | BUILD_STRENGTH, IMPROVE_CONDITIONING | — | FALSE |
-| 19 | Bodyweight Foundation | FULL_BODY | BEG | HOME | 6 | 3 | 18 | GENERAL_FITNESS | Bodyweight Strength | TRUE |
-| 20 | Bodyweight Strength | FULL_BODY | INT | HOME | 8 | 4 | 32 | BUILD_STRENGTH, GENERAL_FITNESS | Bodyweight Performance | FALSE |
-| 21 | Bodyweight Performance | FULL_BODY | ADV | HOME | 10 | 4 | 40 | BUILD_STRENGTH, GENERAL_FITNESS | — | FALSE |
-| 22 | Home Conditioning | FULL_BODY | BEG | HOME | 6 | 3 | 18 | LOSE_FAT, IMPROVE_CONDITIONING | — | FALSE |
-| 23 | Home Strength Foundation | FULL_BODY | BEG | HOME | 8 | 3 | 24 | BUILD_STRENGTH, GENERAL_FITNESS | — | FALSE |
-| 24 | Mobility Foundation | MOBILITY | BEG | HOME | 4 | 5 | 20 | IMPROVE_MOBILITY | Mobility Intermediate | FALSE |
-| 25 | Mobility Intermediate | MOBILITY | INT | HOME | 6 | 5 | 30 | IMPROVE_MOBILITY | — | FALSE |
+| 4 | Powerbuilding Foundation | STRENGTH | BEG | GYM | 10 | 4 | 40 | BUILD_STRENGTH, BUILD_MUSCLE | Strength Foundation II | FALSE |
+| 5 | Muscle Building Foundation | HYPERTROPHY | BEG | GYM | 8 | 4 | 32 | BUILD_MUSCLE | Muscle Building Intermediate | FALSE |
+| 6 | Muscle Building Intermediate | HYPERTROPHY | INT | GYM | 10 | 4 | 40 | BUILD_MUSCLE | Muscle Building Advanced | FALSE |
+| 7 | Muscle Building Advanced | HYPERTROPHY | ADV | GYM | 12 | 5 | 60 | BUILD_MUSCLE | — | FALSE |
+| 8 | Lower Body Foundation | HYPERTROPHY | BEG | GYM | 8 | 3 | 24 | BUILD_MUSCLE | Lower Body Intermediate | FALSE |
+| 9 | Lower Body Intermediate | HYPERTROPHY | INT | GYM | 10 | 4 | 40 | BUILD_MUSCLE | — | FALSE |
+| 10 | Running Base I | RUNNING | BEG | OUT | 8 | 4 | 32 | IMPROVE_RUNNING, IMPROVE_ENDURANCE | Running Base II | FALSE |
+| 11 | Running Base II | RUNNING | INT | OUT | 10 | 5 | 50 | IMPROVE_RUNNING, IMPROVE_ENDURANCE | — | FALSE |
+| 12 | Athletic Conditioning Foundation | CONDITIONING | BEG | GYM | 8 | 3 | 24 | IMPROVE_CONDITIONING, GENERAL_FITNESS | Conditioning Intermediate | FALSE |
+| 13 | Body Recomposition Foundation | CONDITIONING | BEG | GYM | 8 | 4 | 32 | LOSE_FAT, BUILD_MUSCLE | Body Recomposition Intermediate | FALSE |
+| 14 | Conditioning Intermediate | CONDITIONING | INT | GYM | 10 | 4 | 40 | IMPROVE_CONDITIONING | — | FALSE |
+| 15 | Body Recomposition Intermediate | CONDITIONING | INT | GYM | 10 | 4 | 40 | LOSE_FAT, BUILD_MUSCLE | — | FALSE |
+| 16 | Hybrid Foundation | CONDITIONING | BEG | MIX | 8 | 4 | 32 | BUILD_STRENGTH, IMPROVE_CONDITIONING | Hybrid Intermediate | FALSE |
+| 17 | Hybrid Intermediate | CONDITIONING | INT | MIX | 10 | 4 | 40 | BUILD_STRENGTH, IMPROVE_CONDITIONING | — | FALSE |
+| 18 | Bodyweight Foundation | FULL_BODY | BEG | HOME | 6 | 3 | 18 | GENERAL_FITNESS | Bodyweight Strength | TRUE |
+| 19 | Bodyweight Strength | FULL_BODY | INT | HOME | 8 | 4 | 32 | BUILD_STRENGTH, GENERAL_FITNESS | Bodyweight Performance | FALSE |
+| 20 | Bodyweight Performance | FULL_BODY | ADV | HOME | 10 | 4 | 40 | BUILD_STRENGTH, GENERAL_FITNESS | — | FALSE |
+| 21 | Home Conditioning | FULL_BODY | BEG | HOME | 6 | 3 | 18 | LOSE_FAT, IMPROVE_CONDITIONING | — | FALSE |
+| 22 | Home Strength Foundation | FULL_BODY | BEG | HOME | 8 | 3 | 24 | BUILD_STRENGTH, GENERAL_FITNESS | — | FALSE |
+| 23 | Mobility Foundation | MOBILITY | BEG | HOME | 4 | 5 | 20 | IMPROVE_MOBILITY | Mobility Intermediate | FALSE |
+| 24 | Mobility Intermediate | MOBILITY | INT | HOME | 6 | 5 | 30 | IMPROVE_MOBILITY | — | FALSE |
 
 *BEG = BEGINNER, INT = INTERMEDIATE, ADV = ADVANCED, OUT = OUTDOOR, MIX = MIXED*
 
-**Terminal programs** (`successorProgramName` blank): Strength Foundation III, Powerbuilding Intermediate, Hypertrophy Advanced, Lower Body Intermediate, Running Base II, Conditioning Intermediate, Body Recomposition Intermediate, Hybrid Intermediate, Bodyweight Performance, Home Conditioning, Home Strength Foundation, Mobility Intermediate.
+**Terminal programs** (`successorProgramName` blank): Strength Foundation III, Muscle Building Advanced, Lower Body Intermediate, Running Base II, Conditioning Intermediate, Body Recomposition Intermediate, Hybrid Intermediate, Bodyweight Performance, Home Conditioning, Home Strength Foundation, Mobility Intermediate.
 
 ---
 
 ## Section 14 — Deload Schedules by Program
 
-The following table applies PAS-D7 to all 25 programs. Authors do not need to derive these schedules.
+The following table applies PAS-D7 to all 24 programs. Authors do not need to derive these schedules.
 
 **Slot numbers are 1-based** (as authors count them). `slotIndex` in the Google Sheet Tab 2 is 0-based — subtract 1 from the slot number shown here.
 
@@ -859,10 +862,9 @@ The following table applies PAS-D7 to all 25 programs. Authors do not need to de
 | Strength Foundation II | 10 | 4 | Yes — 1 | 9 | 33–36 | Week 10 (slots 37–40) |
 | Strength Foundation III | 12 | 4 | Yes — 2 | 4 and 11 | 13–16 and 41–44 | Week 12 (slots 45–48) |
 | Powerbuilding Foundation | 10 | 4 | Yes — 1 | 9 | 33–36 | Week 10 (slots 37–40) |
-| Powerbuilding Intermediate | 12 | 4 | Yes — 2 | 4 and 11 | 13–16 and 41–44 | Week 12 (slots 45–48) |
-| Hypertrophy Foundation | 8 | 4 | Yes — 1 | 7 | 25–28 | Week 8 (slots 29–32) |
-| Hypertrophy Intermediate | 10 | 4 | Yes — 1 | 9 | 33–36 | Week 10 (slots 37–40) |
-| Hypertrophy Advanced | 12 | 5 | Yes — 2 | 4 and 10 | 16–20 and 46–50 | Weeks 11–12 (slots 51–60) |
+| Muscle Building Foundation | 8 | 4 | Yes — 1 | 7 | 25–28 | Week 8 (slots 29–32) |
+| Muscle Building Intermediate | 10 | 4 | Yes — 1 | 9 | 33–36 | Week 10 (slots 37–40) |
+| Muscle Building Advanced | 12 | 5 | Yes — 2 | 4 and 10 | 16–20 and 46–50 | Weeks 11–12 (slots 51–60) |
 | Lower Body Foundation | 8 | 3 | Yes — 1 | 7 | 19–21 | Week 8 (slots 22–24) |
 | Lower Body Intermediate | 10 | 4 | Yes — 1 | 9 | 33–36 | Week 10 (slots 37–40) |
 | Running Base I | 8 | 4 | Yes — 1 | 7 | 25–28 | Week 8 (slots 29–32) |
@@ -881,7 +883,7 @@ The following table applies PAS-D7 to all 25 programs. Authors do not need to de
 | Mobility Foundation | 4 | 5 | No | — | — | All 4 weeks training |
 | Mobility Intermediate | 6 | 5 | No | — | — | All 6 weeks training |
 
-**Deload slot naming example** (Hypertrophy Foundation, deload Week 7, slots 25–28):
+**Deload slot naming example** (Muscle Building Foundation, deload Week 7, slots 25–28):
 
 ```
 Tab 2, slotIndex 24 (slot 25): Week 7 — Upper Body Push [DELOAD]
@@ -910,7 +912,7 @@ Comparing Week 1 prescriptions to Week 4 prescriptions to the peak week should s
 
 ### QC-3 — Session Balance Is Maintained
 
-No single movement pattern dominates to the exclusion of its opposing pattern across the week's sessions. A week with four horizontal press exercises and no horizontal pulling is unbalanced. A strength program that trains lower body once and upper body three times per week is structurally imbalanced.
+Evaluate movement-pattern and muscle-group balance across the program's full declared weekly or cyclical structure — not assumed to be a specific split (e.g., PPL or Upper/Lower) and not evaluated within a single session in isolation. No single movement pattern dominates to the exclusion of its opposing pattern across the week's sessions. A week with four horizontal press exercises and no horizontal pulling is unbalanced. A strength program that trains lower body once and upper body three times per week is structurally imbalanced.
 
 **Test:** Map each MAIN section exercise to its movement pattern (Section 3.1 for category guidance; exercise library for pattern data). Confirm the week's pattern distribution is defensible by training principles.
 
@@ -1002,7 +1004,7 @@ The import tool resolves `successorProgramName` to a `successorProgramId` UUID. 
 
 **Recommended order for the initial batch:** Import terminal programs first (those with no successor). Then import programs that reference them.
 
-**Terminal programs to import first:** Strength Foundation III (Sort 3), Powerbuilding Intermediate (Sort 5), Hypertrophy Advanced (Sort 8), Lower Body Intermediate (Sort 10), Running Base II (Sort 12), Conditioning Intermediate (Sort 15), Body Recomposition Intermediate (Sort 16), Hybrid Intermediate (Sort 18), Bodyweight Performance (Sort 21), Home Conditioning (Sort 22), Home Strength Foundation (Sort 23), Mobility Intermediate (Sort 25).
+**Terminal programs to import first:** Strength Foundation III (Sort 3), Muscle Building Advanced (Sort 7), Lower Body Intermediate (Sort 9), Running Base II (Sort 11), Conditioning Intermediate (Sort 14), Body Recomposition Intermediate (Sort 15), Hybrid Intermediate (Sort 17), Bodyweight Performance (Sort 20), Home Conditioning (Sort 21), Home Strength Foundation (Sort 22), Mobility Intermediate (Sort 24).
 
 ### 17.3 Draft Review Criteria
 
@@ -1025,7 +1027,7 @@ During product team draft review, verify:
 
 ### 18.2 New Catalog Additions
 
-Programs added to the catalog beyond the initial 25 must:
+Programs added to the catalog beyond the initial 24 must:
 1. Pass the catalog expansion policy gate (Program-Catalog-Architecture-v1.0.md §5.4)
 2. Satisfy family cap governance if adding to an existing family with 5 programs (Program-Ecosystem-Architecture-v1.0.md §2.2)
 3. Comply with all PAS authoring standards in this document
@@ -1037,11 +1039,11 @@ Changes to this document follow the amendment pattern established across all For
 
 ### 18.4 PAS-R1 — Difficulty Calibration Audit (Pre-Launch Governance Activity)
 
-After all 25 launch programs are authored and imported as drafts — **before any program is published** — perform a catalog-wide difficulty calibration audit.
+After all 24 launch programs are authored and imported as drafts — **before any program is published** — perform a catalog-wide difficulty calibration audit.
 
 **Purpose:** Verify cross-category level consistency. Confirm that `BEGINNER` means the same thing in `STRENGTH` as in `CYCLING` as in `MOBILITY`, and likewise for `INTERMEDIATE` and `ADVANCED`. Programs authored sequentially or in parallel can develop subtle level drift that is only visible when the full catalog is viewed together.
 
-**Trigger:** All 25 programs exist as drafts in the admin system. No program has been published yet.
+**Trigger:** All 24 programs exist as drafts in the admin system. No program has been published yet.
 
 **Output:** A written finding confirming cross-category level consistency, or a set of targeted corrections to program levels (and affected descriptions) before publish.
 
@@ -1057,7 +1059,7 @@ The Program Authoring Standard does NOT:
 
 | Non-Behavior | Reason |
 |-------------|--------|
-| Write any of the 25 programs | The PAS is the rulebook; the programs are the content |
+| Write any of the 24 programs | The PAS is the rulebook; the programs are the content |
 | Define exercise library content | Governed by Exercise-Library-Architecture-v1.0.md and the FORGE exercise catalog |
 | Create code or schema changes | Schema is locked in the authority documents |
 | Define a public program marketplace | Post-MVP; requires separate architecture |
@@ -1079,7 +1081,7 @@ The Program Authoring Standard does NOT:
 | **PAS-D3 — RPE Encoding for MVP** | RPE guidance is encoded in the `notes` field only. No schema amendment for an `rpe` field in MVP. Permitted only in STRENGTH and HYPERTROPHY programs at INTERMEDIATE and ADVANCED levels. Not permitted in BEGINNER programs or any other category. The notes encoding is explicitly a temporary MVP accommodation — PAS-D12 is the forward reference for the correct long-term solution. |
 | **PAS-D4 — Tempo Excluded from MVP Programs** | Tempo notation is not used in any MVP Forge program. Independent author encoding choices produce inconsistent results at scale. The 200-character `notes` field is insufficient for reliable tempo encoding. Tempo prescription is a post-MVP authoring capability requiring a schema amendment and standardized display behavior. |
 | **PAS-D5 — RPE Format Enforcement** | When RPE is encoded in `notes`, the exact format is: `RPE [integer or integer–integer range]` (e.g., `RPE 8`, `RPE 7–8`). No other prefix, punctuation, or surrounding content is permitted in the same `notes` field when RPE is present. This format supports future machine parsing when a dedicated `rpe` field is added post-MVP. |
-| **PAS-D6 — Five Approved Progression Models** | Approved models for MVP: (1) Linear Progression — STRENGTH BEGINNER, FULL_BODY, CONDITIONING BEGINNER; (2) Double Progression — HYPERTROPHY all levels, STRENGTH INTERMEDIATE/ADVANCED, CONDITIONING INTERMEDIATE; (3) Block Periodization — STRENGTH ADVANCED, HYPERTROPHY ADVANCED, RUNNING all levels, CYCLING all levels; (4) Volume Accumulation — HYPERTROPHY BEGINNER/INTERMEDIATE (layered), COMBAT_SPORTS; (5) Time-Based Progression — MOBILITY all levels, cardio interval elements. Additional progression models require a PAS amendment before use in Forge programs. |
+| **PAS-D6 — Progression Models Used in the Launch Catalog** | Models used across the 24 launch programs: (1) Linear Progression — STRENGTH BEGINNER, FULL_BODY, CONDITIONING BEGINNER; (2) Double Progression — HYPERTROPHY all levels, STRENGTH INTERMEDIATE/ADVANCED, CONDITIONING INTERMEDIATE; (3) Block Periodization — STRENGTH ADVANCED, HYPERTROPHY ADVANCED, RUNNING all levels, CYCLING all levels; (4) Volume Accumulation — HYPERTROPHY BEGINNER/INTERMEDIATE (layered), COMBAT_SPORTS; (5) Time-Based Progression — MOBILITY all levels, cardio interval elements. Additional evidence-supported progression models may be used when justified in the program Blueprint and approved through Group C review, without requiring a PAS amendment (PAS-Amendment-002). |
 | **PAS-D7 — Deload Requirements by Program Length** | 4–6 weeks: no mandatory deload; optional at author's discretion. 7–10 weeks: one mandatory deload at the penultimate week, leaving the final week as peak. 11–14 weeks: two mandatory deloads — first at Week 4 (concluding the opening mesocycle), second at the penultimate week, leaving the final week as peak. |
 | **PAS-D8 — Deload Encoding Convention** | Deload weeks are encoded by: (1) including `[DELOAD]` in every slot name for the deload week; (2) reducing `sets` on primary compound exercises by 40–50% compared to the preceding week's equivalent session; (3) maintaining the same `workoutsPerWeek` as all other weeks; (4) using the same exercises as the preceding week's equivalent session (no new exercise introductions in deload weeks). Weight values are held at the previous week's level or reduced 10–15%. |
 | **PAS-D9 — WARM_UP and COOL_DOWN Requirements by Category** | WARM_UP section required: STRENGTH, HYPERTROPHY, CONDITIONING, RUNNING, CYCLING, COMBAT_SPORTS, FULL_BODY. COOL_DOWN section required: CONDITIONING, RUNNING, CYCLING, COMBAT_SPORTS. MOBILITY programs use MAIN only — no WARM_UP or COOL_DOWN sections. WARM_UP and COOL_DOWN are optional (not prohibited) for STRENGTH, HYPERTROPHY, and FULL_BODY cooldowns. |
@@ -1093,12 +1095,15 @@ The Program Authoring Standard does NOT:
 
 | Version | Date | Change |
 |---------|------|--------|
+| v1.4 | June 2026 | PAS-Amendment-002 (Methodology Pluralism) applied. Reframed §11.1–§11.8's per-category "Session structure" lines from hard requirements to defaults, each now permitting a Blueprint-justified alternative subject to §10.1 deviation-note review and Group C approval. Reframed PAS-D6/§7.1 from "Approved MVP Progression Models" (amendment-gated) to "Progression Models Used in the Launch Catalog" — additional evidence-supported models are now usable via Blueprint justification + Group C review, without a PAS amendment; added a cross-reference note to §7.2's model-selection table. Added a clarifying sentence to §10.1 (PAS-D11) stating that volume distribution pattern — including concentrated body-part-split distribution — is a methodology choice, subject to the same deviation-note/Group C path as guardrail deviations. Clarified QC-3's test scope (§15) to evaluate balance across the program's full declared weekly/cyclical structure rather than assuming a PPL/Upper-Lower split or a single-session view. No changes to schema, taxonomy (category/level/environment/goalAlignment), the 24 launch program seeds, or any QC pass/fail threshold — this amendment relaxes launch-catalog authoring defaults, not quality standards. Status: LOCKED. |
+| v1.3 | June 2026 | Muscle Building Rename Amendment 001 applied. Renamed the three general Hypertrophy programs to Muscle Building Foundation/Intermediate/Advanced across §7.1 (Models 2, 3, 4 program lists), §13's reference table (name + successor columns), §14's deload schedule table and deload-naming example, the terminal-programs note beneath §13, and §17.2's import order. The stored category enum `HYPERTROPHY` is unchanged (no schema change, no migration); Lower Body Foundation/Intermediate unchanged. Status: LOCKED. |
+| v1.2 | June 2026 | Program Ecosystem Amendment 001 (Powerbuilding Intermediate Retirement) applied. Removed Powerbuilding Intermediate from §7.1's Model 2 program list, §13's reference table, §14's deload schedule table, and §17.2's import order; updated the terminal-programs note beneath §13. Powerbuilding Foundation's successor changed from Powerbuilding Intermediate to Strength Foundation II (Sort 2). Renumbered every program at old Sort 6+ down by one (new catalog: Sort 1–24, 24 programs total). Updated live "25 launch programs"/"25 programs" references to 24 (§1.1, §1.2, §1.4, §13, §14, §18.4, §19) — the v1.0 Change Log entry below is left as a historical record and not altered. Status: LOCKED. |
 | v1.1 | June 2026 | Catalog Revision Amendment applied. Updated Section 13 reference table: removed Cycling Base (Sort 11), Cycling Development (Sort 12), Combat Foundation (Sort 19), Combat Conditioning (Sort 20); added Lower Body Foundation (Sort 9), Lower Body Intermediate (Sort 10), Bodyweight Performance (Sort 21), Home Strength Foundation (Sort 23); renumbered Running Base I/II to Sorts 11/12; updated Bodyweight Foundation to Sort 19 and Bodyweight Strength to Sort 20 with new successor. Updated Section 14 deload schedules: removed Cycling and Combat rows; added Lower Body Foundation, Lower Body Intermediate, Bodyweight Performance, Home Strength Foundation deload schedules. Updated terminal programs list (§13). Updated succession import order (§17.2). Updated Section 7 Model 3 programs list (removed Cycling programs); updated Model 4 programs list (removed Combat programs, added Lower Body Foundation/Intermediate). Status: LOCKED. |
 | v1.0 | June 2026 | Initial specification. Defines the Program Authoring Standard governing all 25 Forge Legacy launch programs. Introduces PAS-D1 through PAS-D12. Covers: program naming pattern (PAS-D1), description sentence structure (PAS-D2), RPE and tempo handling for MVP (PAS-D3, PAS-D4, PAS-D5, PAS-D12), five approved progression models (PAS-D6), deload architecture (PAS-D7, PAS-D8), warm-up and cooldown requirements by category (PAS-D9, PAS-D10), volume guardrails by category (PAS-D11), session duration quality guidelines (Section 10.2 — no decision ID; quality-review tier), Google Sheets authoring template column specification (Section 12), 25-program reference table with computed totals (Section 13), per-program deload schedules with 1-based and 0-based slot indices (Section 14), seven quality criteria with testable pass conditions (Section 15), pre-import validation checklist in three groups (Section 16), import-to-publish workflow and succession import order (Section 17), post-publish governance including PAS-R1 Difficulty Calibration Audit pre-launch checkpoint (Section 18). Authority for all Forge program authoring, validation, and import workflows. |
 
 ---
 
-*Forge Legacy — Program Authoring Standard — v1.1*
+*Forge Legacy — Program Authoring Standard — v1.4*
 *June 2026*
 *Internal authority for all `source: 'FORGE'` program authoring, validation, and import.*
-*Implements PC-D4, PC-D7, PC-D9. Operationalizes the import pipeline defined in Program-Ecosystem-Architecture-v1.0.md §6. Extends ExercisePrescription-Amendment-001.md with authoring guidance. Records PAS-R1 Difficulty Calibration Audit as the pre-launch catalog governance checkpoint.*
+*Implements PC-D4, PC-D7, PC-D9. Operationalizes the import pipeline defined in Program-Ecosystem-Architecture-v1.0.md §6. Extends ExercisePrescription-Amendment-001.md with authoring guidance. Records PAS-R1 Difficulty Calibration Audit as the pre-launch catalog governance checkpoint. PAS-Amendment-002 (Methodology Pluralism) reframes launch-catalog session-structure and progression-model defaults as Blueprint-adjustable via existing Group C review, without new schema or taxonomy.*

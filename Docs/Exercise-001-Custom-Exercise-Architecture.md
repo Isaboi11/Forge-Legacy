@@ -1,9 +1,9 @@
 # Forge Legacy — Exercise-001: Custom Exercise Architecture
-## Version 1.0 | June 2026
+## Version 1.0 (Media Field Reconciliation) | June 2026
 
 **Status:** LOCKED
-**Authority:** Exercise-Library-Architecture-v1.0.md, ExercisePrescription-Amendment-001.md, Architecture-Amendment-001-Import.md
-**Downstream impact:** W-21 (My Exercises surface), W-22 (Edit action), W-23 (Custom label, creation entry point), W-24 (future creation/edit screen), W-27 (tombstone behavior extension), Architecture-Amendment-001-Import.md (import gap resolved)
+**Authority:** Exercise-Library-Architecture-v1.0.md, ExercisePrescription-Amendment-001.md, Architecture-Amendment-001-Import.md, Exercise-Media-Architecture-v1.0.md
+**Downstream impact:** W-21 (My Exercises surface), W-22 (Edit action), W-23 (Custom label, creation entry point), W-28 (future creation/edit screen), W-27 (tombstone behavior extension), Architecture-Amendment-001-Import.md (import gap resolved)
 
 ---
 
@@ -133,7 +133,7 @@ Name conflict against FORGE library: no check. An athlete's "Leg Press (Plate Lo
 | Threshold | Behavior |
 |-----------|----------|
 | 480 exercises | UI warning in My Exercises: "You're approaching the exercise limit." |
-| 500 exercises | Creation blocked via W-23 inline sheet and W-24. Warning surfaced. |
+| 500 exercises | Creation blocked via W-23 inline sheet and W-28. Warning surfaced. |
 | Import beyond 500 | Import completes. Exercises beyond the limit have their name snapshotted directly onto `ExerciseLog.exerciseName` without creating an `ExerciseDefinition` record. Post-import warning informs the athlete. |
 
 The 500 limit prevents import-triggered bloat while covering realistic import scenarios (3+ years of training from a major platform typically contains fewer than 200 distinct exercise names).
@@ -144,7 +144,7 @@ The 500 limit prevents import-triggered bloat while covering realistic import sc
 |---------|----------|
 | Inline W-23 | Sheet overlay above W-23. Name only. Auto-selects on save. (Locked in Exercise Library Architecture.) |
 | W-21 My Exercises | `[+ New Exercise]` in section header. Launches same inline creation sheet. |
-| W-24 (future) | Full-creation screen with rich metadata. Not defined in this document. |
+| W-28 (future) | Full-creation screen with rich metadata. Not defined in this document. |
 | Import auto-creation | Silent, automatic. See Section 13. |
 
 ---
@@ -176,6 +176,7 @@ Custom Exercises use the same `ExerciseDefinition` schema as FORGE exercises. Th
 | `gifThumbnailUrl` | Optional. Derived from gifUrl if provided. |
 | `videoUrl` | Optional. Athlete-supplied media. |
 | `imageUrl` | Optional. Athlete-supplied media. |
+| `muscleTargetImageUrl` | Optional. Athlete-supplied media. Null at inline MVP creation. |
 | `alternativeExerciseIds` | Always `[]`. Relationships are editorial. |
 | `progressionExerciseIds` | Always `[]`. (EL-D12 locked.) |
 | `regressionExerciseIds` | Always `[]`. (EL-D12 locked.) |
@@ -185,7 +186,7 @@ Custom Exercises use the same `ExerciseDefinition` schema as FORGE exercises. Th
 
 ### 5.2 Non-MVP Metadata
 
-Media upload (gifUrl, videoUrl, imageUrl) and coaching notes text field (description) are reserved for W-24. Inline W-23 creation and the My Exercises `[+ New Exercise]` entry point remain name-only at MVP. The schema supports these fields; the creation UI defers them.
+Media upload (gifUrl, videoUrl, imageUrl, muscleTargetImageUrl) and coaching notes text field (description) are reserved for W-28. Inline W-23 creation and the My Exercises `[+ New Exercise]` entry point remain name-only at MVP. The schema supports these fields; the creation UI defers them.
 
 ---
 
@@ -284,9 +285,9 @@ Restore is not available. Athlete B cannot restore Athlete A's exercise.
 
 When Replace is executed on either tombstone type, only `exercisePrescription.exerciseId` changes. All other fields are preserved:
 
-- `setsTarget`
-- `repsTarget`
-- `weightTarget`
+- `sets`
+- `reps`
+- `weightValue`
 - `restSeconds`
 - `distanceValue`
 - `distanceUnit`
@@ -305,7 +306,7 @@ FORGE exercises have `isActive` permanently `true` — they are never deleted. T
 
 ### 9.1 W-21 My Exercises — Full Definition
 
-**Decision EX-001-D16: Exercise-001 fully defines the My Exercises browse surface in W-21. No W-21 amendment or W-24 action is required for Custom Exercise browse behavior. When W-21's full wireframe spec is written, it must implement these rules.**
+**Decision EX-001-D16: Exercise-001 fully defines the My Exercises browse surface in W-21. No W-21 amendment or W-28 action is required for Custom Exercise browse behavior. When W-21's full wireframe spec is written, it must implement these rules.**
 
 #### Distinction from Existing MY EXERCISES Section
 
@@ -342,7 +343,7 @@ Deleted exercises do not appear in My Exercises (active-only scope). Restore is 
 - Hero media: shown if `gifUrl`, `videoUrl`, or `imageUrl` is populated; absent if all null
 - Educational content sections (`whyItMatters`, `instructions`, `tips`, `commonMistakes`): always null for CUSTOM → always absent
 - `description` field: shown as athlete notes if non-null; section absent if null
-- **Edit action:** present for CUSTOM exercises only. Pen icon in sticky header. Tapping navigates to edit flow (inline edit sheet at MVP; W-24 when built). This action is not shown for FORGE exercises.
+- **Edit action:** present for CUSTOM exercises only. Pen icon in sticky header. Tapping navigates to edit flow (inline edit sheet at MVP; W-28 when built). This action is not shown for FORGE exercises.
 - Alternatives section: absent (CUSTOM `alternativeExerciseIds` always `[]`)
 - Difficulty chip: absent (CUSTOM `difficulty` always null)
 
@@ -419,7 +420,7 @@ Custom Exercises can be used in `ATHLETE_CREATED` programs. They cannot be used 
 3. Athlete taps **Replace** → W-23 opens in REPLACEMENT context, full catalog (FORGE + Athlete B's own CUSTOM)
 4. Athlete selects a replacement exercise
 5. `exercisePrescription.exerciseId` is updated to the selected exercise
-6. All other prescription fields are preserved unchanged (`setsTarget`, `repsTarget`, `weightTarget`, `restSeconds`, `distanceValue`, `distanceUnit`)
+6. All other prescription fields are preserved unchanged (`sets`, `reps`, `weightValue`, `restSeconds`, `distanceValue`, `distanceUnit`)
 7. Slot position and section membership (WARM_UP / MAIN / COOL_DOWN) are unchanged
 8. Replacement is permanent. No undo.
 
@@ -599,7 +600,7 @@ This architecture does not and will never include:
 | **EX-001-D13** | Import deduplication order: FORGE exact match → existing CUSTOM exact match → create new. Batch-level deduplication within a single import. Post-import count surfaced on completion screen with navigation to W-21 My Exercises. |
 | **EX-001-D14** | `exerciseName` MUST be snapshotted onto `ExerciseLog` at write time for all exercise sources (FORGE and CUSTOM). The snapshotted name is the display authority for completed session history. The `exerciseId` is retained as a reference but the snapshot is what appears in W-18, W-19, and the Legacy Timeline. |
 | **EX-001-D15** *(NEW — R1-1+R1-2)* | Two tombstone types govern all Custom Exercise placeholder states. `[Deleted Exercise]`: own CUSTOM, soft-deleted; actions Restore \| Replace \| Remove. `[Custom Exercise]`: foreign author; actions Replace \| Remove. Prescription quantities are preserved on Replace for both types — only `exerciseId` changes. |
-| **EX-001-D16** *(NEW — R1-3)* | Exercise-001 fully defines the My Exercises browse surface in W-21. No standalone W-21 wireframe spec exists at lock time; Exercise-001 is the authority. When W-21's full wireframe spec is written, it must implement these rules. No W-21 amendment or W-24 action is required for Custom Exercise browse behavior. |
+| **EX-001-D16** *(NEW — R1-3)* | Exercise-001 fully defines the My Exercises browse surface in W-21. No standalone W-21 wireframe spec exists at lock time; Exercise-001 is the authority. When W-21's full wireframe spec is written, it must implement these rules. No W-21 amendment or W-28 action is required for Custom Exercise browse behavior. |
 
 ---
 
@@ -611,6 +612,7 @@ This architecture does not and will never include:
 - [ ] `name` — only required field; min 1, max 60 chars; trimmed
 - [ ] `difficulty` — always `null` for CUSTOM
 - [ ] `whyItMatters`, `instructions`, `tips`, `commonMistakes` — always `null` / `[]` for CUSTOM
+- [ ] `muscleTargetImageUrl` — optional for CUSTOM, athlete-supplied or null
 - [ ] `alternativeExerciseIds`, `progressionExerciseIds`, `regressionExerciseIds` — always `[]`
 - [ ] `isActive: true` on creation; `false` on soft-delete; `true` on restore
 - [ ] `updatedAt` updates on every edit
@@ -722,7 +724,7 @@ This architecture does not and will never include:
 | `Exercise-Library-Hub-Wireframe-Spec-W21.md` | Does not exist at lock time. When written, must implement EX-001-D16 My Exercises browse rules. |
 | W-22 wireframe spec | No edits required. CUSTOM minimal display behavior is already locked. Edit action and absence of educational content sections are additive rules consistent with existing spec. |
 | W-23 wireframe spec | No edits required. CUSTOM label, search inclusion, inline creation, and My Exercises quick-access section are consistent with or already defined by the existing spec. |
-| W-24 (future) | Will implement full CUSTOM exercise creation and edit flows. Must honor creation rules from Section 4 and metadata rules from Section 5. |
+| W-28 (future) | Will implement full CUSTOM exercise creation and edit flows. Must honor creation rules from Section 4 and metadata rules from Section 5. |
 | W-27 wireframe spec | No edits required. EX-001-D15 two-tombstone system extends and clarifies W-27 §4.3 behavior. Additive. |
 
 ---
@@ -732,6 +734,9 @@ This architecture does not and will never include:
 | Version | Date | Change |
 |---------|------|--------|
 | v1.0 | June 2026 | Initial specification. Defines Custom Exercise ownership, visibility, creation, editing, deletion with restore, tombstone system (two types), My Exercises browse surface in W-21, workout logging integration, template integration, program integration with cross-fork replacement workflow, import auto-creation and deduplication, search architecture, and historical integrity rules. Sixteen architecture decisions (EX-001-D1 through EX-001-D16). Refinement Pass R1 applied: restore capability (R1-1), foreign exercise replacement workflow (R1-2), W-21 My Exercises full definition (R1-3). |
+| v1.0 (Repository Correction) | June 2026 | Numbering correction only, no behavioral change: this document's six references to the Custom Exercise creation/edit screen (Downstream impact line, §4.4 Creation Surfaces table, §8.3 Volume Limit table, §9.1 Creation Surfaces, §9.2 W-22 integration, EX-001-D16 prose and decision table) updated from "W-24" to "W-28," resolving a screen-numbering collision with the unrelated, ecosystem-wide Program Slot Builder (which retains W-24). See `W-28-Create-Edit-Custom-Exercise.md` Change Log v1.0 R2 for full audit trail. |
+| v1.0 (Field-Name Reconciliation) | June 2026 | Naming correction only, no behavioral change: §8.4 and §12.1 referred to `ExercisePrescription` fields as `setsTarget`, `repsTarget`, `weightTarget`. The canonical schema (`ExercisePrescription-Amendment-001.md` §2) names these fields `sets`, `reps`, `weightValue`. Both references updated to the canonical names; no documented reason existed for the divergent names, so none are retained. |
+| v1.0 (Media Field Reconciliation) | June 2026 | Schema reconciliation only, no behavioral change: added `muscleTargetImageUrl` to §5.1's CUSTOM field-rules table and §5.2's Non-MVP Metadata media list, matching the existing optional/athlete-supplied pattern of `gifUrl`/`videoUrl`/`imageUrl`. §19 Validation Checklist updated. Companion to `Exercise-Media-Architecture-v1.0.md` and `Exercise-Library-Architecture-v1.0.md` v1.2. |
 
 ---
 

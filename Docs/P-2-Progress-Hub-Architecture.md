@@ -7,11 +7,11 @@
 **Authority:**
 - Progress Analytics Discovery Phase (June 2026) — authoritative source for all core decisions reflected here; treated as pre-approved
 - Product DNA (Docs/FORGE_LEGACY_PRODUCT_DNA.md)
-- Profile Wireframe Specification P-1 v1.0
+- Profile Wireframe Specification P-1 v1.3
 - FLM Standards v1.0 + FLM/Sealed Chapter Amendment 001
-- HonorInstance Architecture v1.0 (LOCKED)
-- Honor Evaluation Service Architecture v1.0 (LOCKED)
-- Honor Catalog v1.0 (LOCKED)
+- HonorInstance Architecture v1.1 (LOCKED)
+- Honor Evaluation Service Architecture v1.1 (LOCKED)
+- Honor Catalog v1.5 (LOCKED)
 - Goal Hub Wireframe Spec G-1 v1.1
 - Goal Detail Wireframe Spec G-2 v1.0
 - Exercise Library Architecture v1.0 (LOCKED)

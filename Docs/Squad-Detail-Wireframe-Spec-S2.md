@@ -1,5 +1,9 @@
 # Forge Legacy — Squad Detail Wireframe Specification
-## S-2 | Phase 2B | Version 1.3 — June 2026
+## S-2 | Phase 2B | Version 1.6 — June 2026
+
+> **Governing-authority pointer — `Squad-System-Architecture-v1.0` (LOCKED, June 2026).** That document locks Squad Goals, Missions, Streak, Momentum, Weekly Summary, the Squad Feed, Honors integration, Competition standings, Analytics, and Commitment, and **supersedes, for this screen only**, the Firewall provisions of `Squad-Architecture-Amendment-001` (SA-D1) and `Squad-Architecture-Amendment-002` (SA2-D1/D2) and the bounded Check-ins model of `WSR-001` §6.1–§6.4. The preamble below, written under the prior firewall, is updated accordingly (see the note that follows it). Everything **not** touched by `Squad-System-Architecture-v1.0` — the Squad Header, Train Together, the Member List, the Limited Athlete Profile's field set, and Navigation — is unchanged and still governed entirely by this document as written.
+
+**Component contracts:** CLA-C16 (ListItem), CLA-C07 (Card), CLA-C17 (SectionHeader) — see [`Component-Library-Architecture-v1.0.md`](Component-Library-Architecture-v1.0.md)
 
 ---
 
@@ -13,17 +17,17 @@ S-2 is the accountability surface. Accountability requires visibility. The quest
 
 Forge Legacy's answer is presence. The athlete who opens S-2 sees their squadmates — not their programs, not their progress percentages, not their chapter goals. They see whether each person has trained recently. That is the signal accountability requires. That is the only signal S-2 provides.
 
-S-2 is not a feed. Nothing posts here. No athlete generates content by logging a workout. The member list is a snapshot of training presence, updated silently. There is no notification that Alex logged a workout. There is no announcement. Alex either trained this week or did not. S-2 reflects that state. Nothing more.
+**Update — `Squad-System-Architecture-v1.0` (LOCKED, June 2026):** the paragraph above and the "must never become" list below described S-2 under the original Firewall. That Firewall is now lifted for this screen specifically, because a Squad is capped at 10 people who chose this specific team on purpose — a different relationship than the Friends Feed or a Community, where the Firewall remains exactly as written. S-2 **is** now a feed (the Squad Feed, §18), **does** carry a shared Goal, Mission, Streak, and Momentum (§§15–16, Analytics §21), and **does** show this squad's own competition standings inline (§19). What does not change: the member list is still a snapshot of presence, not a ranking (§5); absence is still never shown as a record of failure (§6, §17); and none of this ever reaches the Friends Feed, a Community, or any *other* squad's page.
 
 **S-2 must never become:**
-- An activity stream of what squadmates logged
-- A comparison surface where members are ranked by training frequency
-- A record of how long anyone has been absent
-- A place where training history beyond the current week is visible
+- A place where a member's absence, non-participation, or "loss" is narrated as failure (Section 17, Section 9 of `Squad-System-Architecture-v1.0`)
+- A surface visible to anyone outside this squad's current membership
+- A place where this squad's data appears on a *different* squad's page, the Friends Feed, or a Community
+- A general chat surface — the Feed carries events, not freeform posts (§18.3)
 
-**S-2 should leave the athlete feeling:** "I know who is showing up, and I know where to go to train alongside them."
+**S-2 should leave the athlete feeling:** "I know who is showing up, what we're building together, and where to go to train alongside them."
 
-Not inspired by teammates' volume. Not pressured by visible absence. Anchored. Connected. Ready.
+Not pressured by visible absence. Not shamed by a missed check-in or an unmet Goal. Anchored. Connected. Ready — and, now, part of a team with a shared record.
 
 ---
 
@@ -46,15 +50,15 @@ S-2 exists to accomplish four things:
 - How do I access squad settings?
 
 **What S-2 does NOT answer:**
-- What did each member train?
-- How much did each member lift, run, or cycle?
-- How does my training volume compare to my squadmates?
+- What did each member train (sets, reps, weight, distance, pace)?
 - What chapter is each member working on?
-- How long has any member been absent?
-- Who is the "best" performer in this squad?
+- How long has any member been absent (no historical absence record — §6, §17)?
+- Who is "best" — there is no per-member leaderboard, ranking, or sort by performance anywhere on S-2, including in the new Goal, Mission, Feed, Competitions, and Analytics sections (Squad-System-Architecture-v1.0 SQ-D3.4, SQ-D4.4, SQ-D13.1)
+
+**Update — `Squad-System-Architecture-v1.0` (LOCKED):** S-2 now *does* answer several questions it previously didn't — "What is our squad working toward right now?" (Current Goal, §15), "What's this week's shared push?" (Current Mission, §16), "What's happened in the squad lately?" (Squad Feed, §18), and "How are we doing against other squads?" (Competitions, §19; Analytics, §21). These are squad-aggregate or individually-attributed-but-positive answers (a workout completion or PR names who did it, the same way the Feed always has) — none of them rank members against each other.
 
 **Why this scope:**
-S-2 is the individual-level expression of the collective signal S-1 already established. S-1 said "3 of 5 trained this week." S-2 says which 3 and which 2. That depth serves accountability — members can see who is showing up — without crossing into performance monitoring, which would convert the squad from a support structure into a comparison engine.
+S-2 is the individual-level expression of the collective signal S-1 already established, **and**, per `Squad-System-Architecture-v1.0`, the squad's shared accountability and progress surface. S-1 said "3 of 5 trained this week." S-2 says which 3 and which 2, and now also what the squad is building toward together. That depth serves accountability without converting the squad into a *member-vs-member* comparison engine — the line this document still holds is not "no shared data," it's "no ranking of people against each other."
 
 **Supporting the Forge Legacy mission:**
 Squads exist to support consistency. Consistency is built by showing up, not by optimizing volume. S-2 shows showing up. Nothing else. The athlete who opens S-2 and sees their squadmates' presence status gets the accountability signal without the shame signal. "Alex trained today" is encouraging. "Alex has missed 12 days" is not accountability — it is surveillance. S-2 shows the former and will never show the latter.
@@ -63,23 +67,46 @@ Squads exist to support consistency. Consistency is built by showing up, not by 
 
 ## Section 2 — Information Hierarchy
 
+**Update — `Squad-System-Architecture-v1.0` (LOCKED, June 2026):** the tier list below is reconciled to SQ-D15's locked page layout (Banner → Train Together → Goal → Mission → Check-ins → Feed → Competitions → Members → Honors → Analytics → Invite). Tiers 1, 2, 8 ("Members"), 9 (Invite), and 10 (Squad Options) are unchanged from prior versions. Tiers 3–7 are new or reconciled.
+
 **TIER 1 — Squad Header**
 The squad's identity. Name, purpose, and member count. This is the first thing the athlete sees and it grounds the rest of the screen. The athlete should immediately confirm they are in the right squad and understand its focus.
 
 **TIER 2 — Train Together CTA**
-The primary action available from S-2. Positioned immediately after the Squad Header so the athlete who came to S-2 specifically to initiate a Train Together session can act without scrolling through the member list.
+The primary action available from S-2. Positioned immediately after the Squad Header so the athlete who came to S-2 specifically to initiate a Train Together session can act without scrolling through the rest of the page.
 
-**TIER 3 — Member List with Presence**
-The accountability heart of S-2. Every member, name, avatar, and presence state. This is the deepest S-2 gets into squad member data. Visibility is member-level presence. Nothing else.
+**TIER 3 — Current Goal Card** *(new — §15, `Squad-System-Architecture-v1.0` SQ-D3)*
+The squad's single active Goal and its aggregate progress. Absent entirely when no Goal is active — no empty state, no placeholder, no "set a goal" prompt competing with Train Together for primacy.
 
-**TIER 4 — Invite to Squad**
-A Secondary CTA at the bottom of the member list. Squad growth is encouraged but not the primary purpose of S-2. Invite access is always available but positioned as a secondary action.
+**TIER 4 — Current Mission Card** *(new — §16, SQ-D4)*
+The squad's single active Mission and aggregate completion. Same absent-when-empty rule as the Goal card.
 
-**Tier 5 — Squad Options (⋯)**
+**TIER 5 — Today's Check-ins Card** *(reconciled — §17, SQ-D5; supersedes the prior WSR-001 §6.1 Check-ins section)*
+Every current member's daily status (Trained / Rest Day / Missed), persistent and always visible — not part of the chronological Feed below it. This is the authoritative daily accountability record.
+
+**TIER 6 — Squad Feed** *(new — §18, SQ-D9)*
+The chronological record of workout completions, PRs, Honors, competition updates, Goal/Mission milestones, optional video check-ins, and the Weekly Summary. The largest content block on the page by volume, but positioned after the Goal/Mission/Check-ins cards because those answer "where do we stand right now" before the Feed answers "what's been happening."
+
+**TIER 7 — Competitions** *(new — §19, SQ-D11)*
+This squad's own challenge standings and results, reusing the existing Challenge System.
+
+**TIER 8 — Member List with Presence**
+The accountability heart of S-2. Every member, name, avatar, and presence state. Visibility rules and the Limited Athlete Profile modal are unchanged from prior versions (§5).
+
+**TIER 9 — Honors** *(new — §20, SQ-D10)*
+The squad's honor case — Squad Honors earned by current and past members, surfaced as a positive record.
+
+**TIER 10 — Analytics** *(new — §21, SQ-D13)*
+Squad-aggregate display-only figures: workouts, participation, current streak, goal progress, mission completion, competition record.
+
+**TIER 11 — Invite to Squad**
+A Secondary CTA at the bottom of the page. Squad growth is encouraged but not the primary purpose of S-2.
+
+**Tier 12 — Squad Options (⋯)**
 Squad settings, leave squad, and management actions accessible via the Top App Bar [⋯] action. Present but compact — management is not the primary purpose of a visit to S-2.
 
 **Hierarchy principle:**
-Squad identity comes first because the athlete needs confirmation of context. Train Together comes second because it is the only outbound action on S-2. Members come third because the accountability check — the reason most athletes visit S-2 — is served here. Invite and settings are last because they are maintenance actions, not daily-use actions.
+Squad identity comes first because the athlete needs confirmation of context. Train Together comes second because it is the only outbound training action on S-2. The Goal and Mission cards come next because they answer "what are we working toward" before anything else — the squad's current state, not its history. Today's Check-ins follows as the daily accountability record, then the Feed as the squad's narrative history, then Competitions as the squad's own scoreboard. Members, Honors, and Analytics close out the page as reference material — true at any time, not time-sensitive the way the cards above them are. Invite and settings remain last because they are maintenance actions, not daily-use actions.
 
 ---
 
@@ -105,13 +132,46 @@ S-2 is a navigation stack screen. It is entered from S-1 via a squad card tap. I
 │                                                         │
 │  ─────────────────────────────────────────────────────  │
 │                                                         │
-│  MEMBERS                                                │  ← Section label
+│  CURRENT GOAL                                            │  ← Section label (absent if no active Goal) — §15
+│  [ Goal card — target, aggregate progress ]              │
+│                                                         │
+│  CURRENT MISSION                                         │  ← Section label (absent if no active Mission) — §16
+│  [ Mission card — target, aggregate completion ]         │
+│                                                         │
+│  ─────────────────────────────────────────────────────  │
+│                                                         │
+│  TODAY'S CHECK-INS                                       │  ← Persistent, always visible — §17
+│  [👤] Alex · Trained   [👤] Jordan · Rest Day  ...       │
+│                                                         │
+│  ─────────────────────────────────────────────────────  │
+│                                                         │
+│  SQUAD FEED                                              │  ← Chronological — §18
+│  [ Feed entry — workout, PR, Honor, video check-in... ] │
+│  [ Feed entry ]                                          │
+│  [ Feed entry ]                                          │
+│                                                         │
+│  ─────────────────────────────────────────────────────  │
+│                                                         │
+│  COMPETITIONS                                            │  ← §19 (absent if squad has no challenges)
+│  [ Standings / results summary for this squad ]          │
+│                                                         │
+│  ─────────────────────────────────────────────────────  │
+│                                                         │
+│  MEMBERS                                                │  ← Section label, unchanged from prior versions
 │                                                         │
 │  [👤]  Alex                  Trained today              │  ← Member row
 │  [👤]  Jordan                Not yet this week          │
 │  [👤]  Maya                  Trained this week          │
 │  [👤]  Riley                 Not yet this week          │
 │  [👤]  Sam                   Trained today              │
+│                                                         │
+│  ─────────────────────────────────────────────────────  │
+│                                                         │
+│  HONORS                                                  │  ← §20 (absent if squad has none yet)
+│  [ Squad honor case ]                                    │
+│                                                         │
+│  ANALYTICS                                               │  ← §21
+│  [ Workouts · Participation · Streak · Goal · Mission · Record ] │
 │                                                         │
 │  ─────────────────────────────────────────────────────  │
 │                                                         │
@@ -122,16 +182,19 @@ S-2 is a navigation stack screen. It is entered from S-1 via a squad card tap. I
 └─────────────────────────────────────────────────────────┘
 ```
 
+**Current Goal / Current Mission / Today's Check-ins / Squad Feed / Competitions / Honors / Analytics (Squad-System-Architecture-v1.0 reconciliation):**
+Per `Squad-System-Architecture-v1.0` SQ-D15, seven sections are added or reconciled into the scroll order between the Train Together CTA and the Members section (and after Members, for Honors/Analytics): **Current Goal** (§15, absent when no Goal is active), **Current Mission** (§16, absent when no Mission is active), **Today's Check-ins** (§17 — supersedes the prior WSR-001 §6.1 bounded Check-ins section; persistent and always visible, not part of the Feed), **Squad Feed** (§18, chronological, the largest content block), **Competitions** (§19, absent when this squad has no challenge history), **Honors** (§20, absent when the squad has none yet), and **Analytics** (§21, always present). Each section's absent-when-empty rule follows the same pattern already established for Check-ins and Goal/Mission cards — no placeholder, no empty-state prompt competing with Train Together. Full content, data, and behavior rules for each section live in the new section numbers cited above, not redefined inline here.
+
 **Top App Bar:**
-- Back arrow [←] — navigates to S-1; restores S-1 scroll position (per S-1 v1.1)
+- Back arrow [←] — navigates to S-1; restores S-1 scroll position (per S-1 v1.5)
 - Squad name in title position — confirms context at a glance, 18sp, truncated with ellipsis if too long
 - [⋯] options — opens the Squad Options bottom sheet
 
 **What appears above the fold on 375×812:**
-The Squad Header (name, purpose, member count) and the Train Together CTA must be fully visible. The first 2–3 member rows should begin appearing below the fold boundary, signaling scrollability and showing the accountability content is immediately below.
+The Squad Header (name, purpose, member count) and the Train Together CTA must be fully visible. Everything below — Goal, Mission, Check-ins, Feed, Competitions, Members, Honors, Analytics — is reached by scrolling; the page is now substantially longer than it was prior to `Squad-System-Architecture-v1.0`, and that is expected. The first visible content below the fold should be the Current Goal or Current Mission card if either is active, or the Today's Check-ins card if neither is active, signaling that there is more squad content immediately below.
 
 **Scroll behavior:**
-Standard vertical scroll. The member list may be long for squads with many members. All members accessible by scrolling. "+ Invite to Squad" at the content bottom scrolls with content — it is not sticky.
+Standard vertical scroll. The page is now a long, content-rich scroll reflecting the squad's full activity — Goal/Mission cards, Today's Check-ins, the Feed, Competitions, Members, Honors, and Analytics all accessible by scrolling in that order. "+ Invite to Squad" at the content bottom scrolls with content — it is not sticky.
 
 **Tab Bar behavior:**
 The Bottom Tab Bar is visible and accessible. S-2 is not a full-screen mode screen. Standard navigation is available.
@@ -351,7 +414,7 @@ Incorrect: Architect IV
 Accomplishments are user-declared real-world achievements. They appear below a divider line, under the "ACCOMPLISHMENTS" section label.
 
 - Up to 3 accomplishments shown — the athlete's top 3 as set on their profile
-- Each accomplishment shows its name only (e.g., "Marathon Finisher," "315 lb Bench Press," "Spartan Race")
+- Each accomplishment shows its name only (e.g., "Marathon Finisher," "315 lb Barbell Bench Press," "Spartan Race")
 - Date of accomplishment is not shown on the limited profile
 - If the member has no accomplishments entered: the accomplishments section (label + content) is entirely absent. No "No accomplishments yet" placeholder.
 
@@ -375,6 +438,9 @@ The following are explicitly excluded from the Limited Athlete Profile and must 
 - Any training performance data
 - Streak data
 - Accomplishment dates
+- Challenge standings, scores, win/loss, badges, or champion recognition (Squad-Architecture-Amendment-001 SA-D1; Squad-Architecture-Amendment-002 SA2-D1)
+
+**Update — `Squad-System-Architecture-v1.0` (LOCKED, SQ-D2 Rule 3):** this hidden-fields list is **not** changed by the new Squad System Architecture — the Limited Athlete Profile modal gains no new fields. Honors, Goal/Mission/Streak data, and challenge standings are now visible on S-2, but through the dedicated Honors (§20), Goal/Mission cards (§§15–16), Analytics (§21), and Competitions (§19) sections — not by adding them to this per-member modal. Tapping a member's row still opens exactly the fields listed in §5.5.2, nothing more.
 
 #### 5.5.6 The Athlete's Own Row
 
@@ -434,7 +500,9 @@ Forge Legacy shows the former. Never the latter.
 
 S-2 does not show any training activity data older than 7 days. There is no "last trained [date]" field. There is no training history. There is no streak counter. The presence indicator resets to "Not yet this week" for all members at the start of each new 7-day window.
 
-**Why:** A streak counter converts presence into a performance metric by assigning value to the length of the streak. A long streak creates pressure to maintain it. A broken streak creates visible failure. Forge Legacy does not do streaks. The window is the accountability unit — not the streak. Each week is a fresh chance to show up.
+**Why:** An *individual* streak counter converts personal presence into a performance metric by assigning value to the length of the streak. A long streak creates pressure to maintain it. A broken streak creates visible failure. The window remains the per-member accountability unit — not a per-member streak. Each week is a fresh chance to show up.
+
+**Update — `Squad-System-Architecture-v1.0` (LOCKED, SQ-D6):** this rule governs *individual member* presence only and is unchanged — there is still no per-member streak counter anywhere on S-2's member list or Limited Athlete Profile. A separate, **squad-level** Squad Streak now exists (a calendar day counts when at least half the squad's current members check in as Trained) and is displayed in the Analytics section (§21) — it is a squad-aggregate metric, not a renaming or relaxation of this rule.
 
 ### 6.4 The Performance Line
 
@@ -447,6 +515,8 @@ Everything that crosses that line is absent from S-2. A member's workout type, d
 Knowing that Alex trained today is not performance data. It is presence data. It tells the athlete "Alex showed up." It does not tell them "Alex lifted 250 lbs" or "Alex ran 8 miles." The accountability value is in the showing up. The performance data — what was done while showing up — remains private.
 
 The line drawn: **training occurrence is visible. Training content is not.**
+
+**Challenge System note — superseded in part by `Squad-System-Architecture-v1.0` SQ-D2/SQ-D11 (LOCKED, June 2026):** the member list, presence states, squad header, and Limited Athlete Profile remain exactly as described above — no challenge data is ever added to those specific surfaces, and member ordering stays fixed-alphabetical; challenges never reorder the list. What **has** changed is that this squad's own challenge standings, scores, win/loss, and champion recognition now display inline in the **Competitions section** (§19) of this squad's own S-2 page — no longer gated to an opt-in C-series surface only. The original Firewall (Comparison-Philosophy-Amendment-001 CC-D2; Squad-Architecture-Amendment-001 SA-D1) continues to govern every *other* surface this challenge data must never reach: the Friends Feed, any Community surface, and any *other* squad's page.
 
 ---
 
@@ -552,15 +622,14 @@ Squad purpose is editable from Squad Settings, accessible via the [⋯] options 
 ### 9.3 What "Purpose" Is Not
 
 The squad purpose is not:
-- A goal statement (no "reach 225 lb bench press by December")
+- A target or measurable objective (that is now the Current Goal, §15 — a distinct field with its own card)
 - A shared chapter (each member has their own chapters)
 - A program enrollment ("we're all doing 5×5")
-- A group commitment tracker
+- The squad's values statement (that is now the Commitment, owned by S-3 §6 per `Squad-System-Architecture-v1.0` SQ-D14)
 
 It is a short, human-readable description of why this group trains together. "Morning lift crew." "Marathon 2027." "General accountability." Nothing more is required, and the field does not allow for more.
 
-**Why no squad-level goals:**
-Goals belong to individual chapters. A squad might share a general focus, but each member's training goals are their own. A squad-level goal would create a shared target that not all members may be aligned to, and would introduce comparison between members' progress toward that target. Forge Legacy does not create that dynamic. The squad's purpose is descriptive, not prescriptive.
+**Purpose vs. Goal — `Squad-System-Architecture-v1.0` (LOCKED, SQ-D3) reconciliation:** prior versions of this document stated "no squad-level goals" as an absolute rule. That rule is **superseded**: a squad may now have exactly one active Goal (§15), a measurable, time-bound target with shared aggregate progress. Purpose and Goal remain distinct fields serving different jobs — Purpose is a permanent, descriptive identity statement ("why this group trains together"); the Goal is a temporary, prescriptive target the squad is currently working toward, and it ends (is completed or replaced) the way Purpose never does. A squad may have a Purpose with no active Goal, a Goal with no stated Purpose, both, or neither.
 
 ---
 
@@ -570,7 +639,7 @@ Goals belong to individual chapters. A squad might share a general focus, but ea
 
 | Action | Destination |
 |--------|-------------|
-| Tap [←] back arrow | S-1 (scroll position restored, per S-1 v1.1) |
+| Tap [←] back arrow | S-1 (scroll position restored, per S-1 v1.5) |
 | Tap [⋯] | Squad Options bottom sheet |
 | Squad Options → Squad Settings | Squad edit screen (S-XX) |
 | Squad Options → Invite to Squad | Squad invite flow (S-XX) |
@@ -719,7 +788,7 @@ Standard vertical scroll. All content scrolls between the Top App Bar and the Ta
 On standard device size (375×812), the following must be visible without scrolling:
 - Squad Header (name, purpose if set, avatar stack, member count) — fully visible
 - Train Together CTA — fully visible
-- First 2–3 member rows — partially visible, signaling scrollability
+- Content immediately below the fold — the Current Goal or Current Mission card if either is active, otherwise the Today's Check-ins card — partially visible, signaling that the rest of the page (Feed, Competitions, Members, Honors, Analytics, per §3 and §§15–21) continues below
 
 The athlete who opens S-2 sees the squad identity, the primary action, and the beginning of the accountability content in the first glance.
 
@@ -787,7 +856,7 @@ S-2 supports portrait orientation only — consistent with all Forge Legacy scre
 
 ### Screen Architecture
 - [ ] Top App Bar present with back arrow [←], squad name title (18sp, truncated), and [⋯] options button
-- [ ] Back arrow navigates to S-1 and restores S-1 scroll position (per S-1 v1.1 Section 11.3)
+- [ ] Back arrow navigates to S-1 and restores S-1 scroll position (per S-1 v1.5 Section 11.3)
 - [ ] Bottom Tab Bar visible and functional
 - [ ] Screen is NOT in full-screen mode
 - [ ] Screen scrolls vertically; no horizontal scroll
@@ -812,6 +881,13 @@ S-2 supports portrait orientation only — consistent with all Forge Legacy scre
 - [ ] Delete Squad option visible only to squad creator; triggers confirmation sheet
 - [ ] Destructive options (Leave, Delete) use destructive text color
 - [ ] Options sheet dismissed by tap outside or drag down
+
+### Check-ins Integration (WSR-001)
+- [ ] "CHECK-INS" section present between Train Together CTA and Members section when active check-in cards exist for this squad
+- [ ] Section entirely absent (no label, no placeholder) when no active check-in cards exist
+- [ ] Card content, 48h TTL, 5-card maximum, ordering, and reactions governed by WSR-001 §6.2–§6.4 — not redefined in S-2
+- [ ] Tapping a check-in card opens the Limited Athlete Profile modal (same destination as a member row tap)
+- [ ] Check-ins for this squad never display cards created for a different squad (WSR-001 §6.3, cross-squad isolation)
 
 ### Train Together CTA
 - [ ] "Train Together →" Primary CTA present between Squad Header and Members section
@@ -927,24 +1003,324 @@ S-2 supports portrait orientation only — consistent with all Forge Legacy scre
 - [ ] Top App Bar and Bottom Tab Bar respect safe areas
 - [ ] Screen reader accessibility labels on all interactive elements
 
-### Squad Philosophy Compliance
-- [ ] No feed, no activity stream, no "Alex logged a workout" events
-- [ ] No likes, comments, reactions
-- [ ] No leaderboard, ranking, or comparison element
-- [ ] Squad is private — nothing visible to non-members
-- [ ] Screen feels: grounded, trustworthy, accountable, private
-- [ ] Screen does NOT feel: competitive, performative, surveillance-oriented
+### Squad Philosophy Compliance — updated per `Squad-System-Architecture-v1.0` (LOCKED, SQ-D2)
+- [ ] The Squad Feed (§18) carries only the locked event-type list (workouts, PRs, Honors, competition updates, Goal/Mission milestones, video check-ins, Weekly Summary) — no freeform posts, no general chat composer
+- [ ] Plain Trained/Rest Day/Missed check-in status changes never generate a Feed entry (SQ-D5.2) — only video check-ins do
+- [ ] Reactions and comments are permitted on Feed entries (SQ-D9.4) — this is an intentional, locked change from the prior "no likes, comments, reactions" rule
+- [ ] Goal, Mission, Analytics, and Competitions sections show squad-aggregate data only — no per-member leaderboard, ranking, or sort by performance anywhere on the page
+- [ ] Non-participation in a Goal, Mission, or Challenge is never narrated as failure on the Feed or anywhere else on S-2
+- [ ] Squad is private — nothing on S-2 (including the Feed, Goal, Mission, Competitions, Honors, or Analytics) is visible to non-members, on any other squad's page, on the Friends Feed, or on a Community surface
+- [ ] Screen feels: grounded, trustworthy, accountable, and — now — like a team with a shared record
+- [ ] Screen does NOT feel: surveillance-oriented, or like a member-vs-member comparison engine
+
+### Current Goal (§15)
+- [ ] Card absent when no Goal is active — no placeholder
+- [ ] Progress shown as squad-aggregate only — never a per-member breakdown
+- [ ] Any member can set or edit the active Goal; only one active Goal at a time
+- [ ] Goal completion fires a positive Feed entry and the Squad Goal Completed honor path — no member singled out
+
+### Current Mission (§16)
+- [ ] Card absent when no Mission is active — no placeholder
+- [ ] Completion shown as squad-aggregate only — never a sorted "who finished first" list
+- [ ] Only one active Mission at a time; Missions and the Goal may run concurrently
+- [ ] An expired, incomplete Mission ends with neutral framing — no "failed mission" language
+
+### Today's Check-ins (§17)
+- [ ] Card is persistent and always visible — not part of the chronological Feed
+- [ ] All three states render with neutral typography — "Missed" carries no alarm color or strikethrough
+- [ ] Plain status changes never appear in the Feed; only optional video check-ins do, linking back to this card
+- [ ] Daily reset clears all member statuses at the start of a new day
+
+### Squad Feed (§18)
+- [ ] Reverse-chronological, one feed only — no tabs, no per-member filter
+- [ ] Every entry traces to a permitted event type (SQ-D9 Rule 1) — no orphan or freeform entries
+- [ ] Weekly Summary posts as a normal Feed entry, not a separate modal or pinned-forever banner
+- [ ] Scoped to this squad's current members only — never visible elsewhere
+
+### Competitions (§19)
+- [ ] Displays this squad's own standings/results inline — no longer gated to a neutral entry-point-only affordance
+- [ ] Section absent when this squad has no challenge history
+- [ ] Challenge creator role remains challenge-scoped — confers no squad governance power (SA-D3 unchanged)
+- [ ] Non-participation in a challenge is never shown as a "didn't join" row
+
+### Honors (§20)
+- [ ] Every honor shown traces to an account-based `HonorInstance` — no squad-owned honor record
+- [ ] No catalog visibility, no rank effect (AD-7, AD-27 unchanged)
+- [ ] Honors still surface to each earner via M-2 — this section does not duplicate the ceremony, it displays the resulting record
+
+### Analytics (§21)
+- [ ] Every figure is squad-aggregate — no per-member breakdown, sort, or leaderboard
+- [ ] No trend charts, historical comparison, projections, or exportable report
+- [ ] Competition record shown as a summary line only — full standings live on the Competitions section / C-series surfaces
+
+---
+
+## Section 15 — Current Goal
+
+Full rules: `Squad-System-Architecture-v1.0` SQ-D3. This section specifies the S-2 card.
+
+### 15.1 Card Anatomy
+
+```
+┌────────────────────────────────────────────────────────┐
+│  CURRENT GOAL                                          │
+│  [Goal description — e.g., "500 workouts this month"]  │
+│  [Progress bar / count — e.g., "312 / 500 workouts"]    │
+└────────────────────────────────────────────────────────┘
+```
+
+For completion-based Goals (e.g., "Everyone completes Chapter 2"), the progress line reads as a member-completion count: "6 of 8 completed."
+
+### 15.2 Presence Rule
+
+Absent entirely when no Goal is active — no empty state, no "Set a Goal" prompt on the card itself (setting a Goal is reached via Squad Settings or a "+ Set a Goal" affordance within this section's empty slot, deferred to implementation; it is not a competing CTA with Train Together).
+
+### 15.3 Editing
+
+Tapping the card (or a dedicated edit affordance) opens Goal editing. Any member may set or edit the active Goal (SQ-D3.2). Editing a Goal with existing progress requires a confirmation step before the target changes, consistent with the product's pattern of confirming consequential edits.
+
+### 15.4 Completion
+
+When the target is met, the card shows a brief completed state, a Squad Feed entry announces it (§18), and the card clears to absent until a new Goal is set. No member is named as having carried or missed the goal.
+
+---
+
+## Section 16 — Current Mission
+
+Full rules: `Squad-System-Architecture-v1.0` SQ-D4. This section specifies the S-2 card.
+
+### 16.1 Card Anatomy
+
+```
+┌────────────────────────────────────────────────────────┐
+│  CURRENT MISSION                                        │
+│  [Mission description — e.g., "PR Saturday"]            │
+│  [Aggregate completion — e.g., "5 of 7 completed"]       │
+│  [Days remaining — e.g., "Ends in 2 days"]               │
+└────────────────────────────────────────────────────────┘
+```
+
+### 16.2 Presence Rule
+
+Absent entirely when no Mission is active — same pattern as the Goal card (§15.2).
+
+### 16.3 Editing and Expiry
+
+Any member may set or edit the active Mission (SQ-D4.3). A Mission that expires without full completion ends with neutral framing — the card simply clears; there is no "mission failed" state, color, or copy.
+
+---
+
+## Section 17 — Today's Check-ins
+
+Full rules: `Squad-System-Architecture-v1.0` SQ-D5. This section supersedes the prior WSR-001 §6.1–§6.4 bounded Check-ins integration for this screen.
+
+### 17.1 Card Anatomy
+
+```
+┌────────────────────────────────────────────────────────┐
+│  TODAY'S CHECK-INS                                       │
+│  [👤] Alex     Trained        [▶ 0:42 video]            │
+│  [👤] Jordan   Rest Day                                  │
+│  [👤] Maya     Trained                                   │
+│  [👤] Riley    Missed                                    │
+│  [👤] Sam      —  (not yet checked in)                    │
+└────────────────────────────────────────────────────────┘
+```
+
+### 17.2 Persistence and Scope
+
+This card is **always visible** on S-2 regardless of Feed activity — it is not bounded, ephemeral, or contingent on anyone sharing anything (contrast with the superseded WSR-001 model). It shows the current calendar day's status for every current member, resetting at the start of each new day (SQ-D5.5).
+
+### 17.3 States
+
+Three states per member: **Trained**, **Rest Day**, **Missed** — plus an unmarked state for a member who has not yet checked in today (rendered neutrally, e.g., "—," not as a fourth alarm state). "Missed" uses the same neutral typography and color treatment established for "Not yet this week" in §6.2 — no red/orange, no strikethrough.
+
+### 17.4 Optional Video
+
+A member may attach a 30–60 second video to their own check-in. The video supplements, never replaces, the Trained/Rest Day/Missed status. Tapping the video plays it inline or opens a lightweight player; posting a video check-in also generates a linked Squad Feed entry (§18) — "Alex posted a video check-in" — that deep-links back to this card's entry.
+
+### 17.5 No Feed Pollution
+
+Marking Trained, Rest Day, or Missed updates this card silently — no Feed entry, no notification beyond what §12 of `Squad-System-Architecture-v1.0` defines (which excludes plain status changes entirely).
+
+---
+
+## Section 18 — Squad Feed
+
+Full rules: `Squad-System-Architecture-v1.0` SQ-D9.
+
+### 18.1 Feed Anatomy
+
+```
+┌────────────────────────────────────────────────────────┐
+│  SQUAD FEED                                              │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │ [👤] Maya completed a workout · 2h ago           │  │
+│  │ 🎉 [👤] Sam hit a new PR: Bench 225 · 5h ago      │  │
+│  │ 🏆 [👤] Riley earned "10 Workouts Logged" · 1d ago│  │
+│  │ ▶ [👤] Alex posted a video check-in · 1d ago      │  │
+│  │ 🎯 Squad Mission complete: PR Saturday · 2d ago   │  │
+│  │ 📋 Weekly Summary — Jun 16–22                     │  │
+│  └──────────────────────────────────────────────────┘  │
+└────────────────────────────────────────────────────────┘
+```
+
+### 18.2 Permitted Entry Types
+
+Workout completions, PRs, Honors earned, competition/challenge updates for this squad, Goal progress and completion, Mission completion, optional video check-in posts (linking to §17), and the Weekly Summary (§18.4). No other entry type exists. There is no composer for a freeform post.
+
+### 18.3 Engagement
+
+Members may react to and comment on any Feed entry. An @-mention within a comment notifies the mentioned member (P-5 — see `Squad-System-Architecture-v1.0` SQ-D12).
+
+### 18.4 Weekly Summary Entries
+
+Once per calendar week, a Weekly Summary entry posts at the top of the Feed for the new week, summarizing the prior 7 days: total workouts, PRs, participation rate, Goal progress delta, and Honors earned. It is a normal Feed entry — no special pinning beyond its natural position as the most recent post when the week turns over.
+
+### 18.5 Anti-Shame Guardrails
+
+Non-participation in a Goal, Mission, or Challenge never generates a Feed entry. Missed check-ins never generate a Feed entry (§17.5). The Feed narrates positive and neutral events only.
+
+### 18.6 Scope
+
+Visible only to this squad's current members. Never appears on the Friends Feed, a Community page, or any other squad's Feed.
+
+---
+
+## Section 19 — Competitions
+
+Full rules: `Squad-System-Architecture-v1.0` SQ-D11. Reuses the existing Challenge System (`Challenge-System-Architecture-v1.0.md`) — no new data model.
+
+### 19.1 Section Anatomy
+
+```
+┌────────────────────────────────────────────────────────┐
+│  COMPETITIONS                                            │
+│  [ Active challenge — standings preview ]                │
+│  [ Recent result — e.g., "Won vs. Iron Fathers, 3–1" ]    │
+│  [  View All Challenges  →  ]                             │
+└────────────────────────────────────────────────────────┘
+```
+
+### 19.2 Presence Rule
+
+Absent entirely when this squad has no challenge history or active challenge — same absent-when-empty pattern as Goal/Mission.
+
+### 19.3 What Displays
+
+This squad's own challenge standings, scores, win/loss record, and champion recognition — drawn from the same Challenge entities the C-series surfaces (C-1, C-3, C-4, C-7) already read. "View All Challenges" navigates to C-1, filtered to this squad. This section is a squad-scoped *view*, not a duplicate data model.
+
+### 19.4 Firewall Boundary (still enforced)
+
+This squad's challenge data renders here and on the C-series surfaces only. It never appears on a *different* squad's S-2 page, the Friends Feed, or a Community surface. Friend- and Community-context challenges have no surface here at all (unchanged, CA3-D6/D8).
+
+### 19.5 Anti-Shame
+
+Non-participation is invisible — a member who didn't join a challenge simply doesn't appear in its standings; there is no "didn't participate" row anywhere in this section.
+
+---
+
+## Section 20 — Honors
+
+Full rules: `Squad-System-Architecture-v1.0` SQ-D10; new `SQUAD` category in `Honor-Catalog-v1.0-LOCKED.md` v1.5.
+
+### 20.1 Section Anatomy
+
+```
+┌────────────────────────────────────────────────────────┐
+│  HONORS                                                  │
+│  🏅 Squad Founder         🏅 Perfect Week                │
+│  🏅 7-Day Squad Streak    🏅 100 Squad Workouts           │
+└────────────────────────────────────────────────────────┘
+```
+
+### 20.2 Presence Rule
+
+Absent entirely when the squad has no Squad Honors earned by any current member yet.
+
+### 20.3 What Displays
+
+Squad Honors (the new `SQUAD` Honor Catalog category) earned by current members, shown as a positive record — not a leaderboard of who has the most. No member ranking within this section.
+
+### 20.4 Relationship to M-2
+
+This section displays the resulting record; it does not replace the M-2 Honor Earned ceremony, which still fires individually to each qualifying member the next time they open the app (SQ-D10 Rule 2).
+
+---
+
+## Section 21 — Analytics
+
+Full rules: `Squad-System-Architecture-v1.0` SQ-D13.
+
+### 21.1 Section Anatomy
+
+```
+┌────────────────────────────────────────────────────────┐
+│  ANALYTICS                                                │
+│  Workouts this month        142                           │
+│  Participation rate         86%                           │
+│  Current Squad Streak       12 days                        │
+│  Goal progress              312 / 500                      │
+│  Mission completion         5 of 7                         │
+│  Competition record         3–1                            │
+└────────────────────────────────────────────────────────┘
+```
+
+### 21.2 Rules
+
+Squad-aggregate figures only — no per-member breakdown, no trend chart, no historical comparison, no exportable report (SQ-D13.2). Competition record is a summary line; full standings live in the Competitions section (§19) and the C-series surfaces.
 
 ---
 
 *Forge Legacy Squad Detail Wireframe Specification — S-2*
-*v1.3 — June 2026*
-*All decisions derived from the Phase 2A locked architecture, the Forge Legacy Master PRD, the Forge Legacy UX Framework v1.0, the WwF System Spec v1.1, the S-1 Squads Hub Spec v1.1, and all other approved Phase 2B wireframe specifications.*
+*v1.6 — June 2026*
+*All decisions derived from the Phase 2A locked architecture, the Forge Legacy Master PRD, the Forge Legacy UX Framework v1.0, the WwF System Spec v1.1, the S-1 Squads Hub Spec v1.1, `Squad-System-Architecture-v1.0` (governing, §§15–21), and all other approved Phase 2B wireframe specifications.*
 *This document is the authority for all Squad Detail implementation in Phase 2B.*
 
 ---
 
 ## Change Log
+
+### v1.6 — June 2026
+
+**Squad System Architecture reconciliation — major layout and philosophy update**
+
+Merges `Squad-System-Architecture-v1.0` (LOCKED) into S-2. Adds seven new sections to the page (§§15–21): Current Goal, Current Mission, Today's Check-ins (supersedes the WSR-001 §6.1–§6.4 bounded Check-ins model), Squad Feed, Competitions (challenge standings now inline, superseding `Squad-Architecture-Amendment-001` SA-D1 and `Squad-Architecture-Amendment-002` SA2-D1/D2 for this screen), Honors, and Analytics. Rewrites the Preamble's "must never become a feed/comparison surface" framing to reflect the lifted Firewall (scoped to this screen only — the Friends Feed, Communities, and Calendar are unaffected). Reconciles §6.3 (clarifies the new squad-level Streak is separate from the unchanged individual no-streak rule), §6.4 (Challenge data now inline in Competitions), §9.3 (Purpose vs. the new Goal field), and §5.5.5 (confirms the Limited Athlete Profile gains no new fields — new data lives in the new sections instead). Section 2 (Information Hierarchy) and Section 3 (Full Scroll Order) rewritten for the new 12-tier layout. Squad Philosophy Compliance checklist updated; new checklist blocks added for §§15–21. Member List, Limited Athlete Profile field set, Train Together/WwF integration, and Navigation are unchanged.
+
+---
+
+### v1.5 — June 2026
+
+**Challenge System Firewall alignment (inline edit per approved Challenge amendments)**
+
+Aligns S-2 with the finalized Challenge System. Per Comparison-Philosophy-Amendment-001 (CC-D2), Squad-Architecture-Amendment-001 (SA-D1), and Squad-Architecture-Amendment-002 (SA2-D1): added "Challenge standings, scores, win/loss, badges, or champion recognition" to §5.5.5 Limited Athlete Profile hidden fields; added a Challenge System note to §6.4 confirming challenge performance lives only on opt-in C-series surfaces and never on the S-2 member list, presence states, header, or Limited Profile (the exception is granted by member opt-in, not role). Member ordering and presence behavior unchanged. No new design decision; reflects already-approved architecture (Firewall/Philosophy Compliance preserved).
+
+**Participant-based reconciliation (Challenge-Architecture-Amendment-003 v1.1 / CA3-D5/D11):** Challenges are now **participant-based** (roster = a Squad **or** a set of accepted Friends). This **does not change S-2**: the squad challenge entry point (SA-D2) is unchanged and opens the Challenge Hub **filtered to this squad** (SQUAD context); the challenge "creator" remains a **challenge-scoped role**, never a squad tier (SA-D3 preserved). **Friend Challenges (`context = FRIENDS`) have no always-on surface and never appear on S-2** — they are entered from a participant-level surface (H-1 recommended), not from Squad Detail. The §5.5.5 hidden-fields list and the §6.4 Firewall note hold unchanged for both contexts.
+
+---
+
+### v1.4 — June 2026
+
+**WSR-001 Downstream Reconciliation Pass — Check-ins Integration**
+
+Added the **Check-ins** section, required by WSR-001 §6.1 and §14's Downstream Impact table but previously absent from this document entirely.
+
+| Element | v1.3 | v1.4 |
+|---------|------|------|
+| Information Hierarchy (§2) | 5 tiers: Header, Train Together, Members, Invite, Options | 6 tiers: Header, Train Together, **Check-ins**, Members, Invite, Options |
+| Full Scroll Order (§3) | Header → Train Together → Members → Invite | Header → Train Together → **Check-ins (conditional)** → Members → Invite |
+
+**Placement:** Between the Train Together CTA and the Members section — above the member presence list, per WSR-001 §6.1's literal requirement ("appears at the top of S-2 Squad Detail, above the member presence list"). Train Together retains its existing position directly after the Squad Header.
+
+**Absent-when-empty rule:** Section entirely absent when no active check-in cards exist for this squad — no label, no placeholder. Identical absence pattern to every other optional S-2 section.
+
+**Ownership boundary:** S-2 is the display surface only. Card content format, the 48-hour TTL, the 5-card maximum, ordering, and reaction behavior are all owned and defined by WSR-001 §6.2–§6.4 — this document does not redefine them. Tapping a check-in card opens the Limited Athlete Profile modal, identical to a member row tap.
+
+**Philosophy compatibility:** Verified, not assumed — WSR-001 designed Check-ins specifically to satisfy S-2's own anti-feed principles (WSR-D16: bounded, ephemeral, no infinite scroll, no algorithm). No conflict found with this document's existing "S-2 must never become an activity stream" framing (§14 Squad Philosophy Compliance updated to record this explicitly).
+
+**Sections updated:** §2 (Information Hierarchy, tiers renumbered), §3 (wireframe + new "Check-ins section" paragraph + fold note), §13.3 (fold note), §14 (new "Check-ins Integration" checklist block; Squad Philosophy Compliance item amended).
+
+---
 
 ### v1.3 — June 2026
 

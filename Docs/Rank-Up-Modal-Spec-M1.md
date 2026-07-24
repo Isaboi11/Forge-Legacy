@@ -1,9 +1,10 @@
 # M-1 Rank Up
-## Wireframe Specification v1.0 | June 2026
+## Wireframe Specification v1.1 | June 2026
 
 **Authority:** Rank Computation Architecture (D1–D12, all locked), M-2 Honor Earned Modal Spec v1.0, M-3 Goal Achieved Modal Spec v1.0, M-4 Program Graduation Modal Spec v1.0, Ceremony Queue Amendment (June 2026), Master PRD § 13, Product DNA.
 
 **STATUS: LOCKED — June 2026**
+**Component contracts:** CLA-C20 (Modal), CLA-C08 (Button) — see [`Component-Library-Architecture-v1.0.md`](Component-Library-Architecture-v1.0.md)
 
 ---
 
@@ -102,15 +103,7 @@ All outputs are written before M-1 fires. The athlete's rank is updated and perm
 - Date: advancement date (not ceremony date — relevant when deferred from offline)
 - Stored at account level (not chapter-scoped)
 
-**Share Artifact:** A data bundle is created at ceremony time for future sharing system use. No MVP sharing UI exists. The bundle captures:
-- Rank Name
-- Sub-Rank
-- Rank badge identifier
-- Athlete display name
-- Forging Since date
-- Advancement date
-
-The share artifact is created regardless of whether sharing UI ever surfaces it. It is a permanent record attached to the advancement event.
+**Sharing:** Per WSR-001 (Workout Share Result Architecture, LOCKED) §8.2 and §14, M-1 offers a "Share this advancement" action (§7.4). No `WorkoutShare` record is created automatically at ceremony fire time — a record is created only if the athlete taps "Share this advancement," at which point SH-1 (Share Configuration Step) opens with `shareType: RANK_UP` pre-selected and assembles the `ShareContent` payload from the same rank, athlete, and date fields listed in §4.1. This supersedes the prior MVP-deferred "Share Artifact" concept referenced in earlier drafts of this document — WSR-001 and SH-1 are the authority for all sharing behavior.
 
 M-1 does **not** create an Honor record. Rank advancement is an identity transition and a journey event — it is recognized through the Timeline Event and the ceremony itself, not through the Honors system.
 
@@ -148,6 +141,8 @@ M-1 is a centered modal overlay. The underlying surface (typically W-17) is visi
 │                                      │
 │           [ Continue ]               │  ← Primary CTA
 │                                      │
+│        Share this advancement        │  ← Subordinate text action, always present
+│                                      │
 │   View Your Rank    View Your Legacy │  ← Conditional text links
 │                                      │
 └──────────────────────────────────────┘
@@ -176,6 +171,8 @@ The final rank in the system uses elevated presentation in place of the standard
 │  [Next Rank row absent]              │  ← No next rank — row omitted
 │                                      │
 │           [ Continue ]               │
+│                                      │
+│        Share this advancement        │  ← Subordinate text action, always present
 │                                      │
 │   View Your Rank    View Your Legacy │  ← Conditional text links
 │                                      │
@@ -264,7 +261,13 @@ When M-1 fires for the final rank in the system:
 
 `"Continue"` — centered, primary style. Always present. Always the only button-class element.
 
-#### 7.2 Secondary Navigation Links
+#### 7.2 Share Action
+
+`"Share this advancement"` — a subordinate text action below `"Continue"`, above the queue-conditional secondary navigation links (§7.3). Per WSR-001 §8.2, this is always present — it is not gated by queue position, unlike the secondary navigation links.
+
+Tapping `"Share this advancement"` is treated identically to tapping `"Continue"` for ceremony-sequence purposes (SH-1 §6.2): the queue advances exactly as it would have, and SH-1 (Share Configuration Step) presents on top of whatever that advancement reveals, with `shareType: RANK_UP` pre-selected.
+
+#### 7.3 Secondary Navigation Links
 
 Two text links appear below the primary CTA. They are **not buttons** — small text link style only, no visual competition with Continue.
 
@@ -273,7 +276,7 @@ Two text links appear below the primary CTA. They are **not buttons** — small 
 | `"View Your Rank"` | P-3 Rank Detail |
 | `"View Your Legacy"` | L-1 Legacy Hub |
 
-#### 7.3 Queue-Conditional Display
+#### 7.4 Queue-Conditional Display
 
 Secondary navigation links are displayed only when M-1 is the final remaining ceremony in the active queue.
 
@@ -292,6 +295,7 @@ When a secondary link is tapped, M-1 dismisses and the athlete navigates to the 
 |--------|------------|
 | `"Continue"` — ceremonies remain in queue | Next queued ceremony (M-3, M-4, or M-2 per priority) |
 | `"Continue"` — M-1 is final ceremony | Originating surface (surface active when queue was consumed) |
+| `"Share this advancement"` tap | SH-1 opens (`RANK_UP` pre-selected); queue advances exactly as `"Continue"` would (per SH-1 §6.2) |
 | `"View Your Rank"` tap | P-3 Rank Detail (M-1 dismissed) |
 | `"View Your Legacy"` tap | L-1 Legacy Hub (M-1 dismissed) |
 | Tap outside modal | No action — M-1 remains open |
@@ -316,8 +320,9 @@ When a secondary link is tapped, M-1 dismisses and the athlete navigates to the 
 - `"Continue"` CTA is the default focus target when modal opens
 - Focus is trapped within the modal while open (standard modal behavior)
 - After dismissal, focus returns to the originating surface
+- `"Share this advancement"` announced as a link: `"Share this advancement, double-tap to share"`
 - Secondary navigation links, when visible, are announced as links: `"View Your Rank, double-tap to navigate"` / `"View Your Legacy, double-tap to navigate"`
-- Minimum touch target: 44×44pt for `"Continue"` and all secondary link rows
+- Minimum touch target: 44×44pt for `"Continue"`, `"Share this advancement"`, and all secondary link rows
 
 ---
 
@@ -360,7 +365,7 @@ M-1 does not and will never:
 - Display "Congratulations" or effusive language
 - Display gamification language (points, scores, streaks)
 - Display rank contribution from specific workouts or goals
-- Display sharing UI in MVP (share artifact is created but no sharing surface exists)
+- Render the share card image itself, or create a `WorkoutShare` record without the athlete tapping "Share this advancement" (delegated to SH-1 and the Share Card Renderer, per WSR-001 §7, §9)
 - Fire mid-session (W-9–W-16)
 - Fire as a push notification
 - Fire at app open, home screen load, or tab switch independently of a ceremony queue
@@ -410,6 +415,8 @@ M-1 does not and will never:
 
 **CTA and queue-conditional display:**
 - [ ] `"Continue"` always present as primary CTA
+- [ ] `"Share this advancement"` always present below `"Continue"`, regardless of queue position
+- [ ] `"Share this advancement"` tap opens SH-1 with `RANK_UP` pre-selected and advances the queue as `"Continue"` would
 - [ ] Secondary links hidden when additional ceremonies remain in queue
 - [ ] Secondary links visible when M-1 is the final ceremony
 - [ ] `"View Your Rank"` navigates to P-3
@@ -458,6 +465,7 @@ M-1 does not and will never:
 |---------|------|--------|
 | v1.0 draft | June 2026 | Initial specification — D1–D12 captured |
 | v1.0 | June 2026 | Architecture revision pass: ceremony priority corrected (M-1 → M-3 → M-4 → M-2); honor creation removed (Timeline Event only); M-1→M-2 chaining removed; final rank copy locked ("Your legacy has been forged."); secondary link naming verified. Specification locked. |
+| v1.1 | June 2026 | WSR-001 Downstream Reconciliation Pass. Added "Share this advancement" subordinate text action (§5, §7.2, §8, §9, §12), always present below "Continue" per WSR-001 §8.2. Replaced the §4.2 "Share Artifact" placeholder concept with a reference to WSR-001/SH-1 as the authority — no `WorkoutShare` record is created automatically at ceremony time; it is created only on explicit "Share this advancement" tap. Removed the contradictory "Display sharing UI in MVP" line from §11 Non-Behaviors. No other M-1 behavior changed. |
 
 ---
 

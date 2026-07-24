@@ -233,13 +233,15 @@ EP-A1 fields are subject to the same activity-type display rules as existing pre
 
 ## Section 8 — Downstream Document Impact
 
-| Document | Required Update |
-|---|---|
-| `Workout-Builder-Wireframe-Spec-W24.md` | § 7.6 ExercisePrescription schema: add three EP-A1 fields. Add note: "EP-A1 governs restSeconds, distanceValue, distanceUnit." |
-| `Free-Workout-Builder-Spec-W25.md` | § 5.1 schema block: reference EP-A1 rather than defining fields inline. Remove W25-D3, W25-D4, W25-D5. |
-| `Active-Workout-Flow-Spec-W9-W16.md` | W-9 rest overlay section: add note that restSeconds may be displayed as reference context when non-null. |
-| `Architecture-Amendment-001-Import.md` | Add import rule for EP-A1 fields: all three arrive null; no inference. |
-| `Activity-Detail-Wireframe-Spec-W19.md` | Display rule: show distanceValue/distanceUnit if non-null; do not show restSeconds. |
+| Document | Required Update | Status (verified June 2026 reconciliation pass) |
+|---|---|---|
+| `Workout-Builder-Wireframe-Spec-W24.md` | § 7.6 ExercisePrescription schema: add three EP-A1 fields. Add note: "EP-A1 governs restSeconds, distanceValue, distanceUnit." | ✅ Complete — merged as v1.2 (EP-A1) |
+| `Free-Workout-Builder-Spec-W25.md` | § 5.1 schema block: reference EP-A1 rather than defining fields inline. Remove W25-D3, W25-D4, W25-D5. | ✅ Complete — § 5.1/§ 17.4 reference EP-A1 as governing authority; W25-D3 retained as a pointer decision ("governed by EP-A1, not defined in W-25") rather than deleted, since other documents cite it by ID |
+| `Active-Workout-Flow-Spec-W9-W16.md` | W-9 rest overlay section: add note that restSeconds may be displayed as reference context when non-null. | ✅ Complete — merged as v1.3 (§7.2) |
+| `Architecture-Amendment-001-Import.md` | Add import rule for EP-A1 fields: all three arrive null; no inference. | ✅ Complete — Section 7 |
+| `Activity-Detail-Wireframe-Spec-W19.md` | Display rule: show distanceValue/distanceUnit if non-null; do not show restSeconds. | ✅ Complete — merged as v1.2 (EP-A1), § 7.1 |
+
+All five downstream updates required by this amendment are confirmed applied. No outstanding EP-A1 reconciliation work remains.
 
 ---
 

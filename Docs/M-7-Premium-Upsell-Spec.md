@@ -4,6 +4,7 @@
 **Status:** LOCKED
 **Authority:** Monetization Architecture Amendment 001, Critical Decisions Amendment 001, Master PRD §18, MVP Architecture Audit [H-18]
 **Closes:** Architecture Audit issue [H-18] — M-7 referenced but not specced
+**Component contracts:** CLA-C20 (Modal), CLA-C08 (Button) — see [`Component-Library-Architecture-v1.0.md`](Component-Library-Architecture-v1.0.md)
 
 ---
 

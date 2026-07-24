@@ -1,5 +1,5 @@
 # Forge Legacy — Workout With Friend Architecture & UX Specification
-## WwF System | Phase 2B | Version 1.1 — June 2026
+## WwF System | Phase 2B | Version 1.2.1 — June 2026
 
 ---
 
@@ -14,6 +14,11 @@ WwF is an attribution system. It answers a single question: "Was someone else pr
 This distinction drives every decision in the WwF system. The tagger's workout belongs to the tagger. The tagged athlete is offered an acknowledgment of presence, not a copy of someone else's record. The claim is optional. The absence of a claim is never flagged as a gap.
 
 "The workout tracker is the engine. The Legacy is the product." WwF is a footnote in the engine room. It creates no legacy — it acknowledges that two people built their legacies alongside each other.
+
+> **Reconciliation note — Social-System-Architecture-v1.0 (LOCKED, June 2026; governing social authority).** WwF is an **interaction** granted by a relationship, governed by `Social-System-Architecture-v1.0` SOC-D2 (relationships grant interaction, not visibility) and integrated in SOC-D16. Two clarifications, neither of which changes WwF:
+> - **WwF creates reference entries, never Posts.** A WwF reference entry is a **training-presence record in the Legacy Engine** (W-18 history), not a social-layer Post. It retains its existing Community/Longevity honor eligibility because the honor is earned by the **training/presence act**, never by the friendship or by any post about it (SOC-D13 boundary clarification).
+> - **The Preamble's "there are no feeds" is WwF's own scope, not a product-wide ban.** The intentional **Posts / Friends Feed** is a distinct, coexisting social primitive (SOC-D9). WwF presence is never auto-posted there, and the Friends Feed never becomes a presence/check-in surface — the two remain separate (the WSR-001 ↔ Friends Feed coexistence applies equally to WwF presence).
+> - **Standing-consent routing:** an accepted Friend is the standing-consent relationship (FR-D5) enabling WwF outside Squads via the M-8 path — as already noted in §15's standing-relationship analysis.
 
 ---
 
@@ -1098,6 +1103,48 @@ The squad-only restriction at S-10 provided no consent protection for the tagged
 
 ---
 
+## Architecture Amendment B — Accepted Friend as Standing Consent Outside Squads
+
+**Amendment ID:** WwF-B
+**Status:** Approved | June 2026
+**Authority:** `Friend-Relationship-Architecture-Amendment-001.md` (LOCKED) — FR-D1 (persistent mutual Friend relationship), FR-D5 (WwF standing consent outside Squads).
+**Supersedes/affects:** the squad-vs-non-squad routing in Sections 6, 7, 14.1, 14.2 (M-8/M-9 determination); §15.1/§15.2 (membership-change edge cases); §17 checklist. Adds a relationship to the standing-consent set; **changes no privacy rule.**
+
+### Amendment Summary
+
+WwF previously recognized exactly **one** standing relationship — squad membership — which routed a tag to the **M-8 auto-accept path** (claim/dismiss). Every non-squad tag routed to the **M-9 approval path** (approve → claim/dismiss). The persistent **accepted Friend** relationship (FR-D1) is now a **second standing consent relationship**, equivalent to squad membership for WwF routing (FR-D5).
+
+### The Routing Change (the only change)
+
+| Tagger ↔ Tagged relationship at "Done" time | v1.1 routing | v1.2 routing |
+|---|---|---|
+| Share ≥1 common **Squad** | **M-8** (auto-accept → claim/dismiss) | **M-8** (unchanged) |
+| Accepted **Friend** (no common squad) | M-9 (approval required) | **M-8** (auto-accept → claim/dismiss) — a mutual Friend has already consented to a standing relationship (FR-D5) |
+| Neither squad nor Friend (e.g., found via search) | **M-9** (approve → claim/dismiss) | **M-9** (unchanged) |
+
+**Standing-consent determination (revised):** a partner takes the **M-8 path** if, at the moment the tagger taps "Done" on W-17, the two athletes **share ≥1 common squad OR have an `ACCEPTED` Friend relationship**. Otherwise the partner takes the **M-9 path**. Evaluated at "Done" time (same timing rule as squad membership, §4.2/§6); a relationship change between selection and "Done" is governed by the status at "Done."
+
+### What Did NOT Change (every existing privacy rule preserved)
+
+- **Presence is not performance** — the reference entry still contains only activity type, date, "Trained with [Name]"; no sets/reps/weight/distance/duration (Principle 1, §8). Friendship grants **no** access to a partner's workout data.
+- **Consent is still explicit** — M-8 is *not* silent enrollment: the tagged Friend still receives a **claim/dismiss** offer and no history entry exists without their deliberate claim (Principle 2). M-8 removes the *pre-approval* step that a standing relationship makes redundant — exactly as it already does for squadmates — not the claim step.
+- **Decline/Dismiss remain silent**; absence is never a gap (Principles 3/4; §6.3/§7.3).
+- **Record ownership, history attribution, chapter attribution, legacy attribution** — all unchanged (§8–§13).
+- **No new notification type** — M-8 and M-9 are reused exactly; no friend-specific WwF notification is introduced. (Friend *request/accept* notifications are a separate P-5 concern, FR-D7 — not a WwF tag notification.)
+- **No social graph / followers / counts** — the Friend relationship is mutual, private, consented (FR-D2/D3).
+
+### Edge Cases (revised)
+
+- **§15.1 (tagged athlete leaves squad before responding):** if M-8 fired because they were a squadmate **and** they are still an accepted Friend, the M-8 claim/dismiss card stands on the Friend basis; if neither basis remains, the already-fired card still stands (membership/relationship at tag time governs — unchanged principle).
+- **§15.2 (tagged as non-squad, then becomes Friend before responding):** the already-fired **M-9** card is not retroactively upgraded — status at "Done" time governs, consistent with the existing rule.
+- **Unfriend after a tag fires:** does not retract an already-fired tag or an already-claimed reference entry (records are owned by their holders, Principle 5).
+
+### Architectural Rationale
+
+FR-D5 establishes that an accepted Friend is "a squad of two without the squad container" — a mutual, doubly-consented standing relationship. WwF's M-8 path exists precisely for standing relationships where pre-approval is redundant. Extending M-8 to accepted Friends closes WwF §15's original gap ("squad was the only standing relationship") without weakening the claim-time consent that protects the tagged athlete's record.
+
+---
+
 ## Change Log
 
 | Version | Date | Change | Section(s) Affected |
@@ -1105,11 +1152,13 @@ The squad-only restriction at S-10 provided no consent protection for the tagged
 | v1.0 | June 2026 | Initial specification | All |
 | v1.1 | June 2026 | Amendment A: Train Together expanded to any athlete | 4.1, 4.2, 5.4, 14.2, 17 (checklist), Appendices |
 | v1.1 | June 2026 | Correction: Section 3 lifecycle diagram updated to reflect Amendment A (Path 1 was still referencing squad-only) | 3 |
+| v1.2 | June 2026 | **Amendment B: accepted Friend = standing consent (FR-D5).** A mutual `ACCEPTED` Friend now routes to the **M-8 auto-accept path** (claim/dismiss), equivalent to squad membership; only athletes who are neither squadmates nor Friends route to M-9. Claim-time consent and all privacy rules unchanged; no new notification type. | 6, 7, 14.1, 14.2, 15.1, 15.2, 17 |
+| v1.2.1 | June 2026 | Reconciliation pass for `Social-System-Architecture-v1.0`. Added a Preamble reconciliation note: WwF is an interaction governed by SOC-D2; it creates reference entries never Posts (SOC-D13 boundary); the Preamble's "no feeds" is WwF's own scope, with the intentional Posts/Friends Feed a distinct coexisting primitive (SOC-D9). No decision or behavior changed. | Preamble |
 
 ---
 
 *Forge Legacy Workout With Friend Architecture & UX Specification*
-*v1.1 — June 2026*
+*v1.2 — June 2026 (Amendment B: accepted Friend = standing consent / M-8 path, FR-D5)*
 *All decisions derived from the Phase 2A locked architecture, the Forge Legacy Master PRD, the Forge Legacy UX Framework v1.0, and the approved H-1, L-1, L-3/L-4, W-1, W-9–W-16, and W-17 wireframe specifications.*
 *Amendment A (Train Together scope expansion) approved June 2026.*
 *This document is the authority for all Workout With Friend implementation in Phase 2B.*

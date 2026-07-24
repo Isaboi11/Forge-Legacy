@@ -1,8 +1,9 @@
 # L-11 Honor Detail Sheet
-## Wireframe Specification v1.0 | June 2026
+## Wireframe Specification v1.1 | June 2026
 
 **Status:** LOCKED
 **Authority:** Honor-Catalog-v1.0-LOCKED.md, HonorInstance-Architecture-v1.0.md, Honor-Evaluation-Service-Architecture-v1.0.md, L-10 Honors Hub Spec v1.0, M-2 Honor Earned Modal Spec v1.1, L-1 Legacy Hub Spec v1.0, Master PRD §13, Product DNA
+**Component contracts:** CLA-C21 (BottomSheet), CLA-C23 (Skeleton) — see [`Component-Library-Architecture-v1.0.md`](Component-Library-Architecture-v1.0.md)
 
 ---
 
@@ -94,6 +95,8 @@ No back navigation within L-11. Bottom sheets do not use back-gesture navigation
 │                                            │
 │  [Generated description text]              │  ← 1–3 lines
 │                                            │
+│  Share this honor                          │  ← Subordinate text action (WSR-001 §8.1)
+│                                            │
 │  [bottom safe area]                        │
 └────────────────────────────────────────────┘
 ```
@@ -115,6 +118,8 @@ For honors with no attribution (e.g., Training, Strength, Longevity):
 │                                            │
 │  [Generated description text]              │
 │                                            │
+│  Share this honor                          │  ← Subordinate text action (WSR-001 §8.1)
+│                                            │
 │  [bottom safe area]                        │
 └────────────────────────────────────────────┘
 ```
@@ -131,8 +136,9 @@ Content always renders in this fixed order, top to bottom:
 6. Attribution section (conditional — omit entirely when not applicable)
 7. Second divider (conditional — present only when attribution is shown)
 8. Description
+9. Share action — "Share this honor" (per WSR-001 §8.1, §14)
 
-No other content. No navigation header. No close button. No title bar. No action buttons.
+No other content beyond the share action. No navigation header. No close button. No title bar.
 
 ---
 
@@ -488,9 +494,13 @@ When attribution taps result in full navigation (Chapter, Goal, Program), the at
 
 When attribution tap opens the Limited Athlete Profile modal (Partner), the modal is dismissed with drag or tap-outside. L-11 remains open beneath.
 
-### 10.3 No Other Navigation in L-11
+### 10.3 Share Action
 
-L-11 does not offer any other navigation. There are no:
+"Share this honor" appears below the description at every entry point and detail state (§4.1, §4.2). Per WSR-001 §8.1 and SH-1 §2, tapping it opens SH-1 (Share Configuration Step) with `shareType: HONOR_EARNED` pre-selected, scoped to this specific `HonorInstance.id` — no multi-honor selection is needed, since L-11 always arrives pre-scoped to one honor. SH-1 presents as a sheet on top of L-11; L-11 remains open beneath it. Dismissing or completing SH-1 returns to L-11 unchanged.
+
+### 10.4 No Other Navigation in L-11
+
+Beyond attribution navigation (§10.2) and the share action (§10.3), L-11 does not offer any other navigation. There are no:
 - "Next honor" or "Previous honor" arrows
 - Links to L-10
 - "View all [Category] honors" links
@@ -586,6 +596,7 @@ Sheet remains open during error state. Drag-to-dismiss remains available. The at
 | Attribution value — tappable | Announced as button: "[Value], double-tap to view [chapter / goal / program / profile]" |
 | Attribution value — non-tappable | Announced as static text: "[Value]" |
 | Description | Announced as static text |
+| "Share this honor" | Announced as a link: "Share this honor, double-tap to share" |
 | Background dimmed area | Accessible: "Double-tap to dismiss" |
 
 **Focus behavior:**
@@ -595,6 +606,7 @@ Sheet remains open during error state. Drag-to-dismiss remains available. The at
 
 **Minimum touch targets:**
 - Attribution row (tappable): 44pt height minimum
+- "Share this honor": 44pt height minimum
 - Drag handle: accessible tap area extended beyond visual size
 
 ---
@@ -634,7 +646,7 @@ L-11 does not and will never:
 | Allow editing of any displayed field |
 | Allow deleting the honor record |
 | Allow changing attribution |
-| Allow sharing of the honor (MVP) |
+| Render the share card image itself, or create a `WorkoutShare` record without the athlete tapping "Share this honor" (delegated to SH-1 and the Share Card Renderer, per WSR-001 §7, §9) |
 | Allow the athlete to hide the honor |
 | Display a celebration animation |
 | Play a sound effect |
@@ -710,6 +722,12 @@ L-11 does not and will never:
 - [ ] Partner attribution tap → Limited Athlete Profile modal (not full-screen navigation)
 - [ ] L-11 remains open beneath Limited Athlete Profile modal
 
+### Share Action
+- [ ] "Share this honor" present below the description at every entry point and detail state
+- [ ] Tap opens SH-1 with `HONOR_EARNED` pre-selected, scoped to this `HonorInstance.id`
+- [ ] SH-1 presents as a sheet over L-11; L-11 remains open beneath
+- [ ] Dismissing or completing SH-1 returns to L-11 unchanged
+
 ### Description Section
 - [ ] Description present for all 53 honor types
 - [ ] Description template correct per Section 9.3 tables
@@ -760,7 +778,7 @@ L-11 does not and will never:
 - [ ] No "next honor" recommendation
 - [ ] No editing, deletion, or hiding
 - [ ] No re-triggering of M-2
-- [ ] No sharing CTA (MVP)
+- [ ] No share artifact rendered by L-11 itself (delegated to SH-1/Share Card Renderer)
 
 ---
 
@@ -789,9 +807,9 @@ L-11 does not and will never:
 
 ### Contradictions Found
 
-**None.**
+**None, as of the v1.0 lock pass.**
 
-All locked decisions (L11-D1 through L11-D6) are internally consistent. The description philosophy (L11-D4) and the attribution section (L11-D5/D6) create a clean division of responsibility: attribution carries the specific context, description carries the meaning. These two elements reinforce rather than duplicate each other.
+A subsequent WSR-001 Downstream Reconciliation Pass (June 2026, post-dating this document's v1.0 lock) found that §17's "Allow sharing of the honor (MVP)" Non-Behavior contradicted WSR-001 (LOCKED) §8.1/§14 and SH-1 (LOCKED) §2, both of which name L-11 as a required MVP sharing entry point. This has been corrected in v1.1 (§4, §10.3, §15, §17, §18) by adding the "Share this honor" action. All locked decisions (L11-D1 through L11-D6) remain internally consistent and unaffected by this correction — the description philosophy (L11-D4) and the attribution section (L11-D5/D6) still create a clean division of responsibility: attribution carries the specific context, description carries the meaning.
 
 ### Architecture Coverage
 
@@ -822,7 +840,7 @@ The following three documents form the complete Honors architecture:
 The following three documents form the complete Honors UX specification:
 - `Docs/M-2-Honor-Earned-Modal-Spec.md` v1.1 — LOCKED
 - `Docs/Honors-Spec-L10.md` v1.0 — LOCKED
-- `Docs/Honor-Detail-Sheet-Spec-L11.md` v1.0 — LOCKED
+- `Docs/Honor-Detail-Sheet-Spec-L11.md` v1.1 — LOCKED
 
 No remaining Honors workstream items exist. The system is implementation-ready:
 - Honor types defined and locked (53 types)
@@ -845,8 +863,9 @@ Remaining Honors items are **implementation concerns**, not specification concer
 | Version | Date | Change |
 |---------|------|--------|
 | v1.0 | June 2026 | Initial specification — full L-11 Honor Detail Sheet architecture |
+| v1.1 | June 2026 | WSR-001 Downstream Reconciliation Pass. Added "Share this honor" subordinate text action below the description, present at every entry point and detail state (§4.1, §4.2, §4.3, new §10.3, §15, §18). Opens SH-1 with `HONOR_EARNED` pre-selected, scoped to this `HonorInstance.id`. Removed the contradictory "Allow sharing of the honor (MVP)" line from §17 Non-Behaviors. Corrected §19's "Contradictions Found: None" claim to record this finding. Renumbered old §10.3 to §10.4. No other L-11 behavior changed. |
 
 ---
 
-*L-11 Honor Detail Sheet — Wireframe Specification v1.0*
+*L-11 Honor Detail Sheet — Wireframe Specification v1.1*
 *Forge Legacy | June 2026*

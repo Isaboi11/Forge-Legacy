@@ -6,6 +6,7 @@
 **Implements:** Architecture § 4.1 (Education Content Fields), § 4.2 (Content Model), § 4.3 (Media Model), § 4.4 (W-22 Content Order — LOCKED), § 4.6 (Non-Behavior Clarification — LOCKED), § 2.6 (Alternatives Model)
 **Navigated from:** W-21 (grid, horizontal rows, search, collection detail, see all favorites), future: W-23, W-9
 **Navigates to:** W-22 (for alternative exercises), source screen (back)
+**Component contracts:** CLA-C09 (Chip), CLA-C11 (Avatar), CLA-C12 (ProgressBar), CLA-C18 (AppBar) — see [`Component-Library-Architecture-v1.0.md`](Component-Library-Architecture-v1.0.md)
 
 ---
 
@@ -99,7 +100,7 @@ W-22 is a single vertically-scrolling screen with a persistent sticky header. Th
 │  │                                               │  │
 │  └───────────────────────────────────────────────┘  │
 │                                                     │
-│  Bench Press                                        │  ← Exercise Name (large)
+│  Barbell Bench Press                                │  ← Exercise Name (large)
 │                                                     │
 │  [Chest] [Triceps]           [+ Front Delt]         │  ← Primary muscles
 │  Secondary: [Shoulders] [Core]                      │  ← Secondary muscles (if present)
@@ -154,6 +155,7 @@ Sections are conditionally shown based on content availability. Sections with nu
 | Exercise Name | Always shown. |
 | Primary Muscles | Always shown for system exercises; may be absent for custom. |
 | Secondary Muscles | Shown when `secondaryMuscles.length > 0`. Hidden if none. |
+| Muscle Target Image | Shown when `muscleTargetImageUrl` is non-null. Hidden if null (§6.3b). |
 | Metadata row | Shown when any of: difficulty, equipment, or environment is set. |
 | WHY IT MATTERS | Shown when `whyItMatters` is non-null and non-empty. |
 | ABOUT | Shown when `description` is non-null and non-empty. |
@@ -202,7 +204,7 @@ Per ED-5 (LOCKED): GIF autoplays in W-22. This is the only surface in Forge Lega
 │  │                                             │    │
 │  └─────────────────────────────────────────────┘    │
 │                                                     │
-│  Bench Press                                        │
+│  Barbell Bench Press                                │
 │  ...                                                │
 ```
 
@@ -260,7 +262,7 @@ When the athlete has "Reduce Motion" enabled:
 ### 6.1 Exercise Name
 
 ```
-Bench Press
+Barbell Bench Press
 ```
 
 - Typography: 28sp, primary weight (heaviest weight in the type system)
@@ -293,6 +295,19 @@ Secondary  [Shoulders] [Core]
 - Chip style: outlined chips (border only, no fill) — visually lighter than primary chips
 - Same expansion behavior as primary: if > 3, condensed into "+ N more"
 - Spacing: 6pt vertical gap between primary and secondary chip rows
+
+### 6.3a Muscle Target Image
+
+Shown when `muscleTargetImageUrl` is non-null. A bespoke anatomical illustration supplementing the primary/secondary muscle chips (§6.2–6.3) with a visual diagram.
+
+- Placement: immediately below the secondary muscle chips (or primary chips, if no secondary muscles are set), above the metadata row
+- Size: compact — approximately 96pt × 96pt, right-aligned or inline with the muscle chip block — does not interrupt the vertical reading flow the way the full-width hero media does
+- Visual treatment: primary muscle regions shown filled (matching the filled primary-chip accent color); secondary muscle regions shown outlined only (matching the outlined secondary-chip treatment) — the same visual hierarchy already established by the chips themselves, reinforced rather than duplicated
+- Production standards (resolution, aspect ratio, file format, highlight color convention, and the mandatory fixed-model/pose/camera consistency requirement across all exercises): governed by `Exercise-Media-Architecture-v1.0.md` § 3.3
+
+### 6.3b Muscle Target Image — Absent
+
+When `muscleTargetImageUrl` is null, the image is hidden entirely — no placeholder, no "diagram coming soon" message. This follows the same section-visibility convention as every other optional W-22 element (§4.2, §14.1). This is the default state for all FORGE exercises until a future media production pass populates this field, and is expected to remain the default state for most CUSTOM exercises indefinitely.
 
 ### 6.4 Metadata Row
 
@@ -366,7 +381,7 @@ WHY IT MATTERS appears immediately after the identity block (name, muscles, meta
 ─────────────────────────────────────────────────────
 WHY IT MATTERS
 
-▌  The Bench Press is one of the most effective
+▌  The Barbell Bench Press is one of the most effective
 ▌  exercises for developing upper-body pressing
 ▌  strength, chest development, and overall
 ▌  upper-body power. It is commonly used as a
@@ -412,7 +427,7 @@ It is a brief, factual identification of the exercise — what it is and its pri
 ─────────────────────────────────────────────────────
 ABOUT
 
-The Bench Press is a foundational barbell pressing
+The Barbell Bench Press is a foundational barbell pressing
 movement performed on a flat bench. The athlete lies
 supine and presses a loaded barbell from chest height
 to full arm extension.
@@ -634,11 +649,11 @@ Each alternative card:
 Tapping an alternative exercise card navigates to **W-22 for the alternative exercise** — a new W-22 instance is pushed onto the navigation stack.
 
 ```
-W-21 Grid → W-22 Bench Press → [tap Dumbbell Bench Press in Alternatives] → W-22 Dumbbell Bench Press
+W-21 Grid → W-22 Barbell Bench Press → [tap Dumbbell Bench Press in Alternatives] → W-22 Dumbbell Bench Press
 ```
 
-Back from "W-22 Dumbbell Bench Press" → returns to "W-22 Bench Press" (at the Alternatives section position, scroll preserved).
-Back from "W-22 Bench Press" → returns to W-21 (at the exercise card that was originally tapped).
+Back from "W-22 Dumbbell Bench Press" → returns to "W-22 Barbell Bench Press" (at the Alternatives section position, scroll preserved).
+Back from "W-22 Barbell Bench Press" → returns to W-21 (at the exercise card that was originally tapped).
 
 The navigation stack handles this correctly. W-22 is a standard pushable destination — there is no special routing logic for alternatives.
 
@@ -684,8 +699,8 @@ The header position ensures the athlete can always favorite an exercise without 
 
 | State | Visual | Accessible Label |
 |-------|--------|-----------------|
-| Not favorited | Heart icon, outline, muted | "Add Bench Press to Favorites" |
-| Favorited | Heart icon, filled, warm accent color | "Remove Bench Press from Favorites" |
+| Not favorited | Heart icon, outline, muted | "Add Barbell Bench Press to Favorites" |
+| Favorited | Heart icon, filled, warm accent color | "Remove Barbell Bench Press from Favorites" |
 
 Transition between states: instant fill/unfill with a subtle spring animation (50ms) — tactile feedback without ostentation.
 
@@ -810,7 +825,7 @@ When the athlete opens W-22 for an exercise they have not previously viewed whil
 │                                                     │
 │  [Dark placeholder — name initial]                  │  ← No media loaded
 │                                                     │
-│  Bench Press                                        │
+│  Barbell Bench Press                                │
 │                                                     │
 │  ─────────────────────────────────────────────      │
 │  ⚠  Full content unavailable offline.               │
@@ -861,6 +876,7 @@ If the athlete attempts to navigate to an alternative exercise while offline, an
 | Favorite icon (favorited) | "[Exercise Name] is in your Favorites. Double-tap to remove." |
 | Primary muscle chip | "[Muscle Name], primary target" |
 | Secondary muscle chip | "[Muscle Name], secondary target" |
+| Muscle target image | "Muscle diagram for [Exercise Name], [primary muscles] highlighted" — decorative supplement; muscle chips remain the primary accessible source of this information |
 | "+ N more" chip (muscles) | "[N] additional muscles — double-tap to expand" |
 | Difficulty chip | "[Level] difficulty" |
 | Section heading "WHY IT MATTERS" | Announced as heading |
@@ -1005,6 +1021,9 @@ W-22 does not and will never:
 - [ ] Primary muscles: filled chips; max 3 shown; "+ N more" if additional
 - [ ] Secondary muscles: outlined chips; hidden when none; "Secondary" label preceding
 - [ ] "+ N more" chip expands inline on tap
+- [ ] Muscle target image shown when `muscleTargetImageUrl` is non-null; positioned after Secondary Muscles, before Metadata row
+- [ ] Muscle target image hidden entirely (no placeholder) when `muscleTargetImageUrl` is null
+- [ ] Muscle target image highlight colors match the filled-primary / outlined-secondary chip hierarchy
 - [ ] Metadata row: equipment displayed first (plain text), difficulty displayed as trailing chip
 - [ ] Single-line preferred; two-line fallback when equipment list is long
 - [ ] Difficulty chip: colored dot + label, outlined chip style
@@ -1113,6 +1132,7 @@ W-22 does not and will never:
 | W22-D13 — Absent sections: hidden, not placeholder | All optional sections hidden when null or empty. No "coming soon" or "not available" states. Rationale: clean progressive rendering; absent is cleaner than a placeholder; content team populates incrementally. |
 | W22-D14 — Custom exercise W-22 | Minimal W-22 for custom exercises: name, "Custom" label, image (or placeholder), whatever fields the athlete populated at creation. No prompts to "complete" the exercise profile. Rationale: the athlete created it; they understand it. |
 | W22-D15 — Equipment leads, difficulty supports | Equipment is the primary actionable metadata signal; difficulty is supporting educational context. Equipment displayed as plain primary text leading the metadata row. Difficulty displayed as a trailing outlined chip — same style as secondary muscle chips — which subordinates it visually without removing it. Rationale: athletes evaluate equipment first (gating factor: "can I do this here?") and difficulty second (context: "is this appropriate for my level?"). The colored dot inside the chip preserves the semantic color signal without dominating the row. "Used In" (program/chapter relationships) rejected as a W-22 candidate — W-22 is a pure educational surface; relational data belongs in program-level views (W-3) or future profile screens. Approved: W22-R1 review, June 2026. |
+| W22-D16 — Muscle target image placement | Placed within the Identity block (§6), immediately after Secondary Muscles and before the Metadata row — not as a new top-level section. Hidden entirely when null, consistent with W22-D13. Rationale: the locked top-level content order (§4.3) governs the six major sections (WHY IT MATTERS through ALTERNATIVES); the muscle target image is a supplementary visual within the existing Identity section, not a seventh major section, so no reordering occurs. Visual highlight convention reuses the existing filled/outlined chip hierarchy (§6.2–6.3) rather than introducing a new color language. Approved as part of Exercise-Media-Architecture-v1.0.md companion doc, June 2026. |
 
 ---
 
@@ -1122,6 +1142,7 @@ W-22 does not and will never:
 |---------|------|--------|
 | v1.0 | June 2026 | Initial specification. Implements locked content order (Architecture § 4.4). Implements WHY IT MATTERS (Architecture Amendment 001). Implements GIF autoplay (ED-5). Implements alternatives model (Architecture § 2.6). |
 | v1.0 (R1) | June 2026 | W22-R1 resolved. Option B accepted. Equipment leads metadata row as plain text; difficulty moves to trailing outlined chip. Two-line fallback approved for long equipment lists. W22-D15 added. "Used In" rejected as W-22 candidate. Status: LOCKED. |
+| v1.0 (R2) | June 2026 | Muscle Target Image amendment (Exercise Library Phase 4). Adds §6.3a/§6.3b (placement and absent-state behavior) within the Identity block (§6) — supplementary anatomical diagram, not a new top-level section. §4.2 Section Visibility Rules, §17.2 Screen Reader Labels, §20 Validation Checklist, and §21 Decisions Record (W22-D16) updated accordingly. Locked top-level content order (§4.3) is unchanged — no section reordering. Companion to `Exercise-Media-Architecture-v1.0.md`. Status: LOCKED. |
 
 ---
 
