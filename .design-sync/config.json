@@ -1,0 +1,9 @@
+{
+  "projectId": "dc4893e6-5612-48eb-b800-c580b54d0fc2",
+  "pkg": "forgelegacy",
+  "globalName": "ForgeLegacy",
+  "shape": "package",
+  "srcDir": "src",
+  "tokensGlob": "ds-bundle/tokens/forge-legacy-tokens.css",
+  "readmeHeader": ".design-sync/conventions.md"
+}
