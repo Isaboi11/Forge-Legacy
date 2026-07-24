@@ -1,7 +1,8 @@
 import { supabase } from '@/lib/supabase';
 import { cap, dateRangeCompact, dateRangeFull, daysSince, fmtDate, fmtShort, roman } from '@/lib/format';
 import { CHAPTER_GOALS_PENDING, LEGACY_FIXTURE_PENDING } from './legacy-fixture-pending';
-import type { Chapter, FeaturedMoment, LegacyData, Pin, PinKind, TimelineEntry } from '@/types/legacy';
+import type { Chapter, FeaturedMoment, Goal as LegacyGoal, LegacyData, Pin, PinKind, TimelineEntry } from '@/types/legacy';
+import { isAchieved, isQuantifiable, progressLabel, progressPct } from '@/domain/goals/goals';
 
 /**
  * Live Legacy read (Phase 2) — builds the exact `LegacyData` shape the Legacy components already
@@ -36,6 +37,7 @@ interface PinRow {
   media_url: string | null;
   poster_url: string | null;
   is_video: boolean;
+  ref_id: string | null;
 }
 
 const EVENT_LABEL: Record<string, string> = {
@@ -49,6 +51,25 @@ const EVENT_LABEL: Record<string, string> = {
   MEMORY_ADDED: 'Memory Added',
   PHOTO_ADDED: 'Photo Added',
 };
+
+interface GoalRow {
+  chapter_id: string;
+  name: string;
+  target: number | null;
+  unit: string | null;
+  current: number;
+  achieved_at: string | null;
+}
+
+/** A real primary goal row → the Legacy chapter card's display Goal (single-sourced via domain/goals). */
+function toDisplayGoal(g: GoalRow | undefined): LegacyGoal {
+  if (!g) return { kind: 'none' };
+  const dom = { target: g.target, current: g.current, unit: g.unit, achievedAt: g.achieved_at };
+  const achieved = isAchieved(dom);
+  return isQuantifiable(dom)
+    ? { kind: 'quantifiable', name: g.name, progress: progressPct(dom), achieved, valueLabel: progressLabel(dom) }
+    : { kind: 'narrative', name: g.name, achieved };
+}
 
 function toChapter(r: ChapterRow): Chapter {
   return {
@@ -77,7 +98,18 @@ function deriveFeatured(timeline: TimelineRow[], chapters: ChapterRow[]): Featur
     primaryText: sealed.object_name,
     secondaryText: chapter?.reflection ? `"${chapter.reflection}"` : undefined,
     dateLabel: fmtShort(sealed.occurred_at),
+    chapterId: chapter?.id,
   };
+}
+
+/** L-12 My Standard editor — persist the athlete's creed (`profiles.standard`). */
+export async function updateStandard(text: string): Promise<void> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('not signed in');
+  const { error } = await supabase.from('profiles').update({ standard: text }).eq('id', user.id);
+  if (error) throw error;
 }
 
 export async function fetchLegacyData(): Promise<LegacyData> {
@@ -93,12 +125,15 @@ export async function fetchLegacyData(): Promise<LegacyData> {
     { data: tlRows, error: te },
     { data: pinRows, error: pne },
     { data: honorRows, error: he },
+    { data: goalRows },
   ] = await Promise.all([
     supabase.from('profiles').select('rank_family, rank_level, standard').eq('id', uid).single(),
     supabase.from('chapters').select('*').eq('athlete_id', uid),
     supabase.from('timeline_events').select('*').eq('athlete_id', uid).order('occurred_at', { ascending: false }),
     supabase.from('pins').select('*').eq('athlete_id', uid).order('position', { ascending: true }),
     supabase.from('honor_instances').select('id, display_name, date_earned').eq('athlete_id', uid).order('date_earned', { ascending: false }),
+    // Real primary goals (0025). NOT thrown on error — degrades to the fixture-free 'none' pre-migration.
+    supabase.from('goals').select('chapter_id, name, target, unit, current, achieved_at').eq('athlete_id', uid).eq('is_primary', true),
   ]);
   if (pe) throw pe;
   if (ce) throw ce;
@@ -123,17 +158,24 @@ export async function fetchLegacyData(): Promise<LegacyData> {
     mediaUrl: p.media_url ?? undefined,
     posterUrl: p.poster_url ?? undefined,
     isVideo: p.is_video,
+    refId: p.ref_id ?? undefined,
   }));
   const active = chapters.find((c) => c.is_active) ?? null;
   const sealed = chapters
     .filter((c) => !c.is_active)
     .sort((a, b) => (b.sealed_at ?? '').localeCompare(a.sealed_at ?? ''));
 
+  // The active chapter's card shows the REAL primary goal (0025), not the fixture. No primary → 'none'
+  // (a fresh chapter shows no goal, never a placeholder one).
+  const primaryGoalRow = ((goalRows ?? []) as GoalRow[]).find((g) => active && g.chapter_id === active.id);
+  const activeChapter = active ? toChapter(active) : null;
+  if (activeChapter) activeChapter.goal = toDisplayGoal(primaryGoalRow);
+
   return {
     rankName: prof.rank_family ? cap(prof.rank_family) : '',
     rankSubTier: prof.rank_level ? roman(prof.rank_level) : '',
     standard: prof.standard ?? '',
-    activeChapter: active ? toChapter(active) : null,
+    activeChapter,
     dayCount: active ? daysSince(active.start_date) : 0,
     featuredMoment: deriveFeatured(timeline, chapters),
     pinned,

@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
+import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
 import { SettingsToggle } from '@/components/forge/SettingsToggle';
+import { useToast } from '@/hooks/useCeremony';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
@@ -65,7 +67,7 @@ export default function AccomplishmentsScreen() {
   if (loading) {
     return (
       <View style={styles.root}>
-        <ScreenBackground image={SCREEN_BG.legacyMountains} overlay={{ flat: 'rgba(6,7,8,0.34)' }} />
+        <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(6,7,8,0.34)' }} />
         <AppBar title="Accomplishments" serif onBack={() => router.back()} />
         <View style={styles.center}>
           <ActivityIndicator color={flColor.bronze400} />
@@ -112,7 +114,7 @@ export default function AccomplishmentsScreen() {
   // ── L-12 · list ──
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.legacyMountains} overlay={{ flat: 'rgba(6,7,8,0.34)' }} />
+      <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(6,7,8,0.34)' }} />
       <AppBar
         title="Accomplishments"
         serif
@@ -177,35 +179,30 @@ function AccomplishmentDetail({
   onChanged: () => void;
   onDeleted: () => void;
 }) {
+  const { showToast } = useToast();
   const [featured, setFeatured] = useState(item.featured);
+  const [delOpen, setDelOpen] = useState(false);
   const nFeatured = featuredCount(all.map((a) => (a.id === item.id ? { ...a, featured } : a)));
 
   const toggleFeatured = (next: boolean) => {
     if (!canToggleFeatured(all, item.id, next)) {
-      Alert.alert('Top 3 only', `You can feature up to ${FEATURED_MAX} accomplishments on your profile. Un-feature one to make room.`);
+      showToast(`Up to ${FEATURED_MAX} featured — un-feature one to make room.`);
       return;
     }
     setFeatured(next);
     void setAccomplishmentFeatured(item.id, next).then(onChanged);
   };
 
-  const confirmDelete = () => {
-    const doDelete = () => void removeAccomplishment(item.id).then(onDeleted);
-    if (Platform.OS === 'web') {
-      if (typeof window !== 'undefined' && window.confirm(`Delete “${item.name}”?\n\nThis can’t be undone.`)) doDelete();
-      return;
-    }
-    Alert.alert('Delete Accomplishment', `Delete “${item.name}”? This can’t be undone.`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: doDelete },
-    ]);
+  const doDelete = () => {
+    setDelOpen(false);
+    void removeAccomplishment(item.id).then(onDeleted);
   };
 
   const chapter = item.chapterId ? chapterLabel(item.chapterId) : null;
 
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.legacyMountains} overlay={{ flat: 'rgba(6,7,8,0.34)' }} />
+      <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(6,7,8,0.34)' }} />
       <AppBar title="" onBack={onBack} actions={<Pressable onPress={onEdit} accessibilityRole="button" accessibilityLabel="Edit" hitSlop={8} style={styles.addBtn}><Text style={styles.editLink}>Edit</Text></Pressable>} />
 
       <ScrollView contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
@@ -239,11 +236,21 @@ function AccomplishmentDetail({
           <SettingsToggle value={featured} onChange={toggleFeatured} accessibilityLabel="Featured on profile" />
         </View>
 
-        <Pressable onPress={confirmDelete} accessibilityRole="button" accessibilityLabel="Delete accomplishment" style={styles.deleteBtn}>
+        <Pressable onPress={() => setDelOpen(true)} accessibilityRole="button" accessibilityLabel="Delete accomplishment" style={styles.deleteBtn}>
           <Glyph d={TRASH} size={15} color={flColor.emberFlame} width={1.9} />
           <Text style={styles.deleteText}>Delete Accomplishment</Text>
         </Pressable>
       </ScrollView>
+
+      <ConfirmSheet
+        open={delOpen}
+        onClose={() => setDelOpen(false)}
+        headline="Delete Accomplishment"
+        body={`Delete “${item.name}”? This can’t be undone.`}
+        confirmLabel="Delete"
+        tone="destructive"
+        onConfirm={doDelete}
+      />
     </View>
   );
 }
@@ -284,7 +291,7 @@ function AccomplishmentForm({
 
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.legacyMountains} overlay={{ flat: 'rgba(6,7,8,0.34)' }} />
+      <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(6,7,8,0.34)' }} />
       <AppBar title={existing ? 'Edit Accomplishment' : 'New Accomplishment'} onClose={onCancel} />
 
       <ScrollView contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">

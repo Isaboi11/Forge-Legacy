@@ -42,6 +42,7 @@ export function ScreenBackground({
   image,
   base = '#050505',
   imagePosition = 'center',
+  imageOpacity = 1,
   overlay,
   radials,
   atmospheric = false,
@@ -53,6 +54,8 @@ export function ScreenBackground({
   /** Base fill behind the artwork (a few screens sit on a cooler near-black, e.g. Squads Hub #060708). */
   base?: string;
   imagePosition?: 'center' | 'top';
+  /** Cover-artwork opacity (0–1); < 1 makes the background artwork subtler over the base. Default 1. */
+  imageOpacity?: number;
   /** Per-screen darkening overlay; `null`/omitted → none (the atmospheric screens carry no dark scrim). */
   overlay?: ScreenOverlay | null;
   /** Screen-level bronze radial-glows layered over the base + overlay. */
@@ -79,7 +82,7 @@ export function ScreenBackground({
         />
       ) : null}
       {image != null ? (
-        <Image source={image} style={StyleSheet.absoluteFill} contentFit="cover" contentPosition={imagePosition} />
+        <Image source={image} style={[StyleSheet.absoluteFill, { opacity: imageOpacity }]} contentFit="cover" contentPosition={imagePosition} />
       ) : null}
       {overlay ? <Overlay overlay={overlay} /> : null}
       {allRadials.length ? <ScreenRadials radials={allRadials} /> : null}

@@ -21,7 +21,7 @@ import { fetchLegacyData } from '@/data/legacy-live';
 import { fetchAccomplishments } from '@/data/accomplishments-live';
 import { formatAccDate } from '@/domain/legacy/accomplishments';
 import { useQuery } from '@/lib/useQuery';
-import type { Pin } from '@/types/legacy';
+import type { Pin, PinKind } from '@/types/legacy';
 import {
   AccomplishmentCard,
   CompactChapterRow,
@@ -34,6 +34,18 @@ import {
 } from '@/components/forge/profile-sections';
 import { ScreenTour } from '@/components/tour/ScreenTour';
 import { PinManagerSheet } from '@/components/forge/PinManagerSheet';
+import { StandardEditorSheet } from '@/components/forge/StandardEditorSheet';
+import { ForgeSymbol, type SymbolName } from '@/components/forge/ForgeSymbol';
+
+/** The bronze medallion glyph for a non-photo pin, by kind (matches the museum's emblem cards). */
+const PIN_GLYPH: Record<PinKind, SymbolName> = {
+  chapter: 'book',
+  honor: 'medal',
+  accomplishment: 'trophy',
+  record: 'dumbbell',
+  photo: 'eye',
+  memory: 'spark',
+};
 
 /**
  * Legacy tab root — L-1 Legacy Hub.
@@ -68,10 +80,10 @@ import { PinManagerSheet } from '@/components/forge/PinManagerSheet';
  * legitimately shown HERE — an achievement context, unlike the workout card where it is reserved —
  * but the honor art was never imported).
  *
- * Deferred to a follow-up sub-phase (noted at the gate): the three bottom sheets
- * (L-11 Honor Detail, L-12 My Standard editor), the Toast, the
- * scroll-driven artwork fade, and Transformation/Trophy counts (no data). Taps to
- * unbuilt destinations are inert, consistent with Home/Workouts.
+ * Built: the L-12 My Standard editor (tap the creed → StandardEditorSheet, persisted), the L-13 pin
+ * manager, the global Toast, and L-11 Honor Detail (on the Honors hub). Deferred (noted at the gate):
+ * the scroll-driven artwork fade and Transformation/Trophy counts (no data). Taps to unbuilt
+ * destinations are inert, consistent with Home/Workouts.
  */
 
 export default function LegacyScreen() {
@@ -92,6 +104,16 @@ export default function LegacyScreen() {
     [accData],
   );
   const [pinManager, setPinManager] = useState(false);
+  const [stdOpen, setStdOpen] = useState(false);
+  // Open a pinned museum item at its real home: a video plays; a chapter/honor/accomplishment opens its
+  // screen; a bare record/photo/memory pin has no destination yet (media viewer not built).
+  const openPin = (pin: Pin) => {
+    if (pin.isVideo && pin.mediaUrl) return router.push({ pathname: '/pin-video', params: { url: pin.mediaUrl } });
+    if (pin.kind === 'chapter' && pin.refId) return router.push({ pathname: '/chapter/[id]', params: { id: pin.refId } });
+    if (pin.kind === 'honor') return router.push('/honors');
+    if (pin.kind === 'accomplishment') return router.push('/accomplishments');
+  };
+  const openChapter = (chapterId: string) => router.push({ pathname: '/chapter/[id]', params: { id: chapterId } });
   // Scroll-driven hero choreography (the .dc "premium scroll choreography"): the background scrim
   // fades in (ScreenBackground `scrimFade`), the hero parallaxes up + fades, and the portrait scales
   // down from its left edge. All native-driver transform/opacity.
@@ -128,7 +150,7 @@ export default function LegacyScreen() {
 
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.legacyMountains} overlay={{ flat: 'rgba(5,5,5,0.30)' }} scrimFade scrollY={scrollY} />
+      <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(5,5,5,0.30)' }} scrimFade scrollY={scrollY} />
 
       <AppBar
         title="Legacy"
@@ -165,11 +187,11 @@ export default function LegacyScreen() {
           />
         </Animated.View>
 
-        {/* My Standard — the creed (editable-inert: L-12 editor not yet implemented) */}
-        <MyStandard standard={data.standard} onEdit={() => {}} />
+        {/* My Standard — the creed; tap opens the L-12 editor sheet */}
+        <MyStandard standard={data.standard} onEdit={() => setStdOpen(true)} />
 
         {/* What I'm Building — current chapter + primary goal */}
-        {chapter ? <CurrentChapter chapter={chapter} dayCount={data.dayCount} onOpen={() => {}} /> : null}
+        {chapter ? <CurrentChapter chapter={chapter} dayCount={data.dayCount} onOpen={() => router.push({ pathname: '/chapter/[id]', params: { id: chapter.id } })} /> : null}
 
         {/* ── PINNED LEGACY · My Museum (real pins + L-13 pin manager) ── */}
         <View style={styles.section}>
@@ -181,9 +203,7 @@ export default function LegacyScreen() {
               <PinnedCard
                 key={pin.id}
                 pin={pin}
-                onPress={() => {
-                  if (pin.isVideo && pin.mediaUrl) router.push({ pathname: '/pin-video', params: { url: pin.mediaUrl } });
-                }}
+                onPress={() => openPin(pin)}
               />
             ))}
             <Pressable
@@ -204,16 +224,19 @@ export default function LegacyScreen() {
         {data.featuredMoment ? (
           <View style={styles.sectionPad}>
             <Text style={styles.overline}>Featured Legacy Moment</Text>
-            <FeaturedMomentCard moment={data.featuredMoment} />
+            <FeaturedMomentCard
+              moment={data.featuredMoment}
+              onPress={data.featuredMoment.chapterId ? () => openChapter(data.featuredMoment!.chapterId!) : undefined}
+            />
           </View>
         ) : null}
 
         {/* ── MY STORY · chapter history + timeline ── */}
         {recentSeal ? (
           <View style={[styles.sectionPad, styles.storyStack]}>
-            <SealedChapterCard chapter={recentSeal} />
+            <SealedChapterCard chapter={recentSeal} onPress={() => openChapter(recentSeal.id)} />
             {olderSeals.map((c) => (
-              <CompactChapterRow key={c.id} chapter={c} />
+              <CompactChapterRow key={c.id} chapter={c} onPress={() => openChapter(c.id)} />
             ))}
 
             {data.timelineEntries.length > 0 ? (
@@ -272,7 +295,7 @@ export default function LegacyScreen() {
               </View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.honorStripPad}>
                 {data.honors.map((h) => (
-                  <HonorInsignia key={h.id} honor={h} />
+                  <HonorInsignia key={h.id} honor={h} onPress={() => router.push('/honors')} />
                 ))}
               </ScrollView>
             </View>
@@ -302,6 +325,8 @@ export default function LegacyScreen() {
           }
         }}
       />
+
+      <StandardEditorSheet key={stdOpen ? 'std-open' : 'std-closed'} open={stdOpen} initial={data.standard} onClose={() => setStdOpen(false)} onSaved={() => refetch()} />
     </View>
   );
 }
@@ -328,7 +353,7 @@ function LegacyShell({
   const router = useRouter();
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.legacyMountains} overlay={{ flat: 'rgba(5,5,5,0.30)' }} scrimFade scrollY={scrollY} />
+      <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(5,5,5,0.30)' }} scrimFade scrollY={scrollY} />
       <AppBar title="Legacy" serif avatar={<Avatar name={avatarName} src={avatarSrc} size="appBar" />} onAvatar={() => router.push('/account-settings')} />
       <View style={styles.statusWrap}>{children}</View>
     </View>
@@ -373,7 +398,11 @@ function PinnedCard({ pin, onPress }: { pin: Pin; onPress: () => void }) {
           ) : null}
         </>
       ) : (
-        <View style={[StyleSheet.absoluteFill, styles.pinEmblem]} />
+        <View style={[StyleSheet.absoluteFill, styles.pinEmblem]}>
+          <View style={styles.pinMedallion}>
+            <ForgeSymbol name={PIN_GLYPH[pin.kind]} size={26} color={flColor.bronze300} strokeWidth={1.6} />
+          </View>
+        </View>
       )}
       <View style={styles.pinKind}>
         <Text style={styles.pinKindText}>{pin.kind}</Text>
@@ -624,7 +653,17 @@ const styles = StyleSheet.create({
     borderColor: flColor.bronzeBorderSubtle,
     boxShadow: flShadow.card,
   },
-  pinEmblem: { backgroundColor: flColor.charcoal800 },
+  pinEmblem: { backgroundColor: flColor.charcoal800, alignItems: 'center', justifyContent: 'center' },
+  pinMedallion: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(191,143,79,0.10)',
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+  },
   pinPlay: {
     position: 'absolute',
     top: '50%',

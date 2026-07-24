@@ -17,8 +17,10 @@ import { ProgramMissionGrid } from '@/components/forge/compositions/ProgramMissi
 import { YourCircleCard } from '@/components/forge/compositions/YourCircleCard';
 import { QuickActionsRow } from '@/components/forge/compositions/QuickActionsRow';
 import { FriendActionSheet } from '@/components/forge/compositions/TrainTogetherCard';
-import { FRIEND_ACTIVITY, HOME_CHAPTER, HOME_DATA, todaysPrinciple } from '@/data/home-placeholder';
+import { FRIEND_ACTIVITY, HOME_CHAPTER, todaysPrinciple } from '@/data/home-placeholder';
 import { fetchHomeGym, saveHomeGym } from '@/data/home-gym-live';
+import { fetchActiveChapterGoals } from '@/data/goals-live';
+import { goalSections } from '@/domain/goals/goals';
 import { LIVE_TRAINING_USERS } from '@/data/live-training-placeholder';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { useQuery } from '@/lib/useQuery';
@@ -262,7 +264,13 @@ export default function HomeScreen() {
     return { profile, home: { workout, resolved, name, completed, total } };
   }, [builtProgram, builtDone, awaiting, homeLevel, homeIntake]);
 
-  const { mission } = HOME_DATA;
+  // The Mission tile shows the REAL chapter goal now (0025), not the HOME_DATA placeholder. Primary
+  // preferred, else the newest goal; count = goals still in progress. No goals → an invite to set one.
+  const { data: goalData } = useQuery(fetchActiveChapterGoals, []);
+  const goalList = goalData?.goals ?? [];
+  const { primary: primaryGoal, active: activeGoals } = goalSections(goalList);
+  const missionTarget = (primaryGoal ?? activeGoals[0])?.name ?? 'Set a chapter goal';
+  const goalsRemaining = goalList.filter((g) => g.achievedAt == null).length;
 
   // Shared actions (used by both the still-collecting gate and the un-gated Home hero).
   const startFirst = () => {
@@ -449,8 +457,8 @@ export default function HomeScreen() {
               programName={home.name}
               completed={home.completed}
               total={home.total}
-              missionTarget={mission.goal.label}
-              goalsRemaining={2}
+              missionTarget={missionTarget}
+              goalsRemaining={goalsRemaining}
               // Tap "Current Program": a fresh athlete's suggestion → re-pick (Change); a program the
               // athlete built → its detail (schedule, progress, log); otherwise browse programs.
               onProgram={
@@ -460,9 +468,7 @@ export default function HomeScreen() {
                     ? () => router.push({ pathname: '/program/[id]', params: { id: builtId } })
                     : openPrograms
               }
-              onMission={() => {
-                // G-1 Goal Hub — not yet implemented.
-              }}
+              onMission={() => router.push('/goals')}
             />
           ) : null}
 

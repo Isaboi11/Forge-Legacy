@@ -32,6 +32,11 @@ function fmtDate(iso: string): string {
   if (!y || !m || !d) return iso;
   return `${MONTHS[m - 1]} ${d}, ${y}`;
 }
+/** Compact tile date — month + day, no year (the design's `shortDate`); the sheet keeps the full date. */
+function shortDate(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  return !y || !m || !d ? iso : `${MONTHS[m - 1]} ${d}`;
+}
 
 export default function HonorsScreen() {
   const router = useRouter();
@@ -63,7 +68,7 @@ export default function HonorsScreen() {
 
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.legacyMountains} overlay={{ flat: 'rgba(5,5,5,0.42)' }} />
+      <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(5,5,5,0.42)' }} />
 
       <AppBar
         onBack={() => router.back()}
@@ -145,7 +150,7 @@ function HonorTile({ honor, size, onPress }: { honor: EarnedHonor; size: number;
       <Text style={styles.tileName} numberOfLines={2}>
         {meta.name}
       </Text>
-      <Text style={styles.tileDate}>{fmtDate(honor.date)}</Text>
+      <Text style={styles.tileDate}>{shortDate(honor.date)}</Text>
     </Pressable>
   );
 }

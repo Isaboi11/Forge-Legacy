@@ -16,6 +16,7 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
+import { ForgeSymbol, type SymbolName } from '@/components/forge/ForgeSymbol';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import type { Accomplishment, Chapter, FeaturedMoment, Goal, Honor, TimelineEntry } from '@/types/legacy';
 
@@ -27,7 +28,8 @@ export function humanizeEvent(t: string): string {
     .join(' ');
 }
 export function goalValue(g: Goal): string | null {
-  return g.kind === 'quantifiable' ? `${g.progress}%` : null;
+  // Prefer the absolute value ("335 / 405 lb"); fall back to the percentage for fixture goals with none.
+  return g.kind === 'quantifiable' ? g.valueLabel ?? `${g.progress}%` : null;
 }
 
 /** My Standard — the athlete's creed. Editable-inert on Legacy (onEdit), read-only on the Public Profile. */
@@ -103,9 +105,9 @@ export function CurrentChapter({ chapter, dayCount, onOpen }: { chapter: Chapter
   );
 }
 
-export function FeaturedMomentCard({ moment }: { moment: FeaturedMoment }) {
+export function FeaturedMomentCard({ moment, onPress }: { moment: FeaturedMoment; onPress?: () => void }) {
   return (
-    <Pressable onPress={() => {}} accessibilityRole="button" accessibilityLabel={`Open ${moment.primaryText}`} style={s.flmCard}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`Open ${moment.primaryText}`} style={s.flmCard}>
       <LinearGradient
         colors={['rgba(191,143,79,0.12)', 'rgba(191,143,79,0)'] as const}
         locations={[0, 0.55] as const}
@@ -132,9 +134,9 @@ export function FeaturedMomentCard({ moment }: { moment: FeaturedMoment }) {
   );
 }
 
-export function SealedChapterCard({ chapter }: { chapter: Chapter }) {
+export function SealedChapterCard({ chapter, onPress }: { chapter: Chapter; onPress?: () => void }) {
   return (
-    <Pressable onPress={() => {}} accessibilityRole="button" accessibilityLabel={`Open sealed chapter ${chapter.name}`} style={s.sealedCard}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`Open sealed chapter ${chapter.name}`} style={s.sealedCard}>
       <View style={s.sealedTitleRow}>
         <Text style={s.sealedName}>{chapter.name}</Text>
         <View style={s.sealedTag}>
@@ -163,9 +165,9 @@ export function SealedChapterCard({ chapter }: { chapter: Chapter }) {
   );
 }
 
-export function CompactChapterRow({ chapter }: { chapter: Chapter }) {
+export function CompactChapterRow({ chapter, onPress }: { chapter: Chapter; onPress?: () => void }) {
   return (
-    <Pressable onPress={() => {}} accessibilityRole="button" accessibilityLabel={`Open chapter ${chapter.name}`} style={s.compactChapter}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`Open chapter ${chapter.name}`} style={s.compactChapter}>
       <View style={s.compactDiamond} />
       <View style={s.compactChapterBody}>
         <Text style={s.compactChapterName} numberOfLines={1}>
@@ -180,11 +182,31 @@ export function CompactChapterRow({ chapter }: { chapter: Chapter }) {
   );
 }
 
+/** Per-event-type timeline glyph, matching the design's book/laurel/shield/spark set. */
+function timelineGlyph(eventType: string): SymbolName {
+  switch (eventType) {
+    case 'Chapter Sealed':
+      return 'seal';
+    case 'Goal Achieved':
+      return 'target';
+    case 'Rank Up':
+      return 'rankUp';
+    case 'Program Graduated':
+      return 'dumbbell';
+    case 'Accomplishment':
+      return 'trophy';
+    case 'Honor Earned':
+      return 'medal';
+    default:
+      return 'spark';
+  }
+}
+
 export function TimelineRow({ entry }: { entry: TimelineEntry }) {
   return (
     <View style={s.timelineRow}>
       <View style={s.timelineGlyph}>
-        <View style={s.timelineDot} />
+        <ForgeSymbol name={timelineGlyph(entry.eventType)} size={15} color={flColor.bronze300} strokeWidth={1.7} />
       </View>
       <Text style={s.timelineTitle} numberOfLines={1}>
         {entry.objectName}
@@ -209,9 +231,9 @@ export function AccomplishmentCard({ item, onPress }: { item: Accomplishment; on
 }
 
 /** Honor badge — graceful bronze insignia placeholder (artwork is pending-asset). */
-export function HonorInsignia({ honor }: { honor: Honor }) {
+export function HonorInsignia({ honor, onPress }: { honor: Honor; onPress?: () => void }) {
   return (
-    <Pressable onPress={() => {}} accessibilityRole="button" accessibilityLabel={`${honor.name}, earned ${honor.dateEarned}`} style={s.honor}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${honor.name}, earned ${honor.dateEarned}`} style={s.honor}>
       <View style={s.honorBadge}>
         <Svg width={64} height={64} viewBox="0 0 64 64">
           <Circle cx={32} cy={32} r={30} stroke={flColor.bronze400} strokeWidth={1.4} opacity={0.5} fill="none" />

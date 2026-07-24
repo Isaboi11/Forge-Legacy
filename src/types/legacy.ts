@@ -1,5 +1,5 @@
 export type Goal =
-  | { kind: 'quantifiable'; name: string; progress: number; achieved: boolean }
+  | { kind: 'quantifiable'; name: string; progress: number; achieved: boolean; valueLabel?: string }
   | { kind: 'narrative'; name: string; achieved: boolean }
   | { kind: 'none' }
 
@@ -36,6 +36,8 @@ export type FeaturedMoment = {
   primaryText: string
   secondaryText?: string
   dateLabel: string
+  /** The sealed chapter this moment belongs to — so the card can open its Chapter Detail. */
+  chapterId?: string
   isInert?: boolean
 }
 
@@ -78,6 +80,8 @@ export type Pin = {
   mediaUrl?: string
   posterUrl?: string
   isVideo: boolean
+  /** Soft reference to the underlying entity (chapter/honor/accomplishment id) so the card can open it. */
+  refId?: string
 }
 
 export type LegacyData = {
