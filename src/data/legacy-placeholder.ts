@@ -11,6 +11,8 @@ export const LEGACY_DATA: LegacyData = {
   // No rank backend yet — replace when real rank evaluation lands.
   rankName:  'Established',
   rankSubTier: 'III',
+  rankFamily: 'established',
+  rankLevel: 3,
 
   // Hero — "My Standard" creed (placeholder; no backend/editor yet)
   standard: 'Show up when it’s hard. The work is the promise I keep to myself.',

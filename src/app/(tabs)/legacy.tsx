@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type ReactNode, useMemo } from 'react';
+import { useCallback, useState, type ReactNode, useMemo } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -14,10 +14,12 @@ import { Image } from 'expo-image';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { useProfile } from '@/lib/profile';
 import type { Sex } from '@/domain/profile/schema';
-import { PLACEHOLDER_RANK, type RankFamily, type RankLevel } from '@/domain/rank-artwork/resolver';
+import { type RankFamily, type RankLevel } from '@/domain/rank-artwork/resolver';
 import { resolveRankBadge } from '@/domain/rank-artwork/badge-art';
 import { RankSeal } from '@/components/forge/RankSeal';
 import { fetchLegacyData } from '@/data/legacy-live';
+import { refreshRank } from '@/data/rank-live';
+import { useCeremony } from '@/hooks/useCeremony';
 import { fetchAccomplishments } from '@/data/accomplishments-live';
 import { formatAccDate } from '@/domain/legacy/accomplishments';
 import { useQuery } from '@/lib/useQuery';
@@ -89,6 +91,7 @@ const PIN_GLYPH: Record<PinKind, SymbolName> = {
 export default function LegacyScreen() {
   const router = useRouter();
   const { profile } = useProfile();
+  const { enqueue } = useCeremony();
   const { data, error, refetch } = useQuery(fetchLegacyData, []);
   // Accomplishments are now LIVE (0023) — replacing the fixture. Newest first; the strip shows a few and
   // "View all" opens the full L-12 screen. `featured` drives the filled star.
@@ -124,15 +127,24 @@ export default function LegacyScreen() {
 
   // Refetch when the tab regains focus (e.g. returning from a just-logged workout) — the current data
   // stays on screen during the reload, so a background refresh never flashes the spinner.
-  const firstFocus = useRef(true);
+  // Rank evaluation is the "app foreground" trigger (RCM §19): each time Legacy gains focus, recompute the
+  // earned rank from live activity and persist any promotion (never decreases). A newly-crossed FAMILY
+  // boundary fires the M-1 rank-up ceremony; then refetch so the badge + label reflect the new rank.
   useFocusEffect(
     useCallback(() => {
-      if (firstFocus.current) {
-        firstFocus.current = false; // mount already fetched
-        return;
-      }
-      refetch();
-    }, [refetch]),
+      let cancelled = false;
+      void refreshRank()
+        .then((res) => {
+          if (cancelled || !res?.promotedFamily) return;
+          enqueue({ id: `rank-${res.rank.rankLevel}`, kind: 'rankUp', rank: { family: res.rank.family, level: res.rank.subTier as RankLevel } });
+        })
+        .finally(() => {
+          if (!cancelled) refetch();
+        });
+      return () => {
+        cancelled = true;
+      };
+    }, [enqueue, refetch]),
   );
 
   // First load only: wait for the live Legacy read + the shared profile, with a retryable error. Once
@@ -178,8 +190,8 @@ export default function LegacyScreen() {
             <Text style={styles.identitySub}>Forging a permanent record, one chapter at a time.</Text>
           </View>
           <ProgressBadge
-            rankFamily={PLACEHOLDER_RANK.family}
-            rankLevel={PLACEHOLDER_RANK.level}
+            rankFamily={data.rankFamily}
+            rankLevel={data.rankLevel}
             sex={profile.sex}
             onPress={() => {
               // P-2 Progress Hub — not yet implemented.

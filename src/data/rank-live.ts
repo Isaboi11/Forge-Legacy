@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { assembleSignals, type RawSession } from '@/domain/rank/signals';
-import { resolveRank, type RankSignals, type ResolvedRank } from '@/domain/rank/rank';
-import type { AthleteType } from '@/domain/rank/thresholds';
+import { rankDisplay, resolveRank, type RankSignals, type ResolvedRank } from '@/domain/rank/rank';
+import { FAMILIES, type AthleteType, type RankFamily } from '@/domain/rank/thresholds';
 
 /**
  * Rank signal aggregation from live Supabase data (Slice 2). Reads the athlete's real activity — saved
@@ -89,7 +89,59 @@ export async function buildRankSignals(): Promise<RankSignals> {
   });
 }
 
-/** The rank the athlete has earned right now (signals → convergence). Slice 3 persists this. */
+/** The rank the athlete has earned right now (signals → convergence). */
 export async function computeCurrentRank(): Promise<ResolvedRank> {
   return resolveRank(await buildRankSignals());
+}
+
+export interface RankRefresh {
+  rank: ResolvedRank;
+  /** The family newly crossed INTO this run (fire the M-1 ceremony), else null. */
+  promotedFamily: RankFamily | null;
+}
+
+/**
+ * Slice 3 — evaluate the earned rank against the stored one and persist any promotion. Rank never
+ * decreases (RSA §3.3): a lower computed rank is ignored and the stored rank kept. Writes both the engine
+ * record (`athlete_rank_state`) and the denormalized display fields (`profiles.rank_family/rank_level`).
+ * Returns the current rank + whether a FAMILY boundary was crossed so the caller can fire M-1.
+ *
+ * Idempotent per promotion: once persisted, a re-run sees earned == stored and reports no promotion.
+ */
+export async function refreshRank(): Promise<RankRefresh | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const uid = user.id;
+
+  const earned = resolveRank(await buildRankSignals());
+
+  const { data: stored } = await supabase.from('athlete_rank_state').select('family, sub_tier, rank_level').eq('athlete_id', uid).maybeSingle();
+  const storedRow = stored as { family: string; sub_tier: number; rank_level: number } | null;
+  const storedFamily = (storedRow?.family ?? 'foundation') as RankFamily;
+  const storedLevel = storedRow?.rank_level ?? 1;
+
+  // Nothing to do — the stored rank already meets or exceeds what's earned (and the row exists).
+  if (storedRow != null && earned.rankLevel <= storedLevel) {
+    return { rank: { family: storedFamily, subTier: storedRow.sub_tier, rankLevel: storedLevel, display: rankDisplay(storedFamily, storedRow.sub_tier) }, promotedFamily: null };
+  }
+
+  const familyChanged = FAMILIES.indexOf(earned.family) > FAMILIES.indexOf(storedFamily);
+  const nowIso = new Date().toISOString();
+
+  await supabase.from('athlete_rank_state').upsert(
+    {
+      athlete_id: uid,
+      family: earned.family,
+      sub_tier: earned.subTier,
+      rank_level: earned.rankLevel,
+      ...(familyChanged ? { family_entry_date: nowIso.slice(0, 10) } : {}),
+      updated_at: nowIso,
+    },
+    { onConflict: 'athlete_id' },
+  );
+  await supabase.from('profiles').update({ rank_family: earned.family, rank_level: earned.subTier }).eq('id', uid);
+
+  return { rank: earned, promotedFamily: familyChanged ? earned.family : null };
 }

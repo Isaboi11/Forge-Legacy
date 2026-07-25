@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { cap, dateRangeCompact, dateRangeFull, daysSince, fmtDate, fmtShort, roman } from '@/lib/format';
 import { CHAPTER_GOALS_PENDING, LEGACY_FIXTURE_PENDING } from './legacy-fixture-pending';
 import type { Chapter, FeaturedMoment, Goal as LegacyGoal, LegacyData, Pin, PinKind, TimelineEntry } from '@/types/legacy';
+import type { RankFamily, RankLevel } from '@/domain/rank-artwork/resolver';
 import { isAchieved, isQuantifiable, progressLabel, progressPct } from '@/domain/goals/goals';
 
 /**
@@ -174,6 +175,9 @@ export async function fetchLegacyData(): Promise<LegacyData> {
   return {
     rankName: prof.rank_family ? cap(prof.rank_family) : '',
     rankSubTier: prof.rank_level ? roman(prof.rank_level) : '',
+    // The real rank drives the badge art (Slice 4). Foundation I is the floor for a fresh/unranked athlete.
+    rankFamily: ((prof.rank_family as RankFamily | null) ?? 'foundation') as RankFamily,
+    rankLevel: (Math.min(4, Math.max(1, prof.rank_level ?? 1))) as RankLevel,
     standard: prof.standard ?? '',
     activeChapter,
     dayCount: active ? daysSince(active.start_date) : 0,

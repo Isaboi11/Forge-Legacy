@@ -1,3 +1,5 @@
+import type { RankFamily, RankLevel } from '@/domain/rank-artwork/resolver'
+
 export type Goal =
   | { kind: 'quantifiable'; name: string; progress: number; achieved: boolean; valueLabel?: string }
   | { kind: 'narrative'; name: string; achieved: boolean }
@@ -87,6 +89,9 @@ export type Pin = {
 export type LegacyData = {
   rankName: string
   rankSubTier: string
+  /** The athlete's real rank for the badge art (lowercase family + sub-tier 1–4). */
+  rankFamily: RankFamily
+  rankLevel: RankLevel
   /** "My Standard" — the athlete's creed, shown at the top of the Legacy hero. */
   standard: string
   activeChapter: Chapter | null
