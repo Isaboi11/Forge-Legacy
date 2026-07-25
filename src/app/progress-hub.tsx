@@ -6,15 +6,12 @@ import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ForgeSymbol } from '@/components/forge/ForgeSymbol';
-import { HonorMedallion } from '@/components/honor/HonorMedallion';
 import { RankSeal } from '@/components/forge/RankSeal';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { resolveRankBadge } from '@/domain/rank-artwork/badge-art';
 import type { RankFamily, RankLevel } from '@/domain/rank-artwork/resolver';
-import { categoryGlyph, honorMeta } from '@/domain/honor/catalog';
-import { fetchHonors } from '@/data/honors-live';
 import { fetchProgressHub, type MetricSeries } from '@/data/progress-hub-live';
 import { useMetricSelection } from '@/lib/metric-selection';
 import { useProfile } from '@/lib/profile';
@@ -26,8 +23,9 @@ import { BodySection } from '@/components/forge/BodySection';
 
 /**
  * P-2 Progress Hub (`Forge Progress Hub.dc.html`) — the full picture reached from the Legacy rank badge:
- * rank journey (centerpiece), identity, strength PBs, consistency, honors, body metrics, and what's next —
- * all wired to live data. Strength cards open the Metric Detail overlay + Edit Metrics sheet; the body
+ * rank journey (centerpiece), identity, strength PBs, consistency, body metrics, and what's next — all
+ * wired to live data. (Honors live on the Legacy page, so they're not duplicated here.) Strength cards
+ * open the Metric Detail overlay + Edit Metrics sheet; the body
  * section (BodySection) owns the weigh-in log + chart. Progress photos remain a "coming soon" toast (no
  * transformation/photos backend yet).
  */
@@ -49,7 +47,6 @@ export default function ProgressHubScreen() {
   const { profile } = useProfile();
   const { showToast } = useToast();
   const { data, loading } = useQuery(fetchProgressHub, []);
-  const { data: honors } = useQuery(fetchHonors, []);
   const { selected, persist } = useMetricSelection();
   const [openId, setOpenId] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
@@ -179,27 +176,6 @@ export default function ProgressHubScreen() {
               Best streak · <Text style={styles.streakVal}>{data.consistency.bestStreakWeeks} weeks</Text>
             </Text>
           </View>
-        </View>
-
-        {/* ── HONORS ── */}
-        <View style={styles.honorsSection}>
-          <View style={[styles.sectionHead, styles.honorsHead]}>
-            <Text style={styles.sectionLabel}>Honors</Text>
-            <Pressable onPress={() => router.push('/honors')} accessibilityRole="button" accessibilityLabel="All honors">
-              <Text style={styles.editText}>{(honors ?? []).length} earned ›</Text>
-            </Pressable>
-          </View>
-          {honors && honors.length ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.honorStrip}>
-              {honors.slice(0, 6).map((h) => (
-                <Pressable key={h.id} onPress={() => router.push('/honors')} accessibilityRole="button" accessibilityLabel={h.name}>
-                  <HonorMedallion glyph={categoryGlyph(honorMeta(h.slug, h.name).category)} size={68} />
-                </Pressable>
-              ))}
-            </ScrollView>
-          ) : (
-            <Text style={styles.honorsEmpty}>No honors yet — your first mark is close.</Text>
-          )}
         </View>
 
         {/* ── BODY METRICS (Slice C — live) ── */}
@@ -439,12 +415,6 @@ const styles = StyleSheet.create({
   streakRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4, paddingTop: 12 },
   streakText: { fontFamily: flFont.sans, fontSize: 12, color: flColor.gray600 },
   streakVal: { color: flColor.gray400, fontWeight: '600' },
-
-  // honors
-  honorsSection: { paddingTop: 24 },
-  honorsHead: { paddingHorizontal: 24 },
-  honorStrip: { gap: 16, paddingHorizontal: 24, paddingTop: 12, paddingBottom: 6 },
-  honorsEmpty: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray600, paddingHorizontal: 24, paddingTop: 8 },
 
   // body cta
 
