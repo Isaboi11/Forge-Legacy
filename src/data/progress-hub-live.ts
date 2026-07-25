@@ -11,16 +11,17 @@ import type { RankFamily } from '@/domain/rank-artwork/resolver';
  * from their own fetchers / a later slice. Read-only.
  */
 
-export interface SparkPoint {
-  value: number;
+export interface MetricPoint {
+  date: string; // ISO (YYYY-MM-DD)
+  value: number; // best e1RM that day, rounded
 }
-export interface StrengthCard {
-  id: string;
-  category: string; // 'Strength'
+export interface MetricSeries {
+  id: string; // exercise name (the metric key)
   name: string;
-  value: string; // "225 lb"
+  category: string; // 'Strength'
+  points: MetricPoint[]; // dated best-e1RM progression, ascending
+  current: number;
   improving: boolean;
-  series: number[]; // best-e1RM progression, for the sparkline
 }
 export interface ConsistencyStats {
   lifetime: number;
@@ -42,7 +43,7 @@ export interface ProgressHubData {
   forgingSince: string; // year, e.g. "2024"
   lifetime: number;
   pinned: string | null; // "Deadlift 495 lb · Personal Record" or null
-  strength: StrengthCard[];
+  metrics: MetricSeries[]; // all the athlete's tracked lifts, dated — sorted most-recent first
   consistency: ConsistencyStats;
   next: NextProgram | null;
 }
@@ -111,7 +112,7 @@ export async function fetchProgressHub(): Promise<ProgressHubData> {
   const weeksActive = countActiveWeeks(dates) || 1;
   const earliestYear = dates.length ? dates.reduce((a, b) => (a < b ? a : b)).slice(0, 4) : String(now.getUTCFullYear());
 
-  // ── strength cards: personal-best e1RM progression per exercise, top 4 by recency ──
+  // ── metrics: personal-best e1RM progression per exercise (all lifts, dated), most-recent first ──
   const prs = (prRes.data ?? []) as PRRow[];
   const byExercise = new Map<string, { date: string; e: number }[]>();
   for (const p of prs) {
@@ -121,17 +122,16 @@ export async function fetchProgressHub(): Promise<ProgressHubData> {
     arr.push({ date, e: e1rm(p.load_value, p.load_reps ?? 1) });
     byExercise.set(p.exercise, arr);
   }
-  const strength: StrengthCard[] = [...byExercise.entries()]
+  const metrics: MetricSeries[] = [...byExercise.entries()]
     .map(([name, pts]) => {
       const sorted = pts.sort((a, b) => a.date.localeCompare(b.date));
-      const series = sorted.map((p) => Math.round(p.e));
-      const last = series[series.length - 1] ?? 0;
-      const prev = series[series.length - 2] ?? last;
-      return { id: name, category: 'Strength', name, value: `${last} lb`, improving: last > prev, series, lastDate: sorted[sorted.length - 1]?.date ?? '' };
+      const points: MetricPoint[] = sorted.map((p) => ({ date: p.date, value: Math.round(p.e) }));
+      const current = points[points.length - 1]?.value ?? 0;
+      const prev = points[points.length - 2]?.value ?? current;
+      return { id: name, name, category: 'Strength', points, current, improving: current > prev, lastDate: points[points.length - 1]?.date ?? '' };
     })
     .sort((a, b) => b.lastDate.localeCompare(a.lastDate))
-    .slice(0, 4)
-    .map(({ lastDate: _lastDate, ...c }) => c);
+    .map(({ lastDate: _lastDate, ...m }) => m);
 
   // ── pinned: highest e1RM among the big three ──
   let pinned: string | null = null;
@@ -159,7 +159,7 @@ export async function fetchProgressHub(): Promise<ProgressHubData> {
     forgingSince: earliestYear,
     lifetime,
     pinned,
-    strength,
+    metrics,
     consistency: {
       lifetime,
       hoursForged,

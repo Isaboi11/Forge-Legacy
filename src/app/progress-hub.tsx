@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,10 +15,13 @@ import { resolveRankBadge } from '@/domain/rank-artwork/badge-art';
 import type { RankFamily, RankLevel } from '@/domain/rank-artwork/resolver';
 import { categoryGlyph, honorMeta } from '@/domain/honor/catalog';
 import { fetchHonors } from '@/data/honors-live';
-import { fetchProgressHub, type StrengthCard } from '@/data/progress-hub-live';
+import { fetchProgressHub, type MetricSeries } from '@/data/progress-hub-live';
+import { useMetricSelection } from '@/lib/metric-selection';
 import { useProfile } from '@/lib/profile';
 import { useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
+import { MetricDetail } from '@/components/forge/MetricDetail';
+import { EditMetricsSheet } from '@/components/forge/EditMetricsSheet';
 
 /**
  * P-2 Progress Hub (`Forge Progress Hub.dc.html`) — the full picture reached from the Legacy rank badge:
@@ -44,6 +48,9 @@ export default function ProgressHubScreen() {
   const { showToast } = useToast();
   const { data, loading } = useQuery(fetchProgressHub, []);
   const { data: honors } = useQuery(fetchHonors, []);
+  const { selected, persist } = useMetricSelection();
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
 
   if (loading || !data) {
     return (
@@ -59,6 +66,12 @@ export default function ProgressHubScreen() {
   const curDef = LADDER[cur];
   const sex = profile?.sex;
   const soon = (what: string) => showToast(`${what} · coming soon`);
+
+  // Which lifts show as cards: the saved selection, else the athlete's most-recent lifts (default).
+  const metrics = data.metrics;
+  const shownIds = selected.length ? selected : metrics.slice(0, 4).map((m) => m.id);
+  const shown = shownIds.map((id) => metrics.find((m) => m.id === id)).filter((m): m is MetricSeries => m != null).slice(0, 4);
+  const openMetric = openId ? metrics.find((m) => m.id === openId) ?? null : null;
 
   return (
     <View style={styles.root}>
@@ -124,21 +137,25 @@ export default function ProgressHubScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHead}>
             <Text style={styles.sectionLabel}>Strength &amp; Performance</Text>
-            <Pressable onPress={() => soon('Edit metrics')} accessibilityRole="button" accessibilityLabel="Edit metrics" style={styles.editLink}>
+            <Pressable onPress={() => setEditOpen(true)} accessibilityRole="button" accessibilityLabel="Edit metrics" style={styles.editLink}>
               <Glyph d={PATHS.pencil} size={13} color={flColor.bronze400} />
               <Text style={styles.editText}>Edit</Text>
             </Pressable>
           </View>
-          {data.strength.length ? (
+          {shown.length ? (
             <View style={styles.strengthGrid}>
-              {data.strength.map((c) => (
-                <StrengthTile key={c.id} card={c} onPress={() => soon(c.name)} />
+              {shown.map((m) => (
+                <StrengthTile key={m.id} metric={m} onPress={() => setOpenId(m.id)} />
               ))}
             </View>
-          ) : (
-            <Pressable onPress={() => soon('Choose your lifts')} accessibilityRole="button" accessibilityLabel="Choose lifts" style={styles.strengthEmpty}>
+          ) : metrics.length ? (
+            <Pressable onPress={() => setEditOpen(true)} accessibilityRole="button" accessibilityLabel="Choose lifts" style={styles.strengthEmpty}>
               <Text style={styles.strengthEmptyText}>Choose the lifts that matter to you</Text>
             </Pressable>
+          ) : (
+            <View style={styles.strengthEmpty}>
+              <Text style={styles.strengthEmptyText}>Log a lift and your PRs appear here</Text>
+            </View>
           )}
         </View>
 
@@ -216,6 +233,16 @@ export default function ProgressHubScreen() {
           </View>
         ) : null}
       </ScrollView>
+
+      {openMetric ? <MetricDetail metric={openMetric} onClose={() => setOpenId(null)} /> : null}
+      <EditMetricsSheet
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        metrics={metrics}
+        selectedIds={shownIds}
+        onPersist={persist}
+        onCap={() => showToast(`Up to 4 metrics — turn one off to add another`)}
+      />
     </View>
   );
 }
@@ -289,17 +316,17 @@ function Rung({ def, state, subTier, sex }: { def: { key: RankFamily; name: stri
   );
 }
 
-function StrengthTile({ card, onPress }: { card: StrengthCard; onPress: () => void }) {
-  const s = spark(card.series);
+function StrengthTile({ metric, onPress }: { metric: MetricSeries; onPress: () => void }) {
+  const s = spark(metric.points.map((p) => p.value));
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={card.name} style={styles.strengthTile}>
-      <Text style={styles.tileCat}>{card.category}</Text>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={metric.name} style={styles.strengthTile}>
+      <Text style={styles.tileCat}>{metric.category}</Text>
       <Text style={styles.tileName} numberOfLines={1}>
-        {card.name}
+        {metric.name}
       </Text>
       <View style={styles.tileValueRow}>
-        <Text style={styles.tileValue}>{card.value}</Text>
-        {card.improving ? <Glyph d={PATHS.trendUp} size={13} color={flColor.bronze300} width={2} /> : <Text style={styles.tileFlat}>—</Text>}
+        <Text style={styles.tileValue}>{metric.current} lb</Text>
+        {metric.improving ? <Glyph d={PATHS.trendUp} size={13} color={flColor.bronze300} width={2} /> : <Text style={styles.tileFlat}>—</Text>}
       </View>
       {s ? (
         <Svg viewBox="0 0 82 30" width="100%" height={26} preserveAspectRatio="none" style={styles.spark}>
