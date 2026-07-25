@@ -94,6 +94,17 @@ export async function computeCurrentRank(): Promise<ResolvedRank> {
   return resolveRank(await buildRankSignals());
 }
 
+/** The athlete's persisted rank (cheap read, no recompute) — for the "you are here" marker. */
+export async function fetchStoredRank(): Promise<{ family: RankFamily; subTier: number }> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { family: 'foundation', subTier: 1 };
+  const { data } = await supabase.from('athlete_rank_state').select('family, sub_tier').eq('athlete_id', user.id).maybeSingle();
+  const row = data as { family: string; sub_tier: number } | null;
+  return { family: (row?.family ?? 'foundation') as RankFamily, subTier: row?.sub_tier ?? 1 };
+}
+
 export interface RankRefresh {
   rank: ResolvedRank;
   /** The family newly crossed INTO this run (fire the M-1 ceremony), else null. */

@@ -193,9 +193,7 @@ export default function LegacyScreen() {
             rankFamily={data.rankFamily}
             rankLevel={data.rankLevel}
             sex={profile.sex}
-            onPress={() => {
-              // P-2 Progress Hub — not yet implemented.
-            }}
+            onPress={() => router.push('/rank-progression')}
           />
         </Animated.View>
 
