@@ -1,0 +1,95 @@
+import { supabase } from '@/lib/supabase';
+import { assembleSignals, type RawSession } from '@/domain/rank/signals';
+import { resolveRank, type RankSignals, type ResolvedRank } from '@/domain/rank/rank';
+import type { AthleteType } from '@/domain/rank/thresholds';
+
+/**
+ * Rank signal aggregation from live Supabase data (Slice 2). Reads the athlete's real activity — saved
+ * workouts (consistency · volume · longevity · recent · endurance PBs), load PRs (strength improvement),
+ * graduated programs, sealed chapters, and chapter-resolved goals — and hands them to the pure engine.
+ *
+ * Read-only: this computes what the athlete has EARNED; Slice 3 persists it + fires ceremonies. All
+ * sessions are native (no import path exists yet), so import credit is inert.
+ */
+
+const ATHLETE_TYPE: Record<string, AthleteType> = {
+  Strength: 'strength',
+  Bodybuilding: 'bodybuilding',
+  Endurance: 'endurance',
+  Hybrid: 'hybrid',
+};
+
+interface WorkoutRow {
+  saved_at: string | null;
+  started_at: string;
+  duration_sec: number | null;
+  activity_type: string;
+  distance: number | null;
+}
+interface PRRow {
+  achieved_on: string | null;
+  created_at: string;
+}
+interface GoalRow {
+  is_primary: boolean;
+  achieved_at: string | null;
+  chapter_id: string | null;
+}
+
+export async function buildRankSignals(): Promise<RankSignals> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('not signed in');
+  const uid = user.id;
+  const today = new Date().toISOString().slice(0, 10);
+
+  const [prof, workoutsRes, prRes, programsRes, chaptersRes, goalsRes] = await Promise.all([
+    supabase.from('profiles').select('athlete_type').eq('id', uid).single(),
+    supabase.from('workouts').select('saved_at, started_at, duration_sec, activity_type, distance').eq('athlete_id', uid).eq('state', 'saved'),
+    supabase.from('personal_records').select('achieved_on, created_at').eq('athlete_id', uid).eq('measure_kind', 'load'),
+    supabase.from('programs').select('id').eq('athlete_id', uid).eq('state', 'graduated'),
+    supabase.from('chapters').select('id').eq('athlete_id', uid).not('sealed_at', 'is', null),
+    supabase.from('goals').select('is_primary, achieved_at, chapter_id').eq('athlete_id', uid),
+  ]);
+
+  const athleteType = ATHLETE_TYPE[(prof.data as { athlete_type: string | null } | null)?.athlete_type ?? ''] ?? 'strength';
+
+  const sessions: RawSession[] = ((workoutsRes.data ?? []) as WorkoutRow[]).map((w) => ({
+    date: w.saved_at ?? w.started_at ?? today,
+    durationSec: w.duration_sec ?? 0,
+    state: 'saved',
+    activityType: w.activity_type ?? 'strength',
+    distance: w.distance,
+  }));
+
+  const loadPRDates = ((prRes.data ?? []) as PRRow[]).map((r) => r.achieved_on ?? r.created_at?.slice(0, 10)).filter((d): d is string => !!d);
+
+  // Goal participation = a goal resolved through chapter sealing (RCM §6.6); primary achievements are the
+  // subset flagged achieved. Only goals attached to a SEALED chapter count.
+  const sealedChapterIds = new Set(((chaptersRes.data ?? []) as { id: string }[]).map((c) => c.id));
+  const resolvedGoals = ((goalsRes.data ?? []) as GoalRow[]).filter((g) => g.chapter_id != null && sealedChapterIds.has(g.chapter_id));
+  const goalEvents = resolvedGoals.length;
+  const primaryGoalsAchieved = resolvedGoals.filter((g) => g.is_primary && g.achieved_at != null).length;
+
+  // Total graduations; distinct-program-ID (Legend/Legacy milestone) has no re-run tracking yet, so it
+  // equals the total until a source-template column exists.
+  const programGraduations = (programsRes.data ?? []).length;
+
+  return assembleSignals({
+    athleteType,
+    today,
+    sessions,
+    loadPRDates,
+    programGraduations,
+    distinctProgramGraduations: programGraduations,
+    sealedChapters: sealedChapterIds.size,
+    goalEvents,
+    primaryGoalsAchieved,
+  });
+}
+
+/** The rank the athlete has earned right now (signals → convergence). Slice 3 persists this. */
+export async function computeCurrentRank(): Promise<ResolvedRank> {
+  return resolveRank(await buildRankSignals());
+}
