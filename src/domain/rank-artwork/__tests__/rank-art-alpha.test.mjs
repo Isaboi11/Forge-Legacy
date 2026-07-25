@@ -20,8 +20,13 @@ import { Buffer } from 'node:buffer'
 
 const RANKS = 'assets/artwork/ranks'
 const BADGES = [
+  'foundation-1', 'foundation-2', 'foundation-3', 'foundation-4',
+  'builder-1', 'builder-2', 'builder-3', 'builder-4',
+  'craftsman-1', 'craftsman-2', 'craftsman-3', 'craftsman-4',
+  'architect-1', 'architect-2', 'architect-3', 'architect-4',
   'established-m-1', 'established-m-2', 'established-m-3', 'established-m-4',
   'established-f-1', 'established-f-2', 'established-f-3', 'established-f-4',
+  'legend-1', 'legend-2', 'legend-3', 'legend-4',
   'legacy-1', 'legacy-2', 'legacy-3', 'legacy-4',
 ]
 const GUARDED = [...BADGES, 'seal-flame']
