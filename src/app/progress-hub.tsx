@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -9,7 +10,7 @@ import { ForgeSymbol } from '@/components/forge/ForgeSymbol';
 import { RankSeal } from '@/components/forge/RankSeal';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
-import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { resolveRankBadge } from '@/domain/rank-artwork/badge-art';
 import type { RankFamily, RankLevel } from '@/domain/rank-artwork/resolver';
 import { fetchProgressHub, type MetricSeries } from '@/data/progress-hub-live';
@@ -186,6 +187,7 @@ export default function ProgressHubScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>What&apos;s Next</Text>
             <Pressable onPress={() => router.push({ pathname: '/program/[id]', params: { id: data.next!.id } })} accessibilityRole="button" accessibilityLabel={data.next.title} style={styles.nextCard}>
+              <LinearGradient colors={['rgba(191,143,79,0.10)', 'rgba(191,143,79,0)']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 0.75 }} style={StyleSheet.absoluteFill} pointerEvents="none" />
               <View style={styles.nextIcon}>
                 <ForgeSymbol name="dumbbell" size={20} color={flColor.bronze300} />
               </View>
@@ -414,8 +416,8 @@ const styles = StyleSheet.create({
   // body cta
 
   // what's next
-  nextCard: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 18, borderRadius: flRadius.xl, backgroundColor: flColor.charcoal900, borderWidth: 1, borderColor: flColor.bronzeBorder },
-  nextIcon: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800 },
+  nextCard: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 18, borderRadius: flRadius.xl, backgroundColor: flColor.charcoal900, borderWidth: 1, borderColor: flColor.bronzeBorder, overflow: 'hidden', boxShadow: `${flShadow.borderInset}, 0 12px 30px rgba(0,0,0,0.42)` },
+  nextIcon: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800, boxShadow: flShadow.glowSubtle },
   nextText: { flex: 1, minWidth: 0, gap: 3 },
   nextKicker: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.gray600 },
   nextTitle: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },

@@ -2,6 +2,8 @@ import { supabase } from '@/lib/supabase';
 import { countActiveWeeks, mondayWeekKey } from '@/domain/rank/rank';
 import { e1rm } from '@/domain/workout/metrics';
 import { fetchStoredRank } from '@/data/rank-live';
+import { fetchMyPrograms, fetchProgramCompletedCount } from '@/data/programs-live';
+import { dayLabel, nextSession } from '@/domain/program/progress-core';
 import type { RankFamily } from '@/domain/rank-artwork/resolver';
 
 /**
@@ -94,12 +96,12 @@ export async function fetchProgressHub(): Promise<ProgressHubData> {
   const now = new Date();
   const nowMonth = now.toISOString().slice(0, 7);
 
-  const [rank, workoutsRes, prRes, chapterRes, programsRes] = await Promise.all([
+  const [rank, workoutsRes, prRes, chapterRes, myPrograms] = await Promise.all([
     fetchStoredRank(),
     supabase.from('workouts').select('saved_at, started_at, duration_sec').eq('athlete_id', uid).eq('state', 'saved'),
     supabase.from('personal_records').select('exercise, achieved_on, created_at, load_value, load_reps').eq('athlete_id', uid).eq('measure_kind', 'load'),
     supabase.from('chapters').select('name, is_active').eq('athlete_id', uid).eq('is_active', true).maybeSingle(),
-    supabase.from('programs').select('id, name, state').eq('athlete_id', uid).eq('state', 'active').order('updated_at', { ascending: false }).limit(1),
+    fetchMyPrograms(),
   ]);
 
   const workouts = (workoutsRes.data ?? []) as WorkoutRow[];
@@ -146,7 +148,15 @@ export async function fetchProgressHub(): Promise<ProgressHubData> {
     }
   }
 
-  const program = (programsRes.data ?? [])[0] as { id: string; name: string } | undefined;
+  // Active program → "What's Next" with real progress: "Week 3 of 8 · Next: Push Day A".
+  const active = myPrograms.filter((p) => p.state === 'active')[0];
+  let next: NextProgram | null = null;
+  if (active) {
+    const completed = await fetchProgramCompletedCount(active.id);
+    const ns = nextSession(active.structure, completed);
+    const sub = ns ? `Week ${ns.weekIndex + 1} of ${active.structure.weeks} · Next: ${dayLabel(ns.day, ns.dayIndex)}` : 'Program complete';
+    next = { id: active.id, title: active.name, sub };
+  }
 
   // "Chapter III — The Rebuild" → "The Rebuild" (the tile shows the title, like the .dc).
   const rawChapter = (chapterRes.data as { name: string } | null)?.name ?? null;
@@ -168,6 +178,6 @@ export async function fetchProgressHub(): Promise<ProgressHubData> {
       avgPerWeek: round1(lifetime / weeksActive),
       bestStreakWeeks: bestStreak(weekKeys),
     },
-    next: program ? { id: program.id, title: program.name, sub: 'Continue your program' } : null,
+    next,
   };
 }
