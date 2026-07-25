@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
   // body cta
 
   // what's next
-  nextCard: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 18, borderRadius: flRadius.xl, backgroundColor: flColor.charcoal900, borderWidth: 1, borderColor: flColor.bronzeBorder, overflow: 'hidden', boxShadow: `${flShadow.borderInset}, 0 12px 30px rgba(0,0,0,0.42)` },
+  nextCard: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 12, padding: 18, borderRadius: flRadius.xl, backgroundColor: flColor.charcoal900, borderWidth: 1, borderColor: flColor.bronzeBorder, overflow: 'hidden', boxShadow: `${flShadow.borderInset}, 0 12px 30px rgba(0,0,0,0.42)` },
   nextIcon: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800, boxShadow: flShadow.glowSubtle },
   nextText: { flex: 1, minWidth: 0, gap: 3 },
   nextKicker: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.gray600 },
