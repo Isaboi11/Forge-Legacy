@@ -22,12 +22,14 @@ import { useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { MetricDetail } from '@/components/forge/MetricDetail';
 import { EditMetricsSheet } from '@/components/forge/EditMetricsSheet';
+import { BodySection } from '@/components/forge/BodySection';
 
 /**
  * P-2 Progress Hub (`Forge Progress Hub.dc.html`) — the full picture reached from the Legacy rank badge:
- * rank journey (centerpiece), identity, strength PBs, consistency, honors, and what's next. Slice A wires
- * every section to live data; the Metric Detail overlay + Edit Metrics sheet (Slice B) and the body-metrics
- * backend + Log Weight sheet (Slice C) follow — for now Strength Edit and the Body CTA note "coming soon".
+ * rank journey (centerpiece), identity, strength PBs, consistency, honors, body metrics, and what's next —
+ * all wired to live data. Strength cards open the Metric Detail overlay + Edit Metrics sheet; the body
+ * section (BodySection) owns the weigh-in log + chart. Progress photos remain a "coming soon" toast (no
+ * transformation/photos backend yet).
  */
 
 const LADDER: { key: RankFamily; name: string; statement: string }[] = [
@@ -65,7 +67,6 @@ export default function ProgressHubScreen() {
   const cur = ORDER.indexOf(data.rankFamily);
   const curDef = LADDER[cur];
   const sex = profile?.sex;
-  const soon = (what: string) => showToast(`${what} · coming soon`);
 
   // Which lifts show as cards: the saved selection, else the athlete's most-recent lifts (default).
   const metrics = data.metrics;
@@ -201,19 +202,8 @@ export default function ProgressHubScreen() {
           )}
         </View>
 
-        {/* ── BODY METRICS (CTA — backend is Slice C) ── */}
-        <View style={styles.section}>
-          <Pressable onPress={() => soon('Body metrics')} accessibilityRole="button" accessibilityLabel="Track body metrics" style={styles.bodyCta}>
-            <View style={styles.bodyCtaIcon}>
-              <Glyph d={PATHS.pulse} size={17} color={flColor.gray400} width={1.8} />
-            </View>
-            <View style={styles.bodyCtaText}>
-              <Text style={styles.bodyCtaTitle}>Track body metrics</Text>
-              <Text style={styles.bodyCtaSub}>Optional — bodyweight &amp; measurements, only if you want them.</Text>
-            </View>
-            <Glyph d={PATHS.plus} size={16} color={flColor.bronze400} width={2} />
-          </Pressable>
-        </View>
+        {/* ── BODY METRICS (Slice C — live) ── */}
+        <BodySection />
 
         {/* ── WHAT'S NEXT ── */}
         {data.next ? (
@@ -457,11 +447,6 @@ const styles = StyleSheet.create({
   honorsEmpty: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray600, paddingHorizontal: 24, paddingTop: 8 },
 
   // body cta
-  bodyCta: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: flRadius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.charcoal500 },
-  bodyCtaIcon: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: flColor.charcoal600 },
-  bodyCtaText: { flex: 1, minWidth: 0, gap: 2 },
-  bodyCtaTitle: { fontFamily: flFont.sans, fontSize: 14, fontWeight: '600', color: flColor.gray400 },
-  bodyCtaSub: { fontFamily: flFont.sans, fontSize: 11.5, color: flColor.gray600 },
 
   // what's next
   nextCard: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 18, borderRadius: flRadius.xl, backgroundColor: flColor.charcoal900, borderWidth: 1, borderColor: flColor.bronzeBorder },
