@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
   section: { marginTop: 30 },
   sectionEyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 12 },
 
-  primaryCard: { padding: 18, borderRadius: flRadius.xl, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  primaryCard: { padding: 18, borderRadius: flRadius.xl, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: 'rgba(46, 35, 20, 0.42)' },
   primaryName: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', color: flColor.cream100, marginBottom: 14 },
   primaryProgRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 10 },
   primaryPct: { fontFamily: flFont.display, fontSize: 38, fontWeight: '700', color: flColor.bronze300 },
