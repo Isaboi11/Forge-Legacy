@@ -254,13 +254,12 @@ function Rung({ def, state, subTier, sex }: { def: { key: RankFamily; name: stri
   return (
     <View style={[styles.rung, state === 'current' && styles.rungCurrent, state === 'locked' && styles.rungLocked]}>
       <View style={styles.rungNode}>
-        <View style={[styles.node, state === 'current' ? styles.nodeCurrent : state === 'earned' ? styles.nodeEarned : styles.nodeLocked]} />
         {state === 'locked' ? (
           <View style={styles.lockHex}>
             <Glyph d={PATHS.lock} size={15} color="rgba(150,130,100,0.5)" width={1.8} />
           </View>
         ) : (
-          <Badge family={def.key} level={state === 'current' ? subTier : 4} sex={sex} size={state === 'current' ? 42 : 36} />
+          <Badge family={def.key} level={state === 'current' ? subTier : 4} sex={sex} size={state === 'current' ? 48 : 41} />
         )}
       </View>
       <View style={styles.rungLabel}>
@@ -368,16 +367,12 @@ const styles = StyleSheet.create({
 
   // journey
   journey: { position: 'relative', paddingTop: 14, paddingBottom: 4 },
-  spine: { position: 'absolute', left: 43, width: 2, backgroundColor: flColor.charcoal700, borderRadius: 1 },
+  spine: { position: 'absolute', left: 34, width: 2, backgroundColor: flColor.charcoal700, borderRadius: 1 },
   spineFill: { width: 2, backgroundColor: flColor.bronzeBorder, borderRadius: 1 },
   rung: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8, borderRadius: flRadius.xl, paddingRight: 8 },
   rungCurrent: { borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint, paddingLeft: 0 },
   rungLocked: { opacity: 0.7 },
   rungNode: { width: 70, alignItems: 'center', justifyContent: 'center' },
-  node: { position: 'absolute', borderRadius: 999 },
-  nodeEarned: { width: 11, height: 11, backgroundColor: flColor.bronze400, borderWidth: 3, borderColor: '#000' },
-  nodeCurrent: { width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(191,143,79,0.16)' },
-  nodeLocked: { width: 9, height: 9, backgroundColor: flColor.charcoal500, borderWidth: 3, borderColor: '#0b0a08' },
   lockHex: { width: 50, height: 68, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.md, borderWidth: 1, borderColor: 'rgba(120,96,60,0.14)', backgroundColor: '#0f0d0a' },
   rungLabel: { flex: 1, minWidth: 0, gap: 4, paddingVertical: 2 },
   rungNameRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
