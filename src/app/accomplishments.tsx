@@ -467,8 +467,8 @@ const styles = StyleSheet.create({
   replaceList: { gap: 8 },
   replaceRow: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 12, paddingHorizontal: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
   replaceItemName: { flex: 1, minWidth: 0, fontFamily: flFont.sans, fontSize: 14, fontWeight: '600', color: flColor.cream100 },
-  replaceBtn: { paddingVertical: 8, paddingHorizontal: 15, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeMetalBorder, backgroundColor: flColor.bronzeTint },
-  replaceBtnText: { fontFamily: flFont.sans, fontSize: 12.5, fontWeight: '700', letterSpacing: 0.3, color: flColor.bronze300 },
+  replaceBtn: { paddingVertical: 8, paddingHorizontal: 15, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeMetalBorder, backgroundColor: flColor.bronze400 },
+  replaceBtnText: { fontFamily: flFont.sans, fontSize: 12.5, fontWeight: '700', letterSpacing: 0.3, color: '#F7F5F1' },
 
   // form
   field: { marginBottom: 20 },

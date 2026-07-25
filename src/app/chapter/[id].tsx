@@ -271,7 +271,7 @@ export default function ChapterDetailScreen() {
             <Text style={styles.sealCopy}>You&rsquo;ve built everything this chapter contains. When you&rsquo;re ready, seal it permanently.</Text>
             <Button variant="primary" fullWidth onPress={goSeal} accessibilityLabel="Seal chapter">
               <View style={styles.sealInner}>
-                <Glyph d={FLAME} size={16} color="#1A1206" width={1.8} />
+                <Glyph d={FLAME} size={16} color="#F7F5F1" width={1.8} />
                 <Text style={styles.sealText}>Seal Chapter</Text>
               </View>
             </Button>
@@ -402,6 +402,6 @@ const styles = StyleSheet.create({
   sealBlock: { alignItems: 'center', gap: 16, marginTop: 44, paddingHorizontal: 8 },
   sealCopy: { fontFamily: flFont.display, fontSize: 20, lineHeight: 29, fontWeight: '600', color: flColor.cream100, textAlign: 'center' },
   sealInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
-  sealText: { fontSize: 15, fontWeight: '700', color: '#1A1206' },
+  sealText: { fontSize: 15, fontWeight: '700', color: '#F7F5F1' },
   sealNote: { fontSize: 12, lineHeight: 18, color: flColor.gray600, textAlign: 'center' },
 });
