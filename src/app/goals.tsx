@@ -45,9 +45,9 @@ import { useCeremony, useToast } from '@/hooks/useCeremony';
  * goals present (primary pinned + active + achieved). GD-D5: no delete — the chapter archive records
  * the outcome, so this screen has no remove path.
  *
- * DEFERRED (flagged): the M-3 Goal Achieved ceremony on PRIMARY completion — the card transitions to
- * Achieved and a toast fires; the full modal ceremony is a fast follow (M-3 is its own spec). Narrative
- * "mark achieved" and quantifiable "update progress" are both live.
+ * A PRIMARY goal's achievement fires the M-3 Goal Achieved ceremony (`enqueue({kind:'goalAchieved'})`);
+ * a SUPPORTING one gets a toast (GD-D4). Narrative "mark achieved" and quantifiable "update progress" both
+ * route through that celebrate step. Achieving is confirmed first (ConfirmSheet) — it's permanent (GD-D5).
  */
 
 const PLUS = 'M12 5v14M5 12h14';

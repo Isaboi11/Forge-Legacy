@@ -110,13 +110,18 @@ export default function ChapterReflectionScreen() {
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(5,5,5,0.42)' }} />
 
-      {/* app bar — back cancels (no seal) */}
+      {/* app bar — a back/cancel only on the POST path (matches the .dc). On the sealing path the screen IS
+          the commitment: the only ways forward both seal (write + "Seal Chapter", or "Skip for now"). */}
       <View style={[styles.bar, { paddingTop: insets.top + 6 }]}>
-        <Pressable onPress={attemptExit} accessibilityRole="button" accessibilityLabel="Cancel" style={styles.barBtn} hitSlop={8}>
-          <Glyph d={BACK} size={22} color={flColor.gray400} width={1.9} />
-        </Pressable>
-        <Text style={styles.barTitle}>Reflection</Text>
-        <View style={styles.barBtn} />
+        {isPost ? (
+          <>
+            <Pressable onPress={attemptExit} accessibilityRole="button" accessibilityLabel="Cancel" style={styles.barBtn} hitSlop={8}>
+              <Glyph d={BACK} size={22} color={flColor.gray400} width={1.9} />
+            </Pressable>
+            <Text style={styles.barTitle}>Reflection</Text>
+            <View style={styles.barBtn} />
+          </>
+        ) : null}
       </View>
 
       {loading || !data || !header ? (
@@ -250,7 +255,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   err: { fontSize: 14, color: flColor.gray400 },
 
-  bar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingBottom: 6 },
+  bar: { flexDirection: 'row', alignItems: 'center', minHeight: 44, paddingHorizontal: 8, paddingBottom: 6 },
   barBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   barTitle: { flex: 1, fontFamily: flFont.sans, fontSize: 11, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.gray400 },
 

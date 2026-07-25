@@ -6,9 +6,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
+import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
 import { SettingsToggle } from '@/components/forge/SettingsToggle';
-import { useToast } from '@/hooks/useCeremony';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
@@ -22,6 +22,7 @@ import {
 import {
   accSubline,
   canToggleFeatured,
+  featuredAccomplishments,
   featuredCount,
   FEATURED_MAX,
   formatAccDate,
@@ -179,18 +180,31 @@ function AccomplishmentDetail({
   onChanged: () => void;
   onDeleted: () => void;
 }) {
-  const { showToast } = useToast();
   const [featured, setFeatured] = useState(item.featured);
   const [delOpen, setDelOpen] = useState(false);
+  const [replaceOpen, setReplaceOpen] = useState(false);
   const nFeatured = featuredCount(all.map((a) => (a.id === item.id ? { ...a, featured } : a)));
+  // The current featured three (persisted) — the pool the replace picker offers when we're at the cap.
+  const currentFeatured = featuredAccomplishments(all);
 
   const toggleFeatured = (next: boolean) => {
-    if (!canToggleFeatured(all, item.id, next)) {
-      showToast(`Up to ${FEATURED_MAX} featured — un-feature one to make room.`);
+    // At the cap, featuring a 4th doesn't block — it opens the replace picker (design AC "featured replace
+    // prompt"): choose one of the current three to swap out for this one.
+    if (next && !canToggleFeatured(all, item.id, next)) {
+      setReplaceOpen(true);
       return;
     }
     setFeatured(next);
     void setAccomplishmentFeatured(item.id, next).then(onChanged);
+  };
+
+  // Swap: un-feature the chosen one, feature this one.
+  const doReplace = (targetId: string) => {
+    setReplaceOpen(false);
+    setFeatured(true);
+    void setAccomplishmentFeatured(targetId, false)
+      .then(() => setAccomplishmentFeatured(item.id, true))
+      .then(onChanged);
   };
 
   const doDelete = () => {
@@ -251,7 +265,48 @@ function AccomplishmentDetail({
         tone="destructive"
         onConfirm={doDelete}
       />
+
+      <FeaturedReplaceSheet open={replaceOpen} pendingName={item.name} current={currentFeatured} onReplace={doReplace} onClose={() => setReplaceOpen(false)} />
     </View>
+  );
+}
+
+/** AC "featured replace prompt" — at the 3-featured cap, choose one to swap out for the pending one. */
+function FeaturedReplaceSheet({
+  open,
+  pendingName,
+  current,
+  onReplace,
+  onClose,
+}: {
+  open: boolean;
+  pendingName: string;
+  current: Accomplishment[];
+  onReplace: (targetId: string) => void;
+  onClose: () => void;
+}) {
+  return (
+    <BottomSheet open={open} onClose={onClose} footer={<Button variant="secondary" fullWidth onPress={onClose}>Keep current three</Button>}>
+      <View style={styles.replaceWrap}>
+        <Text style={styles.replaceTitle}>You can feature {FEATURED_MAX}</Text>
+        <Text style={styles.replaceBody}>
+          Choose one to replace with <Text style={styles.replaceName}>{pendingName}</Text>.
+        </Text>
+        <View style={styles.replaceList}>
+          {current.map((a) => (
+            <View key={a.id} style={styles.replaceRow}>
+              <Glyph d={STAR} size={15} color={flColor.bronze300} width={0} fill={flColor.bronze300} />
+              <Text style={styles.replaceItemName} numberOfLines={1}>
+                {a.name}
+              </Text>
+              <Pressable onPress={() => onReplace(a.id)} accessibilityRole="button" accessibilityLabel={`Replace ${a.name}`} style={styles.replaceBtn}>
+                <Text style={styles.replaceBtnText}>Replace</Text>
+              </Pressable>
+            </View>
+          ))}
+        </View>
+      </View>
+    </BottomSheet>
   );
 }
 
@@ -355,9 +410,9 @@ function Redirect({ onDone }: { onDone: () => void }) {
   return null;
 }
 
-function Glyph({ d, size = 16, color, width = 1.9 }: { d: string; size?: number; color: string; width?: number }) {
+function Glyph({ d, size = 16, color, width = 1.9, fill = 'none' }: { d: string; size?: number; color: string; width?: number; fill?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round">
       <Path d={d} />
     </Svg>
   );
@@ -403,6 +458,17 @@ const styles = StyleSheet.create({
 
   deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 12, paddingVertical: 14, borderRadius: flRadius.md, borderWidth: 1, borderColor: 'rgba(190,90,76,0.4)', backgroundColor: 'rgba(190,90,76,0.1)' },
   deleteText: { fontSize: 14, fontWeight: '600', color: flColor.emberFlame },
+
+  // featured replace picker
+  replaceWrap: { gap: 0 },
+  replaceTitle: { fontFamily: flFont.display, fontSize: 21, fontWeight: '700', color: flColor.cream100, marginBottom: 6 },
+  replaceBody: { fontFamily: flFont.sans, fontSize: 13.5, lineHeight: 21, color: flColor.gray400, marginBottom: 18 },
+  replaceName: { color: flColor.cream100, fontWeight: '600' },
+  replaceList: { gap: 8 },
+  replaceRow: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 12, paddingHorizontal: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
+  replaceItemName: { flex: 1, minWidth: 0, fontFamily: flFont.sans, fontSize: 14, fontWeight: '600', color: flColor.cream100 },
+  replaceBtn: { paddingVertical: 8, paddingHorizontal: 15, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeMetalBorder, backgroundColor: flColor.bronzeTint },
+  replaceBtnText: { fontFamily: flFont.sans, fontSize: 12.5, fontWeight: '700', letterSpacing: 0.3, color: flColor.bronze300 },
 
   // form
   field: { marginBottom: 20 },
