@@ -8,6 +8,7 @@ import { ForgeSymbol } from '@/components/forge/ForgeSymbol';
 import { flColor, flRadius } from '@/constants/foundation';
 import { fetchPinManager, pinCandidate, unpin } from '@/data/legacy-pins-live';
 import { canPinMore, pinCountLabel, pinFor, type PinCandidate, type PinRef } from '@/domain/legacy/pins';
+import type { PinKind } from '@/types/legacy';
 import { useQuery } from '@/lib/useQuery';
 
 /**
@@ -16,15 +17,41 @@ import { useQuery } from '@/lib/useQuery';
  * Lists the athlete's real pinnable content (accomplishments · honors · chapters), each a toggle: a
  * check when pinned, a plus when not, disabled once the 6-cap is reached. Writes straight through to the
  * `pins` table; `onClose` lets Legacy refetch so the strip reflects the curation.
+ *
+ * Candidates are grouped into collapsible categories (Chapters · Honors · Accomplishments · …) so the
+ * list stays scannable as content grows — tap a category header to collapse/expand it.
  */
+
+/** Display order + label for the pin categories. Reserved kinds (record/photo/memory) are listed so they
+ *  slot in automatically once they produce candidates; empty categories never render. */
+const CATEGORY_ORDER: { kind: PinKind; label: string }[] = [
+  { kind: 'chapter', label: 'Chapters' },
+  { kind: 'honor', label: 'Honors' },
+  { kind: 'accomplishment', label: 'Accomplishments' },
+  { kind: 'record', label: 'Records' },
+  { kind: 'photo', label: 'Photos' },
+  { kind: 'memory', label: 'Memories' },
+];
+
 export function PinManagerSheet({ open, onClose }: { open: boolean; onClose: (changed: boolean) => void }) {
   const { data, loading, refetch } = useQuery(fetchPinManager, [open]); // re-read each time it opens
   const [busy, setBusy] = useState(false);
   const [changed, setChanged] = useState(false);
+  const [collapsed, setCollapsed] = useState<Set<PinKind>>(() => new Set());
 
   const candidates = data?.candidates ?? [];
   const pins: PinRef[] = data?.pins ?? [];
   const full = !canPinMore(pins);
+
+  // Group candidates into the non-empty categories, in display order.
+  const groups = CATEGORY_ORDER.map((c) => ({ ...c, items: candidates.filter((x) => x.kind === c.kind) })).filter((g) => g.items.length > 0);
+  const toggleSection = (kind: PinKind) =>
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(kind)) next.delete(kind);
+      else next.add(kind);
+      return next;
+    });
 
   const toggle = (c: PinCandidate) => {
     if (busy) return;
@@ -52,36 +79,59 @@ export function PinManagerSheet({ open, onClose }: { open: boolean; onClose: (ch
           ) : candidates.length === 0 ? (
             <Text style={styles.empty}>Nothing to pin yet — earn an honor, seal a chapter, or add an accomplishment.</Text>
           ) : (
-            candidates.map((c) => {
-              const pinned = pinFor(c, pins) != null;
-              const disabled = (!pinned && full) || busy;
+            groups.map((g) => {
+              const isCollapsed = collapsed.has(g.kind);
               return (
-                <Pressable
-                  key={`${c.kind}:${c.refId}`}
-                  onPress={() => toggle(c)}
-                  disabled={disabled}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: pinned, disabled }}
-                  accessibilityLabel={`${pinned ? 'Unpin' : 'Pin'} ${c.title}`}
-                  style={[styles.row, pinned && styles.rowOn, !pinned && full && styles.rowDim]}
-                >
-                  <View style={styles.rowIcon}>
-                    <ForgeSymbol name={c.icon} size={20} color={flColor.bronze300} />
-                  </View>
-                  <View style={styles.rowText}>
-                    <Text style={styles.rowTitle} numberOfLines={1}>
-                      {c.title}
-                    </Text>
-                    <Text style={styles.rowSub} numberOfLines={1}>
-                      {c.subtitle}
-                    </Text>
-                  </View>
-                  <View style={[styles.mark, pinned && styles.markOn]}>
-                    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={pinned ? '#1A1206' : flColor.bronze300} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
-                      <Path d={pinned ? 'M5 12.5l4.5 4.5L19 6.5' : 'M12 5v14M5 12h14'} />
+                <View key={g.kind} style={styles.section}>
+                  <Pressable
+                    onPress={() => toggleSection(g.kind)}
+                    accessibilityRole="button"
+                    accessibilityState={{ expanded: !isCollapsed }}
+                    accessibilityLabel={`${g.label}, ${g.items.length}`}
+                    style={styles.sectionHeader}
+                  >
+                    <Text style={styles.sectionLabel}>{g.label}</Text>
+                    <Text style={styles.sectionCount}>{g.items.length}</Text>
+                    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ transform: [{ rotate: isCollapsed ? '-90deg' : '0deg' }] }}>
+                      <Path d="M6 9l6 6 6-6" />
                     </Svg>
-                  </View>
-                </Pressable>
+                  </Pressable>
+
+                  {isCollapsed
+                    ? null
+                    : g.items.map((c) => {
+                        const pinned = pinFor(c, pins) != null;
+                        const disabled = (!pinned && full) || busy;
+                        return (
+                          <Pressable
+                            key={`${c.kind}:${c.refId}`}
+                            onPress={() => toggle(c)}
+                            disabled={disabled}
+                            accessibilityRole="button"
+                            accessibilityState={{ selected: pinned, disabled }}
+                            accessibilityLabel={`${pinned ? 'Unpin' : 'Pin'} ${c.title}`}
+                            style={[styles.row, pinned && styles.rowOn, !pinned && full && styles.rowDim]}
+                          >
+                            <View style={styles.rowIcon}>
+                              <ForgeSymbol name={c.icon} size={20} color={flColor.bronze300} />
+                            </View>
+                            <View style={styles.rowText}>
+                              <Text style={styles.rowTitle} numberOfLines={1}>
+                                {c.title}
+                              </Text>
+                              <Text style={styles.rowSub} numberOfLines={1}>
+                                {c.subtitle}
+                              </Text>
+                            </View>
+                            <View style={[styles.mark, pinned && styles.markOn]}>
+                              <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={pinned ? '#1A1206' : flColor.bronze300} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+                                <Path d={pinned ? 'M5 12.5l4.5 4.5L19 6.5' : 'M12 5v14M5 12h14'} />
+                              </Svg>
+                            </View>
+                          </Pressable>
+                        );
+                      })}
+                </View>
               );
             })
           )}
@@ -105,6 +155,11 @@ const styles = StyleSheet.create({
   list: { maxHeight: 380 },
   listPad: { gap: 8, paddingBottom: 6 },
   empty: { fontSize: 13, lineHeight: 20, color: flColor.gray600, textAlign: 'center', paddingVertical: 24 },
+
+  section: { gap: 8 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 6, paddingBottom: 2, paddingHorizontal: 2 },
+  sectionLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  sectionCount: { flex: 1, fontSize: 11, fontWeight: '600', color: flColor.gray600, fontVariant: ['tabular-nums'] },
 
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, paddingHorizontal: 12, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal900 },
   rowOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
