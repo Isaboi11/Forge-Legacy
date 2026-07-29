@@ -415,6 +415,23 @@ export default function SquadDetailRoute() {
           ) : null}
         </View>
 
+        {/* COMPETITIONS (C-1) — a Challenge surface, entered deliberately (CS-D22 / SA-D2). */}
+        <Pressable
+          onPress={() => router.push({ pathname: '/competitions', params: { id: squad.id } })}
+          accessibilityRole="button"
+          accessibilityLabel="Competitions"
+          style={({ pressed }) => [styles.recordsRow, pressed ? styles.recordsRowPressed : null]}
+        >
+          <View style={styles.recordsIcon}>
+            <SwordsIcon />
+          </View>
+          <View style={styles.recordsBody}>
+            <Text style={styles.recordsTitle}>Competitions</Text>
+            <Text style={styles.recordsSub}>What we&apos;re competing in, and what we&apos;ve won.</Text>
+          </View>
+          <ChevronRight />
+        </Pressable>
+
         {/* SQUAD RECORDS — content, not administration, so it gets a visible home rather than a menu row. */}
         <Pressable
           onPress={() => router.push({ pathname: '/squad-records', params: { id: squad.id } })}
@@ -871,6 +888,16 @@ function ChevronRight() {
   return (
     <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
       <Path d="M9 5l7 7-7 7" />
+    </Svg>
+  );
+}
+function SwordsIcon() {
+  return (
+    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M14.5 17.5 L3 6 L3 3 L6 3 L17.5 14.5" />
+      <Path d="M13 19 L19 13" />
+      <Path d="M14.5 6.5 L18 3 L21 3 L21 6 L17.5 9.5" />
+      <Path d="M5 14 L9 18" />
     </Svg>
   );
 }
