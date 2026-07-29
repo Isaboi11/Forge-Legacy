@@ -17,6 +17,7 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { claimInitiativeHonor } from '@/data/honors-live';
 import { createProgram, fetchProgram, updateProgram, type ProgramDay, type ProgramExercise } from '@/data/programs-live';
 import { clearBuilderInbox, readBuilderInbox, type BuilderSection } from '@/lib/builder-inbox';
+import { errorMessage } from '@/lib/useQuery';
 import {
   absorbBuilderInbox,
   activeDays,
@@ -296,7 +297,7 @@ export default function ProgramBuilderScreen() {
       void claimInitiativeHonor().catch(() => {});
       router.replace({ pathname: '/program/[id]', params: { id } });
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errorMessage(e));
       setSaving(false);
     }
   };

@@ -31,6 +31,7 @@ import {
 } from '@/domain/program/progress-core';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { useUnits } from '@/lib/settings';
+import { errorMessage } from '@/lib/useQuery';
 
 /**
  * Program Detail (`Forge Program.dc.html`) — one athlete-authored program across its five lifecycle
@@ -82,7 +83,7 @@ export default function ProgramDetailScreen() {
           setProgram(p);
           setWorkouts(w);
         } catch (e) {
-          if (active) setError(e instanceof Error ? e.message : String(e));
+          if (active) setError(errorMessage(e));
         } finally {
           if (active) setLoading(false);
         }
@@ -150,7 +151,7 @@ export default function ProgramDetailScreen() {
         router.replace('/(tabs)');
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -171,7 +172,7 @@ export default function ProgramDetailScreen() {
         router.back();
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errorMessage(e));
     } finally {
       setBusy(false);
     }

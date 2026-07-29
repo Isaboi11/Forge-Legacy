@@ -17,6 +17,7 @@ import { buildActiveSession, buildSessionFromProgram } from '@/domain/workout/bu
 import { fetchProgram, fetchProgramCompletedCount } from '@/data/programs-live';
 import { nextSession } from '@/domain/program/progress-core';
 import { clearWorkoutLaunch, readWorkoutLaunch } from '@/lib/workout-launch';
+import { errorMessage } from '@/lib/useQuery';
 import { clearSession, loadSession, persistSession } from '@/domain/workout/autosave';
 import { doneSetCount, hasLoggedSet } from '@/domain/workout/metrics';
 import { saveWorkout } from '@/domain/workout/save';
@@ -415,7 +416,7 @@ export default function WorkoutScreen() {
       finishWorkout();
       router.replace({ pathname: '/workout-complete', params: { id: r.workoutId } });
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errorMessage(e));
       setPhase('active');
     }
   };

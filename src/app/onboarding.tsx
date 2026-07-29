@@ -10,6 +10,7 @@ import { Field, Heading, ProgressHeader, SelectTile } from '@/components/onboard
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { completeOnboarding, isHandleAvailable } from '@/domain/onboarding/service';
 import { useProfile } from '@/lib/profile';
+import { errorMessage } from '@/lib/useQuery';
 
 /**
  * The onboarding route (session, not-onboarded) — a MINIMAL identity ramp (ONB-Amendment-002): Account →
@@ -86,7 +87,7 @@ export default function Onboarding() {
       refetchProfile();
     } catch (e) {
       setFinishing(false);
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errorMessage(e));
     }
   };
 
