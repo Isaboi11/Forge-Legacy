@@ -415,6 +415,23 @@ export default function SquadDetailRoute() {
           ) : null}
         </View>
 
+        {/* SQUAD RECORDS — content, not administration, so it gets a visible home rather than a menu row. */}
+        <Pressable
+          onPress={() => router.push({ pathname: '/squad-records', params: { id: squad.id } })}
+          accessibilityRole="button"
+          accessibilityLabel="Squad records"
+          style={({ pressed }) => [styles.recordsRow, pressed ? styles.recordsRowPressed : null]}
+        >
+          <View style={styles.recordsIcon}>
+            <BookIcon />
+          </View>
+          <View style={styles.recordsBody}>
+            <Text style={styles.recordsTitle}>Squad Records</Text>
+            <Text style={styles.recordsSub}>The best this squad has ever posted.</Text>
+          </View>
+          <ChevronRight />
+        </Pressable>
+
         {/* CHECK-INS — ephemeral video stories (latest per member, <24h) */}
         <View style={styles.checkinsSection}>
           <View style={styles.checkinHead}>
@@ -850,6 +867,21 @@ function GearIcon() {
     </Svg>
   );
 }
+function ChevronRight() {
+  return (
+    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M9 5l7 7-7 7" />
+    </Svg>
+  );
+}
+function BookIcon() {
+  return (
+    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M12 6.5C10.5 5 8.5 4.5 4 4.5v13c4.5 0 6.5.5 8 2 1.5-1.5 3.5-2 8-2v-13c-4.5 0-6.5.5-8 2z" />
+      <Path d="M12 6.5v13" />
+    </Svg>
+  );
+}
 function InviteIcon() {
   return (
     <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
@@ -1081,6 +1113,35 @@ const styles = StyleSheet.create({
   confirmActions: { gap: 10, marginTop: 22 },
 
   // today's check-ins
+  recordsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 13,
+    marginTop: 22,
+    paddingHorizontal: 15,
+    paddingVertical: 14,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    backgroundColor: flColor.charcoal800,
+    boxShadow: flShadow.card,
+  },
+  recordsRowPressed: { transform: [{ scale: 0.99 }], borderColor: flColor.bronzeBorder },
+  recordsIcon: {
+    width: 38,
+    height: 38,
+    flexShrink: 0,
+    borderRadius: flRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: flColor.bronzeTint,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+  },
+  recordsBody: { flex: 1, minWidth: 0, gap: 3 },
+  recordsTitle: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
+  recordsSub: { fontSize: 11.5, color: flColor.gray600 },
+
   checkinsSection: { paddingHorizontal: 20, marginTop: 12 },
   checkinHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 },
   checkinDate: { fontSize: 11.5, color: flColor.gray600 },
