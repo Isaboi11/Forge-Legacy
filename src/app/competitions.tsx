@@ -190,7 +190,7 @@ export default function CompetitionsScreen() {
           ) : (
             <View style={styles.stack}>
               {active.map((c) => (
-                <ActiveCard key={c.id} challenge={c} />
+                <ActiveCard key={c.id} challenge={c} onOpen={() => router.push({ pathname: '/challenge/[id]', params: { id: c.id } })} />
               ))}
             </View>
           )}
@@ -206,7 +206,7 @@ export default function CompetitionsScreen() {
           ) : (
             <View style={styles.historyCard}>
               {history.slice(0, 5).map((p, i) => (
-                <HistoryRow key={p.id} past={p} divided={i > 0} />
+                <HistoryRow key={p.id} past={p} divided={i > 0} onOpen={() => router.push({ pathname: '/challenge-results/[id]', params: { id: p.id } })} />
               ))}
             </View>
           )}
@@ -239,13 +239,13 @@ export default function CompetitionsScreen() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-function ActiveCard({ challenge: c }: { challenge: ActiveChallenge }) {
+function ActiveCard({ challenge: c, onOpen }: { challenge: ActiveChallenge; onOpen: () => void }) {
   const meta = CHALLENGE_TYPES[c.type];
   const share = shareOfLeader(c.myScore, c.leaderScore);
   const left = daysLeft(c.endAt);
 
   return (
-    <View style={styles.activeCard}>
+    <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={`Open ${c.name}`} style={({ pressed }) => [styles.activeCard, pressed ? styles.activeCardPressed : null]}>
       <LinearGradient colors={['rgba(191,143,79,0.07)', 'transparent'] as const} locations={[0, 0.62] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
 
       <View style={styles.typeRow}>
@@ -284,16 +284,16 @@ function ActiveCard({ challenge: c }: { challenge: ActiveChallenge }) {
         </Text>
         <Text style={styles.days}>{left === 0 ? 'Ends today' : `${left} ${left === 1 ? 'day' : 'days'} left`}</Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
-function HistoryRow({ past: p, divided }: { past: PastChallenge; divided: boolean }) {
+function HistoryRow({ past: p, divided, onOpen }: { past: PastChallenge; divided: boolean; onOpen: () => void }) {
   const meta = CHALLENGE_TYPES[p.type];
   const label = pastPlaceLabel(p);
 
   return (
-    <View style={[styles.historyRow, divided ? styles.historyRowDivided : null]}>
+    <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={`Open ${p.name}`} style={({ pressed }) => [styles.historyRow, divided ? styles.historyRowDivided : null, pressed ? styles.activeCardPressed : null]}>
       {p.isWinner ? (
         <View style={styles.champDisc}>
           <LinearGradient colors={flGradient.bronzeMetallic.colors} locations={flGradient.bronzeMetallic.locations} start={flGradient.bronzeMetallic.start} end={flGradient.bronzeMetallic.end} style={StyleSheet.absoluteFill} />
@@ -324,7 +324,7 @@ function HistoryRow({ past: p, divided }: { past: PastChallenge; divided: boolea
           {formatScore(p.type, p.score)} {meta.unit}
         </Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -475,6 +475,7 @@ const styles = StyleSheet.create({
   btnBusy: { opacity: 0.6 },
 
   // active
+  activeCardPressed: { opacity: 0.9, transform: [{ scale: 0.995 }] },
   activeCard: {
     position: 'relative',
     overflow: 'hidden',

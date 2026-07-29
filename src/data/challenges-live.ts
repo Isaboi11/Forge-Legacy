@@ -362,6 +362,207 @@ export async function createChallenge(input: CreateChallengeInput): Promise<stri
   return id;
 }
 
+export interface Standing {
+  userId: string;
+  name: string;
+  avatarUrl: string | null;
+  score: number;
+  place: number;
+  /** True when another athlete shares this place — the screen shows "T-3" rather than picking a winner. */
+  tied: boolean;
+  isSelf: boolean;
+  loggedToday: boolean;
+  /** Added in the last 7 days. Shown only when above zero — CS-D3 never annotates absence. */
+  recent: number;
+}
+
+export interface ChallengeDetail {
+  id: string;
+  name: string;
+  description: string | null;
+  type: ChallengeType;
+  metricKey: string | null;
+  context: ChallengeContext;
+  state: string;
+  startAt: string;
+  endAt: string;
+  squadId: string | null;
+  squadName: string | null;
+  isCreator: boolean;
+  iJoined: boolean;
+  standings: Standing[];
+}
+
+/** One challenge and its full roster, ranked. Null when it isn't visible to you. */
+export async function fetchChallengeDetail(challengeId: string): Promise<ChallengeDetail | null> {
+  const { data, error } = await supabase.rpc('challenge_detail', { p_challenge: challengeId });
+  if (error) {
+    if ((error as { code?: string }).code === 'PGRST202') throw new Error('Challenge detail isn’t available yet — migration 0064 hasn’t been applied.');
+    throw error;
+  }
+  if (!data) return null;
+  const d = data as Record<string, unknown>;
+  return {
+    id: String(d.id),
+    name: String(d.name),
+    description: (d.description as string) ?? null,
+    type: asType(String(d.type)),
+    metricKey: (d.metric_key as string) ?? null,
+    context: asContext(String(d.context)),
+    state: String(d.state),
+    startAt: String(d.start_at),
+    endAt: String(d.end_at),
+    squadId: (d.squad_id as string) ?? null,
+    squadName: (d.squad_name as string) ?? null,
+    isCreator: !!d.is_creator,
+    iJoined: !!d.i_joined,
+    standings: ((d.standings ?? []) as Record<string, unknown>[]).map((r) => ({
+      userId: String(r.user_id),
+      name: String(r.name),
+      avatarUrl: (r.avatar_url as string) ?? null,
+      score: Number(r.score ?? 0),
+      place: Number(r.place ?? 1),
+      tied: !!r.tied,
+      isSelf: !!r.is_self,
+      loggedToday: !!r.logged_today,
+      recent: Number(r.recent ?? 0),
+    })),
+  };
+}
+
+/** "2nd", "T-3" — ordinal, and honest about ties. */
+export function ordinal(place: number, tied = false): string {
+  const suffix = place % 100 >= 11 && place % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][place % 10] ?? 'th';
+  return `${tied ? 'T-' : ''}${place}${suffix}`;
+}
+
+// ── C-4 Challenge Results ────────────────────────────────────────────────────
+
+export interface FinalStanding {
+  userId: string;
+  name: string;
+  avatarUrl: string | null;
+  score: number;
+  place: number;
+  isWinner: boolean;
+  tied: boolean;
+  isSelf: boolean;
+}
+
+export interface Champion {
+  userId: string;
+  name: string;
+  avatarUrl: string | null;
+  score: number;
+}
+
+/**
+ * A distinction computed at read time from the season's training data (C-4 §6.1 / CC-D4). Never
+ * stored, never negative — a badge is only ever returned when someone genuinely earned it.
+ */
+export interface ChallengeBadge {
+  kind: 'MOST_CONSISTENT' | 'BIGGEST_CLIMB';
+  userId: string;
+  name: string;
+  value: number;
+}
+
+export interface ChallengeResultsDetail {
+  id: string;
+  name: string;
+  description: string | null;
+  type: ChallengeType;
+  metricKey: string | null;
+  context: ChallengeContext;
+  state: string;
+  startAt: string;
+  endAt: string;
+  squadId: string | null;
+  squadName: string | null;
+  field: number;
+  standings: FinalStanding[];
+  /** Plural by design — CS-D15 gives every athlete tied at the top a full share of the win. */
+  winners: Champion[];
+  summary: { total: number; athletes: number; prs: number; athleteDays: number };
+  badges: ChallengeBadge[];
+}
+
+/**
+ * The frozen result of a finished season. Null when the challenge isn't visible to you, or when it
+ * never reached COMPLETED — a cancelled challenge has no final standings and C-4 is never shown for
+ * one (spec §8), which the RPC enforces rather than trusting this caller.
+ */
+export async function fetchChallengeResults(challengeId: string): Promise<ChallengeResultsDetail | null> {
+  const { data, error } = await supabase.rpc('challenge_results_detail', { p_challenge: challengeId });
+  if (error) {
+    if ((error as { code?: string }).code === 'PGRST202') throw new Error('Final results aren’t available yet — migration 0065 hasn’t been applied.');
+    throw error;
+  }
+  if (!data) return null;
+  const d = data as Record<string, unknown>;
+  const s = (d.summary ?? {}) as Record<string, unknown>;
+  return {
+    id: String(d.id),
+    name: String(d.name),
+    description: (d.description as string) ?? null,
+    type: asType(String(d.type)),
+    metricKey: (d.metric_key as string) ?? null,
+    context: asContext(String(d.context)),
+    state: String(d.state),
+    startAt: String(d.start_at),
+    endAt: String(d.end_at),
+    squadId: (d.squad_id as string) ?? null,
+    squadName: (d.squad_name as string) ?? null,
+    field: Number(d.field ?? 0),
+    standings: ((d.standings ?? []) as Record<string, unknown>[]).map((r) => ({
+      userId: String(r.user_id),
+      name: String(r.name),
+      avatarUrl: (r.avatar_url as string) ?? null,
+      score: Number(r.score ?? 0),
+      place: Number(r.place ?? 1),
+      isWinner: !!r.is_winner,
+      tied: !!r.tied,
+      isSelf: !!r.is_self,
+    })),
+    winners: ((d.winners ?? []) as Record<string, unknown>[]).map((r) => ({
+      userId: String(r.user_id),
+      name: String(r.name),
+      avatarUrl: (r.avatar_url as string) ?? null,
+      score: Number(r.score ?? 0),
+    })),
+    summary: {
+      total: Number(s.total ?? 0),
+      athletes: Number(s.athletes ?? 0),
+      prs: Number(s.prs ?? 0),
+      athleteDays: Number(s.athlete_days ?? 0),
+    },
+    badges: ((d.badges ?? []) as Record<string, unknown>[]).map((r) => ({
+      kind: r.kind === 'BIGGEST_CLIMB' ? 'BIGGEST_CLIMB' : 'MOST_CONSISTENT',
+      userId: String(r.user_id),
+      name: String(r.name),
+      value: Number(r.value ?? 0),
+    })),
+  };
+}
+
+/**
+ * How a finish is named. Positive by construction (CC-D3 / spec §5): every placement is stated as a
+ * placement. There is no "last", and a two-athlete result does not read "Lost the duel" — the design's
+ * phrasing, and the one line on that screen that manufactures a loser.
+ */
+export function finishLabel(place: number, isWinner: boolean, coWinners: number): string {
+  if (isWinner) return coWinners > 1 ? 'Co-Champion' : 'Champion';
+  if (place === 2) return 'Silver Finish';
+  if (place === 3) return 'Bronze Finish';
+  return `${ordinal(place)} Place`;
+}
+
+/** Season length in whole days, floored at 1 so a same-day challenge never reads "0-day season". */
+export function seasonDays(startAt: string, endAt: string): number {
+  const ms = new Date(endAt).getTime() - new Date(startAt).getTime();
+  return Number.isFinite(ms) ? Math.max(1, Math.round(ms / (24 * 60 * 60 * 1000))) : 1;
+}
+
 /** Opt in. No auto-enrollment (CS-D1) — this is only ever the athlete adding themselves. */
 export async function joinChallenge(challengeId: string): Promise<void> {
   const {

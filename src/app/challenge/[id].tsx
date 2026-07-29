@@ -1,0 +1,582 @@
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import Svg, { Circle, Path } from 'react-native-svg';
+
+import { AppBar } from '@/components/forge/composites/AppBar';
+import { Avatar } from '@/components/forge/composites/Avatar';
+import { ScreenBackground } from '@/components/screen-background';
+import { SCREEN_BG } from '@/constants/backgrounds';
+import {
+  CHALLENGE_TYPES,
+  fetchChallengeDetail,
+  formatScore,
+  isGainType,
+  metricLabel,
+  ordinal,
+  type ChallengeDetail,
+  type Standing,
+} from '@/data/challenges-live';
+import { useQuery } from '@/lib/useQuery';
+import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
+
+/**
+ * Challenge (C-3) — the standings screen. Built to `Forge Challenge.dc.html`.
+ *
+ * The design calls itself the most cinematic screen in the project and it is: a crown emerging from the
+ * stone at 34% opacity, an ember drifting up over 7.5s, a shimmer that glints for 21% of a 10s cycle,
+ * and a season timeline of week segments. All of that is here.
+ *
+ * It is also, in the design, entirely fictional — `yourRank: '2nd'`, `raceLine: 'Marcus leads by 2
+ * workouts'` and `yourScore: '5'` are typed strings that merely happen to agree with the seed roster.
+ * Every number on this screen is now computed from the same scoring the challenge itself runs on.
+ *
+ * FOUR DESIGN DEFECTS FIXED, each because real data exposes them:
+ *   · "WKTS" was hardcoded into the markup three times, so the screen physically could not display a
+ *     volume, distance, PR or gain challenge — thirteen of our fourteen metrics. The unit comes from
+ *     the challenge now.
+ *   · A tie at 4 workouts was given ranks 3 and 4 by array order, and the podium treatment went to
+ *     whichever sorted first. Ties share a place and are marked "T-3".
+ *   · The roster rendered five blank gradient discs on the one screen whose entire job is telling five
+ *     competitors apart. Real avatars with the design system's initials fallback.
+ *   · Standings rows were inert; they open the athlete's profile.
+ *
+ * CS-D3 shows up in one visible way: the design flags athletes who have gone quiet with a `stale`
+ * treatment, which is a soft failure marker on a leaderboard. Momentum here is positive-only — "+3 this
+ * week" when there's something to say, and nothing at all otherwise. Absence is never annotated.
+ *
+ * NOT PORTED: the shimmer's second-asset alpha mask (`competition-crown-mask.png`) and the crown's
+ * radial dissolve. Both are CSS mask-image + mix-blend-mode: screen, which React Native has no
+ * equivalent for. The glint is approximated with a clipped sweeping gradient; the dissolve is carried
+ * by the vignette behind the art instead. The mask asset is imported and unused, waiting for a native
+ * masking approach.
+ */
+
+const CROWN = require('../../../assets/competition/competition-crown.png');
+
+const DAY = 24 * 60 * 60 * 1000;
+
+export default function ChallengeDetailScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const challengeId = String(id ?? '');
+  const router = useRouter();
+  const { data, loading, error, refetch } = useQuery(() => fetchChallengeDetail(challengeId), [challengeId]);
+
+  const goBack = () => (router.canGoBack() ? router.back() : router.replace('/competitions'));
+
+  if (loading && !data) {
+    return (
+      <Shell onBack={goBack}>
+        <View style={styles.center}>
+          <ActivityIndicator color={flColor.bronze400} />
+        </View>
+      </Shell>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <Shell onBack={goBack}>
+        <View style={styles.center}>
+          <Text style={styles.missingTitle}>{error ? 'Couldn’t load this competition.' : 'This competition isn’t available.'}</Text>
+          {error ? <Text style={styles.missingBody}>{error}</Text> : null}
+          <Pressable onPress={error ? refetch : goBack} accessibilityRole="button" accessibilityLabel={error ? 'Try again' : 'Back'} style={styles.outlineBtn}>
+            <Text style={styles.outlineBtnLabel}>{error ? 'Try Again' : 'Back'}</Text>
+          </Pressable>
+        </View>
+      </Shell>
+    );
+  }
+
+  return (
+    <Shell onBack={goBack}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <Hero challenge={data} />
+        {/* The design's own flagged gap: a closed season had no way through to its final standings. */}
+        {data.state === 'COMPLETED' || data.state === 'ARCHIVED' ? (
+          <Pressable
+            onPress={() => router.push({ pathname: '/challenge-results/[id]', params: { id: challengeId } })}
+            accessibilityRole="button"
+            accessibilityLabel="View final standings"
+            style={({ pressed }) => [styles.finalBtn, pressed ? styles.standRowPressed : null]}
+          >
+            <CrownGlyph size={16} />
+            <Text style={styles.finalBtnLabel}>View Final Standings</Text>
+          </Pressable>
+        ) : null}
+        <YourStanding challenge={data} />
+        <Standings challenge={data} onAthlete={(name) => router.push({ pathname: '/athlete/[id]', params: { id: name } })} />
+        <HowItWorks challenge={data} />
+      </ScrollView>
+    </Shell>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+function Hero({ challenge: c }: { challenge: ChallengeDetail }) {
+  const [rise] = useState(() => new Animated.Value(0));
+  const [ember] = useState(() => new Animated.Value(0));
+  const [glint] = useState(() => new Animated.Value(0));
+
+  useEffect(() => {
+    const entrance = Animated.timing(rise, { toValue: 1, duration: 900, useNativeDriver: true });
+    entrance.start();
+    // 7.5s drift, 2.2s in — the design's ember, on its own unhurried loop.
+    const drift = Animated.loop(Animated.sequence([Animated.delay(2200), Animated.timing(ember, { toValue: 1, duration: 7500, useNativeDriver: true }), Animated.timing(ember, { toValue: 0, duration: 0, useNativeDriver: true })]));
+    drift.start();
+    // A glint every ~10s rather than a constant shine — the design's stalled timing curve.
+    const sweep = Animated.loop(Animated.sequence([Animated.delay(2000), Animated.timing(glint, { toValue: 1, duration: 2100, useNativeDriver: true }), Animated.delay(7900), Animated.timing(glint, { toValue: 0, duration: 0, useNativeDriver: true })]));
+    sweep.start();
+    return () => {
+      entrance.stop();
+      drift.stop();
+      sweep.stop();
+    };
+  }, [rise, ember, glint]);
+
+  const start = new Date(c.startAt).getTime();
+  const end = new Date(c.endAt).getTime();
+  // Pinned at mount: the season maths must not shift between re-renders, and Date.now() in a render
+  // body is impure (react-compiler flags it).
+  const [now] = useState(() => Date.now());
+  const totalDays = Math.max(1, Math.round((end - start) / DAY));
+  const totalWeeks = Math.max(1, Math.ceil(totalDays / 7));
+  const elapsed = Math.max(0, Math.min(end - start, now - start));
+  const elapsedWeeks = elapsed / (7 * DAY);
+  const currentWeek = Math.min(totalWeeks, Math.floor(elapsedWeeks) + 1);
+  const weekFill = Math.max(0, Math.min(1, elapsedWeeks - Math.floor(elapsedWeeks)));
+  const daysLeft = Math.max(0, Math.ceil((end - now) / DAY));
+
+  const leader = c.standings[0];
+  const self = c.standings.find((s) => s.isSelf);
+  const meta = CHALLENGE_TYPES[c.type];
+
+  // The race line, computed. The design typed it.
+  const raceLine = (() => {
+    if (!leader) return 'No one has scored yet.';
+    if (self && leader.userId === self.userId) {
+      const next = c.standings.find((s) => !s.isSelf);
+      if (!next) return 'You’re the only one in so far.';
+      const lead = self.score - next.score;
+      return lead > 0 ? `You lead by ${formatScore(c.type, lead)} ${meta.unit}` : `You and ${next.name} are level`;
+    }
+    if (!self) return `${leader.name} leads with ${formatScore(c.type, leader.score)} ${meta.unit}`;
+    const gap = leader.score - self.score;
+    return gap > 0 ? `${leader.name} leads by ${formatScore(c.type, gap)} ${meta.unit}` : `You and ${leader.name} are level`;
+  })();
+
+  return (
+    <View style={styles.hero}>
+      {/* the vignette the crown reads against — layered rather than radial, RN has no radial-gradient */}
+      <LinearGradient colors={['rgba(6,7,9,0.97)', 'rgba(6,7,9,0.72)', 'transparent'] as const} locations={[0, 0.54, 0.84] as const} start={{ x: 0.5, y: 0.2 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+
+      <Animated.View
+        style={[
+          styles.crownWrap,
+          {
+            opacity: rise.interpolate({ inputRange: [0, 1], outputRange: [0, 0.34] }),
+            transform: [{ translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }, { scale: rise.interpolate({ inputRange: [0, 1], outputRange: [0.98, 1] }) }],
+          },
+        ]}
+      >
+        <Image source={CROWN} style={styles.crown} contentFit="contain" />
+        <Animated.View
+          style={[
+            styles.glint,
+            { transform: [{ translateX: glint.interpolate({ inputRange: [0, 1], outputRange: [-260, 300] }) }, { rotate: '15deg' }] },
+          ]}
+        >
+          <LinearGradient colors={['transparent', 'rgba(230,202,156,0.5)', 'transparent'] as const} locations={[0, 0.5, 1] as const} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={StyleSheet.absoluteFill} />
+        </Animated.View>
+      </Animated.View>
+
+      <Animated.View
+        style={[
+          styles.ember,
+          {
+            opacity: ember.interpolate({ inputRange: [0, 0.08, 0.7, 1], outputRange: [0, 0.7, 0.4, 0] }),
+            transform: [{ translateY: ember.interpolate({ inputRange: [0, 1], outputRange: [0, -96] }) }, { translateX: ember.interpolate({ inputRange: [0, 1], outputRange: [0, 14] }) }],
+          },
+        ]}
+      />
+
+      <View style={styles.heroContent}>
+        <Text style={styles.heroName} numberOfLines={3}>
+          {c.name}
+        </Text>
+
+        <View style={styles.timeline}>
+          {Array.from({ length: totalWeeks }).map((_, i) => {
+            const week = i + 1;
+            const fill = week < currentWeek ? 1 : week === currentWeek ? weekFill : 0;
+            return (
+              <View key={i} style={styles.weekTrack}>
+                {fill > 0 ? (
+                  <View style={[styles.weekFill, { width: `${Math.round(fill * 100)}%` }, week === currentWeek ? styles.weekFillCurrent : null]}>
+                    <LinearGradient colors={flGradient.bronzeMetallic.colors} locations={flGradient.bronzeMetallic.locations} start={flGradient.bronzeMetallic.start} end={flGradient.bronzeMetallic.end} style={StyleSheet.absoluteFill} />
+                  </View>
+                ) : null}
+              </View>
+            );
+          })}
+        </View>
+        <Text style={styles.seasonLabel}>
+          {c.state === 'ENROLLMENT'
+            ? `Starts in ${Math.max(0, Math.ceil((start - now) / DAY))} days · ${totalDays} day run`
+            : `Week ${currentWeek} of ${totalWeeks} • ${daysLeft === 0 ? 'final day' : `${daysLeft} days remaining`}`}
+        </Text>
+
+        <View style={styles.raceRow}>
+          <CrownGlyph size={15} />
+          <Text style={styles.raceLine} numberOfLines={2}>
+            {raceLine}
+          </Text>
+        </View>
+
+        <Text style={styles.heroMeta}>
+          {metricLabel(c.type, c.metricKey)}
+          {c.squadName ? ` · ${c.squadName}` : ''}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+function YourStanding({ challenge: c }: { challenge: ChallengeDetail }) {
+  const self = c.standings.find((s) => s.isSelf);
+  if (!self) return null;
+
+  const meta = CHALLENGE_TYPES[c.type];
+  const sorted = c.standings;
+  const idx = sorted.findIndex((s) => s.isSelf);
+  const above = sorted.slice(0, idx).reverse().find((s) => s.score > self.score);
+  const below = sorted.slice(idx + 1).find((s) => s.score < self.score);
+
+  return (
+    <View style={styles.standingCard}>
+      <LinearGradient colors={['rgba(191,143,79,0.10)', 'transparent'] as const} locations={[0, 0.55] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+      <View style={styles.rankZone}>
+        <Text style={styles.rankLabel}>Your Rank</Text>
+        <Text style={styles.rankValue}>{ordinal(self.place, self.tied)}</Text>
+        <Text style={styles.rankLabel}>Out of {sorted.length}</Text>
+      </View>
+
+      <View style={styles.rule} />
+
+      <View style={styles.compareZone}>
+        <View style={styles.scoreRow}>
+          <Text style={styles.scoreValue}>{formatScore(c.type, self.score)}</Text>
+          <Text style={styles.scoreUnit}>{meta.unit}</Text>
+        </View>
+        {above ? (
+          <Text style={styles.behindLine}>
+            {formatScore(c.type, above.score - self.score)} behind {above.name}
+          </Text>
+        ) : null}
+        {below ? (
+          <Text style={styles.aheadLine}>
+            {formatScore(c.type, self.score - below.score)} ahead of {below.name}
+          </Text>
+        ) : null}
+        {!above && !below ? <Text style={styles.aheadLine}>Everyone is level so far.</Text> : null}
+      </View>
+    </View>
+  );
+}
+
+function Standings({ challenge: c, onAthlete }: { challenge: ChallengeDetail; onAthlete: (name: string) => void }) {
+  const meta = CHALLENGE_TYPES[c.type];
+
+  return (
+    <>
+      <View style={styles.standHead}>
+        <Text style={styles.standLabel}>Standings</Text>
+        <View style={styles.legend}>
+          <PulseDot />
+          <Text style={styles.legendText}>LOGGED TODAY</Text>
+        </View>
+      </View>
+
+      {c.standings.length === 0 ? (
+        <View style={styles.dashedEmpty}>
+          <Text style={styles.dashedText}>No one has opted in yet.</Text>
+        </View>
+      ) : (
+        <View style={styles.standList}>
+          {c.standings.map((s, i) => (
+            <StandingRow key={s.userId} standing={s} index={i} type={c.type} unit={meta.unit} onPress={() => onAthlete(s.name)} />
+          ))}
+        </View>
+      )}
+    </>
+  );
+}
+
+function StandingRow({ standing: s, index, type, unit, onPress }: { standing: Standing; index: number; type: ChallengeDetail['type']; unit: string; onPress: () => void }) {
+  const leader = s.place === 1;
+  const podium = s.place <= 3;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${s.name}, ${ordinal(s.place, s.tied)}, ${formatScore(type, s.score)} ${unit}`}
+      style={({ pressed }) => [styles.standRow, leader ? styles.standRowLeader : null, s.place === 3 ? styles.standRowThird : null, s.isSelf ? styles.standRowSelf : null, pressed ? styles.standRowPressed : null]}
+    >
+      {leader || s.place === 3 ? (
+        <LinearGradient colors={leader ? (['rgba(191,143,79,0.09)', 'rgba(191,143,79,0.02)'] as const) : (['rgba(191,143,79,0.045)', 'transparent'] as const)} locations={[0, leader ? 1 : 0.6] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+      ) : null}
+
+      <View style={styles.rankSlot}>
+        {leader ? <CrownGlyph size={17} /> : <Text style={[styles.rankNum, podium ? styles.rankNumPodium : null]}>{s.tied ? `T${s.place}` : s.place}</Text>}
+      </View>
+
+      <View style={styles.avatarWrap}>
+        <Avatar src={s.avatarUrl ?? undefined} name={s.name} size={40} />
+        {s.loggedToday ? <PulseDot size={11} ringed /> : null}
+      </View>
+
+      <View style={styles.standBody}>
+        <Text style={[styles.standName, leader || s.isSelf ? styles.standNameStrong : null]} numberOfLines={1}>
+          {s.name}
+          {s.isSelf ? ' (You)' : ''}
+        </Text>
+        {/* Positive-only: an athlete with nothing to add simply has no second line. */}
+        {s.recent > 0 ? (
+          <View style={styles.momRow}>
+            <ArrowUpGlyph />
+            <Text style={styles.momText}>
+              +{formatScore(type, s.recent)} this week
+            </Text>
+          </View>
+        ) : null}
+      </View>
+
+      <View style={styles.standScore}>
+        <Text style={[styles.standScoreValue, leader ? styles.standScoreLeader : null]}>{formatScore(type, s.score)}</Text>
+        <Text style={styles.standScoreUnit}>{unit}</Text>
+      </View>
+    </Pressable>
+  );
+}
+
+function HowItWorks({ challenge: c }: { challenge: ChallengeDetail }) {
+  const meta = CHALLENGE_TYPES[c.type];
+  const gain = isGainType(c.type);
+  const rules = [
+    { glyph: <DumbbellGlyph />, text: gain ? `Your ${meta.unit.replace(' gained', '')} during the challenge, measured against the same length of time before it.` : `${metricLabel(c.type, c.metricKey)} — counted in ${meta.unit}.` },
+    { glyph: <FlameGlyph size={15} />, text: 'Scores update as you log. Nothing to submit.' },
+    { glyph: <MedalGlyph />, text: 'The highest score at the end takes the crown. Ties share it.' },
+  ];
+
+  return (
+    <>
+      <Text style={styles.sectionLabel}>How It Works</Text>
+      <View style={styles.rulesCard}>
+        {rules.map((r, i) => (
+          <View key={i} style={styles.ruleRow}>
+            <View style={styles.ruleIcon}>{r.glyph}</View>
+            <Text style={styles.ruleText}>{r.text}</Text>
+          </View>
+        ))}
+      </View>
+      {c.description ? (
+        <View style={styles.messageCard}>
+          <Text style={styles.messageText}>“{c.description}”</Text>
+        </View>
+      ) : null}
+    </>
+  );
+}
+
+function Shell({ children, onBack }: { children: React.ReactNode; onBack: () => void }) {
+  return (
+    <View style={styles.root}>
+      <ScreenBackground image={SCREEN_BG.slate2} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
+      <AppBar title="Competition" serif onBack={onBack} />
+      {children}
+    </View>
+  );
+}
+
+/** The design's breathing dot — 2.8s in and out, marking who has trained today. */
+function PulseDot({ size = 6, ringed = false }: { size?: number; ringed?: boolean }) {
+  const [v] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    const anim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(v, { toValue: 1, duration: 1400, useNativeDriver: true }),
+        Animated.timing(v, { toValue: 0, duration: 1400, useNativeDriver: true }),
+      ]),
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [v]);
+  return (
+    <Animated.View
+      style={[
+        { width: size, height: size, borderRadius: flRadius.round, backgroundColor: flColor.bronze300 },
+        ringed ? styles.dotRinged : null,
+        { opacity: v.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] }) },
+      ]}
+    />
+  );
+}
+
+// ── glyphs ──
+function CrownGlyph({ size = 15, color = flColor.bronze300 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <Path d="M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z" />
+    </Svg>
+  );
+}
+function ArrowUpGlyph({ size = 10, color = flColor.bronze400 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M12 19V5M6 11l6-6 6 6" />
+    </Svg>
+  );
+}
+function DumbbellGlyph({ size = 15, color = flColor.bronze300 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />
+    </Svg>
+  );
+}
+function FlameGlyph({ size = 15, color = flColor.bronze300 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z" />
+    </Svg>
+  );
+}
+function MedalGlyph({ size = 15, color = flColor.bronze300 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M8.5 3 L12 9M15.5 3 L12 9" />
+      <Circle cx={12} cy={15} r={5.4} />
+    </Svg>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  scroll: { paddingHorizontal: 16, paddingBottom: 30 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 34 },
+  missingTitle: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', textAlign: 'center', color: flColor.cream100 },
+  missingBody: { marginTop: 9, fontSize: 13, lineHeight: 19, textAlign: 'center', color: flColor.gray400 },
+
+  // hero — bleeds past the scroller's padding
+  hero: { position: 'relative', marginHorizontal: -16, paddingTop: 14, paddingHorizontal: 24, paddingBottom: 30, overflow: 'hidden' },
+  crownWrap: { position: 'absolute', top: 0, left: 0, right: 0, height: 196, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  crown: { width: 300, height: 196 },
+  glint: { position: 'absolute', top: -40, bottom: -40, width: 90 },
+  ember: {
+    position: 'absolute',
+    bottom: 70,
+    left: '56%',
+    width: 2.5,
+    height: 2.5,
+    borderRadius: flRadius.round,
+    backgroundColor: flColor.bronze300,
+    boxShadow: '0 0 5px 1px rgba(191,143,79,0.6)',
+  },
+  heroContent: { paddingTop: 158, alignItems: 'center' },
+  heroName: { fontFamily: flFont.display, fontSize: 31, fontWeight: '700', letterSpacing: -0.4, lineHeight: 34, textAlign: 'center', color: flColor.cream100 },
+  timeline: { flexDirection: 'row', gap: 5, width: 214, marginTop: 16 },
+  weekTrack: { flex: 1, height: 5, borderRadius: flRadius.pill, overflow: 'hidden', backgroundColor: flColor.charcoal700, boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)' },
+  weekFill: { height: '100%', borderRadius: flRadius.pill, overflow: 'hidden' },
+  weekFillCurrent: { boxShadow: flShadow.glowSubtle },
+  seasonLabel: { marginTop: 9, fontSize: 11, letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray600 },
+  raceRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14 },
+  raceLine: { flexShrink: 1, fontSize: 15, fontWeight: '600', color: flColor.bronze300 },
+  heroMeta: { marginTop: 7, fontSize: 11.5, color: flColor.gray600 },
+
+  // your standing
+  standingCard: {
+    position: 'relative',
+    overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    marginTop: 4,
+    padding: 16,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    backgroundColor: flColor.charcoal800,
+    boxShadow: flShadow.card,
+  },
+  rankZone: { minWidth: 70, alignItems: 'center', justifyContent: 'center', gap: 2 },
+  rankLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray600 },
+  rankValue: { fontFamily: flFont.display, fontSize: 44, fontWeight: '700', letterSpacing: -1, lineHeight: 48, color: flColor.bronze300 },
+  rule: { width: 1, alignSelf: 'stretch', marginHorizontal: 16, backgroundColor: flColor.bronzeBorderSubtle },
+  compareZone: { flex: 1, justifyContent: 'center', gap: 5 },
+  scoreRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
+  scoreValue: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', color: flColor.cream100 },
+  scoreUnit: { fontSize: 9, fontWeight: '700', letterSpacing: 0.7, textTransform: 'uppercase', color: flColor.gray600 },
+  /** Deliberately not red/green — muted clay and sage, the design's "premium comparison tones". */
+  behindLine: { fontSize: 12.5, color: '#A97E68' },
+  aheadLine: { fontSize: 12.5, color: '#7E8E74' },
+
+  // standings
+  standHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 26, marginBottom: 12, marginHorizontal: 4 },
+  standLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 1.7, textTransform: 'uppercase', color: flColor.bronze400 },
+  legend: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendText: { fontSize: 9, fontWeight: '600', letterSpacing: 0.8, color: flColor.gray600 },
+  standList: { gap: 8 },
+  standRow: {
+    position: 'relative',
+    overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    backgroundColor: flColor.charcoal800,
+  },
+  standRowLeader: { borderColor: flColor.bronzeBorder },
+  standRowThird: {},
+  /** Applied last so it wins on border and glow, while a leader's wash survives underneath. */
+  standRowSelf: { borderColor: flColor.bronze400, boxShadow: `0 0 0 1px ${flColor.bronzeBorder}, 0 0 18px rgba(191,143,79,0.16), ${flShadow.card}` },
+  standRowPressed: { opacity: 0.9 },
+  rankSlot: { width: 24, alignItems: 'center', flexShrink: 0 },
+  rankNum: { fontFamily: flFont.display, fontSize: 17, fontWeight: '700', color: flColor.gray600 },
+  rankNumPodium: { color: flColor.bronze400 },
+  avatarWrap: { position: 'relative', flexShrink: 0 },
+  dotRinged: { position: 'absolute', right: -1, bottom: -1, borderWidth: 2, borderColor: flColor.charcoal800 },
+  standBody: { flex: 1, minWidth: 0, gap: 3 },
+  standName: { fontSize: 15, fontWeight: '500', color: flColor.cream100 },
+  standNameStrong: { fontWeight: '700' },
+  momRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  momText: { fontSize: 11.5, color: flColor.bronze400 },
+  standScore: { flexShrink: 0, alignItems: 'flex-end' },
+  standScoreValue: { fontFamily: flFont.display, fontSize: 19, fontWeight: '700', color: flColor.cream100 },
+  standScoreLeader: { color: flColor.bronze300 },
+  standScoreUnit: { fontSize: 9, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray600 },
+
+  finalBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, marginTop: 4, marginBottom: 10, padding: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  finalBtnLabel: { fontSize: 14, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronze300 },
+
+  // how it works
+  sectionLabel: { marginTop: 26, marginBottom: 12, marginHorizontal: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  rulesCard: { gap: 14, padding: 15, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.surfaceRecessed },
+  ruleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  ruleIcon: { width: 30, height: 30, flexShrink: 0, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.bronzeTint },
+  ruleText: { flex: 1, paddingTop: 5, fontSize: 13.5, lineHeight: 19, color: flColor.gray400 },
+  messageCard: { marginTop: 12, padding: 15, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
+  messageText: { fontFamily: flFont.displayMedium, fontSize: 14.5, lineHeight: 22, color: flColor.cream100 },
+
+  dashedEmpty: { paddingVertical: 22, paddingHorizontal: 16, borderRadius: flRadius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.charcoal600 },
+  dashedText: { fontSize: 12.5, textAlign: 'center', color: flColor.gray600 },
+
+  outlineBtn: { marginTop: 22, paddingHorizontal: 20, paddingVertical: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder },
+  outlineBtnLabel: { fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },
+});
