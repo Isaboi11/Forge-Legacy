@@ -10,6 +10,12 @@
  * Kept free of data/JSON imports so it runs under `node --test`.
  */
 
+/** How a quantifiable goal's progress is tracked. 'manual' = the athlete types it (default); the rest are
+ *  computed from workout data (Hybrid Progress Model). */
+export type MetricKind = 'manual' | 'exercise_max' | 'distance_total' | 'workout_count' | 'volume_total' | 'time_total' | 'pr_count' | 'body_weight' | 'body_measure';
+/** Which way is "better". 'up' = reach/accumulate (default); 'down' = reduce toward the target (cut). */
+export type MetricDir = 'up' | 'down';
+
 export interface Goal {
   id: string;
   chapterId: string;
@@ -23,7 +29,26 @@ export interface Goal {
   /** null = in progress. */
   achievedAt: string | null;
   createdAt: string;
+  metricKind: MetricKind;
+  /** exercise name (exercise_max) · activity modality (distance_total) · measurement column (body_measure); null otherwise. */
+  metricKey: string | null;
+  /** window anchor for cumulative metrics; null for exercise_max / body / manual. */
+  metricStartedAt: string | null;
+  /** 'up' (default) or 'down' (lower is better). */
+  metricDir: MetricDir;
+  /** baseline a level metric (body / later times) is measured from; null for accumulate / ratio metrics. */
+  metricStartValue: number | null;
 }
+
+/** Auto-tracked = progress comes from workout data, not a hand-typed number. */
+export const isAutoTracked = (g: Pick<Goal, 'metricKind'>): boolean => g.metricKind !== 'manual';
+
+/** Cumulative metrics count over a window (anchored at metricStartedAt); exercise_max is an all-time peak. */
+export const isCumulativeMetric = (kind: MetricKind): boolean =>
+  kind === 'distance_total' || kind === 'workout_count' || kind === 'volume_total' || kind === 'time_total' || kind === 'pr_count';
+
+/** Level metrics track a current reading against a baseline (not from zero) — body composition (later: times). */
+export const usesBaseline = (kind: MetricKind): boolean => kind === 'body_weight' || kind === 'body_measure';
 
 export const GOAL_NAME_MAX = 60;
 export const UNIT_MAX = 12;
@@ -32,21 +57,43 @@ export const UNIT_CHIPS = ['lb', 'kg', 'reps', 'mi', 'min', '× / week'] as cons
 export const isQuantifiable = (g: Pick<Goal, 'target'>): boolean => g.target != null;
 export const isAchieved = (g: Pick<Goal, 'achievedAt'>): boolean => g.achievedAt != null;
 
-/** Progress toward the target, 0–100. A narrative goal is 0 until achieved, then 100. */
-export function progressPct(g: Pick<Goal, 'target' | 'current' | 'achievedAt'>): number {
+/** The shape progress/achievement read. The direction + baseline fields are optional so pre-direction
+ *  callers and tests (passing just target/current/achievedAt) keep the original higher-is-better behaviour. */
+type ProgressShape = Pick<Goal, 'target' | 'current' | 'achievedAt'> & { metricDir?: MetricDir; metricStartValue?: number | null };
+const clampPct = (n: number): number => Math.max(0, Math.min(100, Math.round(n)));
+
+/**
+ * Progress toward the target, 0–100. Three shapes:
+ *  · narrative (no target) — 0 until achieved, then 100.
+ *  · level (a baseline is set) — measured from the baseline toward the target, either direction.
+ *  · accumulate / ratio (no baseline) — `current / target` (the original higher-is-better behaviour).
+ */
+export function progressPct(g: ProgressShape): number {
   if (g.target == null) return g.achievedAt != null ? 100 : 0;
+  const dir = g.metricDir ?? 'up';
+  const start = g.metricStartValue ?? null;
+  if (start != null) {
+    const span = dir === 'down' ? start - g.target : g.target - start;
+    if (span <= 0) return meetsTarget(g) ? 100 : 0; // target already met/at baseline — no range to fill
+    const done = dir === 'down' ? start - g.current : g.current - start;
+    return clampPct((done / span) * 100);
+  }
   if (g.target <= 0) return 0;
-  return Math.max(0, Math.min(100, Math.round((g.current / g.target) * 100)));
+  return clampPct((g.current / g.target) * 100);
 }
 
-/** Has a quantifiable goal reached its target? (Used to auto-mark achieved on a progress update.) */
-export const meetsTarget = (g: Pick<Goal, 'target' | 'current'>): boolean =>
-  g.target != null && g.target > 0 && g.current >= g.target;
+/** Has a quantifiable goal reached its target? (Used to auto-mark achieved on a progress update.) A
+ *  'down' goal needs a real reading (`current > 0`) so a not-yet-logged body goal never auto-completes. */
+export const meetsTarget = (g: Pick<Goal, 'target' | 'current'> & { metricDir?: MetricDir }): boolean => {
+  if (g.target == null) return false;
+  return (g.metricDir ?? 'up') === 'down' ? g.current > 0 && g.current <= g.target : g.target > 0 && g.current >= g.target;
+};
 
-/** "225 / 405 lb" · "12 reps" · "In progress" — the goal's current-state line. */
-export function progressLabel(g: Pick<Goal, 'target' | 'current' | 'unit' | 'achievedAt'>): string {
+/** "225 / 405 lb" (accumulate) · "195 lb → 185 lb" (level journey) · "In progress" (narrative). */
+export function progressLabel(g: Pick<Goal, 'target' | 'current' | 'unit' | 'achievedAt'> & { metricStartValue?: number | null }): string {
   if (g.target == null) return g.achievedAt != null ? 'Achieved' : 'In progress';
   const unit = g.unit ? ` ${g.unit}` : '';
+  if (g.metricStartValue != null) return `${trimNum(g.current)}${unit} → ${trimNum(g.target)}${unit}`;
   return `${trimNum(g.current)} / ${trimNum(g.target)}${unit}`;
 }
 

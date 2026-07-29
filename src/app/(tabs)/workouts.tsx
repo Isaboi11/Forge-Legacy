@@ -283,10 +283,9 @@ export default function WorkoutsScreen() {
         )}
       </ScrollView>
 
-      {/* Start Training — the `+`'s sheet (`openStart` in the .dc). Only the paths that really work are
-          offered: today's session, and building a program. The design's other-activity tiles (run, ride,
-          Train with others) need modality logging that doesn't exist yet, so they're absent rather than
-          present-and-dead. */}
+      {/* Start Training — the `+`'s sheet (`openStart` in the .dc): today's session, a freestyle strength
+          log, distance-activity logging ("Log a Run" → run/walk/ride/row/swim with miles), and building a
+          program. "Train with others" still needs the social plumbing, so it stays absent. */}
       <BottomSheet open={startOpen} onClose={() => setStartOpen(false)} title="Start Training">
         <View style={styles.stackTight}>
           {todayLabel ? (
@@ -307,6 +306,21 @@ export default function WorkoutsScreen() {
             <View style={styles.rowBody}>
               <Text style={styles.rowTitle}>Freestyle Workout</Text>
               <Text style={styles.rowSub}>A one-off. Log whatever you train.</Text>
+            </View>
+            <ChevronRightIcon size={18} color={flColor.bronze400} />
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              setStartOpen(false);
+              router.push('/log-activity');
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Log a run"
+            style={styles.libRow}
+          >
+            <View style={styles.rowBody}>
+              <Text style={styles.rowTitle}>Log a Run</Text>
+              <Text style={styles.rowSub}>Record a run, walk, ride, row, or swim — with distance.</Text>
             </View>
             <ChevronRightIcon size={18} color={flColor.bronze400} />
           </Pressable>

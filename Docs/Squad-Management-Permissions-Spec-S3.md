@@ -1,7 +1,7 @@
 # Forge Legacy — Squad Management & Permissions Specification
 ## S-3 | Phase 2B | Version 1.3 — June 2026
 
-> **Governing-authority pointer — `Squad-System-Architecture-v1.0` (LOCKED, June 2026).** Adds the Squad Commitment field to Squad Identity (§6.5, SQ-D14) and confirms Goal/Mission edit rights follow the existing "any member" identity-editing pattern (§4.1, SQ-D3.2/SQ-D4.3). The two-tier Owner/Member model, the 10-member cap, and every other rule in this document are unchanged.
+> **Governing-authority pointer — `Squad-System-Architecture-v1.0` (LOCKED, June 2026).** Adds the Squad Commitment field to Squad Identity (§6.5, SQ-D14) and confirms Goal/Mission edit rights follow the same governance as squad identity (§4.1, SQ-D3.2/SQ-D4.3) — **owner-only per `Squad-Management-Amendment-001`**. The two-tier Owner/Member model, the 10-member cap, and every other rule in this document are unchanged.
 
 ---
 
@@ -23,7 +23,7 @@ Every permission in S-3 was challenged against a single question: **"Is this nec
 
 S-3 exists to accomplish five things:
 
-1. **Allow squad identity editing** — name and purpose, accessible to all members because the squad belongs to everyone in it
+1. **Allow squad identity editing** — name and purpose, **owner-only** (`Squad-Management-Amendment-001` SM-D1); members see identity read-only
 2. **Surface the permission model** — who owns this squad and what that means, visible without requiring the athlete to look it up
 3. **Enable member management** — the owner can remove members when necessary; this action is available but not prominent
 4. **Manage pending invitations** — view and cancel outstanding invites
@@ -195,7 +195,7 @@ S-3 is entered from S-2 via [⋯] → Squad Settings. It is a navigation stack s
 | Leave Squad behavior | Requires transfer first (if members remain) | Direct with confirmation |
 
 **What is the same in both views:**
-- Squad identity editing (both can edit name, purpose, and squad icon)
+- Squad identity (owner edits name, purpose, and squad icon; members view it) — SM-D1
 - Member list (both see all members)
 - Pending invitations list (both see who has been invited)
 - Leave Squad CTA
@@ -212,9 +212,9 @@ No moderator tier. No admin tier. No co-owner. Two tiers only.
 
 | Permission | Owner | Member |
 |------------|-------|--------|
-| Edit squad name | Yes | Yes |
-| Edit squad purpose | Yes | Yes |
-| Edit squad Commitment | Yes | Yes |
+| Edit squad name | Yes | No |
+| Edit squad purpose | Yes | No |
+| Edit squad Commitment | Yes | No |
 | Set/edit the active Goal | Yes | Yes |
 | Set/edit the active Mission | Yes | Yes |
 | Select/edit squad icon | Yes | Yes |
@@ -239,31 +239,35 @@ A third tier creates:
 In a close friend accountability group, these dynamics are harmful. The squad is not an organization with a hierarchy — it is a group of people who trust each other enough to show up. Adding a third tier implies that some members are more trusted than others within the squad, which undermines the high-trust foundation.
 
 The two-tier model answers every governance need:
-- Name changes: any member (low-stakes, reversible)
+- Name changes: owner only (identity is the one thing that should not change under a member’s feet) — SM-D1
 - Invites: any member (organic growth through relationships)
 - Removal: owner only (high-stakes, relational consequence)
 - Deletion: owner only (irreversible, squad-ending)
 
-The only actions that are owner-only are the ones with significant or irreversible consequences. Everything else is open to all members.
+Owner-only covers squad identity (SM-D1) plus every action with significant or irreversible consequences. Participation — inviting, posting, checking in, leaving — stays open to all members.
 
 **Challenge System note (Squad-Architecture-Amendment-001 SA-D3):** The two-tier model is unchanged by the Challenge System. The challenge "commissioner" maps to a **challenge-scoped creator role**, not a third squad governance tier. Any member may create a challenge (the same openness as inviting, §4.4); the creator's authority is scoped entirely to the challenge object and confers **no** squad-level power over members. The squad Owner may cancel a challenge as squad cleanup but gains no scoring or standing privilege.
 
 **Settings vs. governance actions:**
-Identity settings (squad name, purpose, icon) are shared — any member can edit them because they belong to the squad as a collective. Governance actions (remove member, transfer ownership, delete squad) are owner-only because they have significant or irreversible consequences for the group. This distinction is intentional: the squad's identity is co-owned; its governance responsibility is held by one person.
+Identity settings (squad name, purpose, icon, Commitment) are **owner-held** — see SM-D1. Governance actions (remove member, transfer ownership, delete squad) are owner-only because they have significant or irreversible consequences for the group. What a squad shares is its *work*: the feed, the goal, the check-ins, the records — all of which every member contributes to. What it does not share is the right to redefine what the squad IS.
 
-### 4.3 Why All Members Can Edit Squad Identity
+### 4.3 Why Squad Identity Is Owner-Only
 
-Squad identity — name and purpose — belongs to the squad, not just the owner. The squad is a collective. In a close friend group, anyone can suggest renaming the group chat, and if someone renames it to something the group accepts, it sticks. Restricting name editing to the owner treats the squad as the owner's property rather than the group's shared context.
+**Amended 2026-07-28 by `Squad-Management-Amendment-001` (SM-D1), reversing this section.** This spec previously argued that identity belongs to the collective and any member should be able to edit it. The design has always drawn the member view of Squad Settings as read-only, the build has always enforced owner-only via the `squads` UPDATE policy, and the product owner confirmed owner-only as the intent. Under PD-7 the design governs, so this document is what gets corrected.
 
-This was established in S-2 v1.1 Section 4.5: "Squad Settings — opens squad edit screen (S-XX, to be defined): athlete can edit squad name and purpose. Available to all members."
+The collective nature of a squad is real, but identity is the wrong lever for it: a squad’s shared ownership shows up in its feed, goal progress, check-ins and records, all of which every member contributes to. The name is the one thing that should not change under a member’s feet.
 
-**Conflict handling:** If two members edit the squad name simultaneously, last-write wins. There is no collaborative editing session. S-3 is a settings screen, not a real-time editor.
+~~This was established in S-2 v1.1 Section 4.5: "Squad Settings — opens squad edit screen (S-XX, to be defined): athlete can edit squad name and purpose. Available to all members."~~ — superseded by SM-D1.
 
-### 4.4 Why All Members Can Invite
+**Conflict handling:** moot under SM-D1 — one editor, so there is nothing to conflict. Retained for the record.
 
-Invitations are how squads grow. Restricting invites to the owner means the squad can only grow through one person's relationships — the owner's. For an accountability group, the athlete's training relationships span more than one person's network. Any member should be able to bring in a trusted training partner.
+### 4.4 Why Inviting Is Owner-Controlled
 
-The owner can cancel any pending invite if a member sends one that isn't appropriate. This is the safeguard. The openness is the default.
+**Amended 2026-07-28 by `Squad-Management-Amendment-001` (SM-D2).** Inviting is **owner-only by default**, and the owner may open it to all members via Squad Settings → Permissions → Who Can Invite (Owner Only / Any Member). This spec previously granted invites to every member unconditionally.
+
+The reasoning for member invites — that squads grow organically through the relationships of everyone in them — is preserved as the *opt-in*, not the default. Who enters a squad changes it for all its members, and under SM-D1 the owner already holds who the squad IS; holding who it admits belongs with that. An owner who wants organic growth turns it on in one tap.
+
+**Enforcement:** the invite code is served by `squad_invite_info()` (0056), which withholds it from a member who is not permitted to hand it out. It is not merely a hidden button — `squads` RLS lets any member read the squad row, so a client-side gate would have been cosmetic.
 
 ### 4.5 Why Only the Owner Can Remove Members
 
@@ -471,7 +475,7 @@ When set, the squad icon is displayed on:
 - Text input field, full-width, multiline (short list or short paragraph)
 - Label: "Squad Commitment"
 - Pre-populated with existing Commitment text, or a small set of suggested starter values (e.g., "Show up," "Encourage others," "Stay respectful," "Train consistently") for a newly created squad
-- Editable by all members, same governance as squad name and purpose (§4.3) — included in the Save Changes flow (§6.3)
+- Editable by the **owner**, same governance as squad name and purpose (§4.3, SM-D1) — included in the Save Changes flow (§6.3)
 
 **Why a Commitment field exists:** the Commitment is the squad's short, accepted values statement — distinct from Purpose (a descriptive "why we train together," §6.2) and distinct from the Goal/Mission (measurable targets, owned by `Squad-System-Architecture-v1.0`). It reinforces accountability and squad identity without introducing an enforcement mechanism — there is no violation-reporting or scoring tied to it in V1.
 
@@ -479,7 +483,7 @@ When set, the squad icon is displayed on:
 
 ### 6.6 Goal and Mission Edit Rights *(new — `Squad-System-Architecture-v1.0` SQ-D3.2, SQ-D4.3)*
 
-Setting or editing the squad's active Goal and active Mission is **not** a field on this screen — the Goal and Mission cards live on S-2 (§§15–16 of `Squad-Detail-Wireframe-Spec-S2.md`). This section exists only to confirm the governing permission: any member may set or edit the active Goal and active Mission, the same openness already granted for squad name, purpose, Commitment, and icon (§4.3). Neither Goal nor Mission editing is Owner-gated, and neither introduces a new permission tier.
+Setting or editing the squad's active Goal and active Mission is **not** a field on this screen — the Goal and Mission cards live on S-2 (§§15–16 of `Squad-Detail-Wireframe-Spec-S2.md`). This section exists only to confirm the governing permission: the **owner** sets or edits the active Goal and active Mission, the same governance that applies to squad name, purpose, Commitment, and icon (§4.3, SM-D1). Neither introduces a new permission tier.
 
 ---
 
@@ -899,7 +903,7 @@ Portrait only — consistent with all Forge Legacy screens.
 - [ ] Icon selection change enables Save Changes CTA
 - [ ] Icon saved with Save Changes — not auto-saved on selection
 - [ ] All members (owner and non-owner) can edit squad name, purpose, Commitment, and icon
-- [ ] Squad Commitment field present, editable by all members, included in Save Changes flow
+- [ ] Squad Commitment field present, editable by the owner (SM-D1), included in Save Changes flow
 - [ ] Save Changes CTA: disabled when no changes exist; enabled when changes are present
 - [ ] Save Changes blocked if squad name is empty; inline error message shown
 - [ ] After successful save: Save Changes returns to disabled state

@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Animated, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Animated, Modal, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Circle, Defs, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,11 +10,14 @@ import { Card } from '@/components/forge/composites/Surface';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { useQuery } from '@/lib/useQuery';
+import { useToast } from '@/hooks/useCeremony';
 import { useUnits } from '@/lib/settings';
 import { displayWeight } from '@/domain/settings/units';
 import { getProgramDefinitions } from '@/domain/training/programs';
 import { DEMO_ACTIVE_ID } from '@/domain/training/active-program-core';
 import { fetchCompletion, saveReflection, type CompletionHero, type ExerciseDelta } from '@/data/workout-complete-live';
+import { addSquadPost, recapSummaryFrom } from '@/data/squad-feed-live';
+import { fetchMySquads, type SquadSummary } from '@/data/squad-live';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 
 const AnimatedGradient = Animated.createAnimatedComponent(LinearGradient);
@@ -71,8 +74,12 @@ export default function WorkoutComplete() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const router = useRouter();
   const { data, loading, error } = useQuery(() => fetchCompletion(String(id)), [id]);
+  const { showToast } = useToast();
   // Volume is stored in lb; show it in the athlete's system. `fmt` re-expresses per-set strings.
   const { units, fmt } = useUnits();
+  const [mySquads, setMySquads] = useState<SquadSummary[] | null>(null);
+  const [squadPickerOpen, setSquadPickerOpen] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const vol = (lb: number) => thousands(displayWeight(lb, units).value);
   const volUnit = displayWeight(0, units).unit;
   const [step, setStep] = useState<Step>('seal');
@@ -121,6 +128,38 @@ export default function WorkoutComplete() {
   const onShare = () => {
     if (!data) return;
     void Share.share({ title: 'Forge Legacy', message: `${data.workoutName} — sealed. ${vol(data.volume)} ${volUnit} moved.` });
+  };
+  const postRecapTo = (squad: SquadSummary) => {
+    if (!data || sharing) return;
+    setSharing(true);
+    addSquadPost({ squadId: squad.id, type: 'recap', body: '', workoutId: data.workoutId, workoutSummary: recapSummaryFrom(data) }).then(
+      () => {
+        setSharing(false);
+        setSquadPickerOpen(false);
+        showToast(`Shared to ${squad.name}`);
+      },
+      (e: unknown) => {
+        setSharing(false);
+        showToast(e instanceof Error ? e.message : 'Couldn’t share to your squad.');
+      },
+    );
+  };
+  const onShareToSquad = async () => {
+    if (sharing) return;
+    let squads = mySquads;
+    if (!squads) {
+      squads = await fetchMySquads().catch(() => [] as SquadSummary[]);
+      setMySquads(squads);
+    }
+    if (!squads.length) {
+      showToast('Create or join a squad first');
+      return;
+    }
+    if (squads.length === 1) {
+      postRecapTo(squads[0]);
+      return;
+    }
+    setSquadPickerOpen(true);
   };
 
   if (loading || !data) {
@@ -414,11 +453,31 @@ export default function WorkoutComplete() {
           <Button variant="primary" fullWidth onPress={onShare} accessibilityLabel="Share">
             Share
           </Button>
+          <Button variant="secondary" fullWidth onPress={onShareToSquad} accessibilityLabel="Share to squad">
+            {sharing ? 'Sharing…' : 'Share to Squad'}
+          </Button>
           <Button variant="text" fullWidth onPress={() => setStep('seal')} accessibilityLabel="Back">
             Back
           </Button>
         </View>
       </View>
+
+      <Modal visible={squadPickerOpen} transparent animationType="fade" onRequestClose={() => setSquadPickerOpen(false)}>
+        <Pressable style={styles.pickerBackdrop} onPress={() => setSquadPickerOpen(false)}>
+          <Pressable style={styles.pickerCard} onPress={() => {}}>
+            <Text style={styles.pickerTitle}>Share to which squad?</Text>
+            <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
+              {(mySquads ?? []).map((s, i) => (
+                <Pressable key={s.id} onPress={() => postRecapTo(s)} disabled={sharing} accessibilityRole="button" accessibilityLabel={`Share to ${s.name}`} style={[styles.pickerRow, i > 0 ? styles.pickerRowDiv : null]}>
+                  <Text style={styles.pickerName} numberOfLines={1}>
+                    {s.name}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Shell>
   );
 }
@@ -721,6 +780,15 @@ const styles = StyleSheet.create({
   chapterText: { flex: 1, minWidth: 0, gap: 2 },
   chapterName: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.cream100 },
   chapterSub: { fontSize: 12, color: flColor.gray600 },
+
+  // share-to-squad picker
+  pickerBackdrop: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, backgroundColor: flColor.overlayDark },
+  pickerCard: { width: '100%', maxWidth: 320, backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.charcoal500, borderRadius: flRadius.xl, paddingVertical: 20, paddingHorizontal: 20, boxShadow: flShadow.ambient },
+  pickerTitle: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', color: flColor.cream100, marginBottom: 12 },
+  pickerScroll: { maxHeight: 300 },
+  pickerRow: { paddingVertical: 14 },
+  pickerRowDiv: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  pickerName: { fontSize: 15.5, fontWeight: '600', color: flColor.cream100 },
 
   // resurfaced memory
   pastRef: { width: '100%', maxWidth: 320, marginTop: 6, paddingVertical: 13, paddingHorizontal: 15, borderRadius: flRadius.lg, backgroundColor: flColor.surfaceRecessed, borderWidth: 1, borderColor: flColor.charcoal600, borderLeftWidth: 2, borderLeftColor: flColor.bronze400, gap: 5 },

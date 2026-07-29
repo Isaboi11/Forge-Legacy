@@ -276,7 +276,7 @@ export default function LegacyScreen() {
         {/* ── WHAT ENDURES ── */}
         <View style={styles.enduresStack}>
           <View style={styles.previewGroup}>
-            <PreviewRow title="Transformation" sub="Physique & progress footage" onPress={() => {}} />
+            <PreviewRow title="Transformation" sub="Physique & progress footage" onPress={() => router.push('/transformation')} />
             <View style={styles.previewDivider} />
             <PreviewRow title="Photos" sub="Every chapter, one archive" count={`${data.totalPhotoCount} photos`} onPress={() => {}} />
             <View style={styles.previewDivider} />

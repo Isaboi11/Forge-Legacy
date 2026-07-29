@@ -1,0 +1,405 @@
+import { supabase } from '@/lib/supabase';
+import { fetchCompletion } from '@/data/workout-complete-live';
+
+/**
+ * Squad Feed data (Social · Part 1) — training-only threaded posts (`squad_posts`), flat comments
+ * (`squad_post_comments`), and a "respect" reaction (`squad_post_reactions`), all member-scoped by RLS
+ * (migration 0041). Reads go through the `squad_feed` / `squad_post_one` RPCs so author identity + live
+ * counts + my-reaction arrive in one round trip; writes are plain RLS-guarded inserts/deletes.
+ *
+ * Shipped post types: checkin · recap · pr · discussion · announcement (owner-only). The design's
+ * formcheck/challenge/traintogether need subsystems that don't exist yet and are intentionally omitted.
+ */
+
+export type SquadPostType = 'checkin' | 'recap' | 'pr' | 'formcheck' | 'transformation' | 'discussion' | 'announcement';
+
+/** A single attachment on a post. `kind` is coarse so the UI can pick image vs. video rendering. */
+export type SquadMediaKind = 'image' | 'video';
+export interface SquadMedia {
+  url: string;
+  kind: SquadMediaKind;
+  /** Optional alignment (pan/zoom) for before/after transformation posts — fractions of the frame + scale. */
+  transform?: { tx: number; ty: number; scale: number };
+}
+
+// ── Transformation share layout (templates) ──
+export type ShareTemplate = 'slider' | 'sidebyside' | 'stacked' | 'grid';
+export interface AlignedPhoto {
+  url: string;
+  transform?: { tx: number; ty: number; scale: number };
+}
+export interface ComparePair {
+  label: string;
+  then: AlignedPhoto;
+  now: AlignedPhoto;
+}
+export interface TransformationLayoutData {
+  template: ShareTemplate;
+  thenLabel?: string;
+  nowLabel?: string;
+  elapsed?: string;
+  pairs: ComparePair[];
+}
+
+/** Snapshot of a completed workout captured at recap-post time (survives later edits to the workout). */
+export interface RecapExercise {
+  name: string;
+  sets: number;
+  topSet: string | null;
+  isPR: boolean;
+}
+export interface WorkoutSummary {
+  volume: number;
+  durationSec: number;
+  prCount: number;
+  exercises: RecapExercise[];
+}
+
+export interface SquadPostTypeDef {
+  id: SquadPostType;
+  label: string;
+  ownerOnly: boolean;
+  blurb: string;
+}
+
+/** The composer's palette, in display order. Announcement is owner-only. (transformation is wired next.) */
+export const SQUAD_POST_TYPES: SquadPostTypeDef[] = [
+  { id: 'checkin', label: 'Check-in', ownerOnly: false, blurb: 'Log that you trained today.' },
+  { id: 'recap', label: 'Workout Recap', ownerOnly: false, blurb: 'Share how the session went.' },
+  { id: 'pr', label: 'PR / Milestone', ownerOnly: false, blurb: 'Mark a personal record for the squad.' },
+  { id: 'formcheck', label: 'Form Check', ownerOnly: false, blurb: 'Post a lift for the squad’s eyes.' },
+  { id: 'discussion', label: 'Discussion', ownerOnly: false, blurb: 'A short note to the squad.' },
+  { id: 'announcement', label: 'Squad Announcement', ownerOnly: true, blurb: 'Owner note pinned for the squad.' },
+];
+
+export const squadPostTypeDef = (id: SquadPostType): SquadPostTypeDef => SQUAD_POST_TYPES.find((t) => t.id === id) ?? SQUAD_POST_TYPES[0];
+
+export interface SquadFeedPost {
+  id: string;
+  type: SquadPostType;
+  body: string | null;
+  prValue: string | null;
+  prExercise: string | null;
+  prLabel: string | null;
+  authorId: string;
+  authorName: string;
+  authorAvatar: string | null;
+  authorIsOwner: boolean;
+  createdAt: string;
+  commentCount: number;
+  respectCount: number;
+  iReacted: boolean;
+  media: SquadMedia[];
+  workoutSummary: WorkoutSummary | null;
+  layout: TransformationLayoutData | null;
+}
+
+export interface SquadPostComment {
+  id: string;
+  body: string;
+  createdAt: string;
+  authorId: string;
+  authorName: string;
+  authorAvatar: string | null;
+  authorIsOwner: boolean;
+}
+
+export interface SquadPostThread {
+  post: SquadFeedPost;
+  squadName: string;
+  comments: SquadPostComment[];
+}
+
+interface FeedRow {
+  id: string;
+  type: SquadPostType;
+  body: string | null;
+  pr_value: string | null;
+  pr_exercise: string | null;
+  pr_label: string | null;
+  author_id: string;
+  author_name: string | null;
+  author_avatar: string | null;
+  author_is_owner: boolean;
+  created_at: string;
+  comment_count: number;
+  respect_count: number;
+  i_reacted: boolean;
+  media: SquadMedia[] | null;
+  workout_summary: WorkoutSummary | null;
+  layout: TransformationLayoutData | null;
+}
+
+const toPost = (r: FeedRow): SquadFeedPost => ({
+  id: r.id,
+  type: r.type,
+  body: r.body,
+  prValue: r.pr_value,
+  prExercise: r.pr_exercise,
+  prLabel: r.pr_label,
+  authorId: r.author_id,
+  authorName: r.author_name ?? 'Athlete',
+  authorAvatar: r.author_avatar,
+  authorIsOwner: r.author_is_owner,
+  createdAt: r.created_at,
+  commentCount: Number(r.comment_count ?? 0),
+  respectCount: Number(r.respect_count ?? 0),
+  iReacted: !!r.i_reacted,
+  media: Array.isArray(r.media) ? r.media : [],
+  workoutSummary: r.workout_summary ?? null,
+  layout: r.layout ?? null,
+});
+
+/** One squad's feed page (newest first). */
+export async function fetchSquadFeed(squadId: string, limit = 5, offset = 0): Promise<SquadFeedPost[]> {
+  const { data, error } = await supabase.rpc('squad_feed', { p_squad: squadId, p_limit: limit, p_offset: offset });
+  if (error) throw error;
+  return ((data ?? []) as FeedRow[]).map(toPost);
+}
+
+/** One post + its (flat) comment thread. Null if the post is gone / not visible. */
+export async function fetchSquadPost(postId: string): Promise<SquadPostThread | null> {
+  const { data, error } = await supabase.rpc('squad_post_one', { p_post: postId });
+  if (error) throw error;
+  const rows = (data ?? []) as (FeedRow & { squad_name: string | null; squad_owner_id: string })[];
+  const row = rows[0];
+  if (!row) return null;
+
+  const { data: cData, error: cErr } = await supabase
+    .from('squad_post_comments')
+    .select('id, body, created_at, author_id, profiles(name, avatar_url)')
+    .eq('post_id', postId)
+    .order('created_at', { ascending: true });
+  if (cErr) throw cErr;
+
+  const comments = ((cData ?? []) as unknown as { id: string; body: string; created_at: string; author_id: string; profiles: { name: string | null; avatar_url: string | null } | null }[]).map((c) => ({
+    id: c.id,
+    body: c.body,
+    createdAt: c.created_at,
+    authorId: c.author_id,
+    authorName: c.profiles?.name ?? 'Athlete',
+    authorAvatar: c.profiles?.avatar_url ?? null,
+    authorIsOwner: c.author_id === row.squad_owner_id,
+  }));
+
+  return { post: toPost(row), squadName: row.squad_name ?? 'Squad', comments };
+}
+
+export interface NewSquadPost {
+  squadId: string;
+  type: SquadPostType;
+  body: string;
+  prValue?: string;
+  prExercise?: string;
+  prLabel?: string;
+  media?: SquadMedia[];
+  workoutId?: string | null;
+  workoutSummary?: WorkoutSummary | null;
+  layout?: TransformationLayoutData | null;
+}
+
+/** Compose a post. Returns the new post id. RLS rejects an announcement from a non-owner. */
+export async function addSquadPost(input: NewSquadPost): Promise<string> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not signed in');
+
+  const body = input.body.trim();
+  const row = {
+    squad_id: input.squadId,
+    author_id: user.id,
+    type: input.type,
+    body: input.type === 'checkin' && !body ? 'Checked in — trained today.' : body || null,
+    pr_value: input.type === 'pr' ? (input.prValue ?? '').trim() || null : null,
+    pr_exercise: input.type === 'pr' ? (input.prExercise ?? '').trim() || null : null,
+    pr_label: input.type === 'pr' ? (input.prLabel ?? '').trim() || 'Squad PR' : null,
+    media: input.media ?? [],
+    workout_id: input.type === 'recap' ? input.workoutId ?? null : null,
+    workout_summary: input.type === 'recap' ? input.workoutSummary ?? null : null,
+    layout: input.type === 'transformation' ? input.layout ?? null : null,
+  };
+  const { data, error } = await supabase.from('squad_posts').insert(row).select('id').single();
+  if (error) throw error;
+  return (data as { id: string }).id;
+}
+
+// ── Workout-backed posts (Recap snapshots real workout stats; composer picks from recent activity) ──
+
+interface CompletionLike {
+  volume: number;
+  durationSec: number;
+  exercises: { name: string; sets: number; topSet: string | null; isPR: boolean }[];
+}
+
+/** Snapshot a Completion's stats into the recap `WorkoutSummary` stored on the post. */
+export function recapSummaryFrom(c: CompletionLike): WorkoutSummary {
+  return {
+    volume: c.volume,
+    durationSec: c.durationSec,
+    prCount: c.exercises.filter((e) => e.isPR).length,
+    exercises: c.exercises.map((e) => ({ name: e.name, sets: e.sets, topSet: e.topSet, isPR: e.isPR })),
+  };
+}
+
+/** Build a recap snapshot for a completed workout (reuses the W-17 completion read). Null if it's gone. */
+export async function buildWorkoutRecap(workoutId: string): Promise<{ workoutName: string; summary: WorkoutSummary } | null> {
+  try {
+    const c = await fetchCompletion(workoutId);
+    return { workoutName: c.workoutName, summary: recapSummaryFrom(c) };
+  } catch {
+    return null;
+  }
+}
+
+export interface RecentWorkout {
+  id: string;
+  name: string;
+  savedAt: string;
+}
+
+/** My recent completed (saved) workouts, newest first — the composer's Recap picker. */
+export async function fetchRecentWorkouts(limit = 15): Promise<RecentWorkout[]> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data, error } = await supabase
+    .from('workouts')
+    .select('id, workout_name, saved_at')
+    .eq('athlete_id', user.id)
+    .eq('state', 'saved')
+    .order('saved_at', { ascending: false })
+    .limit(limit);
+  if (error) return [];
+  return ((data ?? []) as { id: string; workout_name: string | null; saved_at: string }[]).map((w) => ({ id: w.id, name: w.workout_name ?? 'Workout', savedAt: w.saved_at }));
+}
+
+export interface RecentPR {
+  exercise: string;
+  value: string;
+  achievedOn: string;
+}
+
+/** My recent load PRs, newest first — the composer's PR picker (prefills the fields; still editable). */
+export async function fetchRecentPRs(limit = 15): Promise<RecentPR[]> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data, error } = await supabase
+    .from('personal_records')
+    .select('exercise, load_value, load_reps, achieved_on')
+    .eq('athlete_id', user.id)
+    .eq('measure_kind', 'load')
+    .order('achieved_on', { ascending: false })
+    .limit(limit);
+  if (error) return [];
+  return ((data ?? []) as { exercise: string; load_value: number | null; load_reps: number | null; achieved_on: string }[])
+    .filter((p) => p.load_value != null)
+    .map((p) => ({ exercise: p.exercise, value: `${p.load_value} lb`, achievedOn: p.achieved_on }));
+}
+
+/** "18,140" — thousands separators without Intl (Hermes-safe). */
+export function fmtVolume(n: number): string {
+  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+/** "52:18" (h:mm:ss past an hour) — the completion screen's Under-Iron clock. */
+export function fmtDuration(sec: number): string {
+  const s = Math.max(0, Math.round(sec));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const r = s % 60;
+  return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}` : `${m}:${String(r).padStart(2, '0')}`;
+}
+
+/**
+ * Upload a photo/video for a squad post to the public `squad-media` bucket and return its public URL.
+ * Media is uploaded at compose time (before the post row exists), so the object path is keyed by uploader +
+ * timestamp, not post id. `uri` is a local file/blob/data URI from expo-image-picker.
+ */
+export async function uploadPostMedia(squadId: string, uri: string, kind: SquadMediaKind): Promise<string> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not signed in');
+  const res = await fetch(uri);
+  const blob = await res.blob();
+  const ext = kind === 'video' ? (blob.type.includes('quicktime') ? 'mov' : 'mp4') : blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg';
+  const path = `${squadId}/${user.id}-${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from('squad-media').upload(path, blob, { contentType: blob.type || (kind === 'video' ? 'video/mp4' : 'image/jpeg'), upsert: true });
+  if (error) throw error;
+  const { data } = supabase.storage.from('squad-media').getPublicUrl(path);
+  return data.publicUrl;
+}
+
+/** Add a comment to a post. */
+export async function addSquadComment(postId: string, body: string): Promise<void> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not signed in');
+  const { error } = await supabase.from('squad_post_comments').insert({ post_id: postId, author_id: user.id, body: body.trim() });
+  if (error) throw error;
+}
+
+/** Toggle my "respect" reaction on a post. Pass the current state; returns the new state. */
+export async function toggleSquadReaction(postId: string, reacted: boolean): Promise<boolean> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not signed in');
+  if (reacted) {
+    const { error } = await supabase.from('squad_post_reactions').delete().eq('post_id', postId).eq('user_id', user.id);
+    if (error) throw error;
+    return false;
+  }
+  const { error } = await supabase.from('squad_post_reactions').insert({ post_id: postId, user_id: user.id });
+  if (error) throw error;
+  return true;
+}
+
+/** Compact relative time: "Just now" · "12m" · "3h" · "2d" · "5w" · then a short date. */
+export function timeAgo(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (!Number.isFinite(then)) return '';
+  const s = Math.max(0, Math.floor((Date.now() - then) / 1000));
+  if (s < 45) return 'Just now';
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d}d`;
+  const w = Math.floor(d / 7);
+  if (w < 5) return `${w}w`;
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+/** The one-line "who + verb" lead for a feed card (discussion has none — the body IS the line). */
+export function leadFor(p: Pick<SquadFeedPost, 'type' | 'prExercise'>): string {
+  switch (p.type) {
+    case 'checkin':
+      return 'checked in — trained today.';
+    case 'recap':
+      return 'logged a workout recap.';
+    case 'pr':
+      return `set a ${p.prExercise?.trim() || 'new'} PR.`;
+    case 'formcheck':
+      return 'posted a form check for the squad.';
+    case 'transformation':
+      return 'shared a transformation.';
+    case 'announcement':
+      return 'posted a squad announcement.';
+    default:
+      return '';
+  }
+}
+
+/** The secondary line under the lead. PR → "315 lb · Squad PR"; else a trimmed body excerpt. */
+export function detailFor(p: Pick<SquadFeedPost, 'type' | 'body' | 'prValue' | 'prLabel'>): string {
+  if (p.type === 'pr' && p.prValue) return `${p.prValue} · ${p.prLabel || 'Squad PR'}`;
+  const b = (p.body ?? '').replace(/\s+/g, ' ').trim();
+  return b.length > 90 ? `${b.slice(0, 90)}…` : b;
+}

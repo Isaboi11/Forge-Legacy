@@ -1,0 +1,555 @@
+import { useState } from 'react';
+import { Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Circle, Path } from 'react-native-svg';
+
+import { TransformationLayout } from '@/components/forge/TransformationLayout';
+import { addSquadPost, type ComparePair, type ShareTemplate, type TransformationLayoutData } from '@/data/squad-feed-live';
+import { fetchMySquads, type SquadSummary } from '@/data/squad-live';
+import { fetchTransformationEntries, type PoseKey, type TransformationEntry } from '@/data/transformation-live';
+import { errorMessage, useQuery } from '@/lib/useQuery';
+import { useProfile } from '@/lib/profile';
+import { useToast } from '@/hooks/useCeremony';
+import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+
+/**
+ * Share Configuration (SH-1) — built to `Forge Share Configuration.dc.html`, scoped to the `transformation`
+ * kind. Compare shares carry a JSON `payload` (labels · elapsed · chapter · reflection · pose pairs w/
+ * alignment) and offer a template picker (slider / side-by-side / stacked / multi-pose grid) + a pose
+ * selector; entry shares are a single photo. The design's destinations were fake toasts — here **Share to
+ * Squad is REAL** (creates a squad `transformation` post, storing the chosen `layout`). Friends / Community /
+ * a-friend + the outside-Forge row stay honest; Share… uses the system sheet.
+ */
+
+type ToggleKey = 'chapter' | 'reflection' | 'date' | 'photo' | 'name';
+
+interface Payload {
+  thenLabel?: string;
+  nowLabel?: string;
+  elapsed?: string;
+  chapter?: string;
+  reflection?: string;
+  pairs?: ComparePair[];
+}
+
+const TEMPLATES: { id: ShareTemplate; label: string }[] = [
+  { id: 'slider', label: 'Slider' },
+  { id: 'sidebyside', label: 'Side by side' },
+  { id: 'stacked', label: 'Stacked' },
+  { id: 'grid', label: 'Grid' },
+];
+
+export default function ShareConfigRoute() {
+  const params = useLocalSearchParams<{ mode?: string; id?: string; pose?: string; payload?: string }>();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { showToast } = useToast();
+  const { profile } = useProfile();
+  const { data } = useQuery(fetchTransformationEntries, []);
+  const entries = data ?? [];
+
+  const isCompare = params.mode === 'compare';
+  const pose = (params.pose as PoseKey) || undefined;
+  const payload: Payload | null = (() => {
+    if (!params.payload) return null;
+    try {
+      return JSON.parse(String(params.payload));
+    } catch {
+      return null;
+    }
+  })();
+
+  const [incl, setIncl] = useState<Partial<Record<ToggleKey, boolean>>>({});
+  const [dest, setDest] = useState<'squad' | 'friends' | 'community' | 'friend'>('squad');
+  const [template, setTemplate] = useState<ShareTemplate>('slider');
+  const [excluded, setExcluded] = useState<number[]>([]);
+  const [mySquads, setMySquads] = useState<SquadSummary[] | null>(null);
+  const [squadPickerOpen, setSquadPickerOpen] = useState(false);
+  const [sharing, setSharing] = useState(false);
+
+  const eff = (k: ToggleKey): boolean => incl[k] ?? true;
+  const toggle = (k: ToggleKey) => setIncl((cur) => ({ ...cur, [k]: !(cur[k] ?? true) }));
+
+  const firstPhoto = (e: TransformationEntry | null): string | null => {
+    if (!e) return null;
+    if (pose && e.photos[pose]) return e.photos[pose]!;
+    return Object.values(e.photos)[0] ?? null;
+  };
+
+  // ── Resolve payload (compare) or entry ──
+  const entry = !isCompare ? entries.find((e) => e.id === String(params.id)) ?? null : null;
+  const allPairs = isCompare ? payload?.pairs ?? [] : [];
+  const thenLabel = payload?.thenLabel ?? 'Then';
+  const nowLabel = payload?.nowLabel ?? 'Now';
+  const elapsed = isCompare ? payload?.elapsed ?? '' : '';
+  const chapterName = isCompare ? payload?.chapter || null : entry?.chapterName ?? null;
+  const reflection = isCompare ? payload?.reflection || null : entry?.caption ?? null;
+  const dateLabel = isCompare ? nowLabel : entry?.label ?? '';
+  const athlete = profile?.name ?? 'You';
+  const photo = isCompare ? allPairs[0]?.now.url ?? null : firstPhoto(entry);
+
+  const selectedPairs = allPairs.filter((_, i) => !excluded.includes(i));
+  const usePairs = template === 'grid' ? selectedPairs : selectedPairs.slice(0, 1);
+  const layoutData: TransformationLayoutData = { template, thenLabel, nowLabel, elapsed: elapsed || undefined, pairs: usePairs };
+
+  const missing = isCompare ? allPairs.length === 0 : !!data && !entry;
+  if (missing) {
+    return (
+      <View style={styles.root}>
+        <Pressable style={styles.scrim} onPress={() => router.back()} />
+        <View style={styles.sheet}>
+          <Handle />
+          <View style={styles.missingWrap}>
+            <Text style={styles.missingText}>This isn’t available to share.</Text>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  const lines: { key: ToggleKey; text: string; emph: 'bronze' | 'body' | 'muted' }[] = [];
+  if (chapterName) lines.push({ key: 'chapter', text: `Chapter · ${chapterName}`, emph: 'bronze' });
+  if (reflection) lines.push({ key: 'reflection', text: reflection, emph: 'body' });
+  if (dateLabel && !isCompare) lines.push({ key: 'date', text: dateLabel, emph: 'muted' });
+
+  const detailRows: { key: ToggleKey; label: string }[] = [
+    ...lines.map((l) => ({ key: l.key, label: l.key === 'chapter' ? 'Chapter' : l.key === 'reflection' ? 'Reflection' : 'Date' })),
+    ...(!isCompare && photo ? [{ key: 'photo' as ToggleKey, label: 'Photo' }] : []),
+    { key: 'name', label: 'Name' },
+  ];
+  const showPhoto = !isCompare && !!photo && eff('photo');
+
+  const destVerb: Record<typeof dest, string> = { squad: 'Share to Squad', friends: 'Share with Friends', community: 'Post to Community', friend: 'Send to a friend' };
+
+  const togglePose = (i: number) =>
+    setExcluded((cur) => {
+      const has = cur.includes(i);
+      const next = has ? cur.filter((x) => x !== i) : [...cur, i];
+      // never exclude the last remaining pose
+      return next.length >= allPairs.length ? cur : next;
+    });
+
+  const postToSquad = (squad: SquadSummary) => {
+    if (sharing) return;
+    setSharing(true);
+    const body = reflection && eff('reflection') ? reflection : isCompare && elapsed ? `${elapsed} apart` : '';
+    const shareMedia = isCompare ? (usePairs[0] ? [{ url: usePairs[0].now.url, kind: 'image' as const }] : []) : photo ? [{ url: photo, kind: 'image' as const }] : [];
+    addSquadPost({ squadId: squad.id, type: 'transformation', body, media: shareMedia, layout: isCompare ? layoutData : null }).then(
+      () => {
+        setSharing(false);
+        setSquadPickerOpen(false);
+        showToast(`Shared to ${squad.name}`);
+        setTimeout(() => router.back(), 700);
+      },
+      (e: unknown) => {
+        setSharing(false);
+        showToast(errorMessage(e));
+      },
+    );
+  };
+
+  const onShare = async () => {
+    if (sharing) return;
+    if (dest === 'squad') {
+      let squads = mySquads;
+      if (!squads) {
+        squads = await fetchMySquads().catch(() => [] as SquadSummary[]);
+        setMySquads(squads);
+      }
+      if (!squads.length) {
+        showToast('Create or join a squad first');
+        return;
+      }
+      if (squads.length === 1) {
+        postToSquad(squads[0]);
+        return;
+      }
+      setSquadPickerOpen(true);
+      return;
+    }
+    showToast(dest === 'community' ? 'Community is coming soon' : 'Sharing with friends is coming soon');
+  };
+
+  const onSystemShare = async () => {
+    const text = `${athlete}'s transformation${chapterName ? ` · ${chapterName}` : ''}`;
+    if (Platform.OS === 'web') {
+      const nav = typeof navigator !== 'undefined' ? (navigator as { share?: (d: { title?: string; text?: string }) => Promise<void> }) : undefined;
+      if (nav?.share) {
+        try {
+          await nav.share({ title: 'Forge Legacy', text });
+        } catch {
+          /* dismissed */
+        }
+        return;
+      }
+      showToast('Sharing isn’t available here');
+      return;
+    }
+    try {
+      await Share.share({ message: text });
+    } catch {
+      /* dismissed */
+    }
+  };
+
+  return (
+    <View style={styles.root}>
+      <Pressable style={styles.scrim} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Dismiss" />
+      <View style={styles.sheet}>
+        <Handle />
+        <View style={styles.header}>
+          <Text style={styles.title}>Share Transformation</Text>
+          <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Close" style={styles.closeBtn}>
+            <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M6 6l12 12M18 6L6 18" />
+            </Svg>
+          </Pressable>
+        </View>
+
+        <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} showsVerticalScrollIndicator={false}>
+          {/* ── LAYOUT (compare only) ── */}
+          {isCompare ? (
+            <>
+              <Text style={styles.sectionLabelFirst}>Layout</Text>
+              <View style={styles.templateRow}>
+                {TEMPLATES.map((t) => (
+                  <Pressable key={t.id} onPress={() => setTemplate(t.id)} accessibilityRole="button" accessibilityState={{ selected: template === t.id }} style={[styles.tplChip, template === t.id ? styles.tplChipOn : styles.tplChipOff]}>
+                    <Text style={[styles.tplChipText, template === t.id ? styles.tplChipTextOn : null]}>{t.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              {allPairs.length > 1 ? (
+                <>
+                  <Text style={styles.poseSelectLabel}>{template === 'grid' ? 'Poses in this post' : 'Pose (grid shows all)'}</Text>
+                  <View style={styles.poseSelectRow}>
+                    {allPairs.map((p, i) => {
+                      const on = !excluded.includes(i);
+                      return (
+                        <Pressable key={`${p.label}-${i}`} onPress={() => togglePose(i)} accessibilityRole="button" accessibilityState={{ selected: on }} style={[styles.poseSelChip, on ? styles.poseSelOn : styles.poseSelOff]}>
+                          <Text style={[styles.poseSelText, on ? styles.poseSelTextOn : null]}>{p.label}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </>
+              ) : null}
+            </>
+          ) : null}
+
+          {/* ── PREVIEW CARD ── */}
+          <View style={styles.card}>
+            <View style={styles.brand}>
+              <View style={styles.anvilTile}>
+                <AnvilGlyph />
+              </View>
+              <Text style={styles.brandText}>Forge Legacy</Text>
+            </View>
+
+            {isCompare ? (
+              <View style={styles.compareWrap}>
+                <TransformationLayout data={layoutData} />
+              </View>
+            ) : showPhoto ? (
+              <Image source={{ uri: photo! }} style={styles.photoBand} contentFit="cover" />
+            ) : (
+              <View style={styles.kindGlyph}>
+                <CameraGlyph />
+              </View>
+            )}
+
+            {!isCompare ? (
+              <View style={styles.cardTitleBlock}>
+                <Text style={styles.cardEyebrow}>Transformation</Text>
+                <Text style={styles.cardTitle}>{dateLabel}</Text>
+              </View>
+            ) : null}
+
+            {lines.map((l) =>
+              eff(l.key) ? (
+                <Text key={l.key} style={[styles.line, l.emph === 'bronze' ? styles.lineBronze : l.emph === 'body' ? styles.lineBody : styles.lineMuted]}>
+                  {l.emph === 'body' ? `“${l.text}”` : l.text}
+                </Text>
+              ) : null,
+            )}
+
+            {eff('name') ? (
+              <View style={styles.cardFooter}>
+                <Text style={styles.athlete}>{athlete}</Text>
+              </View>
+            ) : null}
+          </View>
+
+          {/* ── CARD DETAILS ── */}
+          <Text style={styles.sectionLabel}>Card Details</Text>
+          <View style={styles.detailCard}>
+            {detailRows.map((row, i) => (
+              <View key={row.key} style={[styles.detailRow, i > 0 ? styles.detailRowDiv : null]}>
+                <Text style={styles.detailLabel}>{row.label}</Text>
+                <Switch on={eff(row.key)} onToggle={() => toggle(row.key)} label={row.label} />
+              </View>
+            ))}
+          </View>
+
+          {/* ── SHARE IN FORGE ── */}
+          <Text style={styles.sectionLabel}>Share in Forge</Text>
+          <View style={styles.destGrid}>
+            <DestTile label="Squad" icon={<SquadIcon />} on={dest === 'squad'} onPress={() => setDest('squad')} />
+            <DestTile label="Friends" icon={<FriendsIcon />} on={dest === 'friends'} onPress={() => setDest('friends')} />
+            <DestTile label="Community" icon={<GlobeIcon />} on={dest === 'community'} onPress={() => setDest('community')} />
+            <DestTile label="A friend" icon={<FriendPlusIcon />} on={dest === 'friend'} onPress={() => setDest('friend')} />
+          </View>
+
+          {/* ── SHARE OUTSIDE FORGE ── */}
+          <Text style={styles.sectionLabel}>Share outside Forge</Text>
+          <View style={styles.outsideGrid}>
+            <OutsideRow label="Message" icon={<MessageIcon />} onPress={() => showToast('Message ready')} />
+            <OutsideRow label="Share…" icon={<ShareDots />} onPress={onSystemShare} />
+            <OutsideRow label="Save image" icon={<SaveIcon />} onPress={() => showToast('Saving the card is coming soon')} />
+            <OutsideRow label="Copy link" icon={<LinkIcon />} onPress={() => showToast('Share links are coming soon')} />
+          </View>
+        </ScrollView>
+
+        <View style={[styles.footer, { paddingBottom: 16 + insets.bottom }]}>
+          <Pressable onPress={onShare} disabled={sharing} accessibilityRole="button" accessibilityLabel={destVerb[dest]} style={styles.cta}>
+            <ShareDots color="#F7F5F1" />
+            <Text style={styles.ctaText}>{sharing ? 'Sharing…' : destVerb[dest]}</Text>
+          </Pressable>
+        </View>
+      </View>
+
+      <Modal visible={squadPickerOpen} transparent animationType="fade" onRequestClose={() => setSquadPickerOpen(false)}>
+        <Pressable style={styles.pickerBackdrop} onPress={() => setSquadPickerOpen(false)}>
+          <Pressable style={styles.pickerCard} onPress={() => {}}>
+            <Text style={styles.pickerTitle}>Share to which squad?</Text>
+            <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
+              {(mySquads ?? []).map((s, i) => (
+                <Pressable key={s.id} onPress={() => postToSquad(s)} disabled={sharing} accessibilityRole="button" accessibilityLabel={`Share to ${s.name}`} style={[styles.pickerRow, i > 0 ? styles.pickerRowDiv : null]}>
+                  <Text style={styles.pickerName} numberOfLines={1}>
+                    {s.name}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </View>
+  );
+}
+
+function Handle() {
+  return (
+    <View style={styles.handleWrap}>
+      <View style={styles.handle} />
+    </View>
+  );
+}
+
+function Switch({ on, onToggle, label }: { on: boolean; onToggle: () => void; label: string }) {
+  return (
+    <Pressable onPress={onToggle} accessibilityRole="switch" accessibilityState={{ checked: on }} accessibilityLabel={label} style={[styles.switch, on ? styles.switchOn : styles.switchOff]}>
+      <View style={[styles.switchKnob, on ? styles.switchKnobOn : styles.switchKnobOff]} />
+    </Pressable>
+  );
+}
+
+function DestTile({ label, icon, on, onPress }: { label: string; icon: React.ReactNode; on: boolean; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={label} style={[styles.destTile, on ? styles.destTileOn : styles.destTileOff]}>
+      <View style={[styles.destIcon, on ? styles.destIconOn : styles.destIconOff]}>{icon}</View>
+      <Text style={[styles.destLabel, on ? styles.destLabelOn : null]}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function OutsideRow({ label, icon, onPress }: { label: string; icon: React.ReactNode; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={styles.outsideRow}>
+      <View style={styles.outsideIcon}>{icon}</View>
+      <Text style={styles.outsideLabel}>{label}</Text>
+    </Pressable>
+  );
+}
+
+// ── glyphs ──
+function AnvilGlyph() {
+  return (
+    <Svg width={13} height={13} viewBox="0 0 24 24" fill="#1A1206">
+      <Path d="M10.9 3.2H13.1V15H10.9Z" />
+      <Path d="M7.6 7.1L9.6 5.8V15H7.6Z" />
+      <Path d="M16.4 7.1L14.4 5.8V15H16.4Z" />
+      <Path d="M6.8 15.4H17.2V16.2H6.8Z" />
+      <Path d="M5.6 16.6H18.4V17.4H5.6Z" />
+      <Path d="M4.4 17.8H19.6V18.6H4.4Z" />
+    </Svg>
+  );
+}
+function CameraGlyph() {
+  return (
+    <Svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M4 7h3.4l1.2-2h6.8L16.6 7H20v12H4z" />
+      <Circle cx={12} cy={13} r={3.2} />
+    </Svg>
+  );
+}
+function SquadIcon() {
+  return (
+    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.cream100} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6" />
+      <Path d="M3 19v-1a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v1" />
+      <Path d="M16 5.5a3 3 0 0 1 0 6M18 14h.5a4 4 0 0 1 4 4v1" />
+    </Svg>
+  );
+}
+function FriendsIcon() {
+  return (
+    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.cream100} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <Circle cx={12} cy={8} r={3.4} />
+      <Path d="M5 20a7 7 0 0 1 14 0" />
+    </Svg>
+  );
+}
+function GlobeIcon() {
+  return (
+    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.cream100} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <Circle cx={12} cy={12} r={9} />
+      <Path d="M3.5 12h17M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18" />
+    </Svg>
+  );
+}
+function FriendPlusIcon() {
+  return (
+    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.cream100} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <Circle cx={9} cy={8} r={3.4} />
+      <Path d="M3.5 20a5.5 5.5 0 0 1 11 0" />
+      <Path d="M18 7v6M15 10h6" />
+    </Svg>
+  );
+}
+function MessageIcon() {
+  return (
+    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M20 5H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h4v4l4-4h8a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1z" />
+    </Svg>
+  );
+}
+function SaveIcon() {
+  return (
+    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M12 4v11M8 11l4 4 4-4M5 19h14" />
+    </Svg>
+  );
+}
+function LinkIcon() {
+  return (
+    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M9.5 14.5l5-5" />
+      <Path d="M8 12l-2 2a3 3 0 0 0 4.2 4.2l2-2" />
+      <Path d="M16 12l2-2a3 3 0 0 0-4.2-4.2l-2 2" />
+    </Svg>
+  );
+}
+function ShareDots({ color = flColor.bronze300 }: { color?: string }) {
+  return (
+    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+      <Circle cx={6} cy={12} r={2.4} />
+      <Circle cx={17} cy={6} r={2.4} />
+      <Circle cx={17} cy={18} r={2.4} />
+      <Path d="M8.1 10.9l6.8-3.8M8.1 13.1l6.8 3.8" />
+    </Svg>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1, justifyContent: 'flex-end' },
+  scrim: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(4,5,7,0.6)' },
+  sheet: { maxHeight: '95%', backgroundColor: '#111214', borderTopLeftRadius: 26, borderTopRightRadius: 26, borderWidth: 1, borderBottomWidth: 0, borderColor: flColor.charcoal500, boxShadow: '0 -30px 70px rgba(0,0,0,0.6)' },
+
+  handleWrap: { alignItems: 'center', paddingTop: 10, paddingBottom: 2 },
+  handle: { width: 44, height: 5, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal500 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12 },
+  title: { fontFamily: flFont.display, fontSize: 20, fontWeight: '600', color: flColor.cream100 },
+  closeBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.charcoal600 },
+
+  body: { flexShrink: 1 },
+  bodyContent: { paddingHorizontal: 20, paddingBottom: 20 },
+  missingWrap: { padding: 40, alignItems: 'center' },
+  missingText: { fontSize: 14, color: flColor.gray400, textAlign: 'center' },
+
+  // layout picker
+  sectionLabelFirst: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400, marginTop: 4, marginBottom: 10, marginLeft: 2 },
+  templateRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  tplChip: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: flRadius.pill, borderWidth: 1 },
+  tplChipOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.bronzeBorder },
+  tplChipOff: { backgroundColor: flColor.charcoal900, borderColor: flColor.charcoal600 },
+  tplChipText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
+  tplChipTextOn: { color: flColor.bronze300 },
+  poseSelectLabel: { fontSize: 10, color: flColor.gray600, marginTop: 12, marginBottom: 8, marginLeft: 2 },
+  poseSelectRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  poseSelChip: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: flRadius.pill, borderWidth: 1 },
+  poseSelOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.bronzeBorder },
+  poseSelOff: { backgroundColor: 'transparent', borderColor: flColor.charcoal600 },
+  poseSelText: { fontSize: 11.5, fontWeight: '600', color: flColor.gray400 },
+  poseSelTextOn: { color: flColor.bronze300 },
+
+  // preview card
+  card: { alignSelf: 'center', width: '100%', maxWidth: 300, borderRadius: flRadius.xl, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: '#0d0b09', padding: 18, alignItems: 'center', boxShadow: flShadow.borderInset, marginTop: 22 },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 16 },
+  anvilTile: { width: 20, height: 20, borderRadius: 6, backgroundColor: flColor.bronze400, alignItems: 'center', justifyContent: 'center' },
+  brandText: { fontSize: 10, fontWeight: '700', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.gray400 },
+
+  compareWrap: { alignSelf: 'stretch' },
+  photoBand: { alignSelf: 'stretch', height: 132, borderRadius: flRadius.md, backgroundColor: flColor.surfaceRecessed },
+  kindGlyph: { width: 70, height: 70, borderRadius: 35, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800, boxShadow: flShadow.glowSubtle },
+
+  cardTitleBlock: { alignItems: 'center', marginTop: 16 },
+  cardEyebrow: { fontSize: 9, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  cardTitle: { marginTop: 4, fontFamily: flFont.display, fontSize: 25, fontWeight: '700', letterSpacing: -0.3, color: flColor.cream100, textAlign: 'center' },
+  line: { textAlign: 'center', maxWidth: '100%' },
+  lineBronze: { marginTop: 12, fontSize: 11.5, fontWeight: '600', color: flColor.bronze400 },
+  lineBody: { marginTop: 9, fontFamily: flFont.display, fontStyle: 'italic', fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
+  lineMuted: { marginTop: 5, fontSize: 11, color: flColor.gray600 },
+  cardFooter: { marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: flColor.charcoal700, alignSelf: 'stretch', alignItems: 'center' },
+  athlete: { fontSize: 12, fontWeight: '600', color: flColor.gray400 },
+
+  sectionLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400, marginTop: 24, marginBottom: 10, marginLeft: 2 },
+  detailCard: { borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900, overflow: 'hidden' },
+  detailRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 13, paddingHorizontal: 15 },
+  detailRowDiv: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  detailLabel: { fontSize: 14, color: flColor.cream100 },
+  switch: { width: 44, height: 26, borderRadius: flRadius.pill, borderWidth: 1, justifyContent: 'center', paddingHorizontal: 2 },
+  switchOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.bronzeBorder, alignItems: 'flex-end' },
+  switchOff: { backgroundColor: flColor.charcoal700, borderColor: flColor.charcoal600, alignItems: 'flex-start' },
+  switchKnob: { width: 18, height: 18, borderRadius: 9 },
+  switchKnobOn: { backgroundColor: flColor.bronze300 },
+  switchKnobOff: { backgroundColor: flColor.charcoal500 },
+
+  destGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  destTile: { width: '47%', flexGrow: 1, alignItems: 'center', gap: 9, paddingVertical: 16, borderRadius: flRadius.lg, borderWidth: 1 },
+  destTileOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  destTileOff: { borderColor: flColor.charcoal700, backgroundColor: flColor.charcoal900 },
+  destIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  destIconOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800 },
+  destIconOff: { borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
+  destLabel: { fontSize: 11.5, fontWeight: '600', color: flColor.gray400 },
+  destLabelOn: { color: flColor.bronze300 },
+
+  outsideGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  outsideRow: { width: '47%', flexGrow: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 13, paddingHorizontal: 13, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.charcoal900 },
+  outsideIcon: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.bronzeTint, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
+  outsideLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
+
+  footer: { paddingHorizontal: 18, paddingTop: 12, paddingBottom: 18, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: '#3D2F1A', boxShadow: flShadow.card },
+  ctaText: { fontSize: 15, fontWeight: '700', letterSpacing: 0.4, color: '#F7F5F1' },
+
+  pickerBackdrop: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, backgroundColor: flColor.overlayDark },
+  pickerCard: { width: '100%', maxWidth: 320, backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.charcoal500, borderRadius: flRadius.xl, paddingVertical: 20, paddingHorizontal: 20, boxShadow: flShadow.ambient },
+  pickerTitle: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', color: flColor.cream100, marginBottom: 12 },
+  pickerScroll: { maxHeight: 300 },
+  pickerRow: { paddingVertical: 14 },
+  pickerRowDiv: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  pickerName: { fontSize: 15.5, fontWeight: '600', color: flColor.cream100 },
+});

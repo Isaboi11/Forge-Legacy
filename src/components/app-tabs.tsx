@@ -1,7 +1,10 @@
 import { Tabs, TabList, TabSlot, TabTrigger } from 'expo-router/ui';
+import { usePathname } from 'expo-router';
 
 import { TabBar, TabBarButton } from '@/components/forge/composites/TabBar';
 import { TourOverlay } from '@/components/tour/TourOverlay';
+import { fetchOwnedPendingCounts } from '@/data/squad-discover-live';
+import { useQuery } from '@/lib/useQuery';
 import {
   HomeTabIcon,
   LegacyTabIcon,
@@ -29,6 +32,13 @@ import {
  * `/legacy` are placeholder "coming in Phase 3" screens for now.
  */
 export default function AppTabs() {
+  // Athletes waiting on YOU — pending join requests across every squad you own, on the Squads tab.
+  // Keyed on the pathname rather than polled: any navigation (including coming back from approving
+  // someone) re-reads it, so the badge self-corrects without a timer.
+  const pathname = usePathname();
+  const { data: pendingCounts } = useQuery(fetchOwnedPendingCounts, [pathname]);
+  const pendingRequests = Object.values(pendingCounts ?? {}).reduce((sum, n) => sum + n, 0);
+
   return (
     <Tabs style={{ flex: 1 }}>
       <TabSlot style={{ flex: 1 }} />
@@ -46,7 +56,7 @@ export default function AppTabs() {
             <TabBarButton label="Legacy" emphasized renderIcon={(color) => <LegacyTabIcon color={color} />} />
           </TabTrigger>
           <TabTrigger name="squads" href="/squads" asChild>
-            <TabBarButton label="Squads" renderIcon={(color) => <SquadsTabIcon color={color} />} />
+            <TabBarButton label="Squads" badge={pendingRequests} renderIcon={(color) => <SquadsTabIcon color={color} />} />
           </TabTrigger>
         </TabBar>
       </TabList>

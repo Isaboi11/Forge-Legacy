@@ -4,9 +4,10 @@ import {
 } from '@expo-google-fonts/playfair-display';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { useFonts } from 'expo-font';
-import { useColorScheme } from 'react-native';
+import { ActivityIndicator, StyleSheet, useColorScheme, View } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { flColor } from '@/constants/foundation';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { ProfileProvider, useProfile } from '@/lib/profile';
 import { SettingsProvider } from '@/lib/settings';
@@ -73,13 +74,32 @@ function RootNavigator() {
     profileLoading,
     onboardedAt: profile?.onboardedAt,
   });
-  if (route === 'splash') return null;
+  // Hold a calm, on-brand loading state while auth/profile resolve — never a flash of the wrong destination.
+  // The animated splash overlay covers the first ~600ms on top of this; if the reads run longer, this dark
+  // fill (not a blank, and not the old onboarding flash) carries through until the real route is known.
+  if (route === 'splash') return <BootLoading />;
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={route === 'app'}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="post/[id]" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Screen name="squad/[id]" />
+        <Stack.Screen name="squad-settings" />
+        <Stack.Screen name="squad-invite" />
+        <Stack.Screen name="squad-transfer" />
+        <Stack.Screen name="discover-squads" />
+        <Stack.Screen name="squad-preview" />
+        <Stack.Screen name="squad-requests" />
+        <Stack.Screen name="inbox" />
+        <Stack.Screen name="squad-post/[id]" options={{ presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="squad-composer" options={{ presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="transformation" />
+        <Stack.Screen name="transformation/[id]" />
+        <Stack.Screen name="transformation-add" options={{ presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="transformation-compare" options={{ presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="share-config" options={{ presentation: 'transparentModal', animation: 'fade' }} />
+        <Stack.Screen name="create-squad" options={{ presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="join-squad" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="athlete/[id]" />
         <Stack.Screen name="honors" />
         <Stack.Screen name="program/[id]" />
@@ -88,6 +108,7 @@ function RootNavigator() {
         <Stack.Screen name="exercise/[id]" />
         <Stack.Screen name="exercise-library" />
         <Stack.Screen name="workout" options={{ presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="log-activity" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="exercise-picker" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="program-builder" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="workout-complete" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
@@ -102,3 +123,18 @@ function RootNavigator() {
     </Stack>
   );
 }
+
+/** Boot loading state — a dark, app-matching fill with a quiet bronze spinner, shown while the boot router
+ *  resolves (session × onboarded). Replaces the old `null` so a slow read never reveals a blank or the wrong
+ *  screen underneath the fading splash. */
+function BootLoading() {
+  return (
+    <View style={styles.boot}>
+      <ActivityIndicator color={flColor.bronze400} />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  boot: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.base },
+});

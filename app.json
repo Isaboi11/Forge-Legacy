@@ -36,7 +36,15 @@
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-video"
+      "expo-video",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Forge Legacy uses your photo library so you can add a squad photo, share progress in the feed, and build your transformation gallery.",
+          "cameraPermission": "Forge Legacy uses your camera so you can record squad check-in videos and capture photos on the spot.",
+          "microphonePermission": "Forge Legacy uses your microphone so your check-in and form-check videos have sound."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

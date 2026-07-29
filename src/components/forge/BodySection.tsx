@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
 
 import { LogWeightSheet } from '@/components/forge/LogWeightSheet';
@@ -10,7 +11,6 @@ import { displayWeight } from '@/domain/settings/units';
 import { useBodyPrefs } from '@/lib/body-metrics';
 import { useUnits } from '@/lib/settings';
 import { useQuery } from '@/lib/useQuery';
-import { useToast } from '@/hooks/useCeremony';
 
 /**
  * P-2 Body Metrics section (`Forge Progress Hub.dc.html` §8) — the three-way branch: off (opt-in CTA),
@@ -28,10 +28,10 @@ const MINUS = '−';
 const W = 300, H = 120, PADX = 10, PADTOP = 12, PADBOT = 24;
 
 export function BodySection() {
+  const router = useRouter();
   const { data: entries, refetch } = useQuery(fetchBodyEntries, []);
   const { enabled, showTrend, loaded, setEnabled, setShowTrend } = useBodyPrefs();
   const { units, load } = useUnits();
-  const { showToast } = useToast();
   const [logOpen, setLogOpen] = useState(false);
   const [sel, setSel] = useState<number | null>(null);
 
@@ -168,7 +168,7 @@ export function BodySection() {
           </View>
         ) : null}
 
-        <Pressable onPress={() => showToast('Progress photos · coming soon')} accessibilityRole="button" accessibilityLabel="Progress photos" style={styles.photos}>
+        <Pressable onPress={() => router.push('/transformation')} accessibilityRole="button" accessibilityLabel="Progress photos" style={styles.photos}>
           <View style={styles.photosIcon}>
             <Glyph d="M4 7h3l1.5-2h7L17 7h3v12H4z M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" size={16} color={flColor.bronze300} width={1.7} />
           </View>

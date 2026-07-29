@@ -29,14 +29,13 @@ export function BottomSheet({ open, onClose, dismissible = true, title, showHand
 
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable
-        style={styles.backdrop}
-        onPress={dismissible ? onClose : undefined}
-        accessibilityRole={dismissible ? 'button' : undefined}
-        accessibilityLabel={dismissible ? 'Dismiss' : undefined}
-      >
+      {/* Backdrop = tap-to-dismiss surface only. It must NOT be an accessibilityRole="button" — on web that
+          makes it keyboard-activatable, so a SPACEBAR press inside a text field bubbles up and "clicks" the
+          backdrop, dismissing the sheet mid-typing. `focusable={false}` keeps it out of the keyboard path. */}
+      <Pressable style={styles.backdrop} onPress={dismissible ? onClose : undefined} focusable={false}>
         <Pressable
           onPress={(e) => e.stopPropagation()}
+          focusable={false}
           style={[styles.sheet, { paddingBottom: 22 + insets.bottom }]}
         >
           {showHandle ? (

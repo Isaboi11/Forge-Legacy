@@ -21,7 +21,7 @@ interface QueryState<T> {
  * (`{ message, details, hint, code }`), not an `Error` — so the old `String(e)` fallback rendered every
  * database failure as a useless "[object Object]", hiding the one piece of information worth having.
  */
-function errorMessage(e: unknown): string {
+export function errorMessage(e: unknown): string {
   if (e instanceof Error) return e.message;
   if (e && typeof e === 'object') {
     const o = e as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown };

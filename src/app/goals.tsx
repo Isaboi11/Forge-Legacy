@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -17,6 +17,7 @@ import {
   fetchGoalHistory,
   markAchieved,
   saveGoal,
+  syncAutoGoals,
   updateProgress,
   type ChapterGoals,
 } from '@/data/goals-live';
@@ -26,7 +27,9 @@ import {
   goalSections,
   historyDate,
   isAchieved,
+  isAutoTracked,
   isQuantifiable,
+  usesBaseline,
   orderedUnits,
   parseTarget,
   progressEntryLine,
@@ -34,7 +37,9 @@ import {
   progressPct,
   validateGoal,
   type Goal,
+  type MetricKind,
 } from '@/domain/goals/goals';
+import { PICKER_DB } from '@/domain/exercise-picker/data';
 import { useQuery } from '@/lib/useQuery';
 import { useCeremony, useToast } from '@/hooks/useCeremony';
 
@@ -54,6 +59,34 @@ const PLUS = 'M12 5v14M5 12h14';
 const CHEVRON = 'M9 6l6 6-6 6';
 const PENCIL = 'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z';
 
+// Auto-tracking: each metric determines its own unit; the tracked-progress options; the distance activities.
+const AUTO_UNIT: Record<MetricKind, string> = { manual: '', exercise_max: 'lb', distance_total: 'mi', workout_count: 'workouts', volume_total: 'lb', time_total: 'hrs', pr_count: 'PRs', body_weight: 'lb', body_measure: 'in' };
+const METRIC_OPTIONS: [MetricKind, string][] = [
+  ['manual', 'Manually'],
+  ['exercise_max', 'A lift'],
+  ['distance_total', 'Total distance'],
+  ['workout_count', 'Workout count'],
+  ['volume_total', 'Total volume'],
+  ['time_total', 'Total time'],
+  ['pr_count', 'PRs set'],
+  ['body_weight', 'Bodyweight'],
+  ['body_measure', 'Body measurement'],
+];
+const DISTANCE_ACTS: [string, string][] = [
+  ['running', 'Run'],
+  ['walking', 'Walk'],
+  ['cycling', 'Bike'],
+  ['rowing', 'Row'],
+  ['swimming', 'Swim'],
+];
+const DIST_KEYS = DISTANCE_ACTS.map(([k]) => k);
+const BODY_MEASURES: [string, string][] = [
+  ['waist_in', 'Waist'],
+  ['chest_in', 'Chest'],
+  ['arm_in', 'Arm'],
+];
+const BODY_KEYS = BODY_MEASURES.map(([k]) => k);
+
 type ViewState = { mode: 'hub' } | { mode: 'detail'; id: string } | { mode: 'form'; id?: string; primary: boolean };
 
 export default function GoalsScreen() {
@@ -61,6 +94,33 @@ export default function GoalsScreen() {
   const insets = useSafeAreaInsets();
   const { data, loading, refetch } = useQuery(fetchActiveChapterGoals, []);
   const [view, setView] = useState<ViewState>({ mode: 'hub' });
+  const { enqueue } = useCeremony();
+  const { showToast } = useToast();
+
+  // Hybrid Progress Model: reconcile auto-tracked goals against live workout data whenever the hub's data
+  // lands. Writes through updateProgress (history + achieve), fires the M-3 ceremony on a fresh achieve, and
+  // refetches. A signature guard makes it converge — once values match, it stops (no refetch loop).
+  const syncedSig = useRef('');
+  useEffect(() => {
+    if (!data) return;
+    const auto = data.goals.filter((g) => isAutoTracked(g) && g.achievedAt == null && g.target != null);
+    if (auto.length === 0) return;
+    const sig = auto.map((g) => `${g.id}:${g.current}:${g.metricKind}:${g.metricKey}:${g.metricStartedAt}`).join('|');
+    if (sig === syncedSig.current) return;
+    syncedSig.current = sig;
+    let alive = true;
+    void syncAutoGoals(auto).then((res) => {
+      if (!alive) return;
+      for (const g of res.achieved) {
+        if (g.isPrimary) enqueue({ id: `goal-${g.id}`, kind: 'goalAchieved', goalName: g.name, chapterName: data.chapterName ?? undefined });
+        else showToast('Goal achieved · recorded in your legacy');
+      }
+      if (res.changed) refetch();
+    });
+    return () => {
+      alive = false;
+    };
+  }, [data, refetch, enqueue, showToast]);
 
   if (loading || !data) {
     return (
@@ -298,10 +358,17 @@ function GoalDetail({ goal, chapterName, insets, onBack, onEdit, onChanged }: { 
             <ProgressBar value={progressPct(goal)} max={100} height={8} label={`${progressPct(goal)}%`} />
             {!done ? (
               <>
-                <Pressable onPress={() => setUpdateOpen(true)} accessibilityRole="button" accessibilityLabel="Update progress" style={styles.updateBtn}>
-                  <Glyph d={PENCIL} size={16} color={flColor.bronze300} width={2} />
-                  <Text style={styles.updateText}>Update Progress</Text>
-                </Pressable>
+                {isAutoTracked(goal) ? (
+                  <View style={styles.autoNote}>
+                    <Glyph d="M12 2a10 10 0 1 0 10 10M12 6v6l4 2" size={15} color={flColor.bronze300} width={1.8} />
+                    <Text style={styles.autoNoteText}>Tracked automatically from your workouts</Text>
+                  </View>
+                ) : (
+                  <Pressable onPress={() => setUpdateOpen(true)} accessibilityRole="button" accessibilityLabel="Update progress" style={styles.updateBtn}>
+                    <Glyph d={PENCIL} size={16} color={flColor.bronze300} width={2} />
+                    <Text style={styles.updateText}>Update Progress</Text>
+                  </Pressable>
+                )}
                 {/* Declare it done before the number lands — the design allows marking a tracked goal achieved. */}
                 <Pressable onPress={() => setAchieveOpen(true)} accessibilityRole="button" accessibilityLabel="Mark achieved" style={styles.markLink}>
                   <Text style={styles.markLinkText}>Mark as Achieved</Text>
@@ -422,6 +489,10 @@ function GoalForm({
   const [target, setTarget] = useState(existing?.target != null ? String(existing.target) : '');
   const [unit, setUnit] = useState(existing?.unit ?? '');
   const [customUnit, setCustomUnit] = useState(existing?.unit != null && !orderedUnits('').includes(existing.unit));
+  const [metricKind, setMetricKind] = useState<MetricKind>(existing?.metricKind ?? 'manual');
+  const [metricKey, setMetricKey] = useState<string | null>(existing?.metricKey ?? null);
+  const [liftOpen, setLiftOpen] = useState(false);
+  const [liftSearch, setLiftSearch] = useState('');
   const [saving, setSaving] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
 
@@ -431,23 +502,55 @@ function GoalForm({
   const chips = orderedUnits(name);
   const showPreview = name.trim().length >= 2;
 
+  // Auto metrics fix their own unit; manual keeps the user's chosen unit.
+  const effectiveUnit = metricKind === 'manual' ? unit : AUTO_UNIT[metricKind];
+  const metricReady = (metricKind !== 'exercise_max' && metricKind !== 'body_measure') || !!metricKey; // a lift / measurement goal needs its subject chosen
+  const liftResults = ((): string[] => {
+    const q = liftSearch.trim().toLowerCase();
+    const names = PICKER_DB.map((x) => x.name);
+    return (q ? names.filter((n) => n.toLowerCase().includes(q)) : names).slice(0, 40);
+  })();
+
+  const pickMetric = (k: MetricKind) => {
+    setMetricKind(k);
+    if (k === 'exercise_max') {
+      if (!metricKey || DIST_KEYS.includes(metricKey) || BODY_KEYS.includes(metricKey)) {
+        setMetricKey(null);
+        setLiftOpen(true);
+      }
+    } else if (k === 'distance_total') {
+      setMetricKey((prev) => (prev && DIST_KEYS.includes(prev) ? prev : 'running'));
+    } else if (k === 'body_measure') {
+      setMetricKey((prev) => (prev && BODY_KEYS.includes(prev) ? prev : 'waist_in'));
+    } else {
+      setMetricKey(null);
+    }
+  };
+
   // Discard protection: only prompt when there's unsaved input to lose (M3 / the design's discard sheet).
-  const dirty = name !== (existing?.name ?? '') || target !== (existing?.target != null ? String(existing.target) : '') || unit !== (existing?.unit ?? '');
+  const dirty =
+    name !== (existing?.name ?? '') ||
+    target !== (existing?.target != null ? String(existing.target) : '') ||
+    unit !== (existing?.unit ?? '') ||
+    metricKind !== (existing?.metricKind ?? 'manual') ||
+    (metricKey ?? '') !== (existing?.metricKey ?? '');
   const cancel = () => {
     if (!dirty) return onCancel();
     setDiscardOpen(true);
   };
 
   const save = () => {
-    if (!valid.ok || !chapterId) return;
+    if (!valid.ok || !metricReady || !chapterId) return;
     setSaving(true);
     saveGoal({
       id: existing?.id,
       chapterId,
       name,
       target: parseTarget(target),
-      unit: hasTarget ? unit.trim() || null : null,
+      unit: hasTarget ? effectiveUnit.trim() || null : null,
       isPrimary,
+      metricKind: hasTarget ? metricKind : 'manual',
+      metricKey: metricKind === 'exercise_max' || metricKind === 'distance_total' ? metricKey : null,
     }).then(onSaved, () => setSaving(false));
   };
 
@@ -472,6 +575,49 @@ function GoalForm({
         </Field>
 
         {hasTarget ? (
+          <Field label="Track Progress">
+            <View style={styles.chipRow}>
+              {METRIC_OPTIONS.map(([k, lbl]) => (
+                <Pressable key={k} onPress={() => pickMetric(k)} accessibilityRole="button" accessibilityState={{ selected: metricKind === k }} style={[styles.chip, metricKind === k && styles.chipOn]}>
+                  <Text style={[styles.chipText, metricKind === k && styles.chipTextOn]}>{lbl}</Text>
+                </Pressable>
+              ))}
+            </View>
+            {metricKind === 'exercise_max' ? (
+              <Pressable onPress={() => setLiftOpen(true)} accessibilityRole="button" accessibilityLabel="Choose a lift" style={styles.metricRow}>
+                <Text style={[styles.metricRowText, !metricKey && styles.metricRowPlaceholder]} numberOfLines={1}>
+                  {metricKey ?? 'Choose a lift…'}
+                </Text>
+                <Text style={styles.metricRowAction}>{metricKey ? 'Change' : 'Choose'}</Text>
+              </Pressable>
+            ) : null}
+            {metricKind === 'distance_total' ? (
+              <View style={[styles.chipRow, styles.subChips]}>
+                {DISTANCE_ACTS.map(([k, lbl]) => (
+                  <Pressable key={k} onPress={() => setMetricKey(k)} accessibilityRole="button" accessibilityState={{ selected: metricKey === k }} style={[styles.chip, metricKey === k && styles.chipOn]}>
+                    <Text style={[styles.chipText, metricKey === k && styles.chipTextOn]}>{lbl}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+            {metricKind === 'body_measure' ? (
+              <View style={[styles.chipRow, styles.subChips]}>
+                {BODY_MEASURES.map(([k, lbl]) => (
+                  <Pressable key={k} onPress={() => setMetricKey(k)} accessibilityRole="button" accessibilityState={{ selected: metricKey === k }} style={[styles.chip, metricKey === k && styles.chipOn]}>
+                    <Text style={[styles.chipText, metricKey === k && styles.chipTextOn]}>{lbl}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+            {metricKind !== 'manual' ? (
+              <Text style={styles.metricNote}>
+                {usesBaseline(metricKind) ? 'Tracks your latest logged weigh-in (Progress Hub).' : `Updates automatically from your logged workouts, in ${effectiveUnit}.`}
+              </Text>
+            ) : null}
+          </Field>
+        ) : null}
+
+        {hasTarget && metricKind === 'manual' ? (
           <Field label="Unit">
             <View style={styles.chipRow}>
               {chips.map((u) => (
@@ -500,10 +646,12 @@ function GoalForm({
 
         {/* live type hint — decided automatically by whether a target is set */}
         <View style={styles.hintCard}>
-          <Text style={styles.hintTitle}>{hasTarget ? 'Tracked goal' : 'Narrative goal'}</Text>
+          <Text style={styles.hintTitle}>{hasTarget ? (metricKind === 'manual' ? 'Tracked goal' : 'Auto-tracked goal') : 'Narrative goal'}</Text>
           <Text style={styles.hintBody}>
             {hasTarget
-              ? `You’ll log progress toward ${parseTarget(target)}${unit ? ` ${unit}` : ''} over time.`
+              ? metricKind === 'manual'
+                ? `You’ll log progress toward ${parseTarget(target)}${effectiveUnit ? ` ${effectiveUnit}` : ''} over time.`
+                : `Progress toward ${parseTarget(target)}${effectiveUnit ? ` ${effectiveUnit}` : ''} is read from your workouts — no manual updates.`
               : 'No number to hit — mark it achieved when the chapter has proven it.'}
           </Text>
         </View>
@@ -518,7 +666,7 @@ function GoalForm({
               </Text>
               {hasTarget ? (
                 <View style={styles.previewProgress}>
-                  <ProgressBar value={0} max={100} height={8} label={`0 / ${parseTarget(target)}${unit ? ` ${unit}` : ''} · 0%`} />
+                  <ProgressBar value={0} max={100} height={8} label={`0 / ${parseTarget(target)}${effectiveUnit ? ` ${effectiveUnit}` : ''} · 0%`} />
                 </View>
               ) : (
                 <View style={styles.previewPill}>
@@ -530,11 +678,42 @@ function GoalForm({
         ) : null}
 
         <View style={styles.saveWrap}>
-          <Button variant="primary" fullWidth disabled={!valid.ok || saving} onPress={save} accessibilityLabel="Save goal">
+          <Button variant="primary" fullWidth disabled={!valid.ok || !metricReady || saving} onPress={save} accessibilityLabel="Save goal">
             {existing ? 'Save Changes' : isPrimary ? 'Set Chapter Goal' : 'Add Goal'}
           </Button>
         </View>
       </ScrollView>
+
+      {/* A lift: search the real catalog and pick the exercise whose max weight this goal tracks. */}
+      <BottomSheet open={liftOpen} onClose={() => setLiftOpen(false)} title="Choose a Lift">
+        <View style={styles.liftSheet}>
+          <TextInput
+            style={styles.input}
+            value={liftSearch}
+            onChangeText={setLiftSearch}
+            placeholder="Search exercises…"
+            placeholderTextColor={flColor.gray600}
+            autoFocus
+          />
+          <ScrollView style={styles.liftList} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+            {liftResults.map((n) => (
+              <Pressable
+                key={n}
+                onPress={() => {
+                  setMetricKey(n);
+                  setLiftOpen(false);
+                  setLiftSearch('');
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={n}
+                style={styles.liftRow}
+              >
+                <Text style={styles.liftRowText}>{n}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+      </BottomSheet>
 
       <ConfirmSheet
         open={discardOpen}
@@ -662,6 +841,20 @@ const styles = StyleSheet.create({
   chipOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   chipText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
   chipTextOn: { color: flColor.bronze300 },
+
+  // auto-tracking metric picker
+  subChips: { marginTop: 10 },
+  metricRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 10, paddingVertical: 12, paddingHorizontal: 14, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
+  metricRowText: { flex: 1, minWidth: 0, fontSize: 14.5, color: flColor.cream100 },
+  metricRowPlaceholder: { color: flColor.gray600 },
+  metricRowAction: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze300 },
+  metricNote: { marginTop: 10, fontSize: 12, lineHeight: 17, color: flColor.gray600 },
+  autoNote: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 12, paddingHorizontal: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint, marginTop: 4 },
+  autoNoteText: { flex: 1, fontSize: 13, fontWeight: '600', color: flColor.bronze300 },
+  liftSheet: { gap: 12 },
+  liftList: { maxHeight: 320 },
+  liftRow: { paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: flColor.charcoal800 },
+  liftRowText: { fontSize: 15, color: flColor.cream100 },
 
   hintCard: { padding: 13, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900, marginBottom: 14 },
   hintTitle: { fontSize: 12.5, fontWeight: '700', color: flColor.bronze300, marginBottom: 3 },

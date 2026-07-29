@@ -59,8 +59,8 @@ const SCREEN_TOURS: Record<ScreenKey, TourCard[]> = {
       body: 'Small, private groups that train together. Favorite the ones you check most to keep them up top.',
     },
     {
-      title: 'Create or discover',
-      body: 'Start your own squad, or find one to join — from the buttons up top.',
+      title: 'Create a squad',
+      body: 'Start your own from the button up top — name it, pick a crest, and it’s yours to build.',
     },
   ],
   friends: [

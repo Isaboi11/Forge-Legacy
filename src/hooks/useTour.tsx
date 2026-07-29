@@ -100,7 +100,7 @@ const TourContext = createContext<TourContextValue | null>(null);
 
 export function TourProvider({ children }: { children: React.ReactNode }) {
   const { current: ceremony } = useCeremony();
-  const { session } = useAuth();
+  const { session, loading: authLoading } = useAuth();
   const userId = session?.user?.id ?? null;
 
   const [status, setStatus] = useState<UiStatus>('loading');
@@ -111,13 +111,18 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const [seenLoaded, setSeenLoaded] = useState(false);
   const [tipsEnabled, setTips] = useState(true); // absent preference = on, the first-run default
 
-  // Load persisted state on first mount; force in-memory defaults on any later account switch. The switch
-  // path deliberately does NOT re-read storage (a race with `resetFirstRunFlags` clearing it) — it just
-  // resets to the fresh-athlete defaults, which is exactly what the cleared flags would resolve to.
-  const prevId = useRef<string | null | undefined>(undefined);
+  // Baseline the tour state ONCE the session read has resolved, so we read the restored account directly and
+  // never mistake boot's null→id settle for an account switch. That false "switch" was wiping the seen-set on
+  // every relaunch (and re-firing the honor ceremony). After the baseline, only a genuinely DIFFERENT account
+  // signing in on this device resets to fresh-athlete defaults; a plain relaunch — or re-logging into the same
+  // account — keeps the persisted "already seen" state. `resetFirstRunFlags` (AuthProvider) is gated the same way.
+  const didInit = useRef(false);
+  const lastRealId = useRef<string | null>(null);
   useEffect(() => {
-    if (prevId.current === undefined) {
-      prevId.current = userId;
+    if (authLoading) return; // hold until getSession() resolves — userId is final from here on
+    if (!didInit.current) {
+      didInit.current = true;
+      lastRealId.current = userId;
       let alive = true;
       void (async () => {
         const [persisted, seenList, wasAnnounced, tips] = await Promise.all([
@@ -137,8 +142,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
         alive = false;
       };
     }
-    if (prevId.current !== userId) {
-      prevId.current = userId;
+    if (userId && lastRealId.current && lastRealId.current !== userId) {
       setStatus('pending');
       setStepIndex(0);
       setRequested(false);
@@ -147,7 +151,8 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       setSeenLoaded(true);
       setTips(true);
     }
-  }, [userId]);
+    if (userId) lastRealId.current = userId;
+  }, [authLoading, userId]);
 
   // Entering the tour is also the moment the ceremony has served its purpose — record it so an interrupted
   // tour resumes without re-announcing the honor.

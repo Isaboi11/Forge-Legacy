@@ -37,34 +37,44 @@ export interface TabBarButtonProps extends Omit<PressableProps, 'children'> {
   /** Give this tab the lit bronze-tile treatment when active (the Legacy tab). */
   emphasized?: boolean
   isFocused?: boolean
+  /** Count riding the tab icon — omitted or 0 renders nothing. Caps at "9+". */
+  badge?: number
 }
 
-export function TabBarButton({ label, renderIcon, emphasized = false, isFocused = false, style: _triggerStyle, ...rest }: TabBarButtonProps) {
+export function TabBarButton({ label, renderIcon, emphasized = false, isFocused = false, badge = 0, style: _triggerStyle, ...rest }: TabBarButtonProps) {
   const active = isFocused
   const emph = emphasized && active
   const color = active ? flColor.bronze400 : flColor.gray600
+  const showBadge = badge > 0
 
   return (
     <Pressable
       accessibilityRole="tab"
-      accessibilityLabel={label}
+      accessibilityLabel={showBadge ? `${label}, ${badge} pending` : label}
       accessibilityState={{ selected: active }}
       {...rest}
       style={styles.button}
     >
-      {emph ? (
-        <LinearGradient
-          colors={flGradient.bronzeFill.colors}
-          locations={flGradient.bronzeFill.locations}
-          start={flGradient.bronzeFill.start}
-          end={flGradient.bronzeFill.end}
-          style={[styles.iconWrap, styles.iconWrapEmphasized, { boxShadow: flShadow.glowSubtle }]}
-        >
-          {renderIcon(flColor.bronze300)}
-        </LinearGradient>
-      ) : (
-        <View style={styles.iconWrap}>{renderIcon(color)}</View>
-      )}
+      <View style={styles.iconSlot}>
+        {emph ? (
+          <LinearGradient
+            colors={flGradient.bronzeFill.colors}
+            locations={flGradient.bronzeFill.locations}
+            start={flGradient.bronzeFill.start}
+            end={flGradient.bronzeFill.end}
+            style={[styles.iconWrap, styles.iconWrapEmphasized, { boxShadow: flShadow.glowSubtle }]}
+          >
+            {renderIcon(flColor.bronze300)}
+          </LinearGradient>
+        ) : (
+          <View style={styles.iconWrap}>{renderIcon(color)}</View>
+        )}
+        {showBadge ? (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{badge > 9 ? '9+' : badge}</Text>
+          </View>
+        ) : null}
+      </View>
       <Text style={[styles.label, { color, fontWeight: active ? '600' : '500' }]}>{label}</Text>
     </Pressable>
   )
@@ -88,9 +98,32 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     minHeight: 44,
   },
+  iconSlot: {
+    position: 'relative',
+  },
   iconWrap: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  badge: {
+    position: 'absolute',
+    top: -6,
+    right: -10,
+    minWidth: 17,
+    height: 17,
+    paddingHorizontal: 5,
+    borderRadius: flRadius.pill,
+    backgroundColor: flColor.bronze400,
+    borderWidth: 1.5,
+    borderColor: 'rgba(13, 13, 15, 0.92)', // the bar's own fill, so the badge reads as lifted off the icon
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    lineHeight: 12,
+    color: '#1A1206',
   },
   iconWrapEmphasized: {
     width: 46,

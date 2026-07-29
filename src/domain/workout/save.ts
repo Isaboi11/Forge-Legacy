@@ -60,6 +60,8 @@ export async function saveWorkout(session: ActiveSession, partners: string[] = [
     p_exercises: exercises,
     p_prs: prs,
     p_program_id: session.programId ?? null,
+    p_distance: null,
+    p_distance_unit: null,
   });
   if (error) throw error;
 
@@ -73,4 +75,52 @@ export async function saveWorkout(session: ActiveSession, partners: string[] = [
   }
 
   return { workoutId: data.workout_id, prs, volume: sessionVolume(session), sets: doneSetCount(session) };
+}
+
+/** The distance-based activity modalities loggable via the "Log a Run" flow. */
+export type DistanceActivity = 'running' | 'walking' | 'cycling' | 'swimming' | 'rowing';
+
+const ACTIVITY_NAME: Record<DistanceActivity, string> = {
+  running: 'Run',
+  walking: 'Walk',
+  cycling: 'Bike Ride',
+  swimming: 'Swim',
+  rowing: 'Row',
+};
+
+export interface ActivityInput {
+  activityType: DistanceActivity;
+  distanceMi: number;
+  durationSec?: number;
+  notes?: string | null;
+}
+
+/**
+ * Log a distance activity (run/walk/bike/row/swim) — a workout carrying `distance` and no strength sets.
+ * Reuses the atomic `save_workout` RPC with empty exercises/PRs, so it bumps the chapter and lands in the
+ * activity history like any session. Distance is stored as authored in miles (never unit-converted).
+ */
+export async function saveActivity(input: ActivityInput): Promise<{ workoutId: string }> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('not signed in');
+
+  const dur = input.durationSec ?? 0;
+  const startedAt = new Date(Date.now() - dur * 1000).toISOString();
+
+  const { data, error } = await supabase.rpc('save_workout', {
+    p_workout_name: ACTIVITY_NAME[input.activityType],
+    p_activity_type: input.activityType,
+    p_started_at: startedAt,
+    p_duration_sec: dur,
+    p_notes: input.notes?.trim() || null,
+    p_exercises: [],
+    p_prs: [],
+    p_program_id: null,
+    p_distance: input.distanceMi,
+    p_distance_unit: 'mi',
+  });
+  if (error) throw error;
+  return { workoutId: data.workout_id };
 }

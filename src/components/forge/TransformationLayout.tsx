@@ -1,0 +1,127 @@
+import { useState } from 'react';
+import { StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
+import { Image } from 'expo-image';
+
+import { BeforeAfterSlider } from '@/components/forge/BeforeAfterSlider';
+import type { AlignedPhoto, TransformationLayoutData } from '@/data/squad-feed-live';
+import { flColor, flFont, flRadius } from '@/constants/foundation';
+
+/**
+ * Renders a shared transformation in the chosen template — slider (draggable), side-by-side, stacked, or a
+ * multi-pose grid — from `TransformationLayoutData` pairs. Used in the Share preview and the squad post it
+ * creates, so both look identical. Per-photo alignment (pan/zoom) is applied in every template.
+ */
+export function TransformationLayout({ data, compact = false }: { data: TransformationLayoutData; compact?: boolean }) {
+  const pairs = data.pairs ?? [];
+  if (!pairs.length) return null;
+  const first = pairs[0];
+
+  if (data.template === 'slider') {
+    return (
+      <View>
+        <BeforeAfterSlider before={first.then.url} after={first.now.url} beforeT={first.then.transform} afterT={first.now.transform} beforeLabel={data.thenLabel} afterLabel={data.nowLabel} />
+        {data.elapsed ? <ElapsedHero elapsed={data.elapsed} /> : null}
+      </View>
+    );
+  }
+
+  if (data.template === 'stacked') {
+    return (
+      <View style={styles.stack}>
+        <Labeled label="Then" sub={data.thenLabel} photo={first.then} now={false} />
+        <Labeled label="Now" sub={data.nowLabel} photo={first.now} now />
+        {data.elapsed ? <ElapsedHero elapsed={data.elapsed} /> : null}
+      </View>
+    );
+  }
+
+  if (data.template === 'grid') {
+    return (
+      <View style={styles.gridStack}>
+        {data.elapsed ? <ElapsedHero elapsed={data.elapsed} top /> : null}
+        {pairs.map((p, i) => (
+          <View key={`${p.label}-${i}`} style={styles.gridRow}>
+            <Text style={styles.gridPose}>{p.label}</Text>
+            <View style={styles.pairRow}>
+              <AlignedImage photo={p.then} chip={i === 0 ? data.thenLabel ?? 'Then' : undefined} now={false} />
+              <AlignedImage photo={p.now} chip={i === 0 ? data.nowLabel ?? 'Now' : undefined} now />
+            </View>
+          </View>
+        ))}
+      </View>
+    );
+  }
+
+  // side-by-side (default)
+  return (
+    <View>
+      <View style={styles.pairRow}>
+        <Labeled label="Then" sub={data.thenLabel} photo={first.then} now={false} stacked={false} />
+        <Labeled label="Now" sub={data.nowLabel} photo={first.now} now stacked={false} />
+      </View>
+      {data.elapsed ? <ElapsedHero elapsed={data.elapsed} /> : null}
+    </View>
+  );
+}
+
+function Labeled({ label, sub, photo, now, stacked = true }: { label: string; sub?: string; photo: AlignedPhoto; now: boolean; stacked?: boolean }) {
+  return (
+    <View style={stacked ? undefined : styles.col}>
+      <Text style={[styles.overLabel, now ? styles.overLabelNow : null]}>
+        {label}
+        {sub ? ` · ${sub}` : ''}
+      </Text>
+      <AlignedImage photo={photo} />
+    </View>
+  );
+}
+
+function AlignedImage({ photo, chip, now }: { photo: AlignedPhoto; chip?: string; now?: boolean }) {
+  const [w, setW] = useState(0);
+  const h = (w * 4) / 3;
+  const t = photo.transform;
+  const onLayout = (e: LayoutChangeEvent) => setW(e.nativeEvent.layout.width);
+  return (
+    <View style={styles.cell} onLayout={onLayout}>
+      <Image source={{ uri: photo.url }} style={[styles.cellImg, t ? { transform: [{ translateX: t.tx * w }, { translateY: t.ty * h }, { scale: t.scale }] } : null]} contentFit="cover" />
+      {chip ? (
+        <View style={[styles.chip, now ? styles.chipNow : null]}>
+          <Text style={[styles.chipText, now ? styles.chipTextNow : null]}>{chip}</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function ElapsedHero({ elapsed, top }: { elapsed: string; top?: boolean }) {
+  return (
+    <View style={[styles.elapsedHero, top ? styles.elapsedTop : styles.elapsedBottom]}>
+      <Text style={styles.elapsedBig}>{elapsed}</Text>
+      <Text style={styles.transformed}>Transformed</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  stack: { gap: 10 },
+  gridStack: { gap: 16 },
+  gridRow: { gap: 7 },
+  gridPose: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.gray600 },
+  pairRow: { flexDirection: 'row', gap: 8 },
+  col: { flex: 1, minWidth: 0, gap: 5 },
+  overLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray400, marginBottom: 5 },
+  overLabelNow: { color: flColor.bronze300 },
+
+  cell: { flex: 1, minWidth: 0, aspectRatio: 3 / 4, borderRadius: flRadius.md, overflow: 'hidden', borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.surfaceRecessed, position: 'relative' },
+  cellImg: { width: '100%', height: '100%' },
+  chip: { position: 'absolute', top: 8, left: 8, paddingVertical: 3, paddingHorizontal: 8, borderRadius: flRadius.sm, backgroundColor: 'rgba(8,11,14,0.72)', borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
+  chipNow: {},
+  chipText: { fontSize: 9, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray400 },
+  chipTextNow: { color: flColor.bronze300 },
+
+  elapsedHero: { alignItems: 'center' },
+  elapsedTop: { marginBottom: 6 },
+  elapsedBottom: { marginTop: 14 },
+  elapsedBig: { fontFamily: flFont.display, fontSize: 28, fontWeight: '700', letterSpacing: -0.5, color: flColor.bronze300 },
+  transformed: { marginTop: 4, fontSize: 9, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.gray600 },
+});

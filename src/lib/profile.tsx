@@ -21,10 +21,17 @@ const ProfileContext = createContext<ProfileState | undefined>(undefined);
 export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const { session } = useAuth();
   const uid = session?.user.id ?? null;
-  const { data, loading, refetch } = useQuery<UserProfile | null>(
+  const { data, loading: rawLoading, error, refetch } = useQuery<UserProfile | null>(
     async () => (uid ? fetchSelfProfile() : null),
     [uid],
   );
+  // Boot flash guard: when the session id settles null→uid, useQuery keeps the prior result
+  // (data:null, loading:false) until the refetch lands — which the boot router read as "signed in ·
+  // not onboarded" and flashed the onboarding screen for a beat before Home. Treat "have a uid but no
+  // profile yet (and no error)" as still loading so routeFor holds on the splash. Every signed-in user
+  // has a profile row (the handle_new_user trigger), so a null here is always transient, never "no row".
+  // Pure derivation — no effect/setState — to stay clean under the strict react-compiler lint.
+  const loading = rawLoading || (uid != null && data == null && error == null);
   return <ProfileContext.Provider value={{ profile: data, loading, refetch }}>{children}</ProfileContext.Provider>;
 }
 

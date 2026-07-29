@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { meetsTarget, type Goal, type ProgressEntry } from '@/domain/goals/goals';
+import { isAutoTracked, isCumulativeMetric, meetsTarget, usesBaseline, type Goal, type MetricDir, type MetricKind, type ProgressEntry } from '@/domain/goals/goals';
 
 /**
  * Goals persistence (`goals`, 0025) — chapter-scoped, athlete-owned.
@@ -9,7 +9,7 @@ import { meetsTarget, type Goal, type ProgressEntry } from '@/domain/goals/goals
  * resolves to an empty list, so the consumers that preview a goal never break.
  */
 
-const ROW = 'id, chapter_id, name, target, unit, current, is_primary, target_date, achieved_at, created_at';
+const ROW = 'id, chapter_id, name, target, unit, current, is_primary, target_date, achieved_at, created_at, metric_kind, metric_key, metric_started_at, metric_dir, metric_start_value';
 
 interface Row {
   id: string;
@@ -22,6 +22,11 @@ interface Row {
   target_date: string | null;
   achieved_at: string | null;
   created_at: string;
+  metric_kind: MetricKind | null;
+  metric_key: string | null;
+  metric_started_at: string | null;
+  metric_dir: MetricDir | null;
+  metric_start_value: number | null;
 }
 
 const toModel = (r: Row): Goal => ({
@@ -35,6 +40,11 @@ const toModel = (r: Row): Goal => ({
   targetDate: r.target_date,
   achievedAt: r.achieved_at,
   createdAt: r.created_at,
+  metricKind: r.metric_kind ?? 'manual', // pre-0035 rows read as manual
+  metricKey: r.metric_key ?? null,
+  metricStartedAt: r.metric_started_at ?? null,
+  metricDir: r.metric_dir ?? 'up',
+  metricStartValue: r.metric_start_value ?? null,
 });
 
 async function uid(): Promise<string | null> {
@@ -106,6 +116,9 @@ export interface SaveGoalInput {
   target: number | null;
   unit: string | null;
   isPrimary: boolean;
+  /** 'manual' (default) or an auto-tracking metric. Auto metrics only apply to quantifiable goals. */
+  metricKind?: MetricKind;
+  metricKey?: string | null;
 }
 
 /** Insert or update. When `isPrimary`, the chapter's previous primary is cleared first (GD-D1). */
@@ -123,11 +136,48 @@ export async function saveGoal(input: SaveGoalInput): Promise<Goal> {
       .neq('id', input.id ?? '00000000-0000-0000-0000-000000000000');
   }
 
+  // Auto-tracking only makes sense on a quantifiable goal; a narrative goal is always manual.
+  const metricKind: MetricKind = input.target != null ? input.metricKind ?? 'manual' : 'manual';
+  const metricKey = metricKind === 'exercise_max' || metricKind === 'distance_total' || metricKind === 'body_measure' ? input.metricKey ?? null : null;
+
+  const before = input.id ? await fetchGoal(input.id) : null;
+  const sameMetric = before != null && before.metricKind === metricKind && (before.metricKey ?? null) === metricKey;
+
+  // Cumulative metrics count from an anchor: stamp it now on a fresh assignment, keep it when the metric is
+  // unchanged (so editing the name doesn't reset the window), null it otherwise.
+  let metricStartedAt: string | null = null;
+  if (isCumulativeMetric(metricKind)) {
+    metricStartedAt = sameMetric && before?.metricStartedAt ? before.metricStartedAt : new Date().toISOString();
+  }
+
+  // Level metrics (body) carry a baseline + inferred direction. Keep them when the metric is unchanged;
+  // otherwise read the current value now as the baseline (back-filled later if there's no reading yet).
+  let metricDir: MetricDir = 'up';
+  let metricStartValue: number | null = null;
+  if (usesBaseline(metricKind)) {
+    if (sameMetric && before?.metricStartValue != null) {
+      metricStartValue = before.metricStartValue;
+      metricDir = before.metricDir;
+    } else {
+      const { data: mv } = await supabase.rpc('goal_metric_value', { p_metric_kind: metricKind, p_metric_key: metricKey, p_started_at: null });
+      const baseline = Number(mv ?? 0);
+      if (baseline > 0) {
+        metricStartValue = baseline;
+        metricDir = input.target != null && input.target < baseline ? 'down' : 'up';
+      }
+    }
+  }
+
   const fields = {
     name: input.name.trim(),
     target: input.target,
     unit: input.target != null ? input.unit : null, // a unit is meaningless without a target
     is_primary: input.isPrimary,
+    metric_kind: metricKind,
+    metric_key: metricKey,
+    metric_started_at: metricStartedAt,
+    metric_dir: metricDir,
+    metric_start_value: metricStartValue,
   };
 
   if (input.id) {
@@ -153,7 +203,7 @@ export async function updateProgress(goalId: string, current: number): Promise<{
   if (!id) throw new Error('Not signed in');
   const before = await fetchGoal(goalId);
   const patch: { current: number; achieved_at?: string } = { current };
-  const nowAchieved = before != null && before.achievedAt == null && meetsTarget({ target: before.target, current });
+  const nowAchieved = before != null && before.achievedAt == null && meetsTarget({ target: before.target, current, metricDir: before.metricDir });
   if (nowAchieved) patch.achieved_at = new Date().toISOString();
 
   const { data, error } = await supabase.from('goals').update(patch).eq('id', goalId).eq('athlete_id', id).select(ROW).single();
@@ -184,6 +234,46 @@ export async function fetchGoalHistory(goalId: string): Promise<ProgressEntry[]>
     toValue: r.to_value,
     createdAt: r.created_at,
   }));
+}
+
+/**
+ * Reconcile every auto-tracked, in-progress goal against live workout data — the Hybrid Progress Model.
+ * Computes each metric via the `goal_metric_value` RPC and, when it differs from the stored value, writes
+ * it through the SAME `updateProgress` path (so history + auto-achieve + the M-3 ceremony all still work).
+ * Returns whether anything changed (the caller refetches) and any goals this pass newly achieved (ceremony).
+ */
+export async function syncAutoGoals(goals: Goal[]): Promise<{ changed: boolean; achieved: Goal[] }> {
+  const id = await uid();
+  const auto = goals.filter((g) => isAutoTracked(g) && g.achievedAt == null && g.target != null);
+  let changed = false;
+  const achieved: Goal[] = [];
+  for (const g of auto) {
+    const { data, error } = await supabase.rpc('goal_metric_value', {
+      p_metric_kind: g.metricKind,
+      p_metric_key: g.metricKey,
+      p_started_at: g.metricStartedAt,
+    });
+    if (error) continue;
+    const value = Number(data ?? 0);
+    if (!Number.isFinite(value)) continue;
+
+    // First real reading of a level goal → capture the baseline + infer direction (target vs baseline).
+    if (id && usesBaseline(g.metricKind) && g.metricStartValue == null && value > 0) {
+      const dir: MetricDir = g.target != null && g.target < value ? 'down' : 'up';
+      await supabase.from('goals').update({ metric_start_value: value, metric_dir: dir }).eq('id', g.id).eq('athlete_id', id);
+      changed = true;
+    }
+
+    if (value === g.current) continue;
+    changed = true;
+    try {
+      const res = await updateProgress(g.id, value);
+      if (res.newlyAchieved) achieved.push(res.goal);
+    } catch {
+      // a single goal's sync failure never blocks the rest
+    }
+  }
+  return { changed, achieved };
 }
 
 /** Mark a narrative goal achieved (or, rarely, an under-target one the athlete calls done). */

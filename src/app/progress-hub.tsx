@@ -27,8 +27,8 @@ import { BodySection } from '@/components/forge/BodySection';
  * rank journey (centerpiece), identity, strength PBs, consistency, body metrics, and what's next — all
  * wired to live data. (Honors live on the Legacy page, so they're not duplicated here.) Strength cards
  * open the Metric Detail overlay + Edit Metrics sheet; the body
- * section (BodySection) owns the weigh-in log + chart. Progress photos remain a "coming soon" toast (no
- * transformation/photos backend yet).
+ * section (BodySection) owns the weigh-in log + chart, and its "Progress photos" row opens the L-17
+ * Transformation gallery (`/transformation`).
  */
 
 const LADDER: { key: RankFamily; name: string; statement: string }[] = [
@@ -179,7 +179,7 @@ export default function ProgressHubScreen() {
           </View>
         </View>
 
-        {/* ── BODY METRICS (Slice C — live) ── */}
+        {/* ── BODY METRICS (Slice C — live; its "Progress photos" row opens the L-17 Transformation gallery) ── */}
         <BodySection />
 
         {/* ── WHAT'S NEXT ── */}

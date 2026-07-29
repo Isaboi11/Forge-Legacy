@@ -4,6 +4,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
+import { NotificationBell } from '@/components/forge/compositions/NotificationBell';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { Button } from '@/components/forge/composites/Button';
 import { Card } from '@/components/forge/composites/Surface';
@@ -381,6 +382,7 @@ export default function HomeScreen() {
         <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.15)' }} />
         <AppBar
           title={<HomeWordmark />}
+          actions={<NotificationBell />}
           avatar={<Avatar name={liveProfile?.name ?? ''} src={liveProfile?.avatarUrl ?? undefined} size="appBar" />}
           onAvatar={() => router.push('/account-settings')}
         />
@@ -423,6 +425,7 @@ export default function HomeScreen() {
 
       <AppBar
         title={<HomeWordmark />}
+        actions={<NotificationBell />}
         avatar={<Avatar name={liveProfile?.name ?? profile.name} src={liveProfile?.avatarUrl ?? undefined} size="appBar" />}
         onAvatar={() => router.push('/account-settings')}
       />
