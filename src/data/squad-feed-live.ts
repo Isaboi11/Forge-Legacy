@@ -11,7 +11,75 @@ import { fetchCompletion } from '@/data/workout-complete-live';
  * formcheck/challenge/traintogether need subsystems that don't exist yet and are intentionally omitted.
  */
 
-export type SquadPostType = 'checkin' | 'recap' | 'pr' | 'formcheck' | 'transformation' | 'discussion' | 'announcement';
+export type SquadPostType = 'checkin' | 'recap' | 'pr' | 'formcheck' | 'transformation' | 'discussion' | 'announcement' | 'weekly';
+
+// ── Weekly Recap (SQ-D8, migration 0057) ──
+// Snapshotted at generation time, so a week's summary can't silently change because someone later
+// deleted a workout. It is a record of what that week WAS.
+export interface WeeklyRecapPr {
+  name: string;
+  exercise: string;
+  value: string;
+}
+export interface WeeklyRecapHonor {
+  name: string;
+  honor: string;
+}
+export interface WeeklyRecapGoal {
+  title: string | null;
+  kind: string;
+  delta: number;
+  target: number;
+}
+export interface WeeklyRecap {
+  weekStart: string;
+  weekEnd: string;
+  workouts: number;
+  participation: { active: number; total: number };
+  prs: WeeklyRecapPr[];
+  prCount: number;
+  honors: WeeklyRecapHonor[];
+  honorCount: number;
+  goal: WeeklyRecapGoal | null;
+}
+
+interface WeeklyRecapRow {
+  week_start: string;
+  week_end: string;
+  workouts: number | null;
+  participation: { active: number; total: number } | null;
+  prs: WeeklyRecapPr[] | null;
+  pr_count: number | null;
+  honors: WeeklyRecapHonor[] | null;
+  honor_count: number | null;
+  goal: WeeklyRecapGoal | null;
+}
+
+const toRecap = (r: WeeklyRecapRow | null): WeeklyRecap | null =>
+  r
+    ? {
+        weekStart: r.week_start,
+        weekEnd: r.week_end,
+        workouts: r.workouts ?? 0,
+        participation: r.participation ?? { active: 0, total: 0 },
+        prs: r.prs ?? [],
+        prCount: r.pr_count ?? 0,
+        honors: r.honors ?? [],
+        honorCount: r.honor_count ?? 0,
+        goal: r.goal ?? null,
+      }
+    : null;
+
+/**
+ * One line, the way the design writes it: "27 sessions, 2 PRs, 1 Honor earned across the squad."
+ * Parts with nothing to report are dropped rather than shown as zero.
+ */
+export function recapSummaryLine(r: WeeklyRecap): string {
+  const parts = [`${r.workouts} ${r.workouts === 1 ? 'session' : 'sessions'}`];
+  if (r.prCount > 0) parts.push(`${r.prCount} ${r.prCount === 1 ? 'PR' : 'PRs'}`);
+  if (r.honorCount > 0) parts.push(`${r.honorCount} ${r.honorCount === 1 ? 'Honor' : 'Honors'} earned`);
+  return `${parts.join(', ')} across the squad.`;
+}
 
 /** A single attachment on a post. `kind` is coarse so the UI can pick image vs. video rendering. */
 export type SquadMediaKind = 'image' | 'video';
@@ -92,6 +160,8 @@ export interface SquadFeedPost {
   media: SquadMedia[];
   workoutSummary: WorkoutSummary | null;
   layout: TransformationLayoutData | null;
+  /** 'weekly' only — the generated summary. Null on every other type. */
+  recap: WeeklyRecap | null;
 }
 
 export interface SquadPostComment {
@@ -128,6 +198,7 @@ interface FeedRow {
   media: SquadMedia[] | null;
   workout_summary: WorkoutSummary | null;
   layout: TransformationLayoutData | null;
+  recap: WeeklyRecapRow | null;
 }
 
 const toPost = (r: FeedRow): SquadFeedPost => ({
@@ -148,7 +219,22 @@ const toPost = (r: FeedRow): SquadFeedPost => ({
   media: Array.isArray(r.media) ? r.media : [],
   workoutSummary: r.workout_summary ?? null,
   layout: r.layout ?? null,
+  recap: toRecap(r.recap ?? null),
 });
+
+/**
+ * Generate this week's recap if it doesn't exist yet (SQ-D8, migration 0057). Lazy rather than
+ * scheduled — there is no cron, so the first athlete to open the feed in a new week triggers it and it
+ * is a no-op afterwards. Silent on failure: a missing summary must never stop the feed from loading,
+ * and pre-0057 there simply isn't one.
+ */
+export async function ensureWeeklyRecap(squadId: string): Promise<void> {
+  try {
+    await supabase.rpc('ensure_weekly_recap', { p_squad: squadId });
+  } catch {
+    // nothing to summarise, or the migration hasn't been applied
+  }
+}
 
 /** One squad's feed page (newest first). */
 export async function fetchSquadFeed(squadId: string, limit = 5, offset = 0): Promise<SquadFeedPost[]> {
@@ -392,6 +478,8 @@ export function leadFor(p: Pick<SquadFeedPost, 'type' | 'prExercise'>): string {
       return 'shared a transformation.';
     case 'announcement':
       return 'posted a squad announcement.';
+    case 'weekly':
+      return 'Weekly Summary';
     default:
       return '';
   }

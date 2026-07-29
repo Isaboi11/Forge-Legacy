@@ -91,6 +91,7 @@ function RootNavigator() {
         <Stack.Screen name="squad-preview" />
         <Stack.Screen name="squad-requests" />
         <Stack.Screen name="inbox" />
+        <Stack.Screen name="squad-recap/[id]" />
         <Stack.Screen name="squad-post/[id]" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="squad-composer" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="transformation" />

@@ -16,7 +16,7 @@ import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
 import { SquadCrest } from '@/components/forge/SquadCrest';
 import { fetchSquadInvite, GOAL_UNITS, fetchSquad, fetchSquadCheckins, uploadCheckinVideo, postCheckin, markCheckinViewed, setSquadGoal, clearSquadGoal, deleteSquad, removeSquadMember, type SquadCheckin, type SquadMemberView, type SquadGoalMetric } from '@/data/squad-live';
-import { detailFor, fetchSquadFeed, fmtDuration, fmtVolume, leadFor, timeAgo, toggleSquadReaction, type SquadFeedPost, type SquadPostType } from '@/data/squad-feed-live';
+import { detailFor, ensureWeeklyRecap, fetchSquadFeed, fmtDuration, fmtVolume, leadFor, recapSummaryLine, timeAgo, toggleSquadReaction, type SquadFeedPost, type SquadPostType } from '@/data/squad-feed-live';
 import { FlameIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { useQuery } from '@/lib/useQuery';
 import { useMediaPicker } from '@/lib/useMediaPicker';
@@ -73,7 +73,12 @@ export default function SquadDetailRoute() {
 
   const [feedLimit, setFeedLimit] = useState(5);
   const [reactMap, setReactMap] = useState<Record<string, { on: boolean; n: number }>>({});
-  const { data: feedData, refetch: refetchFeed } = useQuery(() => fetchSquadFeed(squadId, feedLimit), [squadId, feedLimit]);
+  // SQ-D8: no scheduler exists, so the first athlete to open the feed in a new week generates that
+  // week's recap. Awaited before the read so it lands in this page rather than the next one.
+  const { data: feedData, refetch: refetchFeed } = useQuery(async () => {
+    await ensureWeeklyRecap(squadId);
+    return fetchSquadFeed(squadId, feedLimit);
+  }, [squadId, feedLimit]);
   const { data: checkinsData, refetch: refetchCheckins } = useQuery(() => fetchSquadCheckins(squadId), [squadId]);
   // Whether YOU may hand out this squad's code — owner always, members only if the owner opened it
   // up (0056). Resolved server-side; the Options row follows it rather than assuming.
@@ -442,7 +447,14 @@ export default function SquadDetailRoute() {
           ) : (
             <View style={styles.feedList}>
               {feedPosts.map((p) => (
-                <FeedCard key={p.id} post={p} reacted={reactMap[p.id]?.on ?? p.iReacted} respect={reactMap[p.id]?.n ?? p.respectCount} onOpen={() => openPost(p.id)} onReact={() => onReactCard(p)} />
+                <FeedCard
+                  key={p.id}
+                  post={p}
+                  reacted={reactMap[p.id]?.on ?? p.iReacted}
+                  respect={reactMap[p.id]?.n ?? p.respectCount}
+                  onOpen={() => (p.type === 'weekly' ? router.push({ pathname: '/squad-recap/[id]', params: { id: p.id } }) : openPost(p.id))}
+                  onReact={() => onReactCard(p)}
+                />
               ))}
               {canLoadMore ? (
                 <Pressable onPress={() => setFeedLimit((n) => n + 5)} accessibilityRole="button" accessibilityLabel="Load more posts" style={styles.loadMore}>
@@ -558,7 +570,20 @@ export default function SquadDetailRoute() {
 }
 
 function DetailBg() {
-  return <ScreenBackground image={SCREEN_BG.squadDetail} imagePosition="top" atmospheric overlay={{ colors: ['rgba(5,5,5,0.12)', 'rgba(5,5,5,0.26)', 'rgba(5,5,5,0.38)'], locations: [0, 0.38, 1] }} radials={[BG_RADIAL.squadTop, BG_RADIAL.squadBottom]} />;
+  // `imageOpacity` rather than a heavier top overlay: this artwork is near-black everywhere except its
+  // golden mountain band, so dimming the whole image toward the base lands almost entirely on the
+  // mountains — the slate texture below has almost no luminance to lose. Taken down 25% twice
+  // (1 → 0.75 → 0.5625) on review; the peaks should read as atmosphere, not as a photograph.
+  return (
+    <ScreenBackground
+      image={SCREEN_BG.squadDetail}
+      imagePosition="top"
+      imageOpacity={0.5625}
+      atmospheric
+      overlay={{ colors: ['rgba(5,5,5,0.12)', 'rgba(5,5,5,0.26)', 'rgba(5,5,5,0.38)'], locations: [0, 0.38, 1] }}
+      radials={[BG_RADIAL.squadTop, BG_RADIAL.squadBottom]}
+    />
+  );
 }
 
 function OptionRow({ icon, label, onPress, divided = false, danger = false }: { icon: React.ReactNode; label: string; onPress: () => void; divided?: boolean; danger?: boolean }) {
@@ -663,6 +688,31 @@ function FeedCard({ post, reacted, respect, onOpen, onReact }: { post: SquadFeed
   const lead = isDiscussion ? post.body ?? '' : leadFor(post);
   const detail = isDiscussion ? '' : detailFor(post);
   const summary = post.type === 'recap' ? post.workoutSummary : null;
+
+  // The generated Weekly Summary — no author, its own bronze-washed treatment, and the one card that
+  // reads as the squad talking rather than a member. The design draws it untappable; it opens its
+  // breakdown here (see squad-recap/[id]).
+  if (post.type === 'weekly' && post.recap) {
+    return (
+      <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel="Open weekly summary" style={[styles.feedCard, styles.weeklyCard]}>
+        <LinearGradient colors={['rgba(191,143,79,0.06)', 'transparent'] as const} locations={[0, 0.46] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+        <View style={styles.feedCardRow}>
+          <View style={styles.weeklyIcon}>
+            <BannerGlyph />
+          </View>
+          <View style={styles.feedCardBody}>
+            <Text style={styles.weeklyTitle}>Weekly Summary</Text>
+            <Text style={styles.weeklyLine}>{recapSummaryLine(post.recap)}</Text>
+            <View style={styles.weeklyFoot}>
+              <Text style={styles.weeklyTime}>{timeAgo(post.createdAt)}</Text>
+              <Text style={styles.weeklyMore}>View breakdown →</Text>
+            </View>
+          </View>
+        </View>
+      </Pressable>
+    );
+  }
+
   return (
     <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={`Open post by ${post.authorName}`} style={styles.feedCard}>
       <View style={styles.feedCardRow}>
@@ -845,6 +895,14 @@ function FeedCommentGlyph() {
   return (
     <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
       <Path d="M4 5.5h16v11H9l-4 3z" />
+    </Svg>
+  );
+}
+function BannerGlyph({ size = 17, color = flColor.bronze300 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M6 3h12v16l-6-4-6 4z" />
+      <Path d="M9 8h6" />
     </Svg>
   );
 }
@@ -1063,6 +1121,23 @@ const styles = StyleSheet.create({
   newPostBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: '#3D2F1A', boxShadow: flShadow.glowSubtle },
   newPostText: { fontSize: 11.5, fontWeight: '700', letterSpacing: 0.3, color: flColor.bronze300 },
   feedList: { gap: 10 },
+  weeklyCard: { borderColor: flColor.bronzeBorder },
+  weeklyIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: flRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: flColor.bronzeTint,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+  },
+  weeklyTitle: { fontFamily: flFont.display, fontSize: 15.5, fontWeight: '600', letterSpacing: 0.2, color: flColor.cream100 },
+  weeklyLine: { marginTop: 4, fontSize: 13, lineHeight: 19, color: flColor.gray400 },
+  weeklyFoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 11 },
+  weeklyTime: { fontSize: 11.5, color: flColor.gray600 },
+  weeklyMore: { fontSize: 11.5, fontWeight: '600', color: flColor.bronze400 },
+
   feedCard: { borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal800, boxShadow: `${flShadow.borderInset}, ${flShadow.card}`, padding: 15 },
   feedCardRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   feedIcon: { width: 34, height: 34, flexShrink: 0, borderRadius: flRadius.sm, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.bronzeTint, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
