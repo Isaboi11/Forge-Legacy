@@ -19,8 +19,10 @@ import { resolveRankBadge } from '@/domain/rank-artwork/badge-art';
 import { RankSeal } from '@/components/forge/RankSeal';
 import { fetchLegacyData } from '@/data/legacy-live';
 import { refreshRank } from '@/data/rank-live';
-import { useCeremony } from '@/hooks/useCeremony';
+import { useCeremony, useToast } from '@/hooks/useCeremony';
 import { fetchAccomplishments } from '@/data/accomplishments-live';
+import { fetchLegacyArchive } from '@/data/legacy-archive-live';
+import { LegacyArchiveBand } from '@/components/forge/LegacyArchiveBand';
 import { formatAccDate } from '@/domain/legacy/accomplishments';
 import { useQuery } from '@/lib/useQuery';
 import type { Pin, PinKind } from '@/types/legacy';
@@ -60,7 +62,8 @@ const PIN_GLYPH: Record<PinKind, SymbolName> = {
  * Moment, My Story (chapter history + timeline preview), What Endures.
  * Pinned Legacy renders real pins (video pins open the fullscreen player); the L-13 pin manager
  * (PinManagerSheet) curates them — accomplishments/honors/chapters pinnable, max 6 (migrations 0023/0024).
- * (Transformation/Photos/Trophy preview rows + Accomplishments + Honors), and the
+ * What Endures is the `LegacyArchiveBand` (three graded image tiles → Transformation / Photos /
+ * Trophy Case, replacing the old navigation rows) + Accomplishments + Honors, then the
  * closing inscription.
  *
  * Data (Phase 2): the spine sections — rank · standard · active + sealed chapters · timeline ·
@@ -84,7 +87,7 @@ const PIN_GLYPH: Record<PinKind, SymbolName> = {
  *
  * Built: the L-12 My Standard editor (tap the creed → StandardEditorSheet, persisted), the L-13 pin
  * manager, the global Toast, and L-11 Honor Detail (on the Honors hub). Deferred (noted at the gate):
- * the scroll-driven artwork fade and Transformation/Trophy counts (no data). Taps to unbuilt
+ * the scroll-driven artwork fade. Taps to unbuilt
  * destinations are inert, consistent with Home/Workouts.
  */
 
@@ -92,10 +95,15 @@ export default function LegacyScreen() {
   const router = useRouter();
   const { profile } = useProfile();
   const { enqueue } = useCeremony();
+  const { showToast } = useToast();
   const { data, error, refetch } = useQuery(fetchLegacyData, []);
   // Accomplishments are now LIVE (0023) — replacing the fixture. Newest first; the strip shows a few and
   // "View all" opens the full L-12 screen. `featured` drives the filled star.
   const { data: accData, refetch: refetchAcc } = useQuery(fetchAccomplishments, []);
+  // The archive band loads alongside rather than inside `fetchLegacyData` — it feeds three tiles near
+  // the bottom of a long scroll and must not delay the hero. Each tile shows its recessed surface
+  // until this resolves, which is the same surface its empty state uses, so nothing rearranges.
+  const { data: archive } = useQuery(fetchLegacyArchive, []);
   const liveAccomplishments = useMemo(
     () =>
       (accData ?? []).map((a) => ({
@@ -275,12 +283,21 @@ export default function LegacyScreen() {
 
         {/* ── WHAT ENDURES ── */}
         <View style={styles.enduresStack}>
-          <View style={styles.previewGroup}>
-            <PreviewRow title="Transformation" sub="Physique & progress footage" onPress={() => router.push('/transformation')} />
-            <View style={styles.previewDivider} />
-            <PreviewRow title="Photos" sub="Every chapter, one archive" count={`${data.totalPhotoCount} photos`} onPress={() => {}} />
-            <View style={styles.previewDivider} />
-            <PreviewRow title="Trophy Case" sub="Championships & podium finishes" onPress={() => router.push('/trophy-case')} />
+          <View>
+            <View style={styles.sectionHeaderPad}>
+              <SectionHeader label="What Endures" />
+            </View>
+            <LegacyArchiveBand
+              archive={archive}
+              onTransformation={() => router.push('/transformation')}
+              onPhotos={() =>
+                // L-15/L-16 is specced and LOCKED but has no tables and no route, so there is nowhere to
+                // send them yet. Saying so beats a tap that silently does nothing, which is what the old
+                // row did while advertising a fixture count of "12 photos".
+                showToast('The photo archive isn’t built yet.')
+              }
+              onTrophies={() => router.push('/trophy-case')}
+            />
           </View>
 
           {/* Accomplishments — live (0023). Section hides entirely when the athlete has none. */}
@@ -506,19 +523,6 @@ function ProgressBadge({ rankFamily, rankLevel, sex, onPress }: { rankFamily?: R
   );
 }
 
-function PreviewRow({ title, sub, count, onPress }: { title: string; sub: string; count?: string; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={styles.previewRow}>
-      <View style={styles.previewBody}>
-        <Text style={styles.previewTitle}>{title}</Text>
-        <Text style={styles.previewSub}>{sub}</Text>
-      </View>
-      {count ? <Text style={styles.previewCount}>{count}</Text> : null}
-      <ChevronRightIcon size={17} color={flColor.bronze400} />
-    </Pressable>
-  );
-}
-
 // ── inline glyphs ──
 function PlusIcon({ color = flColor.bronze400 }: { color?: string }) {
   return (
@@ -724,13 +728,6 @@ const styles = StyleSheet.create({
 
   // what endures
   enduresStack: { marginTop: 46, gap: 26 },
-  previewGroup: { paddingHorizontal: 18 },
-  previewRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14, paddingHorizontal: 8, borderRadius: flRadius.lg },
-  previewBody: { flex: 1, minWidth: 0, gap: 2 },
-  previewTitle: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
-  previewSub: { fontSize: 11.5, color: flColor.gray600 },
-  previewCount: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze400 },
-  previewDivider: { height: 1, marginHorizontal: 8, backgroundColor: flColor.bronzeBorderSubtle },
 
   // closing
   closing: { marginTop: 46, paddingHorizontal: 24, paddingBottom: 12, alignItems: 'center', gap: 15 },
