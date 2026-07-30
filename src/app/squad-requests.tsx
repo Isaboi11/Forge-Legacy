@@ -243,7 +243,7 @@ export default function SquadRequestsScreen() {
             onPress={() => {
               const target = menuFor;
               setMenuFor(null);
-              if (target) router.push({ pathname: '/athlete/[id]', params: { id: target.name } });
+              if (target) router.push({ pathname: '/athlete/[id]', params: { id: target.userId } });
             }}
             accessibilityRole="button"
             accessibilityLabel="View profile"

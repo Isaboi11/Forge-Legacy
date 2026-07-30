@@ -128,7 +128,7 @@ export default function ChallengeDetailScreen() {
           </Pressable>
         ) : null}
         <YourStanding challenge={data} />
-        <Standings challenge={data} onAthlete={(name) => router.push({ pathname: '/athlete/[id]', params: { id: name } })} />
+        <Standings challenge={data} onAthlete={(userId) => router.push({ pathname: '/athlete/[id]', params: { id: userId } })} />
         <HowItWorks challenge={data} />
 
         {/* CALL OFF (CS-D5) — the commissioner's only early exit. Deliberately not "end now and crown
@@ -312,7 +312,7 @@ function YourStanding({ challenge: c }: { challenge: ChallengeDetail }) {
   );
 }
 
-function Standings({ challenge: c, onAthlete }: { challenge: ChallengeDetail; onAthlete: (name: string) => void }) {
+function Standings({ challenge: c, onAthlete }: { challenge: ChallengeDetail; onAthlete: (userId: string) => void }) {
   const meta = CHALLENGE_TYPES[c.type];
 
   return (
@@ -332,7 +332,7 @@ function Standings({ challenge: c, onAthlete }: { challenge: ChallengeDetail; on
       ) : (
         <View style={styles.standList}>
           {c.standings.map((s, i) => (
-            <StandingRow key={s.userId} standing={s} index={i} type={c.type} unit={meta.unit} onPress={() => onAthlete(s.name)} />
+            <StandingRow key={s.userId} standing={s} index={i} type={c.type} unit={meta.unit} onPress={() => onAthlete(s.userId)} />
           ))}
         </View>
       )}

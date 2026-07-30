@@ -119,7 +119,7 @@ export default function SquadRecordsScreen() {
 
       {/* ── History ── */}
       <BottomSheet open={open != null} onClose={() => setOpenKind(null)} title={open ? RECORD_META[open.kind].label : ''}>
-        {open ? <RecordHistory record={open} onHolder={(name) => { setOpenKind(null); router.push({ pathname: '/athlete/[id]', params: { id: name } }); }} /> : null}
+        {open ? <RecordHistory record={open} onHolder={(holderId) => { setOpenKind(null); router.push({ pathname: '/athlete/[id]', params: { id: holderId } }); }} /> : null}
       </BottomSheet>
     </View>
   );
@@ -185,7 +185,7 @@ function RecordRow({ record, onOpen }: { record: SquadRecord; onOpen: () => void
   );
 }
 
-function RecordHistory({ record, onHolder }: { record: SquadRecord; onHolder: (name: string) => void }) {
+function RecordHistory({ record, onHolder }: { record: SquadRecord; onHolder: (holderId: string) => void }) {
   const meta = RECORD_META[record.kind];
   const [current, ...previous] = record.reigns;
   const fresh = isNewRecord(record);
@@ -205,7 +205,7 @@ function RecordHistory({ record, onHolder }: { record: SquadRecord; onHolder: (n
       ) : null}
 
       <Text style={styles.sheetLabel}>Current</Text>
-      <Pressable onPress={() => onHolder(current.holderName)} accessibilityRole="button" accessibilityLabel={`View ${current.holderName}'s profile`} style={styles.currentCard}>
+      <Pressable onPress={() => onHolder(current.holderId)} accessibilityRole="button" accessibilityLabel={`View ${current.holderName}'s profile`} style={styles.currentCard}>
         <View style={styles.crownWrap}>
           <FlameGlyph size={16} />
         </View>
@@ -238,7 +238,7 @@ function RecordHistory({ record, onHolder }: { record: SquadRecord; onHolder: (n
           {previous.map((p, i) => (
             <Pressable
               key={`${p.holderId}-${p.value}-${i}`}
-              onPress={() => onHolder(p.holderName)}
+              onPress={() => onHolder(p.holderId)}
               accessibilityRole="button"
               accessibilityLabel={`View ${p.holderName}'s profile`}
               style={[styles.lineageRow, i > 0 ? styles.lineageRowDivided : null]}

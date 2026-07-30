@@ -119,7 +119,7 @@ export default function ChallengeResultsScreen() {
         <ChampionSpotlight result={data} />
         <YourResult result={data} />
         <SeasonSummary result={data} />
-        <FinalStandings result={data} onAthlete={(name) => router.push({ pathname: '/athlete/[id]', params: { id: name } })} />
+        <FinalStandings result={data} onAthlete={(userId) => router.push({ pathname: '/athlete/[id]', params: { id: userId } })} />
         <Recognition result={data} />
         <Closing result={data} onBack={goBack} />
       </ScrollView>
@@ -307,7 +307,7 @@ function SeasonSummary({ result: r }: { result: ChallengeResultsDetail }) {
 }
 
 /** §5: every non-withdrawn participant, ranked. No truncation — the design's top-5 cut misleads. */
-function FinalStandings({ result: r, onAthlete }: { result: ChallengeResultsDetail; onAthlete: (name: string) => void }) {
+function FinalStandings({ result: r, onAthlete }: { result: ChallengeResultsDetail; onAthlete: (userId: string) => void }) {
   const meta = CHALLENGE_TYPES[r.type];
 
   return (
@@ -326,7 +326,7 @@ function FinalStandings({ result: r, onAthlete }: { result: ChallengeResultsDeta
       ) : (
         <View style={styles.standList}>
           {r.standings.map((s) => (
-            <StandingRow key={s.userId} standing={s} type={r.type} unit={meta.unit} onPress={() => onAthlete(s.name)} />
+            <StandingRow key={s.userId} standing={s} type={r.type} unit={meta.unit} onPress={() => onAthlete(s.userId)} />
           ))}
         </View>
       )}
