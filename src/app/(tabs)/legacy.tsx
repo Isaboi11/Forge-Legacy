@@ -303,8 +303,11 @@ export default function LegacyScreen() {
               <View style={styles.sectionHeaderPad}>
                 <SectionHeader label="Honors" action="View all" onAction={() => router.push('/honors')} />
               </View>
+              {/* The six most recent only. `legacy-live` returns every honor newest-first (and
+                  `totalHonorCount` still counts them all) — an unbounded strip turns into a very long
+                  swipe the moment the catalog starts landing, and the Hub is where the full set lives. */}
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.honorStripPad}>
-                {data.honors.map((h) => (
+                {data.honors.slice(0, 6).map((h) => (
                   <HonorInsignia key={h.id} honor={h} onPress={() => router.push('/honors')} />
                 ))}
               </ScrollView>
