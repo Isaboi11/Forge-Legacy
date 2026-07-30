@@ -148,7 +148,12 @@ export default function CompetitionsScreen() {
           {/* ── Create ── the design's one metal-rim, white-inked button. Kept as drawn. */}
           <View style={styles.createWrap}>
             <Pressable
-              onPress={() => (squadId ? router.push({ pathname: '/create-challenge', params: { id: squadId } }) : showToast('Open Competitions from a squad to create one.'))}
+              onPress={() =>
+                /* No squad in context is no longer a dead end (0087). A competition without a squad is a
+                   FRIENDS one — CS-D1's second roster source — and the create screen names who it is for
+                   instead of taking a squad's roster wholesale. */
+                router.push(squadId ? { pathname: '/create-challenge', params: { id: squadId } } : { pathname: '/create-challenge' })
+              }
               accessibilityRole="button"
               accessibilityLabel="Create competition"
               style={({ pressed }) => [styles.createBtn, pressed ? styles.createBtnPressed : null]}

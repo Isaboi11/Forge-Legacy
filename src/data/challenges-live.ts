@@ -298,7 +298,10 @@ export async function fetchChallengeHub(): Promise<ChallengeHub> {
 }
 
 export interface CreateChallengeInput {
-  squadId: string;
+  /** SQUAD context. Mutually exclusive with `invitedIds`. */
+  squadId?: string | null;
+  /** FRIENDS context (0087): the accepted friends this is opened to. Mutually exclusive with `squadId`. */
+  invitedIds?: string[] | null;
   name: string;
   description: string;
   type: ChallengeType;
@@ -320,11 +323,15 @@ function deviceTimeZone(): string {
 }
 
 /**
- * Create a SQUAD challenge and enroll the creator (C-2).
+ * Create a competition and enroll the creator (C-2). SQUAD or FRIENDS (CS-D1's first two contexts).
  *
  * The creator joins as a participant, which is NOT auto-enrollment (CS-D1) — creating IS the act of
  * opting in, and CS-D6 makes the creator a challenge-scoped commissioner, not an outside organiser.
- * Everyone else in the squad opts in themselves from the hub.
+ * Everyone else opts in themselves from the hub.
+ *
+ * FRIENDS names its roster, because friends are not a group — there is no "my friends" object to point
+ * at, only a graph of pairs. Being named puts the competition in front of you; it does not enter you,
+ * and an invited athlete who never joins leaves no row anywhere (CS-D3).
  *
  * State is ENROLLMENT rather than ACTIVE even when it starts today: CS-D5 has no path that skips
  * enrollment, and `advance_challenges()` promotes it the moment the start time passes.
@@ -336,11 +343,16 @@ export async function createChallenge(input: CreateChallengeInput): Promise<stri
   if (!user) throw new Error('Not signed in');
 
   const end = new Date(input.startAt.getTime() + input.durationDays * 24 * 60 * 60 * 1000);
+  const friends = (input.invitedIds ?? []).filter((id) => id && id !== user.id);
+  const isFriends = !input.squadId;
+  if (isFriends && friends.length === 0) throw new Error('Pick at least one friend to compete against.');
+
   const { data, error } = await supabase
     .from('challenges')
     .insert({
-      context: 'SQUAD',
-      squad_id: input.squadId,
+      context: isFriends ? 'FRIENDS' : 'SQUAD',
+      squad_id: isFriends ? null : input.squadId,
+      invited_ids: isFriends ? friends : [],
       creator_id: user.id,
       name: input.name.trim(),
       description: input.description.trim() || null,
@@ -354,7 +366,12 @@ export async function createChallenge(input: CreateChallengeInput): Promise<stri
     })
     .select('id')
     .single();
-  if (error) throw error;
+  if (error) {
+    if ((error as { code?: string }).code === '42703') {
+      throw new Error('Competitions between friends aren’t available yet — migration 0087 hasn’t been applied.');
+    }
+    throw error;
+  }
 
   const id = (data as { id: string }).id;
   const { error: joinError } = await supabase.from('challenge_participants').insert({ challenge_id: id, user_id: user.id });

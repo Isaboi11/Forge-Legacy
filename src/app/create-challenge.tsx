@@ -10,6 +10,8 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { fetchSquad } from '@/data/squad-live';
+import { fetchFriendLists, type FriendSummary } from '@/data/friends-live';
+import { Avatar } from '@/components/forge/composites/Avatar';
 import { ACTIVITY_KEYS, LIFT_KEYS, SCOPE_OF, createChallenge, isGainType, metricLabel, type ChallengeType } from '@/data/challenges-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
@@ -127,7 +129,15 @@ export default function CreateChallengeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { showToast } = useToast();
-  const { data: squadData } = useQuery(() => fetchSquad(squadId), [squadId]);
+  const { data: squadData } = useQuery(() => (squadId ? fetchSquad(squadId) : Promise.resolve(null)), [squadId]);
+  /* No squad id means FRIENDS context (0087, CS-D1's second roster source). Friends are not a group —
+     there is no "my friends" object to point at, only a graph of pairs — so this competition names who
+     it is for, and the picker below is that naming. */
+  const friendsMode = !squadId;
+  const { data: friendLists } = useQuery(() => (friendsMode ? fetchFriendLists() : Promise.resolve(null)), [friendsMode]);
+  const myFriends: FriendSummary[] = friendLists?.friends ?? [];
+  const [invited, setInvited] = useState<string[]>([]);
+  const toggleFriend = (id: string) => setInvited((v) => (v.includes(id) ? v.filter((x) => x !== id) : [...v, id]));
 
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
@@ -176,15 +186,28 @@ export default function CreateChallengeScreen() {
   const scopedLabel = metricLabel(metric, metricKey);
   const trimmedName = name.trim();
   const nameOk = trimmedName.length >= 2;
-  const canCreate = nameOk && !!squad && !busy;
+  const canCreate = nameOk && !busy && (friendsMode ? invited.length > 0 : !!squad);
 
   const onCreate = () => {
-    if (!canCreate || !squad) return;
+    if (!canCreate) return;
     setBusy(true);
-    createChallenge({ squadId: squad.id, name, description: message, type: metric, metricKey, durationDays, startAt: start }).then(
+    createChallenge({
+      squadId: friendsMode ? null : squad?.id,
+      invitedIds: friendsMode ? invited : null,
+      name,
+      description: message,
+      type: metric,
+      metricKey,
+      durationDays,
+      startAt: start,
+    }).then(
       () => {
-        showToast(`${trimmedName} is open — your squad can opt in now.`);
-        router.replace({ pathname: '/competitions', params: { id: squad.id } });
+        showToast(
+          friendsMode
+            ? `${trimmedName} is open — ${invited.length === 1 ? 'they' : 'they'} can opt in now.`
+            : `${trimmedName} is open — your squad can opt in now.`,
+        );
+        router.replace(friendsMode ? { pathname: '/competitions' } : { pathname: '/competitions', params: { id: squad!.id } });
       },
       (e: unknown) => {
         setBusy(false);
@@ -211,7 +234,7 @@ export default function CreateChallengeScreen() {
             <Text style={[styles.heroTitle, editing && styles.heroTitleSmall, !trimmedName && styles.heroTitleMuted]} numberOfLines={3}>
               {trimmedName || 'Name Your Challenge'}
             </Text>
-            {!trimmedName ? <Text style={styles.heroIntro}>Set the terms. Your squad opts in.</Text> : null}
+            {!trimmedName ? <Text style={styles.heroIntro}>{friendsMode ? 'Set the terms. They opt in.' : 'Set the terms. Your squad opts in.'}</Text> : null}
 
             {trimmedName ? (
               <View style={styles.pillRow}>
@@ -392,20 +415,59 @@ export default function CreateChallengeScreen() {
             </View>
           </View>
 
-          {/* ── Who Competes ── squad scope only, so this states the roster rather than choosing it. */}
+          {/* ── Who Competes ── a squad STATES its roster; friends have to be named. */}
           <Text style={styles.sectionLabel}>Who Competes</Text>
           <View style={styles.card}>
-            <View style={styles.scopeStrip}>
-              <View style={styles.scopeIcon}>
-                <PeopleGlyph size={18} color={flColor.bronze300} />
+            {friendsMode ? (
+              myFriends.length === 0 ? (
+                <View style={styles.scopeStrip}>
+                  <View style={styles.scopeIcon}>
+                    <PeopleGlyph size={18} color={flColor.bronze300} />
+                  </View>
+                  <View style={styles.scopeBody}>
+                    <Text style={styles.scopeName}>No friends yet</Text>
+                    <Text style={styles.scopeSub}>Add someone by handle first, then you can compete against them.</Text>
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.friendList}>
+                  {myFriends.map((f) => {
+                    const on = invited.includes(f.id);
+                    return (
+                      <Pressable
+                        key={f.id}
+                        onPress={() => toggleFriend(f.id)}
+                        accessibilityRole="checkbox"
+                        accessibilityState={{ checked: on }}
+                        accessibilityLabel={f.name}
+                        style={({ pressed }) => [styles.friendRow, on ? styles.friendRowOn : null, pressed ? styles.friendRowPressed : null]}
+                      >
+                        <Avatar name={f.name} src={f.avatarUrl ?? undefined} size={34} />
+                        <View style={styles.friendBody}>
+                          <Text style={styles.friendName} numberOfLines={1}>
+                            {f.name}
+                          </Text>
+                          {f.handle ? <Text style={styles.friendHandle}>@{f.handle}</Text> : null}
+                        </View>
+                        <View style={[styles.tick, on ? styles.tickOn : null]}>{on ? <TickGlyph /> : null}</View>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              )
+            ) : (
+              <View style={styles.scopeStrip}>
+                <View style={styles.scopeIcon}>
+                  <PeopleGlyph size={18} color={flColor.bronze300} />
+                </View>
+                <View style={styles.scopeBody}>
+                  <Text style={styles.scopeName}>{squad?.name ?? 'Your squad'}</Text>
+                  <Text style={styles.scopeSub}>
+                    {memberCount === 1 ? 'You’re the only member so far.' : `All ${memberCount} members can opt in.`}
+                  </Text>
+                </View>
               </View>
-              <View style={styles.scopeBody}>
-                <Text style={styles.scopeName}>{squad?.name ?? 'Your squad'}</Text>
-                <Text style={styles.scopeSub}>
-                  {memberCount === 1 ? 'You’re the only member so far.' : `All ${memberCount} members can opt in.`}
-                </Text>
-              </View>
-            </View>
+            )}
             <Text style={styles.optInHint}>No one is entered until they opt in — a challenge nobody joins simply never starts.</Text>
           </View>
 
@@ -422,7 +484,7 @@ export default function CreateChallengeScreen() {
               {trimmedName || 'Untitled Challenge'}
             </Text>
             <Text style={styles.reviewTagline}>
-              {scopedLabel}   ·   {fmtDate(start)} – {fmtDate(end)}   ·   {squad?.name ?? 'Squad'}
+              {scopedLabel}   ·   {fmtDate(start)} – {fmtDate(end)}   ·   {friendsMode ? 'Friends' : (squad?.name ?? 'Squad')}
             </Text>
 
             <View style={styles.reviewRule} />
@@ -430,7 +492,18 @@ export default function CreateChallengeScreen() {
             <ReviewRow label="Scoring" value={scopedLabel} />
             <ReviewRow label="Runs" value={`${durationDays} days`} />
             <ReviewRow label="Starts" value={startWhen === 'now' ? 'Today' : fmtDate(start)} />
-            <ReviewRow label="Competing" value={squad ? `${squad.name} · ${memberCount} eligible` : '—'} />
+            <ReviewRow
+              label="Competing"
+              value={
+                friendsMode
+                  ? invited.length === 0
+                    ? 'Pick at least one friend'
+                    : `You + ${invited.length} ${invited.length === 1 ? 'friend' : 'friends'}`
+                  : squad
+                    ? `${squad.name} · ${memberCount} eligible`
+                    : '—'
+              }
+            />
             <ReviewRow label="Entry" value="Opt-in" last />
           </View>
         </ScrollView>
@@ -628,7 +701,24 @@ function CheckGlyph({ size = 12, color = '#6E8E74' }: { size?: number; color?: s
   );
 }
 
+function TickGlyph() {
+  return (
+    <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#1A1206" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M5 12.5l4.5 4.5L19 7" />
+    </Svg>
+  );
+}
+
 const styles = StyleSheet.create({
+  friendList: { gap: 8 },
+  friendRow: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingHorizontal: 11, paddingVertical: 9, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
+  friendRowOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  friendRowPressed: { opacity: 0.88 },
+  friendBody: { flex: 1, minWidth: 0 },
+  friendName: { fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
+  friendHandle: { marginTop: 1, fontSize: 11, color: flColor.gray600 },
+  tick: { width: 22, height: 22, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round, borderWidth: 1, borderColor: flColor.charcoal600 },
+  tickOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronze300 },
   root: { flex: 1 },
   flex: { flex: 1 },
   scroll: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 30 },
