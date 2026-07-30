@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { categoryGlyph, type HonorGlyphName } from '@/domain/honor/catalog';
 
 /**
  * Grant the one-time "Initiative" honor — the fresh athlete's first-move honor, earned when they commit to a
@@ -67,6 +68,8 @@ export interface CatalogHonor {
   name: string;
   category: string;
   metric: string;
+  /** Narrows the metric to one lift or activity (0078). Null = unscoped. */
+  metricKey: string | null;
   threshold: number;
   /** 'account' = once ever; 'chapter' = once per chapter. */
   scope: 'account' | 'chapter';
@@ -80,7 +83,7 @@ export interface CatalogHonor {
 export async function fetchHonorCatalog(): Promise<CatalogHonor[]> {
   const { data, error } = await supabase
     .from('honor_catalog')
-    .select('honor_type, display_name, category, metric, threshold, scope')
+    .select('honor_type, display_name, category, metric, metric_key, threshold, scope')
     .order('sort_order', { ascending: true });
   if (error) {
     if ((error as { code?: string }).code === 'PGRST205') return []; // table not migrated yet
@@ -91,6 +94,7 @@ export async function fetchHonorCatalog(): Promise<CatalogHonor[]> {
     name: r.display_name as string,
     category: r.category as string,
     metric: r.metric as string,
+    metricKey: (r.metric_key as string) ?? null,
     threshold: Number(r.threshold),
     scope: (r.scope === 'chapter' ? 'chapter' : 'account') as 'account' | 'chapter',
   }));
@@ -116,4 +120,180 @@ export async function claimEarnedHonors(): Promise<number> {
     throw error;
   }
   return Array.isArray(data) ? data.length : 0;
+}
+
+// ── The Hub read (L-10) ──────────────────────────────────────────────────────
+
+
+/** DB category names → the code catalog's category ids, for glyphs and ordering. */
+const CATEGORY_ID: Record<string, string> = {
+  Training: 'training',
+  Chapters: 'chapters',
+  Goals: 'goals',
+  Strength: 'strength',
+  'Relative Strength': 'strength',
+  Competition: 'competition',
+  Endurance: 'endurance',
+  Partnership: 'partnership',
+  Longevity: 'longevity',
+  Programs: 'programs',
+  Communities: 'communities',
+  Squad: 'squad',
+  Prestige: 'prestige',
+  Hidden: 'hidden',
+};
+
+const LIFT_LABEL: Record<string, string> = {
+  'barbell-bench-press': 'Bench',
+  'barbell-back-squat': 'Squat',
+  'barbell-deadlift': 'Deadlift',
+  'barbell-overhead-press': 'Overhead press',
+};
+
+const ACTIVITY_LABEL: Record<string, string> = {
+  running: 'Run',
+  walking: 'Walk',
+  cycling: 'Ride',
+  swimming: 'Swim',
+  rowing: 'Row',
+};
+
+const num = (n: number): string => n.toLocaleString('en-US');
+
+/**
+ * How an honor is earned, in a sentence — DERIVED from the metric and threshold rather than stored.
+ *
+ * The design ships a hand-written `trigger` string per honor. Prose can drift from the rule it describes
+ * (a threshold changes, the sentence doesn't), and with 131 honors nobody would catch it. Generating it
+ * from the same numbers the evaluator tests means the description is wrong only if the rule is.
+ */
+export function triggerText(metric: string, threshold: number, metricKey: string | null): string {
+  const lift = metricKey ? (LIFT_LABEL[metricKey] ?? metricKey) : '';
+  const act = metricKey ? (ACTIVITY_LABEL[metricKey] ?? metricKey) : '';
+  switch (metric) {
+    case 'workouts_total':
+      return threshold <= 1 ? 'Log your first workout.' : `Log ${num(threshold)} workouts.`;
+    case 'hours_forged':
+      return `Spend ${num(threshold)} hours training.`;
+    case 'active_weeks':
+      return `Train in ${num(threshold)} separate weeks.`;
+    case 'chapters_sealed':
+      return threshold <= 1 ? 'Seal your first chapter.' : `Seal ${num(threshold)} chapters.`;
+    case 'chapter_workouts':
+      return `Log ${num(threshold)} workouts inside a single chapter.`;
+    case 'chapter_days':
+      return `Keep one chapter open for ${num(threshold)} days.`;
+    case 'goals_achieved':
+      return threshold <= 1 ? 'Achieve your first goal.' : `Achieve ${num(threshold)} goals.`;
+    case 'lift_max':
+      return `${lift} ${num(threshold)} lb.`;
+    case 'combined_lifts':
+      return `Bench, squat and deadlift totalling ${num(threshold)} lb.`;
+    case 'lift_ratio':
+      return `${lift} ${threshold}× your bodyweight.`;
+    case 'lifetime_volume':
+      return `Move ${num(threshold)} lb in total, across every set you've logged.`;
+    case 'challenges_won':
+      return threshold <= 1 ? 'Win a competition.' : `Win ${num(threshold)} competitions.`;
+    case 'challenges_entered':
+      return threshold <= 1 ? 'Enter a competition.' : `Enter ${num(threshold)} competitions.`;
+    case 'session_distance':
+      return `${act} ${threshold} miles in a single session.`;
+    case 'lifetime_distance':
+      return `${num(threshold)} lifetime ${act.toLowerCase()} miles.`;
+    case 'partnered_sessions':
+      return threshold <= 1 ? 'Train alongside someone.' : `Train alongside someone ${num(threshold)} times.`;
+    case 'same_partner_max':
+      return `Train with the same person ${num(threshold)} times.`;
+    case 'distinct_partners':
+      return `Train with ${num(threshold)} different people.`;
+    case 'comeback_days':
+      return `Come back and train again after ${num(threshold)} days away.`;
+    default:
+      return 'Earned through training.';
+  }
+}
+
+export interface HubHonor {
+  slug: string;
+  name: string;
+  /** ISO date; null when this honor is in the catalog but not yet earned. */
+  date: string | null;
+  categoryId: string;
+  categoryName: string;
+  glyph: HonorGlyphName;
+  trigger: string;
+  /** Position within its own ladder, e.g. 2 of 4 bench tiers. Null when it stands alone. */
+  tier: { step: number; of: number } | null;
+}
+
+export interface HonorCategoryGroup {
+  id: string;
+  name: string;
+  glyph: HonorGlyphName;
+  honors: HubHonor[];
+}
+
+export interface HonorsHub {
+  earned: HubHonor[];
+  recent: HubHonor[];
+  categories: HonorCategoryGroup[];
+  earnedCount: number;
+  catalogCount: number;
+}
+
+/**
+ * Everything L-10 renders. Earned honors are joined to the catalog so each one knows how it was earned
+ * and where it sits in its ladder — the design's detail sheet shows only "Category", which is the same
+ * word already printed directly above it.
+ */
+export async function fetchHonorsHub(): Promise<HonorsHub> {
+  const [earnedRows, catalog] = await Promise.all([fetchHonors(), fetchHonorCatalog()]);
+  const bySlug = new Map(catalog.map((c) => [c.slug, c]));
+
+  // Ladder position: honors sharing a metric + key form a tier list, ordered by threshold.
+  const ladders = new Map<string, CatalogHonor[]>();
+  for (const c of catalog) {
+    const key = `${c.metric}|${c.metricKey ?? ''}`;
+    const list = ladders.get(key);
+    if (list) list.push(c);
+    else ladders.set(key, [c]);
+  }
+  for (const list of ladders.values()) list.sort((a, b) => a.threshold - b.threshold);
+
+  const toHub = (slug: string, name: string, date: string | null): HubHonor => {
+    const c = bySlug.get(slug);
+    const categoryName = c?.category ?? 'Training';
+    const categoryId = CATEGORY_ID[categoryName] ?? 'training';
+    const ladder = c ? (ladders.get(`${c.metric}|${c.metricKey ?? ''}`) ?? []) : [];
+    const step = c ? ladder.findIndex((x) => x.slug === slug) + 1 : 0;
+    return {
+      slug,
+      name,
+      date,
+      categoryId,
+      categoryName,
+      glyph: categoryGlyph(categoryId),
+      trigger: c ? triggerText(c.metric, c.threshold, c.metricKey) : 'Earned through training.',
+      tier: ladder.length > 1 && step > 0 ? { step, of: ladder.length } : null,
+    };
+  };
+
+  const earned = earnedRows.map((r) => toHub(r.slug, r.name, r.date));
+
+  // Non-mutating sort, newest first.
+  const recent = [...earned]
+    .sort((a, b) => new Date(b.date ?? 0).getTime() - new Date(a.date ?? 0).getTime())
+    .slice(0, 5);
+
+  // Canonical category order, empty categories dropped.
+  const order = Object.values(CATEGORY_ID).filter((v, i, a) => a.indexOf(v) === i);
+  const categories: HonorCategoryGroup[] = [];
+  for (const id of order) {
+    const honors = earned.filter((h) => h.categoryId === id);
+    if (honors.length === 0) continue;
+    categories.push({ id, name: honors[0].categoryName, glyph: categoryGlyph(id), honors });
+  }
+
+  return { earned, recent, categories, earnedCount: earned.length, catalogCount: catalog.length };
 }

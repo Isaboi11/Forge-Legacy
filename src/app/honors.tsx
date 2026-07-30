@@ -10,8 +10,7 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { useTour } from '@/hooks/useTour';
-import { claimEarnedHonors, fetchHonors, type EarnedHonor } from '@/data/honors-live';
-import { HONOR_CATEGORIES, categoryGlyph, categoryMeta, honorMeta } from '@/domain/honor/catalog';
+import { claimEarnedHonors, fetchHonorsHub, type HubHonor } from '@/data/honors-live';
 import { HonorMedallion } from '@/components/honor/HonorMedallion';
 import { HonorGlyph } from '@/components/honor/HonorGlyph';
 
@@ -21,9 +20,25 @@ import { HonorGlyph } from '@/components/honor/HonorGlyph';
  * then earned honors grouped by their canonical category (map order), each a forged medallion. Tapping one
  * opens the L-11 bottom sheet (medallion · category · name · earned date · trigger · Share).
  *
- * Data is LIVE — every row is read from `honor_instances` (the same source Legacy uses); category, glyph,
- * and trigger come from the code honor catalog (`domain/honor/catalog`). Reached from the ceremony's
- * "View Honor" and Legacy → Honors → "View all". Share is a "coming soon" toast, matching the design.
+ * Data is LIVE. Earned rows come from `honor_instances`; category, ladder position and the earn condition
+ * are joined from `honor_catalog` (migration 0077) — which replaced a 14-entry hardcoded code catalog that
+ * had gone stale against a database holding 131. Anything the app can grant now renders here, without a
+ * second list to keep in step.
+ *
+ * THE EARN CONDITION IS DERIVED, NOT STORED. The design ships a hand-written `trigger` sentence per honor.
+ * Prose drifts from the rule it describes — a threshold moves, the sentence doesn't — and across 131 honors
+ * nobody would catch it. `triggerText()` builds the sentence from the same metric and threshold the
+ * evaluator tests, so a description can only be wrong if the rule is.
+ *
+ * TWO DESIGN GAPS CLOSED:
+ *   · The detail sheet's one info row was "Category" — the same word already printed as the eyebrow
+ *     directly above it. It now carries the earn condition and the honor's position in its own ladder
+ *     ("Tier 2 of 4"), which is what an athlete looking at a bench milestone actually wants to know.
+ *   · The Recent strip dropped the year, so honors three years apart both read "Jan 20". It keeps the year
+ *     whenever the visible honors span more than one.
+ *
+ * Reached from the ceremony's "View Honor" and Legacy → Honors → "View all". Share is a "coming soon"
+ * toast, matching the design.
  */
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -48,11 +63,11 @@ export default function HonorsScreen() {
    * you'd earn "100 Workouts Logged" by logging your 101st. Silent and idempotent, so opening this screen
    * is safe to repeat and never back-dates a timeline event.
    */
-  const { data: honors, error, refetch } = useQuery(
-    () => claimEarnedHonors().catch(() => 0).then(fetchHonors),
+  const { data: hub, error, refetch } = useQuery(
+    () => claimEarnedHonors().catch(() => 0).then(fetchHonorsHub),
     [],
   );
-  const [selected, setSelected] = useState<EarnedHonor | null>(null);
+  const [selected, setSelected] = useState<HubHonor | null>(null);
 
   // The "view honor → then tutorial" hand-off: if the tour was deferred by "View Honor", resume it as the
   // athlete leaves this hub (unmount covers back button, swipe, and hardware back). No-op otherwise.
@@ -62,18 +77,19 @@ export default function HonorsScreen() {
     };
   }, [resumeTour]);
 
-  const { recent, categories, total } = useMemo(() => {
-    const list = honors ?? [];
-    const byCat = new Map<string, EarnedHonor[]>();
-    for (const h of list) {
-      const cat = honorMeta(h.slug, h.name).category;
-      const arr = byCat.get(cat) ?? [];
-      arr.push(h);
-      byCat.set(cat, arr);
-    }
-    const categories = HONOR_CATEGORIES.map((c) => ({ cat: c, items: byCat.get(c.id) ?? [] })).filter((g) => g.items.length > 0);
-    return { recent: list.slice(0, 5), categories, total: list.length };
-  }, [honors]);
+  // Memoized: `?? []` mints a fresh array every render, which would defeat the memo below.
+  const recent = useMemo(() => hub?.recent ?? [], [hub]);
+  const categories = hub?.categories ?? [];
+  const total = hub?.earnedCount ?? 0;
+
+  /**
+   * Whether the Recent strip needs years. The design always drops them, so a three-year athlete sees two
+   * honors both reading "Jan 20" with nothing to tell them apart.
+   */
+  const recentNeedsYear = useMemo(() => {
+    const years = new Set(recent.map((h) => (h.date ?? '').slice(0, 4)).filter(Boolean));
+    return years.size > 1;
+  }, [recent]);
 
   return (
     <View style={styles.root}>
@@ -91,7 +107,7 @@ export default function HonorsScreen() {
         }
       />
 
-      {!honors ? (
+      {!hub ? (
         <View style={styles.status}>
           {error ? (
             <>
@@ -111,27 +127,36 @@ export default function HonorsScreen() {
           <Text style={styles.sectionLabel}>Recent</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
             {recent.map((h) => (
-              <HonorTile key={h.id} honor={h} size={72} onPress={() => setSelected(h)} />
+              <HonorTile key={h.slug} honor={h} size={72} showYear={recentNeedsYear} onPress={() => setSelected(h)} />
             ))}
           </ScrollView>
 
-          {categories.map(({ cat, items }) => (
-            <View key={cat.id} style={styles.catBlock}>
+          {categories.map((group) => (
+            <View key={group.id} style={styles.catBlock}>
               <View style={styles.divider} />
               <View style={styles.catHeader}>
                 <View style={styles.catHeaderLeft}>
-                  <HonorGlyph glyph={cat.glyph} size={15} color={flColor.bronze400} strokeWidth={1.9} />
-                  <Text style={styles.catName}>{cat.name}</Text>
+                  <HonorGlyph glyph={group.glyph} size={15} color={flColor.bronze400} strokeWidth={1.9} />
+                  <Text style={styles.catName}>{group.name}</Text>
                 </View>
-                <Text style={styles.catCount}>{items.length}</Text>
+                <Text style={styles.catCount}>{group.honors.length}</Text>
               </View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
-                {items.map((h) => (
-                  <HonorTile key={h.id} honor={h} size={56} onPress={() => setSelected(h)} />
+                {group.honors.map((h) => (
+                  <HonorTile key={h.slug} honor={h} size={56} onPress={() => setSelected(h)} />
                 ))}
               </ScrollView>
             </View>
           ))}
+
+          {/* What is still out there. The design shows only earned honors, so a catalog of 131 is invisible
+              to the person it is meant to motivate — 'you have 12' reads very differently from
+              'you have 12 of 131'. A count, not a list: the Catalog screen is where browsing belongs. */}
+          {hub && hub.catalogCount > hub.earnedCount ? (
+            <Text style={styles.remaining}>
+              {hub.earnedCount} of {hub.catalogCount} honors earned · {hub.catalogCount - hub.earnedCount} still out there
+            </Text>
+          ) : null}
         </ScrollView>
       )}
 
@@ -151,45 +176,68 @@ export default function HonorsScreen() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-function HonorTile({ honor, size, onPress }: { honor: EarnedHonor; size: number; onPress: () => void }) {
-  const meta = honorMeta(honor.slug, honor.name);
+function HonorTile({
+  honor,
+  size,
+  showYear = false,
+  onPress,
+}: {
+  honor: HubHonor;
+  size: number;
+  showYear?: boolean;
+  onPress: () => void;
+}) {
+  const date = honor.date ?? '';
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${meta.name}, earned ${fmtDate(honor.date)}`} style={[styles.tile, { width: size + 16 }]}>
-      <HonorMedallion glyph={categoryGlyph(meta.category)} size={size} />
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${honor.name}${date ? `, earned ${fmtDate(date)}` : ''}`}
+      style={[styles.tile, { width: size + 16 }]}
+    >
+      <HonorMedallion glyph={honor.glyph} size={size} />
       <Text style={styles.tileName} numberOfLines={2}>
-        {meta.name}
+        {honor.name}
       </Text>
-      <Text style={styles.tileDate}>{shortDate(honor.date)}</Text>
+      {date ? <Text style={styles.tileDate}>{showYear ? fmtDate(date) : shortDate(date)}</Text> : null}
     </Pressable>
   );
 }
 
 /** L-11 Honor Detail Sheet — a bottom sheet over the hub. */
-function HonorDetailSheet({ honor, onClose, onShare }: { honor: EarnedHonor; onClose: () => void; onShare: () => void }) {
-  const meta = honorMeta(honor.slug, honor.name);
-  const cat = categoryMeta(meta.category);
+function HonorDetailSheet({ honor, onClose, onShare }: { honor: HubHonor; onClose: () => void; onShare: () => void }) {
   return (
     <View style={StyleSheet.absoluteFill}>
       <Pressable style={styles.sheetScrim} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" />
       <View style={styles.sheet} accessibilityViewIsModal>
         <View style={styles.sheetHandle} />
         <View style={styles.sheetHead}>
-          <HonorMedallion glyph={categoryGlyph(meta.category)} size={96} />
-          <Text style={styles.sheetEyebrow}>{cat?.name ?? ''}</Text>
-          <Text style={styles.sheetName}>{meta.name}</Text>
-          <Text style={styles.sheetDate}>Earned {fmtDate(honor.date)}</Text>
+          <HonorMedallion glyph={honor.glyph} size={96} />
+          <Text style={styles.sheetEyebrow}>{honor.categoryName}</Text>
+          <Text style={styles.sheetName}>{honor.name}</Text>
+          {honor.date ? <Text style={styles.sheetDate}>Earned {fmtDate(honor.date)}</Text> : null}
         </View>
 
         <View style={styles.sheetCard}>
-          <Text style={styles.sheetDesc}>{meta.trigger || 'A permanent part of your legacy.'}</Text>
-          <View style={styles.sheetRowDivider} />
-          <View style={styles.sheetRow}>
-            <View style={styles.sheetRowLeft}>
-              <HonorGlyph glyph={categoryGlyph(meta.category)} size={13} color={flColor.bronze400} strokeWidth={1.9} />
-              <Text style={styles.sheetRowLabel}>Category</Text>
-            </View>
-            <Text style={styles.sheetRowValue}>{cat?.name ?? ''}</Text>
-          </View>
+          {/* The earn condition, generated from the rule the evaluator actually tests. */}
+          <Text style={styles.sheetDesc}>{honor.trigger}</Text>
+
+          {/* Where this sits in its own ladder. The design's only row was "Category", which is the word
+              already printed as the eyebrow six pixels above — this says something the athlete can't see. */}
+          {honor.tier ? (
+            <>
+              <View style={styles.sheetRowDivider} />
+              <View style={styles.sheetRow}>
+                <View style={styles.sheetRowLeft}>
+                  <HonorGlyph glyph={honor.glyph} size={13} color={flColor.bronze400} strokeWidth={1.9} />
+                  <Text style={styles.sheetRowLabel}>Tier</Text>
+                </View>
+                <Text style={styles.sheetRowValue}>
+                  {honor.tier.step} of {honor.tier.of}
+                </Text>
+              </View>
+            </>
+          ) : null}
         </View>
 
         <Pressable onPress={onShare} accessibilityRole="button" accessibilityLabel="Share honor" style={styles.shareBtn}>
@@ -236,6 +284,7 @@ const styles = StyleSheet.create({
   retryText: { color: flColor.bronze400, fontFamily: flFont.sans, fontSize: 14, fontWeight: '600' },
 
   scroll: { paddingTop: 18, paddingBottom: 40 },
+  remaining: { marginTop: 30, marginHorizontal: 24, fontSize: 11.5, lineHeight: 17, textAlign: 'center', color: flColor.gray600 },
   sectionLabel: {
     paddingHorizontal: 24,
     fontFamily: flFont.sans,

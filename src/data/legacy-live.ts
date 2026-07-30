@@ -1,9 +1,29 @@
 import { supabase } from '@/lib/supabase';
+import { categoryGlyph, honorMeta } from '@/domain/honor/catalog';
+
 import { cap, dateRangeCompact, dateRangeFull, daysSince, fmtDate, fmtShort, roman } from '@/lib/format';
 import { CHAPTER_GOALS_PENDING, LEGACY_FIXTURE_PENDING } from './legacy-fixture-pending';
 import type { Chapter, FeaturedMoment, Goal as LegacyGoal, LegacyData, Pin, PinKind, TimelineEntry } from '@/types/legacy';
 import type { RankFamily, RankLevel } from '@/domain/rank-artwork/resolver';
 import { isAchieved, isQuantifiable, progressLabel, progressPct } from '@/domain/goals/goals';
+
+/** DB `honor_catalog.category` names → the code catalog's ids, for glyph resolution. */
+const CATEGORY_ID: Record<string, string> = {
+  Training: 'training',
+  Chapters: 'chapters',
+  Goals: 'goals',
+  Strength: 'strength',
+  'Relative Strength': 'strength',
+  Competition: 'competition',
+  Endurance: 'endurance',
+  Partnership: 'partnership',
+  Longevity: 'longevity',
+  Programs: 'programs',
+  Communities: 'communities',
+  Squad: 'squad',
+  Prestige: 'prestige',
+  Hidden: 'hidden',
+};
 
 /**
  * Live Legacy read (Phase 2) — builds the exact `LegacyData` shape the Legacy components already
@@ -132,7 +152,7 @@ export async function fetchLegacyData(): Promise<LegacyData> {
     supabase.from('chapters').select('*').eq('athlete_id', uid),
     supabase.from('timeline_events').select('*').eq('athlete_id', uid).order('occurred_at', { ascending: false }),
     supabase.from('pins').select('*').eq('athlete_id', uid).order('position', { ascending: true }),
-    supabase.from('honor_instances').select('id, display_name, date_earned').eq('athlete_id', uid).order('date_earned', { ascending: false }),
+    supabase.from('honor_instances').select('id, honor_type, display_name, date_earned, category').eq('athlete_id', uid).order('date_earned', { ascending: false }),
     // Real primary goals (0025). NOT thrown on error — degrades to the fixture-free 'none' pre-migration.
     supabase.from('goals').select('chapter_id, name, target, unit, current, achieved_at').eq('athlete_id', uid).eq('is_primary', true),
   ]);
@@ -143,9 +163,12 @@ export async function fetchLegacyData(): Promise<LegacyData> {
   if (he) throw he;
 
   // Honors are LIVE now (honor_instances) — retires LEGACY_FIXTURE_PENDING.honors.
-  const honors = ((honorRows ?? []) as { id: string; display_name: string; date_earned: string }[]).map((h) => ({
+  const honors = ((honorRows ?? []) as { id: string; honor_type: string; display_name: string; date_earned: string; category: string | null }[]).map((h) => ({
     id: h.id,
     name: h.display_name,
+    // Same medallion the Hub draws. `category` is snapshotted on the row (0081); honors granted outside
+    // the catalog (initiative) have none, so the code catalog resolves those by slug.
+    glyph: h.category ? categoryGlyph(CATEGORY_ID[h.category] ?? 'training') : categoryGlyph(honorMeta(h.honor_type, h.display_name).category),
     dateEarned: fmtDate(h.date_earned),
   }));
 

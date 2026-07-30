@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
+import { HonorMedallion } from '@/components/honor/HonorMedallion';
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { ForgeSymbol, type SymbolName } from '@/components/forge/ForgeSymbol';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
@@ -231,15 +232,16 @@ export function AccomplishmentCard({ item, onPress }: { item: Accomplishment; on
 }
 
 /** Honor badge — graceful bronze insignia placeholder (artwork is pending-asset). */
+/**
+ * An earned honor's mark. Draws the SAME `HonorMedallion` the Honors Hub uses, keyed by the honor's own
+ * category — previously this rendered one hardcoded five-point star for everything, so a Training honor
+ * appeared as a dumbbell on the Hub and a star here. One honor, one mark, wherever it is shown.
+ */
 export function HonorInsignia({ honor, onPress }: { honor: Honor; onPress?: () => void }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${honor.name}, earned ${honor.dateEarned}`} style={s.honor}>
       <View style={s.honorBadge}>
-        <Svg width={64} height={64} viewBox="0 0 64 64">
-          <Circle cx={32} cy={32} r={30} stroke={flColor.bronze400} strokeWidth={1.4} opacity={0.5} fill="none" />
-          <Circle cx={32} cy={32} r={23} stroke={flColor.bronze400} strokeWidth={1} opacity={0.3} fill="none" />
-          <Path d="M32 16 L36 28 L48 28 L38 36 L42 48 L32 40 L22 48 L26 36 L16 28 L28 28 Z" stroke={flColor.bronze300} strokeWidth={1.2} opacity={0.55} fill="none" strokeLinejoin="round" />
-        </Svg>
+        <HonorMedallion glyph={honor.glyph ?? 'trophy'} size={64} />
       </View>
       <Text style={s.honorLabel} numberOfLines={2}>
         {honor.name}

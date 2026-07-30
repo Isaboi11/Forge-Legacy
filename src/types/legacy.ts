@@ -1,4 +1,5 @@
 import type { RankFamily, RankLevel } from '@/domain/rank-artwork/resolver'
+import type { HonorGlyphName } from '@/domain/honor/catalog'
 
 export type Goal =
   | { kind: 'quantifiable'; name: string; progress: number; achieved: boolean; valueLabel?: string }
@@ -69,6 +70,11 @@ export type Honor = {
   id: string
   name: string
   dateEarned: string
+  /**
+   * Category medallion, resolved at read time so Legacy renders the SAME mark the Honors Hub does.
+   * Optional: a caller without it falls back to the generic trophy rather than a wrong category.
+   */
+  glyph?: HonorGlyphName
 }
 
 /** A Pinned Legacy item — the "My Museum" strip (Forge Legacy.dc.html §pinned). */
