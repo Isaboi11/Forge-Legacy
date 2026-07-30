@@ -18,11 +18,11 @@ import { ProgramMissionGrid } from '@/components/forge/compositions/ProgramMissi
 import { YourCircleCard } from '@/components/forge/compositions/YourCircleCard';
 import { QuickActionsRow } from '@/components/forge/compositions/QuickActionsRow';
 import { FriendActionSheet } from '@/components/forge/compositions/TrainTogetherCard';
-import { FRIEND_ACTIVITY, HOME_CHAPTER, todaysPrinciple } from '@/data/home-placeholder';
+import { HOME_CHAPTER, todaysPrinciple } from '@/data/home-placeholder';
 import { fetchHomeGym, saveHomeGym } from '@/data/home-gym-live';
 import { fetchActiveChapterGoals } from '@/data/goals-live';
 import { goalSections } from '@/domain/goals/goals';
-import { LIVE_TRAINING_USERS } from '@/data/live-training-placeholder';
+import { fetchFriendsFeed } from '@/data/friends-feed-live';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { useQuery } from '@/lib/useQuery';
 import { fetchAwaitingChapter } from '@/data/home-live';
@@ -156,7 +156,7 @@ function ExploreForgeSection({ onOpen }: { onOpen: (route: Href) => void }) {
  * program), the Program tile (`getActiveProgram()`), the AppBar avatar
  * (`getSelfProfile()`), and the principle (`todaysPrinciple`). PLACEHOLDER
  * (no backend yet): chapter/week (HOME_DATA + HOME_CHAPTER), the Mission tile
- * goal, live presence + friend activity (LIVE_TRAINING_USERS / FRIEND_ACTIVITY),
+ * goal, the newest post from the athlete's circle (real, 0074; live presence has no backend),
  * and the Quick Actions. The Home hero rank medallion is temporarily REMOVED
  * (`showRankMedallion={false}`) pending user-supplied cycling artwork — see FORGE_DELTAS §19.
  * (Legacy's hero seal is a separate component and stays.)
@@ -190,6 +190,17 @@ export default function HomeScreen() {
   // Goals + equipment intake (local only) — feeds the recommendation on the suggested face.
   const { data: homeIntake, refetch: refetchIntake } = useQuery(getHomeIntake, []);
   const { data: homeGymData, refetch: refetchHomeGym } = useQuery(fetchHomeGym, []);
+  /* Your Circle's friend row, real since 0074 — the newest post from anyone the athlete is connected to.
+     One post, not the feed: this is a doorway, and `/friends` is the room. Live presence is NOT read
+     because there is nothing to read — an in-progress workout lives in a client-side session, not a
+     table, so no athlete can observe another training. The fixture that claimed two squad-mates were
+     mid-workout is retired rather than reproduced. */
+  const { data: circlePosts } = useQuery(() => fetchFriendsFeed(1), []);
+  const circleActivity = useMemo(() => {
+    const p = (circlePosts ?? []).find((x) => !x.isMine && (x.body ?? '').trim().length > 0);
+    if (!p) return null;
+    return { name: p.authorName, quote: (p.body ?? '').trim(), avatarUrl: p.authorAvatarUrl };
+  }, [circlePosts]);
   // Re-read on focus so the hero flips OFF awaiting after the first workout AND reflects a program just
   // built in the builder (Home is a mounted tab; without this it fetches once and stays stale).
   const firstAwaitFocus = useRef(true);
@@ -476,10 +487,11 @@ export default function HomeScreen() {
           ) : null}
 
           <YourCircleCard
-            liveUsers={LIVE_TRAINING_USERS}
-            friendActivity={FRIEND_ACTIVITY}
+            liveUsers={[]}
+            friendActivity={circleActivity}
             onJoinLive={() => {
-              // S-2 Squad Detail / S-10 Train Together join flow — not yet implemented.
+              // S-10 Train Together is unbuilt, and with no presence backend nobody is ever live, so this
+              // is unreachable rather than inert. It stays wired for the day presence exists.
             }}
             onFriendActivity={() => router.push('/friends')}
             onSeeCircle={() => router.push('/friends')}
@@ -487,9 +499,7 @@ export default function HomeScreen() {
 
           <QuickActionsRow
             onChallenge={() => setFriendSheetOpen(true)}
-            onCompetitions={() => {
-              // Competitions Hub — not yet implemented.
-            }}
+            onCompetitions={() => router.push('/competitions')}
           />
 
           {/* "Explore Forge" invitation (ONB-A2-D4a) — the fresh athlete's map to the four pillars. Shown

@@ -7,9 +7,17 @@
  * (reads like a miniature post), then a grouped-table footer into the feed. The
  * dc's optional "Workout Invite" sub-block is omitted for now (default no invite).
  *
- * Reworks the Phase-2 `TrainTogetherCard` to match the dc. Data: live presence +
- * friend activity are PLACEHOLDER (`LIVE_TRAINING_USERS` / `FRIEND_ACTIVITY`) — no
- * Social/presence backend yet.
+ * Reworks the Phase-2 `TrainTogetherCard` to match the dc.
+ *
+ * DATA. `friendActivity` is REAL — the newest post in the friends feed (0074). `liveUsers` is not, and
+ * cannot be: the app has no presence backend. An in-progress workout lives in a client-side session, not
+ * a table, so nobody can observe anybody else training. Rather than keep a fixture that invents two
+ * squad-mates mid-workout, the caller passes an empty list and the Live Now block simply does not draw —
+ * which the layout already handled, since the bronze accent ring was always conditional on someone being
+ * live. When presence exists, the same prop lights it up with nothing here to change.
+ *
+ * Both halves absent is a real state (no friends, no posts) and gets one quiet line rather than a hollow
+ * card — the footer into the feed stays, because the athlete with no circle is exactly who needs it.
  */
 
 import React, { useMemo } from 'react'
@@ -24,11 +32,13 @@ import type { LiveTrainingUser } from '@/types/liveTraining'
 export interface FriendActivity {
   name: string
   quote: string
+  avatarUrl?: string | null
 }
 
 export interface YourCircleCardProps {
   liveUsers: LiveTrainingUser[]
-  friendActivity: FriendActivity
+  /** Null when nobody in the circle has posted — the row is omitted rather than drawn empty. */
+  friendActivity?: FriendActivity | null
   onJoinLive: (userId: string) => void
   onFriendActivity: () => void
   onSeeCircle: () => void
@@ -96,21 +106,29 @@ export function YourCircleCard({ liveUsers, friendActivity, onJoinLive, onFriend
           </View>
         ) : null}
 
-        <Pressable
-          onPress={onFriendActivity}
-          accessibilityRole="button"
-          accessibilityLabel={`See ${friendActivity.name}'s update`}
-          style={styles.friendRow}
-        >
-          <View style={styles.friendAvatar}>
-            <Avatar name={friendActivity.name} size="listRow" />
-            <ProgressGlyph />
+        {friendActivity ? (
+          <Pressable
+            onPress={onFriendActivity}
+            accessibilityRole="button"
+            accessibilityLabel={`See ${friendActivity.name}'s update`}
+            style={styles.friendRow}
+          >
+            <View style={styles.friendAvatar}>
+              <Avatar name={friendActivity.name} src={friendActivity.avatarUrl ?? undefined} size="listRow" />
+              <ProgressGlyph />
+            </View>
+            <View style={styles.friendBody}>
+              <Text style={styles.friendName}>{friendActivity.name}</Text>
+              <Text style={styles.friendQuote} numberOfLines={2}>
+                {friendActivity.quote}
+              </Text>
+            </View>
+          </Pressable>
+        ) : !live ? (
+          <View style={styles.quietRow}>
+            <Text style={styles.quietText}>Nothing from your circle yet.</Text>
           </View>
-          <View style={styles.friendBody}>
-            <Text style={styles.friendName}>{friendActivity.name}</Text>
-            <Text style={styles.friendQuote}>{friendActivity.quote}</Text>
-          </View>
-        </Pressable>
+        ) : null}
 
         <Pressable onPress={onSeeCircle} accessibilityRole="button" accessibilityLabel="See your circle" style={styles.footer}>
           <Text style={styles.footerText}>See your circle</Text>
@@ -122,6 +140,8 @@ export function YourCircleCard({ liveUsers, friendActivity, onJoinLive, onFriend
 }
 
 const styles = StyleSheet.create({
+  quietRow: { paddingHorizontal: 16, paddingVertical: 18 },
+  quietText: { fontSize: 13, color: flColor.gray600 },
   card: {
     position: 'relative',
     borderRadius: flRadius.xl,
