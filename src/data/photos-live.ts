@@ -124,9 +124,12 @@ export interface AddPhotoInput {
   chapterId: string;
   url: string;
   takenOn?: string;
+  /** A short label — "Front", "Clip", "Squat 405". Shown as the viewer's pill and the thumb caption. */
   pose?: string | null;
   caption?: string | null;
   isVideo?: boolean;
+  /** Importance, not cover intent — tier 3 of the cover waterfall (0085). */
+  isStarred?: boolean;
 }
 
 export async function addChapterPhoto(input: AddPhotoInput): Promise<string> {
@@ -145,6 +148,7 @@ export async function addChapterPhoto(input: AddPhotoInput): Promise<string> {
       pose: input.pose?.trim() || null,
       caption: input.caption?.trim() || null,
       is_video: !!input.isVideo,
+      is_starred: !!input.isStarred,
     })
     .select('id')
     .single();
@@ -168,6 +172,31 @@ export async function uploadChapterPhoto(chapterId: string, uri: string, kind: '
   if (error) throw error;
   const { data } = supabase.storage.from('chapter-photos').getPublicUrl(path);
   return data.publicUrl;
+}
+
+/** The chapter a new photo lands in by default — the one being lived in. Null before the first. */
+export async function fetchActivePhotoChapter(): Promise<{ id: string; name: string; startDate: string } | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase
+    .from('chapters')
+    .select('id, name, start_date')
+    .eq('athlete_id', user.id)
+    .eq('is_active', true)
+    .maybeSingle();
+  if (!data) return null;
+  const c = data as { id: string; name: string; start_date: string };
+  return { id: c.id, name: c.name, startDate: c.start_date };
+}
+
+/** One chapter's name and start date, for the details screen's header and its date floor. */
+export async function fetchPhotoChapter(chapterId: string): Promise<{ id: string; name: string; startDate: string } | null> {
+  const { data } = await supabase.from('chapters').select('id, name, start_date').eq('id', chapterId).maybeSingle();
+  if (!data) return null;
+  const c = data as { id: string; name: string; start_date: string };
+  return { id: c.id, name: c.name, startDate: c.start_date };
 }
 
 // ── Presentation ─────────────────────────────────────────────────────────────

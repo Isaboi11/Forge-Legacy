@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
@@ -15,10 +14,7 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { fetchChapterDetail } from '@/data/chapter-detail-live';
 import { goalSections, isAchieved, isQuantifiable, progressLabel, progressPct, type Goal } from '@/domain/goals/goals';
-import { errorMessage, useQuery } from '@/lib/useQuery';
-import { useMediaPicker } from '@/lib/useMediaPicker';
-import { useToast } from '@/hooks/useCeremony';
-import { addChapterPhoto, uploadChapterPhoto } from '@/data/photos-live';
+import { useQuery } from '@/lib/useQuery';
 
 /**
  * L-3/L-4 Chapter Detail — the chapter overview reached by tapping the chapter on Legacy.
@@ -54,33 +50,15 @@ export default function ChapterDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data, loading, refetch } = useQuery(() => fetchChapterDetail(String(id)), [id]);
-  const { pick, mediaPickerSheet } = useMediaPicker();
-  const { showToast } = useToast();
-  const [adding, setAdding] = useState(false);
-
+  const { data, loading } = useQuery(() => fetchChapterDetail(String(id)), [id]);
   /**
-   * The archive's one door. A photo is captured, uploaded, and tied to THIS chapter — which is what makes
-   * the gallery's albums real, since a chapter IS an album (0085). Sealed chapters accept photos too:
+   * The archive's one door, shared with Workout Complete. `/add-photo` collects the label, the line and
+   * the date as well as the image — without them the gallery's pull-quote, pose pill and starred cover
+   * tier are all unreachable. Sealed chapters accept photos too:
    * `Chapter-Detail-Wireframe-Spec-L3-L4` §17.3 draws the line at additions to the archive versus edits
    * of it, and a memory added later is an addition.
    */
-  const addPhoto = async () => {
-    const asset = await pick({ kind: 'both', title: 'Add a photo', hint: 'It joins this chapter’s album.', quality: 0.85 });
-    if (!asset) return;
-    setAdding(true);
-    try {
-      const isVideo = asset.type === 'video';
-      const url = await uploadChapterPhoto(String(id), asset.uri, isVideo ? 'video' : 'image');
-      await addChapterPhoto({ chapterId: String(id), url, isVideo });
-      showToast(isVideo ? 'Video added to this chapter.' : 'Photo added to this chapter.');
-      refetch();
-    } catch (e) {
-      showToast(errorMessage(e));
-    } finally {
-      setAdding(false);
-    }
-  };
+  const addPhoto = () => router.push({ pathname: '/add-photo', params: { chapter: String(id) } });
 
   if (loading || !data) {
     return (
@@ -263,20 +241,13 @@ export default function ChapterDetailScreen() {
         <View style={styles.section}>
           <SectionHeader label="Photos" action="View album" onAction={() => router.push('/photos')} />
           <Pressable
-            onPress={adding ? undefined : addPhoto}
+            onPress={addPhoto}
             accessibilityRole="button"
             accessibilityLabel="Add a photo to this chapter"
-            accessibilityState={{ disabled: adding }}
-            style={({ pressed }) => [styles.addPhoto, pressed && !adding ? styles.addPhotoPressed : null]}
+            style={({ pressed }) => [styles.addPhoto, pressed ? styles.addPhotoPressed : null]}
           >
-            {adding ? (
-              <ActivityIndicator color={flColor.bronze400} />
-            ) : (
-              <>
-                <CameraGlyph />
-                <Text style={styles.addPhotoLabel}>Add a Photo</Text>
-              </>
-            )}
+            <CameraGlyph />
+            <Text style={styles.addPhotoLabel}>Add a Photo</Text>
           </Pressable>
         </View>
 
@@ -333,7 +304,6 @@ export default function ChapterDetailScreen() {
           </View>
         ) : null}
       </ScrollView>
-      {mediaPickerSheet}
     </View>
   );
 }

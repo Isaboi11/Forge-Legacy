@@ -418,6 +418,19 @@ export default function WorkoutComplete() {
             onChangeText={setNote}
             accessibilityLabel="Your reflection"
           />
+          {/* A photo is never more available than right after the session that earned it. Routes to the
+              shared capture flow against the ACTIVE chapter, which is the one this workout belongs to —
+              creation stays a chapter action (L-15 arch §2), this is just the moment it is offered. */}
+          <Pressable
+            onPress={() => router.push('/add-photo')}
+            accessibilityRole="button"
+            accessibilityLabel="Add a photo or video to this chapter"
+            style={({ pressed }) => [styles.addMedia, pressed ? styles.addMediaPressed : null]}
+          >
+            <CameraGlyph />
+            <Text style={styles.addMediaLabel}>Add a Photo or Video</Text>
+          </Pressable>
+
           <View style={styles.reflectActions}>
             <Button variant="primary" fullWidth onPress={onSealNote} accessibilityLabel="Seal the note">
               Seal the Note
@@ -661,7 +674,19 @@ function Hero({ hero }: { hero: CompletionHero }) {
   );
 }
 
+function CameraGlyph({ size = 17, color = flColor.bronze300 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.2l1.2-2h8.2l1.2 2h2.2A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z" />
+      <Path d="M15.2 13a3.2 3.2 0 1 1-6.4 0 3.2 3.2 0 0 1 6.4 0z" />
+    </Svg>
+  );
+}
+
 const styles = StyleSheet.create({
+  addMedia: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, marginTop: 18, paddingVertical: 14, borderRadius: flRadius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
+  addMediaPressed: { opacity: 0.88, borderColor: flColor.bronzeBorder },
+  addMediaLabel: { fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },
   root: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 30, gap: 12 },
   scroll: { paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40 },
