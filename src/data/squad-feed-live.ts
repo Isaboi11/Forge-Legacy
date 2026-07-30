@@ -130,12 +130,20 @@ export interface SquadPostTypeDef {
   blurb: string;
 }
 
-/** The composer's palette, in display order. Announcement is owner-only. (transformation is wired next.) */
+/**
+ * The composer's palette, in display order. Announcement is owner-only.
+ *
+ * `transformation` posts a comparison built from the athlete's OWN Transformation entries (L-17) rather than
+ * from loose photos — the gallery is where the captures and their pose alignment live, so picking two entries
+ * yields the same aligned pair layout the gallery's own Share flow produces. Two entries with at least one
+ * pose in common are required, which is why the composer offers the gallery instead when there aren't.
+ */
 export const SQUAD_POST_TYPES: SquadPostTypeDef[] = [
   { id: 'checkin', label: 'Check-in', ownerOnly: false, blurb: 'Log that you trained today.' },
   { id: 'recap', label: 'Workout Recap', ownerOnly: false, blurb: 'Share how the session went.' },
   { id: 'pr', label: 'PR / Milestone', ownerOnly: false, blurb: 'Mark a personal record for the squad.' },
   { id: 'formcheck', label: 'Form Check', ownerOnly: false, blurb: 'Post a lift for the squad’s eyes.' },
+  { id: 'transformation', label: 'Transformation', ownerOnly: false, blurb: 'Compare two of your progress captures.' },
   { id: 'discussion', label: 'Discussion', ownerOnly: false, blurb: 'A short note to the squad.' },
   { id: 'announcement', label: 'Squad Announcement', ownerOnly: true, blurb: 'Owner note pinned for the squad.' },
 ];

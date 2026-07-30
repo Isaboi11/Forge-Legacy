@@ -23,8 +23,10 @@ import {
   type SquadMedia,
   type SquadMediaKind,
   type SquadPostType,
+  type TransformationLayoutData,
   type WorkoutSummary,
 } from '@/data/squad-feed-live';
+import { elapsedBetween, fetchTransformationEntries, XFORM_POSES, type TransformationEntry } from '@/data/transformation-live';
 import { errorMessage } from '@/lib/useQuery';
 import { useMediaPicker } from '@/lib/useMediaPicker';
 import { useToast } from '@/hooks/useCeremony';
@@ -33,8 +35,14 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 /**
  * Squad Composer — built to `Squad Composer.dc.html`, scoped to the 5 post types Squad Feed backs with real
  * data (checkin · recap · pr · discussion · announcement). Two steps: pick a type → compose. Announcement is
- * owner-only (locked card for members; the DB also rejects it via RLS). formcheck/challenge/traintogether
- * are omitted (they need video/competition/scheduling subsystems that don't exist yet).
+ * owner-only (locked card for members; the DB also rejects it via RLS).
+ *
+ * TRANSFORMATION posts a comparison assembled from the athlete's own Transformation entries (L-17), not from
+ * loose photos. That distinction is the point: the gallery holds the captures AND their per-pose alignment, so
+ * two entries produce a genuine before/after — two arbitrary photos would produce a visibly worse post the
+ * renderer already knows how to beat. The same `TransformationLayoutData` the gallery's Share flow builds is
+ * assembled here, so `squad-post/[id]` renders both identically. Fewer than two entries offers the gallery
+ * rather than an empty picker.
  */
 
 interface Form {
@@ -63,8 +71,19 @@ export default function SquadComposerRoute() {
   const [recentPRs, setRecentPRs] = useState<RecentPR[] | null>(null);
   const [loadingList, setLoadingList] = useState(false);
   const [buildingRecap, setBuildingRecap] = useState(false);
+  const [entries, setEntries] = useState<TransformationEntry[] | null>(null);
+  const [thenId, setThenId] = useState<string | null>(null);
+  const [nowId, setNowId] = useState<string | null>(null);
 
   const set = (k: keyof Form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  // The two chosen captures, and the poses they BOTH have — a comparison needs the same pose on each side.
+  const thenEntry = entries?.find((e) => e.id === thenId) ?? null;
+  const nowEntry = entries?.find((e) => e.id === nowId) ?? null;
+  const sharedPoses = useMemo(
+    () => (thenEntry && nowEntry ? XFORM_POSES.filter((pose) => thenEntry.photos[pose.key] && nowEntry.photos[pose.key]) : []),
+    [thenEntry, nowEntry],
+  );
 
   const valid = useMemo(() => {
     if (!type || uploading || buildingRecap) return false;
@@ -78,10 +97,13 @@ export default function SquadComposerRoute() {
         return !!recap; // a recap needs a real workout
       case 'pr':
         return !!form.prExercise.trim() && !!form.prValue.trim();
+      case 'transformation':
+        // Two different captures that share at least one pose. Anything less isn't a comparison.
+        return !!thenEntry && !!nowEntry && thenEntry.id !== nowEntry.id && sharedPoses.length > 0;
       default:
         return !!body; // discussion / announcement
     }
-  }, [type, form, media, recap, uploading, buildingRecap]);
+  }, [type, form, media, recap, uploading, buildingRecap, thenEntry, nowEntry, sharedPoses.length]);
 
   const pick = (t: SquadPostType) => {
     setType(t);
@@ -102,6 +124,25 @@ export default function SquadComposerRoute() {
     if (t === 'pr') {
       setRecentPRs(null);
       fetchRecentPRs().then(setRecentPRs, () => setRecentPRs([]));
+    }
+    if (t === 'transformation') {
+      setEntries(null);
+      setThenId(null);
+      setNowId(null);
+      setLoadingList(true);
+      fetchTransformationEntries().then(
+        (rows) => {
+          setEntries(rows);
+          setLoadingList(false);
+          // Newest is almost always the "now" and the oldest the "then", so pre-select the widest span the
+          // athlete has. One tap to change either; zero taps if that's what they wanted.
+          if (rows.length >= 2) {
+            setThenId(rows[rows.length - 1].id);
+            setNowId(rows[0].id);
+          }
+        },
+        () => setLoadingList(false),
+      );
     }
   };
   const backToPick = () => {
@@ -144,6 +185,33 @@ export default function SquadComposerRoute() {
 
   const submit = () => {
     if (!type || !valid || posting) return;
+
+    // Assembled exactly as the gallery's Share flow does, so both render through one path. `transform` is
+    // left undefined — the per-pose alignment tool lives in Compare; unaligned pairs still render.
+    const layout: TransformationLayoutData | null =
+      type === 'transformation' && thenEntry && nowEntry
+        ? {
+            template: 'slider',
+            thenLabel: thenEntry.label,
+            nowLabel: nowEntry.label,
+            elapsed: elapsedBetween(thenEntry.label, nowEntry.label),
+            pairs: sharedPoses.map((pose) => ({
+              label: pose.label,
+              then: { url: thenEntry.photos[pose.key]! },
+              now: { url: nowEntry.photos[pose.key]! },
+            })),
+          }
+        : null;
+
+    // media carries the first pair so the feed card has something to show without reading the layout.
+    const xformMedia =
+      layout && layout.pairs.length > 0
+        ? [
+            { url: layout.pairs[0].then.url, kind: 'image' as SquadMediaKind },
+            { url: layout.pairs[0].now.url, kind: 'image' as SquadMediaKind },
+          ]
+        : [];
+
     setPosting(true);
     addSquadPost({
       squadId,
@@ -152,9 +220,10 @@ export default function SquadComposerRoute() {
       prValue: form.prValue,
       prExercise: form.prExercise,
       prLabel: form.prLabel,
-      media: media ? [media] : [],
+      media: type === 'transformation' ? xformMedia : media ? [media] : [],
       workoutId: recap?.workoutId ?? null,
       workoutSummary: recap?.summary ?? null,
+      layout,
     }).then(
       () => {
         setPosting(false);
@@ -220,7 +289,82 @@ export default function SquadComposerRoute() {
           </View>
         </View>
 
-        {type === 'formcheck' ? (
+        {type === 'transformation' ? (
+          loadingList ? (
+            <View style={styles.xformLoading}>
+              <ActivityIndicator color={flColor.bronze400} />
+            </View>
+          ) : (entries?.length ?? 0) < 2 ? (
+            /* Not an empty picker: two captures are required, so send them where captures are made. */
+            <View style={styles.xformEmpty}>
+              <Text style={styles.xformEmptyTitle}>
+                {(entries?.length ?? 0) === 0 ? 'No progress captures yet' : 'One capture so far'}
+              </Text>
+              <Text style={styles.xformEmptyBody}>
+                A comparison needs two. Capture another in your Transformation archive and it’ll show up here.
+              </Text>
+              <Pressable
+                onPress={() => router.push('/transformation')}
+                accessibilityRole="button"
+                accessibilityLabel="Open your transformation archive"
+                style={({ pressed }) => [styles.xformEmptyBtn, pressed ? styles.xformPressed : null]}
+              >
+                <Text style={styles.xformEmptyBtnLabel}>Open Transformation</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <>
+              <EntryStrip
+                label="Then"
+                entries={entries ?? []}
+                selectedId={thenId}
+                otherId={nowId}
+                onSelect={setThenId}
+              />
+              <EntryStrip
+                label="Now"
+                entries={entries ?? []}
+                selectedId={nowId}
+                otherId={thenId}
+                onSelect={setNowId}
+              />
+
+              {thenEntry && nowEntry && thenEntry.id !== nowEntry.id ? (
+                sharedPoses.length > 0 ? (
+                  <View style={styles.xformPreview}>
+                    <Text style={styles.xformPreviewLabel}>
+                      {sharedPoses.length} {sharedPoses.length === 1 ? 'pose' : 'poses'} in both
+                      {elapsedBetween(thenEntry.label, nowEntry.label) ? ` · ${elapsedBetween(thenEntry.label, nowEntry.label)} apart` : ''}
+                    </Text>
+                    <View style={styles.xformPair}>
+                      <View style={styles.xformHalf}>
+                        <Image source={{ uri: thenEntry.photos[sharedPoses[0].key] }} style={styles.xformImg} contentFit="cover" />
+                        <Text style={styles.xformCorner}>{thenEntry.label}</Text>
+                      </View>
+                      <View style={styles.xformHalf}>
+                        <Image source={{ uri: nowEntry.photos[sharedPoses[0].key] }} style={styles.xformImg} contentFit="cover" />
+                        <Text style={styles.xformCorner}>{nowEntry.label}</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.xformHint}>
+                      Every shared pose is included. To line them up precisely, use Compare in your Transformation archive.
+                    </Text>
+                  </View>
+                ) : (
+                  /* Says which pose is missing rather than just refusing to post. */
+                  <View style={styles.xformWarn}>
+                    <Text style={styles.xformWarnText}>
+                      These two captures don’t share a pose, so there’s nothing to compare side by side. Pick a
+                      different pair, or add a matching pose to one of them.
+                    </Text>
+                  </View>
+                )
+              ) : null}
+
+              <Area label="Say something (optional)" value={form.body} onChange={(v) => set('body', v)} placeholder="What changed?…" rows={2} />
+            </>
+          )
+        ) : type === 'formcheck' ? (
           <>
             <MediaAttach media={media} uploading={uploading} videoOnly onPick={() => pickMedia(true)} onRemove={() => setMedia(null)} />
             <Area label="What should the squad look at? (optional)" value={form.body} onChange={(v) => set('body', v)} placeholder="e.g. Does my hip rise look early?" rows={3} />
@@ -552,7 +696,87 @@ function CloseIcon() {
   );
 }
 
+/**
+ * One row of captures to choose from. The other side's pick is dimmed rather than removed — a disappearing
+ * option makes the two strips look like different lists, and you'd lose your place scrolling.
+ */
+function EntryStrip({
+  label,
+  entries,
+  selectedId,
+  otherId,
+  onSelect,
+}: {
+  label: string;
+  entries: TransformationEntry[];
+  selectedId: string | null;
+  otherId: string | null;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <View style={styles.stripBlock}>
+      <Text style={styles.stripLabel}>{label}</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
+        {entries.map((e) => {
+          const on = e.id === selectedId;
+          const taken = e.id === otherId;
+          const cover = XFORM_POSES.map((pose) => e.photos[pose.key]).find(Boolean);
+          return (
+            <Pressable
+              key={e.id}
+              onPress={() => !taken && onSelect(e.id)}
+              disabled={taken}
+              accessibilityRole="button"
+              accessibilityState={{ selected: on, disabled: taken }}
+              accessibilityLabel={`${label}: ${e.label}${taken ? ', already chosen on the other side' : ''}`}
+              style={({ pressed }) => [styles.chip, on ? styles.chipOn : null, taken ? styles.chipTaken : null, pressed ? styles.xformPressed : null]}
+            >
+              {cover ? (
+                <Image source={{ uri: cover }} style={styles.chipImg} contentFit="cover" />
+              ) : (
+                <View style={[styles.chipImg, styles.chipImgEmpty]} />
+              )}
+              <Text style={[styles.chipLabel, on ? styles.chipLabelOn : null]} numberOfLines={1}>
+                {e.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  xformLoading: { paddingVertical: 40, alignItems: 'center' },
+  xformEmpty: { gap: 8, padding: 18, borderRadius: flRadius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.charcoal600 },
+  xformEmptyTitle: { fontFamily: flFont.display, fontSize: 17, fontWeight: '600', color: flColor.cream100 },
+  xformEmptyBody: { fontSize: 12.5, lineHeight: 18, color: flColor.gray600 },
+  xformEmptyBtn: { marginTop: 6, alignSelf: 'flex-start', paddingHorizontal: 16, paddingVertical: 10, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  xformEmptyBtnLabel: { fontSize: 13, fontWeight: '600', color: flColor.bronze300 },
+  xformPressed: { opacity: 0.85 },
+
+  stripBlock: { gap: 8 },
+  stripLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.bronze400 },
+  strip: { gap: 9, paddingRight: 4 },
+  chip: { width: 76, gap: 5, padding: 5, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
+  chipOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
+  chipTaken: { opacity: 0.35 },
+  chipImg: { width: '100%', height: 74, borderRadius: flRadius.sm, backgroundColor: flColor.charcoal800 },
+  chipImgEmpty: { borderWidth: 1, borderColor: flColor.charcoal700 },
+  chipLabel: { fontSize: 9.5, textAlign: 'center', color: flColor.gray600 },
+  chipLabelOn: { color: flColor.bronze300, fontWeight: '600' },
+
+  xformPreview: { gap: 9, padding: 12, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal800 },
+  xformPreviewLabel: { fontSize: 10.5, fontWeight: '600', letterSpacing: 0.5, textTransform: 'uppercase', color: flColor.bronze400 },
+  xformPair: { flexDirection: 'row', gap: 3 },
+  xformHalf: { flex: 1, position: 'relative', overflow: 'hidden', borderRadius: flRadius.sm },
+  xformImg: { width: '100%', aspectRatio: 4 / 5, backgroundColor: flColor.charcoal900 },
+  xformCorner: { position: 'absolute', bottom: 6, left: 6, paddingHorizontal: 6, paddingVertical: 2, borderRadius: flRadius.pill, backgroundColor: 'rgba(0,0,0,0.6)', fontSize: 9, fontWeight: '600', color: flColor.cream100 },
+  xformHint: { fontSize: 11, lineHeight: 16, color: flColor.gray600 },
+  xformWarn: { padding: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
+  xformWarnText: { fontSize: 12, lineHeight: 18, color: flColor.gray400 },
+
   root: { flex: 1 },
   barTitle: { fontFamily: flFont.display, fontSize: 17, fontWeight: '600', color: flColor.cream100 },
   barSub: { fontSize: 11.5, color: flColor.gray600 },
