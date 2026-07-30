@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import Svg, { Path, Rect } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -46,10 +46,15 @@ import { useReduceMotion } from '@/lib/settings';
  * design and `Photos-Architecture-Amendment-001` records the correction. Two things from the spec are
  * NOT layout and are therefore kept:
  *
- *   · BROWSE-ONLY (§10, architecture §6). Nothing here creates, edits, deletes or reassigns a photo.
- *     Creation is the chapter screen's media strip and nowhere else.
- *   · The empty state carries NO call to action, because this screen genuinely cannot act — it points
- *     at where photos are added instead of offering a button it can't honour.
+ *   · NO EDIT, DELETE, REASSIGN OR CURATE. Nothing here changes a photo that already exists.
+ *   · Creation is still a chapter action — the album's add button targets that album's chapter and routes
+ *     to the same `/add-photo` screen the chapter and workout paths use.
+ *
+ * The one rule that did NOT survive is the ban on adding (§10, §4's no-CTA). It rested on the screen
+ * having no target, which was true of a flat account-wide grid and is false of chapter albums: an album
+ * IS a chapter. Amendment 001 §5 records the correction. The albums ROOT still has no add button — there
+ * you may be browsing a chapter sealed years ago — but its empty state does, because there is always
+ * exactly one active chapter for a first photo to land in.
  *
  * NOT CARRIED: the "X of 50 photos" counter. `Monetization-Amendment-001` sets a 50-photo free ceiling
  * and requires the counter here, but P-8 Subscription and the M-7 upsell are both unbuilt, so there is
@@ -105,7 +110,16 @@ export default function PhotosScreen() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const { data: albums, loading, error, refetch } = useQuery(fetchPhotoAlbums, []);
-  const { data: album } = useQuery(() => (albumId ? fetchAlbum(albumId) : Promise.resolve(null)), [albumId]);
+  const { data: album, refetch: refetchAlbum } = useQuery(() => (albumId ? fetchAlbum(albumId) : Promise.resolve(null)), [albumId]);
+
+  /* Coming back from `/add-photo` must show the photo. Without this the gallery keeps the payload it
+     loaded on the way in, and a successful add reads as one that silently failed. */
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+      if (albumId) refetchAlbum();
+    }, [albumId, refetch, refetchAlbum]),
+  );
 
   const months = useMemo(() => (album ? groupByMonth(album.photos) : []), [album]);
   const flat = useMemo(() => flatten(months), [months]);
@@ -135,15 +149,28 @@ export default function PhotosScreen() {
         onBack={goBack}
         actions={
           albumId && album ? (
-            <Pressable
-              onPress={() => router.push('/transformation')}
-              accessibilityRole="button"
-              accessibilityLabel="Compare in the transformation gallery"
-              hitSlop={8}
-              style={styles.barBtn}
-            >
-              <CompareGlyph />
-            </Pressable>
+            <>
+              <Pressable
+                onPress={() => router.push('/transformation')}
+                accessibilityRole="button"
+                accessibilityLabel="Compare in the transformation gallery"
+                hitSlop={8}
+                style={styles.barBtn}
+              >
+                <CompareGlyph />
+              </Pressable>
+              {/* An album IS a chapter, so adding here has exactly one unambiguous target — which is why
+                  the browse-only ban does not survive the design's change of shape. See Amendment 001 §5. */}
+              <Pressable
+                onPress={() => router.push({ pathname: '/add-photo', params: { chapter: albumId } })}
+                accessibilityRole="button"
+                accessibilityLabel={`Add a photo to ${album.name}`}
+                hitSlop={8}
+                style={styles.barBtn}
+              >
+                <PlusGlyph />
+              </Pressable>
+            </>
           ) : undefined
         }
       />
@@ -172,7 +199,7 @@ export default function PhotosScreen() {
         </FadeIn>
       ) : (
         <FadeIn key="albums">
-          <AlbumsView albums={albums} onOpen={setAlbumId} />
+          <AlbumsView albums={albums} onOpen={setAlbumId} onAddFirst={() => router.push('/add-photo')} />
         </FadeIn>
       )}
 
@@ -195,16 +222,28 @@ export default function PhotosScreen() {
 
 // ── Albums ───────────────────────────────────────────────────────────────────
 
-function AlbumsView({ albums, onOpen }: { albums: { total: number; albums: PhotoAlbum[] } | null; onOpen: (id: string) => void }) {
+function AlbumsView({
+  albums,
+  onOpen,
+  onAddFirst,
+}: {
+  albums: { total: number; albums: PhotoAlbum[] } | null;
+  onOpen: (id: string) => void;
+  onAddFirst: () => void;
+}) {
   const list = albums?.albums ?? [];
 
   if (list.length === 0) {
-    /* No CTA. This screen cannot add a photo, so an invitation to act would be a button that lies —
-       it points at where photos are actually made instead. */
+    /* The old ban on a CTA here rested on the screen being unable to act. It can: there is always exactly
+       one active chapter (the database enforces it), so "your first photo" has one unambiguous home.
+       Telling someone to go elsewhere, on the screen named Photos, was the worse answer. */
     return (
       <View style={styles.center}>
         <Text style={styles.emptyTitle}>No photos yet</Text>
-        <Text style={styles.emptyBody}>Your photos will appear here as you add them to your chapters.</Text>
+        <Text style={styles.emptyBody}>Photos live inside your chapters. The first one starts the album.</Text>
+        <Pressable onPress={onAddFirst} accessibilityRole="button" accessibilityLabel="Add your first photo" style={styles.outlineBtn}>
+          <Text style={styles.outlineBtnLabel}>Add Your First Photo</Text>
+        </Pressable>
       </View>
     );
   }
@@ -612,6 +651,13 @@ function LayersGlyph({ size = 9, color = flColor.bronze300 }: { size?: number; c
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.4} strokeLinejoin="round">
       <Rect x={3} y={3} width={14} height={14} rx={2} />
       <Path d="M21 7v12a2 2 0 0 1-2 2H7" />
+    </Svg>
+  );
+}
+function PlusGlyph({ size = 21, color = flColor.bronze400 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round">
+      <Path d="M12 5v14M5 12h14" />
     </Svg>
   );
 }

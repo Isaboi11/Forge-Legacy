@@ -1,9 +1,9 @@
 # Photos Architecture — Amendment 001: Chapter Albums
 
-## Status: LOCKED · 2026-07-30
+## Status: LOCKED · v1.1 · 2026-07-30
 
-**Amends:** `Docs/Photos-Wireframe-Spec-L15-L16.md` (LOCKED, June 2026) §3, §4, §5
-**Does not amend:** `Docs/L-15-Photos-Architecture.md` — every decision in it survives intact.
+**Amends:** `Docs/Photos-Wireframe-Spec-L15-L16.md` (LOCKED, June 2026) §3, §4, §5, §10
+**Amends:** `Docs/L-15-Photos-Architecture.md` §6 (browse-only) — see §5 below. Every other decision in it survives intact.
 **Authority:** PD-7 (the design is the north star; where a locked doc and the design disagree on
 presentation, the design governs and the doc is corrected).
 **Design source:** `Forge Photos Gallery.dc.html`
@@ -39,13 +39,11 @@ training, while a reverse-chronological grid is a camera roll. Under PD-7 the de
 
 ### Kept — these were never layout
 
-- **Browse-only.** `L-15-Photos-Architecture` §6 and wireframe §10 stand: L-15 creates, edits, deletes and
-  reassigns nothing. Creation remains exclusively L-3/L-4, and is now actually built there — an **Add a
-  Photo** control on Chapter Detail, which before this work did not exist anywhere in the app. The
-  gallery has no add control of any kind.
-- **No CTA in the empty state.** Wireframe §4's reasoning holds and gets stronger: this screen cannot
-  act, so an invitation would be a button that lies. Copy retained nearly verbatim — *"Your photos will
-  appear here as you add them to your chapters."*
+- **No edit, delete, reassign or curate.** L-15 changes nothing that already exists. The mutability line
+  is untouched: additions are permitted, the archive itself is not editable here.
+- **Creation is still a chapter action.** Every path — Chapter Detail, Workout Complete's Reflect step,
+  and now the album view — targets one chapter and routes to one shared screen. There is no
+  chapter-less upload anywhere. *(Adding FROM an album is amended in §5.)*
 - **Owner-only.** No squad or friend read path exists for Legacy photos in any locked document, and
   `chapter_photos` RLS is owner-only for every verb.
 - **Additions vs. edits.** `Chapter-Detail-Wireframe-Spec-L3-L4` §17.3 draws the line at adding to the
@@ -99,6 +97,43 @@ viewer) are documented in the screen's own header.
 count is real, the destination exists, and photo taps land on the photo rather than falling back to the
 chapter.
 
+## 5 · Adding from the gallery — §10 and §4's no-CTA rule are struck
+
+**v1.1.** `L-15-Photos-Architecture` §6 and wireframe §10 ban an add control on L-15; §4 bans a CTA in
+its empty state. Both rested on one premise, stated plainly in §4: *"the empty state cannot invite an
+action this screen doesn't support."*
+
+The premise was true of the screen those documents describe. A flat, account-wide, reverse-chronological
+grid has **no target** — a photo must belong to a chapter, and the grid does not know which. Banning the
+control was the right call for that screen.
+
+It is not that screen any more. §1 of this amendment replaced the grid with chapter albums, and **an
+album IS a chapter**. Adding from inside one has exactly one unambiguous destination — the same
+destination the chapter screen offers, reached through a different door. The reason for the ban did not
+survive the change of shape, and a rule that outlives its reason is just an obstacle: without it, an
+athlete standing on the screen named Photos, inside the album they want to add to, has to leave, find the
+chapter, and come back.
+
+Amended:
+
+- **Album view gains an add control** in the app bar, targeting that album's chapter.
+- **Albums root does not.** There the original objection still holds — you may be browsing a chapter
+  sealed three years ago, and "add" would have to guess.
+- **The empty state gains one CTA.** There is always exactly one active chapter (`chapters` carries a
+  unique index enforcing it), so "your first photo" has a single unambiguous home. *"Your photos will
+  appear here as you add them to your chapters"* pointed the athlete away from the screen they were
+  standing on, which is the worse answer, not the humbler one.
+
+Unchanged: no edit, no delete, no reassignment, no curation control anywhere on L-15. The ban that
+mattered was never on *adding* — `Chapter-Detail-Wireframe-Spec-L3-L4` §17.3 permits additions and
+forbids edits, and that line is exactly where it was.
+
+**Owed on M-7:** the upsell spec names "any photo upload surface" as a trigger. The album view is now
+one. M-7 is unbuilt, and this joins the counter in §2 as owed on P-8.
+
 ## Change Log
 
+- v1.1 — 2026-07-30 — §5 added: the album view and the empty state may add. Wireframe §10 and §4's
+  no-CTA rule struck; `L-15-Photos-Architecture` §6 narrowed from "browse-only" to "no edit, delete or
+  reassign". LOCKED.
 - v1.0 — 2026-07-30 — Initial. LOCKED.
