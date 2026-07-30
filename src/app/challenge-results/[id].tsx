@@ -195,7 +195,7 @@ function ChampionSpotlight({ result: r }: { result: ChallengeResultsDetail }) {
 
   return (
     <View style={styles.champCard}>
-      <LinearGradient colors={['rgba(191,143,79,0.16)', 'rgba(191,143,79,0.03)'] as const} locations={[0, 0.62] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={['rgba(186, 134, 84,0.16)', 'rgba(186, 134, 84,0.03)'] as const} locations={[0, 0.62] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
       {/* The design's crGlow breathes a box-shadow; RN can't drive that natively, so an overlay does. */}
       <Animated.View pointerEvents="none" style={[styles.champGlow, { opacity: glow.interpolate({ inputRange: [0, 1], outputRange: [0.25, 0.7] }) }]} />
 
@@ -353,7 +353,7 @@ function StandingRow({ standing: s, type, unit, onPress }: { standing: FinalStan
     >
       {podium ? (
         <LinearGradient
-          colors={s.isWinner ? (['rgba(191,143,79,0.10)', 'rgba(191,143,79,0.02)'] as const) : (['rgba(191,143,79,0.05)', 'transparent'] as const)}
+          colors={s.isWinner ? (['rgba(186, 134, 84,0.10)', 'rgba(186, 134, 84,0.02)'] as const) : (['rgba(186, 134, 84,0.05)', 'transparent'] as const)}
           locations={[0, s.isWinner ? 1 : 0.6] as const}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
@@ -624,7 +624,7 @@ const styles = StyleSheet.create({
   champAvatarsMany: { flexDirection: 'row', gap: 18, flexWrap: 'wrap', justifyContent: 'center' },
   champAvatarWrap: { position: 'relative', alignItems: 'center' },
   champCrown: { position: 'absolute', top: -21, zIndex: 2 },
-  champRing: { borderRadius: flRadius.round, borderWidth: 2, borderColor: flColor.bronze400, padding: 2, boxShadow: '0 0 20px rgba(191,143,79,0.34)' },
+  champRing: { borderRadius: flRadius.round, borderWidth: 2, borderColor: flColor.bronze400, padding: 2, boxShadow: '0 0 20px rgba(186, 134, 84,0.34)' },
   champRingSmall: { borderWidth: 1.5 },
   champName: { marginTop: 14, fontFamily: flFont.display, fontSize: 25, fontWeight: '600', letterSpacing: -0.3, lineHeight: 29, textAlign: 'center', color: flColor.cream100 },
   champScoreRow: { flexDirection: 'row', alignItems: 'baseline', gap: 7, marginTop: 8 },
@@ -643,7 +643,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: flColor.bronzeBorder,
     backgroundColor: flColor.charcoal800,
-    boxShadow: `0 0 9px rgba(191,143,79,0.09), ${flShadow.card}`,
+    boxShadow: `0 0 9px rgba(186, 134, 84,0.09), ${flShadow.card}`,
   },
   markWell: { position: 'relative', width: 56, height: 56, flexShrink: 0, alignItems: 'center', justifyContent: 'center' },
   markDisc: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: flRadius.round, borderWidth: 1, borderColor: 'rgba(185,188,194,0.5)', backgroundColor: 'rgba(150,154,162,0.08)' },
@@ -687,7 +687,7 @@ const styles = StyleSheet.create({
   },
   standRowWinner: { borderColor: flColor.bronzeBorder, paddingVertical: 17 },
   standRowPodium: { borderColor: flColor.bronzeBorderSubtle },
-  standRowSelf: { borderColor: flColor.bronze400, boxShadow: `0 0 0 1px ${flColor.bronzeBorder}, 0 0 18px rgba(191,143,79,0.22), ${flShadow.card}` },
+  standRowSelf: { borderColor: flColor.bronze400, boxShadow: `0 0 0 1px ${flColor.bronzeBorder}, 0 0 18px rgba(186, 134, 84,0.22), ${flShadow.card}` },
   standRowPressed: { opacity: 0.9 },
   rankSlot: { width: 26, flexShrink: 0, alignItems: 'center' },
   rankNum: { fontFamily: flFont.display, fontSize: 17, fontWeight: '700', color: flColor.gray600 },

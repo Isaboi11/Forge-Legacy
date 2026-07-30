@@ -166,7 +166,7 @@ function EntryCard({ entry: e, onPress }: { entry: HallEntry; onPress: () => voi
       style={({ pressed }) => [styles.card, mine ? styles.cardMine : null, pressed ? styles.cardPressed : null]}
     >
       {mine ? (
-        <LinearGradient colors={['rgba(191,143,79,0.10)', 'rgba(191,143,79,0.02)'] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={['rgba(186, 134, 84,0.10)', 'rgba(186, 134, 84,0.02)'] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
       ) : null}
 
       <View style={styles.cardHead}>
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
   header: { flexShrink: 0, position: 'relative', borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
   barTitle: { fontSize: 11, fontWeight: '700', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.cream100 },
   identity: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingHorizontal: 22, paddingTop: 2, paddingBottom: 18 },
-  crest: { width: 44, height: 44, flexShrink: 0, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: flRadius.md, boxShadow: '0 0 10px rgba(191,143,79,0.20)' },
+  crest: { width: 44, height: 44, flexShrink: 0, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: flRadius.md, boxShadow: '0 0 10px rgba(186, 134, 84,0.20)' },
   identityText: { flex: 1, minWidth: 0 },
   squadName: { fontFamily: flFont.display, fontSize: 21, fontWeight: '600', letterSpacing: -0.3, color: flColor.cream100 },
   subLine: { marginTop: 3, fontSize: 11.5, color: flColor.gray600 },
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
   champRow: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingHorizontal: 15, paddingTop: 12, paddingBottom: 13 },
   champDiscWrap: { position: 'relative', width: 46, height: 46, flexShrink: 0, alignItems: 'center', justifyContent: 'center' },
   champCrown: { position: 'absolute', top: -10, zIndex: 2 },
-  champRing: { borderRadius: flRadius.round, borderWidth: 1, borderColor: flColor.bronze400, boxShadow: '0 0 11px rgba(191,143,79,0.26)' },
+  champRing: { borderRadius: flRadius.round, borderWidth: 1, borderColor: flColor.bronze400, boxShadow: '0 0 11px rgba(186, 134, 84,0.26)' },
   champBody: { flex: 1, minWidth: 0 },
   champNameRow: { flexDirection: 'row', alignItems: 'center', gap: 7, minWidth: 0 },
   champName: { flexShrink: 1, fontFamily: flFont.display, fontSize: 18, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },

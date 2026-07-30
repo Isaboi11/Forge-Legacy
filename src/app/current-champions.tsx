@@ -243,7 +243,7 @@ function FeaturedTitle({ title: t, onPress }: { title: ChampionTitle; onPress: (
       accessibilityLabel={`${metricLabel(t.type, t.metricKey)}, held by ${t.champions.map((c) => c.name).join(' and ')}. Double-tap for standings.`}
       style={({ pressed }) => [styles.featured, pressed ? styles.pressed : null]}
     >
-      <LinearGradient colors={['rgba(191,143,79,0.16)', 'rgba(191,143,79,0.03)'] as const} locations={[0, 0.62] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={['rgba(186, 134, 84,0.16)', 'rgba(186, 134, 84,0.03)'] as const} locations={[0, 0.62] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
       {/* The design's ccGlow breathes a box-shadow; RN can't drive that natively, so an overlay does. */}
       <Animated.View pointerEvents="none" style={[styles.featuredGlow, { opacity: glow.interpolate({ inputRange: [0, 1], outputRange: [0.25, 0.7] }) }]} />
 
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
   newestPillText: { fontSize: 8, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.bronze300 },
   featuredChamp: { position: 'relative', marginTop: 20, alignItems: 'center' },
   champCrown: { position: 'absolute', top: -14, zIndex: 2 },
-  champRing: { borderRadius: flRadius.round, borderWidth: 2, borderColor: flColor.bronze400, padding: 2, boxShadow: '0 0 18px rgba(191,143,79,0.32)' },
+  champRing: { borderRadius: flRadius.round, borderWidth: 2, borderColor: flColor.bronze400, padding: 2, boxShadow: '0 0 18px rgba(186, 134, 84,0.32)' },
   featuredName: { marginTop: 12, fontFamily: flFont.display, fontSize: 22, fontWeight: '600', letterSpacing: -0.3, lineHeight: 26, textAlign: 'center', color: flColor.cream100 },
   featuredRole: { marginTop: 5, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.bronze300 },
   featuredWon: { marginTop: 10, fontSize: 11.5, lineHeight: 17, textAlign: 'center', color: flColor.gray600 },

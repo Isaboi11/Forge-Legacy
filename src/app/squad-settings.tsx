@@ -928,7 +928,7 @@ const styles = StyleSheet.create({
   sheetBody: { gap: 18 },
   faLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 9 },
   editPhotoWrap: { alignItems: 'center', gap: 10 },
-  editPhotoDisc: { width: 76, height: 76, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', backgroundColor: flColor.charcoal900, boxShadow: `0 0 0 2px ${flColor.bronze400}, 0 0 14px rgba(191,143,79,0.26)` },
+  editPhotoDisc: { width: 76, height: 76, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', backgroundColor: flColor.charcoal900, boxShadow: `0 0 0 2px ${flColor.bronze400}, 0 0 14px rgba(186, 134, 84,0.26)` },
   editPhotoImg: { width: '100%', height: '100%', borderRadius: flRadius.round },
   editPhotoActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   editLink: { fontSize: 12, fontWeight: '600', color: flColor.bronze400 },

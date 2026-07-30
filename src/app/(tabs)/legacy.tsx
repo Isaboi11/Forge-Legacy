@@ -677,7 +677,7 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(191,143,79,0.10)',
+    backgroundColor: 'rgba(186, 134, 84,0.10)',
     borderWidth: 1,
     borderColor: flColor.bronzeBorder,
   },

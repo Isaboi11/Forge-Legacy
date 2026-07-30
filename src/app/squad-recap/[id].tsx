@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: flColor.bronzeBorder,
-    backgroundColor: 'rgba(191,143,79,0.07)',
+    backgroundColor: 'rgba(186, 134, 84,0.07)',
     boxShadow: flShadow.glowSubtle,
   },
   heroTitle: { marginTop: 15, fontFamily: flFont.display, fontSize: 24, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },

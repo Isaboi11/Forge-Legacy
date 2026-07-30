@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import { flColor } from '@/constants/foundation';
 
 /**
  * The Forge symbol set used by the settings branch screens, ported VERBATIM from `forge-symbols.js`
@@ -76,7 +77,7 @@ const SYMBOLS: Record<SymbolName, (color: string) => ReactNode> = {
 export function ForgeSymbol({
   name,
   size = 18,
-  color = '#CDA063',
+  color = flColor.bronze300,
   strokeWidth = 1.8,
 }: {
   name: SymbolName;

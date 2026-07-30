@@ -56,7 +56,7 @@ export function ShareCard({ content, hiddenKeys, includeName }: ShareCardProps) 
   return (
     <View style={styles.card}>
       <LinearGradient
-        colors={['rgba(191,143,79,0.10)', 'rgba(191,143,79,0)'] as const}
+        colors={['rgba(186, 134, 84,0.10)', 'rgba(186, 134, 84,0)'] as const}
         locations={[0, 0.42] as const}
         start={{ x: 0.2, y: 0 }}
         end={{ x: 0.9, y: 1 }}

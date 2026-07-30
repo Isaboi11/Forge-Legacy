@@ -187,7 +187,7 @@ export default function ProgressHubScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>What&apos;s Next</Text>
             <Pressable onPress={() => router.push({ pathname: '/program/[id]', params: { id: data.next!.id } })} accessibilityRole="button" accessibilityLabel={data.next.title} style={styles.nextCard}>
-              <LinearGradient colors={['rgba(191,143,79,0.10)', 'rgba(191,143,79,0)']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 0.75 }} style={StyleSheet.absoluteFill} pointerEvents="none" />
+              <LinearGradient colors={['rgba(186, 134, 84,0.10)', 'rgba(186, 134, 84,0)']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 0.75 }} style={StyleSheet.absoluteFill} pointerEvents="none" />
               <View style={styles.nextIcon}>
                 <ForgeSymbol name="dumbbell" size={20} color={flColor.bronze300} />
               </View>
@@ -297,7 +297,7 @@ function StrengthTile({ metric, onPress }: { metric: MetricSeries; onPress: () =
       </View>
       {s ? (
         <Svg viewBox="0 0 82 30" width="100%" height={26} preserveAspectRatio="none" style={styles.spark}>
-          <Path d={s.area} fill="rgba(191,143,79,0.10)" />
+          <Path d={s.area} fill="rgba(186, 134, 84,0.10)" />
           <Path d={s.line} fill="none" stroke={flColor.bronze400} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
           <Circle cx={s.lastX} cy={s.lastY} r={2.2} fill={flColor.bronze300} />
         </Svg>

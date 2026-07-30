@@ -48,7 +48,7 @@ const VARIANT_CONFIG: Record<BannerVariant, {
     bgStart: 'rgba(200,169,126,0.10)',
     bgEnd: 'rgba(200,169,126,0.02)',
     border: 'rgba(200,169,126,0.40)',
-    iconBg: 'radial-gradient(#DFC49A,#7A6040)' ,
+    iconBg: 'radial-gradient(#DFC49A,#765B44)' ,
     textColor: '#DFC49A',
   },
   info: {

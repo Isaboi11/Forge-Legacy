@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
 
   eyebrow: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '600', letterSpacing: 4, textTransform: 'uppercase', color: '#8A6B41', textAlign: 'center', marginTop: 6 },
   rule: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 14 },
-  ruleLine: { width: 70, height: 1, backgroundColor: 'rgba(191,143,79,0.5)' },
+  ruleLine: { width: 70, height: 1, backgroundColor: 'rgba(186, 134, 84,0.5)' },
   ruleDiamond: { width: 7, height: 7, transform: [{ rotate: '45deg' }], borderWidth: 1, borderColor: flColor.bronze400 },
   mastSub: { fontFamily: flFont.sans, fontSize: 11.5, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: '#B08A55', textAlign: 'center', marginTop: 14 },
 
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
   tierRow: { flexDirection: 'row', gap: 10 },
   tile: { flex: 1, alignItems: 'center', gap: 7 },
   tileArt: { width: '100%', aspectRatio: 0.82, borderRadius: flRadius.md, alignItems: 'center', justifyContent: 'center' },
-  tileArtCurrent: { borderWidth: 1.5, borderColor: flColor.bronze400, backgroundColor: 'rgba(191,143,79,0.08)', boxShadow: '0 0 18px rgba(191,143,79,0.35)' },
+  tileArtCurrent: { borderWidth: 1.5, borderColor: flColor.bronze400, backgroundColor: 'rgba(186, 134, 84,0.08)', boxShadow: '0 0 18px rgba(186, 134, 84,0.35)' },
   badgeImg: { width: '92%', height: '92%' },
   tierLabel: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '700', letterSpacing: 1.4, color: '#6C5A41' },
   tierLabelCurrent: { color: flColor.bronze300 },

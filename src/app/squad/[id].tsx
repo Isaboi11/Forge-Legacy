@@ -507,7 +507,7 @@ export default function SquadDetailRoute() {
             accessibilityLabel="Hall of Champions"
             style={({ pressed }) => [styles.hallRow, pressed ? styles.recordsRowPressed : null]}
           >
-            <LinearGradient colors={['rgba(191,143,79,0.07)', 'transparent'] as const} locations={[0, 0.58] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+            <LinearGradient colors={['rgba(186, 134, 84,0.07)', 'transparent'] as const} locations={[0, 0.58] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
             <View style={styles.hallCrest}>
               <LinearGradient colors={flGradient.bronzeMetallic.colors} locations={flGradient.bronzeMetallic.locations} start={flGradient.bronzeMetallic.start} end={flGradient.bronzeMetallic.end} style={StyleSheet.absoluteFill} />
               <HallCrownIcon />
@@ -841,7 +841,7 @@ function FeedCard({ post, reacted, respect, onOpen, onReact }: { post: SquadFeed
   if (post.type === 'weekly' && post.recap) {
     return (
       <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel="Open weekly summary" style={[styles.feedCard, styles.weeklyCard]}>
-        <LinearGradient colors={['rgba(191,143,79,0.06)', 'transparent'] as const} locations={[0, 0.46] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={['rgba(186, 134, 84,0.06)', 'transparent'] as const} locations={[0, 0.46] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
         <View style={styles.feedCardRow}>
           <View style={styles.weeklyIcon}>
             <BannerGlyph />
@@ -1254,7 +1254,7 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.charcoal900,
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: `0 0 0 2.5px ${flColor.bronze400}, 0 8px 22px rgba(0,0,0,0.7), 0 0 18px rgba(191,143,79,0.3)`,
+    boxShadow: `0 0 0 2.5px ${flColor.bronze400}, 0 8px 22px rgba(0,0,0,0.7), 0 0 18px rgba(186, 134, 84,0.3)`,
   },
   crestPhoto: { width: '100%', height: '100%', borderRadius: flRadius.round },
 
@@ -1346,7 +1346,7 @@ const styles = StyleSheet.create({
   checkinEmpty: { fontSize: 12.5, lineHeight: 18, color: flColor.gray600, marginTop: 2, paddingRight: 20 },
   ciItem: { width: 72, alignItems: 'center', gap: 8, paddingVertical: 2 },
   ciRing: { width: 58, height: 58, borderRadius: flRadius.round, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center', position: 'relative' },
-  ciRingNew: { borderColor: flColor.bronze300, boxShadow: `0 0 10px rgba(191,143,79,0.5)` },
+  ciRingNew: { borderColor: flColor.bronze300, boxShadow: `0 0 10px rgba(186, 134, 84,0.5)` },
   ciRingWatched: { borderColor: flColor.charcoal500 },
   ciAvatarWrap: { width: 48, height: 48, borderRadius: flRadius.round, overflow: 'hidden' },
   ciDim: { opacity: 0.45 },

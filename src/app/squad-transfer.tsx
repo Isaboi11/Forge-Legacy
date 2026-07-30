@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 28 },
 
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 2 },
-  headerCrest: { width: 42, height: 42, flexShrink: 0, borderRadius: flRadius.round, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.charcoal900, boxShadow: `0 0 0 2px ${flColor.bronze400}, 0 4px 12px rgba(0,0,0,0.55), 0 0 10px rgba(191,143,79,0.2)` },
+  headerCrest: { width: 42, height: 42, flexShrink: 0, borderRadius: flRadius.round, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.charcoal900, boxShadow: `0 0 0 2px ${flColor.bronze400}, 0 4px 12px rgba(0,0,0,0.55), 0 0 10px rgba(186, 134, 84,0.2)` },
   headerCrestPhoto: { width: '100%', height: '100%', borderRadius: flRadius.round },
   headerText: { flex: 1, minWidth: 0, gap: 2 },
   headerName: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },

@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
   cardEmph: { borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal800 },
   cardPlain: { borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.charcoal800 },
   newestWash: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
-  newestWashInner: { position: 'absolute', top: 0, left: 0, right: 0, height: '42%', backgroundColor: 'rgba(191,143,79,0.06)' },
+  newestWashInner: { position: 'absolute', top: 0, left: 0, right: 0, height: '42%', backgroundColor: 'rgba(186, 134, 84,0.06)' },
   accentBar: { position: 'absolute', left: 0, top: 14, bottom: 14, width: 2, borderRadius: 2, backgroundColor: flColor.bronze400 },
 
   cardHead: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, paddingTop: 13, paddingHorizontal: 15, paddingBottom: 10 },
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.bronze400,
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '0 0 0 1px rgba(207,160,99,0.25), 0 0 22px rgba(191,143,79,0.42), inset 0 0 28px rgba(0,0,0,0.6)',
+    boxShadow: '0 0 0 1px rgba(201, 151, 103,0.25), 0 0 22px rgba(186, 134, 84,0.42), inset 0 0 28px rgba(0,0,0,0.6)',
   },
   emptyHeadline: { marginTop: 22, fontFamily: flFont.display, fontSize: 22, fontWeight: '600', color: flColor.cream100 },
   emptyBody: { marginTop: 12, textAlign: 'center', fontSize: 13.5, lineHeight: 21, color: flColor.gray400, maxWidth: 280 },

@@ -91,7 +91,7 @@ export function WelcomeAtmosphere() {
           <Defs>
             <RadialGradient id="wa-ember" cx="50%" cy="44%" rx="46%" ry="40%">
               <Stop offset="0" stopColor="rgba(201,128,44,0.10)" />
-              <Stop offset="0.42" stopColor="rgba(191,143,79,0.04)" />
+              <Stop offset="0.42" stopColor="rgba(186, 134, 84,0.04)" />
               <Stop offset="0.72" stopColor="rgba(120,70,20,0)" />
             </RadialGradient>
           </Defs>

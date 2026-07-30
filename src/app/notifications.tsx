@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
   rowHint: { fontSize: 11.5, lineHeight: 17, color: flColor.gray600, marginTop: 2 },
 
   callout: { flexDirection: 'row', gap: 12, padding: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint, marginBottom: 16 },
-  calloutIcon: { width: 34, height: 34, borderRadius: flRadius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(191,143,79,0.14)' },
+  calloutIcon: { width: 34, height: 34, borderRadius: flRadius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(186, 134, 84,0.14)' },
   calloutTitle: { fontSize: 13.5, fontWeight: '700', color: flColor.bronze300, marginBottom: 3 },
   calloutBody: { fontSize: 12, lineHeight: 18, color: flColor.gray400 },
 

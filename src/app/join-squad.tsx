@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.bronze400,
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '0 0 0 1px rgba(207,160,99,0.25), 0 0 22px rgba(191,143,79,0.42), inset 0 1px 0 rgba(207,160,99,0.14), inset 0 0 28px rgba(0,0,0,0.6)',
+    boxShadow: '0 0 0 1px rgba(201, 151, 103,0.25), 0 0 22px rgba(186, 134, 84,0.42), inset 0 1px 0 rgba(201, 151, 103,0.14), inset 0 0 28px rgba(0,0,0,0.6)',
   },
   headline: { marginTop: 22, textAlign: 'center', fontFamily: flFont.display, fontSize: 22, fontWeight: '600', lineHeight: 28, letterSpacing: -0.2, color: flColor.cream100 },
   sub: { marginTop: 12, textAlign: 'center', fontSize: 13.5, lineHeight: 21, color: flColor.gray400, maxWidth: 290 },

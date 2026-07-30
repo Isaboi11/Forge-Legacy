@@ -99,7 +99,7 @@ const TIER: Record<TrophyTier, { accent: string; ring: string; emblem: readonly 
     ring: flColor.bronze400,
     emblem: ['#453322', '#1a140e'],
     glyph: '#1A1206',
-    glow: 'rgba(191,143,79,0.24)',
+    glow: 'rgba(186, 134, 84,0.24)',
   },
   silver: {
     accent: '#C7CAD0',
@@ -109,10 +109,10 @@ const TIER: Record<TrophyTier, { accent: string; ring: string; emblem: readonly 
     glow: 'rgba(199,202,208,0.10)',
   },
   bronze: {
-    accent: '#C08A54',
+    accent: '#C08354',
     ring: 'rgba(176,124,78,0.55)',
     emblem: ['#4a3524', '#211913'],
-    glyph: '#C08A54',
+    glyph: '#C08354',
     glow: 'rgba(176,124,78,0.12)',
   },
 };
@@ -352,7 +352,7 @@ function ChampionTile({ finish: f, onPress }: { finish: TrophyFinish; onPress: (
     >
       {/* Bronze light pooling at the top edge, the way it falls on every other forged surface. */}
       <LinearGradient
-        colors={['rgba(191,143,79,0.14)', 'rgba(191,143,79,0.02)']}
+        colors={['rgba(186, 134, 84,0.14)', 'rgba(186, 134, 84,0.02)']}
         locations={[0, 0.6]}
         style={StyleSheet.absoluteFill}
         pointerEvents="none"

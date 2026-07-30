@@ -75,8 +75,8 @@ function HeroShell({ children }: { children: ReactNode }) {
       <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
         <Defs>
           <RadialGradient id="spc-wash" cx="50%" cy="0%" rx="120%" ry="90%">
-            <Stop offset="0" stopColor="rgba(191,143,79,0.16)" />
-            <Stop offset="0.62" stopColor="rgba(191,143,79,0)" />
+            <Stop offset="0" stopColor="rgba(186, 134, 84,0.16)" />
+            <Stop offset="0.62" stopColor="rgba(186, 134, 84,0)" />
           </RadialGradient>
         </Defs>
         <Rect width="100%" height="100%" fill="url(#spc-wash)" />
@@ -511,7 +511,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     boxShadow: flShadow.borderInset,
   },
-  rowOuterSel: { borderColor: flColor.bronze400, backgroundColor: 'rgba(191,143,79,0.08)' },
+  rowOuterSel: { borderColor: flColor.bronze400, backgroundColor: 'rgba(186, 134, 84,0.08)' },
   romanSlot: { width: 28, alignItems: 'center', justifyContent: 'center' },
   roman: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', letterSpacing: 1, lineHeight: 16, color: flColor.gray600 },
   rowText: { flex: 1, minWidth: 0, gap: 3 },

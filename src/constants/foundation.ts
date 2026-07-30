@@ -9,7 +9,7 @@
  * design system next) consume this file instead.
  *
  * Two deliberate divergences from `@/constants/tokens`' palette, carried over
- * from the design source: the bronze accent is warmer (#BF8F4F vs #C8A97E)
+ * from the design source: the bronze accent is warmer (#BA8654 vs #C8A97E)
  * and the charcoal ramp is neutralized (cooler, less blue-black).
  *
  * Source: Claude Design project "Forge Legacy Blueprint" (5368b220-9e78-4104-
@@ -34,10 +34,10 @@ export const flColor = {
   gray400: '#9E9890',
   gray600: '#666060',
 
-  bronze300: '#CDA063',
-  bronze400: '#BF8F4F',
-  bronze600: '#7A6040',
-  bronzeDark: '#574029',
+  bronze300: '#C99767',
+  bronze400: '#BA8654',
+  bronze600: '#765B44',
+  bronzeDark: '#543D2C',
 
   greenMuted: '#5A9E68',
   redMuted: '#BE5A4C',
@@ -47,13 +47,13 @@ export const flColor = {
   innerHighlight: 'rgba(255, 255, 255, 0.04)',
   innerHighlightMd: 'rgba(255, 255, 255, 0.07)',
 
-  bronzeBorder: 'rgba(186, 146, 92, 0.40)',
-  bronzeBorderSubtle: 'rgba(186, 146, 92, 0.19)',
-  bronzeTint: 'rgba(186, 146, 92, 0.05)',
+  bronzeBorder: 'rgba(181, 138, 97, 0.40)',
+  bronzeBorderSubtle: 'rgba(181, 138, 97, 0.19)',
+  bronzeTint: 'rgba(181, 138, 97, 0.05)',
 
   // Forged-metal button + engraved-medallion tokens (from foundation.css)
   emberFlame: '#E0913F', //           --fl-ember-flame (heat/flame icon stroke)
-  bronzeMetalBorder: 'rgba(174, 136, 86, 0.55)', // --fl-bronze-metal-border
+  bronzeMetalBorder: 'rgba(169, 129, 91, 0.55)', // --fl-bronze-metal-border
   surfaceRecessed: '#09090B', //      --fl-surface-recessed (solid stand-in for the base→#0C0C0E gradient)
 } as const
 
@@ -112,7 +112,7 @@ export const flGradient = {
   },
   /** Faint warm wash inside the Mission Card, fading out by ~42% down the card. */
   missionCardWash: {
-    colors: ['rgba(202,162,106,0.07)', 'rgba(202,162,106,0)'] as const,
+    colors: ['rgba(198,154,110,0.07)', 'rgba(198,154,110,0)'] as const,
     locations: [0, 0.42] as const,
     start: { x: 0.5, y: 0 },
     end: { x: 0.5, y: 1 },
@@ -127,22 +127,22 @@ export const flShadow = {
   card: `inset 0 1px 0 ${flColor.innerHighlight}, 0 2px 8px rgba(0, 0, 0, 0.35)`,
   elevated: `inset 0 1px 0 ${flColor.innerHighlightMd}, 0 4px 16px rgba(0, 0, 0, 0.5)`,
   ambient: '0 20px 60px rgba(0, 0, 0, 0.45)',
-  glowSubtle: '0 0 20px rgba(186, 146, 92, 0.14)',
+  glowSubtle: '0 0 20px rgba(181, 138, 97, 0.14)',
   // Engraved-medallion + metal-button atomic tokens (from foundation.css)
   borderInset: 'inset 0 1px 0 rgba(255, 255, 255, 0.04)', // --fl-border-inset
   shadowImage: '0 6px 20px rgba(0, 0, 0, 0.55)', //          --fl-shadow-image
-  glowBadge: '0 0 16px rgba(186, 146, 92, 0.28)', //         --fl-glow-badge
-  bronzeMetalTopRim: 'inset 0 1px 0 rgba(222, 190, 148, 0.42)', // --fl-bronze-metal-top-rim
+  glowBadge: '0 0 16px rgba(181, 138, 97, 0.28)', //         --fl-glow-badge
+  bronzeMetalTopRim: 'inset 0 1px 0 rgba(219, 184, 151, 0.42)', // --fl-bronze-metal-top-rim
   /** Mission Card — bronze-edged hero container. */
   missionCard:
-    'inset 0 1px 0 rgba(198,156,100,0.30), 0 18px 40px -24px rgba(0,0,0,0.82), 0 0 18px -6px rgba(186,146,92,0.11)',
+    'inset 0 1px 0 rgba(194,148,104,0.30), 0 18px 40px -24px rgba(0,0,0,0.82), 0 0 18px -6px rgba(181,138,97,0.11)',
   /** Train Together container — a step down from the Mission Card. */
   trainTogetherCard:
-    'inset 0 1px 0 rgba(198,156,100,0.22), 0 12px 30px -24px rgba(0,0,0,0.72), 0 0 15px -6px rgba(186,146,92,0.09)',
+    'inset 0 1px 0 rgba(194,148,104,0.22), 0 12px 30px -24px rgba(0,0,0,0.72), 0 0 15px -6px rgba(181,138,97,0.09)',
   /** Primary (bronze) button — forged-metal rim + glow. */
   buttonPrimary:
-    'inset 0 1px 0 rgba(222, 190, 148, 0.42), inset 0 -1px 1px rgba(176, 134, 80, 0.14), inset 10px 0 16px -12px rgba(0,0,0,0.50), inset -10px 0 16px -12px rgba(0,0,0,0.50), 0 2px 8px rgba(0,0,0,0.35), 0 0 2px rgba(186, 144, 90, 0.14)',
-  avatarRingGlow: '0 0 16px rgba(186, 146, 92, 0.28), inset 0 1px 0 rgba(255,255,255,0.04)',
+    'inset 0 1px 0 rgba(219, 184, 151, 0.42), inset 0 -1px 1px rgba(171, 126, 85, 0.14), inset 10px 0 16px -12px rgba(0,0,0,0.50), inset -10px 0 16px -12px rgba(0,0,0,0.50), 0 2px 8px rgba(0,0,0,0.35), 0 0 2px rgba(181, 136, 95, 0.14)',
+  avatarRingGlow: '0 0 16px rgba(181, 138, 97, 0.28), inset 0 1px 0 rgba(255,255,255,0.04)',
   presenceDotGlow: '0 0 6px rgba(76, 175, 110, 0.6)',
 } as const
 

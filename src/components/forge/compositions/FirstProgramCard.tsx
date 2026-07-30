@@ -22,8 +22,8 @@ export function FirstProgramCard({ onBuild, onStart }: { onBuild: () => void; on
       <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
         <Defs>
           <RadialGradient id="fpc-wash" cx="50%" cy="0%" rx="120%" ry="90%">
-            <Stop offset="0" stopColor="rgba(191,143,79,0.16)" />
-            <Stop offset="0.62" stopColor="rgba(191,143,79,0)" />
+            <Stop offset="0" stopColor="rgba(186, 134, 84,0.16)" />
+            <Stop offset="0.62" stopColor="rgba(186, 134, 84,0)" />
           </RadialGradient>
         </Defs>
         <Rect width="100%" height="100%" fill="url(#fpc-wash)" />

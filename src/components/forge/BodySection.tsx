@@ -125,13 +125,13 @@ export function BodySection() {
 
         <Svg viewBox={`0 0 ${W} ${H}`} width="100%" height={120} style={styles.chart}>
           <Line x1={8} y1={H - PADBOT} x2={W - 8} y2={H - PADBOT} stroke={flColor.charcoal600} strokeWidth={1} />
-          <Path d={area} fill="rgba(191,143,79,0.16)" />
+          <Path d={area} fill="rgba(186, 134, 84,0.16)" />
           <Path d={line} fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
           {coords.map((c, i) => (
             <Circle key={`h${i}`} cx={c.x} cy={c.y} r={11} fill="transparent" onPress={() => setSel(sel === i ? null : i)} />
           ))}
           {coords.map((c, i) => (
-            <Circle key={`d${i}`} cx={c.x} cy={c.y} r={2.5} fill="rgba(191,143,79,0.5)" />
+            <Circle key={`d${i}`} cx={c.x} cy={c.y} r={2.5} fill="rgba(186, 134, 84,0.5)" />
           ))}
           {sel != null && coords[sel] ? <Circle cx={coords[sel].x} cy={coords[sel].y} r={4} fill={flColor.bronze300} stroke="#070707" strokeWidth={1.4} /> : null}
           <Circle cx={coords[coords.length - 1].x} cy={coords[coords.length - 1].y} r={3.4} fill={flColor.bronze300} stroke="#070707" strokeWidth={1.5} />

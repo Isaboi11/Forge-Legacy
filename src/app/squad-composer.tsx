@@ -723,7 +723,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
-  previewValue: { fontFamily: flFont.display, fontSize: 46, fontWeight: '700', lineHeight: 48, color: flColor.bronze300, textShadowColor: 'rgba(191,143,79,0.5)', textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 20 },
+  previewValue: { fontFamily: flFont.display, fontSize: 46, fontWeight: '700', lineHeight: 48, color: flColor.bronze300, textShadowColor: 'rgba(186, 134, 84,0.5)', textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 20 },
   previewExercise: { fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   previewTag: { fontSize: 9, fontWeight: '600', letterSpacing: 2.5, color: flColor.bronze400 },
 

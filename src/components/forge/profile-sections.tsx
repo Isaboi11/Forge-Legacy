@@ -110,7 +110,7 @@ export function FeaturedMomentCard({ moment, onPress }: { moment: FeaturedMoment
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`Open ${moment.primaryText}`} style={s.flmCard}>
       <LinearGradient
-        colors={['rgba(191,143,79,0.12)', 'rgba(191,143,79,0)'] as const}
+        colors={['rgba(186, 134, 84,0.12)', 'rgba(186, 134, 84,0)'] as const}
         locations={[0, 0.55] as const}
         start={{ x: 0.85, y: 0 }}
         end={{ x: 0.2, y: 1 }}

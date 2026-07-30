@@ -546,7 +546,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: flColor.surfaceRecessed,
-    boxShadow: `0 0 0 2.5px ${flColor.bronze400}, 0 8px 22px rgba(0,0,0,0.6), 0 0 18px rgba(191,143,79,0.3)`,
+    boxShadow: `0 0 0 2.5px ${flColor.bronze400}, 0 8px 22px rgba(0,0,0,0.6), 0 0 18px rgba(186, 134, 84,0.3)`,
   },
   crestPhoto: { width: '100%', height: '100%', borderRadius: flRadius.round },
   name: { marginTop: 13, maxWidth: 300, fontFamily: flFont.display, fontSize: 26, fontWeight: '600', letterSpacing: 0.3, lineHeight: 28, textTransform: 'uppercase', textAlign: 'center', color: flColor.cream100 },

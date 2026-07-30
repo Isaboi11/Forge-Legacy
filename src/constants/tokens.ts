@@ -40,7 +40,7 @@ const _palette = {
   // Anchor: #C8A97E — matches existing legacy-theme.ts LC.accent
   bronze300:    '#DFC49A',   // highlight / pressed state on accent surfaces
   bronze400:    '#C8A97E',   // PRIMARY accent: earned, active, progress, legacy
-  bronze600:    '#7A6040',   // MUTED accent: progress track tint, ambient background
+  bronze600:    '#765B44',   // MUTED accent: progress track tint, ambient background
   bronzeGlow:   'rgba(200, 169, 126, 0.10)',  // ambient amber wash (use sparingly)
 
   // Semantic feedback palette

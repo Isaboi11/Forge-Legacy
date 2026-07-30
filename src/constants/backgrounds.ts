@@ -25,9 +25,9 @@ export const SCREEN_BG = {
  */
 export const BG_RADIAL = {
   /** Friends Feed apex — `120% 44% at 50% -4%`, bronze. */
-  friendsApex: { cx: '50%', cy: '-4%', rx: '120%', ry: '44%', color: 'rgba(191,143,79,0.05)', stop: 0.6 },
+  friendsApex: { cx: '50%', cy: '-4%', rx: '120%', ry: '44%', color: 'rgba(186, 134, 84,0.05)', stop: 0.6 },
   /** Squad Detail top — `100% 40% at 50% -6%`, bronze. */
-  squadTop: { cx: '50%', cy: '-6%', rx: '100%', ry: '40%', color: 'rgba(191,143,79,0.05)', stop: 0.6 },
+  squadTop: { cx: '50%', cy: '-6%', rx: '100%', ry: '40%', color: 'rgba(186, 134, 84,0.05)', stop: 0.6 },
   /** Squad Detail bottom — `120% 62% at 50% 108%`, warm. */
   squadBottom: { cx: '50%', cy: '108%', rx: '120%', ry: '62%', color: 'rgba(150,110,60,0.06)', stop: 0.6 },
 } as const;

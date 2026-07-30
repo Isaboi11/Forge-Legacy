@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: flColor.charcoal600,
   },
-  discOn: { backgroundColor: 'rgba(191,143,79,0.14)', borderColor: flColor.bronzeBorder },
+  discOn: { backgroundColor: 'rgba(186, 134, 84,0.14)', borderColor: flColor.bronzeBorder },
   check: {
     width: 22,
     height: 22,

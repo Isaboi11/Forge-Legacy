@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.charcoal900,
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: `0 0 0 2px ${flColor.bronze400}, 0 4px 12px rgba(0,0,0,0.55), 0 0 10px rgba(191,143,79,0.2)`,
+    boxShadow: `0 0 0 2px ${flColor.bronze400}, 0 4px 12px rgba(0,0,0,0.55), 0 0 10px rgba(186, 134, 84,0.2)`,
   },
   headerCrestPhoto: { width: '100%', height: '100%', borderRadius: flRadius.round },
   headerText: { flex: 1, minWidth: 0, gap: 2 },
@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
     paddingLeft: 8,
     color: flColor.bronze300,
     marginTop: 11,
-    textShadowColor: 'rgba(191,143,79,0.35)',
+    textShadowColor: 'rgba(186, 134, 84,0.35)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 14,
   },
@@ -489,7 +489,7 @@ const styles = StyleSheet.create({
 
   // qr sheet
   qrBody: { alignItems: 'center', gap: 16, paddingBottom: 6 },
-  qrPlate: { padding: 16, borderRadius: flRadius.lg, backgroundColor: '#EDE4D2', boxShadow: `${flShadow.shadowImage}, 0 0 20px rgba(191,143,79,0.25)` },
+  qrPlate: { padding: 16, borderRadius: flRadius.lg, backgroundColor: '#EDE4D2', boxShadow: `${flShadow.shadowImage}, 0 0 20px rgba(186, 134, 84,0.25)` },
   qrGrid: { width: 210, height: 210, flexDirection: 'row', flexWrap: 'wrap' },
   qrCell: { width: 10, height: 10, backgroundColor: 'transparent' },
   qrCellOn: { backgroundColor: '#141210' },

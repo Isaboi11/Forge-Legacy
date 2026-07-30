@@ -141,7 +141,7 @@ function RecordRow({ record, onOpen }: { record: SquadRecord; onOpen: () => void
       style={({ pressed }) => [styles.row, fresh ? styles.rowNew : styles.rowPlain, pressed ? styles.rowPressed : null]}
     >
       {fresh ? (
-        <LinearGradient colors={['rgba(191,143,79,0.09)', 'transparent'] as const} locations={[0, 0.6] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={['rgba(186, 134, 84,0.09)', 'transparent'] as const} locations={[0, 0.6] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
       ) : null}
 
       <View style={styles.iconTile}>
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: flColor.bronzeBorder,
-    backgroundColor: 'rgba(191,143,79,0.07)',
+    backgroundColor: 'rgba(186, 134, 84,0.07)',
     boxShadow: flShadow.glowSubtle,
   },
   emptyTitle: { marginTop: 20, fontFamily: flFont.display, fontSize: 21, fontWeight: '600', letterSpacing: -0.2, textAlign: 'center', color: flColor.cream100 },

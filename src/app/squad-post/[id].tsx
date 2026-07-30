@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 7,
   },
-  achValue: { fontFamily: flFont.display, fontSize: 44, fontWeight: '700', lineHeight: 46, color: flColor.bronze300, textShadowColor: 'rgba(191,143,79,0.45)', textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 18 },
+  achValue: { fontFamily: flFont.display, fontSize: 44, fontWeight: '700', lineHeight: 46, color: flColor.bronze300, textShadowColor: 'rgba(186, 134, 84,0.45)', textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 18 },
   achExercise: { fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   achLabel: { fontSize: 9, fontWeight: '600', letterSpacing: 2.5, color: flColor.bronze400 },
 

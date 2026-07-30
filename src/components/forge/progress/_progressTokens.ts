@@ -1,6 +1,8 @@
 // Component-scoped tokens for progress primitives.
 // Not re-exported from index — internal use only.
 
+import { flColor } from '@/constants/foundation';
+
 export const PROG = {
   // Linear bar heights
   HEIGHT_THIN:     4,
@@ -44,7 +46,7 @@ export const PROG = {
   FILL_DARK_TO:   '#A8794A',
 
   // Leading glow cap
-  CAP_COLOR:  '#CDA063',
+  CAP_COLOR:  flColor.bronze300,
 
   // Shadow / glow values
   GLOW_FILL:  'rgba(150,100,55,0.26)',

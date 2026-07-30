@@ -275,7 +275,7 @@ function PostCard({
         </View>
       ) : shape === 'milestone' ? (
         <View style={styles.milestone}>
-          <LinearGradient colors={['rgba(191,143,79,0.14)', 'transparent'] as const} locations={[0, 0.7] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+          <LinearGradient colors={['rgba(186, 134, 84,0.14)', 'transparent'] as const} locations={[0, 0.7] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
           <View style={styles.milestoneHead}>
             <MedalGlyph />
             <Text style={styles.milestoneKind}>{post.prLabel ?? 'Milestone'}</Text>

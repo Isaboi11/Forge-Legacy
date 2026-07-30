@@ -411,7 +411,7 @@ export default function CreateChallengeScreen() {
 
           {/* ── Review ── */}
           <View style={styles.review}>
-            <LinearGradient colors={['rgba(191,143,79,0.12)', 'transparent'] as const} locations={[0, 0.46] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+            <LinearGradient colors={['rgba(186, 134, 84,0.12)', 'transparent'] as const} locations={[0, 0.46] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
             <View style={styles.eyebrowRow}>
               <View style={styles.eyebrowRule} />
               <SwordsGlyph size={11} color={flColor.bronze400} />
@@ -642,7 +642,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: `0 0 0 2px ${flColor.bronze400}, 0 8px 18px rgba(0,0,0,0.6), 0 0 16px rgba(191,143,79,0.3)`,
+    boxShadow: `0 0 0 2px ${flColor.bronze400}, 0 8px 18px rgba(0,0,0,0.6), 0 0 16px rgba(186, 134, 84,0.3)`,
   },
   sealSmall: { width: 54, height: 54 },
   heroTitle: { marginTop: 13, maxWidth: 320, fontFamily: flFont.display, fontSize: 27, fontWeight: '600', letterSpacing: -0.3, lineHeight: 32, textAlign: 'center', color: flColor.cream100 },

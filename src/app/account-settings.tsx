@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '0 0 20px rgba(186, 146, 92, 0.14)',
+    boxShadow: '0 0 20px rgba(181, 138, 97, 0.14)',
   },
   avatarInitials: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', color: '#1A1206' },
   identityText: { flex: 1 },

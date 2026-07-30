@@ -22,6 +22,7 @@
  * invented here.
  */
 import React from 'react';
+import { flColor } from '@/constants/foundation';
 import Svg, {
   Circle, ClipPath, Defs, G, Image as SvgImage, LinearGradient, Path, RadialGradient, Rect, Stop, Text, TextPath,
 } from 'react-native-svg';
@@ -46,14 +47,14 @@ interface SealAccent {
 /** Bronze — the spec default and the palette for six of the seven families. */
 const BRONZE: SealAccent = {
   bevel: ['#DDB578', '#C0904F', '#8A6C46', '#5C452E', '#463526'],
-  glowInner: '#CDA063',
-  glowMid: '#BF8F4F',
-  textTop: '#CDA063',
-  textBottom: '#BF8F4F',
-  diamond: '#BF8F4F',
+  glowInner: flColor.bronze300,
+  glowMid: '#BA8654',
+  textTop: '#C99767',
+  textBottom: '#BA8654',
+  diamond: '#BA8654',
   knurl: '#6A5334',
   rimHi: 'rgba(222,190,148,0.35)',
-  groove: 'rgba(186,146,92,0.30)',
+  groove: 'rgba(181, 138, 97,0.30)',
   discRing: '#8A6C46',
 };
 

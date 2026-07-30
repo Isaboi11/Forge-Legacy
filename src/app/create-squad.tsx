@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
     backgroundColor: flColor.charcoal900,
-    boxShadow: `0 0 0 2px ${flColor.bronze400}, 0 6px 18px rgba(0,0,0,0.6), 0 0 14px rgba(191,143,79,0.26)`,
+    boxShadow: `0 0 0 2px ${flColor.bronze400}, 0 6px 18px rgba(0,0,0,0.6), 0 0 14px rgba(186, 134, 84,0.26)`,
   },
   heroCrestSmall: { marginTop: 14, width: 58, height: 58 },
   heroPhoto: { width: '100%', height: '100%', borderRadius: flRadius.round },

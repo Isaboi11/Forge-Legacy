@@ -306,7 +306,7 @@ function SquadResultCard({
         {/* identity */}
         <View style={styles.cardHead}>
           <View style={styles.crest}>
-            <LinearGradient colors={['rgba(191,143,79,0.24)', 'rgba(191,143,79,0)']} locations={[0, 0.72]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+            <LinearGradient colors={['rgba(186, 134, 84,0.24)', 'rgba(186, 134, 84,0)']} locations={[0, 0.72]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
             {squad.photoUrl ? <Image source={{ uri: squad.photoUrl }} style={styles.crestPhoto} contentFit="cover" /> : <SquadCrest crest={squad.crest} size={26} color={flColor.bronze300} strokeWidth={1.6} />}
           </View>
 
@@ -489,7 +489,7 @@ const styles = StyleSheet.create({
   searchInputFocused: {
     borderColor: flColor.bronzeBorder,
     backgroundColor: flColor.charcoal800,
-    boxShadow: '0 0 0 3px rgba(191,143,79,0.12), 0 4px 16px rgba(0,0,0,0.4)',
+    boxShadow: '0 0 0 3px rgba(186, 134, 84,0.12), 0 4px 16px rgba(0,0,0,0.4)',
   },
 
   // category chips
@@ -571,7 +571,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: flColor.bronzeBorder,
-    backgroundColor: 'rgba(191,143,79,0.06)',
+    backgroundColor: 'rgba(186, 134, 84,0.06)',
     boxShadow: flShadow.glowSubtle,
   },
   emptyTitle: { marginTop: 18, fontFamily: flFont.display, fontSize: 20, fontWeight: '600', textAlign: 'center', color: flColor.cream100 },

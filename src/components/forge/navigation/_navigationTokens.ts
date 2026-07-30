@@ -74,5 +74,5 @@ export const NAV = {
   MENU_SHADOW_COLOR:       '#000000',
   MENU_SEPARATOR:          '#222229',
   FLOATING_BTN_BG:         '#18181F',              // Floating back button bg
-  ACTIVE_INDICATOR_BORDER: '#7A6040',              // Floating back button pressed border
+  ACTIVE_INDICATOR_BORDER: '#765B44',              // Floating back button pressed border
 } as const

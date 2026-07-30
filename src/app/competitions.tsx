@@ -309,7 +309,7 @@ function ActiveCard({ challenge: c, onOpen }: { challenge: ActiveChallenge; onOp
 
   return (
     <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={`Open ${c.name}`} style={({ pressed }) => [styles.activeCard, pressed ? styles.activeCardPressed : null]}>
-      <LinearGradient colors={['rgba(191,143,79,0.07)', 'transparent'] as const} locations={[0, 0.62] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={['rgba(186, 134, 84,0.07)', 'transparent'] as const} locations={[0, 0.62] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
 
       <View style={styles.typeRow}>
         <TypeGlyph type={c.type} size={15} />

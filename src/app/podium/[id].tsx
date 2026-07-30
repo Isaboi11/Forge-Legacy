@@ -69,7 +69,7 @@ const BEATS = {
 
 /** Gold / silver / bronze TIER, indexed by podium slot — never by place, so ties can't shift the look. */
 const SLOT = [
-  { avatar: 78, ring: flColor.bronze400, medal: '#CDA063', medalSize: 24, pedestal: 128, numeral: 30, numeralColor: flColor.bronze300, name: 15, glow: true },
+  { avatar: 78, ring: flColor.bronze400, medal: flColor.bronze300, medalSize: 24, pedestal: 128, numeral: 30, numeralColor: flColor.bronze300, name: 15, glow: true },
   { avatar: 60, ring: 'rgba(190,193,199,0.75)', medal: '#C7CAD0', medalSize: 20, pedestal: 92, numeral: 24, numeralColor: flColor.gray400, name: 13.5, glow: false },
   { avatar: 56, ring: 'rgba(196,140,90,0.7)', medal: '#B07C4E', medalSize: 20, pedestal: 68, numeral: 22, numeralColor: flColor.gray600, name: 13, glow: false },
 ] as const;
@@ -251,7 +251,7 @@ function Ceremony({ result: r, onDone }: { result: ChallengeResultsDetail; onDon
 
       {/* Ambient forge glow — the light source sits off the top edge for the whole screen. */}
       <Animated.View style={[styles.ambient, { opacity: breathe.interpolate({ inputRange: [0, 1], outputRange: [0.4, 0.85] }) }]}>
-        <LinearGradient colors={['rgba(191,143,79,0.20)', 'rgba(191,143,79,0.05)', 'transparent'] as const} locations={[0, 0.45, 1] as const} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={['rgba(186, 134, 84,0.20)', 'rgba(186, 134, 84,0.05)', 'transparent'] as const} locations={[0, 0.45, 1] as const} style={StyleSheet.absoluteFill} />
       </Animated.View>
 
       {/* Top bar — Skip is live from the first frame, so the ceremony is never a trap. */}
@@ -310,7 +310,7 @@ function Ceremony({ result: r, onDone }: { result: ChallengeResultsDetail; onDon
             },
           ]}
         >
-          <LinearGradient colors={['rgba(191,143,79,0.34)', 'rgba(191,143,79,0.10)', 'transparent'] as const} locations={[0, 0.5, 1] as const} style={StyleSheet.absoluteFill} />
+          <LinearGradient colors={['rgba(186, 134, 84,0.34)', 'rgba(186, 134, 84,0.10)', 'transparent'] as const} locations={[0, 0.5, 1] as const} style={StyleSheet.absoluteFill} />
         </Animated.View>
 
         {/* Podium — the whole row eases back from 1.075 over the full reveal: a slow camera pull-back. */}
@@ -545,10 +545,10 @@ const styles = StyleSheet.create({
   athleteBlock: { alignItems: 'center', paddingBottom: 10 },
   crown: { position: 'absolute', top: -30, zIndex: 3 },
   flash: { position: 'absolute', top: 30, width: 170, height: 170, borderRadius: flRadius.round, overflow: 'hidden' },
-  ember: { position: 'absolute', borderRadius: flRadius.round, backgroundColor: flColor.bronze300, boxShadow: '0 0 6px rgba(191,143,79,0.8)' },
+  ember: { position: 'absolute', borderRadius: flRadius.round, backgroundColor: flColor.bronze300, boxShadow: '0 0 6px rgba(186, 134, 84,0.8)' },
   avatarRow: { flexDirection: 'row', gap: 6 },
   avatarRing: { borderWidth: 2, padding: 2 },
-  avatarGlow: { boxShadow: '0 0 26px rgba(191,143,79,0.5)' },
+  avatarGlow: { boxShadow: '0 0 26px rgba(186, 134, 84,0.5)' },
   overflowText: { marginTop: 4, fontSize: 10, color: flColor.gray600 },
   medal: { marginTop: 8 },
   nameRow: { marginTop: 6, maxWidth: 108 },
@@ -571,7 +571,7 @@ const styles = StyleSheet.create({
     transformOrigin: 'bottom',
   },
   /** Warm forged metal, lit from above by the athlete standing on it. */
-  pedestalGold: { boxShadow: 'inset 0 1px 0 rgba(230,202,156,0.35), 0 -2px 14px rgba(191,143,79,0.30)' },
+  pedestalGold: { boxShadow: 'inset 0 1px 0 rgba(230,202,156,0.35), 0 -2px 14px rgba(186, 134, 84,0.30)' },
   numeral: { fontFamily: flFont.display, fontWeight: '700' },
 
   ctaWrap: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 30, zIndex: 5 },

@@ -177,7 +177,7 @@ function SquadCard({
 
   return (
     <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={`Open ${squad.name}`} style={[styles.card, isFavorite ? styles.cardFav : null]}>
-      {isFavorite ? <LinearGradient colors={['rgba(191,143,79,0.07)', 'rgba(191,143,79,0)'] as const} locations={[0, 0.42] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} /> : null}
+      {isFavorite ? <LinearGradient colors={['rgba(186, 134, 84,0.07)', 'rgba(186, 134, 84,0)'] as const} locations={[0, 0.42] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} /> : null}
       <View style={styles.cardInner}>
         {/* identity */}
         <View style={styles.identityRow}>
@@ -230,7 +230,7 @@ function SquadCard({
 
         {/* divider */}
         <View style={styles.dividerWrap}>
-          <LinearGradient colors={['rgba(186,146,92,0)', flColor.bronzeBorderSubtle, flColor.bronzeBorderSubtle, 'rgba(186,146,92,0)'] as const} locations={[0, 0.2, 0.8, 1] as const} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={styles.divider} />
+          <LinearGradient colors={['rgba(181, 138, 97,0)', flColor.bronzeBorderSubtle, flColor.bronzeBorderSubtle, 'rgba(181, 138, 97,0)'] as const} locations={[0, 0.2, 0.8, 1] as const} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={styles.divider} />
         </View>
 
         {/* daily progress */}
@@ -368,8 +368,8 @@ const styles = StyleSheet.create({
   joinLinkEmph: { color: flColor.bronze300, fontWeight: '600' },
 
   // card
-  card: { position: 'relative', overflow: 'hidden', borderRadius: flRadius.lg, borderWidth: 1, borderColor: 'rgba(191,143,79,0.30)', backgroundColor: flColor.charcoal900, boxShadow: flShadow.card },
-  cardFav: { borderColor: 'rgba(191,143,79,0.62)', boxShadow: `${flShadow.card}, 0 0 22px rgba(191,143,79,0.15)` },
+  card: { position: 'relative', overflow: 'hidden', borderRadius: flRadius.lg, borderWidth: 1, borderColor: 'rgba(186, 134, 84,0.30)', backgroundColor: flColor.charcoal900, boxShadow: flShadow.card },
+  cardFav: { borderColor: 'rgba(186, 134, 84,0.62)', boxShadow: `${flShadow.card}, 0 0 22px rgba(186, 134, 84,0.15)` },
   cardInner: { paddingHorizontal: 18, paddingTop: 18, paddingBottom: 17, gap: 16 },
 
   // identity
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.bronze400,
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '0 0 0 1px rgba(207,160,99,0.25), 0 0 14px rgba(191,143,79,0.35), inset 0 1px 0 rgba(207,160,99,0.14), inset 0 0 26px rgba(0,0,0,0.6)',
+    boxShadow: '0 0 0 1px rgba(201, 151, 103,0.25), 0 0 14px rgba(186, 134, 84,0.35), inset 0 1px 0 rgba(201, 151, 103,0.14), inset 0 0 26px rgba(0,0,0,0.6)',
   },
   crestPhoto: { width: '100%', height: '100%', borderRadius: flRadius.round },
   identityBody: { flex: 1, minWidth: 0, gap: 5, paddingTop: 1 },
@@ -419,7 +419,7 @@ const styles = StyleSheet.create({
   dailyLabel: { fontSize: 11.5, letterSpacing: 0.2, color: flColor.gray400 },
   segments: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
   segment: { flex: 1, height: 6, borderRadius: 3 },
-  segmentOn: { backgroundColor: flColor.bronze400, boxShadow: '0 0 6px rgba(191,143,79,0.35)' },
+  segmentOn: { backgroundColor: flColor.bronze400, boxShadow: '0 0 6px rgba(186, 134, 84,0.35)' },
   segmentOff: { backgroundColor: 'rgba(151,137,113,0.26)', boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)' },
 
   // pending join requests (owner only)
@@ -459,7 +459,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.bronze400,
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '0 0 0 1px rgba(207,160,99,0.25), 0 0 22px rgba(191,143,79,0.42), inset 0 1px 0 rgba(207,160,99,0.14), inset 0 0 28px rgba(0,0,0,0.6)',
+    boxShadow: '0 0 0 1px rgba(201, 151, 103,0.25), 0 0 22px rgba(186, 134, 84,0.42), inset 0 1px 0 rgba(201, 151, 103,0.14), inset 0 0 28px rgba(0,0,0,0.6)',
   },
   emptyHeadline: { marginTop: 24, textAlign: 'center', fontFamily: flFont.display, fontSize: 22, fontWeight: '600', lineHeight: 28, letterSpacing: -0.2, color: flColor.cream100, maxWidth: 300 },
   emptyBody: { marginTop: 13, textAlign: 'center', fontSize: 13.5, lineHeight: 22, color: flColor.gray400, maxWidth: 270 },

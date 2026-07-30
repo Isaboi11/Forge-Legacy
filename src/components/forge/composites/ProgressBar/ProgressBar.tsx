@@ -41,7 +41,7 @@ export function ProgressBar({ value = 0, max = 100, height = 6, label }: Progres
             {
               width: `${pct}%`,
               borderRadius: flRadius.pill,
-              boxShadow: '0 0 8px rgba(186,146,92,0.35)',
+              boxShadow: '0 0 8px rgba(181, 138, 97,0.35)',
             },
           ]}
         />

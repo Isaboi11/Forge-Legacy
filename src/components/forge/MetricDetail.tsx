@@ -75,7 +75,7 @@ export function MetricDetail({ metric, onClose }: { metric: MetricSeries; onClos
 
         {/* chart */}
         <Svg viewBox={`0 0 ${W} ${H}`} width="100%" height={200} style={styles.chart}>
-          <Path d={area} fill="rgba(191,143,79,0.14)" />
+          <Path d={area} fill="rgba(186, 134, 84,0.14)" />
           <Path d={line} fill="none" stroke={flColor.bronze400} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
           {milestones.map((m) => (
             <Path key={m.club} d={`M${m.x.toFixed(1)} ${(m.y - 4).toFixed(1)} L${(m.x + 4).toFixed(1)} ${m.y.toFixed(1)} L${m.x.toFixed(1)} ${(m.y + 4).toFixed(1)} L${(m.x - 4).toFixed(1)} ${m.y.toFixed(1)} Z`} fill="none" stroke={flColor.bronze300} strokeWidth={1.4} />
@@ -84,7 +84,7 @@ export function MetricDetail({ metric, onClose }: { metric: MetricSeries; onClos
             <Circle key={i} cx={c.x} cy={c.y} r={11} fill="transparent" onPress={() => setSel(sel === i ? null : i)} />
           ))}
           {coords.map((c, i) => (
-            <Circle key={`d${i}`} cx={c.x} cy={c.y} r={2.5} fill="rgba(191,143,79,0.5)" />
+            <Circle key={`d${i}`} cx={c.x} cy={c.y} r={2.5} fill="rgba(186, 134, 84,0.5)" />
           ))}
           {sel != null && coords[sel] ? <Circle cx={coords[sel].x} cy={coords[sel].y} r={4.5} fill={flColor.bronze300} stroke="#070707" strokeWidth={1.4} /> : null}
           {last ? <Circle cx={last.x} cy={last.y} r={4.6} fill={flColor.bronze300} stroke="#070707" strokeWidth={1.5} /> : null}

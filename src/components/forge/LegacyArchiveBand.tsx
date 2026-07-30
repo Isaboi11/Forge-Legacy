@@ -235,7 +235,7 @@ function GradedImage({
 }
 
 /**
- * The lit recessed plate: `radial-gradient(120% 90% at 50% 8%, rgba(191,143,79,0.16), transparent 62%)`
+ * The lit recessed plate: `radial-gradient(120% 90% at 50% 8%, rgba(186, 134, 84,0.16), transparent 62%)`
  * over `#100e0b`.
  *
  * Drawn in SVG because neither `expo-linear-gradient` nor RN's non-experimental style API does radial. The
@@ -250,8 +250,8 @@ function RecessedSurface({ id }: { id: string }) {
       <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
         <Defs>
           <RadialGradient id={gid} gradientUnits="userSpaceOnUse" cx={50} cy={10.667} r={120} gradientTransform="scale(1, 0.75)">
-            <Stop offset="0" stopColor="#BF8F4F" stopOpacity={0.16} />
-            <Stop offset="0.62" stopColor="#BF8F4F" stopOpacity={0} />
+            <Stop offset="0" stopColor={flColor.bronze400} stopOpacity={0.16} />
+            <Stop offset="0.62" stopColor={flColor.bronze400} stopOpacity={0} />
           </RadialGradient>
         </Defs>
         <Rect x={0} y={0} width={100} height={100} fill={`url(#${gid})`} />

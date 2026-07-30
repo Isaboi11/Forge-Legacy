@@ -147,7 +147,7 @@ function PlateGlow({ cx = '50%', cy = '42%', r = '62%', inner = 0.4 }: { cx?: st
       <Svg width="100%" height="100%">
         <Defs>
           <RadialGradient id={gid} cx={cx} cy={cy} r={r}>
-            <Stop offset="0" stopColor="#BF8F4F" stopOpacity={inner} />
+            <Stop offset="0" stopColor={flColor.bronze400} stopOpacity={inner} />
             <Stop offset="0.7" stopColor="#17110B" stopOpacity={0} />
           </RadialGradient>
         </Defs>
@@ -435,7 +435,7 @@ const chrome = StyleSheet.create({
   roleBadgeText: { fontSize: 8.5, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronze400 },
   // sanctioned: clip the radial glow to the plate's rounded corners + the value text-shadow.
   glowClip: { overflow: 'hidden' },
-  glowText: { textShadowColor: 'rgba(191,143,79,0.55)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 22 },
+  glowText: { textShadowColor: 'rgba(186, 134, 84,0.55)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 22 },
 });
 
 // ── FEED styles — lifted verbatim from the original FeedPostCard content styles ──

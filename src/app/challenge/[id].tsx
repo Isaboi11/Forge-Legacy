@@ -282,7 +282,7 @@ function YourStanding({ challenge: c }: { challenge: ChallengeDetail }) {
 
   return (
     <View style={styles.standingCard}>
-      <LinearGradient colors={['rgba(191,143,79,0.10)', 'transparent'] as const} locations={[0, 0.55] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={['rgba(186, 134, 84,0.10)', 'transparent'] as const} locations={[0, 0.55] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
       <View style={styles.rankZone}>
         <Text style={styles.rankLabel}>Your Rank</Text>
         <Text style={styles.rankValue}>{ordinal(self.place, self.tied)}</Text>
@@ -352,7 +352,7 @@ function StandingRow({ standing: s, index, type, unit, onPress }: { standing: St
       style={({ pressed }) => [styles.standRow, leader ? styles.standRowLeader : null, s.place === 3 ? styles.standRowThird : null, s.isSelf ? styles.standRowSelf : null, pressed ? styles.standRowPressed : null]}
     >
       {leader || s.place === 3 ? (
-        <LinearGradient colors={leader ? (['rgba(191,143,79,0.09)', 'rgba(191,143,79,0.02)'] as const) : (['rgba(191,143,79,0.045)', 'transparent'] as const)} locations={[0, leader ? 1 : 0.6] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={leader ? (['rgba(186, 134, 84,0.09)', 'rgba(186, 134, 84,0.02)'] as const) : (['rgba(186, 134, 84,0.045)', 'transparent'] as const)} locations={[0, leader ? 1 : 0.6] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
       ) : null}
 
       <View style={styles.rankSlot}>
@@ -507,7 +507,7 @@ const styles = StyleSheet.create({
     height: 2.5,
     borderRadius: flRadius.round,
     backgroundColor: flColor.bronze300,
-    boxShadow: '0 0 5px 1px rgba(191,143,79,0.6)',
+    boxShadow: '0 0 5px 1px rgba(186, 134, 84,0.6)',
   },
   heroContent: { paddingTop: 158, alignItems: 'center' },
   heroName: { fontFamily: flFont.display, fontSize: 31, fontWeight: '700', letterSpacing: -0.4, lineHeight: 34, textAlign: 'center', color: flColor.cream100 },
@@ -568,7 +568,7 @@ const styles = StyleSheet.create({
   standRowLeader: { borderColor: flColor.bronzeBorder },
   standRowThird: {},
   /** Applied last so it wins on border and glow, while a leader's wash survives underneath. */
-  standRowSelf: { borderColor: flColor.bronze400, boxShadow: `0 0 0 1px ${flColor.bronzeBorder}, 0 0 18px rgba(191,143,79,0.16), ${flShadow.card}` },
+  standRowSelf: { borderColor: flColor.bronze400, boxShadow: `0 0 0 1px ${flColor.bronzeBorder}, 0 0 18px rgba(186, 134, 84,0.16), ${flShadow.card}` },
   standRowPressed: { opacity: 0.9 },
   rankSlot: { width: 24, alignItems: 'center', flexShrink: 0 },
   rankNum: { fontFamily: flFont.display, fontSize: 17, fontWeight: '700', color: flColor.gray600 },
