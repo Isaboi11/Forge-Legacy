@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { categoryGlyph, type HonorGlyphName } from '@/domain/honor/catalog';
+import { HONOR_CATEGORIES, categoryGlyph, categoryMeta, honorMeta, type HonorGlyphName } from '@/domain/honor/catalog';
 
 /**
  * Grant the one-time "Initiative" honor — the fresh athlete's first-move honor, earned when they commit to a
@@ -127,6 +127,7 @@ export async function claimEarnedHonors(): Promise<number> {
 
 /** DB category names → the code catalog's category ids, for glyphs and ordering. */
 const CATEGORY_ID: Record<string, string> = {
+  Origin: 'origin',
   Training: 'training',
   Chapters: 'chapters',
   Goals: 'goals',
@@ -263,8 +264,18 @@ export async function fetchHonorsHub(): Promise<HonorsHub> {
 
   const toHub = (slug: string, name: string, date: string | null): HubHonor => {
     const c = bySlug.get(slug);
-    const categoryName = c?.category ?? 'Training';
-    const categoryId = CATEGORY_ID[categoryName] ?? 'training';
+
+    /**
+     * Not every earned honor is a catalog row. `initiative` is granted by its own RPC (0014) and has no
+     * metric or threshold, so it will never appear in `honor_catalog` — and falling through to a generic
+     * "Training" default put it in the wrong category with the wrong mark, while Legacy (which already
+     * falls back to the code catalog) showed it correctly as Origin. Same fallback here, so one honor
+     * reads the same on both screens.
+     */
+    const code = c ? null : honorMeta(slug, name);
+    const categoryId = c ? (CATEGORY_ID[c.category] ?? 'training') : (code?.category ?? 'training');
+    const categoryName = c?.category ?? categoryMeta(categoryId)?.name ?? 'Training';
+
     const ladder = c ? (ladders.get(`${c.metric}|${c.metricKey ?? ''}`) ?? []) : [];
     const step = c ? ladder.findIndex((x) => x.slug === slug) + 1 : 0;
     return {
@@ -274,7 +285,7 @@ export async function fetchHonorsHub(): Promise<HonorsHub> {
       categoryId,
       categoryName,
       glyph: categoryGlyph(categoryId),
-      trigger: c ? triggerText(c.metric, c.threshold, c.metricKey) : 'Earned through training.',
+      trigger: c ? triggerText(c.metric, c.threshold, c.metricKey) : (code?.trigger || 'A permanent part of your legacy.'),
       tier: ladder.length > 1 && step > 0 ? { step, of: ladder.length } : null,
     };
   };
@@ -287,12 +298,14 @@ export async function fetchHonorsHub(): Promise<HonorsHub> {
     .slice(0, 5);
 
   // Canonical category order, empty categories dropped.
-  const order = Object.values(CATEGORY_ID).filter((v, i, a) => a.indexOf(v) === i);
+  // Canonical order from the code catalog (Origin first), so a category the DB catalog never names —
+  // Origin, whose only member is `initiative` — still has a slot to render in.
+  const order = HONOR_CATEGORIES.map((c) => c.id);
   const categories: HonorCategoryGroup[] = [];
   for (const id of order) {
     const honors = earned.filter((h) => h.categoryId === id);
     if (honors.length === 0) continue;
-    categories.push({ id, name: honors[0].categoryName, glyph: categoryGlyph(id), honors });
+    categories.push({ id, name: categoryMeta(id)?.name ?? honors[0].categoryName, glyph: categoryGlyph(id), honors });
   }
 
   return { earned, recent, categories, earnedCount: earned.length, catalogCount: catalog.length };

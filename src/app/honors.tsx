@@ -148,15 +148,6 @@ export default function HonorsScreen() {
               </ScrollView>
             </View>
           ))}
-
-          {/* What is still out there. The design shows only earned honors, so a catalog of 131 is invisible
-              to the person it is meant to motivate — 'you have 12' reads very differently from
-              'you have 12 of 131'. A count, not a list: the Catalog screen is where browsing belongs. */}
-          {hub && hub.catalogCount > hub.earnedCount ? (
-            <Text style={styles.remaining}>
-              {hub.earnedCount} of {hub.catalogCount} honors earned · {hub.catalogCount - hub.earnedCount} still out there
-            </Text>
-          ) : null}
         </ScrollView>
       )}
 
@@ -284,7 +275,6 @@ const styles = StyleSheet.create({
   retryText: { color: flColor.bronze400, fontFamily: flFont.sans, fontSize: 14, fontWeight: '600' },
 
   scroll: { paddingTop: 18, paddingBottom: 40 },
-  remaining: { marginTop: 30, marginHorizontal: 24, fontSize: 11.5, lineHeight: 17, textAlign: 'center', color: flColor.gray600 },
   sectionLabel: {
     paddingHorizontal: 24,
     fontFamily: flFont.sans,

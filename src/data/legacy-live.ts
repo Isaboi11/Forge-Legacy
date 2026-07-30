@@ -9,6 +9,7 @@ import { isAchieved, isQuantifiable, progressLabel, progressPct } from '@/domain
 
 /** DB `honor_catalog.category` names → the code catalog's ids, for glyph resolution. */
 const CATEGORY_ID: Record<string, string> = {
+  Origin: 'origin',
   Training: 'training',
   Chapters: 'chapters',
   Goals: 'goals',
