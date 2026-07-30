@@ -9,12 +9,13 @@
  *
  * Reworks the Phase-2 `TrainTogetherCard` to match the dc.
  *
- * DATA. `friendActivity` is REAL — the newest post in the friends feed (0074). `liveUsers` is not, and
- * cannot be: the app has no presence backend. An in-progress workout lives in a client-side session, not
- * a table, so nobody can observe anybody else training. Rather than keep a fixture that invents two
- * squad-mates mid-workout, the caller passes an empty list and the Live Now block simply does not draw —
- * which the layout already handled, since the bronze accent ring was always conditional on someone being
- * live. When presence exists, the same prop lights it up with nothing here to change.
+ * DATA. Both halves are real. `friendActivity` is the newest post in the friends feed (0074);
+ * `liveUsers` is `training_now()` (0086), squad-mates and accepted friends currently mid-workout, each
+ * gated on their own `visibility.training` audience.
+ *
+ * SQUAD OUTRANKS FRIEND when several people are training at once — the person you actually lift
+ * alongside leads, and the overflow line names their squad ("2 more from Iron Vigil") rather than
+ * reporting a bare number. A count says only that a number exists; a squad name says who.
  *
  * Both halves absent is a real state (no friends, no posts) and gets one quiet line rather than a hollow
  * card — the footer into the feed stays, because the athlete with no circle is exactly who needs it.
@@ -27,7 +28,7 @@ import { flColor, flFont, flRadius, flShadow, flType } from '@/constants/foundat
 import { Avatar } from '../../composites/Avatar'
 import { SectionHeader } from '../../composites/SectionHeader'
 import { ChevronRightIcon } from '../../primitives/icons/HomeIcons'
-import type { LiveTrainingUser } from '@/types/liveTraining'
+import { minutesTraining, othersLine, type TrainingAthlete } from '@/data/presence-live'
 
 export interface FriendActivity {
   name: string
@@ -36,22 +37,21 @@ export interface FriendActivity {
 }
 
 export interface YourCircleCardProps {
-  liveUsers: LiveTrainingUser[]
+  liveUsers: TrainingAthlete[]
   /** Null when nobody in the circle has posted — the row is omitted rather than drawn empty. */
   friendActivity?: FriendActivity | null
+  /** Opens the athlete. S-10 Train Together (joining their session) is unbuilt; their profile is real. */
   onJoinLive: (userId: string) => void
   onFriendActivity: () => void
   onSeeCircle: () => void
 }
 
-function mostRelevantFirst(users: LiveTrainingUser[]): LiveTrainingUser[] {
+/** `training_now()` already returns squad-first then most-recent; this keeps the guarantee local too. */
+function mostRelevantFirst(users: TrainingAthlete[]): TrainingAthlete[] {
   return [...users].sort((a, b) => {
     if (a.source !== b.source) return a.source === 'squad' ? -1 : 1
     return new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
   })
-}
-function minutesAgo(iso: string): number {
-  return Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60_000))
 }
 
 /** Post-type glyph (progress comparison) — the corner badge on a friend-activity avatar. */
@@ -69,7 +69,7 @@ function ProgressGlyph() {
 export function YourCircleCard({ liveUsers, friendActivity, onJoinLive, onFriendActivity, onSeeCircle }: YourCircleCardProps) {
   const sorted = useMemo(() => mostRelevantFirst(liveUsers), [liveUsers])
   const live = sorted[0]
-  const others = sorted.length - 1
+  const others = othersLine(sorted.slice(1))
 
   return (
     <View>
@@ -80,27 +80,27 @@ export function YourCircleCard({ liveUsers, friendActivity, onJoinLive, onFriend
             <View style={styles.liveHeader}>
               <View style={styles.liveDot} />
               <Text style={styles.liveLabel}>Live Now</Text>
-              {others > 0 ? <Text style={styles.othersText}>+{others} more training</Text> : null}
+              {others ? <Text style={styles.othersText}>{others}</Text> : null}
             </View>
             <View style={styles.liveRow}>
               <Pressable
-                onPress={() => onJoinLive(live.id)}
+                onPress={() => onJoinLive(live.userId)}
                 accessibilityRole="button"
-                accessibilityLabel={`${live.name} is training ${live.workoutName}, started ${minutesAgo(live.startedAt)} minutes ago`}
+                accessibilityLabel={`${live.name} is training${live.label ? ` ${live.label}` : ''}, started ${minutesTraining(live.startedAt)} minutes ago`}
                 style={styles.livePerson}
               >
-                <Avatar name={live.name} src={live.avatarUrl} size="listRow" presence />
+                <Avatar name={live.name} src={live.avatarUrl ?? undefined} size="listRow" presence />
                 <View style={styles.livePersonText}>
                   <Text style={styles.liveName} numberOfLines={1}>
                     {live.name}
                   </Text>
                   <Text style={flType.bodySmall} numberOfLines={1}>
-                    {live.workoutName} · {minutesAgo(live.startedAt)} min
+                    {[live.label, `${minutesTraining(live.startedAt)} min`, live.squadName].filter(Boolean).join(' · ')}
                   </Text>
                 </View>
               </Pressable>
-              <Pressable onPress={() => onJoinLive(live.id)} accessibilityRole="button" accessibilityLabel="Join workout" style={styles.joinBtn}>
-                <Text style={styles.joinText}>Join</Text>
+              <Pressable onPress={() => onJoinLive(live.userId)} accessibilityRole="button" accessibilityLabel={`View ${live.name}`} style={styles.joinBtn}>
+                <Text style={styles.joinText}>View</Text>
               </Pressable>
             </View>
           </View>

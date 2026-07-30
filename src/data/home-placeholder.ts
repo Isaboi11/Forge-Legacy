@@ -6,7 +6,7 @@ import type { HomeData } from '@/types/home'
  * state. Content matches `Forge Home.dc.html` exactly for visual parity;
  * wire to the real Chapter/Program data source when the backend integration
  * lands. Squad/friend live-presence data lives separately in
- * `live-training-placeholder.ts` — it's a dynamic feed, not static content.
+ * `presence-live.ts` (0086) — it's a dynamic feed, not static content.
  */
 export const HOME_DATA: HomeData = {
   mission: {

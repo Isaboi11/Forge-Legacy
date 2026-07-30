@@ -39,7 +39,8 @@ export type VisibilityKey =
   | 'transformation'
   | 'photos'
   | 'accomplishments'
-  | 'stats';
+  | 'stats'
+  | 'training';
 
 export interface VisibilitySection {
   key: VisibilityKey;
@@ -49,7 +50,14 @@ export interface VisibilitySection {
   icon: SymbolName;
 }
 
-/** The seven controllable sections, with the design's defaults, copy and per-row symbol (verbatim). */
+/**
+ * The controllable sections, with the design's defaults, copy and per-row symbol (verbatim).
+ *
+ * `training` is the one addition (0086). Live presence needed an off switch, and it did not need a new
+ * privacy concept to get one — it is a section like any other, on the same audience ladder, and setting
+ * it to "Only me" is how an athlete stops broadcasting that they are mid-workout. Default `squads`: the
+ * people you train alongside see it, strangers never do.
+ */
 export const VISIBILITY_SECTIONS: VisibilitySection[] = [
   { key: 'chapter', label: 'Current Chapter & Goal', desc: 'The chapter you’re training through now, and its goal.', def: 'everyone', icon: 'book' },
   { key: 'history', label: 'Chapter History', desc: 'Sealed chapters from your past.', def: 'everyone', icon: 'seal' },
@@ -58,6 +66,7 @@ export const VISIBILITY_SECTIONS: VisibilitySection[] = [
   { key: 'photos', label: 'Photos', desc: 'Your full photo archive.', def: 'friends', icon: 'medal' },
   { key: 'accomplishments', label: 'Accomplishments', desc: 'Records and milestones you’ve preserved.', def: 'everyone', icon: 'trophy' },
   { key: 'stats', label: 'Training Stats', desc: 'Volume, streaks and totals.', def: 'squads', icon: 'dumbbell' },
+  { key: 'training', label: 'Live Workout Status', desc: 'That you’re training right now, while you are.', def: 'squads', icon: 'spark' },
 ];
 
 export type VisibilityMap = Record<VisibilityKey, AudienceId>;

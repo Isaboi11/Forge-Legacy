@@ -17,13 +17,14 @@ import { TodaysWorkoutCard } from '@/components/forge/compositions/TodaysWorkout
 import { ProgramMissionGrid } from '@/components/forge/compositions/ProgramMissionGrid';
 import { YourCircleCard } from '@/components/forge/compositions/YourCircleCard';
 import { QuickActionsRow } from '@/components/forge/compositions/QuickActionsRow';
-import { FriendActionSheet } from '@/components/forge/compositions/TrainTogetherCard';
+import { TrainingNowSheet } from '@/components/forge/TrainingNowSheet';
 import { HOME_CHAPTER, todaysPrinciple } from '@/data/home-placeholder';
 import { fetchHomeGym, saveHomeGym } from '@/data/home-gym-live';
 import { fetchActiveChapterGoals } from '@/data/goals-live';
 import { goalSections } from '@/domain/goals/goals';
 import { fetchFriendsFeed } from '@/data/friends-feed-live';
 import { fetchChallengeHub } from '@/data/challenges-live';
+import { fetchTrainingNow, trainingSummary } from '@/data/presence-live';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { useQuery } from '@/lib/useQuery';
 import { fetchAwaitingChapter } from '@/data/home-live';
@@ -157,7 +158,7 @@ function ExploreForgeSection({ onOpen }: { onOpen: (route: Href) => void }) {
  * program), the Program tile (`getActiveProgram()`), the AppBar avatar
  * (`getSelfProfile()`), and the principle (`todaysPrinciple`). PLACEHOLDER
  * (no backend yet): chapter/week (HOME_DATA + HOME_CHAPTER), the Mission tile
- * goal, the newest post from the athlete's circle (real, 0074; live presence has no backend),
+ * goal, live presence (0086) + the newest post from the athlete's circle (0074),
  * and the Quick Actions. The Home hero rank medallion is temporarily REMOVED
  * (`showRankMedallion={false}`) pending user-supplied cycling artwork — see FORGE_DELTAS §19.
  * (Legacy's hero seal is a separate component and stays.)
@@ -201,6 +202,10 @@ export default function HomeScreen() {
      scheduler, so a season closes when someone opens a screen that reads it, and Home is the screen
      opened most. The badge is the cheap part; keeping every squad's competitions honest is the point. */
   const { data: challengeHub } = useQuery(fetchChallengeHub, []);
+  /* Who from the circle is mid-workout (0086). Squad-mates outrank friends, and each athlete's own
+     `visibility.training` audience decides whether they appear at all — "Only me" is the off switch. */
+  const { data: trainingNow } = useQuery(fetchTrainingNow, []);
+  const live = useMemo(() => trainingNow ?? [], [trainingNow]);
   const circleActivity = useMemo(() => {
     const p = (circlePosts ?? []).find((x) => !x.isMine && (x.body ?? '').trim().length > 0);
     if (!p) return null;
@@ -492,19 +497,22 @@ export default function HomeScreen() {
           ) : null}
 
           <YourCircleCard
-            liveUsers={[]}
+            liveUsers={live}
             friendActivity={circleActivity}
-            onJoinLive={() => {
-              // S-10 Train Together is unbuilt, and with no presence backend nobody is ever live, so this
-              // is unreachable rather than inert. It stays wired for the day presence exists.
-            }}
+            onJoinLive={(userId) => router.push({ pathname: '/athlete/[id]', params: { id: userId } })}
             onFriendActivity={() => router.push('/friends')}
             onSeeCircle={() => router.push('/friends')}
           />
 
+          {/* Two actions, both real. "Train Together" was "Challenge", which opened a sheet whose every
+              row was inert — FRIENDS-context competitions are deferred, so it duplicated Competitions and
+              then dead-ended. It now shows who is training, which is the honest form of working out with
+              your people while S-10 is unbuilt. Competitions is unchanged: you start one from the hub. */}
           <QuickActionsRow
             competitionsCount={challengeHub?.active.length ?? 0}
-            onChallenge={() => setFriendSheetOpen(true)}
+            trainingCount={live.length}
+            trainingSummary={trainingSummary(live)}
+            onTrainTogether={() => setFriendSheetOpen(true)}
             onCompetitions={() => router.push('/competitions')}
           />
 
@@ -514,14 +522,17 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
-      <FriendActionSheet
+      <TrainingNowSheet
         open={friendSheetOpen}
         onClose={() => setFriendSheetOpen(false)}
-        onTrainTogether={() => {
-          // S-10 Train Together (partner selection) — not yet implemented.
+        athletes={live}
+        onAthlete={(userId) => {
+          setFriendSheetOpen(false);
+          router.push({ pathname: '/athlete/[id]', params: { id: userId } });
         }}
-        onChallenge={() => {
-          // C-2 Create Challenge, FRIENDS context — not yet implemented.
+        onFindPeople={() => {
+          setFriendSheetOpen(false);
+          router.push('/friends');
         }}
       />
     </View>

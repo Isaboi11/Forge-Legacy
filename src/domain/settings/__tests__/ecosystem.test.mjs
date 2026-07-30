@@ -37,11 +37,14 @@ test('the preview matches what a real 315 lb squat would render', () => {
 
 // ── visibility ────────────────────────────────────────────────────────────────
 
-test('the seven sections carry the design’s defaults', () => {
-  assert.equal(VISIBILITY_SECTIONS.length, 7);
+test('the sections carry the design’s defaults, plus live status', () => {
+  // Seven from the design, plus `training` (0086) — live presence needed an off switch and took the
+  // audience ladder rather than inventing a second privacy concept. `private` IS that off switch.
+  assert.equal(VISIBILITY_SECTIONS.length, 8);
   assert.equal(VISIBILITY_DEFAULTS.chapter, 'everyone');
   assert.equal(VISIBILITY_DEFAULTS.transformation, 'friends');
   assert.equal(VISIBILITY_DEFAULTS.stats, 'squads');
+  assert.equal(VISIBILITY_DEFAULTS.training, 'squads', 'squad-mates see you lifting; strangers never do');
   assert.equal(AUDIENCES.find((a) => a.id === 'private').label, 'Only me');
 });
 

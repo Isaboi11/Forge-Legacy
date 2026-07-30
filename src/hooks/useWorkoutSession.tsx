@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 
-import { DEFAULT_LIVE_TRAINING_PRIVACY } from '@/data/live-training-placeholder'
+import { setTrainingStatus } from '@/data/presence-live'
 
 /** One planned lift carried into the session so the Finish log sheet knows what to record. */
 export type SessionLift = {
@@ -32,14 +32,22 @@ const WorkoutSessionContext = createContext<WorkoutSessionContextValue | null>(n
 const STALE_SESSION_TIMEOUT_MS = 4 * 60 * 60 * 1000
 
 /**
- * Presence write path. No backend exists yet, so this is a local stub —
- * swap the body for a real API/socket call once live presence has a server.
- * Call sites don't change: they only ever see start/finish/abandon.
+ * Presence write path — real since migration 0086.
+ *
+ * NO PRIVACY CHECK HERE, deliberately. The old stub short-circuited on a local
+ * `shareLiveWorkoutStatus` flag, which is the wrong place for the decision twice
+ * over: a client that decides whether to broadcast is a client that can be wrong,
+ * and the athlete's audience for this is `visibility.training`, which lives on
+ * their profile with every other section. `training_now()` applies it at read
+ * time, so setting it to "Only me" hides the status from every viewer without
+ * this call ever knowing. Writing the fact and gating the read is the honest
+ * split — and it means changing the setting takes effect on a workout already
+ * in progress.
+ *
+ * Fire-and-forget: presence must never block starting or finishing a workout.
  */
 function setLiveWorkoutPresence(active: boolean, workoutName?: string): void {
-  if (active && !DEFAULT_LIVE_TRAINING_PRIVACY.shareLiveWorkoutStatus) return
-  if (active && DEFAULT_LIVE_TRAINING_PRIVACY.visibility === 'private') return
-  void workoutName // TODO(backend): PATCH /presence { active, workoutName, visibility }
+  void setTrainingStatus(active, workoutName)
 }
 
 export function WorkoutSessionProvider({ children }: { children: React.ReactNode }) {

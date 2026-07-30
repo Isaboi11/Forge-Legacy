@@ -12,9 +12,15 @@ export type LiveTrainingUser = {
 /**
  * No settings screen owns this yet (P-6 Privacy only covers squad check-in
  * cards today). `visibility` is unenforced by the mock feed in
- * `live-training-placeholder.ts` — Home renders one merged list regardless
+ * `training_now()` (0086) — Home renders one merged list regardless
  * of source — it's reserved for future per-audience surfaces (e.g. a
  * squad-only presence view) once a real Live Training privacy toggle ships.
+ */
+/**
+ * SUPERSEDED by `profiles.visibility.training` (0086). Live status is a profile SECTION on the same
+ * audience ladder as every other one, gated server-side at read time — not a device-local flag a client
+ * consults before deciding whether to broadcast. Kept as the shape the old placeholder documented; no
+ * code reads it.
  */
 export type LiveTrainingPrivacySettings = {
   shareLiveWorkoutStatus: boolean
