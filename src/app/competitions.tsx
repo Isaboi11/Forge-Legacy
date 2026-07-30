@@ -228,6 +228,19 @@ export default function CompetitionsScreen() {
           {/* ── History ── */}
           <View style={styles.headRow}>
             <Text style={styles.sectionLabelInline}>History</Text>
+            {/* Only five fit here; the full, filterable record is its own screen. */}
+            {history.length > 0 ? (
+              <Pressable
+                onPress={() => router.push('/competition-history')}
+                accessibilityRole="button"
+                accessibilityLabel="View all competition history"
+                hitSlop={8}
+                style={styles.viewAllRow}
+              >
+                <Text style={styles.viewAllText}>View All{history.length > 5 ? ` (${history.length})` : ''}</Text>
+                <ChevronRowGlyph />
+              </Pressable>
+            ) : null}
           </View>
           {history.length === 0 ? (
             <View style={styles.dashedEmpty}>
@@ -597,6 +610,8 @@ const styles = StyleSheet.create({
   championsBody: { flex: 1, minWidth: 0 },
   championsTitle: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
   championsSub: { marginTop: 2, fontSize: 11.5, color: flColor.gray600 },
+  viewAllRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  viewAllText: { fontSize: 12, fontWeight: '500', color: flColor.bronze400 },
   statCell: { flexGrow: 1, flexBasis: '48%', alignItems: 'center', gap: 5, paddingVertical: 18, backgroundColor: flColor.surfaceRecessed },
   statValue: { fontFamily: flFont.display, fontSize: 24, fontWeight: '700', color: flColor.cream100 },
   statLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray600 },
