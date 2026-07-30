@@ -8,11 +8,19 @@ import { supabase } from '@/lib/supabase';
  * an event can't outlive the fact behind it. Read state is a single timestamp on the profile:
  * everything newer than `notifications_seen_at` is unread.
  *
- * The kinds are all squad-membership today. The union in `notification_events()` is where the feed
+ * Squad membership and friendships. There is deliberately no declined-friend-request kind: accepting
+ * notifies, declining is silent, because a notification whose only content is a small rejection is
+ * worse than none (0073). The union in `notification_events()` is where the feed
  * grows as other pillars gain real rows to report.
  */
 
-export type NotificationKind = 'join_request' | 'member_joined' | 'request_approved' | 'request_declined';
+export type NotificationKind =
+  | 'join_request'
+  | 'member_joined'
+  | 'request_approved'
+  | 'request_declined'
+  | 'friend_request'
+  | 'friend_accepted';
 
 export interface ForgeNotification {
   kind: NotificationKind;
@@ -31,7 +39,14 @@ export interface ForgeNotification {
 const MISSING_FN = 'PGRST202';
 const isMissingFn = (e: unknown): boolean => (e as { code?: string } | null)?.code === MISSING_FN;
 
-const KINDS: NotificationKind[] = ['join_request', 'member_joined', 'request_approved', 'request_declined'];
+const KINDS: NotificationKind[] = [
+  'join_request',
+  'member_joined',
+  'request_approved',
+  'request_declined',
+  'friend_request',
+  'friend_accepted',
+];
 const asKind = (v: string): NotificationKind | null => (KINDS as string[]).includes(v) ? (v as NotificationKind) : null;
 
 interface FeedRow {

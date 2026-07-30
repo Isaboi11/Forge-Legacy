@@ -161,7 +161,13 @@ export default function SquadDetailRoute() {
           </View>
           <View style={styles.membersCard}>
             {members.map((m, i) => (
-              <MemberRow key={m.id} member={m} last={i === members.length - 1} onPress={squad.isOwner && !m.isSelf ? () => setMemberAction(m) : undefined} />
+              <MemberRow
+                key={m.id}
+                member={m}
+                last={i === members.length - 1}
+                onOpen={() => router.push({ pathname: '/athlete/[id]', params: { id: m.id } })}
+                onManage={squad.isOwner && !m.isSelf ? () => setMemberAction(m) : undefined}
+              />
             ))}
           </View>
           {squad.isOwner && members.length > 1 ? <Text style={styles.membersHint}>Tap a member to transfer ownership or remove them.</Text> : null}
@@ -914,28 +920,72 @@ function FeedCard({ post, reacted, respect, onOpen, onReact }: { post: SquadFeed
   );
 }
 
-function MemberRow({ member, last, onPress }: { member: SquadMemberView; last: boolean; onPress?: () => void }) {
-  const content = (
-    <>
-      <Avatar src={member.avatarUrl ?? undefined} name={member.name} size="listRow" />
-      <View style={styles.memberText}>
-        <Text style={styles.memberName} numberOfLines={1}>
-          {member.name}
-          {member.isSelf ? <Text style={styles.memberYou}> (You)</Text> : null}
-        </Text>
-        <Text style={styles.memberRole}>{member.role === 'owner' ? 'Owner' : 'Member'}</Text>
-      </View>
-      {onPress ? <ChevronIcon color={flColor.bronze400} /> : <ChevronIcon color={flColor.gray600} />}
-    </>
-  );
-  if (onPress) {
-    return (
-      <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`Manage ${member.name}`} style={[styles.memberRow, last ? null : styles.memberRowDivided]}>
-        {content}
+/**
+ * A member row. TAPPING IT OPENS THEIR PROFILE — for every member, which is what S-2 intends ("row tap →
+ * Limited Athlete Profile") and what anyone would expect from a roster.
+ *
+ * It didn't, until now. `onPress` was wired only for the owner's manage action, so for every other viewer
+ * — and for the owner looking at their own row — the row rendered as a plain View with a grey chevron
+ * suggesting otherwise. Tapping a squadmate did nothing, which made the roster the least useful route to
+ * the one screen that now carries Add Friend.
+ *
+ * Management is its own affordance rather than sharing the tap. Two different destinations behind one
+ * target meant the owner could never reach a member's profile at all, and everyone else could never reach
+ * anything.
+ */
+function MemberRow({
+  member,
+  last,
+  onOpen,
+  onManage,
+}: {
+  member: SquadMemberView;
+  last: boolean;
+  onOpen: () => void;
+  onManage?: () => void;
+}) {
+  return (
+    <View style={[styles.memberRow, last ? null : styles.memberRowDivided]}>
+      <Pressable
+        onPress={onOpen}
+        accessibilityRole="button"
+        accessibilityLabel={`View ${member.name}${member.isSelf ? ', you' : ''}'s profile`}
+        style={({ pressed }) => [styles.memberMain, pressed ? styles.memberMainPressed : null]}
+      >
+        <Avatar src={member.avatarUrl ?? undefined} name={member.name} size="listRow" />
+        <View style={styles.memberText}>
+          <Text style={styles.memberName} numberOfLines={1}>
+            {member.name}
+            {member.isSelf ? <Text style={styles.memberYou}> (You)</Text> : null}
+          </Text>
+          <Text style={styles.memberRole}>{member.role === 'owner' ? 'Owner' : 'Member'}</Text>
+        </View>
+        <ChevronIcon color={flColor.gray600} />
       </Pressable>
-    );
-  }
-  return <View style={[styles.memberRow, last ? null : styles.memberRowDivided]}>{content}</View>;
+
+      {onManage ? (
+        <Pressable
+          onPress={onManage}
+          accessibilityRole="button"
+          accessibilityLabel={`Manage ${member.name}`}
+          hitSlop={8}
+          style={({ pressed }) => [styles.memberManage, pressed ? styles.memberMainPressed : null]}
+        >
+          <DotsIcon />
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+function DotsIcon({ color = flColor.bronze400 }: { color?: string }) {
+  return (
+    <Svg width={17} height={17} viewBox="0 0 24 24" fill={color}>
+      <Circle cx={12} cy={5} r={1.7} />
+      <Circle cx={12} cy={12} r={1.7} />
+      <Circle cx={12} cy={19} r={1.7} />
+    </Svg>
+  );
 }
 
 // ── glyphs ──
@@ -1396,7 +1446,10 @@ const styles = StyleSheet.create({
   membersCount: { fontSize: 11.5, color: flColor.gray600 },
   membersHint: { fontSize: 11.5, lineHeight: 16, color: flColor.gray600, textAlign: 'center', marginTop: 14, paddingHorizontal: 20 },
   membersCard: { backgroundColor: flColor.charcoal900, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, borderRadius: flRadius.lg, paddingHorizontal: 16, boxShadow: flShadow.card },
-  memberRow: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingVertical: 13 },
+  memberRow: { flexDirection: 'row', alignItems: 'center' },
+  memberMain: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 13, paddingVertical: 13 },
+  memberMainPressed: { opacity: 0.7 },
+  memberManage: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', marginLeft: 4 },
   memberRowDivided: { borderBottomWidth: 1, borderBottomColor: flColor.charcoal800 },
   memberText: { flex: 1, minWidth: 0, gap: 3 },
   memberName: { fontSize: 15.5, color: flColor.cream100 },

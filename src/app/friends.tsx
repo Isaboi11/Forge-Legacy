@@ -22,8 +22,8 @@ import { flColor, flRadius, flShadow } from '@/constants/foundation';
  * The card itself is the shared `FeedPostCard` (one config-driven card across Friends / Community
  * / Squad — see its module doc); Friends shows the per-post audience tag (`showAudience` default).
  *
- * READ-ONLY viewing surface: the composer prompt, friends-hub button, and per-post react are
- * inert; the card's Share reuses SH-1 for milestone posts. ALL feed content is PLACEHOLDER
+ * READ-ONLY viewing surface: the composer prompt and per-post react are inert; the friends-hub button
+ * now opens Add Friend, which holds the real graph (migration 0073); the card's Share reuses SH-1 for milestone posts. ALL feed content is PLACEHOLDER
  * (`getFriendsFeed` — no feed backend); the same posts open in Post Detail, so they stay
  * consistent. "Nothing posts automatically" (dc) — the Firewall is respected: this shows only
  * what a friend chose to share.
@@ -45,13 +45,31 @@ export default function FriendsFeedRoute() {
         serif
         onBack={() => router.back()}
         actions={
-          <Pressable onPress={() => {}} accessibilityRole="button" accessibilityLabel="Friends" style={styles.iconBtn} hitSlop={8}>
+          <Pressable onPress={() => router.push('/add-friend')} accessibilityRole="button" accessibilityLabel="Friends and requests" style={styles.iconBtn} hitSlop={8}>
             <FriendsGlyph />
           </Pressable>
         }
       />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* A named row, because the AppBar icon alone was not findable — it carries no label, and this is
+            the only route into the friend graph. The icon stays for people who already know it. */}
+        <Pressable
+          onPress={() => router.push('/add-friend')}
+          accessibilityRole="button"
+          accessibilityLabel="Add a friend, and see your requests"
+          style={({ pressed }) => [styles.addFriendRow, pressed ? styles.addFriendRowPressed : null]}
+        >
+          <View style={styles.addFriendIcon}>
+            <AddFriendGlyph />
+          </View>
+          <View style={styles.addFriendText}>
+            <Text style={styles.addFriendTitle}>Add a Friend</Text>
+            <Text style={styles.addFriendSub}>Search by handle, and answer requests.</Text>
+          </View>
+          <ChevronGlyph />
+        </Pressable>
+
         {/* composer prompt — inert (compose is not part of this read-only viewer) */}
         <Pressable onPress={() => {}} accessibilityRole="button" accessibilityLabel="Share a moment" style={styles.composer}>
           <Avatar name={profile?.name ?? ''} src={profile?.avatarUrl ?? undefined} size="listRow" />
@@ -85,6 +103,22 @@ function FriendsGlyph() {
   );
 }
 
+function AddFriendGlyph({ size = 18, color = flColor.bronze300 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+      <Circle cx={9} cy={8} r={3.4} />
+      <Path d="M3.5 20a5.5 5.5 0 0 1 11 0M18 8v6M15 11h6" />
+    </Svg>
+  );
+}
+function ChevronGlyph({ size = 17, color = flColor.gray600 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M9 5l7 7-7 7" />
+    </Svg>
+  );
+}
+
 const styles = StyleSheet.create({
   root: { flex: 1 },
   iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round },
@@ -103,4 +137,31 @@ const styles = StyleSheet.create({
     boxShadow: flShadow.card,
   },
   composerText: { flex: 1, minWidth: 0, fontSize: 13.5, color: flColor.gray600 },
+  addFriendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 13,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    backgroundColor: flColor.charcoal900,
+    boxShadow: flShadow.card,
+  },
+  addFriendRowPressed: { opacity: 0.88 },
+  addFriendIcon: {
+    width: 38,
+    height: 38,
+    flexShrink: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: flRadius.round,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    backgroundColor: flColor.bronzeTint,
+  },
+  addFriendText: { flex: 1, minWidth: 0 },
+  addFriendTitle: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
+  addFriendSub: { marginTop: 2, fontSize: 11.5, color: flColor.gray600 },
 });

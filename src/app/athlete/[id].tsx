@@ -18,8 +18,11 @@ import {
   TimelineRow,
 } from '@/components/forge/profile-sections';
 import { fetchAthleteProfile, rankLabel, type AthleteProfile } from '@/data/athlete-profile-live';
+import { acceptFriendRequest, friendAction, removeFriendship, requestFriend, type FriendState } from '@/data/friends-live';
 import type { Accomplishment, Chapter, Goal, TimelineEntry } from '@/types/legacy';
-import { useQuery } from '@/lib/useQuery';
+import { errorMessage, useQuery } from '@/lib/useQuery';
+import { useToast } from '@/hooks/useCeremony';
+import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 
 /**
@@ -66,11 +69,21 @@ import { flColor, flFont, flRadius } from '@/constants/foundation';
  * NOT ON THIS SURFACE: Featured Legacy Moment (needs FLM event data this read doesn't carry) and Honors
  * (no HonorInstance backend). The Legacy tab remains the rich self surface for both.
  *
- * STILL INERT, HONESTLY: Add Friend, Follow, a one-on-one Challenge, Train With, Invite to Squad, Report
- * and Block. Each needs a system that doesn't exist — a friends graph, a follow graph, duel-context
- * challenges (ours are squad-wide), Train Together, or a moderation policy. They render visibly disabled
- * with one line saying so, rather than as buttons that toast. The design's own logic layer is the same
- * shape: local state and toast stubs.
+ * ADD FRIEND IS LIVE (migration 0073). The button reads the real relationship — Add Friend / Accept
+ * Request / Request Sent / Friends — and acting on it writes the graph. Withdrawing a sent request and
+ * unfriending both go through the same erasure, because a declined or withdrawn request must leave no
+ * trace (there is no DECLINED row to find).
+ *
+ * FOLLOW IS NOT BUILT, AND WILL NOT BE. The design draws a Follow button beside Add Friend, and it is
+ * barred outright — FR-D2 is titled "Why this is NOT a follower system", and FR-D3, Social-System §143 and
+ * Product DNA §10 all prohibit asymmetric or unconsented relationships. The product-owner reasoning:
+ * a follower would receive nothing, since posts carry Friends/Squad audiences and a public audience means
+ * public performance data — the actually-barred item. Communities is the creator/audience surface if one
+ * is ever wanted. This is a deliberate absence, not an unfinished feature.
+ *
+ * STILL INERT, HONESTLY: a one-on-one Challenge (ours are squad-wide, and FRIENDS context needs its own
+ * create flow), Train With, Invite to Squad, Report and Block. Each needs a system that doesn't exist.
+ * They render visibly disabled with one line saying so, rather than as buttons that toast.
  */
 
 const SCROLL_RANGE = 220;
@@ -81,6 +94,11 @@ export default function AthleteProfileScreen() {
   const router = useRouter();
   const { data, loading, error, refetch } = useQuery(() => fetchAthleteProfile(athleteId), [athleteId]);
   const [scrollY] = useState(() => new Animated.Value(0));
+  const { showToast } = useToast();
+  // Optimistic, so the button responds on tap rather than after a round trip; the refetch reconciles.
+  const [pending, setPending] = useState<FriendState | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(false);
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/squads'));
 
@@ -107,6 +125,41 @@ export default function AthleteProfileScreen() {
   // p = 0…1 across the first 220px, exactly as the design drives its hero.
   const p = scrollY.interpolate({ inputRange: [0, SCROLL_RANGE], outputRange: [0, 1], extrapolate: 'clamp' });
   const rank = rankLabel(data.rankFamily, data.rankLevel);
+  const state = pending ?? data.friendship;
+
+  const run = (work: Promise<unknown>, next: FriendState, said: string) => {
+    if (busy) return;
+    setBusy(true);
+    setPending(next);
+    work.then(
+      () => {
+        setBusy(false);
+        showToast(said);
+        refetch();
+      },
+      (e: unknown) => {
+        setBusy(false);
+        setPending(null); // put the button back where it was
+        showToast(errorMessage(e));
+      },
+    );
+  };
+
+  const onFriendAction = () => {
+    switch (state) {
+      case 'none':
+        return run(requestFriend(athleteId).then((r) => setPending(r)), 'outgoing', `Request sent to ${data.firstName}`);
+      case 'incoming':
+        return run(acceptFriendRequest(athleteId), 'friends', `You and ${data.firstName} are friends`);
+      case 'outgoing':
+        // Withdrawing leaves no trace, same call as declining and unfriending.
+        return run(removeFriendship(athleteId), 'none', 'Request withdrawn');
+      case 'friends':
+        return setConfirmRemove(true);
+      default:
+        return undefined;
+    }
+  };
 
   return (
     <View style={styles.root}>
@@ -173,7 +226,7 @@ export default function AthleteProfileScreen() {
           </View>
         </Animated.View>
 
-        {!data.isSelf ? <InertActions /> : null}
+        {!data.isSelf ? <Actions state={state} busy={busy} onPress={onFriendAction} /> : null}
 
         {/* My Standard — core identity, always visible (visibility.ts header). */}
         {data.standard ? (
@@ -188,6 +241,16 @@ export default function AthleteProfileScreen() {
             <StatCell value={data.stats.workouts} label="Workouts" />
             <StatCell value={data.stats.prs} label={data.stats.prs === 1 ? 'PR' : 'PRs'} />
             <StatCell value={data.stats.chapters} label={data.stats.chapters === 1 ? 'Chapter' : 'Chapters'} />
+          </View>
+        ) : null}
+
+        {/* Friend-clearance only. `null` still means not cleared, so a squad-mate sees nothing here. */}
+        {data.transformation && data.transformation.entries > 0 ? (
+          <View style={styles.transformRow}>
+            <SparkGlyph />
+            <Text style={styles.transformText}>
+              {data.transformation.entries} transformation {data.transformation.entries === 1 ? 'entry' : 'entries'} shared with friends
+            </Text>
           </View>
         ) : null}
 
@@ -233,6 +296,20 @@ export default function AthleteProfileScreen() {
         </View>
         <Text style={styles.footerHandle}>{data.handle ? `@${data.handle}` : data.name}</Text>
       </Animated.ScrollView>
+
+      <ConfirmSheet
+        open={confirmRemove}
+        onClose={() => setConfirmRemove(false)}
+        headline={`Remove ${data.firstName} as a friend?`}
+        body={`You'll both stop seeing what the other shares with friends. Nothing is recorded, and either of you can send a request again.`}
+        confirmLabel="Remove Friend"
+        onConfirm={() => {
+          setConfirmRemove(false);
+          run(removeFriendship(athleteId), 'none', `${data.firstName} removed`);
+        }}
+        tone="destructive"
+        cancelLabel="Keep"
+      />
     </View>
   );
 }
@@ -316,16 +393,45 @@ function StatCell({ value, label }: { value: number; label: string }) {
   );
 }
 
-/** Visibly disabled, with the reason stated once. Never a button that only toasts. */
-function InertActions() {
+/**
+ * The friend action is live; the rest are honest inert shells.
+ *
+ * There is no Follow button. The design has one and it is barred (FR-D2/FR-D3/§143/DNA §10) — a deliberate
+ * absence, so it is not rendered as "coming soon" either. Nothing here implies it is on the way.
+ */
+function Actions({ state, busy, onPress }: { state: FriendState; busy: boolean; onPress: () => void }) {
+  const action = friendAction(state);
+  const isPending = action.kind === 'pending';
+  const isFriends = action.kind === 'friends';
+
   return (
     <View style={styles.actionsSection}>
       <View style={styles.actionRow}>
+        <Pressable
+          onPress={onPress}
+          disabled={busy}
+          accessibilityRole="button"
+          accessibilityLabel={action.label}
+          accessibilityState={{ busy }}
+          style={({ pressed }) => [
+            styles.action,
+            styles.actionLive,
+            isPending || isFriends ? styles.actionQuiet : null,
+            pressed || busy ? styles.actionPressed : null,
+          ]}
+        >
+          {action.kind === 'accept' ? <CheckGlyph /> : isFriends ? <FriendsGlyph /> : <AddFriendGlyph />}
+          <Text style={[styles.actionLabel, styles.actionLabelLive]}>{action.label}</Text>
+        </Pressable>
+
         <InertAction glyph={<SwordsGlyph />} label="Challenge" />
-        <InertAction glyph={<AddFriendGlyph />} label="Add Friend" />
-        <InertAction glyph={<FollowGlyph />} label="Follow" />
       </View>
-      <Text style={styles.actionNote}>Friends, following and one-on-one challenges aren’t built yet — competitions run squad-wide for now.</Text>
+      {/* Says what these two are waiting on, and claims nothing about Follow. */}
+      <Text style={styles.actionNote}>
+        {isFriends
+          ? 'One-on-one challenges aren’t built yet — competitions run squad-wide for now.'
+          : 'One-on-one challenges aren’t built yet. Friends can see what each other shares with friends.'}
+      </Text>
     </View>
   );
 }
@@ -349,6 +455,13 @@ function Shell({ onBack, children }: { onBack: () => void; children: ReactNode }
   );
 }
 
+function SparkGlyph({ size = 15, color = flColor.bronze300 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18" />
+    </Svg>
+  );
+}
 function SwordsGlyph() {
   return (
     <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
@@ -364,10 +477,19 @@ function AddFriendGlyph() {
     </Svg>
   );
 }
-function FollowGlyph() {
+function CheckGlyph() {
   return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
-      <Path d="M12 5v14M5 12h14" />
+    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M5 13l4.5 4.5L19 7" />
+    </Svg>
+  );
+}
+function FriendsGlyph() {
+  return (
+    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+      <Circle cx={9} cy={8} r={3.2} />
+      <Path d="M3.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5" />
+      <Path d="M16 6.5a3 3 0 0 1 0 5.6" />
     </Svg>
   );
 }
@@ -407,6 +529,12 @@ const styles = StyleSheet.create({
   action: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 13, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800, opacity: 0.55 },
   actionLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
   actionNote: { fontSize: 11.5, lineHeight: 17, color: flColor.gray600 },
+  actionLive: { opacity: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  actionQuiet: { backgroundColor: flColor.charcoal800, borderColor: flColor.bronzeBorderSubtle },
+  actionPressed: { opacity: 0.8 },
+  actionLabelLive: { color: flColor.bronze300 },
+  transformRow: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 22, marginHorizontal: 24, paddingHorizontal: 14, paddingVertical: 12, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
+  transformText: { flex: 1, fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
 
   standardPad: { paddingTop: 20 },
   section: { marginTop: 40 },

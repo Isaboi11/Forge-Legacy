@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { Clearance } from '@/domain/settings/visibility';
+import type { FriendState } from './friends-live';
 
 /**
  * The athlete profile read (migration 0069) — what one athlete may see of another.
@@ -68,6 +69,8 @@ export interface AthleteProfile {
   joinedAt: string;
   clearance: Clearance;
   isSelf: boolean;
+  /** Where the viewer stands with this athlete (0073). Drives the Add Friend / Accept / Friends button. */
+  friendship: FriendState;
   sharedSquads: string[];
   /** null = the viewer isn't cleared for this section. */
   chapter: ProfileChapter | null;
@@ -75,6 +78,8 @@ export interface AthleteProfile {
   accomplishments: ProfileAccomplishment[] | null;
   stats: ProfileStats | null;
   timeline: TimelineEvent[] | null;
+  /** Reachable only at friend clearance — the `transformation` section defaults to the friends audience. */
+  transformation: { entries: number } | null;
 }
 
 const asClearance = (v: string): Clearance =>
@@ -107,6 +112,9 @@ export async function fetchAthleteProfile(athleteId: string): Promise<AthletePro
     joinedAt: String(d.joined_at),
     clearance: asClearance(String(d.clearance)),
     isSelf: !!d.is_self,
+    friendship: (['self', 'friends', 'outgoing', 'incoming', 'none'] as const).includes(d.friendship as never)
+      ? (d.friendship as FriendState)
+      : 'none',
     sharedSquads: ((d.shared_squads ?? []) as unknown[]).map((s) => String(s)),
 
     chapter: chapterRaw
@@ -162,6 +170,8 @@ export async function fetchAthleteProfile(athleteId: string): Promise<AthletePro
             label: String(t.label),
             at: String(t.at),
           })),
+
+    transformation: d.transformation ? { entries: Number((d.transformation as Record<string, unknown>).entries ?? 0) } : null,
   };
 }
 
