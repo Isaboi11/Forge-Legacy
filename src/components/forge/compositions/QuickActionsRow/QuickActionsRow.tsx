@@ -4,8 +4,12 @@
  *
  * Two utilities, deliberately lighter than the people above: Challenge (bronze-tint,
  * emphasized) + Competitions (subtle, with a count badge). Icons ported 1:1 from the
- * dc SVG paths. Handlers are placeholders (C-2 Create Challenge / Competitions Hub
- * are not built yet); the count is placeholder.
+ * dc SVG paths.
+ *
+ * THE COUNT DEFAULTS TO ZERO, i.e. no badge. It used to default to 2 — a number the dc drew for its
+ * mock and this component inherited as a literal, so every athlete was told they had two live
+ * competitions whether or not they had ever entered one. A badge is a claim; it now only draws when the
+ * caller supplies a real figure.
  */
 
 import React from 'react'
@@ -34,7 +38,7 @@ function TrophyIcon() {
   )
 }
 
-export function QuickActionsRow({ onChallenge, onCompetitions, competitionsCount = 2 }: QuickActionsRowProps) {
+export function QuickActionsRow({ onChallenge, onCompetitions, competitionsCount = 0 }: QuickActionsRowProps) {
   return (
     <View style={styles.row}>
       <Pressable onPress={onChallenge} accessibilityRole="button" accessibilityLabel="Challenge a friend" style={styles.challenge}>

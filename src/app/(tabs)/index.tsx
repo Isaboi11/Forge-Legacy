@@ -23,6 +23,7 @@ import { fetchHomeGym, saveHomeGym } from '@/data/home-gym-live';
 import { fetchActiveChapterGoals } from '@/data/goals-live';
 import { goalSections } from '@/domain/goals/goals';
 import { fetchFriendsFeed } from '@/data/friends-feed-live';
+import { fetchChallengeHub } from '@/data/challenges-live';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { useQuery } from '@/lib/useQuery';
 import { fetchAwaitingChapter } from '@/data/home-live';
@@ -196,6 +197,10 @@ export default function HomeScreen() {
      table, so no athlete can observe another training. The fixture that claimed two squad-mates were
      mid-workout is retired rather than reproduced. */
   const { data: circlePosts } = useQuery(() => fetchFriendsFeed(1), []);
+  /* The Competitions badge, real. It also advances any due challenge lifecycle transitions — there is no
+     scheduler, so a season closes when someone opens a screen that reads it, and Home is the screen
+     opened most. The badge is the cheap part; keeping every squad's competitions honest is the point. */
+  const { data: challengeHub } = useQuery(fetchChallengeHub, []);
   const circleActivity = useMemo(() => {
     const p = (circlePosts ?? []).find((x) => !x.isMine && (x.body ?? '').trim().length > 0);
     if (!p) return null;
@@ -498,6 +503,7 @@ export default function HomeScreen() {
           />
 
           <QuickActionsRow
+            competitionsCount={challengeHub?.active.length ?? 0}
             onChallenge={() => setFriendSheetOpen(true)}
             onCompetitions={() => router.push('/competitions')}
           />
