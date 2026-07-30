@@ -3,6 +3,7 @@ import { clearHomeIntake } from './home-intake';
 import { clearTourStatus, clearUnlockAnnounced } from './tour';
 import { clearScreenPrompts } from './screen-prompts';
 import { clearRestTimerPref } from './rest-timer-pref';
+import { clearSeenPodiums } from './podium-seen';
 
 /**
  * Clear the device-local first-run flags. These live in AsyncStorage (localStorage on web) and are NOT
@@ -21,5 +22,6 @@ export async function resetFirstRunFlags(): Promise<void> {
     clearUnlockAnnounced(),
     clearScreenPrompts(),
     clearRestTimerPref(),
+    clearSeenPodiums(),
   ]);
 }

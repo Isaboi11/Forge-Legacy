@@ -97,6 +97,8 @@ function RootNavigator() {
         <Stack.Screen name="create-challenge" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="challenge/[id]" />
         <Stack.Screen name="challenge-results/[id]" />
+        <Stack.Screen name="podium/[id]" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
+        <Stack.Screen name="hall-of-champions" />
         <Stack.Screen name="squad-post/[id]" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="squad-composer" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="transformation" />

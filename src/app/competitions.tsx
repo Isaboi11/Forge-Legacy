@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -23,6 +23,7 @@ import {
   type PastChallenge,
 } from '@/data/challenges-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
+import { getSeenPodiums, podiumIsFresh } from '@/lib/podium-seen';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 
@@ -72,6 +73,35 @@ export default function CompetitionsScreen() {
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/squads'));
 
   const hub = data ?? { open: [], active: [], history: [], stats: { entered: 0, wins: 0, podiums: 0, favType: null } };
+
+  /**
+   * The podium's entry point. `fetchChallengeHub` advances the lifecycle first, so opening this screen
+   * is the moment a finished season actually completes — which makes it the moment to crown it. A
+   * season that closed within the week and hasn't been played on this device runs its ceremony once,
+   * then lands on the results it belongs to.
+   *
+   * The seen-set is read on the same pass rather than at module scope, so it can't go stale after the
+   * ceremony marks itself played.
+   */
+  const revealed = useRef(false);
+  useEffect(() => {
+    if (revealed.current || !data) return;
+    const fresh = data.history.filter((p) => podiumIsFresh(p.endAt));
+    if (fresh.length === 0) {
+      revealed.current = true;
+      return;
+    }
+    let alive = true;
+    getSeenPodiums().then((seen) => {
+      if (!alive || revealed.current) return;
+      const next = fresh.find((p) => !seen.includes(p.id));
+      revealed.current = true;
+      if (next) router.push({ pathname: '/podium/[id]', params: { id: next.id } });
+    }, () => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [data, router]);
   const inScope = (context: string) => filter === 'All' || context === 'SQUAD';
 
   const open = hub.open.filter((c) => inScope(c.context) && !dismissed[c.id]);

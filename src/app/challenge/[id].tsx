@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
+import { CrownArt } from '@/components/forge/compositions/CrownArt';
+import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import {
   CHALLENGE_TYPES,
+  cancelChallenge,
   fetchChallengeDetail,
   formatScore,
   isGainType,
@@ -19,7 +21,8 @@ import {
   type ChallengeDetail,
   type Standing,
 } from '@/data/challenges-live';
-import { useQuery } from '@/lib/useQuery';
+import { errorMessage, useQuery } from '@/lib/useQuery';
+import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 
 /**
@@ -47,14 +50,11 @@ import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/fou
  * treatment, which is a soft failure marker on a leaderboard. Momentum here is positive-only — "+3 this
  * week" when there's something to say, and nothing at all otherwise. Absence is never annotated.
  *
- * NOT PORTED: the shimmer's second-asset alpha mask (`competition-crown-mask.png`) and the crown's
- * radial dissolve. Both are CSS mask-image + mix-blend-mode: screen, which React Native has no
- * equivalent for. The glint is approximated with a clipped sweeping gradient; the dissolve is carried
- * by the vignette behind the art instead. The mask asset is imported and unused, waiting for a native
- * masking approach.
+ * THE CROWN AND ITS LIGHT SWEEP live in `CrownArt`, which is where the two competition assets and the
+ * reason for choosing between them are documented. The short version: the first pass drew the alpha-less
+ * art PNG (an opaque rectangle) and swept an UNMASKED bar across the whole box, which is not what the
+ * design does at all — its band is clipped to the crown's linework by a second asset. Fixed there.
  */
-
-const CROWN = require('../../../assets/competition/competition-crown.png');
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -63,8 +63,29 @@ export default function ChallengeDetailScreen() {
   const challengeId = String(id ?? '');
   const router = useRouter();
   const { data, loading, error, refetch } = useQuery(() => fetchChallengeDetail(challengeId), [challengeId]);
+  const { showToast } = useToast();
+  const [confirmOff, setConfirmOff] = useState(false);
+  const [callingOff, setCallingOff] = useState(false);
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/competitions'));
+
+  const callOff = () => {
+    if (callingOff) return;
+    setCallingOff(true);
+    cancelChallenge(challengeId).then(
+      () => {
+        setCallingOff(false);
+        setConfirmOff(false);
+        showToast('Competition called off');
+        router.replace('/competitions');
+      },
+      (e: unknown) => {
+        setCallingOff(false);
+        setConfirmOff(false);
+        showToast(errorMessage(e));
+      },
+    );
+  };
 
   if (loading && !data) {
     return (
@@ -109,7 +130,32 @@ export default function ChallengeDetailScreen() {
         <YourStanding challenge={data} />
         <Standings challenge={data} onAthlete={(name) => router.push({ pathname: '/athlete/[id]', params: { id: name } })} />
         <HowItWorks challenge={data} />
+
+        {/* CALL OFF (CS-D5) — the commissioner's only early exit. Deliberately not "end now and crown
+            the leader": a cancelled season produces no winner and no result, so nobody can stop the
+            clock the moment they happen to be ahead. */}
+        {data.isCreator && (data.state === 'ENROLLMENT' || data.state === 'ACTIVE') ? (
+          <Pressable
+            onPress={() => setConfirmOff(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Call off this competition"
+            style={({ pressed }) => [styles.callOffBtn, pressed ? styles.standRowPressed : null]}
+          >
+            <Text style={styles.callOffLabel}>Call Off Competition</Text>
+          </Pressable>
+        ) : null}
       </ScrollView>
+
+      <ConfirmSheet
+        open={confirmOff}
+        onClose={() => setConfirmOff(false)}
+        headline="Call off this competition?"
+        body={`${data.name} ends now with no winner and no result — for anyone. It disappears from the squad rather than being recorded as finished, and nobody's placement is kept. This can't be undone.`}
+        confirmLabel={callingOff ? 'Calling off…' : 'Call It Off'}
+        onConfirm={callOff}
+        tone="destructive"
+        cancelLabel="Keep Competing"
+      />
     </Shell>
   );
 }
@@ -119,7 +165,6 @@ export default function ChallengeDetailScreen() {
 function Hero({ challenge: c }: { challenge: ChallengeDetail }) {
   const [rise] = useState(() => new Animated.Value(0));
   const [ember] = useState(() => new Animated.Value(0));
-  const [glint] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     const entrance = Animated.timing(rise, { toValue: 1, duration: 900, useNativeDriver: true });
@@ -127,15 +172,11 @@ function Hero({ challenge: c }: { challenge: ChallengeDetail }) {
     // 7.5s drift, 2.2s in — the design's ember, on its own unhurried loop.
     const drift = Animated.loop(Animated.sequence([Animated.delay(2200), Animated.timing(ember, { toValue: 1, duration: 7500, useNativeDriver: true }), Animated.timing(ember, { toValue: 0, duration: 0, useNativeDriver: true })]));
     drift.start();
-    // A glint every ~10s rather than a constant shine — the design's stalled timing curve.
-    const sweep = Animated.loop(Animated.sequence([Animated.delay(2000), Animated.timing(glint, { toValue: 1, duration: 2100, useNativeDriver: true }), Animated.delay(7900), Animated.timing(glint, { toValue: 0, duration: 0, useNativeDriver: true })]));
-    sweep.start();
     return () => {
       entrance.stop();
       drift.stop();
-      sweep.stop();
     };
-  }, [rise, ember, glint]);
+  }, [rise, ember]);
 
   const start = new Date(c.startAt).getTime();
   const end = new Date(c.endAt).getTime();
@@ -173,25 +214,9 @@ function Hero({ challenge: c }: { challenge: ChallengeDetail }) {
       {/* the vignette the crown reads against — layered rather than radial, RN has no radial-gradient */}
       <LinearGradient colors={['rgba(6,7,9,0.97)', 'rgba(6,7,9,0.72)', 'transparent'] as const} locations={[0, 0.54, 0.84] as const} start={{ x: 0.5, y: 0.2 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
 
-      <Animated.View
-        style={[
-          styles.crownWrap,
-          {
-            opacity: rise.interpolate({ inputRange: [0, 1], outputRange: [0, 0.34] }),
-            transform: [{ translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }, { scale: rise.interpolate({ inputRange: [0, 1], outputRange: [0.98, 1] }) }],
-          },
-        ]}
-      >
-        <Image source={CROWN} style={styles.crown} contentFit="contain" />
-        <Animated.View
-          style={[
-            styles.glint,
-            { transform: [{ translateX: glint.interpolate({ inputRange: [0, 1], outputRange: [-260, 300] }) }, { rotate: '15deg' }] },
-          ]}
-        >
-          <LinearGradient colors={['transparent', 'rgba(230,202,156,0.5)', 'transparent'] as const} locations={[0, 0.5, 1] as const} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={StyleSheet.absoluteFill} />
-        </Animated.View>
-      </Animated.View>
+      <View style={styles.crownWrap}>
+        <CrownArt opacity={0.34} duration={900} shimmer />
+      </View>
 
       <Animated.View
         style={[
@@ -473,9 +498,7 @@ const styles = StyleSheet.create({
 
   // hero — bleeds past the scroller's padding
   hero: { position: 'relative', marginHorizontal: -16, paddingTop: 14, paddingHorizontal: 24, paddingBottom: 30, overflow: 'hidden' },
-  crownWrap: { position: 'absolute', top: 0, left: 0, right: 0, height: 196, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  crown: { width: 300, height: 196 },
-  glint: { position: 'absolute', top: -40, bottom: -40, width: 90 },
+  crownWrap: { position: 'absolute', top: 0, left: 0, right: 0, alignItems: 'center' },
   ember: {
     position: 'absolute',
     bottom: 70,
@@ -564,6 +587,8 @@ const styles = StyleSheet.create({
 
   finalBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, marginTop: 4, marginBottom: 10, padding: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   finalBtnLabel: { fontSize: 14, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronze300 },
+  callOffBtn: { marginTop: 26, alignItems: 'center', justifyContent: 'center', paddingVertical: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600 },
+  callOffLabel: { fontSize: 13, fontWeight: '600', color: flColor.gray600 },
 
   // how it works
   sectionLabel: { marginTop: 26, marginBottom: 12, marginHorizontal: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },

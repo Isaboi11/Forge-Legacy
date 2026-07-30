@@ -16,6 +16,7 @@ import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
 import { SquadCrest } from '@/components/forge/SquadCrest';
 import { fetchSquadInvite, GOAL_UNITS, fetchSquad, fetchSquadCheckins, uploadCheckinVideo, postCheckin, markCheckinViewed, setSquadGoal, clearSquadGoal, deleteSquad, removeSquadMember, type SquadCheckin, type SquadMemberView, type SquadGoalMetric } from '@/data/squad-live';
+import { CHALLENGE_TYPES, daysLeft, fetchSquadActiveChallenge, fetchSquadHall, formatScore, placeLabel } from '@/data/challenges-live';
 import { detailFor, ensureWeeklyRecap, fetchSquadFeed, fmtDuration, fmtVolume, leadFor, recapSummaryLine, timeAgo, toggleSquadReaction, type SquadFeedPost, type SquadPostType } from '@/data/squad-feed-live';
 import { FlameIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { useQuery } from '@/lib/useQuery';
@@ -83,6 +84,11 @@ export default function SquadDetailRoute() {
   // Whether YOU may hand out this squad's code — owner always, members only if the owner opened it
   // up (0056). Resolved server-side; the Options row follows it rather than assuming.
   const { data: inviteInfo } = useQuery(() => fetchSquadInvite(squadId), [squadId]);
+  // Its own tolerant read: a squad with no competition — or an unapplied migration — must not take the
+  // whole screen down, so the section is simply absent rather than the page erroring.
+  const { data: liveChallenge } = useQuery(() => fetchSquadActiveChallenge(squadId).catch(() => null), [squadId]);
+  const { data: hall } = useQuery(() => fetchSquadHall(squadId).catch(() => null), [squadId]);
+  const titles = hall?.entries.length ?? 0;
   const canInvite = inviteInfo?.canInvite ?? false;
 
   const [checkinViewer, setCheckinViewer] = useState<SquadCheckin | null>(null);
@@ -415,22 +421,122 @@ export default function SquadDetailRoute() {
           ) : null}
         </View>
 
-        {/* COMPETITIONS (C-1) — a Challenge surface, entered deliberately (CS-D22 / SA-D2). */}
-        <Pressable
-          onPress={() => router.push({ pathname: '/competitions', params: { id: squad.id } })}
-          accessibilityRole="button"
-          accessibilityLabel="Competitions"
-          style={({ pressed }) => [styles.recordsRow, pressed ? styles.recordsRowPressed : null]}
-        >
-          <View style={styles.recordsIcon}>
-            <SwordsIcon />
-          </View>
-          <View style={styles.recordsBody}>
-            <Text style={styles.recordsTitle}>Competitions</Text>
-            <Text style={styles.recordsSub}>What we&apos;re competing in, and what we&apos;ve won.</Text>
-          </View>
-          <ChevronRight />
-        </Pressable>
+        {/* ACTIVE COMPETITION — the design's inline standings row (S-2 v1.6 / CS-D2 narrowed by v1.5). */}
+        {liveChallenge ? (
+          <>
+            <View style={styles.compHead}>
+              <Text style={styles.feedLabel}>Active Competition</Text>
+              <Pressable
+                onPress={() => router.push({ pathname: '/competitions', params: { id: squad.id } })}
+                accessibilityRole="button"
+                accessibilityLabel="View all competitions"
+                hitSlop={8}
+                style={styles.viewAll}
+              >
+                <Text style={styles.viewAllText}>View All</Text>
+                <ChevronRight color={flColor.bronze400} size={13} />
+              </Pressable>
+            </View>
+
+            <Pressable
+              onPress={() => router.push({ pathname: '/challenge/[id]', params: { id: liveChallenge.id } })}
+              accessibilityRole="button"
+              accessibilityLabel={`${liveChallenge.name}, ranked ${placeLabel(liveChallenge.myPlace)} of ${liveChallenge.roster}`}
+              style={({ pressed }) => [styles.compCard, pressed ? styles.recordsRowPressed : null]}
+            >
+              <LinearGradient colors={['rgba(32,26,19,0.5)', 'rgba(15,13,10,0.45)'] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+
+              <View style={styles.compTop}>
+                <View style={styles.compEmblem}>
+                  <SwordsIcon />
+                </View>
+                <View style={styles.compIdentity}>
+                  <Text style={styles.compEyebrow}>Current Competition</Text>
+                  <Text style={styles.compName} numberOfLines={1}>
+                    {liveChallenge.name}
+                  </Text>
+                </View>
+
+                <View style={styles.compStat}>
+                  <Text style={styles.compStatLabel}>Rank</Text>
+                  <Text style={styles.compRank}>{liveChallenge.myPlace}</Text>
+                  <Text style={styles.compStatLabel}>of {liveChallenge.roster}</Text>
+                </View>
+
+                {/* The design hardcodes "WORKOUTS" here; the unit comes from the metric. */}
+                <View style={styles.compStat}>
+                  <Text style={styles.compScore}>{formatScore(liveChallenge.type, liveChallenge.myScore)}</Text>
+                  <Text style={styles.compStatLabel} numberOfLines={1}>
+                    {CHALLENGE_TYPES[liveChallenge.type].unit}
+                  </Text>
+                </View>
+
+                <ChevronRight color={flColor.bronze400} />
+              </View>
+
+              <View style={styles.compFoot}>
+                {/* Positive-framed (CS-D3): a margin held, or ground to make up — never a deficit. */}
+                <View style={styles.compGap}>
+                  <ArrowUpIcon />
+                  <Text style={styles.compGapText} numberOfLines={1}>
+                    {liveChallenge.myPlace === 1
+                      ? 'Holding the lead'
+                      : `${formatScore(liveChallenge.type, Math.max(0, liveChallenge.leaderScore - liveChallenge.myScore))} ${CHALLENGE_TYPES[liveChallenge.type].unit} to the lead`}
+                  </Text>
+                </View>
+                <Text style={styles.compEnds}>
+                  {daysLeft(liveChallenge.endAt) === 0 ? 'Final day' : `${daysLeft(liveChallenge.endAt)} days left`}
+                </Text>
+              </View>
+            </Pressable>
+          </>
+        ) : null}
+
+        {/* HALL OF CHAMPIONS (C-5) — sits under the active competition, exactly as the design orders it.
+            Absent until there is history: a row reading "0 titles" is the shame copy spec §9 forbids. */}
+        {titles > 0 ? (
+          <Pressable
+            onPress={() => router.push({ pathname: '/hall-of-champions', params: { id: squad.id } })}
+            accessibilityRole="button"
+            accessibilityLabel="Hall of Champions"
+            style={({ pressed }) => [styles.hallRow, pressed ? styles.recordsRowPressed : null]}
+          >
+            <LinearGradient colors={['rgba(191,143,79,0.07)', 'transparent'] as const} locations={[0, 0.58] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+            <View style={styles.hallCrest}>
+              <LinearGradient colors={flGradient.bronzeMetallic.colors} locations={flGradient.bronzeMetallic.locations} start={flGradient.bronzeMetallic.start} end={flGradient.bronzeMetallic.end} style={StyleSheet.absoluteFill} />
+              <HallCrownIcon />
+            </View>
+            <View style={styles.recordsBody}>
+              <Text style={styles.recordsTitle}>Hall of Champions</Text>
+              <Text style={styles.recordsSub}>
+                {titles} {titles === 1 ? 'title' : 'titles'} won
+                {hall?.foundedAt ? ` · since ${new Date(hall.foundedAt).getFullYear()}` : ''}
+              </Text>
+            </View>
+            <ChevronRight />
+          </Pressable>
+        ) : null}
+
+        {/* COMPETITIONS (C-1) — the way in when nothing is running. With a live competition the card's
+            own "View All" is the entry, which is why the design has no such row: it assumes a squad
+            always has a season going. This is that assumption's missing branch. */}
+        {liveChallenge ? null : (
+          <Pressable
+            onPress={() => router.push({ pathname: '/competitions', params: { id: squad.id } })}
+            accessibilityRole="button"
+            accessibilityLabel="Competitions"
+            style={({ pressed }) => [styles.recordsRow, pressed ? styles.recordsRowPressed : null]}
+          >
+            <View style={styles.recordsIcon}>
+              <SwordsIcon />
+            </View>
+            <View style={styles.recordsBody}>
+              <Text style={styles.recordsTitle}>Competitions</Text>
+              <Text style={styles.recordsSub}>Start one, or see what this squad has won.</Text>
+            </View>
+            <ChevronRight />
+          </Pressable>
+        )}
 
         {/* SQUAD RECORDS — content, not administration, so it gets a visible home rather than a menu row. */}
         <Pressable
@@ -884,10 +990,24 @@ function GearIcon() {
     </Svg>
   );
 }
-function ChevronRight() {
+function ChevronRight({ color = flColor.gray600, size = 17 }: { color?: string; size?: number }) {
   return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
       <Path d="M9 5l7 7-7 7" />
+    </Svg>
+  );
+}
+function HallCrownIcon() {
+  return (
+    <Svg width={21} height={21} viewBox="0 0 24 24" fill="#1A1206">
+      <Path d="M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z" />
+    </Svg>
+  );
+}
+function ArrowUpIcon({ color = flColor.bronze400, size = 12 }: { color?: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M12 19V5M6 11l6-6 6 6" />
     </Svg>
   );
 }
@@ -1206,6 +1326,25 @@ const styles = StyleSheet.create({
   feedSection: { paddingHorizontal: 20, marginTop: 10 },
   feedHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 },
   feedLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  compHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 28, marginBottom: 12, marginHorizontal: 2 },
+  viewAll: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  viewAllText: { fontSize: 12, fontWeight: '500', color: flColor.bronze400 },
+  compCard: { position: 'relative', overflow: 'hidden', borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.surfaceRecessed, boxShadow: flShadow.card },
+  compTop: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
+  compEmblem: { width: 46, height: 46, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.surfaceRecessed, boxShadow: flShadow.glowSubtle },
+  compIdentity: { flex: 1, minWidth: 0, gap: 4 },
+  compEyebrow: { fontSize: 9, fontWeight: '600', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.bronze400 },
+  compName: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.cream100 },
+  compStat: { flexShrink: 0, alignItems: 'center', gap: 2, paddingLeft: 13, borderLeftWidth: 1, borderLeftColor: flColor.charcoal600 },
+  compStatLabel: { fontSize: 8, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray600 },
+  compRank: { fontFamily: flFont.display, fontSize: 20, fontWeight: '700', letterSpacing: -0.3, color: flColor.bronze300 },
+  compScore: { fontFamily: flFont.display, fontSize: 20, fontWeight: '700', letterSpacing: -0.3, color: flColor.cream100 },
+  compFoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, paddingHorizontal: 15, paddingVertical: 9, borderTopWidth: 1, borderTopColor: flColor.bronzeBorderSubtle, backgroundColor: 'rgba(0,0,0,0.18)' },
+  compGap: { flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  compGapText: { flexShrink: 1, fontSize: 10.5, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronze400 },
+  compEnds: { flexShrink: 0, fontSize: 10.5, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray600 },
+  hallRow: { position: 'relative', overflow: 'hidden', flexDirection: 'row', alignItems: 'center', gap: 13, marginTop: 12, paddingHorizontal: 15, paddingVertical: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card },
+  hallCrest: { width: 40, height: 40, flexShrink: 0, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: flRadius.md },
   newPostBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: '#3D2F1A', boxShadow: flShadow.glowSubtle },
   newPostText: { fontSize: 11.5, fontWeight: '700', letterSpacing: 0.3, color: flColor.bronze300 },
   feedList: { gap: 10 },

@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
+import { CrownArt } from '@/components/forge/compositions/CrownArt';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
@@ -61,8 +61,6 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
  *
  * ALSO DEFERRED: the "Hall of Champions ›" link (§7) — C-5 isn't built.
  */
-
-const CROWN = require('../../../assets/competition/competition-crown.png');
 
 /** What the field's aggregate is called, per metric. The design hardcoded "Workouts logged". */
 const TOTAL_LABEL: Record<ChallengeType, string> = {
@@ -133,16 +131,12 @@ export default function ChallengeResultsScreen() {
 
 function Hero({ result: r }: { result: ChallengeResultsDetail }) {
   const [rise] = useState(() => new Animated.Value(0));
-  const [crown] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
-    const anim = Animated.parallel([
-      Animated.timing(crown, { toValue: 1, duration: 1000, useNativeDriver: true }),
-      Animated.timing(rise, { toValue: 1, duration: 460, useNativeDriver: true }),
-    ]);
+    const anim = Animated.timing(rise, { toValue: 1, duration: 460, useNativeDriver: true });
     anim.start();
     return () => anim.stop();
-  }, [rise, crown]);
+  }, [rise]);
 
   const closed = new Date(r.endAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
@@ -150,18 +144,9 @@ function Hero({ result: r }: { result: ChallengeResultsDetail }) {
     <View style={styles.hero}>
       <LinearGradient colors={['rgba(6,7,9,0.97)', 'rgba(6,7,9,0.72)', 'transparent'] as const} locations={[0, 0.54, 0.84] as const} start={{ x: 0.5, y: 0.1 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
 
-      <Animated.View
-        style={[
-          styles.crownWrap,
-          {
-            // The design settles the crown at 0.52 — fully revealed, unlike C-3's 0.34 emergence.
-            opacity: crown.interpolate({ inputRange: [0, 1], outputRange: [0, 0.52] }),
-            transform: [{ translateY: crown.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }, { scale: crown.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1] }) }],
-          },
-        ]}
-      >
-        <Image source={CROWN} style={styles.crown} contentFit="contain" />
-      </Animated.View>
+      <View style={styles.crownWrap}>
+        <CrownArt opacity={0.52} duration={1000} shimmer={false} />
+      </View>
 
       <Animated.View
         style={[
@@ -597,8 +582,7 @@ const styles = StyleSheet.create({
 
   // hero
   hero: { position: 'relative', marginHorizontal: -16, paddingTop: 14, paddingHorizontal: 24, paddingBottom: 28, overflow: 'hidden' },
-  crownWrap: { position: 'absolute', top: 6, left: 0, right: 0, height: 200, alignItems: 'center' },
-  crown: { width: 308, height: 200 },
+  crownWrap: { position: 'absolute', top: 6, left: 0, right: 0, alignItems: 'center' },
   heroContent: { paddingTop: 120, alignItems: 'center' },
   closedPill: { paddingHorizontal: 14, paddingVertical: 5, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   closedPillText: { fontSize: 10, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze300 },

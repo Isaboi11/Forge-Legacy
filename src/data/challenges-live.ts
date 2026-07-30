@@ -563,6 +563,120 @@ export function seasonDays(startAt: string, endAt: string): number {
   return Number.isFinite(ms) ? Math.max(1, Math.round(ms / (24 * 60 * 60 * 1000))) : 1;
 }
 
+// ── C-5 Hall of Champions ────────────────────────────────────────────────────
+
+export interface HallChampion {
+  userId: string;
+  name: string;
+  avatarUrl: string | null;
+  isSelf: boolean;
+}
+
+export interface HallEntry {
+  id: string;
+  name: string;
+  type: ChallengeType;
+  metricKey: string | null;
+  endAt: string;
+  /** How many competed. Deliberately not a runner-up list — spec §6 names winners only. */
+  field: number;
+  score: number;
+  champions: HallChampion[];
+  /** Consecutive titles this champion had won, inclusive, at this point in the squad's history. */
+  streak: number;
+}
+
+export interface SquadHall {
+  squadId: string;
+  squadName: string | null;
+  foundedAt: string | null;
+  entries: HallEntry[];
+}
+
+/**
+ * Consecutive-title runs, computed from the ordered history rather than stored.
+ *
+ * Walked oldest → newest so a run counts titles already held; co-won seasons continue every co-champion's
+ * run. Only ever reported as a positive streak on a winner (CC-D4), never as anyone's drought.
+ */
+function withStreaks(entries: HallEntry[]): HallEntry[] {
+  const run = new Map<string, number>();
+  const oldestFirst = [...entries].reverse();
+  const streaks = oldestFirst.map((e) => {
+    const ids = e.champions.map((c) => c.userId);
+    const next = new Map<string, number>();
+    for (const id of ids) next.set(id, (run.get(id) ?? 0) + 1);
+    run.clear();
+    for (const [id, n] of next) run.set(id, n);
+    return Math.max(1, ...ids.map((id) => next.get(id) ?? 1));
+  });
+  return oldestFirst.map((e, i) => ({ ...e, streak: streaks[i] })).reverse();
+}
+
+/** Every finished competition this squad has run, newest first. Null when you can't see this squad. */
+export async function fetchSquadHall(squadId: string): Promise<SquadHall | null> {
+  const { data, error } = await supabase.rpc('squad_hall_of_champions', { p_squad: squadId });
+  if (error) {
+    if ((error as { code?: string }).code === 'PGRST202') throw new Error('The Hall of Champions isn’t available yet — migration 0068 hasn’t been applied.');
+    throw error;
+  }
+  if (!data) return null;
+  const d = data as Record<string, unknown>;
+  const entries = ((d.entries ?? []) as Record<string, unknown>[]).map((r) => ({
+    id: String(r.id),
+    name: String(r.name),
+    type: asType(String(r.type)),
+    metricKey: (r.metric_key as string) ?? null,
+    endAt: String(r.end_at),
+    field: Number(r.field ?? 0),
+    score: Number(r.score ?? 0),
+    champions: ((r.champions ?? []) as Record<string, unknown>[]).map((c) => ({
+      userId: String(c.user_id),
+      name: String(c.name),
+      avatarUrl: (c.avatar_url as string) ?? null,
+      isSelf: !!c.is_self,
+    })),
+    streak: 1,
+  }));
+  return {
+    squadId: String(d.squad_id),
+    squadName: (d.squad_name as string) ?? null,
+    foundedAt: (d.founded_at as string) ?? null,
+    entries: withStreaks(entries),
+  };
+}
+
+/**
+ * The squad's own live competition (S-2's "Active Competition" section).
+ *
+ * Reuses `challenge_hub` rather than adding a read: the hub already returns every active challenge I'm
+ * in with my place and score, so filtering it by squad is free — and calling it here means opening a
+ * squad also advances any season that has just ended, the same lazy lifecycle the hub relies on.
+ *
+ * Returns the one ending soonest, which is the one with something at stake. Null is the ordinary case.
+ */
+export async function fetchSquadActiveChallenge(squadId: string): Promise<ActiveChallenge | null> {
+  const hub = await fetchChallengeHub();
+  const mine = hub.active.filter((c) => c.squadId === squadId);
+  if (mine.length === 0) return null;
+  return mine.reduce((a, b) => (new Date(a.endAt) <= new Date(b.endAt) ? a : b));
+}
+
+/**
+ * Call off a competition before it closes (CS-D5). Creator or squad owner only.
+ *
+ * This is NOT an early finish with a winner — CS-D5 r4 gives a cancelled challenge no result, no winner
+ * and no honor. Ending early WITH a crown would let whoever is ahead stop the clock, so the only honest
+ * early exit is the one where the season didn't happen.
+ */
+export async function cancelChallenge(challengeId: string): Promise<void> {
+  const { error } = await supabase.rpc('cancel_challenge', { p_challenge: challengeId });
+  if (error) {
+    if ((error as { code?: string }).code === 'PGRST202') throw new Error('Calling off a competition isn’t available yet — migration 0067 hasn’t been applied.');
+    throw error;
+  }
+}
+
 /** Opt in. No auto-enrollment (CS-D1) — this is only ever the athlete adding themselves. */
 export async function joinChallenge(challengeId: string): Promise<void> {
   const {
