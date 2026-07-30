@@ -67,7 +67,7 @@ const PAGE = 12;
 type Group = 'All' | 'Squads' | 'Friends' | 'Communities';
 type Result = 'All' | 'Champion' | 'Podium' | 'Completed';
 
-const GROUPS: Group[] = ['All', 'Squads', 'Friends', 'Communities'];
+const ALL_GROUPS: Group[] = ['All', 'Squads', 'Friends', 'Communities'];
 const RESULTS: Result[] = ['All', 'Champion', 'Podium', 'Completed'];
 
 const CONTEXT_OF: Record<Group, string | null> = {
@@ -99,6 +99,20 @@ export default function CompetitionHistoryScreen() {
 
   // Memoized: `?? []` would mint a fresh array every render and defeat both memos below.
   const all = useMemo(() => data?.history ?? [], [data]);
+
+  /**
+   * Group chips are built from the contexts actually present, for the same reason the type chips are: a
+   * chip that can only ever return "No matches" is worse than no chip. Friends and Communities have no
+   * backend, so a squads-only athlete sees All - Squads, matching the C-1 hub's rail. Both appear on
+   * their own the moment such a challenge exists, with nothing to change here.
+   */
+  const groupChips = useMemo(() => {
+    const present = new Set(all.map((p) => p.context));
+    return ALL_GROUPS.filter((g) => {
+      const ctx = CONTEXT_OF[g];
+      return ctx === null || present.has(ctx as PastChallenge['context']);
+    });
+  }, [all]);
 
   // Chips reflect what the athlete actually has, so a new metric can never be unreachable by filter.
   const typesPresent = useMemo(() => {
@@ -178,7 +192,7 @@ export default function CompetitionHistoryScreen() {
           ) : null}
         </View>
 
-        <ChipRow label="Group" items={GROUPS} current={group} onPick={reset(setGroup)} />
+        {groupChips.length > 1 ? <ChipRow label="Group" items={groupChips} current={group} onPick={reset(setGroup)} /> : null}
         {typesPresent.length > 1 ? (
           <ChipRow
             label="Type"
