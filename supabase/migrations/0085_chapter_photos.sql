@@ -229,7 +229,11 @@ begin
                  when p.taken_on = c.start_date then 'Chapter opened'
                  when c.sealed_at is not null and p.taken_on = c.sealed_at::date then 'Chapter sealed'
                  else (
-                   select 'PR · ' || pr.exercise || ' ' || trim(to_char(pr.load_value, 'FM999999.9'))
+                   -- `exercise` is a catalog slug, so it is spoken rather than printed raw, and the load
+                   -- keeps a half-plate without growing a ".0": FM drops trailing fraction zeros and the
+                   -- rtrim removes the bare decimal point it leaves behind. 405 → "405", 227.5 → "227.5".
+                   select 'PR · ' || initcap(replace(pr.exercise, '-', ' ')) || ' '
+                          || rtrim(to_char(pr.load_value, 'FM999999.99'), '.')
                      from public.personal_records pr
                     where pr.athlete_id = v_uid
                       and pr.achieved_on = p.taken_on
