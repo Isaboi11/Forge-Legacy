@@ -4,7 +4,7 @@ import type { ActiveSession } from './types';
 
 export interface SaveResult {
   workoutId: string;
-  prs: { exercise: string; weight: number; reps: number }[];
+  prs: { exercise: string; weight: number; reps: number; catalogKey?: string | null }[];
   volume: number;
   sets: number;
 }

@@ -43,6 +43,8 @@ export interface DetectedPR {
   exercise: string;
   weight: number;
   reps: number;
+  /** Exercise catalog id, so honors match the exercise rather than its display name (0078). */
+  catalogKey?: string | null;
 }
 
 /**
@@ -60,7 +62,9 @@ export function detectPRs(session: ActiveSession, currentBestE1rm: Record<string
       if (!best || est > best.est) best = { weight: s.weight, reps, est };
     }
     if (best && best.est > (currentBestE1rm[ex.name] ?? 0)) {
-      prs.push({ exercise: ex.name, weight: best.weight, reps: best.reps });
+      // catalogKey rides along so honors can match the exercise itself rather than its display name
+      // (0078). Optional end to end: an exercise without one still records, just unkeyed.
+      prs.push({ exercise: ex.name, weight: best.weight, reps: best.reps, catalogKey: ex.catalogKey ?? null });
     }
   }
   return prs;

@@ -10,7 +10,7 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { useTour } from '@/hooks/useTour';
-import { fetchHonors, type EarnedHonor } from '@/data/honors-live';
+import { claimEarnedHonors, fetchHonors, type EarnedHonor } from '@/data/honors-live';
 import { HONOR_CATEGORIES, categoryGlyph, categoryMeta, honorMeta } from '@/domain/honor/catalog';
 import { HonorMedallion } from '@/components/honor/HonorMedallion';
 import { HonorGlyph } from '@/components/honor/HonorGlyph';
@@ -42,7 +42,16 @@ export default function HonorsScreen() {
   const router = useRouter();
   const { showToast } = useToast();
   const { resumeTour } = useTour();
-  const { data: honors, error, refetch } = useQuery(fetchHonors, []);
+  /**
+   * Claim anything already earned before reading. Honors evaluate on workout save, so a threshold added to
+   * the catalog after this athlete passed it would sit unawarded until they happened to train again —
+   * you'd earn "100 Workouts Logged" by logging your 101st. Silent and idempotent, so opening this screen
+   * is safe to repeat and never back-dates a timeline event.
+   */
+  const { data: honors, error, refetch } = useQuery(
+    () => claimEarnedHonors().catch(() => 0).then(fetchHonors),
+    [],
+  );
   const [selected, setSelected] = useState<EarnedHonor | null>(null);
 
   // The "view honor → then tutorial" hand-off: if the tour was deferred by "View Honor", resume it as the

@@ -59,3 +59,61 @@ export async function fetchHonors(): Promise<EarnedHonor[]> {
     date: r.date_earned as string,
   }));
 }
+
+// ── The catalog (migration 0077) ─────────────────────────────────────────────
+
+export interface CatalogHonor {
+  slug: string;
+  name: string;
+  category: string;
+  metric: string;
+  threshold: number;
+  /** 'account' = once ever; 'chapter' = once per chapter. */
+  scope: 'account' | 'chapter';
+}
+
+/**
+ * Every honor that CAN be earned, whether or not this athlete has. Reference data, world-readable —
+ * the catalog surfaces need to show a locked honor alongside an earned one, which is impossible from
+ * `honor_instances` alone (it only ever holds what somebody already has).
+ */
+export async function fetchHonorCatalog(): Promise<CatalogHonor[]> {
+  const { data, error } = await supabase
+    .from('honor_catalog')
+    .select('honor_type, display_name, category, metric, threshold, scope')
+    .order('sort_order', { ascending: true });
+  if (error) {
+    if ((error as { code?: string }).code === 'PGRST205') return []; // table not migrated yet
+    throw error;
+  }
+  return (data ?? []).map((r) => ({
+    slug: r.honor_type as string,
+    name: r.display_name as string,
+    category: r.category as string,
+    metric: r.metric as string,
+    threshold: Number(r.threshold),
+    scope: (r.scope === 'chapter' ? 'chapter' : 'account') as 'account' | 'chapter',
+  }));
+}
+
+/**
+ * Award anything already earned but never granted.
+ *
+ * Honors are evaluated when a workout is saved, so every threshold added to the catalog after an athlete
+ * passed it would otherwise sit unawarded until they happened to train again — they would have to earn
+ * "100 Workouts Logged" by logging their 101st. This closes that gap on demand.
+ *
+ * Idempotent (grant-once is enforced by the unique indexes) and SILENT: it runs with `source = 'import'`,
+ * so no timeline event is written. The moment those honors were earned has already passed, and stamping
+ * them with today's date would be a small lie in a permanent record.
+ *
+ * Returns how many were newly granted, so a caller can decide whether it's worth mentioning.
+ */
+export async function claimEarnedHonors(): Promise<number> {
+  const { data, error } = await supabase.rpc('claim_earned_honors');
+  if (error) {
+    if ((error as { code?: string }).code === 'PGRST202') return 0; // migration 0077 not applied
+    throw error;
+  }
+  return Array.isArray(data) ? data.length : 0;
+}

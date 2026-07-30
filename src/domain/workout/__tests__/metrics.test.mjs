@@ -38,9 +38,11 @@ test('detectPRs — best done set by e1rm vs current best', () => {
   // Back Squat best done = 315x5 (e1rm ~367.5); current best 315x3 (e1rm 346.5) → PR
   // Deadlift best done = 405x3 (e1rm 445.5); current best 0 → PR
   const prs = detectPRs(session, { 'Back Squat': e1rm(315, 3), Deadlift: 0 });
+  // catalogKey rides along so honors can match the exercise itself rather than its display name (0078).
+  // These fixture exercises carry none, so it's null — which is exactly what a hand-entered lift records.
   assert.deepEqual(prs, [
-    { exercise: 'Back Squat', weight: 315, reps: 5 },
-    { exercise: 'Deadlift', weight: 405, reps: 3 },
+    { exercise: 'Back Squat', weight: 315, reps: 5, catalogKey: null },
+    { exercise: 'Deadlift', weight: 405, reps: 3, catalogKey: null },
   ]);
 });
 
