@@ -47,8 +47,10 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
  *     misleading. Every athlete is listed.
  *   · No manufactured loser (CC-D3 / §5). The design's two-athlete case labels your row "Lost the duel".
  *     Placements are stated as placements: "2nd of 2".
- *   · No streak comparison (§6.3, Firewall). The design's "Longest Streak" card ranks the roster by
- *     consecutive training days, which §6.3 names specifically as the thing C-4 must not surface. Gone.
+ *   · (Longest Streak was withheld under §6.3's Firewall bar, then RESTORED by a PD-7 ruling — see
+ *     `Challenge-Architecture-Amendment-007`. It is computed from the season's own window: the longest run
+ *     of consecutive days with at least one session, in the challenge's timezone. An earlier note claimed
+ *     streaks were untrackable; that holds for an ALL-TIME squad record, not for a bounded season.)
  *   · No fabricated statistics. "PRs set" was `3 + hash(name) % 16`; "Honors earned" was `min(3, field)`.
  *     PRs are counted for real. The honors tile is replaced with athlete-days, which can be counted.
  *
@@ -397,9 +399,8 @@ function StandingRow({ standing: s, type, unit, onPress }: { standing: FinalStan
 }
 
 /**
- * Derived badges (§6.1 / CC-D4) — computed at read time, positive only, and absent when unearned.
- * The design's third card, "Longest Streak", is not here: §6.3 forbids a squad-surface streak
- * comparison outright.
+ * Derived badges (§6.1 / CC-D4) — computed at read time, positive only, and absent when unearned. All
+ * three of the design's Season Moments, Longest Streak included (CA7-D2, PD-7).
  */
 function Recognition({ result: r }: { result: ChallengeResultsDetail }) {
   if (r.badges.length === 0) return null;
@@ -424,22 +425,36 @@ function BadgeRow({ badge: b }: { badge: ChallengeBadge }) {
     return () => anim.stop();
   }, [seal]);
 
-  const consistent = b.kind === 'MOST_CONSISTENT';
+  const title = b.kind === 'MOST_CONSISTENT' ? 'Most Consistent' : b.kind === 'LONGEST_STREAK' ? 'Longest Streak' : 'Biggest Climb';
+  const detail =
+    b.kind === 'MOST_CONSISTENT'
+      ? `${b.value} days trained`
+      : b.kind === 'LONGEST_STREAK'
+        ? `${b.value} consecutive days`
+        : `Up ${b.value} ${b.value === 1 ? 'place' : 'places'} from halfway`;
   return (
     <View style={styles.badgeRow}>
       <Animated.View style={[styles.badgeIcon, { opacity: seal, transform: [{ scale: seal.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) }] }]}>
-        {consistent ? <ShieldGlyph size={18} /> : <ArrowUpGlyph size={18} />}
+        {b.kind === 'MOST_CONSISTENT' ? <ShieldGlyph size={18} /> : b.kind === 'LONGEST_STREAK' ? <FlameGlyph size={18} /> : <ArrowUpGlyph size={18} />}
       </Animated.View>
       <View style={styles.badgeBody}>
-        <Text style={styles.badgeTitle}>{consistent ? 'Most Consistent' : 'Biggest Climb'}</Text>
+        <Text style={styles.badgeTitle}>{title}</Text>
         <Text style={styles.badgeWho} numberOfLines={1}>
           {b.name}
         </Text>
       </View>
       <Text style={styles.badgeDetail} numberOfLines={2}>
-        {consistent ? `${b.value} days trained` : `Up ${b.value} ${b.value === 1 ? 'place' : 'places'} from halfway`}
+        {detail}
       </Text>
     </View>
+  );
+}
+
+function FlameGlyph({ size = 18, color = flColor.bronze300 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z" />
+    </Svg>
   );
 }
 

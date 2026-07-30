@@ -120,7 +120,7 @@ Entry: from C-1 ("View All" on the Current Champions preview); optionally from a
 
 - Most recent **`ChallengeResult`** per `ChallengeType` within `squadId` (the Defending Champion projection, CS-D16/D20).
 - Winner(s) from `Challenge.winnerAthleteIds`; crowning challenge name from `Challenge`.
-- No score read (recognition only).
+- ~~No score read (recognition only).~~ **STRUCK by CA6-D1 (`Challenge-Architecture-Amendment-006-Current-Champions-Standings.md`, LOCKED 2026-07-29, PD-7 ruling).** C-7 reads the winning score per title AND the full frozen standings of the season that awarded it. No new data is disclosed: the same viewer can already read all of it on C-3/C-4 behind the same roster gate, so this moved WHERE standings appear, not WHO may see them.
 
 ---
 
@@ -135,7 +135,7 @@ Entry: from C-1 ("View All" on the Current Champions preview); optionally from a
 
 - [ ] C-7 is a Challenge surface; full champion list with crowning-challenge context lives here, never on S-1/S-2 member list/Limited Profile/check-ins (CS-D22).
 - [ ] Squad-scoped query + membership gate.
-- [ ] Recognition only (name + category + challenge) — **no scores, no ranks, no leaderboard** rendered here (those stay on C-3/C-4).
+- [ ] Recognition only (name + category + challenge) — **no scores, no ranks, no leaderboard** rendered here (those stay on C-3/C-4).~~ — **STRUCK by CA6-D1 (`Challenge-Architecture-Amendment-006-Current-Champions-Standings.md`, PD-7).** The Firewall itself is unweakened: C-7 remains squad-scoped and none of this is echoed to S-1/S-2/Limited Profile/check-ins.
 - [ ] Positive only; no "former champion dethroned" framing (CC-D3).
 
 ---
@@ -164,7 +164,7 @@ Portrait only; navigation-stack; Tab Bar visible. Champion tiles ≥ 64dp, tap t
 ## Validation Checklist
 - [ ] One tile per shipping category (Consistency/Volume/Max Lift/Duration/PR); no XP tile (deferred)
 - [ ] Holder = most-recent winner of that type; co-champions on ties; tile → C-4
-- [ ] Recognition only — no scores/ranks/leaderboard on C-7
+- [x] ~~Recognition only — no scores/ranks/leaderboard on C-7~~ — **STRUCK by CA6-D1 (PD-7).** Tiles show the winning score; a tile opens that title’s standings sheet, which carries a "See Full Result" action into C-4.
 - [ ] Empty category tiles absent; full-empty state invitational
 - [ ] Departed champion retained until superseded
 - [ ] Squad-scoped, read-only for all

@@ -65,7 +65,7 @@ Navigation-stack screen entered from C-1 (or C-4). Top App Bar: back + title. Ta
 - Chronological, **most recent first**, grouped by **year** (lightweight label). No type filters in MVP.
 
 ### 3.3 Positive-only
-- Only winners are named. No "runner-up," no per-challenge loser, no "X never won" (CC-D3).
+- ~~Only winners are named. No "runner-up," no per-challenge loser, no "X never won" (CC-D3).~~ **AMENDED by CA7-D1 (`Challenge-Architecture-Amendment-007-Runners-Up-And-Streak.md`, PD-7 ruling).** Each card names 2nd and 3rd in a podium strip, bounded at the top three so no card ever shows a last place. "X never won" copy remains barred, as does any deficit framing.
 
 ---
 
@@ -126,7 +126,7 @@ Entry to C-5: from C-1 ("Hall of Champions ›") and from C-4 ("Hall of Champion
 
 - [ ] C-5 is a Challenge surface; its result rows never appear on S-1 cards, S-2 member list, Limited Profile, or check-ins (CS-D22).
 - [ ] Squad-scoped query (`squadId` + membership gate); no public/cross-squad path.
-- [ ] Winners only; no loser/runner-up/"never won" surfaced (CC-D3).
+- [x] ~~Winners only; no loser/runner-up/"never won" surfaced (CC-D3).~~ **AMENDED by CA7-D1** — 2nd and 3rd are named; nothing beyond the podium, and no "never won" copy.
 - [ ] Row tap routes to C-4 (also a Challenge surface); identity taps there use the performance-free Limited Profile.
 
 ---

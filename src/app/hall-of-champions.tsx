@@ -20,13 +20,15 @@ import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/fou
  * everyone including the owner — §10 forbids editing, deleting or re-opening a historical result, so
  * there is deliberately no action on this screen beyond opening a season's full standings.
  *
- * THE DESIGN'S PODIUM FOOTER IS NOT HERE, AND THAT IS THE SPEC'S CALL. Each card in the design ends with
- * a "subtle podium" strip naming 2nd and 3rd. §6 is explicit — "Only winners are named. No 'runner-up,'
- * no per-challenge loser" — and §12 repeats it as a validation item, both under CC-D3. The distinction
- * against C-4 is real rather than pedantic: C-4 shows a full field because you opened one specific
- * result, whereas a hall is scrolled, and a list of every season that keeps naming who came second turns
- * a monument into a record of who kept losing. The strip is kept as a structure and says how many
- * competed instead, which is the fact worth having — a win over eleven is not a win over two.
+ * RUNNERS-UP ARE NAMED — a PD-7 ruling. C-5 sections 6 and 12 said "Only winners are named. No
+ * 'runner-up,' no per-challenge loser", and the design's card ends with a podium strip naming 2nd and
+ * 3rd. This shipped the spec's version first (a "5 athletes competed" line) and raised the conflict; the
+ * product owner ruled for the design.
+ * `Challenge-Architecture-Amendment-007-Runners-Up-And-Streak.md` amends the spec, so it no longer
+ * contradicts the build.
+ *
+ * The strip stays bounded at the top three: it names who was close, not the whole field, so no row is
+ * ever the last one. CC-D3 is untouched — places are places, no deficit, no "never won" copy.
  *
  * WHAT IS FAITHFUL: the tracked-caps header over the squad identity block with its bronze-metallic
  * crest, the sticky year headers, the entry cards with type eyebrow + serif name, the 46px champion disc
@@ -206,8 +208,7 @@ function EntryCard({ entry: e, onPress }: { entry: HallEntry; onPress: () => voi
               </View>
             ) : null}
           </View>
-          <Text style={styles.champLabel}>{many ? `Co-Champions · ${e.champions.length}` : 'Champion'}</Text>
-          {/* Field size, not a runner-up list (§6 / CC-D3). A win over eleven isn't a win over two. */}
+            <Text style={styles.champLabel}>{many ? `Co-Champions · ${e.champions.length}` : 'Champion'}</Text>
           <Text style={styles.fieldLine}>
             {e.field} {e.field === 1 ? 'athlete' : 'athletes'} competed
           </Text>
@@ -222,9 +223,29 @@ function EntryCard({ entry: e, onPress }: { entry: HallEntry; onPress: () => voi
 
         <ChevronGlyph />
       </View>
+
+      {/* The design's podium strip — 2nd and 3rd, named (CA7-D1, PD-7). */}
+      {e.runners.length > 0 ? (
+        <View style={styles.podium}>
+          {e.runners.map((r) => (
+            <View key={r.userId} style={styles.podiumEntry}>
+              <View style={[styles.podiumPlace, r.place === 2 ? styles.podiumSilver : styles.podiumCopper]}>
+                <Text style={[styles.podiumPlaceText, { color: r.place === 2 ? MEDAL_SILVER : MEDAL_COPPER }]}>{r.place}</Text>
+              </View>
+              <Text style={[styles.podiumName, r.isSelf ? styles.podiumNameSelf : null]} numberOfLines={1}>
+                {r.name}
+                {r.isSelf ? ' (You)' : ''}
+              </Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
     </Pressable>
   );
 }
+
+const MEDAL_SILVER = '#B9BCC2';
+const MEDAL_COPPER = '#B07C4E';
 
 // ── glyphs ──
 function CrownGlyph({ size = 20, color = flColor.bronze300 }: { size?: number; color?: string }) {
@@ -309,6 +330,14 @@ const styles = StyleSheet.create({
   scoreUnit: { marginTop: 3, fontSize: 8.5, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray600 },
 
   closing: { marginTop: 12, marginHorizontal: 24, fontSize: 11, lineHeight: 17, color: flColor.gray600 },
+  podium: { flexDirection: 'row', alignItems: 'center', gap: 18, paddingHorizontal: 16, paddingVertical: 9, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: 'rgba(0,0,0,0.16)' },
+  podiumEntry: { flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 6, minWidth: 0 },
+  podiumPlace: { width: 15, height: 15, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round, borderWidth: 1 },
+  podiumSilver: { borderColor: 'rgba(185,188,194,0.6)' },
+  podiumCopper: { borderColor: 'rgba(176,124,78,0.6)' },
+  podiumPlaceText: { fontSize: 8, fontWeight: '700' },
+  podiumName: { flexShrink: 1, fontSize: 11, color: flColor.gray400 },
+  podiumNameSelf: { color: flColor.bronze300, fontWeight: '700' },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 34, gap: 4 },
   emptyCrest: { width: 76, height: 76, marginBottom: 14, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },

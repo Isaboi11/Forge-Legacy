@@ -241,6 +241,26 @@ export default function CompetitionsScreen() {
             </View>
           )}
 
+          {/* ── CURRENT CHAMPIONS (C-7) ── entered from here per spec §7. Only with a squad in context:
+              the titles are squad-scoped, and the participant-scoped hub (CA3-D10) has no squad. */}
+          {squadId ? (
+            <Pressable
+              onPress={() => router.push({ pathname: '/current-champions', params: { id: squadId } })}
+              accessibilityRole="button"
+              accessibilityLabel="Current champions"
+              style={({ pressed }) => [styles.championsRow, pressed ? styles.championsRowPressed : null]}
+            >
+              <View style={styles.championsIcon}>
+                <CrownRowGlyph />
+              </View>
+              <View style={styles.championsBody}>
+                <Text style={styles.championsTitle}>Current Champions</Text>
+                <Text style={styles.championsSub}>Who holds each title right now.</Text>
+              </View>
+              <ChevronRowGlyph />
+            </Pressable>
+          ) : null}
+
           {/* ── Stats ── real aggregates, not per-filter literals. */}
           <Text style={styles.sectionLabel}>Competition Stats</Text>
           <View style={styles.statGrid}>
@@ -414,6 +434,21 @@ function TrophyGlyph({ size = 16, color = flColor.bronze300 }: { size?: number; 
   );
 }
 
+function CrownRowGlyph() {
+  return (
+    <Svg width={20} height={20} viewBox="0 0 24 24" fill={flColor.bronze300}>
+      <Path d="M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z" />
+    </Svg>
+  );
+}
+function ChevronRowGlyph() {
+  return (
+    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M9 5l7 7-7 7" />
+    </Svg>
+  );
+}
+
 const styles = StyleSheet.create({
   root: { flex: 1 },
   barTitle: { fontSize: 11, fontWeight: '700', letterSpacing: 2.6, textTransform: 'uppercase', color: flColor.cream100 },
@@ -556,6 +591,12 @@ const styles = StyleSheet.create({
 
   // stats — 1px gaps over a hairline-coloured ground, as the design does it
   statGrid: { marginHorizontal: 22, flexDirection: 'row', flexWrap: 'wrap', gap: 1, backgroundColor: flColor.charcoal700, borderRadius: flRadius.lg, overflow: 'hidden' },
+  championsRow: { flexDirection: 'row', alignItems: 'center', gap: 13, marginTop: 24, marginHorizontal: 22, paddingHorizontal: 15, paddingVertical: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card },
+  championsRowPressed: { opacity: 0.92 },
+  championsIcon: { width: 40, height: 40, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  championsBody: { flex: 1, minWidth: 0 },
+  championsTitle: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
+  championsSub: { marginTop: 2, fontSize: 11.5, color: flColor.gray600 },
   statCell: { flexGrow: 1, flexBasis: '48%', alignItems: 'center', gap: 5, paddingVertical: 18, backgroundColor: flColor.surfaceRecessed },
   statValue: { fontFamily: flFont.display, fontSize: 24, fontWeight: '700', color: flColor.cream100 },
   statLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray600 },

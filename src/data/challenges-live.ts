@@ -461,7 +461,7 @@ export interface Champion {
  * stored, never negative — a badge is only ever returned when someone genuinely earned it.
  */
 export interface ChallengeBadge {
-  kind: 'MOST_CONSISTENT' | 'BIGGEST_CLIMB';
+  kind: 'MOST_CONSISTENT' | 'BIGGEST_CLIMB' | 'LONGEST_STREAK';
   userId: string;
   name: string;
   value: number;
@@ -537,7 +537,7 @@ export async function fetchChallengeResults(challengeId: string): Promise<Challe
       athleteDays: Number(s.athlete_days ?? 0),
     },
     badges: ((d.badges ?? []) as Record<string, unknown>[]).map((r) => ({
-      kind: r.kind === 'BIGGEST_CLIMB' ? 'BIGGEST_CLIMB' : 'MOST_CONSISTENT',
+      kind: r.kind === 'BIGGEST_CLIMB' ? 'BIGGEST_CLIMB' : r.kind === 'LONGEST_STREAK' ? 'LONGEST_STREAK' : 'MOST_CONSISTENT',
       userId: String(r.user_id),
       name: String(r.name),
       value: Number(r.value ?? 0),
@@ -563,6 +563,77 @@ export function seasonDays(startAt: string, endAt: string): number {
   return Number.isFinite(ms) ? Math.max(1, Math.round(ms / (24 * 60 * 60 * 1000))) : 1;
 }
 
+// ── C-7 Current Champions ────────────────────────────────────────────────────
+
+export interface ChampionTitle {
+  type: ChallengeType;
+  metricKey: string | null;
+  challengeId: string;
+  challengeName: string;
+  wonAt: string;
+  field: number;
+  /** The winning score. Shown on the tile per the design (PD-7 ruling, Amendment 006). */
+  score: number;
+  champions: HallChampion[];
+  /** The full field for the season that awarded this title — the design's standings sheet. */
+  standings: FinalStanding[];
+}
+
+export interface CurrentChampions {
+  squadId: string;
+  squadName: string | null;
+  titles: ChampionTitle[];
+}
+
+/**
+ * Who currently holds each title, with the winning score and the full standings of the season that
+ * awarded it.
+ *
+ * C-7's spec said recognition-only (§7/§9/§12) and the design does the opposite. Under PD-7 the design
+ * governs and the docs are corrected: the product owner ruled for the design, and
+ * `Challenge-Architecture-Amendment-006` amends the spec accordingly. These numbers are not new
+ * disclosures — the same viewer can already read them on C-3 and C-4 behind the same roster gate — so
+ * this changes where a squad member sees standings, not who may see them.
+ */
+export async function fetchCurrentChampions(squadId: string): Promise<CurrentChampions | null> {
+  const { data, error } = await supabase.rpc('squad_current_champions', { p_squad: squadId });
+  if (error) {
+    if ((error as { code?: string }).code === 'PGRST202') throw new Error('Current Champions isn’t available yet — migration 0070 hasn’t been applied.');
+    throw error;
+  }
+  if (!data) return null;
+  const d = data as Record<string, unknown>;
+  return {
+    squadId: String(d.squad_id),
+    squadName: (d.squad_name as string) ?? null,
+    titles: ((d.titles ?? []) as Record<string, unknown>[]).map((t) => ({
+      type: asType(String(t.type)),
+      metricKey: (t.metric_key as string) ?? null,
+      challengeId: String(t.challenge_id),
+      challengeName: String(t.challenge_name),
+      wonAt: String(t.won_at),
+      field: Number(t.field ?? 0),
+      score: Number(t.score ?? 0),
+      champions: ((t.champions ?? []) as Record<string, unknown>[]).map((c) => ({
+        userId: String(c.user_id),
+        name: String(c.name),
+        avatarUrl: (c.avatar_url as string) ?? null,
+        isSelf: !!c.is_self,
+      })),
+      standings: ((t.standings ?? []) as Record<string, unknown>[]).map((r) => ({
+        userId: String(r.user_id),
+        name: String(r.name),
+        avatarUrl: (r.avatar_url as string) ?? null,
+        score: Number(r.score ?? 0),
+        place: Number(r.place ?? 1),
+        isWinner: !!r.is_winner,
+        tied: !!r.tied,
+        isSelf: !!r.is_self,
+      })),
+    })),
+  };
+}
+
 // ── C-5 Hall of Champions ────────────────────────────────────────────────────
 
 export interface HallChampion {
@@ -572,16 +643,27 @@ export interface HallChampion {
   isSelf: boolean;
 }
 
+export interface HallRunner {
+  userId: string;
+  name: string;
+  place: number;
+  isSelf: boolean;
+}
+
 export interface HallEntry {
   id: string;
   name: string;
   type: ChallengeType;
   metricKey: string | null;
   endAt: string;
-  /** How many competed. Deliberately not a runner-up list — spec §6 names winners only. */
   field: number;
   score: number;
   champions: HallChampion[];
+  /**
+   * 2nd and 3rd, named — the design's podium strip. C-5 §6 said winners only; struck by CA7-D1 under
+   * PD-7. Still bounded: top three only, no "last", no deficit.
+   */
+  runners: HallRunner[];
   /** Consecutive titles this champion had won, inclusive, at this point in the squad's history. */
   streak: number;
 }
@@ -635,6 +717,12 @@ export async function fetchSquadHall(squadId: string): Promise<SquadHall | null>
       name: String(c.name),
       avatarUrl: (c.avatar_url as string) ?? null,
       isSelf: !!c.is_self,
+    })),
+    runners: ((r.runners ?? []) as Record<string, unknown>[]).map((u) => ({
+      userId: String(u.user_id),
+      name: String(u.name),
+      place: Number(u.place ?? 2),
+      isSelf: !!u.is_self,
     })),
     streak: 1,
   }));

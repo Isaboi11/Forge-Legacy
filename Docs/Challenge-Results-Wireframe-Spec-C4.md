@@ -103,7 +103,7 @@ Navigation-stack screen entered from C-3 (COMPLETED) or C-1/C-5. Top App Bar: ba
 - A neutral line: "Honors from this challenge appear on each athlete's record." Challenge honors (First Victory, Wins, Participation, Participation Streak) are awarded to the individual's permanent record and **surface in-app (L-10 / M-2 rules), never as a push.** C-4 does not enumerate another athlete's honors (that would cross into their record).
 
 ### 6.3 Participation streak (CS-D27)
-- The challenge's completion does not itself display streaks here; participation streaks are personal stats feeding honors. No squad-surface streak comparison (Firewall).
+- ~~The challenge's completion does not itself display streaks here; participation streaks are personal stats feeding honors. No squad-surface streak comparison (Firewall).~~ **AMENDED by CA7-D2 (`Challenge-Architecture-Amendment-007-Runners-Up-And-Streak.md`, PD-7 ruling).** Longest Streak ships as a derived badge, defined within the season's own window: a day counts when the athlete saved at least one workout on it in the challenge's timezone; a streak is a maximal run of consecutive counting days; streaks of 1 are not reported. An all-time streak remains out of scope for CS-D19's record book, for a different reason — no stable cross-history definition exists — so the two decisions do not conflict. The Firewall's roster-scoping is unweakened: this stays on the Challenge surface and is never echoed to S-1/S-2/Limited Profile/check-ins.
 
 ---
 
@@ -174,7 +174,7 @@ C-4 is reachable from C-3 (View Final Standings), C-1 (Past Challenges), and C-5
 - [ ] Single winner and co-winner (tie) layouts; never a manufactured sole loser
 - [ ] Lowest finisher = neutral placement; no "last"/deficit/alarm
 - [ ] Withdrawn / non-joiners absent; no markers
-- [ ] Badges positive-only (CC-D4); honors note generic, in-app (no push), never enumerates others' records
+- [ ] Badges positive-only (CC-D4); honors note generic, in-app (no push), never enumerates others' records *(Longest Streak added by CA7-D2 — still positive-only.)*
 - [ ] Standings row → performance-free Limited Profile
 - [ ] "Hall of Champions ›" → C-5; reachable from C-3/C-1/C-5
 - [ ] Immutable — later imported history doesn't alter results
