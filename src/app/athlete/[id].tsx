@@ -244,6 +244,21 @@ export default function AthleteProfileScreen() {
           </View>
         ) : null}
 
+        {/* Trophy Case (0084). Gated on the same `stats` audience the row above is, because a competitive
+            record is performance data — so if the stats block is here, the trophy case is readable too. */}
+        {data.stats ? (
+          <Pressable
+            onPress={() => router.push({ pathname: '/trophy-case', params: { athlete: data.id } })}
+            accessibilityRole="button"
+            accessibilityLabel={`${data.firstName}’s trophy case`}
+            style={({ pressed }) => [styles.trophyRow, pressed ? styles.pressed : null]}
+          >
+            <CrownGlyph />
+            <Text style={styles.trophyText}>Trophy Case</Text>
+            <ChevronGlyph />
+          </Pressable>
+        ) : null}
+
         {/* Friend-clearance only. `null` still means not cleared, so a squad-mate sees nothing here. */}
         {data.transformation && data.transformation.entries > 0 ? (
           <View style={styles.transformRow}>
@@ -469,6 +484,20 @@ function SwordsGlyph() {
     </Svg>
   );
 }
+function CrownGlyph({ size = 15, color = flColor.bronze300 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <Path d="M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z" />
+    </Svg>
+  );
+}
+function ChevronGlyph({ size = 15, color = flColor.bronze400 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M9 6l6 6-6 6" />
+    </Svg>
+  );
+}
 function AddFriendGlyph() {
   return (
     <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
@@ -535,6 +564,9 @@ const styles = StyleSheet.create({
   actionLabelLive: { color: flColor.bronze300 },
   transformRow: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 22, marginHorizontal: 24, paddingHorizontal: 14, paddingVertical: 12, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
   transformText: { flex: 1, fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
+  trophyRow: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 22, marginHorizontal: 24, paddingHorizontal: 14, paddingVertical: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
+  trophyText: { flex: 1, fontSize: 13, fontWeight: '600', color: flColor.cream100 },
+  pressed: { opacity: 0.88 },
 
   standardPad: { paddingTop: 20 },
   section: { marginTop: 40 },

@@ -280,7 +280,7 @@ export default function LegacyScreen() {
             <View style={styles.previewDivider} />
             <PreviewRow title="Photos" sub="Every chapter, one archive" count={`${data.totalPhotoCount} photos`} onPress={() => {}} />
             <View style={styles.previewDivider} />
-            <PreviewRow title="Trophy Case" sub="Championships & podium finishes" onPress={() => {}} />
+            <PreviewRow title="Trophy Case" sub="Championships & podium finishes" onPress={() => router.push('/trophy-case')} />
           </View>
 
           {/* Accomplishments — live (0023). Section hides entirely when the athlete has none. */}

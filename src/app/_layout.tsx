@@ -101,6 +101,7 @@ function RootNavigator() {
         <Stack.Screen name="hall-of-champions" />
         <Stack.Screen name="current-champions" />
         <Stack.Screen name="competition-history" />
+        <Stack.Screen name="trophy-case" />
         <Stack.Screen name="add-friend" />
         <Stack.Screen name="squad-post/[id]" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="squad-composer" options={{ presentation: 'fullScreenModal' }} />
