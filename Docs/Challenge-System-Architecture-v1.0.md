@@ -196,7 +196,16 @@ startAt reached → roster locks → ACTIVE
 
 ## Section 7 — Scoring Model
 
-### CS-D8 — Challenge types & metrics
+### CS-D8 — Challenge types & metrics (AMENDED → 14 types)
+
+> **⚠ EXTENDED BY CA5-D1 (`Challenge-Architecture-Amendment-005-Metric-Expansion.md`, LOCKED 2026-07-29).** The table below lists the five
+> original types; the build ships **fourteen**. Added: `DISTANCE_TOTAL`, and the four fairness
+> metrics (`MOST_DAYS`, `MOST_REPS`, `EARLY_BIRD`, `MOST_VARIETY`) chosen because a different
+> athlete wins them, and the four progression metrics (`GAIN_MAX_LIFT`, `GAIN_VOLUME`, `GAIN_REPS`,
+> `GAIN_DISTANCE`) scoring absolute change, floored at zero. `RANK_XP` remains deferred per CS-D11,
+> unchanged. Two columns are also added: `metric_key` generalizes this section's `targetExerciseId`
+> beyond `MAX_LIFT` (CA5-D2), and `tz` carries the creator's IANA zone so `MOST_DAYS` and
+> `EARLY_BIRD` have a real day boundary (CA5-D3). Full detail and reasoning in the amendment.
 | `ChallengeType` | Metric (`score`) | Source |
 |---|---|---|
 | `MOST_WORKOUTS` | Count of qualifying sessions in window | Session records |
@@ -208,7 +217,7 @@ startAt reached → roster locks → ACTIVE
 
 **`MOST_VOLUME` vs `MAX_LIFT` (both restore the brief's two Volume metrics):** `MOST_VOLUME` is a *cumulative tonnage accumulator* ("most total weight moved"); `MAX_LIFT` is a *heaviest-single-lift max* ("most weight lifted at once"). They are distinct competition shapes and both ship.
 
-**`MAX_LIFT` exercise scoping (`Challenge.targetExerciseId`, optional):** to keep a heaviest-lift contest fair, `MAX_LIFT` may set an optional `targetExerciseId` (a canonical library exercise). When set, the score is the heaviest single set **on that exercise only** (e.g., "heaviest Bench Press"). When unset, the score is the heaviest single set on **any** tracked lift. CUSTOM exercises are excluded from `MAX_LIFT` scoring (consistent with AD-28c). `targetExerciseId` applies only to `MAX_LIFT` and is ignored for other types.
+**`MAX_LIFT` exercise scoping (`Challenge.targetExerciseId`, optional — generalized by CA5-D2 to `metric_key`, which applies the same idea to volume, reps and activity-based metrics too):** to keep a heaviest-lift contest fair, `MAX_LIFT` may set an optional `targetExerciseId` (a canonical library exercise). When set, the score is the heaviest single set **on that exercise only** (e.g., "heaviest Bench Press"). When unset, the score is the heaviest single set on **any** tracked lift. CUSTOM exercises are excluded from `MAX_LIFT` scoring (consistent with AD-28c). `targetExerciseId` applies only to `MAX_LIFT` and is ignored for other types.
 
 ### CS-D9 — Qualifying-event rules (reuse existing definitions)
 1. Only sessions logged by a **non-withdrawn participant** count.

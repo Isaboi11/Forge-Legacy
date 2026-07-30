@@ -1,7 +1,7 @@
 # Forge Legacy — Squad Management & Permissions Specification
 ## S-3 | Phase 2B | Version 1.3 — June 2026
 
-> **Governing-authority pointer — `Squad-System-Architecture-v1.0` (LOCKED, June 2026).** Adds the Squad Commitment field to Squad Identity (§6.5, SQ-D14) and confirms Goal/Mission edit rights follow the same governance as squad identity (§4.1, SQ-D3.2/SQ-D4.3) — **owner-only per `Squad-Management-Amendment-001`**. The two-tier Owner/Member model, the 10-member cap, and every other rule in this document are unchanged.
+> **Governing-authority pointer — `Squad-System-Architecture-v1.0` (LOCKED, June 2026).** Adds the Squad Commitment field to Squad Identity (§6.5, SQ-D14) and confirms Goal/Mission edit rights follow the same governance as squad identity (§4.1, SQ-D3.2/SQ-D4.3) — **owner-only per `Squad-Management-Amendment-001`**. The two-tier Owner/Member model and every other rule in this document are unchanged. **The 10-member cap is NOT — it is amended to 50 by SQ-D1a (`Squad-Architecture-Amendment-003-Size-And-Joining.md`, LOCKED 2026-07-28); every "10" in §8.5 / §14 below reads 50.**
 
 ---
 
@@ -515,7 +515,7 @@ The section label "MEMBERS" is followed by the count in format: "[current] of [m
 
 Example: `MEMBERS  4 of 10`
 
-This tells the athlete how much capacity the squad has before invites are blocked. When the squad is at maximum, the count reads: `MEMBERS  10 of 10 — Full`
+This tells the athlete how much capacity the squad has before invites are blocked. When the squad is at maximum, the count reads: `MEMBERS  50 of 50 — Full` (ceiling amended 10 → 50, SQ-D1a).
 
 ### 7.3 Remove Member Flow
 
@@ -641,9 +641,9 @@ Cancelling pending invites because the squad filled up would punish the invitee 
 When the squad is at its member maximum, the invite initiation entry points are disabled:
 - "+ Invite to Squad" CTA on S-2: disabled, with tooltip/label: "Squad is full (10 of 10 members)"
 - "Invite to Squad" in [⋯] on S-2: disabled with same label
-- From S-3: invite entry is not surfaced — the member count `MEMBERS 10 of 10 — Full` communicates capacity
+- From S-3: invite entry is not surfaced — the member count `MEMBERS 50 of 50 — Full` communicates capacity
 
-**Maximum squad size is 10 members.** This is an MVP limit, not a permanent architectural constraint. Future expansion may be considered after launch data is collected on how accountability effectiveness scales with group size.
+**Maximum squad size is 50 members** (SQ-D1a, `Squad-Architecture-Amendment-003-Size-And-Joining.md`). Originally 10 and framed as an MVP limit; raised to 50 once Discover shipped and made the tension visible — the design's own public squads run 15–48. Small size remains intentional, and 50 is still an order of magnitude below a Community.
 
 ---
 
@@ -969,10 +969,10 @@ Portrait only — consistent with all Forge Legacy screens.
 
 ### Maximum Capacity (10 Members — MVP Limit)
 - [ ] Member count shown as "[current] of 10" in MEMBERS section header
-- [ ] When at maximum (10 of 10): count shows "— Full" suffix
+- [ ] When at maximum (50 of 50): count shows "— Full" suffix
 - [ ] Invite entry points on S-2 disabled when squad is at maximum
 - [ ] Pending invites that predate reaching maximum remain valid
-- [ ] 10-member cap is an MVP limit — no permanent architectural enforcement required
+- [x] Cap is **50** (SQ-D1a) and IS enforced — `squads.member_cap` constraint 2–50, and `approve_squad_join_request` refuses at cap
 
 ### Empty / Edge States
 - [ ] Single-member squad (owner only): valid state, no error, Leave Squad shows "leave and delete" confirmation
@@ -1004,7 +1004,7 @@ The following decisions were open at v1.0 and are resolved in v1.1.
 
 ### Decision 1 — Maximum Squad Size
 
-**Resolved:** 10 members.
+**Resolved:** 10 members. *(Historical record. Later amended to 50 by SQ-D1a — `Squad-Architecture-Amendment-003-Size-And-Joining.md`.)*
 
 This is an MVP limit, not a permanent architectural constraint. Future expansion may be considered after launch data is collected on how accountability effectiveness scales with group size. All S-3 size references use 10.
 
@@ -1063,7 +1063,7 @@ Added a Challenge System note confirming the two-tier model is unchanged: the ch
 
 | Decision | v1.0 Status | v1.1 Resolution |
 |----------|-------------|-----------------|
-| Maximum squad size | Proposed 10, open | Approved: 10 members — MVP limit, not permanent |
+| Maximum squad size | Proposed 10, open | Approved: 10 members — MVP limit, not permanent *(later amended to 50, SQ-D1a)* |
 | Squad identity visual | Custom uploads deferred | Built-in icons (9 options). Custom uploads deferred to V1.1+. |
 | Governance label | "(Owner)" assumed | Confirmed: "(Owner)" — system-generated, non-editable |
 

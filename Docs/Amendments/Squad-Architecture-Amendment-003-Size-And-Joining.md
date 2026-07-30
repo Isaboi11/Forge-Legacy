@@ -97,10 +97,22 @@ was better — the Firewall justification in SQ-D2 — the docs won (SQ-D16).
 This amendment is the governing record; the following still carry the superseded values and should be
 reconciled when next touched:
 
-- [ ] `Squad-System-Architecture-v1.0.md` — SQ-D1 (10 → 50, pointer to SQ-D1a); SQ-D2 consequence note
-- [ ] `Squad-Management-Permissions-Spec-S3.md` §8.5 / §14 — the 10-member MVP limit
-- [ ] `Squads-Hub-Wireframe-Spec-S1.md` §14 — "No public visibility — squads are private and only
-      visible to members" is false since Discover shipped
+- [x] ~~`Squad-System-Architecture-v1.0.md` — SQ-D1 (10 → 50, pointer to SQ-D1a); SQ-D2 consequence
+      note~~ — **DONE 2026-07-29.** SQ-D1 retitled and given a superseded banner, its locked text
+      amended to 50 while retaining the original reasoning, the SQ-D2 consequence note added inline,
+      and the §17 validation row ticked.
+- [x] ~~`Squad-Management-Permissions-Spec-S3.md` §8.5 / §14 — the 10-member MVP limit~~ — **DONE
+      2026-07-29.** The governing-authority pointer no longer claims the cap is unchanged; the
+      capacity examples read `50 of 50`; §14's "Maximum squad size is 10 members" is corrected with
+      the reason it moved; and the validation row now records that the cap IS enforced (constraint
+      2–50 plus the approval-time refusal), which the original wrongly waived. **Historical decision
+      records (§the resolved-decisions list, the decision table) were ANNOTATED, not rewritten** —
+      they record what was decided at the time, and editing them would falsify the history rather
+      than correct the rule.
+- [x] ~~`Squads-Hub-Wireframe-Spec-S1.md` §14 — "No public visibility — squads are private and only
+      visible to members" is false since Discover shipped~~ — **DONE 2026-07-29.** Struck through and
+      replaced with what is actually true: public squads ARE discoverable and previewable by
+      non-members (0050/0051), and the surviving guarantee is that joining is never unreviewed.
 - [x] ~~`Squad-Management-Permissions-Spec-S3.md` §4.3 / §6.2 / §12 — "all members can edit squad
       identity"~~ — **RESOLVED 2026-07-28.** Product owner confirmed owner-only as the intent; locked
       as SM-D1 in `Squad-Management-Amendment-001-Identity-Governance.md`, and the eight affected

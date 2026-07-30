@@ -45,9 +45,13 @@ Everything in this document applies to Squad-internal surfaces (S-1 cards, S-2 S
 
 ## Section 1 — Squad Size
 
-### SQ-D1 — Maximum 10 members (confirmed, unchanged)
+### SQ-D1 — Maximum members (AMENDED → 50)
 
-**Locked:** A Squad has a maximum of 10 members. This was already locked in `Squad-Management-Permissions-Spec-S3.md` §8.5 / §14 ("MVP limit, not permanent") and is now confirmed as a durable product decision: small size is intentional and maximizes accountability, not a temporary engineering constraint awaiting expansion.
+> **⚠ SUPERSEDED BY SQ-D1a (`Squad-Architecture-Amendment-003-Size-And-Joining.md`, LOCKED 2026-07-28).** The ceiling is **50**, not 10. The reasoning below — that small size is intentional rather than a temporary engineering constraint — is retained and still governs; only the number moved. 10 predates Discover, and the design's own public squads run 15–48. 50 remains an order of magnitude below a Community. Shipped: `member_cap` default 50, constraint 2–50 (migration 0053).
+
+**Locked (as amended):** A Squad has a maximum of **50** members (SQ-D1a). Originally locked at 10 in `Squad-Management-Permissions-Spec-S3.md` §8.5 / §14 ("MVP limit, not permanent"); the durable part of that decision is the *principle* — small size is intentional and maximizes accountability, not a temporary engineering constraint awaiting expansion — and that principle is unchanged at 50.
+
+**Consequence to watch (SQ-D2):** at 50 members, SQ-D2's justification for lifting the Performance Firewall inside a squad rests entirely on per-athlete approval, since members no longer plausibly all know each other. Reversing SQ-D16 (request-only joining) would therefore require re-examining SQ-D2.
 
 This is a different axis from the **free-tier squad-membership cap** (max 2 squads joined/created, Premium unlimited — `Squads-Hub-Wireframe-Spec-S1.md` §5.2, Critical Decisions Amendment 001). Both caps stand unchanged and govern different things: SQ-D1 caps people *inside* one squad; S-1 §5.2 caps how many squads *one athlete* can belong to.
 
@@ -346,7 +350,7 @@ The two "Members" mentions in the source decision (member avatar stack in the Ba
 
 ## Validation Checklist
 
-- [ ] SQ-D1 — 10-member cap confirmed as durable, distinct from the free-tier 2-squad-membership cap
+- [x] SQ-D1 — cap **amended to 50** by SQ-D1a (`Squad-Architecture-Amendment-003-Size-And-Joining.md`); still distinct from the free-tier 2-squad-membership cap
 - [ ] SQ-D2 — Firewall lift is scoped to Squad-internal surfaces only; Friends Feed/Communities/Calendar unaffected; SA-D3/SA2-D3 reinforced, not superseded
 - [ ] SQ-D3 — exactly one active Goal; aggregate progress only; no per-member leaderboard
 - [ ] SQ-D4 — exactly one active Mission; binary per-member completion, aggregate display only

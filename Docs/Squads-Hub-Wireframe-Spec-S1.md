@@ -777,7 +777,11 @@ S-1 supports portrait orientation only — consistent with all other Forge Legac
 ### Squads Philosophy
 - [ ] S-1 answers "What are we building together?" — purpose + membership + presence visible
 - [ ] No feed, no likes, no comments, no reactions
-- [ ] No public visibility — squads are private and only visible to members
+- [x] ~~No public visibility — squads are private and only visible to members~~ — **FALSE since Discover shipped.**
+      A squad's `privacy` is `public` or `private`; a public squad is discoverable by non-members through
+      `discover_squads()` and previewable via `squad_preview()` (migrations 0050/0051). What remains true is
+      that **joining is never unreviewed** — SQ-D16 retired open joining, so the two doors are an invite code
+      or an owner-approved request. Corrected per `Squad-Architecture-Amendment-003-Size-And-Joining.md`.
 - [ ] No competitive mechanics (leaderboards, rankings, streaks comparisons)
 - [ ] Screen feels: supportive, private, focused, trustworthy
 - [ ] Screen does NOT feel: competitive, performative, feed-oriented
