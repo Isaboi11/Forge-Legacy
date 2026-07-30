@@ -19,7 +19,7 @@ import { resolveRankBadge } from '@/domain/rank-artwork/badge-art';
 import { RankSeal } from '@/components/forge/RankSeal';
 import { fetchLegacyData } from '@/data/legacy-live';
 import { refreshRank } from '@/data/rank-live';
-import { useCeremony, useToast } from '@/hooks/useCeremony';
+import { useCeremony } from '@/hooks/useCeremony';
 import { fetchAccomplishments } from '@/data/accomplishments-live';
 import { fetchLegacyArchive } from '@/data/legacy-archive-live';
 import { LegacyArchiveBand } from '@/components/forge/LegacyArchiveBand';
@@ -95,7 +95,6 @@ export default function LegacyScreen() {
   const router = useRouter();
   const { profile } = useProfile();
   const { enqueue } = useCeremony();
-  const { showToast } = useToast();
   const { data, error, refetch } = useQuery(fetchLegacyData, []);
   // Accomplishments are now LIVE (0023) — replacing the fixture. Newest first; the strip shows a few and
   // "View all" opens the full L-12 screen. `featured` drives the filled star.
@@ -290,12 +289,7 @@ export default function LegacyScreen() {
             <LegacyArchiveBand
               archive={archive}
               onTransformation={() => router.push('/transformation')}
-              onPhotos={() =>
-                // L-15/L-16 is specced and LOCKED but has no tables and no route, so there is nowhere to
-                // send them yet. Saying so beats a tap that silently does nothing, which is what the old
-                // row did while advertising a fixture count of "12 photos".
-                showToast('The photo archive isn’t built yet.')
-              }
+              onPhotos={() => router.push('/photos')}
               onTrophies={() => router.push('/trophy-case')}
             />
           </View>

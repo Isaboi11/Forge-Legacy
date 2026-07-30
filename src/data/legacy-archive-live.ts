@@ -54,13 +54,21 @@ function thumbOf(e: TransformationEntry): string | null {
 }
 
 /**
- * PHOTOS HAS NO BACKEND. L-15/L-16 is a LOCKED spec with no tables — there is no `chapter_photos` and no
- * gallery route. `LEGACY_FIXTURE_PENDING.totalPhotoCount` is a literal, and the old preview row printed
- * it as "12 photos", which is a fabricated number on a permanent record. This returns the truth (zero,
- * nothing to show) and the tile renders its empty state until the archive is built.
+ * Real since 0085. The tile used to print `LEGACY_FIXTURE_PENDING.totalPhotoCount` — a literal "12
+ * photos" on a permanent record — and tapped to nothing.
+ *
+ * The thumbnail is the most recent photo account-wide, which is deliberately NOT the same rule as an
+ * album cover: a cover answers "what represents this chapter" through the five-tier waterfall, while the
+ * tile answers "what did you last add". An unapplied migration degrades to the empty state rather than
+ * taking the Legacy screen down with it.
  */
 async function readPhotos(): Promise<ArchivePhotos> {
-  return { count: 0, latest: null };
+  const [{ count }, { data }] = await Promise.all([
+    supabase.from('chapter_photos').select('id', { count: 'exact', head: true }),
+    supabase.from('chapter_photos').select('url').order('taken_on', { ascending: false }).order('created_at', { ascending: false }).limit(1),
+  ]);
+  const latest = ((data ?? []) as { url: string }[])[0]?.url ?? null;
+  return { count: count ?? 0, latest };
 }
 
 async function readTransformation(): Promise<ArchiveTransformation> {

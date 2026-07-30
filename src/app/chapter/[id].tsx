@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
@@ -14,7 +15,10 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { fetchChapterDetail } from '@/data/chapter-detail-live';
 import { goalSections, isAchieved, isQuantifiable, progressLabel, progressPct, type Goal } from '@/domain/goals/goals';
-import { useQuery } from '@/lib/useQuery';
+import { errorMessage, useQuery } from '@/lib/useQuery';
+import { useMediaPicker } from '@/lib/useMediaPicker';
+import { useToast } from '@/hooks/useCeremony';
+import { addChapterPhoto, uploadChapterPhoto } from '@/data/photos-live';
 
 /**
  * L-3/L-4 Chapter Detail — the chapter overview reached by tapping the chapter on Legacy.
@@ -28,7 +32,10 @@ import { useQuery } from '@/lib/useQuery';
  * closing reflection and archives the chapter (or "Skip for now" seals without one). A sealed chapter
  * with no reflection offers "Add one now" (the ceremony's post path).
  *
- * DEFERRED (flagged): the Media strip only — no photo/video upload backend yet.
+ * PHOTOS ARE CREATED HERE AND NOWHERE ELSE. `L-15-Photos-Architecture` §2 names the chapter screens as
+ * the only photo creation paths and §6 makes the gallery browse-only, so the Add Photo control lives on
+ * this screen and `/photos` has none. Capture goes through `useMediaPicker` (the single camera-or-library
+ * path), uploads to the public `chapter-photos` bucket, then writes the row (migration 0085).
  */
 
 const CHEVRON = 'M9 6l6 6-6 6';
@@ -47,7 +54,33 @@ export default function ChapterDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data, loading } = useQuery(() => fetchChapterDetail(String(id)), [id]);
+  const { data, loading, refetch } = useQuery(() => fetchChapterDetail(String(id)), [id]);
+  const { pick, mediaPickerSheet } = useMediaPicker();
+  const { showToast } = useToast();
+  const [adding, setAdding] = useState(false);
+
+  /**
+   * The archive's one door. A photo is captured, uploaded, and tied to THIS chapter — which is what makes
+   * the gallery's albums real, since a chapter IS an album (0085). Sealed chapters accept photos too:
+   * `Chapter-Detail-Wireframe-Spec-L3-L4` §17.3 draws the line at additions to the archive versus edits
+   * of it, and a memory added later is an addition.
+   */
+  const addPhoto = async () => {
+    const asset = await pick({ kind: 'both', title: 'Add a photo', hint: 'It joins this chapter’s album.', quality: 0.85 });
+    if (!asset) return;
+    setAdding(true);
+    try {
+      const isVideo = asset.type === 'video';
+      const url = await uploadChapterPhoto(String(id), asset.uri, isVideo ? 'video' : 'image');
+      await addChapterPhoto({ chapterId: String(id), url, isVideo });
+      showToast(isVideo ? 'Video added to this chapter.' : 'Photo added to this chapter.');
+      refetch();
+    } catch (e) {
+      showToast(errorMessage(e));
+    } finally {
+      setAdding(false);
+    }
+  };
 
   if (loading || !data) {
     return (
@@ -226,6 +259,27 @@ export default function ChapterDetailScreen() {
           </>
         )}
 
+        {/* media — the only photo creation path in the app (L-15 arch §2) */}
+        <View style={styles.section}>
+          <SectionHeader label="Photos" action="View album" onAction={() => router.push('/photos')} />
+          <Pressable
+            onPress={adding ? undefined : addPhoto}
+            accessibilityRole="button"
+            accessibilityLabel="Add a photo to this chapter"
+            accessibilityState={{ disabled: adding }}
+            style={({ pressed }) => [styles.addPhoto, pressed && !adding ? styles.addPhotoPressed : null]}
+          >
+            {adding ? (
+              <ActivityIndicator color={flColor.bronze400} />
+            ) : (
+              <>
+                <CameraGlyph />
+                <Text style={styles.addPhotoLabel}>Add a Photo</Text>
+              </>
+            )}
+          </Pressable>
+        </View>
+
         {/* honors */}
         {data.honors.length ? (
           <View style={styles.section}>
@@ -279,7 +333,17 @@ export default function ChapterDetailScreen() {
           </View>
         ) : null}
       </ScrollView>
+      {mediaPickerSheet}
     </View>
+  );
+}
+
+function CameraGlyph({ size = 17, color = flColor.bronze300 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.2l1.2-2h8.2l1.2 2h2.2A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z" />
+      <Path d="M15.2 13a3.2 3.2 0 1 1-6.4 0 3.2 3.2 0 0 1 6.4 0z" />
+    </Svg>
   );
 }
 
@@ -315,6 +379,9 @@ function Glyph({ d, size = 16, color, width = 1.9 }: { d: string; size?: number;
 }
 
 const styles = StyleSheet.create({
+  addPhoto: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, marginTop: 10, paddingVertical: 15, borderRadius: flRadius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
+  addPhotoPressed: { opacity: 0.88, borderColor: flColor.bronzeBorder },
+  addPhotoLabel: { fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },
   root: { flex: 1, backgroundColor: flColor.base },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   err: { fontSize: 14, color: flColor.gray400 },
