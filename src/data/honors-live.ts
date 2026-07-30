@@ -71,6 +71,8 @@ export interface CatalogHonor {
   /** Narrows the metric to one lift or activity (0078). Null = unscoped. */
   metricKey: string | null;
   threshold: number;
+  /** How to speak the threshold when the stored figure isn't the spoken one (0083). Null = say the number. */
+  displayAmount: string | null;
   /** 'account' = once ever; 'chapter' = once per chapter. */
   scope: 'account' | 'chapter';
 }
@@ -83,7 +85,7 @@ export interface CatalogHonor {
 export async function fetchHonorCatalog(): Promise<CatalogHonor[]> {
   const { data, error } = await supabase
     .from('honor_catalog')
-    .select('honor_type, display_name, category, metric, metric_key, threshold, scope')
+    .select('honor_type, display_name, category, metric, metric_key, threshold, scope, display_amount')
     .order('sort_order', { ascending: true });
   if (error) {
     if ((error as { code?: string }).code === 'PGRST205') return []; // table not migrated yet
@@ -96,6 +98,7 @@ export async function fetchHonorCatalog(): Promise<CatalogHonor[]> {
     metric: r.metric as string,
     metricKey: (r.metric_key as string) ?? null,
     threshold: Number(r.threshold),
+    displayAmount: (r.display_amount as string) ?? null,
     scope: (r.scope === 'chapter' ? 'chapter' : 'account') as 'account' | 'chapter',
   }));
 }
@@ -168,12 +171,19 @@ const num = (n: number): string => n.toLocaleString('en-US');
  * (a threshold changes, the sentence doesn't), and with 131 honors nobody would catch it. Generating it
  * from the same numbers the evaluator tests means the description is wrong only if the rule is.
  */
-export function triggerText(metric: string, threshold: number, metricKey: string | null): string {
+export function triggerText(metric: string, threshold: number, metricKey: string | null, displayAmount?: string | null): string {
   const lift = metricKey ? (LIFT_LABEL[metricKey] ?? metricKey) : '';
   const act = metricKey ? (ACTIVITY_LABEL[metricKey] ?? metricKey) : '';
+  /** The spoken amount: a display override when the stored figure isn't the one people say (0083). */
+  const amt = (unit: string) => displayAmount ?? `${num(threshold)} ${unit}${threshold === 1 ? '' : 's'}`;
+  const times = (n: number) => (n === 1 ? 'once' : `${num(n)} times`);
+
   switch (metric) {
     case 'workouts_total':
-      return threshold <= 1 ? 'Log your first workout.' : `Log ${num(threshold)} workouts.`;
+      if (threshold <= 1) return 'Log your first workout.';
+      // "Log 2 workouts" is technically right and says nothing. The honor is about returning.
+      if (threshold === 2) return 'Come back and log a second workout.';
+      return `Log ${num(threshold)} workouts.`;
     case 'hours_forged':
       return `Spend ${num(threshold)} hours training.`;
     case 'active_weeks':
@@ -186,30 +196,53 @@ export function triggerText(metric: string, threshold: number, metricKey: string
       return `Keep one chapter open for ${num(threshold)} days.`;
     case 'goals_achieved':
       return threshold <= 1 ? 'Achieve your first goal.' : `Achieve ${num(threshold)} goals.`;
+
     case 'lift_max':
       return `${lift} ${num(threshold)} lb.`;
     case 'combined_lifts':
       return `Bench, squat and deadlift totalling ${num(threshold)} lb.`;
     case 'lift_ratio':
-      return `${lift} ${threshold}× your bodyweight.`;
+      return threshold === 1 ? `${lift} your full bodyweight.` : `${lift} ${threshold}× your bodyweight.`;
     case 'lifetime_volume':
       return `Move ${num(threshold)} lb in total, across every set you've logged.`;
+
     case 'challenges_won':
       return threshold <= 1 ? 'Win a competition.' : `Win ${num(threshold)} competitions.`;
     case 'challenges_entered':
       return threshold <= 1 ? 'Enter a competition.' : `Enter ${num(threshold)} competitions.`;
+
     case 'session_distance':
-      return `${act} ${threshold} miles in a single session.`;
+      return `${act} ${amt('mile')} in a single session.`;
     case 'lifetime_distance':
-      return `${num(threshold)} lifetime ${act.toLowerCase()} miles.`;
+      return `${act} ${amt('mile')} in total.`;
+
     case 'partnered_sessions':
-      return threshold <= 1 ? 'Train alongside someone.' : `Train alongside someone ${num(threshold)} times.`;
+      return threshold <= 1 ? 'Log a workout alongside someone.' : `Log ${num(threshold)} workouts alongside someone.`;
     case 'same_partner_max':
-      return `Train with the same person ${num(threshold)} times.`;
+      return `Train with the same person ${times(threshold)}.`;
     case 'distinct_partners':
       return `Train with ${num(threshold)} different people.`;
     case 'comeback_days':
       return `Come back and train again after ${num(threshold)} days away.`;
+
+    // ── Origin. These had no case at all and fell through to a useless default. ──
+    case 'prs_recorded':
+      return threshold <= 1 ? 'Set your first personal record.' : `Set ${num(threshold)} personal records.`;
+    case 'goals_set':
+      return threshold <= 1 ? 'Set your first goal.' : `Set ${num(threshold)} goals.`;
+    case 'connections':
+      return 'Join a squad, or add your first friend.';
+    case 'captures_recorded':
+      return threshold <= 1 ? 'Add your first progress capture.' : `Add ${num(threshold)} progress captures.`;
+    case 'reflections_written':
+      return threshold <= 1
+        ? 'Write your first reflection — on a chapter, or on something you accomplished.'
+        : `Write ${num(threshold)} reflections.`;
+    case 'has_standard':
+      return 'Write your Standard — what you hold yourself to.';
+    case 'best_week_sessions':
+      return `Train ${num(threshold)} times inside any seven days.`;
+
     default:
       return 'Earned through training.';
   }
@@ -285,7 +318,7 @@ export async function fetchHonorsHub(): Promise<HonorsHub> {
       categoryId,
       categoryName,
       glyph: categoryGlyph(categoryId),
-      trigger: c ? triggerText(c.metric, c.threshold, c.metricKey) : (code?.trigger || 'A permanent part of your legacy.'),
+      trigger: c ? triggerText(c.metric, c.threshold, c.metricKey, c.displayAmount) : (code?.trigger || 'A permanent part of your legacy.'),
       tier: ladder.length > 1 && step > 0 ? { step, of: ladder.length } : null,
     };
   };
