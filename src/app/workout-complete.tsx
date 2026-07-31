@@ -9,8 +9,9 @@ import { Button } from '@/components/forge/composites/Button';
 import { Card } from '@/components/forge/composites/Surface';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
-import { useQuery } from '@/lib/useQuery';
+import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
+import { saveWorkoutAsTemplate } from '@/data/templates-live';
 import { useUnits } from '@/lib/settings';
 import { displayWeight } from '@/domain/settings/units';
 import { getProgramDefinitions } from '@/domain/training/programs';
@@ -83,6 +84,11 @@ export default function WorkoutComplete() {
   const vol = (lb: number) => thousands(displayWeight(lb, units).value);
   const volUnit = displayWeight(0, units).unit;
   const [step, setStep] = useState<Step>('seal');
+  /* Saving the day as a template. Offered on The Record and nowhere else — it belongs beside the shape it
+     would keep, and the primary path (Seal → hold → Legacy) never sees it, which is the point. Most
+     sessions should not be templates. */
+  const [savedTemplate, setSavedTemplate] = useState(false);
+  const [savingTemplate, setSavingTemplate] = useState(false);
   const [note, setNote] = useState('');
   const [sealed, setSealed] = useState(false);
   const [hold] = useState(() => new Animated.Value(0));
@@ -98,6 +104,25 @@ export default function WorkoutComplete() {
   }, [hold]);
 
   const goHome = () => router.replace('/(tabs)/legacy');
+
+  const keepAsTemplate = async () => {
+    if (!data || savingTemplate || savedTemplate) return;
+    setSavingTemplate(true);
+    try {
+      const id = await saveWorkoutAsTemplate(data.workoutId);
+      if (id) {
+        setSavedTemplate(true);
+        showToast('Saved to your templates.');
+      } else {
+        // Nothing was logged, so there is no shape to keep — say that rather than claiming a success.
+        showToast('Nothing to save from this one.');
+      }
+    } catch (e) {
+      showToast(errorMessage(e));
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
 
   const startHold = () => {
     Animated.timing(hold, { toValue: 1, duration: 900, useNativeDriver: false }).start(({ finished }) => {
@@ -367,6 +392,22 @@ export default function WorkoutComplete() {
               </View>
             ))}
           </View>
+
+          {/* Quiet, and only here. A program day is already reusable BY its program; this is for the
+              sessions with no home — one built as you went, or one reshaped past its program. */}
+          <Pressable
+            onPress={keepAsTemplate}
+            disabled={savingTemplate || savedTemplate}
+            accessibilityRole="button"
+            accessibilityLabel={savedTemplate ? 'Saved to your templates' : 'Save this day as a template'}
+            accessibilityState={{ disabled: savingTemplate || savedTemplate }}
+            style={({ pressed }) => [styles.templateRow, pressed && !savedTemplate ? styles.templateRowPressed : null]}
+          >
+            {savedTemplate ? <CheckGlyph /> : <TemplateGlyph />}
+            <Text style={[styles.templateText, savedTemplate ? styles.templateTextDone : null]}>
+              {savedTemplate ? 'Saved to your templates' : savingTemplate ? 'Saving…' : 'Save this day as a template'}
+            </Text>
+          </Pressable>
 
           <View style={styles.longGameWrap}>
             <Text style={styles.longGameLabel}>The Long Game</Text>
@@ -683,7 +724,26 @@ function CameraGlyph({ size = 17, color = flColor.bronze300 }: { size?: number; 
   );
 }
 
+function TemplateGlyph({ size = 15, color = flColor.bronze400 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M5 4h14v16H5zM8.5 8.5h7M8.5 12h7M8.5 15.5h4" />
+    </Svg>
+  );
+}
+function CheckGlyph({ size = 15, color = '#8FB295' }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M5 12.5l4.5 4.5L19 7" />
+    </Svg>
+  );
+}
+
 const styles = StyleSheet.create({
+  templateRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 18, paddingVertical: 12 },
+  templateRowPressed: { opacity: 0.82 },
+  templateText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze400 },
+  templateTextDone: { color: flColor.gray600 },
   addMedia: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, marginTop: 18, paddingVertical: 14, borderRadius: flRadius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
   addMediaPressed: { opacity: 0.88, borderColor: flColor.bronzeBorder },
   addMediaLabel: { fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },
