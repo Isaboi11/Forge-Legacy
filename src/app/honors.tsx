@@ -7,7 +7,7 @@ import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { useQuery } from '@/lib/useQuery';
+import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { useTour } from '@/hooks/useTour';
 import { claimEarnedHonors, fetchHonorsHub, type HubHonor } from '@/data/honors-live';
@@ -111,7 +111,12 @@ export default function HonorsScreen() {
         <View style={styles.status}>
           {error ? (
             <>
+              {/* The REASON, not just the fact. This said only "Couldn't load your honors." when the
+                  actual error was `42703: column honor_catalog.display_amount does not exist` — an
+                  unapplied 0083, diagnosable in seconds and invisible for want of one line. Every other
+                  screen in the app surfaces `errorMessage`; this one swallowed it. */}
               <Text style={styles.statusText}>Couldn&apos;t load your honors.</Text>
+              <Text style={styles.statusDetail}>{errorMessage(error)}</Text>
               <Pressable onPress={refetch} accessibilityRole="button" accessibilityLabel="Retry" style={styles.retryBtn}>
                 <Text style={styles.retryText}>Try again</Text>
               </Pressable>
@@ -271,6 +276,7 @@ const styles = StyleSheet.create({
 
   status: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, paddingHorizontal: 40 },
   statusText: { color: flColor.gray400, fontFamily: flFont.sans, fontSize: 15, textAlign: 'center' },
+  statusDetail: { marginTop: 6, color: flColor.gray600, fontFamily: flFont.sans, fontSize: 12, lineHeight: 17, textAlign: 'center' },
   retryBtn: { paddingVertical: 10, paddingHorizontal: 22, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronze400 },
   retryText: { color: flColor.bronze400, fontFamily: flFont.sans, fontSize: 14, fontWeight: '600' },
 
