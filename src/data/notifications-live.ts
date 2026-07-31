@@ -20,16 +20,21 @@ export type NotificationKind =
   | 'request_approved'
   | 'request_declined'
   | 'friend_request'
-  | 'friend_accepted';
+  | 'friend_accepted'
+  | 'challenge_invite';
 
 export interface ForgeNotification {
   kind: NotificationKind;
   at: string;
   unread: boolean;
+  /** Empty for an event that isn't about a squad — a challenge invite has no squad (0088). */
   squadId: string;
   squadName: string;
   squadCrest: string;
   squadPhotoUrl: string | null;
+  /** Set only on `challenge_invite`. */
+  challengeId: string | null;
+  challengeName: string | null;
   /** The athlete the event is about — null for the kinds whose subject is the squad itself. */
   actorId: string | null;
   actorName: string | null;
@@ -46,6 +51,7 @@ const KINDS: NotificationKind[] = [
   'request_declined',
   'friend_request',
   'friend_accepted',
+  'challenge_invite',
 ];
 const asKind = (v: string): NotificationKind | null => (KINDS as string[]).includes(v) ? (v as NotificationKind) : null;
 
@@ -53,10 +59,13 @@ interface FeedRow {
   kind: string;
   at: string;
   unread: boolean;
-  squad_id: string;
-  squad_name: string;
-  squad_crest: string;
+  // Nullable since 0088: an event that isn't about a squad has no squad.
+  squad_id: string | null;
+  squad_name: string | null;
+  squad_crest: string | null;
   squad_photo_url: string | null;
+  challenge_id: string | null;
+  challenge_name: string | null;
   actor_id: string | null;
   actor_name: string | null;
   actor_avatar_url: string | null;
@@ -77,13 +86,15 @@ export async function fetchNotifications(limit = 50): Promise<ForgeNotification[
       kind,
       at: r.at,
       unread: !!r.unread,
-      squadId: r.squad_id,
-      squadName: r.squad_name,
-      squadCrest: r.squad_crest,
+      squadId: r.squad_id ?? '',
+      squadName: r.squad_name ?? '',
+      squadCrest: r.squad_crest ?? '',
       squadPhotoUrl: r.squad_photo_url ?? null,
       actorId: r.actor_id ?? null,
       actorName: r.actor_name ?? null,
       actorAvatarUrl: r.actor_avatar_url ?? null,
+      challengeId: r.challenge_id ?? null,
+      challengeName: r.challenge_name ?? null,
     });
   }
   return out;

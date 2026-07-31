@@ -133,8 +133,13 @@ export default function CreateChallengeScreen() {
   /* No squad id means FRIENDS context (0087, CS-D1's second roster source). Friends are not a group —
      there is no "my friends" object to point at, only a graph of pairs — so this competition names who
      it is for, and the picker below is that naming. */
-  const friendsMode = !squadId;
-  const { data: friendLists } = useQuery(() => (friendsMode ? fetchFriendLists() : Promise.resolve(null)), [friendsMode]);
+  /* Entering from a squad no longer DECIDES the roster — it only preselects it. "Who Competes" is a
+     choice between the squad you came from and specific friends, because arriving from a squad page is
+     not the same as wanting to compete against all of it. With no squad in context there is nothing to
+     choose and it is friends outright. */
+  const [scope, setScope] = useState<'squad' | 'friends'>(squadId ? 'squad' : 'friends');
+  const friendsMode = scope === 'friends';
+  const { data: friendLists } = useQuery(fetchFriendLists, []);
   const myFriends: FriendSummary[] = friendLists?.friends ?? [];
   const [invited, setInvited] = useState<string[]>([]);
   const toggleFriend = (id: string) => setInvited((v) => (v.includes(id) ? v.filter((x) => x !== id) : [...v, id]));
@@ -418,6 +423,28 @@ export default function CreateChallengeScreen() {
           {/* ── Who Competes ── a squad STATES its roster; friends have to be named. */}
           <Text style={styles.sectionLabel}>Who Competes</Text>
           <View style={styles.card}>
+            {squadId ? (
+              <View style={styles.scopeToggle}>
+                {(['squad', 'friends'] as const).map((k) => {
+                  const on = scope === k;
+                  return (
+                    <Pressable
+                      key={k}
+                      onPress={() => setScope(k)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: on }}
+                      accessibilityLabel={k === 'squad' ? 'Compete with your squad' : 'Compete with specific friends'}
+                      style={({ pressed }) => [styles.scopeTab, on ? styles.scopeTabOn : null, pressed ? styles.friendRowPressed : null]}
+                    >
+                      <Text style={[styles.scopeTabText, on ? styles.scopeTabTextOn : null]}>
+                        {k === 'squad' ? (squad?.name ?? 'My Squad') : 'Friends'}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ) : null}
+
             {friendsMode ? (
               myFriends.length === 0 ? (
                 <View style={styles.scopeStrip}>
@@ -468,7 +495,11 @@ export default function CreateChallengeScreen() {
                 </View>
               </View>
             )}
-            <Text style={styles.optInHint}>No one is entered until they opt in — a challenge nobody joins simply never starts.</Text>
+            <Text style={styles.optInHint}>
+              {friendsMode
+                ? 'They get a notification and opt in themselves — being named isn’t being entered.'
+                : 'No one is entered until they opt in — a challenge nobody joins simply never starts.'}
+            </Text>
           </View>
 
           {/* ── Review ── */}
@@ -710,6 +741,11 @@ function TickGlyph() {
 }
 
 const styles = StyleSheet.create({
+  scopeToggle: { flexDirection: 'row', gap: 6, marginBottom: 12, padding: 4, borderRadius: flRadius.md, backgroundColor: flColor.surfaceRecessed },
+  scopeTab: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: flRadius.sm },
+  scopeTabOn: { backgroundColor: flColor.bronzeTint, borderWidth: 1, borderColor: flColor.bronzeBorder },
+  scopeTabText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
+  scopeTabTextOn: { color: flColor.bronze300 },
   friendList: { gap: 8 },
   friendRow: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingHorizontal: 11, paddingVertical: 9, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
   friendRowOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },

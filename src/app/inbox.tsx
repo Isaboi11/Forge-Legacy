@@ -77,7 +77,10 @@ export default function InboxScreen() {
   }, [data]);
 
   const open = (n: ForgeNotification) => {
-    if (n.kind === 'join_request') router.push({ pathname: '/squad-requests', params: { id: n.squadId } });
+    // A challenge invite is the only kind whose destination is the thing itself: the competition, where
+    // opting in is one tap. Everything else routes to the squad or the person.
+    if (n.kind === 'challenge_invite' && n.challengeId) router.push({ pathname: '/challenge/[id]', params: { id: n.challengeId } });
+    else if (n.kind === 'join_request') router.push({ pathname: '/squad-requests', params: { id: n.squadId } });
     // Friend requests are answered on the asker's profile — one place holds the whole relationship.
     else if ((n.kind === 'friend_request' || n.kind === 'friend_accepted') && n.actorId) {
       router.push({ pathname: '/athlete/[id]', params: { id: n.actorId } });
@@ -143,7 +146,11 @@ function NotificationRow({ notification: n, divided, onPress }: { notification: 
   // The leading slot answers "who or what is this about" — the athlete when there is one, the squad
   // itself when the squad is the one who acted.
   const aboutAthlete =
-    n.kind === 'join_request' || n.kind === 'member_joined' || n.kind === 'friend_request' || n.kind === 'friend_accepted';
+    n.kind === 'join_request' ||
+    n.kind === 'member_joined' ||
+    n.kind === 'friend_request' ||
+    n.kind === 'friend_accepted' ||
+    n.kind === 'challenge_invite';
 
   return (
     <Animated.View style={{ opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }] }}>
@@ -218,6 +225,12 @@ function bodyFor(n: ForgeNotification, actor: string) {
           <Text style={styles.strong}>{actor}</Text> accepted your request
         </>
       );
+    case 'challenge_invite':
+      return (
+        <>
+          <Text style={styles.strong}>{actor}</Text> challenged you to <Text style={styles.strong}>{n.challengeName ?? 'a competition'}</Text>
+        </>
+      );
   }
 }
 
@@ -235,6 +248,8 @@ function subFor(n: ForgeNotification): string {
       return 'Open their profile to accept';
     case 'friend_accepted':
       return 'You’re now friends';
+    case 'challenge_invite':
+      return 'Opt in to compete';
   }
 }
 
@@ -253,6 +268,8 @@ function accessibilityLabelFor(n: ForgeNotification, actor: string): string {
       return `${actor} wants to be friends, ${when} ago. Open their profile to accept.`;
     case 'friend_accepted':
       return `${actor} accepted your friend request, ${when} ago.`;
+    case 'challenge_invite':
+      return `${actor} challenged you to ${n.challengeName ?? 'a competition'}, ${when} ago. Opt in to compete.`;
   }
 }
 
@@ -270,7 +287,17 @@ function glyphFor(kind: ForgeNotification['kind']) {
       return <PlusGlyph size={11} color={flColor.bronze300} />;
     case 'friend_accepted':
       return <CheckGlyph size={11} color="#8FB295" />;
+    case 'challenge_invite':
+      return <SwordsGlyph size={11} color={flColor.bronze300} />;
   }
+}
+
+function SwordsGlyph({ size = 11, color = flColor.bronze300 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M14.5 14.5L21 21M19 3l-9 9M5 3l9 9M9.5 14.5L3 21" />
+    </Svg>
+  );
 }
 
 // ── glyphs ──
