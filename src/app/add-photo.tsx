@@ -12,6 +12,8 @@ import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { addChapterPhoto, fetchActivePhotoChapter, fetchPhotoChapter, uploadChapterPhoto } from '@/data/photos-live';
 import { useToast } from '@/hooks/useCeremony';
 import { useMediaPicker } from '@/lib/useMediaPicker';
+import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { PICKER_DB } from '@/domain/exercise-picker/data';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 
 /**
@@ -40,8 +42,17 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
  * holds it, and the archive does not accept the future.
  */
 
-/** Quick labels. Free text stays available — a label is often a lift, not a pose. */
-const LABELS = ['Front', 'Side', 'Back', 'Lift', 'Clip'];
+/**
+ * Quick labels. Free text stays available — a label is often a lift, not a pose.
+ *
+ * "Lift" USED TO BE ONE OF THESE, and it was the only one that said nothing. "Front", "Side" and "Back"
+ * name the pose you can't tell from the thumbnail; "Clip" says it moves. A photo labelled "Lift" tells
+ * you what the picture already shows. The useful label for a photo of a lift is WHICH lift — so it moved
+ * out of this row and became a chip that opens the catalog (see `liftOpen`), which also lets a photo added
+ * from the gallery attach to the exercise (0090). Before this, only a photo taken from the PR moment in
+ * the logger could ever carry one.
+ */
+const LABELS = ['Front', 'Side', 'Back', 'Clip'];
 
 /** "barbell-back-squat" → "Back Squat". Same rule the timeline and the trophy card use. */
 function prettyLift(slug: string): string {
@@ -90,6 +101,21 @@ export default function AddPhotoScreen() {
   const [caption, setCaption] = useState('');
   const [starred, setStarred] = useState(false);
   const [saving, setSaving] = useState(false);
+  /* The lift chosen from the catalog, when one was. Held as {key, name} because the label carries the
+     NAME and the column stores the KEY (0090). */
+  const [picked, setPicked] = useState<{ key: string; name: string } | null>(null);
+  const [liftOpen, setLiftOpen] = useState(false);
+  const [liftSearch, setLiftSearch] = useState('');
+
+  const liftResults = (() => {
+    const q = liftSearch.trim().toLowerCase();
+    return (q ? PICKER_DB.filter((x) => x.name.toLowerCase().includes(q)) : PICKER_DB).slice(0, 40);
+  })();
+
+  /* The attachment follows the LABEL. Pick "Back Squat" and then type over it, and the photo is no longer
+     of that lift — so the key is only sent while the label still says so. Derived, not an effect: writing
+     this back into state on every keystroke is exactly what the react-compiler lint forbids. */
+  const pickedKey = picked && label === picked.name ? picked.key : null;
 
   const choose = async () => {
     const asset = await pick({ kind: 'both', title: 'Add a photo', hint: 'It joins this chapter’s album.', quality: 0.85 });
@@ -121,7 +147,8 @@ export default function AddPhotoScreen() {
         isVideo,
         // A PR shot is a highlight by definition — it can stand in as the chapter's cover.
         isStarred: liftKey ? true : starred,
-        exercise: liftKey,
+        // From the PR moment, or chosen from the catalog here — both are a photo OF a lift.
+        exercise: liftKey ?? pickedKey,
       });
       showToast(isVideo ? 'Video added to your chapter.' : 'Photo added to your chapter.');
       router.back();
@@ -260,6 +287,17 @@ export default function AddPhotoScreen() {
                   </Pressable>
                 );
               })}
+              {/* Names the lift instead of just saying "Lift". Shows the chosen one so the chip reads back
+                  what it did — and stays on only while the label still matches, same rule as `pickedKey`. */}
+              <Pressable
+                onPress={() => setLiftOpen(true)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: !!pickedKey }}
+                accessibilityLabel={pickedKey ? `Lift: ${picked?.name}` : 'Choose a lift'}
+                style={({ pressed }) => [styles.chip, pickedKey ? styles.chipOn : null, pressed ? styles.pressed : null]}
+              >
+                <Text style={[styles.chipText, pickedKey ? styles.chipTextOn : null]}>{pickedKey ? picked?.name : 'A lift…'}</Text>
+              </Pressable>
             </View>
             <TextInput
               value={label}
@@ -310,6 +348,41 @@ export default function AddPhotoScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* The real 794-exercise catalog — the same `PICKER_DB` the logger and Goals search. Choosing sets
+          the label AND the attachment, which is the whole reason this replaced a chip reading "Lift". */}
+      <BottomSheet open={liftOpen} onClose={() => setLiftOpen(false)} title="Which lift?">
+        <View style={styles.liftSheet}>
+          <TextInput
+            style={styles.input}
+            value={liftSearch}
+            onChangeText={setLiftSearch}
+            placeholder="Search exercises…"
+            placeholderTextColor={flColor.gray600}
+            accessibilityLabel="Search exercises"
+            autoFocus
+          />
+          <ScrollView style={styles.liftList} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+            {liftResults.map((x) => (
+              <Pressable
+                key={x.key}
+                onPress={() => {
+                  setPicked({ key: x.key, name: x.name });
+                  setLabel(x.name);
+                  setLiftOpen(false);
+                  setLiftSearch('');
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={x.name}
+                style={styles.liftRow}
+              >
+                <Text style={styles.liftRowText}>{x.name}</Text>
+              </Pressable>
+            ))}
+            {liftResults.length === 0 ? <Text style={styles.liftEmpty}>No exercise matches “{liftSearch.trim()}”.</Text> : null}
+          </ScrollView>
+        </View>
+      </BottomSheet>
 
       {mediaPickerSheet}
     </View>
@@ -392,6 +465,12 @@ const styles = StyleSheet.create({
   chipTextOn: { color: flColor.bronze300 },
 
   input: { marginTop: 10, paddingHorizontal: 13, paddingVertical: 11, minHeight: 44, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, fontSize: 13.5, color: flColor.cream100 },
+
+  liftSheet: { gap: 12 },
+  liftList: { maxHeight: 320 },
+  liftRow: { paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: flColor.charcoal800 },
+  liftRowText: { fontSize: 15, color: flColor.cream100 },
+  liftEmpty: { paddingVertical: 18, fontSize: 13, color: flColor.gray400 },
   inputMulti: { minHeight: 88, textAlignVertical: 'top' },
 
   starRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 24, paddingHorizontal: 14, paddingVertical: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },

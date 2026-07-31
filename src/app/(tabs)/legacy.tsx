@@ -101,7 +101,7 @@ export default function LegacyScreen() {
   // The archive band loads alongside rather than inside `fetchLegacyData` — it feeds three tiles near
   // the bottom of a long scroll and must not delay the hero. Each tile shows its recessed surface
   // until this resolves, which is the same surface its empty state uses, so nothing rearranges.
-  const { data: archive } = useQuery(fetchLegacyArchive, []);
+  const { data: archive, refetch: refetchArchive } = useQuery(fetchLegacyArchive, []);
   const liveAccomplishments = useMemo(
     () =>
       (accData ?? []).map((a) => ({
@@ -147,10 +147,14 @@ export default function LegacyScreen() {
         .finally(() => {
           if (!cancelled) refetch();
         });
+      // The archive band too. It was fetched once at mount and never again, so adding a photo — or an
+      // entry, or finishing a competition — and walking back to Legacy showed the band exactly as it was
+      // when the tab first loaded: an empty Photos tile next to a gallery that now had photos in it.
+      refetchArchive();
       return () => {
         cancelled = true;
       };
-    }, [enqueue, refetch]),
+    }, [enqueue, refetch, refetchArchive]),
   );
 
   // First load only: wait for the live Legacy read + the shared profile, with a retryable error. Once
