@@ -66,11 +66,10 @@ const PIN_GLYPH: Record<PinKind, SymbolName> = {
  * Trophy Case, replacing the old navigation rows) + Accomplishments + Honors, then the
  * closing inscription.
  *
- * Data (Phase 2): the spine sections — rank · standard · active + sealed chapters · timeline ·
- * featured moment — read LIVE from Supabase via `fetchLegacyData` (`useQuery`). The athlete identity
- * comes from the live `useProfile`. Only four sections remain seeded — photos · accomplishments ·
- * honors · chapter goals — marked in one place (`LEGACY_FIXTURE_PENDING`) because their tables aren't
- * applied yet. So it's always known which half is real.
+ * Data: every section reads LIVE from Supabase. Rank, standard, chapters, timeline and the featured
+ * moment come from `fetchLegacyData`; accomplishments from 0023, honors from `honor_instances`, chapter
+ * goals from 0025, photos and the trophy count through the archive band. `LEGACY_FIXTURE_PENDING` — the
+ * one place seeded data was allowed to live — is deleted. Nothing on this screen is invented.
  *
  * Hero identity (corrected — see FORGE_DELTAS §15): the LEFT slot is the athlete's PROFILE
  * PORTRAIT (a photo, framed by a faint rank-seal ring). No profile-photo system exists yet, so it

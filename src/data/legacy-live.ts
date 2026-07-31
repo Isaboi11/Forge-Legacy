@@ -2,7 +2,6 @@ import { supabase } from '@/lib/supabase';
 import { categoryGlyph, honorMeta } from '@/domain/honor/catalog';
 
 import { cap, dateRangeCompact, dateRangeFull, daysSince, fmtDate, fmtShort, roman } from '@/lib/format';
-import { CHAPTER_GOALS_PENDING, LEGACY_FIXTURE_PENDING } from './legacy-fixture-pending';
 import type { Chapter, FeaturedMoment, Goal as LegacyGoal, LegacyData, Pin, PinKind, TimelineEntry } from '@/types/legacy';
 import type { RankFamily, RankLevel } from '@/domain/rank-artwork/resolver';
 import { isAchieved, isQuantifiable, progressLabel, progressPct } from '@/domain/goals/goals';
@@ -29,7 +28,7 @@ const CATEGORY_ID: Record<string, string> = {
 /**
  * Live Legacy read (Phase 2) — builds the exact `LegacyData` shape the Legacy components already
  * consume, from the spine (`profiles` · `chapters` · `timeline_events`). The four schema-only sections
- * (photos/accomplishments/honors + chapter goals) come from `LEGACY_FIXTURE_PENDING`. Components
+ * (photos/accomplishments/honors + chapter goals) are now live too — the fixture is deleted. Components
  * unchanged; only the data source swaps.
  */
 
@@ -93,7 +92,15 @@ function toDisplayGoal(g: GoalRow | undefined): LegacyGoal {
     : { kind: 'narrative', name: g.name, achieved };
 }
 
-function toChapter(r: ChapterRow): Chapter {
+/**
+ * `goalOf` looks the chapter's own primary goal up by id.
+ *
+ * This used to be `CHAPTER_GOALS_PENDING[r.name]` — a fixture keyed by chapter NAME, holding invented
+ * goals with invented progress ("Squat 315 lbs, 73%"). Name a chapter "Foundations" and the app would
+ * have shown you someone else's goal, at someone else's percentage, as your own. Goals have been real
+ * since 0025; the mapper just never read them for anything but the active chapter.
+ */
+function toChapter(r: ChapterRow, goalOf: (chapterId: string) => LegacyGoal): Chapter {
   return {
     id: r.id,
     name: r.name,
@@ -102,7 +109,7 @@ function toChapter(r: ChapterRow): Chapter {
     sealedAt: r.sealed_at ? fmtDate(r.sealed_at) : undefined,
     dateRangeFull: r.end_date ? dateRangeFull(r.start_date, r.end_date) : undefined,
     dateRangeCompact: r.end_date ? dateRangeCompact(r.start_date, r.end_date) : undefined,
-    goal: CHAPTER_GOALS_PENDING[r.name] ?? { kind: 'none' }, // FIXTURE until goals table lands
+    goal: goalOf(r.id),
     workoutCount: r.workout_count,
     honorCount: r.honor_count,
     reflection: r.reflection ?? undefined,
@@ -192,9 +199,10 @@ export async function fetchLegacyData(): Promise<LegacyData> {
 
   // The active chapter's card shows the REAL primary goal (0025), not the fixture. No primary → 'none'
   // (a fresh chapter shows no goal, never a placeholder one).
-  const primaryGoalRow = ((goalRows ?? []) as GoalRow[]).find((g) => active && g.chapter_id === active.id);
-  const activeChapter = active ? toChapter(active) : null;
-  if (activeChapter) activeChapter.goal = toDisplayGoal(primaryGoalRow);
+  const goalByChapter = new Map(((goalRows ?? []) as GoalRow[]).map((g) => [g.chapter_id, g]));
+  const goalOf = (chapterId: string): LegacyGoal => toDisplayGoal(goalByChapter.get(chapterId));
+
+  const activeChapter = active ? toChapter(active, goalOf) : null;
 
   return {
     rankName: prof.rank_family ? cap(prof.rank_family) : '',
@@ -207,7 +215,7 @@ export async function fetchLegacyData(): Promise<LegacyData> {
     dayCount: active ? daysSince(active.start_date) : 0,
     featuredMoment: deriveFeatured(timeline, chapters),
     pinned,
-    sealedChapters: sealed.map(toChapter),
+    sealedChapters: sealed.map((c) => toChapter(c, goalOf)),
     timelineEntries: timeline.slice(0, 3).map(
       (e): TimelineEntry => ({
         id: e.id,
@@ -219,7 +227,12 @@ export async function fetchLegacyData(): Promise<LegacyData> {
     // honors are LIVE (from honor_instances); override any fixture default
     honors,
     totalHonorCount: honors.length,
-    // ── transitional half — see legacy-fixture-pending ──
-    ...LEGACY_FIXTURE_PENDING,
+    /* The fixture spread is gone. It supplied `photos`/`totalPhotoCount` — retired when the real photo
+       archive landed (0085) — and `accomplishments`, which the screen stopped reading when 0023 shipped.
+       Both were dead weight sitting in a payload where something could have picked them up. */
+    photos: [],
+    totalPhotoCount: 0,
+    accomplishments: [],
+    totalAccomplishmentCount: 0,
   };
 }

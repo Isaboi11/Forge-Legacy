@@ -40,9 +40,10 @@ export interface ShareContent {
   /** Small uppercase card label, e.g. "Honor Earned". */
   eyebrow: string;
   title: string;
-  athlete: string;
-  /** Rank shown in the card footer when `rankInFooter`. */
-  rank: string;
+  /** Null when the athlete isn't known — the byline is omitted rather than invented. */
+  athlete: string | null;
+  /** Rank shown in the card footer when `rankInFooter`. Null when unknown. */
+  rank: string | null;
   rankInFooter: boolean;
   fields: ShareField[];
 }
@@ -139,18 +140,21 @@ const FIELDS: Record<ShareKind, FieldDef[]> = {
 };
 
 /**
- * Demo card content per kind — PLACEHOLDER, used because there is no share backend. The
- * real SH-1 assembles this from the source entity (session, honor, goal, rank event).
+ * ══ THERE ARE NO DEFAULT VALUES, AND THAT IS THE POINT ══
+ *
+ * This file used to carry a `DEMO` table — a per-kind set of card values used whenever the caller didn't
+ * supply its own. It was written when nothing enqueued a ceremony in production, so the only caller was
+ * the dev harness and the invented values were only ever seen by us.
+ *
+ * That stopped being true. Legacy enqueues a real rank-up and Goals enqueues a real achievement, and both
+ * offer "Share …" — which built a card reading "Chapter III · The Rebuild", dated "May 3, 2026", signed
+ * "Ada Ridge", for an athlete none of that was true of. A share card is the one artifact designed to LEAVE
+ * the app, so it was also the worst possible place for it.
+ *
+ * A card now shows exactly what its caller passes and nothing more. `buildShareContent` already drops
+ * fields whose value is empty, so an under-supplied card renders SHORTER — never wrong. Same reason
+ * `athlete` and `rank` are nullable: an unknown name is an omitted byline, not "Athlete".
  */
-const DEMO: Partial<Record<ShareKind, { title: string; values: Record<string, string> }>> = {
-  accomplishment: { title: '315 lb Barbell Bench Press', values: { value: '315 lb', chapter: 'Chapter III · The Rebuild', date: 'May 3, 2026' } },
-  honor: { title: 'The Unbroken', values: { citation: '30 sessions · no missed week', chapter: 'Chapter III · The Rebuild', date: 'Apr 2, 2026' } },
-  goal: { title: 'Squat 315 lbs', values: { chapter: 'Chapter III · The Rebuild', date: 'May 3, 2026' } },
-  pr: { title: 'Back Squat', values: { prev: 'Was 385 lb × 3', neu: '405 lb × 3', improve: '+20 lb' } },
-  chapter: { title: 'Ironborn', values: { stats: '48 workouts · 14 weeks', date: 'Mar 1, 2026' } },
-  rank: { title: 'Foundation · III', values: { current: 'Foundation tier · III', date: 'Jun 14, 2026' } },
-  program: { title: 'Strength Foundation I', values: { status: 'Completed · 18 of 18', date: 'Jun 12, 2026' } },
-};
 
 export interface ShareOverrides {
   title?: string;
@@ -159,10 +163,9 @@ export interface ShareOverrides {
   values?: Record<string, string>;
 }
 
-/** Assemble the in-progress ShareContent for a kind, from demo defaults + any overrides. */
+/** Assemble the ShareContent for a kind from what the caller actually knows. */
 export function buildShareContent(kind: ShareKind, overrides: ShareOverrides = {}): ShareContent {
-  const demo = DEMO[kind];
-  const values = { ...(demo?.values ?? {}), ...(overrides.values ?? {}) };
+  const values = overrides.values ?? {};
   const fields = FIELDS[kind]
     .filter((f) => values[f.key] != null && values[f.key] !== '')
     .map((f) => ({ key: f.key, label: f.label, text: values[f.key], emphasis: f.emphasis }));
@@ -170,9 +173,10 @@ export function buildShareContent(kind: ShareKind, overrides: ShareOverrides = {
     kind,
     verb: VERB[kind],
     eyebrow: EYE[kind],
-    title: overrides.title ?? demo?.title ?? 'Milestone',
-    athlete: overrides.athlete ?? 'Athlete',
-    rank: overrides.rank ?? 'Foundation · III',
+    // A neutral noun for the headline is a label, not a claim — unlike a value, which would be.
+    title: overrides.title ?? 'Milestone',
+    athlete: overrides.athlete ?? null,
+    rank: overrides.rank ?? null,
     rankInFooter: RANK_FOOT[kind],
     fields,
   };
@@ -181,7 +185,11 @@ export function buildShareContent(kind: ShareKind, overrides: ShareOverrides = {
 /** Plain-text snippet for the native share payload (Share Card Renderer output 2). */
 export function shareSnippet(content: ShareContent, hiddenKeys: ReadonlySet<string>, includeName: boolean): string {
   const lines = [content.title, ...content.fields.filter((f) => !hiddenKeys.has(f.key)).map((f) => f.text)];
-  if (includeName) lines.push(`— ${content.athlete}${content.rankInFooter ? ` · ${content.rank}` : ''}`);
+  // No name, no byline — "— Athlete" signs the card with a person who doesn't exist.
+  if (includeName && content.athlete) {
+    const rank = content.rankInFooter && content.rank ? ` · ${content.rank}` : '';
+    lines.push(`— ${content.athlete}${rank}`);
+  }
   lines.push('Forged in Forge Legacy.');
   return lines.join('\n');
 }

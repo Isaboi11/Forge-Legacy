@@ -18,7 +18,7 @@ import { ProgramMissionGrid } from '@/components/forge/compositions/ProgramMissi
 import { YourCircleCard } from '@/components/forge/compositions/YourCircleCard';
 import { QuickActionsRow } from '@/components/forge/compositions/QuickActionsRow';
 import { TrainingNowSheet } from '@/components/forge/TrainingNowSheet';
-import { HOME_CHAPTER, todaysPrinciple } from '@/data/home-placeholder';
+import { todaysPrinciple } from '@/data/home-principles';
 import { fetchHomeGym, saveHomeGym } from '@/data/home-gym-live';
 import { fetchActiveChapterGoals } from '@/data/goals-live';
 import { goalSections } from '@/domain/goals/goals';
@@ -28,9 +28,8 @@ import { fetchTrainingNow, trainingSummary } from '@/data/presence-live';
 import { fetchFriendLists } from '@/data/friends-live';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { useQuery } from '@/lib/useQuery';
-import { fetchAwaitingChapter } from '@/data/home-live';
+import { fetchAwaitingChapter, fetchHomeChapter } from '@/data/home-live';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
-import { getSelfProfile } from '@/domain/profile/placeholder-data';
 import { useProfile } from '@/lib/profile';
 import { ExperienceLevelCard, EXPERIENCE_FOR, type IntakeResult } from '@/components/forge/compositions/ExperienceLevelCard';
 import { getHomeLevel, setHomeLevel, clearHomeLevel } from '@/lib/home-level';
@@ -44,7 +43,7 @@ import { getProgramDefinitions } from '@/domain/training/programs';
 import { nextSession, totalSessions } from '@/domain/program/progress-core';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
-import { getActiveProgram, getActiveProgramById } from '@/domain/training/active-program';
+import { getActiveProgramById } from '@/domain/training/active-program';
 import { resolveRecommendationId } from '@/domain/onboarding/recommend-core';
 import type { Program, Workout } from '@/domain/training/schema';
 import { resolveHomeWorkoutArtwork } from '@/domain/home-artwork/resolver';
@@ -155,15 +154,67 @@ function ExploreForgeSection({ onOpen }: { onOpen: (route: Href) => void }) {
  * Workout" hero, the Program|Mission grid, the "Your Circle" presence card, and
  * the Quick Actions row.
  *
- * Real data: the hero art + title/focus/count (resolver over the converted active
- * program), the Program tile (`getActiveProgram()`), the AppBar avatar
- * (`getSelfProfile()`), and the principle (`todaysPrinciple`). PLACEHOLDER
- * (no backend yet): chapter/week (HOME_DATA + HOME_CHAPTER), the Mission tile
- * goal, live presence (0086) + the newest post from the athlete's circle (0074),
- * and the Quick Actions. The Home hero rank medallion is temporarily REMOVED
- * (`showRankMedallion={false}`) pending user-supplied cycling artwork — see FORGE_DELTAS §19.
- * (Legacy's hero seal is a separate component and stays.)
+ * EVERYTHING ON THIS SCREEN IS THE ATHLETE'S OWN. The hero and Program tile read their real program
+ * (`fetchMyPrograms`) — never the catalog's demo cursor; the chapter and its week/day come from
+ * `fetchHomeChapter`; the Mission tile from live goals; presence from 0086; Your Circle from the real
+ * friends feed (0074); the avatar from `useProfile()`. The only authored constant is the daily principle
+ * (`todaysPrinciple`), which is the product's own line and the same for everyone by design.
+ *
+ * The Home hero rank medallion is temporarily REMOVED (`showRankMedallion={false}`) pending user-supplied
+ * cycling artwork — see FORGE_DELTAS §19. (Legacy's hero seal is a separate component and stays.)
  */
+
+/**
+ * THE CHOICE COMES BEFORE THE QUESTIONS. "Build my own" used to be a secondary button on step 1 of the
+ * intake stepper — so the app asked what your experience level was, and only then mentioned you might
+ * already know what you want to do. Someone arriving with a program in mind was walked through a
+ * recommendation they never asked for. Two doors, same weight, neither the default.
+ *
+ * Shared by the first-run gate and the established athlete who has no program, because those two are the
+ * same question asked at different times — and the second one used to be answered with a demo program.
+ */
+function ProgramPathChooser({
+  title,
+  subtitle,
+  onGuided,
+  onBuild,
+  onBrowse,
+}: {
+  title: string;
+  subtitle?: string;
+  onGuided: () => void;
+  onBuild: () => void;
+  onBrowse: () => void;
+}) {
+  return (
+    <View style={styles.pathBlock}>
+      <Text style={styles.pathTitle}>{title}</Text>
+      {subtitle ? <Text style={styles.pathCardSub}>{subtitle}</Text> : null}
+      <Pressable
+        onPress={onGuided}
+        accessibilityRole="button"
+        accessibilityLabel="Help me find a program"
+        style={({ pressed }) => [styles.pathCard, pressed ? styles.pathPressed : null]}
+      >
+        <Text style={styles.pathCardTitle}>Help me find one</Text>
+        <Text style={styles.pathCardSub}>A few questions, then a program picked for where you are.</Text>
+      </Pressable>
+      <Pressable
+        onPress={onBuild}
+        accessibilityRole="button"
+        accessibilityLabel="Build my own program"
+        style={({ pressed }) => [styles.pathCard, pressed ? styles.pathPressed : null]}
+      >
+        <Text style={styles.pathCardTitle}>Build my own</Text>
+        <Text style={styles.pathCardSub}>You know the work. Lay out the days and lifts yourself.</Text>
+      </Pressable>
+      <Pressable onPress={onBrowse} accessibilityRole="button" accessibilityLabel="Browse programs" hitSlop={8} style={styles.pathQuiet}>
+        <Text style={styles.pathQuietText}>Or browse everything</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 export default function HomeScreen() {
   const [friendSheetOpen, setFriendSheetOpen] = useState(false);
   const router = useRouter();
@@ -175,6 +226,7 @@ export default function HomeScreen() {
   // H-1 "awaiting first workout" (ONB-D17): a just-onboarded athlete (active chapter, 0 workouts) gets a
   // purpose-built hero instead of the static content, so a fresh user never lands on stale/blank Home.
   const { data: awaiting, refetch: refetchAwaiting, loading: awaitingLoading } = useQuery(fetchAwaitingChapter, []);
+  const { data: homeChapter } = useQuery(fetchHomeChapter, []);
   // The athlete's saved programs — if any, Home reflects them instead of the empty first-program card.
   const { data: myPrograms, refetch: refetchPrograms } = useQuery(fetchMyPrograms, []);
   // How far into the built program the athlete is, so Home previews the NEXT session rather than always
@@ -236,8 +288,7 @@ export default function HomeScreen() {
   //   built program (myPrograms[0]) → the fresh athlete's chosen suggestion → the demo active program.
   // Progress is 0/total (no athlete-progress backend); a built program has no catalog artwork, so the
   // resolver reads its exercises' composition (program=null) and degrades to the split/neutral art.
-  const { profile, home } = useMemo(() => {
-    const profile = getSelfProfile();
+  const { home } = useMemo(() => {
     const built = builtProgram;
 
     let program: Program | null = null;
@@ -273,7 +324,13 @@ export default function HomeScreen() {
                 equipment: homeIntake?.equipment ?? [],
               }),
             )
-          : getActiveProgram();
+          : // NO PROGRAM IS A REAL STATE. This used to fall back to `getActiveProgram()`, which reads the
+            // shipped program DEFINITIONS and returns whichever one the CATALOG marks active — so an
+            // athlete who had chosen nothing (a freestyle-only athlete, past `awaiting` with no program
+            // of their own) was shown Strength Foundation I on their hero as though it were theirs. Same
+            // defect that was fixed on Workouts; this was the other half of it. They get the two doors
+            // below instead.
+            null;
       program = prog;
       workout = prog?.nextWorkout ?? null;
       name = prog?.name ?? '';
@@ -282,14 +339,18 @@ export default function HomeScreen() {
     }
 
     const resolved = resolveHomeWorkoutArtwork({
-      user: profile,
+      // The athlete's REAL sex, which is all the resolver reads off the profile. It used to take the
+      // fixture identity; `'unspecified'` is the honest default and the resolver's deliberate neutral
+      // path (never `'male'`), so a profile that hasn't loaded degrades to neutral art rather than
+      // guessing.
+      user: { sex: liveProfile?.sex ?? 'unspecified' },
       workout: workout ?? ({} as Workout),
       program,
       exercises: workout ? enrichSessionExercises(workout.exercises ?? []) : [],
     });
 
-    return { profile, home: { workout, resolved, name, completed, total } };
-  }, [builtProgram, builtDone, awaiting, homeLevel, homeIntake]);
+    return { home: { workout, resolved, name, completed, total } };
+  }, [builtProgram, builtDone, awaiting, homeLevel, homeIntake, liveProfile?.sex]);
 
   // The Mission tile shows the REAL chapter goal now (0025), not the HOME_DATA placeholder. Primary
   // preferred, else the newest goal; count = goals still in progress. No goals → an invite to set one.
@@ -380,9 +441,14 @@ export default function HomeScreen() {
   const hasProgram = !!(myPrograms && myPrograms.length > 0);
   // Chapter honesty: the full Home can now appear BEFORE the first workout (a suggestion/built program while
   // still `awaiting`), so show the real active chapter then — not the "Chapter III" placeholder.
+  /* The athlete's OWN chapter. This used to fall back to the literal "Chapter III · The Rebuild · Week 6
+     · Day 2" for anyone past their first workout — every athlete shown the same invented chapter on the
+     first screen they land on. Null while it loads, which draws nothing rather than a placeholder. */
   const chapter = awaiting
     ? { ...splitChapterTitle(awaiting.chapterName), weekDay: 'Your first chapter' }
-    : { number: HOME_CHAPTER.number, name: HOME_CHAPTER.name, weekDay: HOME_CHAPTER.weekDay };
+    : homeChapter
+      ? { number: homeChapter.number, name: homeChapter.name, weekDay: homeChapter.weekDay }
+      : { number: '', name: '', weekDay: '' };
 
   // Phase B un-gate: the full Home opens as soon as the athlete has a program signal — a built program OR a
   // chosen level (a suggestion exists). The single-card gate remains ONLY while a fresh athlete is still
@@ -449,35 +515,12 @@ export default function HomeScreen() {
                 onChange={changeIntake}
               />
             ) : path == null ? (
-              /* THE CHOICE COMES BEFORE THE QUESTIONS. "Build my own" was a secondary button on step 1 of
-                 the intake stepper — so the app asked what your experience level was, and only then
-                 mentioned that you might already know what you want to do. Someone arriving with a
-                 program in mind was walked through a recommendation they never asked for. Two doors,
-                 same weight, and neither is the default. */
-              <View style={styles.pathBlock}>
-                <Text style={styles.pathTitle}>How do you want to start?</Text>
-                <Pressable
-                  onPress={() => setPath('guided')}
-                  accessibilityRole="button"
-                  accessibilityLabel="Help me find a program"
-                  style={({ pressed }) => [styles.pathCard, pressed ? styles.pathPressed : null]}
-                >
-                  <Text style={styles.pathCardTitle}>Help me find one</Text>
-                  <Text style={styles.pathCardSub}>A few questions, then a program picked for where you are.</Text>
-                </Pressable>
-                <Pressable
-                  onPress={openBuilder}
-                  accessibilityRole="button"
-                  accessibilityLabel="Build my own program"
-                  style={({ pressed }) => [styles.pathCard, pressed ? styles.pathPressed : null]}
-                >
-                  <Text style={styles.pathCardTitle}>Build my own</Text>
-                  <Text style={styles.pathCardSub}>You know the work. Lay out the days and lifts yourself.</Text>
-                </Pressable>
-                <Pressable onPress={openPrograms} accessibilityRole="button" accessibilityLabel="Browse programs" hitSlop={8} style={styles.pathQuiet}>
-                  <Text style={styles.pathQuietText}>Or browse everything</Text>
-                </Pressable>
-              </View>
+              <ProgramPathChooser
+                title="How do you want to start?"
+                onGuided={() => setPath('guided')}
+                onBuild={openBuilder}
+                onBrowse={openPrograms}
+              />
             ) : (
               // Guided — the intake stepper (level → goals → equipment).
               <ExperienceLevelCard mode="collect" onComplete={completeIntake} onBuild={openBuilder} />
@@ -495,7 +538,7 @@ export default function HomeScreen() {
       <AppBar
         title={<HomeWordmark />}
         actions={<NotificationBell />}
-        avatar={<Avatar name={liveProfile?.name ?? profile.name} src={liveProfile?.avatarUrl ?? undefined} size="appBar" />}
+        avatar={<Avatar name={liveProfile?.name ?? ''} src={liveProfile?.avatarUrl ?? undefined} size="appBar" />}
         onAvatar={() => router.push('/account-settings')}
       />
 
@@ -522,6 +565,30 @@ export default function HomeScreen() {
                  button to nowhere when none is given. */
               onFreestyle={startFreestyleFromHome}
             />
+          ) : null}
+
+          {/* Past the first-run gate with no program of their own — a freestyle-only athlete. They used to
+              be handed the catalog's demo program here. Now they get the same two doors the gate offers,
+              plus the session they can start regardless. */}
+          {!home.name ? (
+            <>
+              <ProgramPathChooser
+                title="You don't have a program yet"
+                subtitle="Train freely as long as you like — or give the work a shape."
+                onGuided={changeIntake}
+                onBuild={openBuilder}
+                onBrowse={openPrograms}
+              />
+              <Pressable
+                onPress={startFreestyleFromHome}
+                accessibilityRole="button"
+                accessibilityLabel="Start a workout without a program"
+                hitSlop={8}
+                style={styles.pathQuiet}
+              >
+                <Text style={styles.pathQuietText}>Or just train today</Text>
+              </Pressable>
+            </>
           ) : null}
 
           {home.name ? (

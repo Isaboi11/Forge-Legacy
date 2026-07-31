@@ -4,10 +4,13 @@
  * Toast, and renders both above every route. Mirrors WorkoutSessionProvider's Context
  * idiom. Exposes `useCeremony` (enqueue/dismiss/current) and `useToast` (showToast).
  *
- * Nothing enqueues ceremonies in production yet (no rank/honor/goal/program evaluator) —
- * the flagged dev harness (`/ceremony-harness`) is the only caller until real triggers
- * exist. Rank ceremonies show the REAL imported badge; every other ceremony's mark is a
- * pending-asset Insignia placeholder (honor art was never imported — never fabricated).
+ * Production DOES enqueue these now — Legacy fires M-1 on a real rank-up (`legacy.tsx`) and Goals fires
+ * M-3 when a primary goal is achieved (`goals.tsx`). The dev harness is no longer the only caller, which
+ * is what made the share card's demo values a real defect rather than a dev-only one; see
+ * `ceremonyShareValues` and the header of `domain/share/content.ts`.
+ *
+ * Rank ceremonies show the REAL imported badge; every other ceremony's mark is a pending-asset Insignia
+ * placeholder (honor art was never imported — never fabricated).
  */
 
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react'
@@ -20,10 +23,10 @@ import { HonorCeremony } from '@/components/ceremony/HonorCeremony'
 import { HonorSymbol } from '@/components/ceremony/HonorSymbol'
 import type { CeremonyEvent } from '@/domain/ceremony/types'
 import { orderCeremonies } from '@/domain/ceremony/queue'
-import { ceremonyCopy } from '@/domain/ceremony/copy'
+import { ceremonyCopy, rankTierLabel } from '@/domain/ceremony/copy'
 import { RankSeal } from '@/components/forge/RankSeal'
 import { useShareSheet } from '@/hooks/useShareSheet'
-import { getSelfProfile } from '@/domain/profile/placeholder-data'
+import { useProfile } from '@/lib/profile'
 import type { ShareKind } from '@/domain/share/content'
 
 export type CeremonyContextValue = {
@@ -57,6 +60,32 @@ function ceremonyArtwork(event: CeremonyEvent): React.ReactNode {
   return <Insignia size={ARTWORK_SIZE} />
 }
 
+/**
+ * The card's field values, read off the EVENT — the only thing here that knows what was actually earned.
+ *
+ * Until this existed, "Share …" built its card from a demo table in `share/content.ts`, so a real rank-up
+ * produced a keepsake citing a chapter the athlete had never written and a date months in the past. The
+ * card now carries the event's own facts and omits what the event doesn't carry (`buildShareContent`
+ * drops empty fields), so it renders shorter rather than wrong.
+ *
+ * The date is stamped at share time because that is when the ceremony fired — these are all "you just
+ * earned this" moments, so now IS the earned date.
+ */
+function ceremonyShareValues(event: CeremonyEvent, earnedOn: string): Record<string, string> {
+  switch (event.kind) {
+    case 'rankUp':
+      return { current: rankTierLabel(event.rank), date: earnedOn }
+    case 'honorEarned':
+      return { citation: event.citation ?? '', date: earnedOn }
+    case 'goalAchieved':
+      return { chapter: event.chapterName ?? '', date: earnedOn }
+    case 'programGraduated':
+      return { date: earnedOn }
+    case 'premiumUpsell':
+      return {}
+  }
+}
+
 /** The SH-1 share type a ceremony's "Share …" secondary opens — null for M-7 (no share). */
 function ceremonyShareType(event: CeremonyEvent): ShareKind | null {
   switch (event.kind) {
@@ -75,6 +104,8 @@ function ceremonyShareType(event: CeremonyEvent): ShareKind | null {
 
 export function CeremonyProvider({ children }: { children: React.ReactNode }) {
   const { openShare } = useShareSheet()
+  // CeremonyProvider sits inside ProfileProvider (_layout), so the real athlete is always readable here.
+  const { profile } = useProfile()
   const [queue, setQueue] = useState<CeremonyEvent[]>([])
   const [toast, setToast] = useState<string | null>(null)
 
@@ -107,7 +138,17 @@ export function CeremonyProvider({ children }: { children: React.ReactNode }) {
             onPress={() => {
               const shareType = ceremonyShareType(current)
               if (shareType) {
-                openShare({ shareType, overrides: { title: copy.title, athlete: getSelfProfile().name } })
+                const earnedOn = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                openShare({
+                  shareType,
+                  overrides: {
+                    title: copy.title,
+                    // The signed-in athlete, or no byline at all. This used to read the fixture
+                    // `getSelfProfile()`, which signed every athlete's keepsake "Ada Ridge".
+                    athlete: profile?.name,
+                    values: ceremonyShareValues(current, earnedOn),
+                  },
+                })
               }
               dismiss()
             }}

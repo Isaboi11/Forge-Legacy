@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
@@ -14,14 +14,21 @@ import type { CeremonyEvent } from '@/domain/ceremony/types';
 import { chapterSealConfirm, destructiveConfirm, type ConfirmConfig } from '@/domain/ceremony/confirmations';
 
 /**
- * ⚠ DEV HARNESS — NOT a product screen and NOT in the tab bar. Reachable only via
- * `router.push('/ceremony-harness')`. Every button here is a PLACEHOLDER trigger: there
- * is no rank/honor/goal/program evaluator yet, so this stands in for the real events that
- * will enqueue ceremonies. Delete this route once real triggers exist.
+ * ⚠ DEV HARNESS — NOT a product screen and NOT in the tab bar.
  *
- * Use it to verify the ① overlay foundation: the ceremony Modal (no tap-outside, artwork
- * slot, locked-order queue) and the Toast. "Queue of 3" enqueues out of priority order to
- * prove the queue re-orders to Rank Up → Goal → Honor and presents one at a time.
+ * Every trigger here is invented: a goal "Squat 315 lbs" in a chapter called "The Rebuild", a seal and a
+ * delete-confirm against that same chapter, and the only links in the app to `/post/[id]`, which renders
+ * a feed of invented athletes. That was always the point — it exists to exercise the overlay foundation
+ * (ceremony Modal, locked-order queue, Toast, ConfirmSheet) without having to earn anything first.
+ *
+ * ══ WHY IT IS NOW GATED ══
+ *
+ * "Reachable only via `router.push`" was never true on web. expo-router routes by FILE, so this answered
+ * to `/ceremony-harness` on the production domain — an unlinked page, but a typed URL away, showing a
+ * fictional athlete's records to anyone who found it. `__DEV__` closes that without losing the tool.
+ *
+ * Real triggers now exist for two of these (M-1 from Legacy, M-3 from Goals), so the harness is no longer
+ * the only caller — but it still covers the three kinds nothing fires yet, and the confirm sheets.
  */
 export default function CeremonyHarness() {
   const router = useRouter();
@@ -29,6 +36,8 @@ export default function CeremonyHarness() {
   const { showToast } = useToast();
   const { openShare } = useShareSheet();
   const [confirm, setConfirm] = useState<ConfirmConfig | null>(null);
+
+  if (!__DEV__) return <Redirect href="/" />;
 
   const uid = () => `ev-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 

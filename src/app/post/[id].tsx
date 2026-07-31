@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -38,6 +38,11 @@ export interface PostDetailActions {
 export default function PostDetailRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  // DEV ONLY. This screen reads `post-placeholder` — invented posts by invented athletes (Ada Ridge,
+  // Marcus Vale) with invented squad records. The only links into it are on `/ceremony-harness`, but
+  // expo-router routes by FILE, so on the web preview it answered to a typed URL on the production
+  // domain. The real squad feed renders its own posts from 0040–0053 and never comes here.
+  if (!__DEV__) return <Redirect href="/" />;
   const post = getPost(String(id ?? ''));
   if (!post) return <PostNotFound onBack={() => router.back()} />;
   return (

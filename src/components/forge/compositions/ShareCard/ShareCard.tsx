@@ -78,10 +78,12 @@ export function ShareCard({ content, hiddenKeys, includeName }: ShareCardProps) 
         </Text>
       ))}
 
-      {includeName ? (
+      {/* An unknown name drops the whole footer rather than signing the card "Athlete", and an unknown
+          rank drops just the rank half — a keepsake should carry no line that isn't true of its owner. */}
+      {includeName && content.athlete ? (
         <View style={styles.footer}>
           <Text style={styles.athlete}>{content.athlete}</Text>
-          {content.rankInFooter ? (
+          {content.rankInFooter && content.rank ? (
             <>
               <View style={styles.dot} />
               <Text style={styles.footerRank}>{content.rank}</Text>

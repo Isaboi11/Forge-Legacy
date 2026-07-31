@@ -7,8 +7,11 @@
  * Replaces the Phase-2 compact chapter heading AND the standalone HomepagePrinciple
  * on Home (the dc integrates the principle here).
  *
- * Data: chapter number/name + week/day = HOME_DATA placeholder (no Chapter/Legacy
- * backend yet); the principle is REAL (`todaysPrinciple`).
+ * Data: chapter number/name and the week/day line come from `fetchHomeChapter()` — the athlete's own
+ * active chapter, its ordinal COUNTED from their chapter list, the week/day ELAPSED from its start date.
+ * The principle is authored product content (`todaysPrinciple`), deliberately the same for everyone.
+ *
+ * Both used to be the hardcoded "Chapter III · The Rebuild · Week 6 · Day 2", shown to every athlete.
  *
  * Rank medallion (top-right watermark): the vector `RankSeal` at low opacity, gated by
  * `showRankMedallion` (default true). Home currently passes `false` — the medallion is a placeholder

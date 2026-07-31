@@ -3,7 +3,7 @@
  * Source of truth: Forge Home.dc.html (§ Program | Mission, lines 142–186).
  *
  * Program tile reads REAL data (the active program from `training/active-program.ts`).
- * Mission tile is placeholder (Goal Hub has no backend yet) — fed from HOME_DATA.
+ * Mission tile shows the real chapter goal (0025) — the caller passes it in.
  */
 
 import React from 'react'
