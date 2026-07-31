@@ -174,6 +174,34 @@ export default function WorkoutScreen() {
          freestyle session, or neither. */
       if (launch?.partnerId) setTaggedPartners([launch.partnerId]);
 
+      /* An explicit shape (0093) — what an invite carries. Checked before templateId because an invite
+         snapshots its workout rather than pointing at one. */
+      if (launch?.exercises && launch.exercises.length > 0) {
+        const shape = launch.exercises;
+        const nm = launch.workoutName ?? 'Shared Workout';
+        await clearWorkoutLaunch();
+        setSession({
+          workoutName: nm,
+          activityType: 'strength',
+          startedAt: new Date().toISOString(),
+          exercises: shape.map((e, i) => ({
+            name: e.name,
+            catalogKey: e.catalogKey ?? undefined,
+            section: 'main',
+            position: i,
+            sets: Array.from({ length: Math.max(1, e.sets) }, (_, si) => ({
+              setIndex: si,
+              targetReps: e.targetReps || 8,
+              weight: null,
+              actualReps: null,
+              done: false,
+            })),
+          })),
+        });
+        setPhase('active');
+        return;
+      }
+
       if (launch?.templateId) {
         await clearWorkoutLaunch();
         try {

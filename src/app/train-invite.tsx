@@ -9,7 +9,7 @@ import { Button } from '@/components/forge/composites/Button';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
-import { fetchTemplates, templateSummary } from '@/data/templates-live';
+import { fetchPlannedSession, fetchTemplates, templateSummary } from '@/data/templates-live';
 import { fetchTrainingPartners, sendWorkoutInvite } from '@/data/train-together-live';
 import { useToast } from '@/hooks/useCeremony';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -20,9 +20,14 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
  * The design draws only the RECEIVING screen; the invite arrives in its fixture already made. This is
  * where it comes from, built to the same language.
  *
- * ONE MECHANISM, TWO INTENTIONS. "Let's do legs" and "run my Leg Day A" are the same ask with and
- * without a shape, so the invite carries a name plus an OPTIONAL template. With a template the other
- * athlete opens that exact session; without, you both start empty under a shared name. No second flow.
+ * THREE WAYS TO ANSWER "WHAT", one mechanism behind them: the session you already have planned today, a
+ * saved template, or nothing — and nothing is a real answer (build it together as you go), not a missing
+ * value. All three resolve to a name plus a SNAPSHOT of the shape.
+ *
+ * SNAPSHOTTED, NEVER REFERENCED (0093). Pointing at "my program's next session" fails twice over: the
+ * person you ask may not own the program, and next-session resolves from each athlete's own completed
+ * count — so one pointer would open a different workout for each of you, which is precisely not training
+ * together. What you asked them to do is what they get, whatever your program does afterwards.
  *
  * WHO YOU CAN ASK is accepted friends and squad-mates — the people you actually train alongside — and it
  * is enforced by the insert policy (0092) rather than by this list, because a list is a suggestion.
@@ -36,8 +41,12 @@ export default function TrainInviteScreen() {
 
   const { data: partners, loading } = useQuery(fetchTrainingPartners, []);
   const { data: templates } = useQuery(fetchTemplates, []);
+  const { data: planned } = useQuery(fetchPlannedSession, []);
 
   const [toId, setToId] = useState<string | null>(preselected);
+  /* Three ways to answer "what": the session you already have planned, a saved template, or nothing —
+     which is a real third option (build it as you go together), not a missing value. */
+  const [source, setSource] = useState<'planned' | 'template' | 'free'>('free');
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [note, setNote] = useState('');
@@ -46,8 +55,12 @@ export default function TrainInviteScreen() {
   const chosen = useMemo(() => (partners ?? []).find((p) => p.id === toId) ?? null, [partners, toId]);
   const chosenTemplate = useMemo(() => (templates ?? []).find((t) => t.id === templateId) ?? null, [templates, templateId]);
 
-  // A template names the session unless they overrode it; otherwise they have to say what it is.
-  const resolvedName = name.trim() || chosenTemplate?.name || '';
+  /* The source names the session unless they overrode it; a freestyle one they have to name themselves. */
+  const sourceName = source === 'planned' ? (planned?.name ?? '') : source === 'template' ? (chosenTemplate?.name ?? '') : '';
+  const resolvedName = name.trim() || sourceName;
+  /* Snapshotted, never referenced — they may not own the program, and "next session" resolves per
+     athlete, so a pointer would open a different workout for each of you (0093). */
+  const shape = source === 'planned' ? (planned?.exercises ?? []) : source === 'template' ? (chosenTemplate?.exercises ?? []) : [];
   const canSend = !!toId && resolvedName.length > 0 && !sending;
 
   const close = () => (router.canGoBack() ? router.back() : router.replace('/'));
@@ -56,7 +69,13 @@ export default function TrainInviteScreen() {
     if (!canSend || !toId) return;
     setSending(true);
     try {
-      await sendWorkoutInvite({ toId, workoutName: resolvedName, templateId, note });
+      await sendWorkoutInvite({
+        toId,
+        workoutName: resolvedName,
+        templateId: source === 'template' ? templateId : null,
+        exercises: shape,
+        note,
+      });
       showToast(`Invite sent to ${chosen?.name ?? 'them'}.`);
       close();
     } catch (e) {
@@ -131,28 +150,63 @@ export default function TrainInviteScreen() {
           </View>
 
           <Text style={[styles.fieldLabel, styles.fieldGap]}>What</Text>
-          <Text style={styles.fieldHint}>Pick a saved template, or just name it and build it as you go.</Text>
-          <View style={styles.chipRow}>
-            {(templates ?? []).map((t) => {
-              const on = templateId === t.id;
-              return (
-                <Pressable
-                  key={t.id}
-                  onPress={() => setTemplateId(on ? null : t.id)}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: on }}
-                  accessibilityLabel={`${t.name}, ${templateSummary(t)}`}
-                  style={({ pressed }) => [styles.chip, on ? styles.chipOn : null, pressed ? styles.pressed : null]}
-                >
-                  <Text style={[styles.chipText, on ? styles.chipTextOn : null]}>{t.name}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
+
+          {planned ? (
+            <Pressable
+              onPress={() => setSource(source === 'planned' ? 'free' : 'planned')}
+              accessibilityRole="button"
+              accessibilityState={{ selected: source === 'planned' }}
+              accessibilityLabel={`Today's workout: ${planned.name}`}
+              style={({ pressed }) => [styles.option, source === 'planned' ? styles.optionOn : null, pressed ? styles.pressed : null]}
+            >
+              <View style={styles.optionBody}>
+                <Text style={styles.optionTitle}>{planned.name}</Text>
+                <Text style={styles.optionSub}>
+                  Today’s workout · {planned.exercises.length} {planned.exercises.length === 1 ? 'lift' : 'lifts'}
+                </Text>
+              </View>
+              {source === 'planned' ? <CheckGlyph /> : null}
+            </Pressable>
+          ) : null}
+
+          {(templates ?? []).length > 0 ? (
+            <>
+              <Text style={styles.fieldHint}>Or a saved template.</Text>
+              <View style={styles.chipRow}>
+                {(templates ?? []).map((t) => {
+                  const on = source === 'template' && templateId === t.id;
+                  return (
+                    <Pressable
+                      key={t.id}
+                      onPress={() => {
+                        if (on) {
+                          setSource('free');
+                          setTemplateId(null);
+                        } else {
+                          setSource('template');
+                          setTemplateId(t.id);
+                        }
+                      }}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: on }}
+                      accessibilityLabel={`${t.name}, ${templateSummary(t)}`}
+                      style={({ pressed }) => [styles.chip, on ? styles.chipOn : null, pressed ? styles.pressed : null]}
+                    >
+                      <Text style={[styles.chipText, on ? styles.chipTextOn : null]}>{t.name}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </>
+          ) : null}
+
+          <Text style={styles.fieldHint}>
+            {source === 'free' ? 'Or just name it and build it as you go together.' : 'Rename it if you want.'}
+          </Text>
           <TextInput
             value={name}
             onChangeText={setName}
-            placeholder={chosenTemplate ? chosenTemplate.name : 'Legs, Push Day, whatever you’re calling it'}
+            placeholder={sourceName || 'Legs, Push Day, whatever you’re calling it'}
             placeholderTextColor={flColor.gray600}
             style={styles.input}
             accessibilityLabel="Workout name"
@@ -203,6 +257,11 @@ const styles = StyleSheet.create({
   fieldHint: { marginTop: 5, fontSize: 11.5, lineHeight: 16, color: flColor.gray600 },
 
   people: { marginTop: 10, gap: 8 },
+  option: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 10, paddingHorizontal: 14, paddingVertical: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
+  optionOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  optionBody: { flex: 1, minWidth: 0 },
+  optionTitle: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.cream100 },
+  optionSub: { marginTop: 2, fontSize: 11.5, color: flColor.gray600 },
   person: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 12, paddingVertical: 10, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
   personOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   personBody: { flex: 1, minWidth: 0 },

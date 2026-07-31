@@ -61,9 +61,12 @@ export default function WorkoutInviteScreen() {
       await acceptWorkoutInvite(invite.id);
       /* The sender rides along in the launch context so the logger opens with them already tagged —
          which is how the credit happens. No separate "shared session" object exists to keep in step. */
+      /* The SNAPSHOT, not a pointer (0093) — the invite carries the workout because they may not own the
+         source program, and "next session" resolves per athlete. Empty means they agreed to build it
+         together as they go, which is a real answer rather than a missing one. */
       await writeWorkoutLaunch({
-        freestyle: !invite.templateId,
-        templateId: invite.templateId ?? undefined,
+        freestyle: invite.exercises.length === 0,
+        exercises: invite.exercises.length > 0 ? invite.exercises : undefined,
         workoutName: invite.workoutName,
         partnerId: invite.fromId,
       });

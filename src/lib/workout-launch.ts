@@ -20,6 +20,11 @@ export interface WorkoutLaunch {
   freestyle?: boolean;
   /** A saved template to open with (0091). */
   templateId?: string;
+  /**
+   * An explicit shape to open with (0093) — what an invite carries. Distinct from `templateId` because an
+   * invite SNAPSHOTS its workout rather than pointing at one: the guest may not own the source program.
+   */
+  exercises?: { catalogKey: string | null; name: string; sets: number; targetReps: number }[];
   /** Overrides the session's name — a shared workout is named by whoever invited you (0092). */
   workoutName?: string;
   /**

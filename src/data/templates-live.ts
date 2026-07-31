@@ -1,4 +1,7 @@
 import { supabase } from '@/lib/supabase';
+import { fetchActiveProgram, fetchProgramCompletedCount } from './programs-live';
+import { nextSession } from '@/domain/program/progress-core';
+import { exerciseNameFor } from '@/domain/training/exercise-names';
 
 /**
  * Workout templates (migration 0091) — a session you already did and want again.
@@ -37,6 +40,39 @@ const toTemplate = (r: Record<string, unknown>): WorkoutTemplate => ({
   lastUsedAt: (r.last_used_at as string) ?? null,
   createdAt: String(r.created_at),
 });
+
+/**
+ * The session the athlete already has planned today — the most likely thing to ask someone to do with
+ * you, and the one thing an invite could not offer before 0093.
+ *
+ * Returned in TEMPLATE shape, because an invite snapshots it rather than pointing at it: the person you
+ * ask may not own the program, and "next session" resolves from each athlete's own completed count, so a
+ * pointer would open a different workout for each of you.
+ *
+ * Null when there is no active program, which is an ordinary state, not a failure.
+ */
+export async function fetchPlannedSession(): Promise<{ name: string; exercises: TemplateExercise[] } | null> {
+  try {
+    const program = await fetchActiveProgram();
+    if (!program) return null;
+    const done = await fetchProgramCompletedCount(program.id);
+    const next = nextSession(program.structure, done);
+    const day = next?.day ?? program.structure.days.find((d) => d.main.length > 0) ?? program.structure.days[0] ?? null;
+    if (!day || day.main.length === 0) return null;
+    return {
+      name: day.name.trim() || `Day ${day.letter}`,
+      exercises: day.main.map((ex) => ({
+        catalogKey: ex.catalogKey ?? null,
+        name: exerciseNameFor(ex.catalogKey),
+        sets: ex.sets ?? 3,
+        targetReps: ex.reps ?? 8,
+      })),
+    };
+  } catch {
+    // A lookup failure must not block sending an invite — it just means one fewer option.
+    return null;
+  }
+}
 
 export async function fetchTemplates(): Promise<WorkoutTemplate[]> {
   const {

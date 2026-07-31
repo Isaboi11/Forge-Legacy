@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import type { TemplateExercise } from './templates-live';
 
 /**
  * Train Together (S-10) — migration 0092.
@@ -27,7 +28,9 @@ export interface WorkoutInvite {
   fromName: string;
   fromAvatarUrl: string | null;
   workoutName: string;
+  /** Provenance only — the guest reads `exercises`, which is the snapshot (0093). */
   templateId: string | null;
+  exercises: TemplateExercise[];
   templateSummary: { lifts: number; sets: number } | null;
   note: string | null;
   status: 'PENDING' | 'ACCEPTED';
@@ -67,6 +70,12 @@ export async function fetchWorkoutInvite(inviteId: string): Promise<WorkoutInvit
     fromAvatarUrl: (d.from_avatar_url as string) ?? null,
     workoutName: String(d.workout_name),
     templateId: (d.template_id as string) ?? null,
+    exercises: ((d.exercises ?? []) as Record<string, unknown>[]).map((e) => ({
+      catalogKey: (e.catalogKey as string) ?? null,
+      name: String(e.name ?? 'Exercise'),
+      sets: Number(e.sets ?? 0),
+      targetReps: Number(e.targetReps ?? 0),
+    })),
     templateSummary: t ? { lifts: Number(t.lifts ?? 0), sets: Number(t.sets ?? 0) } : null,
     note: (d.note as string) ?? null,
     status: d.status === 'ACCEPTED' ? 'ACCEPTED' : 'PENDING',
@@ -77,7 +86,10 @@ export async function fetchWorkoutInvite(inviteId: string): Promise<WorkoutInvit
 export interface SendInviteInput {
   toId: string;
   workoutName: string;
+  /** Provenance, when it came from one. */
   templateId?: string | null;
+  /** The shape, snapshotted. Empty = a freestyle session under a shared name. */
+  exercises?: TemplateExercise[];
   note?: string | null;
 }
 
@@ -94,6 +106,7 @@ export async function sendWorkoutInvite(input: SendInviteInput): Promise<string>
       to_id: input.toId,
       workout_name: input.workoutName.trim(),
       template_id: input.templateId ?? null,
+      exercises: input.exercises ?? [],
       note: input.note?.trim() || null,
     })
     .select('id')
