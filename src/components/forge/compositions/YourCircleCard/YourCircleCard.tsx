@@ -83,7 +83,15 @@ export function YourCircleCard({ liveUsers, friendActivity, hasCircle = true, on
 
   return (
     <View>
-      <SectionHeader label="Your Circle" />
+      {/* "Add" only once they HAVE a circle — with nobody yet, the card's own Add Friends button is the
+          whole point of it, and two invitations to the same place is one too many. Uses the section-header
+          action every other section uses (a verb plus the chevron) rather than a bare +: `SectionHeader`
+          always pairs its action with a chevron, so a lone glyph would read as "+ ›". */}
+      <SectionHeader
+        label="Your Circle"
+        action={hasCircle && onAddFriends ? 'Add' : undefined}
+        onAction={onAddFriends}
+      />
       <View style={[styles.card, live ? styles.cardLive : null]}>
         {live ? (
           <View style={styles.liveBlock}>
