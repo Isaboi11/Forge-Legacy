@@ -105,6 +105,7 @@ function RootNavigator() {
         <Stack.Screen name="add-friend" />
         <Stack.Screen name="squad-post/[id]" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="squad-composer" options={{ presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="legacy-timeline" />
         <Stack.Screen name="photos" />
         <Stack.Screen name="add-photo" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="transformation" />

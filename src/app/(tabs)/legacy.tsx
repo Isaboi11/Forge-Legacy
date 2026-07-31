@@ -87,7 +87,7 @@ const PIN_GLYPH: Record<PinKind, SymbolName> = {
  *
  * Built: the L-12 My Standard editor (tap the creed → StandardEditorSheet, persisted), the L-13 pin
  * manager, the global Toast, and L-11 Honor Detail (on the Honors hub). Deferred (noted at the gate):
- * the scroll-driven artwork fade. Taps to unbuilt
+ * the scroll-driven artwork fade. L-2 Legacy Timeline is live at `/legacy-timeline`. Taps to unbuilt
  * destinations are inert, consistent with Home/Workouts.
  */
 
@@ -265,9 +265,7 @@ export default function LegacyScreen() {
                   ))}
                 </View>
                 <Pressable
-                  onPress={() => {
-                    // L-2 Legacy Timeline — not yet implemented (old-theme dev route retained separately).
-                  }}
+                  onPress={() => router.push('/legacy-timeline')}
                   accessibilityRole="button"
                   accessibilityLabel="View full timeline"
                   style={styles.viewTimeline}
