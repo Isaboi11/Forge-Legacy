@@ -25,6 +25,7 @@ import { goalSections } from '@/domain/goals/goals';
 import { fetchFriendsFeed } from '@/data/friends-feed-live';
 import { fetchChallengeHub } from '@/data/challenges-live';
 import { fetchTrainingNow, trainingSummary } from '@/data/presence-live';
+import { fetchFriendLists } from '@/data/friends-live';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { useQuery } from '@/lib/useQuery';
 import { fetchAwaitingChapter } from '@/data/home-live';
@@ -206,6 +207,10 @@ export default function HomeScreen() {
      `visibility.training` audience decides whether they appear at all — "Only me" is the off switch. */
   const { data: trainingNow } = useQuery(fetchTrainingNow, []);
   const live = useMemo(() => trainingNow ?? [], [trainingNow]);
+  /* Whether they have anyone at all, which an empty feed cannot tell us — "nobody posted" and "nobody to
+     post" look identical from the posts alone, and they want opposite advice. */
+  const { data: friendLists } = useQuery(fetchFriendLists, []);
+  const hasCircle = (friendLists?.friends.length ?? 0) > 0 || live.length > 0;
   const circleActivity = useMemo(() => {
     const p = (circlePosts ?? []).find((x) => !x.isMine && (x.body ?? '').trim().length > 0);
     if (!p) return null;
@@ -499,6 +504,8 @@ export default function HomeScreen() {
           <YourCircleCard
             liveUsers={live}
             friendActivity={circleActivity}
+            hasCircle={hasCircle}
+            onAddFriends={() => router.push('/add-friend')}
             onJoinLive={(userId) => router.push({ pathname: '/athlete/[id]', params: { id: userId } })}
             onFriendActivity={() => router.push('/friends')}
             onSeeCircle={() => router.push('/friends')}

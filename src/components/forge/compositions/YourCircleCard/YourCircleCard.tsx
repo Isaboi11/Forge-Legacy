@@ -17,8 +17,10 @@
  * alongside leads, and the overflow line names their squad ("2 more from Iron Vigil") rather than
  * reporting a bare number. A count says only that a number exists; a squad name says who.
  *
- * Both halves absent is a real state (no friends, no posts) and gets one quiet line rather than a hollow
- * card — the footer into the feed stays, because the athlete with no circle is exactly who needs it.
+ * TWO KINDS OF EMPTY, and they deserve different answers. An athlete WITH friends whose circle happens
+ * to be quiet gets a quiet line — there is nothing for them to do, and a button would invent a task. An
+ * athlete with NO friends gets the step that changes it. Same card, opposite advice, and telling them
+ * apart is the whole reason `hasCircle` is a prop rather than something inferred from an empty list.
  */
 
 import React, { useMemo } from 'react'
@@ -40,6 +42,9 @@ export interface YourCircleCardProps {
   liveUsers: TrainingAthlete[]
   /** Null when nobody in the circle has posted — the row is omitted rather than drawn empty. */
   friendActivity?: FriendActivity | null
+  /** Whether they have anyone at all. False turns the empty state from an observation into a step. */
+  hasCircle?: boolean
+  onAddFriends?: () => void
   /** Opens the athlete. S-10 Train Together (joining their session) is unbuilt; their profile is real. */
   onJoinLive: (userId: string) => void
   onFriendActivity: () => void
@@ -66,7 +71,7 @@ function ProgressGlyph() {
   )
 }
 
-export function YourCircleCard({ liveUsers, friendActivity, onJoinLive, onFriendActivity, onSeeCircle }: YourCircleCardProps) {
+export function YourCircleCard({ liveUsers, friendActivity, hasCircle = true, onAddFriends, onJoinLive, onFriendActivity, onSeeCircle }: YourCircleCardProps) {
   const sorted = useMemo(() => mostRelevantFirst(liveUsers), [liveUsers])
   const live = sorted[0]
   const others = othersLine(sorted.slice(1))
@@ -125,9 +130,23 @@ export function YourCircleCard({ liveUsers, friendActivity, onJoinLive, onFriend
             </View>
           </Pressable>
         ) : !live ? (
-          <View style={styles.quietRow}>
-            <Text style={styles.quietText}>Nothing from your circle yet.</Text>
-          </View>
+          hasCircle ? (
+            <View style={styles.quietRow}>
+              <Text style={styles.quietText}>Nothing from your circle yet.</Text>
+            </View>
+          ) : (
+            <View style={styles.emptyRow}>
+              <Text style={styles.emptyText}>Training is better with people who notice when you don’t show up.</Text>
+              <Pressable
+                onPress={onAddFriends}
+                accessibilityRole="button"
+                accessibilityLabel="Add friends"
+                style={({ pressed }) => [styles.addBtn, pressed ? styles.addBtnPressed : null]}
+              >
+                <Text style={styles.addBtnText}>Add Friends</Text>
+              </Pressable>
+            </View>
+          )
         ) : null}
 
         <Pressable onPress={onSeeCircle} accessibilityRole="button" accessibilityLabel="See your circle" style={styles.footer}>
@@ -142,6 +161,11 @@ export function YourCircleCard({ liveUsers, friendActivity, onJoinLive, onFriend
 const styles = StyleSheet.create({
   quietRow: { paddingHorizontal: 16, paddingVertical: 18 },
   quietText: { fontSize: 13, color: flColor.gray600 },
+  emptyRow: { alignItems: 'center', gap: 14, paddingHorizontal: 20, paddingVertical: 20 },
+  emptyText: { fontSize: 13, lineHeight: 19, textAlign: 'center', color: flColor.gray400 },
+  addBtn: { paddingHorizontal: 20, paddingVertical: 11, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  addBtnPressed: { opacity: 0.88 },
+  addBtnText: { fontSize: 13, fontWeight: '600', color: flColor.bronze300 },
   card: {
     position: 'relative',
     borderRadius: flRadius.xl,
