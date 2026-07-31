@@ -21,6 +21,11 @@
  * to be quiet gets a quiet line — there is nothing for them to do, and a button would invent a task. An
  * athlete with NO friends gets the step that changes it. Same card, opposite advice, and telling them
  * apart is the whole reason `hasCircle` is a prop rather than something inferred from an empty list.
+ *
+ * THE INVITATION IS AN ASPIRATION, NOT A WARNING. The first draft read "training is better with people
+ * who notice when you don't show up" — which casts the athlete as someone who doesn't, and the circle as
+ * a watch rota. CC-D3 forbids exactly that shape: nothing here may imply a shortfall. "Every legacy is
+ * built alongside someone" says why it is worth doing without saying anything about who they are.
  */
 
 import React, { useMemo } from 'react'
@@ -136,7 +141,7 @@ export function YourCircleCard({ liveUsers, friendActivity, hasCircle = true, on
             </View>
           ) : (
             <View style={styles.emptyRow}>
-              <Text style={styles.emptyText}>Training is better with people who notice when you don’t show up.</Text>
+              <Text style={styles.emptyText}>Every legacy is built alongside someone.</Text>
               <Pressable
                 onPress={onAddFriends}
                 accessibilityRole="button"
