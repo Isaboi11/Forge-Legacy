@@ -3,6 +3,9 @@ import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet,
 import { useFocusEffect, useRouter } from 'expo-router';
 
 import { fetchTodaysChapterPhotos } from '@/data/photos-live';
+import { fetchTrainingPartners } from '@/data/train-together-live';
+import { fetchTemplates } from '@/data/templates-live';
+import { Avatar } from '@/components/forge/composites/Avatar';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -45,36 +48,14 @@ const REPS_OPTS = Array.from({ length: 31 }, (_, i) => i); // 0–30
 const DUR_MIN_OPTS = Array.from({ length: 11 }, (_, i) => i); // 0–10 min
 const DUR_SEC_OPTS = Array.from({ length: 12 }, (_, i) => i * 5); // 0–55 by 5
 
-/** Partner roster (W-20) — the design's two-group set. Static until the real Squad/Friends layer lands. */
-const P_ROSTER: { group: string; people: { id: string; name: string; sub: string; tint: string }[] }[] = [
-  {
-    group: 'Your Squad · Iron Vigil',
-    people: [
-      { id: 'dana', name: 'Dana Cole', sub: 'Hybrid Athlete · Craftsman', tint: '#C8A97E' },
-      { id: 'marcus', name: 'Marcus Vale', sub: 'Bodybuilder · Architect', tint: '#A98C6B' },
-      { id: 'theo', name: 'Theo Brandt', sub: 'Strongman · Legend', tint: '#CDB08A' },
-      { id: 'lena', name: 'Lena Cross', sub: 'Olympic Lifter · Builder', tint: '#B9986C' },
-    ],
-  },
-  {
-    group: 'Other Athletes',
-    people: [
-      { id: 'nadia', name: 'Nadia Okafor', sub: 'Runner · Craftsman', tint: '#BFA074' },
-      { id: 'quinn', name: 'Quinn Rhodes', sub: 'Calisthenics · Builder', tint: '#A88A63' },
-    ],
-  },
-];
-const PARTNER_BY_ID: Record<string, { name: string; tint: string }> = Object.fromEntries(
-  P_ROSTER.flatMap((g) => g.people).map((p) => [p.id, { name: p.name, tint: p.tint }]),
-);
-function initials(name: string): string {
-  return name
-    .split(' ')
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
-}
+/**
+ * The partner tagger reads REAL people (0092) — accepted friends and squad-mates.
+ *
+ * It used to read a hardcoded roster of six invented athletes, which meant `workouts.partners` could only
+ * ever be filled with names of people who do not exist. That column has been there since 0016, Activity
+ * History renders it as "Trained With", and 0079's twenty-four partnership honors count it — so the only
+ * way to earn one was to tag a fiction.
+ */
 const WHEEL_ITEM = 44;
 const WHEEL_PAD = 98; // (240 − 44) / 2 — centers the selected row under the band
 
@@ -124,6 +105,7 @@ export default function WorkoutScreen() {
      it is the only signal we get that anything was added, and the alternative (guessing from a push that
      returns nothing) would show a photo that might not exist. */
   const { data: memories, refetch: refetchMemories } = useQuery(fetchTodaysChapterPhotos, []);
+  const { data: partners } = useQuery(fetchTrainingPartners, []);
   useFocusEffect(
     useCallback(() => {
       refetchMemories();
@@ -185,10 +167,51 @@ export default function WorkoutScreen() {
       }
       const launch = await readWorkoutLaunch();
       let fresh: ActiveSession | null = null;
+
+      /* Invited (0092): whoever asked is pre-tagged, so accepting credits both athletes through the
+         partner mechanism that already exists rather than a shared-session object two devices would have
+         to keep in step. Applied before the branches below, because an invite can carry a template, a
+         freestyle session, or neither. */
+      if (launch?.partnerId) setTaggedPartners([launch.partnerId]);
+
+      if (launch?.templateId) {
+        await clearWorkoutLaunch();
+        try {
+          const t = (await fetchTemplates()).find((x) => x.id === launch.templateId);
+          if (t) {
+            setSession({
+              workoutName: launch.workoutName ?? t.name,
+              activityType: 'strength',
+              startedAt: new Date().toISOString(),
+              exercises: t.exercises.map((e, i) => ({
+                name: e.name,
+                catalogKey: e.catalogKey ?? undefined,
+                section: 'main',
+                position: i,
+                sets: Array.from({ length: Math.max(1, e.sets) }, (_, si) => ({
+                  setIndex: si,
+                  targetReps: e.targetReps || 8,
+                  weight: null,
+                  actualReps: null,
+                  done: false,
+                })),
+              })),
+            });
+            setPhase('active');
+            return;
+          }
+        } catch {
+          // a missing template must not block training — fall through to a freestyle session
+        }
+        setSession({ workoutName: launch.workoutName ?? 'Shared Workout', activityType: 'strength', startedAt: new Date().toISOString(), exercises: [] });
+        setPhase('active');
+        return;
+      }
+
       if (launch?.freestyle) {
         // A one-off: no program, no prescription. Starts empty and is filled from the Picker as they go.
         await clearWorkoutLaunch();
-        setSession({ workoutName: 'Freestyle Workout', activityType: 'strength', startedAt: new Date().toISOString(), exercises: [] });
+        setSession({ workoutName: launch.workoutName ?? 'Freestyle Workout', activityType: 'strength', startedAt: new Date().toISOString(), exercises: [] });
         setPhase('active');
         return;
       }
@@ -421,7 +444,7 @@ export default function WorkoutScreen() {
     setPhase('saving');
     setError(null);
     try {
-      const partnerNames = taggedPartners.map((id) => PARTNER_BY_ID[id]?.name).filter((n): n is string => Boolean(n));
+      const partnerNames = taggedPartners.map((id) => (partners ?? []).find((p) => p.id === id)?.name).filter((n): n is string => Boolean(n));
       const r = await saveWorkout(session, partnerNames);
       await clearSession();
       finishWorkout();
@@ -1117,32 +1140,31 @@ export default function WorkoutScreen() {
               <Text style={styles.partnerCount}>{taggedPartners.length} of 3</Text>
             </View>
             <ScrollView style={styles.partnerScroll} showsVerticalScrollIndicator={false}>
-              {P_ROSTER.map((g) => (
-                <View key={g.group} style={styles.partnerGroup}>
-                  <Text style={styles.partnerGroupLabel}>{g.group}</Text>
-                  {g.people.map((p) => {
-                    const on = taggedPartners.includes(p.id);
-                    return (
-                      <Pressable key={p.id} onPress={() => togglePartner(p.id)} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={`${on ? 'Remove' : 'Add'} ${p.name}`} style={[styles.prow, on && styles.prowOn]}>
-                        <View style={[styles.pAvatar, { backgroundColor: p.tint }]}>
-                          <Text style={styles.pAvatarText}>{initials(p.name)}</Text>
-                        </View>
-                        <View style={styles.pText}>
-                          <Text style={styles.pName}>{p.name}</Text>
-                          <Text style={styles.pSub}>{p.sub}</Text>
-                        </View>
-                        <View style={[styles.pCheck, on && styles.pCheckOn]}>
-                          {on ? (
-                            <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="#1A1206" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
-                              <Path d="M20 6L9 17l-5-5" />
-                            </Svg>
-                          ) : null}
-                        </View>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              ))}
+              {(partners ?? []).length === 0 ? (
+                <Text style={styles.partnerEmpty}>
+                  Add a friend or join a squad, and the people you train alongside show up here.
+                </Text>
+              ) : (
+                (partners ?? []).map((p) => {
+                  const on = taggedPartners.includes(p.id);
+                  return (
+                    <Pressable key={p.id} onPress={() => togglePartner(p.id)} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={`${on ? 'Remove' : 'Add'} ${p.name}`} style={[styles.prow, on && styles.prowOn]}>
+                      <Avatar name={p.name} src={p.avatarUrl ?? undefined} size={38} />
+                      <View style={styles.pText}>
+                        <Text style={styles.pName}>{p.name}</Text>
+                        <Text style={styles.pSub}>{p.squadName ?? (p.handle ? `@${p.handle}` : 'Friend')}</Text>
+                      </View>
+                      <View style={[styles.pCheck, on && styles.pCheckOn]}>
+                        {on ? (
+                          <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="#1A1206" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
+                            <Path d="M20 6L9 17l-5-5" />
+                          </Svg>
+                        ) : null}
+                      </View>
+                    </Pressable>
+                  );
+                })
+              )}
             </ScrollView>
             <Button variant="primary" fullWidth onPress={() => setPartnerSheetOpen(false)} accessibilityLabel="Done">
               {taggedPartners.length ? `Done · ${taggedPartners.length} tagged` : 'Done'}
@@ -1580,11 +1602,10 @@ const styles = StyleSheet.create({
   partnerCount: { fontSize: 12, color: flColor.gray600 },
   partnerScroll: { maxHeight: 400 },
   partnerGroup: { marginBottom: 16 },
+  partnerEmpty: { paddingHorizontal: 4, paddingVertical: 18, fontSize: 13, lineHeight: 19, textAlign: 'center', color: flColor.gray600 },
   partnerGroupLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 10 },
   prow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 12, borderRadius: flRadius.lg, borderWidth: 1, borderColor: 'transparent', marginBottom: 8 },
   prowOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
-  pAvatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  pAvatarText: { fontSize: 13, fontWeight: '700', color: '#1A1206' },
   pText: { flex: 1, minWidth: 0, gap: 1 },
   pName: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
   pSub: { fontSize: 12, color: flColor.gray600 },

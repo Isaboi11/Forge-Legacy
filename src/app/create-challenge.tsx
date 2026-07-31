@@ -141,7 +141,9 @@ export default function CreateChallengeScreen() {
   const friendsMode = scope === 'friends';
   const { data: friendLists } = useQuery(fetchFriendLists, []);
   const myFriends: FriendSummary[] = friendLists?.friends ?? [];
-  const [invited, setInvited] = useState<string[]>([]);
+  /* Arriving from a profile preselects them — the picker is still there to add more. */
+  const { athlete } = useLocalSearchParams<{ athlete?: string }>();
+  const [invited, setInvited] = useState<string[]>(typeof athlete === 'string' && athlete ? [athlete] : []);
   const toggleFriend = (id: string) => setInvited((v) => (v.includes(id) ? v.filter((x) => x !== id) : [...v, id]));
 
   const [name, setName] = useState('');

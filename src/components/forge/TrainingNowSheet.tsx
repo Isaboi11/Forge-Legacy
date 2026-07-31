@@ -27,16 +27,20 @@ export interface TrainingNowSheetProps {
   athletes: TrainingAthlete[];
   onAthlete: (userId: string) => void;
   onFindPeople: () => void;
+  onInvite: () => void;
 }
 
-export function TrainingNowSheet({ open, onClose, athletes, onAthlete, onFindPeople }: TrainingNowSheetProps) {
+export function TrainingNowSheet({ open, onClose, athletes, onAthlete, onFindPeople, onInvite }: TrainingNowSheetProps) {
   return (
     <BottomSheet open={open} onClose={onClose} title="Training Now">
       {athletes.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyText}>Nobody from your circle is training right now.</Text>
-          <Pressable onPress={onFindPeople} accessibilityRole="button" accessibilityLabel="See your circle" style={({ pressed }) => [styles.cta, pressed ? styles.pressed : null]}>
-            <Text style={styles.ctaText}>See Your Circle</Text>
+          <Pressable onPress={onInvite} accessibilityRole="button" accessibilityLabel="Ask someone to train" style={({ pressed }) => [styles.cta, pressed ? styles.pressed : null]}>
+            <Text style={styles.ctaText}>Ask Someone to Train</Text>
+          </Pressable>
+          <Pressable onPress={onFindPeople} accessibilityRole="button" accessibilityLabel="See your circle" hitSlop={8}>
+            <Text style={styles.quiet}>See your circle</Text>
           </Pressable>
         </View>
       ) : (
@@ -63,6 +67,13 @@ export function TrainingNowSheet({ open, onClose, athletes, onAthlete, onFindPeo
           ))}
         </ScrollView>
       )}
+
+      {/* Watching who is lifting is not the same as asking someone to. */}
+      {athletes.length > 0 ? (
+        <Pressable onPress={onInvite} accessibilityRole="button" accessibilityLabel="Ask someone to train" style={({ pressed }) => [styles.inviteRow, pressed ? styles.pressed : null]}>
+          <Text style={styles.ctaText}>Ask Someone to Train</Text>
+        </Pressable>
+      ) : null}
     </BottomSheet>
   );
 }
@@ -80,6 +91,8 @@ const styles = StyleSheet.create({
 
   empty: { alignItems: 'center', paddingVertical: 10, gap: 16 },
   emptyText: { fontFamily: flFont.display, fontSize: 15, lineHeight: 21, textAlign: 'center', color: flColor.gray400 },
+  quiet: { fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
+  inviteRow: { marginTop: 12, alignItems: 'center', paddingVertical: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   cta: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   ctaText: { fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },
 });

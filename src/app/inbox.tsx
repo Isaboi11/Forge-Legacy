@@ -79,7 +79,8 @@ export default function InboxScreen() {
   const open = (n: ForgeNotification) => {
     // A challenge invite is the only kind whose destination is the thing itself: the competition, where
     // opting in is one tap. Everything else routes to the squad or the person.
-    if (n.kind === 'challenge_invite' && n.challengeId) router.push({ pathname: '/challenge/[id]', params: { id: n.challengeId } });
+    if (n.kind === 'workout_invite' && n.inviteId) router.push({ pathname: '/workout-invite', params: { id: n.inviteId } });
+    else if (n.kind === 'challenge_invite' && n.challengeId) router.push({ pathname: '/challenge/[id]', params: { id: n.challengeId } });
     else if (n.kind === 'join_request') router.push({ pathname: '/squad-requests', params: { id: n.squadId } });
     // Friend requests are answered on the asker's profile — one place holds the whole relationship.
     else if ((n.kind === 'friend_request' || n.kind === 'friend_accepted') && n.actorId) {
@@ -150,7 +151,8 @@ function NotificationRow({ notification: n, divided, onPress }: { notification: 
     n.kind === 'member_joined' ||
     n.kind === 'friend_request' ||
     n.kind === 'friend_accepted' ||
-    n.kind === 'challenge_invite';
+    n.kind === 'challenge_invite' ||
+    n.kind === 'workout_invite';
 
   return (
     <Animated.View style={{ opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }] }}>
@@ -231,6 +233,12 @@ function bodyFor(n: ForgeNotification, actor: string) {
           <Text style={styles.strong}>{actor}</Text> challenged you to <Text style={styles.strong}>{n.challengeName ?? 'a competition'}</Text>
         </>
       );
+    case 'workout_invite':
+      return (
+        <>
+          <Text style={styles.strong}>{actor}</Text> wants to train <Text style={styles.strong}>{n.inviteName ?? 'together'}</Text> with you
+        </>
+      );
   }
 }
 
@@ -250,6 +258,8 @@ function subFor(n: ForgeNotification): string {
       return 'You’re now friends';
     case 'challenge_invite':
       return 'Opt in to compete';
+    case 'workout_invite':
+      return 'Accept and start';
   }
 }
 
@@ -270,6 +280,8 @@ function accessibilityLabelFor(n: ForgeNotification, actor: string): string {
       return `${actor} accepted your friend request, ${when} ago.`;
     case 'challenge_invite':
       return `${actor} challenged you to ${n.challengeName ?? 'a competition'}, ${when} ago. Opt in to compete.`;
+    case 'workout_invite':
+      return `${actor} wants to train ${n.inviteName ?? 'together'} with you, ${when} ago. Accept and start.`;
   }
 }
 
@@ -289,6 +301,8 @@ function glyphFor(kind: ForgeNotification['kind']) {
       return <CheckGlyph size={11} color="#8FB295" />;
     case 'challenge_invite':
       return <SwordsGlyph size={11} color={flColor.bronze300} />;
+    case 'workout_invite':
+      return <PeopleGlyph size={11} color={flColor.bronze300} />;
   }
 }
 

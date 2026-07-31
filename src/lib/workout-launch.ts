@@ -18,6 +18,16 @@ export interface WorkoutLaunch {
   programId?: string;
   /** A one-off workout: start empty and let the athlete add exercises as they go. */
   freestyle?: boolean;
+  /** A saved template to open with (0091). */
+  templateId?: string;
+  /** Overrides the session's name — a shared workout is named by whoever invited you (0092). */
+  workoutName?: string;
+  /**
+   * Who invited you (0092). Pre-tags them as a partner so accepting an invite credits both athletes
+   * through the mechanism that already exists, rather than inventing a shared-session object that two
+   * devices would then have to keep in step.
+   */
+  partnerId?: string;
 }
 
 const KEY = 'forge_workout_launch_context_v1';

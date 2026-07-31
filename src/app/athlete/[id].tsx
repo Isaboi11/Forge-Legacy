@@ -82,8 +82,11 @@ import { flColor, flFont, flRadius } from '@/constants/foundation';
  * public performance data — the actually-barred item. Communities is the creator/audience surface if one
  * is ever wanted. This is a deliberate absence, not an unfinished feature.
  *
- * STILL INERT, HONESTLY: a one-on-one Challenge (ours are squad-wide, and FRIENDS context needs its own
- * create flow), Train With, Invite to Squad, Report and Block. Each needs a system that doesn't exist.
+ * TRAIN WITH IS LIVE (0092) — it opens the invite composer against this athlete. Accepting starts them
+ * an ordinary workout with you already tagged as a partner, which is what finally writes a real name into
+ * `workouts.partners` (there since 0016, and counted by 0079's partnership honors).
+ *
+ * STILL INERT, HONESTLY: Invite to Squad, Report and Block. Each needs a system that doesn't exist.
  * They render visibly disabled with one line saying so, rather than as buttons that toast.
  */
 
@@ -230,7 +233,15 @@ export default function AthleteProfileScreen() {
           </View>
         </Animated.View>
 
-        {!data.isSelf ? <Actions state={state} busy={busy} onPress={onFriendAction} /> : null}
+        {!data.isSelf ? (
+          <Actions
+            state={state}
+            busy={busy}
+            onPress={onFriendAction}
+            onChallenge={() => router.push({ pathname: '/create-challenge', params: { athlete: athleteId } })}
+            onTrainWith={() => router.push({ pathname: '/train-invite', params: { athlete: athleteId } })}
+          />
+        ) : null}
 
         {/* My Standard — core identity, always visible (visibility.ts header). */}
         {data.standard ? (
@@ -424,12 +435,25 @@ function StatCell({ value, label }: { value: number; label: string }) {
 }
 
 /**
- * The friend action is live; the rest are honest inert shells.
+ * Add Friend, Challenge and Train With are all live between friends; Invite to Squad, Report and Block
+ * remain honest inert shells.
  *
  * There is no Follow button. The design has one and it is barred (FR-D2/FR-D3/§143/DNA §10) — a deliberate
  * absence, so it is not rendered as "coming soon" either. Nothing here implies it is on the way.
  */
-function Actions({ state, busy, onPress }: { state: FriendState; busy: boolean; onPress: () => void }) {
+function Actions({
+  state,
+  busy,
+  onPress,
+  onChallenge,
+  onTrainWith,
+}: {
+  state: FriendState;
+  busy: boolean;
+  onPress: () => void;
+  onChallenge: () => void;
+  onTrainWith: () => void;
+}) {
   const action = friendAction(state);
   const isPending = action.kind === 'pending';
   const isFriends = action.kind === 'friends';
@@ -454,15 +478,48 @@ function Actions({ state, busy, onPress }: { state: FriendState; busy: boolean; 
           <Text style={[styles.actionLabel, styles.actionLabelLive]}>{action.label}</Text>
         </Pressable>
 
-        <InertAction glyph={<SwordsGlyph />} label="Challenge" />
+        {/* Both live now. Challenge opens a FRIENDS competition against them (0087); Train With sends a
+            shared-workout invite (0092). Neither is offered to a stranger — the backend refuses either
+            way, and an action that will be rejected is worse than one that isn't shown. */}
+        {isFriends ? (
+          <>
+            <LiveAction glyph={<SwordsGlyph />} label="Challenge" onPress={onChallenge} />
+            <LiveAction glyph={<PeopleGlyph />} label="Train With" onPress={onTrainWith} />
+          </>
+        ) : (
+          <InertAction glyph={<SwordsGlyph />} label="Challenge" />
+        )}
       </View>
-      {/* Says what these two are waiting on, and claims nothing about Follow. */}
-      <Text style={styles.actionNote}>
-        {isFriends
-          ? 'One-on-one challenges aren’t built yet — competitions run squad-wide for now.'
-          : 'One-on-one challenges aren’t built yet. Friends can see what each other shares with friends.'}
-      </Text>
+      {!isFriends ? (
+        <Text style={styles.actionNote}>
+          Competing and training together are for friends. Friends can also see what each other shares with friends.
+        </Text>
+      ) : null}
     </View>
+  );
+}
+
+function LiveAction({ glyph, label, onPress }: { glyph: ReactNode; label: string; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={({ pressed }) => [styles.action, styles.actionLive, pressed ? styles.actionPressed : null]}
+    >
+      {glyph}
+      <Text style={[styles.actionLabel, styles.actionLabelLive]}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function PeopleGlyph({ size = 16, color = flColor.bronze300 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20" />
+      <Circle cx={10} cy={8} r={3.2} />
+      <Path d="M20 20v-1.5a3.5 3.5 0 0 0-2.6-3.4M15.4 5.2a3.2 3.2 0 0 1 0 6" />
+    </Svg>
   );
 }
 

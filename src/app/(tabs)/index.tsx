@@ -541,6 +541,10 @@ export default function HomeScreen() {
           setFriendSheetOpen(false);
           router.push('/friends');
         }}
+        onInvite={() => {
+          setFriendSheetOpen(false);
+          router.push('/train-invite');
+        }}
       />
     </View>
   );
