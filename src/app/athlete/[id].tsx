@@ -18,6 +18,7 @@ import {
   TimelineRow,
 } from '@/components/forge/profile-sections';
 import { fetchAthleteProfile, rankLabel, type AthleteProfile } from '@/data/athlete-profile-live';
+import { fetchAthleteTraining, minutesTraining } from '@/data/presence-live';
 import { acceptFriendRequest, friendAction, removeFriendship, requestFriend, type FriendState } from '@/data/friends-live';
 import type { Accomplishment, Chapter, Goal, TimelineEntry } from '@/types/legacy';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -93,6 +94,9 @@ export default function AthleteProfileScreen() {
   const athleteId = String(id ?? '').trim();
   const router = useRouter();
   const { data, loading, error, refetch } = useQuery(() => fetchAthleteProfile(athleteId), [athleteId]);
+  /* Presence is volatile where the profile is not, so it is its own read (0089) — and it is what makes
+     the "Everyone" audience real, since `training_now()` is circle-scoped by design. */
+  const { data: training } = useQuery(() => fetchAthleteTraining(athleteId), [athleteId]);
   const [scrollY] = useState(() => new Animated.Value(0));
   const { showToast } = useToast();
   // Optimistic, so the button responds on tap rather than after a round trip; the refetch reconciles.
@@ -241,6 +245,17 @@ export default function AthleteProfileScreen() {
             <StatCell value={data.stats.workouts} label="Workouts" />
             <StatCell value={data.stats.prs} label={data.stats.prs === 1 ? 'PR' : 'PRs'} />
             <StatCell value={data.stats.chapters} label={data.stats.chapters === 1 ? 'Chapter' : 'Chapters'} />
+          </View>
+        ) : null}
+
+        {/* Training right now (0086/0089). Absent means EITHER not training or not cleared — a viewer must
+            not be able to tell a private athlete from a resting one. */}
+        {training ? (
+          <View style={styles.liveRow}>
+            <View style={styles.liveDot} />
+            <Text style={styles.liveText}>
+              Training now{training.label ? ` · ${training.label}` : ''} · {minutesTraining(training.startedAt)} min
+            </Text>
           </View>
         ) : null}
 
@@ -564,6 +579,9 @@ const styles = StyleSheet.create({
   actionLabelLive: { color: flColor.bronze300 },
   transformRow: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 22, marginHorizontal: 24, paddingHorizontal: 14, paddingVertical: 12, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
   transformText: { flex: 1, fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
+  liveRow: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 22, marginHorizontal: 24, paddingHorizontal: 14, paddingVertical: 11, borderRadius: flRadius.lg, borderWidth: 1, borderColor: 'rgba(90, 158, 104, 0.34)', backgroundColor: 'rgba(90, 158, 104, 0.07)' },
+  liveDot: { width: 7, height: 7, borderRadius: flRadius.round, backgroundColor: flColor.greenMuted, boxShadow: '0 0 6px rgba(90, 158, 104, 0.6)' },
+  liveText: { flex: 1, fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
   trophyRow: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 22, marginHorizontal: 24, paddingHorizontal: 14, paddingVertical: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
   trophyText: { flex: 1, fontSize: 13, fontWeight: '600', color: flColor.cream100 },
   pressed: { opacity: 0.88 },

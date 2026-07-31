@@ -50,6 +50,20 @@ export async function fetchTrainingNow(): Promise<TrainingAthlete[]> {
   }));
 }
 
+/**
+ * Whether one athlete is training right now, for their profile (0089).
+ *
+ * Null means BOTH "not cleared to see this" and "not training", deliberately — a viewer must not be able
+ * to tell a private athlete from a resting one, or the setting would leak the thing it hides.
+ */
+export async function fetchAthleteTraining(athleteId: string): Promise<{ label: string | null; startedAt: string } | null> {
+  const { data, error } = await supabase.rpc('athlete_training_status', { p_athlete: athleteId });
+  if (error || !data) return null;
+  const d = data as Record<string, unknown>;
+  if (!d.training) return null;
+  return { label: (d.label as string) ?? null, startedAt: String(d.started_at) };
+}
+
 export function minutesTraining(startedAt: string): number {
   const ms = Date.now() - new Date(startedAt).getTime();
   return Number.isFinite(ms) ? Math.max(0, Math.round(ms / 60_000)) : 0;
