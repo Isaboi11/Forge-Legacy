@@ -248,33 +248,45 @@ export default function LegacyScreen() {
           </View>
         ) : null}
 
-        {/* ── MY STORY · chapter history + timeline ── */}
+        {/* ── MY STORY · sealed chapters ── */}
         {recentSeal ? (
           <View style={[styles.sectionPad, styles.storyStack]}>
             <SealedChapterCard chapter={recentSeal} onPress={() => openChapter(recentSeal.id)} />
             {olderSeals.map((c) => (
               <CompactChapterRow key={c.id} chapter={c} onPress={() => openChapter(c.id)} />
             ))}
+          </View>
+        ) : null}
 
-            {data.timelineEntries.length > 0 ? (
-              <View style={styles.timelineBlock}>
-                <Text style={styles.overlineTight}>Recent</Text>
-                <View>
-                  {data.timelineEntries.map((it) => (
-                    <TimelineRow key={it.id} entry={it} />
-                  ))}
-                </View>
-                <Pressable
-                  onPress={() => router.push('/legacy-timeline')}
-                  accessibilityRole="button"
-                  accessibilityLabel="View full timeline"
-                  style={styles.viewTimeline}
-                >
-                  <Text style={styles.viewTimelineText}>View Full Timeline</Text>
-                  <ChevronRightIcon size={15} color={flColor.bronze400} />
-                </Pressable>
-              </View>
-            ) : null}
+        {/* ── TIMELINE ── its own section, not nested under sealed chapters.
+             It used to live inside the block above, so the route to L-2 only existed once you had SEALED
+             a chapter — and then only if `timeline_events` had rows. Both gates were wrong. The timeline
+             is most worth reading WHILE a chapter is being lived, and the screen derives its opening and
+             every PR from columns that exist from the first workout, so it has content long before the
+             first seal. The preview still waits for something stored to preview; the way in does not. */}
+        {chapter ? (
+          <View style={styles.sectionPad}>
+            <View style={styles.timelineBlock}>
+              {data.timelineEntries.length > 0 ? (
+                <>
+                  <Text style={styles.overlineTight}>Recent</Text>
+                  <View>
+                    {data.timelineEntries.map((it) => (
+                      <TimelineRow key={it.id} entry={it} />
+                    ))}
+                  </View>
+                </>
+              ) : null}
+              <Pressable
+                onPress={() => router.push('/legacy-timeline')}
+                accessibilityRole="button"
+                accessibilityLabel="View full timeline"
+                style={styles.viewTimeline}
+              >
+                <Text style={styles.viewTimelineText}>View Full Timeline</Text>
+                <ChevronRightIcon size={15} color={flColor.bronze400} />
+              </Pressable>
+            </View>
           </View>
         ) : null}
 
