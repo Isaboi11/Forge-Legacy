@@ -20,6 +20,8 @@ export interface ChapterPhoto {
   isVideo: boolean;
   isStarred: boolean;
   role: string | null;
+  /** The lift this photo is OF, when it is of one (0090). Null for an ordinary chapter photo. */
+  exercise: string | null;
   /** Derived server-side from the chapter's dates and the athlete's PRs. Null on an ordinary day. */
   event: string | null;
 }
@@ -82,6 +84,7 @@ const toPhoto = (r: Record<string, unknown>): ChapterPhoto => ({
   isVideo: !!r.is_video,
   isStarred: !!r.is_starred,
   role: (r.role as string) ?? null,
+  exercise: (r.exercise as string) ?? null,
   event: (r.event as string) ?? null,
 });
 
@@ -130,6 +133,8 @@ export interface AddPhotoInput {
   isVideo?: boolean;
   /** Importance, not cover intent — tier 3 of the cover waterfall (0085). */
   isStarred?: boolean;
+  /** Catalog key of the lift this is a photo OF — a PR shot (0090). */
+  exercise?: string | null;
 }
 
 export async function addChapterPhoto(input: AddPhotoInput): Promise<string> {
@@ -149,6 +154,7 @@ export async function addChapterPhoto(input: AddPhotoInput): Promise<string> {
       caption: input.caption?.trim() || null,
       is_video: !!input.isVideo,
       is_starred: !!input.isStarred,
+      exercise: input.exercise?.trim() || null,
     })
     .select('id')
     .single();
@@ -214,7 +220,7 @@ export async function fetchTodaysChapterPhotos(): Promise<ChapterPhoto[]> {
   const today = new Date().toISOString().slice(0, 10);
   const { data } = await supabase
     .from('chapter_photos')
-    .select('id, url, taken_on, pose, caption, is_video, is_starred, role')
+    .select('id, url, taken_on, pose, caption, is_video, is_starred, role, exercise')
     .eq('athlete_id', user.id)
     .eq('taken_on', today)
     .order('created_at', { ascending: false });

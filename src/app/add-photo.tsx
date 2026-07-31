@@ -43,6 +43,13 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
 /** Quick labels. Free text stays available — a label is often a lift, not a pose. */
 const LABELS = ['Front', 'Side', 'Back', 'Lift', 'Clip'];
 
+/** "barbell-back-squat" → "Back Squat". Same rule the timeline and the trophy card use. */
+function prettyLift(slug: string): string {
+  const words = slug.split('-').filter(Boolean);
+  const trimmed = words.length > 2 ? words.slice(1) : words;
+  return trimmed.map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 const today = () => iso(new Date());
 
@@ -60,8 +67,13 @@ function pretty(dateIso: string): string {
 
 export default function AddPhotoScreen() {
   const router = useRouter();
-  const { chapter } = useLocalSearchParams<{ chapter?: string }>();
+  const { chapter, exercise, perf } = useLocalSearchParams<{ chapter?: string; exercise?: string; perf?: string }>();
   const chapterId = typeof chapter === 'string' && chapter.length > 0 ? chapter : null;
+  /* Arriving from a PR: the photo is OF a specific lift, not just of a day in a chapter (0090). The
+     label is prefilled and locked to the lift, because the whole point is that this one is not generic. */
+  const liftKey = typeof exercise === 'string' && exercise.length > 0 ? exercise : null;
+  const liftPerf = typeof perf === 'string' && perf.length > 0 ? perf : null;
+  const liftLabel = liftKey ? prettyLift(liftKey) : null;
 
   const { pick, mediaPickerSheet } = useMediaPicker();
   const { showToast } = useToast();
@@ -104,10 +116,12 @@ export default function AddPhotoScreen() {
         chapterId: target.id,
         url,
         takenOn,
-        pose: label,
+        pose: liftLabel ?? label,
         caption,
         isVideo,
-        isStarred: starred,
+        // A PR shot is a highlight by definition — it can stand in as the chapter's cover.
+        isStarred: liftKey ? true : starred,
+        exercise: liftKey,
       });
       showToast(isVideo ? 'Video added to your chapter.' : 'Photo added to your chapter.');
       router.back();
@@ -156,6 +170,17 @@ export default function AddPhotoScreen() {
           <Text style={styles.destination}>
             Adding to <Text style={styles.destinationName}>{target.name}</Text>
           </Text>
+
+          {/* The PR banner. Present only when this photo is OF a lift. */}
+          {liftLabel ? (
+            <View style={styles.liftBanner}>
+              <MedalGlyph />
+              <View style={styles.liftBody}>
+                <Text style={styles.liftTitle}>{liftLabel}</Text>
+                {liftPerf ? <Text style={styles.liftPerf}>{liftPerf}</Text> : null}
+              </View>
+            </View>
+          ) : null}
 
           {/* ── the photo ── */}
           <Pressable
@@ -215,8 +240,8 @@ export default function AddPhotoScreen() {
             {takenOn === floor ? <Text style={styles.fieldHint}>This is the day the chapter opened.</Text> : null}
           </View>
 
-          {/* ── label ── */}
-          <View style={styles.field}>
+          {/* ── label ── generic photos only; a PR shot is labelled by its lift. */}
+          <View style={[styles.field, liftLabel ? styles.hidden : null]} pointerEvents={liftLabel ? 'none' : 'auto'}>
             <Text style={styles.fieldLabel}>Label</Text>
             <Text style={styles.fieldHint}>Optional. Shown under the photo when you open it.</Text>
             <View style={styles.chipRow}>
@@ -263,13 +288,13 @@ export default function AddPhotoScreen() {
             />
           </View>
 
-          {/* ── star ── */}
+          {/* ── star ── a PR is a highlight by definition, so there is nothing to decide. */}
           <Pressable
             onPress={() => setStarred((v) => !v)}
             accessibilityRole="switch"
             accessibilityState={{ checked: starred }}
             accessibilityLabel="Mark as a highlight"
-            style={({ pressed }) => [styles.starRow, starred ? styles.starRowOn : null, pressed ? styles.pressed : null]}
+            style={({ pressed }) => [styles.starRow, starred ? styles.starRowOn : null, pressed ? styles.pressed : null, liftLabel ? styles.hidden : null]}
           >
             <StarGlyph filled={starred} />
             <View style={styles.starBody}>
@@ -292,6 +317,13 @@ export default function AddPhotoScreen() {
 }
 
 // ── glyphs ──
+function MedalGlyph({ size = 20, color = flColor.bronze300 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <Path d="M12 2l2.6 7.1H22l-6 4.4 2.3 7.1-6.3-4.6-6.3 4.6 2.3-7.1-6-4.4h7.4z" />
+    </Svg>
+  );
+}
 function CameraGlyph({ size = 22, color = flColor.bronze300 }: { size?: number; color?: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
@@ -337,6 +369,11 @@ const styles = StyleSheet.create({
   changeChip: { position: 'absolute', right: 10, bottom: 10, paddingHorizontal: 11, paddingVertical: 5, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: 'rgba(8,11,14,0.78)' },
   changeChipText: { fontSize: 10.5, fontWeight: '700', letterSpacing: 0.4, color: flColor.bronze300 },
 
+  hidden: { display: 'none' },
+  liftBanner: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 18, paddingHorizontal: 14, paddingVertical: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  liftBody: { flex: 1, minWidth: 0 },
+  liftTitle: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.cream100 },
+  liftPerf: { marginTop: 2, fontSize: 12, fontWeight: '600', color: flColor.bronze300 },
   field: { marginTop: 24 },
   fieldLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
   fieldHint: { marginTop: 5, fontSize: 11.5, lineHeight: 16, color: flColor.gray600 },

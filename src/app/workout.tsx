@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Image } from 'expo-image';
 
 import { fetchTodaysChapterPhotos } from '@/data/photos-live';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
@@ -145,7 +144,7 @@ export default function WorkoutScreen() {
   // set-completion celebrations
   const [flash, setFlash] = useState<{ ei: number; si: number; token: number } | null>(null); // green fuse on a row
   const [prShown, setPrShown] = useState<Record<number, boolean>>({}); // one PR per exercise
-  const [prPrompt, setPrPrompt] = useState<{ name: string; perf: string } | null>(null);
+  const [prPrompt, setPrPrompt] = useState<{ name: string; perf: string; key: string | null } | null>(null);
   const [seal, setSeal] = useState<{ name: string; sets: number; volume: number; next: string | null; token: number } | null>(null);
   const [restEnabled, setRestEnabled] = useState(false); // default OFF; the saved pref loads on mount
   const [restSec, setRestSec] = useState(90);
@@ -358,7 +357,7 @@ export default function WorkoutScreen() {
         const w = done.weight;
         const r = done.actualReps;
         setPrShown((p) => ({ ...p, [ei]: true }));
-        setPrPrompt({ name: ex.name, perf: `${w} lb × ${r}` });
+        setPrPrompt({ name: ex.name, perf: `${w} lb × ${r}`, key: ex.catalogKey ?? null });
       }
     }
 
@@ -562,11 +561,29 @@ export default function WorkoutScreen() {
         serif
         onBack={onLeave}
         actions={
+          <>
+            {/* Session-level, because a memory attaches to the CHAPTER, not to whichever lift you happen
+                to be on. It used to live at the bottom of the exercise hero — which auto-collapses the
+                first time you log a set, so it vanished exactly when you'd want it. */}
+            <Pressable
+              onPress={() => router.push('/add-photo')}
+              accessibilityRole="button"
+              accessibilityLabel="Add a photo or video"
+              hitSlop={8}
+              style={styles.overflowBtn}
+            >
+              <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                <Path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.2l1.2-2h8.2l1.2 2h2.2A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z" />
+                <Circle cx={12} cy={13} r={3.2} />
+              </Svg>
+              {(memories ?? []).length > 0 ? <View style={styles.memoryBadge} /> : null}
+            </Pressable>
           <Pressable onPress={() => setOptionsOpen(true)} accessibilityRole="button" accessibilityLabel="Workout options" hitSlop={8} style={styles.overflowBtn}>
             <Svg width={20} height={20} viewBox="0 0 24 24" fill={flColor.gray400}>
               <Path d="M12 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 22a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />
             </Svg>
           </Pressable>
+          </>
         }
       />
 
@@ -684,30 +701,6 @@ export default function WorkoutScreen() {
               <View style={styles.insightCol}>
                 <Text style={styles.insightLabel}>Best</Text>
                 <Text style={styles.insightVal}>—</Text>
-              </View>
-            </View>
-            {/* memories */}
-            <View style={styles.memories}>
-              <Text style={styles.memoriesLabel}>Memories</Text>
-              <View style={styles.memoriesStrip}>
-                {(memories ?? []).slice(0, 4).map((m) => (
-                  <Pressable
-                    key={m.id}
-                    onPress={() => router.push('/photos')}
-                    accessibilityRole="button"
-                    accessibilityLabel={m.pose ? `${m.pose}, added today` : 'Photo added today'}
-                    style={styles.memoryThumb}
-                  >
-                    <Image source={{ uri: m.url }} style={StyleSheet.absoluteFill} contentFit="cover" transition={0} cachePolicy="memory-disk" />
-                  </Pressable>
-                ))}
-                {/* Lands in the chapter you're training through — the same door Chapter Detail and
-                    Workout Complete use, so there is one capture flow rather than three. */}
-                <Pressable onPress={() => router.push('/add-photo')} accessibilityRole="button" accessibilityLabel="Attach photo or video" style={styles.memoryAdd}>
-                  <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-                    <Path d="M3 6h18v14H3zM8 6l1.4-2h5.2L16 6M12 11.5v3M10.5 13h3" />
-                  </Svg>
-                </Pressable>
               </View>
             </View>
           </View>
@@ -942,7 +935,18 @@ export default function WorkoutScreen() {
             <Text style={styles.prPerf}>{prPrompt.perf}</Text>
             <Text style={styles.prBody}>Capture the moment — add a photo or video to your legacy.</Text>
             <View style={styles.prBtns}>
-              <Button variant="primary" fullWidth onPress={() => setPrPrompt(null)} accessibilityLabel="Add photo or video">
+              <Button
+                variant="primary"
+                fullWidth
+                onPress={() => {
+                  const p = prPrompt;
+                  setPrPrompt(null);
+                  // The photo is OF this lift, not just of today (0090) — the capture flow labels and
+                  // stars it from the lift rather than asking again.
+                  router.push({ pathname: '/add-photo', params: p.key ? { exercise: p.key, perf: p.perf } : {} });
+                }}
+                accessibilityLabel="Add photo or video"
+              >
                 Add Photo / Video
               </Button>
               <Button variant="text" fullWidth onPress={() => setPrPrompt(null)} accessibilityLabel="Not now">
@@ -1410,11 +1414,7 @@ const styles = StyleSheet.create({
   insightVal: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.cream100 },
   insightGoalLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronze400 },
   insightGoal: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', letterSpacing: -0.3, lineHeight: 24, color: flColor.bronze300 },
-  memories: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.charcoal700, gap: 10 },
-  memoriesLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
-  memoriesStrip: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  memoryThumb: { width: 44, height: 44, borderRadius: flRadius.sm, overflow: 'hidden', borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: '#0b0a09' },
-  memoryAdd: { width: 60, height: 60, borderRadius: flRadius.md, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint, alignItems: 'center', justifyContent: 'center' },
+  memoryBadge: { position: 'absolute', top: 6, right: 6, width: 7, height: 7, borderRadius: flRadius.round, backgroundColor: flColor.bronze400 },
 
   // hero collapsed strip
   heroStrip: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: flColor.charcoal900, borderWidth: 1, borderColor: flColor.bronzeBorder, borderRadius: flRadius.xl, paddingVertical: 9, paddingHorizontal: 12, boxShadow: flShadow.card },
