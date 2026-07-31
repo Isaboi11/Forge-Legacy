@@ -27,9 +27,14 @@ export interface TodaysWorkoutCardProps {
   exerciseCount: number
   onStart?: () => void
   onPreview?: () => void
+  /**
+   * "Not today's" — starts a one-off instead. The hero is where the planned session is proposed, so it
+   * is the only place the question "what if I don't want that" actually gets asked.
+   */
+  onFreestyle?: () => void
 }
 
-export function TodaysWorkoutCard({ resolved, title, focus, exerciseCount, onStart, onPreview }: TodaysWorkoutCardProps) {
+export function TodaysWorkoutCard({ resolved, title, focus, exerciseCount, onStart, onPreview, onFreestyle }: TodaysWorkoutCardProps) {
   const artSource = resolveArtworkSource(resolved.assetPath)
 
   return (
@@ -54,10 +59,17 @@ export function TodaysWorkoutCard({ resolved, title, focus, exerciseCount, onSta
       ) : null}
 
       <View style={styles.content}>
+        {/* Pressable only when there is somewhere to go. W-3 is unbuilt, so Home passes no handler and
+            this is plain content rather than a button that does nothing. */}
         <Pressable
           onPress={onPreview}
+          disabled={!onPreview}
           accessibilityRole={onPreview ? 'button' : undefined}
-          accessibilityLabel={`Today's workout: ${title}. ${focus ?? ''} ${exerciseCount} exercises. Double-tap to preview.`}
+          accessibilityLabel={
+            onPreview
+              ? `Today's workout: ${title}. ${focus ?? ''} ${exerciseCount} exercises. Double-tap to preview.`
+              : `Today's workout: ${title}. ${focus ?? ''} ${exerciseCount} exercises.`
+          }
           style={styles.previewRow}
         >
           <View style={styles.iconChip}>
@@ -77,21 +89,41 @@ export function TodaysWorkoutCard({ resolved, title, focus, exerciseCount, onSta
           <View style={styles.metaRow}>
             <BarbellIcon size={16} color={flColor.bronze400} />
             <Text style={styles.metaText}>{exerciseCount} Exercises</Text>
-            <View style={styles.metaChevron}>
-              <ChevronRightIcon size={15} color={flColor.gray600} />
-            </View>
+            {/* The chevron went with the dead preview — it pointed at a row that was never a row. */}
+            {onPreview ? (
+              <View style={styles.metaChevron}>
+                <ChevronRightIcon size={15} color={flColor.gray600} />
+              </View>
+            ) : null}
           </View>
         </View>
 
         <Button variant="primary" fullWidth onPress={onStart} icon={<FlameIcon />} accessibilityLabel="Start workout">
           Start Workout
         </Button>
+
+        {/* One line, under the thing it is an alternative to. Not a second button — a one-off is the
+            quieter choice and should look like it. */}
+        {onFreestyle ? (
+          <Pressable
+            onPress={onFreestyle}
+            accessibilityRole="button"
+            accessibilityLabel="Do something else today — start a one-off workout"
+            hitSlop={8}
+            style={({ pressed }) => [styles.freestyleRow, pressed ? styles.freestylePressed : null]}
+          >
+            <Text style={styles.freestyleText}>Something else today?</Text>
+          </Pressable>
+        ) : null}
       </View>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
+  freestyleRow: { alignSelf: 'center', marginTop: 12, paddingVertical: 4 },
+  freestylePressed: { opacity: 0.7 },
+  freestyleText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
   card: {
     position: 'relative',
     overflow: 'hidden',

@@ -355,6 +355,17 @@ export default function HomeScreen() {
   // Start the Home program's next workout (built / chosen / demo). When it's a program the athlete built,
   // stamp the launch context first so the finished session is attributed to it — without this the workout
   // saves unattributed and the program's progress never moves.
+  /**
+   * A one-off, from the hero. The same freestyle path the Workouts tab and Templates use — one session
+   * shape, three doors — and it clears any program context first so an ad-hoc workout is never credited
+   * to a program the athlete deliberately stepped away from today.
+   */
+  const startFreestyleFromHome = async () => {
+    await writeWorkoutLaunch({ freestyle: true });
+    startWorkout('Freestyle Workout', []);
+    router.push('/workout');
+  };
+
   const startHomeWorkout = async () => {
     const w = home.workout;
     if (!w) return;
@@ -475,9 +486,9 @@ export default function HomeScreen() {
               focus={home.workout.focus}
               exerciseCount={home.workout.exerciseCount ?? home.workout.exercises?.length ?? 0}
               onStart={startHomeWorkout}
-              onPreview={() => {
-                // W-3 Program Detail / workout preview — not yet implemented.
-              }}
+              /* No `onPreview`: W-3 is unbuilt, and the card now renders as content rather than as a
+                 button to nowhere when none is given. */
+              onFreestyle={startFreestyleFromHome}
             />
           ) : null}
 
