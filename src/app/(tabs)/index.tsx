@@ -389,6 +389,8 @@ export default function HomeScreen() {
   // collecting their starting point (no program, no level yet). The first-workout ceremony (ONB-D18) is
   // unaffected — it lives in the workout-complete flow, not this gate.
   const stillCollecting = !!awaiting && !hasProgram && homeLevel == null;
+  /** Null until they pick a door. Local: it decides what to draw now, not anything worth persisting. */
+  const [path, setPath] = useState<'guided' | null>(null);
   /**
    * Intake answered, but nothing chosen yet — show the recommendation and let the athlete decide.
    * This step existed on the card (`mode="suggested"`) but was never rendered: finishing the intake
@@ -446,8 +448,38 @@ export default function HomeScreen() {
                 onExplore={openPrograms}
                 onChange={changeIntake}
               />
+            ) : path == null ? (
+              /* THE CHOICE COMES BEFORE THE QUESTIONS. "Build my own" was a secondary button on step 1 of
+                 the intake stepper — so the app asked what your experience level was, and only then
+                 mentioned that you might already know what you want to do. Someone arriving with a
+                 program in mind was walked through a recommendation they never asked for. Two doors,
+                 same weight, and neither is the default. */
+              <View style={styles.pathBlock}>
+                <Text style={styles.pathTitle}>How do you want to start?</Text>
+                <Pressable
+                  onPress={() => setPath('guided')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Help me find a program"
+                  style={({ pressed }) => [styles.pathCard, pressed ? styles.pathPressed : null]}
+                >
+                  <Text style={styles.pathCardTitle}>Help me find one</Text>
+                  <Text style={styles.pathCardSub}>A few questions, then a program picked for where you are.</Text>
+                </Pressable>
+                <Pressable
+                  onPress={openBuilder}
+                  accessibilityRole="button"
+                  accessibilityLabel="Build my own program"
+                  style={({ pressed }) => [styles.pathCard, pressed ? styles.pathPressed : null]}
+                >
+                  <Text style={styles.pathCardTitle}>Build my own</Text>
+                  <Text style={styles.pathCardSub}>You know the work. Lay out the days and lifts yourself.</Text>
+                </Pressable>
+                <Pressable onPress={openPrograms} accessibilityRole="button" accessibilityLabel="Browse programs" hitSlop={8} style={styles.pathQuiet}>
+                  <Text style={styles.pathQuietText}>Or browse everything</Text>
+                </Pressable>
+              </View>
             ) : (
-              // Still collecting — the intake stepper (level → goals → equipment), ALONE.
+              // Guided — the intake stepper (level → goals → equipment).
               <ExperienceLevelCard mode="collect" onComplete={completeIntake} onBuild={openBuilder} />
             )}
           </View>
@@ -562,6 +594,14 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  pathBlock: { gap: 12 },
+  pathTitle: { marginBottom: 4, fontFamily: flFont.display, fontSize: 21, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
+  pathCard: { paddingHorizontal: 18, paddingVertical: 18, borderRadius: flRadius.xl, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card },
+  pathPressed: { opacity: 0.88, borderColor: flColor.bronzeBorder },
+  pathCardTitle: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', color: flColor.cream100 },
+  pathCardSub: { marginTop: 6, fontSize: 13, lineHeight: 19, color: flColor.gray600 },
+  pathQuiet: { alignSelf: 'center', marginTop: 4, paddingVertical: 6 },
+  pathQuietText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
   root: {
     flex: 1,
   },

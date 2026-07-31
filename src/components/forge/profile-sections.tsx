@@ -34,11 +34,26 @@ export function goalValue(g: Goal): string | null {
 }
 
 /** My Standard — the athlete's creed. Editable-inert on Legacy (onEdit), read-only on the Public Profile. */
+/**
+ * The athlete's creed.
+ *
+ * EMPTY IS THE FIRST THING A NEW ATHLETE SEES HERE, and it used to render the label over nothing — a
+ * heading with no content and no sign it could be written. Nobody would know a Standard was theirs to
+ * write. Empty now says what it is and that it is waiting.
+ */
 export function MyStandard({ standard, onEdit }: { standard: string; onEdit?: () => void }) {
+  const written = standard.trim().length > 0;
   const body = (
     <>
       <Text style={s.standardLabel}>My Standard</Text>
-      <Text style={s.standardText}>{standard}</Text>
+      {written ? (
+        <Text style={s.standardText}>{standard}</Text>
+      ) : (
+        <>
+          <Text style={s.standardEmpty}>The line you train by. One sentence, in your words.</Text>
+          {onEdit ? <Text style={s.standardWrite}>Write it →</Text> : null}
+        </>
+      )}
     </>
   );
   return onEdit ? (
@@ -295,6 +310,8 @@ const s = StyleSheet.create({
     color: flColor.bronze400,
     marginBottom: 10,
   },
+  standardEmpty: { marginTop: 8, fontFamily: flFont.display, fontStyle: 'italic', fontSize: 15, lineHeight: 22, color: flColor.gray600 },
+  standardWrite: { marginTop: 10, fontSize: 12.5, fontWeight: '600', color: flColor.bronze400 },
   standardText: {
     fontFamily: flFont.display,
     fontStyle: 'italic',

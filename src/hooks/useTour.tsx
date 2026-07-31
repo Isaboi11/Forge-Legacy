@@ -279,7 +279,20 @@ export function useTour(): TourContextValue {
  */
 export function useScreenPrompt(key: ScreenKey): { shouldShow: boolean; dismiss: () => void } {
   const { seen, seenLoaded, markSeen, status, tipsEnabled } = useTour();
-  const blocking = status === 'loading' || status === 'pending' || status === 'running' || status === 'deferred';
+  /**
+   * BLOCKING MEANS "SOMETHING IS ON SCREEN", NOT "THE TOUR IS UNFINISHED".
+   *
+   * `pending` and `deferred` used to block too, and they are not transient: `pending` is the state of an
+   * athlete who never answered the tour offer, and `deferred` of one who stepped away to look at their
+   * honor and never came back. Neither ever resolves on its own — so a first-visit tip on Workouts,
+   * Legacy or Squads would never appear again for that account, for the rest of its life. A brand-new
+   * athlete who ignored one prompt silently lost every tip in the app.
+   *
+   * Only `running` genuinely conflicts (the tour is drawing over the screen), and `loading` is the
+   * honest wait for storage. The rest are the athlete having said "not now" to ONE thing, which is not
+   * consent to be told nothing.
+   */
+  const blocking = status === 'loading' || status === 'running';
   const shouldShow = tipsEnabled && seenLoaded && !blocking && !seen.includes(key);
   const dismiss = useCallback(() => markSeen(key), [markSeen, key]);
   return { shouldShow, dismiss };

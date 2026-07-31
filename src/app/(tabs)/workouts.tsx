@@ -9,11 +9,10 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { SectionHeader } from '@/components/forge/composites/SectionHeader';
 import { Pill } from '@/components/forge/composites/Pill';
-import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
-import { getActiveProgram, getPrograms } from '@/domain/training/active-program';
+import { getPrograms } from '@/domain/training/active-program';
 import { getProgramDefinitions } from '@/domain/training/programs';
 import { equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
 import { structureFromDefinition } from '@/domain/program/adopt-core';
@@ -56,12 +55,6 @@ function freqAndWeeks(p: Program): { freq: number; weeks?: number } {
   const weeks = p.durationWeeks ?? (p.progress ? Math.round(p.progress.total / Math.max(1, freq)) : undefined);
   return { freq, weeks };
 }
-function activeMeta(p: Program): string {
-  const { freq, weeks } = freqAndWeeks(p);
-  if (!weeks) return p.family;
-  const wk = p.progress ? Math.min(weeks, Math.floor(p.progress.completed / Math.max(1, freq)) + 1) : 1;
-  return `${p.family} · Week ${wk} of ${weeks}`;
-}
 function compactMeta(p: Program): string {
   const { freq, weeks } = freqAndWeeks(p);
   return weeks ? `${p.family} · ${weeks} wk · ${freq}/wk` : `${p.family} · ${freq}/wk`;
@@ -82,7 +75,8 @@ export default function WorkoutsScreen() {
       refetchMine();
     }, [refetchMine]),
   );
-  const mine = myPrograms ?? [];
+  // Memoized: `?? []` would mint a fresh array every render and defeat the catalog memo below.
+  const mine = useMemo(() => myPrograms ?? [], [myPrograms]);
   const templates = templateData ?? [];
   const [adopting, setAdopting] = useState<string | null>(null);
 
@@ -108,14 +102,24 @@ export default function WorkoutsScreen() {
     }
   };
 
-  const { active, catalog, families } = useMemo(() => {
+  /**
+   * ACTIVE IS THE ATHLETE'S OWN, NOT THE CATALOG'S DEMO DEFAULT.
+   *
+   * `getActiveProgram()` reads the shipped program DEFINITIONS and returns whichever one the catalog
+   * marks active — a demo cursor from before an athlete-progress backend existed. Its own header says so.
+   * That backend has existed since 0017: `programs` carries a per-athlete `state`, and `fetchMyPrograms`
+   * reads it. So this screen was telling a brand-new athlete they had Strength Foundation I underway
+   * before they had chosen anything — a claim about their own record, which is the one thing the app must
+   * never invent.
+   */
+  const { catalog, families } = useMemo(() => {
     const programs = getPrograms();
-    const active = getActiveProgram();
-    // "Recommended Next" pool = the real catalog minus whatever is already active.
-    const catalog = programs.filter((p) => p.state !== 'active');
+    // "Recommended Next" pool = the real catalog minus whatever the athlete already has.
+    const owned = new Set(mine.map((p) => p.sourceDefinitionId).filter((id): id is string => !!id));
+    const catalog = programs.filter((p) => !owned.has(p.id));
     const families = ['All', ...Array.from(new Set(programs.map((p) => p.family)))];
-    return { active, catalog, families };
-  }, []);
+    return { catalog, families };
+  }, [mine]);
 
   const discover = useMemo(
     () => (family === 'All' ? catalog : catalog.filter((p) => p.family === family)),
@@ -136,8 +140,9 @@ export default function WorkoutsScreen() {
       router.push('/workout');
       return;
     }
-    if (!active?.nextWorkout) return;
-    startWorkout(active.nextWorkout.name);
+    // No active program: a session started from here is a one-off, not a phantom catalog day.
+    await writeWorkoutLaunch({ freestyle: true });
+    startWorkout('Freestyle Workout');
     router.push('/workout');
   };
 
@@ -149,7 +154,7 @@ export default function WorkoutsScreen() {
     router.push('/workout');
   };
 
-  const todayLabel = myActive ? myActive.name : (active?.nextWorkout?.name ?? null);
+  const todayLabel = myActive ? myActive.name : null;
 
   return (
     <View style={styles.root}>
@@ -185,8 +190,11 @@ export default function WorkoutsScreen() {
             <View>
               <SectionHeader label="Active" />
               <View style={styles.sectionBody}>
-                {active ? (
-                  <ActiveProgramCard program={active} onOpen={() => void openCatalogProgram(active)} />
+                {myActive ? (
+                  <SavedProgramRow
+                    program={myActive}
+                    onPress={() => router.push({ pathname: '/program/[id]', params: { id: myActive.id } })}
+                  />
                 ) : (
                   <View style={styles.emptyCard}>
                     <Text style={styles.emptyTitle}>Forge Your Next Legacy</Text>
@@ -286,8 +294,8 @@ export default function WorkoutsScreen() {
             <View>
               <Text style={styles.recTitle}>Recommended Next</Text>
               <Text style={styles.recBlurb}>
-                {active
-                  ? `Chosen to build on your ${active.family.toLowerCase()} work.`
+                {myActive
+                  ? `Something to follow ${myActive.name}.`
                   : 'A curated starting point for your next chapter.'}
               </Text>
               <View style={styles.stackTight}>
@@ -395,55 +403,6 @@ function Segment({ label, active, onPress }: { label: string; active: boolean; o
   );
 }
 
-function ActiveProgramCard({ program, onOpen }: { program: Program; onOpen: () => void }) {
-  const pct = program.progress ? Math.round((program.progress.completed / program.progress.total) * 100) : 0;
-  return (
-    <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={`Open ${program.name}`} style={styles.heroCard}>
-      <LinearGradient
-        colors={flGradient.missionCardWash.colors}
-        locations={flGradient.missionCardWash.locations}
-        start={flGradient.missionCardWash.start}
-        end={flGradient.missionCardWash.end}
-        style={StyleSheet.absoluteFill}
-      />
-      <View style={styles.heroTopRow}>
-        <View style={styles.heroTitleWrap}>
-          <Text style={styles.heroName}>{program.name}</Text>
-          <Text style={styles.heroMeta} numberOfLines={1}>
-            {activeMeta(program)}
-          </Text>
-        </View>
-        <Pill tone="bronze" size="sm">
-          Active
-        </Pill>
-      </View>
-
-      {program.progress ? (
-        <View style={styles.heroProgressRow}>
-          <View style={styles.heroProgressBar}>
-            <ProgressBar value={program.progress.completed} max={program.progress.total} height={6} label={`${pct}% complete`} />
-          </View>
-          <Text style={styles.heroPct}>{pct}%</Text>
-        </View>
-      ) : null}
-
-      {program.progress ? (
-        <Text style={styles.heroWorkoutLabel}>
-          Workout {program.progress.completed} of {program.progress.total}
-        </Text>
-      ) : null}
-
-      {program.nextWorkout ? (
-        <View style={styles.heroNextRow}>
-          <View style={styles.diamond} />
-          <Text style={styles.heroNext} numberOfLines={1}>
-            Next · {program.nextWorkout.name}
-          </Text>
-        </View>
-      ) : null}
-    </Pressable>
-  );
-}
 
 function CompactProgramCard({ program, onOpen }: { program: Program; onOpen: () => void }) {
   return (
