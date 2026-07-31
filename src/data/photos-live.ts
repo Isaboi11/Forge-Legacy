@@ -199,6 +199,28 @@ export async function fetchPhotoChapter(chapterId: string): Promise<{ id: string
   return { id: c.id, name: c.name, startDate: c.start_date };
 }
 
+/**
+ * Photos added to the active chapter TODAY — the workout logger's Memories strip.
+ *
+ * Scoped to today rather than the session because a workout has no id until it is saved, so there is
+ * nothing to hang a session-scoped query on. Today is the honest approximation and it needs no new
+ * column: what you attached this morning is still what you attached during today's training.
+ */
+export async function fetchTodaysChapterPhotos(): Promise<ChapterPhoto[]> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  const today = new Date().toISOString().slice(0, 10);
+  const { data } = await supabase
+    .from('chapter_photos')
+    .select('id, url, taken_on, pose, caption, is_video, is_starred, role')
+    .eq('athlete_id', user.id)
+    .eq('taken_on', today)
+    .order('created_at', { ascending: false });
+  return ((data ?? []) as Record<string, unknown>[]).map((r) => ({ ...toPhoto(r), event: null }));
+}
+
 // ── Presentation ─────────────────────────────────────────────────────────────
 
 /** One day of the archive: the shots taken on it, plus whatever the record says happened that day. */

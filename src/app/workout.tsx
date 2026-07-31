@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { Image } from 'expo-image';
+
+import { fetchTodaysChapterPhotos } from '@/data/photos-live';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -17,7 +20,7 @@ import { buildActiveSession, buildSessionFromProgram } from '@/domain/workout/bu
 import { fetchProgram, fetchProgramCompletedCount } from '@/data/programs-live';
 import { nextSession } from '@/domain/program/progress-core';
 import { clearWorkoutLaunch, readWorkoutLaunch } from '@/lib/workout-launch';
-import { errorMessage } from '@/lib/useQuery';
+import { errorMessage, useQuery } from '@/lib/useQuery';
 import { clearSession, loadSession, persistSession } from '@/domain/workout/autosave';
 import { doneSetCount, hasLoggedSet } from '@/domain/workout/metrics';
 import { saveWorkout } from '@/domain/workout/save';
@@ -118,6 +121,15 @@ function fmtNum(n: number): string {
  */
 export default function WorkoutScreen() {
   const router = useRouter();
+  /* The Memories strip, real. It refreshes on focus because the capture flow is a modal — returning from
+     it is the only signal we get that anything was added, and the alternative (guessing from a push that
+     returns nothing) would show a photo that might not exist. */
+  const { data: memories, refetch: refetchMemories } = useQuery(fetchTodaysChapterPhotos, []);
+  useFocusEffect(
+    useCallback(() => {
+      refetchMemories();
+    }, [refetchMemories]),
+  );
   const { finishWorkout } = useWorkoutSession();
   const [session, setSession] = useState<ActiveSession | null>(null);
   const [resumable, setResumable] = useState<ActiveSession | null>(null);
@@ -644,7 +656,13 @@ export default function WorkoutScreen() {
                 <View style={styles.heroTags}>
                   <Pill size="sm">Strength</Pill>
                 </View>
-                <Pressable onPress={() => {}} accessibilityRole="button" accessibilityLabel="How to" style={styles.howTo}>
+                {/* 732 exercises ship published coaching content; this used to open nothing. */}
+                <Pressable
+                  onPress={() => (ex.catalogKey ? router.push({ pathname: '/exercise/[id]', params: { id: ex.catalogKey } }) : undefined)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`How to ${ex.name}`}
+                  style={styles.howTo}
+                >
                   <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8}>
                     <Path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z" />
                     <Path d="M10 8.5l6 3.5-6 3.5z" fill={flColor.bronze400} stroke="none" />
@@ -672,7 +690,20 @@ export default function WorkoutScreen() {
             <View style={styles.memories}>
               <Text style={styles.memoriesLabel}>Memories</Text>
               <View style={styles.memoriesStrip}>
-                <Pressable onPress={() => {}} accessibilityRole="button" accessibilityLabel="Attach photo or video" style={styles.memoryAdd}>
+                {(memories ?? []).slice(0, 4).map((m) => (
+                  <Pressable
+                    key={m.id}
+                    onPress={() => router.push('/photos')}
+                    accessibilityRole="button"
+                    accessibilityLabel={m.pose ? `${m.pose}, added today` : 'Photo added today'}
+                    style={styles.memoryThumb}
+                  >
+                    <Image source={{ uri: m.url }} style={StyleSheet.absoluteFill} contentFit="cover" transition={0} cachePolicy="memory-disk" />
+                  </Pressable>
+                ))}
+                {/* Lands in the chapter you're training through — the same door Chapter Detail and
+                    Workout Complete use, so there is one capture flow rather than three. */}
+                <Pressable onPress={() => router.push('/add-photo')} accessibilityRole="button" accessibilityLabel="Attach photo or video" style={styles.memoryAdd}>
                   <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
                     <Path d="M3 6h18v14H3zM8 6l1.4-2h5.2L16 6M12 11.5v3M10.5 13h3" />
                   </Svg>
@@ -1381,7 +1412,8 @@ const styles = StyleSheet.create({
   insightGoal: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', letterSpacing: -0.3, lineHeight: 24, color: flColor.bronze300 },
   memories: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.charcoal700, gap: 10 },
   memoriesLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
-  memoriesStrip: { flexDirection: 'row', gap: 8 },
+  memoriesStrip: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  memoryThumb: { width: 44, height: 44, borderRadius: flRadius.sm, overflow: 'hidden', borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: '#0b0a09' },
   memoryAdd: { width: 60, height: 60, borderRadius: flRadius.md, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint, alignItems: 'center', justifyContent: 'center' },
 
   // hero collapsed strip
