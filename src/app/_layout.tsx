@@ -124,6 +124,7 @@ function RootNavigator() {
         <Stack.Screen name="activity/[id]" />
         <Stack.Screen name="exercise/[id]" />
         <Stack.Screen name="exercise-library" />
+        <Stack.Screen name="templates" />
         <Stack.Screen name="workout" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="log-activity" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="exercise-picker" options={{ presentation: 'fullScreenModal' }} />

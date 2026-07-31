@@ -24,6 +24,7 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { dayLabel, nextSession, sessionsPerWeek, viewForState } from '@/domain/program/progress-core';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { useQuery } from '@/lib/useQuery';
+import { fetchTemplates, templateSummary } from '@/data/templates-live';
 import type { Program } from '@/domain/training/schema';
 import { ScreenTour } from '@/components/tour/ScreenTour';
 
@@ -31,7 +32,7 @@ import { ScreenTour } from '@/components/tour/ScreenTour';
  * Workouts tab root (plural) — W-2 Program Browse / Programs Catalog.
  * Source of truth: the design handoff "Forge Programs Catalog.dc.html".
  *
- * Two tabs: "My Programs" (what you own + train today) and "Discover" (find
+ * Two tabs: "My Workouts" (what you own + train today) and "Discover" (find
  * something new). Distinct from `/workout` (singular) — the active session that
  * the header start button and Home's "Start Workout" push to.
  *
@@ -75,12 +76,14 @@ export default function WorkoutsScreen() {
   // The athlete's own programs. Refetched on focus so a program just built, duplicated, or ended shows
   // up the moment they come back to this tab.
   const { data: myPrograms, refetch: refetchMine } = useQuery(fetchMyPrograms, []);
+  const { data: templateData } = useQuery(fetchTemplates, []);
   useFocusEffect(
     useCallback(() => {
       refetchMine();
     }, [refetchMine]),
   );
   const mine = myPrograms ?? [];
+  const templates = templateData ?? [];
   const [adopting, setAdopting] = useState<string | null>(null);
 
   /**
@@ -170,7 +173,7 @@ export default function WorkoutsScreen() {
       {/* segmented control — two mindsets: own/train vs. find new */}
       <View style={styles.segWrap}>
         <View style={styles.segTrack}>
-          <Segment label="My Programs" active={tab === 'mine'} onPress={() => setTab('mine')} />
+          <Segment label="My Workouts" active={tab === 'mine'} onPress={() => setTab('mine')} />
           <Segment label="Discover" active={tab === 'discover'} onPress={() => setTab('discover')} />
         </View>
       </View>
@@ -187,46 +190,64 @@ export default function WorkoutsScreen() {
                 ) : (
                   <View style={styles.emptyCard}>
                     <Text style={styles.emptyTitle}>Forge Your Next Legacy</Text>
-                    <Text style={styles.emptySub}>Start a program, or browse Discover.</Text>
+                    <Text style={styles.emptySub}>Build your own below, or find one in Discover.</Text>
                   </View>
                 )}
               </View>
             </View>
 
-            {/* MY PROGRAMS — everything the athlete has built, duplicated, or retired. Without this the
-                programs table was invisible: a saved program, a duplicate, and an ended-early program all
-                existed in the database with no surface in the app that listed them. */}
-            {mine.length > 0 ? (
-              <View>
-                <SectionHeader label="My Programs" />
-                <View style={[styles.sectionBody, styles.stackTight]}>
-                  {mine.map((p) => (
-                    <SavedProgramRow
-                      key={p.id}
-                      program={p}
-                      onPress={() => router.push({ pathname: '/program/[id]', params: { id: p.id } })}
-                    />
-                  ))}
-                </View>
-              </View>
-            ) : null}
-
-            {/* LIBRARY — platform-level resources */}
+            {/* YOUR PROGRAMS — always rendered, because the create row lives here and the moment you most
+                need it is the moment you have none. It used to be gated on `mine.length > 0`, which hid
+                authoring from exactly the athlete who had never authored anything. */}
             <View>
-              <SectionHeader label="Library" />
+              <SectionHeader label="Your Programs" />
               <View style={[styles.sectionBody, styles.stackTight]}>
-                <LibraryRow
-                  title="Your Templates"
-                  sub="Reusable workouts you can start any time."
-                  icon={<TemplatesIcon />}
-                  onPress={() => {}}
-                />
+                {mine.map((p) => (
+                  <SavedProgramRow
+                    key={p.id}
+                    program={p}
+                    onPress={() => router.push({ pathname: '/program/[id]', params: { id: p.id } })}
+                  />
+                ))}
+                {/* Creation beside what it creates. This was a dashed CTA in DISCOVER — which means "find
+                    something someone else made", and where the thing you built then landed in the OTHER
+                    tab. */}
+                <CreateRow label="Build a Program" onPress={() => router.push('/program-builder')} />
+              </View>
+            </View>
+
+            {/* YOUR TEMPLATES — a personal artifact, so it sits with programs rather than under "Library"
+                beside two platform surfaces everyone shares. That grouping was the real error. */}
+            <View>
+              <SectionHeader label="Your Templates" action={templates.length > 3 ? 'View all' : undefined} onAction={() => router.push('/templates')} />
+              <View style={[styles.sectionBody, styles.stackTight]}>
+                {templates.slice(0, 3).map((t) => (
+                  <LibraryRow
+                    key={t.id}
+                    title={t.name}
+                    sub={templateSummary(t)}
+                    icon={<TemplatesIcon />}
+                    onPress={() => router.push('/templates')}
+                  />
+                ))}
+                <CreateRow label="Build a Workout" onPress={() => void startFreestyle()} />
+              </View>
+            </View>
+
+            {/* REFERENCE — what's left once the personal things move out is genuinely reference, and the
+                section name is finally true. */}
+            <View>
+              <SectionHeader label="Reference" />
+              <View style={[styles.sectionBody, styles.stackTight]}>
                 <LibraryRow
                   title="Exercise Library"
                   sub="Browse every exercise, bookmark the ones you use."
                   icon={<DumbbellIcon />}
                   onPress={() => router.push('/exercise-library')}
                 />
+                {/* Stays here, deliberately. It answers "what did I lift Tuesday" — a training question at
+                    set-level granularity. The Legacy Timeline answers "what has this amounted to". Moving
+                    a set-by-set log into the museum would dilute the museum. */}
                 <LibraryRow
                   title="Activity History"
                   sub="Every session you’ve logged, month by month."
@@ -238,8 +259,9 @@ export default function WorkoutsScreen() {
           </View>
         ) : (
           <View style={styles.stack}>
-            {/* Build Your Own — express creation path (skips the recommendation questions) → Program Builder */}
-            <Pressable onPress={() => router.push('/program-builder')} accessibilityRole="button" accessibilityLabel="Build your own program" style={styles.buildCta}>
+            {/* Kept OUT of Discover: authorship is not discovery, and what you build lands in the other
+                tab. The one honest mention is the exit line under empty results, below. */}
+            <Pressable onPress={() => router.push('/program-builder')} accessibilityRole="button" accessibilityLabel="Build your own program" style={[styles.buildCta, styles.hidden]}>
               <View style={styles.buildIcon}>
                 <PlusIcon color={flColor.bronze300} />
               </View>
@@ -466,6 +488,18 @@ function SavedProgramRow({ program, onPress }: { program: SavedProgram; onPress:
   );
 }
 
+/** Authoring, rendered as the last row of the section holding what it authors. */
+function CreateRow({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={({ pressed }) => [styles.createRow, pressed ? styles.createRowPressed : null]}>
+      <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="round">
+        <Path d="M12 5v14M5 12h14" />
+      </Svg>
+      <Text style={styles.createRowText}>{label}</Text>
+    </Pressable>
+  );
+}
+
 function LibraryRow({ title, sub, icon, onPress }: { title: string; sub: string; icon: React.ReactNode; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={styles.libRow}>
@@ -525,6 +559,10 @@ function HistoryIcon() {
 }
 
 const styles = StyleSheet.create({
+  hidden: { display: 'none' },
+  createRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: flRadius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
+  createRowPressed: { opacity: 0.88, borderColor: flColor.bronzeBorder },
+  createRowText: { fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },
   root: { flex: 1 },
   barTitle: {
     fontSize: 13,
