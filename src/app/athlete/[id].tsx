@@ -398,7 +398,9 @@ function toSealed(c: NonNullable<AthleteProfile['history']>[number]): Chapter {
     dateRangeCompact: end ? `${mon(start)} – ${mon(end)} ${end.getFullYear()}${days ? ` · ${days}d` : ''}` : undefined,
     goal: { kind: 'none' },
     workoutCount: c.workoutCount,
-    honorCount: 0,
+    // Real since 0098. This was a literal 0 because the profile payload carried no honor count for a
+    // sealed chapter — so every sealed chapter on every profile claimed the athlete earned nothing.
+    honorCount: c.honorCount,
     isActive: false,
   };
 }

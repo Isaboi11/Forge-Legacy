@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { categoryGlyph, honorMeta } from '@/domain/honor/catalog';
+import { countHonorsByChapter, honorsInChapter } from '@/domain/legacy/chapter-tallies';
 
 import { cap, dateRangeCompact, dateRangeFull, daysSince, fmtDate, fmtShort, roman } from '@/lib/format';
 import type { Chapter, FeaturedMoment, Goal as LegacyGoal, LegacyData, Pin, PinKind, TimelineEntry } from '@/types/legacy';
@@ -41,7 +42,10 @@ interface ChapterRow {
   is_active: boolean;
   reflection: string | null;
   workout_count: number;
-  honor_count: number;
+  /* NO `honor_count`. The column exists and is always 0 — written once at chapter creation and never
+     incremented (0098). Reading it rendered "0 Honors" on Chapter Detail and "N workouts · 0 honors"
+     in the seal ceremony, for every chapter, forever. The tally is derived from honor_instances
+     below; leaving the field off the row type is what stops it being read again. */
 }
 interface TimelineRow {
   id: string;
@@ -100,7 +104,11 @@ function toDisplayGoal(g: GoalRow | undefined): LegacyGoal {
  * have shown you someone else's goal, at someone else's percentage, as your own. Goals have been real
  * since 0025; the mapper just never read them for anything but the active chapter.
  */
-function toChapter(r: ChapterRow, goalOf: (chapterId: string) => LegacyGoal): Chapter {
+function toChapter(
+  r: ChapterRow,
+  goalOf: (chapterId: string) => LegacyGoal,
+  honorsIn: (chapterId: string) => number,
+): Chapter {
   return {
     id: r.id,
     name: r.name,
@@ -111,7 +119,7 @@ function toChapter(r: ChapterRow, goalOf: (chapterId: string) => LegacyGoal): Ch
     dateRangeCompact: r.end_date ? dateRangeCompact(r.start_date, r.end_date) : undefined,
     goal: goalOf(r.id),
     workoutCount: r.workout_count,
-    honorCount: r.honor_count,
+    honorCount: honorsIn(r.id),
     reflection: r.reflection ?? undefined,
     isActive: r.is_active,
   };
@@ -160,7 +168,9 @@ export async function fetchLegacyData(): Promise<LegacyData> {
     supabase.from('chapters').select('*').eq('athlete_id', uid),
     supabase.from('timeline_events').select('*').eq('athlete_id', uid).order('occurred_at', { ascending: false }),
     supabase.from('pins').select('*').eq('athlete_id', uid).order('position', { ascending: true }),
-    supabase.from('honor_instances').select('id, honor_type, display_name, date_earned, category').eq('athlete_id', uid).order('date_earned', { ascending: false }),
+    // `chapter_id` (0012) is what makes the per-chapter tally real — see `honorsIn` below. It costs
+    // nothing here: this read already runs, and already returns exactly the rows the count needs.
+    supabase.from('honor_instances').select('id, honor_type, display_name, date_earned, category, chapter_id').eq('athlete_id', uid).order('date_earned', { ascending: false }),
     // Real primary goals (0025). NOT thrown on error — degrades to the fixture-free 'none' pre-migration.
     supabase.from('goals').select('chapter_id, name, target, unit, current, achieved_at').eq('athlete_id', uid).eq('is_primary', true),
   ]);
@@ -171,7 +181,24 @@ export async function fetchLegacyData(): Promise<LegacyData> {
   if (he) throw he;
 
   // Honors are LIVE now (honor_instances) — retires LEGACY_FIXTURE_PENDING.honors.
-  const honors = ((honorRows ?? []) as { id: string; honor_type: string; display_name: string; date_earned: string; category: string | null }[]).map((h) => ({
+  const honorRowsTyped = (honorRows ?? []) as {
+    id: string;
+    honor_type: string;
+    display_name: string;
+    date_earned: string;
+    category: string | null;
+    chapter_id: string | null;
+  }[];
+
+  /**
+   * DERIVED, never read off `chapters.honor_count`, which is always 0 (0098). Counted from rows
+   * already in hand, so there is no extra query and no drift: the tally and the honor list on the
+   * same screen cannot disagree, because they are the same rows.
+   */
+  const honorsByChapter = countHonorsByChapter(honorRowsTyped);
+  const honorsIn = (chapterId: string) => honorsInChapter(honorsByChapter, chapterId);
+
+  const honors = honorRowsTyped.map((h) => ({
     id: h.id,
     name: h.display_name,
     // Same medallion the Hub draws. `category` is snapshotted on the row (0081); honors granted outside
@@ -202,7 +229,7 @@ export async function fetchLegacyData(): Promise<LegacyData> {
   const goalByChapter = new Map(((goalRows ?? []) as GoalRow[]).map((g) => [g.chapter_id, g]));
   const goalOf = (chapterId: string): LegacyGoal => toDisplayGoal(goalByChapter.get(chapterId));
 
-  const activeChapter = active ? toChapter(active, goalOf) : null;
+  const activeChapter = active ? toChapter(active, goalOf, honorsIn) : null;
 
   return {
     rankName: prof.rank_family ? cap(prof.rank_family) : '',
@@ -215,7 +242,7 @@ export async function fetchLegacyData(): Promise<LegacyData> {
     dayCount: active ? daysSince(active.start_date) : 0,
     featuredMoment: deriveFeatured(timeline, chapters),
     pinned,
-    sealedChapters: sealed.map((c) => toChapter(c, goalOf)),
+    sealedChapters: sealed.map((c) => toChapter(c, goalOf, honorsIn)),
     timelineEntries: timeline.slice(0, 3).map(
       (e): TimelineEntry => ({
         id: e.id,

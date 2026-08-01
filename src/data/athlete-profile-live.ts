@@ -33,6 +33,9 @@ export interface SealedChapter {
   startDate: string;
   sealedAt: string | null;
   workoutCount: number;
+  /** Derived from honor_instances by `athlete_profile` (0098). The payload carried no honor count at
+   *  all before, which is why the screen hardcoded 0 for every sealed chapter on a profile. */
+  honorCount: number;
 }
 
 export interface ProfileAccomplishment {
@@ -145,6 +148,7 @@ export async function fetchAthleteProfile(athleteId: string): Promise<AthletePro
             startDate: String(c.start_date),
             sealedAt: (c.sealed_at as string) ?? null,
             workoutCount: Number(c.workout_count ?? 0),
+            honorCount: Number(c.honor_count ?? 0),
           })),
 
     accomplishments:

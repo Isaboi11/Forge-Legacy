@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { countHonorsByChapter, honorsInChapter } from '@/domain/legacy/chapter-tallies';
 
 /**
  * Legacy Timeline (L-2) — every mark, in order.
@@ -98,7 +99,7 @@ interface ChapterRow {
   sealed_at: string | null;
   is_active: boolean;
   workout_count: number;
-  honor_count: number;
+  /* NO `honor_count` — the column is always 0 (0098). Derived from honor_instances below. */
 }
 
 interface EventRow {
@@ -153,15 +154,21 @@ export async function fetchLegacyTimeline(): Promise<LegacyTimeline> {
   } = await supabase.auth.getUser();
   if (!user) return { chapters: [], nodes: [], originAt: null };
 
-  const [chapterRes, eventRes, prRes] = await Promise.all([
-    supabase.from('chapters').select('id, name, start_date, end_date, sealed_at, is_active, workout_count, honor_count').eq('athlete_id', user.id).order('start_date', { ascending: false }),
+  const [chapterRes, eventRes, prRes, honorRes] = await Promise.all([
+    supabase.from('chapters').select('id, name, start_date, end_date, sealed_at, is_active, workout_count').eq('athlete_id', user.id).order('start_date', { ascending: false }),
     supabase.from('timeline_events').select('id, event_type, object_name, chapter_id, occurred_at').eq('athlete_id', user.id).order('occurred_at', { ascending: false }),
     supabase.from('personal_records').select('id, exercise, achieved_on, measure_kind, load_value, load_unit, load_reps').eq('athlete_id', user.id).order('achieved_on', { ascending: false }),
+    // The per-chapter honor tally, derived (0098). `chapters.honor_count` reads 0 for every chapter
+    // ever created, so this timeline used to label each chapter "0 honors". In the same batch as the
+    // other three, so it adds no round trip.
+    supabase.from('honor_instances').select('chapter_id').eq('athlete_id', user.id).not('chapter_id', 'is', null),
   ]);
 
   const chapterRows = (chapterRes.data ?? []) as ChapterRow[];
   const eventRows = (eventRes.data ?? []) as EventRow[];
   const prRows = (prRes.data ?? []) as PrRow[];
+
+  const honorsByChapter = countHonorsByChapter((honorRes.data ?? []) as { chapter_id: string | null }[]);
 
   const chapters: TimelineChapter[] = chapterRows.map((c) => ({
     id: c.id,
@@ -171,7 +178,7 @@ export async function fetchLegacyTimeline(): Promise<LegacyTimeline> {
     startDate: c.start_date,
     endDate: c.end_date ?? (c.sealed_at ? c.sealed_at.slice(0, 10) : null),
     workoutCount: c.workout_count ?? 0,
-    honorCount: c.honor_count ?? 0,
+    honorCount: honorsInChapter(honorsByChapter, c.id),
     events: [],
   }));
 
