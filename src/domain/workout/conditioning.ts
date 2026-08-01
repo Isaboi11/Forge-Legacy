@@ -10,43 +10,69 @@ import type { DistanceActivity } from './save';
 
 export type ExerciseKind = 'strength' | 'distance';
 
-/** How the athlete is doing it TODAY — chosen at log time, never prescribed by the program. */
-export type ConditioningMode = 'outdoor' | 'indoor';
+/**
+ * The three ways to run, and the whole list.
+ *
+ * This was five activities (run/walk/bike/row/swim) with an outdoor-or-indoor toggle inside each leg —
+ * two choices to express one thing. The mode IS the exercise: pick "Outdoor Run" and you have said both
+ * what you are doing and how it will be measured, and the record says the same. If it rains, swapping
+ * the exercise is the same gesture as swapping any other.
+ *
+ * Treadmill and Indoor measure identically — a clock and a number you read off something. They are two
+ * entries because they are two different things to have done, and the record should be able to say
+ * which. Walking, cycling, rowing and swimming remain available through Log a Run, where a whole session
+ * is the activity; inside a workout, this is the list.
+ */
+export type RunMode = 'outdoor' | 'treadmill' | 'indoor';
 
 export interface ConditioningPreset {
-  key: DistanceActivity;
-  /** What the exercise is called in the session. */
+  key: RunMode;
   name: string;
-  /** The indoor phrasing, because "Treadmill Run" is not "Outdoor Run". */
-  indoorName: string;
-  /** Whether GPS can measure it at all — a rowing machine and a pool cannot be tracked outdoors. */
+  /** What it is, in the picker's second line. */
+  detail: string;
+  /** Whether the Active Run screen measures it. False = a clock, and a distance the athlete enters. */
   gps: boolean;
 }
 
-/**
- * The conditioning an athlete can add. Deliberately a short list rather than the 794-exercise catalog:
- * that catalog is organised by movement pattern and equipment, and none of its entries carry a distance.
- */
 export const CONDITIONING: ConditioningPreset[] = [
-  { key: 'running', name: 'Run', indoorName: 'Treadmill Run', gps: true },
-  { key: 'walking', name: 'Walk', indoorName: 'Treadmill Walk', gps: true },
-  { key: 'cycling', name: 'Bike', indoorName: 'Stationary Bike', gps: true },
-  { key: 'rowing', name: 'Row', indoorName: 'Rowing Machine', gps: false },
-  { key: 'swimming', name: 'Swim', indoorName: 'Pool Swim', gps: false },
+  { key: 'outdoor', name: 'Outdoor Run', detail: 'GPS tracks distance, pace and route', gps: true },
+  { key: 'treadmill', name: 'Treadmill Run', detail: 'Timed — read the distance off the machine', gps: false },
+  { key: 'indoor', name: 'Indoor Run', detail: 'Timed — track, court, or anywhere indoors', gps: false },
 ];
 
-export const presetFor = (key: string): ConditioningPreset | undefined => CONDITIONING.find((c) => c.key === key);
+export const presetFor = (key: string): ConditioningPreset | undefined =>
+  CONDITIONING.find((c) => c.key === key);
 
-/** The catalog key a conditioning leg carries, so it round-trips through save and template alike. */
-export const conditioningKey = (key: DistanceActivity): string => `conditioning:${key}`;
+/** The catalog key a leg carries, so it round-trips through the picker, save and template alike. */
+export const conditioningKey = (mode: RunMode): string => `conditioning:${mode}`;
 
 export const isConditioningKey = (k: string | null | undefined): boolean => !!k?.startsWith('conditioning:');
 
-export function activityFromKey(k: string | null | undefined): DistanceActivity | null {
+export function modeFromKey(k: string | null | undefined): RunMode | null {
   if (!isConditioningKey(k)) return null;
   const rest = k!.slice('conditioning:'.length);
-  return presetFor(rest) ? (rest as DistanceActivity) : null;
+  return presetFor(rest) ? (rest as RunMode) : null;
 }
+
+/** Every run is a run as far as the record is concerned; the mode is how it was measured. */
+export const activityForMode = (): DistanceActivity => 'running';
+
+/**
+ * The three runs in the Exercise Picker's own shape, so they sit in the same list as everything else.
+ *
+ * NOT added to `PICKER_DB` and NOT given a browse category. The six-category taxonomy is LOCKED
+ * (`Exercise-Library-Wireframe-Spec-W21` §5), the catalog is invariant-tested to be name-sorted and to
+ * come entirely from `exercises.json`, and a run is none of those things — it has no muscle map, no
+ * movement pattern and no difficulty, because it is a different KIND of exercise. So the picker pins
+ * these three above its results rather than the catalog absorbing them.
+ */
+export const CONDITIONING_PICKER_ITEMS = CONDITIONING.map((c) => ({
+  catalogKey: conditioningKey(c.key),
+  name: c.name,
+  equip: c.detail,
+  muscles: [] as string[],
+  type: 'cardio',
+}));
 
 /**
  * What a leg is aiming at. Either, both, or neither — "3 miles", "20 minutes", "3 miles under 24:00",

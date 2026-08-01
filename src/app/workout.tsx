@@ -20,8 +20,7 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { useUnits } from '@/lib/settings';
 import { ConditioningLeg } from '@/components/workout/ConditioningLeg';
-import { CONDITIONING, activityFromKey, conditioningKey, presetFor } from '@/domain/workout/conditioning';
-import type { DistanceActivity } from '@/domain/workout/save';
+import { conditioningKey, isConditioningKey, modeFromKey, presetFor, type RunMode } from '@/domain/workout/conditioning';
 import { takeRunLegResult, writeRunLegRequest } from '@/lib/run-leg';
 import { buildActiveSession, buildSessionFromProgram } from '@/domain/workout/build-session';
 import { fetchProgram, fetchProgramCompletedCount } from '@/data/programs-live';
@@ -150,7 +149,6 @@ export default function WorkoutScreen() {
   const [durSec, setDurSec] = useState(30);
   const [overviewOpen, setOverviewOpen] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
-  const [runSheetOpen, setRunSheetOpen] = useState(false);
   const sessionRef = useRef(session);
   // partner tagging — persists onto the saved workout; Finish opens the 4-stage seal (W-17) on real data
   const [taggedPartners, setTaggedPartners] = useState<string[]>([]);
@@ -214,16 +212,16 @@ export default function WorkoutScreen() {
       // today?" or anywhere that wants a timed run without a program around it.
       if (launch?.conditioning) {
         await clearWorkoutLaunch();
-        const act = (launch.conditioning.activity ?? 'running') as DistanceActivity;
-        const preset = presetFor(act);
+        const mode = (launch.conditioning.activity ?? 'treadmill') as RunMode;
+        const preset = presetFor(mode);
         setSession({
-          workoutName: launch.workoutName ?? preset?.indoorName ?? 'Run',
+          workoutName: launch.workoutName ?? preset?.name ?? 'Run',
           activityType: 'strength',
           startedAt: new Date().toISOString(),
           exercises: [
             {
-              name: preset?.indoorName ?? 'Run',
-              catalogKey: conditioningKey(act),
+              name: preset?.name ?? 'Run',
+              catalogKey: conditioningKey(mode),
               kind: 'distance',
               targetDistanceMi: launch.conditioning.targetDistanceMi ?? null,
               targetDurationSec: launch.conditioning.targetDurationSec ?? null,
@@ -677,7 +675,7 @@ export default function WorkoutScreen() {
   const trackLegOutdoors = async () => {
     await writeRunLegRequest({
       exerciseIndex: exIdx,
-      activity: activityFromKey(ex.catalogKey) ?? 'running',
+      activity: modeFromKey(ex.catalogKey) ?? 'outdoor',
       targetDistanceMi: ex.targetDistanceMi ?? null,
       targetDurationSec: ex.targetDurationSec ?? null,
     });
@@ -687,8 +685,23 @@ export default function WorkoutScreen() {
   const isLastEx = exIdx >= session.exercises.length - 1;
   const primaryLabel = isLastEx ? 'Finish Workout' : 'Next Exercise';
   const goExercise = (idx: number) => {
-    setExIdx(Math.max(0, Math.min(session.exercises.length - 1, idx)));
+    const next = Math.max(0, Math.min(session.exercises.length - 1, idx));
+    setExIdx(next);
     restSkip(); // leaving an exercise ends its rest
+    /**
+     * Arriving at an outdoor run opens the screen that measures it. Done HERE rather than in a focus
+     * effect on purpose: coming back from Active Run doesn't call this, so the leg can't bounce the
+     * athlete straight out again the moment they return. An already-logged leg just sits there.
+     */
+    const target = session.exercises[next];
+    if (target?.kind === 'distance' && !target.sets[0]?.done && presetFor(modeFromKey(target.catalogKey) ?? '')?.gps) {
+      void writeRunLegRequest({
+        exerciseIndex: next,
+        activity: modeFromKey(target.catalogKey) ?? 'outdoor',
+        targetDistanceMi: target.targetDistanceMi ?? null,
+        targetDurationSec: target.targetDurationSec ?? null,
+      }).then(() => router.push({ pathname: '/active-run', params: { leg: '1' } }));
+    }
   };
   const onPrimary = () => {
     if (isLastEx) {
@@ -698,35 +711,6 @@ export default function WorkoutScreen() {
   const primaryDisabled = isLastEx && !hasLoggedSet(session);
   const popCell = (rowSi: number, field: 'weight' | 'reps', node: ReactNode) =>
     pop && pop.ei === exIdx && pop.si === rowSi && pop.field === field ? <Pop key={pop.token}>{node}</Pop> : node;
-  /**
-   * Append a conditioning leg and go to it. Unprescribed — this is an ad-hoc addition, so it has no
-   * target to meet; the athlete decides when it's done.
-   */
-  const addRunLeg = (activity: DistanceActivity) => {
-    setRunSheetOpen(false);
-    const preset = presetFor(activity);
-    mutate((cur) => {
-      const position = cur.exercises.length;
-      return {
-        ...cur,
-        exercises: [
-          ...cur.exercises,
-          {
-            name: preset?.name ?? 'Run',
-            catalogKey: conditioningKey(activity),
-            kind: 'distance' as const,
-            targetDistanceMi: null,
-            targetDurationSec: null,
-            section: 'main' as const,
-            position,
-            sets: [{ setIndex: 0, targetReps: 0, weight: null, actualReps: null, done: false, durationSec: null, distanceMi: null }],
-          },
-        ],
-      };
-    });
-    setExIdx(sessionRef.current ? sessionRef.current.exercises.length : 0);
-  };
-
   const openAdd = () => {
     setOptionsOpen(false);
     router.push({ pathname: '/exercise-picker', params: { mode: 'add' } });
@@ -1277,28 +1261,6 @@ export default function WorkoutScreen() {
       ) : null}
 
       {/* workout options (⋮) */}
-      {runSheetOpen ? (
-        <View style={styles.pickerWrap}>
-          <Pressable style={styles.pickerBackdrop} onPress={() => setRunSheetOpen(false)} accessibilityLabel="Close" />
-          <View style={styles.picker}>
-            <Text style={styles.pickerTitle}>Add a run</Text>
-            <View style={styles.optList}>
-              {CONDITIONING.map((c) => (
-                <OptionRow
-                  key={c.key}
-                  onPress={() => addRunLeg(c.key)}
-                  title={c.name}
-                  /* Says up front whether GPS is even an option — a rowing machine goes nowhere, and
-                     offering to track it outdoors would be a button that produces zero miles. */
-                  sub={c.gps ? 'Outdoors with GPS, or timed indoors' : 'Timed, with the distance off the machine'}
-                  icon={<Path d="M5 20l4-3 1.5-4.5-2-4 4-2 2 3.5 3 1.5" />}
-                />
-              ))}
-            </View>
-          </View>
-        </View>
-      ) : null}
-
       {optionsOpen ? (
         <View style={styles.pickerWrap}>
           <Pressable style={styles.pickerBackdrop} onPress={() => setOptionsOpen(false)} accessibilityLabel="Close" />
@@ -1306,16 +1268,7 @@ export default function WorkoutScreen() {
             <Text style={styles.pickerTitle}>Workout Options</Text>
             <View style={styles.optList}>
               <OptionRow onPress={openAdd} tint title="Add an exercise" sub="Pick another movement for this session" icon={<Path d="M12 5v14M5 12h14" />} />
-              <OptionRow
-                onPress={() => {
-                  setOptionsOpen(false);
-                  setRunSheetOpen(true);
-                }}
-                title="Add a run"
-                sub="Run, walk, bike, row or swim — anywhere in this session"
-                icon={<Path d="M5 20l4-3 1.5-4.5-2-4 4-2 2 3.5 3 1.5" />}
-              />
-              <OptionRow onPress={openSwap} title="Swap this exercise" sub="Pick a different movement" icon={<Path d="M4 7h13l-3-3M20 17H7l3 3" />} />
+                      <OptionRow onPress={openSwap} title="Swap this exercise" sub="Pick a different movement" icon={<Path d="M4 7h13l-3-3M20 17H7l3 3" />} />
               <OptionRow onPress={skipExercise} title="Skip this exercise" sub="Move on to the next one" icon={<Path d="M5 5l9 7-9 7zM18 5v14" />} />
               <OptionRow
                 onPress={() => {
@@ -1403,6 +1356,20 @@ function replaceExercise(s: ActiveSession, ei: number, ex: ActiveSession['exerci
 }
 /** A freshly-added (freestyle) exercise from the picker — 3 blank working sets. */
 function pickedToExercise(p: PickedExercise, position: number): SessionExercise {
+  // A run picked from the catalog becomes a LEG, not three sets of eight — the picker returns it like
+  // any other exercise, and this is where the two kinds diverge.
+  if (isConditioningKey(p.catalogKey)) {
+    return {
+      catalogKey: p.catalogKey,
+      name: p.name,
+      kind: 'distance',
+      targetDistanceMi: null,
+      targetDurationSec: null,
+      section: 'main',
+      position,
+      sets: [{ setIndex: 0, weight: null, targetReps: 0, actualReps: null, done: false, durationSec: null, distanceMi: null }],
+    };
+  }
   return {
     catalogKey: p.catalogKey,
     name: p.name,
@@ -1413,6 +1380,12 @@ function pickedToExercise(p: PickedExercise, position: number): SessionExercise 
 }
 /** A swap keeps the slot's set structure (count × target) but is a different movement — clear the logged work. */
 function swapExercise(ex: SessionExercise, p: PickedExercise): SessionExercise {
+  // Swapping a lift for a run (or back) changes what the slot IS, so it cannot keep the old set
+  // structure — three sets of eight is not a shape a run has. This is the path someone takes when the
+  // program said Outdoor Run and it started raining.
+  if (isConditioningKey(p.catalogKey) !== (ex.kind === 'distance')) {
+    return pickedToExercise(p, ex.position);
+  }
   return {
     ...ex,
     catalogKey: p.catalogKey,

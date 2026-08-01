@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
   CONDITIONING,
-  activityFromKey,
+  modeFromKey,
   clock,
   conditioningKey,
   isConditioningKey,
@@ -18,30 +18,38 @@ import {
 const mi = (n) => n; // imperial identity, so the target-label tests read plainly
 
 // ── the catalog key round-trip ───────────────────────────────────────────────
-test('conditioningKey round-trips through activityFromKey', () => {
+test('conditioningKey round-trips through modeFromKey', () => {
   for (const c of CONDITIONING) {
     const k = conditioningKey(c.key);
     assert.equal(isConditioningKey(k), true);
-    assert.equal(activityFromKey(k), c.key);
+    assert.equal(modeFromKey(k), c.key);
   }
 });
 
 test('a strength catalog key is not mistaken for conditioning', () => {
   assert.equal(isConditioningKey('barbell-back-squat'), false);
-  assert.equal(activityFromKey('barbell-back-squat'), null);
-  assert.equal(activityFromKey(null), null);
-  assert.equal(activityFromKey(undefined), null);
+  assert.equal(modeFromKey('barbell-back-squat'), null);
+  assert.equal(modeFromKey(null), null);
+  assert.equal(modeFromKey(undefined), null);
 });
 
-test('an unknown conditioning key resolves to null rather than a bad activity type', () => {
-  assert.equal(activityFromKey('conditioning:skiing'), null);
+test('an unknown conditioning key resolves to null rather than a bad mode', () => {
+  assert.equal(modeFromKey('conditioning:skiing'), null);
 });
 
-test('only what GPS can actually measure is marked trackable', () => {
-  assert.equal(presetFor('running').gps, true);
-  // A rowing machine and a pool go nowhere; offering to track them outdoors would be a lie.
-  assert.equal(presetFor('rowing').gps, false);
-  assert.equal(presetFor('swimming').gps, false);
+test('the list is three runs — the mode IS the exercise, so there is no second choice to make', () => {
+  assert.deepEqual(CONDITIONING.map((c) => c.key), ['outdoor', 'treadmill', 'indoor']);
+});
+
+test('only the outdoor run is GPS-measured; the other two are a clock and a typed distance', () => {
+  assert.equal(presetFor('outdoor').gps, true);
+  assert.equal(presetFor('treadmill').gps, false);
+  assert.equal(presetFor('indoor').gps, false);
+});
+
+test('treadmill and indoor measure identically but stay distinct — the record says which you did', () => {
+  assert.equal(presetFor('treadmill').gps, presetFor('indoor').gps);
+  assert.notEqual(presetFor('treadmill').name, presetFor('indoor').name);
 });
 
 // ── targets ──────────────────────────────────────────────────────────────────

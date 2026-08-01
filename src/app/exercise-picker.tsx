@@ -10,6 +10,7 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { writeExerciseInbox, type PickedExercise } from '@/lib/exercise-inbox';
+import { CONDITIONING } from '@/domain/workout/conditioning';
 import { writeBuilderInbox, type BuilderSection } from '@/lib/builder-inbox';
 import { addFavorite, fetchFavoriteKeys, fetchRecentExerciseKeys, removeFavorite } from '@/data/exercise-prefs-live';
 import { useQuery } from '@/lib/useQuery';
@@ -33,6 +34,36 @@ import {
 function toPicked(x: PickerItem): PickedExercise {
   return { catalogKey: x.key, name: x.name, equip: x.equip, muscles: x.muscles, type: x.modality };
 }
+
+/**
+ * The three runs, pinned above the catalog rather than inside it.
+ *
+ * NOT in `PICKER_DB`: the six browse categories are LOCKED (`Exercise-Library-Wireframe-Spec-W21` §5),
+ * the catalog is invariant-tested to come wholly from `exercises.json` and to be name-sorted, and a run
+ * has no muscle map, pattern or difficulty because it is a different KIND of exercise. Adding a seventh
+ * category to make the code fit would be amending a governed decision from the wrong end. They are
+ * offered here, in the same list and through the same round-trip, without disturbing any of that.
+ */
+const CONDITIONING_ROWS: PickerItem[] = CONDITIONING.map((c) => ({
+  key: `conditioning:${c.key}`,
+  name: c.name,
+  cat: 'FULL_BODY',
+  equipId: 'none',
+  equip: c.detail,
+  equipClass: 'Bodyweight',
+  muscleIds: [],
+  muscles: [],
+  primaryMuscleIds: [],
+  difficulty: 'Beginner',
+  pattern: 'Locomotion',
+  modality: 'cardio',
+  aliases: [],
+  environments: [],
+})) as PickerItem[];
+
+/** Catalog first, then the pinned runs — so a conditioning key resolves everywhere a catalog one does. */
+const resolveKey = (k: string): PickerItem | undefined =>
+  itemByKey(k) ?? CONDITIONING_ROWS.find((c) => c.key === k);
 
 /**
  * W-23 Exercise Picker (`Forge Exercise Picker.dc.html`). Three modes off the route params:
@@ -140,7 +171,7 @@ export default function ExercisePickerScreen() {
 
   const commitReplace = () => {
     if (selected == null || targetIdx < 0) return;
-    const item = itemByKey(selected);
+    const item = resolveKey(selected);
     if (!item) return;
     setPersistOpen(false);
     setToast({ to: item.name });
@@ -159,7 +190,7 @@ export default function ExercisePickerScreen() {
     if (isReplace) {
       if (selected != null) setPersistOpen(true);
     } else {
-      const items = picked.map((k) => itemByKey(k)).filter((x): x is PickerItem => Boolean(x));
+      const items = picked.map(resolveKey).filter((x): x is PickerItem => Boolean(x));
       if (!items.length) return;
       if (isBuilder) {
         void writeBuilderInbox({
@@ -304,6 +335,19 @@ export default function ExercisePickerScreen() {
                 <View style={styles.rows}>{sections.best.map(renderRow)}</View>
               </View>
             ) : null}
+
+            {/* Pinned: a run is added the same way every other exercise is. */}
+            {(() => {
+              const q = search.trim().toLowerCase();
+              const rows = q ? CONDITIONING_ROWS.filter((c) => c.name.toLowerCase().includes(q)) : CONDITIONING_ROWS;
+              return rows.length ? (
+                <View style={styles.section}>
+                  <SectionHeader label="Running & Cardio" />
+                  <Text style={styles.bestSub}>Timed, and measured in distance rather than reps</Text>
+                  <View style={styles.rows}>{rows.map(renderRow)}</View>
+                </View>
+              ) : null;
+            })()}
 
             {sections.browsing && sections.mine.length ? (
               <View style={styles.section}>

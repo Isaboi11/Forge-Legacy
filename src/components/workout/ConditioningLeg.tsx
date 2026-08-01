@@ -6,7 +6,7 @@ import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { useWallClockTimer } from '@/hooks/useWallClockTimer';
 import { useKeepScreenAwake } from '@/hooks/useKeepScreenAwake';
 import {
-  activityFromKey,
+  modeFromKey,
   clock,
   legComplete,
   legPaceSec,
@@ -21,10 +21,10 @@ import type { SessionExercise } from '@/domain/workout/types';
 /**
  * A conditioning leg inside a session — the panel that stands where the set table would.
  *
- * Two ways to do the same prescribed work, chosen here rather than written into the program: OUTDOORS,
- * where GPS measures both numbers, or INDOORS, where a wall clock measures the time and the athlete
- * reads the distance off the machine. The program said "run three miles"; it has no business deciding
- * whether it rained.
+ * THE MODE IS THE EXERCISE. This panel briefly carried an outdoor/indoor toggle, which asked the athlete
+ * to choose twice: once picking "Run" from the list and again picking how to measure it. Picking
+ * "Outdoor Run" says both, and the record then says which was done rather than only that a run happened.
+ * If it rains, swapping the exercise is the same gesture as swapping any other.
  *
  * The timer is `useWallClockTimer`, which computes elapsed from a stored start TIMESTAMP rather than
  * counting seconds — so it survives the screen locking, the app being switched away, and the tab being
@@ -44,14 +44,14 @@ interface Props {
 }
 
 export function ConditioningLeg({ exercise, index, units, onComplete, onTrackOutdoors }: Props) {
-  const activity = activityFromKey(exercise.catalogKey) ?? 'running';
-  const preset = presetFor(activity);
+  // The MODE IS THE EXERCISE. This used to hold an outdoor/indoor toggle, which meant the athlete chose
+  // twice: once picking "Run" and again picking how. Picking "Outdoor Run" says both.
+  const mode = modeFromKey(exercise.catalogKey) ?? 'treadmill';
+  const preset = presetFor(mode);
+  const outdoor = !!preset?.gps;
   const set = exercise.sets[0];
   const alreadyDone = !!set?.done;
 
-  // Indoors by default: it is the mode that always works, and the one someone standing on a treadmill
-  // with the app open is overwhelmingly likely to want.
-  const [outdoor, setOutdoor] = useState(false);
   const [distanceText, setDistanceText] = useState('');
 
   const timer = useWallClockTimer(alreadyDone ? null : `forge_leg_timer_v1:${index}`);
@@ -115,31 +115,6 @@ export function ConditioningLeg({ exercise, index, units, onComplete, onTrackOut
         <Text style={styles.eyebrow}>{(preset?.name ?? 'Conditioning').toUpperCase()}</Text>
         <Text style={styles.target}>{prescribed ?? 'No target — just go'}</Text>
       </View>
-
-      {/* Mode. Only offered where GPS could actually measure it: a rowing machine and a pool go
-          nowhere, so "outdoors" would be a button that produces zero miles. */}
-      {preset?.gps ? (
-        <View style={styles.segment}>
-          <Pressable
-            onPress={() => setOutdoor(false)}
-            accessibilityRole="button"
-            accessibilityState={{ selected: !outdoor }}
-            accessibilityLabel="Indoors — time it and enter the distance"
-            style={[styles.seg, !outdoor ? styles.segOn : null]}
-          >
-            <Text style={[styles.segText, !outdoor ? styles.segTextOn : null]}>{preset.indoorName}</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => setOutdoor(true)}
-            accessibilityRole="button"
-            accessibilityState={{ selected: outdoor }}
-            accessibilityLabel="Outdoors — track it with GPS"
-            style={[styles.seg, outdoor ? styles.segOn : null]}
-          >
-            <Text style={[styles.segText, outdoor ? styles.segTextOn : null]}>Outdoors · GPS</Text>
-          </Pressable>
-        </View>
-      ) : null}
 
       {outdoor ? (
         <View style={styles.outdoorBlock}>
