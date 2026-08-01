@@ -11,11 +11,20 @@
  * presentation-only preview built directly from the shared BTN tokens. Every
  * other cell renders the real production component.
  *
- * Standalone route, not wired into the tab navigator — same convention as
- * legacy-design-test.tsx.
+ * ⚠ DEV ONLY. This is a design gallery, not a product screen.
+ *
+ * The comment that used to sit here read "standalone route, not wired into the tab navigator" and
+ * treated that as sufficient. It never was: expo-router serves routes by FILE, so nothing being
+ * linked to it did not stop `/button-library-preview` from answering a typed URL on the production
+ * domain — 400 lines of swatch grid, served to anyone who guessed the path. (It also cited
+ * `legacy-design-test.tsx` as precedent, a file that no longer exists.)
+ *
+ * `__DEV__` closes that without losing the tool: Metro strips this body from the production bundle,
+ * and `src/app/__tests__/route-guard.test.mjs` asserts the redirect stays.
  */
 
 import React from 'react'
+import { Redirect } from 'expo-router'
 import {
   View,
   Text,
@@ -255,6 +264,7 @@ function VariantSection({ v }: { v: (typeof VARIANTS)[number] }) {
 // ─── Root ─────────────────────────────────────────────────────────────────
 
 export default function ButtonLibraryPreview() {
+  if (!__DEV__) return <Redirect href="/" />;
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <StatusBar barStyle="light-content" backgroundColor={color.background.primary} />

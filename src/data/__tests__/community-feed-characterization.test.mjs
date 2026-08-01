@@ -15,7 +15,11 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { COMMUNITY_DATA } from '../community-placeholder.ts'
-import { getCommunityFeed, getPost, formatProgramMeta } from '../post-placeholder.ts'
+import { getCommunityFeed, getPost } from '../post-placeholder.ts'
+// `formatProgramMeta` moved to the domain: a production component (PostContent) was importing it as a
+// VALUE out of this fixture module, which compiled every invented athlete in here into the shipped
+// bundle. The golden below is unchanged — same function, same output, honest module boundary.
+import { formatProgramMeta } from '../../domain/training/program-meta.ts'
 import { formatRecordValue } from '../../domain/records/format.ts'
 
 /**

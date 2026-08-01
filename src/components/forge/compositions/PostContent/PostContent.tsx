@@ -23,7 +23,11 @@ import Svg, { Circle, Defs, Path, RadialGradient, Rect, Stop } from 'react-nativ
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { FlameIcon } from '../../primitives/icons/HomeIcons';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { formatProgramMeta, type PostContent, type PostRole } from '@/data/post-placeholder';
+// `formatProgramMeta` now comes from the domain, NOT from the fixture module. It was the only value
+// this production component pulled out of `post-placeholder`, and that one edge compiled every
+// invented athlete in there into the shipped bundle. The remaining imports are types, which erase.
+import { formatProgramMeta } from '@/domain/training/program-meta';
+import type { PostContent, PostRole } from '@/data/post-placeholder';
 import { formatRecordValue } from '@/domain/records/format';
 import type { FeedOriginConfig } from '../FeedPostCard/origin-config';
 

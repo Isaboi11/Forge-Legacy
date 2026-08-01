@@ -88,7 +88,25 @@ export async function fetchHonorCatalog(): Promise<CatalogHonor[]> {
     .select('honor_type, display_name, category, metric, metric_key, threshold, scope, display_amount')
     .order('sort_order', { ascending: true });
   if (error) {
-    if ((error as { code?: string }).code === 'PGRST205') return []; // table not migrated yet
+    /*
+     * This guard used to catch PGRST205 (whole table absent) and return [] — an empty Honors screen.
+     * It was pointed at the wrong failure. The break that actually happened was
+     * `42703: column honor_catalog.display_amount does not exist` — a column added by 0083 while the
+     * applied range stopped at 0081 — and `display_amount` is in the select above. A partly-applied
+     * chain fails on a missing COLUMN, not a missing table, so the guard covered the case that could
+     * not happen and let the one that did throw raw.
+     *
+     * Both are now named, and neither returns []. Silently rendering "no honors earned" to an athlete
+     * who has earned some is the same class of lie as a chapter reporting zero (0098) — an empty
+     * state is a claim, not a neutral fallback. A schema problem should say so.
+     */
+    const code = (error as { code?: string }).code;
+    if (code === 'PGRST205') throw new Error('Honors aren’t available yet — migration 0077 hasn’t been applied.');
+    if (code === '42703') {
+      throw new Error(
+        'The honors catalog is out of date — part of the 0077–0083 chain is missing. Run the rest of it, then reopen this screen.',
+      );
+    }
     throw error;
   }
   return (data ?? []).map((r) => ({
@@ -119,7 +137,14 @@ export async function fetchHonorCatalog(): Promise<CatalogHonor[]> {
 export async function claimEarnedHonors(): Promise<number> {
   const { data, error } = await supabase.rpc('claim_earned_honors');
   if (error) {
-    if ((error as { code?: string }).code === 'PGRST202') return 0; // migration 0077 not applied
+    /*
+     * Was `return 0` on PGRST202 — indistinguishable from "nothing to grant". If this RPC's signature
+     * ever drifts, honors stop being granted and every caller is told, truthfully-looking, that zero
+     * were earned. A backfill that silently does nothing is worse than one that fails.
+     */
+    if ((error as { code?: string }).code === 'PGRST202') {
+      throw new Error('Honors can’t be claimed yet — migration 0077 hasn’t been applied.');
+    }
     throw error;
   }
   return Array.isArray(data) ? data.length : 0;

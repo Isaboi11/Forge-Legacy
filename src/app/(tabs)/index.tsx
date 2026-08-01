@@ -27,7 +27,8 @@ import { fetchChallengeHub } from '@/data/challenges-live';
 import { fetchTrainingNow, trainingSummary } from '@/data/presence-live';
 import { fetchFriendLists } from '@/data/friends-live';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { useQuery } from '@/lib/useQuery';
+import { errorMessage, useQuery } from '@/lib/useQuery';
+import { useToast } from '@/hooks/useCeremony';
 import { fetchAwaitingChapter, fetchHomeChapter } from '@/data/home-live';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { useProfile } from '@/lib/profile';
@@ -222,6 +223,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { startWorkout } = useWorkoutSession();
   const { requestPrompt, markAnnounced } = useTour();
+  const { showToast } = useToast();
   // Live identity for the AppBar avatar. The artwork resolver below keeps its synchronous seed
   // profile — it must resolve the hero art on the first frame, and the art is static regardless.
   const { profile: liveProfile } = useProfile();
@@ -374,7 +376,21 @@ export default function HomeScreen() {
     await setHomeIntake({ goals: r.goals, primaryGoal: r.primaryGoal, equipment: r.equipment });
     // The quick-picked gym, when they trained one out. Absent = skipped, which must leave the profile
     // UNSET rather than empty — "I didn't answer" and "I own nothing" mean different things downstream.
-    if (r.homeGym) await saveHomeGym(r.homeGym).catch(() => {});
+    /*
+     * NOT `.catch(() => {})`. The comment above draws a real distinction — absent must leave the
+     * profile UNSET, because "I didn't answer" and "I own nothing" mean different things downstream —
+     * and a swallowed failure produced exactly the "didn't answer" state while the athlete believed
+     * they had answered. Their equipment then silently failed to filter the exercise list.
+     * Still non-fatal: the rest of the intake is already saved and must not be lost, so this reports
+     * and moves on rather than throwing the whole completion away.
+     */
+    if (r.homeGym) {
+      try {
+        await saveHomeGym(r.homeGym);
+      } catch (e) {
+        showToast(`Your gym setup didn’t save — ${errorMessage(e)}`);
+      }
+    }
     // NO honor here. Answering three questions about yourself is not a first move — Initiative is
     // earned by actually committing to a program (`acceptSuggestion`) or building one. Granting it at
     // intake meant the ceremony fired before the athlete had chosen anything at all.

@@ -131,6 +131,42 @@ function RootNavigator() {
         <Stack.Screen name="program-builder" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="workout-complete" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Screen name="pin-video" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
+
+        {/*
+         * These fourteen were reachable while SIGNED OUT until now, and the reason is worth stating
+         * because it is not obvious: a route is gated by being DECLARED here, not by existing.
+         * expo-router builds the route tree from the filesystem; `withLayoutContext` is called without
+         * `useOnlyUserDefinedScreens`, so every file route is included, and `useSortedScreens` then
+         * removes only the names collected into `protectedScreens` — which is populated ONLY from
+         * screens declared inside a `<Stack.Protected>` whose guard is false. A screen nobody listed
+         * is never in that set, so the guard cannot exclude it.
+         *
+         * Nothing leaked: RLS plus a null `auth.uid()` meant the reads came back empty. But a logged-out
+         * visitor got a fully-chromed, empty Goals / Progress Hub / Friends / Settings on the public
+         * domain instead of the sign-in screen.
+         *
+         * ADD EVERY NEW SCREEN HERE. `src/app/__tests__/route-guard.test.mjs` fails if one is missed.
+         */}
+        <Stack.Screen name="goals" />
+        <Stack.Screen name="progress-hub" />
+        <Stack.Screen name="friends" />
+        <Stack.Screen name="accomplishments" />
+        <Stack.Screen name="chapter/[id]" />
+        {/* Declared bare, with no `options`, on purpose: these already render with the navigator's
+            defaults today, and a guard fix must not quietly restyle a screen's presentation. */}
+        <Stack.Screen name="chapter/reflect" />
+        <Stack.Screen name="template/[id]" />
+        <Stack.Screen name="active-run" />
+        <Stack.Screen name="home-gym" />
+        <Stack.Screen name="account-settings" />
+        <Stack.Screen name="preferences" />
+        <Stack.Screen name="profile-visibility" />
+        <Stack.Screen name="notifications" />
+        <Stack.Screen name="community" />
+        {/* Orphaned, not dead: nothing links here since the Legacy hero badge was pointed at the
+            Progress Hub (P-2.2, the sole rank-depth destination). Declared so it is at least not
+            reachable signed-out. Whether it gets rewired or retired is a product call, not cleanup. */}
+        <Stack.Screen name="rank-progression" />
       </Stack.Protected>
       <Stack.Protected guard={route === 'onboarding'}>
         <Stack.Screen name="onboarding" />

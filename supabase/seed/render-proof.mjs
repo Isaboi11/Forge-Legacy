@@ -6,7 +6,7 @@
 //
 // This script queries the live DB (authed, RLS-scoped to self), applies a 1:1 port of
 // src/lib/format.ts + src/data/legacy-live.ts + fetchPublicProfile, and diffs each rendered value
-// against the fixture (src/data/legacy-placeholder.ts LEGACY_DATA). Any diff is printed and
+// against the L-1 prototype fixture's expected values (FIX below). Any diff is printed and
 // classified; only `dayCount` is an expected (live-derived) diff.
 //
 //   SB_EMAIL=… SB_PASS=… node supabase/seed/render-proof.mjs
@@ -56,7 +56,10 @@ function deriveFeatured(timeline, chapters) {
   };
 }
 
-// ── expected (fixture) rendered values, from src/data/legacy-placeholder.ts ──
+// ── expected rendered values ──
+// Transcribed from the L-1 Legacy Hub prototype fixture, which was deleted once every Legacy
+// surface read live data (it had no importers left). These literals ARE the reference now — there
+// is no fixture file to diff against, so treat a change here as a deliberate re-baselining.
 const FIX = {
   rankName: 'Established', rankSubTier: 'III',
   standard: 'Show up when it’s hard. The work is the promise I keep to myself.',

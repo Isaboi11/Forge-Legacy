@@ -590,7 +590,12 @@ export interface SquadByCode {
  * Resolve an invite code to its squad WITHOUT joining (0055) — so the athlete can be shown the squad's
  * Commitment before they commit. 0040's join RPC resolved and joined in one step, which left nowhere to
  * put SQ-D14's acceptance gate. Null = the code doesn't match a squad. Resolves null (not an error) on
- * a pre-0055 database, so the caller falls through to the ungated join it already had.
+ * a pre-0055 database.
+ *
+ * That fallback used to be described as falling through to "the ungated join it already had", which
+ * overstated it: `join_squad_by_code` (0055) enforces the commitment server-side and returns
+ * `commitment_required`, which `join-squad.tsx` handles. The gate holds either way. What degrades is
+ * only the UX — the athlete gets a rejection toast instead of being shown the commitment to accept.
  */
 export async function fetchSquadByCode(code: string): Promise<SquadByCode | null> {
   const { data, error } = await supabase.rpc('squad_by_code', { p_code: code });

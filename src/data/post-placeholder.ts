@@ -110,25 +110,6 @@ export interface FeedPost {
   shareType?: ShareKind
 }
 
-/** Display labels for the ProgramStructure enum (the renderer never sees the enum directly). */
-const STRUCTURE_LABEL: Record<ProgramStructure, string> = {
-  upper_lower: 'Upper / Lower',
-  ppl: 'Push/Pull/Legs',
-  full_body: 'Full Body',
-}
-
-/**
- * Format a program plate's meta line from the real structured fields — the ONE place program meta
- * is rendered, so the feed card and Post Detail agree and a backend swap stays a data change.
- * Omits any field the source didn't supply (never fabricated). Shared by both renderers.
- */
-export function formatProgramMeta(p: { durationWeeks?: number; frequencyPerWeek?: number; structure?: ProgramStructure }): string {
-  const parts: string[] = []
-  if (p.durationWeeks != null) parts.push(`${p.durationWeeks} weeks`)
-  if (p.structure) parts.push(STRUCTURE_LABEL[p.structure])
-  if (p.frequencyPerWeek != null) parts.push(`${p.frequencyPerWeek} days/week`)
-  return parts.join(' · ')
-}
 
 const COMMUNITY: PostSource = { kind: 'community', name: 'Iron Collective', sub: 'Community · 2.4k members', tag: 'Community' }
 const SQUAD: PostSource = { kind: 'squad', name: 'Iron Vigil', sub: 'Squad · 5 members', tag: 'Squad' }
