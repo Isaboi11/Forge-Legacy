@@ -30,7 +30,7 @@ import {
   type CardioActivity,
 } from '@/domain/workout/conditioning';
 import { takeRunLegResult, writeRunLegRequest } from '@/lib/run-leg';
-import { buildActiveSession, buildSessionFromProgram } from '@/domain/workout/build-session';
+import { buildSessionFromProgram } from '@/domain/workout/build-session';
 import { fetchProgram, fetchProgramCompletedCount } from '@/data/programs-live';
 import { nextSession } from '@/domain/program/progress-core';
 import { clearWorkoutLaunch, readWorkoutLaunch } from '@/lib/workout-launch';
@@ -330,7 +330,16 @@ export default function WorkoutScreen() {
           // fall through to the default session — a lookup failure must not block training
         }
       }
-      setSession(fresh ?? buildActiveSession());
+      /**
+       * No launch and no saved session means they opened the logger with nothing chosen. That is an
+       * EMPTY session — add what you train as you go.
+       *
+       * It used to be `buildActiveSession()`, which builds a day out of the shipped catalog's demo
+       * program: the same fabrication removed from Home and from Workouts, still living here as a
+       * fallback. It is what an athlete actually landed in whenever anything upstream went wrong, and it
+       * looked convincingly like a real workout they had never chosen.
+       */
+      setSession(fresh ?? { workoutName: 'Freestyle Workout', activityType: 'strength', startedAt: new Date().toISOString(), exercises: [] });
       setPhase('active');
     })();
   }, [reloadKey]);

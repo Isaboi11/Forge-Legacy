@@ -62,7 +62,28 @@ export async function readWorkoutLaunch(): Promise<WorkoutLaunch | null> {
     if (!raw) return null;
     const v = JSON.parse(raw) as WorkoutLaunch;
     if (!v) return null;
-    return v.freestyle || (typeof v.programId === 'string' && v.programId) ? v : null;
+    /**
+     * ══ THE GUARD USED TO NAME TWO FIELDS AND SILENTLY DROP THE REST ══
+     *
+     * It read `v.freestyle || v.programId ? v : null`, written when those were the only two ways to
+     * start a session. Every field added since — `templateId`, `exercises` (a training invite),
+     * `conditioning` (a run) — was therefore accepted by the writer, stored, and then thrown away here
+     * on the way out. The logger saw no launch at all and fell back to its default session, so tapping
+     * "Treadmill run" opened somebody's idea of a strength workout instead.
+     *
+     * Nothing errored. A guard that returns null is indistinguishable from "they just opened the
+     * logger", which is exactly why it survived three features being added around it.
+     *
+     * Now: any intent at all counts, so a field added tomorrow cannot be dropped by omission.
+     */
+    const carriesIntent =
+      !!v.freestyle ||
+      (typeof v.programId === 'string' && !!v.programId) ||
+      (typeof v.templateId === 'string' && !!v.templateId) ||
+      !!v.conditioning ||
+      (Array.isArray(v.exercises) && v.exercises.length > 0) ||
+      (typeof v.partnerId === 'string' && !!v.partnerId);
+    return carriesIntent ? v : null;
   } catch {
     return null;
   }

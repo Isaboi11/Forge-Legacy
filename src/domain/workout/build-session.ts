@@ -12,6 +12,18 @@ import { EMPTY_RESULT, activityFromKey, cardioKey, deriveName, type Modality } f
  * first workout (matches the Home resolver's DEMO_ACTIVE_ID / zero-progress cursor). Weights start empty;
  * the athlete logs actuals in W-9.
  */
+/**
+ * ⚠ RETIRED — do not reach for this.
+ *
+ * It builds a session out of the shipped catalog's DEMO program, which is a claim about the athlete's
+ * training that they never made. It was the Active Workout screen's fallback, so any upstream failure —
+ * including a launch payload silently dropped by a stale guard — dropped them into a convincing workout
+ * they had never chosen. The logger now starts EMPTY instead, which is the honest answer to "you opened
+ * the logger with nothing selected".
+ *
+ * Kept only because the program definitions it reads are the same ones `buildSessionFromProgram` uses,
+ * and deleting it outright is a separate retirement pass.
+ */
 export function buildActiveSession(): ActiveSession | null {
   const defs = getProgramDefinitions();
   const def = defs.find((d) => d.id === DEMO_ACTIVE_ID) ?? defs[0];
