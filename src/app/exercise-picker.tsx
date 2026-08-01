@@ -13,7 +13,7 @@ import { writeExerciseInbox, type PickedExercise } from '@/lib/exercise-inbox';
 import { CONDITIONING } from '@/domain/workout/conditioning';
 import { fetchHomeGym } from '@/data/home-gym-live';
 import { canDoExercise } from '@/domain/home-gym/equipment';
-import { getGearOnly, setGearOnly } from '@/lib/gear-filter';
+import { dismissGearPrompt, getGearOnly, getGearPromptDismissed, setGearOnly } from '@/lib/gear-filter';
 import { writeBuilderInbox, type BuilderSection } from '@/lib/builder-inbox';
 import { addFavorite, fetchFavoriteKeys, fetchRecentExerciseKeys, removeFavorite } from '@/data/exercise-prefs-live';
 import { useQuery } from '@/lib/useQuery';
@@ -153,6 +153,8 @@ export default function ExercisePickerScreen() {
    */
   const { data: ownedGear } = useQuery(fetchHomeGym, []);
   const { data: storedGearOnly } = useQuery(getGearOnly, []);
+  const { data: promptDismissed } = useQuery(getGearPromptDismissed, []);
+  const [dismissedNow, setDismissedNow] = useState(false);
   const [gearOverride, setGearOverride] = useState<boolean | null>(null);
   const hasGymProfile = ownedGear != null;
   // Default ON once a profile exists — that is the whole point — but the athlete's own choice wins and
@@ -363,18 +365,33 @@ export default function ExercisePickerScreen() {
         {/* Never set up. Saying nothing here was a dead end of my own making: the screen KNOWS it could
             cut 500 exercises and just didn't mention it. `router.back()` from the editor lands here
             again, so setting it up costs one detour and no lost place. */}
-        {ownedGear === null ? (
-          <Pressable
-            onPress={() => router.push('/home-gym')}
-            accessibilityRole="button"
-            accessibilityLabel="Set up your home gym to filter this list to what you own"
-            style={({ pressed }) => [styles.gearPrompt, pressed && styles.gearPromptPressed]}
-          >
+        {ownedGear === null && !promptDismissed && !dismissedNow ? (
+          <View style={styles.gearPrompt}>
             <Text style={styles.gearPromptText}>
-              Tell us what equipment you have and this list only shows what you can actually do.
+              Training at home? Tell us your equipment and this list only shows what you can actually do.
             </Text>
-            <Text style={styles.gearPromptCta}>Set up my gym</Text>
-          </Pressable>
+            <View style={styles.gearPromptRow}>
+              <Pressable
+                onPress={() => router.push('/home-gym')}
+                accessibilityRole="button"
+                accessibilityLabel="Set up your home gym"
+                style={({ pressed }) => [styles.gearPromptBtn, pressed && styles.gearPromptPressed]}
+              >
+                <Text style={styles.gearPromptCta}>Set up my gym</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  setDismissedNow(true);
+                  void dismissGearPrompt();
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="I train at a gym — stop showing this"
+                style={({ pressed }) => [styles.gearPromptBtn, pressed && styles.gearPromptPressed]}
+              >
+                <Text style={styles.gearPromptDismiss}>I train at a gym</Text>
+              </Pressable>
+            </View>
+          </View>
         ) : null}
         {hasFilters ? (
           <View style={styles.chipRow}>
@@ -644,6 +661,9 @@ const styles = StyleSheet.create({
   appliedChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 5, paddingLeft: 11, paddingRight: 8, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   gearPrompt: { marginTop: 10, padding: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900, gap: 6 },
   gearPromptPressed: { opacity: 0.85 },
+  gearPromptRow: { flexDirection: 'row', alignItems: 'center', gap: 18 },
+  gearPromptBtn: { paddingVertical: 4 },
+  gearPromptDismiss: { fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
   gearPromptText: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
   gearPromptCta: { fontSize: 12.5, fontWeight: '700', color: flColor.bronze300 },
   gearChipOff: { borderColor: flColor.charcoal600, backgroundColor: 'transparent' },
