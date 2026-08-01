@@ -339,6 +339,24 @@ export default function WorkoutsScreen() {
             </View>
             <ChevronRightIcon size={18} color={flColor.bronze400} />
           </Pressable>
+          {/* Two different things, deliberately both here: TRACK measures a session as you do it,
+              LOG records one you already did. Neither replaces the other — a treadmill run or a swim
+              has nothing for GPS to measure, and a run you forgot to start still counts. */}
+          <Pressable
+            onPress={() => {
+              setStartOpen(false);
+              router.push('/active-run');
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Track a run with GPS"
+            style={styles.libRow}
+          >
+            <View style={styles.rowBody}>
+              <Text style={styles.rowTitle}>Track a Run</Text>
+              <Text style={styles.rowSub}>Start now — your phone measures distance, pace, and route.</Text>
+            </View>
+            <ChevronRightIcon size={18} color={flColor.bronze400} />
+          </Pressable>
           <Pressable
             onPress={() => {
               setStartOpen(false);
@@ -350,7 +368,7 @@ export default function WorkoutsScreen() {
           >
             <View style={styles.rowBody}>
               <Text style={styles.rowTitle}>Log a Run</Text>
-              <Text style={styles.rowSub}>Record a run, walk, ride, row, or swim — with distance.</Text>
+              <Text style={styles.rowSub}>Already done it? Record a run, walk, ride, row, or swim.</Text>
             </View>
             <ChevronRightIcon size={18} color={flColor.bronze400} />
           </Pressable>

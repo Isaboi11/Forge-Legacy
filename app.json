@@ -44,6 +44,12 @@
           "cameraPermission": "Forge Legacy uses your camera so you can record squad check-in videos and capture photos on the spot.",
           "microphonePermission": "Forge Legacy uses your microphone so your check-in and form-check videos have sound."
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Forge Legacy uses your location while you're running, walking, or riding to measure the distance and pace of that session. It is only read during a session you started, and the route is never shared."
+        }
       ]
     ],
     "experiments": {
