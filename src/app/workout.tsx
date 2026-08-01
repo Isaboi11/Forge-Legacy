@@ -29,7 +29,6 @@ import {
   newCardioBlock,
   type CardioActivity,
 } from '@/domain/workout/conditioning';
-import { takeRunLegResult, writeRunLegRequest } from '@/lib/run-leg';
 import { buildSessionFromProgram } from '@/domain/workout/build-session';
 import { fetchProgram, fetchProgramCompletedCount } from '@/data/programs-live';
 import { nextSession } from '@/domain/program/progress-core';
@@ -373,58 +372,6 @@ export default function WorkoutScreen() {
     sessionRef.current = session;
   }, [session]);
 
-  /**
-   * Drain a returning GPS measurement onto the leg that asked for it.
-   *
-   * Consumed on read (`takeRunLegResult`), so one run lands on one leg exactly once — left in place it
-   * would re-apply every time this screen regained focus and overwrite whatever came after.
-   */
-  useFocusEffect(
-    useCallback(() => {
-      let active = true;
-      void takeRunLegResult().then((res) => {
-        if (!active || !res) return;
-        setSession((cur) => {
-          if (!cur) return cur;
-          const target = cur.exercises[res.exerciseIndex];
-          // The session may have been rebuilt while they were out there; only apply it to a block.
-          if (!target || target.kind !== 'cardio') return cur;
-          const withResult = {
-            ...cur,
-            exercises: cur.exercises.map((e, i) =>
-              i !== res.exerciseIndex
-                ? e
-                : {
-                    ...e,
-                    // `loggedModality: 'outdoor'` — it came back from GPS. Written once, here, and never
-                    // rewritten by the card's toggle (0097).
-                    cardio: {
-                      distanceMi: res.distanceMi,
-                      timeSec: res.durationSec,
-                      inclinePct: e.cardio?.inclinePct ?? null,
-                      loggedModality: 'outdoor' as const,
-                      source: 'tracked' as const,
-                    },
-                  },
-            ),
-          };
-          return patchSet(withResult, res.exerciseIndex, 0, (set) => ({
-            ...set,
-            done: true,
-            durationSec: res.durationSec,
-            distanceMi: res.distanceMi,
-            modality: 'outdoor' as const,
-            actualReps: null,
-          }));
-        });
-        setExIdx(res.exerciseIndex);
-      });
-      return () => {
-        active = false;
-      };
-    }, [setSession]),
-  );
-
   // drain the Exercise Picker inbox when the workout regains focus (after add / swap), then jump to it
   useFocusEffect(
     useCallback(() => {
@@ -742,7 +689,16 @@ export default function WorkoutScreen() {
    * `loggedModality` comes from the DRAFT, not from the live toggle: the form's shape was frozen when it
    * opened, and saving must record how the bout was actually done rather than what the card says now.
    */
-  const saveCardioLog = (r: { distanceMi: number; timeSec: number; inclinePct: number | null; modality: 'outdoor' | 'indoor' }) => {
+  /**
+   * Commit one cardio bout onto the block.
+   *
+   * `source` comes FROM THE CARD, which is the only place that knows whether GPS measured the distance
+   * or the athlete typed it. This used to read `e.cardio?.source === 'tracked' ? 'tracked' : 'manual'`
+   * — inspecting the value it was about to overwrite — which was correct only while a tracked run
+   * arrived by a different path entirely. Now that both arrive here, that guess would file every
+   * measured run as a claim.
+   */
+  const saveCardioLog = (r: { distanceMi: number; timeSec: number; inclinePct: number | null; modality: 'outdoor' | 'indoor'; source: 'tracked' | 'manual' }) => {
     mutate((cur) => {
       const withResult = {
         ...cur,
@@ -756,7 +712,7 @@ export default function WorkoutScreen() {
                   timeSec: r.timeSec,
                   inclinePct: r.modality === 'indoor' ? r.inclinePct : (e.cardio?.inclinePct ?? null),
                   loggedModality: r.modality,
-                  source: (e.cardio?.source === 'tracked' ? 'tracked' : 'manual') as 'tracked' | 'manual',
+                  source: r.source,
                 },
               },
         ),
@@ -784,19 +740,6 @@ export default function WorkoutScreen() {
         i !== exIdx ? e : { ...e, modality: m, name: deriveName(activity, m) },
       ),
     }));
-  };
-
-  /** Hand off to Active Run, telling it which block is waiting for the answer. */
-  const startOutdoorRun = async () => {
-    await writeRunLegRequest({
-      exerciseIndex: exIdx,
-      activity: ex.activity ?? 'run',
-      name: ex.name,
-      targetMi: ex.targetMi ?? null,
-      targetPaceSec: ex.targetPaceSec ?? null,
-      program: session.workoutName,
-    });
-    router.push({ pathname: '/active-run', params: { leg: '1' } });
   };
 
   const isLastEx = exIdx >= session.exercises.length - 1;
@@ -914,7 +857,10 @@ export default function WorkoutScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        {heroExpanded ? (
+        {/* A cardio block replaces the hero as well as the set table. There is no demonstration to play,
+            no How To to read and no per-lift Memories strip for a run — and leaving the lifting hero above
+            it left two headers stacked on one exercise. The block's own card is the whole surface. */}
+        {isCardio ? null : heroExpanded ? (
           <View style={styles.hero}>
             <View style={styles.heroRow}>
               {/* media slot — engraved dumbbell placeholder (animation art is Phase-4) */}
@@ -997,7 +943,7 @@ export default function WorkoutScreen() {
           </Pressable>
         )}
 
-        {/* A conditioning leg stands where the set table would: same position in the session, entirely
+        {/* The block stands where the hero AND the table would: same position in the session, entirely
             different measurement. Sets of reps have nothing to say about three miles. */}
         {isCardio ? (
           <CardioBlockCard
@@ -1006,7 +952,6 @@ export default function WorkoutScreen() {
             units={units}
             onSetModality={setCardioModality}
             onSave={saveCardioLog}
-            onStartOutdoor={() => void startOutdoorRun()}
           />
         ) : (
         <View style={styles.table}>

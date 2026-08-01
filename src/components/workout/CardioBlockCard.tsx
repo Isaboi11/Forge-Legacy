@@ -6,6 +6,7 @@ import { Button } from '@/components/forge/composites/Button';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { useWallClockTimer } from '@/hooks/useWallClockTimer';
 import { useKeepScreenAwake } from '@/hooks/useKeepScreenAwake';
+import { useRunTracker } from '@/hooks/useRunTracker';
 import { useReduceMotion } from '@/lib/settings';
 import {
   activitySymbol,
@@ -20,7 +21,17 @@ import {
   type CardioResult,
   type Modality,
 } from '@/domain/workout/conditioning';
-import { distanceLabel as unitLabel, toDistance, toPace, toSpeed, type UnitSystem } from '@/domain/run/run-core';
+import {
+  currentPaceSec,
+  distanceLabel as unitLabel,
+  routePath,
+  signalNote,
+  toDistance,
+  toPace,
+  toSpeed,
+  totalMiles,
+  type UnitSystem,
+} from '@/domain/run/run-core';
 import type { SessionExercise } from '@/domain/workout/types';
 
 /**
@@ -38,6 +49,19 @@ import type { SessionExercise } from '@/domain/workout/types';
  * was actually recorded, written once at log time. Flipping the toggle after a treadmill run must not
  * repaint it as a traced GPS route, so every "was this really outdoors" question below reads
  * `loggedModality` and never `modality`.
+ *
+ * ══ THE RUN HAPPENS HERE ══
+ *
+ * An outdoor block used to hand off to the full-screen Active Run and wait for an answer to come back
+ * through storage. That existed because the two screens were separate design documents, not because a
+ * run inside a workout is a different thing — and it cost a route change, a request/result round trip and
+ * an entire second way for a measurement to go missing, all to collect two numbers. The tracker now runs
+ * on this card. `/active-run` remains what it always should have been: the screen for a run that IS the
+ * session, reached from Home.
+ *
+ * So the two modalities are one shape with one difference. A treadmill gives a clock; outdoors gives a
+ * clock AND a measured distance. Same live band, same End, same log form — the outdoor one arrives with
+ * its numbers already filled in.
  */
 
 const BAND_H = 140;
@@ -49,6 +73,14 @@ interface Draft {
   /** Frozen when the form opens. A toggle flipped mid-edit must not change the form's shape. */
   hasIncline: boolean;
   modality: Modality;
+  /**
+   * Whether these numbers were MEASURED by GPS or typed by hand — frozen with the rest of the form.
+   *
+   * It survives editing: nudging a tracked distance by a tenth does not turn the run into a claim, and
+   * pretending otherwise would erase the only durable difference between a run the app watched and a
+   * number somebody remembered.
+   */
+  source: 'tracked' | 'manual';
 }
 
 interface Props {
@@ -56,11 +88,17 @@ interface Props {
   index: number;
   units: UnitSystem;
   onSetModality: (m: Modality) => void;
-  onSave: (r: { distanceMi: number; timeSec: number; inclinePct: number | null; modality: Modality }) => void;
-  onStartOutdoor: () => void;
+  onSave: (r: {
+    distanceMi: number;
+    timeSec: number;
+    inclinePct: number | null;
+    modality: Modality;
+    /** Whether the distance was MEASURED or typed. A tracked run must never be filed as a claim. */
+    source: 'tracked' | 'manual';
+  }) => void;
 }
 
-export function CardioBlockCard({ exercise, index, units, onSetModality, onSave, onStartOutdoor }: Props) {
+export function CardioBlockCard({ exercise, index, units, onSetModality, onSave }: Props) {
   const activity: CardioActivity = exercise.activity ?? 'run';
   const modality: Modality = exercise.modality ?? 'outdoor';
   const treadmill = modality === 'indoor';
@@ -76,12 +114,52 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
   const reduceMotion = useReduceMotion();
 
   const timer = useWallClockTimer(logged ? null : `forge_cardio_timer_v1:${index}`);
-  useKeepScreenAwake(timer.running);
+  const tracker = useRunTracker(activity);
+
+  /**
+   * One notion of "in progress" across both modalities: the belt is moving, or GPS is.
+   *
+   * The screen must stay awake for either. On a treadmill the clock survives a sleep (it reads the time
+   * of day) but you cannot see it; outdoors a sleeping screen suspends the fix stream on the web and the
+   * distance simply stops, which is the worse of the two failures.
+   */
+  const live = tracker.status === 'acquiring' || tracker.status === 'tracking';
+  useKeepScreenAwake(timer.running || live);
+
+  // Live measurements. Zero and null until GPS has actually accepted movement — never seeded, never
+  // simulated: an empty track has nothing to say and says nothing.
+  const liveMi = totalMiles(tracker.track);
+  const livePaceSec = currentPaceSec(tracker.track);
+  const tracking = live || tracker.status === 'paused';
+  /** Nothing to track WITH — refused, or no provider at all. The manual path has to stay open. */
+  const noGps = tracker.status === 'denied' || tracker.status === 'unavailable';
 
   const dU = unitLabel(units);
   const d1 = (mi: number | null | undefined) => toDistance(mi ?? 0, units).toFixed(1);
   const speed = usesSpeed(activity);
   const hasTarget = exercise.targetMi != null;
+
+  /**
+   * One line under the name, saying what this block asks for.
+   *
+   * It used to read `Hold ${targetPaceSec ?? 0} or better` whenever a distance existed — so a block with
+   * three miles and no pace told the athlete to hold 0:00, a target nobody has ever hit. Each clause now
+   * only claims what was actually prescribed.
+   */
+  const paceStr = speed
+    ? exercise.targetSpdMph != null
+      ? `${toSpeed(exercise.targetSpdMph, units).toFixed(1)} ${units === 'metric' ? 'km/h' : 'mph'}`
+      : null
+    : exercise.targetPaceSec != null
+      ? `${fmtPace(toPace(exercise.targetPaceSec, units))} /${dU}`
+      : null;
+  const subtitle = hasTarget
+    ? paceStr
+      ? `${d1(exercise.targetMi)} ${dU} · hold ${paceStr} or better`
+      : `${d1(exercise.targetMi)} ${dU} — take the pace you want`
+    : paceStr
+      ? `Hold ${paceStr} or better · go as far as you like`
+      : `No target — ${VERB[activity].toLowerCase()} what you’ve got`;
 
   // ── the belt, only while the timer runs ───────────────────────────────────
   // The hatch scrolls downward, toward the runner, 28px per 900ms. Started in an EFFECT, not in render:
@@ -101,24 +179,33 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
     };
   }, [beltRunning, belt]);
 
-  const openLog = () => {
+  /**
+   * End the bout and open the form on it.
+   *
+   * `measured` is passed when GPS did the measuring, and then it wins over every default below — the
+   * whole point of having tracked is that nobody has to remember or re-enter anything.
+   */
+  const openLog = (measured?: { distanceMi: number; timeSec: number }) => {
     // Opening the form ENDS the bout. The clock was running because the athlete was; they have stopped
     // to write the numbers down, and a timer still counting behind the form would keep inflating a
     // duration they are in the middle of confirming.
     if (timer.running) timer.pause();
+    if (tracking) tracker.stop();
     // The form's shape is decided ONCE, here, from how the bout was (or will be) recorded — not from
     // whatever the toggle says later. Otherwise editing an outdoor-toggled treadmill run drops its incline.
     const formTreadmill = logged && lm ? lm === 'indoor' : treadmill;
     const target = exercise.targetMi ?? 1;
     const pace = exercise.targetPaceSec ?? 540;
+    const distanceMi = measured ? measured.distanceMi : (result?.distanceMi ?? target);
     setDraft({
-      distanceMi: result?.distanceMi ?? target,
-      timeSec: result?.timeSec ?? (timer.elapsedSec || Math.round(target * pace)),
+      distanceMi,
+      timeSec: measured ? measured.timeSec : (result?.timeSec ?? (timer.elapsedSec || Math.round(target * pace))),
       inclinePct: result?.inclinePct ?? (formTreadmill ? 1 : 0),
       hasIncline: formTreadmill,
       modality: formTreadmill ? 'indoor' : 'outdoor',
+      source: measured ? 'tracked' : (result?.source ?? 'manual'),
     });
-    setDistanceText(toDistance(result?.distanceMi ?? target, units).toFixed(2));
+    setDistanceText(toDistance(distanceMi, units).toFixed(2));
   };
 
   const adj = (field: 'distanceMi' | 'timeSec' | 'inclinePct', delta: number) =>
@@ -134,6 +221,19 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
     });
 
   const draftPace = draft ? avgPaceSec(draft.distanceMi, draft.timeSec) : null;
+
+  /**
+   * The athlete's own trace, fitted to the band — or null, which draws the dashed placeholder instead.
+   *
+   * Two points is the minimum that can be a line rather than a dot. `start` and `head` are guaranteed
+   * non-null by then, and narrowing them here keeps the JSX from having to ask again.
+   */
+  const fitted = routePath(tracker.track, 372, 126, 14);
+  const route = tracker.track.length > 1 && fitted.start && fitted.head
+    ? { d: fitted.d, start: fitted.start, head: fitted.head }
+    : null;
+
+  const note = signalNote(tracker.status === 'paused', tracker.weakSignal, tracker.accuracyM);
 
   return (
     <View style={styles.card}>
@@ -194,29 +294,62 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
               {Array.from({ length: 13 }, (_, i) => (
                 <Rect key={`v${i}`} x={i * 30} y={0} width={1} height={126} fill="rgba(191,143,79,0.045)" />
               ))}
-              {/* Dashed until it has been run, solid once it has. That change, plus the start marker
-                  filling in, is the entire tell — and it is driven by loggedModality, never by "is
-                  logged", so a treadmill run flipped to Outdoor stays a ghost. */}
-              <Path
-                d="M44 100 C 28 70 70 66 72 46 C 74 24 42 20 66 12 C 92 4 152 14 172 44 C 194 78 262 70 278 40 C 288 22 318 30 320 52"
-                fill="none"
-                stroke={traced ? flColor.bronze300 : flColor.bronzeBorder}
-                strokeWidth={traced ? 3 : 2.4}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeDasharray={traced ? undefined : '5 8'}
-                opacity={traced ? 0.95 : loggedIndoors ? 0.28 : 0.45}
-              />
-              <Circle cx={44} cy={100} r={5} fill={traced ? flColor.bronze300 : 'none'} stroke={flColor.bronze400} strokeWidth={2} opacity={0.85} />
-              <Circle cx={320} cy={52} r={5} fill="none" stroke={flColor.bronze400} strokeWidth={2} opacity={0.7} />
+              {/* THE ROUTE IS THE REAL ONE or it is visibly not a route at all.
+                  With fixes in hand, this is the athlete's own trace, drawn from the track. With none,
+                  it is a dashed placeholder that says so in the caption — never a solid line implying a
+                  run that the app did not watch. */}
+              {route ? (
+                <>
+                  <Path d={route.d} fill="none" stroke={flColor.bronze300} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" opacity={0.95} />
+                  <Circle cx={route.start.x} cy={route.start.y} r={5} fill={flColor.bronze300} stroke={flColor.bronze400} strokeWidth={2} opacity={0.9} />
+                  <Circle cx={route.head.x} cy={route.head.y} r={5} fill="none" stroke={flColor.bronze400} strokeWidth={2} opacity={0.9} />
+                </>
+              ) : (
+                <>
+                  <Path
+                    d="M44 100 C 28 70 70 66 72 46 C 74 24 42 20 66 12 C 92 4 152 14 172 44 C 194 78 262 70 278 40 C 288 22 318 30 320 52"
+                    fill="none"
+                    stroke={flColor.bronzeBorder}
+                    strokeWidth={2.4}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeDasharray="5 8"
+                    opacity={loggedIndoors ? 0.22 : 0.4}
+                  />
+                  <Circle cx={44} cy={100} r={5} fill="none" stroke={flColor.bronze400} strokeWidth={2} opacity={0.7} />
+                </>
+              )}
               <Rect x={0} y={74} width={372} height={52} fill="url(#cscrim)" />
             </Svg>
+
+            {/* The live read-out sits ON the route while it's being drawn — the number and the shape it
+                came from in one place, rather than a clock at the top and a distance three rows down. */}
+            {tracking ? (
+              <View style={styles.liveOverlay} pointerEvents="none">
+                <Text style={styles.liveDistance}>{toDistance(liveMi, units).toFixed(2)}</Text>
+                <Text style={styles.liveUnit}>{dU.toUpperCase()}</Text>
+                <View style={styles.liveMetaRow}>
+                  <Text style={styles.liveMeta}>{fmtClock(tracker.elapsedSec)}</Text>
+                  <Text style={styles.liveMetaDot}>·</Text>
+                  <Text style={styles.liveMeta}>
+                    {livePaceSec == null
+                      ? '--'
+                      : speed
+                        ? `${toSpeed(3600 / livePaceSec, units).toFixed(1)} ${units === 'metric' ? 'km/h' : 'mph'}`
+                        : `${fmtPace(toPace(livePaceSec, units))} /${dU}`}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
+
             <Text style={styles.bandCaption}>
-              {traced
-                ? `${d1(result?.distanceMi)} ${dU} · ${fmtClock(result?.timeSec)}`
-                : loggedIndoors
-                  ? 'Logged on a treadmill · no route'
-                  : 'Your route traces as you run'}
+              {tracking
+                ? note
+                : traced
+                  ? `${d1(result?.distanceMi)} ${dU} · ${fmtClock(result?.timeSec)}`
+                  : loggedIndoors
+                    ? 'Logged on a treadmill · no route'
+                    : 'Your route traces as you run'}
             </Text>
           </>
         )}
@@ -241,9 +374,7 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
         <View style={styles.nameRow}>
           <View style={styles.nameText}>
             <Text style={styles.name}>{exercise.name}</Text>
-            <Text style={styles.prescription}>
-              {hasTarget ? `Hold ${fmtPace(toPace(exercise.targetPaceSec ?? 0, units))} or better` : 'No distance target — run what you’ve got'}
-            </Text>
+            <Text style={styles.prescription}>{subtitle}</Text>
           </View>
           {/* Decorative: the toggle and the name already say the modality. */}
           <View style={styles.mark} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
@@ -271,26 +402,26 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
           })}
         </View>
 
-        {/* Read-only. The strength logger above establishes the rule: Target comes from the program and
-            does not move; Actual is what you log. An editable prescription would be the one place in a
-            workout where you can quietly rewrite the program, and it would destroy the comparison. */}
-        <View style={styles.strip}>
-          <StripCell
-            label={hasTarget ? 'TARGET' : 'DISTANCE'}
-            value={hasTarget ? `${d1(exercise.targetMi)} ${dU}` : 'Open'}
-            big
-            accent
-            first
-          />
-          {speed
-            ? exercise.targetSpdMph != null && (
-                <StripCell label="TARGET SPEED" value={`${toSpeed(exercise.targetSpdMph, units).toFixed(1)}`} />
-              )
-            : exercise.targetPaceSec != null && (
-                <StripCell label="TARGET PACE" value={`${fmtPace(toPace(exercise.targetPaceSec, units))} /${dU}`} />
-              )}
-          <StripCell label="LAST" value="—" />
-        </View>
+        {/* THE PRESCRIPTION, and only when there is one.
+            Read-only, on the strength logger's rule: Target comes from the program and does not move;
+            Actual is what you log. An editable prescription would be the one place in a workout where you
+            can quietly rewrite the program, and it would destroy the comparison.
+
+            An open block draws NOTHING here. It used to render "DISTANCE · Open" beside a "LAST · —" that
+            was never once populated — two cells of chrome saying there is nothing to say, on the card
+            that most needed to be short. The subtitle already says it in words. */}
+        {hasTarget || exercise.targetPaceSec != null || exercise.targetSpdMph != null ? (
+          <View style={styles.strip}>
+            {hasTarget ? <StripCell label="TARGET" value={`${d1(exercise.targetMi)} ${dU}`} big accent first /> : null}
+            {speed
+              ? exercise.targetSpdMph != null && (
+                  <StripCell label="TARGET SPEED" value={`${toSpeed(exercise.targetSpdMph, units).toFixed(1)}`} first={!hasTarget} big={!hasTarget} accent={!hasTarget} />
+                )
+              : exercise.targetPaceSec != null && (
+                  <StripCell label="TARGET PACE" value={`${fmtPace(toPace(exercise.targetPaceSec, units))} /${dU}`} first={!hasTarget} big={!hasTarget} accent={!hasTarget} />
+                )}
+          </View>
+        ) : null}
 
         {/* ── STATE C · the log form ─────────────────────────────────────── */}
         {draft ? (
@@ -344,7 +475,7 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
                   onPress={() => {
                   const typed = parseDistance(distanceText);
                   const mi = typed == null ? draft.distanceMi : units === 'metric' ? typed / 1.609344 : typed;
-                  onSave({ distanceMi: +mi.toFixed(2), timeSec: draft.timeSec, inclinePct: draft.hasIncline ? draft.inclinePct : null, modality: draft.modality });
+                  onSave({ distanceMi: +mi.toFixed(2), timeSec: draft.timeSec, inclinePct: draft.hasIncline ? draft.inclinePct : null, modality: draft.modality, source: draft.source });
                     setDraft(null);
                     timer.reset();
                   }}
@@ -374,7 +505,7 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
                 <ResultCell value={`${result.inclinePct.toFixed(1)}%`} label="INCLINE" />
               ) : null}
             </View>
-            <Pressable onPress={openLog} accessibilityRole="button" accessibilityLabel="Edit these numbers" style={styles.textBtn}>
+            <Pressable onPress={() => openLog()} accessibilityRole="button" accessibilityLabel="Edit these numbers" style={styles.textBtn}>
               <Text style={styles.textBtnText}>Edit these numbers</Text>
             </Pressable>
           </View>
@@ -396,34 +527,87 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
                 <View style={styles.half}>
                   {/* "End" and not "Log": it stops the clock. Calling it Log made it read like a
                       passive write while the timer kept counting behind the form. */}
-                  <Button variant="primary" fullWidth onPress={openLog} accessibilityLabel={`End ${VERB[activity].toLowerCase()}`}>
+                  <Button variant="primary" fullWidth onPress={() => openLog()} accessibilityLabel={`End ${VERB[activity].toLowerCase()}`}>
                     End {VERB[activity]}
                   </Button>
                 </View>
               ) : null}
             </View>
             {timer.elapsedSec === 0 && !timer.running ? (
-              <Pressable onPress={openLog} accessibilityRole="button" accessibilityLabel="Skip the timer and enter it myself" style={styles.textBtn}>
+              <Pressable onPress={() => openLog()} accessibilityRole="button" accessibilityLabel="Skip the timer and enter it myself" style={styles.textBtn}>
                 <Text style={styles.textBtnText}>Skip timer · enter it myself</Text>
               </Pressable>
             ) : null}
+            {/* ONE line. Two stacked notes on the shortest card in the app was the bulk the athlete was
+                looking at — and the second only mattered mid-run, when the first no longer did. */}
             <Text style={styles.note}>
-              A treadmill only gives us time. You&apos;ll read the distance off the console when you log it.
-            </Text>
-            <Text style={styles.note}>
-              The clock reads the time of day, so it stays right even if your screen sleeps.
+              {timer.running || timer.elapsedSec > 0
+                ? 'The clock reads the time of day, so it stays right even if your screen sleeps.'
+                : 'A treadmill only gives us time — you’ll read the distance off the console at the end.'}
             </Text>
           </View>
         ) : (
-          /* ── STATE A · outdoor, not yet run ───────────────────────────── */
+          /* ── STATE A · outdoor ────────────────────────────────────────── */
           <View style={styles.form}>
-            <Button variant="primary" fullWidth onPress={onStartOutdoor} accessibilityLabel={`Start ${VERB[activity].toLowerCase()}`}>
-              Start {VERB[activity]}
-            </Button>
-            <Pressable onPress={openLog} accessibilityRole="button" accessibilityLabel="Already did it — log manually" style={styles.textBtn}>
-              <Text style={styles.textBtnText}>Already did it · log manually</Text>
-            </Pressable>
-            <Text style={styles.note}>Tracking opens full screen. You&apos;ll come straight back here when you finish.</Text>
+            {tracking ? (
+              <>
+                <View style={styles.formActions}>
+                  <View style={styles.half}>
+                    <Button
+                      variant="secondary"
+                      fullWidth
+                      onPress={tracker.status === 'paused' ? tracker.resume : tracker.pause}
+                      accessibilityLabel={tracker.status === 'paused' ? 'Resume tracking' : 'Pause tracking'}
+                    >
+                      {tracker.status === 'paused' ? 'Resume' : 'Pause'}
+                    </Button>
+                  </View>
+                  <View style={styles.half}>
+                    {/* Ends the run AND carries the measurement straight into the form. Nothing to
+                        re-enter: the whole reason to track is that the numbers already exist. */}
+                    <Button
+                      variant="primary"
+                      fullWidth
+                      onPress={() => openLog({ distanceMi: +liveMi.toFixed(2), timeSec: tracker.elapsedSec })}
+                      accessibilityLabel={`End ${VERB[activity].toLowerCase()}`}
+                    >
+                      End {VERB[activity]}
+                    </Button>
+                  </View>
+                </View>
+                <Text style={styles.note}>
+                  Keep this screen open — tracking stops if the app goes to the background.
+                </Text>
+              </>
+            ) : noGps ? (
+              <>
+                {/* Refused or unavailable. It says which, then gets out of the way — the run still
+                    happened and it must still be loggable. */}
+                <Button variant="primary" fullWidth onPress={() => openLog()} accessibilityLabel={`Log the ${VERB[activity].toLowerCase()} by hand`}>
+                  Enter it myself
+                </Button>
+                <Text style={styles.note}>
+                  {tracker.status === 'denied'
+                    ? 'Location is off for Forge Legacy, so there’s nothing to track with. Turn it on in your settings, or just type the numbers in.'
+                    : 'This device won’t give us a location. Type the numbers in instead.'}
+                </Text>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="primary"
+                  fullWidth
+                  onPress={() => void tracker.start()}
+                  disabled={tracker.status === 'requesting'}
+                  accessibilityLabel={`Start ${VERB[activity].toLowerCase()}`}
+                >
+                  {tracker.status === 'requesting' ? 'Asking for location…' : `Start ${VERB[activity]}`}
+                </Button>
+                <Pressable onPress={() => openLog()} accessibilityRole="button" accessibilityLabel="Already did it — log manually" style={styles.textBtn}>
+                  <Text style={styles.textBtnText}>Already did it · log manually</Text>
+                </Pressable>
+              </>
+            )}
           </View>
         )}
       </View>
@@ -507,6 +691,20 @@ function Glyph({ name, size, color }: { name: string; size: number; color: strin
 }
 
 const styles = StyleSheet.create({
+  /* The live read-out, centred over the route it came from. */
+  liveOverlay: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
+  liveDistance: {
+    fontFamily: flFont.display,
+    fontSize: 46,
+    lineHeight: 50,
+    letterSpacing: -1,
+    color: flColor.bronze300,
+    fontVariant: ['tabular-nums'],
+  },
+  liveUnit: { fontFamily: flFont.sans, fontSize: 9.5, letterSpacing: 1.6, color: flColor.gray400, marginTop: -2 },
+  liveMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 7 },
+  liveMeta: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray400, fontVariant: ['tabular-nums'] },
+  liveMetaDot: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray600 },
   /**
    * `flex: none` is LOAD-BEARING. The scroll body is a column flex container, so children default to
    * shrinking — and because this card clips (for the rounded band) a shrunk card silently clips its own

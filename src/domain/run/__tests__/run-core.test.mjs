@@ -20,6 +20,7 @@ import {
   sustainedCue,
   toDistance,
   toPace,
+  signalNote,
   totalMiles,
 } from '../run-core.ts';
 
@@ -61,10 +62,38 @@ test('acceptFix: the first fix starts the track at zero miles', () => {
 
 test('acceptFix: a low-accuracy fix is rejected and does not move the track', () => {
   const seed = acceptFix([], pt(40, -105, at0), 'run').track;
-  const { track, rejected } = acceptFix(seed, pt(40.001, -105, at0 + 5000, 60), 'run');
+  const { track, rejected } = acceptFix(seed, pt(40.001, -105, at0 + 5000, 140), 'run');
   assert.equal(rejected, 'accuracy');
   assert.equal(track, seed, 'the same array is returned, unchanged');
   assert.equal(totalMiles(track), 0);
+});
+
+/*
+ * The floor moved 25 m → 65 m, and these two lock why.
+ *
+ * 25 m was chosen for a phone under open sky. It is WRONG for a browser geolocating off wi-fi, which
+ * routinely reports 30–80 m — so on the web preview every single fix was rejected and the distance sat
+ * at 0.00 while the athlete walked, with nothing on screen to say why. The replacement defence is that
+ * movement must clear the device's own error bars, which is a claim these tests have to hold to.
+ */
+test('acceptFix: an ordinary browser fix (±45 m) is USABLE, not thrown away', () => {
+  const seed = acceptFix([], pt(40, -105, at0, 45), 'run').track;
+  // ~55 m of real walking — comfortably past ±45 m of uncertainty.
+  const { track, rejected } = acceptFix(seed, pt(40.0005, -105, at0 + 40_000, 45), 'run');
+  assert.equal(rejected, null, 'a 45 m fix used to be discarded, which is why distance never moved');
+  assert.ok(totalMiles(track) > 0.03, `expected real distance, got ${totalMiles(track)}`);
+});
+
+test('acceptFix: on a poor signal, movement smaller than the error bars still counts as noise', () => {
+  const seed = acceptFix([], pt(40, -105, at0, 60), 'run').track;
+  // ~11 m apart. Real at ±5 m; indistinguishable from drift at ±60 m, so it must NOT be credited.
+  const { track, rejected } = acceptFix(seed, pt(40.0001, -105, at0 + 8000, 60), 'run');
+  assert.equal(rejected, 'jitter');
+  assert.equal(totalMiles(track), 0, 'a wide fix must not manufacture distance from its own uncertainty');
+
+  // The same 11 m step on a good fix is real movement and IS credited.
+  const good = acceptFix([], pt(40, -105, at0, 6), 'run').track;
+  assert.equal(acceptFix(good, pt(40.0001, -105, at0 + 8000, 6), 'run').rejected, null);
 });
 
 test('acceptFix: standing-still drift is rejected as jitter, so a traffic light adds no distance', () => {
@@ -353,4 +382,36 @@ test('clampStep: holds bounds and kills float drift', () => {
   assert.equal(clampStep(5 + 0.30000000000000004, 1, 26.2), 5.3);
   assert.equal(clampStep(0.4, 1, 26.2), 1);
   assert.equal(clampStep(99, 1, 26.2), 26.2);
+});
+
+// ── the signal note ──────────────────────────────────────────────────────────
+//
+// The bug this locks was SILENCE. A walk around the block reported 0.00 and neither run surface said
+// why — one showed "Finding you…" only while the track was empty, the other showed nothing at all.
+// The state that actually needed words is "we have a fix and it is not good enough to move you".
+test('signalNote: a weak signal says so, with the number that makes it weak', () => {
+  const n = signalNote(false, true, 48);
+  assert.match(n, /Weak signal/);
+  assert.match(n, /48 m/, 'the athlete should be able to see what the device is claiming');
+});
+
+test('signalNote: never returns an empty string in any state', () => {
+  const states = [
+    [false, true, null], [false, true, 40],
+    [false, false, null], [false, false, 9],
+    [true, false, 12], [true, true, null],
+  ];
+  for (const [paused, weak, acc] of states) {
+    const n = signalNote(paused, weak, acc);
+    assert.ok(n.length > 0, `silent in state ${JSON.stringify([paused, weak, acc])}`);
+  }
+});
+
+test('signalNote: paused outranks everything — the clock stopping is the headline', () => {
+  assert.match(signalNote(true, true, 90), /Paused/);
+});
+
+test('signalNote: a good fix reports its accuracy rather than claiming precision', () => {
+  assert.equal(signalNote(false, false, 6), 'Tracking · ±6 m');
+  assert.equal(signalNote(false, false, null), 'Tracking');
 });

@@ -452,11 +452,18 @@ export default function HomeScreen() {
     router.push('/workout');
   };
 
-  /** A treadmill session: one timed leg, distance typed in. No GPS, so no permission and no daylight. */
-  const startIndoorRun = async () => {
+  /**
+   * A run that IS the session — one cardio block, nothing else in it.
+   *
+   * BOTH modalities come through here now. Treadmill already did; Outdoor pushed to `/active-run`
+   * instead, so two adjacent rows in the same sheet led to two entirely different surfaces with
+   * different controls, different ways to finish, and different places the numbers ended up. A run is
+   * a run whether it's the whole workout or the last leg of one, and it is the same card either way.
+   */
+  const startRun = async (modality: 'indoor' | 'outdoor') => {
     setElseOpen(false);
-    await writeWorkoutLaunch({ conditioning: { activity: 'run', modality: 'indoor' } });
-    startWorkout('Treadmill Run', []);
+    await writeWorkoutLaunch({ conditioning: { activity: 'run', modality } });
+    startWorkout(modality === 'indoor' ? 'Treadmill Run' : 'Outdoor Run', []);
     router.push('/workout');
   };
 
@@ -685,7 +692,7 @@ export default function HomeScreen() {
             <Text style={styles.pathCardSub}>Add lifts as you go. Nothing planned.</Text>
           </Pressable>
           <Pressable
-            onPress={() => void startIndoorRun()}
+            onPress={() => void startRun('indoor')}
             accessibilityRole="button"
             accessibilityLabel="Treadmill run — timed, distance entered by hand"
             style={({ pressed }) => [styles.elseRow, pressed ? styles.pathPressed : null]}
@@ -694,10 +701,7 @@ export default function HomeScreen() {
             <Text style={styles.pathCardSub}>We time it, you read the distance off the machine.</Text>
           </Pressable>
           <Pressable
-            onPress={() => {
-              setElseOpen(false);
-              router.push('/active-run');
-            }}
+            onPress={() => void startRun('outdoor')}
             accessibilityRole="button"
             accessibilityLabel="Outdoor run — GPS tracks distance and pace"
             style={({ pressed }) => [styles.elseRow, pressed ? styles.pathPressed : null]}

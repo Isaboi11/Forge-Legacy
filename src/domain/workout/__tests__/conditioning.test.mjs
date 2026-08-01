@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   CARDIO_ACTIVITIES,
   CARDIO_DEFAULTS,
+  FIRST_TARGET,
   activityFromKey,
   activitySymbol,
   avgPaceSec,
@@ -73,9 +74,12 @@ test('setModality rewrites name and equip together, and no-ops when already sele
 });
 
 test('setModality preserves the targets — switching where you run is not editing the program', () => {
-  const b = setModality(newCardioBlock('run'), 'indoor');
+  // Set targets explicitly — a new block has none to preserve, which is not what's under test here.
+  const authored = { ...newCardioBlock('run'), targetMi: 3, targetPaceSec: 495 };
+  const b = setModality(authored, 'indoor');
   assert.equal(b.targetMi, 3);
   assert.equal(b.targetPaceSec, 495);
+  assert.equal(b.name, 'Treadmill Run');
 });
 
 // ── the glyph is keyed off activity (spec 2.4) ───────────────────────────────
@@ -88,14 +92,26 @@ test('the glyph follows ACTIVITY, so Run and Walk never collide on shared equipm
   assert.notEqual(activitySymbol('run'), activitySymbol('walk'));
 });
 
-// ── defaults (spec 2.2) ──────────────────────────────────────────────────────
-test('authored defaults match the handoff table', () => {
-  assert.equal(CARDIO_DEFAULTS.run.targetMi, 3);
-  assert.equal(CARDIO_DEFAULTS.run.targetPaceSec, 495); // 8:15/mi
-  assert.equal(CARDIO_DEFAULTS.walk.targetMi, 2);
-  assert.equal(CARDIO_DEFAULTS.walk.targetPaceSec, 1050); // 17:30/mi
-  assert.equal(CARDIO_DEFAULTS.bike.targetMi, 10);
-  assert.equal(CARDIO_DEFAULTS.bike.targetSpdMph, 17);
+// ── defaults ─────────────────────────────────────────────────────────────────
+//
+// DELIBERATE DEVIATION from the handoff's §2.2 table, which authored 3 mi @ 8:15 / 2 mi @ 17:30 /
+// 10 mi @ 17 mph. Those arrived in an author's program looking exactly like a prescription they had
+// written, and "just go for a run" cost six taps to undo. A target is now something you set, not
+// something you inherit.
+test('a new block starts OPEN — a target is a decision, not a default', () => {
+  for (const a of ['run', 'walk', 'bike']) {
+    assert.equal(CARDIO_DEFAULTS[a].targetMi, null, `${a} arrived with a distance nobody chose`);
+    assert.equal(newCardioBlock(a).targetMi, null);
+  }
+  assert.equal(CARDIO_DEFAULTS.run.targetPaceSec, null);
+  assert.equal(CARDIO_DEFAULTS.walk.targetPaceSec, null);
+  assert.equal(CARDIO_DEFAULTS.bike.targetSpdMph, null);
+});
+
+test('the shape of the activity IS still a default — only the demands were removed', () => {
+  assert.equal(CARDIO_DEFAULTS.run.name, 'Outdoor Run');
+  assert.equal(CARDIO_DEFAULTS.bike.equip, 'Road');
+  assert.equal(CARDIO_DEFAULTS.walk.modality, 'outdoor');
 });
 
 test('a ride carries speed and no pace; a run the reverse', () => {
@@ -105,11 +121,22 @@ test('a ride carries speed and no pace; a run the reverse', () => {
   assert.equal(CARDIO_DEFAULTS.run.targetSpdMph, undefined);
 });
 
+test('the first tap up from Open lands on an ordinary session, not the smallest legal one', () => {
+  // Open is now the starting point, so this seed is what someone gets the moment they want a target.
+  assert.equal(bumpDistance(null, 1, FIRST_TARGET.run.mi), 3);
+  assert.equal(bumpDistance(null, 1, FIRST_TARGET.walk.mi), 2);
+  assert.equal(bumpDistance(null, 1, FIRST_TARGET.bike.mi), 10);
+  assert.equal(bumpPace(null, 1, FIRST_TARGET.walk.paceSec), 1050);
+  assert.equal(bumpSpeed(null, 1, FIRST_TARGET.bike.spdMph), 17);
+  // And stepping back down still reaches Open rather than sticking at the seed.
+  assert.equal(bumpDistance(0.5, -1, FIRST_TARGET.run.mi), null);
+});
+
 test('newCardioBlock hands back a copy — two blocks in one day must not share a target', () => {
   const a = newCardioBlock('run');
   const b = newCardioBlock('run');
   a.targetMi = 10;
-  assert.equal(b.targetMi, 3);
+  assert.equal(b.targetMi, null);
 });
 
 // ── steppers: Open at the bottom (spec 2.6) ──────────────────────────────────
@@ -143,13 +170,17 @@ test('speed: + is FASTER, and below 6 mph clears to Any', () => {
   assert.equal(bumpSpeed(30, 1), 30);
 });
 
-test('all four authored combinations are reachable from two steppers', () => {
-  // 3 mi @ 8:15 · 3 mi @ any pace · open @ 8:15 · fully open
+test('all four combinations are reachable from two steppers', () => {
+  // fully open (where a block now starts) · 3 mi @ any pace · open @ 8:15 · 3 mi @ 8:15
   const base = newCardioBlock('run');
-  assert.ok(base.targetMi != null && base.targetPaceSec != null);
-  assert.equal(bumpPace(300, -1), null, 'drop the pace out');
-  assert.equal(bumpDistance(0.5, -1), null, 'drop the distance out');
-  assert.equal(bumpDistance(null, 1), 0.5, 'and bring either back');
+  assert.equal(base.targetMi, null);
+  assert.equal(base.targetPaceSec, null);
+  const mi = bumpDistance(base.targetMi, 1, FIRST_TARGET.run.mi);
+  assert.equal(mi, 3, 'one tap gives a distance');
+  const pace = bumpPace(base.targetPaceSec, 1, FIRST_TARGET.run.paceSec);
+  assert.equal(pace, 495, 'one tap gives a pace');
+  assert.equal(bumpPace(300, -1), null, 'and either drops back out');
+  assert.equal(bumpDistance(0.5, -1), null);
 });
 
 // ── labels ───────────────────────────────────────────────────────────────────
@@ -160,10 +191,10 @@ test('distanceLabel says Open, never 0', () => {
 
 test('effortLabel says Any for a cleared target, and speaks speed for a ride', () => {
   const run = newCardioBlock('run');
-  assert.equal(effortLabel(run, id, id), '8:15');
-  assert.equal(effortLabel({ ...run, targetPaceSec: null }, id, id), 'Any');
+  assert.equal(effortLabel(run, id, id), 'Any', 'a new block prescribes no pace');
+  assert.equal(effortLabel({ ...run, targetPaceSec: 495 }, id, id), '8:15');
   const ride = newCardioBlock('bike');
-  assert.equal(effortLabel(ride, id, id), '17.0');
+  assert.equal(effortLabel({ ...ride, targetSpdMph: 17 }, id, id), '17.0');
   assert.equal(effortLabel({ ...ride, targetSpdMph: null }, id, id), 'Any');
 });
 

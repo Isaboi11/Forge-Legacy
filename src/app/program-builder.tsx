@@ -28,6 +28,7 @@ import {
   distanceLabel,
   effortLabel,
   newCardioBlock,
+  FIRST_TARGET,
   usesSpeed,
   type CardioActivity,
   type Modality,
@@ -384,7 +385,7 @@ export default function ProgramBuilderScreen() {
                 k !== i
                   ? x
                   : x.kind === 'cardio'
-                    ? { ...x, targetMi: bumpDistance(x.targetMi ?? null, dir) }
+                    ? { ...x, targetMi: bumpDistance(x.targetMi ?? null, dir, FIRST_TARGET[x.activity ?? 'run'].mi) }
                     : { ...x, sets: clampSets((x.sets ?? 1) + dir) },
               ),
             )
@@ -397,8 +398,8 @@ export default function ProgramBuilderScreen() {
                   : x.kind !== 'cardio'
                     ? { ...x, reps: clampReps((x.reps ?? 1) + dir) }
                     : x.activity === 'bike'
-                      ? { ...x, targetSpdMph: bumpSpeed(x.targetSpdMph ?? null, dir) }
-                      : { ...x, targetPaceSec: bumpPace(x.targetPaceSec ?? null, dir) },
+                      ? { ...x, targetSpdMph: bumpSpeed(x.targetSpdMph ?? null, dir, FIRST_TARGET[x.activity ?? 'bike'].spdMph) }
+                      : { ...x, targetPaceSec: bumpPace(x.targetPaceSec ?? null, dir, FIRST_TARGET[x.activity ?? 'run'].paceSec) },
               ),
             )
           }

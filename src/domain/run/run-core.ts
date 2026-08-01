@@ -43,12 +43,40 @@ export function haversineMi(a: { lat: number; lon: number }, b: { lat: number; l
 
 // ── accepting a fix ─────────────────────────────────────────────────────────
 
-/** Worse than this and the fix is noise, not a position. 25 m is roughly "urban canyon, still usable". */
-export const ACCURACY_FLOOR_M = 25;
+/**
+ * Worse than this and the fix is noise, not a position.
+ *
+ * This was 25 m, and that was WRONG in practice. A phone with a clear sky reports 5–20 m, but a browser
+ * geolocating from wi-fi routinely reports 30–80 m — so on the web preview, and on a phone indoors or
+ * among buildings, EVERY fix was rejected and the distance sat at 0.00 while the athlete walked. Silently:
+ * a rejected fix looks exactly like standing still.
+ *
+ * 65 m keeps genuinely useless fixes out while letting ordinary ones through. The defence against noise
+ * is no longer this number alone — see `minStepFor`.
+ */
+export const ACCURACY_FLOOR_M = 65;
+
+const M_PER_MI = 1609.344;
+
+/**
+ * How far you must move before it counts, given how sure the device is of where you are.
+ *
+ * A fixed 1.5 m threshold is right for a good fix and useless for a ±40 m one, where two consecutive
+ * readings can sit 40 m apart with nobody moving. So the bar scales with the uncertainty: you cannot
+ * distinguish a movement smaller than your own error bars from noise, and pretending otherwise is how
+ * apps invent a mile of "distance" from a phone on a table.
+ *
+ * Half the reported accuracy, floored at 1.5 m. The cost is slight UNDER-counting on a poor signal —
+ * movement accumulates in coarser steps — which is the right direction to be wrong in.
+ */
+function minStepMi(accuracyM: number | null): number {
+  const acc = accuracyM == null ? 8 : accuracyM;
+  return Math.max(MIN_STEP_MI, (acc * 0.5) / M_PER_MI);
+}
 /** No human moves faster than this on foot or a bike; above it the fix jumped, it didn't travel. */
 const MAX_MPH: Record<ActivityKind, number> = { run: 20, walk: 12, bike: 60 };
-/** Movement below this between fixes is a device sitting still and drifting. */
-const MIN_STEP_MI = 0.0009; // ~1.5 m
+/** The floor under `minStepMi` — a device sitting still and drifting never clears it. */
+const MIN_STEP_MI = 0.00093; // ~1.5 m
 
 export interface AcceptResult {
   /** The new track, unchanged when the fix was rejected. */
@@ -79,7 +107,7 @@ export function acceptFix(track: TrackPoint[], fix: Fix, kind: ActivityKind): Ac
   if (!last) return { track: [{ lat: fix.lat, lon: fix.lon, at: fix.at, mi: 0 }], rejected: null };
 
   const step = haversineMi(last, fix);
-  if (step < MIN_STEP_MI) return { track, rejected: 'jitter' };
+  if (step < minStepMi(fix.accuracy)) return { track, rejected: 'jitter' };
 
   const hours = Math.max(1e-9, (fix.at - last.at) / 3_600_000);
   if (step / hours > MAX_MPH[kind]) {
@@ -204,6 +232,27 @@ export function cueLabel(cue: PaceCue, speed: boolean): string {
 // ── units ───────────────────────────────────────────────────────────────────
 
 const KM_PER_MI = 1.609344;
+
+/**
+ * What to say about the signal, so a stalled distance is never silent.
+ *
+ * This exists because both run surfaces failed the same way: a walk around the block reported 0.00 with
+ * nothing on screen to explain it. One screen said "Finding you…" and only while the track was empty;
+ * the other said nothing at all. Neither could distinguish "we haven't got a fix" from "we have a fix
+ * and it isn't good enough to move you" — which is the state that actually needed words.
+ *
+ * Shared rather than written twice, so the two screens can't drift into describing GPS differently.
+ */
+export function signalNote(
+  paused: boolean,
+  weak: boolean,
+  accuracyM: number | null,
+): string {
+  if (paused) return 'Paused · the ground still moves, the run does not';
+  const pm = accuracyM == null ? null : `±${Math.round(accuracyM)} m`;
+  if (weak) return pm == null ? 'Looking for satellites…' : `Weak signal · ${pm} — move a little further to start the trace`;
+  return pm == null ? 'Tracking' : `Tracking · ${pm}`;
+}
 
 export const distanceLabel = (u: UnitSystem) => (u === 'metric' ? 'km' : 'mi');
 export const distanceLabelLong = (u: UnitSystem) => (u === 'metric' ? 'Kilometers' : 'Miles');

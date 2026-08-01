@@ -25,7 +25,13 @@ export interface RunTracker {
   elapsedSec: number;
   /** Metres of uncertainty on the newest fix, for the signal read-out. Null before the first one. */
   accuracyM: number | null;
-  /** True while fixes are arriving but none has yet been accurate enough to trust. */
+  /**
+   * True while the tracker is live but no MOVEMENT has been accepted yet.
+   *
+   * Deliberately `< 2` and not `=== 0`: the very first fix always seeds the track at zero miles, so a
+   * length of 1 means "we know where you are and nothing you've done since has cleared the noise floor".
+   * That is the exact state that used to sit on screen as a silent 0.00 while someone walked around.
+   */
   weakSignal: boolean;
   start: () => Promise<boolean>;
   pause: () => void;
@@ -157,7 +163,7 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
     track,
     elapsedSec: Math.floor(elapsedSec),
     accuracyM,
-    weakSignal: (effective === 'acquiring' || effective === 'tracking') && track.length === 0,
+    weakSignal: (effective === 'acquiring' || effective === 'tracking') && track.length < 2,
     start,
     pause,
     resume,

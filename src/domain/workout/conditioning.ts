@@ -120,10 +120,23 @@ export const usesSpeed = (a: CardioActivity): boolean => a === 'bike';
 
 // ── authored defaults ───────────────────────────────────────────────────────
 
+/**
+ * The shape of each activity — and NOT its targets.
+ *
+ * A block added to a program starts OPEN: no distance, no pace. It used to arrive as "3 mi @ 8:15",
+ * which is a prescription the author never wrote, sitting in their program looking exactly like one
+ * they did. Someone who wanted "just go for a run" had to step a target down six times to remove
+ * something they never asked for, and someone who didn't notice shipped a number they'd never chosen
+ * to everyone who ran that program.
+ *
+ * So the steppers now start at Open and go UP. Setting a target is a decision; having one is not a
+ * default. `CARDIO_DEFAULTS` still exists because the name, equipment and modality genuinely are
+ * defaults — those are what the activity IS, not what it demands of you.
+ */
 export const CARDIO_DEFAULTS: Record<CardioActivity, CardioBlock> = {
-  run: { activity: 'run', name: 'Outdoor Run', equip: 'Road', modality: 'outdoor', targetMi: 3, targetPaceSec: 495 },
-  walk: { activity: 'walk', name: 'Outdoor Walk', equip: 'Road', modality: 'outdoor', targetMi: 2, targetPaceSec: 1050 },
-  bike: { activity: 'bike', name: 'Outdoor Ride', equip: 'Road', modality: 'outdoor', targetMi: 10, targetSpdMph: 17 },
+  run: { activity: 'run', name: 'Outdoor Run', equip: 'Road', modality: 'outdoor', targetMi: null, targetPaceSec: null },
+  walk: { activity: 'walk', name: 'Outdoor Walk', equip: 'Road', modality: 'outdoor', targetMi: null, targetPaceSec: null },
+  bike: { activity: 'bike', name: 'Outdoor Ride', equip: 'Road', modality: 'outdoor', targetMi: null, targetSpdMph: null },
 };
 
 export const newCardioBlock = (a: CardioActivity): CardioBlock => ({ ...CARDIO_DEFAULTS[a] });
@@ -139,28 +152,40 @@ export function setModality<T extends CardioBlock>(block: T, modality: Modality)
 // There is no checkbox, switch or "no target" option. Stepping below the minimum CLEARS the target.
 // One control, one gesture — and four authored combinations fall out of two steppers: 3 mi @ 8:15,
 // 3 mi @ any pace, open @ 8:15 (a tempo run of any length), and fully open.
+//
+// THE FIRST STEP UP MATTERS NOW. Blocks start Open, so the seed is no longer the bottom of a scale
+// somebody is walking down — it is the value they land on the moment they decide they want a target,
+// and it should be the ordinary version of that activity rather than the smallest one the stepper
+// allows. Six taps to get from 0.5 to a three-mile run is a toll for having wanted a target at all.
 
 const DIST = { step: 0.5, min: 0.5, max: 26.2, seed: 0.5 };
 const PACE = { step: 5, min: 300, max: 1200, seed: 495 };
 const SPEED = { step: 0.5, min: 6, max: 30, seed: 17 };
 
+/** Where each stepper lands on the first tap up from Open — an ordinary session, per activity. */
+export const FIRST_TARGET: Record<CardioActivity, { mi: number; paceSec: number; spdMph: number }> = {
+  run: { mi: 3, paceSec: 495, spdMph: 17 },
+  walk: { mi: 2, paceSec: 1050, spdMph: 17 },
+  bike: { mi: 10, paceSec: 495, spdMph: 17 },
+};
+
 /** Rounded to one decimal each step, or 3 + 0.5 eventually reads 3.5000000000000004. */
-export function bumpDistance(current: number | null, dir: 1 | -1): number | null {
-  if (current == null) return dir > 0 ? DIST.seed : null;
+export function bumpDistance(current: number | null, dir: 1 | -1, seed: number = DIST.seed): number | null {
+  if (current == null) return dir > 0 ? seed : null;
   const next = Math.round((current + dir * DIST.step) * 10) / 10;
   return next < DIST.min ? null : Math.min(DIST.max, next);
 }
 
 /** `+` makes the pace SLOWER, matching the numeral going up. */
-export function bumpPace(current: number | null, dir: 1 | -1): number | null {
-  if (current == null) return dir > 0 ? PACE.seed : null;
+export function bumpPace(current: number | null, dir: 1 | -1, seed: number = PACE.seed): number | null {
+  if (current == null) return dir > 0 ? seed : null;
   const next = current + dir * PACE.step;
   return next < PACE.min ? null : Math.min(PACE.max, next);
 }
 
 /** `+` makes the speed HIGHER. The direction inverts against pace, and so do the aria labels. */
-export function bumpSpeed(current: number | null, dir: 1 | -1): number | null {
-  if (current == null) return dir > 0 ? SPEED.seed : null;
+export function bumpSpeed(current: number | null, dir: 1 | -1, seed: number = SPEED.seed): number | null {
+  if (current == null) return dir > 0 ? seed : null;
   const next = Math.round((current + dir * SPEED.step) * 10) / 10;
   return next < SPEED.min ? null : Math.min(SPEED.max, next);
 }

@@ -15,7 +15,6 @@ import { useRunTracker } from '@/hooks/useRunTracker';
 import { useKeepScreenAwake } from '@/hooks/useKeepScreenAwake';
 import { saveActivity } from '@/domain/workout/save';
 import { ACTIVITY_TYPE, fetchPriorSessions } from '@/data/runs-live';
-import { clearRunLegRequest, readRunLegRequest, writeRunLegResult, type RunLegRequest } from '@/lib/run-leg';
 import {
   ACTIVITY,
   averagePaceSec,
@@ -31,6 +30,7 @@ import {
   paceLabel,
   personalBests,
   routePath,
+  signalNote,
   sustainedCue,
   speedLabel,
   toDistance,
@@ -112,35 +112,18 @@ function Glyph({ kind, size = 40 }: { kind: ActivityKind; size?: number }) {
 
 export default function ActiveRunScreen() {
   const router = useRouter();
-  const { type, leg } = useLocalSearchParams<{ type?: string; leg?: string }>();
-  /**
-   * LEG MODE. The run belongs to a session that is already open, so this screen measures and hands the
-   * numbers back instead of saving a workout of its own — saving here would put the same miles in
-   * Activity History twice, once standalone and once inside the session.
-   */
-  const isLeg = leg === '1';
-  const { data: legReq } = useQuery<RunLegRequest | null>(() => (isLeg ? readRunLegRequest() : Promise.resolve(null)), [isLeg]);
-  // In-workout: the activity comes from the payload, not the URL query.
-  const requested = KINDS.includes(legReq?.activity as ActivityKind) ? (legReq!.activity as ActivityKind) : null;
-  const kind: ActivityKind = requested ?? (KINDS.includes(type as ActivityKind) ? (type as ActivityKind) : 'run');
+  const { type } = useLocalSearchParams<{ type?: string }>();
+  const kind: ActivityKind = KINDS.includes(type as ActivityKind) ? (type as ActivityKind) : 'run';
   const cfg = ACTIVITY[kind];
   const { units } = useUnits();
   const { showToast } = useToast();
 
   const [phase, setPhase] = useState<'start' | 'live' | 'finish'>('start');
-  /**
-   * `null` until the athlete chooses, so an in-workout default can be DERIVED rather than fought.
-   *
-   * A block that prescribed a distance hides the chooser and locks to it. A block that prescribed
-   * NOTHING restores the chooser and defaults to Open — the ring becomes a per-mile cycle rather than
-   * progress toward a target nobody set, which is the whole reason `targetMi: null` has to survive.
-   */
   const [goalChoice, setGoalChoice] = useState<'distance' | 'open' | null>(null);
-  const prescribed = isLeg && legReq?.targetMi != null;
-  const goalOpen = goalChoice != null ? goalChoice === 'open' : isLeg && !prescribed;
+  const goalOpen = goalChoice === 'open';
   const setGoalOpen = (open: boolean) => setGoalChoice(open ? 'open' : 'distance');
   const [targetOverride, setTargetOverride] = useState<number | null>(null);
-  const targetMi = targetOverride ?? (prescribed ? legReq!.targetMi! : cfg.targetMi);
+  const targetMi = targetOverride ?? cfg.targetMi;
   const setTargetMi = (fn: (v: number) => number) => setTargetOverride((v) => fn(v ?? targetMi));
   const [paceOn, setPaceOn] = useState(false);
   const [paceTarget, setPaceTarget] = useState(cfg.paceDefault);
@@ -184,9 +167,7 @@ export default function ActiveRunScreen() {
 
   // No useMemo: react-compiler is on and memoizes this itself. Hand-written memoization here made it
   // bail out of optimizing the whole component ("existing memoization could not be preserved").
-  // Suppressed in leg mode: personal bests belong to the workout's own ceremony, not to one block
-  // inside it, and the session isn't finished yet.
-  const bests = phase === 'finish' && !isLeg ? personalBests(mi, el, priors ?? [], kind, units) : [];
+  const bests = phase === 'finish' ? personalBests(mi, el, priors ?? [], kind, units) : [];
 
   // ── actions ────────────────────────────────────────────────────────────────
   const begin = async () => {
@@ -198,12 +179,6 @@ export default function ActiveRunScreen() {
   const persist = async (): Promise<string | null> => {
     if (savedId) return savedId;
     if (mi <= 0) return null;
-    if (isLeg) {
-      // Hand back and get out of the way; the session commits it at Finish.
-      await writeRunLegResult({ exerciseIndex: legReq?.exerciseIndex ?? 0, distanceMi: +mi.toFixed(3), durationSec: el });
-      await clearRunLegRequest();
-      return null;
-    }
     const { workoutId } = await saveActivity({
       activityType: ACTIVITY_TYPE[kind],
       distanceMi: +mi.toFixed(3),
@@ -226,8 +201,7 @@ export default function ActiveRunScreen() {
       await persist();
       setSealed(true);
       setHold(1);
-      // A leg returns to the session it belongs to; a standalone run goes home.
-      setTimeout(() => (isLeg ? router.back() : router.replace('/(tabs)')), 850);
+      setTimeout(() => router.replace('/(tabs)'), 850);
     } catch (e) {
       setHold(0);
       showToast(errorMessage(e));
@@ -266,8 +240,7 @@ export default function ActiveRunScreen() {
       const id = await persist();
       // Saving FIRST is the whole point: in the design this path logged nothing, so choosing to look at
       // your run instead of holding the seal threw the run away.
-      if (isLeg) router.back();
-      else if (id) router.replace({ pathname: '/activity/[id]', params: { id } });
+      if (id) router.replace({ pathname: '/activity/[id]', params: { id } });
       else router.replace('/activity-history');
     } catch (e) {
       showToast(errorMessage(e));
@@ -288,33 +261,13 @@ export default function ActiveRunScreen() {
       <View style={styles.root}>
         <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
         <AppBar onBack={() => {
-          if (isLeg) {
-            // Leaving without running is not a result. Clear the request so a later block can't
-            // inherit this one's answer.
-            void clearRunLegRequest().then(() => router.back());
-            return;
-          }
           if (router.canGoBack()) router.back();
           else router.replace('/(tabs)');
-        }} title={<Text style={styles.barTitle}>{isLeg ? (legReq?.name ?? cfg.eyebrow) : cfg.eyebrow}</Text>} />
+        }} title={<Text style={styles.barTitle}>{cfg.eyebrow}</Text>} />
 
         <ScrollView contentContainerStyle={styles.setup} showsVerticalScrollIndicator={false}>
           <Glyph kind={kind} />
 
-          {isLeg ? (
-            <View style={[styles.pill, styles.pillOn]}>
-              <View style={styles.pillDot} />
-              <Text style={styles.pillText}>
-                {prescribed ? 'Part of ' : 'Open block · '}
-                {(legReq?.program ?? 'your workout').split('·')[0].trim()}
-              </Text>
-            </View>
-          ) : null}
-
-          {/* Hidden when the program set a distance: it is not the athlete's to re-choose here. The
-              ± stepper stays live, because cutting a run short before starting is a decision, not an
-              edit to the program. */}
-          {prescribed ? null : (
           <View style={styles.segment}>
             <Pressable
               onPress={() => setGoalOpen(false)}
@@ -335,7 +288,6 @@ export default function ActiveRunScreen() {
               <Text style={[styles.segText, goalOpen ? styles.segTextOn : null]}>Open</Text>
             </Pressable>
           </View>
-          )}
 
           {goalOpen ? (
             <Text style={styles.openTitle}>Open {cfg.verb}</Text>
@@ -500,7 +452,9 @@ export default function ActiveRunScreen() {
                     {route.head ? <Circle cx={route.head.x} cy={route.head.y} r={4} fill={flColor.bronze300} /> : null}
                   </Svg>
                 ) : (
-                  <Text style={styles.mapWait}>{tracker.weakSignal ? 'Finding you…' : ''}</Text>
+                  <Text style={styles.mapWait}>
+                    {signalNote(tracker.status === 'paused', tracker.weakSignal, tracker.accuracyM)}
+                  </Text>
                 )}
               </View>
               <Text style={styles.mapLabel}>LIVE ROUTE</Text>
@@ -632,28 +586,6 @@ export default function ActiveRunScreen() {
         ) : null}
 
         <View style={styles.sealBlock}>
-          {/* IN A WORKOUT there is no seal. The block is handed back and the SESSION seals once, at its
-              own end — a ceremony here would be sealing something that hasn't finished. */}
-          {isLeg ? (
-            <>
-              <Pressable
-                onPress={() => void viewRecord()}
-                disabled={saving || mi <= 0}
-                accessibilityRole="button"
-                accessibilityLabel="Add this to your workout"
-                style={({ pressed }) => [styles.primary, mi <= 0 ? styles.disabled : null, pressed ? styles.pressed : null]}
-              >
-                <Text style={styles.primaryText}>Add to Workout</Text>
-              </Pressable>
-              <Text style={styles.legHint}>You&apos;ll seal the whole session at the end.</Text>
-              {mi <= 0 ? (
-                <Pressable onPress={discard} accessibilityRole="button" accessibilityLabel="Back to workout" style={styles.textBtn}>
-                  <Text style={styles.discardText}>Back to Workout</Text>
-                </Pressable>
-              ) : null}
-            </>
-          ) : (
-            <>
               <Pressable
                 onPressIn={startHold}
                 onPressOut={endHold}
@@ -691,8 +623,6 @@ export default function ActiveRunScreen() {
                   <Text style={styles.discardText}>Discard</Text>
                 </Pressable>
               ) : null}
-            </>
-          )}
         </View>
       </ScrollView>
     </View>
@@ -724,7 +654,6 @@ const styles = StyleSheet.create({
 
   pill: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, paddingHorizontal: 15, borderRadius: 999, borderWidth: 1, borderColor: flColor.charcoal600 },
   pillOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
-  pillDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: flColor.bronze400 },
   pillText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
   pillTextOn: { color: flColor.bronze300 },
   paceStepper: { flexDirection: 'row', alignItems: 'center', gap: 18 },
@@ -796,7 +725,6 @@ const styles = StyleSheet.create({
   sealFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: flColor.bronze600 },
   sealText: { fontSize: 13, fontWeight: '700', letterSpacing: 1.6, color: flColor.bronze300 },
   sealTextOver: { color: '#1A1206' },
-  legHint: { marginTop: 10, fontSize: 11.5, lineHeight: 17, color: flColor.gray600, textAlign: 'center' },
   nothingText: { fontSize: 12.5, lineHeight: 19, color: flColor.gray600, textAlign: 'center' },
   textBtn: { alignItems: 'center', paddingVertical: 10 },
   textBtnText: { fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },
