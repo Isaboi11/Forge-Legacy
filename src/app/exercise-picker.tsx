@@ -360,6 +360,22 @@ export default function ExercisePickerScreen() {
             </Pressable>
           </View>
         ) : null}
+        {/* Never set up. Saying nothing here was a dead end of my own making: the screen KNOWS it could
+            cut 500 exercises and just didn't mention it. `router.back()` from the editor lands here
+            again, so setting it up costs one detour and no lost place. */}
+        {ownedGear === null ? (
+          <Pressable
+            onPress={() => router.push('/home-gym')}
+            accessibilityRole="button"
+            accessibilityLabel="Set up your home gym to filter this list to what you own"
+            style={({ pressed }) => [styles.gearPrompt, pressed && styles.gearPromptPressed]}
+          >
+            <Text style={styles.gearPromptText}>
+              Tell us what equipment you have and this list only shows what you can actually do.
+            </Text>
+            <Text style={styles.gearPromptCta}>Set up my gym</Text>
+          </Pressable>
+        ) : null}
         {hasFilters ? (
           <View style={styles.chipRow}>
             {appliedChips.map((c) => (
@@ -626,6 +642,10 @@ const styles = StyleSheet.create({
   search: { borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, borderRadius: flRadius.md, paddingVertical: 11, paddingLeft: 40, paddingRight: 12, fontFamily: flFont.sans, fontSize: 14, color: flColor.cream100 },
   chipRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 7 },
   appliedChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 5, paddingLeft: 11, paddingRight: 8, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  gearPrompt: { marginTop: 10, padding: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900, gap: 6 },
+  gearPromptPressed: { opacity: 0.85 },
+  gearPromptText: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
+  gearPromptCta: { fontSize: 12.5, fontWeight: '700', color: flColor.bronze300 },
   gearChipOff: { borderColor: flColor.charcoal600, backgroundColor: 'transparent' },
   gearChipTextOff: { color: flColor.gray400 },
   appliedChipText: { fontSize: 11, fontWeight: '600', color: flColor.bronze300 },
