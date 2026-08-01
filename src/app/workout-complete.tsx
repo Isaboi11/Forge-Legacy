@@ -12,6 +12,7 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { saveWorkoutAsTemplate } from '@/data/templates-live';
+import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useUnits } from '@/lib/settings';
 import { displayWeight } from '@/domain/settings/units';
 import { getProgramDefinitions } from '@/domain/training/programs';
@@ -89,6 +90,10 @@ export default function WorkoutComplete() {
      sessions should not be templates. */
   const [savedTemplate, setSavedTemplate] = useState(false);
   const [savingTemplate, setSavingTemplate] = useState(false);
+  /* Naming happens at save time, not afterwards. A template called "Freestyle Workout" is one you have
+     to open to identify, and by the time you notice you're on a different screen. */
+  const [nameOpen, setNameOpen] = useState(false);
+  const [templateName, setTemplateName] = useState('');
   const [note, setNote] = useState('');
   const [sealed, setSealed] = useState(false);
   const [hold] = useState(() => new Animated.Value(0));
@@ -105,16 +110,27 @@ export default function WorkoutComplete() {
 
   const goHome = () => router.replace('/(tabs)/legacy');
 
+  /** Opens the naming sheet, prefilled with what the session was called. */
+  const openTemplateName = () => {
+    if (!data || savingTemplate || savedTemplate) return;
+    setTemplateName(data.workoutName ?? '');
+    setNameOpen(true);
+  };
+
   const keepAsTemplate = async () => {
     if (!data || savingTemplate || savedTemplate) return;
     setSavingTemplate(true);
     try {
-      const id = await saveWorkoutAsTemplate(data.workoutId);
+      // Blank falls back to the database's own default (the session's name) rather than saving an
+      // empty title — the sheet allows clearing the field, and that shouldn't produce a nameless row.
+      const id = await saveWorkoutAsTemplate(data.workoutId, templateName.trim() || undefined);
       if (id) {
         setSavedTemplate(true);
-        showToast('Saved to your templates.');
+        setNameOpen(false);
+        showToast(`Saved “${templateName.trim() || data.workoutName}” to your templates.`);
       } else {
         // Nothing was logged, so there is no shape to keep — say that rather than claiming a success.
+        setNameOpen(false);
         showToast('Nothing to save from this one.');
       }
     } catch (e) {
@@ -396,7 +412,7 @@ export default function WorkoutComplete() {
           {/* Quiet, and only here. A program day is already reusable BY its program; this is for the
               sessions with no home — one built as you went, or one reshaped past its program. */}
           <Pressable
-            onPress={keepAsTemplate}
+            onPress={openTemplateName}
             disabled={savingTemplate || savedTemplate}
             accessibilityRole="button"
             accessibilityLabel={savedTemplate ? 'Saved to your templates' : 'Save this day as a template'}
@@ -532,6 +548,33 @@ export default function WorkoutComplete() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* Name it here, while you still remember what it was. Prefilled with the session's own name so
+          keeping that is one tap, and changing it is the same one tap it would have been later. */}
+      <BottomSheet open={nameOpen} onClose={() => setNameOpen(false)} title="Name this template">
+        <TextInput
+          value={templateName}
+          onChangeText={setTemplateName}
+          placeholder="e.g. Push Day A"
+          placeholderTextColor={flColor.gray600}
+          style={styles.nameInput}
+          accessibilityLabel="Template name"
+          maxLength={60}
+          autoFocus
+          selectTextOnFocus
+          returnKeyType="done"
+          onSubmitEditing={() => void keepAsTemplate()}
+        />
+        <Text style={styles.nameHint}>You&apos;ll find it under Workouts → Templates.</Text>
+        <View style={styles.nameActions}>
+          <Button variant="secondary" fullWidth onPress={() => setNameOpen(false)} accessibilityLabel="Cancel">
+            Cancel
+          </Button>
+          <Button variant="primary" fullWidth onPress={() => void keepAsTemplate()} accessibilityLabel="Save template">
+            {savingTemplate ? 'Saving…' : 'Save Template'}
+          </Button>
+        </View>
+      </BottomSheet>
     </Shell>
   );
 }
@@ -740,6 +783,10 @@ function CheckGlyph({ size = 15, color = '#8FB295' }: { size?: number; color?: s
 }
 
 const styles = StyleSheet.create({
+  nameInput: { paddingHorizontal: 13, paddingVertical: 12, minHeight: 46, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, fontSize: 15, color: flColor.cream100 },
+  nameHint: { marginTop: 8, fontSize: 12, color: flColor.gray600 },
+  nameActions: { flexDirection: 'row', gap: 10, marginTop: 16 },
+
   templateRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 18, paddingVertical: 12 },
   templateRowPressed: { opacity: 0.82 },
   templateText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze400 },
