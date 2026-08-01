@@ -58,6 +58,22 @@ export function buildSessionFromProgram(
   const exercises: SessionExercise[] = [];
   for (const sec of sections) {
     for (const ex of sec.items) {
+      // A prescribed run, row or ride carries through as a conditioning leg with ONE bout — sets of reps
+      // are meaningless for it, and building three of them would ask the athlete to run the distance
+      // three times. Its target rides along so the logger can show what was asked for.
+      if (ex.kind === 'distance') {
+        exercises.push({
+          catalogKey: ex.catalogKey,
+          name: ex.name,
+          kind: 'distance',
+          targetDistanceMi: ex.targetDistanceMi ?? null,
+          targetDurationSec: ex.targetDurationSec ?? null,
+          section: sec.key,
+          position: exercises.length,
+          sets: [{ setIndex: 0, weight: null, targetReps: 0, actualReps: null, done: false, durationSec: null, distanceMi: null }],
+        });
+        continue;
+      }
       exercises.push({
         catalogKey: ex.catalogKey,
         name: ex.name,

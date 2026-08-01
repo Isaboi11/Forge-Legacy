@@ -28,6 +28,16 @@ export interface WorkoutLaunch {
   /** Overrides the session's name — a shared workout is named by whoever invited you (0092). */
   workoutName?: string;
   /**
+   * Start straight into a conditioning session — a treadmill run, a row, a ride (0096). Its own field
+   * rather than a shape in `exercises`, because a leg is not a list of sets and squeezing it into one
+   * would mean inventing a rep count for a distance.
+   */
+  conditioning?: {
+    activity: string;
+    targetDistanceMi?: number | null;
+    targetDurationSec?: number | null;
+  };
+  /**
    * Who invited you (0092). Pre-tags them as a partner so accepting an invite credits both athletes
    * through the mechanism that already exists, rather than inventing a shared-session object that two
    * devices would then have to keep in step.

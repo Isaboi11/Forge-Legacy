@@ -42,6 +42,7 @@ import { itemByName } from '@/domain/exercise-picker/data';
 import { getProgramDefinitions } from '@/domain/training/programs';
 import { nextSession, totalSessions } from '@/domain/program/progress-core';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
+import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { getActiveProgramById } from '@/domain/training/active-program';
 import { resolveRecommendationId } from '@/domain/onboarding/recommend-core';
@@ -217,6 +218,7 @@ function ProgramPathChooser({
 
 export default function HomeScreen() {
   const [friendSheetOpen, setFriendSheetOpen] = useState(false);
+  const [elseOpen, setElseOpen] = useState(false);
   const router = useRouter();
   const { startWorkout } = useWorkoutSession();
   const { requestPrompt, markAnnounced } = useTour();
@@ -421,9 +423,24 @@ export default function HomeScreen() {
    * shape, three doors — and it clears any program context first so an ad-hoc workout is never credited
    * to a program the athlete deliberately stepped away from today.
    */
-  const startFreestyleFromHome = async () => {
+  /**
+   * "Something else today?" opens a choice rather than assuming freestyle strength. Three things an
+   * athlete plausibly means by it, and lifting is only one of them — the button used to answer for them.
+   */
+  const startFreestyleFromHome = () => setElseOpen(true);
+
+  const startFreestyleStrength = async () => {
+    setElseOpen(false);
     await writeWorkoutLaunch({ freestyle: true });
     startWorkout('Freestyle Workout', []);
+    router.push('/workout');
+  };
+
+  /** A treadmill session: one timed leg, distance typed in. No GPS, so no permission and no daylight. */
+  const startIndoorRun = async () => {
+    setElseOpen(false);
+    await writeWorkoutLaunch({ conditioning: { activity: 'running' } });
+    startWorkout('Treadmill Run', []);
     router.push('/workout');
   };
 
@@ -639,6 +656,42 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
+      {/* Three things "something else" can mean. The button used to assume the first. */}
+      <BottomSheet open={elseOpen} onClose={() => setElseOpen(false)} title="What are you doing today?">
+        <View style={styles.elseList}>
+          <Pressable
+            onPress={() => void startFreestyleStrength()}
+            accessibilityRole="button"
+            accessibilityLabel="Freestyle workout — add lifts as you go"
+            style={({ pressed }) => [styles.elseRow, pressed ? styles.pathPressed : null]}
+          >
+            <Text style={styles.pathCardTitle}>Freestyle workout</Text>
+            <Text style={styles.pathCardSub}>Add lifts as you go. Nothing planned.</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => void startIndoorRun()}
+            accessibilityRole="button"
+            accessibilityLabel="Treadmill run — timed, distance entered by hand"
+            style={({ pressed }) => [styles.elseRow, pressed ? styles.pathPressed : null]}
+          >
+            <Text style={styles.pathCardTitle}>Treadmill run</Text>
+            <Text style={styles.pathCardSub}>We time it, you read the distance off the machine.</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              setElseOpen(false);
+              router.push('/active-run');
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Outdoor run — GPS tracks distance and pace"
+            style={({ pressed }) => [styles.elseRow, pressed ? styles.pathPressed : null]}
+          >
+            <Text style={styles.pathCardTitle}>Outdoor run</Text>
+            <Text style={styles.pathCardSub}>GPS tracks distance, pace and your route.</Text>
+          </Pressable>
+        </View>
+      </BottomSheet>
+
       <TrainingNowSheet
         open={friendSheetOpen}
         onClose={() => setFriendSheetOpen(false)}
@@ -661,6 +714,8 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  elseList: { gap: 10 },
+  elseRow: { padding: 15, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
   pathBlock: { gap: 12 },
   pathTitle: { marginBottom: 4, fontFamily: flFont.display, fontSize: 21, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
   pathCard: { paddingHorizontal: 18, paddingVertical: 18, borderRadius: flRadius.xl, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card },

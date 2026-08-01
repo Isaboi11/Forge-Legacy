@@ -14,6 +14,18 @@ export type ProgramExercise = {
   type?: string;
   sets?: number;
   reps?: number;
+  /**
+   * 'distance' prescribes a conditioning leg — a run, row or ride, at any position in the day. Absent
+   * means 'strength', so every program authored before this reads unchanged. The structure is jsonb, so
+   * these cost no migration.
+   *
+   * The program prescribes the WORK, never how it is done: whether it is outdoors with GPS or on a
+   * treadmill is the athlete's choice on the day, because nobody knows the weather when they write a
+   * training block.
+   */
+  kind?: 'strength' | 'distance';
+  targetDistanceMi?: number | null;
+  targetDurationSec?: number | null;
 };
 export type ProgramDay = {
   letter: string;

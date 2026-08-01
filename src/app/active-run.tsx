@@ -15,6 +15,7 @@ import { useRunTracker } from '@/hooks/useRunTracker';
 import { useKeepScreenAwake } from '@/hooks/useKeepScreenAwake';
 import { saveActivity } from '@/domain/workout/save';
 import { ACTIVITY_TYPE, fetchPriorSessions } from '@/data/runs-live';
+import { clearRunLegRequest, readRunLegRequest, writeRunLegResult, type RunLegRequest } from '@/lib/run-leg';
 import {
   ACTIVITY,
   averagePaceSec,
@@ -111,8 +112,16 @@ function Glyph({ kind, size = 40 }: { kind: ActivityKind; size?: number }) {
 
 export default function ActiveRunScreen() {
   const router = useRouter();
-  const { type } = useLocalSearchParams<{ type?: string }>();
-  const kind: ActivityKind = KINDS.includes(type as ActivityKind) ? (type as ActivityKind) : 'run';
+  const { type, leg } = useLocalSearchParams<{ type?: string; leg?: string }>();
+  /**
+   * LEG MODE. The run belongs to a session that is already open, so this screen measures and hands the
+   * numbers back instead of saving a workout of its own — saving here would put the same miles in
+   * Activity History twice, once standalone and once inside the session.
+   */
+  const isLeg = leg === '1';
+  const { data: legReq } = useQuery<RunLegRequest | null>(() => (isLeg ? readRunLegRequest() : Promise.resolve(null)), [isLeg]);
+  const requested = legReq?.activity === 'walking' ? 'walk' : legReq?.activity === 'cycling' ? 'bike' : legReq ? 'run' : null;
+  const kind: ActivityKind = requested ?? (KINDS.includes(type as ActivityKind) ? (type as ActivityKind) : 'run');
   const cfg = ACTIVITY[kind];
   const { units } = useUnits();
   const { showToast } = useToast();
@@ -174,6 +183,12 @@ export default function ActiveRunScreen() {
   const persist = async (): Promise<string | null> => {
     if (savedId) return savedId;
     if (mi <= 0) return null;
+    if (isLeg) {
+      // Hand back and get out of the way; the session commits it at Finish.
+      await writeRunLegResult({ exerciseIndex: legReq?.exerciseIndex ?? 0, distanceMi: +mi.toFixed(3), durationSec: el });
+      await clearRunLegRequest();
+      return null;
+    }
     const { workoutId } = await saveActivity({
       activityType: ACTIVITY_TYPE[kind],
       distanceMi: +mi.toFixed(3),
@@ -196,7 +211,8 @@ export default function ActiveRunScreen() {
       await persist();
       setSealed(true);
       setHold(1);
-      setTimeout(() => router.replace('/(tabs)'), 850);
+      // A leg returns to the session it belongs to; a standalone run goes home.
+      setTimeout(() => (isLeg ? router.back() : router.replace('/(tabs)')), 850);
     } catch (e) {
       setHold(0);
       showToast(errorMessage(e));
@@ -235,7 +251,8 @@ export default function ActiveRunScreen() {
       const id = await persist();
       // Saving FIRST is the whole point: in the design this path logged nothing, so choosing to look at
       // your run instead of holding the seal threw the run away.
-      if (id) router.replace({ pathname: '/activity/[id]', params: { id } });
+      if (isLeg) router.back();
+      else if (id) router.replace({ pathname: '/activity/[id]', params: { id } });
       else router.replace('/activity-history');
     } catch (e) {
       showToast(errorMessage(e));
@@ -588,7 +605,7 @@ export default function ActiveRunScreen() {
             {/* The ink flips to dark once the bronze has flooded past it — a contrast crossover, not a
                 colour change. */}
             <Text style={[styles.sealText, hold > 0.55 || sealed ? styles.sealTextOver : null]}>
-              {sealed ? 'SEALED' : hold > 0 ? 'KEEP HOLDING…' : 'HOLD TO SEAL SESSION'}
+              {sealed ? (isLeg ? 'ADDED' : 'SEALED') : hold > 0 ? 'KEEP HOLDING…' : isLeg ? 'HOLD TO ADD TO WORKOUT' : 'HOLD TO SEAL SESSION'}
             </Text>
           </Pressable>
 
@@ -605,7 +622,7 @@ export default function ActiveRunScreen() {
             accessibilityLabel={mi > 0 ? 'View record' : 'Log it by hand'}
             style={styles.textBtn}
           >
-            <Text style={styles.textBtnText}>{mi > 0 ? 'View Record' : 'Log it by hand'}</Text>
+            <Text style={styles.textBtnText}>{mi > 0 ? (isLeg ? 'Back to Workout' : 'View Record') : 'Log it by hand'}</Text>
           </Pressable>
 
           {mi <= 0 ? (

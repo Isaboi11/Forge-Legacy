@@ -36,6 +36,10 @@ export interface TemplateExercise {
    * what they were, since 0091 dropped the section when deriving the template in the first place.
    */
   section?: TemplateSection;
+  /** 'distance' is a conditioning leg (0096). Absent means strength, as every older template was. */
+  kind?: 'strength' | 'distance';
+  targetDistanceMi?: number | null;
+  targetDurationSec?: number | null;
 }
 
 export interface WorkoutTemplate {
@@ -70,6 +74,9 @@ const toExercise = (e: Record<string, unknown>): TemplateExercise => ({
   sets: Number(e.sets ?? 0),
   targetReps: Number(e.targetReps ?? 0),
   section: (['warmup', 'main', 'cooldown'] as TemplateSection[]).includes(e.section as TemplateSection) ? (e.section as TemplateSection) : 'main',
+  kind: e.kind === 'distance' ? 'distance' : 'strength',
+  targetDistanceMi: e.targetDistanceMi == null ? null : Number(e.targetDistanceMi),
+  targetDurationSec: e.targetDurationSec == null ? null : Number(e.targetDurationSec),
 });
 
 const toTemplate = (r: Record<string, unknown>): WorkoutTemplate => ({

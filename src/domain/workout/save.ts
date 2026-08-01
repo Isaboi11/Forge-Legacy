@@ -48,7 +48,21 @@ export async function saveWorkout(session: ActiveSession, partners: string[] = [
     position: ex.position,
     sets: ex.sets
       .filter((s) => s.done)
-      .map((s) => ({ set_index: s.setIndex, weight: s.weight, weight_unit: 'lb', reps: s.actualReps ?? s.targetReps })),
+      .map((s) =>
+        // A conditioning bout carries time and ground covered; a strength set carries load and reps.
+        // Sending a leg's `reps` as its target would record 8 repetitions of a three-mile run (0096).
+        ex.kind === 'distance'
+          ? {
+              set_index: s.setIndex,
+              weight: null,
+              weight_unit: null,
+              reps: null,
+              duration_sec: s.durationSec ?? null,
+              distance: s.distanceMi ?? null,
+              distance_unit: s.distanceMi != null ? 'mi' : null,
+            }
+          : { set_index: s.setIndex, weight: s.weight, weight_unit: 'lb', reps: s.actualReps ?? s.targetReps },
+      ),
   }));
 
   const { data, error } = await supabase.rpc('save_workout', {
