@@ -336,19 +336,6 @@ export default function ExercisePickerScreen() {
               </View>
             ) : null}
 
-            {/* Pinned: a run is added the same way every other exercise is. */}
-            {(() => {
-              const q = search.trim().toLowerCase();
-              const rows = q ? CONDITIONING_ROWS.filter((c) => c.name.toLowerCase().includes(q)) : CONDITIONING_ROWS;
-              return rows.length ? (
-                <View style={styles.section}>
-                  <SectionHeader label="Running & Cardio" />
-                  <Text style={styles.bestSub}>Timed, and measured in distance rather than reps</Text>
-                  <View style={styles.rows}>{rows.map(renderRow)}</View>
-                </View>
-              ) : null;
-            })()}
-
             {sections.browsing && sections.mine.length ? (
               <View style={styles.section}>
                 <SectionHeader label="My exercises" />
@@ -388,6 +375,21 @@ export default function ExercisePickerScreen() {
                 <View style={styles.rows}>{sections.results.map(renderRow)}</View>
               </>
             )}
+            {/* BELOW the catalog, not above it. Pinning three runs over 794 lifts made every athlete
+                adding a bench press scroll past cardio first — paying on the common case to help the
+                rare one. Search is where finding them actually matters, and it still surfaces them
+                instantly. */}
+            {(() => {
+              const q = search.trim().toLowerCase();
+              const rows = q ? CONDITIONING_ROWS.filter((c) => c.name.toLowerCase().includes(q)) : CONDITIONING_ROWS;
+              return rows.length ? (
+                <View style={styles.section}>
+                  <SectionHeader label="Running & Cardio" />
+                  <Text style={styles.bestSub}>Timed, and measured in distance rather than reps</Text>
+                  <View style={styles.rows}>{rows.map(renderRow)}</View>
+                </View>
+              ) : null;
+            })()}
           </>
         ) : (
           <View style={styles.empty}>
