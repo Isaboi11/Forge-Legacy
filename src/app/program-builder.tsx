@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
@@ -17,6 +17,21 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { claimInitiativeHonor } from '@/data/honors-live';
 import { createProgram, fetchProgram, updateProgram, type ProgramDay, type ProgramExercise } from '@/data/programs-live';
 import { clearBuilderInbox, readBuilderInbox, type BuilderSection } from '@/lib/builder-inbox';
+import {
+  CARDIO_ACTIVITIES,
+  activitySymbol,
+  bumpDistance,
+  bumpPace,
+  bumpSpeed,
+  deriveEquip,
+  deriveName,
+  distanceLabel,
+  effortLabel,
+  newCardioBlock,
+  usesSpeed,
+  type CardioActivity,
+  type Modality,
+} from '@/domain/workout/conditioning';
 import { errorMessage } from '@/lib/useQuery';
 import {
   absorbBuilderInbox,
@@ -148,6 +163,8 @@ export default function ProgramBuilderScreen() {
   const [jumpOpen, setJumpOpen] = useState(false);
   const [weekSheet, setWeekSheet] = useState<{ index: number; entering: boolean } | null>(null);
   const [dayMenu, setDayMenu] = useState<number | null>(null);
+  /** The section the cardio sheet was opened from; null = closed. */
+  const [cardioSheet, setCardioSheet] = useState<BuilderSection | null>(null);
 
   // Boot + picker round-trip in one pass: read the stored draft, absorb anything the Picker handed back,
   // persist, then render. Runs on every focus, so returning from the Picker lands the new exercises.
@@ -350,14 +367,39 @@ export default function ProgramBuilderScreen() {
               return next;
             })
           }
-          onSets={(section, i, delta) =>
+          onAddCardio={(section) => setCardioSheet(section)}
+          onModality={(section, i, m) =>
             patchSection(draft.openDay!, section, (list) =>
-              list.map((x, k) => (k === i ? { ...x, sets: clampSets((x.sets ?? 1) + delta) } : x)),
+              list.map((x, k) => {
+                if (k !== i || !x.activity || x.modality === m) return x;
+                // The name and equipment are DERIVED — the author never types them, so the block always
+                // states what it is rather than drifting out of step with its own toggle.
+                return { ...x, modality: m, name: deriveName(x.activity, m), equip: deriveEquip(x.activity, m) };
+              }),
             )
           }
-          onReps={(section, i, delta) =>
+          onSlotA={(section, i, dir) =>
             patchSection(draft.openDay!, section, (list) =>
-              list.map((x, k) => (k === i ? { ...x, reps: clampReps((x.reps ?? 1) + delta) } : x)),
+              list.map((x, k) =>
+                k !== i
+                  ? x
+                  : x.kind === 'cardio'
+                    ? { ...x, targetMi: bumpDistance(x.targetMi ?? null, dir) }
+                    : { ...x, sets: clampSets((x.sets ?? 1) + dir) },
+              ),
+            )
+          }
+          onSlotB={(section, i, dir) =>
+            patchSection(draft.openDay!, section, (list) =>
+              list.map((x, k) =>
+                k !== i
+                  ? x
+                  : x.kind !== 'cardio'
+                    ? { ...x, reps: clampReps((x.reps ?? 1) + dir) }
+                    : x.activity === 'bike'
+                      ? { ...x, targetSpdMph: bumpSpeed(x.targetSpdMph ?? null, dir) }
+                      : { ...x, targetPaceSec: bumpPace(x.targetPaceSec ?? null, dir) },
+              ),
             )
           }
         />
@@ -394,6 +436,46 @@ export default function ProgramBuilderScreen() {
       )}
 
       {/* Jump to week — the progress bar's destination. */}
+      {/* Add a cardio block. Three activities — the modality is set on the card afterwards, and the
+          targets are steppers rather than fields because either one can be left open. */}
+      <BottomSheet open={cardioSheet != null} onClose={() => setCardioSheet(null)} title="Add a cardio block">
+        <Text style={styles.cardioIntro}>
+          Set the distance and pace on the card. Leave either one open and the athlete decides.
+        </Text>
+        <View style={styles.sectionBody}>
+          {CARDIO_ACTIVITIES.map((a) => (
+            <Pressable
+              key={a.key}
+              onPress={() => {
+                const section = cardioSheet;
+                setCardioSheet(null);
+                if (!section || draft.openDay == null) return;
+                patchSection(draft.openDay, section, (list) => [
+                  ...list,
+                  {
+                    id: `c${Date.now()}${Math.round(Math.random() * 1e6)}`,
+                    kind: 'cardio' as const,
+                    ...newCardioBlock(a.key),
+                  },
+                ]);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={`Add a ${a.name.toLowerCase()}`}
+              style={styles.cardioRow}
+            >
+              <View style={styles.cardioIcon}>
+                <ActivityGlyph activity={a.key} size={19} color={flColor.bronze400} />
+              </View>
+              <View style={styles.cardioRowText}>
+                <Text style={styles.cardioRowName}>{a.name}</Text>
+                <Text style={styles.cardioRowSub}>{a.sub}</Text>
+              </View>
+              <Glyph d="M9 6l6 6-6 6" size={15} color={flColor.gray600} width={2} />
+            </Pressable>
+          ))}
+        </View>
+      </BottomSheet>
+
       <BottomSheet open={jumpOpen} onClose={() => setJumpOpen(false)} title="Jump to week">
         <ScrollView style={styles.jumpScroll} showsVerticalScrollIndicator={false}>
           {(draft.weekPlans ?? []).map((w, i) => {
@@ -1010,10 +1092,12 @@ function DayBuilder({
   onNext,
   onName,
   onAdd,
+  onAddCardio,
   onRemove,
   onMove,
-  onSets,
-  onReps,
+  onModality,
+  onSlotA,
+  onSlotB,
 }: {
   day: ProgramDay;
   index: number;
@@ -1023,10 +1107,14 @@ function DayBuilder({
   onNext: () => void;
   onName: (v: string) => void;
   onAdd: (section: BuilderSection) => void;
+  onAddCardio: (section: BuilderSection) => void;
   onRemove: (section: BuilderSection, i: number) => void;
   onMove: (section: BuilderSection, i: number, dir: -1 | 1) => void;
-  onSets: (section: BuilderSection, i: number, delta: number) => void;
-  onReps: (section: BuilderSection, i: number, delta: number) => void;
+  onModality: (section: BuilderSection, i: number, m: Modality) => void;
+  /** Sets for a lift, distance for a block. */
+  onSlotA: (section: BuilderSection, i: number, dir: 1 | -1) => void;
+  /** Reps for a lift, pace or speed for a block. */
+  onSlotB: (section: BuilderSection, i: number, dir: 1 | -1) => void;
 }) {
   const total = dayTotal(day);
   const est = Math.round((day.main.length * 9 + day.warmup.length * 4 + day.cooldown.length * 4) / 5) * 5;
@@ -1076,20 +1164,34 @@ function DayBuilder({
                     onUp={() => onMove(sec.key, i, -1)}
                     onDown={() => onMove(sec.key, i, 1)}
                     onRemove={() => onRemove(sec.key, i)}
-                    onSets={(delta) => onSets(sec.key, i, delta)}
-                    onReps={(delta) => onReps(sec.key, i, delta)}
+                    onModality={(m) => onModality(sec.key, i, m)}
+                    onSlotA={(dir) => onSlotA(sec.key, i, dir)}
+                    onSlotB={(dir) => onSlotB(sec.key, i, dir)}
                   />
                 ))}
 
-                <Pressable
-                  onPress={() => onAdd(sec.key)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Add ${sec.addLabel}`}
-                  style={styles.addBtn}
-                >
-                  <Glyph d={PLUS} size={15} color={flColor.bronze300} width={2} />
-                  <Text style={styles.addText}>Add {sec.addLabel}</Text>
-                </Pressable>
+                {/* Adding an exercise is the common path and stays bronze; adding cardio is available
+                    but recessive. The hierarchy is the point. */}
+                <View style={styles.addRow}>
+                  <Pressable
+                    onPress={() => onAdd(sec.key)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Add ${sec.addLabel}`}
+                    style={[styles.addBtn, styles.addBtnGrow]}
+                  >
+                    <Glyph d={PLUS} size={15} color={flColor.bronze300} width={2} />
+                    <Text style={styles.addText}>Add {sec.addLabel}</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => onAddCardio(sec.key)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Add a cardio block"
+                    style={styles.addCardioBtn}
+                  >
+                    <ActivityGlyph activity="run" size={17} color={flColor.gray400} />
+                    <Text style={styles.addCardioText}>Cardio</Text>
+                  </Pressable>
+                </View>
               </View>
             </View>
           );
@@ -1118,8 +1220,9 @@ function ExerciseCard({
   onUp,
   onDown,
   onRemove,
-  onSets,
-  onReps,
+  onModality,
+  onSlotA,
+  onSlotB,
 }: {
   item: ProgramExercise;
   first: boolean;
@@ -1127,14 +1230,36 @@ function ExerciseCard({
   onUp: () => void;
   onDown: () => void;
   onRemove: () => void;
-  onSets: (delta: number) => void;
-  onReps: (delta: number) => void;
+  onModality: (m: Modality) => void;
+  onSlotA: (dir: 1 | -1) => void;
+  onSlotB: (dir: 1 | -1) => void;
 }) {
+  /**
+   * The SAME card for a lift and a run — same shell, header and reorder cluster. Only two things differ:
+   * a modality row is inserted, and the two footer steppers count different units. The visual continuity
+   * between a lift and a run in one list is the point; a bespoke cardio card would break the day apart.
+   */
+  const cardio = item.kind === 'cardio';
+  const activity = (item.activity ?? 'run') as CardioActivity;
+  const speed = cardio && usesSpeed(activity);
+  const indoor = item.modality === 'indoor';
+  const id = (n: number) => n;
+
+  // Slot A: sets for a lift, distance for a block. Slot B: reps, or pace/speed.
+  const aVal = cardio ? distanceLabel(item.targetMi ?? null, id) : String(item.sets ?? 1);
+  const aUnit = cardio ? (item.targetMi == null ? '' : 'mi') : 'sets';
+  const bVal = cardio ? effortLabel({ ...item, activity, name: item.name, equip: item.equip ?? '', modality: item.modality ?? 'outdoor', targetMi: item.targetMi ?? null }, id, id) : String(item.reps ?? 1);
+  const bUnit = cardio ? (speed ? (item.targetSpdMph == null ? 'speed' : 'mph') : item.targetPaceSec == null ? 'pace' : '/mi') : 'reps';
+  // Bronze on an open target is what makes "no target" read as a deliberate authored state rather than
+  // a value someone forgot to fill in.
+  const aOpen = cardio && item.targetMi == null;
+  const bOpen = cardio && (speed ? item.targetSpdMph == null : item.targetPaceSec == null);
+
   return (
     <View style={styles.exCard}>
       <View style={styles.exTop}>
         <View style={styles.exIcon}>
-          <EquipIcon equip={item.equip} size={19} />
+          {cardio ? <ActivityGlyph activity={activity} size={19} color={flColor.bronze400} /> : <EquipIcon equip={item.equip} size={19} />}
         </View>
         <View style={styles.exText}>
           <Text style={styles.exName} numberOfLines={1}>
@@ -1171,23 +1296,83 @@ function ExerciseCard({
         </View>
       </View>
 
+      {cardio ? (
+        <View style={styles.modRow}>
+          <Pressable
+            onPress={() => onModality('outdoor')}
+            accessibilityRole="button"
+            accessibilityState={{ selected: !indoor }}
+            accessibilityLabel="Outdoor"
+            style={[styles.modBtn, !indoor ? styles.modBtnOn : null]}
+          >
+            <Text style={[styles.modText, !indoor ? styles.modTextOn : null]}>Outdoor</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => onModality('indoor')}
+            accessibilityRole="button"
+            accessibilityState={{ selected: indoor }}
+            accessibilityLabel={activity === 'bike' ? 'Indoor' : 'Treadmill'}
+            style={[styles.modBtn, styles.modBtnDiv, indoor ? styles.modBtnOn : null]}
+          >
+            <Text style={[styles.modText, indoor ? styles.modTextOn : null]}>{activity === 'bike' ? 'Indoor' : 'Treadmill'}</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
       <View style={styles.exBottom}>
         <View style={[styles.exMeter, styles.exMeterDivider]}>
-          <RoundStep label={`Fewer sets for ${item.name}`} sign="−" onPress={() => onSets(-1)} />
+          <RoundStep label={cardio ? `Shorter distance for ${item.name}` : `Fewer sets for ${item.name}`} sign="−" onPress={() => onSlotA(-1)} />
           <Text style={styles.exMeterText}>
-            <Text style={styles.exMeterValue}>{item.sets ?? 1}</Text> sets
+            <Text style={[styles.exMeterValue, aOpen ? styles.exMeterOpen : null]}>{aVal}</Text>
+            {aUnit ? ` ${aUnit}` : ''}
           </Text>
-          <RoundStep label={`More sets for ${item.name}`} sign="+" onPress={() => onSets(1)} />
+          <RoundStep label={cardio ? `Longer distance for ${item.name}` : `More sets for ${item.name}`} sign="+" onPress={() => onSlotA(1)} />
         </View>
         <View style={styles.exMeter}>
-          <RoundStep label={`Fewer reps for ${item.name}`} sign="−" onPress={() => onReps(-1)} />
+          <RoundStep
+            label={cardio ? (speed ? `Lower target speed for ${item.name}` : `Faster target pace for ${item.name}`) : `Fewer reps for ${item.name}`}
+            sign="−"
+            onPress={() => onSlotB(-1)}
+          />
           <Text style={styles.exMeterText}>
-            <Text style={styles.exMeterValue}>{item.reps ?? 1}</Text> reps
+            <Text style={[styles.exMeterValue, bOpen ? styles.exMeterOpen : null]}>{bVal}</Text> {bUnit}
           </Text>
-          <RoundStep label={`More reps for ${item.name}`} sign="+" onPress={() => onReps(1)} />
+          <RoundStep
+            label={cardio ? (speed ? `Higher target speed for ${item.name}` : `Slower target pace for ${item.name}`) : `More reps for ${item.name}`}
+            sign="+"
+            onPress={() => onSlotB(1)}
+          />
         </View>
       </View>
     </View>
+  );
+}
+
+/** The activity glyph — same paths as `forge-symbols.js`, keyed off ACTIVITY and never equipment. */
+function ActivityGlyph({ activity, size, color }: { activity: CardioActivity; size: number; color: string }) {
+  const name = activitySymbol(activity);
+  const p = { fill: 'none' as const, stroke: color, strokeWidth: 1.7, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+  if (name === 'bicycle') {
+    return (
+      <Svg width={size} height={size} viewBox="0 0 24 24">
+        <Circle cx={5.5} cy={15.5} r={3.2} {...p} />
+        <Circle cx={18.5} cy={15.5} r={3.2} {...p} />
+        <Path d="M5.5 15.5l4-7h6M9.5 8.5l3 7M18.5 15.5l-3-7" {...p} />
+      </Svg>
+    );
+  }
+  if (name === 'footprints') {
+    return (
+      <Svg width={size} height={size} viewBox="0 0 24 24">
+        <Path d="M8 4.5c1.4 0 2.2 1.5 2.2 3.3 0 1.4-.6 2.7-2.2 2.7s-2.2-1.3-2.2-2.7C5.6 6 6.6 4.5 8 4.5z" {...p} />
+        <Path d="M16 8.5c1.4 0 2.2 1.5 2.2 3.3 0 1.4-.6 2.7-2.2 2.7s-2.2-1.3-2.2-2.7C13.8 10 14.6 8.5 16 8.5z" {...p} />
+      </Svg>
+    );
+  }
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M3 15.6v-3c0-.5.4-.8.9-.6l3.3.8 2.6-2.9c.4-.5 1.2-.4 1.5.2l.7 1.5 6 1.7c1.2.3 2 1.1 2 2.4v.7c0 .4-.3.7-.7.7H4c-.6 0-1-.5-1-1z" {...p} />
+    </Svg>
   );
 }
 
@@ -1201,6 +1386,24 @@ function RoundStep({ label, sign, onPress }: { label: string; sign: string; onPr
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+
+  addRow: { flexDirection: 'row', gap: 8 },
+  addBtnGrow: { flex: 1, minWidth: 0 },
+  addCardioBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, paddingHorizontal: 14, borderRadius: flRadius.md, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.charcoal500 },
+  addCardioText: { fontSize: 12.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.gray400 },
+  modRow: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  modBtn: { flex: 1, paddingVertical: 8, alignItems: 'center' },
+  modBtnDiv: { borderLeftWidth: 1, borderLeftColor: flColor.charcoal700 },
+  modBtnOn: { backgroundColor: flColor.bronzeTint },
+  modText: { fontSize: 11.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.gray600 },
+  modTextOn: { color: flColor.bronze300 },
+  exMeterOpen: { color: flColor.bronze300 },
+  cardioRow: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingVertical: 14, paddingHorizontal: 15, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
+  cardioIcon: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal900, alignItems: 'center', justifyContent: 'center' },
+  cardioRowText: { flex: 1, minWidth: 0, gap: 2 },
+  cardioRowName: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
+  cardioRowSub: { fontSize: 11.5, color: flColor.gray600 },
+  cardioIntro: { fontSize: 12.5, lineHeight: 19, color: flColor.gray600, marginBottom: 2 },
 
   // ── setup
   setupScroll: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 24 },

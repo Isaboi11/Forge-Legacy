@@ -439,7 +439,7 @@ export default function HomeScreen() {
   /** A treadmill session: one timed leg, distance typed in. No GPS, so no permission and no daylight. */
   const startIndoorRun = async () => {
     setElseOpen(false);
-    await writeWorkoutLaunch({ conditioning: { activity: 'treadmill' } });
+    await writeWorkoutLaunch({ conditioning: { activity: 'run', modality: 'indoor' } });
     startWorkout('Treadmill Run', []);
     router.push('/workout');
   };

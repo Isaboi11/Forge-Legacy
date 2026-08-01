@@ -4,6 +4,7 @@ import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { dayLabel, plannedDays, trainingDays } from '@/domain/program/progress-core';
 import type { ProgramStructure } from '@/data/programs-live';
 import type { ActiveSession, SessionExercise, WorkoutSectionKind } from './types';
+import { EMPTY_RESULT, activityFromKey, cardioKey, deriveName, type Modality } from './conditioning';
 
 /**
  * Seed an ActiveSession from the active program's current workout (real prescriptions — sets × reps as
@@ -58,16 +59,23 @@ export function buildSessionFromProgram(
   const exercises: SessionExercise[] = [];
   for (const sec of sections) {
     for (const ex of sec.items) {
-      // A prescribed run, row or ride carries through as a conditioning leg with ONE bout — sets of reps
+      // A prescribed run, walk or ride carries through as a cardio block with ONE bout — sets of reps
       // are meaningless for it, and building three of them would ask the athlete to run the distance
-      // three times. Its target rides along so the logger can show what was asked for.
-      if (ex.kind === 'distance') {
+      // three times. The prescription rides along, `null` included: null means the program set no
+      // target, and coercing it to 0 would turn "run what you've got" into a permanently-met goal.
+      if (ex.kind === 'cardio') {
+        const activity = activityFromKey(ex.catalogKey) ?? 'run';
+        const modality: Modality = ex.modality === 'indoor' ? 'indoor' : 'outdoor';
         exercises.push({
-          catalogKey: ex.catalogKey,
-          name: ex.name,
-          kind: 'distance',
-          targetDistanceMi: ex.targetDistanceMi ?? null,
-          targetDurationSec: ex.targetDurationSec ?? null,
+          catalogKey: cardioKey(activity),
+          name: deriveName(activity, modality),
+          kind: 'cardio',
+          activity,
+          modality,
+          targetMi: ex.targetMi ?? null,
+          targetPaceSec: ex.targetPaceSec ?? null,
+          targetSpdMph: ex.targetSpdMph ?? null,
+          cardio: { ...EMPTY_RESULT },
           section: sec.key,
           position: exercises.length,
           sets: [{ setIndex: 0, weight: null, targetReps: 0, actualReps: null, done: false, durationSec: null, distanceMi: null }],

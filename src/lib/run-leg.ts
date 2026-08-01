@@ -17,11 +17,21 @@ const REQUEST_KEY = 'forge_run_leg_request_v1';
 const RESULT_KEY = 'forge_run_leg_result_v1';
 
 export interface RunLegRequest {
-  /** Which exercise in the session is waiting for this — the leg it returns to. */
+  /** Which exercise in the session is waiting for this — the block it returns to. */
   exerciseIndex: number;
+  /** 'run' | 'walk' | 'bike'. Active Run takes its activity from here, not from the URL. */
   activity: string;
-  targetDistanceMi?: number | null;
-  targetDurationSec?: number | null;
+  /** The block's derived name, shown as the eyebrow instead of the generic activity label. */
+  name: string;
+  /**
+   * The prescription. `null` means the program prescribed no distance, and Active Run must then RESTORE
+   * its goal chooser and default to Open — the ring becomes a per-mile cycle rather than progress toward
+   * a target nobody set.
+   */
+  targetMi: number | null;
+  targetPaceSec?: number | null;
+  /** The session's name, for the "Part of …" pill. Truncated at the first `·` by the reader. */
+  program?: string;
 }
 
 export interface RunLegResult {

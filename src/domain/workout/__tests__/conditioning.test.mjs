@@ -2,144 +2,215 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  CONDITIONING,
-  modeFromKey,
-  clock,
-  conditioningKey,
-  isConditioningKey,
-  legComplete,
-  legPaceSec,
-  legProgress,
+  CARDIO_ACTIVITIES,
+  CARDIO_DEFAULTS,
+  activityFromKey,
+  activitySymbol,
+  avgPaceSec,
+  bumpDistance,
+  bumpPace,
+  bumpSpeed,
+  cardioKey,
+  deriveEquip,
+  deriveName,
+  distanceLabel,
+  effortLabel,
+  fmtClock,
+  fmtPace,
+  isCardioKey,
+  isLogged,
+  newCardioBlock,
   parseDistance,
-  presetFor,
-  targetLabel,
+  setModality,
+  usesSpeed,
 } from '../conditioning.ts';
 
-const mi = (n) => n; // imperial identity, so the target-label tests read plainly
+const id = (n) => n; // imperial identity, so the label tests read plainly
 
-// ── the catalog key round-trip ───────────────────────────────────────────────
-test('conditioningKey round-trips through modeFromKey', () => {
-  for (const c of CONDITIONING) {
-    const k = conditioningKey(c.key);
-    assert.equal(isConditioningKey(k), true);
-    assert.equal(modeFromKey(k), c.key);
+// ── the picker's three activities ────────────────────────────────────────────
+test('the list is Run, Walk, Ride — the activity is picked, the modality is chosen later', () => {
+  assert.deepEqual(CARDIO_ACTIVITIES.map((a) => a.key), ['run', 'walk', 'bike']);
+  assert.deepEqual(CARDIO_ACTIVITIES.map((a) => a.name), ['Run', 'Walk', 'Ride']);
+});
+
+test('cardioKey round-trips, and a strength key is never mistaken for one', () => {
+  for (const a of CARDIO_ACTIVITIES) {
+    assert.equal(isCardioKey(cardioKey(a.key)), true);
+    assert.equal(activityFromKey(cardioKey(a.key)), a.key);
   }
+  assert.equal(isCardioKey('barbell-back-squat'), false);
+  assert.equal(activityFromKey('barbell-back-squat'), null);
+  assert.equal(activityFromKey(null), null);
+  assert.equal(activityFromKey('cardio:swimming'), null, 'an unknown activity resolves to null, not a bad type');
 });
 
-test('a strength catalog key is not mistaken for conditioning', () => {
-  assert.equal(isConditioningKey('barbell-back-squat'), false);
-  assert.equal(modeFromKey('barbell-back-squat'), null);
-  assert.equal(modeFromKey(null), null);
-  assert.equal(modeFromKey(undefined), null);
+// ── name / equip derivation (spec 2.5) ───────────────────────────────────────
+test('deriveName: the block always states what it is', () => {
+  assert.equal(deriveName('run', 'outdoor'), 'Outdoor Run');
+  assert.equal(deriveName('run', 'indoor'), 'Treadmill Run');
+  assert.equal(deriveName('walk', 'outdoor'), 'Outdoor Walk');
+  assert.equal(deriveName('walk', 'indoor'), 'Treadmill Walk');
 });
 
-test('an unknown conditioning key resolves to null rather than a bad mode', () => {
-  assert.equal(modeFromKey('conditioning:skiing'), null);
+test('deriveName: a bike gets Indoor Ride — there is no treadmill for a bicycle', () => {
+  assert.equal(deriveName('bike', 'outdoor'), 'Outdoor Ride');
+  assert.equal(deriveName('bike', 'indoor'), 'Indoor Ride');
 });
 
-test('the list is three runs — the mode IS the exercise, so there is no second choice to make', () => {
-  assert.deepEqual(CONDITIONING.map((c) => c.key), ['outdoor', 'treadmill', 'indoor']);
+test('deriveEquip: Road outdoors, Treadmill indoors, Trainer for a bike', () => {
+  assert.equal(deriveEquip('run', 'outdoor'), 'Road');
+  assert.equal(deriveEquip('run', 'indoor'), 'Treadmill');
+  assert.equal(deriveEquip('bike', 'indoor'), 'Trainer');
 });
 
-test('only the outdoor run is GPS-measured; the other two are a clock and a typed distance', () => {
-  assert.equal(presetFor('outdoor').gps, true);
-  assert.equal(presetFor('treadmill').gps, false);
-  assert.equal(presetFor('indoor').gps, false);
+test('setModality rewrites name and equip together, and no-ops when already selected', () => {
+  const b = newCardioBlock('run');
+  const indoor = setModality(b, 'indoor');
+  assert.equal(indoor.name, 'Treadmill Run');
+  assert.equal(indoor.equip, 'Treadmill');
+  assert.equal(indoor.modality, 'indoor');
+  assert.equal(setModality(indoor, 'indoor'), indoor, 'same object back — nothing to change');
 });
 
-test('treadmill and indoor measure identically but stay distinct — the record says which you did', () => {
-  assert.equal(presetFor('treadmill').gps, presetFor('indoor').gps);
-  assert.notEqual(presetFor('treadmill').name, presetFor('indoor').name);
+test('setModality preserves the targets — switching where you run is not editing the program', () => {
+  const b = setModality(newCardioBlock('run'), 'indoor');
+  assert.equal(b.targetMi, 3);
+  assert.equal(b.targetPaceSec, 495);
 });
 
-// ── targets ──────────────────────────────────────────────────────────────────
-test('targetLabel: distance, time, both, or nothing', () => {
-  assert.equal(targetLabel({ distanceMi: 3 }, 'mi', mi), '3.0 mi');
-  assert.equal(targetLabel({ durationSec: 1200 }, 'mi', mi), '20:00');
-  assert.equal(targetLabel({ distanceMi: 3, durationSec: 1200 }, 'mi', mi), '3.0 mi · 20:00');
-  assert.equal(targetLabel({}, 'mi', mi), null, 'an unprescribed leg has no target line');
-  assert.equal(targetLabel({ distanceMi: 0, durationSec: 0 }, 'mi', mi), null);
+// ── the glyph is keyed off activity (spec 2.4) ───────────────────────────────
+test('the glyph follows ACTIVITY, so Run and Walk never collide on shared equipment', () => {
+  assert.equal(activitySymbol('run'), 'shoe');
+  assert.equal(activitySymbol('walk'), 'footprints');
+  assert.equal(activitySymbol('bike'), 'bicycle');
+  // Both are 'Road' outdoors — keying off equip would render them identically.
+  assert.equal(deriveEquip('run', 'outdoor'), deriveEquip('walk', 'outdoor'));
+  assert.notEqual(activitySymbol('run'), activitySymbol('walk'));
 });
 
-test('targetLabel converts through the caller, so metric athletes see kilometres', () => {
-  assert.equal(targetLabel({ distanceMi: 1 }, 'km', (m) => m * 1.609344), '1.6 km');
+// ── defaults (spec 2.2) ──────────────────────────────────────────────────────
+test('authored defaults match the handoff table', () => {
+  assert.equal(CARDIO_DEFAULTS.run.targetMi, 3);
+  assert.equal(CARDIO_DEFAULTS.run.targetPaceSec, 495); // 8:15/mi
+  assert.equal(CARDIO_DEFAULTS.walk.targetMi, 2);
+  assert.equal(CARDIO_DEFAULTS.walk.targetPaceSec, 1050); // 17:30/mi
+  assert.equal(CARDIO_DEFAULTS.bike.targetMi, 10);
+  assert.equal(CARDIO_DEFAULTS.bike.targetSpdMph, 17);
 });
 
-// ── completion ───────────────────────────────────────────────────────────────
-test('legComplete: an unprescribed leg is done once anything is recorded', () => {
-  assert.equal(legComplete({ distanceMi: 0, durationSec: 0 }, {}), false);
-  assert.equal(legComplete({ distanceMi: 1.2, durationSec: 0 }, {}), true);
-  assert.equal(legComplete({ distanceMi: 0, durationSec: 300 }, {}), true);
+test('a ride carries speed and no pace; a run the reverse', () => {
+  assert.equal(usesSpeed('bike'), true);
+  assert.equal(usesSpeed('run'), false);
+  assert.equal(CARDIO_DEFAULTS.bike.targetPaceSec, undefined);
+  assert.equal(CARDIO_DEFAULTS.run.targetSpdMph, undefined);
 });
 
-test('legComplete: a distance target is met by distance, not by time spent', () => {
-  assert.equal(legComplete({ distanceMi: 2.9, durationSec: 3600 }, { distanceMi: 3 }), false);
-  assert.equal(legComplete({ distanceMi: 3.2, durationSec: 60 }, { distanceMi: 3 }), true, 'overshooting still finishes it');
+test('newCardioBlock hands back a copy — two blocks in one day must not share a target', () => {
+  const a = newCardioBlock('run');
+  const b = newCardioBlock('run');
+  a.targetMi = 10;
+  assert.equal(b.targetMi, 3);
 });
 
-test('legComplete: "3 miles in 20 minutes" is ONE prescription — both halves must be met', () => {
-  const target = { distanceMi: 3, durationSec: 1200 };
-  assert.equal(legComplete({ distanceMi: 3, durationSec: 900 }, target), false, 'the distance alone is not the whole ask');
-  assert.equal(legComplete({ distanceMi: 2, durationSec: 1200 }, target), false);
-  assert.equal(legComplete({ distanceMi: 3, durationSec: 1200 }, target), true);
+// ── steppers: Open at the bottom (spec 2.6) ──────────────────────────────────
+test('distance: stepping below the minimum CLEARS the target rather than clamping', () => {
+  assert.equal(bumpDistance(1, -1), 0.5);
+  assert.equal(bumpDistance(0.5, -1), null, 'below 0.5 is Open, not 0');
 });
 
-// ── progress ─────────────────────────────────────────────────────────────────
-test('legProgress: fills against whichever target exists and clamps at one', () => {
-  assert.equal(legProgress({ distanceMi: 1.5 }, { distanceMi: 3 }), 0.5);
-  assert.equal(legProgress({ durationSec: 600 }, { durationSec: 1200 }), 0.5);
-  assert.equal(legProgress({ distanceMi: 9 }, { distanceMi: 3 }), 1);
+test('distance: + from Open seeds the minimum, - from Open stays Open', () => {
+  assert.equal(bumpDistance(null, 1), 0.5);
+  assert.equal(bumpDistance(null, -1), null);
 });
 
-test('legProgress: with two targets it shows the further along, so the bar never goes backwards', () => {
-  const p = legProgress({ distanceMi: 2.4, durationSec: 300 }, { distanceMi: 3, durationSec: 1200 });
-  assert.ok(Math.abs(p - 0.8) < 1e-9, `got ${p}`);
+test('distance: the marathon is the ceiling, and float drift never shows', () => {
+  assert.equal(bumpDistance(26.2, 1), 26.2);
+  assert.equal(bumpDistance(3, 1), 3.5);
+  assert.equal(bumpDistance(3.5, 1), 4);
 });
 
-test('legProgress: an unprescribed leg has no bar to fill', () => {
-  assert.equal(legProgress({ distanceMi: 5, durationSec: 1800 }, {}), 0);
+test('pace: + is SLOWER, and below 5:00 clears to Any', () => {
+  assert.equal(bumpPace(495, 1), 500, 'a bigger number is a slower pace');
+  assert.equal(bumpPace(300, -1), null);
+  assert.equal(bumpPace(null, 1), 495);
+  assert.equal(bumpPace(1200, 1), 1200);
 });
 
-// ── pace ─────────────────────────────────────────────────────────────────────
-test('legPaceSec: seconds per mile, or null when a half is missing', () => {
-  assert.equal(legPaceSec(3, 1440), 480);
-  assert.equal(legPaceSec(0, 1440), null);
-  assert.equal(legPaceSec(3, 0), null);
-  assert.equal(legPaceSec(null, 600), null);
-  assert.equal(legPaceSec(undefined, undefined), null);
+test('speed: + is FASTER, and below 6 mph clears to Any', () => {
+  assert.equal(bumpSpeed(17, 1), 17.5);
+  assert.equal(bumpSpeed(6, -1), null);
+  assert.equal(bumpSpeed(null, 1), 17);
+  assert.equal(bumpSpeed(30, 1), 30);
 });
 
-test('legPaceSec: a short typed treadmill interval still has a real pace', () => {
-  // Unlike the live tracker's readout, this runs on a finished leg with a number the athlete entered.
-  assert.equal(legPaceSec(0.25, 120), 480);
+test('all four authored combinations are reachable from two steppers', () => {
+  // 3 mi @ 8:15 · 3 mi @ any pace · open @ 8:15 · fully open
+  const base = newCardioBlock('run');
+  assert.ok(base.targetMi != null && base.targetPaceSec != null);
+  assert.equal(bumpPace(300, -1), null, 'drop the pace out');
+  assert.equal(bumpDistance(0.5, -1), null, 'drop the distance out');
+  assert.equal(bumpDistance(null, 1), 0.5, 'and bring either back');
 });
 
-// ── the clock ────────────────────────────────────────────────────────────────
-test('clock: minutes under an hour, hours over it', () => {
-  assert.equal(clock(0), '0:00');
-  assert.equal(clock(64), '1:04');
-  assert.equal(clock(1200), '20:00');
-  assert.equal(clock(3725), '1:02:05');
+// ── labels ───────────────────────────────────────────────────────────────────
+test('distanceLabel says Open, never 0', () => {
+  assert.equal(distanceLabel(null, id), 'Open');
+  assert.equal(distanceLabel(3, id), '3.0');
 });
 
-// ── parsing what someone typed ───────────────────────────────────────────────
-test('parseDistance: accepts plain and decimal input', () => {
+test('effortLabel says Any for a cleared target, and speaks speed for a ride', () => {
+  const run = newCardioBlock('run');
+  assert.equal(effortLabel(run, id, id), '8:15');
+  assert.equal(effortLabel({ ...run, targetPaceSec: null }, id, id), 'Any');
+  const ride = newCardioBlock('bike');
+  assert.equal(effortLabel(ride, id, id), '17.0');
+  assert.equal(effortLabel({ ...ride, targetSpdMph: null }, id, id), 'Any');
+});
+
+test('fmtPace floors so a pace never renders as ":60"', () => {
+  assert.equal(fmtPace(495), '8:15');
+  assert.equal(fmtPace(479.99), '7:59');
+  assert.equal(fmtPace(null), '--:--');
+  assert.equal(fmtPace(0), '--:--');
+});
+
+test('fmtClock hides the hour under one and never over', () => {
+  assert.equal(fmtClock(0), '0:00');
+  assert.equal(fmtClock(1485), '24:45');
+  assert.equal(fmtClock(3725), '1:02:05');
+  assert.equal(fmtClock(null), '0:00');
+});
+
+// ── computed pace ────────────────────────────────────────────────────────────
+test('avgPaceSec: real once there is distance, null when a half is missing', () => {
+  assert.equal(avgPaceSec(3, 1485), 495);
+  assert.equal(avgPaceSec(0, 1485), null);
+  assert.equal(avgPaceSec(3, 0), null);
+  assert.equal(avgPaceSec(null, 600), null);
+});
+
+test('avgPaceSec: a trivial distance yields nothing rather than an absurd pace', () => {
+  assert.equal(avgPaceSec(0.02, 600), null, '0.02 mi in 10 minutes is not an 8-hour mile, it is noise');
+});
+
+// ── logged state ─────────────────────────────────────────────────────────────
+test('isLogged needs BOTH numbers — a distance with no time is not a session', () => {
+  assert.equal(isLogged(null), false);
+  assert.equal(isLogged({ distanceMi: 3, timeSec: null }), false);
+  assert.equal(isLogged({ distanceMi: null, timeSec: 1485 }), false);
+  assert.equal(isLogged({ distanceMi: 3, timeSec: 1485 }), true);
+});
+
+// ── typed distance ───────────────────────────────────────────────────────────
+test('parseDistance accepts plain, decimal and comma-decimal input', () => {
   assert.equal(parseDistance('3'), 3);
   assert.equal(parseDistance('3.1'), 3.1);
-  assert.equal(parseDistance(' 3.1 '), 3.1);
-  assert.equal(parseDistance('.5'), 0.5);
-});
-
-test('parseDistance: accepts a comma decimal, which many phone keypads produce', () => {
   assert.equal(parseDistance('3,1'), 3.1);
+  assert.equal(parseDistance(' .5 '), 0.5);
 });
 
-test('parseDistance: rejects anything that would store a distance nobody ran', () => {
-  assert.equal(parseDistance(''), null);
-  assert.equal(parseDistance('abc'), null);
-  assert.equal(parseDistance('-3'), null);
-  assert.equal(parseDistance('0'), null);
-  assert.equal(parseDistance('3.1.4'), null);
-  assert.equal(parseDistance('1e3'), null, 'exponent notation is a typo, not an ultramarathon');
-  assert.equal(parseDistance('9999'), null, 'beyond any single session');
+test('parseDistance rejects anything that would store a distance nobody ran', () => {
+  for (const bad of ['', 'abc', '-3', '0', '3.1.4', '1e3', '9999']) {
+    assert.equal(parseDistance(bad), null, `${bad} should be rejected`);
+  }
 });

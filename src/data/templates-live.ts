@@ -36,9 +36,11 @@ export interface TemplateExercise {
    * what they were, since 0091 dropped the section when deriving the template in the first place.
    */
   section?: TemplateSection;
-  /** 'distance' is a conditioning leg (0096). Absent means strength, as every older template was. */
-  kind?: 'strength' | 'distance';
-  targetDistanceMi?: number | null;
+  /** 'cardio' is a run/walk/ride block. Absent means strength, as every older template was. */
+  kind?: 'strength' | 'cardio';
+  /** How it was trained — carried so repeating a treadmill session doesn't put you on the road (0097). */
+  modality?: 'outdoor' | 'indoor';
+  targetMi?: number | null;
   targetDurationSec?: number | null;
 }
 
@@ -74,8 +76,9 @@ const toExercise = (e: Record<string, unknown>): TemplateExercise => ({
   sets: Number(e.sets ?? 0),
   targetReps: Number(e.targetReps ?? 0),
   section: (['warmup', 'main', 'cooldown'] as TemplateSection[]).includes(e.section as TemplateSection) ? (e.section as TemplateSection) : 'main',
-  kind: e.kind === 'distance' ? 'distance' : 'strength',
-  targetDistanceMi: e.targetDistanceMi == null ? null : Number(e.targetDistanceMi),
+  kind: e.kind === 'cardio' ? 'cardio' : 'strength',
+  modality: e.modality === 'indoor' ? 'indoor' : e.modality === 'outdoor' ? 'outdoor' : undefined,
+  targetMi: e.targetMi == null ? null : Number(e.targetMi),
   targetDurationSec: e.targetDurationSec == null ? null : Number(e.targetDurationSec),
 });
 

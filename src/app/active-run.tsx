@@ -120,15 +120,28 @@ export default function ActiveRunScreen() {
    */
   const isLeg = leg === '1';
   const { data: legReq } = useQuery<RunLegRequest | null>(() => (isLeg ? readRunLegRequest() : Promise.resolve(null)), [isLeg]);
-  const requested = legReq?.activity === 'walking' ? 'walk' : legReq?.activity === 'cycling' ? 'bike' : legReq ? 'run' : null;
+  // In-workout: the activity comes from the payload, not the URL query.
+  const requested = KINDS.includes(legReq?.activity as ActivityKind) ? (legReq!.activity as ActivityKind) : null;
   const kind: ActivityKind = requested ?? (KINDS.includes(type as ActivityKind) ? (type as ActivityKind) : 'run');
   const cfg = ACTIVITY[kind];
   const { units } = useUnits();
   const { showToast } = useToast();
 
   const [phase, setPhase] = useState<'start' | 'live' | 'finish'>('start');
-  const [goalOpen, setGoalOpen] = useState(false);
-  const [targetMi, setTargetMi] = useState(cfg.targetMi);
+  /**
+   * `null` until the athlete chooses, so an in-workout default can be DERIVED rather than fought.
+   *
+   * A block that prescribed a distance hides the chooser and locks to it. A block that prescribed
+   * NOTHING restores the chooser and defaults to Open — the ring becomes a per-mile cycle rather than
+   * progress toward a target nobody set, which is the whole reason `targetMi: null` has to survive.
+   */
+  const [goalChoice, setGoalChoice] = useState<'distance' | 'open' | null>(null);
+  const prescribed = isLeg && legReq?.targetMi != null;
+  const goalOpen = goalChoice != null ? goalChoice === 'open' : isLeg && !prescribed;
+  const setGoalOpen = (open: boolean) => setGoalChoice(open ? 'open' : 'distance');
+  const [targetOverride, setTargetOverride] = useState<number | null>(null);
+  const targetMi = targetOverride ?? (prescribed ? legReq!.targetMi! : cfg.targetMi);
+  const setTargetMi = (fn: (v: number) => number) => setTargetOverride((v) => fn(v ?? targetMi));
   const [paceOn, setPaceOn] = useState(false);
   const [paceTarget, setPaceTarget] = useState(cfg.paceDefault);
   const [confirmFinish, setConfirmFinish] = useState(false);
@@ -171,7 +184,9 @@ export default function ActiveRunScreen() {
 
   // No useMemo: react-compiler is on and memoizes this itself. Hand-written memoization here made it
   // bail out of optimizing the whole component ("existing memoization could not be preserved").
-  const bests = phase === 'finish' ? personalBests(mi, el, priors ?? [], kind, units) : [];
+  // Suppressed in leg mode: personal bests belong to the workout's own ceremony, not to one block
+  // inside it, and the session isn't finished yet.
+  const bests = phase === 'finish' && !isLeg ? personalBests(mi, el, priors ?? [], kind, units) : [];
 
   // ── actions ────────────────────────────────────────────────────────────────
   const begin = async () => {
@@ -272,11 +287,34 @@ export default function ActiveRunScreen() {
     return (
       <View style={styles.root}>
         <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
-        <AppBar onBack={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))} title={<Text style={styles.barTitle}>{cfg.eyebrow}</Text>} />
+        <AppBar onBack={() => {
+          if (isLeg) {
+            // Leaving without running is not a result. Clear the request so a later block can't
+            // inherit this one's answer.
+            void clearRunLegRequest().then(() => router.back());
+            return;
+          }
+          if (router.canGoBack()) router.back();
+          else router.replace('/(tabs)');
+        }} title={<Text style={styles.barTitle}>{isLeg ? (legReq?.name ?? cfg.eyebrow) : cfg.eyebrow}</Text>} />
 
         <ScrollView contentContainerStyle={styles.setup} showsVerticalScrollIndicator={false}>
           <Glyph kind={kind} />
 
+          {isLeg ? (
+            <View style={[styles.pill, styles.pillOn]}>
+              <View style={styles.pillDot} />
+              <Text style={styles.pillText}>
+                {prescribed ? 'Part of ' : 'Open block · '}
+                {(legReq?.program ?? 'your workout').split('·')[0].trim()}
+              </Text>
+            </View>
+          ) : null}
+
+          {/* Hidden when the program set a distance: it is not the athlete's to re-choose here. The
+              ± stepper stays live, because cutting a run short before starting is a decision, not an
+              edit to the program. */}
+          {prescribed ? null : (
           <View style={styles.segment}>
             <Pressable
               onPress={() => setGoalOpen(false)}
@@ -297,6 +335,7 @@ export default function ActiveRunScreen() {
               <Text style={[styles.segText, goalOpen ? styles.segTextOn : null]}>Open</Text>
             </Pressable>
           </View>
+          )}
 
           {goalOpen ? (
             <Text style={styles.openTitle}>Open {cfg.verb}</Text>
@@ -593,43 +632,67 @@ export default function ActiveRunScreen() {
         ) : null}
 
         <View style={styles.sealBlock}>
-          <Pressable
-            onPressIn={startHold}
-            onPressOut={endHold}
-            disabled={sealed || saving || mi <= 0}
-            accessibilityRole="button"
-            accessibilityLabel="Press and hold to seal this session"
-            style={[styles.seal, mi <= 0 ? styles.disabled : null]}
-          >
-            <View style={[styles.sealFill, { width: `${Math.round(hold * 100)}%` }]} />
-            {/* The ink flips to dark once the bronze has flooded past it — a contrast crossover, not a
-                colour change. */}
-            <Text style={[styles.sealText, hold > 0.55 || sealed ? styles.sealTextOver : null]}>
-              {sealed ? (isLeg ? 'ADDED' : 'SEALED') : hold > 0 ? 'KEEP HOLDING…' : isLeg ? 'HOLD TO ADD TO WORKOUT' : 'HOLD TO SEAL SESSION'}
-            </Text>
-          </Pressable>
+          {/* IN A WORKOUT there is no seal. The block is handed back and the SESSION seals once, at its
+              own end — a ceremony here would be sealing something that hasn't finished. */}
+          {isLeg ? (
+            <>
+              <Pressable
+                onPress={() => void viewRecord()}
+                disabled={saving || mi <= 0}
+                accessibilityRole="button"
+                accessibilityLabel="Add this to your workout"
+                style={({ pressed }) => [styles.primary, mi <= 0 ? styles.disabled : null, pressed ? styles.pressed : null]}
+              >
+                <Text style={styles.primaryText}>Add to Workout</Text>
+              </Pressable>
+              <Text style={styles.legHint}>You&apos;ll seal the whole session at the end.</Text>
+              {mi <= 0 ? (
+                <Pressable onPress={discard} accessibilityRole="button" accessibilityLabel="Back to workout" style={styles.textBtn}>
+                  <Text style={styles.discardText}>Back to Workout</Text>
+                </Pressable>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <Pressable
+                onPressIn={startHold}
+                onPressOut={endHold}
+                disabled={sealed || saving || mi <= 0}
+                accessibilityRole="button"
+                accessibilityLabel="Press and hold to seal this session"
+                style={[styles.seal, mi <= 0 ? styles.disabled : null]}
+              >
+                <View style={[styles.sealFill, { width: `${Math.round(hold * 100)}%` }]} />
+                {/* The ink flips to dark once the bronze has flooded past it — a contrast crossover,
+                    not a colour change. */}
+                <Text style={[styles.sealText, hold > 0.55 || sealed ? styles.sealTextOver : null]}>
+                  {sealed ? 'SEALED' : hold > 0 ? 'KEEP HOLDING…' : 'HOLD TO SEAL SESSION'}
+                </Text>
+              </Pressable>
 
-          {mi <= 0 ? (
-            <Text style={styles.nothingText}>
-              No distance was recorded, so there’s nothing to seal. You can log this session by hand instead.
-            </Text>
-          ) : null}
+              {mi <= 0 ? (
+                <Text style={styles.nothingText}>
+                  No distance was recorded, so there&apos;s nothing to seal. You can log this session by hand instead.
+                </Text>
+              ) : null}
 
-          <Pressable
-            onPress={() => void (mi > 0 ? viewRecord() : router.replace('/log-activity'))}
-            disabled={saving}
-            accessibilityRole="button"
-            accessibilityLabel={mi > 0 ? 'View record' : 'Log it by hand'}
-            style={styles.textBtn}
-          >
-            <Text style={styles.textBtnText}>{mi > 0 ? (isLeg ? 'Back to Workout' : 'View Record') : 'Log it by hand'}</Text>
-          </Pressable>
+              <Pressable
+                onPress={() => void (mi > 0 ? viewRecord() : router.replace('/log-activity'))}
+                disabled={saving}
+                accessibilityRole="button"
+                accessibilityLabel={mi > 0 ? 'View record' : 'Log it by hand'}
+                style={styles.textBtn}
+              >
+                <Text style={styles.textBtnText}>{mi > 0 ? 'View Record' : 'Log it by hand'}</Text>
+              </Pressable>
 
-          {mi <= 0 ? (
-            <Pressable onPress={discard} accessibilityRole="button" accessibilityLabel="Discard" style={styles.textBtn}>
-              <Text style={styles.discardText}>Discard</Text>
-            </Pressable>
-          ) : null}
+              {mi <= 0 ? (
+                <Pressable onPress={discard} accessibilityRole="button" accessibilityLabel="Discard" style={styles.textBtn}>
+                  <Text style={styles.discardText}>Discard</Text>
+                </Pressable>
+              ) : null}
+            </>
+          )}
         </View>
       </ScrollView>
     </View>
@@ -661,6 +724,7 @@ const styles = StyleSheet.create({
 
   pill: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, paddingHorizontal: 15, borderRadius: 999, borderWidth: 1, borderColor: flColor.charcoal600 },
   pillOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  pillDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: flColor.bronze400 },
   pillText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
   pillTextOn: { color: flColor.bronze300 },
   paceStepper: { flexDirection: 'row', alignItems: 'center', gap: 18 },
@@ -732,6 +796,7 @@ const styles = StyleSheet.create({
   sealFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: flColor.bronze600 },
   sealText: { fontSize: 13, fontWeight: '700', letterSpacing: 1.6, color: flColor.bronze300 },
   sealTextOver: { color: '#1A1206' },
+  legHint: { marginTop: 10, fontSize: 11.5, lineHeight: 17, color: flColor.gray600, textAlign: 'center' },
   nothingText: { fontSize: 12.5, lineHeight: 19, color: flColor.gray600, textAlign: 'center' },
   textBtn: { alignItems: 'center', paddingVertical: 10 },
   textBtnText: { fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },

@@ -15,17 +15,22 @@ export type ProgramExercise = {
   sets?: number;
   reps?: number;
   /**
-   * 'distance' prescribes a conditioning leg — a run, row or ride, at any position in the day. Absent
-   * means 'strength', so every program authored before this reads unchanged. The structure is jsonb, so
-   * these cost no migration.
+   * 'cardio' prescribes a run, walk or ride at any position in the day. Absent means 'strength', so
+   * every program authored before this reads unchanged. The structure is jsonb, so these cost no
+   * migration.
    *
-   * The program prescribes the WORK, never how it is done: whether it is outdoors with GPS or on a
-   * treadmill is the athlete's choice on the day, because nobody knows the weather when they write a
-   * training block.
+   * `modality` is the AUTHOR'S DEFAULT, not a rule: the athlete can switch it on the day, because
+   * nobody knows the weather when they write a training block.
+   *
+   * Every target is nullable and `null` is MEANINGFUL — it prescribes nothing, an open session. It must
+   * survive persistence uncoerced: a 0 would read as a target that is permanently, absurdly met.
    */
-  kind?: 'strength' | 'distance';
-  targetDistanceMi?: number | null;
-  targetDurationSec?: number | null;
+  kind?: 'strength' | 'cardio';
+  activity?: 'run' | 'walk' | 'bike';
+  modality?: 'outdoor' | 'indoor';
+  targetMi?: number | null;
+  targetPaceSec?: number | null;
+  targetSpdMph?: number | null;
 };
 export type ProgramDay = {
   letter: string;

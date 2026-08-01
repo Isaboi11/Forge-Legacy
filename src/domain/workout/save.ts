@@ -51,7 +51,7 @@ export async function saveWorkout(session: ActiveSession, partners: string[] = [
       .map((s) =>
         // A conditioning bout carries time and ground covered; a strength set carries load and reps.
         // Sending a leg's `reps` as its target would record 8 repetitions of a three-mile run (0096).
-        ex.kind === 'distance'
+        ex.kind === 'cardio'
           ? {
               set_index: s.setIndex,
               weight: null,
@@ -60,6 +60,9 @@ export async function saveWorkout(session: ActiveSession, partners: string[] = [
               duration_sec: s.durationSec ?? null,
               distance: s.distanceMi ?? null,
               distance_unit: s.distanceMi != null ? 'mi' : null,
+              // How it was RECORDED, not what the toggle currently says (0097).
+              modality: s.modality ?? null,
+              incline_pct: s.inclinePct ?? null,
             }
           : { set_index: s.setIndex, weight: s.weight, weight_unit: 'lb', reps: s.actualReps ?? s.targetReps },
       ),

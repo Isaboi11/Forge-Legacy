@@ -19,8 +19,16 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { useUnits } from '@/lib/settings';
-import { ConditioningLeg } from '@/components/workout/ConditioningLeg';
-import { conditioningKey, isConditioningKey, modeFromKey, presetFor, type RunMode } from '@/domain/workout/conditioning';
+import { CardioBlockCard } from '@/components/workout/CardioBlockCard';
+import {
+  EMPTY_RESULT,
+  activityFromKey,
+  cardioKey,
+  deriveName,
+  isCardioKey,
+  newCardioBlock,
+  type CardioActivity,
+} from '@/domain/workout/conditioning';
 import { takeRunLegResult, writeRunLegRequest } from '@/lib/run-leg';
 import { buildActiveSession, buildSessionFromProgram } from '@/domain/workout/build-session';
 import { fetchProgram, fetchProgramCompletedCount } from '@/data/programs-live';
@@ -208,28 +216,18 @@ export default function WorkoutScreen() {
         return;
       }
 
-      // A conditioning-only session: one leg, nothing else (0096). Started from Home's "Something else
-      // today?" or anywhere that wants a timed run without a program around it.
+      // A cardio-only session: one block, nothing else. Started from Home's "Something else today?" or
+      // anywhere that wants a run without a program around it. Unprescribed, so both targets are open.
       if (launch?.conditioning) {
         await clearWorkoutLaunch();
-        const mode = (launch.conditioning.activity ?? 'treadmill') as RunMode;
-        const preset = presetFor(mode);
+        const activity = (launch.conditioning.activity ?? 'run') as CardioActivity;
+        const modality = launch.conditioning.modality ?? 'outdoor';
+        const block = cardioExercise(activity, 0, { modality, targetMi: null, targetPaceSec: null, targetSpdMph: null });
         setSession({
-          workoutName: launch.workoutName ?? preset?.name ?? 'Run',
+          workoutName: launch.workoutName ?? block.name,
           activityType: 'strength',
           startedAt: new Date().toISOString(),
-          exercises: [
-            {
-              name: preset?.name ?? 'Run',
-              catalogKey: conditioningKey(mode),
-              kind: 'distance',
-              targetDistanceMi: launch.conditioning.targetDistanceMi ?? null,
-              targetDurationSec: launch.conditioning.targetDurationSec ?? null,
-              section: 'main',
-              position: 0,
-              sets: [{ setIndex: 0, targetReps: 0, weight: null, actualReps: null, done: false, durationSec: null, distanceMi: null }],
-            },
-          ],
+          exercises: [block],
         });
         setPhase('active');
         return;
@@ -247,35 +245,36 @@ export default function WorkoutScreen() {
               // Attributes the saved workout back to the template (0095) — what makes its "Times used"
               // and session history real, and what makes them count only sessions actually finished.
               templateId: t.id,
-              exercises: t.exercises.map((e, i) =>
-                // A template that ended in a run comes back as a leg, not as sets of it (0096).
-                e.kind === 'distance'
-                  ? {
-                      name: e.name,
-                      catalogKey: e.catalogKey ?? undefined,
-                      kind: 'distance' as const,
-                      targetDistanceMi: e.targetDistanceMi ?? null,
-                      targetDurationSec: e.targetDurationSec ?? null,
-                      section: e.section ?? 'main',
-                      position: i,
-                      sets: [{ setIndex: 0, targetReps: 0, weight: null, actualReps: null, done: false, durationSec: null, distanceMi: null }],
-                    }
-                  : {
+              exercises: t.exercises.map((e, i) => {
+                // A template that ended in a run comes back as a cardio block, not as sets of it. The
+                // modality it was trained in comes back too (0097) — a treadmill session shouldn't
+                // silently become a road run the next time you repeat it.
+                const act = activityFromKey(e.catalogKey);
+                if (e.kind === 'cardio' && act) {
+                  return cardioExercise(act, i, {
+                    section: e.section ?? 'main',
+                    modality: e.modality ?? 'outdoor',
+                    targetMi: e.targetMi ?? null,
+                    targetPaceSec: null,
+                    targetSpdMph: null,
+                  });
+                }
+                return {
                       name: e.name,
                       catalogKey: e.catalogKey ?? undefined,
                       // The template's own section, not a flat 'main' — warm-up and cool-down survived the
                       // round trip as of 0095, and the logger is where that has to show up.
                       section: e.section ?? 'main',
                       position: i,
-                      sets: Array.from({ length: Math.max(1, e.sets) }, (_, si) => ({
-                        setIndex: si,
-                        targetReps: e.targetReps || 8,
-                        weight: null,
-                        actualReps: null,
-                        done: false,
-                      })),
-                    },
-              ),
+                  sets: Array.from({ length: Math.max(1, e.sets) }, (_, si) => ({
+                    setIndex: si,
+                    targetReps: e.targetReps || 8,
+                    weight: null,
+                    actualReps: null,
+                    done: false,
+                  })),
+                } satisfies SessionExercise;
+              }),
             });
             setPhase('active');
             return;
@@ -360,13 +359,33 @@ export default function WorkoutScreen() {
         setSession((cur) => {
           if (!cur) return cur;
           const target = cur.exercises[res.exerciseIndex];
-          // The session may have been rebuilt while they were out there; only apply it to a leg.
-          if (!target || target.kind !== 'distance') return cur;
-          return patchSet(cur, res.exerciseIndex, 0, (set) => ({
+          // The session may have been rebuilt while they were out there; only apply it to a block.
+          if (!target || target.kind !== 'cardio') return cur;
+          const withResult = {
+            ...cur,
+            exercises: cur.exercises.map((e, i) =>
+              i !== res.exerciseIndex
+                ? e
+                : {
+                    ...e,
+                    // `loggedModality: 'outdoor'` — it came back from GPS. Written once, here, and never
+                    // rewritten by the card's toggle (0097).
+                    cardio: {
+                      distanceMi: res.distanceMi,
+                      timeSec: res.durationSec,
+                      inclinePct: e.cardio?.inclinePct ?? null,
+                      loggedModality: 'outdoor' as const,
+                      source: 'tracked' as const,
+                    },
+                  },
+            ),
+          };
+          return patchSet(withResult, res.exerciseIndex, 0, (set) => ({
             ...set,
             done: true,
             durationSec: res.durationSec,
             distanceMi: res.distanceMi,
+            modality: 'outdoor' as const,
             actualReps: null,
           }));
         });
@@ -658,26 +677,69 @@ export default function WorkoutScreen() {
     setHeroPref((p) => ({ ...p, [exIdx]: collapsed ? 'collapsed' : 'expanded' }));
     setAutoCollapsed((a) => ({ ...a, [exIdx]: true })); // a manual choice also blocks the one-time auto-collapse
   };
-  const isLeg = ex.kind === 'distance';
+  const isCardio = ex.kind === 'cardio';
 
   /**
-   * Commit a leg: its single set carries the time and the ground covered, and `done` marks it logged the
-   * same way a completed strength set does — so the progress dots, the Finish gate and the save path all
-   * treat it as an ordinary exercise, which is the point of modelling it as one.
+   * Commit a cardio block: its single set carries the time and the ground covered, and `done` marks it
+   * logged the same way a completed strength set does — so the progress dots, the Finish gate and the
+   * save path all treat it as an ordinary exercise, which is the point of modelling it as one.
+   *
+   * `loggedModality` comes from the DRAFT, not from the live toggle: the form's shape was frozen when it
+   * opened, and saving must record how the bout was actually done rather than what the card says now.
    */
-  const completeLeg = (durationSec: number, distanceMi: number | null) => {
-    mutate((cur) =>
-      patchSet(cur, exIdx, 0, (set) => ({ ...set, done: true, durationSec, distanceMi, actualReps: null })),
-    );
+  const saveCardioLog = (r: { distanceMi: number; timeSec: number; inclinePct: number | null; modality: 'outdoor' | 'indoor' }) => {
+    mutate((cur) => {
+      const withResult = {
+        ...cur,
+        exercises: cur.exercises.map((e, i) =>
+          i !== exIdx
+            ? e
+            : {
+                ...e,
+                cardio: {
+                  distanceMi: r.distanceMi,
+                  timeSec: r.timeSec,
+                  inclinePct: r.modality === 'indoor' ? r.inclinePct : (e.cardio?.inclinePct ?? null),
+                  loggedModality: r.modality,
+                  source: (e.cardio?.source === 'tracked' ? 'tracked' : 'manual') as 'tracked' | 'manual',
+                },
+              },
+        ),
+      };
+      return patchSet(withResult, exIdx, 0, (set) => ({
+        ...set,
+        done: true,
+        durationSec: r.timeSec,
+        distanceMi: r.distanceMi,
+        inclinePct: r.modality === 'indoor' ? r.inclinePct : null,
+        modality: r.modality,
+        actualReps: null,
+      }));
+    });
+    showToast(`${ex.name} logged`);
   };
 
-  /** Hand off to Active Run, telling it which leg is waiting for the answer. */
-  const trackLegOutdoors = async () => {
+  /** Switch where the block is being done. Renames it, and never touches what was already recorded. */
+  const setCardioModality = (m: 'outdoor' | 'indoor') => {
+    if (!ex.activity || ex.modality === m) return;
+    const activity = ex.activity;
+    mutate((cur) => ({
+      ...cur,
+      exercises: cur.exercises.map((e, i) =>
+        i !== exIdx ? e : { ...e, modality: m, name: deriveName(activity, m) },
+      ),
+    }));
+  };
+
+  /** Hand off to Active Run, telling it which block is waiting for the answer. */
+  const startOutdoorRun = async () => {
     await writeRunLegRequest({
       exerciseIndex: exIdx,
-      activity: modeFromKey(ex.catalogKey) ?? 'outdoor',
-      targetDistanceMi: ex.targetDistanceMi ?? null,
-      targetDurationSec: ex.targetDurationSec ?? null,
+      activity: ex.activity ?? 'run',
+      name: ex.name,
+      targetMi: ex.targetMi ?? null,
+      targetPaceSec: ex.targetPaceSec ?? null,
+      program: session.workoutName,
     });
     router.push({ pathname: '/active-run', params: { leg: '1' } });
   };
@@ -685,23 +747,8 @@ export default function WorkoutScreen() {
   const isLastEx = exIdx >= session.exercises.length - 1;
   const primaryLabel = isLastEx ? 'Finish Workout' : 'Next Exercise';
   const goExercise = (idx: number) => {
-    const next = Math.max(0, Math.min(session.exercises.length - 1, idx));
-    setExIdx(next);
+    setExIdx(Math.max(0, Math.min(session.exercises.length - 1, idx)));
     restSkip(); // leaving an exercise ends its rest
-    /**
-     * Arriving at an outdoor run opens the screen that measures it. Done HERE rather than in a focus
-     * effect on purpose: coming back from Active Run doesn't call this, so the leg can't bounce the
-     * athlete straight out again the moment they return. An already-logged leg just sits there.
-     */
-    const target = session.exercises[next];
-    if (target?.kind === 'distance' && !target.sets[0]?.done && presetFor(modeFromKey(target.catalogKey) ?? '')?.gps) {
-      void writeRunLegRequest({
-        exerciseIndex: next,
-        activity: modeFromKey(target.catalogKey) ?? 'outdoor',
-        targetDistanceMi: target.targetDistanceMi ?? null,
-        targetDurationSec: target.targetDurationSec ?? null,
-      }).then(() => router.push({ pathname: '/active-run', params: { leg: '1' } }));
-    }
   };
   const onPrimary = () => {
     if (isLastEx) {
@@ -897,13 +944,14 @@ export default function WorkoutScreen() {
 
         {/* A conditioning leg stands where the set table would: same position in the session, entirely
             different measurement. Sets of reps have nothing to say about three miles. */}
-        {isLeg ? (
-          <ConditioningLeg
+        {isCardio ? (
+          <CardioBlockCard
             exercise={ex}
             index={exIdx}
             units={units}
-            onComplete={completeLeg}
-            onTrackOutdoors={() => void trackLegOutdoors()}
+            onSetModality={setCardioModality}
+            onSave={saveCardioLog}
+            onStartOutdoor={() => void startOutdoorRun()}
           />
         ) : (
         <View style={styles.table}>
@@ -1355,21 +1403,42 @@ function replaceExercise(s: ActiveSession, ei: number, ex: ActiveSession['exerci
   return { ...s, exercises: s.exercises.map((e, i) => (i === ei ? ex : e)) };
 }
 /** A freshly-added (freestyle) exercise from the picker — 3 blank working sets. */
+/**
+ * One cardio block, in session shape. Every construction site — the picker, a program day, a template,
+ * and a conditioning launch — goes through here so they cannot drift apart on the synthetic set, the
+ * derived name, or which fields a block is supposed to carry.
+ */
+function cardioExercise(
+  activity: CardioActivity,
+  position: number,
+  opts: { section?: SessionExercise['section']; targetMi?: number | null; targetPaceSec?: number | null; targetSpdMph?: number | null; modality?: 'outdoor' | 'indoor'; name?: string } = {},
+): SessionExercise {
+  const modality = opts.modality ?? 'outdoor';
+  const base = newCardioBlock(activity);
+  return {
+    catalogKey: cardioKey(activity),
+    name: opts.name ?? deriveName(activity, modality),
+    kind: 'cardio',
+    activity,
+    modality,
+    // `undefined` means "not specified, use the authored default"; `null` means "deliberately open".
+    targetMi: opts.targetMi === undefined ? base.targetMi : opts.targetMi,
+    targetPaceSec: opts.targetPaceSec === undefined ? base.targetPaceSec ?? null : opts.targetPaceSec,
+    targetSpdMph: opts.targetSpdMph === undefined ? base.targetSpdMph ?? null : opts.targetSpdMph,
+    cardio: { ...EMPTY_RESULT },
+    section: opts.section ?? 'main',
+    position,
+    // The single synthetic set: one run is one unit of progress, and no progress math learns about cardio.
+    sets: [{ setIndex: 0, targetReps: 0, weight: null, actualReps: null, done: false, durationSec: null, distanceMi: null }],
+  };
+}
+
 function pickedToExercise(p: PickedExercise, position: number): SessionExercise {
-  // A run picked from the catalog becomes a LEG, not three sets of eight — the picker returns it like
-  // any other exercise, and this is where the two kinds diverge.
-  if (isConditioningKey(p.catalogKey)) {
-    return {
-      catalogKey: p.catalogKey,
-      name: p.name,
-      kind: 'distance',
-      targetDistanceMi: null,
-      targetDurationSec: null,
-      section: 'main',
-      position,
-      sets: [{ setIndex: 0, weight: null, targetReps: 0, actualReps: null, done: false, durationSec: null, distanceMi: null }],
-    };
-  }
+  // A run picked from the catalog becomes a CARDIO BLOCK, not three sets of eight — the picker returns
+  // it like any other exercise, and this is where the two kinds diverge. Added ad hoc, so it carries no
+  // target: nothing prescribed it.
+  const picked = activityFromKey(p.catalogKey);
+  if (picked) return cardioExercise(picked, position, { targetMi: null, targetPaceSec: null, targetSpdMph: null });
   return {
     catalogKey: p.catalogKey,
     name: p.name,
@@ -1383,7 +1452,7 @@ function swapExercise(ex: SessionExercise, p: PickedExercise): SessionExercise {
   // Swapping a lift for a run (or back) changes what the slot IS, so it cannot keep the old set
   // structure — three sets of eight is not a shape a run has. This is the path someone takes when the
   // program said Outdoor Run and it started raining.
-  if (isConditioningKey(p.catalogKey) !== (ex.kind === 'distance')) {
+  if (isCardioKey(p.catalogKey) !== (ex.kind === 'cardio')) {
     return pickedToExercise(p, ex.position);
   }
   return {

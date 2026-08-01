@@ -33,9 +33,10 @@ export interface WorkoutLaunch {
    * would mean inventing a rep count for a distance.
    */
   conditioning?: {
+    /** 'run' | 'walk' | 'bike'. */
     activity: string;
-    targetDistanceMi?: number | null;
-    targetDurationSec?: number | null;
+    /** Where, chosen by whoever launched it — Home's treadmill entry starts indoors. */
+    modality?: 'outdoor' | 'indoor';
   };
   /**
    * Who invited you (0092). Pre-tags them as a partner so accepting an invite credits both athletes

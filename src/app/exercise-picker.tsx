@@ -10,7 +10,7 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { writeExerciseInbox, type PickedExercise } from '@/lib/exercise-inbox';
-import { CONDITIONING } from '@/domain/workout/conditioning';
+import { CARDIO_ACTIVITIES, cardioKey } from '@/domain/workout/conditioning';
 import { fetchHomeGym } from '@/data/home-gym-live';
 import { canDoExercise } from '@/domain/home-gym/equipment';
 import { dismissGearPrompt, getGearOnly, getGearPromptDismissed, setGearOnly } from '@/lib/gear-filter';
@@ -48,12 +48,12 @@ function toPicked(x: PickerItem): PickedExercise {
  * category to make the code fit would be amending a governed decision from the wrong end. They are
  * offered here, in the same list and through the same round-trip, without disturbing any of that.
  */
-const CONDITIONING_ROWS: PickerItem[] = CONDITIONING.map((c) => ({
-  key: `conditioning:${c.key}`,
+const CONDITIONING_ROWS: PickerItem[] = CARDIO_ACTIVITIES.map((c) => ({
+  key: cardioKey(c.key),
   name: c.name,
   cat: 'FULL_BODY',
   equipId: 'none',
-  equip: c.detail,
+  equip: c.sub,
   equipClass: 'Bodyweight',
   muscleIds: [],
   muscles: [],
@@ -471,7 +471,7 @@ export default function ExercisePickerScreen() {
               return rows.length ? (
                 <View style={styles.section}>
                   <SectionHeader label="Running & Cardio" />
-                  <Text style={styles.bestSub}>Timed, and measured in distance rather than reps</Text>
+                  <Text style={styles.bestSub}>Measured in distance and time, not sets and reps</Text>
                   <View style={styles.rows}>{rows.map(renderRow)}</View>
                 </View>
               ) : null;
