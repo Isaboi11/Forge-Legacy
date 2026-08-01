@@ -399,9 +399,12 @@ export default function WorkoutComplete() {
                       </View>
                     ) : null}
                   </View>
+                  {/* A run states what it actually was. "1 set" is true of it and tells the athlete
+                      nothing; the distance, the clock and the pace are the record. */}
                   <Text style={styles.recTop}>
-                    {ex.sets} set{ex.sets === 1 ? '' : 's'}
-                    {ex.topSet ? ` · top ${fmt(ex.topSet)}` : ''}
+                    {ex.cardio
+                      ? fmt(ex.cardio)
+                      : `${ex.sets} set${ex.sets === 1 ? '' : 's'}${ex.topSet ? ` · top ${fmt(ex.topSet)}` : ''}`}
                   </Text>
                 </View>
                 {ex.delta ? <Text style={[styles.recDelta, ex.delta.kind === 'hold' ? styles.deltaFlat : styles.deltaUp]}>{deltaLabel(ex.delta, units)}</Text> : null}

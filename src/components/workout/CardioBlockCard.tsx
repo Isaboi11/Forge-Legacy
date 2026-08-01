@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 
+import { Button } from '@/components/forge/composites/Button';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { useWallClockTimer } from '@/hooks/useWallClockTimer';
 import { useKeepScreenAwake } from '@/hooks/useKeepScreenAwake';
@@ -101,6 +102,10 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
   }, [beltRunning, belt]);
 
   const openLog = () => {
+    // Opening the form ENDS the bout. The clock was running because the athlete was; they have stopped
+    // to write the numbers down, and a timer still counting behind the form would keep inflating a
+    // duration they are in the middle of confirming.
+    if (timer.running) timer.pause();
     // The form's shape is decided ONCE, here, from how the bout was (or will be) recorded — not from
     // whatever the toggle says later. Otherwise editing an outdoor-toggled treadmill run drops its incline.
     const formTreadmill = logged && lm ? lm === 'indoor' : treadmill;
@@ -326,23 +331,27 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
               </Text>
             </View>
             <View style={styles.formActions}>
-              <Pressable onPress={() => setDraft(null)} accessibilityRole="button" accessibilityLabel="Cancel" style={({ pressed }) => [styles.secondary, pressed ? styles.pressed : null]}>
-                <Text style={styles.secondaryText}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => {
+              <View style={styles.half}>
+                <Button variant="secondary" fullWidth onPress={() => setDraft(null)} accessibilityLabel="Cancel">
+                  Cancel
+                </Button>
+              </View>
+              <View style={styles.saveBtn}>
+                <Button
+                  variant="primary"
+                  fullWidth
+                  accessibilityLabel="Save run"
+                  onPress={() => {
                   const typed = parseDistance(distanceText);
                   const mi = typed == null ? draft.distanceMi : units === 'metric' ? typed / 1.609344 : typed;
                   onSave({ distanceMi: +mi.toFixed(2), timeSec: draft.timeSec, inclinePct: draft.hasIncline ? draft.inclinePct : null, modality: draft.modality });
-                  setDraft(null);
-                  timer.reset();
-                }}
-                accessibilityRole="button"
-                accessibilityLabel="Save run"
-                style={({ pressed }) => [styles.primary, styles.saveBtn, pressed ? styles.pressed : null]}
-              >
-                <Text style={styles.primaryText}>Save {VERB[activity]}</Text>
-              </Pressable>
+                    setDraft(null);
+                    timer.reset();
+                  }}
+                >
+                  Save {VERB[activity]}
+                </Button>
+              </View>
             </View>
           </View>
         ) : logged ? (
@@ -373,20 +382,24 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
           /* ── STATE B · treadmill, not yet run ─────────────────────────── */
           <View style={styles.form}>
             <View style={styles.formActions}>
-              <Pressable
-                onPress={timer.running ? timer.pause : timer.elapsedSec > 0 ? timer.resume : timer.start}
-                accessibilityRole="button"
-                accessibilityLabel={timer.running ? 'Pause the timer' : timer.elapsedSec > 0 ? 'Resume the timer' : 'Start the timer'}
-                style={({ pressed }) => [timer.elapsedSec > 0 || timer.running ? styles.secondary : styles.primary, pressed ? styles.pressed : null]}
-              >
-                <Text style={timer.elapsedSec > 0 || timer.running ? styles.secondaryText : styles.primaryText}>
+              <View style={styles.half}>
+                <Button
+                  variant={timer.elapsedSec > 0 || timer.running ? 'secondary' : 'primary'}
+                  fullWidth
+                  onPress={timer.running ? timer.pause : timer.elapsedSec > 0 ? timer.resume : timer.start}
+                  accessibilityLabel={timer.running ? 'Pause the timer' : timer.elapsedSec > 0 ? 'Resume the timer' : 'Start the timer'}
+                >
                   {timer.running ? 'Pause' : timer.elapsedSec > 0 ? 'Resume' : 'Start Timer'}
-                </Text>
-              </Pressable>
+                </Button>
+              </View>
               {timer.elapsedSec > 0 ? (
-                <Pressable onPress={openLog} accessibilityRole="button" accessibilityLabel="Log run" style={({ pressed }) => [styles.primary, pressed ? styles.pressed : null]}>
-                  <Text style={styles.primaryText}>Log {VERB[activity]}</Text>
-                </Pressable>
+                <View style={styles.half}>
+                  {/* "End" and not "Log": it stops the clock. Calling it Log made it read like a
+                      passive write while the timer kept counting behind the form. */}
+                  <Button variant="primary" fullWidth onPress={openLog} accessibilityLabel={`End ${VERB[activity].toLowerCase()}`}>
+                    End {VERB[activity]}
+                  </Button>
+                </View>
               ) : null}
             </View>
             {timer.elapsedSec === 0 && !timer.running ? (
@@ -404,9 +417,9 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
         ) : (
           /* ── STATE A · outdoor, not yet run ───────────────────────────── */
           <View style={styles.form}>
-            <Pressable onPress={onStartOutdoor} accessibilityRole="button" accessibilityLabel={`Start ${VERB[activity].toLowerCase()}`} style={({ pressed }) => [styles.primary, styles.tall, pressed ? styles.pressed : null]}>
-              <Text style={styles.primaryText}>Start {VERB[activity]}</Text>
-            </Pressable>
+            <Button variant="primary" fullWidth onPress={onStartOutdoor} accessibilityLabel={`Start ${VERB[activity].toLowerCase()}`}>
+              Start {VERB[activity]}
+            </Button>
             <Pressable onPress={openLog} accessibilityRole="button" accessibilityLabel="Already did it — log manually" style={styles.textBtn}>
               <Text style={styles.textBtnText}>Already did it · log manually</Text>
             </Pressable>
@@ -555,6 +568,7 @@ const styles = StyleSheet.create({
   computedLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.3, color: flColor.bronze400 },
   computedValue: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', color: flColor.bronze300 },
   formActions: { flexDirection: 'row', gap: 9 },
+  half: { flex: 1 },
   saveBtn: { flex: 1.15 },
 
   resultRow: { flexDirection: 'row', paddingVertical: 14, borderRadius: flRadius.lg, backgroundColor: flColor.surfaceRecessed, borderWidth: 1, borderColor: 'rgba(90,158,104,0.24)' },

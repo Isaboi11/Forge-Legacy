@@ -27,10 +27,30 @@ function fmtDate(iso: string | null): string | null {
  * durable from W-9 Finish; W-17 is presentation after). Volume + per-exercise top set are computed from
  * the persisted sets; PRs come from today's personal_records for this workout's exercises.
  */
+/** "24:45" / "1:02:05" — the same clock the logger shows, so the record reads back identically. */
+function clock(sec: number): string {
+  const t = Math.max(0, Math.floor(sec));
+  const h = Math.floor(t / 3600);
+  const m = Math.floor((t % 3600) / 60);
+  const ss = t % 60;
+  const mm = h > 0 ? String(m).padStart(2, '0') : String(m);
+  return h > 0 ? `${h}:${mm}:${String(ss).padStart(2, '0')}` : `${mm}:${String(ss).padStart(2, '0')}`;
+}
+/** Seconds per mile → "8:15". Floored, so a pace never reads ":60". */
+function pace2(secPerMi: number): string {
+  const t = Math.floor(secPerMi);
+  return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
+}
+
 export type ExerciseDelta = { kind: 'weight'; n: number } | { kind: 'reps'; n: number } | { kind: 'hold' };
 export interface CompletionExercise {
   name: string;
-  topSet: string | null; // "225 × 5" (heaviest set by e1RM)
+  topSet: string | null; // "225 × 5" (heaviest set by e1RM); null on a cardio block
+  /**
+   * A cardio block's actual result — "3.0 mi · 24:45 · 8:15 /mi". The Record used to show a run as a
+   * nameless row with no numbers at all, because it reads weight and reps and a run carries neither.
+   */
+  cardio: string | null;
   sets: number; // done-set count this workout
   isPR: boolean;
   delta: ExerciseDelta | null; // vs this lift's previous session (null = no prior)
@@ -78,6 +98,11 @@ interface SetRow {
   workout_exercise_id: string;
   weight: number | null;
   reps: number | null;
+  /** Cardio bouts (0096/0097). Null on every strength set. */
+  duration_sec?: number | null;
+  distance?: number | null;
+  modality?: string | null;
+  incline_pct?: number | null;
 }
 
 export async function fetchCompletion(workoutId: string): Promise<Completion> {
@@ -125,7 +150,10 @@ export async function fetchCompletion(workoutId: string): Promise<Completion> {
 
   const exIds = exercises.map((e) => e.id);
   const { data: setRows, error: se } = exIds.length
-    ? await supabase.from('workout_sets').select('workout_exercise_id, weight, reps').in('workout_exercise_id', exIds)
+    ? await supabase
+        .from('workout_sets')
+        .select('workout_exercise_id, weight, reps, duration_sec, distance, modality, incline_pct')
+        .in('workout_exercise_id', exIds)
     : { data: [], error: null };
   if (se) throw se;
   const sets = (setRows ?? []) as SetRow[];
@@ -282,12 +310,29 @@ export async function fetchCompletion(workoutId: string): Promise<Completion> {
       if (!top || e1rm(s.weight, s.reps) > e1rm(top.weight ?? 0, top.reps ?? 0)) top = s;
     }
     const now = top && top.weight != null && top.reps != null ? { w: top.weight, r: top.reps } : null;
+
+    // A cardio block is recognised by what it MEASURED, not by a stored flag — the evidence of what it
+    // was is the distance and the clock.
+    const bout = exSets.find((x) => (x.distance ?? 0) > 0 || (x.duration_sec ?? 0) > 0) ?? null;
+    let cardio: string | null = null;
+    if (bout) {
+      const parts: string[] = [];
+      if (bout.distance != null && bout.distance > 0) parts.push(`${bout.distance.toFixed(2)} mi`);
+      if (bout.duration_sec != null && bout.duration_sec > 0) parts.push(clock(bout.duration_sec));
+      const pace = bout.distance && bout.duration_sec && bout.distance > 0.05 ? bout.duration_sec / bout.distance : null;
+      if (pace != null) parts.push(`${pace2(pace)} /mi`);
+      if (bout.incline_pct != null && bout.incline_pct > 0) parts.push(`${bout.incline_pct.toFixed(1)}% incline`);
+      cardio = parts.join(' · ') || null;
+    }
+
     return {
       name: ex.name,
       topSet: top ? `${top.weight} × ${top.reps}` : null,
-      sets: exSets.filter((s) => s.weight != null && s.reps != null).length,
+      cardio,
+      // A block counts as the one bout it is, the same way it counts as one unit of progress.
+      sets: bout ? 1 : exSets.filter((s) => s.weight != null && s.reps != null).length,
       isPR: prByExercise.has(ex.name),
-      delta: deltaOf(now, priorTop.get(ex.name) ?? null),
+      delta: bout ? null : deltaOf(now, priorTop.get(ex.name) ?? null),
     };
   });
 

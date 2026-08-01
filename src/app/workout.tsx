@@ -126,6 +126,10 @@ export default function WorkoutScreen() {
   const { finishWorkout } = useWorkoutSession();
   const [session, setSession] = useState<ActiveSession | null>(null);
   const [resumable, setResumable] = useState<ActiveSession | null>(null);
+  /** A launch intent parked because work was already in progress. Null = they just opened the logger. */
+  const [pendingLaunch, setPendingLaunch] = useState<Awaited<ReturnType<typeof readWorkoutLaunch>> | null>(null);
+  /** Bumped to re-run the mount flow after discarding, so one code path builds every session. */
+  const [reloadKey, setReloadKey] = useState(0);
   const [exIdx, setExIdx] = useState(0);
   // A conditioning leg shows distance in the athlete's own system; the record stays in miles.
   const { units } = useUnits();
@@ -174,12 +178,27 @@ export default function WorkoutScreen() {
   useEffect(() => {
     void (async () => {
       const saved = await loadSession();
-      if (saved && saved.exercises?.some((e) => e.sets.some((s) => s.done))) {
+      /**
+       * THE LAUNCH IS READ FIRST, and this order is the whole fix.
+       *
+       * The resume gate used to run before it, so an unfinished session from days ago swallowed every
+       * explicit start: tapping "Treadmill run" on Home landed you in a different workout entirely, and
+       * the launch sat unconsumed, waiting to fire at some unrelated moment later.
+       *
+       * An explicit launch is the athlete asking for something specific, so it must not be silently
+       * ignored — but neither may it silently discard work already logged. When both exist, ask.
+       */
+      const launch = await readWorkoutLaunch();
+      const hasWork = !!saved && saved.exercises?.some((e) => e.sets.some((s) => s.done));
+      const wantsSomething = !!launch && (!!launch.conditioning || !!launch.templateId || !!launch.freestyle || !!launch.programId || !!launch.exercises?.length);
+
+      if (hasWork) {
         setResumable(saved);
+        setPendingLaunch(wantsSomething ? launch : null);
         setPhase('resume');
+        // Held, not consumed: whichever way they answer, `startPending` re-reads it.
         return;
       }
-      const launch = await readWorkoutLaunch();
       let fresh: ActiveSession | null = null;
 
       /* Invited (0092): whoever asked is pre-tagged, so accepting credits both athletes through the
@@ -314,7 +333,7 @@ export default function WorkoutScreen() {
       setSession(fresh ?? buildActiveSession());
       setPhase('active');
     })();
-  }, []);
+  }, [reloadKey]);
 
   // load the saved rest-timer preference (stays OFF until the athlete has turned it on before)
   useEffect(() => {
@@ -600,13 +619,40 @@ export default function WorkoutScreen() {
           <Card variant="hero" style={styles.resumeCard}>
             <Text style={styles.kicker}>Session in progress</Text>
             <Text style={styles.resumeName}>{resumable.workoutName}</Text>
-            <Text style={styles.resumeSub}>{doneSetCount(resumable)} sets logged. Resume where you left off?</Text>
+            <Text style={styles.resumeSub}>
+              {doneSetCount(resumable)} sets logged.
+              {pendingLaunch ? ' Resume it, or start what you just picked?' : ' Resume where you left off?'}
+            </Text>
             <View style={styles.resumeActions}>
-              <Button variant="primary" fullWidth onPress={() => { setSession(resumable); setPhase('active'); }} accessibilityLabel="Resume workout">
+              <Button
+                variant="primary"
+                fullWidth
+                onPress={async () => {
+                  // Resuming abandons the new intent — otherwise it would ambush them later.
+                  if (pendingLaunch) await clearWorkoutLaunch();
+                  setPendingLaunch(null);
+                  setSession(resumable);
+                  setPhase('active');
+                }}
+                accessibilityLabel="Resume workout"
+              >
                 Resume
               </Button>
-              <Button variant="text" fullWidth onPress={async () => { await clearSession(); setSession(buildActiveSession()); setPhase('active'); }} accessibilityLabel="Discard and start fresh">
-                Discard &amp; start fresh
+              <Button
+                variant="text"
+                fullWidth
+                onPress={async () => {
+                  await clearSession();
+                  setResumable(null);
+                  // Re-enter the mount flow with no saved work in the way, so the parked launch is
+                  // built by the same branches that would have built it in the first place.
+                  setPendingLaunch(null);
+                  setPhase('loading');
+                  setReloadKey((k) => k + 1);
+                }}
+                accessibilityLabel={pendingLaunch ? 'Discard and start the new one' : 'Discard and start fresh'}
+              >
+                {pendingLaunch ? 'Discard & start the new one' : 'Discard & start fresh'}
               </Button>
             </View>
           </Card>
