@@ -22,6 +22,7 @@ import {
   isLogged,
   newCardioBlock,
   parseDistance,
+  sessionActivityType,
   setModality,
   usesSpeed,
 } from '../conditioning.ts';
@@ -244,4 +245,42 @@ test('parseDistance rejects anything that would store a distance nobody ran', ()
   for (const bad of ['', 'abc', '-3', '0', '3.1.4', '1e3', '9999']) {
     assert.equal(parseDistance(bad), null, `${bad} should be rejected`);
   }
+});
+
+// ── what a session IS ────────────────────────────────────────────────────────
+//
+// A run that was the whole session used to save as `activity_type: 'strength'`. The distance sat in the
+// row and nothing looked at it: Activity History filed it with the bench presses, the rank engine
+// counted it STRENGTH, and the run-records lookup asks for 'running' and found nothing.
+test('a session that is only a run is filed as a run', () => {
+  const one = [{ kind: 'cardio', activity: 'run' }];
+  assert.equal(sessionActivityType(one, 'strength'), 'running');
+  assert.equal(sessionActivityType([{ kind: 'cardio', activity: 'walk' }], 'strength'), 'walking');
+  assert.equal(sessionActivityType([{ kind: 'cardio', activity: 'bike' }], 'strength'), 'cycling');
+});
+
+test('a lift day with a cool-down walk stays a strength workout', () => {
+  const mixed = [
+    { kind: 'strength' },
+    { kind: 'strength' },
+    { kind: 'cardio', activity: 'walk' },
+  ];
+  assert.equal(sessionActivityType(mixed, 'strength'), 'strength', 'the last five minutes must not rename the day');
+});
+
+test('two different cardio kinds in one session claim neither', () => {
+  const brick = [{ kind: 'cardio', activity: 'bike' }, { kind: 'cardio', activity: 'run' }];
+  assert.equal(sessionActivityType(brick, 'strength'), 'strength');
+});
+
+test('several bouts of the SAME activity still count as that activity', () => {
+  const intervals = [
+    { kind: 'cardio', activity: 'run' },
+    { kind: 'cardio', activity: 'run' },
+  ];
+  assert.equal(sessionActivityType(intervals, 'strength'), 'running');
+});
+
+test('an empty session keeps its fallback rather than inventing a type', () => {
+  assert.equal(sessionActivityType([], 'strength'), 'strength');
 });

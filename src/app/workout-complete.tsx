@@ -17,7 +17,8 @@ import { useUnits } from '@/lib/settings';
 import { displayWeight } from '@/domain/settings/units';
 import { getProgramDefinitions } from '@/domain/training/programs';
 import { DEMO_ACTIVE_ID } from '@/domain/training/active-program-core';
-import { fetchCompletion, saveReflection, type CompletionHero, type ExerciseDelta } from '@/data/workout-complete-live';
+import { fetchCompletion, saveReflection, type CompletionCardio, type CompletionHero, type ExerciseDelta } from '@/data/workout-complete-live';
+import { distanceLabel, fmtClock, fmtPace, toDistance, toPace, type UnitSystem } from '@/domain/run/run-core';
 import { addSquadPost, recapSummaryFrom } from '@/data/squad-feed-live';
 import { fetchMySquads, type SquadSummary } from '@/data/squad-live';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
@@ -75,10 +76,10 @@ function nextWorkoutName(completed: string): string | null {
 export default function WorkoutComplete() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const router = useRouter();
-  const { data, loading, error } = useQuery(() => fetchCompletion(String(id)), [id]);
   const { showToast } = useToast();
   // Volume is stored in lb; show it in the athlete's system. `fmt` re-expresses per-set strings.
   const { units, fmt } = useUnits();
+  const { data, loading, error } = useQuery(() => fetchCompletion(String(id), units), [id, units]);
   const [mySquads, setMySquads] = useState<SquadSummary[] | null>(null);
   const [squadPickerOpen, setSquadPickerOpen] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -386,30 +387,51 @@ export default function WorkoutComplete() {
             </View>
           ) : null}
 
+          {/* WHAT THIS RUN BEAT — computed against the athlete's own prior sessions, never asserted.
+              The retired Active Run screen owned this and it was the last thing it had that nothing
+              else did. Absent for a strength session, and absent for a first-ever run: there is no
+              best to beat yet, and "your longest ever" on a first walk is a hollow thing to be told. */}
+          {data.runBests.length ? (
+            <View style={styles.bestsBlock}>
+              {data.runBests.map((b) => (
+                <View key={b.label} style={styles.bestRow}>
+                  <View style={styles.bestMark} />
+                  <View style={styles.bestText}>
+                    <Text style={styles.bestLabel}>{b.label}</Text>
+                    <Text style={styles.bestDetail}>{b.detail}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : null}
+
           <Text style={styles.recHeading}>How You Improved</Text>
           <View style={styles.recTable}>
-            {data.exercises.map((ex) => (
-              <View key={ex.name} style={styles.recRow}>
-                <View style={styles.recRowText}>
-                  <View style={styles.recNameLine}>
-                    <Text style={styles.recExName}>{ex.name}</Text>
-                    {ex.isPR ? (
-                      <View style={styles.prBadge}>
-                        <Text style={styles.prBadgeText}>PR</Text>
-                      </View>
-                    ) : null}
+            {data.exercises.map((ex) =>
+              /* A run gets the whole row. "1 set · top —" is true of it and says nothing; the distance,
+                 the clock, the pace, the grade and WHERE it was done are the record of what happened,
+                 and they don't fit on one line beside a delta that a run never has. */
+              ex.cardio ? (
+                <CardioRecordRow key={ex.name} name={ex.name} cardio={ex.cardio} units={units} />
+              ) : (
+                <View key={ex.name} style={styles.recRow}>
+                  <View style={styles.recRowText}>
+                    <View style={styles.recNameLine}>
+                      <Text style={styles.recExName}>{ex.name}</Text>
+                      {ex.isPR ? (
+                        <View style={styles.prBadge}>
+                          <Text style={styles.prBadgeText}>PR</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                    <Text style={styles.recTop}>
+                      {`${ex.sets} set${ex.sets === 1 ? '' : 's'}${ex.topSet ? ` · top ${fmt(ex.topSet)}` : ''}`}
+                    </Text>
                   </View>
-                  {/* A run states what it actually was. "1 set" is true of it and tells the athlete
-                      nothing; the distance, the clock and the pace are the record. */}
-                  <Text style={styles.recTop}>
-                    {ex.cardio
-                      ? fmt(ex.cardio)
-                      : `${ex.sets} set${ex.sets === 1 ? '' : 's'}${ex.topSet ? ` · top ${fmt(ex.topSet)}` : ''}`}
-                  </Text>
+                  {ex.delta ? <Text style={[styles.recDelta, ex.delta.kind === 'hold' ? styles.deltaFlat : styles.deltaUp]}>{deltaLabel(ex.delta, units)}</Text> : null}
                 </View>
-                {ex.delta ? <Text style={[styles.recDelta, ex.delta.kind === 'hold' ? styles.deltaFlat : styles.deltaUp]}>{deltaLabel(ex.delta, units)}</Text> : null}
-              </View>
-            ))}
+              ),
+            )}
           </View>
 
           {/* Quiet, and only here. A program day is already reusable BY its program; this is for the
@@ -785,6 +807,57 @@ function CheckGlyph({ size = 15, color = '#8FB295' }: { size?: number; color?: s
   );
 }
 
+/**
+ * One conditioning bout on the Record — everything that was measured about it.
+ *
+ * This row exists because a run rendered through the strength row was a name above "1 set", and after
+ * that a single joined string with a hardcoded `mi` in it. A run has more to say than a lift does and it
+ * says it differently: four numbers, none of which is a weight, plus where it was done.
+ *
+ * EVERY CELL IS CONDITIONAL, and that is the point. Incline shows only when it was recorded and only
+ * indoors; pace only when there was enough distance to divide by; distance only when something measured
+ * it. A treadmill bout with no distance typed in renders as a duration and a place, which is exactly
+ * what is known about it — a dash under a "MILES" heading would be a shrug where the app should just
+ * not ask the question.
+ */
+function CardioRecordRow({ name, cardio, units }: { name: string; cardio: CompletionCardio; units: UnitSystem }) {
+  const u = distanceLabel(units);
+  const cells: { value: string; label: string; accent?: boolean }[] = [];
+  if (cardio.distanceMi != null) {
+    cells.push({ value: toDistance(cardio.distanceMi, units).toFixed(2), label: u.toUpperCase() });
+  }
+  if (cardio.durationSec != null) cells.push({ value: fmtClock(cardio.durationSec), label: 'TIME' });
+  if (cardio.paceSecPerMi != null) {
+    cells.push({ value: fmtPace(toPace(cardio.paceSecPerMi, units)), label: `AVG /${u.toUpperCase()}`, accent: true });
+  }
+  // Grade is a treadmill fact. Outdoors it is not something the app measured, so it is not shown.
+  if (cardio.modality === 'indoor' && cardio.inclinePct != null) {
+    cells.push({ value: `${cardio.inclinePct.toFixed(1)}%`, label: 'INCLINE' });
+  }
+
+  const where =
+    cardio.modality === 'indoor' ? 'On the belt' : cardio.modality === 'outdoor' ? 'Outdoors' : null;
+
+  return (
+    <View style={styles.cardioRow}>
+      <View style={styles.recNameLine}>
+        <Text style={styles.recExName}>{name}</Text>
+        {where ? <Text style={styles.cardioWhere}>{where}</Text> : null}
+      </View>
+      {cells.length ? (
+        <View style={styles.cardioCells}>
+          {cells.map((c, i) => (
+            <View key={c.label} style={[styles.cardioCell, i === 0 ? null : styles.cardioCellDiv]}>
+              <Text style={[styles.cardioValue, c.accent ? styles.cardioValueAccent : null]}>{c.value}</Text>
+              <Text style={styles.cardioLabel}>{c.label}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   nameInput: { paddingHorizontal: 13, paddingVertical: 12, minHeight: 46, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, fontSize: 15, color: flColor.cream100 },
   nameHint: { marginTop: 8, fontSize: 12, color: flColor.gray600 },
@@ -853,6 +926,40 @@ const styles = StyleSheet.create({
   recRowText: { gap: 2 },
   recExName: { fontFamily: flFont.sans, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   recTop: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray400 },
+  bestsBlock: {
+    gap: 1,
+    marginBottom: 18,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    borderRadius: flRadius.md,
+    backgroundColor: 'rgba(191,143,79,0.05)',
+    overflow: 'hidden',
+  },
+  bestRow: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 12, paddingHorizontal: 14 },
+  bestMark: { width: 7, height: 7, transform: [{ rotate: '45deg' }], backgroundColor: flColor.bronze400 },
+  bestText: { flex: 1, gap: 2 },
+  bestLabel: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', letterSpacing: 0.2, color: flColor.bronze300 },
+  bestDetail: { fontFamily: flFont.sans, fontSize: 12, lineHeight: 17, color: flColor.gray400 },
+  cardioRow: { gap: 10, paddingVertical: 14, paddingHorizontal: 15, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  cardioWhere: {
+    fontFamily: flFont.sans,
+    fontSize: 9.5,
+    letterSpacing: 1.1,
+    textTransform: 'uppercase',
+    color: flColor.gray600,
+  },
+  cardioCells: { flexDirection: 'row', alignItems: 'stretch' },
+  cardioCell: { flex: 1, alignItems: 'center', gap: 3, paddingVertical: 2 },
+  cardioCellDiv: { borderLeftWidth: 1, borderLeftColor: flColor.charcoal700 },
+  cardioValue: {
+    fontFamily: flFont.display,
+    fontSize: 21,
+    lineHeight: 24,
+    color: flColor.cream100,
+    fontVariant: ['tabular-nums'],
+  },
+  cardioValueAccent: { color: flColor.bronze300 },
+  cardioLabel: { fontFamily: flFont.sans, fontSize: 8.5, letterSpacing: 1.1, color: flColor.gray600 },
   prBadge: { paddingVertical: 3, paddingHorizontal: 9, borderRadius: flRadius.sm, backgroundColor: flColor.bronzeTint, borderWidth: 1, borderColor: flColor.bronze400 },
   prBadgeText: { fontSize: 9, fontWeight: '800', letterSpacing: 1, color: flColor.bronze400 },
   longGame: { marginTop: 26, gap: 8 },

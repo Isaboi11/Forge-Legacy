@@ -1,4 +1,6 @@
 import { supabase } from '@/lib/supabase';
+import { personalBests, type ActivityKind, type PersonalBest, type UnitSystem } from '@/domain/run/run-core';
+import { fetchPriorSessions } from '@/data/runs-live';
 import { e1rm } from '@/domain/workout/metrics';
 import { fetchProgram, fetchProgramCompletedCount } from '@/data/programs-live';
 import { dayLabel, nextSession } from '@/domain/program/progress-core';
@@ -27,30 +29,44 @@ function fmtDate(iso: string | null): string | null {
  * durable from W-9 Finish; W-17 is presentation after). Volume + per-exercise top set are computed from
  * the persisted sets; PRs come from today's personal_records for this workout's exercises.
  */
-/** "24:45" / "1:02:05" — the same clock the logger shows, so the record reads back identically. */
-function clock(sec: number): string {
-  const t = Math.max(0, Math.floor(sec));
-  const h = Math.floor(t / 3600);
-  const m = Math.floor((t % 3600) / 60);
-  const ss = t % 60;
-  const mm = h > 0 ? String(m).padStart(2, '0') : String(m);
-  return h > 0 ? `${h}:${mm}:${String(ss).padStart(2, '0')}` : `${mm}:${String(ss).padStart(2, '0')}`;
-}
-/** Seconds per mile → "8:15". Floored, so a pace never reads ":60". */
-function pace2(secPerMi: number): string {
-  const t = Math.floor(secPerMi);
-  return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
-}
+/* `clock` and `pace2` used to live here — private copies of run-core's `fmtClock` and `fmtPace`, needed
+   only because this layer was formatting the cardio line itself. It no longer formats anything; the
+   screen does, with the shared functions. Two implementations of "seconds to 24:45" is one too many. */
 
 export type ExerciseDelta = { kind: 'weight'; n: number } | { kind: 'reps'; n: number } | { kind: 'hold' };
+
+/** One conditioning bout as it was recorded. Miles and seconds — the screen converts for display. */
+export interface CompletionCardio {
+  distanceMi: number | null;
+  durationSec: number | null;
+  /** Seconds per mile. Null when there isn't enough distance to divide by honestly. */
+  paceSecPerMi: number | null;
+  /** Treadmill grade. Null outdoors, and null indoors when it was flat. */
+  inclinePct: number | null;
+  /** Where it was actually done, as recorded — never the toggle's last position (0097). */
+  modality: 'outdoor' | 'indoor' | null;
+}
+/**
+ * What a run beat — ported from the retired Active Run screen, which owned this and nothing else does.
+ *
+ * Empty for a strength session, and empty for a first-ever run: there is no best to beat yet, and
+ * "your longest ever" on somebody's first walk is a hollow thing to be told.
+ */
 export interface CompletionExercise {
   name: string;
   topSet: string | null; // "225 × 5" (heaviest set by e1RM); null on a cardio block
   /**
-   * A cardio block's actual result — "3.0 mi · 24:45 · 8:15 /mi". The Record used to show a run as a
-   * nameless row with no numbers at all, because it reads weight and reps and a run carries neither.
+   * A cardio block's actual result, STRUCTURED — not a pre-joined string.
+   *
+   * It was `"3.10 mi · 24:45 · 7:59 /mi"`, built here with a hardcoded `mi`, so an athlete on metric
+   * finished a 5 km run and read "3.11 mi" on the one screen that summarises what they just did. This
+   * layer has no business formatting a unit it doesn't know; the screen holds `useUnits`, so it converts
+   * and the record stays in miles as it always does.
+   *
+   * Structured also means the screen can lay a run out as the run it was — where it was done, what the
+   * incline was, whether GPS measured it or the athlete typed it — instead of a single wrapping line.
    */
-  cardio: string | null;
+  cardio: CompletionCardio | null;
   sets: number; // done-set count this workout
   isPR: boolean;
   delta: ExerciseDelta | null; // vs this lift's previous session (null = no prior)
@@ -59,6 +75,8 @@ export type CompletionHero =
   | { kind: 'honor' | 'pr'; eyebrow: string; title: string; note: string; featured: true }
   | { kind: 'milestone' | 'consistency'; eyebrow: string; title: string; note: string; featured: false };
 export interface Completion {
+  /** What this run beat, when it was a run. Empty for a strength session and for a first-ever run. */
+  runBests: PersonalBest[];
   workoutId: string;
   workoutName: string;
   chapterName: string | null;
@@ -88,6 +106,10 @@ interface WorkoutRow {
   duration_sec: number | null;
   chapter_id: string | null;
   reflection: string | null;
+  /** Derived from the session's content at save time — 'running' when the session WAS a run. */
+  activity_type?: string | null;
+  /** Miles, rolled up from the bout's sets by 0096 when the caller passes none. */
+  distance?: number | null;
 }
 interface ExRow {
   id: string;
@@ -105,7 +127,13 @@ interface SetRow {
   incline_pct?: number | null;
 }
 
-export async function fetchCompletion(workoutId: string): Promise<Completion> {
+/**
+ * `units` is here only because `personalBests` writes its own sentences ("0.42 mi farther than your
+ * best"), and a sentence has to know whether it is speaking miles or kilometres. Everything else this
+ * function returns is raw — the cardio bout used to be a pre-joined string with a hardcoded `mi` in it,
+ * and a metric athlete finished a 5 km run and read "3.11 mi" on the screen summarising their session.
+ */
+export async function fetchCompletion(workoutId: string, units: UnitSystem = 'imperial'): Promise<Completion> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -113,7 +141,7 @@ export async function fetchCompletion(workoutId: string): Promise<Completion> {
 
   const { data: wk, error: we } = await supabase
     .from('workouts')
-    .select('workout_name, duration_sec, chapter_id, reflection, saved_at, program_id')
+    .select('workout_name, duration_sec, chapter_id, reflection, saved_at, program_id, activity_type, distance')
     .eq('id', workoutId)
     .single();
   if (we) throw we;
@@ -314,16 +342,21 @@ export async function fetchCompletion(workoutId: string): Promise<Completion> {
     // A cardio block is recognised by what it MEASURED, not by a stored flag — the evidence of what it
     // was is the distance and the clock.
     const bout = exSets.find((x) => (x.distance ?? 0) > 0 || (x.duration_sec ?? 0) > 0) ?? null;
-    let cardio: string | null = null;
-    if (bout) {
-      const parts: string[] = [];
-      if (bout.distance != null && bout.distance > 0) parts.push(`${bout.distance.toFixed(2)} mi`);
-      if (bout.duration_sec != null && bout.duration_sec > 0) parts.push(clock(bout.duration_sec));
-      const pace = bout.distance && bout.duration_sec && bout.distance > 0.05 ? bout.duration_sec / bout.distance : null;
-      if (pace != null) parts.push(`${pace2(pace)} /mi`);
-      if (bout.incline_pct != null && bout.incline_pct > 0) parts.push(`${bout.incline_pct.toFixed(1)}% incline`);
-      cardio = parts.join(' · ') || null;
-    }
+    const dist = bout?.distance != null && bout.distance > 0 ? Number(bout.distance) : null;
+    const dur = bout?.duration_sec != null && bout.duration_sec > 0 ? Number(bout.duration_sec) : null;
+    const cardio: CompletionCardio | null = bout
+      ? {
+          distanceMi: dist,
+          durationSec: dur,
+          // 0.05 mi is the floor under the division: a 90-foot bout would otherwise report a pace, and
+          // it would be a wild one.
+          paceSecPerMi: dist != null && dur != null && dist > 0.05 ? dur / dist : null,
+          // A zero grade is flat, not "no incline recorded" — but showing "0.0%" on every treadmill run
+          // is noise, so it reads as absent. Outdoors it is meaningless and stays null.
+          inclinePct: bout.incline_pct != null && bout.incline_pct > 0 ? Number(bout.incline_pct) : null,
+          modality: bout.modality === 'indoor' || bout.modality === 'outdoor' ? bout.modality : null,
+        }
+      : null;
 
     return {
       name: ex.name,
@@ -335,6 +368,26 @@ export async function fetchCompletion(workoutId: string): Promise<Completion> {
       delta: bout ? null : deltaOf(now, priorTop.get(ex.name) ?? null),
     };
   });
+
+  /*
+   * Run records, for a session that WAS a run.
+   *
+   * Keyed off the workout's own activity_type, which is now derived from its content at save time
+   * (`sessionActivityType`) rather than hard-coded 'strength' — without that this branch could never
+   * fire, because every run was filed as a strength workout carrying a distance nobody looked at.
+   *
+   * A leg day with a cool-down walk stays 'strength' and correctly claims nothing: three minutes on a
+   * treadmill at the end of a session is not a walking record.
+   */
+  const RUN_KIND: Record<string, ActivityKind> = { running: 'run', walking: 'walk', cycling: 'bike' };
+  const runKind = RUN_KIND[String(workout.activity_type ?? '')] ?? null;
+  let runBests: PersonalBest[] = [];
+  if (runKind && workout.distance != null && Number(workout.distance) > 0 && (workout.duration_sec ?? 0) > 0) {
+    // Excluding THIS workout matters: it is already saved by the time this screen loads, so without the
+    // exclusion the run would be compared against itself and could never be a record.
+    const priors = await fetchPriorSessions(runKind, { id: workoutId, savedAt: savedAt ?? new Date().toISOString() });
+    runBests = personalBests(Number(workout.distance), workout.duration_sec ?? 0, priors, runKind, units);
+  }
 
   // ── hero moment: honor > PR > milestone (every 10th) > consistency ──
   let hero: CompletionHero | null = null;
@@ -351,6 +404,7 @@ export async function fetchCompletion(workoutId: string): Promise<Completion> {
 
   return {
     workoutId,
+    runBests,
     workoutName: workout.workout_name ?? 'Workout',
     chapterName,
     dateLabel: fmtDate(savedAt),

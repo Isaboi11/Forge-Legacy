@@ -156,7 +156,6 @@ function RootNavigator() {
             defaults today, and a guard fix must not quietly restyle a screen's presentation. */}
         <Stack.Screen name="chapter/reflect" />
         <Stack.Screen name="template/[id]" />
-        <Stack.Screen name="active-run" />
         <Stack.Screen name="home-gym" />
         <Stack.Screen name="account-settings" />
         <Stack.Screen name="preferences" />

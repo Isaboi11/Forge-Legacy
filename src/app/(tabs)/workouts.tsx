@@ -147,6 +147,21 @@ export default function WorkoutsScreen() {
   };
 
   /** A one-off session, deliberately unattributed — it belongs to no program's progress. */
+  /**
+   * A run that IS the session — the same one-block workout Home builds, on the same card.
+   *
+   * This row used to push `/active-run`, a second full-screen surface for the same activity with its own
+   * controls, its own ending and its own way of writing to the record. That screen is retired; what it
+   * had that the card didn't — the distance goal, the pace target and its cues — moved onto the card,
+   * and the ending it owned is the session's own Finish, which every other workout already uses.
+   */
+  const startTrackedRun = async () => {
+    setStartOpen(false);
+    await writeWorkoutLaunch({ conditioning: { activity: 'run', modality: 'outdoor' } });
+    startWorkout('Outdoor Run');
+    router.push('/workout');
+  };
+
   const startFreestyle = async () => {
     setStartOpen(false);
     await writeWorkoutLaunch({ freestyle: true });
@@ -343,10 +358,7 @@ export default function WorkoutsScreen() {
               LOG records one you already did. Neither replaces the other — a treadmill run or a swim
               has nothing for GPS to measure, and a run you forgot to start still counts. */}
           <Pressable
-            onPress={() => {
-              setStartOpen(false);
-              router.push('/active-run');
-            }}
+            onPress={() => void startTrackedRun()}
             accessibilityRole="button"
             accessibilityLabel="Track a run with GPS"
             style={styles.libRow}

@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { sessionActivityType } from './conditioning';
 import { detectPRs, doneSetCount, e1rm, sessionVolume } from './metrics';
 import type { ActiveSession } from './types';
 
@@ -70,7 +71,9 @@ export async function saveWorkout(session: ActiveSession, partners: string[] = [
 
   const { data, error } = await supabase.rpc('save_workout', {
     p_workout_name: session.workoutName,
-    p_activity_type: session.activityType,
+    // Derived, not taken on trust: every construction site hard-codes 'strength', which stopped being
+    // true when a run could be the whole session.
+    p_activity_type: sessionActivityType(session.exercises, session.activityType),
     p_started_at: session.startedAt,
     p_duration_sec: durationSec,
     p_notes: null,

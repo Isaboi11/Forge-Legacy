@@ -11,6 +11,10 @@ import { useReduceMotion } from '@/lib/settings';
 import {
   activitySymbol,
   avgPaceSec,
+  bumpDistance,
+  bumpPace,
+  bumpSpeed,
+  FIRST_TARGET,
   fmtClock,
   fmtPace,
   isLogged,
@@ -23,9 +27,13 @@ import {
 } from '@/domain/workout/conditioning';
 import {
   currentPaceSec,
+  cueLabel,
   distanceLabel as unitLabel,
+  goalMet,
+  goalProgress,
   routePath,
   signalNote,
+  sustainedCue,
   toDistance,
   toPace,
   toSpeed,
@@ -52,12 +60,21 @@ import type { SessionExercise } from '@/domain/workout/types';
  *
  * ══ THE RUN HAPPENS HERE ══
  *
- * An outdoor block used to hand off to the full-screen Active Run and wait for an answer to come back
- * through storage. That existed because the two screens were separate design documents, not because a
- * run inside a workout is a different thing — and it cost a route change, a request/result round trip and
- * an entire second way for a measurement to go missing, all to collect two numbers. The tracker now runs
- * on this card. `/active-run` remains what it always should have been: the screen for a run that IS the
- * session, reached from Home.
+ * An outdoor block used to hand off to a full-screen Active Run and wait for an answer to come back
+ * through storage. That existed because the two were separate design documents, not because a run inside
+ * a workout is a different thing — and it cost a route change, a request/result round trip and an entire
+ * second way for a measurement to go missing, all to collect two numbers.
+ *
+ * THAT SCREEN IS RETIRED and this card is the only place a run is measured. The duplication was worse
+ * than the round trip: a run could enter the record two ways (a standalone activity row, or cardio legs
+ * on a session), so everything downstream — Activity History, the rank engine, auto-goals, run records —
+ * had two shapes to handle. GPS reporting was written twice and one copy said nothing at all, which is
+ * how a walk around the block looked like a dead app. One surface, one writer, one place to be wrong.
+ *
+ * What that screen had and this now has: a distance goal (a bar along the band, not a ring — this is
+ * 140px with a route in it), a pace target with `sustainedCue`, and a chooser for both when the program
+ * prescribed neither. What did NOT come across is its hold-to-seal ceremony: a run-only session already
+ * ends at the workout's own Finish, and a second seal just for runs is the inconsistency, not a feature.
  *
  * So the two modalities are one shape with one difference. A treadmill gives a clock; outdoors gives a
  * clock AND a measured distance. Same live band, same End, same log form — the outdoor one arrives with
@@ -111,6 +128,18 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave 
 
   const [draft, setDraft] = useState<Draft | null>(null);
   const [distanceText, setDistanceText] = useState('');
+
+  /**
+   * A target the ATHLETE set for this one bout, when the program set none.
+   *
+   * This is what the retired Active Run screen's setup step did, and it is the only part of it worth
+   * keeping: choosing "three miles at 8:30" before you start is a real decision. It is deliberately
+   * NOT written back to the exercise — a program's prescription is the program's, and a target invented
+   * on the day must not look like one afterwards. It lives as long as the card does.
+   *
+   * `null` means "hasn't opened the chooser"; `{mi: null, paceSec: null}` means open on purpose.
+   */
+  const [ownTarget, setOwnTarget] = useState<{ mi: number | null; paceSec: number | null; spdMph: number | null } | null>(null);
   const reduceMotion = useReduceMotion();
 
   const timer = useWallClockTimer(logged ? null : `forge_cardio_timer_v1:${index}`);
@@ -137,7 +166,19 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave 
   const dU = unitLabel(units);
   const d1 = (mi: number | null | undefined) => toDistance(mi ?? 0, units).toFixed(1);
   const speed = usesSpeed(activity);
-  const hasTarget = exercise.targetMi != null;
+
+  /**
+   * The target in force — the program's if it prescribed one, otherwise whatever the athlete chose
+   * before starting. The program always wins: a prescription is not the athlete's to overwrite here.
+   */
+  const targetMi = exercise.targetMi ?? ownTarget?.mi ?? null;
+  const targetPaceSec = exercise.targetPaceSec ?? ownTarget?.paceSec ?? null;
+  const targetSpdMph = exercise.targetSpdMph ?? ownTarget?.spdMph ?? null;
+  const hasTarget = targetMi != null;
+  /** A pace cue needs something to compare against; without one there is nothing honest to say. */
+  const effortTarget = speed ? targetSpdMph : targetPaceSec;
+  /** The program prescribed it, so there is nothing here for the athlete to choose. */
+  const prescribed = exercise.targetMi != null || exercise.targetPaceSec != null || exercise.targetSpdMph != null;
 
   /**
    * One line under the name, saying what this block asks for.
@@ -147,16 +188,16 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave 
    * only claims what was actually prescribed.
    */
   const paceStr = speed
-    ? exercise.targetSpdMph != null
-      ? `${toSpeed(exercise.targetSpdMph, units).toFixed(1)} ${units === 'metric' ? 'km/h' : 'mph'}`
+    ? targetSpdMph != null
+      ? `${toSpeed(targetSpdMph, units).toFixed(1)} ${units === 'metric' ? 'km/h' : 'mph'}`
       : null
-    : exercise.targetPaceSec != null
-      ? `${fmtPace(toPace(exercise.targetPaceSec, units))} /${dU}`
+    : targetPaceSec != null
+      ? `${fmtPace(toPace(targetPaceSec, units))} /${dU}`
       : null;
   const subtitle = hasTarget
     ? paceStr
-      ? `${d1(exercise.targetMi)} ${dU} · hold ${paceStr} or better`
-      : `${d1(exercise.targetMi)} ${dU} — take the pace you want`
+      ? `${d1(targetMi)} ${dU} · hold ${paceStr} or better`
+      : `${d1(targetMi)} ${dU} — take the pace you want`
     : paceStr
       ? `Hold ${paceStr} or better · go as far as you like`
       : `No target — ${VERB[activity].toLowerCase()} what you’ve got`;
@@ -194,8 +235,8 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave 
     // The form's shape is decided ONCE, here, from how the bout was (or will be) recorded — not from
     // whatever the toggle says later. Otherwise editing an outdoor-toggled treadmill run drops its incline.
     const formTreadmill = logged && lm ? lm === 'indoor' : treadmill;
-    const target = exercise.targetMi ?? 1;
-    const pace = exercise.targetPaceSec ?? 540;
+    const target = targetMi ?? 1;
+    const pace = targetPaceSec ?? 540;
     const distanceMi = measured ? measured.distanceMi : (result?.distanceMi ?? target);
     setDraft({
       distanceMi,
@@ -234,6 +275,72 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave 
     : null;
 
   const note = signalNote(tracker.status === 'paused', tracker.weakSignal, tracker.accuracyM);
+
+  /**
+   * The pace cue, ported from the retired Active Run screen.
+   *
+   * `sustainedCue` demands that a 30-second and a 75-second window AGREE before it says anything, which
+   * is what keeps it from flickering "EASE OFF / PUSH" every two seconds on ordinary GPS noise. Null
+   * when there's no target to compare against, and null is the right answer — a cue with nothing behind
+   * it is just a colour.
+   */
+  const cue = effortTarget != null && live ? sustainedCue(tracker.track, effortTarget, speed) : null;
+  /** Fraction of the distance target covered, clamped — or null when the bout is open. */
+  const progress = targetMi != null ? goalProgress(liveMi, targetMi) : null;
+  const reached = goalMet(liveMi, targetMi);
+
+  /**
+   * "Set a target" — the one piece of the retired Active Run setup step worth keeping.
+   *
+   * Hidden entirely when the PROGRAM prescribed something: that target is not the athlete's to re-choose
+   * mid-session, exactly as the set table's Target column isn't. Shown as a link rather than as open
+   * steppers so the default path — press Start, go — stays one tap. Stepping either value below its
+   * minimum clears it back to open, so there is no separate "actually, no target" control.
+   */
+  const targetChooser = prescribed ? null : ownTarget == null ? (
+    <Pressable
+      onPress={() => setOwnTarget({ mi: null, paceSec: null, spdMph: null })}
+      accessibilityRole="button"
+      accessibilityLabel="Set a target for this bout"
+      style={styles.textBtn}
+    >
+      <Text style={styles.textBtnText}>Set a target</Text>
+    </Pressable>
+  ) : (
+    <View style={styles.chooser}>
+      <Field
+        label="DISTANCE"
+        hint=""
+        value={ownTarget.mi == null ? 'Open' : `${toDistance(ownTarget.mi, units).toFixed(1)} ${dU}`}
+        onDec={() => setOwnTarget((t) => (t ? { ...t, mi: bumpDistance(t.mi, -1, FIRST_TARGET[activity].mi) } : t))}
+        onInc={() => setOwnTarget((t) => (t ? { ...t, mi: bumpDistance(t.mi, 1, FIRST_TARGET[activity].mi) } : t))}
+        decLabel="Less distance"
+        incLabel="More distance"
+      />
+      {speed ? (
+        <Field
+          label="SPEED"
+          hint=""
+          value={ownTarget.spdMph == null ? 'Any' : `${toSpeed(ownTarget.spdMph, units).toFixed(1)}`}
+          onDec={() => setOwnTarget((t) => (t ? { ...t, spdMph: bumpSpeed(t.spdMph, -1, FIRST_TARGET[activity].spdMph) } : t))}
+          onInc={() => setOwnTarget((t) => (t ? { ...t, spdMph: bumpSpeed(t.spdMph, 1, FIRST_TARGET[activity].spdMph) } : t))}
+          decLabel="Slower target"
+          incLabel="Faster target"
+        />
+      ) : (
+        <Field
+          label="PACE"
+          hint=""
+          value={ownTarget.paceSec == null ? 'Any' : `${fmtPace(toPace(ownTarget.paceSec, units))} /${dU}`}
+          /* `−` is FASTER for a pace: the numeral going down is the runner speeding up. */
+          onDec={() => setOwnTarget((t) => (t ? { ...t, paceSec: bumpPace(t.paceSec, -1, FIRST_TARGET[activity].paceSec) } : t))}
+          onInc={() => setOwnTarget((t) => (t ? { ...t, paceSec: bumpPace(t.paceSec, 1, FIRST_TARGET[activity].paceSec) } : t))}
+          decLabel="Faster target"
+          incLabel="Slower target"
+        />
+      )}
+    </View>
+  );
 
   return (
     <View style={styles.card}>
@@ -339,12 +446,29 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave 
                         : `${fmtPace(toPace(livePaceSec, units))} /${dU}`}
                   </Text>
                 </View>
+                {cue ? (
+                  <View style={[styles.cue, cue === 'on' ? styles.cueOn : styles.cueOff]}>
+                    <Text style={[styles.cueText, cue === 'on' ? styles.cueTextOn : null]}>{cueLabel(cue, speed)}</Text>
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
+
+            {/* THE GOAL, as a bar rather than the retired screen's ring.
+                The ring owned a full-screen layout; this band is 140px tall with a route in it, and a
+                ring here would either shrink to unreadable or crowd out the number it describes. The
+                information is identical: how much of the target is behind you. */}
+            {tracking && progress != null ? (
+              <View style={styles.goalTrack} pointerEvents="none">
+                <View style={[styles.goalFill, { width: `${Math.round(progress * 100)}%` }, reached ? styles.goalFillMet : null]} />
               </View>
             ) : null}
 
             <Text style={styles.bandCaption}>
               {tracking
-                ? note
+                ? reached
+                  ? `${d1(targetMi)} ${dU} target reached · keep going if you like`
+                  : note
                 : traced
                   ? `${d1(result?.distanceMi)} ${dU} · ${fmtClock(result?.timeSec)}`
                   : loggedIndoors
@@ -410,15 +534,15 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave 
             An open block draws NOTHING here. It used to render "DISTANCE · Open" beside a "LAST · —" that
             was never once populated — two cells of chrome saying there is nothing to say, on the card
             that most needed to be short. The subtitle already says it in words. */}
-        {hasTarget || exercise.targetPaceSec != null || exercise.targetSpdMph != null ? (
+        {hasTarget || effortTarget != null ? (
           <View style={styles.strip}>
-            {hasTarget ? <StripCell label="TARGET" value={`${d1(exercise.targetMi)} ${dU}`} big accent first /> : null}
+            {hasTarget ? <StripCell label="TARGET" value={`${d1(targetMi)} ${dU}`} big accent first /> : null}
             {speed
-              ? exercise.targetSpdMph != null && (
-                  <StripCell label="TARGET SPEED" value={`${toSpeed(exercise.targetSpdMph, units).toFixed(1)}`} first={!hasTarget} big={!hasTarget} accent={!hasTarget} />
+              ? targetSpdMph != null && (
+                  <StripCell label="TARGET SPEED" value={`${toSpeed(targetSpdMph, units).toFixed(1)}`} first={!hasTarget} big={!hasTarget} accent={!hasTarget} />
                 )
-              : exercise.targetPaceSec != null && (
-                  <StripCell label="TARGET PACE" value={`${fmtPace(toPace(exercise.targetPaceSec, units))} /${dU}`} first={!hasTarget} big={!hasTarget} accent={!hasTarget} />
+              : targetPaceSec != null && (
+                  <StripCell label="TARGET PACE" value={`${fmtPace(toPace(targetPaceSec, units))} /${dU}`} first={!hasTarget} big={!hasTarget} accent={!hasTarget} />
                 )}
           </View>
         ) : null}
@@ -512,6 +636,7 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave 
         ) : treadmill ? (
           /* ── STATE B · treadmill, not yet run ─────────────────────────── */
           <View style={styles.form}>
+            {timer.elapsedSec === 0 && !timer.running ? targetChooser : null}
             <View style={styles.formActions}>
               <View style={styles.half}>
                 <Button
@@ -594,6 +719,7 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave 
               </>
             ) : (
               <>
+                {targetChooser}
                 <Button
                   variant="primary"
                   fullWidth
@@ -705,6 +831,16 @@ const styles = StyleSheet.create({
   liveMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 7 },
   liveMeta: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray400, fontVariant: ['tabular-nums'] },
   liveMetaDot: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray600 },
+  chooser: { gap: 8, marginBottom: 2 },
+  cue: { marginTop: 8, paddingHorizontal: 10, paddingVertical: 3.5, borderRadius: 999, borderWidth: 1 },
+  cueOn: { borderColor: 'rgba(122,155,110,0.5)', backgroundColor: 'rgba(122,155,110,0.14)' },
+  cueOff: { borderColor: flColor.bronzeBorder, backgroundColor: 'rgba(191,143,79,0.1)' },
+  cueText: { fontFamily: flFont.sans, fontSize: 9.5, letterSpacing: 1.3, color: flColor.bronze400 },
+  cueTextOn: { color: flColor.greenMuted },
+  /* The distance goal, along the foot of the band. */
+  goalTrack: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 3, backgroundColor: 'rgba(255,255,255,0.06)' },
+  goalFill: { height: 3, backgroundColor: flColor.bronze400 },
+  goalFillMet: { backgroundColor: flColor.greenMuted },
   /**
    * `flex: none` is LOAD-BEARING. The scroll body is a column flex container, so children default to
    * shrinking — and because this card clips (for the rounded band) a shrunk card silently clips its own

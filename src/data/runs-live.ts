@@ -24,13 +24,25 @@ export const ACTIVITY_TYPE: Record<ActivityKind, DistanceActivity> = {
  * than defaulted, because a session with no duration would compute as infinitely fast and silently
  * become a record nothing could ever beat.
  */
-export async function fetchPriorSessions(kind: ActivityKind): Promise<PriorSession[]> {
+export async function fetchPriorSessions(
+  kind: ActivityKind,
+  /**
+   * The session being judged, so it cannot be its own field.
+   *
+   * The Active Run screen never needed this: it computed bests BEFORE saving, so the run in question
+   * did not exist in the table yet. Workout Complete runs AFTER the save, and without an exclusion
+   * every run would be compared against itself and could never be a record — a silent "no bests" on
+   * exactly the session that earned them. `before` handles the same problem from the other side: a
+   * later session must not retroactively demote an earlier one when its Record is re-opened.
+   */
+  exclude?: { id: string; savedAt: string },
+): Promise<PriorSession[]> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const { data, error } = await supabase
+  let q = supabase
     .from('workouts')
     .select('distance, duration_sec')
     .eq('athlete_id', user.id)
@@ -38,6 +50,9 @@ export async function fetchPriorSessions(kind: ActivityKind): Promise<PriorSessi
     .eq('state', 'saved')
     .not('distance', 'is', null)
     .gt('duration_sec', 0);
+  if (exclude) q = q.neq('id', exclude.id).lte('saved_at', exclude.savedAt);
+
+  const { data, error } = await q;
 
   // No history reads as "no bests to beat", which is the safe direction — it withholds a claim rather
   // than making one.

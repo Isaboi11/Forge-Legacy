@@ -249,3 +249,30 @@ export function parseDistance(raw: string): number | null {
   if (!Number.isFinite(n) || n <= 0 || n > 500) return null;
   return n;
 }
+
+// ── what a session IS ───────────────────────────────────────────────────────
+
+/**
+ * The activity type a saved session should be filed under, derived from what is actually in it.
+ *
+ * WHY THIS HAS TO BE DERIVED. A session's `activityType` was hard-coded `'strength'` at every
+ * construction site, which was true while the logger only ever held lifts. It stopped being true the
+ * moment a run could BE the session: "Outdoor Run" was saved as a strength workout that happened to
+ * carry three miles, so Activity History filed it with the bench presses, the rank engine counted it as
+ * STRENGTH, and a prior-sessions lookup for run records — which asks for `activity_type = 'running'` —
+ * could not see it at all. The distance was right there in the row and nothing would look at it.
+ *
+ * ONLY a session that is entirely one kind of cardio changes type. A leg day with a cool-down walk is a
+ * strength workout; calling it a walk because of the last five minutes would be worse than the bug.
+ */
+export function sessionActivityType(
+  exercises: { kind?: 'strength' | 'cardio'; activity?: CardioActivity }[],
+  fallback: string,
+): string {
+  if (!exercises.length) return fallback;
+  const kinds = new Set(exercises.map((e) => (e.kind === 'cardio' ? (e.activity ?? 'run') : 'strength')));
+  if (kinds.size !== 1) return fallback;
+  const only = [...kinds][0];
+  if (only === 'strength') return fallback;
+  return { run: 'running', walk: 'walking', bike: 'cycling' }[only as CardioActivity];
+}
