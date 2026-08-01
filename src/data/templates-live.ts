@@ -2,6 +2,21 @@ import { supabase } from '@/lib/supabase';
 import { fetchActiveProgram, fetchProgramCompletedCount } from './programs-live';
 import { nextSession } from '@/domain/program/progress-core';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
+import {
+  copyName,
+  durationText,
+  estimatedMinutes,
+  groupBySection,
+  historyDate,
+  schemeText,
+  statDate,
+  type TemplateSection,
+} from '@/domain/workout/template-format';
+
+// The pure display rules live in the domain module so `node --test` can load them — this file imports
+// the Supabase client, which it cannot. Re-exported so a screen has one import, not two.
+export { copyName, durationText, estimatedMinutes, historyDate, schemeText, statDate };
+export type { TemplateSection };
 
 /**
  * Workout templates (migration 0091) — a session you already did and want again.
@@ -16,27 +31,52 @@ export interface TemplateExercise {
   name: string;
   sets: number;
   targetReps: number;
+  /**
+   * Which block it belongs to. Absent on a template saved before 0095 — those read as 'main', which is
+   * what they were, since 0091 dropped the section when deriving the template in the first place.
+   */
+  section?: TemplateSection;
 }
 
 export interface WorkoutTemplate {
   id: string;
   name: string;
   exercises: TemplateExercise[];
+  /** DERIVED from `workouts.template_id` (0095), never a stored counter — see the migration header. */
+  useCount: number;
   lastUsedAt: string | null;
   createdAt: string;
 }
 
+/** One finished session trained from this template. */
+export interface TemplateSession {
+  /** The session's own workout — so a history row opens ITS session, not a generic activity screen. */
+  workoutId: string;
+  at: string;
+  durationSec: number | null;
+  note: string | null;
+}
+
+export interface TemplateDetail extends WorkoutTemplate {
+  history: TemplateSession[];
+}
+
 const MISSING = 'Templates aren’t available yet — migration 0091 hasn’t been applied.';
+const DETAIL_MISSING = 'Template details aren’t available yet — migration 0095 hasn’t been applied.';
+
+const toExercise = (e: Record<string, unknown>): TemplateExercise => ({
+  catalogKey: (e.catalogKey as string) ?? null,
+  name: String(e.name ?? 'Exercise'),
+  sets: Number(e.sets ?? 0),
+  targetReps: Number(e.targetReps ?? 0),
+  section: (['warmup', 'main', 'cooldown'] as TemplateSection[]).includes(e.section as TemplateSection) ? (e.section as TemplateSection) : 'main',
+});
 
 const toTemplate = (r: Record<string, unknown>): WorkoutTemplate => ({
   id: String(r.id),
   name: String(r.name),
-  exercises: ((r.exercises ?? []) as Record<string, unknown>[]).map((e) => ({
-    catalogKey: (e.catalogKey as string) ?? null,
-    name: String(e.name ?? 'Exercise'),
-    sets: Number(e.sets ?? 0),
-    targetReps: Number(e.targetReps ?? 0),
-  })),
+  exercises: ((r.exercises ?? []) as Record<string, unknown>[]).map(toExercise),
+  useCount: Number(r.use_count ?? 0),
   lastUsedAt: (r.last_used_at as string) ?? null,
   createdAt: String(r.created_at),
 });
@@ -74,20 +114,58 @@ export async function fetchPlannedSession(): Promise<{ name: string; exercises: 
   }
 }
 
+/**
+ * The library, ordered by when each template was last actually trained.
+ *
+ * Through the RPC rather than the table, because `use_count` and `last_used_at` are DERIVED from
+ * `workouts.template_id` (0095). The direct select ordered by the STORED `last_used_at`, which nothing
+ * has ever written — so "most recently used" silently meant "most recently created", and the list would
+ * have disagreed with the count on each template's own detail screen.
+ */
 export async function fetchTemplates(): Promise<WorkoutTemplate[]> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
-  const { data, error } = await supabase
-    .from('workout_templates')
-    .select('id, name, exercises, last_used_at, created_at')
-    .eq('athlete_id', user.id)
-    .order('last_used_at', { ascending: false, nullsFirst: false })
-    .order('created_at', { ascending: false });
+  const { data, error } = await supabase.rpc('workout_templates_list');
   // An unapplied migration reads as "no templates", which is the safe direction.
   if (error) return [];
   return ((data ?? []) as Record<string, unknown>[]).map(toTemplate);
+}
+
+/** One template with everything W-27 renders. Null when it isn't yours or no longer exists. */
+export async function fetchTemplateDetail(id: string): Promise<TemplateDetail | null> {
+  const { data, error } = await supabase.rpc('template_detail', { p_template: id });
+  if (error) {
+    if ((error as { code?: string }).code === 'PGRST202') throw new Error(DETAIL_MISSING);
+    throw error;
+  }
+  if (!data) return null;
+  const d = data as Record<string, unknown>;
+  return {
+    ...toTemplate(d),
+    history: ((d.history ?? []) as Record<string, unknown>[]).map((h) => ({
+      workoutId: String(h.workout_id),
+      at: String(h.at),
+      durationSec: h.duration_sec == null ? null : Number(h.duration_sec),
+      note: (h.note as string) ?? null,
+    })),
+  };
+}
+
+/** Copy a template — lands you on the copy, so the thing you just made is the thing you're looking at. */
+export async function duplicateTemplate(id: string): Promise<string | null> {
+  const src = await fetchTemplateDetail(id);
+  if (!src) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not signed in');
+  const { data, error } = await supabase
+    .from('workout_templates')
+    // The copy starts its own history at zero — it has never been trained, and `use_count` is derived
+    // from workouts anyway, so there is nothing to reset and nothing that could be inherited by mistake.
+    .insert({ athlete_id: user.id, name: copyName(src.name), exercises: src.exercises })
+    .select('id')
+    .single();
+  if (error) throw error;
+  return (data as { id: string }).id;
 }
 
 /**
@@ -121,4 +199,15 @@ export function templateSummary(t: WorkoutTemplate): string {
   const lifts = t.exercises.length;
   const sets = t.exercises.reduce((n, e) => n + e.sets, 0);
   return `${lifts} ${lifts === 1 ? 'lift' : 'lifts'} · ${sets} ${sets === 1 ? 'set' : 'sets'}`;
+}
+
+/** "6 exercises · ~48 min" — the hero's one line. */
+export function heroSummary(t: WorkoutTemplate): string {
+  const n = t.exercises.length;
+  return `${n} ${n === 1 ? 'exercise' : 'exercises'} · ~${estimatedMinutes(t.exercises)} min`;
+}
+
+/** The three blocks, empties dropped. */
+export function templateSections(t: WorkoutTemplate) {
+  return groupBySection(t.exercises);
 }

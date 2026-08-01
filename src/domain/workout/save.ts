@@ -62,6 +62,7 @@ export async function saveWorkout(session: ActiveSession, partners: string[] = [
     p_program_id: session.programId ?? null,
     p_distance: null,
     p_distance_unit: null,
+    p_template_id: session.templateId ?? null,
   });
   if (error) throw error;
 

@@ -28,4 +28,11 @@ export interface ActiveSession {
   exercises: SessionExercise[];
   /** Set when the session was launched from a program — attributes the saved workout to it (0018). */
   programId?: string;
+  /**
+   * Set when the session was launched from a saved template — attributes the saved workout back (0095),
+   * which is what makes the template's "Times used" and session history real. Derived from these rows
+   * rather than counted, so an abandoned start never inflates the number: a session you didn't save is
+   * not a session you trained.
+   */
+  templateId?: string;
 }

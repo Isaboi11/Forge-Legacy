@@ -128,6 +128,16 @@ export default function TemplatesScreen() {
           <View style={styles.stack}>
             {list.map((t) => (
               <View key={t.id} style={[styles.card, t.lastUsedAt ? styles.cardUsed : null]}>
+                {/* The card body opens W-27. Only the body — the footer's Start and Remove are their own
+                    targets, and nesting them inside one big pressable would make every Start also a
+                    navigation. The card used to be inert entirely: you could save a template and never
+                    open it. */}
+                <Pressable
+                  onPress={() => router.push({ pathname: '/template/[id]', params: { id: t.id } })}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${t.name}`}
+                  style={({ pressed }) => (pressed ? styles.pressed : null)}
+                >
                 <View style={styles.cardTop}>
                   <View style={styles.cardHead}>
                     <View style={styles.cardHeadText}>
@@ -158,6 +168,7 @@ export default function TemplatesScreen() {
                     ) : null}
                   </View>
                 </View>
+                </Pressable>
 
                 <View style={styles.cardFoot}>
                   <Pressable

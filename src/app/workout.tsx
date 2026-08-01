@@ -211,10 +211,15 @@ export default function WorkoutScreen() {
               workoutName: launch.workoutName ?? t.name,
               activityType: 'strength',
               startedAt: new Date().toISOString(),
+              // Attributes the saved workout back to the template (0095) — what makes its "Times used"
+              // and session history real, and what makes them count only sessions actually finished.
+              templateId: t.id,
               exercises: t.exercises.map((e, i) => ({
                 name: e.name,
                 catalogKey: e.catalogKey ?? undefined,
-                section: 'main',
+                // The template's own section, not a flat 'main' — warm-up and cool-down survived the
+                // round trip as of 0095, and the logger is where that has to show up.
+                section: e.section ?? 'main',
                 position: i,
                 sets: Array.from({ length: Math.max(1, e.sets) }, (_, si) => ({
                   setIndex: si,
