@@ -12,6 +12,7 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { useUnits } from '@/lib/settings';
 import { useRunTracker } from '@/hooks/useRunTracker';
+import { useKeepScreenAwake } from '@/hooks/useKeepScreenAwake';
 import { saveActivity } from '@/domain/workout/save';
 import { ACTIVITY_TYPE, fetchPriorSessions } from '@/data/runs-live';
 import {
@@ -129,6 +130,9 @@ export default function ActiveRunScreen() {
   const holdTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const tracker = useRunTracker(kind);
+  // The tracker is foreground-only, so a sleeping screen is a stopped run. Held for the live phase
+  // only — a wake lock that outlasts the session would hold the screen on for whatever comes next.
+  useKeepScreenAwake(phase === 'live');
   const { data: priors } = useQuery(() => fetchPriorSessions(kind), [kind]);
 
   const mi = totalMiles(tracker.track);
@@ -362,7 +366,8 @@ export default function ActiveRunScreen() {
             </View>
           ) : (
             <Text style={styles.trackHint}>
-              Your phone measures distance and pace by GPS. Keep the app open — this tracks while you’re in it, not in the background.
+              Your phone measures distance and pace by GPS. We’ll keep your screen from sleeping while you
+              train — just leave this open, since tracking pauses if you switch away.
             </Text>
           )}
 
