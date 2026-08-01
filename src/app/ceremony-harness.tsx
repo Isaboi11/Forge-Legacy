@@ -16,10 +16,16 @@ import { chapterSealConfirm, destructiveConfirm, type ConfirmConfig } from '@/do
 /**
  * ⚠ DEV HARNESS — NOT a product screen and NOT in the tab bar.
  *
- * Every trigger here is invented: a goal "Squat 315 lbs" in a chapter called "The Rebuild", a seal and a
- * delete-confirm against that same chapter, and the only links in the app to `/post/[id]`, which renders
- * a feed of invented athletes. That was always the point — it exists to exercise the overlay foundation
- * (ceremony Modal, locked-order queue, Toast, ConfirmSheet) without having to earn anything first.
+ * Every trigger here is invented: a goal "Squat 315 lbs" in a chapter called "The Rebuild", and a seal
+ * and delete-confirm against that same chapter. That was always the point — it exists to exercise the
+ * overlay foundation (ceremony Modal, locked-order queue, Toast, ConfirmSheet) without having to earn
+ * anything first.
+ *
+ * The five Post Detail buttons are GONE. They were the only links in the app to `/post/[id]`, and that
+ * screen is now deferred to `src/deferred/post-detail.tsx`: because a file in `src/app/` is a route and
+ * Metro does not tree-shake, its import of the fixture chain put every invented athlete into the
+ * PRODUCTION bundle, readable in source, no matter that the screen redirected on `!__DEV__`. Losing the
+ * preview is the price of that; the live post surface is `squad-post/[id]`, on real data.
  *
  * ══ WHY IT IS NOW GATED ══
  *
@@ -114,25 +120,6 @@ export default function CeremonyHarness() {
         </Button>
         <Button variant="secondary" fullWidth onPress={() => openShare({ shareType: 'pr' })}>
           Open SH-1 · PR
-        </Button>
-
-        <View style={styles.divider} />
-        <Text style={styles.note}>Post Detail (full-screen keepsake):</Text>
-
-        <Button variant="secondary" fullWidth onPress={() => router.push({ pathname: '/post/[id]', params: { id: 'honor' } })}>
-          Open Post Detail · Honor (plate + comments)
-        </Button>
-        <Button variant="secondary" fullWidth onPress={() => router.push({ pathname: '/post/[id]', params: { id: 'pr' } })}>
-          Open Post Detail · PR (achievement)
-        </Button>
-        <Button variant="secondary" fullWidth onPress={() => router.push({ pathname: '/post/[id]', params: { id: 'program' } })}>
-          Open Post Detail · Program
-        </Button>
-        <Button variant="secondary" fullWidth onPress={() => router.push({ pathname: '/post/[id]', params: { id: 'event' } })}>
-          Open Post Detail · Event
-        </Button>
-        <Button variant="secondary" fullWidth onPress={() => router.push({ pathname: '/post/[id]', params: { id: 'poll' } })}>
-          Open Post Detail · Poll
         </Button>
 
         <View style={styles.divider} />
