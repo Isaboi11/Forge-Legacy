@@ -11,6 +11,9 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { writeExerciseInbox, type PickedExercise } from '@/lib/exercise-inbox';
 import { CONDITIONING } from '@/domain/workout/conditioning';
+import { fetchHomeGym } from '@/data/home-gym-live';
+import { canDoExercise } from '@/domain/home-gym/equipment';
+import { getGearOnly, setGearOnly } from '@/lib/gear-filter';
 import { writeBuilderInbox, type BuilderSection } from '@/lib/builder-inbox';
 import { addFavorite, fetchFavoriteKeys, fetchRecentExerciseKeys, removeFavorite } from '@/data/exercise-prefs-live';
 import { useQuery } from '@/lib/useQuery';
@@ -25,6 +28,7 @@ import {
   filtersActive,
   itemByKey,
   MUSCLE_FILTER_GROUPS,
+  PICKER_DB,
   type Difficulty,
   type ExerciseCategoryKey,
   type PickerFilters,
@@ -136,6 +140,37 @@ export default function ExercisePickerScreen() {
     void (next ? addFavorite(key) : removeFavorite(key)).then(() => refetchFavorites());
   };
 
+  /**
+   * THE GEAR GATE.
+   *
+   * `canDoExercise` has existed, fully tested, since the Home Gym profile shipped — and nothing called
+   * it. So an athlete told the app they own dumbbells and a bench, then got all 794 exercises anyway,
+   * most of which they cannot do.
+   *
+   * `null` means the profile was NEVER SET UP, which is not the same as owning nothing: filtering on it
+   * would cut the catalog to bodyweight for someone who simply hasn't answered yet. So the gate only
+   * engages once there is an answer to gate on.
+   */
+  const { data: ownedGear } = useQuery(fetchHomeGym, []);
+  const { data: storedGearOnly } = useQuery(getGearOnly, []);
+  const [gearOverride, setGearOverride] = useState<boolean | null>(null);
+  const hasGymProfile = ownedGear != null;
+  // Default ON once a profile exists — that is the whole point — but the athlete's own choice wins and
+  // persists, because "My Home Gym" is what you own at HOME and you may be standing in a commercial gym.
+  const gearOnly = hasGymProfile && (gearOverride ?? storedGearOnly ?? true);
+
+  const pool = useMemo(
+    () => (gearOnly && ownedGear ? PICKER_DB.filter((x) => canDoExercise({ key: x.key, equipId: x.equipId }, ownedGear)) : PICKER_DB),
+    [gearOnly, ownedGear],
+  );
+  const hiddenByGear = PICKER_DB.length - pool.length;
+
+  const toggleGearOnly = () => {
+    const next = !gearOnly;
+    setGearOverride(next);
+    void setGearOnly(next);
+  };
+
   const sections = buildSections({
     search,
     filters: applied,
@@ -143,6 +178,7 @@ export default function ExercisePickerScreen() {
     replacingName,
     favorites,
     recents: recentData ?? [],
+    pool,
   });
   const hasFilters = filtersActive(applied);
 
@@ -307,6 +343,23 @@ export default function ExercisePickerScreen() {
             accessibilityLabel="Search exercises"
           />
         </View>
+        {/* The gate is never silent. When it is on it says so and says how many it is holding back, and
+            one tap sees everything — so a short list is always explained, never just short. */}
+        {hasGymProfile ? (
+          <View style={styles.chipRow}>
+            <Pressable
+              onPress={toggleGearOnly}
+              accessibilityRole="button"
+              accessibilityState={{ selected: gearOnly }}
+              accessibilityLabel={gearOnly ? `Showing only what you own. ${hiddenByGear} exercises hidden. Tap to show everything.` : 'Showing every exercise. Tap to narrow to your own equipment.'}
+              style={[styles.appliedChip, !gearOnly && styles.gearChipOff]}
+            >
+              <Text style={[styles.appliedChipText, !gearOnly && styles.gearChipTextOff]}>
+                {gearOnly ? `My gear · ${hiddenByGear} hidden` : 'Showing everything'}
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
         {hasFilters ? (
           <View style={styles.chipRow}>
             {appliedChips.map((c) => (
@@ -573,6 +626,8 @@ const styles = StyleSheet.create({
   search: { borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, borderRadius: flRadius.md, paddingVertical: 11, paddingLeft: 40, paddingRight: 12, fontFamily: flFont.sans, fontSize: 14, color: flColor.cream100 },
   chipRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 7 },
   appliedChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 5, paddingLeft: 11, paddingRight: 8, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  gearChipOff: { borderColor: flColor.charcoal600, backgroundColor: 'transparent' },
+  gearChipTextOff: { color: flColor.gray400 },
   appliedChipText: { fontSize: 11, fontWeight: '600', color: flColor.bronze300 },
   clearBtn: { paddingVertical: 5, paddingHorizontal: 10 },
   clearText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray600 },

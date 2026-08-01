@@ -12,6 +12,7 @@ import {
   SYSTEM_MUSCLE_IDS,
   HIDDEN_EXERCISE_IDS,
 } from '../catalog-core.ts';
+import { canDoExercise } from '../../home-gym/equipment.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SRC = join(HERE, '..', '..', 'exercise-relationships', 'source');
@@ -155,4 +156,33 @@ test('the equipment filter covers every equipment type the catalog actually uses
   const used = new Set(exercises.map((e) => e.equipmentId));
   const missing = [...used].filter((id) => !offered.has(id));
   assert.deepEqual(missing, [], 'an equipment type in use but not filterable would strand exercises');
+});
+
+// ── the gear gate ────────────────────────────────────────────────────────────
+// The Exercise Picker searches a POOL, and narrows that pool to what the athlete owns. `buildSections`
+// itself can't be exercised here — `data.ts` imports the JSON catalog directly, which is why this suite
+// builds its own DB — so these lock the gate, which is the part that was missing.
+
+test('the gear gate genuinely cuts the list — a home athlete sees a fraction of the catalog', () => {
+  const pool = DB.filter((x) => canDoExercise({ key: x.key, equipId: x.equipId }, ['dumbbells', 'bench']));
+  assert.ok(pool.length > 100, 'a dumbbell athlete still has plenty to train');
+  assert.ok(pool.length < DB.length * 0.5, `expected well under half the catalog, got ${pool.length}/${DB.length}`);
+});
+
+test('owning nothing still leaves a real bodyweight catalog, not an empty screen', () => {
+  const pool = DB.filter((x) => canDoExercise({ key: x.key, equipId: x.equipId }, []));
+  assert.ok(pool.length > 100, `owning nothing should still train, got ${pool.length}`);
+});
+
+test('more equipment never hides an exercise it previously showed', () => {
+  const few = new Set(DB.filter((x) => canDoExercise({ key: x.key, equipId: x.equipId }, ['dumbbells'])).map((x) => x.key));
+  const many = new Set(DB.filter((x) => canDoExercise({ key: x.key, equipId: x.equipId }, ['dumbbells', 'bench', 'barbell', 'rack'])).map((x) => x.key));
+  for (const k of few) assert.ok(many.has(k), `${k} vanished after buying MORE equipment`);
+});
+
+test('the gate never lets through something the athlete cannot do', () => {
+  const owned = ['dumbbells', 'bench'];
+  for (const x of DB.filter((e) => canDoExercise({ key: e.key, equipId: e.equipId }, owned))) {
+    assert.ok(canDoExercise({ key: x.key, equipId: x.equipId }, owned), `${x.key} passed the filter but fails the gate`);
+  }
 });

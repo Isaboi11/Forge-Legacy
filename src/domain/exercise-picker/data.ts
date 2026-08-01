@@ -198,6 +198,12 @@ export function buildSections(opts: {
   favorites?: readonly string[];
   /** Recently-logged catalog keys, most recent first. */
   recents?: readonly string[];
+  /**
+   * The catalog to search, defaulting to all of it. Passed in rather than filtered here so the gear
+   * gate stays where it belongs (`home-gym/equipment`) and this module keeps knowing nothing about
+   * what an athlete owns.
+   */
+  pool?: readonly PickerItem[];
 }): PickerSections {
   const { search, filters, isReplace, replacingName } = opts;
   const favorites = opts.favorites ?? [];
@@ -211,7 +217,7 @@ export function buildSections(opts: {
   const searching = search.trim().length > 0;
   const browsing = !searching && !filtersActive(filters);
 
-  const matched = PICKER_DB.filter((x) => matchItem(x, search, filters, exclude));
+  const matched = (opts.pool ?? PICKER_DB).filter((x) => matchItem(x, search, filters, exclude));
 
   const best = isReplace && browsing && replacingName ? bestReplacements(replacingName, matched) : [];
   const bestKeys = new Set(best.map((b) => b.key));
