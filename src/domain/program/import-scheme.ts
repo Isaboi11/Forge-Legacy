@@ -16,17 +16,21 @@ export interface Scheme {
 }
 
 /** `3x8`, `3 x 8`, `3×8`, `5X5`, `4x8-10` → the sets and the FLOOR of the rep range. */
-const COMPACT = /(\d{1,2})\s*[x×]\s*(\d{1,3})/i;
+const COMPACT = /(?<![\d.])(\d{1,2})\s*[x×]\s*(\d{1,3})(?![\d.])/i;
 /**
  * "4/8" — sets over reps, which is how a split gets texted.
+ *
+ * Guarded on BOTH sides against a longer number: "5/3/1" is a loading scheme, not five sets of three,
+ * and "135 x 5" is a weight — which this read as ONE set of THIRTY-FIVE before the guard, by slicing the
+ * first two digits off a three-digit number.
  *
  * Ambiguous against per-side reps ("8/8"), and deliberately resolved toward sets/reps: in a line that
  * names an exercise, the first number is almost always how many times you do it. Per-side counts turn up
  * in a Reps COLUMN, which never reaches here.
  */
-const SLASHED = /(\d{1,2})\s*\/\s*(\d{1,3})\b/;
+const SLASHED = /(?<![\d.\/])(\d{1,2})\s*\/\s*(\d{1,3})(?![\d.\/])/;
 /** "4 sets", "4 sets of 12", "3 sets x 10" — the label carries the meaning, wherever it sits. */
-const SETS_LABELLED = /(\d{1,2})\s*sets?\b(?:\s*(?:of|x|×)\s*(\d{1,3}))?/i;
+const SETS_LABELLED = /(?<![\d.])(\d{1,2})\s*sets?\b(?:\s*(?:of|x|×)\s*(\d{1,3}))?/i;
 /** "8 reps", "6-8 reps", "12–15 reps", "8/8 reps" — ranges read as their floor. */
 const REPS_LABELLED = /(\d{1,3})(?:\s*[-–—/]\s*\d{1,3})?\s*reps?\b/gi;
 /** A trailing load — "@135", "@ 225 lb", "@75%". Never part of the name. */
@@ -185,6 +189,16 @@ export function weekHeading(line: string): number | null {
 }
 
 /**
+ * What is left of a line after its week heading — "Week 1: Squat 5x5" carries an exercise.
+ *
+ * Consuming the whole line threw that exercise away and, for a program written one week per line, threw
+ * away every exercise in it and reported "no exercises found". Empty when the heading stood alone.
+ */
+export function afterWeekHeading(line: string): string {
+  return line.trim().replace(WEEK_WORD, '').replace(LEADING_DECORATION, '').replace(/^[\s:;,\-–—|]+/, '').trim();
+}
+
+/**
  * Is this line the name of a day rather than an exercise?
  *
  * Only asked of lines carrying NO sets×reps, because anything with a scheme is work. Beyond that it
@@ -216,4 +230,25 @@ export function cleanDayName(line: string): string {
       .replace(/\s+/g, ' ')
       .trim() || line.trim()
   );
+}
+
+/**
+ * A line that is a SET rather than an exercise — "65% x 5", "135 x 5", "225 x 1", "85% x 5+".
+ *
+ * This is how 5/3/1, Sheiko and every wave-loading template are written: the exercise is named once and
+ * each line beneath it is one set at a different load. Read as exercises they produced a day full of
+ * lifts called "65% x 5"; read as sets they are three sets of five, which the program model can hold.
+ *
+ * The LOAD is deliberately discarded. A program prescribes sets and reps here; the weight is what the
+ * athlete logs on the day, and inventing a target load from somebody else's percentages would be
+ * prescribing a number nobody wrote.
+ */
+const LOAD_SET = /^(\d{1,3}(?:\.\d+)?)\s*(?:%|lbs?|kgs?)?\s*[x×]\s*(\d{1,3})\s*\+?$/i;
+
+/** The rep count when a line is one loaded set, or null when the line is something else. */
+export function loadedSetReps(line: string): number | null {
+  const m = line.trim().match(LOAD_SET);
+  if (!m) return null;
+  const n = Number(m[2]);
+  return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
 }

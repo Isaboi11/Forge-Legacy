@@ -20,6 +20,8 @@
  */
 
 import {
+  afterWeekHeading,
+  loadedSetReps,
   cleanDayName,
   cleanExerciseName,
   extractScheme,
@@ -130,8 +132,12 @@ class Builder {
     const days = this.weeks.get(week)!;
     if (!days.has(day)) days.set(day, []);
     days.get(day)!.push(item);
+    this.last = item;
     this.rowsRead++;
   }
+
+  /** The item added most recently, so a loaded-set line can extend it. */
+  last: ParsedItem | null = null;
 
   done(): ParsedWeek[] {
     return [...this.weeks.entries()]
@@ -190,10 +196,39 @@ function parseFreeform(lines: string[]): ParseResult {
       return { line, wk, scheme, rest, hasScheme: scheme.sets != null || scheme.reps != null };
     });
 
+  /** Scheme-only lines already claimed by the exercise named above them. */
+  const consumed = new Set<(typeof rows)[number]>();
+
   rows.forEach((row, i) => {
+    if (consumed.has(row)) return;
     if (row.wk != null) {
       week = row.wk;
       day = null; // a new week starts its own days
+      /*
+       * "Week 1: Squat 5x5" carries work on the heading line. Consuming the whole line discarded it —
+       * and for a program written one week per line, discarded every exercise in the program and then
+       * reported that it found none.
+       */
+      const rest = afterWeekHeading(row.line);
+      if (rest) {
+        const { scheme, rest: named } = extractScheme(rest);
+        const name = cleanExerciseName(named || rest);
+        if (name) b.add(week, day ?? 'Day 1', item(name, scheme.sets, scheme.reps));
+      }
+      return;
+    }
+
+    /*
+     * "Squat" then "65% x 5" / "75% x 5" / "85% x 5+" — the 5/3/1 shape, where the exercise is named
+     * once and every line under it is ONE SET at a different load. Read as exercises it produced a day
+     * of lifts called "65% x 5"; each one now adds a set to the lift above it instead.
+     */
+    const setReps = loadedSetReps(row.line);
+    if (setReps != null && b.last) {
+      b.last.sets = (b.last.setsAssumed ? 0 : b.last.sets) + 1;
+      b.last.setsAssumed = false;
+      b.last.reps = setReps;
+      b.last.repsAssumed = false;
       return;
     }
 
@@ -209,8 +244,19 @@ function parseFreeform(lines: string[]): ParseResult {
        */
       const next = rows.slice(i + 1).find((r) => r.wk == null);
       const prev = rows.slice(0, i).reverse().find((r) => r.wk == null);
-      const atBoundary = next?.hasScheme === true && (prev == null || prev.hasScheme);
 
+      /*
+       * "Bench Press" then "4x8" on the line below is a name and its scheme, not a heading and a lift
+       * called "4x8". A next line that is NOTHING BUT a scheme belongs to this one.
+       */
+      if (next?.hasScheme && !next.rest) {
+        const name = cleanExerciseName(row.line);
+        if (name) b.add(week, day ?? 'Day 1', item(name, next.scheme.sets, next.scheme.reps));
+        consumed.add(next);
+        return;
+      }
+
+      const atBoundary = next?.hasScheme === true && (prev == null || prev.hasScheme);
       if (looksLikeDayHeading(row.line) || atBoundary) {
         day = cleanDayName(row.line);
         return;
@@ -228,11 +274,62 @@ function parseFreeform(lines: string[]): ParseResult {
   return { ok: true, weeks: b.done(), ignoredColumns: [], rowsRead: b.rowsRead };
 }
 
+/**
+ * A markdown table, which is what an answer pasted out of a chat window looks like.
+ *
+ *   | Day  | Exercise | Sets | Reps |
+ *   |------|----------|------|------|
+ *   | Push | Bench    | 4    | 8    |
+ *
+ * The pipes become the delimiter and the `|---|---|` rule is dropped. Without this the whole table read
+ * as two exercises named after its own borders.
+ */
+function unwrapMarkdown(lines: string[]): string[] | null {
+  const piped = lines.filter((l) => l.trim().startsWith('|'));
+  if (piped.length < 2 || piped.length < lines.length - 1) return null;
+  return piped
+    .filter((l) => !/^[|\s:-]+$/.test(l))
+    .map((l) => l.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim()).join('\t'));
+}
+
+/** "Day 1", "Push", "Upper A" — the labels a column-per-day sheet puts in its header row. */
+const DAYISH = /^(?:day|d|workout|session|w)\s*\d+|^(push|pull|legs?|upper|lower|chest|back|arms?|shoulders?|full\s*body|rest)\b/i;
+
+/**
+ * A sheet with ONE COLUMN PER DAY, which is how a great many coaches lay a week out.
+ *
+ *   Day 1        Day 2       Day 3
+ *   Bench 4x8    Squat 5x5   Row 4x8
+ *
+ * There is no Exercise column because every column is exercises. Read row-wise it produced one absurd
+ * lift per line — "Bench Squat 5x5 Row 4x8" — so it is transposed instead: each column becomes a day,
+ * each cell in it an exercise.
+ */
+function parseColumnPerDay(lines: string[], delimiter: '\t' | ';' | ','): ParseResult | null {
+  const header = splitLine(lines[0], delimiter);
+  const dayCols = header.map((h, i) => [i, h] as const).filter(([, h]) => h && DAYISH.test(h));
+  if (dayCols.length < 2 || dayCols.length < header.filter(Boolean).length - 1) return null;
+
+  const b = new Builder();
+  for (const [col, label] of dayCols) {
+    for (const line of lines.slice(1)) {
+      const cell = (splitLine(line, delimiter)[col] ?? '').trim();
+      if (!cell) continue;
+      const { scheme, rest } = extractScheme(cell);
+      const name = cleanExerciseName(rest || cell);
+      if (name) b.add(1, cleanDayName(label), item(name, scheme.sets, scheme.reps));
+    }
+  }
+  return b.rowsRead ? { ok: true, weeks: b.done(), ignoredColumns: [], rowsRead: b.rowsRead } : null;
+}
+
 export function parseProgramTable(raw: string): ParseResult {
-  const lines = raw
+  let lines = raw
     .split(/\r?\n/)
     .map((l) => l.trimEnd())
     .filter((l) => l.trim().length > 0);
+
+  lines = unwrapMarkdown(lines) ?? lines;
 
   if (lines.length === 0) return { ok: false, error: 'Nothing to read — paste some rows first.' };
 
@@ -256,6 +353,10 @@ export function parseProgramTable(raw: string): ParseResult {
    * and "import, but only if you already keep a spreadsheet".
    */
   if (at.exercise === undefined) {
+    // Every column is exercises — no Exercise column because there is no room for one.
+    const transposed = parseColumnPerDay(lines, delimiter);
+    if (transposed) return transposed;
+
     /*
      * Two very different things arrive here, and telling them apart is the whole job.
      *

@@ -523,3 +523,67 @@ test('a deload week note does not stop the week being read', () => {
   const r = ok(parseProgramTable('Week 1\nSquat 5x5\nWeek 2 - DELOAD\nSquat 3x5'));
   assert.deepEqual(r.weeks.map((w) => [w.index, w.days[0].items[0].sets]), [[1, 5], [2, 3]]);
 });
+
+/*
+ * ══ THE SHAPES THAT STILL BROKE IT ══
+ *
+ * A second adversarial pass. Four of these were silently WRONG rather than rejected, which is the class
+ * that reaches an athlete's legacy without anyone noticing.
+ */
+
+test('a weight is not a scheme — "135 x 5" must never read as 1 set of 35', () => {
+  // The compact matcher took two digits off the front of a three-digit number. Silently, and the result
+  // looked entirely plausible.
+  const r = ok(parseProgramTable('Bench\n135 x 5\n185 x 3\n225 x 1'));
+  const items = r.weeks[0].days[0].items;
+  assert.equal(items.length, 1, 'three loaded sets are one exercise, not three');
+  assert.equal(items[0].name, 'Bench');
+  assert.notEqual(items[0].reps, 35);
+});
+
+test('5/3/1 and wave loading — each loaded line is a SET of the lift above it', () => {
+  // "Squat / 65% x 5 / 75% x 5 / 85% x 5+" is one exercise for three sets, not three lifts named after
+  // percentages. The LOAD is dropped: a program prescribes sets and reps, and the weight is what the
+  // athlete puts on the bar on the day.
+  const r = ok(parseProgramTable('Squat\n65% x 5\n75% x 5\n85% x 5+'));
+  const items = r.weeks[0].days[0].items;
+  assert.equal(items.length, 1);
+  assert.deepEqual([items[0].name, items[0].sets, items[0].reps], ['Squat', 3, 5]);
+  assert.equal(items[0].setsAssumed, false);
+});
+
+test('ONE COLUMN PER DAY — how a great many coaches lay a week out', () => {
+  // No Exercise column, because every column IS exercises. Read row-wise this produced one absurd lift
+  // per line: "Bench Squat 5x5 Row 4x8".
+  const r = ok(parseProgramTable(tsv([
+    ['Day 1', 'Day 2', 'Day 3'],
+    ['Bench 4x8', 'Squat 5x5', 'Row 4x8'],
+    ['Fly 3x12', 'Lunge 3x10', 'Curl 3x12'],
+  ])));
+  assert.deepEqual(r.weeks[0].days.map((d) => [d.name, d.items.map((i) => i.name)]), [
+    ['Day 1', ['Bench', 'Fly']],
+    ['Day 2', ['Squat', 'Lunge']],
+    ['Day 3', ['Row', 'Curl']],
+  ]);
+});
+
+test('a markdown table — what an answer pasted out of a chat window looks like', () => {
+  const r = ok(parseProgramTable('| Day | Exercise | Sets | Reps |\n|---|---|---|---|\n| Push | Bench | 4 | 8 |'));
+  assert.equal(r.weeks[0].days[0].name, 'Push');
+  assert.deepEqual(r.weeks[0].days[0].items.map((i) => [i.name, i.sets, i.reps]), [['Bench', 4, 8]]);
+});
+
+test('"Week 1: Squat 5x5" keeps the exercise on the heading line', () => {
+  // Consuming the whole line discarded it — and for a program written one week per line, discarded every
+  // exercise in the program and then reported that it found none.
+  const r = ok(parseProgramTable('Week 1: Squat 5x5\nWeek 2: Squat 5x5\nWeek 3: Squat 3x5'));
+  assert.deepEqual(r.weeks.map((w) => [w.index, w.days[0].items[0].sets]), [[1, 5], [2, 5], [3, 3]]);
+});
+
+test('a scheme on the line BELOW its exercise belongs to it', () => {
+  const r = ok(parseProgramTable('Bench Press\n4x8\nSquat\n5x5'));
+  assert.deepEqual(r.weeks[0].days[0].items.map((i) => [i.name, i.sets, i.reps]), [
+    ['Bench Press', 4, 8],
+    ['Squat', 5, 5],
+  ]);
+});
