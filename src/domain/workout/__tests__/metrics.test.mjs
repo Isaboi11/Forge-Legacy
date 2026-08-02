@@ -184,3 +184,39 @@ test('first-ever stays first-ever, and the second block is not a new "first"', (
   assert.equal(prs.length, 2, 'and 110 then beats it');
   assert.equal(prs[1].isFirst, false, 'the second is a real record, not another baseline');
 });
+
+/*
+ * ══ ONE LIFT, TWO NAMES ══
+ *
+ * An imported program keeps the athlete's words ("Bench press"); the picker writes the catalogue's
+ * ("Barbell Bench Press"). Same lift, same catalogKey. Keyed by NAME, history split in half and the app
+ * announced a 190 lb record to somebody who had benched 225. Found by the 2026-08-02 audit.
+ */
+
+test('two names for one lift share one history, via the catalogue key', () => {
+  const KEY = 'barbell-bench-press';
+  const lift = (name, weight) => ({
+    ...session,
+    exercises: [{ name, catalogKey: KEY, section: 'main', position: 0, sets: [set(0, weight, 3, 3, true)] }],
+  });
+
+  // Their real best, logged under the imported program's wording, is keyed by the catalogue key.
+  const prior = { [KEY]: 225 };
+
+  // The same lift picked from the library — a different string, the same key.
+  assert.deepEqual(detectPRs(lift('Barbell Bench Press', 190), prior), [],
+    '190 is not a record for someone who has benched 225, whatever the row is called');
+
+  // And a genuine improvement still lands.
+  assert.equal(detectPRs(lift('Barbell Bench Press', 230), prior)[0]?.weight, 230);
+});
+
+test('an exercise with no catalogue key still falls back to its name', () => {
+  // Custom and unmatched lifts have no key; the name is the only identity they have, and it must work.
+  const s = {
+    ...session,
+    exercises: [{ name: 'Coach Special', section: 'main', position: 0, sets: [set(0, 100, 3, 3, true)] }],
+  };
+  assert.deepEqual(detectPRs(s, { 'Coach Special': 120 }), [], 'name identity still applies');
+  assert.equal(detectPRs(s, { 'Coach Special': 80 })[0]?.weight, 100);
+});

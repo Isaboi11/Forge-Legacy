@@ -33,21 +33,46 @@ export async function saveWorkout(session: ActiveSession, partners: string[] = [
    * a record only when there was already a mark to beat. Defaulting an absent lift to 0 is precisely
    * what made every set a beginner performed into a personal record.
    */
-  const names = [...new Set(session.exercises.map((e) => e.name))];
+  /*
+   * Fetched by athlete rather than by name, because the NAME is no longer the identity — see below. The
+   * filtered form could not express "this key, or this name when the row predates keys" without building
+   * an `.or()` string out of user-supplied exercise names, which is a quoting bug waiting to happen. A
+   * single athlete's record rows are few; correctness is worth the extra ones.
+   */
   const { data: prRows, error: pe } = await supabase
     .from('personal_records')
-    .select('exercise, load_value, load_reps')
+    .select('exercise, catalog_key, load_value, load_reps')
     .eq('athlete_id', user.id)
     .eq('measure_kind', 'load')
-    .lte('load_reps', PR_MAX_REPS)
-    .in('exercise', names);
+    .lte('load_reps', PR_MAX_REPS);
   if (pe) throw pe;
 
+  /*
+   * KEYED BY CATALOGUE KEY, NOT BY DISPLAY NAME.
+   *
+   * One lift can have two names. An imported program keeps the athlete's words on purpose ("Bench
+   * press"); the picker writes the catalogue's ("Barbell Bench Press"). Same lift, same `catalog_key`,
+   * two strings — so a name-keyed history split in half, and the second name started from nothing and
+   * announced a 190 lb record to an athlete who had already benched 225.
+   *
+   * The `catalog_key is null` arm is for rows written before 0078 added the column: those match on the
+   * exact name instead. It mirrors `lift_best_lb` in 0078, deliberately — two different answers to
+   * "which lift is this" is how the two surfaces would drift apart.
+   */
   const priorBest: Record<string, number | undefined> = {};
-  for (const r of prRows ?? []) {
-    if (r.load_value == null) continue;
-    const seen = priorBest[r.exercise];
-    if (seen == null || r.load_value > seen) priorBest[r.exercise] = r.load_value;
+  const bump = (id: string, v: number) => {
+    const seen = priorBest[id];
+    if (seen == null || v > seen) priorBest[id] = v;
+  };
+  for (const ex of session.exercises) {
+    const id = ex.catalogKey ?? ex.name;
+    for (const r of prRows ?? []) {
+      if (r.load_value == null) continue;
+      const sameLift = ex.catalogKey
+        ? r.catalog_key === ex.catalogKey || (r.catalog_key == null && r.exercise === ex.name)
+        : r.exercise === ex.name;
+      if (sameLift) bump(id, r.load_value);
+    }
   }
 
   const prs = detectPRs(session, priorBest);

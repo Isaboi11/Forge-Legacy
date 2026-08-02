@@ -133,14 +133,27 @@ export function detectPRs(
     const weight = bestRecordWeight(ex.sets);
     if (weight == null) continue; // nothing in the record band — a 4×12 day sets no records
 
-    const before = priorBest[ex.name];
-    const earlierToday = setThisSession[ex.name];
+    /*
+     * WHICH LIFT THIS IS — the catalogue key when the app knows it, the written name when it does not.
+     *
+     * Identity used to be the display name alone, and a lift can carry two of those. An imported program
+     * keeps the athlete's words on purpose ("Bench press"), while the picker writes the catalogue's name
+     * ("Barbell Bench Press") — the same lift, the same `catalogKey`, two different strings. History was
+     * split down the middle, so the second name began from nothing and then announced a 190 lb record to
+     * an athlete who had already benched 225.
+     *
+     * The key is the honest identity: it is what every other part of the app already keys off — the
+     * detail page, substitutions, equipment, honors. The name stays what the athlete wrote.
+     */
+    const id = ex.catalogKey ?? ex.name;
+    const before = priorBest[id];
+    const earlierToday = setThisSession[id];
     // The bar to beat is whichever is higher — history, or what they already lifted today.
     const prior = earlierToday == null ? before : before == null ? earlierToday : Math.max(before, earlierToday);
     // Undefined = first time on this lift, ever. Written as the mark, never announced as a record.
     const isFirst = before == null && earlierToday == null;
     if (!isFirst && weight <= (prior as number)) continue;
-    setThisSession[ex.name] = Math.max(earlierToday ?? 0, weight);
+    setThisSession[id] = Math.max(earlierToday ?? 0, weight);
 
     const from = ex.sets.find((s) => s.done && s.weight === weight && effectiveReps(s) <= PR_MAX_REPS);
     prs.push({
