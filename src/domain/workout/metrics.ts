@@ -45,44 +45,97 @@ export interface DetectedPR {
   reps: number;
   /** Exercise catalog id, so honors match the exercise rather than its display name (0078). */
   catalogKey?: string | null;
+  /**
+   * True when this is the athlete's FIRST mark on this lift.
+   *
+   * It is still written — there has to be something for the next session to beat — but it is not a
+   * record and nothing announces it. Every surface that says the words "personal record" checks this.
+   */
+  isFirst: boolean;
 }
 
 /**
  * PRs for the session: per exercise, the best done set by e1RM; a PR if its e1RM beats the athlete's
  * current best for that exercise. `currentBestE1rm` maps exercise name → current best e1RM (0 if none).
  */
-export function detectPRs(session: ActiveSession, currentBestE1rm: Record<string, number>): DetectedPR[] {
+/**
+ * The heaviest rep count that can set a strength record.
+ *
+ * A PR is a FACT — the most weight you have ever put on the bar and moved for a real set. Above five
+ * reps you are training something else, and calling a heavier 12-rep set a record would mean comparing
+ * two different efforts by arithmetic rather than by what happened. Improvements above this band are
+ * still shown, on the Record's "How You Improved" — they are just not records.
+ */
+export const PR_MAX_REPS = 5;
+
+/** The heaviest weight moved for 1–{@link PR_MAX_REPS} reps in these sets. Null when there was no such set. */
+export function bestRecordWeight(sets: readonly SessionSet[]): number | null {
+  let best: number | null = null;
+  for (const s of sets) {
+    if (!s.done || s.weight == null) continue;
+    const reps = effectiveReps(s);
+    if (reps < 1 || reps > PR_MAX_REPS) continue;
+    if (best == null || s.weight > best) best = s.weight;
+  }
+  return best;
+}
+
+/**
+ * What this session set as a record, and what merely established a mark.
+ *
+ * ══ NO ESTIMATED MAX, ANYWHERE ══
+ *
+ * This compared estimated 1RMs (Epley) across any rep count. Two problems, and the second is the one
+ * that matters. An estimate is not a fact: an athlete told they set a 330 lb record never lifted 330 lb.
+ * And the estimate inflates badly with reps — 60 lb × 25 computes to 110, which would beat a genuine
+ * 80 lb triple. A record is now the heaviest weight actually moved for 1–5 reps, full stop.
+ *
+ * ══ THE FIRST TIME IS A BASELINE, NOT A RECORD ══
+ *
+ * Against a prior best of zero, every set a beginner performs is a "record" — which is exactly what an
+ * athlete's real history showed: 3 lb, then 35, then 90, three records in a day, on a lift they had just
+ * met. You cannot break a record you have never set. The first mark on an exercise is written (there has
+ * to be something to beat) and announced to nobody.
+ *
+ * `priorBest` therefore uses UNDEFINED, not 0, for "never done this" — the whole distinction lives in
+ * that difference, and a `?? 0` anywhere in here brings the flood straight back.
+ */
+export function detectPRs(
+  session: ActiveSession,
+  priorBest: Record<string, number | undefined>,
+): DetectedPR[] {
   const prs: DetectedPR[] = [];
   for (const ex of session.exercises) {
     /*
-     * A PERSONAL RECORD IS A CLAIM ABOUT THE ATHLETE, so two whole classes of row are excluded before
-     * any comparison happens.
+     * A PERSONAL RECORD IS A CLAIM ABOUT THE ATHLETE, so two classes of row never qualify.
      *
-     * A REAL ONE FROM THE RECORD: "Light treadmill walk — 2 minutes" is sitting in an athlete's personal
-     * records at 40 lb. It is a warm-up row; a weight got typed into it, this loop read every exercise in
-     * every section, and the app told them they had set a record on a walk. Nobody put that number there
-     * meaning it as a lift.
+     * A REAL ONE FROM THE RECORD: "Light treadmill walk — 2 minutes" sat in an athlete's personal
+     * records at 40 lb. A warm-up row, a weight typed into it, and the app told them they had set a
+     * record on a walk.
      *
-     *   · CARDIO blocks have no load at all. A weight on one is noise by definition.
-     *   · WARM-UP and COOL-DOWN are deliberately submaximal. You do not set a record in your warm-up, and
-     *     a "PR" from one is always an artifact — either a stray keystroke or a prescription carried into
-     *     the weight column. Main-section work is the only place a record can honestly come from.
+     *   · CARDIO blocks have no load. A weight on one is noise by definition.
+     *   · WARM-UP and COOL-DOWN are deliberately submaximal. You do not set a record warming up.
      */
     if (ex.kind === 'cardio') continue;
     if (ex.section !== 'main') continue;
 
-    let best: { weight: number; reps: number; est: number } | null = null;
-    for (const s of ex.sets) {
-      if (!s.done || s.weight == null) continue;
-      const reps = effectiveReps(s);
-      const est = e1rm(s.weight, reps);
-      if (!best || est > best.est) best = { weight: s.weight, reps, est };
-    }
-    if (best && best.est > (currentBestE1rm[ex.name] ?? 0)) {
-      // catalogKey rides along so honors can match the exercise itself rather than its display name
-      // (0078). Optional end to end: an exercise without one still records, just unkeyed.
-      prs.push({ exercise: ex.name, weight: best.weight, reps: best.reps, catalogKey: ex.catalogKey ?? null });
-    }
+    const weight = bestRecordWeight(ex.sets);
+    if (weight == null) continue; // nothing in the record band — a 4×12 day sets no records
+
+    const prior = priorBest[ex.name];
+    // Undefined = first time on this lift. Written as the mark, never announced as a record.
+    const isFirst = prior == null;
+    if (!isFirst && weight <= prior) continue;
+
+    const from = ex.sets.find((s) => s.done && s.weight === weight && effectiveReps(s) <= PR_MAX_REPS);
+    prs.push({
+      exercise: ex.name,
+      weight,
+      reps: from ? effectiveReps(from) : 1,
+      catalogKey: ex.catalogKey ?? null,
+      isFirst,
+    });
   }
   return prs;
 }
+

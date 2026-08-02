@@ -228,9 +228,32 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
         .eq('achieved_on', today)
         .in('exercise', names)
     : { data: [] };
+  /*
+   * A BASELINE IS NOT A RECORD, so it does not get the badge.
+   *
+   * The first mark on a lift is written — the next session needs something to beat — but an athlete's
+   * first ever bench press is not a personal record, it is the start of the data. This asks whether an
+   * EARLIER mark exists for the same lift; if none does, today's row is that start.
+   *
+   * Derived rather than stored: "is this the earliest row for this exercise" is already answerable from
+   * the rows themselves, and a column would be one more thing to write correctly forever.
+   */
   const prByExercise = new Map<string, { weight: number; reps: number }>();
-  for (const p of prRows ?? []) {
-    if (p.load_value != null) prByExercise.set(p.exercise, { weight: p.load_value, reps: p.load_reps ?? 1 });
+  if ((prRows ?? []).length) {
+    const todaysNames = [...new Set((prRows ?? []).map((p) => p.exercise))];
+    const { data: earlier } = await supabase
+      .from('personal_records')
+      .select('exercise')
+      .eq('athlete_id', user.id)
+      .eq('measure_kind', 'load')
+      .lt('achieved_on', today)
+      .in('exercise', todaysNames);
+    const hasHistory = new Set((earlier ?? []).map((e) => (e as { exercise: string }).exercise));
+    for (const p of prRows ?? []) {
+      if (p.load_value == null) continue;
+      if (!hasHistory.has(p.exercise)) continue; // first mark on this lift — a baseline, not a record
+      prByExercise.set(p.exercise, { weight: p.load_value, reps: p.load_reps ?? 1 });
+    }
   }
 
   // volume + per-exercise top set (heaviest by e1RM)

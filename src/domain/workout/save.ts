@@ -1,11 +1,12 @@
 import { supabase } from '@/lib/supabase';
 import { sessionActivityType } from './conditioning';
-import { detectPRs, doneSetCount, e1rm, sessionVolume } from './metrics';
+import { detectPRs, doneSetCount, PR_MAX_REPS, sessionVolume } from './metrics';
 import type { ActiveSession } from './types';
 
 export interface SaveResult {
   workoutId: string;
-  prs: { exercise: string; weight: number; reps: number; catalogKey?: string | null }[];
+  /** Includes first-ever marks (`isFirst`), which are stored but are not records — see `detectPRs`. */
+  prs: { exercise: string; weight: number; reps: number; catalogKey?: string | null; isFirst: boolean }[];
   volume: number;
   sets: number;
 }
@@ -24,22 +25,32 @@ export async function saveWorkout(session: ActiveSession, partners: string[] = [
   } = await supabase.auth.getUser();
   if (!user) throw new Error('not signed in');
 
+  /*
+   * The athlete's existing mark on each lift in this session — the heaviest weight they have logged for
+   * 1–5 reps, which is what a record now means.
+   *
+   * A NAME MISSING FROM THIS MAP MEANS "NEVER DONE IT", and that is load-bearing: `detectPRs` announces
+   * a record only when there was already a mark to beat. Defaulting an absent lift to 0 is precisely
+   * what made every set a beginner performed into a personal record.
+   */
   const names = [...new Set(session.exercises.map((e) => e.name))];
   const { data: prRows, error: pe } = await supabase
     .from('personal_records')
     .select('exercise, load_value, load_reps')
     .eq('athlete_id', user.id)
     .eq('measure_kind', 'load')
+    .lte('load_reps', PR_MAX_REPS)
     .in('exercise', names);
   if (pe) throw pe;
 
-  const bestE1rm: Record<string, number> = {};
+  const priorBest: Record<string, number | undefined> = {};
   for (const r of prRows ?? []) {
     if (r.load_value == null) continue;
-    bestE1rm[r.exercise] = Math.max(bestE1rm[r.exercise] ?? 0, e1rm(r.load_value, r.load_reps ?? 1));
+    const seen = priorBest[r.exercise];
+    if (seen == null || r.load_value > seen) priorBest[r.exercise] = r.load_value;
   }
 
-  const prs = detectPRs(session, bestE1rm);
+  const prs = detectPRs(session, priorBest);
   const durationSec = Math.max(0, Math.round((Date.now() - Date.parse(session.startedAt)) / 1000));
 
   const exercises = session.exercises.map((ex) => ({
@@ -144,4 +155,40 @@ export async function saveActivity(input: ActivityInput): Promise<{ workoutId: s
   });
   if (error) throw error;
   return { workoutId: data.workout_id };
+}
+
+/**
+ * The athlete's existing record on each of these lifts — heaviest weight logged for 1–5 reps.
+ *
+ * The live logger needs this to tell a record from a warm-up ramp. It used to compare a set against
+ * earlier sets in the SAME session, so working up 135 → 185 → 225 announced a personal record on the
+ * third set, every session, forever.
+ *
+ * A NAME ABSENT FROM THE RESULT MEANS "NEVER DONE IT" — the caller must not default it to zero, or the
+ * first session on any lift becomes a record again.
+ */
+export async function fetchPriorRecords(names: readonly string[]): Promise<Record<string, number>> {
+  if (!names.length) return {};
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return {};
+
+  const { data, error } = await supabase
+    .from('personal_records')
+    .select('exercise, load_value')
+    .eq('athlete_id', user.id)
+    .eq('measure_kind', 'load')
+    .lte('load_reps', PR_MAX_REPS)
+    .in('exercise', [...names]);
+  if (error) return {}; // no history readable = nothing to beat, which stays silent rather than claiming
+
+  const best: Record<string, number> = {};
+  for (const r of data ?? []) {
+    const v = Number((r as { load_value: number | null }).load_value);
+    const k = (r as { exercise: string }).exercise;
+    if (!Number.isFinite(v)) continue;
+    if (best[k] == null || v > best[k]) best[k] = v;
+  }
+  return best;
 }

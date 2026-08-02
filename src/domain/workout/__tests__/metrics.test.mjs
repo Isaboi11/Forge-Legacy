@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { e1rm, sessionVolume, doneSetCount, hasLoggedSet, detectPRs } from '../metrics.ts';
+import { e1rm, sessionVolume, doneSetCount, hasLoggedSet, detectPRs, bestRecordWeight, PR_MAX_REPS } from '../metrics.ts';
 
 const set = (setIndex, weight, targetReps, actualReps, done) => ({ setIndex, weight, targetReps, actualReps, done });
 const session = {
@@ -34,22 +34,6 @@ test('doneSetCount + hasLoggedSet', () => {
   assert.equal(hasLoggedSet({ ...session, exercises: [{ name: 'x', section: 'main', position: 0, sets: [set(0, 100, 5, null, false)] }] }), false);
 });
 
-test('detectPRs — best done set by e1rm vs current best', () => {
-  // Back Squat best done = 315x5 (e1rm ~367.5); current best 315x3 (e1rm 346.5) → PR
-  // Deadlift best done = 405x3 (e1rm 445.5); current best 0 → PR
-  const prs = detectPRs(session, { 'Back Squat': e1rm(315, 3), Deadlift: 0 });
-  // catalogKey rides along so honors can match the exercise itself rather than its display name (0078).
-  // These fixture exercises carry none, so it's null — which is exactly what a hand-entered lift records.
-  assert.deepEqual(prs, [
-    { exercise: 'Back Squat', weight: 315, reps: 5, catalogKey: null },
-    { exercise: 'Deadlift', weight: 405, reps: 3, catalogKey: null },
-  ]);
-});
-
-test('detectPRs — no PR when current best already higher', () => {
-  const prs = detectPRs(session, { 'Back Squat': e1rm(405, 5), Deadlift: e1rm(500, 3) });
-  assert.deepEqual(prs, []);
-});
 
 /*
  * A PERSONAL RECORD IS A CLAIM ABOUT THE ATHLETE.
@@ -90,7 +74,69 @@ test('detectPRs — a cardio block never sets a LOAD record, whatever is in the 
 });
 
 test('detectPRs — main-section lifting still records, so the fix did not silence the feature', () => {
-  const prs = detectPRs(session, { 'Back Squat': 0, Deadlift: 0 });
+  const prs = detectPRs(session, { 'Back Squat': 300, Deadlift: 400 });
   assert.equal(prs.length, 2);
   assert.deepEqual(prs.map((p) => p.exercise).sort(), ['Back Squat', 'Deadlift']);
+  assert.equal(prs.every((p) => p.isFirst === false), true);
+});
+
+// ── A RECORD IS A FACT, NOT A CALCULATION ────────────────────────────────────
+
+test('bestRecordWeight — the heaviest weight moved for 1–5 reps, and nothing above', () => {
+  assert.equal(PR_MAX_REPS, 5);
+  assert.equal(bestRecordWeight([set(0, 225, 5, 5, true), set(1, 245, 3, 3, true)]), 245);
+  // A heavier set at 12 reps is real training and is not a record.
+  assert.equal(bestRecordWeight([set(0, 225, 5, 5, true), set(1, 250, 12, 12, true)]), 225);
+  // Nothing in the band at all.
+  assert.equal(bestRecordWeight([set(0, 135, 12, 12, true)]), null);
+  // Pending sets are not performances.
+  assert.equal(bestRecordWeight([set(0, 400, 3, null, false)]), null);
+});
+
+test('a high-rep light set can no longer out-rank a genuine heavy triple', () => {
+  // Under estimated 1RM this was the failure: 60×25 computes to 110, beating 80×3 at 88. A record is now
+  // the weight on the bar, so 60 never beats 80 no matter how many times it moves.
+  const s = { ...session, exercises: [{ name: 'Press', section: 'main', position: 0, sets: [set(0, 60, 25, 25, true)] }] };
+  assert.deepEqual(detectPRs(s, { Press: 80 }), []);
+});
+
+test('the FIRST time on a lift is a baseline — recorded, never announced', () => {
+  // Straight from a real athlete's records: 3 lb, then 35, then 90 — three "records" in a day on a lift
+  // they had only just met. The first is now silent.
+  const first = { ...session, exercises: [{ name: 'Dumbbell Bench Press', section: 'main', position: 0, sets: [set(0, 3, 5, 5, true)] }] };
+  const prs = detectPRs(first, {}); // {} = never done it
+  assert.equal(prs.length, 1, 'the mark must still be written — the next session needs something to beat');
+  assert.equal(prs[0].isFirst, true, 'and it must be flagged, so nothing calls it a record');
+});
+
+test('the SECOND time is a real record, because now there was something to beat', () => {
+  const s = { ...session, exercises: [{ name: 'Dumbbell Bench Press', section: 'main', position: 0, sets: [set(0, 35, 5, 5, true)] }] };
+  const prs = detectPRs(s, { 'Dumbbell Bench Press': 3 });
+  assert.equal(prs.length, 1);
+  assert.equal(prs[0].isFirst, false);
+  assert.equal(prs[0].weight, 35);
+});
+
+test('an absent lift means NEVER DONE, and must never be read as zero', () => {
+  // The whole distinction lives in undefined-vs-0. A `?? 0` anywhere brings the flood straight back:
+  // every set a beginner performs would beat it.
+  const s = { ...session, exercises: [{ name: 'New Lift', section: 'main', position: 0, sets: [set(0, 95, 5, 5, true)] }] };
+  assert.equal(detectPRs(s, {})[0].isFirst, true);
+  assert.equal(detectPRs(s, { 'New Lift': 0 })[0].isFirst, false, 'an explicit 0 is a real prior mark and 95 beats it');
+});
+
+test('matching your best is not beating it', () => {
+  const s = { ...session, exercises: [{ name: 'Squat', section: 'main', position: 0, sets: [set(0, 225, 5, 5, true)] }] };
+  assert.deepEqual(detectPRs(s, { Squat: 225 }), []);
+});
+
+test('a day of nothing but 4×12 sets no records, and that is correct', () => {
+  const s = {
+    ...session,
+    exercises: [{ name: 'Lateral Raise', section: 'main', position: 0, sets: [
+      set(0, 20, 12, 12, true), set(1, 25, 12, 12, true), set(2, 30, 12, 12, true),
+    ] }],
+  };
+  assert.deepEqual(detectPRs(s, { 'Lateral Raise': 15 }), [],
+    'going heavier at 12 reps is improvement, shown on the Record — it is not a personal record');
 });

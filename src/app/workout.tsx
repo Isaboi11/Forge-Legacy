@@ -35,8 +35,8 @@ import { nextSession } from '@/domain/program/progress-core';
 import { clearWorkoutLaunch, readWorkoutLaunch } from '@/lib/workout-launch';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { clearSession, loadSession, persistSession } from '@/domain/workout/autosave';
-import { doneSetCount, hasLoggedSet } from '@/domain/workout/metrics';
-import { saveWorkout } from '@/domain/workout/save';
+import { doneSetCount, hasLoggedSet, PR_MAX_REPS } from '@/domain/workout/metrics';
+import { fetchPriorRecords, saveWorkout } from '@/domain/workout/save';
 import { equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
 import { getRestTimerEnabled, setRestTimerEnabled } from '@/lib/rest-timer-pref';
 import { clearExerciseInbox, readExerciseInbox, type PickedExercise } from '@/lib/exercise-inbox';
@@ -44,11 +44,6 @@ import type { ActiveSession, SessionExercise, SessionSet } from '@/domain/workou
 
 const AnimatedSvg = Animated.createAnimatedComponent(Svg);
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
-
-/** Estimated 1RM (Epley). Used to detect a within-session best set → the PR moment. */
-function epley1RM(weight: number, reps: number): number {
-  return weight * (1 + reps / 30);
-}
 
 type Phase = 'loading' | 'resume' | 'active' | 'saving';
 type Picker = { exIdx: number; setIdx: number; field: 'weight' | 'reps' };
@@ -144,6 +139,12 @@ export default function WorkoutScreen() {
   const [flash, setFlash] = useState<{ ei: number; si: number; token: number } | null>(null); // green fuse on a row
   const [prShown, setPrShown] = useState<Record<number, boolean>>({}); // one PR per exercise
   const [prPrompt, setPrPrompt] = useState<{ name: string; perf: string; key: string | null } | null>(null);
+  /**
+   * The athlete's existing record on each lift in this session, so the live PR moment is measured
+   * against their history rather than against the set they did ten seconds ago. Undefined for a lift
+   * they have never done — which is exactly the case that must stay silent.
+   */
+  const [priorRecord, setPriorRecord] = useState<Record<string, number> | null>(null);
   const [seal, setSeal] = useState<{ name: string; sets: number; volume: number; next: string | null; token: number } | null>(null);
   const [restEnabled, setRestEnabled] = useState(false); // default OFF; the saved pref loads on mount
   const [restSec, setRestSec] = useState(90);
@@ -353,6 +354,24 @@ export default function WorkoutScreen() {
     if (phase === 'active' && session) void persistSession(session);
   }, [session, phase]);
 
+  /*
+   * Read the athlete's existing marks once the session's lifts are known.
+   *
+   * Keyed on the exercise NAMES rather than the session object, so adding a set or logging reps does not
+   * re-fetch — but swapping or adding an exercise does, which is when a new lift's mark is needed.
+   */
+  const exerciseNames = session?.exercises.map((e) => e.name).join(' ') ?? '';
+  useEffect(() => {
+    if (!exerciseNames) return;
+    let alive = true;
+    void fetchPriorRecords(exerciseNames.split(' ')).then((r) => {
+      if (alive) setPriorRecord(r);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [exerciseNames]);
+
   // rest ticker — repaints twice a second while running; clears itself when the deadline passes (setState in
   // the interval callback is the async-callback form the strict react-hooks rules allow, like a query result)
   useEffect(() => {
@@ -475,14 +494,20 @@ export default function WorkoutScreen() {
       setHeroPref((p) => ({ ...p, [ei]: 'collapsed' }));
     }
 
-    // PR — a later set whose est. 1RM beats every earlier done set of this exercise (one per exercise)
-    if (!prShown[ei] && done.weight != null && done.actualReps != null) {
-      const mine = epley1RM(done.weight, done.actualReps);
-      const priorBest = Math.max(
-        0,
-        ...ex.sets.filter((s2, i) => i !== si && s2.done && s2.weight != null && s2.actualReps != null).map((s2) => epley1RM(s2.weight!, s2.actualReps!)),
-      );
-      if (priorBest > 0 && mine > priorBest) {
+    /*
+     * A PERSONAL RECORD, against the athlete's actual history.
+     *
+     * This compared the set to EARLIER SETS IN THIS SESSION, by estimated 1RM — so working up 135 → 185
+     * → 225 announced a personal record on the third set of a warm-up ramp, every session, forever. It
+     * measured nothing except that you go heavier as you go.
+     *
+     * A record is now what it is everywhere else: the heaviest weight moved for 1–5 reps, beating what
+     * they had already logged for 1–5 reps on this lift. `priorRecord` is undefined for a lift they have
+     * never done, and that stays silent — the first time is a baseline, not a record.
+     */
+    if (!prShown[ei] && done.weight != null && done.actualReps != null && done.actualReps <= PR_MAX_REPS) {
+      const prior = priorRecord?.[ex.name];
+      if (prior != null && done.weight > prior) {
         const w = done.weight;
         const r = done.actualReps;
         setPrShown((p) => ({ ...p, [ei]: true }));
