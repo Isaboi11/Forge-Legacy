@@ -173,30 +173,54 @@ function parseFreeform(lines: string[]): ParseResult {
   let week = 1;
   let day: string | null = null;
 
-  for (const raw of lines) {
-    const line = raw.trim();
-    if (!line) continue;
+  /*
+   * Read every line's scheme up front, because deciding what a line IS needs its neighbours.
+   *
+   * "Push" on its own is a heading. So are "Legs", "Core", "Pull" and "Push Day" — none of which match
+   * any keyword, none of which shout in capitals, and all of which used to import as an exercise at an
+   * invented 3×10 while the day they were naming never got created. Whether a bare line is a heading is
+   * not a property of the line; it is a property of where it SITS.
+   */
+  const rows = lines
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const wk = weekHeading(line);
+      const { scheme, rest } = extractScheme(line);
+      return { line, wk, scheme, rest, hasScheme: scheme.sets != null || scheme.reps != null };
+    });
 
-    const wk = weekHeading(line);
-    if (wk != null) {
-      week = wk;
+  rows.forEach((row, i) => {
+    if (row.wk != null) {
+      week = row.wk;
       day = null; // a new week starts its own days
-      continue;
+      return;
     }
 
-    const { scheme, rest } = extractScheme(line);
-    const hasScheme = scheme.sets != null || scheme.reps != null;
+    if (!row.hasScheme) {
+      /*
+       * A heading either SAYS it is one, or SITS like one: at a boundary, with work beneath it and
+       * either nothing or the end of the previous day above it.
+       *
+       * The boundary rule is what catches a bare "Push". Its cost is that a genuine exercise written
+       * with no sets or reps, immediately above one that has them, reads as a heading — which is rare
+       * enough, and visible in the preview, whereas a missed heading silently welds two training days
+       * into one.
+       */
+      const next = rows.slice(i + 1).find((r) => r.wk == null);
+      const prev = rows.slice(0, i).reverse().find((r) => r.wk == null);
+      const atBoundary = next?.hasScheme === true && (prev == null || prev.hasScheme);
 
-    if (!hasScheme && looksLikeDayHeading(line)) {
-      day = cleanDayName(line);
-      continue;
+      if (looksLikeDayHeading(row.line) || atBoundary) {
+        day = cleanDayName(row.line);
+        return;
+      }
     }
 
-    // Everything else is an exercise. `rest` is the line minus its scheme; strip the decoration too.
-    const name = cleanExerciseName(rest || line);
-    if (!name) continue;
-    b.add(week, day ?? 'Day 1', item(name, scheme.sets, scheme.reps));
-  }
+    const name = cleanExerciseName(row.rest || row.line);
+    if (!name) return;
+    b.add(week, day ?? 'Day 1', item(name, row.scheme.sets, row.scheme.reps));
+  });
 
   if (b.rowsRead === 0) {
     return { ok: false, error: 'No exercises found. Write one per line, like “Bench Press 3x8”.' };

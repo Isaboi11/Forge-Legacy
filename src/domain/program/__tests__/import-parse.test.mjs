@@ -407,3 +407,119 @@ test('CRLF, padded headers, quoted headers and trailing empty columns all surviv
     assert.equal(r.weeks[0].days[0].items[0].sets, 3);
   }
 });
+
+/*
+ * ══ A WORKOUT SOMEBODY TEXTS YOU ══
+ *
+ * Verbatim from a real six-day split. Numbered lines, "N sets - M-K reps" phrasing, a stray trailing
+ * period, one line where the author typed "reps" when they meant "sets", and a day heading that names
+ * the muscles rather than the day. It read every set and lost every rep count, and left "- - 6-8 reps"
+ * welded to each exercise name — so seven lifts imported as seven unmatched names at an invented 3×10.
+ */
+const REAL_SPLIT = `DAY 1 - Chest and Triceps
+1.   Bench press - 4 sets - 6-8 reps
+2.   Incline Dumbbell press - 3 sets - 6-8 reps
+3.   Chest Flys 3 sets - 8-10 reps
+4.   Dips - 3 sets - 10-12 reps
+DAY 2 - Back and Biceps
+1.   Deadlifts - 4 sets - 6-8 reps
+7.   Barbell or Dumbbell Shrugs - 3 reps - 10-12 reps
+DAY 3 - Legs and Shoulder
+5.   Overhead Press - 4 sets - 6-8 reps.
+2.   Lunges - 2 sets - 14-16 reps`;
+
+test('the texted split imports exactly, with nothing assumed', () => {
+  const r = ok(parseProgramTable(REAL_SPLIT));
+  assert.deepEqual(r.weeks[0].days.map((d) => d.name), ['Chest and Triceps', 'Back and Biceps', 'Legs and Shoulder']);
+
+  const all = r.weeks[0].days.flatMap((d) => d.items);
+  assert.equal(all.some((i) => i.setsAssumed || i.repsAssumed), false, 'every set and rep is stated — none may be assumed');
+  assert.equal(all.some((i) => /reps|sets|--|\s-\s*$/.test(i.name)), false, `scheme debris left in a name: ${all.map((i) => i.name).join(' / ')}`);
+
+  assert.deepEqual(r.weeks[0].days[0].items.map((i) => [i.name, i.sets, i.reps]), [
+    ['Bench press', 4, 6],
+    ['Incline Dumbbell press', 3, 6],
+    ['Chest Flys', 3, 8], // no dash before "3 sets"
+    ['Dips', 3, 10],
+  ]);
+});
+
+test('"3 reps - 10-12 reps" — the author meant sets, and it is not in doubt', () => {
+  // Every other line in that day reads "N sets - M-K reps". Two rep phrases and no sets phrase is read
+  // as sets-then-reps rather than throwing the first away.
+  const r = ok(parseProgramTable(REAL_SPLIT));
+  const shrugs = r.weeks[0].days[1].items.find((i) => i.name.includes('Shrugs'));
+  assert.equal(shrugs.sets, 3);
+  assert.equal(shrugs.reps, 10);
+});
+
+test('a trailing full stop is not part of the lift', () => {
+  const r = ok(parseProgramTable(REAL_SPLIT));
+  assert.equal(r.weeks[0].days[2].items[0].name, 'Overhead Press');
+});
+
+// ── the shapes a split arrives in ───────────────────────────────────────────
+
+test('A BARE HEADING splits the days — "Push" is not an exercise', () => {
+  // "Push", "Legs", "Core", "Pull" match no keyword and shout no capitals. Each used to import as an
+  // exercise at an invented 3×10 while the day it named was never created. Whether a bare line is a
+  // heading is not a property of the line — it is where it SITS: work beneath, a boundary above.
+  const r = ok(parseProgramTable('Push\nBench Press 4x8\nFly 3x12\nPull\nRow 4x8'));
+  assert.deepEqual(r.weeks[0].days.map((d) => [d.name, d.items.length]), [['Push', 2], ['Pull', 1]]);
+});
+
+test('but a list of lifts with no headings stays one day', () => {
+  const r = ok(parseProgramTable('Squat 5x5\nBench 5x5\nRow 5x5'));
+  assert.equal(r.weeks[0].days.length, 1);
+  assert.equal(r.weeks[0].days[0].items.length, 3);
+});
+
+test('"4/8" reads as sets over reps, the way a split gets texted', () => {
+  const r = ok(parseProgramTable('Push\nBench Press 4/8\nFly 3/12'));
+  assert.deepEqual(r.weeks[0].days[0].items.map((i) => [i.name, i.sets, i.reps]), [
+    ['Bench Press', 4, 8],
+    ['Fly', 3, 12],
+  ]);
+});
+
+test('reps before sets reads the same as sets before reps', () => {
+  const r = ok(parseProgramTable('Push\nBench Press - 8 reps - 4 sets'));
+  const it = r.weeks[0].days[0].items[0];
+  assert.deepEqual([it.name, it.sets, it.reps], ['Bench Press', 4, 8]);
+});
+
+test('a parenthesised scheme leaves no empty brackets behind', () => {
+  const r = ok(parseProgramTable('Pull\nDeadlift (4 sets of 5)\nRow (3 sets of 10)'));
+  assert.deepEqual(r.weeks[0].days[0].items.map((i) => [i.name, i.sets, i.reps]), [
+    ['Deadlift', 4, 5],
+    ['Row', 3, 10],
+  ]);
+});
+
+test('coaching notes and rest times are not part of the lift\'s name', () => {
+  // The catalogue matches on exact name, so "Bench Press (last set AMRAP)" matches nothing at all.
+  const r = ok(parseProgramTable(
+    'Push\nBench Press - 4 sets - 8 reps (last set AMRAP)\nFly - 3 sets - 12 reps - 90s rest',
+  ));
+  assert.deepEqual(r.weeks[0].days[0].items.map((i) => i.name), ['Bench Press', 'Fly']);
+});
+
+test('numbered and emoji-decorated headings still name the day', () => {
+  assert.deepEqual(ok(parseProgramTable('1) Push\nBench 4x8\n2) Pull\nRow 4x8')).weeks[0].days.map((d) => d.name), ['Push', 'Pull']);
+  assert.equal(ok(parseProgramTable('💪 PUSH DAY\n• Bench Press — 4 sets — 6-8 reps')).weeks[0].days[0].items[0].name, 'Bench Press');
+});
+
+test('sets with no reps, and reps with no sets, each keep what was actually said', () => {
+  const setsOnly = ok(parseProgramTable('Legs\nSquat - 5 sets'));
+  assert.equal(setsOnly.weeks[0].days[0].items[0].sets, 5);
+  assert.equal(setsOnly.weeks[0].days[0].items[0].repsAssumed, true);
+
+  const repsOnly = ok(parseProgramTable('Core\nPlank - 60 reps'));
+  assert.equal(repsOnly.weeks[0].days[0].items[0].reps, 60);
+  assert.equal(repsOnly.weeks[0].days[0].items[0].setsAssumed, true);
+});
+
+test('a deload week note does not stop the week being read', () => {
+  const r = ok(parseProgramTable('Week 1\nSquat 5x5\nWeek 2 - DELOAD\nSquat 3x5'));
+  assert.deepEqual(r.weeks.map((w) => [w.index, w.days[0].items[0].sets]), [[1, 5], [2, 3]]);
+});
