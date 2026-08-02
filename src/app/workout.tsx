@@ -34,7 +34,7 @@ import { fetchProgram, fetchProgramCompletedCount } from '@/data/programs-live';
 import { nextSession } from '@/domain/program/progress-core';
 import { clearWorkoutLaunch, readWorkoutLaunch } from '@/lib/workout-launch';
 import { errorMessage, useQuery } from '@/lib/useQuery';
-import { clearSession, loadSession, persistSession } from '@/domain/workout/autosave';
+import { clearSession, hasLoggedWork, loadSession, persistSession } from '@/domain/workout/autosave';
 import { doneSetCount, hasLoggedSet, PR_MAX_REPS } from '@/domain/workout/metrics';
 import { fetchPriorRecords, saveWorkout } from '@/domain/workout/save';
 import { equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
@@ -189,7 +189,7 @@ export default function WorkoutScreen() {
        * ignored — but neither may it silently discard work already logged. When both exist, ask.
        */
       const launch = await readWorkoutLaunch();
-      const hasWork = !!saved && saved.exercises?.some((e) => e.sets.some((s) => s.done));
+      const hasWork = hasLoggedWork(saved); // the same rule Home uses to offer "Continue" — see `autosave.ts`
       const wantsSomething = !!launch && (!!launch.conditioning || !!launch.templateId || !!launch.freestyle || !!launch.programId || !!launch.exercises?.length);
 
       if (hasWork) {

@@ -26,6 +26,14 @@ export interface TodaysWorkoutCardProps {
   focus?: string
   exerciseCount: number
   onStart?: () => void
+  /**
+   * Unfinished work waiting in local storage, as "N sets logged" — or null when there is none.
+   *
+   * The session was ALREADY being autosaved on every set and the logger already offered to resume it.
+   * Nothing on Home said so, so the only way to discover your workout survived a crashed tab was to
+   * navigate back into the logger and find out. The recovery existed; the sentence announcing it did not.
+   */
+  resumeSets?: number | null
   onPreview?: () => void
   /**
    * "Not today's" — starts a one-off instead. The hero is where the planned session is proposed, so it
@@ -34,7 +42,7 @@ export interface TodaysWorkoutCardProps {
   onFreestyle?: () => void
 }
 
-export function TodaysWorkoutCard({ resolved, title, focus, exerciseCount, onStart, onPreview, onFreestyle }: TodaysWorkoutCardProps) {
+export function TodaysWorkoutCard({ resolved, title, focus, exerciseCount, onStart, resumeSets, onPreview, onFreestyle }: TodaysWorkoutCardProps) {
   const artSource = resolveArtworkSource(resolved.assetPath)
 
   return (
@@ -98,9 +106,21 @@ export function TodaysWorkoutCard({ resolved, title, focus, exerciseCount, onSta
           </View>
         </View>
 
-        <Button variant="primary" fullWidth onPress={onStart} icon={<FlameIcon />} accessibilityLabel="Start workout">
-          Start Workout
+        <Button
+          variant="primary"
+          fullWidth
+          onPress={onStart}
+          icon={<FlameIcon />}
+          accessibilityLabel={resumeSets ? `Continue workout — ${resumeSets} sets already logged` : 'Start workout'}
+        >
+          {resumeSets ? 'Continue Workout' : 'Start Workout'}
         </Button>
+        {/* The count is the reassurance. "Continue" alone still leaves you wondering what survived. */}
+        {resumeSets ? (
+          <Text style={styles.resumeNote}>
+            {resumeSets} set{resumeSets === 1 ? '' : 's'} logged — pick up where you left off
+          </Text>
+        ) : null}
 
         {/* One line, under the thing it is an alternative to. Not a second button — a one-off is the
             quieter choice and should look like it. */}
@@ -121,6 +141,7 @@ export function TodaysWorkoutCard({ resolved, title, focus, exerciseCount, onSta
 }
 
 const styles = StyleSheet.create({
+  resumeNote: { marginTop: 8, textAlign: 'center', fontSize: 12.5, color: flColor.gray600 },
   freestyleRow: { alignSelf: 'center', marginTop: 12, paddingVertical: 4 },
   freestylePressed: { opacity: 0.7 },
   freestyleText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },

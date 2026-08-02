@@ -48,6 +48,8 @@ import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { getActiveProgramById } from '@/domain/training/active-program';
 import { resolveRecommendationId } from '@/domain/onboarding/recommend-core';
 import { CARDIO_ACTIVITIES, CARDIO_DEFAULTS, deriveName, type CardioActivity } from '@/domain/workout/conditioning';
+import { hasLoggedWork, loadSession } from '@/domain/workout/autosave';
+import { doneSetCount } from '@/domain/workout/metrics';
 import type { Program, Workout } from '@/domain/training/schema';
 import { resolveHomeWorkoutArtwork } from '@/domain/home-artwork/resolver';
 import { enrichSessionExercises, equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
@@ -220,6 +222,26 @@ function ProgramPathChooser({
 
 export default function HomeScreen() {
   const [friendSheetOpen, setFriendSheetOpen] = useState(false);
+  /**
+   * Unfinished work sitting in local storage, re-read every time Home comes into focus.
+   *
+   * MUST be per-focus, not once on mount. Home is a mounted tab: read a single time, it would still be
+   * advertising "Continue Workout · 12 sets logged" after the athlete had finished and saved that very
+   * session — an offer to resume something that no longer exists.
+   */
+  const [resumeSets, setResumeSets] = useState<number | null>(null);
+  useFocusEffect(
+    useCallback(() => {
+      let alive = true;
+      void loadSession().then((saved) => {
+        if (alive) setResumeSets(hasLoggedWork(saved) ? doneSetCount(saved!) : null);
+      });
+      return () => {
+        alive = false;
+      };
+    }, []),
+  );
+
   const [elseOpen, setElseOpen] = useState(false);
   /**
    * The sheet has two pages: the choice, then the cardio list.
@@ -492,6 +514,16 @@ export default function HomeScreen() {
     router.push('/workout');
   };
 
+  /**
+   * Continue: straight into the logger, writing NO launch intent.
+   *
+   * That absence is the whole point. `startHomeWorkout` writes one, and the logger reads a launch
+   * arriving on top of unfinished work as a conflict — "resume it, or start what you just picked?" —
+   * which is an incoherent question to ask somebody who just pressed Continue. With no intent the
+   * logger shows its plain "Resume where you left off?" card, which also still offers to discard.
+   */
+  const continueWorkout = () => router.push('/workout');
+
   const startHomeWorkout = async () => {
     const w = home.workout;
     if (!w) return;
@@ -625,7 +657,8 @@ export default function HomeScreen() {
               title={home.workout.name}
               focus={home.workout.focus}
               exerciseCount={home.workout.exerciseCount ?? home.workout.exercises?.length ?? 0}
-              onStart={startHomeWorkout}
+              onStart={resumeSets ? continueWorkout : startHomeWorkout}
+              resumeSets={resumeSets}
               /* No `onPreview`: W-3 is unbuilt, and the card now renders as content rather than as a
                  button to nowhere when none is given. */
               onFreestyle={startFreestyleFromHome}
