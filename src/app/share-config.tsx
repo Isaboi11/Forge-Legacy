@@ -7,6 +7,8 @@ import Svg, { Circle, Path } from 'react-native-svg';
 
 import { TransformationLayout } from '@/components/forge/TransformationLayout';
 import { addSquadPost, type ComparePair, type ShareTemplate, type TransformationLayoutData } from '@/data/squad-feed-live';
+import { fetchFriendLists } from '@/data/friends-live';
+import { createFriendPost } from '@/data/friends-feed-live';
 import { fetchMySquads, type SquadSummary } from '@/data/squad-live';
 import { fetchTransformationEntries, type PoseKey, type TransformationEntry } from '@/data/transformation-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -131,23 +133,86 @@ export default function ShareConfigRoute() {
       return next.length >= allPairs.length ? cur : next;
     });
 
+  /** The post this screen composes, whichever audience it goes to. Built once so the two paths cannot drift. */
+  const composePost = () => ({
+    type: 'transformation' as const,
+    body: reflection && eff('reflection') ? reflection : isCompare && elapsed ? `${elapsed} apart` : '',
+    media: isCompare
+      ? usePairs[0]
+        ? [{ url: usePairs[0].now.url, kind: 'image' as const }]
+        : []
+      : photo
+        ? [{ url: photo, kind: 'image' as const }]
+        : [],
+    layout: isCompare ? layoutData : null,
+  });
+
+  const finishShare = (where: string) => {
+    setSharing(false);
+    setSquadPickerOpen(false);
+    showToast(`Shared to ${where}`);
+    setTimeout(() => router.back(), 700);
+  };
+
+  const failShare = (e: unknown) => {
+    setSharing(false);
+    showToast(errorMessage(e));
+  };
+
   const postToSquad = (squad: SquadSummary) => {
     if (sharing) return;
     setSharing(true);
-    const body = reflection && eff('reflection') ? reflection : isCompare && elapsed ? `${elapsed} apart` : '';
-    const shareMedia = isCompare ? (usePairs[0] ? [{ url: usePairs[0].now.url, kind: 'image' as const }] : []) : photo ? [{ url: photo, kind: 'image' as const }] : [];
-    addSquadPost({ squadId: squad.id, type: 'transformation', body, media: shareMedia, layout: isCompare ? layoutData : null }).then(
-      () => {
+    addSquadPost({ ...composePost(), squadId: squad.id }).then(() => finishShare(squad.name), failShare);
+  };
+
+  /**
+   * Share to the Friends Feed.
+   *
+   * This was a toast reading "Sharing with friends is coming soon" while the entire backend sat finished:
+   * migration 0074 gave posts an audience of FRIENDS · SQUAD · BOTH, 0076 fixed its insert policy, the
+   * Friends Feed has been reading them for weeks — and `createFriendPost` was already written for exactly
+   * this call. Nothing was missing but the caller.
+   *
+   * The "you have no friends yet" check mirrors the squad branch's courtesy: posting into an empty
+   * audience succeeds and is seen by nobody, which looks identical to a failure.
+   */
+  const postToFriends = async () => {
+    if (sharing) return;
+    setSharing(true);
+    try {
+      const lists = await fetchFriendLists();
+      if (!lists.friends.length) {
         setSharing(false);
-        setSquadPickerOpen(false);
-        showToast(`Shared to ${squad.name}`);
-        setTimeout(() => router.back(), 700);
-      },
-      (e: unknown) => {
-        setSharing(false);
-        showToast(errorMessage(e));
-      },
-    );
+        showToast('Add a friend first — nobody would see this yet.');
+        return;
+      }
+      const post = composePost();
+      /*
+       * A COMPARE GOES AS THE FRIENDS FEED'S OWN before/after POST, not as the squad card's.
+       *
+       * The squad surface stores a `transformation` with one image and a `layout` describing the
+       * composition. The friends card reads neither — it renders a `progress` post by finding media
+       * slotted `before` and `after` and putting a draggable divider between them. Sending the squad
+       * shape here would store something true and display it as a lone photo, so each surface gets the
+       * post it knows how to draw.
+       */
+      const pair = isCompare ? usePairs[0] : null;
+      await createFriendPost({
+        audience: 'FRIENDS',
+        squadId: null,
+        type: pair ? 'progress' : undefined,
+        body: post.body,
+        media: pair
+          ? [
+              { url: pair.then.url, kind: 'image', slot: 'before' },
+              { url: pair.now.url, kind: 'image', slot: 'after' },
+            ]
+          : post.media,
+      });
+      finishShare('your friends');
+    } catch (e) {
+      failShare(e);
+    }
   };
 
   const onShare = async () => {
@@ -169,7 +234,13 @@ export default function ShareConfigRoute() {
       setSquadPickerOpen(true);
       return;
     }
-    showToast(dest === 'community' ? 'Community is coming soon' : 'Sharing with friends is coming soon');
+    if (dest === 'friends') {
+      void postToFriends();
+      return;
+    }
+    // "A friend" is a direct send, and there is no direct-message surface to send it to — a different
+    // thing from the Friends Feed, so it says so rather than borrowing the Community line.
+    showToast(dest === 'community' ? 'Community is coming soon' : 'Sending to one person is coming soon');
   };
 
   const onSystemShare = async () => {
