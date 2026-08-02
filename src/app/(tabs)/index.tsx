@@ -221,6 +221,15 @@ function ProgramPathChooser({
 export default function HomeScreen() {
   const [friendSheetOpen, setFriendSheetOpen] = useState(false);
   const [elseOpen, setElseOpen] = useState(false);
+  /**
+   * The sheet has two pages: the choice, then the cardio list.
+   *
+   * A flat list put seven conditioning rows in front of an athlete whose most likely answer is
+   * "freestyle" — the common case paying for the rare one, and the same mistake the exercise picker
+   * already fixed by moving cardio BELOW the catalogue. Two taps to a rower is cheaper than seven rows
+   * to a bench press.
+   */
+  const [elseView, setElseView] = useState<'root' | 'cardio'>('root');
   const router = useRouter();
   const { startWorkout } = useWorkoutSession();
   const { requestPrompt, markAnnounced } = useTour();
@@ -444,10 +453,17 @@ export default function HomeScreen() {
    * "Something else today?" opens a choice rather than assuming freestyle strength. Three things an
    * athlete plausibly means by it, and lifting is only one of them — the button used to answer for them.
    */
-  const startFreestyleFromHome = () => setElseOpen(true);
+  const startFreestyleFromHome = () => {
+    setElseView('root'); // never reopen mid-drill: the sheet always starts at the question it asks
+    setElseOpen(true);
+  };
+  const closeElse = () => {
+    setElseOpen(false);
+    setElseView('root');
+  };
 
   const startFreestyleStrength = async () => {
-    setElseOpen(false);
+    closeElse();
     await writeWorkoutLaunch({ freestyle: true });
     startWorkout('Freestyle Workout', []);
     router.push('/workout');
@@ -462,7 +478,7 @@ export default function HomeScreen() {
    * a run whether it's the whole workout or the last leg of one, and it is the same card either way.
    */
   const startCardio = async (activity: CardioActivity) => {
-    setElseOpen(false);
+    closeElse();
     /*
      * The modality is the activity's own default, not a choice forced at the door.
      *
@@ -689,37 +705,65 @@ export default function HomeScreen() {
       </ScrollView>
 
       {/*
-        THE ACTIVITY TYPE PICKER (`Forge Activity Type Picker.dc.html` — "What are you training?").
+        TWO PAGES: the choice, then the cardio list.
 
-        This was three hardcoded rows: freestyle, treadmill run, outdoor run. Walk and Ride were fully
-        built — their own targets, glyphs, GPS gates and record labels — and unreachable from Home,
-        because the sheet enumerated runs by hand instead of reading the list. Every conditioning
-        activity now comes from `CARDIO_ACTIVITIES`, so adding one can never again leave it stranded
-        behind a sheet that forgot to mention it.
+        Every conditioning activity still comes from `CARDIO_ACTIVITIES` rather than being typed out —
+        that is what stopped Walk and Ride being built and reachable from nowhere. The list simply lives
+        one tap in, behind a single Cardio row, so the athlete who wants to lift is not asked to read
+        past a stair climber first.
       */}
-      <BottomSheet open={elseOpen} onClose={() => setElseOpen(false)} title="What are you training?" scroll>
+      <BottomSheet
+        open={elseOpen}
+        onClose={closeElse}
+        title={elseView === 'root' ? 'What are you training?' : 'Cardio'}
+        scroll
+      >
         <View style={styles.elseList}>
-          <Pressable
-            onPress={() => void startFreestyleStrength()}
-            accessibilityRole="button"
-            accessibilityLabel="Freestyle workout — add lifts as you go"
-            style={({ pressed }) => [styles.elseRow, pressed ? styles.pathPressed : null]}
-          >
-            <Text style={styles.pathCardTitle}>Freestyle workout</Text>
-            <Text style={styles.pathCardSub}>Add lifts as you go. Nothing planned.</Text>
-          </Pressable>
-          {CARDIO_ACTIVITIES.map((a) => (
-            <Pressable
-              key={a.key}
-              onPress={() => void startCardio(a.key)}
-              accessibilityRole="button"
-              accessibilityLabel={`${a.name} — ${a.sub}`}
-              style={({ pressed }) => [styles.elseRow, pressed ? styles.pathPressed : null]}
-            >
-              <Text style={styles.pathCardTitle}>{a.name}</Text>
-              <Text style={styles.pathCardSub}>{a.sub}</Text>
-            </Pressable>
-          ))}
+          {elseView === 'root' ? (
+            <>
+              <Pressable
+                onPress={() => void startFreestyleStrength()}
+                accessibilityRole="button"
+                accessibilityLabel="Freestyle workout — add lifts as you go"
+                style={({ pressed }) => [styles.elseRow, pressed ? styles.pathPressed : null]}
+              >
+                <Text style={styles.pathCardTitle}>Freestyle workout</Text>
+                <Text style={styles.pathCardSub}>Add lifts as you go. Nothing planned.</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setElseView('cardio')}
+                accessibilityRole="button"
+                accessibilityLabel="Cardio — run, walk, ride, row, elliptical, stair climber or swim"
+                style={({ pressed }) => [styles.elseRow, pressed ? styles.pathPressed : null]}
+              >
+                <Text style={styles.pathCardTitle}>Cardio</Text>
+                <Text style={styles.pathCardSub}>Run, ride, row, swim and more. Measured in distance and time.</Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <Pressable
+                onPress={() => setElseView('root')}
+                accessibilityRole="button"
+                accessibilityLabel="Back to what are you training"
+                style={({ pressed }) => [styles.elseBack, pressed ? styles.pathPressed : null]}
+              >
+                <Text style={styles.elseBackLabel}>← Back</Text>
+              </Pressable>
+              {CARDIO_ACTIVITIES.map((a) => (
+                <Pressable
+                  key={a.key}
+                  onPress={() => void startCardio(a.key)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${a.name} — ${a.sub}`}
+                  style={({ pressed }) => [styles.elseRow, pressed ? styles.pathPressed : null]}
+                >
+                  <Text style={styles.pathCardTitle}>{a.name}</Text>
+                  <Text style={styles.pathCardSub}>{a.sub}</Text>
+                </Pressable>
+              ))}
+            </>
+          )}
         </View>
       </BottomSheet>
 
@@ -746,6 +790,8 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   elseList: { gap: 10 },
+  elseBack: { paddingVertical: 6, paddingHorizontal: 2, alignSelf: 'flex-start' },
+  elseBackLabel: { fontSize: 14, fontWeight: '600', color: flColor.gray600 },
   elseRow: { padding: 15, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
   pathBlock: { gap: 12 },
   pathTitle: { marginBottom: 4, fontFamily: flFont.display, fontSize: 21, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
