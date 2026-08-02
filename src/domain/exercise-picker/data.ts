@@ -254,3 +254,13 @@ export function buildSections(opts: {
 
   return { best, mine: [], categoryRows: [], results, browsing: false, total: matched.length, hasResults: results.length > 0 || best.length > 0 };
 }
+
+
+/**
+ * The catalogue as the import matcher wants it — key, name, aliases, nothing else.
+ *
+ * A narrow view on purpose: `exercise-match` stays pure and dependency-free (it never imports the
+ * catalogue, which is 797 entries of JSON), and this is the one place that hands it the real data.
+ */
+export const catalogForMatching = (): { key: string; name: string; aliases?: string[] }[] =>
+  PICKER_DB.map((x) => ({ key: x.key, name: x.name, aliases: x.aliases }));

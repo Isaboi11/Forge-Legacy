@@ -18,7 +18,8 @@ import {
   type ParsedWeek,
 } from '@/domain/program/import-parse';
 import { pickTextFile } from '@/lib/pick-text-file';
-import { itemByName } from '@/domain/exercise-picker/data';
+import { catalogForMatching } from '@/domain/exercise-picker/data';
+import { matchExercise } from '@/domain/program/exercise-match';
 import { useToast } from '@/hooks/useCeremony';
 import { EquipIcon } from '@/components/forge/EquipIcon';
 import { ScreenBackground } from '@/components/screen-background';
@@ -186,6 +187,12 @@ export default function ProgramBuilderScreen() {
   /** Non-null once a paste has parsed — the sheet flips to its preview state. */
   const [preview, setPreview] = useState<ParsedWeek[] | null>(null);
 
+  /**
+   * Resolve a written name to the catalogue — the SAME call the preview renders and the import commits,
+   * so what the athlete is shown is exactly what gets stored. Two resolvers would drift.
+   */
+  const resolveName = (n: string) => matchExercise(n, catalogForMatching());
+
   const openImport = () => {
     setPasteText('');
     setImportError(null);
@@ -263,7 +270,7 @@ export default function ProgramBuilderScreen() {
    */
   const confirmImport = () => {
     if (!preview?.length) return;
-    const imported = toProgramStructure(preview, draft?.name?.trim() || 'Imported Program', (n) => itemByName(n)?.key);
+    const imported = toProgramStructure(preview, draft?.name?.trim() || 'Imported Program', (n) => resolveName(n)?.key);
     mutate((d) => ({
       ...d,
       name: d.name?.trim() ? d.name : imported.name,
@@ -276,7 +283,7 @@ export default function ProgramBuilderScreen() {
       openDay: null,
     }));
     setImportOpen(false);
-    const unmatched = unmatchedNames(preview, (n) => itemByName(n)?.key);
+    const unmatched = unmatchedNames(preview, (n) => resolveName(n)?.key);
     showToast(
       unmatched.length
         ? `Imported · ${unmatched.length} name${unmatched.length === 1 ? '' : 's'} weren’t in the library and kept yours`
@@ -835,9 +842,26 @@ export default function ProgramBuilderScreen() {
                     <View style={styles.impItems}>
                       {d.items.map((it, ii) => (
                         <View key={`${it.name}-${ii}`} style={styles.impItemRow}>
-                          <Text style={styles.impItemName} numberOfLines={1}>
-                            {it.name}
-                          </Text>
+                          <View style={styles.impItemText}>
+                            <Text style={styles.impItemName} numberOfLines={1}>
+                              {it.name}
+                            </Text>
+                            {/* WHAT THE NAME RESOLVED TO, before anything is created.
+                                A match found by the equipment convention rather than by the words is a
+                                judgement, not a fact — showing it is what makes the convention honest,
+                                and the athlete can swap the exercise in the builder afterwards. */}
+                            {(() => {
+                              const hit = resolveName(it.name);
+                              if (!hit) return <Text style={styles.impItemUnmatched}>not in the library · kept as written</Text>;
+                              if (hit.name.toLowerCase() === it.name.trim().toLowerCase()) return null;
+                              return (
+                                <Text style={styles.impItemMatched} numberOfLines={1}>
+                                  {hit.byPreference ? '≈ ' : '→ '}
+                                  {hit.name}
+                                </Text>
+                              );
+                            })()}
+                          </View>
                           <View style={styles.impSteppers}>
                             <ImpStep label={`Fewer sets of ${it.name}`} glyph="−" onPress={() => bumpPreview(wi, di, ii, 'sets', -1)} />
                             <Text style={[styles.impNum, it.setsAssumed ? styles.impNumAssumed : null]}>{it.sets}</Text>
@@ -1688,7 +1712,10 @@ const styles = StyleSheet.create({
   impDayName: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '700', color: flColor.cream100, paddingVertical: 9, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
   impItems: { gap: 6, paddingVertical: 10, paddingHorizontal: 12 },
   impItemRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
-  impItemName: { flex: 1, fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray400 },
+  impItemText: { flex: 1, gap: 1 },
+  impItemName: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray400 },
+  impItemMatched: { fontFamily: flFont.sans, fontSize: 10.5, color: flColor.bronze400 },
+  impItemUnmatched: { fontFamily: flFont.sans, fontSize: 10.5, color: flColor.gray600 },
   impSteppers: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   impStep: { width: 22, height: 22, borderRadius: flRadius.sm, borderWidth: 1, borderColor: flColor.charcoal500, alignItems: 'center', justifyContent: 'center' },
   impStepGlyph: { fontSize: 13, lineHeight: 15, color: flColor.gray400 },
