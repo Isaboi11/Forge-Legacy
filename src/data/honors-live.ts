@@ -287,9 +287,15 @@ export function triggerText(metric: string, threshold: number, metricKey: string
     case 'squad_workouts':
       return `Your squads log ${num(threshold)} sessions between them.`;
     case 'perfect_weeks':
+      // The bar is the squad's own weekly standard, not seven days — rest days are training, and an
+      // honor nobody can earn without skipping theirs is an honor worth not having.
       return threshold <= 1
-        ? 'A week where every member of your squad trained all seven days.'
-        : `${num(threshold)} weeks where every member of your squad trained all seven days.`;
+        ? 'A week where every member of your squad met its standard.'
+        : `${num(threshold)} weeks where every member of your squad met its standard.`;
+    case 'squad_goals_completed':
+      return threshold <= 1
+        ? 'Finish a goal your squad set together.'
+        : `Finish ${num(threshold)} goals your squad set together.`;
     case 'max_squad_streak':
       return `Keep half your squad training, every day, for ${num(threshold)} days.`;
     case 'everyone_finished_program':

@@ -409,8 +409,21 @@ export async function markCheckinViewed(checkinId: string): Promise<void> {
   await supabase.from('squad_checkin_views').upsert({ checkin_id: checkinId, viewer_id: user.id }, { onConflict: 'checkin_id,viewer_id' });
 }
 
-/** Set / update the squad's measurable goal (owner). Resets the start clock so progress counts forward. */
+/**
+ * Set / update the squad's measurable goal (owner). Resets the start clock so progress counts forward.
+ *
+ * BANKS THE OUTGOING GOAL FIRST. The goal lives in columns on `squads`, so setting a new one erases the
+ * last — and a squad that finished five goals would have no evidence of any of them. `archive_squad_goal`
+ * writes a completion row if the current goal was actually met, and does nothing if it wasn't; that
+ * archive is what the Squad Goal honors count. Best-effort, because failing to record history must never
+ * stop someone setting their next goal.
+ */
 export async function setSquadGoal(id: string, input: { title: string; target: number; metricKind: SquadGoalMetric; metricKey: string | null }): Promise<void> {
+  try {
+    await supabase.rpc('archive_squad_goal', { p_squad: id });
+  } catch {
+    // 0099 not yet applied, or offline. The next evaluation banks it if it still qualifies.
+  }
   const { error } = await supabase
     .from('squads')
     .update({
@@ -425,8 +438,13 @@ export async function setSquadGoal(id: string, input: { title: string; target: n
   if (error) throw error;
 }
 
-/** Clear the squad's goal (owner). */
+/** Clear the squad's goal (owner). Banks it first if it was met — clearing a finished goal is finishing it. */
 export async function clearSquadGoal(id: string): Promise<void> {
+  try {
+    await supabase.rpc('archive_squad_goal', { p_squad: id });
+  } catch {
+    // See setSquadGoal.
+  }
   const { error } = await supabase.from('squads').update({ goal: null, goal_target: null, goal_started_at: null, updated_at: new Date().toISOString() }).eq('id', id);
   if (error) throw error;
 }
@@ -463,10 +481,25 @@ export async function createSquad(input: {
   return (data as { squad_id: string }).squad_id;
 }
 
+/**
+ * The squad's weekly standard — how many trained days a week it holds itself to.
+ *
+ * Fetched on its own rather than added to `SQUAD_COLS`, because the client ships before the migration is
+ * run by hand and a missing COLUMN raises 42703 — which the data layer's table-level guards do not catch.
+ * Putting it in the shared select would take every squad screen down until 0099 lands. Null means exactly
+ * that: not migrated yet, so the control that sets it stays hidden rather than pretending to work.
+ */
+export async function fetchCheckinStandard(id: string): Promise<number | null> {
+  const { data, error } = await supabase.from('squads').select('checkin_standard').eq('id', id).maybeSingle();
+  if (error || !data) return null;
+  const n = Number((data as { checkin_standard?: number }).checkin_standard);
+  return Number.isFinite(n) ? n : null;
+}
+
 /** Owner edit — any subset of the identity fields. */
 export async function updateSquad(
   id: string,
-  patch: { name?: string; motto?: string | null; goal?: string | null; description?: string | null; privacy?: SquadPrivacy; crest?: string; photoUrl?: string | null },
+  patch: { name?: string; motto?: string | null; goal?: string | null; description?: string | null; privacy?: SquadPrivacy; crest?: string; photoUrl?: string | null; checkinStandard?: number },
 ): Promise<void> {
   const upd: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (patch.name !== undefined) upd.name = patch.name.trim();
@@ -476,6 +509,9 @@ export async function updateSquad(
   if (patch.privacy !== undefined) upd.privacy = patch.privacy;
   if (patch.crest !== undefined) upd.crest = patch.crest;
   if (patch.photoUrl !== undefined) upd.photo_url = patch.photoUrl;
+  // Clamped here as well as in the CHECK constraint: a stepper that ran past 7 would fail the whole
+  // save with a constraint error, and the athlete would just see "couldn't save".
+  if (patch.checkinStandard !== undefined) upd.checkin_standard = Math.max(1, Math.min(7, Math.round(patch.checkinStandard)));
   const { error } = await supabase.from('squads').update(upd).eq('id', id);
   if (error) throw error;
 }

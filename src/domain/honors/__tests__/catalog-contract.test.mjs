@@ -99,9 +99,9 @@ const rows = catalogRows();
 const { keys: computed, file: metricsFile } = computedMetrics();
 
 test('the migrations define the honors this project believes it has', () => {
-  // 175 catalog rows + `initiative`, which is awarded by its own RPC (0014) and is deliberately not a
-  // catalog row — 176 awardable honors in total.
-  assert.ok(rows.size >= 175, `expected at least 175 catalog rows, parsed ${rows.size}`);
+  // 178 catalog rows + `initiative`, which is awarded by its own RPC (0014) and is deliberately not a
+  // catalog row — 179 awardable honors in total.
+  assert.ok(rows.size >= 178, `expected at least 178 catalog rows, parsed ${rows.size}`);
 });
 
 test('EVERY catalog metric has an evaluator path', () => {
@@ -211,7 +211,7 @@ test('the categories that were empty are not empty any more', () => {
   // The whole point of 0099. If a future migration removes these, that should be a decision, not a slip.
   const byCat = {};
   for (const r of rows.values()) byCat[r.category] = (byCat[r.category] ?? 0) + 1;
-  for (const [cat, min] of [['Programs', 5], ['Squad', 12], ['Hidden', 6], ['Prestige', 7], ['Longevity', 10]]) {
+  for (const [cat, min] of [['Programs', 5], ['Squad', 15], ['Hidden', 6], ['Prestige', 7], ['Longevity', 10]]) {
     assert.ok((byCat[cat] ?? 0) >= min, `${cat} has ${byCat[cat] ?? 0} honors, expected at least ${min}`);
   }
 });

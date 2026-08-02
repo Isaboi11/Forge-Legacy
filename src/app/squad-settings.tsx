@@ -21,6 +21,7 @@ import {
   leaveSquad,
   setSquadNotifPrefs,
   updateSquad,
+  fetchCheckinStandard,
   uploadSquadPhoto,
   type SquadDetail,
   type SquadMemberView,
@@ -67,6 +68,9 @@ export default function SquadSettingsScreen() {
   // where the migration hasn't been applied — `null` just means the Discovery controls stay hidden.
   const { data: discovery, refetch: refetchDiscovery } = useQuery(() => fetchSquadDiscovery(squadId), [squadId]);
   const { data: pendingCount } = useQuery(() => fetchPendingRequestCount(squadId), [squadId]);
+  // Same reason as Discovery above: read separately, and `null` (0099 not applied) hides the control
+  // rather than taking the screen down on a missing column.
+  const { data: standard, refetch: refetchStandard } = useQuery(() => fetchCheckinStandard(squadId), [squadId]);
 
   const [editOpen, setEditOpen] = useState(false);
   const [draftName, setDraftName] = useState('');
@@ -172,6 +176,18 @@ export default function SquadSettingsScreen() {
         showToast(e instanceof Error ? e.message : 'Couldn’t save changes.');
       },
     );
+  };
+
+  /** Move the squad's weekly bar. Clamped, saved, then re-read so the number on screen is the stored one. */
+  const changeStandard = async (next: number) => {
+    const n = Math.max(1, Math.min(7, next));
+    if (n === standard) return;
+    try {
+      await updateSquad(squadId, { checkinStandard: n });
+      refetchStandard();
+    } catch (e) {
+      showToast(errorMessage(e));
+    }
   };
 
   const changePrivacy = (p: SquadPrivacy) => {
@@ -308,6 +324,44 @@ export default function SquadSettingsScreen() {
             </View>
           ) : null}
         </View>
+
+        {/* The squad's weekly standard — the bar a Perfect Week is measured against. */}
+        {standard != null ? (
+          <>
+            <Text style={styles.sectionLabel}>Training Standard</Text>
+            <View style={styles.card}>
+              <Text style={styles.privacyLabel}>Days a week</Text>
+              <Text style={styles.privacyHint}>
+                What this squad holds itself to. Rest days are part of training — this is the bar everyone
+                agrees to clear, not the number of days in the week.
+              </Text>
+              <View style={styles.stdRow}>
+                <Pressable
+                  onPress={() => void changeStandard(standard - 1)}
+                  disabled={standard <= 1}
+                  accessibilityRole="button"
+                  accessibilityLabel="Fewer days a week"
+                  style={({ pressed }) => [styles.stdBtn, standard <= 1 ? styles.stdBtnOff : null, pressed ? styles.stdPressed : null]}
+                >
+                  <Text style={styles.stdGlyph}>−</Text>
+                </Pressable>
+                <View style={styles.stdValueWrap}>
+                  <Text style={styles.stdValue}>{standard}</Text>
+                  <Text style={styles.stdUnit}>{standard === 1 ? 'DAY' : 'DAYS'}</Text>
+                </View>
+                <Pressable
+                  onPress={() => void changeStandard(standard + 1)}
+                  disabled={standard >= 7}
+                  accessibilityRole="button"
+                  accessibilityLabel="More days a week"
+                  style={({ pressed }) => [styles.stdBtn, standard >= 7 ? styles.stdBtnOff : null, pressed ? styles.stdPressed : null]}
+                >
+                  <Text style={styles.stdGlyph}>+</Text>
+                </Pressable>
+              </View>
+            </View>
+          </>
+        ) : null}
 
         {/* Permissions — the design's Who Can Invite control (0056) */}
         {discovery ? (
@@ -832,6 +886,22 @@ const styles = StyleSheet.create({
   // sections
   sectionLabel: { marginTop: 26, marginBottom: 12, marginLeft: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
   dangerLabel: { marginTop: 44, color: flColor.redMuted },
+  stdRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  stdBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: flRadius.md,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stdBtnOff: { opacity: 0.3 },
+  stdPressed: { opacity: 0.65 },
+  stdGlyph: { fontSize: 21, lineHeight: 24, color: flColor.bronze300 },
+  stdValueWrap: { flex: 1, alignItems: 'center' },
+  stdValue: { fontFamily: flFont.display, fontSize: 30, lineHeight: 34, color: flColor.cream100, fontVariant: ['tabular-nums'] },
+  stdUnit: { fontSize: 9.5, letterSpacing: 1.5, color: flColor.gray600, marginTop: 1 },
   card: { backgroundColor: flColor.charcoal900, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, borderRadius: flRadius.lg, padding: 15, boxShadow: flShadow.card },
 
   // identity card

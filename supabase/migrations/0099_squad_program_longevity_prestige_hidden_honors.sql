@@ -4,15 +4,16 @@
 -- ZERO honors. The Squad system in particular is fully built — squads, members, check-ins, feed,
 -- records — and earned nothing at all.
 --
--- Adds 37 honors: Programs 5, Longevity 7, Squad 12, Hidden 6, Prestige 7. Catalog 139 → 176.
+-- Adds 40 honors: Programs 5, Longevity 7, Squad 15, Hidden 6, Prestige 7. Catalog 139 → 179.
 --
 -- ══════════════════════════════════════════════════════════════════════════════
 -- WHAT IS DELIBERATELY NOT HERE, AND WHY
 -- ══════════════════════════════════════════════════════════════════════════════
 --
---   · SQUAD Mission Complete (3) — squad Missions were never built. No table, no screens; the concept
---     appears once in 0029's header as a diverged draft. An honor for completing a thing that cannot be
---     started is worse than no honor.
+--   · (SQUAD Mission Complete is BUILT — as squad GOALS. The locked catalog predates the rename: what it
+--     calls a Mission is what the product shipped as the squad goal, so these three honors count goals
+--     completed and carry `squad_goal_complete_*` ids rather than the doc's `mission_complete_*`. The
+--     name in the doc describes a thing that no longer exists under that word.)
 --   · PROGRAMS Family Mastery (2) — needs "every program in a successor lineage". Lineage exists only as
 --     `successorName`, an unresolved authored STRING in client TypeScript (`domain/training/schema.ts`),
 --     never resolved to ids and never shipped to the database. The evaluator cannot see it.
@@ -75,6 +76,88 @@ begin;
 alter table public.profiles add column if not exists tz text;
 comment on column public.profiles.tz is
   'IANA timezone (e.g. America/Denver), written by the client. Null = local-time honors do not evaluate; never defaulted, because a guessed timezone awards honors that did not happen.';
+
+-- ── THE SQUAD'S WEEKLY STANDARD ─────────────────────────────────────────────
+--
+-- How many days a week this squad holds itself to. It exists because "Perfect Week" as the locked
+-- catalog defines it — every member checked in Trained on all seven days — is a bad honor. Rest days
+-- are TRAINING, deliberately taken, and an honor that can only be earned by a squad where nobody rests
+-- rewards the one pattern the rest of this app refuses to celebrate. It would also have been broken by
+-- one person taking a Sunday off, which is the shape of thing that makes people apologise to a group.
+--
+-- So the bar is the squad's own. Three is a default, not a claim: a squad that never opens settings
+-- still has a reachable honor, and an owner who wants five sets five.
+alter table public.squads add column if not exists checkin_standard int not null default 3;
+alter table public.squads drop constraint if exists squads_checkin_standard_range;
+alter table public.squads add constraint squads_checkin_standard_range check (checkin_standard between 1 and 7);
+comment on column public.squads.checkin_standard is
+  'Trained check-ins per week this squad holds itself to (1-7, default 3). The bar for a Perfect Week. Owner-set: a squad that rests two days a week is not failing at anything.';
+
+-- ── SQUAD GOALS, ARCHIVED ───────────────────────────────────────────────────
+--
+-- A squad goal lives in COLUMNS ON `squads` (0031/0036) — one at a time, and setting a new one overwrites
+-- the last. So "10 Squad Goals" was uncountable: every goal a squad had ever finished was gone the moment
+-- it started another. This is the record that makes finishing one a thing that happened.
+--
+-- Keyed on (squad, started_at) because that pair identifies one goal INSTANCE — the same target set twice
+-- is two goals, and re-running the archiver on a goal already banked does nothing.
+create table if not exists public.squad_goal_completions (
+  squad_id     uuid        not null references public.squads(id) on delete cascade,
+  started_at   timestamptz not null,
+  goal         text,
+  target       int         not null,
+  metric_kind  text        not null,
+  metric_key   text,
+  completed_at timestamptz not null default now(),
+  primary key (squad_id, started_at)
+);
+
+alter table public.squad_goal_completions enable row level security;
+drop policy if exists squad_goal_completions_read on public.squad_goal_completions;
+create policy squad_goal_completions_read on public.squad_goal_completions for select using (
+  exists (select 1 from public.squad_members m
+           where m.squad_id = squad_goal_completions.squad_id and m.user_id = auth.uid())
+);
+
+-- Bank the squad's current goal if it has been met. Idempotent; returns whether it banked anything.
+--
+-- Columns are read into named variables rather than a `record`, on purpose: PL/pgSQL resolves record
+-- fields at RUN time, so `s.goal_target` against a renamed column compiles clean, reports success, and
+-- fails the first time an athlete finishes a goal. This project has already shipped that exact bug once.
+create or replace function public.archive_squad_goal(p_squad uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_goal     text;
+  v_target   int;
+  v_kind     text;
+  v_key      text;
+  v_started  timestamptz;
+  v_progress numeric;
+begin
+  select sq.goal, sq.goal_target, sq.goal_metric_kind, sq.goal_metric_key, sq.goal_started_at
+    into v_goal, v_target, v_kind, v_key, v_started
+    from public.squads sq where sq.id = p_squad;
+
+  if v_target is null or v_started is null then
+    return false;
+  end if;
+
+  v_progress := public.squad_metric_sum(p_squad, coalesce(v_kind, 'workout_count'), v_key, v_started);
+  if v_progress is null or v_progress < v_target then
+    return false;
+  end if;
+
+  insert into public.squad_goal_completions (squad_id, started_at, goal, target, metric_kind, metric_key)
+  values (p_squad, v_started, v_goal, v_target, coalesce(v_kind, 'workout_count'), v_key)
+  on conflict (squad_id, started_at) do nothing;
+
+  return found;
+end;
+$$;
 
 -- Honors that require OTHER honors.
 --
@@ -262,24 +345,41 @@ begin
         join public.workouts w on w.athlete_id = mate.user_id and w.state = 'saved'
        where me.user_id = p_uid
     ) end,
-    -- A perfect week: an ISO week in which EVERY current member checked in Trained on all seven days.
+    -- A perfect week: an ISO week in which EVERY current member met the squad's OWN standard.
     --
-    -- The locked doc says "a 7-day window" and does not say how overlapping windows count — eight perfect
-    -- days would be two perfect weeks under one reading and one under another. Calendar weeks resolve
-    -- that without inflating: fourteen perfect days is two perfect weeks, and an athlete can say what
-    -- one is. The row count equals days × members exactly, because (squad, user, date) is the primary
-    -- key, so equality with 7 × members forces every member on every day.
+    -- Not "all seven days", which is what the locked catalog says and what this originally shipped as.
+    -- That version could only be earned by a squad in which nobody ever rested, and was broken for
+    -- everyone by one person taking a Sunday off — an honor that quietly asks a group to train through
+    -- their rest days, in an app whose whole posture is that rest is part of the work.
+    --
+    -- Calendar weeks rather than rolling ones: the doc says "a 7-day window" without saying how
+    -- overlapping windows count, and fourteen perfect days should be two perfect weeks, not eight.
     'perfect_weeks', case when not v_squad then 0 else (
       select count(*) from (
-        select ck.squad_id, date_trunc('week', ck.checkin_date) as wk
-          from public.squad_checkins ck
-         where ck.status = 'trained'
-           and ck.squad_id in (select sm.squad_id from public.squad_members sm where sm.user_id = p_uid)
-           and exists (select 1 from public.squad_members cur
-                        where cur.squad_id = ck.squad_id and cur.user_id = ck.user_id)
-         group by ck.squad_id, date_trunc('week', ck.checkin_date)
-        having count(*) = 7 * (select count(*) from public.squad_members m2 where m2.squad_id = ck.squad_id)
+        select per.squad_id, per.wk
+          from (
+            select ck.squad_id,
+                   date_trunc('week', ck.checkin_date) as wk,
+                   ck.user_id,
+                   count(*) as days
+              from public.squad_checkins ck
+             where ck.status = 'trained'
+               and ck.squad_id in (select sm.squad_id from public.squad_members sm where sm.user_id = p_uid)
+               and exists (select 1 from public.squad_members cur
+                            where cur.squad_id = ck.squad_id and cur.user_id = ck.user_id)
+             group by ck.squad_id, date_trunc('week', ck.checkin_date), ck.user_id
+          ) per
+         group by per.squad_id, per.wk
+        having count(*) filter (
+                 where per.days >= (select sq.checkin_standard from public.squads sq where sq.id = per.squad_id))
+             = (select count(*) from public.squad_members m2 where m2.squad_id = per.squad_id)
       ) pw
+    ) end,
+    -- Squad goals finished, across every squad the athlete belongs to. Counted from the archive, because
+    -- the live goal columns hold only the current one.
+    'squad_goals_completed', case when not v_squad then 0 else (
+      select count(*) from public.squad_goal_completions gc
+       where gc.squad_id in (select sm.squad_id from public.squad_members sm where sm.user_id = p_uid)
     ) end,
     -- SQ-D6: a day counts when at least half the current members (rounded up) check in Trained. Rest
     -- days do not count toward the bar. Gaps-and-islands over qualifying days; the streak is the longest
@@ -444,12 +544,21 @@ declare
   v_bw      numeric;
   v_cats    int;
   v_tt      record;
+  v_sq      record;
 begin
   if v_uid is null then
     raise exception 'not authenticated';
   end if;
 
-  v_bw      := public.latest_bodyweight_lb(v_uid);
+  v_bw := public.latest_bodyweight_lb(v_uid);
+
+  -- Bank any squad goal that has been met, BEFORE measuring. Nothing else notices a goal being finished
+  -- — progress is derived live and the columns are overwritten by the next goal — so if this does not run
+  -- here, a squad can complete ten goals and the honor counting them stays at zero forever.
+  for v_sq in select sm.squad_id from public.squad_members sm where sm.user_id = v_uid loop
+    perform public.archive_squad_goal(v_sq.squad_id);
+  end loop;
+
   v_metrics := public.honor_metrics(v_uid);
 
   -- ── Account-scoped, unkeyed ──
@@ -636,7 +745,7 @@ alter table public.honor_catalog add constraint honor_catalog_metric_check
     -- 0099
     'always', 'never', 'programs_graduated', 'account_days',
     'squads_founded', 'squad_checkins_logged', 'squad_workouts',
-    'perfect_weeks', 'max_squad_streak', 'everyone_finished_program',
+    'perfect_weeks', 'max_squad_streak', 'everyone_finished_program', 'squad_goals_completed',
     'categories_topped',
     'sessions_before_6am', 'sessions_midnight_3am', 'sessions_new_years', 'sessions_leap_day',
     'sessions_full_circle'
@@ -676,6 +785,10 @@ insert into public.honor_catalog (honor_type, display_name, category, metric, me
   ('squad_workouts_500',  '500 Squad Workouts',   'Squad', 'squad_workouts',        null, 500,  'account', 841),
   ('squad_workouts_1000', '1,000 Squad Workouts', 'Squad', 'squad_workouts',        null, 1000, 'account', 842),
   ('everyone_finished_program', 'Everyone Finished Program', 'Squad', 'everyone_finished_program', null, 1, 'account', 850),
+  -- The locked catalog's Mission Complete family. Missions shipped as squad GOALS; these count those.
+  ('squad_goal_complete_1',  'First Squad Goal', 'Squad', 'squad_goals_completed', null, 1,  'account', 860),
+  ('squad_goal_complete_10', '10 Squad Goals',   'Squad', 'squad_goals_completed', null, 10, 'account', 861),
+  ('squad_goal_complete_25', '25 Squad Goals',   'Squad', 'squad_goals_completed', null, 25, 'account', 862),
 
   -- ── Hidden. Criteria are never surfaced before they are earned; the Honors hub omits a category
   --    entirely when nothing in it is held, which is the whole concealment mechanism. No new schema. ──
@@ -764,6 +877,12 @@ begin
     raise exception 'HONOR REQUIREMENTS BROKEN: prerequisite(s) do not exist: %', v_missing;
   end if;
 
+  -- (c) Execute the goal archiver once. A non-existent squad returns false at the first guard, but only
+  --     AFTER the select that names five `squads` columns has been planned and run — which is the whole
+  --     point: a renamed column fails here, at apply time, instead of the first time a squad finishes a
+  --     goal. Read-only in this path; it cannot bank anything for a squad that does not exist.
+  perform public.archive_squad_goal('00000000-0000-0000-0000-000000000000'::uuid);
+
   raise notice 'Honor catalog OK — % honors, % prerequisite rows.',
     (select count(*) from public.honor_catalog),
     (select count(*) from public.honor_requires);
@@ -781,9 +900,13 @@ commit;
 --
 --   select jsonb_pretty(public.honor_metrics(auth.uid()));
 --
--- Expect one object with 41 keys and plausible numbers. Then check the counts:
+-- Expect one object with 43 keys and plausible numbers. Then check the counts:
 --
 --   select category, count(*) from public.honor_catalog group by category order by count(*) desc;
 --
--- Expect 176 honors across 15 categories, with Programs 5, Longevity 10, Squad 12, Hidden 6,
+-- Expect 179 honors across 15 categories, with Programs 5, Longevity 10, Squad 15, Hidden 6,
 -- Prestige 7.
+--
+-- And confirm the squad standard landed, since Perfect Week now depends on it:
+--
+--   select name, checkin_standard from public.squads;
