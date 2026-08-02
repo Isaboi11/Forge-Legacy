@@ -21,8 +21,61 @@
  */
 
 export type ExerciseKind = 'strength' | 'cardio';
-export type CardioActivity = 'run' | 'walk' | 'bike';
+
+/**
+ * Every kind of conditioning the app can log.
+ *
+ * ══ THREE SHAPES, NOT ONE ══
+ *
+ * These are not interchangeable, and pretending otherwise is how a machine ends up lying about itself:
+ *
+ *  · ROAD-CAPABLE (run, walk, bike) — can happen outdoors under GPS, or indoors on a machine. They have
+ *    a pace or a speed, because distance over ground is the thing being measured.
+ *  · MACHINES WITH A DISTANCE (row, elliptical, swim) — indoor only. Time and distance are real; a
+ *    target PACE is not. A rower's honest metric is a 500 m split and a swimmer's is per-100, neither of
+ *    which this app computes, so neither is offered rather than approximated with a per-mile number
+ *    nobody in either sport uses.
+ *  · MACHINES WITHOUT ONE (stair) — time only. A stair climber counts floors, and floors are not miles.
+ *    Converting them would invent a distance the athlete never travelled.
+ */
+export type CardioActivity = 'run' | 'walk' | 'bike' | 'row' | 'elliptical' | 'swim' | 'stair';
 export type Modality = 'outdoor' | 'indoor';
+
+/** Can this happen outside, under GPS? Everything else is a machine and the toggle never appears. */
+export const OUTDOOR_CAPABLE: Record<CardioActivity, boolean> = {
+  run: true,
+  walk: true,
+  bike: true,
+  row: false,
+  elliptical: false,
+  swim: false,
+  stair: false,
+};
+
+/** Is a distance meaningful for it? False for the stair climber, which measures floors. */
+export const TRACKS_DISTANCE: Record<CardioActivity, boolean> = {
+  run: true,
+  walk: true,
+  bike: true,
+  row: true,
+  elliptical: true,
+  swim: true,
+  stair: false,
+};
+
+/**
+ * Which rate the athlete thinks in. Runners and walkers hold a PACE (minutes per mile); cyclists hold a
+ * SPEED (miles per hour). The machines hold neither — see the type doc above.
+ */
+export const RATE_KIND: Record<CardioActivity, 'pace' | 'speed' | 'none'> = {
+  run: 'pace',
+  walk: 'pace',
+  bike: 'speed',
+  row: 'none',
+  elliptical: 'none',
+  swim: 'none',
+  stair: 'none',
+};
 
 export interface CardioBlock {
   activity: CardioActivity;
@@ -73,10 +126,39 @@ export const CARDIO_ACTIVITIES: { key: CardioActivity; name: string; sub: string
   { key: 'run', name: 'Run', sub: 'Outdoor or treadmill', symbol: 'shoe' },
   { key: 'walk', name: 'Walk', sub: 'Easy, restorative miles', symbol: 'footprints' },
   { key: 'bike', name: 'Ride', sub: 'Outdoor or trainer', symbol: 'bicycle' },
+  { key: 'row', name: 'Row', sub: 'Ergometer, indoors', symbol: 'rower' },
+  { key: 'elliptical', name: 'Elliptical', sub: 'Low impact, steady effort', symbol: 'elliptical' },
+  { key: 'stair', name: 'Stair Climber', sub: 'Floors, not miles', symbol: 'stairs' },
+  { key: 'swim', name: 'Swim', sub: 'Pool lengths', symbol: 'swim' },
 ];
 
 /** The verb a name is built from. Ride, not Bike — you go for a ride. */
-export const VERB: Record<CardioActivity, string> = { run: 'Run', walk: 'Walk', bike: 'Ride' };
+export const VERB: Record<CardioActivity, string> = {
+  run: 'Run',
+  walk: 'Walk',
+  bike: 'Ride',
+  row: 'Row',
+  elliptical: 'Elliptical',
+  swim: 'Swim',
+  stair: 'Stair Climb',
+};
+
+/**
+ * What the block is called when it is NOT outdoors.
+ *
+ * Was a single ternary special-casing the bike, with the comment "there is no treadmill for a bicycle."
+ * That was right, and it generalises: there is no treadmill for a rower either. Each machine states what
+ * it actually is rather than borrowing the running machine's name.
+ */
+const INDOOR_NAME: Record<CardioActivity, string> = {
+  run: 'Treadmill Run',
+  walk: 'Treadmill Walk',
+  bike: 'Indoor Ride',
+  row: 'Row',
+  elliptical: 'Elliptical',
+  swim: 'Pool Swim',
+  stair: 'Stair Climb',
+};
 
 /**
  * The block always states what it is.
@@ -85,14 +167,23 @@ export const VERB: Record<CardioActivity, string> = { run: 'Run', walk: 'Walk', 
  * template string: there is no treadmill for a bicycle.
  */
 export function deriveName(activity: CardioActivity, modality: Modality): string {
-  const verb = VERB[activity];
-  if (modality === 'outdoor') return `Outdoor ${verb}`;
-  return activity === 'bike' ? 'Indoor Ride' : `Treadmill ${verb}`;
+  if (modality === 'outdoor' && OUTDOOR_CAPABLE[activity]) return `Outdoor ${VERB[activity]}`;
+  return INDOOR_NAME[activity];
 }
 
+const INDOOR_EQUIP: Record<CardioActivity, string> = {
+  run: 'Treadmill',
+  walk: 'Treadmill',
+  bike: 'Trainer',
+  row: 'Erg',
+  elliptical: 'Elliptical',
+  swim: 'Pool',
+  stair: 'Stair Climber',
+};
+
 export function deriveEquip(activity: CardioActivity, modality: Modality): string {
-  if (modality === 'outdoor') return 'Road';
-  return activity === 'bike' ? 'Trainer' : 'Treadmill';
+  if (modality === 'outdoor' && OUTDOOR_CAPABLE[activity]) return 'Road';
+  return INDOOR_EQUIP[activity];
 }
 
 /**
@@ -101,8 +192,16 @@ export function deriveEquip(activity: CardioActivity, modality: Modality): strin
  * Setting the modality rewrites `equip`, so keying off it would make Outdoor Run and Outdoor Walk render
  * the same glyph the moment both sat on 'Road'. Modality is already carried by the toggle and the name.
  */
-export const activitySymbol = (a: CardioActivity): string =>
-  a === 'bike' ? 'bicycle' : a === 'walk' ? 'footprints' : 'shoe';
+const SYMBOL: Record<CardioActivity, string> = {
+  run: 'shoe',
+  walk: 'footprints',
+  bike: 'bicycle',
+  row: 'rower',
+  elliptical: 'elliptical',
+  swim: 'swim',
+  stair: 'stairs',
+};
+export const activitySymbol = (a: CardioActivity): string => SYMBOL[a];
 
 /** The catalog key a block carries, so it round-trips through the picker, save and template alike. */
 export const cardioKey = (a: CardioActivity): string => `cardio:${a}`;
@@ -112,11 +211,17 @@ export const isCardioKey = (k: string | null | undefined): boolean => !!k?.start
 export function activityFromKey(k: string | null | undefined): CardioActivity | null {
   if (!isCardioKey(k)) return null;
   const rest = k!.slice('cardio:'.length);
-  return rest === 'run' || rest === 'walk' || rest === 'bike' ? rest : null;
+  // DERIVED from the list, never a second hardcoded copy of it. The literal triple that stood here was
+  // already stale the moment a fourth activity existed: `cardio:row` round-tripped to null, so a rowing
+  // block authored into a program would have come back as "not a cardio block at all".
+  return CARDIO_ACTIVITIES.some((a) => a.key === rest) ? (rest as CardioActivity) : null;
 }
 
 /** A ride measures speed where a run measures pace — this flips strings and both step directions. */
-export const usesSpeed = (a: CardioActivity): boolean => a === 'bike';
+export const usesSpeed = (a: CardioActivity): boolean => RATE_KIND[a] === 'speed';
+
+/** Does this activity offer a rate target at all? The machines do not — see `RATE_KIND`. */
+export const hasRateTarget = (a: CardioActivity): boolean => RATE_KIND[a] !== 'none';
 
 // ── authored defaults ───────────────────────────────────────────────────────
 
@@ -137,6 +242,12 @@ export const CARDIO_DEFAULTS: Record<CardioActivity, CardioBlock> = {
   run: { activity: 'run', name: 'Outdoor Run', equip: 'Road', modality: 'outdoor', targetMi: null, targetPaceSec: null },
   walk: { activity: 'walk', name: 'Outdoor Walk', equip: 'Road', modality: 'outdoor', targetMi: null, targetPaceSec: null },
   bike: { activity: 'bike', name: 'Outdoor Ride', equip: 'Road', modality: 'outdoor', targetMi: null, targetSpdMph: null },
+  // Machines open INDOORS, because that is the only place they exist. A rower defaulting to "Outdoor
+  // Row" would put the athlete one tap from a modality that is not real for it.
+  row: { activity: 'row', name: 'Row', equip: 'Erg', modality: 'indoor', targetMi: null },
+  elliptical: { activity: 'elliptical', name: 'Elliptical', equip: 'Elliptical', modality: 'indoor', targetMi: null },
+  swim: { activity: 'swim', name: 'Pool Swim', equip: 'Pool', modality: 'indoor', targetMi: null },
+  stair: { activity: 'stair', name: 'Stair Climb', equip: 'Stair Climber', modality: 'indoor', targetMi: null },
 };
 
 export const newCardioBlock = (a: CardioActivity): CardioBlock => ({ ...CARDIO_DEFAULTS[a] });
@@ -167,6 +278,12 @@ export const FIRST_TARGET: Record<CardioActivity, { mi: number; paceSec: number;
   run: { mi: 3, paceSec: 495, spdMph: 17 },
   walk: { mi: 2, paceSec: 1050, spdMph: 17 },
   bike: { mi: 10, paceSec: 495, spdMph: 17 },
+  // The machines carry a distance seed but no rate — `RATE_KIND` says 'none', so the pace and speed
+  // steppers never appear for them and these figures are never reached.
+  row: { mi: 1.5, paceSec: 495, spdMph: 17 },
+  elliptical: { mi: 2, paceSec: 495, spdMph: 17 },
+  swim: { mi: 0.5, paceSec: 495, spdMph: 17 },
+  stair: { mi: 0, paceSec: 495, spdMph: 17 },
 };
 
 /** Rounded to one decimal each step, or 3 + 0.5 eventually reads 3.5000000000000004. */
@@ -253,6 +370,24 @@ export function parseDistance(raw: string): number | null {
 // ── what a session IS ───────────────────────────────────────────────────────
 
 /**
+ * The `modality` enum value each activity is filed under.
+ *
+ * The enum has held 'rowing' and 'swimming' since 0001 — the database was ahead of the UI. 'stair' and
+ * 'elliptical' are added by migration 0102, deliberately rather than being collapsed into 'other':
+ * Activity History groups by this column, and two different machines sharing one bucket would report a
+ * month of stair work and elliptical work as the same undifferentiated thing.
+ */
+export const STORED_TYPE: Record<CardioActivity, string> = {
+  run: 'running',
+  walk: 'walking',
+  bike: 'cycling',
+  row: 'rowing',
+  swim: 'swimming',
+  stair: 'stair_climber',
+  elliptical: 'elliptical',
+};
+
+/**
  * The activity type a saved session should be filed under, derived from what is actually in it.
  *
  * WHY THIS HAS TO BE DERIVED. A session's `activityType` was hard-coded `'strength'` at every
@@ -274,5 +409,5 @@ export function sessionActivityType(
   if (kinds.size !== 1) return fallback;
   const only = [...kinds][0];
   if (only === 'strength') return fallback;
-  return { run: 'running', walk: 'walking', bike: 'cycling' }[only as CardioActivity];
+  return STORED_TYPE[only as CardioActivity];
 }

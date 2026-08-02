@@ -24,6 +24,7 @@ import {
   type CardioActivity,
   type CardioResult,
   type Modality,
+  OUTDOOR_CAPABLE,
 } from '@/domain/workout/conditioning';
 import {
   currentPaceSec,
@@ -38,6 +39,7 @@ import {
   toPace,
   toSpeed,
   totalMiles,
+  type ActivityKind,
   type UnitSystem,
 } from '@/domain/run/run-core';
 import type { SessionExercise } from '@/domain/workout/types';
@@ -143,7 +145,19 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave 
   const reduceMotion = useReduceMotion();
 
   const timer = useWallClockTimer(logged ? null : `forge_cardio_timer_v1:${index}`);
-  const tracker = useRunTracker(activity);
+  /*
+   * GPS SPEAKS ONLY ROAD.
+   *
+   * `ActivityKind` is the tracker's vocabulary, and it is deliberately narrower than `CardioActivity`:
+   * it exists to gate impossible movement (`MAX_MPH`), which is a question about travelling over ground.
+   * A rower, an elliptical, a stair climber and a pool swim never travel over ground, so widening the
+   * tracker to accept them would advertise a GPS capability that does not exist for any of them.
+   *
+   * They are indoor-only (`OUTDOOR_CAPABLE`), so the Outdoor toggle never renders and `start()` is never
+   * reached — the hook is instantiated but idle. The fallback kind is therefore never consulted; it is
+   * here because the hook needs A kind, not because any machine has one.
+   */
+  const tracker = useRunTracker(OUTDOOR_CAPABLE[activity] ? (activity as ActivityKind) : 'walk');
 
   /**
    * One notion of "in progress" across both modalities: the belt is moving, or GPS is.

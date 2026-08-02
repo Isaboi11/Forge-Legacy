@@ -47,6 +47,7 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { getActiveProgramById } from '@/domain/training/active-program';
 import { resolveRecommendationId } from '@/domain/onboarding/recommend-core';
+import { CARDIO_ACTIVITIES, CARDIO_DEFAULTS, deriveName, type CardioActivity } from '@/domain/workout/conditioning';
 import type { Program, Workout } from '@/domain/training/schema';
 import { resolveHomeWorkoutArtwork } from '@/domain/home-artwork/resolver';
 import { enrichSessionExercises, equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
@@ -460,10 +461,18 @@ export default function HomeScreen() {
    * different controls, different ways to finish, and different places the numbers ended up. A run is
    * a run whether it's the whole workout or the last leg of one, and it is the same card either way.
    */
-  const startRun = async (modality: 'indoor' | 'outdoor') => {
+  const startCardio = async (activity: CardioActivity) => {
     setElseOpen(false);
-    await writeWorkoutLaunch({ conditioning: { activity: 'run', modality } });
-    startWorkout(modality === 'indoor' ? 'Treadmill Run' : 'Outdoor Run', []);
+    /*
+     * The modality is the activity's own default, not a choice forced at the door.
+     *
+     * Run, walk and ride open outdoors; the machines open indoors, because indoors is the only place a
+     * rower exists. Either way the toggle lives on the card, where it belongs — the athlete decides on
+     * the day, and for a machine `OUTDOOR_CAPABLE` means the toggle never appears at all.
+     */
+    const modality = CARDIO_DEFAULTS[activity].modality;
+    await writeWorkoutLaunch({ conditioning: { activity, modality } });
+    startWorkout(deriveName(activity, modality), []);
     router.push('/workout');
   };
 
@@ -679,8 +688,16 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
-      {/* Three things "something else" can mean. The button used to assume the first. */}
-      <BottomSheet open={elseOpen} onClose={() => setElseOpen(false)} title="What are you doing today?">
+      {/*
+        THE ACTIVITY TYPE PICKER (`Forge Activity Type Picker.dc.html` — "What are you training?").
+
+        This was three hardcoded rows: freestyle, treadmill run, outdoor run. Walk and Ride were fully
+        built — their own targets, glyphs, GPS gates and record labels — and unreachable from Home,
+        because the sheet enumerated runs by hand instead of reading the list. Every conditioning
+        activity now comes from `CARDIO_ACTIVITIES`, so adding one can never again leave it stranded
+        behind a sheet that forgot to mention it.
+      */}
+      <BottomSheet open={elseOpen} onClose={() => setElseOpen(false)} title="What are you training?" scroll>
         <View style={styles.elseList}>
           <Pressable
             onPress={() => void startFreestyleStrength()}
@@ -691,24 +708,18 @@ export default function HomeScreen() {
             <Text style={styles.pathCardTitle}>Freestyle workout</Text>
             <Text style={styles.pathCardSub}>Add lifts as you go. Nothing planned.</Text>
           </Pressable>
-          <Pressable
-            onPress={() => void startRun('indoor')}
-            accessibilityRole="button"
-            accessibilityLabel="Treadmill run — timed, distance entered by hand"
-            style={({ pressed }) => [styles.elseRow, pressed ? styles.pathPressed : null]}
-          >
-            <Text style={styles.pathCardTitle}>Treadmill run</Text>
-            <Text style={styles.pathCardSub}>We time it, you read the distance off the machine.</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => void startRun('outdoor')}
-            accessibilityRole="button"
-            accessibilityLabel="Outdoor run — GPS tracks distance and pace"
-            style={({ pressed }) => [styles.elseRow, pressed ? styles.pathPressed : null]}
-          >
-            <Text style={styles.pathCardTitle}>Outdoor run</Text>
-            <Text style={styles.pathCardSub}>GPS tracks distance, pace and your route.</Text>
-          </Pressable>
+          {CARDIO_ACTIVITIES.map((a) => (
+            <Pressable
+              key={a.key}
+              onPress={() => void startCardio(a.key)}
+              accessibilityRole="button"
+              accessibilityLabel={`${a.name} — ${a.sub}`}
+              style={({ pressed }) => [styles.elseRow, pressed ? styles.pathPressed : null]}
+            >
+              <Text style={styles.pathCardTitle}>{a.name}</Text>
+              <Text style={styles.pathCardSub}>{a.sub}</Text>
+            </Pressable>
+          ))}
         </View>
       </BottomSheet>
 

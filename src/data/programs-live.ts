@@ -1,3 +1,4 @@
+import type { CardioActivity } from '@/domain/workout/conditioning';
 import { supabase } from '@/lib/supabase';
 import type { LoggedWorkout, ProgramState } from '@/domain/program/progress-core';
 
@@ -26,7 +27,7 @@ export type ProgramExercise = {
    * survive persistence uncoerced: a 0 would read as a target that is permanently, absurdly met.
    */
   kind?: 'strength' | 'cardio';
-  activity?: 'run' | 'walk' | 'bike';
+  activity?: CardioActivity;
   modality?: 'outdoor' | 'indoor';
   targetMi?: number | null;
   targetPaceSec?: number | null;

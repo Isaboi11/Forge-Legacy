@@ -4,6 +4,10 @@ import assert from 'node:assert/strict';
 import {
   CARDIO_ACTIVITIES,
   CARDIO_DEFAULTS,
+  OUTDOOR_CAPABLE,
+  STORED_TYPE,
+  TRACKS_DISTANCE,
+  hasRateTarget,
   FIRST_TARGET,
   activityFromKey,
   activitySymbol,
@@ -30,9 +34,58 @@ import {
 const id = (n) => n; // imperial identity, so the label tests read plainly
 
 // ── the picker's three activities ────────────────────────────────────────────
-test('the list is Run, Walk, Ride — the activity is picked, the modality is chosen later', () => {
-  assert.deepEqual(CARDIO_ACTIVITIES.map((a) => a.key), ['run', 'walk', 'bike']);
-  assert.deepEqual(CARDIO_ACTIVITIES.map((a) => a.name), ['Run', 'Walk', 'Ride']);
+test('the list is the seven activities — the activity is picked, the modality is chosen later', () => {
+  assert.deepEqual(CARDIO_ACTIVITIES.map((a) => a.key), ['run', 'walk', 'bike', 'row', 'elliptical', 'stair', 'swim']);
+  assert.deepEqual(CARDIO_ACTIVITIES.map((a) => a.name),
+    ['Run', 'Walk', 'Ride', 'Row', 'Elliptical', 'Stair Climber', 'Swim']);
+});
+
+/*
+ * ══ THE MACHINES ARE NOT RUNS ══
+ *
+ * Three properties separate them, and each one exists because collapsing it would make the app claim
+ * something untrue about the session.
+ */
+
+test('only run, walk and ride can go outdoors', () => {
+  const outdoor = CARDIO_ACTIVITIES.filter((a) => OUTDOOR_CAPABLE[a.key]).map((a) => a.key);
+  assert.deepEqual(outdoor, ['run', 'walk', 'bike'], 'a rower has no road');
+});
+
+test('an indoor-only activity never takes an outdoor name, even if asked', () => {
+  // `deriveName` is called with whatever modality the block carries; a machine must not become
+  // "Outdoor Row" because a stale modality came through.
+  assert.equal(deriveName('row', 'outdoor'), 'Row');
+  assert.equal(deriveName('swim', 'outdoor'), 'Pool Swim');
+  // And the road-capable ones still honour the toggle.
+  assert.equal(deriveName('run', 'outdoor'), 'Outdoor Run');
+  assert.equal(deriveName('run', 'indoor'), 'Treadmill Run');
+  assert.equal(deriveName('bike', 'indoor'), 'Indoor Ride', 'there is no treadmill for a bicycle');
+  assert.equal(deriveName('row', 'indoor'), 'Row', 'nor for a rower');
+});
+
+test('the stair climber measures no distance, because floors are not miles', () => {
+  assert.equal(TRACKS_DISTANCE.stair, false);
+  for (const k of ['run', 'walk', 'bike', 'row', 'elliptical', 'swim']) {
+    assert.equal(TRACKS_DISTANCE[k], true, k);
+  }
+});
+
+test('a machine offers no pace or speed target — neither is a metric it has', () => {
+  assert.equal(usesSpeed('bike'), true, 'a cyclist thinks in mph');
+  assert.equal(usesSpeed('run'), false, 'a runner thinks in min/mi');
+  for (const k of ['row', 'elliptical', 'swim', 'stair']) {
+    assert.equal(hasRateTarget(k), false, `${k} has no per-mile rate anybody in that sport uses`);
+    assert.equal(usesSpeed(k), false, k);
+  }
+});
+
+test('every activity files under a distinct stored type', () => {
+  const stored = CARDIO_ACTIVITIES.map((a) => STORED_TYPE[a.key]);
+  assert.equal(new Set(stored).size, stored.length,
+    'two activities sharing one enum value would merge them in Activity History');
+  assert.deepEqual(stored,
+    ['running', 'walking', 'cycling', 'rowing', 'elliptical', 'stair_climber', 'swimming']);
 });
 
 test('cardioKey round-trips, and a strength key is never mistaken for one', () => {
