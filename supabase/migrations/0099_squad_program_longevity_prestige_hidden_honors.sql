@@ -359,7 +359,7 @@ begin
         select per.squad_id, per.wk
           from (
             select ck.squad_id,
-                   date_trunc('week', ck.checkin_date) as wk,
+                   date_trunc('week', ck.checkin_date::timestamp) as wk,
                    ck.user_id,
                    count(*) as days
               from public.squad_checkins ck
@@ -367,7 +367,7 @@ begin
                and ck.squad_id in (select sm.squad_id from public.squad_members sm where sm.user_id = p_uid)
                and exists (select 1 from public.squad_members cur
                             where cur.squad_id = ck.squad_id and cur.user_id = ck.user_id)
-             group by ck.squad_id, date_trunc('week', ck.checkin_date), ck.user_id
+             group by ck.squad_id, date_trunc('week', ck.checkin_date::timestamp), ck.user_id
           ) per
          group by per.squad_id, per.wk
         having count(*) filter (
