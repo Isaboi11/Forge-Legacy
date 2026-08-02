@@ -66,7 +66,7 @@ function docxParagraphs(file) {
   const text = xml.replace(/<[^>]+>/g, '');
   return decodeEntities(text)
     .split('\n')
-    .map((l) => l.replace(/ /g, ' ').trim())
+    .map((l) => l.replace(/\u00a0/g, ' ').trim())
     .filter((l) => l.length);
 }
 

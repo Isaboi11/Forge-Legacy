@@ -360,11 +360,11 @@ export default function WorkoutScreen() {
    * Keyed on the exercise NAMES rather than the session object, so adding a set or logging reps does not
    * re-fetch — but swapping or adding an exercise does, which is when a new lift's mark is needed.
    */
-  const exerciseNames = session?.exercises.map((e) => e.name).join(' ') ?? '';
+  const exerciseNames = session?.exercises.map((e) => e.name).join('\u0000') ?? '';
   useEffect(() => {
     if (!exerciseNames) return;
     let alive = true;
-    void fetchPriorRecords(exerciseNames.split(' ')).then((r) => {
+    void fetchPriorRecords(exerciseNames.split('\u0000')).then((r) => {
       if (alive) setPriorRecord(r);
     });
     return () => {

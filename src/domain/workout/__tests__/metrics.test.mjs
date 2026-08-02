@@ -140,3 +140,47 @@ test('a day of nothing but 4×12 sets no records, and that is correct', () => {
   assert.deepEqual(detectPRs(s, { 'Lateral Raise': 15 }), [],
     'going heavier at 12 reps is improvement, shown on the Record — it is not a personal record');
 });
+
+/*
+ * ══ ONE LIFT, TWICE IN A SESSION ══
+ *
+ * `priorBest` is a snapshot taken before the session and it never moves. A lift that appears twice — a
+ * program listing it in two blocks, an athlete adding it again, a superset — was therefore compared
+ * against the same stale number both times. Found by the 2026-08-02 audit.
+ */
+
+test('a lift done twice in one session is measured against what it just did', () => {
+  const twice = (a, b) => ({
+    ...session,
+    exercises: [
+      { name: 'Squat', section: 'main', position: 0, sets: [set(0, a, 3, 3, true)] },
+      { name: 'Squat', section: 'main', position: 1, sets: [set(0, b, 3, 3, true)] },
+    ],
+  });
+
+  // The bug: 310 then 300, against a prior of 295, announced BOTH. The 300 is not a record —
+  // they had just done 310 twenty minutes earlier.
+  const heavyFirst = detectPRs(twice(310, 300), { Squat: 295 });
+  assert.deepEqual(heavyFirst.map((p) => p.weight), [310],
+    'only the heaviest stands; a lighter later set is not a second record');
+
+  // Climbing through the session is still two genuine records, in order.
+  assert.deepEqual(detectPRs(twice(300, 310), { Squat: 295 }).map((p) => p.weight), [300, 310]);
+
+  // Equalling what you did earlier today is not beating it.
+  assert.deepEqual(detectPRs(twice(300, 300), { Squat: 295 }).map((p) => p.weight), [300]);
+});
+
+test('first-ever stays first-ever, and the second block is not a new "first"', () => {
+  const s = {
+    ...session,
+    exercises: [
+      { name: 'Novel Lift', section: 'main', position: 0, sets: [set(0, 100, 3, 3, true)] },
+      { name: 'Novel Lift', section: 'main', position: 1, sets: [set(0, 110, 3, 3, true)] },
+    ],
+  };
+  const prs = detectPRs(s, {});
+  assert.equal(prs[0].isFirst, true, 'the first mark on a lift they have never done');
+  assert.equal(prs.length, 2, 'and 110 then beats it');
+  assert.equal(prs[1].isFirst, false, 'the second is a real record, not another baseline');
+});

@@ -105,6 +105,17 @@ export function detectPRs(
   priorBest: Record<string, number | undefined>,
 ): DetectedPR[] {
   const prs: DetectedPR[] = [];
+  /*
+   * WHAT THIS SESSION HAS ALREADY SET, carried forward as we go.
+   *
+   * One lift can appear twice in a session — a program that lists it in two blocks, an athlete who adds
+   * it again, a superset. `priorBest` is a snapshot taken before the session and never moves, so the
+   * second entry was compared against the same old number as the first. Squat 310 then 300, against a
+   * prior of 295, announced BOTH as records: the 300 is not a record, they had just done 310.
+   *
+   * A record is the heaviest thing you have done, including the thing you did twenty minutes ago.
+   */
+  const setThisSession: Record<string, number> = {};
   for (const ex of session.exercises) {
     /*
      * A PERSONAL RECORD IS A CLAIM ABOUT THE ATHLETE, so two classes of row never qualify.
@@ -122,10 +133,14 @@ export function detectPRs(
     const weight = bestRecordWeight(ex.sets);
     if (weight == null) continue; // nothing in the record band — a 4×12 day sets no records
 
-    const prior = priorBest[ex.name];
-    // Undefined = first time on this lift. Written as the mark, never announced as a record.
-    const isFirst = prior == null;
-    if (!isFirst && weight <= prior) continue;
+    const before = priorBest[ex.name];
+    const earlierToday = setThisSession[ex.name];
+    // The bar to beat is whichever is higher — history, or what they already lifted today.
+    const prior = earlierToday == null ? before : before == null ? earlierToday : Math.max(before, earlierToday);
+    // Undefined = first time on this lift, ever. Written as the mark, never announced as a record.
+    const isFirst = before == null && earlierToday == null;
+    if (!isFirst && weight <= (prior as number)) continue;
+    setThisSession[ex.name] = Math.max(earlierToday ?? 0, weight);
 
     const from = ex.sets.find((s) => s.done && s.weight === weight && effectiveReps(s) <= PR_MAX_REPS);
     prs.push({
