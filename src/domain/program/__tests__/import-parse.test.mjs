@@ -146,7 +146,8 @@ test('every failure names the fix', () => {
   const cases = [
     ['', /paste some rows/i],
     ['Week, Day, Exercise, Sets, Reps', /header row on its own/i],
-    [tsv([['Week', 'Sets', 'Reps'], ['1', '3', '8']]), /Exercise column/i],
+    // A near-miss table says what to rename; a typed-out workout is NOT rejected at all (see below).
+    [tsv([['Week', 'Sets', 'Reps'], ['1', '3', '8']]), /not an Exercise one/i],
     [tsv([['Day', 'Exercise'], ['Push', '']]), /No exercises found/i],
   ];
   for (const [input, pattern] of cases) {
@@ -268,4 +269,141 @@ test('unmatched names are reported, so nothing is silently unmatched', () => {
 test('an empty program name falls back rather than persisting as blank', () => {
   const r = ok(parseProgramTable(tsv([['Exercise'], ['Back Squat']])));
   assert.equal(toProgramStructure(r.weeks, '   ', resolve).name, 'Imported Program');
+});
+
+/*
+ * ══ FORMATS THAT ACTUALLY BROKE IT ══
+ *
+ * Every case below was run through the parser and failed. Nine were rejected outright and six more were
+ * accepted while quietly reading the wrong thing, which is the worse half — a rejection sends somebody
+ * back to their spreadsheet, a silent misread puts a program they did not write into their legacy.
+ */
+
+const shapeOf = (r) =>
+  r.weeks.map((w) => ({
+    week: w.index,
+    days: w.days.map((d) => ({ name: d.name, items: d.items.map((i) => `${i.name} ${i.sets}x${i.reps}`) })),
+  }));
+
+test('MERGED cells — a sheet fills Week and Day once per block and leaves the rest blank', () => {
+  // This is what merging cells looks like on the clipboard, and it is how nearly every real sheet is
+  // built. Reading a blank as "no value" invented a "Day 1" and split one training day in two.
+  const r = ok(parseProgramTable(tsv([
+    ['Week', 'Day', 'Exercise', 'Sets', 'Reps'],
+    ['1', 'Push', 'Bench Press', '3', '8'],
+    ['', '', 'Incline Press', '3', '10'],
+    ['', '', 'Fly', '3', '12'],
+    ['2', 'Push', 'Bench Press', '3', '6'],
+  ])));
+  assert.deepEqual(shapeOf(r), [
+    { week: 1, days: [{ name: 'Push', items: ['Bench Press 3x8', 'Incline Press 3x10', 'Fly 3x12'] }] },
+    { week: 2, days: [{ name: 'Push', items: ['Bench Press 3x6'] }] },
+  ]);
+});
+
+test('a single Sets × Reps column', () => {
+  const r = ok(parseProgramTable(tsv([['Day', 'Exercise', 'Sets x Reps'], ['Push', 'Bench Press', '3x8'], ['Push', 'Fly', '3 x 12']])));
+  assert.deepEqual(r.weeks[0].days[0].items.map((i) => `${i.sets}x${i.reps}`), ['3x8', '3x12']);
+});
+
+test('a real multiplication sign — 5×5 is what people actually type', () => {
+  const r = ok(parseProgramTable(tsv([['Exercise', 'Scheme'], ['Squat', '5×5']])));
+  const it = r.weeks[0].days[0].items[0];
+  assert.equal(`${it.sets}x${it.reps}`, '5x5');
+});
+
+test('sets and reps typed INTO the exercise cell', () => {
+  const r = ok(parseProgramTable(tsv([['Day', 'Exercise'], ['Push', 'Bench Press 3x8'], ['Push', 'Fly 3x12']])));
+  assert.deepEqual(r.weeks[0].days[0].items.map((i) => [i.name, i.sets, i.reps]), [
+    ['Bench Press', 3, 8],
+    ['Fly', 3, 12],
+  ]);
+});
+
+// ── typed-out workouts: no header, no columns, no spreadsheet ───────────────
+
+test('a workout typed into Notes, with a day heading', () => {
+  const r = ok(parseProgramTable('Monday - Push\nBench Press 3x8\nIncline DB Press 3x10\nCable Fly 3x12'));
+  assert.equal(r.weeks[0].days[0].name, 'Push');
+  assert.deepEqual(r.weeks[0].days[0].items.map((i) => i.name), ['Bench Press', 'Incline DB Press', 'Cable Fly']);
+});
+
+test('bullets, numbers, colons and dashes all read the same', () => {
+  for (const [label, text] of [
+    ['bullets', '- Bench Press 3x8\n- Barbell Row 3x8'],
+    ['numbers', '1. Bench Press 3x8\n2. Barbell Row 3x8'],
+    ['colons', 'Bench Press: 3x8\nBarbell Row: 3x8'],
+    ['dashes', 'Bench Press - 3 x 8\nBarbell Row - 3 x 8'],
+  ]) {
+    const r = ok(parseProgramTable(text));
+    assert.deepEqual(
+      r.weeks[0].days[0].items.map((i) => [i.name, i.sets, i.reps]),
+      [['Bench Press', 3, 8], ['Barbell Row', 3, 8]],
+      `${label} did not read cleanly — no separator may survive in the name`,
+    );
+  }
+});
+
+test('day headings as their own lines split the days', () => {
+  const r = ok(parseProgramTable('DAY 1: PUSH\nBench Press 3x8\nFly 3x12\nDAY 2: PULL\nBarbell Row 3x8\nCurl 3x12'));
+  assert.deepEqual(r.weeks[0].days.map((d) => [d.name, d.items.length]), [['PUSH', 2], ['PULL', 2]]);
+});
+
+test('week headings as their own lines split the weeks', () => {
+  const r = ok(parseProgramTable('WEEK 1\nDay A\nBench Press 3x8\nDay B\nSquat 5x5\nWEEK 2\nDay A\nBench Press 3x6'));
+  assert.deepEqual(r.weeks.map((w) => w.index), [1, 2]);
+  assert.equal(r.weeks[0].days.length, 2);
+  assert.equal(r.weeks[1].days[0].items[0].reps, 6);
+});
+
+test('a lone exercise with nothing else is an import, not an error', () => {
+  const r = ok(parseProgramTable('Deadlift'));
+  assert.equal(r.weeks[0].days[0].items[0].name, 'Deadlift');
+  assert.equal(r.weeks[0].days[0].items[0].setsAssumed, true);
+});
+
+// ── the awkward middles ─────────────────────────────────────────────────────
+
+test('a semicolon export (European locale) is still a table', () => {
+  const r = ok(parseProgramTable('Week;Day;Exercise;Sets;Reps\n1;Push;Bench Press;3;8'));
+  assert.equal(r.weeks[0].days[0].items[0].name, 'Bench Press');
+});
+
+test('superset labels are not part of the lift\'s name', () => {
+  // The catalogue matches by exact name, so "A1) Bench Press" would match nothing at all.
+  const r = ok(parseProgramTable(tsv([['Day', 'Exercise', 'Sets', 'Reps'], ['Push', 'A1) Bench Press', '3', '8'], ['Push', 'A2) Row', '3', '8']])));
+  assert.deepEqual(r.weeks[0].days[0].items.map((i) => i.name), ['Bench Press', 'Row']);
+});
+
+test('a weight tacked on the end is not part of the name either', () => {
+  const r = ok(parseProgramTable(tsv([['Exercise'], ['Bench Press 3x8 @135'], ['Squat 5x5 @ 225 lb']])));
+  assert.deepEqual(r.weeks[0].days[0].items.map((i) => [i.name, i.sets, i.reps]), [
+    ['Bench Press', 3, 8],
+    ['Squat', 5, 5],
+  ]);
+});
+
+test('"4 sets of 12" reads as 4×12', () => {
+  const r = ok(parseProgramTable(tsv([['Exercise', 'Sets', 'Reps'], ['Bench', '4 sets', '12 reps']])));
+  const it = r.weeks[0].days[0].items[0];
+  assert.equal(`${it.sets}x${it.reps}`, '4x12');
+});
+
+test('a near-miss table is told what to rename, not silently read as prose', () => {
+  const r = parseProgramTable(tsv([['Week', 'Sets', 'Reps'], ['1', '3', '8']]));
+  assert.equal(r.ok, false);
+  assert.match(r.error, /not an Exercise one/i);
+});
+
+test('CRLF, padded headers, quoted headers and trailing empty columns all survive', () => {
+  for (const text of [
+    'Day\tExercise\tSets\tReps\r\nPush\tBench\t3\t8\r\n',
+    '  WEEK  \t Day \t  EXERCISE\t Sets \tREPS\n1\tPush\tBench\t3\t8',
+    '"Week","Day","Exercise","Sets","Reps"\n"1","Push","Bench","3","8"',
+    'Week\tDay\tExercise\tSets\tReps\t\t\n1\tPush\tBench\t3\t8\t\t',
+  ]) {
+    const r = ok(parseProgramTable(text));
+    assert.equal(r.weeks[0].days[0].items[0].name, 'Bench');
+    assert.equal(r.weeks[0].days[0].items[0].sets, 3);
+  }
 });

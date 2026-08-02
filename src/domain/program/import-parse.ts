@@ -19,6 +19,15 @@
  * anything unmatched stays a plain name rather than becoming the nearest-looking lift.
  */
 
+import {
+  cleanDayName,
+  cleanExerciseName,
+  extractScheme,
+  firstNumber,
+  looksLikeDayHeading,
+  weekHeading,
+} from './import-scheme.ts';
+
 export interface ParsedItem {
   /** Verbatim from the sheet. Never normalised, never corrected. */
   name: string;
@@ -53,13 +62,20 @@ const DEFAULT_REPS = 10;
 
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-/** Header aliases. Deliberately short — a guess this list gets wrong silently mis-imports a program. */
+/**
+ * Header aliases.
+ *
+ * Deliberately short. A guess this list gets wrong does not fail — it silently mis-imports somebody's
+ * program, which is the worst outcome available.
+ */
 const COLUMNS = {
   week: ['week', 'wk'],
-  day: ['day', 'session', 'workout'],
+  day: ['day', 'session', 'workout', 'split'],
   exercise: ['exercise', 'movement', 'lift', 'name'],
   sets: ['sets', 'set'],
   reps: ['reps', 'rep', 'repetitions'],
+  /** One column holding both — "Sets x Reps", "Scheme", "3x8". Common enough to be worth reading. */
+  scheme: ['setsxreps', 'setsreps', 'scheme', 'setrep', 'volume', 'prescription'],
 } as const;
 
 type ColumnKey = keyof typeof COLUMNS;
@@ -68,11 +84,11 @@ type ColumnKey = keyof typeof COLUMNS;
  * Split one line into cells.
  *
  * TAB FIRST, because that is what Excel and Google Sheets put on the clipboard, and a sheet whose cells
- * contain commas ("Row, then press") would otherwise shatter into nonsense. A pasted table is the
- * headline case in the design's copy; an uploaded .csv is the secondary one.
+ * contain commas ("Squat, paused") would otherwise shatter into nonsense. Semicolons come next — that is
+ * what a European locale exports — and commas last.
  */
-function splitLine(line: string, delimiter: '\t' | ','): string[] {
-  if (delimiter === '\t') return line.split('\t').map((c) => c.trim());
+function splitLine(line: string, delimiter: '\t' | ';' | ','): string[] {
+  if (delimiter !== ',') return line.split(delimiter).map((c) => c.trim());
 
   // CSV, with quoted fields — a coach's "Squat, paused" must survive as one cell.
   const out: string[] = [];
@@ -98,24 +114,94 @@ function splitLine(line: string, delimiter: '\t' | ','): string[] {
   return out;
 }
 
-/** Tabs win when present: a single stray comma inside a cell must not re-interpret the whole table. */
-function detectDelimiter(lines: string[]): '\t' | ',' {
-  return lines.some((l) => l.includes('\t')) ? '\t' : ',';
+function detectDelimiter(lines: string[]): '\t' | ';' | ',' {
+  if (lines.some((l) => l.includes('\t'))) return '\t';
+  if (lines.some((l) => l.includes(';'))) return ';';
+  return ',';
+}
+
+/** Accumulates rows into weeks → days → items, keeping first-appearance order throughout. */
+class Builder {
+  private weeks = new Map<number, Map<string, ParsedItem[]>>();
+  rowsRead = 0;
+
+  add(week: number, day: string, item: ParsedItem) {
+    if (!this.weeks.has(week)) this.weeks.set(week, new Map());
+    const days = this.weeks.get(week)!;
+    if (!days.has(day)) days.set(day, []);
+    days.get(day)!.push(item);
+    this.rowsRead++;
+  }
+
+  done(): ParsedWeek[] {
+    return [...this.weeks.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([index, days]) => ({
+        index,
+        days: [...days.entries()].map(([name, items], i) => ({
+          name,
+          letter: LETTERS[i] ?? String(i + 1),
+          items,
+        })),
+      }));
+  }
+}
+
+function item(name: string, sets: number | undefined, reps: number | undefined): ParsedItem {
+  return {
+    name,
+    sets: sets ?? DEFAULT_SETS,
+    reps: reps ?? DEFAULT_REPS,
+    setsAssumed: sets == null,
+    repsAssumed: reps == null,
+  };
 }
 
 /**
- * The first number in a cell.
+ * A TYPED-OUT workout — no header row, no columns, just what somebody wrote down.
  *
- * Training sheets write ranges and instructions, not integers: "8-10", "8–10" (en dash), "3 x 8",
- * "AMRAP", "8+". Taking the first number reads the lower bound of a range, which is the honest floor —
- * and anything with no number at all falls back to the default and says it did.
+ *   Monday - Push          - Bench Press 3x8         DAY 1: PUSH
+ *   Bench Press 3x8        - Barbell Row 3x8         Bench Press: 3x8
+ *   Incline DB 3x10        - Squat 5x5               Fly - 3 x 12
+ *
+ * All three are the same thing and all three used to be REJECTED, which made the feature useless for
+ * anybody who keeps their training in Notes rather than Excel. A line with a scheme is work; a line
+ * without one is a heading if it says so and an exercise otherwise.
  */
-function firstNumber(cell: string | undefined): number | null {
-  if (!cell) return null;
-  const m = cell.match(/\d+(?:\.\d+)?/);
-  if (!m) return null;
-  const n = Number(m[0]);
-  return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+function parseFreeform(lines: string[]): ParseResult {
+  const b = new Builder();
+  let week = 1;
+  let day: string | null = null;
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) continue;
+
+    const wk = weekHeading(line);
+    if (wk != null) {
+      week = wk;
+      day = null; // a new week starts its own days
+      continue;
+    }
+
+    const { scheme, rest } = extractScheme(line);
+    const hasScheme = scheme.sets != null || scheme.reps != null;
+
+    if (!hasScheme && looksLikeDayHeading(line)) {
+      day = cleanDayName(line);
+      continue;
+    }
+
+    // Everything else is an exercise. `rest` is the line minus its scheme; strip the decoration too.
+    const name = cleanExerciseName(rest || line);
+    if (!name) continue;
+    b.add(week, day ?? 'Day 1', item(name, scheme.sets, scheme.reps));
+  }
+
+  if (b.rowsRead === 0) {
+    return { ok: false, error: 'No exercises found. Write one per line, like “Bench Press 3x8”.' };
+  }
+  return { ok: true, weeks: b.done(), ignoredColumns: [], rowsRead: b.rowsRead };
 }
 
 export function parseProgramTable(raw: string): ParseResult {
@@ -125,12 +211,10 @@ export function parseProgramTable(raw: string): ParseResult {
     .filter((l) => l.trim().length > 0);
 
   if (lines.length === 0) return { ok: false, error: 'Nothing to read — paste some rows first.' };
-  if (lines.length === 1) {
-    return { ok: false, error: 'That looks like a header row on its own. Include the exercise rows beneath it.' };
-  }
 
   const delimiter = detectDelimiter(lines);
-  const header = splitLine(lines[0], delimiter).map((h) => h.toLowerCase().replace(/[^a-z]/g, ''));
+  const headerCells = splitLine(lines[0], delimiter);
+  const header = headerCells.map((h) => h.toLowerCase().replace(/[^a-z]/g, ''));
 
   const at: Partial<Record<ColumnKey, number>> = {};
   const used = new Set<number>();
@@ -142,60 +226,81 @@ export function parseProgramTable(raw: string): ParseResult {
     }
   }
 
-  // Exercise is the only column with nothing sensible to fall back to — every other one has a default.
+  /*
+   * No Exercise column means this is not a table — it is a workout somebody typed out. Falling through
+   * to the freeform reader rather than refusing is the difference between "import from a spreadsheet"
+   * and "import, but only if you already keep a spreadsheet".
+   */
   if (at.exercise === undefined) {
-    return {
-      ok: false,
-      error: 'Couldn’t find an Exercise column. Add a header row with Week, Day, Exercise, Sets and Reps — in any order.',
-    };
+    /*
+     * Two very different things arrive here, and telling them apart is the whole job.
+     *
+     * A header row that matched OTHER known columns is a TABLE whose Exercise column is missing or
+     * named something unexpected — the athlete meant to paste a spreadsheet and it is nearly right, so
+     * say what is wrong. Anything else is a typed-out workout that never had columns, and refusing it
+     * would make this "import from a spreadsheet, but only if you already keep a spreadsheet".
+     */
+    if (used.size >= 2) {
+      return {
+        ok: false,
+        error: 'Found your other columns but not an Exercise one. Name that column Exercise (or Movement, or Lift) and try again.',
+      };
+    }
+    return parseFreeform(lines);
   }
 
-  const ignoredColumns = splitLine(lines[0], delimiter).filter((_, i) => !used.has(i) && header[i]);
+  if (lines.length === 1) {
+    return { ok: false, error: 'That looks like a header row on its own. Include the exercise rows beneath it.' };
+  }
 
-  /** Weeks keyed by their number, days keyed by name within a week — both in first-appearance order. */
-  const weeks = new Map<number, Map<string, ParsedItem[]>>();
-  let rowsRead = 0;
+  const ignoredColumns = headerCells.filter((_, i) => !used.has(i) && header[i]);
+  const b = new Builder();
+
+  /*
+   * MERGED CELLS. Real sheets fill Week and Day once per block and leave the rest blank — it is what
+   * merging cells looks like once it reaches a clipboard. Reading a blank as "no value" put every
+   * continuation row into a fabricated "Day 1", quietly splitting one training day into two. The last
+   * seen value carries forward, which is what the blank means.
+   */
+  let week = 1;
+  let day = 'Day 1';
 
   for (const line of lines.slice(1)) {
     const cells = splitLine(line, delimiter);
-    const name = (cells[at.exercise] ?? '').trim();
-    if (!name) continue; // a spacer row between blocks, which sheets are full of
 
-    const weekNo = (at.week !== undefined ? firstNumber(cells[at.week]) : null) ?? 1;
-    const dayName = (at.day !== undefined ? (cells[at.day] ?? '').trim() : '') || 'Day 1';
+    const rawName = (cells[at.exercise] ?? '').trim();
+    if (!rawName) continue; // a spacer or a notes row, which every real sheet has
 
-    const setsRaw = at.sets !== undefined ? firstNumber(cells[at.sets]) : null;
-    const repsRaw = at.reps !== undefined ? firstNumber(cells[at.reps]) : null;
+    const wkCell = at.week !== undefined ? firstNumber(cells[at.week]) : undefined;
+    if (wkCell != null) week = wkCell;
 
-    if (!weeks.has(weekNo)) weeks.set(weekNo, new Map());
-    const days = weeks.get(weekNo)!;
-    if (!days.has(dayName)) days.set(dayName, []);
-    days.get(dayName)!.push({
-      name,
-      sets: setsRaw ?? DEFAULT_SETS,
-      reps: repsRaw ?? DEFAULT_REPS,
-      setsAssumed: setsRaw == null,
-      repsAssumed: repsRaw == null,
-    });
-    rowsRead++;
+    const dayCell = at.day !== undefined ? (cells[at.day] ?? '').trim() : '';
+    if (dayCell) day = dayCell;
+
+    let sets = at.sets !== undefined ? firstNumber(cells[at.sets]) : undefined;
+    let reps = at.reps !== undefined ? firstNumber(cells[at.reps]) : undefined;
+
+    // A single "Sets x Reps" column, when that is how the sheet keeps it.
+    if ((sets == null || reps == null) && at.scheme !== undefined) {
+      const fromScheme = extractScheme(cells[at.scheme] ?? '').scheme;
+      sets = sets ?? fromScheme.sets;
+      reps = reps ?? fromScheme.reps;
+    }
+
+    // And last: "Bench Press 3x8" typed into the exercise cell itself.
+    const { scheme: inName, rest } = extractScheme(rawName);
+    if (sets == null) sets = inName.sets;
+    if (reps == null) reps = inName.reps;
+
+    const name = cleanExerciseName(rest || rawName);
+    if (!name) continue;
+    b.add(week, day, item(name, sets, reps));
   }
 
-  if (rowsRead === 0) {
+  if (b.rowsRead === 0) {
     return { ok: false, error: 'No exercises found. Check that the Exercise column has names in it.' };
   }
-
-  const out: ParsedWeek[] = [...weeks.entries()]
-    .sort((a, b) => a[0] - b[0])
-    .map(([index, days]) => ({
-      index,
-      days: [...days.entries()].map(([dayName, items], i) => ({
-        name: dayName,
-        letter: LETTERS[i] ?? String(i + 1),
-        items,
-      })),
-    }));
-
-  return { ok: true, weeks: out, ignoredColumns, rowsRead };
+  return { ok: true, weeks: b.done(), ignoredColumns, rowsRead: b.rowsRead };
 }
 
 /** "3 weeks · 4 days each · 48 exercises" — the design's "Here's what we read". */
