@@ -17,6 +17,8 @@
  * The mapping onto the 6 locked browse categories lives in `catalog-core` (pure + unit-tested).
  */
 
+import { type MatchResult } from '../program/exercise-match.ts';
+import { ALIASES_BY_ID, resolveAgainstCatalog } from './aliases.ts';
 import equipmentData from '../exercise-relationships/source/equipment.json';
 import exerciseMusclesData from '../exercise-relationships/source/exercise_muscles.json';
 import exercisesData from '../exercise-relationships/source/exercises.json';
@@ -72,6 +74,10 @@ for (const x of PICKER_DB) {
   BY_NAME.set(normName(x.name), x);
   for (const a of x.aliases) if (!BY_NAME.has(normName(a))) BY_NAME.set(normName(a), x);
 }
+// The vernacular, added LAST and never over an existing key: a real name always outranks an alias.
+for (const x of PICKER_DB) {
+  for (const a of ALIASES_BY_ID.get(x.key) ?? []) if (!BY_NAME.has(normName(a))) BY_NAME.set(normName(a), x);
+}
 
 /**
  * Resolve a stored/display name back to a catalog entry — matching on name, then alias, after
@@ -121,6 +127,8 @@ export function matchItem(x: PickerItem, search: string, f: PickerFilters, exclu
   return (
     x.name.toLowerCase().includes(q) ||
     x.aliases.some((a) => a.toLowerCase().includes(q)) ||
+    // What people call it, which is often not what the catalogue calls it — see `aliases.ts`.
+    (ALIASES_BY_ID.get(x.key) ?? []).some((a) => a.includes(q)) ||
     x.muscles.some((m) => m.toLowerCase().includes(q)) ||
     x.equip.toLowerCase().includes(q)
   );
@@ -264,3 +272,15 @@ export function buildSections(opts: {
  */
 export const catalogForMatching = (): { key: string; name: string; aliases?: string[] }[] =>
   PICKER_DB.map((x) => ({ key: x.key, name: x.name, aliases: x.aliases }));
+
+/**
+ * Resolve a written exercise name to a catalogue entry — the ONE path, used by import and by anything
+ * else that has to turn somebody's words into a real lift.
+ *
+ * The order is the safety property. The token matcher runs first and the curated aliases are consulted
+ * only when it returned nothing, so an alias can rescue a name the catalogue could not reach but can
+ * never override, contradict or shadow a name it could. See `aliases.ts` for the bug that ordering
+ * makes unwritable.
+ */
+export const resolveExerciseName = (written: string): MatchResult | null =>
+  resolveAgainstCatalog(written, catalogForMatching());

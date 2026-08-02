@@ -18,8 +18,7 @@ import {
   type ParsedWeek,
 } from '@/domain/program/import-parse';
 import { pickTextFile } from '@/lib/pick-text-file';
-import { catalogForMatching } from '@/domain/exercise-picker/data';
-import { matchExercise } from '@/domain/program/exercise-match';
+import { resolveExerciseName } from '@/domain/exercise-picker/data';
 import { useToast } from '@/hooks/useCeremony';
 import { EquipIcon } from '@/components/forge/EquipIcon';
 import { ScreenBackground } from '@/components/screen-background';
@@ -192,7 +191,7 @@ export default function ProgramBuilderScreen() {
    * Resolve a written name to the catalogue — the SAME call the preview renders and the import commits,
    * so what the athlete is shown is exactly what gets stored. Two resolvers would drift.
    */
-  const resolveName = (n: string) => matchExercise(n, catalogForMatching());
+  const resolveName = (n: string) => resolveExerciseName(n);
 
   const openImport = () => {
     setPasteText('');
