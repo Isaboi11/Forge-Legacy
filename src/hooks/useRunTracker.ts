@@ -4,43 +4,75 @@ import * as Location from 'expo-location';
 import { ACCURACY_FLOOR_M, acceptFix, type ActivityKind, type TrackPoint } from '@/domain/run/run-core';
 
 /**
- * The GPS side of Active Run — permissions, the position subscription, the clock, and pause.
+ * The GPS side of a run — permissions, the position subscription, the clock, and pause.
  *
- * Kept out of the screen because none of it is presentation and all of it needs teardown. The design had
- * no equivalent: it advanced a counter on a `setInterval` at exactly 8:00/mi, so it never had to hold a
- * subscription, ask for anything, or decide what a paused run does with the ground you cover anyway.
+ * ══ THE RUN AND THE SIGNAL ARE TWO DIFFERENT THINGS ══
+ *
+ * This used to be ONE status, and conflating them broke the screen. `start()` awaited a permission
+ * request, and anything short of an outright grant returned false and left the run un-started — so
+ * pressing Start Run produced no clock, no live card and no way to end anything, just a dead end
+ * offering to let you type it in.
+ *
+ * On the web that path was the NORMAL one. `requestForegroundPermissionsAsync` there reports the
+ * current permission state; it does not raise the browser prompt, because browsers only ask when you
+ * actually request a position. A first-time athlete is in state "prompt", which is not "granted", so
+ * the run was refused before the browser had been given the chance to ask.
+ *
+ * So: `phase` is whether the athlete is running, `gps` is whether we can measure it. Pressing Start
+ * starts the run — immediately, synchronously, before any permission is resolved. GPS attaches
+ * underneath if it can, and adds distance to a run that is already happening. If it never arrives, the
+ * athlete still has a timed run and types the distance at the end, exactly as they would on a treadmill.
+ * A run is not contingent on being measurable.
  *
  * FOREGROUND ONLY. Background tracking needs `isIosBackgroundLocationEnabled` plus a task-manager task,
  * a heavier permission prompt, and a native build to verify — none of which can be tested from this
  * project's setup. Locking the phone will pause the trace on a real device; that limit is stated on the
- * screen rather than discovered mid-run.
+ * card rather than discovered mid-run.
  */
 
-export type TrackerStatus = 'idle' | 'requesting' | 'denied' | 'unavailable' | 'acquiring' | 'tracking' | 'paused';
+/** Is the athlete running? */
+export type RunPhase = 'idle' | 'live' | 'paused';
+/** Can we measure it? Independent of the above — a run happens either way. */
+export type GpsState = 'off' | 'acquiring' | 'tracking' | 'denied' | 'unavailable';
+
+/**
+ * Seconds of running with not one accepted fix before we stop saying "acquiring" and say so plainly.
+ *
+ * Without this the card sits on "Looking for satellites…" forever when a browser silently refuses to
+ * deliver positions — no error, no rejection, just nothing — and forever is indistinguishable from
+ * about to work.
+ */
+export const GPS_PATIENCE_SEC = 25;
 
 export interface RunTracker {
-  status: TrackerStatus;
+  phase: RunPhase;
+  gps: GpsState;
   track: TrackPoint[];
   /** Whole seconds of MOVING time — a pause stops this, so pace stays honest across a rest. */
   elapsedSec: number;
   /** Metres of uncertainty on the newest fix, for the signal read-out. Null before the first one. */
   accuracyM: number | null;
   /**
-   * True while the tracker is live but no MOVEMENT has been accepted yet.
+   * True while the run is live but no MOVEMENT has been accepted yet.
    *
    * Deliberately `< 2` and not `=== 0`: the very first fix always seeds the track at zero miles, so a
    * length of 1 means "we know where you are and nothing you've done since has cleared the noise floor".
    * That is the exact state that used to sit on screen as a silent 0.00 while someone walked around.
    */
   weakSignal: boolean;
-  start: () => Promise<boolean>;
+  /** Nothing has arrived for long enough that "still looking" would be a lie. */
+  gpsStalled: boolean;
+  /** No distance will be measured — refused, unavailable, or given up on. Manual entry is the path. */
+  noGps: boolean;
+  start: () => void;
   pause: () => void;
   resume: () => void;
   stop: () => void;
 }
 
 export function useRunTracker(kind: ActivityKind): RunTracker {
-  const [status, setStatus] = useState<TrackerStatus>('idle');
+  const [phase, setPhase] = useState<RunPhase>('idle');
+  const [gps, setGps] = useState<GpsState>('off');
   const [track, setTrack] = useState<TrackPoint[]>([]);
   const [elapsedSec, setElapsedSec] = useState(0);
   const [accuracyM, setAccuracyM] = useState<number | null>(null);
@@ -85,29 +117,30 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
       }
       return acceptFix(prev, fix, kind).track;
     });
-    // `kind` comes from a route param and cannot change mid-session, so closing over it is safe and
-    // avoids writing a ref during render — which the react-compiler lint forbids, correctly: a value
-    // that changes without a render is a value the UI can disagree with.
+    // `kind` cannot change mid-session, so closing over it is safe and avoids writing a ref during
+    // render — which the react-compiler lint forbids, correctly: a value that changes without a render
+    // is a value the UI can disagree with.
   }, [kind]);
 
-  const start = useCallback(async () => {
-    setStatus('requesting');
+  /**
+   * Attach the position stream. Separate from `start` because it must not be able to prevent one.
+   *
+   * The permission request is fired for its SIDE EFFECT — raising the native prompt — and its answer is
+   * deliberately not treated as final. On the web it reports state rather than asking, so a first-time
+   * athlete reads back "not granted" purely because the browser has not been given a reason to ask yet.
+   * The watch below is the thing that actually asks, and the thing that actually knows.
+   */
+  const attachGps = useCallback(async () => {
     try {
-      const { granted } = await Location.requestForegroundPermissionsAsync();
-      if (!granted) {
-        setStatus('denied');
-        return false;
-      }
+      await Location.requestForegroundPermissionsAsync();
     } catch {
-      // No location provider at all — a desktop browser with the API blocked, say.
-      setStatus('unavailable');
-      return false;
+      // Swallowed on purpose: the watch is the real test, and it is about to run either way.
     }
 
     try {
       sub.current = await Location.watchPositionAsync(
         {
-          // BestForNavigation is the point of the screen: Balanced rounds a run into a shape.
+          // BestForNavigation is the point of tracking at all: Balanced rounds a run into a shape.
           accuracy: Location.Accuracy.BestForNavigation,
           // Distance rather than time — a stationary phone should not generate fixes to reject.
           distanceInterval: 3,
@@ -115,16 +148,25 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
         },
         onFix,
       );
-    } catch {
-      setStatus('unavailable');
-      return false;
+    } catch (e) {
+      // A refusal and a missing provider read differently to the athlete: one is theirs to undo in
+      // settings, the other is not worth being told to go and fix.
+      const msg = String((e as { message?: string })?.message ?? e).toLowerCase();
+      setGps(msg.includes('denied') || msg.includes('permission') ? 'denied' : 'unavailable');
     }
+  }, [onFix]);
 
+  /**
+   * Begin the run. Synchronous and unconditional — this is the athlete saying they have started, and
+   * nothing about the state of a radio makes that untrue.
+   */
+  const start = useCallback(() => {
     running.current = true;
     reanchor.current = false;
-    setStatus('acquiring');
-    // The clock is wall-time-driven rather than a counter, so a throttled background tab can't make a
-    // 40-minute run report 26 minutes.
+    setPhase('live');
+    setGps('acquiring');
+    // Wall-time-driven rather than a counter, so a throttled background tab can't make a 40-minute run
+    // report 26 minutes.
     let lastTick = Date.now();
     timer.current = setInterval(() => {
       const now = Date.now();
@@ -132,38 +174,44 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
       lastTick = now;
       if (running.current) setElapsedSec((s) => s + delta);
     }, 1000);
-    return true;
-  }, [onFix]);
-
-  // "Acquiring" resolves into "tracking" the moment a fix is good enough to have entered the track.
-  // Pure derivation from state, not a write inside the callback — the strict react-compiler lint forbids
-  // a synchronous setState in an effect body, and this needs no state of its own.
-  const settled = track.length > 0;
-  const effective: TrackerStatus =
-    status === 'acquiring' && settled ? 'tracking' : status === 'paused' ? 'paused' : status;
+    void attachGps();
+  }, [attachGps]);
 
   const pause = useCallback(() => {
     running.current = false;
-    setStatus('paused');
+    setPhase('paused');
   }, []);
 
   const resume = useCallback(() => {
     running.current = true;
     reanchor.current = true;
-    setStatus('tracking');
+    setPhase('live');
   }, []);
 
   const stop = useCallback(() => {
     clearAll();
-    setStatus('idle');
+    setPhase('idle');
+    setGps('off');
   }, [clearAll]);
 
+  // Everything below is DERIVED. "Acquiring" becomes "tracking" the moment a fix is good enough to have
+  // entered the track, and patience runs out on its own — both are functions of state already held, and
+  // a synchronous setState in an effect body is exactly what the strict react-compiler lint forbids.
+  const live = phase === 'live' || phase === 'paused';
+  const settled = track.length > 0;
+  const gpsStalled = live && gps === 'acquiring' && !settled && elapsedSec >= GPS_PATIENCE_SEC;
+  const effectiveGps: GpsState =
+    gps === 'acquiring' && settled ? 'tracking' : gpsStalled ? 'unavailable' : gps;
+
   return {
-    status: effective,
+    phase,
+    gps: effectiveGps,
     track,
     elapsedSec: Math.floor(elapsedSec),
     accuracyM,
-    weakSignal: (effective === 'acquiring' || effective === 'tracking') && track.length < 2,
+    weakSignal: live && (effectiveGps === 'acquiring' || effectiveGps === 'tracking') && track.length < 2,
+    gpsStalled,
+    noGps: effectiveGps === 'denied' || effectiveGps === 'unavailable',
     start,
     pause,
     resume,

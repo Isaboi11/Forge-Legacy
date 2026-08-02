@@ -415,3 +415,37 @@ test('signalNote: a good fix reports its accuracy rather than claiming precision
   assert.equal(signalNote(false, false, 6), 'Tracking · ±6 m');
   assert.equal(signalNote(false, false, null), 'Tracking');
 });
+
+/*
+ * The unmeasured run.
+ *
+ * Pressing Start used to await a permission request and refuse the run on anything short of a grant —
+ * and on the web that was the NORMAL path, because `requestForegroundPermissionsAsync` reports the
+ * current state there rather than raising the browser prompt. A first-time athlete is in "prompt",
+ * which is not "granted", so the run was refused before the browser had been asked. The card offered
+ * "Enter it myself" and nothing else: no clock, no way to end anything.
+ *
+ * The run now starts regardless and the clock is the measurement. These lock the words for that.
+ */
+test('signalNote: a refused permission describes the RUN, not the radio', () => {
+  const n = signalNote(false, true, null, 'denied');
+  assert.match(n, /Timing only/);
+  assert.doesNotMatch(n, /satellites|Weak/, 'nothing is being looked for — that search is over');
+});
+
+test('signalNote: no provider still leaves a run in progress, not an error', () => {
+  const n = signalNote(false, true, null, 'unavailable');
+  assert.match(n, /timing only/i);
+  assert.match(n, /distance/i, 'it must say where the distance is going to come from');
+});
+
+test('signalNote: paused still outranks a dead signal', () => {
+  assert.match(signalNote(true, true, null, 'denied'), /Paused/);
+});
+
+test('signalNote: an unmeasured run is never described as broken', () => {
+  for (const g of ['denied', 'unavailable']) {
+    const n = signalNote(false, true, null, g);
+    assert.doesNotMatch(n, /error|failed|can.t track|unable/i, `"${n}" reads as a failure`);
+  }
+});

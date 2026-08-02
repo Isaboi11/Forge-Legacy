@@ -237,18 +237,27 @@ const KM_PER_MI = 1.609344;
  * What to say about the signal, so a stalled distance is never silent.
  *
  * This exists because both run surfaces failed the same way: a walk around the block reported 0.00 with
- * nothing on screen to explain it. One screen said "Finding you…" and only while the track was empty;
- * the other said nothing at all. Neither could distinguish "we haven't got a fix" from "we have a fix
- * and it isn't good enough to move you" — which is the state that actually needed words.
+ * nothing on screen to explain it. One said "Finding you…" and only while the track was empty; the
+ * other said nothing at all. Neither could distinguish "we haven't got a fix" from "we have a fix and
+ * it isn't good enough to move you" — which is the state that actually needed words.
  *
- * Shared rather than written twice, so the two screens can't drift into describing GPS differently.
+ * The `gps` argument arrived later, and with it the case that matters most: a run happening with no
+ * measurement at all. That is no longer a dead end — the clock runs regardless — so the line has to
+ * account for a bout that is real and simply unmeasured, without implying it is broken.
  */
+export type GpsReport = 'off' | 'acquiring' | 'tracking' | 'denied' | 'unavailable';
+
 export function signalNote(
   paused: boolean,
   weak: boolean,
   accuracyM: number | null,
+  gps: GpsReport = 'tracking',
 ): string {
   if (paused) return 'Paused · the ground still moves, the run does not';
+  // The run is under way and nothing will measure it. Say what that means for the number, not what
+  // went wrong with a radio.
+  if (gps === 'denied') return 'Timing only · add the distance when you finish';
+  if (gps === 'unavailable') return 'No signal · timing only, add the distance at the end';
   const pm = accuracyM == null ? null : `±${Math.round(accuracyM)} m`;
   if (weak) return pm == null ? 'Looking for satellites…' : `Weak signal · ${pm} — move a little further to start the trace`;
   return pm == null ? 'Tracking' : `Tracking · ${pm}`;

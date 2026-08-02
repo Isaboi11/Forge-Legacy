@@ -152,16 +152,23 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave 
    * of day) but you cannot see it; outdoors a sleeping screen suspends the fix stream on the web and the
    * distance simply stops, which is the worse of the two failures.
    */
-  const live = tracker.status === 'acquiring' || tracker.status === 'tracking';
+  const live = tracker.phase === 'live';
   useKeepScreenAwake(timer.running || live);
 
   // Live measurements. Zero and null until GPS has actually accepted movement — never seeded, never
   // simulated: an empty track has nothing to say and says nothing.
   const liveMi = totalMiles(tracker.track);
   const livePaceSec = currentPaceSec(tracker.track);
-  const tracking = live || tracker.status === 'paused';
-  /** Nothing to track WITH — refused, or no provider at all. The manual path has to stay open. */
-  const noGps = tracker.status === 'denied' || tracker.status === 'unavailable';
+  /**
+   * The bout is UNDER WAY — running or paused, measured or not.
+   *
+   * Keyed off the run, never off GPS. This used to be true only once a position stream existed, which
+   * is why a refused permission produced no live card at all: the athlete had started, and the screen
+   * disagreed.
+   */
+  const tracking = live || tracker.phase === 'paused';
+  /** Nothing will be measured. The clock still runs; the distance gets typed at the end. */
+  const noGps = tracker.noGps;
 
   const dU = unitLabel(units);
   const d1 = (mi: number | null | undefined) => toDistance(mi ?? 0, units).toFixed(1);
@@ -226,7 +233,7 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave 
    * `measured` is passed when GPS did the measuring, and then it wins over every default below — the
    * whole point of having tracked is that nobody has to remember or re-enter anything.
    */
-  const openLog = (measured?: { distanceMi: number; timeSec: number }) => {
+  const openLog = (bout?: { distanceMi?: number; timeSec: number }) => {
     // Opening the form ENDS the bout. The clock was running because the athlete was; they have stopped
     // to write the numbers down, and a timer still counting behind the form would keep inflating a
     // duration they are in the middle of confirming.
@@ -237,14 +244,17 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave 
     const formTreadmill = logged && lm ? lm === 'indoor' : treadmill;
     const target = targetMi ?? 1;
     const pace = targetPaceSec ?? 540;
-    const distanceMi = measured ? measured.distanceMi : (result?.distanceMi ?? target);
+    // A bout with a measured distance is TRACKED; one with only a clock is not, and must not be filed
+    // as though GPS vouched for the number the athlete is about to type.
+    const gpsMeasured = bout?.distanceMi != null;
+    const distanceMi = bout?.distanceMi ?? result?.distanceMi ?? target;
     setDraft({
       distanceMi,
-      timeSec: measured ? measured.timeSec : (result?.timeSec ?? (timer.elapsedSec || Math.round(target * pace))),
+      timeSec: bout ? bout.timeSec : (result?.timeSec ?? (timer.elapsedSec || Math.round(target * pace))),
       inclinePct: result?.inclinePct ?? (formTreadmill ? 1 : 0),
       hasIncline: formTreadmill,
       modality: formTreadmill ? 'indoor' : 'outdoor',
-      source: measured ? 'tracked' : (result?.source ?? 'manual'),
+      source: gpsMeasured ? 'tracked' : (result?.source ?? 'manual'),
     });
     setDistanceText(toDistance(distanceMi, units).toFixed(2));
   };
@@ -274,7 +284,7 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave 
     ? { d: fitted.d, start: fitted.start, head: fitted.head }
     : null;
 
-  const note = signalNote(tracker.status === 'paused', tracker.weakSignal, tracker.accuracyM);
+  const note = signalNote(tracker.phase === 'paused', tracker.weakSignal, tracker.accuracyM, tracker.gps);
 
   /**
    * The pace cue, ported from the retired Active Run screen.
@@ -285,6 +295,8 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave 
    * it is just a colour.
    */
   const cue = effortTarget != null && live ? sustainedCue(tracker.track, effortTarget, speed) : null;
+  /** Distance is only a number when something measured it. Untracked, the clock is the whole readout. */
+  const measured = tracker.track.length > 1;
   /** Fraction of the distance target covered, clamped — or null when the bout is open. */
   const progress = targetMi != null ? goalProgress(liveMi, targetMi) : null;
   const reached = goalMet(liveMi, targetMi);
@@ -433,19 +445,32 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave 
                 came from in one place, rather than a clock at the top and a distance three rows down. */}
             {tracking ? (
               <View style={styles.liveOverlay} pointerEvents="none">
-                <Text style={styles.liveDistance}>{toDistance(liveMi, units).toFixed(2)}</Text>
-                <Text style={styles.liveUnit}>{dU.toUpperCase()}</Text>
-                <View style={styles.liveMetaRow}>
-                  <Text style={styles.liveMeta}>{fmtClock(tracker.elapsedSec)}</Text>
-                  <Text style={styles.liveMetaDot}>·</Text>
-                  <Text style={styles.liveMeta}>
-                    {livePaceSec == null
-                      ? '--'
-                      : speed
-                        ? `${toSpeed(3600 / livePaceSec, units).toFixed(1)} ${units === 'metric' ? 'km/h' : 'mph'}`
-                        : `${fmtPace(toPace(livePaceSec, units))} /${dU}`}
-                  </Text>
-                </View>
+                {/* THE HEADLINE IS WHAT IS ACTUALLY KNOWN.
+                    With GPS that is the distance, and the clock rides underneath. Without it the clock
+                    IS the measurement — a 0.00 in 46pt type over a run that is genuinely happening reads
+                    as a broken app, and it would be the largest thing on screen. */}
+                {measured ? (
+                  <>
+                    <Text style={styles.liveDistance}>{toDistance(liveMi, units).toFixed(2)}</Text>
+                    <Text style={styles.liveUnit}>{dU.toUpperCase()}</Text>
+                    <View style={styles.liveMetaRow}>
+                      <Text style={styles.liveMeta}>{fmtClock(tracker.elapsedSec)}</Text>
+                      <Text style={styles.liveMetaDot}>·</Text>
+                      <Text style={styles.liveMeta}>
+                        {livePaceSec == null
+                          ? '--'
+                          : speed
+                            ? `${toSpeed(3600 / livePaceSec, units).toFixed(1)} ${units === 'metric' ? 'km/h' : 'mph'}`
+                            : `${fmtPace(toPace(livePaceSec, units))} /${dU}`}
+                      </Text>
+                    </View>
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.liveDistance}>{fmtClock(tracker.elapsedSec)}</Text>
+                    <Text style={styles.liveUnit}>{noGps ? 'ELAPSED' : 'ELAPSED · FINDING YOU'}</Text>
+                  </>
+                )}
                 {cue ? (
                   <View style={[styles.cue, cue === 'on' ? styles.cueOn : styles.cueOff]}>
                     <Text style={[styles.cueText, cue === 'on' ? styles.cueTextOn : null]}>{cueLabel(cue, speed)}</Text>
@@ -458,7 +483,7 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave 
                 The ring owned a full-screen layout; this band is 140px tall with a route in it, and a
                 ring here would either shrink to unreadable or crowd out the number it describes. The
                 information is identical: how much of the target is behind you. */}
-            {tracking && progress != null ? (
+            {tracking && measured && progress != null ? (
               <View style={styles.goalTrack} pointerEvents="none">
                 <View style={[styles.goalFill, { width: `${Math.round(progress * 100)}%` }, reached ? styles.goalFillMet : null]} />
               </View>
@@ -681,19 +706,26 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave 
                     <Button
                       variant="secondary"
                       fullWidth
-                      onPress={tracker.status === 'paused' ? tracker.resume : tracker.pause}
-                      accessibilityLabel={tracker.status === 'paused' ? 'Resume tracking' : 'Pause tracking'}
+                      onPress={tracker.phase === 'paused' ? tracker.resume : tracker.pause}
+                      accessibilityLabel={tracker.phase === 'paused' ? `Resume the ${VERB[activity].toLowerCase()}` : `Pause the ${VERB[activity].toLowerCase()}`}
                     >
-                      {tracker.status === 'paused' ? 'Resume' : 'Pause'}
+                      {tracker.phase === 'paused' ? 'Resume' : 'Pause'}
                     </Button>
                   </View>
                   <View style={styles.half}>
-                    {/* Ends the run AND carries the measurement straight into the form. Nothing to
-                        re-enter: the whole reason to track is that the numbers already exist. */}
+                    {/* Ends the run AND carries whatever was measured straight into the form. With GPS
+                        that is the distance and the clock; without it, the clock alone — and the form
+                        opens on the distance field for them to fill in, exactly like a treadmill. */}
                     <Button
                       variant="primary"
                       fullWidth
-                      onPress={() => openLog({ distanceMi: +liveMi.toFixed(2), timeSec: tracker.elapsedSec })}
+                      onPress={() =>
+                        openLog(
+                          measured
+                            ? { distanceMi: +liveMi.toFixed(2), timeSec: tracker.elapsedSec }
+                            : { timeSec: tracker.elapsedSec },
+                        )
+                      }
                       accessibilityLabel={`End ${VERB[activity].toLowerCase()}`}
                     >
                       End {VERB[activity]}
@@ -701,33 +733,21 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave 
                   </View>
                 </View>
                 <Text style={styles.note}>
-                  Keep this screen open — tracking stops if the app goes to the background.
-                </Text>
-              </>
-            ) : noGps ? (
-              <>
-                {/* Refused or unavailable. It says which, then gets out of the way — the run still
-                    happened and it must still be loggable. */}
-                <Button variant="primary" fullWidth onPress={() => openLog()} accessibilityLabel={`Log the ${VERB[activity].toLowerCase()} by hand`}>
-                  Enter it myself
-                </Button>
-                <Text style={styles.note}>
-                  {tracker.status === 'denied'
-                    ? 'Location is off for Forge Legacy, so there’s nothing to track with. Turn it on in your settings, or just type the numbers in.'
-                    : 'This device won’t give us a location. Type the numbers in instead.'}
+                  {noGps
+                    ? tracker.gps === 'denied'
+                      ? 'Location is off for Forge Legacy, so we can’t measure the distance — the clock is still running, and you can type the distance in when you finish.'
+                      : 'No location signal here. The clock is still running; you’ll add the distance at the end.'
+                    : 'Keep this screen open — tracking stops if the app goes to the background.'}
                 </Text>
               </>
             ) : (
               <>
                 {targetChooser}
-                <Button
-                  variant="primary"
-                  fullWidth
-                  onPress={() => void tracker.start()}
-                  disabled={tracker.status === 'requesting'}
-                  accessibilityLabel={`Start ${VERB[activity].toLowerCase()}`}
-                >
-                  {tracker.status === 'requesting' ? 'Asking for location…' : `Start ${VERB[activity]}`}
+                {/* PRESSING THIS STARTS THE RUN. It does not ask permission first and wait to find out
+                    whether it is allowed to agree — that is what left an athlete who pressed Start with
+                    no clock, no card and no way to end anything. GPS attaches underneath. */}
+                <Button variant="primary" fullWidth onPress={tracker.start} accessibilityLabel={`Start ${VERB[activity].toLowerCase()}`}>
+                  Start {VERB[activity]}
                 </Button>
                 <Pressable onPress={() => openLog()} accessibilityRole="button" accessibilityLabel="Already did it — log manually" style={styles.textBtn}>
                   <Text style={styles.textBtnText}>Already did it · log manually</Text>
