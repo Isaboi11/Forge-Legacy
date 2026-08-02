@@ -137,3 +137,31 @@ test('matching the whole split — most resolve, and every miss keeps what was w
     }
   }
 });
+
+/*
+ * ══ NEAREST IS NOT THE SAME AS RIGHT ══
+ *
+ * Three matches from a real import that were the closest candidate by word count and the wrong lift.
+ * Each one now abstains — the athlete keeps what they wrote, which is always survivable.
+ */
+
+test('a bare word never resolves to an obscure implement', () => {
+  // "Squats" → CABLE Squat and "Leg curls" → BAND Leg Curl. Both nearest by word count, both absurd:
+  // the catalogue simply holds those variants under shorter names than the ones people mean.
+  for (const [written, forbidden] of [['Squats', /cable/i], ['Leg curls', /band/i], ['Leg Curls', /band/i]]) {
+    const r = m(written);
+    if (r) assert.ok(!forbidden.test(r.name), `"${written}" resolved to "${r.name}"`);
+  }
+});
+
+test('but a cable lift a bare word DOES mean still resolves', () => {
+  // The rule must not become "abstain whenever it is a cable" — pulldowns and face pulls are cable lifts.
+  assert.match(m('Lat Pulldowns')?.name ?? '', /Cable Lat Pulldown/);
+  assert.match(m('Face Pulls')?.name ?? '', /Cable Face Pull/);
+});
+
+test('naming the obscure implement yourself is honoured', () => {
+  // The restriction is on ASSUMING one, never on obeying one.
+  const r = m('Band Leg Curl');
+  assert.ok(r?.name.toLowerCase().includes('band'), `got ${r?.name}`);
+});

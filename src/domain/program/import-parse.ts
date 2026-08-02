@@ -124,14 +124,25 @@ function detectDelimiter(lines: string[]): '\t' | ';' | ',' {
 
 /** Accumulates rows into weeks → days → items, keeping first-appearance order throughout. */
 class Builder {
-  private weeks = new Map<number, Map<string, ParsedItem[]>>();
+  /*
+   * Days are keyed by an IDENTITY, not by their name.
+   *
+   * A six-day split names day 4 "Chest and Triceps" exactly like day 1 — that is what a split IS. Keying
+   * by name merged them, and a six-day program imported as four days with fourteen exercises crammed
+   * into the first. Two days that share a name are still two days.
+   *
+   * A TABLE is the opposite case: its Day column repeats the same label on every row of that day, and
+   * those rows genuinely are one day. So the caller decides — a table passes the name as the key, and a
+   * typed-out workout passes a fresh key per heading.
+   */
+  private weeks = new Map<number, Map<string, { name: string; items: ParsedItem[] }>>();
   rowsRead = 0;
 
-  add(week: number, day: string, item: ParsedItem) {
+  add(week: number, dayKey: string, dayName: string, item: ParsedItem) {
     if (!this.weeks.has(week)) this.weeks.set(week, new Map());
     const days = this.weeks.get(week)!;
-    if (!days.has(day)) days.set(day, []);
-    days.get(day)!.push(item);
+    if (!days.has(dayKey)) days.set(dayKey, { name: dayName, items: [] });
+    days.get(dayKey)!.items.push(item);
     this.last = item;
     this.rowsRead++;
   }
@@ -144,10 +155,10 @@ class Builder {
       .sort((a, b) => a[0] - b[0])
       .map(([index, days]) => ({
         index,
-        days: [...days.entries()].map(([name, items], i) => ({
-          name,
+        days: [...days.values()].map((d, i) => ({
+          name: d.name,
           letter: LETTERS[i] ?? String(i + 1),
-          items,
+          items: d.items,
         })),
       }));
   }
@@ -178,6 +189,8 @@ function parseFreeform(lines: string[]): ParseResult {
   const b = new Builder();
   let week = 1;
   let day: string | null = null;
+  /** Bumped on every heading, so two days called the same thing stay two days. */
+  let dayOrdinal = 0;
 
   /*
    * Read every line's scheme up front, because deciding what a line IS needs its neighbours.
@@ -204,6 +217,7 @@ function parseFreeform(lines: string[]): ParseResult {
     if (row.wk != null) {
       week = row.wk;
       day = null; // a new week starts its own days
+      dayOrdinal = 0;
       /*
        * "Week 1: Squat 5x5" carries work on the heading line. Consuming the whole line discarded it —
        * and for a program written one week per line, discarded every exercise in the program and then
@@ -213,7 +227,7 @@ function parseFreeform(lines: string[]): ParseResult {
       if (rest) {
         const { scheme, rest: named } = extractScheme(rest);
         const name = cleanExerciseName(named || rest);
-        if (name) b.add(week, day ?? 'Day 1', item(name, scheme.sets, scheme.reps));
+        if (name) b.add(week, `${dayOrdinal}`, day ?? 'Day 1', item(name, scheme.sets, scheme.reps));
       }
       return;
     }
@@ -251,7 +265,7 @@ function parseFreeform(lines: string[]): ParseResult {
        */
       if (next?.hasScheme && !next.rest) {
         const name = cleanExerciseName(row.line);
-        if (name) b.add(week, day ?? 'Day 1', item(name, next.scheme.sets, next.scheme.reps));
+        if (name) b.add(week, `${dayOrdinal}`, day ?? 'Day 1', item(name, next.scheme.sets, next.scheme.reps));
         consumed.add(next);
         return;
       }
@@ -259,13 +273,14 @@ function parseFreeform(lines: string[]): ParseResult {
       const atBoundary = next?.hasScheme === true && (prev == null || prev.hasScheme);
       if (looksLikeDayHeading(row.line) || atBoundary) {
         day = cleanDayName(row.line);
+        dayOrdinal++;
         return;
       }
     }
 
     const name = cleanExerciseName(row.rest || row.line);
     if (!name) return;
-    b.add(week, day ?? 'Day 1', item(name, row.scheme.sets, row.scheme.reps));
+    b.add(week, `${dayOrdinal}`, day ?? 'Day 1', item(name, row.scheme.sets, row.scheme.reps));
   });
 
   if (b.rowsRead === 0) {
@@ -317,7 +332,7 @@ function parseColumnPerDay(lines: string[], delimiter: '\t' | ';' | ','): ParseR
       if (!cell) continue;
       const { scheme, rest } = extractScheme(cell);
       const name = cleanExerciseName(rest || cell);
-      if (name) b.add(1, cleanDayName(label), item(name, scheme.sets, scheme.reps));
+      if (name) b.add(1, label, cleanDayName(label), item(name, scheme.sets, scheme.reps));
     }
   }
   return b.rowsRead ? { ok: true, weeks: b.done(), ignoredColumns: [], rowsRead: b.rowsRead } : null;
@@ -419,7 +434,7 @@ export function parseProgramTable(raw: string): ParseResult {
 
     const name = cleanExerciseName(rest || rawName);
     if (!name) continue;
-    b.add(week, day, item(name, sets, reps));
+    b.add(week, day, day, item(name, sets, reps));
   }
 
   if (b.rowsRead === 0) {

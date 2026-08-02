@@ -10,7 +10,7 @@
  */
 
 import React from 'react'
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native'
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { flColor, flRadius, flShadow } from '@/constants/foundation'
 
@@ -21,10 +21,18 @@ export interface BottomSheetProps {
   title?: string
   showHandle?: boolean
   children?: React.ReactNode
+  /**
+   * Scroll the body when it is taller than the sheet.
+   *
+   * OPT-IN, not automatic: ten sheets already own an inner `ScrollView` sized to their content, and
+   * wrapping those in another would nest two scrollers on the same axis. The height cap below is
+   * unconditional and fixes the worst of it for everybody; this is for a body that is genuinely long.
+   */
+  scroll?: boolean
   footer?: React.ReactNode
 }
 
-export function BottomSheet({ open, onClose, dismissible = true, title, showHandle = true, children, footer }: BottomSheetProps) {
+export function BottomSheet({ open, onClose, dismissible = true, title, showHandle = true, scroll = false, children, footer }: BottomSheetProps) {
   const insets = useSafeAreaInsets()
 
   return (
@@ -46,7 +54,18 @@ export function BottomSheet({ open, onClose, dismissible = true, title, showHand
 
           {title ? <Text style={styles.title}>{title}</Text> : null}
 
-          <View style={styles.content}>{children}</View>
+          {scroll ? (
+            <ScrollView
+              style={styles.scrollBody}
+              contentContainerStyle={styles.content}
+              showsVerticalScrollIndicator
+              keyboardShouldPersistTaps="handled"
+            >
+              {children}
+            </ScrollView>
+          ) : (
+            <View style={styles.content}>{children}</View>
+          )}
 
           {footer ? <View style={styles.footer}>{footer}</View> : null}
         </Pressable>
@@ -62,6 +81,14 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.overlayDark,
   },
   sheet: {
+    /*
+     * A SHEET TALLER THAN THE SCREEN HAS NO BOTTOM.
+     *
+     * There was no cap at all, so a long body — an imported six-day program, forty-five exercises —
+     * simply ran off the top of the display with its Create button somewhere past the ceiling and no way
+     * to reach it. 88% leaves the backdrop tappable above, which is how a sheet is dismissed.
+     */
+    maxHeight: '88%',
     backgroundColor: flColor.charcoal700,
     borderWidth: 1,
     borderColor: flColor.charcoal500,
@@ -88,6 +115,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: flColor.cream100,
   },
+  /** Shrinks so the pinned footer keeps its place; the body scrolls inside whatever is left. */
+  scrollBody: { flexShrink: 1 },
   content: {
     paddingHorizontal: 22,
     paddingTop: 14,

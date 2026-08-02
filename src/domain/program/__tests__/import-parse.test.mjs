@@ -587,3 +587,38 @@ test('a scheme on the line BELOW its exercise belongs to it', () => {
     ['Squat', 5, 5],
   ]);
 });
+
+test('TWO DAYS THAT SHARE A NAME ARE STILL TWO DAYS', () => {
+  /*
+   * A six-day split names day 4 "Chest and Triceps" exactly like day 1 — that is what a split IS.
+   * Keying days by name merged them, and a real six-day program imported as FOUR days with fourteen
+   * exercises crammed into the first. Found by importing one, not by reading the code.
+   */
+  const r = ok(parseProgramTable([
+    'DAY 1 - Chest and Triceps', 'Bench press - 4 sets - 6-8 reps',
+    'DAY 2 - Back and Biceps', 'Deadlifts - 4 sets - 6-8 reps',
+    'DAY 3 - Legs and Shoulder', 'Front Squat - 4 sets - 10-12 reps',
+    'DAY 4 - Chest and Triceps', 'Dumbbell Bench Press - 4 sets - 6-8 reps',
+    'DAY 5 - Back and Biceps', 'Pull-ups - 4 sets - 6-8 reps',
+    'DAY 6 - Shoulder and Legs', 'Military press - 4 sets - 6-8 reps',
+  ].join('\n')));
+
+  assert.equal(r.weeks[0].days.length, 6, 'a six-day split must import as six days');
+  assert.deepEqual(r.weeks[0].days.map((d) => d.letter), ['A', 'B', 'C', 'D', 'E', 'F']);
+  for (const d of r.weeks[0].days) {
+    assert.equal(d.items.length, 1, `${d.letter} (${d.name}) collected another day's work`);
+  }
+});
+
+test('but a TABLE still merges the rows of one day, because its Day column repeats', () => {
+  // The opposite case, and the reason the two readers key days differently: a table labels every row.
+  const r = ok(parseProgramTable(tsv([
+    ['Day', 'Exercise', 'Sets', 'Reps'],
+    ['Push', 'Bench', '4', '8'],
+    ['Push', 'Fly', '3', '12'],
+    ['Pull', 'Row', '4', '8'],
+    ['Push', 'Dips', '3', '10'], // out of order, and still the same day
+  ])));
+  assert.equal(r.weeks[0].days.length, 2);
+  assert.deepEqual(r.weeks[0].days.map((d) => [d.name, d.items.length]), [['Push', 3], ['Pull', 1]]);
+});

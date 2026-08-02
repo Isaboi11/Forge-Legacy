@@ -782,7 +782,31 @@ export default function ProgramBuilderScreen() {
       {/* ── IMPORT FROM A SPREADSHEET ─────────────────────────────────────
           One sheet, two states, per the design: paste → preview. The paste state's copy IS the parser's
           contract, so it states exactly what is read rather than describing a format vaguely. */}
-      <BottomSheet open={importOpen} onClose={() => setImportOpen(false)} title="Import from spreadsheet">
+      {/* `scroll` because an imported program is long — six days and forty-five exercises ran off the top
+          of the screen with no way back. The actions live in the FOOTER so they stay put while the
+          preview scrolls; buried under forty-five rows they may as well not exist. */}
+      <BottomSheet
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        title="Import from spreadsheet"
+        scroll
+        footer={
+          preview == null ? undefined : (
+            <View style={styles.impActions}>
+              <View style={styles.impBackBtn}>
+                <Button variant="secondary" fullWidth onPress={() => setPreview(null)}>
+                  Back
+                </Button>
+              </View>
+              <View style={styles.impCreateBtn}>
+                <Button variant="primary" fullWidth onPress={confirmImport}>
+                  Create program
+                </Button>
+              </View>
+            </View>
+          )
+        }
+      >
         {preview == null ? (
           <View style={styles.impCol}>
             <Text style={styles.impHint}>
@@ -891,18 +915,6 @@ export default function ProgramBuilderScreen() {
               <Text style={styles.impAddWeekText}>Add another week</Text>
             </Pressable>
 
-            <View style={styles.impActions}>
-              <View style={styles.impBackBtn}>
-                <Button variant="secondary" fullWidth onPress={() => setPreview(null)}>
-                  Back
-                </Button>
-              </View>
-              <View style={styles.impCreateBtn}>
-                <Button variant="primary" fullWidth onPress={confirmImport}>
-                  Create program
-                </Button>
-              </View>
-            </View>
           </View>
         )}
       </BottomSheet>

@@ -75,6 +75,16 @@ const NOISE = new Set(['the', 'a', 'and', 'or', 'with', 'on', 'to', 'for', 'of',
  */
 const EQUIPMENT_PREFERENCE = ['barbell', 'dumbbell', 'cable', 'machine', 'smith', 'kettlebell', 'band'];
 
+/**
+ * Implements a bare exercise name never means.
+ *
+ * "Leg curls" resolved to a BAND leg curl — the nearest candidate by word count, because the catalogue
+ * happens to hold that variant under a shorter name than the machine one. Nobody writing "leg curls"
+ * means a band. When the ONLY thing an athlete's words add up to is one of these, the catalogue does not
+ * have the lift they meant, and saying so is better than handing them a different one.
+ */
+const OBSCURE_IMPLEMENTS = new Set(['band', 'smith', 'kettlebell']);
+
 function singular(w: string): string {
   if (w.length > 3 && w.endsWith('ies')) return `${w.slice(0, -3)}y`;
   if (w.length > 3 && w.endsWith('es') && /(sh|ch|ss|x|z)es$/.test(w)) return w.slice(0, -2);
@@ -136,11 +146,29 @@ export function matchExercise(written: string, catalog: readonly CatalogEntry[])
    */
   const usable =
     q.size === 1 && !namedEquipmentEarly
-      ? tied.filter((c) => [...c.tokens].every((w) => q.has(w) || EQUIPMENT_PREFERENCE.includes(w)))
+      ? tied.filter(
+          (c) =>
+            [...c.tokens].every((w) => q.has(w) || EQUIPMENT_PREFERENCE.includes(w)) &&
+            /*
+             * AND the implement must be one a bare word could plausibly mean.
+             *
+             * "Squats" resolved to a CABLE squat and "Leg curls" to a BAND leg curl — each the nearest
+             * candidate by word count, and neither what anybody means. When somebody writes one generic
+             * word they mean the barbell or the dumbbell; if the catalogue only offers a cable, machine
+             * or band variant of it, the honest answer is that it does not have the lift they meant.
+             */
+            [...c.tokens].every((w) => q.has(w) || w === 'barbell' || w === 'dumbbell'),
+        )
       : tied;
   if (usable.length === 0) return null;
   if (usable.length === 1) {
-    return { key: usable[0].entry.key, name: usable[0].entry.name, byPreference: usable[0].extra > 0 && q.size === 1 };
+    const only = usable[0];
+    // Purely an implement choice the athlete never made, and an implement nobody means by a bare name.
+    if (!namedEquipmentEarly) {
+      const added = [...only.tokens].filter((w) => !q.has(w));
+      if (added.length === 1 && OBSCURE_IMPLEMENTS.has(added[0])) return null;
+    }
+    return { key: only.entry.key, name: only.entry.name, byPreference: only.extra > 0 && q.size === 1 };
   }
 
   /*
