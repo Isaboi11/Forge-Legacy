@@ -24,7 +24,7 @@
 | **Architecture Design** | **~100%** | All 21 Architecture Freeze rows ✅ Complete; V1 Architecture Freeze officially **FROZEN 2026-06-30** |
 | **UI / Wireframes** | **~95%** | Nearly all screens specced; W18/W19 both lock-candidate (W18 corrected 2026-07-09 — previously misdashboarded as LOCKED; W19 blocked on W18, see Decision Queue #16); no Search/Rest-Timer/Community wireframe yet — Communities is architecture-only in this pass, no pixel layout authored |
 | **Content Authoring** | **Split — 92% coaching · 8% programs** | Was a single "~12%", which was wrong in both directions. **Coaching: 735 of 797 exercises Published, 62 Needs Review.** **Honors: data** (`honor_catalog`, **179 awardable** across 14 categories — 0099 filled the five empty ones). **Programs: 2 of 24 generated** — the real gap. **Exercise media: 0 of 797** |
-| **Backend / Data** | **BUILT (Supabase) — 98 migrations, 0001–0099, ALL APPLIED** | auth · profiles · chapters · workouts+sets+conditioning legs · PRs · honors (`honor_catalog` + table-driven evaluator) · programs · goals · rank · body metrics · photos · squads+feed+discovery · friends · challenges · notifications · templates · train-together. RLS on all 35 tables; 52/52 `SECURITY DEFINER` pin `search_path`. Design doc still ratifies Firebase — the BUILD is Supabase (PD-7: build governs) |
+| **Backend / Data** | **BUILT (Supabase) — 99 migrations, 0001–0100. ⚠️ 0100 NOT YET APPLIED** | auth · profiles · chapters · workouts+sets+conditioning legs · PRs · honors (`honor_catalog` + table-driven evaluator) · programs · goals · rank · body metrics · photos · squads+feed+discovery · friends · challenges · notifications · templates · train-together. RLS on all 35 tables; 52/52 `SECURITY DEFINER` pin `search_path`. Design doc still ratifies Firebase — the BUILD is Supabase (PD-7: build governs) |
 | **Code Implementation** | **~75%** *(71 screens, essentially all backend-wired)* | **71 screens** (72 until `/active-run` was retired 2026-08-01 — one run surface, folded onto the workout card). **70 of 71 read real Supabase.** The whole SOCIAL pillar — Squads · Squad Detail · Friends · Feed · Athlete Profile — is live, not mock; the old "fully MOCK, quarantined in `*-placeholder.ts`" reading was stale by weeks. Remaining: content, media production, and the deferred items in Current Sprint |
 | **Testing** | **508 tests green** *(coverage % not instrumented → not measured)* | 40 files, all passing. Invariant/golden (comment ⊆ thread · check-in ⊆ roster · records ⊆ roster · one-active-program), resolver matrices, domain validators, **+ two new regression guards: `route-guard` (every screen declared, else it answers a URL signed-out) and `chapter-tallies` (a chapter with honors never reports 0)**. Behavioural coverage of built layers, NOT whole-app coverage |
 
@@ -354,6 +354,51 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 ---
 
 ## ✅ Recently Completed (last ~20 milestones)
+
+### 1. Import from a spreadsheet · PR semantics · Rank standards (2026-08-02, CODE)
+
+**IMPORT IS BUILT.** It was in the design all along — not a screen, a BottomSheet inside the Program
+Builder — which is why a search for an import `.dc.html` found nothing. That supersedes
+`Architecture-Amendment-001-Import.md` (four screens, W-IM-1..4) which had sat in Decision Queue #15
+since W-1's retirement orphaned one of its entry points. PD-7: the design governs.
+
+The design's own copy IS the parser's contract, so it was built to it literally, then attacked. **52
+formats now import; 15 of the first 26 broke it and 9 more of the next 20 did.** The ones that mattered:
+
+· MERGED CELLS — a real sheet fills Week and Day once per block. Blank read as "no value", so every
+  continuation row landed in a fabricated "Day 1" and one training day silently became two.
+· TYPED-OUT WORKOUTS were all rejected. "Import from a spreadsheet" meant "import, but only if you
+  already keep a spreadsheet". Bullets, numbering, colons, day headings all read now.
+· "Bench press - 4 sets - 6-8 reps" — the single most common hand-written shape — read the sets, lost
+  every rep, and welded "- - 6-8 reps" onto each name.
+· "135 x 5" READ AS 1 SET OF 35, by slicing two digits off a three-digit weight. Silently, plausibly.
+· 5/3/1 and wave loading imported as lifts named after percentages. Each loaded line is now a SET.
+· One column per day, markdown tables, semicolon exports, "Week 1: Squat 5x5".
+
+**NAME MATCHING: 0 of 18 → 14.** A real split parsed perfectly and resolved NOTHING — exact-match only,
+against a catalogue that says "Barbell Bench Press" while people write "Bench press". Token matching
+(every written word must appear) that ABSTAINS on ambiguity: a wrong key is invisible, permanent, and
+files PRs against a lift nobody did. Two wrong matches in the first version were caught by measuring —
+"Dips" → Bench Dip, and "Lateral Raises" → CABLE. Deliberately not an LLM: the remaining gaps are model
+gaps, not parsing ones. **The real fix is data — 797 exercises carry ~3 aliases between them.**
+
+**A PERSONAL RECORD IS A FACT, NOT A CALCULATION.** Three definitions of "PR" were live at once. The
+in-app prompt compared a set to earlier sets in the SAME session, so working up 135 → 185 → 225
+announced a record on the third set of a warm-up ramp, every session. `detectPRs` compared estimated
+1RM against a floor of ZERO, so a beginner's every set was a record — one athlete's history reads
+3 lb → 35 → 90, three records in a day. Now: heaviest weight at 1–5 reps, beating a previous 1–5 rep
+mark, no estimation anywhere. The FIRST mark on a lift is a baseline — written, never announced.
+
+Also: a warm-up treadmill walk had been recorded as a **40 lb personal record** (cardio and warm-up
+sections are now excluded); **Rank Progression states every standard** and is reachable at last (it was
+built, guarded, and linked from nowhere, which is why nobody had noticed it stated none); **sharing to
+Friends** works — the backend had been finished for weeks and only the caller was missing; **Save image**
+composes the card at 1080px rather than screenshotting it; and Workout Complete stopped inventing an
+"Up next" from the demo program.
+
+Gate held at every step: tsc 0 · lint at baseline · **635 `node --test` green** · export + bundle grep +
+deploy.
+
 
 ### 1. Cardio consolidated onto one surface · the five empty honor categories filled (2026-08-01, CODE + migration 0099)
 
