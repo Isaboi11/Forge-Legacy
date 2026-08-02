@@ -9,6 +9,7 @@ import { TransformationLayout } from '@/components/forge/TransformationLayout';
 import { addSquadPost, type ComparePair, type ShareTemplate, type TransformationLayoutData } from '@/data/squad-feed-live';
 import { fetchFriendLists } from '@/data/friends-live';
 import { createFriendPost } from '@/data/friends-feed-live';
+import { saveShareCard } from '@/lib/share-image';
 import { fetchMySquads, type SquadSummary } from '@/data/squad-live';
 import { fetchTransformationEntries, type PoseKey, type TransformationEntry } from '@/data/transformation-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -70,6 +71,8 @@ export default function ShareConfigRoute() {
   const [mySquads, setMySquads] = useState<SquadSummary[] | null>(null);
   const [squadPickerOpen, setSquadPickerOpen] = useState(false);
   const [sharing, setSharing] = useState(false);
+  /** Separate from `sharing`: saving an image is not posting, and one must not block the other. */
+  const [savingImage, setSavingImage] = useState(false);
 
   const eff = (k: ToggleKey): boolean => incl[k] ?? true;
   const toggle = (k: ToggleKey) => setIncl((cur) => ({ ...cur, [k]: !(cur[k] ?? true) }));
@@ -243,6 +246,46 @@ export default function ShareConfigRoute() {
     showToast(dest === 'community' ? 'Community is coming soon' : 'Sending to one person is coming soon');
   };
 
+  /**
+   * Save the card as a real image.
+   *
+   * Built from exactly the state the preview above renders — the same photos, the same alignment, the
+   * same toggled lines — so what lands in the athlete's downloads is what they were looking at. It is
+   * COMPOSED at 1080px rather than captured, because a capture exports whatever the device happened to
+   * render at whatever density it happened to use.
+   */
+  const onSaveImage = async () => {
+    if (savingImage) return;
+    setSavingImage(true);
+    try {
+      const pairs = isCompare ? usePairs : [];
+      const result = await saveShareCard({
+        photoUrls: pairs.length
+          ? pairs.flatMap((pr) => [pr.then.url, pr.now.url])
+          : showPhoto && photo
+            ? [photo]
+            : [],
+        transforms: pairs.length ? pairs.flatMap((pr) => [pr.then.transform, pr.now.transform]) : [],
+        template: pairs.length ? layoutData.template : null,
+        pairCount: pairs.length,
+        poseLabels: pairs.map((pr) => pr.label),
+        thenLabel: layoutData.thenLabel,
+        nowLabel: layoutData.nowLabel,
+        elapsed: isCompare && elapsed ? elapsed : undefined,
+        eyebrow: isCompare ? undefined : 'Transformation',
+        title: isCompare ? undefined : dateLabel || undefined,
+        lines: lines.filter((l) => eff(l.key)).map((l) => ({ text: l.text, emph: l.emph })),
+        athlete: eff('name') ? athlete : undefined,
+        fileName: `forge-legacy-${(chapterName ?? 'transformation').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+      });
+      setSavingImage(false);
+      showToast(result.ok ? 'Saved to your downloads' : result.reason);
+    } catch {
+      setSavingImage(false);
+      showToast('Couldn’t save the image.');
+    }
+  };
+
   const onSystemShare = async () => {
     const text = `${athlete}'s transformation${chapterName ? ` · ${chapterName}` : ''}`;
     if (Platform.OS === 'web') {
@@ -377,7 +420,7 @@ export default function ShareConfigRoute() {
           <View style={styles.outsideGrid}>
             <OutsideRow label="Message" icon={<MessageIcon />} onPress={() => showToast('Message ready')} />
             <OutsideRow label="Share…" icon={<ShareDots />} onPress={onSystemShare} />
-            <OutsideRow label="Save image" icon={<SaveIcon />} onPress={() => showToast('Saving the card is coming soon')} />
+            <OutsideRow label="Save image" icon={<SaveIcon />} onPress={() => void onSaveImage()} />
             <OutsideRow label="Copy link" icon={<LinkIcon />} onPress={() => showToast('Share links are coming soon')} />
           </View>
         </ScrollView>
