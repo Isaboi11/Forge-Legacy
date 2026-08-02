@@ -21,7 +21,7 @@ import {
   leaveSquad,
   setSquadNotifPrefs,
   updateSquad,
-  fetchCheckinStandard,
+  fetchWeeklyStandard,
   uploadSquadPhoto,
   type SquadDetail,
   type SquadMemberView,
@@ -70,7 +70,7 @@ export default function SquadSettingsScreen() {
   const { data: pendingCount } = useQuery(() => fetchPendingRequestCount(squadId), [squadId]);
   // Same reason as Discovery above: read separately, and `null` (0099 not applied) hides the control
   // rather than taking the screen down on a missing column.
-  const { data: standard, refetch: refetchStandard } = useQuery(() => fetchCheckinStandard(squadId), [squadId]);
+  const { data: standard, refetch: refetchStandard } = useQuery(() => fetchWeeklyStandard(squadId), [squadId]);
 
   const [editOpen, setEditOpen] = useState(false);
   const [draftName, setDraftName] = useState('');
@@ -183,7 +183,7 @@ export default function SquadSettingsScreen() {
     const n = Math.max(1, Math.min(7, next));
     if (n === standard) return;
     try {
-      await updateSquad(squadId, { checkinStandard: n });
+      await updateSquad(squadId, { weeklyStandard: n });
       refetchStandard();
     } catch (e) {
       showToast(errorMessage(e));
@@ -332,8 +332,8 @@ export default function SquadSettingsScreen() {
             <View style={styles.card}>
               <Text style={styles.privacyLabel}>Days a week</Text>
               <Text style={styles.privacyHint}>
-                What this squad holds itself to. Rest days are part of training — this is the bar everyone
-                agrees to clear, not the number of days in the week.
+                Days a week every member trains. Rest days are part of training — this is the bar the squad agrees
+                to clear, not the number of days in a week.
               </Text>
               <View style={styles.stdRow}>
                 <Pressable

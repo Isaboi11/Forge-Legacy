@@ -80,18 +80,23 @@ comment on column public.profiles.tz is
 -- ── THE SQUAD'S WEEKLY STANDARD ─────────────────────────────────────────────
 --
 -- How many days a week this squad holds itself to. It exists because "Perfect Week" as the locked
--- catalog defines it — every member checked in Trained on all seven days — is a bad honor. Rest days
--- are TRAINING, deliberately taken, and an honor that can only be earned by a squad where nobody rests
--- rewards the one pattern the rest of this app refuses to celebrate. It would also have been broken by
--- one person taking a Sunday off, which is the shape of thing that makes people apologise to a group.
+-- catalog defines it — every member training all seven days — is a bad honor. Rest days are TRAINING,
+-- deliberately taken, and an honor only earnable by a squad where nobody rests rewards the one pattern
+-- the rest of this app refuses to celebrate. It would also have been broken for everyone by one person
+-- taking a Sunday off, which is the shape of thing that makes people apologise to a group.
 --
 -- So the bar is the squad's own. Three is a default, not a claim: a squad that never opens settings
 -- still has a reachable honor, and an owner who wants five sets five.
-alter table public.squads add column if not exists checkin_standard int not null default 3;
-alter table public.squads drop constraint if exists squads_checkin_standard_range;
-alter table public.squads add constraint squads_checkin_standard_range check (checkin_standard between 1 and 7);
-comment on column public.squads.checkin_standard is
-  'Trained check-ins per week this squad holds itself to (1-7, default 3). The bar for a Perfect Week. Owner-set: a squad that rests two days a week is not failing at anything.';
+--
+-- MEASURED FROM LOGGED WORKOUTS, not from check-ins. This was written against `squad_checkins` before
+-- discovering that 0049 DROPPED 0048's daily trained/rest table and rebuilt it as ephemeral video
+-- stories — there is no daily trained/rest record in this product. Workouts are the better evidence
+-- anyway: a standard should be met by training, not by pressing a button that says you did.
+alter table public.squads add column if not exists weekly_standard int not null default 3;
+alter table public.squads drop constraint if exists squads_weekly_standard_range;
+alter table public.squads add constraint squads_weekly_standard_range check (weekly_standard between 1 and 7);
+comment on column public.squads.weekly_standard is
+  'Training days per week this squad holds itself to (1-7, default 3). The bar for a Perfect Week, measured from logged workouts. Owner-set: a squad that rests two days a week is not failing at anything.';
 
 -- ── SQUAD GOALS, ARCHIVED ───────────────────────────────────────────────────
 --
@@ -333,8 +338,10 @@ begin
     'squads_founded', (
       select count(*) from public.squads s where s.owner_id = p_uid
     ),
+    -- Distinct DAYS on which the athlete posted a check-in to a squad, not raw rows: fifty videos in one
+    -- afternoon is one day of showing up, and counting rows would make Team Player a posting target.
     'squad_checkins_logged', (
-      select count(*) from public.squad_checkins ck where ck.user_id = p_uid
+      select count(distinct ck.created_at::date) from public.squad_checkins ck where ck.user_id = p_uid
     ),
     -- Every workout logged by any CURRENT member of any squad the athlete belongs to, each counted once.
     -- A squad-collective figure: "your squads have logged N sessions together".
@@ -347,31 +354,33 @@ begin
     ) end,
     -- A perfect week: an ISO week in which EVERY current member met the squad's OWN standard.
     --
-    -- Not "all seven days", which is what the locked catalog says and what this originally shipped as.
-    -- That version could only be earned by a squad in which nobody ever rested, and was broken for
-    -- everyone by one person taking a Sunday off — an honor that quietly asks a group to train through
-    -- their rest days, in an app whose whole posture is that rest is part of the work.
+    -- Counted from LOGGED WORKOUTS. The obvious source would be check-ins, and this was written against
+    -- them — but `squad_checkins` has been ephemeral video stories since 0049 dropped 0048's daily
+    -- trained/rest table, so that record does not exist. Workouts are the stronger evidence regardless.
     --
     -- Calendar weeks rather than rolling ones: the doc says "a 7-day window" without saying how
     -- overlapping windows count, and fourteen perfect days should be two perfect weeks, not eight.
+    --
+    -- A member who trained NOTHING that week produces no row at all, so the count falls short of the
+    -- roster and the week does not qualify — the intended reading of "every current member".
     'perfect_weeks', case when not v_squad then 0 else (
       select count(*) from (
         select per.squad_id, per.wk
           from (
-            select ck.squad_id,
-                   date_trunc('week', ck.checkin_date::timestamp) as wk,
-                   ck.user_id,
-                   count(*) as days
-              from public.squad_checkins ck
-             where ck.status = 'trained'
-               and ck.squad_id in (select sm.squad_id from public.squad_members sm where sm.user_id = p_uid)
-               and exists (select 1 from public.squad_members cur
-                            where cur.squad_id = ck.squad_id and cur.user_id = ck.user_id)
-             group by ck.squad_id, date_trunc('week', ck.checkin_date::timestamp), ck.user_id
+            select me.squad_id,
+                   date_trunc('week', w.saved_at) as wk,
+                   w.athlete_id,
+                   count(distinct w.saved_at::date) as days
+              from public.squad_members me
+              join public.squad_members mate on mate.squad_id = me.squad_id
+              join public.workouts w
+                on w.athlete_id = mate.user_id and w.state = 'saved' and w.saved_at is not null
+             where me.user_id = p_uid
+             group by me.squad_id, date_trunc('week', w.saved_at), w.athlete_id
           ) per
          group by per.squad_id, per.wk
         having count(*) filter (
-                 where per.days >= (select sq.checkin_standard from public.squads sq where sq.id = per.squad_id))
+                 where per.days >= (select sq.weekly_standard from public.squads sq where sq.id = per.squad_id))
              = (select count(*) from public.squad_members m2 where m2.squad_id = per.squad_id)
       ) pw
     ) end,
@@ -381,24 +390,27 @@ begin
       select count(*) from public.squad_goal_completions gc
        where gc.squad_id in (select sm.squad_id from public.squad_members sm where sm.user_id = p_uid)
     ) end,
-    -- SQ-D6: a day counts when at least half the current members (rounded up) check in Trained. Rest
-    -- days do not count toward the bar. Gaps-and-islands over qualifying days; the streak is the longest
-    -- run ever achieved, not the current one, because an honor once earned is never revoked.
+    -- SQ-D6: a day counts when at least half the current members (rounded up) trained. Gaps-and-islands
+    -- over qualifying days; the streak is the longest run EVER achieved, not the current one, because an
+    -- honor once earned is never revoked.
+    --
+    -- Also from workouts, for the same reason as above — and it is the better signal here too: a streak
+    -- built from check-in taps measures reporting, and one built from sessions measures training.
     'max_squad_streak', case when not v_squad then 0 else (
       select coalesce(max(run_len), 0) from (
         select count(*) as run_len
           from (
             select d.squad_id, (d.day - (row_number() over (partition by d.squad_id order by d.day))::int) as grp
               from (
-                select ck.squad_id, ck.checkin_date as day
-                  from public.squad_checkins ck
-                 where ck.status = 'trained'
-                   and ck.squad_id in (select sm.squad_id from public.squad_members sm where sm.user_id = p_uid)
-                   and exists (select 1 from public.squad_members cur
-                                where cur.squad_id = ck.squad_id and cur.user_id = ck.user_id)
-                 group by ck.squad_id, ck.checkin_date
-                having count(*) >= ceil(
-                  (select count(*) from public.squad_members m2 where m2.squad_id = ck.squad_id)::numeric / 2)
+                select me.squad_id, w.saved_at::date as day
+                  from public.squad_members me
+                  join public.squad_members mate on mate.squad_id = me.squad_id
+                  join public.workouts w
+                    on w.athlete_id = mate.user_id and w.state = 'saved' and w.saved_at is not null
+                 where me.user_id = p_uid
+                 group by me.squad_id, w.saved_at::date
+                having count(distinct w.athlete_id) >= ceil(
+                  (select count(*) from public.squad_members m2 where m2.squad_id = me.squad_id)::numeric / 2)
               ) d
           ) g
          group by g.squad_id, g.grp
@@ -909,4 +921,4 @@ commit;
 --
 -- And confirm the squad standard landed, since Perfect Week now depends on it:
 --
---   select name, checkin_standard from public.squads;
+--   select name, weekly_standard from public.squads;

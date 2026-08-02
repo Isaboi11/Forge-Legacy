@@ -22,7 +22,15 @@ import path from 'node:path';
 
 const DIR = path.join(process.cwd(), 'supabase', 'migrations');
 const files = fs.readdirSync(DIR).filter((f) => f.endsWith('.sql')).sort();
-const read = (f) => fs.readFileSync(path.join(DIR, f), 'utf8');
+/*
+ * CRLF is normalised, and that is not a detail.
+ *
+ * These files are checked out with CRLF on Windows. The first version of the dropped-table check below
+ * ended its pattern with a bare newline before the closing paren, so on CRLF it matched no table
+ * definition at all — it examined nothing, found nothing, and passed. A guard that silently checks zero
+ * things is worse than no guard, because it also tells you it looked.
+ */
+const read = (f) => fs.readFileSync(path.join(DIR, f), 'utf8').split('\r\n').join('\n');
 
 /** Metrics the evaluator resolves through a keyed CASE rather than the metrics object. */
 const KEYED = ['lift_max', 'lift_ratio', 'session_distance', 'lifetime_distance'];
@@ -214,4 +222,73 @@ test('the categories that were empty are not empty any more', () => {
   for (const [cat, min] of [['Programs', 5], ['Squad', 15], ['Hidden', 6], ['Prestige', 7], ['Longevity', 10]]) {
     assert.ok((byCat[cat] ?? 0) >= min, `${cat} has ${byCat[cat] ?? 0} honors, expected at least ${min}`);
   }
+});
+
+/*
+ * A TABLE'S SHAPE IS ITS LAST DEFINITION, NOT ITS FIRST.
+ *
+ * 0099 shipped queries against `squad_checkins.checkin_date` and `.status`, read straight out of 0048,
+ * which defines exactly those columns. It was wrong: 0049 DROPS that table and rebuilds it as ephemeral
+ * video check-ins with neither column. Reading the migration that introduces a table is not the same as
+ * reading the migration that decides what it is, and grep finds the first one.
+ *
+ * So: for every table any migration drops and recreates, the newest migration's references to it are
+ * checked against the SURVIVING definition. Scoped to dropped tables on purpose — those are the only
+ * ones where an earlier definition is actively misleading, so this has no false positives to train
+ * anyone to ignore.
+ */
+function droppedTables() {
+  const dropped = new Set();
+  for (const f of files) {
+    for (const m of read(f).matchAll(/drop table (?:if exists )?(?:public\.)?([a-z_]+)/gi)) dropped.add(m[1]);
+  }
+  return dropped;
+}
+
+/** The columns a table ends up with: its last `create table`, plus every `add column` after it. */
+function finalColumns(table) {
+  let cols = null;
+  for (const f of files) {
+    const src = read(f);
+    const re = new RegExp(`create table (?:if not exists )?(?:public\\.)?${table}\\s*\\(([\\s\\S]*?)\\n\\);`, 'i');
+    const m = src.match(re);
+    if (m) {
+      cols = new Set(
+        m[1]
+          .split('\n')
+          .map((l) => l.trim())
+          .filter((l) => l && !l.startsWith('--') && !/^(primary key|unique|constraint|check|foreign key)/i.test(l))
+          .map((l) => l.split(/\s+/)[0])
+          .filter(Boolean),
+      );
+    }
+    if (cols) {
+      const add = new RegExp(`alter table (?:public\\.)?${table}[^;]*?add column (?:if not exists )?([a-z_]+)`, 'gi');
+      for (const a of src.matchAll(add)) cols.add(a[1]);
+    }
+  }
+  return cols;
+}
+
+test('the newest migration reads dropped-and-rebuilt tables by their SURVIVING shape', () => {
+  const newest = files[files.length - 1];
+  const src = read(newest);
+  const problems = [];
+
+  for (const table of droppedTables()) {
+    const cols = finalColumns(table);
+    if (!cols) continue;
+    // Aliases bound to this table anywhere in the newest migration.
+    const aliases = new Set();
+    for (const m of src.matchAll(new RegExp(`(?:from|join)\\s+public\\.${table}\\s+([a-z][a-z0-9_]*)`, 'gi'))) {
+      if (!['on', 'where', 'group', 'having', 'order', 'set'].includes(m[1].toLowerCase())) aliases.add(m[1]);
+    }
+    for (const alias of aliases) {
+      for (const use of src.matchAll(new RegExp(`\\b${alias}\\.([a-z_]+)`, 'g'))) {
+        if (!cols.has(use[1])) problems.push(`${newest}: ${table}.${use[1]} (alias "${alias}") — surviving columns: ${[...cols].join(', ')}`);
+      }
+    }
+  }
+
+  assert.deepEqual([...new Set(problems)], [], `columns read from a definition that no longer exists:\n  ${[...new Set(problems)].join('\n  ')}`);
 });

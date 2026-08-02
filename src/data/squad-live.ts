@@ -482,24 +482,24 @@ export async function createSquad(input: {
 }
 
 /**
- * The squad's weekly standard — how many trained days a week it holds itself to.
+ * The squad's weekly standard — how many days a week it holds itself to training.
  *
  * Fetched on its own rather than added to `SQUAD_COLS`, because the client ships before the migration is
  * run by hand and a missing COLUMN raises 42703 — which the data layer's table-level guards do not catch.
  * Putting it in the shared select would take every squad screen down until 0099 lands. Null means exactly
  * that: not migrated yet, so the control that sets it stays hidden rather than pretending to work.
  */
-export async function fetchCheckinStandard(id: string): Promise<number | null> {
-  const { data, error } = await supabase.from('squads').select('checkin_standard').eq('id', id).maybeSingle();
+export async function fetchWeeklyStandard(id: string): Promise<number | null> {
+  const { data, error } = await supabase.from('squads').select('weekly_standard').eq('id', id).maybeSingle();
   if (error || !data) return null;
-  const n = Number((data as { checkin_standard?: number }).checkin_standard);
+  const n = Number((data as { weekly_standard?: number }).weekly_standard);
   return Number.isFinite(n) ? n : null;
 }
 
 /** Owner edit — any subset of the identity fields. */
 export async function updateSquad(
   id: string,
-  patch: { name?: string; motto?: string | null; goal?: string | null; description?: string | null; privacy?: SquadPrivacy; crest?: string; photoUrl?: string | null; checkinStandard?: number },
+  patch: { name?: string; motto?: string | null; goal?: string | null; description?: string | null; privacy?: SquadPrivacy; crest?: string; photoUrl?: string | null; weeklyStandard?: number },
 ): Promise<void> {
   const upd: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (patch.name !== undefined) upd.name = patch.name.trim();
@@ -511,7 +511,7 @@ export async function updateSquad(
   if (patch.photoUrl !== undefined) upd.photo_url = patch.photoUrl;
   // Clamped here as well as in the CHECK constraint: a stepper that ran past 7 would fail the whole
   // save with a constraint error, and the athlete would just see "couldn't save".
-  if (patch.checkinStandard !== undefined) upd.checkin_standard = Math.max(1, Math.min(7, Math.round(patch.checkinStandard)));
+  if (patch.weeklyStandard !== undefined) upd.weekly_standard = Math.max(1, Math.min(7, Math.round(patch.weeklyStandard)));
   const { error } = await supabase.from('squads').update(upd).eq('id', id);
   if (error) throw error;
 }
