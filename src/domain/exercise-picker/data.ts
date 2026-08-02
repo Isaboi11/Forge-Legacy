@@ -17,6 +17,7 @@
  * The mapping onto the 6 locked browse categories lives in `catalog-core` (pure + unit-tested).
  */
 
+import { CARDIO_ACTIVITIES, cardioKey } from '../workout/conditioning.ts';
 import { type MatchResult } from '../program/exercise-match.ts';
 import { ALIASES_BY_ID, resolveAgainstCatalog } from './aliases.ts';
 import equipmentData from '../exercise-relationships/source/equipment.json';
@@ -225,7 +226,13 @@ export function buildSections(opts: {
   const searching = search.trim().length > 0;
   const browsing = !searching && !filtersActive(filters);
 
-  const matched = (opts.pool ?? PICKER_DB).filter((x) => matchItem(x, search, filters, exclude));
+  /*
+   * Tapping CARDIO browses conditioning. The pool widens ONLY for that chip: every other path — search,
+   * the other six categories, the equipment and muscle filters — still sees the catalogue alone, so
+   * nothing about finding a bench press changes.
+   */
+  const pool = filters.cat.includes('CARDIO') ? [...(opts.pool ?? PICKER_DB), ...CONDITIONING_ROWS] : (opts.pool ?? PICKER_DB);
+  const matched = pool.filter((x) => matchItem(x, search, filters, exclude));
 
   const best = isReplace && browsing && replacingName ? bestReplacements(replacingName, matched) : [];
   const bestKeys = new Set(best.map((b) => b.key));
@@ -235,10 +242,17 @@ export function buildSections(opts: {
     const mine = mineKeys
       .map((k) => matched.find((x) => x.key === k))
       .filter((x): x is PickerItem => Boolean(x) && !bestKeys.has((x as PickerItem).key));
+    /*
+     * CARDIO counts its own rows, not the catalogue's.
+     *
+     * Conditioning deliberately lives outside `PICKER_DB` (see `CONDITIONING_ROWS`), so counting it the
+     * same way as the other six would report zero and the filter below would drop the category
+     * entirely — a door that exists in the list and opens onto nothing.
+     */
     const categoryRows = EXERCISE_CATEGORIES.map((c) => ({
       key: c.key,
       label: c.label,
-      count: matched.filter((x) => x.cat === c.key).length,
+      count: c.key === 'CARDIO' ? CONDITIONING_ROWS.length : matched.filter((x) => x.cat === c.key).length,
     })).filter((c) => c.count > 0);
     return {
       best,
@@ -270,6 +284,31 @@ export function buildSections(opts: {
  * A narrow view on purpose: `exercise-match` stays pure and dependency-free (it never imports the
  * catalogue, which is 797 entries of JSON), and this is the one place that hands it the real data.
  */
+/**
+ * Conditioning as picker rows — the CARDIO category's contents.
+ *
+ * Deliberately NOT in `PICKER_DB`. That list is invariant-tested to come wholly from `exercises.json`,
+ * name-sorted, and a run has no muscle map, movement pattern or difficulty because it is a different
+ * KIND of exercise. These sit alongside it and are folded in only where a category is being browsed or
+ * counted, so search results over the catalogue are unchanged.
+ */
+export const CONDITIONING_ROWS: PickerItem[] = CARDIO_ACTIVITIES.map((c) => ({
+  key: cardioKey(c.key),
+  name: c.name,
+  cat: 'CARDIO' as ExerciseCategoryKey,
+  equipId: 'none',
+  equip: c.sub,
+  equipClass: 'Bodyweight',
+  muscleIds: [],
+  muscles: [],
+  primaryMuscleIds: [],
+  difficulty: 'Beginner',
+  pattern: 'Locomotion',
+  modality: 'cardio',
+  aliases: [],
+  environments: [],
+})) as PickerItem[];
+
 export const catalogForMatching = (): { key: string; name: string; aliases?: string[] }[] =>
   PICKER_DB.map((x) => ({ key: x.key, name: x.name, aliases: x.aliases }));
 

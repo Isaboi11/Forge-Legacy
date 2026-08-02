@@ -10,7 +10,6 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { writeExerciseInbox, type PickedExercise } from '@/lib/exercise-inbox';
-import { CARDIO_ACTIVITIES, cardioKey } from '@/domain/workout/conditioning';
 import { fetchHomeGym } from '@/data/home-gym-live';
 import { canDoExercise } from '@/domain/home-gym/equipment';
 import { dismissGearPrompt, getGearOnly, getGearPromptDismissed, setGearOnly } from '@/lib/gear-filter';
@@ -18,6 +17,7 @@ import { writeBuilderInbox, type BuilderSection } from '@/lib/builder-inbox';
 import { addFavorite, fetchFavoriteKeys, fetchRecentExerciseKeys, removeFavorite } from '@/data/exercise-prefs-live';
 import { useQuery } from '@/lib/useQuery';
 import {
+  CONDITIONING_ROWS,
   buildSections,
   canonicalName,
   DIFFS,
@@ -48,22 +48,7 @@ function toPicked(x: PickerItem): PickedExercise {
  * category to make the code fit would be amending a governed decision from the wrong end. They are
  * offered here, in the same list and through the same round-trip, without disturbing any of that.
  */
-const CONDITIONING_ROWS: PickerItem[] = CARDIO_ACTIVITIES.map((c) => ({
-  key: cardioKey(c.key),
-  name: c.name,
-  cat: 'FULL_BODY',
-  equipId: 'none',
-  equip: c.sub,
-  equipClass: 'Bodyweight',
-  muscleIds: [],
-  muscles: [],
-  primaryMuscleIds: [],
-  difficulty: 'Beginner',
-  pattern: 'Locomotion',
-  modality: 'cardio',
-  aliases: [],
-  environments: [],
-})) as PickerItem[];
+// CONDITIONING_ROWS now lives in the picker domain — it is the CARDIO category's contents.
 
 /** Catalog first, then the pinned runs — so a conditioning key resolves everywhere a catalog one does. */
 const resolveKey = (k: string): PickerItem | undefined =>

@@ -54,11 +54,20 @@ test('every exercise lands in exactly one of the 6 locked browse categories', ()
   assert.deepEqual(orphans, [], 'every exercise must be reachable from browse');
 });
 
-test('no category is empty — all six locked rows have exercises behind them', () => {
+test('no catalogue category is empty — every locked row has exercises behind it', () => {
   for (const c of EXERCISE_CATEGORIES) {
+    // CARDIO is the amended seventh and is sourced from CARDIO_ACTIVITIES, not from `exercises.json`.
+    // Counting it against the catalogue would assert the very thing that makes it different.
+    if (c.key === 'CARDIO') continue;
     const n = DB.filter((x) => x.cat === c.key).length;
     assert.ok(n > 0, `${c.key} has no exercises — the row would render as a dead end`);
   }
+});
+
+test('CARDIO divides nothing in the catalogue — the W-21 §5 invariant still holds', () => {
+  // The amendment's whole safety argument: adding a seventh door does not reassign a single exercise.
+  assert.equal(DB.filter((x) => x.cat === 'CARDIO').length, 0,
+    'no cataloged exercise may be filed under CARDIO — it is a door onto conditioning, not a division of the catalogue');
 });
 
 test('every exercise resolves real equipment (no raw ids leaking into the UI)', () => {
@@ -123,11 +132,11 @@ test('an unrecognised pattern degrades to Carry & Full Body rather than vanishin
 
 // ── ordering + filter vocabularies ──────────────────────────────────────────
 
-test('browse categories keep the locked W-21 §5 order', () => {
-  assert.deepEqual(
-    EXERCISE_CATEGORIES.map((c) => c.key),
-    ['PUSH', 'PULL', 'LEGS_AND_GLUTES', 'CORE', 'FULL_BODY', 'MOBILITY'],
-  );
+test('the six locked categories keep their W-21 §5 order, and CARDIO comes after them', () => {
+  const keys = EXERCISE_CATEGORIES.map((c) => c.key);
+  // The lock is about the SIX and their order. Both are untouched — the amendment appends, never reorders.
+  assert.deepEqual(keys.slice(0, 6), ['PUSH', 'PULL', 'LEGS_AND_GLUTES', 'CORE', 'FULL_BODY', 'MOBILITY']);
+  assert.deepEqual(keys, ['PUSH', 'PULL', 'LEGS_AND_GLUTES', 'CORE', 'FULL_BODY', 'MOBILITY', 'CARDIO']);
 });
 
 test('the catalog is name-sorted so the list reads alphabetically', () => {

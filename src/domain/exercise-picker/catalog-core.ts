@@ -16,7 +16,23 @@
 // BROWSE TAXONOMY — the 6 locked categories, in the locked display order
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type ExerciseCategoryKey = 'PUSH' | 'PULL' | 'LEGS_AND_GLUTES' | 'CORE' | 'FULL_BODY' | 'MOBILITY';
+/**
+ * ══ SEVEN, AND THE SEVENTH IS AN AMENDMENT ══
+ *
+ * `Exercise-Library-Wireframe-Spec-W21` §5 locks SIX browse categories, and this file previously refused
+ * to add one — correctly, at the time: the six are a governed decision about how the 797-exercise
+ * catalogue is divided, and bending them to fit code would be amending an architecture from the wrong end.
+ *
+ * CARDIO does not divide that catalogue. It divides nothing: no exercise in `exercises.json` is ever
+ * assigned to it, `categoryFor` cannot return it (it falls back to FULL_BODY), and `PICKER_DB` is
+ * untouched — the invariant that the catalogue comes wholly from `exercises.json`, name-sorted, still
+ * holds and is still tested. It is a seventh DOOR onto conditioning, which until now was reachable only
+ * by scrolling past every lift or by searching a word you had to already know.
+ *
+ * PO decision, 2026-08-02: cardio gets a category you can tap into. Recorded here because the spec says
+ * six, and a build that quietly says seven without saying why is how a locked document becomes fiction.
+ */
+export type ExerciseCategoryKey = 'PUSH' | 'PULL' | 'LEGS_AND_GLUTES' | 'CORE' | 'FULL_BODY' | 'MOBILITY' | 'CARDIO';
 
 /** Fixed order per `Exercise-Library-Wireframe-Spec-W21` §5 + W-23 §9.1. */
 export const EXERCISE_CATEGORIES: { key: ExerciseCategoryKey; label: string }[] = [
@@ -26,6 +42,8 @@ export const EXERCISE_CATEGORIES: { key: ExerciseCategoryKey; label: string }[] 
   { key: 'CORE', label: 'Core & Stability' },
   { key: 'FULL_BODY', label: 'Carry & Full Body' },
   { key: 'MOBILITY', label: 'Mobility & Flexibility' },
+  // Last, and sourced from CARDIO_ACTIVITIES rather than the catalogue — see the type doc above.
+  { key: 'CARDIO', label: 'Cardio & Conditioning' },
 ];
 
 /**
