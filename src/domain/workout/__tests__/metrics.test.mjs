@@ -50,3 +50,47 @@ test('detectPRs — no PR when current best already higher', () => {
   const prs = detectPRs(session, { 'Back Squat': e1rm(405, 5), Deadlift: e1rm(500, 3) });
   assert.deepEqual(prs, []);
 });
+
+/*
+ * A PERSONAL RECORD IS A CLAIM ABOUT THE ATHLETE.
+ *
+ * From a real athlete's records: "Light treadmill walk — 2 minutes", measure_kind `load`, 40 lb. It is a
+ * warm-up row. A weight got typed into it, `detectPRs` read every exercise in every section, and the app
+ * told somebody they had set a 40 lb record on a walk. These lock the two exclusions that prevent it.
+ */
+test('detectPRs — a warm-up never sets a record', () => {
+  const warmup = {
+    ...session,
+    exercises: [
+      { name: 'Light treadmill walk — 2 minutes', section: 'warmup', position: 0, sets: [set(0, 40, 1, 1, true)] },
+      { name: 'Empty bar', section: 'warmup', position: 1, sets: [set(0, 45, 10, 10, true)] },
+    ],
+  };
+  assert.deepEqual(detectPRs(warmup, {}), [], 'a warm-up produced a personal record');
+});
+
+test('detectPRs — a cool-down never sets a record either', () => {
+  const cool = {
+    ...session,
+    exercises: [{ name: 'Farmer Carry', section: 'cooldown', position: 0, sets: [set(0, 200, 1, 1, true)] }],
+  };
+  assert.deepEqual(detectPRs(cool, {}), []);
+});
+
+test('detectPRs — a cardio block never sets a LOAD record, whatever is in the weight column', () => {
+  // A run has no load. Anything sitting in that column is noise, not a lift.
+  const cardio = {
+    ...session,
+    exercises: [{
+      name: 'Treadmill Run', kind: 'cardio', activity: 'run', section: 'main', position: 0,
+      sets: [set(0, 40, 0, null, true)],
+    }],
+  };
+  assert.deepEqual(detectPRs(cardio, {}), []);
+});
+
+test('detectPRs — main-section lifting still records, so the fix did not silence the feature', () => {
+  const prs = detectPRs(session, { 'Back Squat': 0, Deadlift: 0 });
+  assert.equal(prs.length, 2);
+  assert.deepEqual(prs.map((p) => p.exercise).sort(), ['Back Squat', 'Deadlift']);
+});

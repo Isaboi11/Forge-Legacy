@@ -54,6 +54,23 @@ export interface DetectedPR {
 export function detectPRs(session: ActiveSession, currentBestE1rm: Record<string, number>): DetectedPR[] {
   const prs: DetectedPR[] = [];
   for (const ex of session.exercises) {
+    /*
+     * A PERSONAL RECORD IS A CLAIM ABOUT THE ATHLETE, so two whole classes of row are excluded before
+     * any comparison happens.
+     *
+     * A REAL ONE FROM THE RECORD: "Light treadmill walk — 2 minutes" is sitting in an athlete's personal
+     * records at 40 lb. It is a warm-up row; a weight got typed into it, this loop read every exercise in
+     * every section, and the app told them they had set a record on a walk. Nobody put that number there
+     * meaning it as a lift.
+     *
+     *   · CARDIO blocks have no load at all. A weight on one is noise by definition.
+     *   · WARM-UP and COOL-DOWN are deliberately submaximal. You do not set a record in your warm-up, and
+     *     a "PR" from one is always an artifact — either a stray keystroke or a prescription carried into
+     *     the weight column. Main-section work is the only place a record can honestly come from.
+     */
+    if (ex.kind === 'cardio') continue;
+    if (ex.section !== 'main') continue;
+
     let best: { weight: number; reps: number; est: number } | null = null;
     for (const s of ex.sets) {
       if (!s.done || s.weight == null) continue;
