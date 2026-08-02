@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 import { resetFirstRunFlags } from './first-run';
+import { syncAthleteTimezone } from '@/data/honors-live';
 
 /**
  * Auth session — the real identity the app runs on (Phase 1). `session.user.id` is `auth.uid()`,
@@ -33,6 +34,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setLoading(false);
+      // Which clock this athlete lives by — the Hidden honors ask what the wall said, and a timestamptz
+      // cannot answer that. Fire-and-forget: it must never delay the splash or fail a launch.
+      if (data.session) void syncAthleteTimezone();
     });
     const { data } = supabase.auth.onAuthStateChange((_event, next) => {
       setSession(next);
@@ -40,6 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (prevUserId.current !== undefined && prevUserId.current !== nextId) {
         void resetFirstRunFlags();
       }
+      if (nextId && prevUserId.current !== nextId) void syncAthleteTimezone();
       prevUserId.current = nextId;
     });
     return () => data.subscription.unsubscribe();

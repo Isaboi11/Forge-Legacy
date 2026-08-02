@@ -268,6 +268,57 @@ export function triggerText(metric: string, threshold: number, metricKey: string
     case 'best_week_sessions':
       return `Train ${num(threshold)} times inside any seven days.`;
 
+    // ── Programs ──
+    case 'programs_graduated':
+      return threshold <= 1 ? 'Finish a program you started.' : `Finish ${num(threshold)} programs.`;
+
+    // ── Longevity as TENURE. Spoken in the unit the honor is named in — "Forge for 1,095 days" is a
+    //    number nobody counts, and the honor is called 3 Years Forging. ──
+    case 'account_days':
+      return threshold < 365
+        ? `Keep forging for ${num(threshold)} days.`
+        : `Keep forging for ${num(Math.round(threshold / 365))} year${threshold >= 730 ? 's' : ''}.`;
+
+    // ── Squad ──
+    case 'squads_founded':
+      return 'Start a squad of your own.';
+    case 'squad_checkins_logged':
+      return `Check in with your squad ${num(threshold)} times.`;
+    case 'squad_workouts':
+      return `Your squads log ${num(threshold)} sessions between them.`;
+    case 'perfect_weeks':
+      return threshold <= 1
+        ? 'A week where every member of your squad trained all seven days.'
+        : `${num(threshold)} weeks where every member of your squad trained all seven days.`;
+    case 'max_squad_streak':
+      return `Keep half your squad training, every day, for ${num(threshold)} days.`;
+    case 'everyone_finished_program':
+      return 'Every member of your squad finishes the same program.';
+
+    // ── Prestige ──
+    case 'categories_topped':
+      return threshold >= 7
+        ? 'Reach the top of every path a person can walk alone.'
+        : `Reach the top of ${num(threshold)} different paths.`;
+
+    // ── Hidden. These are only ever READ once earned — the catalog row is unreadable until then
+    //    (0099 row-level policy) — so they are written in the past tense, as a record of the thing
+    //    that happened rather than an instruction for how to get it. ──
+    case 'sessions_before_6am':
+      return 'You trained before the sun was up.';
+    case 'sessions_midnight_3am':
+      return 'You trained in the smallest hours of the morning.';
+    case 'sessions_new_years':
+      return 'You trained on the first day of the year.';
+    case 'sessions_leap_day':
+      return 'You trained on a day that only exists every four years.';
+    case 'sessions_full_circle':
+      return 'You trained on the anniversary of the day you started.';
+    case 'never':
+      return 'Three kinds of honor, all at once.';
+    case 'always':
+      return 'A rare combination of everything below.';
+
     default:
       return 'Earned through training.';
   }
@@ -367,4 +418,31 @@ export async function fetchHonorsHub(): Promise<HonorsHub> {
   }
 
   return { earned, recent, categories, earnedCount: earned.length, catalogCount: catalog.length };
+}
+
+/**
+ * Record which clock the athlete lives by.
+ *
+ * `workouts.started_at` is a timestamptz — an absolute instant with no local offset kept — so the app
+ * cannot tell whether a session started at 5 AM or 5 PM for the person who did it. Three of the Hidden
+ * honors turn on exactly that (0099), and the column has NO default on purpose: assuming UTC would award
+ * "Midnight Forge" to someone in Denver who trained after dinner, which is a claim about their life that
+ * never happened. Null means those honors simply do not evaluate — the honest failure.
+ *
+ * Written once per launch rather than per save. Somebody who moves timezones is right from their next
+ * launch, and honors are permanent once granted, so the worst a stale value can do is delay one.
+ *
+ * Best-effort throughout: a profile write must never be able to stop somebody using the app.
+ */
+export async function syncAthleteTimezone(): Promise<void> {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (!tz) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from('profiles').update({ tz }).eq('id', user.id);
+  } catch {
+    // A missing `tz` column (0099 not yet applied) lands here, as does an offline launch. Both mean the
+    // local-time honors stay unevaluated, which is the same as before this existed.
+  }
 }
