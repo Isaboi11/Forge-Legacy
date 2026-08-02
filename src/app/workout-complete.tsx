@@ -15,8 +15,6 @@ import { saveWorkoutAsTemplate } from '@/data/templates-live';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useUnits } from '@/lib/settings';
 import { displayWeight } from '@/domain/settings/units';
-import { getProgramDefinitions } from '@/domain/training/programs';
-import { DEMO_ACTIVE_ID } from '@/domain/training/active-program-core';
 import { fetchCompletion, saveReflection, type CompletionCardio, type CompletionHero, type ExerciseDelta } from '@/data/workout-complete-live';
 import { distanceLabel, fmtClock, fmtPace, toDistance, toPace, type UnitSystem } from '@/domain/run/run-core';
 import { addSquadPost, recapSummaryFrom } from '@/data/squad-feed-live';
@@ -52,19 +50,6 @@ function quoteFor(id: string): string {
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
   return QUOTES[h % QUOTES.length];
 }
-// The next workout in the active program's sequence, after the one just finished (wraps at the end).
-// Null if the completed workout isn't part of the active program (e.g. a freestyle session).
-function nextWorkoutName(completed: string): string | null {
-  const defs = getProgramDefinitions();
-  const def = defs.find((d) => d.id === DEMO_ACTIVE_ID) ?? defs[0];
-  if (!def) return null;
-  const names = def.blocks.flatMap((b) => b.workouts.map((w) => w.name));
-  if (names.length < 2) return null;
-  const i = names.indexOf(completed);
-  if (i < 0) return null;
-  return names[(i + 1) % names.length];
-}
-
 /**
  * W-17 Workout Complete (minimal-real, 4-stage: Seal · Record · Reflect · Share). A separate route
  * reached by W-9 Finish (`router.replace('/workout-complete?id=…')`) — the workout is already durably
@@ -215,8 +200,18 @@ export default function WorkoutComplete() {
   // ── Stage 1 · Seal ──
   if (step === 'seal') {
     const fillW = hold.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
-    // Prefer the real program's next session; fall back to the catalog sequence for demo/freestyle sessions.
-    const nextName = data.nextWorkoutName ?? nextWorkoutName(data.workoutName);
+    /*
+     * "Up next" comes from the program this workout actually belonged to, and from nowhere else.
+     *
+     * It used to fall back to the SHIPPED DEMO PROGRAM: look the finished workout's name up in that
+     * catalog and, on a match, announce its next session. A freestyle workout has no next session — that
+     * is what freestyle means — and an athlete who had never opened that program would be told what they
+     * were doing on Thursday. The fallback also fired when the real lookup THREW, so a transient failure
+     * did not degrade to silence, it degraded to fiction.
+     *
+     * Null now means null: no program, no line.
+     */
+    const nextName = data.nextWorkoutName;
 
     // First-run reveal (ONB-D18): the chapter comes alive on workout #1. Arrival, not achievement — no
     // reward/rank/honor/streak language (honest against D22; leaves the First-Honor check for ONB-D19).
