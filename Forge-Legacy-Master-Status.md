@@ -23,9 +23,9 @@
 |---|---:|---|
 | **Architecture Design** | **~100%** | All 21 Architecture Freeze rows ✅ Complete; V1 Architecture Freeze officially **FROZEN 2026-06-30** |
 | **UI / Wireframes** | **~95%** | Nearly all screens specced; W18/W19 both lock-candidate (W18 corrected 2026-07-09 — previously misdashboarded as LOCKED; W19 blocked on W18, see Decision Queue #16); no Search/Rest-Timer/Community wireframe yet — Communities is architecture-only in this pass, no pixel layout authored |
-| **Content Authoring** | **Split — 92% coaching · 8% programs** | Was a single "~12%", which was wrong in both directions. **Coaching: 735 of 797 exercises Published, 62 Needs Review.** **Honors: data** (`honor_catalog`, 139 awardable). **Programs: 2 of 24 generated** — the real gap. **Exercise media: 0 of 797** |
-| **Backend / Data** | **BUILT (Supabase) — 97 migrations, 0001–0098, ALL APPLIED** | auth · profiles · chapters · workouts+sets+conditioning legs · PRs · honors (`honor_catalog` + table-driven evaluator) · programs · goals · rank · body metrics · photos · squads+feed+discovery · friends · challenges · notifications · templates · train-together. RLS on all 35 tables; 52/52 `SECURITY DEFINER` pin `search_path`. Design doc still ratifies Firebase — the BUILD is Supabase (PD-7: build governs) |
-| **Code Implementation** | **~75%** *(72 screens, essentially all backend-wired)* | **72 screens** (was mis-stated as 37). **71 of 72 read real Supabase.** The whole SOCIAL pillar — Squads · Squad Detail · Friends · Feed · Athlete Profile — is live, not mock; the old "fully MOCK, quarantined in `*-placeholder.ts`" reading was stale by weeks. Remaining: content, media production, and the deferred items in Current Sprint |
+| **Content Authoring** | **Split — 92% coaching · 8% programs** | Was a single "~12%", which was wrong in both directions. **Coaching: 735 of 797 exercises Published, 62 Needs Review.** **Honors: data** (`honor_catalog`, **179 awardable** across 14 categories — 0099 filled the five empty ones). **Programs: 2 of 24 generated** — the real gap. **Exercise media: 0 of 797** |
+| **Backend / Data** | **BUILT (Supabase) — 98 migrations, 0001–0099, ALL APPLIED** | auth · profiles · chapters · workouts+sets+conditioning legs · PRs · honors (`honor_catalog` + table-driven evaluator) · programs · goals · rank · body metrics · photos · squads+feed+discovery · friends · challenges · notifications · templates · train-together. RLS on all 35 tables; 52/52 `SECURITY DEFINER` pin `search_path`. Design doc still ratifies Firebase — the BUILD is Supabase (PD-7: build governs) |
+| **Code Implementation** | **~75%** *(71 screens, essentially all backend-wired)* | **71 screens** (72 until `/active-run` was retired 2026-08-01 — one run surface, folded onto the workout card). **70 of 71 read real Supabase.** The whole SOCIAL pillar — Squads · Squad Detail · Friends · Feed · Athlete Profile — is live, not mock; the old "fully MOCK, quarantined in `*-placeholder.ts`" reading was stale by weeks. Remaining: content, media production, and the deferred items in Current Sprint |
 | **Testing** | **508 tests green** *(coverage % not instrumented → not measured)* | 40 files, all passing. Invariant/golden (comment ⊆ thread · check-in ⊆ roster · records ⊆ roster · one-active-program), resolver matrices, domain validators, **+ two new regression guards: `route-guard` (every screen declared, else it answers a URL signed-out) and `chapter-tallies` (a chapter with honors never reports 0)**. Behavioural coverage of built layers, NOT whole-app coverage |
 
 | Snapshot | Value |
@@ -354,6 +354,52 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 ---
 
 ## ✅ Recently Completed (last ~20 milestones)
+
+### 1. Cardio consolidated onto one surface · the five empty honor categories filled (2026-08-01, CODE + migration 0099)
+
+**Runs.** GPS measured nothing because `ACCURACY_FLOOR_M` was 25 m — right for a phone under open sky, wrong
+for a browser geolocating off wi-fi at 30–80 m, so every fix was discarded and the distance sat at 0.00
+through a real walk, silently. Floor is 65 m and movement must now clear the device's own error bars.
+`signalNote()` is shared by every run surface so a stalled distance can never again be wordless.
+
+**`/active-run` is RETIRED** (72 screens → 71). Two full-screen surfaces measured one activity and wrote to
+the record two different ways — a standalone activity row, or cardio legs on a session — so everything
+downstream had two shapes for one event. Its distance goal, pace target and cues moved onto the cardio
+card; its hold-to-seal did not, because a run-only session already ends at the workout's own Finish.
+
+**Start now starts the run.** `start()` awaited a permission grant and refused on anything less — and on the
+web that is the NORMAL path, since `requestForegroundPermissionsAsync` reports state rather than raising the
+browser prompt. `phase` (is the athlete running) and `gps` (can we measure it) are now separate.
+
+**A run was being filed as a strength workout.** `activityType` was hard-coded at every construction site, so
+Activity History filed runs with the bench presses and the run-records lookup could not see them. Derived
+from session content now, and only when the whole session is one kind of cardio.
+
+**Honors 139 → 179** (migration 0099). Programs 5 · Longevity 10 · Squad 15 · Prestige 7 · Hidden 6. Not
+built, with reasons: Communities (5, pillar deferred), Family Mastery (2) and Built by the Plan (1) — program
+lineage exists only as an unresolved authored string in client code, invisible to the evaluator.
+
+**Two product corrections from the PO mid-build:** squad Missions shipped as squad GOALS (so those three
+honors count goals, and `squad_goal_completions` is the archive that makes them countable — nothing had ever
+recorded a goal being finished); and Perfect Week as the locked catalog defines it — every member training
+all seven days — is a bad honor, earnable only by a squad in which nobody rests and broken for everyone by
+one person's Sunday off. The bar is now `squads.weekly_standard`, owner-set in Squad Settings.
+
+**The safeguards earned their keep.** `honor_metrics(uuid)` was extracted from the evaluator specifically so
+it could be RUN — and it caught `42703 column ck.checkin_date does not exist` at apply time. `squad_checkins`
+was daily trained/rest in 0048; **0049 DROPS that table** and rebuilds it as ephemeral video stories. Reading
+the migration that introduces a table is not reading the one that decides what it is, and grep finds the
+first. Perfect Week and Squad Streak now derive from logged workouts, which is the better evidence anyway.
+`honor_requires` carries foreign keys both ways, so a mistyped Prestige prerequisite cannot be stored.
+
+**A guard that checks nothing is worse than no guard.** The new dropped-table contract test passed twice with
+the bug deliberately reintroduced — once because its pattern ended in a bare `
+` and these files are CRLF,
+once because a heredoc ate a backslash level. It now provably fails with the bug and passes without it.
+
+Verified: tsc 0 · lint at baseline · **540 `node --test` green across 40 files** · export + bundle grep +
+deploy. Migration 0099 applied and verified against a real account (179 rows, 14 categories).
+
 
 1. **Repository audit + correction pass — five defects closed, and this board rebuilt from measurement (2026-08-01, CODE + DOCS)** — A five-lens audit of the whole repository (inventory · data-layer contract · route-by-route state · correctness/fabrication · docs), then the fixes. **The data layer came back clean and it was verified mechanically, not asserted**: 53 RPC names, 61 call sites, 434 select columns and 119 write payloads all resolve against the migrations; RLS is on all 35 tables with a policy each; 52/52 `SECURITY DEFINER` functions pin `search_path`. **What it found instead was a class nobody had checked — values displayed from columns nothing writes.** `chapters.honor_count` had been written once at chapter creation as a literal `0` and incremented by nothing across 97 migrations (`workout_count` has eight increment sites), yet was rendered as a real tally on Chapter Detail, the Legacy Timeline, the public athlete profile, and — worst — the **M-5 seal ceremony**, whose closing line told an athlete they had earned "0 honors" in the chapter they were closing. Migration **0098** derives it from `honor_instances.chapter_id` per 0095's derive-don't-store rule and marks the column dead; the column is NOT dropped, because the only statements naming it sit inside `complete_onboarding`, whose failure mode is "a new athlete can never enter". **Second: 17 routes sat outside the auth guard** — in expo-router a route is gated by being DECLARED, not by existing (verified against the installed 56.2.9 source), so undeclared screens answered a URL while signed out; RLS meant nothing leaked, but a logged-out visitor got an empty Goals/Progress-Hub/Friends/Settings instead of sign-in. **Third: invented athletes were compiled into the production web bundle** — gating a screen does not tree-shake a module, and `app/post/[id].tsx` was a route whose static import pulled the whole fixture chain in; the screen is now deferred out of `src/app/` (the precedent set for Community) and a rebuild proves it (`Ada Ridge` 10 → 0, bundle 11.71 → 11.11 MB). Also: three silent failures made honest (the honors guard caught the impossible case, PGRST205, and missed the real one, 42703; `claimEarnedHonors` turned a schema error into "0 granted"; a failed `saveHomeGym` produced the exact "didn't answer" state its own comment warned against), one dead 186-line fixture deleted, and a comment corrected that overstated a security bypass the server actually prevents. Two new regression guards: `route-guard.test.mjs` derives the screen list from the filesystem, and `chapter-tallies.test.mjs` asserts a chapter holding eleven honors never reports 0. **Three findings were deliberately NOT fixed, with reasons recorded in Current Sprint** — `workout_count` (a stored counter that is correct today and only breaks when a delete-workout path ships), the duplicate `FeedPostCard` (covered by the standing "no deletion until the new component system locks" rule), and the migration-compat guards (genuinely useful on a fresh database). Gates: **tsc 0 · 508/508 `node --test` · eslint at baseline · web export clean.** Commits `8179a10`, `e6fc901`, `d5a0db3`. **This dashboard was rebuilt against a fresh measurement in the same pass** — it had been claiming 37 screens (72), 28 migrations (97), 411 tests (508), a "fully MOCK" social pillar that has been Supabase-backed for weeks, and a Current Sprint describing a pre-implementation phase that closed 2026-06-30.
 
