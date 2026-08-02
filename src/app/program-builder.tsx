@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -10,6 +10,16 @@ import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { SectionHeader } from '@/components/forge/composites/SectionHeader';
+import {
+  parseProgramTable,
+  summarize,
+  toProgramStructure,
+  unmatchedNames,
+  type ParsedWeek,
+} from '@/domain/program/import-parse';
+import { pickTextFile } from '@/lib/pick-text-file';
+import { itemByName } from '@/domain/exercise-picker/data';
+import { useToast } from '@/hooks/useCeremony';
 import { EquipIcon } from '@/components/forge/EquipIcon';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
@@ -154,12 +164,125 @@ function useEntryRise(duration: number) {
 }
 
 export default function ProgramBuilderScreen() {
+  const { showToast } = useToast();
   const router = useRouter();
   const { o: entryMode, id: entryId } = useLocalSearchParams<{ o?: string; id?: string }>();
   const [draft, setDraft] = useState<ProgramDraft | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendingResize, setPendingResize] = useState<{ kind: 'weeks' | 'days'; to: number; msg: string } | null>(null);
+
+  /*
+   * ── IMPORT FROM A SPREADSHEET ────────────────────────────────────────────
+   *
+   * One sheet, two states, per `Forge Program Builder.dc.html`: paste, then preview what was read. The
+   * architecture amendment specced four separate screens (W-IM-1..4) back in June; the design supersedes
+   * it with a sheet inside the builder, which is also where an imported program is going to be edited
+   * anyway. PD-7 — the design governs.
+   */
+  const [importOpen, setImportOpen] = useState(false);
+  const [pasteText, setPasteText] = useState('');
+  const [importError, setImportError] = useState<string | null>(null);
+  /** Non-null once a paste has parsed — the sheet flips to its preview state. */
+  const [preview, setPreview] = useState<ParsedWeek[] | null>(null);
+
+  const openImport = () => {
+    setPasteText('');
+    setImportError(null);
+    setPreview(null);
+    setImportOpen(true);
+  };
+
+  const runParse = (text: string) => {
+    const r = parseProgramTable(text);
+    if (!r.ok) {
+      setImportError(r.error);
+      setPreview(null);
+      return;
+    }
+    setImportError(null);
+    setPreview(r.weeks);
+  };
+
+  const onPickFile = async () => {
+    const r = await pickTextFile();
+    if (!r.ok) {
+      if (r.reason) setImportError(r.reason);
+      return;
+    }
+    setPasteText(r.text);
+    runParse(r.text);
+  };
+
+  /** Adjust a parsed set/rep count before creating. The design's − / + on every preview row. */
+  const bumpPreview = (wi: number, di: number, ii: number, field: 'sets' | 'reps', delta: number) =>
+    setPreview((cur) =>
+      !cur
+        ? cur
+        : cur.map((w, a) =>
+            a !== wi
+              ? w
+              : {
+                  ...w,
+                  days: w.days.map((d, b) =>
+                    b !== di
+                      ? d
+                      : {
+                          ...d,
+                          items: d.items.map((it, c) =>
+                            c !== ii
+                              ? it
+                              : {
+                                  ...it,
+                                  [field]: Math.max(1, Math.min(field === 'sets' ? 20 : 100, it[field] + delta)),
+                                  // Adjusting a value makes it authored, not assumed — the flag stops
+                                  // claiming the sheet was silent once the athlete has spoken.
+                                  [field === 'sets' ? 'setsAssumed' : 'repsAssumed']: false,
+                                },
+                          ),
+                        },
+                  ),
+                },
+          ),
+    );
+
+  /** "Add another week" — copies the last week forward, which is how a block is usually extended. */
+  const addPreviewWeek = () =>
+    setPreview((cur) => {
+      if (!cur?.length) return cur;
+      const last = cur[cur.length - 1];
+      return [...cur, { index: last.index + 1, days: last.days.map((d) => ({ ...d, items: d.items.map((i) => ({ ...i })) })) }];
+    });
+
+  /**
+   * Replace the draft with what was imported.
+   *
+   * It fills the SETUP the athlete was already on rather than creating anything — the sheet's CTA says
+   * "Create program", and the create still happens where it always did, on Save. So an import that reads
+   * wrong is one Back away from being fixed, not a program row to go and delete.
+   */
+  const confirmImport = () => {
+    if (!preview?.length) return;
+    const imported = toProgramStructure(preview, draft?.name?.trim() || 'Imported Program', (n) => itemByName(n)?.key);
+    mutate((d) => ({
+      ...d,
+      name: d.name?.trim() ? d.name : imported.name,
+      weeks: imported.weeks,
+      daysPerWeek: imported.daysPerWeek,
+      vary: imported.vary,
+      days: imported.days,
+      weekPlans: imported.weekPlans,
+      openWeek: null,
+      openDay: null,
+    }));
+    setImportOpen(false);
+    const unmatched = unmatchedNames(preview, (n) => itemByName(n)?.key);
+    showToast(
+      unmatched.length
+        ? `Imported · ${unmatched.length} name${unmatched.length === 1 ? '' : 's'} weren’t in the library and kept yours`
+        : 'Imported — review and save',
+    );
+  };
   const [confirmClose, setConfirmClose] = useState(false);
   const [jumpOpen, setJumpOpen] = useState(false);
   const [weekSheet, setWeekSheet] = useState<{ index: number; entering: boolean } | null>(null);
@@ -429,6 +552,7 @@ export default function ProgramBuilderScreen() {
           onOpenDayMenu={setDayMenu}
           onOpenWeek={openWeek}
           onOpenWeekMenu={(i) => setWeekSheet({ index: i, entering: false })}
+          onOpenImport={openImport}
           onOpenJump={() => setJumpOpen(true)}
           onRepeat={() => mutate(setRepeatMode)}
           onVary={() => mutate(setVaryMode)}
@@ -648,6 +772,117 @@ export default function ProgramBuilderScreen() {
         </View>
       </BottomSheet>
 
+      {/* ── IMPORT FROM A SPREADSHEET ─────────────────────────────────────
+          One sheet, two states, per the design: paste → preview. The paste state's copy IS the parser's
+          contract, so it states exactly what is read rather than describing a format vaguely. */}
+      <BottomSheet open={importOpen} onClose={() => setImportOpen(false)} title="Import from spreadsheet">
+        {preview == null ? (
+          <View style={styles.impCol}>
+            <Text style={styles.impHint}>
+              Paste rows from Excel or Google Sheets. Include a header row — columns can be in any order.
+              We look for <Text style={styles.impHintStrong}>Week</Text>, <Text style={styles.impHintStrong}>Day</Text>,{' '}
+              <Text style={styles.impHintStrong}>Exercise</Text>, <Text style={styles.impHintStrong}>Sets</Text>,{' '}
+              <Text style={styles.impHintStrong}>Reps</Text>. One week or the whole program — either works.
+            </Text>
+            <TextInput
+              value={pasteText}
+              onChangeText={setPasteText}
+              multiline
+              placeholder={'Week, Day, Exercise, Sets, Reps\n1, Push A, Bench Press, 3, 8\n1, Push A, Incline DB Press, 3, 10'}
+              placeholderTextColor={flColor.gray600}
+              accessibilityLabel="Paste your spreadsheet rows"
+              style={styles.impPaste}
+            />
+            {importError ? <Text style={styles.impError}>{importError}</Text> : null}
+            <Button variant="primary" fullWidth onPress={() => runParse(pasteText)}>
+              Preview import
+            </Button>
+            <Pressable
+              onPress={() => void onPickFile()}
+              accessibilityRole="button"
+              accessibilityLabel="Upload a CSV file"
+              style={({ pressed }) => [styles.impFileBtn, pressed ? styles.impPressed : null]}
+            >
+              <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                <Path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+                <Path d="M14 3v6h6" />
+              </Svg>
+              <Text style={styles.impFileText}>Or upload a .csv file</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={styles.impCol}>
+            <View style={styles.impSummary}>
+              <Text style={styles.impSummaryLabel}>Here&apos;s what we read</Text>
+              <Text style={styles.impSummaryText}>{summarize(preview)}</Text>
+            </View>
+            <Text style={styles.impNote}>
+              Tap − / + to fix any sets × reps now. You can also rename, reorder, and add exercises after you
+              create the program.
+            </Text>
+
+            {preview.map((w, wi) => (
+              <View key={`w${w.index}`} style={styles.impWeekBlock}>
+                {preview.length > 1 ? (
+                  <View style={styles.impWeekHead}>
+                    <Text style={styles.impWeekLabel}>Week {w.index}</Text>
+                    <View style={styles.impWeekRule} />
+                  </View>
+                ) : null}
+                {w.days.map((d, di) => (
+                  <View key={`${w.index}-${d.letter}`} style={styles.impDayCard}>
+                    <Text style={styles.impDayName}>{d.name}</Text>
+                    <View style={styles.impItems}>
+                      {d.items.map((it, ii) => (
+                        <View key={`${it.name}-${ii}`} style={styles.impItemRow}>
+                          <Text style={styles.impItemName} numberOfLines={1}>
+                            {it.name}
+                          </Text>
+                          <View style={styles.impSteppers}>
+                            <ImpStep label={`Fewer sets of ${it.name}`} glyph="−" onPress={() => bumpPreview(wi, di, ii, 'sets', -1)} />
+                            <Text style={[styles.impNum, it.setsAssumed ? styles.impNumAssumed : null]}>{it.sets}</Text>
+                            <ImpStep label={`More sets of ${it.name}`} glyph="+" onPress={() => bumpPreview(wi, di, ii, 'sets', 1)} />
+                            <Text style={styles.impTimes}>×</Text>
+                            <ImpStep label={`Fewer reps of ${it.name}`} glyph="−" onPress={() => bumpPreview(wi, di, ii, 'reps', -1)} />
+                            <Text style={[styles.impNum, styles.impNumWide, it.repsAssumed ? styles.impNumAssumed : null]}>{it.reps}</Text>
+                            <ImpStep label={`More reps of ${it.name}`} glyph="+" onPress={() => bumpPreview(wi, di, ii, 'reps', 1)} />
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                ))}
+              </View>
+            ))}
+
+            <Pressable
+              onPress={addPreviewWeek}
+              accessibilityRole="button"
+              accessibilityLabel="Add another week"
+              style={({ pressed }) => [styles.impAddWeek, pressed ? styles.impPressed : null]}
+            >
+              <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <Path d="M12 5v14M5 12h14" />
+              </Svg>
+              <Text style={styles.impAddWeekText}>Add another week</Text>
+            </Pressable>
+
+            <View style={styles.impActions}>
+              <View style={styles.impBackBtn}>
+                <Button variant="secondary" fullWidth onPress={() => setPreview(null)}>
+                  Back
+                </Button>
+              </View>
+              <View style={styles.impCreateBtn}>
+                <Button variant="primary" fullWidth onPress={confirmImport}>
+                  Create program
+                </Button>
+              </View>
+            </View>
+          </View>
+        )}
+      </BottomSheet>
+
       <BottomSheet open={pendingResize != null} onClose={() => setPendingResize(null)} title="Remove content?">
         <View style={styles.resizeSheet}>
           <Text style={styles.resizeMsg}>{pendingResize?.msg ?? ''}</Text>
@@ -673,6 +908,19 @@ export default function ProgramBuilderScreen() {
 // SETUP — program details, length, training days, the weekly split
 // ─────────────────────────────────────────────────────────────────────────────
 
+function ImpStep({ glyph, label, onPress }: { glyph: string; label: string; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={({ pressed }) => [styles.impStep, pressed ? styles.impPressed : null]}
+    >
+      <Text style={styles.impStepGlyph}>{glyph}</Text>
+    </Pressable>
+  );
+}
+
 function SetupView({
   draft,
   days,
@@ -687,6 +935,7 @@ function SetupView({
   onOpenWeek,
   onOpenWeekMenu,
   onOpenJump,
+  onOpenImport,
   onRepeat,
   onVary,
   onSave,
@@ -704,6 +953,7 @@ function SetupView({
   onOpenWeek: (i: number) => void;
   onOpenWeekMenu: (i: number) => void;
   onOpenJump: () => void;
+  onOpenImport: () => void;
   onRepeat: () => void;
   onVary: () => void;
   onSave: () => void;
@@ -797,6 +1047,20 @@ function SetupView({
             </View>
           </View>
         </View>
+
+        {/* "Import from a spreadsheet" — the design places it here, between the length controls and the
+            structure choice, because importing decides both for you. */}
+        <Pressable
+          onPress={onOpenImport}
+          accessibilityRole="button"
+          accessibilityLabel="Import from a spreadsheet"
+          style={({ pressed }) => [styles.importLink, pressed ? styles.pressed : null]}
+        >
+          <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+            <Path d="M12 3v12M8 11l4 4 4-4M4 19h16" />
+          </Svg>
+          <Text style={styles.importLinkText}>Import from a spreadsheet</Text>
+        </Pressable>
 
         <View style={styles.structure}>
           <SectionHeader label="Program structure" />
@@ -1386,6 +1650,60 @@ function RoundStep({ label, sign, onPress }: { label: string; sign: string; onPr
 }
 
 const styles = StyleSheet.create({
+  importLink: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 22, paddingVertical: 6, paddingHorizontal: 2, alignSelf: 'flex-start' },
+  importLinkText: { fontFamily: flFont.sans, fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
+  pressed: { opacity: 0.65 },
+
+  impCol: { gap: 12, paddingTop: 2 },
+  impHint: { fontFamily: flFont.sans, fontSize: 12.5, lineHeight: 19, color: flColor.gray400 },
+  impHintStrong: { color: flColor.cream100, fontWeight: '700' },
+  impPaste: {
+    height: 148,
+    borderRadius: flRadius.md,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.surfaceRecessed,
+    color: flColor.cream100,
+    fontSize: 12,
+    lineHeight: 18,
+    padding: 12,
+    textAlignVertical: 'top',
+  },
+  impError: { fontFamily: flFont.sans, fontSize: 12, lineHeight: 17, color: flColor.redMuted },
+  impFileBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 10 },
+  impFileText: { fontFamily: flFont.sans, fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
+  impPressed: { opacity: 0.6 },
+
+  impSummary: { padding: 13, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
+  impSummaryLabel: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 5 },
+  impSummaryText: { fontFamily: flFont.sans, fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
+  impNote: { fontFamily: flFont.sans, fontSize: 11.5, lineHeight: 17, color: flColor.gray600 },
+
+  impWeekBlock: { gap: 10 },
+  impWeekHead: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6 },
+  impWeekLabel: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  impWeekRule: { flex: 1, height: 1, backgroundColor: flColor.charcoal600 },
+
+  impDayCard: { borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, overflow: 'hidden' },
+  impDayName: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '700', color: flColor.cream100, paddingVertical: 9, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  impItems: { gap: 6, paddingVertical: 10, paddingHorizontal: 12 },
+  impItemRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  impItemName: { flex: 1, fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray400 },
+  impSteppers: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  impStep: { width: 22, height: 22, borderRadius: flRadius.sm, borderWidth: 1, borderColor: flColor.charcoal500, alignItems: 'center', justifyContent: 'center' },
+  impStepGlyph: { fontSize: 13, lineHeight: 15, color: flColor.gray400 },
+  impNum: { fontSize: 12, color: flColor.cream100, width: 16, textAlign: 'center', fontVariant: ['tabular-nums'] },
+  impNumWide: { width: 22 },
+  /* An assumed number is dimmer — the sheet did not say it, and the athlete should see which is which. */
+  impNumAssumed: { color: flColor.gray600 },
+  impTimes: { fontSize: 11, color: flColor.gray600, marginHorizontal: 1 },
+
+  impAddWeek: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 11, borderRadius: flRadius.md, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.charcoal500 },
+  impAddWeekText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.bronze300 },
+  impActions: { flexDirection: 'row', gap: 10 },
+  impBackBtn: { flexBasis: 96 },
+  impCreateBtn: { flex: 1 },
+
   root: { flex: 1 },
 
   addRow: { flexDirection: 'row', gap: 8 },
