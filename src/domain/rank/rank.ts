@@ -140,8 +140,14 @@ export function meetsImprovement(req: ImprovementRequirement, imp: ImprovementSu
   }
 }
 
-// ── convergence: does the athlete meet EVERY requirement to enter `target`? (RCM §14.11) ──
-function meetsFamilyPromotion(target: import('./thresholds.ts').PromotableFamily, s: RankSignals): boolean {
+/**
+ * Convergence: does the athlete meet EVERY requirement to enter `target`? (RCM §14.11)
+ *
+ * EXPORTED so `standards.ts` can be tested against it. The Rank Progression screen states these same
+ * requirements to the athlete, and two implementations of one rule drift the moment either is edited —
+ * so the standards module is asserted to agree with this function rather than trusted to.
+ */
+export function meetsFamilyPromotion(target: import('./thresholds.ts').PromotableFamily, s: RankSignals): boolean {
   const r = FAMILY_PROMOTIONS[target];
   const prestige = r.nativeActiveWeekFloor != null;
   const credit = prestige ? IMPORT_PRESTIGE_CREDIT : 1;

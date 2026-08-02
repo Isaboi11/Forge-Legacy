@@ -9,14 +9,31 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { resolveRankBadge } from '@/domain/rank-artwork/badge-art';
 import type { RankFamily, RankLevel } from '@/domain/rank-artwork/resolver';
-import { fetchStoredRank } from '@/data/rank-live';
+import { buildRankSignals, fetchStoredRank } from '@/data/rank-live';
+import { allMet, familyStandards, subTierStandards, type StandardRow } from '@/domain/rank/standards';
+import type { PromotableFamily } from '@/domain/rank/thresholds';
+import type { RankSignals } from '@/domain/rank/rank';
 import { useProfile } from '@/lib/profile';
 import { useQuery } from '@/lib/useQuery';
 
 /**
  * Rank Progression — the rank-journey reference (`Rank Progression.dc.html`). All seven families, four
  * tiers each, rendered with the real forged badge art (`resolveRankBadge`), earned in sequence. The
- * athlete's current tier is marked "You are here". Reached from the Legacy hero badge.
+ * athlete's current tier is marked "You are here".
+ *
+ * ══ IT NOW STATES THE STANDARDS ══
+ *
+ * This screen showed twenty-eight badges and not one requirement. An athlete could study the whole ladder
+ * and learn nothing about how to climb it, which makes a rank feel handed out rather than earned — the
+ * exact opposite of what the system is for. Every family now carries what it asks for and where the
+ * athlete stands against each line.
+ *
+ * The numbers come from `familyStandards`, which computes them with the same expressions the promotion
+ * gate uses and is TESTED against that gate directly. A screen that states a bar the engine does not
+ * enforce is worse than a screen that states nothing: it explains a promotion that never comes.
+ *
+ * Reached from the Progress Hub's Rank Journey. It was orphaned — built, guarded, and linked from
+ * nowhere — which is why the standards had never been missed.
  */
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV'] as const;
@@ -39,6 +56,9 @@ export default function RankProgressionScreen() {
   const insets = useSafeAreaInsets();
   const { profile } = useProfile();
   const { data: current } = useQuery(fetchStoredRank, []);
+  /* The athlete's real signals. Null while loading or when the read fails — the standards still render,
+     because what a rank asks for is true whether or not we know anything about you yet. */
+  const { data: signals } = useQuery(buildRankSignals, []);
 
   const currentIdx = current ? ORDER.indexOf(current.family) : -1;
 
@@ -78,6 +98,12 @@ export default function RankProgressionScreen() {
                     <BadgeTile key={t} family={f.key} tier={t} sex={profile?.sex} isCurrent={state === 'current' && current.subTier === t} />
                   ))}
                 </View>
+
+                {/* What this rank asks for. Foundation is where everyone starts, so it asks for nothing —
+                    printing an empty requirements block under it would imply otherwise. */}
+                {f.key === 'foundation' ? null : (
+                  <Standards family={f.key as PromotableFamily} signals={signals ?? null} earned={state === 'past'} />
+                )}
               </View>
             );
           })}
@@ -87,6 +113,72 @@ export default function RankProgressionScreen() {
           </Text>
         </ScrollView>
       )}
+    </View>
+  );
+}
+
+/**
+ * One family's requirements, and how far along the athlete is.
+ *
+ * EVERY LINE MUST BE MET AT ONCE (RSA §5.1 — the convergence rule). Exceeding one never offsets a
+ * shortfall in another, and that is stated rather than left to be inferred from a wall of bars: an
+ * athlete two years in with everything but a sealed chapter should know precisely what is holding them.
+ */
+function Standards({ family, signals, earned }: { family: PromotableFamily; signals: RankSignals | null; earned: boolean }) {
+  const rows = familyStandards(family, signals);
+  const subs = subTierStandards(family, signals);
+  const all = signals != null && allMet(rows);
+
+  return (
+    <View style={styles.std}>
+      <View style={styles.stdHead}>
+        <Text style={styles.stdTitle}>{earned ? 'What it asked for' : 'What it asks for'}</Text>
+        {earned ? (
+          <Text style={styles.stdEarned}>Earned</Text>
+        ) : all ? (
+          <Text style={styles.stdEarned}>All met</Text>
+        ) : null}
+      </View>
+
+      {rows.map((r) => (
+        <Requirement key={r.key} row={r} />
+      ))}
+
+      {/* Sub-tiers. Weeks reset when you enter the family, so these are counted from entry, not from the
+          beginning — the same derivation the engine performs. */}
+      {subs.length ? (
+        <View style={styles.subRow}>
+          <Text style={styles.subLabel}>Then within {family === 'legacy' ? 'it' : 'the rank'}</Text>
+          <Text style={styles.subText}>
+            {subs.map((sb) => `${ROMAN[sb.tier]} at ${sb.weeks} wk${sb.evidence ? ` ${sb.evidence}` : ''}`).join(' · ')}
+          </Text>
+        </View>
+      ) : null}
+
+      <Text style={styles.stdRule}>Every line at once. Going further on one never covers a shortfall on another.</Text>
+    </View>
+  );
+}
+
+function Requirement({ row }: { row: StandardRow }) {
+  const pct = row.have == null ? 0 : Math.max(0, Math.min(1, row.have / row.need));
+  const haveStr = row.have == null ? '—' : row.have % 1 === 0 ? String(row.have) : row.have.toFixed(1);
+  return (
+    <View style={styles.req}>
+      <View style={styles.reqTop}>
+        <Text style={[styles.reqLabel, row.met && styles.reqLabelMet]} numberOfLines={1}>
+          {row.met ? '✓ ' : ''}
+          {row.label}
+        </Text>
+        <Text style={[styles.reqCount, row.met && styles.reqCountMet]}>
+          {haveStr} / {row.need}
+          {row.unit ? ` ${row.unit}` : ''}
+        </Text>
+      </View>
+      <View style={styles.reqTrack}>
+        <View style={[styles.reqFill, { width: `${Math.round(pct * 100)}%` }, row.met && styles.reqFillMet]} />
+      </View>
+      {row.detail ? <Text style={styles.reqDetail}>{row.detail}</Text> : null}
     </View>
   );
 }
@@ -104,6 +196,28 @@ function BadgeTile({ family, tier, sex, isCurrent }: { family: RankFamily; tier:
 }
 
 const styles = StyleSheet.create({
+  std: { marginTop: 18, borderTopWidth: 1, borderTopColor: '#1B1510', paddingTop: 16, gap: 13 },
+  stdHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  stdTitle: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: '#7A5E38' },
+  stdEarned: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.greenMuted },
+
+  req: { gap: 5 },
+  reqTop: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 },
+  reqLabel: { flex: 1, fontFamily: flFont.sans, fontSize: 13, color: '#B4AA9C' },
+  reqLabelMet: { color: flColor.cream100 },
+  reqCount: { fontFamily: flFont.sans, fontSize: 12, color: '#8A7F70', fontVariant: ['tabular-nums'] },
+  reqCountMet: { color: flColor.bronze300 },
+  reqTrack: { height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.06)', overflow: 'hidden' },
+  reqFill: { height: 3, backgroundColor: flColor.bronze400 },
+  reqFillMet: { backgroundColor: flColor.greenMuted },
+  reqDetail: { fontFamily: flFont.sans, fontSize: 11, lineHeight: 16, color: '#6A6154' },
+
+  subRow: { gap: 3, marginTop: 2 },
+  subLabel: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: '#7A5E38' },
+  subText: { fontFamily: flFont.sans, fontSize: 12, lineHeight: 18, color: '#9A9084' },
+
+  stdRule: { fontFamily: flFont.sans, fontSize: 11, lineHeight: 16, color: '#5F5648', fontStyle: 'italic' },
+
   root: { flex: 1, backgroundColor: '#0A0807' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   body: { paddingHorizontal: 18, paddingTop: 6 },

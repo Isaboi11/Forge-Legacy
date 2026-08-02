@@ -297,7 +297,9 @@ export function triggerText(metric: string, threshold: number, metricKey: string
         ? 'Finish a goal your squad set together.'
         : `Finish ${num(threshold)} goals your squad set together.`;
     case 'max_squad_streak':
-      return `Keep half your squad training, every day, for ${num(threshold)} days.`;
+      // A trailing week, not the day itself (0100). "Every day" would have been a lie about the rule and
+      // an instruction to skip rest days.
+      return `Keep your squad going ${num(threshold)} days without half of it falling quiet for a week.`;
     case 'everyone_finished_program':
       return 'Every member of your squad finishes the same program.';
 

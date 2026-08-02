@@ -123,12 +123,24 @@ export default function ProgressHubScreen() {
             {LADDER.map((f, i) => (
               <Rung key={f.key} def={f} state={i < cur ? 'earned' : i === cur ? 'current' : 'locked'} subTier={data.rankSubTier as RankLevel} sex={sex} />
             ))}
-            <View style={styles.closer}>
+            {/* WAS: "The path continues. What comes next is earned, not previewed."
+                That stance is reversed, deliberately. Hiding what a rank asks for does not make it feel
+                earned — it makes it feel arbitrary, and an athlete who cannot see the bar cannot aim at
+                it. Rank Progression states every requirement and where they stand against each; earning
+                it is still the only way through. This is also the screen's ONLY inbound link: it was
+                built, guarded and reachable from nowhere, which is why nobody had noticed it stated no
+                requirements at all. */}
+            <Pressable
+              onPress={() => router.push('/rank-progression')}
+              accessibilityRole="button"
+              accessibilityLabel="See every rank and what it asks for"
+              style={({ pressed }) => [styles.closer, pressed ? { opacity: 0.7 } : null]}
+            >
               <View style={styles.closerIcon}>
                 <Chevron />
               </View>
-              <Text style={styles.closerText}>The path continues. What comes next is earned, not previewed.</Text>
-            </View>
+              <Text style={styles.closerText}>See every rank, and exactly what each one asks for.</Text>
+            </Pressable>
           </View>
         </View>
 
