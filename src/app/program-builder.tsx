@@ -52,6 +52,7 @@ import {
   applyWeeks,
   clampReps,
   clampSets,
+  clampDays,
   clampWeeks,
   clearProgramDraft,
   clearWeek,
@@ -271,24 +272,49 @@ export default function ProgramBuilderScreen() {
   const confirmImport = () => {
     if (!preview?.length) return;
     const imported = toProgramStructure(preview, draft?.name?.trim() || 'Imported Program', (n) => resolveName(n)?.key);
+
+    /*
+     * FIT WHAT WAS PASTED INTO WHAT THE BUILDER CAN HOLD — and say so when it does not fit.
+     *
+     * The draft has hard bounds (WEEKS 4–52, DAYS 2–6, SETS 1–8, REPS 1–60) and the import wrote
+     * straight past them: a single-week paste produced `weeks: 1`, below the minimum, and a seven-day
+     * program would have produced a seventh day the builder has no letter for and no chip to select.
+     * Every one of those is a draft that cannot be edited or trusted.
+     *
+     * Clamping silently would be the worse fix. An athlete whose seventh day vanished must be told which
+     * day went, not left to discover it on a Thursday.
+     */
+    const days = imported.days.slice(0, DAYS_MAX);
+    const droppedDays = imported.days.slice(DAYS_MAX).map((d) => d.name);
+    const fit = (list: typeof days) =>
+      list.map((d) => ({
+        ...d,
+        main: d.main.map((x) => ({ ...x, sets: clampSets(x.sets), reps: clampReps(x.reps) })),
+      }));
+
+    const weeks = clampWeeks(imported.weeks);
+    const stretched = weeks !== imported.weeks;
+
     mutate((d) => ({
       ...d,
       name: d.name?.trim() ? d.name : imported.name,
-      weeks: imported.weeks,
-      daysPerWeek: imported.daysPerWeek,
+      weeks,
+      daysPerWeek: clampDays(days.length),
       vary: imported.vary,
-      days: imported.days,
-      weekPlans: imported.weekPlans,
+      days: fit(days),
+      weekPlans: imported.weekPlans ? imported.weekPlans.map((w) => ({ days: fit(w.days.slice(0, DAYS_MAX)) })) : null,
       openWeek: null,
       openDay: null,
     }));
     setImportOpen(false);
+
+    // One line, and it leads with whatever was LOST — the part an athlete needs to know about.
     const unmatched = unmatchedNames(preview, (n) => resolveName(n)?.key);
-    showToast(
-      unmatched.length
-        ? `Imported · ${unmatched.length} name${unmatched.length === 1 ? '' : 's'} weren’t in the library and kept yours`
-        : 'Imported — review and save',
-    );
+    const notes: string[] = [];
+    if (droppedDays.length) notes.push(`${droppedDays.length} day${droppedDays.length === 1 ? '' : 's'} over the ${DAYS_MAX}-day limit dropped (${droppedDays.join(', ')})`);
+    if (stretched) notes.push(`set to ${weeks} weeks — the shortest a program can be`);
+    if (unmatched.length) notes.push(`${unmatched.length} name${unmatched.length === 1 ? '' : 's'} weren’t in the library and kept yours`);
+    showToast(notes.length ? `Imported · ${notes.join(' · ')}` : 'Imported — review and save');
   };
   const [confirmClose, setConfirmClose] = useState(false);
   const [jumpOpen, setJumpOpen] = useState(false);
