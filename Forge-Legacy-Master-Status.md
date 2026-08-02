@@ -24,9 +24,9 @@
 | **Architecture Design** | **~100%** | All 21 Architecture Freeze rows ✅ Complete; V1 Architecture Freeze officially **FROZEN 2026-06-30** |
 | **UI / Wireframes** | **~95%** | Nearly all screens specced; W18/W19 both lock-candidate (W18 corrected 2026-07-09 — previously misdashboarded as LOCKED; W19 blocked on W18, see Decision Queue #16); no Search/Rest-Timer/Community wireframe yet — Communities is architecture-only in this pass, no pixel layout authored |
 | **Content Authoring** | **Split — 92% coaching · 8% programs** | Was a single "~12%", which was wrong in both directions. **Coaching: 735 of 797 exercises Published, 62 Needs Review.** **Honors: data** (`honor_catalog`, **179 awardable** across 14 categories — 0099 filled the five empty ones). **Programs: 2 of 24 generated** — the real gap. **Exercise media: 0 of 797** |
-| **Backend / Data** | **BUILT (Supabase) — 99 migrations, 0001–0100. ⚠️ 0100 NOT YET APPLIED** | auth · profiles · chapters · workouts+sets+conditioning legs · PRs · honors (`honor_catalog` + table-driven evaluator) · programs · goals · rank · body metrics · photos · squads+feed+discovery · friends · challenges · notifications · templates · train-together. RLS on all 35 tables; 52/52 `SECURITY DEFINER` pin `search_path`. Design doc still ratifies Firebase — the BUILD is Supabase (PD-7: build governs) |
+| **Backend / Data** | **BUILT (Supabase) — 100 migrations, 0001–0101. ⚠️ 0100 + 0101 NOT YET APPLIED** | auth · profiles · chapters · workouts+sets+conditioning legs · PRs · honors (`honor_catalog` + table-driven evaluator) · programs · goals · rank · body metrics · photos · squads+feed+discovery · friends · challenges · notifications · templates · train-together. RLS on all 35 tables; 52/52 `SECURITY DEFINER` pin `search_path`. Design doc still ratifies Firebase — the BUILD is Supabase (PD-7: build governs) |
 | **Code Implementation** | **~75%** *(71 screens, essentially all backend-wired)* | **71 screens** (72 until `/active-run` was retired 2026-08-01 — one run surface, folded onto the workout card). **70 of 71 read real Supabase.** The whole SOCIAL pillar — Squads · Squad Detail · Friends · Feed · Athlete Profile — is live, not mock; the old "fully MOCK, quarantined in `*-placeholder.ts`" reading was stale by weeks. Remaining: content, media production, and the deferred items in Current Sprint |
-| **Testing** | **508 tests green** *(coverage % not instrumented → not measured)* | 40 files, all passing. Invariant/golden (comment ⊆ thread · check-in ⊆ roster · records ⊆ roster · one-active-program), resolver matrices, domain validators, **+ two new regression guards: `route-guard` (every screen declared, else it answers a URL signed-out) and `chapter-tallies` (a chapter with honors never reports 0)**. Behavioural coverage of built layers, NOT whole-app coverage |
+| **Testing** | **655 tests green** *(coverage % not instrumented → not measured)* | 40 files, all passing. Invariant/golden (comment ⊆ thread · check-in ⊆ roster · records ⊆ roster · one-active-program), resolver matrices, domain validators, **+ two new regression guards: `route-guard` (every screen declared, else it answers a URL signed-out) and `chapter-tallies` (a chapter with honors never reports 0)**. Behavioural coverage of built layers, NOT whole-app coverage |
 
 | Snapshot | Value |
 |---|---|
@@ -55,7 +55,18 @@
 
 ## 🏃 Current Sprint
 
-**Sprint:** Post-audit correction — make every surface tell the truth
+**Sprint:** Full-app audit (2026-08-02) — try to break it, then fix what broke
+
+**Audit result (see Recently Completed #1).** Seven passes: reachability · data contract · dangling loops ·
+personas · computation truth · hostile input · authority. **Three defects closed** — a personal record
+nobody set (a lift twice in one session was judged against a stale number), `archive_squad_goal` running
+`SECURITY DEFINER` with no caller check (a disclosure oracle over private squads; migration **0101**), and
+two invisible control characters that had grep reporting `workout.tsx` as a binary file *mid-audit*.
+**One defect reported and deliberately not rushed:** personal records are keyed by display name rather than
+`catalog_key`, so one lift can hold two histories — proven, 190 lb announced as a record to an athlete who
+has benched 225. Fixing it means replacing `save_workout`, so it needs a decision, not a reflex.
+
+**Prior sprint:** Post-audit correction — make every surface tell the truth
 
 **Objective:** Close the defects found by the 2026-08-01 repository audit, then bring this dashboard back in line
 with the built tree. The V1 Architecture Freeze closed 2026-06-30 and implementation is well past it; the
@@ -355,7 +366,48 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
-### 1. Import from a spreadsheet · PR semantics · Rank standards (2026-08-02, CODE)
+### 1. FULL-APP AUDIT — seven passes, three defects closed, one reported (2026-08-02, CODE)
+
+A deliberate attempt to break the app: reachability · data contract · dangling loops · persona walks ·
+computation truth · hostile input · server-side authority. Commit `ce472b8`, migration **0101**.
+
+**Fixed**
+
+- **A record nobody set.** `detectPRs` measured every exercise against `priorBest` — a snapshot taken
+  before the session that never moved. A lift appearing twice in one session (two blocks, a re-add, a
+  superset) was compared against the same stale number both times: **Squat 310 then 300, against a prior
+  of 295, announced BOTH as records.** The 300 is not a record; they had just done 310. The bar is now
+  whichever is higher — history, or what they already lifted today. Found by running it, not reading it.
+- **`archive_squad_goal` asked nobody who was calling.** Shipped in 0099 as `SECURITY DEFINER` with no
+  check, while every sibling (`ensure_weekly_recap`, `refresh_squad_records`) opens with
+  `is_squad_member`. DEFINER meant RLS did not apply. Not goal forgery — it archives only a genuinely-met
+  goal — but a **disclosure oracle**: the boolean revealed whether an *arbitrary* squad had met its goal,
+  and squads are private by design (SQ-D16). Migration **0101** adds the missing guard.
+- **Two characters nobody could see.** `src/app/workout.tsx` held two literal NUL bytes as a join/split
+  delimiter; `extract.mjs` a literal NBSP inside a regex. Both correct at runtime, both invisible — and
+  grep classified `workout.tsx` as a **binary file**, silently returning nothing for several searches
+  *during this audit*. Now `\u0000` / `\u00a0`. Third time this session an invisible character hid a real
+  answer.
+
+**Verified clean (mechanically, not asserted)** — 54 RPCs · 53 RPC *argument lists* (a renamed parameter
+is a 42883 that looks cosmetic; never checked before) · 32 tables · 102 select sites · every insert/update
+payload, all against the 101-migration chain. 26 mutating functions swept for an authority decision — one
+gap, above. Every route declared under the auth guard; both dev-only screens genuinely redirect. Run and
+workout math yield no NaN/Infinity on empty input. Every "orphan" explained.
+
+**Reported, deliberately NOT rushed — the one open defect.** Personal records are identified by **display
+name**, not by the `catalog_key` the row already carries. So one lift can hold two histories — "Bench
+press" (imported, keeps the athlete's words by design) vs "Barbell Bench Press" (picked). **Proven: 190 lb
+announced as a record to an athlete who has benched 225.** The correct fix keys PR identity on
+`catalog_key`, which needs a new column *and* a `save_workout` replacement — the RPC with the worst blast
+radius in the project (see the 0095–0097 lesson). Designed, not shipped; awaiting a decision.
+
+**Also noted:** ONB-A2-D4(c) — the post-first-workout discovery moment — is specced and unbuilt; (a) and
+(b) exist. `profiles.environment` is written by nothing and read by nothing (harmless: unlike
+`chapters.honor_count`, no surface displays it). ~69 dangling exports, mostly type-constant arrays, plus
+two superseded duplicates (`fetchPublicProfile`, `getNextWorkout`).
+
+### 2. Import from a spreadsheet · PR semantics · Rank standards (2026-08-02, CODE)
 
 **IMPORT IS BUILT.** It was in the design all along — not a screen, a BottomSheet inside the Program
 Builder — which is why a search for an import `.dc.html` found nothing. That supersedes
@@ -400,7 +452,7 @@ Gate held at every step: tsc 0 · lint at baseline · **635 `node --test` green*
 deploy.
 
 
-### 1. Cardio consolidated onto one surface · the five empty honor categories filled (2026-08-01, CODE + migration 0099)
+### 3. Cardio consolidated onto one surface · the five empty honor categories filled (2026-08-01, CODE + migration 0099)
 
 **Runs.** GPS measured nothing because `ACCURACY_FLOOR_M` was 25 m — right for a phone under open sky, wrong
 for a browser geolocating off wi-fi at 30–80 m, so every fix was discarded and the distance sat at 0.00
