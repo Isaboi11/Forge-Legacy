@@ -8,6 +8,9 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { ScreenBackground } from '@/components/screen-background';
+import { ScreenTour } from '@/components/tour/ScreenTour';
+import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import {
@@ -70,6 +73,8 @@ export default function ProgramDetailScreen() {
   const [openWeek, setOpenWeek] = useState<number | null>(null);
   const [openDay, setOpenDay] = useState<string | null>(null);
   const [sheet, setSheet] = useState<'conflict' | 'end' | 'remove' | null>(null);
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
 
   // Refetch on focus so returning from a finished workout shows the new session immediately.
   useFocusEffect(
@@ -206,7 +211,13 @@ export default function ProgramDetailScreen() {
         }
       />
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={tourScroller}
+        onScroll={onTourScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.title}>{program.name}</Text>
         <Text style={styles.metaFamily}>Custom · {structure.vary ? 'Per-week' : 'Repeating week'}</Text>
         <Text style={styles.metaLine}>
@@ -214,7 +225,7 @@ export default function ProgramDetailScreen() {
         </Text>
 
         {showProgress ? (
-          <View style={styles.progressCard}>
+          <TourAnchor id="program-progress" style={styles.progressCard}>
             <View style={styles.progressHead}>
               <Text style={styles.progressWeek}>
                 Week {progress.week} of {structure.weeks}
@@ -225,7 +236,7 @@ export default function ProgramDetailScreen() {
             <Text style={styles.progressSub}>
               Workout {progress.completed} of {progress.total}
             </Text>
-          </View>
+          </TourAnchor>
         ) : null}
 
         {equipment.length ? (
@@ -250,7 +261,8 @@ export default function ProgramDetailScreen() {
           </View>
         ) : null}
 
-        <Text style={styles.sectionLabel}>{trained ? 'Your Log' : 'The Schedule'}</Text>
+        <TourAnchor id="program-schedule">
+          <Text style={styles.sectionLabel}>{trained ? 'Your Log' : 'The Schedule'}</Text>
         <Text style={styles.sectionSub}>
           {trained
             ? 'Completed weeks show what you lifted; upcoming weeks show the plan.'
@@ -272,12 +284,13 @@ export default function ProgramDetailScreen() {
               onToggleDay={(k) => setOpenDay(openDay === k ? null : k)}
             />
           ))}
-        </View>
+          </View>
+        </TourAnchor>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
       </ScrollView>
 
-      <View style={styles.cta}>
+      <TourAnchor id="program-actions" style={styles.cta}>
         <Button variant="primary" fullWidth disabled={busy} onPress={onPrimary} accessibilityLabel={view.cta}>
           {view.cta}
         </Button>
@@ -316,7 +329,9 @@ export default function ProgramDetailScreen() {
             <Text style={[styles.secondaryText, styles.deleteText]}>Delete Program</Text>
           </Pressable>
         </View>
-      </View>
+      </TourAnchor>
+
+      <ScreenTour screenKey="program-detail" />
 
       <BottomSheet open={sheet != null} onClose={() => setSheet(null)} title={sheetCopy.title}>
         <View style={styles.sheetBody}>

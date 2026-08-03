@@ -16,6 +16,7 @@ import { WorkoutSessionProvider } from '@/hooks/useWorkoutSession';
 import { ShareProvider } from '@/hooks/useShareSheet';
 import { CeremonyProvider } from '@/hooks/useCeremony';
 import { TourProvider } from '@/hooks/useTour';
+import { TourAnchorProvider } from '@/hooks/useTourAnchors';
 
 /**
  * Root layout — a Stack over the whole app. The `(tabs)` group holds the 5-tab shell; every
@@ -25,7 +26,8 @@ import { TourProvider } from '@/hooks/useTour';
  *
  * The overlay providers (ceremony queue / first-time tour / share sheet / workout session) wrap the
  * Stack so every route — tabbed or pushed — sees them. TourProvider sits inside CeremonyProvider so its
- * "Take the tour?" prompt can defer to a live ceremony (never stack over an earned moment).
+ * unlock ceremony can defer to a live one (never stack over an earned moment), and inside
+ * TourAnchorProvider so a tour run can be filtered to the cards actually mounted on screen.
  */
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -46,10 +48,12 @@ export default function RootLayout() {
           <WorkoutSessionProvider>
             <ShareProvider>
               <CeremonyProvider>
-                <TourProvider>
-                  <AnimatedSplashOverlay />
-                  <RootNavigator />
-                </TourProvider>
+                <TourAnchorProvider>
+                  <TourProvider>
+                    <AnimatedSplashOverlay />
+                    <RootNavigator />
+                  </TourProvider>
+                </TourAnchorProvider>
               </CeremonyProvider>
             </ShareProvider>
           </WorkoutSessionProvider>
@@ -158,13 +162,15 @@ function RootNavigator() {
         <Stack.Screen name="template/[id]" />
         <Stack.Screen name="home-gym" />
         <Stack.Screen name="account-settings" />
+        <Stack.Screen name="edit-profile" />
         <Stack.Screen name="preferences" />
         <Stack.Screen name="profile-visibility" />
         <Stack.Screen name="notifications" />
         <Stack.Screen name="community" />
-        {/* Orphaned, not dead: nothing links here since the Legacy hero badge was pointed at the
-            Progress Hub (P-2.2, the sole rank-depth destination). Declared so it is at least not
-            reachable signed-out. Whether it gets rewired or retired is a product call, not cleanup. */}
+        {/* NOT orphaned — this comment used to say it was, and the dashboard still repeats that. It has
+            one inbound link: the Progress Hub's "See every rank" closer (`progress-hub.tsx`), added when
+            that screen stopped withholding the requirements. Reached as Legacy → rank badge → Progress
+            Hub → here. */}
         <Stack.Screen name="rank-progression" />
       </Stack.Protected>
       <Stack.Protected guard={route === 'onboarding'}>

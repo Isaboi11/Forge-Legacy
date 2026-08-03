@@ -7,6 +7,9 @@ import Svg, { Path, Rect } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
+import { ScreenTour } from '@/components/tour/ScreenTour';
+import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import {
@@ -203,6 +206,9 @@ export default function PhotosScreen() {
         </FadeIn>
       )}
 
+      {/* Albums root only — both steps ring things an open album doesn't show. */}
+      <ScreenTour screenKey="photos" ready={!albumId && (albums?.albums.length ?? 0) > 0} />
+
       {viewerAt != null && album && flat.length > 0 ? (
         <Viewer
           chapter={album.name}
@@ -232,6 +238,8 @@ function AlbumsView({
   onAddFirst: () => void;
 }) {
   const list = albums?.albums ?? [];
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
 
   if (list.length === 0) {
     /* The old ban on a CTA here rested on the screen being unable to act. It can: there is always exactly
@@ -249,19 +257,25 @@ function AlbumsView({
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-      <View style={styles.countHead}>
+    <ScrollView
+      ref={tourScroller}
+      onScroll={onTourScroll}
+      scrollEventThrottle={16}
+      contentContainerStyle={styles.scroll}
+      showsVerticalScrollIndicator={false}
+    >
+      <TourAnchor id="photos-count" style={styles.countHead}>
         <Text style={styles.countValue}>{albums?.total ?? 0}</Text>
         <Text style={styles.countSub}>
           photos · {list.length} {list.length === 1 ? 'chapter' : 'chapters'}
         </Text>
-      </View>
+      </TourAnchor>
 
-      <View style={styles.albumStack}>
+      <TourAnchor id="photos-albums" style={styles.albumStack}>
         {list.map((a) => (
           <AlbumCard key={a.chapterId} album={a} onPress={() => onOpen(a.chapterId)} />
         ))}
-      </View>
+      </TourAnchor>
 
       <Text style={styles.footnote}>Every chapter is its own album. Nothing expires, nothing is counted against you.</Text>
     </ScrollView>

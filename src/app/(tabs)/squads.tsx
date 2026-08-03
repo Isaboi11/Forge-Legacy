@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -16,8 +15,11 @@ import { SquadCrest } from '@/components/forge/SquadCrest';
 import { fetchMySquads, type SquadSummary } from '@/data/squad-live';
 import { fetchOwnedPendingCounts } from '@/data/squad-discover-live';
 import { useQuery } from '@/lib/useQuery';
+import { getSquadFavorites, setSquadFavorites } from '@/lib/squad-favorites';
 import { useToast } from '@/hooks/useCeremony';
 import { ScreenTour } from '@/components/tour/ScreenTour';
+import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 
 /**
@@ -28,10 +30,8 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
  * "trained today" segment bar), Favorites / All Squads sections, the empty-state pitch, and the Create CTA.
  * Reconciled to the current backend: real squads (no seed demo); trained-today = whether YOU logged a workout
  * today (per-member check-ins land later); the search/Discover and card→Detail taps are honest stubs until
- * those screens are (re)built. Favorites are device-local (AsyncStorage).
+ * those screens are (re)built. Favorites are device-local (`lib/squad-favorites`).
  */
-
-const FAV_KEY = 'forge.squads.favorites';
 
 export default function SquadsScreen() {
   const router = useRouter();
@@ -40,17 +40,16 @@ export default function SquadsScreen() {
   const { data: pendingCounts, refetch: refetchPending } = useQuery(fetchOwnedPendingCounts, []);
   const { showToast } = useToast();
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const discoverRef = useTourAnchor('squads-discover');
+  const createRef = useTourAnchor('squads-create');
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
 
   useEffect(() => {
     let cancelled = false;
-    void AsyncStorage.getItem(FAV_KEY).then((raw) => {
-      if (cancelled || !raw) return;
-      try {
-        const ids = JSON.parse(raw);
-        if (Array.isArray(ids)) setFavoriteIds(ids);
-      } catch {
-        // ignore malformed
-      }
+    // Parsing and validation live in the store now, so this is just "restore what was starred".
+    void getSquadFavorites().then((ids) => {
+      if (!cancelled && ids.length > 0) setFavoriteIds(ids);
     });
     return () => {
       cancelled = true;
@@ -73,7 +72,7 @@ export default function SquadsScreen() {
     const willFav = !favoriteIds.includes(id);
     setFavoriteIds((prev) => {
       const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
-      void AsyncStorage.setItem(FAV_KEY, JSON.stringify(next)).catch(() => {});
+      void setSquadFavorites(next);
       return next;
     });
     showToast(willFav ? `Added ${name} to Favorites` : `Removed ${name} from Favorites`);
@@ -86,9 +85,10 @@ export default function SquadsScreen() {
     return { favSquads: list.filter((s) => favSet.has(s.id)), otherSquads: list.filter((s) => !favSet.has(s.id)) };
   }, [data, favoriteIds]);
 
+  let cardIndex = 0;
   const renderCard = (s: SquadSummary) => (
+    <TourAnchor key={s.id} id={cardIndex++ === 0 ? 'squads-card' : undefined}>
     <SquadCard
-      key={s.id}
       squad={s}
       isFavorite={favoriteIds.includes(s.id)}
       pendingRequests={pendingCounts?.[s.id] ?? 0}
@@ -96,6 +96,7 @@ export default function SquadsScreen() {
       onOpen={() => openSquad(s.id)}
       onReviewRequests={() => router.push({ pathname: '/squad-requests', params: { id: s.id } })}
     />
+    </TourAnchor>
   );
 
   return (
@@ -106,17 +107,23 @@ export default function SquadsScreen() {
         title={<Text style={styles.barTitle}>Squads</Text>}
         actions={
           <>
-            <Pressable onPress={openDiscover} accessibilityRole="button" accessibilityLabel="Discover squads" style={styles.headerBtn} hitSlop={6}>
+            <Pressable ref={discoverRef} onPress={openDiscover} accessibilityRole="button" accessibilityLabel="Discover squads" style={styles.headerBtn} hitSlop={6}>
               <SearchIcon />
             </Pressable>
-            <Pressable onPress={goCreate} accessibilityRole="button" accessibilityLabel="Create a squad" style={styles.headerBtn} hitSlop={6}>
+            <Pressable ref={createRef} onPress={goCreate} accessibilityRole="button" accessibilityLabel="Create a squad" style={styles.headerBtn} hitSlop={6}>
               <PlusIcon size={26} stroke={flColor.bronze300} />
             </Pressable>
           </>
         }
       />
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={tourScroller}
+        onScroll={onTourScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
         {!data && loading ? (
           <View style={styles.cardStack}>
             <SkeletonCard variant="base" />
@@ -128,9 +135,9 @@ export default function SquadsScreen() {
           <View style={styles.stack}>
             {favSquads.length > 0 ? (
               <>
-                <View style={styles.sectionHeaderPad}>
+                <TourAnchor id="squads-favorites" style={styles.sectionHeaderPad}>
                   <SquadHeader label="Favorites" star />
-                </View>
+                </TourAnchor>
                 <View style={styles.cardStack}>{favSquads.map(renderCard)}</View>
                 {otherSquads.length > 0 ? (
                   <View style={styles.sectionHeaderPad}>
@@ -145,13 +152,16 @@ export default function SquadsScreen() {
               <Button variant="primary" fullWidth icon={<PlusIcon size={18} stroke="#F7F5F1" />} onPress={goCreate} accessibilityLabel="Create a squad">
                 Create a Squad
               </Button>
-              <JoinCodeLink onPress={goJoin} />
+              <TourAnchor id="squads-join">
+                <JoinCodeLink onPress={goJoin} />
+              </TourAnchor>
             </View>
           </View>
         )}
       </ScrollView>
 
-      <ScreenTour screenKey="squads" />
+      {/* Needs at least one squad — four of the five steps ring things the empty state doesn't draw. */}
+      <ScreenTour screenKey="squads" ready={squads.length > 0} restingBottom={108} />
     </View>
   );
 }

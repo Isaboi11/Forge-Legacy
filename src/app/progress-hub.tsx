@@ -9,6 +9,9 @@ import { AppBar } from '@/components/forge/composites/AppBar';
 import { ForgeSymbol } from '@/components/forge/ForgeSymbol';
 import { RankSeal } from '@/components/forge/RankSeal';
 import { ScreenBackground } from '@/components/screen-background';
+import { ScreenTour } from '@/components/tour/ScreenTour';
+import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { resolveRankBadge } from '@/domain/rank-artwork/badge-art';
@@ -44,6 +47,8 @@ const ORDER = LADDER.map((l) => l.key);
 
 export default function ProgressHubScreen() {
   const router = useRouter();
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
   const insets = useSafeAreaInsets();
   const { profile } = useProfile();
   const { showToast } = useToast();
@@ -77,7 +82,13 @@ export default function ProgressHubScreen() {
       <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.28} overlay={{ flat: 'rgba(5,5,5,0.5)' }} />
       <AppBar title="Progress" serif onBack={() => router.back()} />
 
-      <ScrollView contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={tourScroller}
+        onScroll={onTourScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* ── HERO ── */}
         <View style={styles.hero}>
           <View style={styles.heroRow}>
@@ -113,7 +124,9 @@ export default function ProgressHubScreen() {
         {/* ── RANK JOURNEY ── */}
         <View style={styles.section}>
           <View style={styles.sectionHead}>
-            <Text style={styles.sectionLabel}>Rank Journey</Text>
+            <TourAnchor id="progress-rank">
+              <Text style={styles.sectionLabel}>Rank Journey</Text>
+            </TourAnchor>
             <Text style={styles.sectionCaption}>{cur} of the path walked</Text>
           </View>
           <View style={styles.journey}>
@@ -147,7 +160,9 @@ export default function ProgressHubScreen() {
         {/* ── STRENGTH & PERFORMANCE ── */}
         <View style={styles.section}>
           <View style={styles.sectionHead}>
-            <Text style={styles.sectionLabel}>Strength &amp; Performance</Text>
+            <TourAnchor id="progress-strength">
+              <Text style={styles.sectionLabel}>Strength &amp; Performance</Text>
+            </TourAnchor>
             <Pressable onPress={() => setEditOpen(true)} accessibilityRole="button" accessibilityLabel="Edit metrics" style={styles.editLink}>
               <Glyph d={PATHS.pencil} size={13} color={flColor.bronze400} />
               <Text style={styles.editText}>Edit</Text>
@@ -172,7 +187,9 @@ export default function ProgressHubScreen() {
 
         {/* ── CONSISTENCY ── */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Consistency &amp; Training</Text>
+          <TourAnchor id="progress-consistency">
+            <Text style={styles.sectionLabel}>Consistency &amp; Training</Text>
+          </TourAnchor>
           <View style={styles.bigStatRow}>
             <Text style={styles.bigStat}>{data.consistency.lifetime}</Text>
             <Text style={styles.bigStatSub}>workouts,{'\n'}and counting</Text>
@@ -197,7 +214,9 @@ export default function ProgressHubScreen() {
         {/* ── WHAT'S NEXT ── */}
         {data.next ? (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>What&apos;s Next</Text>
+            <TourAnchor id="progress-next">
+              <Text style={styles.sectionLabel}>What&apos;s Next</Text>
+            </TourAnchor>
             <Pressable onPress={() => router.push({ pathname: '/program/[id]', params: { id: data.next!.id } })} accessibilityRole="button" accessibilityLabel={data.next.title} style={styles.nextCard}>
               <LinearGradient colors={['rgba(186, 134, 84,0.10)', 'rgba(186, 134, 84,0)']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 0.75 }} style={StyleSheet.absoluteFill} pointerEvents="none" />
               <View style={styles.nextIcon}>
@@ -213,6 +232,8 @@ export default function ProgressHubScreen() {
           </View>
         ) : null}
       </ScrollView>
+
+      <ScreenTour screenKey="progress-hub" ready={!!data} />
 
       {openMetric ? <MetricDetail metric={openMetric} onClose={() => setOpenId(null)} /> : null}
       <EditMetricsSheet

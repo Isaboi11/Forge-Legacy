@@ -6,6 +6,9 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { ScreenBackground } from '@/components/screen-background';
+import { ScreenTour } from '@/components/tour/ScreenTour';
+import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import {
   acceptFriendRequest,
@@ -78,6 +81,8 @@ export default function AddFriendScreen() {
 
   const [query, setQuery] = useState('');
   const [busy, setBusy] = useState(false);
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
   const [found, setFound] = useState<Awaited<ReturnType<typeof findAthleteByHandle>> | null>(null);
   const [checked, setChecked] = useState<string | null>(null);
 
@@ -187,7 +192,7 @@ export default function AddFriendScreen() {
         <Text style={styles.lede}>Friends are added by handle, one at a time. You’ll need to know theirs.</Text>
 
         {/* The @ prefix lights exactly when the button arms. */}
-        <View style={[styles.inputRow, armed ? styles.inputRowArmed : null]}>
+        <TourAnchor id="addfriend-search" style={[styles.inputRow, armed ? styles.inputRowArmed : null]}>
           <Text style={[styles.prefix, armed ? styles.prefixArmed : null]}>@</Text>
           <TextInput
             value={query}
@@ -213,7 +218,7 @@ export default function AddFriendScreen() {
           >
             {busy ? <ActivityIndicator size="small" color={flColor.bronze300} /> : <Text style={[styles.addBtnLabel, armed ? styles.addBtnLabelArmed : null]}>Add</Text>}
           </Pressable>
-        </View>
+        </TourAnchor>
 
         <View style={styles.statusRow}>
           {status.icon}
@@ -221,7 +226,14 @@ export default function AddFriendScreen() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        ref={tourScroller}
+        onScroll={onTourScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
 
         {/* ── Awaiting your answer. Not in the design; without it there is no surface to accept from. ── */}
         {lists.incoming.length > 0 ? (
@@ -288,6 +300,8 @@ export default function AddFriendScreen() {
           friends are never shown to anyone else.
         </Text>
       </ScrollView>
+
+      <ScreenTour screenKey="add-friend" />
     </View>
   );
 }
@@ -318,7 +332,9 @@ function Section({ label, count, children }: { label: string; count: number; chi
   return (
     <View style={styles.section}>
       <View style={styles.sectionHead}>
-        <Text style={styles.sectionLabel}>{label}</Text>
+        <TourAnchor id={label === 'Sent' ? 'addfriend-pending' : undefined}>
+          <Text style={styles.sectionLabel}>{label}</Text>
+        </TourAnchor>
         <View style={styles.countBadge}>
           <Text style={styles.countBadgeText}>{count}</Text>
         </View>

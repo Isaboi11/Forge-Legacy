@@ -10,6 +10,9 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
 import { SettingsToggle } from '@/components/forge/SettingsToggle';
 import { ScreenBackground } from '@/components/screen-background';
+import { ScreenTour } from '@/components/tour/ScreenTour';
+import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import {
@@ -64,6 +67,9 @@ export default function AccomplishmentsScreen() {
   const chapterLabel = (id: string) => chapterOpts.find((c) => c.id === id)?.label ?? null;
 
   const [view, setView] = useState<ViewState>({ mode: 'list' });
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
+  const addRef = useTourAnchor('accomplishments-add');
 
   if (loading) {
     return (
@@ -121,7 +127,7 @@ export default function AccomplishmentsScreen() {
         serif
         onBack={() => router.back()}
         actions={
-          <Pressable onPress={() => setView({ mode: 'form' })} accessibilityRole="button" accessibilityLabel="Add accomplishment" hitSlop={8} style={styles.addBtn}>
+          <Pressable ref={addRef} onPress={() => setView({ mode: 'form' })} accessibilityRole="button" accessibilityLabel="Add accomplishment" hitSlop={8} style={styles.addBtn}>
             <Glyph d={PLUS} size={22} color={flColor.bronze300} width={2} />
           </Pressable>
         }
@@ -136,14 +142,23 @@ export default function AccomplishmentsScreen() {
           </Button>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
-          {list.map((a) => {
+        <ScrollView
+          ref={tourScroller}
+          onScroll={onTourScroll}
+          scrollEventThrottle={16}
+          contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]}
+          showsVerticalScrollIndicator={false}
+        >
+          {list.map((a, ai) => {
             const sub = accSubline(a, chapterLabel);
             return (
-              <Pressable key={a.id} onPress={() => setView({ mode: 'detail', id: a.id })} accessibilityRole="button" accessibilityLabel={a.name} style={styles.row}>
-                <Svg width={16} height={16} viewBox="0 0 24 24" fill={a.featured ? flColor.bronze300 : 'none'} stroke={a.featured ? flColor.bronze300 : flColor.gray600} strokeWidth={1.5} strokeLinejoin="round">
-                  <Path d={STAR} />
-                </Svg>
+              <TourAnchor key={a.id} id={ai === 0 ? 'accomplishments-list' : undefined}>
+              <Pressable onPress={() => setView({ mode: 'detail', id: a.id })} accessibilityRole="button" accessibilityLabel={a.name} style={styles.row}>
+                <TourAnchor id={ai === 0 ? 'accomplishments-featured' : undefined}>
+                  <Svg width={16} height={16} viewBox="0 0 24 24" fill={a.featured ? flColor.bronze300 : 'none'} stroke={a.featured ? flColor.bronze300 : flColor.gray600} strokeWidth={1.5} strokeLinejoin="round">
+                    <Path d={STAR} />
+                  </Svg>
+                </TourAnchor>
                 <View style={styles.rowText}>
                   <Text style={styles.rowName} numberOfLines={1}>
                     {a.name}
@@ -152,10 +167,13 @@ export default function AccomplishmentsScreen() {
                 </View>
                 <Glyph d={CHEVRON} size={16} color={flColor.gray600} width={2} />
               </Pressable>
+              </TourAnchor>
             );
           })}
         </ScrollView>
       )}
+
+      <ScreenTour screenKey="accomplishments" ready={view.mode === 'list' && list.length > 0} />
     </View>
   );
 }

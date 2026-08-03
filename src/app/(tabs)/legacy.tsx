@@ -37,6 +37,8 @@ import {
   TimelineRow,
 } from '@/components/forge/profile-sections';
 import { ScreenTour } from '@/components/tour/ScreenTour';
+import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { PinManagerSheet } from '@/components/forge/PinManagerSheet';
 import { StandardEditorSheet } from '@/components/forge/StandardEditorSheet';
 import { ForgeSymbol, type SymbolName } from '@/components/forge/ForgeSymbol';
@@ -114,6 +116,14 @@ export default function LegacyScreen() {
   );
   const [pinManager, setPinManager] = useState(false);
   const [stdOpen, setStdOpen] = useState(false);
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
+  /**
+   * "One you write, one you earn" is a single idea about two adjacent sections, either of which can be
+   * absent — both hide entirely when empty. The step rings whichever exists, preferring Accomplishments
+   * (the authored half, and the one that needs explaining). With neither, the step drops itself.
+   */
+  const collectionsAnchor = liveAccomplishments.length > 0 ? 'accomplishments' : (data?.honors.length ?? 0) > 0 ? 'honors' : null;
   // Open a pinned museum item at its real home: a video plays; a chapter/honor/accomplishment opens its
   // screen; a bare record/photo/memory pin has no destination yet (media viewer not built).
   const openPin = (pin: Pin) => {
@@ -182,10 +192,14 @@ export default function LegacyScreen() {
       />
 
       <Animated.ScrollView
+        ref={tourScroller}
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+          useNativeDriver: true,
+          listener: onTourScroll,
+        })}
       >
         {/* ── HERO · identity ── parallaxes up + fades; portrait scales from its left edge (.dc) */}
         <Animated.View style={[styles.identityRow, { opacity: heroOpacity, transform: [{ translateY: heroTranslateY }] }]}>
@@ -199,22 +213,26 @@ export default function LegacyScreen() {
             <RankLabel label={data.rankName} sub={data.rankSubTier} />
             <Text style={styles.identitySub}>Forging a permanent record, one chapter at a time.</Text>
           </View>
-          <ProgressBadge
-            rankFamily={data.rankFamily}
-            rankLevel={data.rankLevel}
-            sex={profile.sex}
-            onPress={() => router.push('/progress-hub')}
-          />
+          <TourAnchor id="legacy-rank">
+            <ProgressBadge
+              rankFamily={data.rankFamily}
+              rankLevel={data.rankLevel}
+              sex={profile.sex}
+              onPress={() => router.push('/progress-hub')}
+            />
+          </TourAnchor>
         </Animated.View>
 
         {/* My Standard — the creed; tap opens the L-12 editor sheet */}
-        <MyStandard standard={data.standard} onEdit={() => setStdOpen(true)} />
+        <TourAnchor id="legacy-standard">
+          <MyStandard standard={data.standard} onEdit={() => setStdOpen(true)} />
+        </TourAnchor>
 
         {/* What I'm Building — current chapter + primary goal */}
         {chapter ? <CurrentChapter chapter={chapter} dayCount={data.dayCount} onOpen={() => router.push({ pathname: '/chapter/[id]', params: { id: chapter.id } })} /> : null}
 
         {/* ── PINNED LEGACY · My Museum (real pins + L-13 pin manager) ── */}
-        <View style={styles.section}>
+        <TourAnchor id="legacy-pinned" style={styles.section}>
           <View style={styles.sectionHeaderPad}>
             <SectionHeader label="Pinned Legacy" action="Edit" onAction={() => setPinManager(true)} />
           </View>
@@ -238,27 +256,27 @@ export default function LegacyScreen() {
               <Text style={styles.pinText}>Pin an item</Text>
             </Pressable>
           </ScrollView>
-        </View>
+        </TourAnchor>
 
         {/* ── FEATURED LEGACY MOMENT ── */}
         {data.featuredMoment ? (
-          <View style={styles.sectionPad}>
+          <TourAnchor id="legacy-featured" style={styles.sectionPad}>
             <Text style={styles.overline}>Featured Legacy Moment</Text>
             <FeaturedMomentCard
               moment={data.featuredMoment}
               onPress={data.featuredMoment.chapterId ? () => openChapter(data.featuredMoment!.chapterId!) : undefined}
             />
-          </View>
+          </TourAnchor>
         ) : null}
 
         {/* ── MY STORY · sealed chapters ── */}
         {recentSeal ? (
-          <View style={[styles.sectionPad, styles.storyStack]}>
+          <TourAnchor id="legacy-story" style={[styles.sectionPad, styles.storyStack]}>
             <SealedChapterCard chapter={recentSeal} onPress={() => openChapter(recentSeal.id)} />
             {olderSeals.map((c) => (
               <CompactChapterRow key={c.id} chapter={c} onPress={() => openChapter(c.id)} />
             ))}
-          </View>
+          </TourAnchor>
         ) : null}
 
         {/* ── TIMELINE ── its own section, not nested under sealed chapters.
@@ -299,17 +317,19 @@ export default function LegacyScreen() {
             <View style={styles.sectionHeaderPad}>
               <SectionHeader label="What Endures" />
             </View>
-            <LegacyArchiveBand
-              archive={archive}
-              onTransformation={() => router.push('/transformation')}
-              onPhotos={() => router.push('/photos')}
-              onTrophies={() => router.push('/trophy-case')}
-            />
+            <TourAnchor id="legacy-endures">
+              <LegacyArchiveBand
+                archive={archive}
+                onTransformation={() => router.push('/transformation')}
+                onPhotos={() => router.push('/photos')}
+                onTrophies={() => router.push('/trophy-case')}
+              />
+            </TourAnchor>
           </View>
 
           {/* Accomplishments — live (0023). Section hides entirely when the athlete has none. */}
           {liveAccomplishments.length > 0 ? (
-            <View>
+            <TourAnchor id={collectionsAnchor === 'accomplishments' ? 'legacy-collections' : undefined}>
               <View style={styles.sectionHeaderPad}>
                 <SectionHeader label="Accomplishments" action="View all" onAction={() => router.push('/accomplishments')} />
               </View>
@@ -318,12 +338,12 @@ export default function LegacyScreen() {
                   <AccomplishmentCard key={a.id} item={a} onPress={() => router.push('/accomplishments')} />
                 ))}
               </ScrollView>
-            </View>
+            </TourAnchor>
           ) : null}
 
           {/* Honors — reserved from the workout card, legitimate here; art is pending-asset */}
           {data.honors.length > 0 ? (
-            <View>
+            <TourAnchor id={collectionsAnchor === 'honors' ? 'legacy-collections' : undefined}>
               <View style={styles.sectionHeaderPad}>
                 <SectionHeader label="Honors" action="View all" onAction={() => router.push('/honors')} />
               </View>
@@ -335,7 +355,7 @@ export default function LegacyScreen() {
                   <HonorInsignia key={h.id} honor={h} onPress={() => router.push('/honors')} />
                 ))}
               </ScrollView>
-            </View>
+            </TourAnchor>
           ) : null}
         </View>
 
@@ -350,7 +370,7 @@ export default function LegacyScreen() {
         </View>
       </Animated.ScrollView>
 
-      <ScreenTour screenKey="legacy" />
+      <ScreenTour screenKey="legacy" restingBottom={108} />
 
       <PinManagerSheet
         open={pinManager}

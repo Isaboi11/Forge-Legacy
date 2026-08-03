@@ -7,6 +7,9 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
+import { ScreenTour } from '@/components/tour/ScreenTour';
+import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
@@ -58,6 +61,8 @@ const PRIVACY_HINT: Record<SquadPrivacy, string> = {
 export default function SquadSettingsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
   const squadId = String(id ?? '');
   const { data, loading, refetch } = useQuery(() => fetchSquad(squadId), [squadId]);
   const squad = data?.squad;
@@ -245,7 +250,13 @@ export default function SquadSettingsScreen() {
       <ScreenBackground image={SCREEN_BG.slate2} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
       <AppBar title="Settings" serif onBack={backToSquad} />
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={tourScroller}
+        onScroll={onTourScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
         {/* header */}
         <View style={styles.header}>
           <View style={styles.headerCrest}>
@@ -260,7 +271,9 @@ export default function SquadSettingsScreen() {
         <View style={styles.divider} />
 
         {/* Identity */}
-        <Text style={styles.sectionLabel}>Identity</Text>
+        <TourAnchor id="settings-identity">
+          <Text style={styles.sectionLabel}>Identity</Text>
+        </TourAnchor>
         <Pressable onPress={openEdit} accessibilityRole="button" accessibilityLabel="Edit identity" style={styles.identityCard}>
           <View style={styles.idField}>
             <Text style={styles.idLabel}>Squad Name</Text>
@@ -300,7 +313,9 @@ export default function SquadSettingsScreen() {
         </Pressable>
 
         {/* Privacy */}
-        <Text style={styles.sectionLabel}>Privacy</Text>
+        <TourAnchor id="settings-privacy">
+          <Text style={styles.sectionLabel}>Privacy</Text>
+        </TourAnchor>
         <View style={styles.card}>
           <Text style={styles.privacyLabel}>Squad Visibility</Text>
           <Text style={styles.privacyHint}>{PRIVACY_HINT[displayedPrivacy]}</Text>
@@ -389,7 +404,9 @@ export default function SquadSettingsScreen() {
         ) : null}
 
         {/* Membership — the owner's join-request queue */}
-        <Text style={styles.sectionLabel}>Membership</Text>
+        <TourAnchor id="settings-roster">
+          <Text style={styles.sectionLabel}>Membership</Text>
+        </TourAnchor>
         <Pressable onPress={() => router.push({ pathname: '/squad-requests', params: { id: squad.id } })} accessibilityRole="button" accessibilityLabel="Review join requests" style={styles.ownershipRow}>
           <View style={styles.ownershipIcon}>
             <InviteGlyph />
@@ -435,6 +452,8 @@ export default function SquadSettingsScreen() {
 
         <Text style={styles.footer}>Forge Legacy</Text>
       </ScrollView>
+
+      <ScreenTour screenKey="squad-settings" />
 
       {/* Edit Identity sheet */}
       <BottomSheet

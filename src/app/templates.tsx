@@ -6,6 +6,9 @@ import Svg, { Path } from 'react-native-svg';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { ScreenBackground } from '@/components/screen-background';
+import { ScreenTour } from '@/components/tour/ScreenTour';
+import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { deleteTemplate, fetchTemplates, templateSummary, type WorkoutTemplate } from '@/data/templates-live';
@@ -47,6 +50,8 @@ export default function TemplatesScreen() {
   const { showToast } = useToast();
   const { data, loading, error, refetch } = useQuery(fetchTemplates, []);
   const [confirmDelete, setConfirmDelete] = useState<WorkoutTemplate | null>(null);
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
 
   // Coming back from a session that was saved as a template must show it.
   useFocusEffect(
@@ -122,10 +127,16 @@ export default function TemplatesScreen() {
           </Pressable>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          ref={tourScroller}
+          onScroll={onTourScroll}
+          scrollEventThrottle={16}
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+        >
           <Text style={styles.lede}>Reusable workouts, ready whenever you are. Recently used appear first.</Text>
 
-          <View style={styles.stack}>
+          <TourAnchor id="templates-list" style={styles.stack}>
             {list.map((t) => (
               <View key={t.id} style={[styles.card, t.lastUsedAt ? styles.cardUsed : null]}>
                 {/* The card body opens W-27. Only the body — the footer's Start and Remove are their own
@@ -191,14 +202,20 @@ export default function TemplatesScreen() {
                 </View>
               </View>
             ))}
-          </View>
+          </TourAnchor>
 
-          <Pressable onPress={newTemplate} accessibilityRole="button" accessibilityLabel="Start a workout to make another" style={({ pressed }) => [styles.newRow, pressed ? styles.pressed : null]}>
-            <PlusGlyph size={16} />
-            <Text style={styles.newRowText}>Train one and keep it</Text>
-          </Pressable>
+          <TourAnchor id="templates-new">
+            <Pressable onPress={newTemplate} accessibilityRole="button" accessibilityLabel="Start a workout to make another" style={({ pressed }) => [styles.newRow, pressed ? styles.pressed : null]}>
+              <PlusGlyph size={16} />
+              <Text style={styles.newRowText}>Train one and keep it</Text>
+            </Pressable>
+          </TourAnchor>
         </ScrollView>
       )}
+
+      {/* The empty state already says, in full sentences, the one thing this tour teaches — so it only
+          fires once there are templates to point at. */}
+      <ScreenTour screenKey="templates" ready={list.length > 0} />
 
       <ConfirmSheet
         open={!!confirmDelete}

@@ -8,6 +8,9 @@ import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { ScreenBackground } from '@/components/screen-background';
+import { ScreenTour } from '@/components/tour/ScreenTour';
+import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { fetchSquad } from '@/data/squad-live';
 import { RECORD_META, fetchSquadRecords, formatRecordValue, isNewRecord, type SquadRecord, type SquadRecordKind } from '@/data/squad-records-live';
@@ -52,6 +55,8 @@ export default function SquadRecordsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const squadId = String(id ?? '');
   const router = useRouter();
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
 
   const { data: squadData } = useQuery(() => fetchSquad(squadId), [squadId]);
   const { data, loading, error, refetch } = useQuery(() => fetchSquadRecords(squadId), [squadId]);
@@ -83,8 +88,16 @@ export default function SquadRecordsScreen() {
           </Pressable>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-          <Text style={styles.intro}>Every mark this squad has set. These marks only ever rise.</Text>
+        <ScrollView
+          ref={tourScroller}
+          onScroll={onTourScroll}
+          scrollEventThrottle={16}
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+        >
+          <TourAnchor id="records-scope">
+            <Text style={styles.intro}>Every mark this squad has set. These marks only ever rise.</Text>
+          </TourAnchor>
           <View style={styles.countRow}>
             <View style={styles.countDot} />
             <Text style={styles.countText}>
@@ -101,11 +114,11 @@ export default function SquadRecordsScreen() {
               <Text style={styles.emptyText}>Nothing has been set yet. The first heavy lift, longest run or biggest session logged by anyone in this squad becomes its first record.</Text>
             </View>
           ) : (
-            <View style={styles.stack}>
+            <TourAnchor id="records-board" style={styles.stack}>
               {records.map((r) => (
                 <RecordRow key={r.kind} record={r} onOpen={() => setOpenKind(r.kind)} />
               ))}
-            </View>
+            </TourAnchor>
           )}
 
           {squad ? (
@@ -116,6 +129,8 @@ export default function SquadRecordsScreen() {
           ) : null}
         </ScrollView>
       )}
+
+      <ScreenTour screenKey="squad-records" ready={records.length > 0} />
 
       {/* ── History ── */}
       <BottomSheet open={open != null} onClose={() => setOpenKind(null)} title={open ? RECORD_META[open.kind].label : ''}>

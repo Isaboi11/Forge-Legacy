@@ -2,7 +2,7 @@ import { getProgramDefinitions } from '@/domain/training/programs';
 import type { ProgramDefinition } from '@/domain/training/schema';
 import { PICKER_DB } from '@/domain/exercise-picker/data';
 import { programCoverage, type GymCoverage } from '@/domain/home-gym/equipment';
-import { FALLBACK_ID, resolveRecommendationId, type RecommendInput } from './recommend-core';
+import { canRecommend, FALLBACK_ID, resolveRecommendationId, type RecommendInput } from './recommend-core';
 
 /**
  * Program recommendation for the Home starting-point on-ramp. The goal × experience × equipment mechanism
@@ -34,6 +34,14 @@ function toView(d: ProgramDefinition): ProgramView {
     workouts: weeks * perWeek,
     description: d.description ?? '',
   };
+}
+
+/**
+ * Whether the real catalog can answer the intake's questions, and so whether Home offers the guided
+ * on-ramp at all. Mechanism in `canRecommend`; this resolves it against what is actually authored.
+ */
+export function catalogCanRecommend(): boolean {
+  return canRecommend(getProgramDefinitions().map((d) => d.id));
 }
 
 /** Recommend a real catalog program from the athlete's intake (experience + primary goal + equipment). */

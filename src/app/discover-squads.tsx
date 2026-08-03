@@ -7,6 +7,9 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
+import { ScreenTour } from '@/components/tour/ScreenTour';
+import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { SquadCrest } from '@/components/forge/SquadCrest';
 import {
@@ -48,6 +51,8 @@ type Cat = (typeof CATS)[number];
 
 export default function DiscoverSquadsScreen() {
   const router = useRouter();
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
   const { showToast } = useToast();
   const { data, loading, error, refetch } = useQuery(fetchDiscoverSquads, []);
 
@@ -135,7 +140,14 @@ export default function DiscoverSquadsScreen() {
       <ScreenBackground image={SCREEN_BG.slate} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
       <AppBar title="Discover Squads" serif onBack={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)/squads'))} />
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        ref={tourScroller}
+        onScroll={onTourScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* ── Search ── */}
         <Rise duration={360}>
           <View style={styles.searchWrap}>
@@ -187,10 +199,10 @@ export default function DiscoverSquadsScreen() {
         </ScrollView>
 
         {/* ── Results header ── */}
-        <View style={styles.resultsHeader}>
+        <TourAnchor id="discover-list" style={styles.resultsHeader}>
           <Text style={styles.resultsLabel}>{category === 'All' ? 'Public Squads' : category}</Text>
           <Text style={styles.resultsCount}>{showSkeleton ? '' : `${n} ${n === 1 ? 'squad' : 'squads'}`}</Text>
-        </View>
+        </TourAnchor>
 
         {showSkeleton ? (
           <View style={styles.stack}>
@@ -239,13 +251,17 @@ export default function DiscoverSquadsScreen() {
             </View>
             <Text style={styles.emptyTitle}>{searching ? 'No squads found' : 'No squads in this category'}</Text>
             <Text style={styles.emptyText}>{searching ? 'Try another search or category.' : 'Check back later, or forge one yourself.'}</Text>
-            <Pressable onPress={() => router.push('/create-squad')} accessibilityRole="button" accessibilityLabel="Create a squad" style={styles.outlineBtn}>
-              <PlusGlyph size={15} color={flColor.bronze300} />
-              <Text style={styles.outlineBtnLabel}>Create a Squad</Text>
-            </Pressable>
+            <TourAnchor id="discover-create">
+              <Pressable onPress={() => router.push('/create-squad')} accessibilityRole="button" accessibilityLabel="Create a squad" style={styles.outlineBtn}>
+                <PlusGlyph size={15} color={flColor.bronze300} />
+                <Text style={styles.outlineBtnLabel}>Create a Squad</Text>
+              </Pressable>
+            </TourAnchor>
           </View>
         ) : null}
       </ScrollView>
+
+      <ScreenTour screenKey="discover-squads" ready={!showSkeleton} />
     </View>
   );
 }
@@ -320,10 +336,10 @@ function SquadResultCard({
               </Text>
             ) : null}
             {mostActive ? (
-              <View style={styles.activeRow}>
+              <TourAnchor id="discover-active" style={styles.activeRow}>
                 <FlameGlyph size={12} color={flColor.bronze400} />
                 <Text style={styles.activeText}>Most active this week</Text>
-              </View>
+              </TourAnchor>
             ) : null}
           </View>
 

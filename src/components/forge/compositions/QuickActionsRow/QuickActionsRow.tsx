@@ -22,10 +22,15 @@ import React from 'react'
 import Svg, { Path } from 'react-native-svg'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { flColor, flRadius } from '@/constants/foundation'
+import { useTourAnchor } from '@/hooks/useTourAnchors'
+import type { TourAnchorId } from '@/domain/onboarding/tour-plan'
 
 export interface QuickActionsRowProps {
   onTrainTogether: () => void
   onCompetitions: () => void
+  /** Guided-tour spotlight targets — one per action, since the two share a row but nothing else. */
+  trainAnchor?: TourAnchorId
+  competitionsAnchor?: TourAnchorId
   competitionsCount?: number
   /** How many of the athlete's circle are mid-workout. 0 draws no badge. */
   trainingCount?: number
@@ -51,14 +56,20 @@ function TrophyIcon() {
 export function QuickActionsRow({
   onTrainTogether,
   onCompetitions,
+  trainAnchor,
+  competitionsAnchor,
   competitionsCount = 0,
   trainingCount = 0,
   trainingSummary = null,
 }: QuickActionsRowProps) {
+  const trainRef = useTourAnchor(trainAnchor)
+  const competitionsRef = useTourAnchor(competitionsAnchor)
+
   return (
     <View>
       <View style={styles.row}>
         <Pressable
+          ref={trainRef}
           onPress={onTrainTogether}
           accessibilityRole="button"
           accessibilityLabel={trainingSummary ?? 'See who is training now'}
@@ -70,7 +81,7 @@ export function QuickActionsRow({
             <View style={styles.liveDot} />
           ) : null}
         </Pressable>
-        <Pressable onPress={onCompetitions} accessibilityRole="button" accessibilityLabel="View competitions" style={styles.competitions}>
+        <Pressable ref={competitionsRef} onPress={onCompetitions} accessibilityRole="button" accessibilityLabel="View competitions" style={styles.competitions}>
           <TrophyIcon />
           <Text style={styles.competitionsText}>Competitions</Text>
           {competitionsCount > 0 ? (

@@ -6,6 +6,9 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
+import { ScreenTour } from '@/components/tour/ScreenTour';
+import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import {
   addSquadPost,
@@ -70,6 +73,9 @@ export default function SquadComposerRoute() {
 
   const [type, setType] = useState<SquadPostType | null>(null);
   const [form, setForm] = useState<Form>(EMPTY);
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
+  const postRef = useTourAnchor('composer-post');
   const [media, setMedia] = useState<SquadMedia | null>(null);
   const [uploading, setUploading] = useState(false);
   const [posting, setPosting] = useState(false);
@@ -255,19 +261,26 @@ export default function SquadComposerRoute() {
         title={<BarTitle title={def.label} sub="Your squad" />}
         onBack={backToPick}
         actions={
-          <Pressable onPress={submit} disabled={!valid || posting} accessibilityRole="button" accessibilityLabel="Post" style={[styles.postBtn, valid ? styles.postBtnOn : styles.postBtnOff]}>
+          <Pressable ref={postRef} onPress={submit} disabled={!valid || posting} accessibilityRole="button" accessibilityLabel="Post" style={[styles.postBtn, valid ? styles.postBtnOn : styles.postBtnOff]}>
             <Text style={[styles.postBtnText, valid ? styles.postBtnTextOn : styles.postBtnTextOff]}>{posting ? 'Posting…' : 'Post'}</Text>
           </Pressable>
         }
       />
-      <ScrollView contentContainerStyle={styles.composeScroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        <View style={styles.authorRow}>
+      <ScrollView
+        ref={tourScroller}
+        onScroll={onTourScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={styles.composeScroll}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <TourAnchor id="composer-body" style={styles.authorRow}>
           <View style={styles.authorDisc} />
           <View style={styles.authorText}>
             <Text style={styles.authorName}>You</Text>
             <Text style={styles.authorMeta}>{def.label}</Text>
           </View>
-        </View>
+        </TourAnchor>
 
         {type === 'transformation' ? (
           loadingList ? (
@@ -405,6 +418,8 @@ export default function SquadComposerRoute() {
           </>
         )}
       </ScrollView>
+
+      <ScreenTour screenKey="squad-composer" ready={!!type} />
 
       {mediaPickerSheet}
     </View>

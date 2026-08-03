@@ -48,6 +48,21 @@ export interface SquadDetail {
   goal: string | null; // the goal TITLE
   goalTarget: number | null; // e.g. 500 workouts / 200 miles
   goalStartedAt: string | null;
+  /** Optional deadline (0103). Past it, `squad_metric_sum` freezes the figure. */
+  goalEndsAt: string | null;
+  /**
+   * The window, resolved HERE rather than at render.
+   *
+   * Both need the current time, and the strict react-compiler rules forbid calling `Date.now()` during
+   * render — an impure read that can change between two renders of the same state. A fetch callback is the
+   * honest place for it, and since every screen refetches on focus the countdown is as fresh as the screen.
+   *
+   * `goalEnded` deliberately requires the target NOT to have been met: a goal that was reached is a
+   * COMPLETION (SQ-D3.5, announced via `archive_squad_goal`), and calling that "ended" would rob it.
+   */
+  goalEnded: boolean;
+  /** Days remaining, or null when there is no deadline or it has already passed. */
+  goalDaysLeft: number | null;
   goalMetricKind: SquadGoalMetric;
   goalMetricKey: string | null; // activity modality for distance_total
   goalProgress: number; // computed from the metric since goalStartedAt (your own for now)
@@ -76,6 +91,7 @@ interface SquadRow {
   goal: string | null;
   goal_target: number | null;
   goal_started_at: string | null;
+  goal_ends_at: string | null;
   goal_metric_kind: SquadGoalMetric | null;
   goal_metric_key: string | null;
   description: string | null;
@@ -86,7 +102,7 @@ interface SquadRow {
   created_at: string;
 }
 
-const SQUAD_COLS = 'id, name, motto, goal, goal_target, goal_started_at, goal_metric_kind, goal_metric_key, description, privacy, crest, photo_url, owner_id, created_at';
+const SQUAD_COLS = 'id, name, motto, goal, goal_target, goal_started_at, goal_ends_at, goal_metric_kind, goal_metric_key, description, privacy, crest, photo_url, owner_id, created_at';
 
 /** The athlete's squads (newest first) with live member counts. */
 export async function fetchMySquads(): Promise<SquadSummary[]> {
@@ -167,6 +183,27 @@ export async function fetchMySquads(): Promise<SquadSummary[]> {
 }
 
 /** One squad's identity + roster (owner first, then you, then name). Null if it doesn't exist / isn't visible. */
+/**
+ * Resolve a goal's window against the clock. Lives here, not in a component, because the strict
+ * react-compiler rules forbid an impure `Date.now()` during render — and because every screen refetches on
+ * focus, so this is as fresh as the screen is.
+ */
+function goalWindow(
+  endsAt: string | null,
+  progress: number,
+  target: number | null,
+): { goalEnded: boolean; goalDaysLeft: number | null } {
+  if (!endsAt) return { goalEnded: false, goalDaysLeft: null };
+  const ends = new Date(endsAt).getTime();
+  const now = Date.now();
+  if (now >= ends) {
+    // Met, then expired, is a COMPLETION — never "ended". SQ-D3.5.
+    const met = target != null && progress >= target;
+    return { goalEnded: !met, goalDaysLeft: null };
+  }
+  return { goalEnded: false, goalDaysLeft: Math.max(1, Math.ceil((ends - now) / 86400000)) };
+}
+
 export async function fetchSquad(id: string): Promise<{ squad: SquadDetail; members: SquadMemberView[] } | null> {
   const {
     data: { user },
@@ -221,6 +258,8 @@ export async function fetchSquad(id: string): Promise<{ squad: SquadDetail; memb
       goal: s.goal ?? null,
       goalTarget: s.goal_target ?? null,
       goalStartedAt: s.goal_started_at ?? null,
+      goalEndsAt: s.goal_ends_at ?? null,
+      ...goalWindow(s.goal_ends_at, goalProgress, s.goal_target),
       goalMetricKind,
       goalMetricKey: s.goal_metric_key ?? null,
       goalProgress,
@@ -418,7 +457,23 @@ export async function markCheckinViewed(checkinId: string): Promise<void> {
  * archive is what the Squad Goal honors count. Best-effort, because failing to record history must never
  * stop someone setting their next goal.
  */
-export async function setSquadGoal(id: string, input: { title: string; target: number; metricKind: SquadGoalMetric; metricKey: string | null }): Promise<void> {
+export async function setSquadGoal(
+  id: string,
+  input: {
+    title: string;
+    target: number;
+    metricKind: SquadGoalMetric;
+    metricKey: string | null;
+    /**
+     * When the window opens. BACKDATING IS ALLOWED and is the common case — "500 workouts this month" set
+     * on the 10th should count the first nine days, which is what the athlete means. `squad_metric_sum`
+     * has always windowed on this column (0031); it was just never chooseable.
+     */
+    startsAt: string;
+    /** Optional deadline (0103). Null = runs until met or cancelled, the pre-0103 behaviour. */
+    endsAt: string | null;
+  },
+): Promise<void> {
   try {
     await supabase.rpc('archive_squad_goal', { p_squad: id });
   } catch {
@@ -431,7 +486,8 @@ export async function setSquadGoal(id: string, input: { title: string; target: n
       goal_target: input.target,
       goal_metric_kind: input.metricKind,
       goal_metric_key: input.metricKind === 'distance_total' ? input.metricKey : null,
-      goal_started_at: new Date().toISOString(),
+      goal_started_at: input.startsAt,
+      goal_ends_at: input.endsAt,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id);

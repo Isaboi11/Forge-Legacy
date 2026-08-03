@@ -8,6 +8,9 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { EquipIcon } from '@/components/forge/EquipIcon';
 import { ScreenBackground } from '@/components/screen-background';
+import { ScreenTour } from '@/components/tour/ScreenTour';
+import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { addFavorite, fetchFavoriteKeys, fetchRecentExerciseKeys, removeFavorite } from '@/data/exercise-prefs-live';
@@ -73,6 +76,9 @@ export default function ExerciseLibraryScreen() {
   const [filters, setFilters] = useState<LibraryFilters>(seeded);
   const [draft, setDraft] = useState<LibraryFilters>(seeded);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const filterRef = useTourAnchor('library-filters');
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
 
   const { data: homeGym } = useQuery(fetchHomeGym, []);
   const { data: favData, refetch: refetchFavorites } = useQuery(fetchFavoriteKeys, []);
@@ -171,7 +177,7 @@ export default function ExerciseLibraryScreen() {
 
       {/* search + filter */}
       <View style={styles.searchRow}>
-        <View style={styles.searchWrap}>
+        <TourAnchor id="library-search" style={styles.searchWrap}>
           <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.9} strokeLinecap="round" style={styles.searchIcon}>
             <Circle cx={11} cy={11} r={7} />
             <Path d="M20 20l-3.2-3.2" />
@@ -187,8 +193,9 @@ export default function ExerciseLibraryScreen() {
             placeholderTextColor={flColor.gray600}
             accessibilityLabel="Search exercises"
           />
-        </View>
+        </TourAnchor>
         <Pressable
+          ref={filterRef}
           onPress={() => {
             setDraft(filters);
             setSheetOpen(true);
@@ -226,7 +233,14 @@ export default function ExerciseLibraryScreen() {
         </View>
       ) : null}
 
-      <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={tourScroller}
+        onScroll={onTourScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={styles.body}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         {flat ? (
           result.rows.length ? (
             <>
@@ -249,7 +263,7 @@ export default function ExerciseLibraryScreen() {
             </View>
           )
         ) : (
-          <>
+          <TourAnchor id="library-hub">
             {favorites.length ? (
               <HubSection
                 title="Favorites"
@@ -284,9 +298,12 @@ export default function ExerciseLibraryScreen() {
                 </Pressable>
               ))}
             </View>
-          </>
+          </TourAnchor>
         )}
       </ScrollView>
+
+      {/* Held to the hub face: two of the three steps ring things a flat search result doesn't show. */}
+      <ScreenTour screenKey="exercise-library" ready={!flat} />
 
       {/* filter sheet */}
       <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title="Filter">

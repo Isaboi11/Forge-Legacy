@@ -10,6 +10,9 @@ import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { HonorInsignia } from '@/components/forge/profile-sections';
 import { ForgeSymbol } from '@/components/forge/ForgeSymbol';
 import { ScreenBackground } from '@/components/screen-background';
+import { ScreenTour } from '@/components/tour/ScreenTour';
+import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { fetchChapterDetail } from '@/data/chapter-detail-live';
@@ -48,6 +51,8 @@ function monthYear(iso: string): string {
 
 export default function ChapterDetailScreen() {
   const router = useRouter();
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data, loading } = useQuery(() => fetchChapterDetail(String(id)), [id]);
@@ -83,7 +88,13 @@ export default function ChapterDetailScreen() {
       <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
       <AppBar title={data.number} serif onBack={() => router.back()} />
 
-      <ScrollView contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={tourScroller}
+        onScroll={onTourScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* hero */}
         <Text style={styles.eyebrow}>{data.number}</Text>
         <Text style={styles.title}>{data.title}</Text>
@@ -100,7 +111,9 @@ export default function ChapterDetailScreen() {
             {/* primary goal */}
             {primary ? (
               <View style={styles.section}>
-                <Text style={styles.sectionEyebrow}>Primary Goal</Text>
+                <TourAnchor id="chapter-goals">
+                  <Text style={styles.sectionEyebrow}>Primary Goal</Text>
+                </TourAnchor>
                 <Pressable onPress={() => router.push('/goals')} accessibilityRole="button" accessibilityLabel={primary.name} style={styles.primaryCard}>
                   <Text style={styles.primaryName}>{primary.name}</Text>
                   {isQuantifiable(primary) ? (
@@ -147,7 +160,9 @@ export default function ChapterDetailScreen() {
             {/* current programs */}
             {data.programs.length ? (
               <View style={styles.section}>
-                <Text style={styles.sectionEyebrow}>Current Programs</Text>
+                <TourAnchor id="chapter-programs">
+                  <Text style={styles.sectionEyebrow}>Current Programs</Text>
+                </TourAnchor>
                 {data.programs.map((p) => (
                   <Pressable key={p.id} onPress={() => router.push({ pathname: '/program/[id]', params: { id: p.id } })} accessibilityRole="button" accessibilityLabel={p.name} style={styles.programRow}>
                     <View style={styles.programHead}>
@@ -180,7 +195,9 @@ export default function ChapterDetailScreen() {
             {/* ── SEALED RECORD (L-4) ── */}
             {/* This Chapter · outcome summary */}
             <View style={styles.section}>
-              <Text style={styles.sectionEyebrow}>This Chapter</Text>
+              <TourAnchor id="chapter-summary">
+                <Text style={styles.sectionEyebrow}>This Chapter</Text>
+              </TourAnchor>
               <View style={styles.outcomeCard}>
                 <View style={styles.outcomeHead}>
                   <Glyph d={CHECK} size={18} color={flColor.bronze300} width={2.4} />
@@ -238,7 +255,7 @@ export default function ChapterDetailScreen() {
         )}
 
         {/* media — the only photo creation path in the app (L-15 arch §2) */}
-        <View style={styles.section}>
+        <TourAnchor id="chapter-archive" style={styles.section}>
           <SectionHeader label="Photos" action="View album" onAction={() => router.push('/photos')} />
           <Pressable
             onPress={addPhoto}
@@ -249,7 +266,7 @@ export default function ChapterDetailScreen() {
             <CameraGlyph />
             <Text style={styles.addPhotoLabel}>Add a Photo</Text>
           </Pressable>
-        </View>
+        </TourAnchor>
 
         {/* honors */}
         {data.honors.length ? (
@@ -292,7 +309,7 @@ export default function ChapterDetailScreen() {
 
         {/* seal */}
         {data.isActive ? (
-          <View style={styles.sealBlock}>
+          <TourAnchor id="chapter-seal" style={styles.sealBlock}>
             <Text style={styles.sealCopy}>You&rsquo;ve built everything this chapter contains. When you&rsquo;re ready, seal it permanently.</Text>
             <Button variant="primary" fullWidth onPress={goSeal} accessibilityLabel="Seal chapter">
               <View style={styles.sealInner}>
@@ -301,9 +318,11 @@ export default function ChapterDetailScreen() {
               </View>
             </Button>
             <Text style={styles.sealNote}>Outcomes become permanent. Memories can still be added later.</Text>
-          </View>
+          </TourAnchor>
         ) : null}
       </ScrollView>
+
+      <ScreenTour screenKey="chapter-detail" ready={!!data} />
     </View>
   );
 }

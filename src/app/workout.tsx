@@ -15,6 +15,9 @@ import { Card } from '@/components/forge/composites/Surface';
 import { Pill } from '@/components/forge/composites/Pill';
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { ScreenBackground } from '@/components/screen-background';
+import { ScreenTour } from '@/components/tour/ScreenTour';
+import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
@@ -117,7 +120,7 @@ export default function WorkoutScreen() {
       refetchMemories();
     }, [refetchMemories]),
   );
-  const { finishWorkout } = useWorkoutSession();
+  const { finishWorkout, abandonWorkout } = useWorkoutSession();
   const [session, setSession] = useState<ActiveSession | null>(null);
   const [resumable, setResumable] = useState<ActiveSession | null>(null);
   /** A launch intent parked because work was already in progress. Null = they just opened the logger. */
@@ -161,6 +164,12 @@ export default function WorkoutScreen() {
   const [durSec, setDurSec] = useState(30);
   const [overviewOpen, setOverviewOpen] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
+  // Walkthrough plumbing. Fires on the FIRST session and nothing after — a PO call: the six things this
+  // screen doesn't explain about itself are worth one overlay, and "Skip" is one tap for anyone who is
+  // genuinely under a bar.
+  const optionsRef = useTourAnchor('workout-options');
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
   const sessionRef = useRef(session);
   // partner tagging — persists onto the saved workout; Finish opens the 4-stage seal (W-17) on real data
   const [taggedPartners, setTaggedPartners] = useState<string[]>([]);
@@ -585,7 +594,23 @@ export default function WorkoutScreen() {
       setPhase('active');
     }
   };
-  const onLeave = () => router.replace('/(tabs)'); // header back — session persists (resume later)
+  /**
+   * Header back — leave WITHOUT finishing.
+   *
+   * TWO DIFFERENT FACTS, and this used to end neither. "I have unfinished work saved" is the local
+   * autosave, and it SHOULD survive — that is what puts "Continue Workout" on Home. "I am training right
+   * now" is `profiles.training_since`, broadcast to squad-mates and friends, and it should stop the moment
+   * you walk away from the session. Only the successful-save path called `finishWorkout()`, so anyone who
+   * started a workout and backed out stayed lit as training to everyone who could see them — until the
+   * four-hour staleness window expired them.
+   *
+   * `abandonWorkout` ends the presence broadcast and the in-memory session. It does NOT clear the autosave,
+   * so the work is still there to resume, which is the whole point of leaving this way.
+   */
+  const onLeave = () => {
+    abandonWorkout();
+    router.replace('/(tabs)');
+  };
   const togglePartner = (id: string) => {
     if (taggedPartners.includes(id)) setTaggedPartners((cur) => cur.filter((x) => x !== id));
     else if (taggedPartners.length >= 3) showToast('Up to 3 partners'); // hard cap of 3
@@ -676,7 +701,9 @@ export default function WorkoutScreen() {
                 variant="text"
                 fullWidth
                 onPress={async () => {
+                  // "Not today" discards outright — so BOTH facts end: the autosave and the presence.
                   await clearSession();
+                  abandonWorkout();
                   router.replace('/(tabs)');
                 }}
                 accessibilityLabel="Leave without logging"
@@ -822,7 +849,7 @@ export default function WorkoutScreen() {
               </Svg>
               {(memories ?? []).length > 0 ? <View style={styles.memoryBadge} /> : null}
             </Pressable>
-          <Pressable onPress={() => setOptionsOpen(true)} accessibilityRole="button" accessibilityLabel="Workout options" hitSlop={8} style={styles.overflowBtn}>
+          <Pressable ref={optionsRef} onPress={() => setOptionsOpen(true)} accessibilityRole="button" accessibilityLabel="Workout options" hitSlop={8} style={styles.overflowBtn}>
             <Svg width={20} height={20} viewBox="0 0 24 24" fill={flColor.gray400}>
               <Path d="M12 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 22a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />
             </Svg>
@@ -832,7 +859,7 @@ export default function WorkoutScreen() {
       />
 
       {/* progress band — rest chip flips to a live countdown while resting */}
-      <View style={styles.band}>
+      <TourAnchor id="workout-rest" style={styles.band}>
         <View style={styles.bandTop}>
           <Text style={styles.doneLabel}>
             <Text style={styles.doneAccent}>{setsDone}</Text> / {totalSets} Done
@@ -879,14 +906,21 @@ export default function WorkoutScreen() {
           )}
         </View>
         <ProgressBar value={setsDone} max={totalSets || 1} height={6} />
-      </View>
+      </TourAnchor>
 
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={tourScroller}
+        onScroll={onTourScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         {/* A cardio block replaces the hero as well as the set table. There is no demonstration to play,
             no How To to read and no per-lift Memories strip for a run — and leaving the lifting hero above
             it left two headers stacked on one exercise. The block's own card is the whole surface. */}
         {isCardio ? null : heroExpanded ? (
-          <View style={styles.hero}>
+          <TourAnchor id="workout-hero" style={styles.hero}>
             <View style={styles.heroRow}>
               {/* media slot — engraved dumbbell placeholder (animation art is Phase-4) */}
               <View style={styles.mediaSlot}>
@@ -950,7 +984,7 @@ export default function WorkoutScreen() {
                 <Text style={styles.insightVal}>—</Text>
               </View>
             </View>
-          </View>
+          </TourAnchor>
         ) : (
           <Pressable onPress={() => setHero(false)} accessibilityRole="button" accessibilityLabel="Expand exercise details" style={styles.heroStrip}>
             <View style={styles.heroStripThumb}>
@@ -979,7 +1013,7 @@ export default function WorkoutScreen() {
             onSave={saveCardioLog}
           />
         ) : (
-        <View style={styles.table}>
+        <TourAnchor id="workout-sets" style={styles.table}>
           <View style={styles.headRow}>
             <Text style={[styles.h, styles.cSet]}>Set</Text>
             <Text style={[styles.h, styles.cTarget]}>Target</Text>
@@ -1048,7 +1082,7 @@ export default function WorkoutScreen() {
                 </View>
               );
             })}
-            <View style={styles.setBtns}>
+            <TourAnchor id="workout-addset" style={styles.setBtns}>
               <Pressable onPress={() => addSet(exIdx)} accessibilityRole="button" accessibilityLabel="Add set" style={styles.addSet}>
                 <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round">
                   <Path d="M12 5v14M5 12h14" />
@@ -1063,9 +1097,9 @@ export default function WorkoutScreen() {
                   <Text style={styles.removeSetText}>Remove</Text>
                 </Pressable>
               ) : null}
-            </View>
+            </TourAnchor>
           </View>
-        </View>
+        </TourAnchor>
         )}
 
         {/* exercise nav dots */}
@@ -1414,6 +1448,8 @@ export default function WorkoutScreen() {
           <Toast key={toast.token} msg={toast.msg} />
         </View>
       ) : null}
+
+      <ScreenTour screenKey="workout" />
     </Shell>
   );
 }

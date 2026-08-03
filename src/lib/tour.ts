@@ -1,30 +1,65 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
- * The first-time guided-tour flag — a device-local record of whether the athlete has answered the
- * "Take the tour?" prompt that appears the moment Home un-gates (Onboarding-Amendment-003). Mirrors
- * `home-level.ts`: local only, no Supabase write, cleared on account switch by `first-run.ts`.
+ * The first-time guided-tour flags — device-local records of the two legs the tour is made of
+ * (Onboarding-Amendment-003). Mirrors `home-level.ts`: local only, no Supabase write, cleared on account
+ * switch by `first-run.ts`.
  *
- * Persisted values are terminal decisions: `completed` (walked the tour) or `skipped` (chose to explore).
- * `pending` = not yet answered (the default when unset) — the prompt is still owed. The in-memory
- * provider (`useTour`) adds a transient `running` while the tour is mid-flight; that is deliberately NOT
- * persisted, so quitting mid-tour re-prompts on the next launch.
+ * TWO KEYS, BECAUSE THE TOUR RUNS AT TWO MOMENTS. `forge_tour_v1` is the TABS leg — the four-pillar map,
+ * shown while Home is still gated. `forge_home_tour_v1` is the HOME leg — the spotlight walkthrough of the
+ * un-gated Home. One flag could not express "saw the map, hasn't been shown the screen yet", which is the
+ * ordinary state of every athlete between their sign-up and their first program. (The Home key name is the
+ * design's own — `forge-coach.js` lists it under `LEGACY_KEYS`.)
+ *
+ * Persisted values are terminal decisions: `completed` (walked it) or `skipped`. `pending` = not yet shown
+ * (the default when unset) — that leg is still owed. A run in flight is deliberately NOT persisted, so
+ * quitting mid-tour leaves the leg owed and it comes back.
  */
 const KEY = 'forge_tour_v1';
+const HOME_KEY = 'forge_home_tour_v1';
 export type TourStatus = 'pending' | 'completed' | 'skipped';
+
+async function readStatus(key: string): Promise<TourStatus> {
+  try {
+    const v = await AsyncStorage.getItem(key);
+    return v === 'completed' || v === 'skipped' ? v : 'pending';
+  } catch {
+    return 'pending';
+  }
+}
 
 export async function setTourStatus(status: TourStatus): Promise<void> {
   try {
     await AsyncStorage.setItem(KEY, status);
   } catch {
-    // best-effort; a missing flag just re-prompts the tour
+    // best-effort; a missing flag just re-runs that leg
   }
 }
 
-/** Re-ask: forget the tour decision so the prompt returns. (Used by the account-switch reset.) */
+/** Re-ask: forget the tabs-leg decision so it runs again. (Used by the account-switch reset + replay.) */
 export async function clearTourStatus(): Promise<void> {
   try {
     await AsyncStorage.removeItem(KEY);
+  } catch {
+    // best-effort
+  }
+}
+
+export async function getHomeTourStatus(): Promise<TourStatus> {
+  return readStatus(HOME_KEY);
+}
+
+export async function setHomeTourStatus(status: TourStatus): Promise<void> {
+  try {
+    await AsyncStorage.setItem(HOME_KEY, status);
+  } catch {
+    // best-effort
+  }
+}
+
+export async function clearHomeTourStatus(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(HOME_KEY);
   } catch {
     // best-effort
   }
@@ -66,10 +101,5 @@ export async function clearUnlockAnnounced(): Promise<void> {
 }
 
 export async function getTourStatus(): Promise<TourStatus> {
-  try {
-    const v = await AsyncStorage.getItem(KEY);
-    return v === 'completed' || v === 'skipped' ? v : 'pending';
-  } catch {
-    return 'pending';
-  }
+  return readStatus(KEY);
 }

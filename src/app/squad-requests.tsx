@@ -9,6 +9,9 @@ import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { ScreenBackground } from '@/components/screen-background';
+import { ScreenTour } from '@/components/tour/ScreenTour';
+import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { SquadCrest } from '@/components/forge/SquadCrest';
 import { fetchSquad } from '@/data/squad-live';
@@ -73,6 +76,8 @@ export default function SquadRequestsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const squadId = String(id ?? '');
   const router = useRouter();
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
   const { showToast } = useToast();
 
   const { data: squadData, loading: squadLoading } = useQuery(() => fetchSquad(squadId), [squadId]);
@@ -168,7 +173,13 @@ export default function SquadRequestsScreen() {
       <ScreenBackground image={SCREEN_BG.slate} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
       <AppBar title="Join Requests" serif onBack={goBack} />
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={tourScroller}
+        onScroll={onTourScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
         {/* ── Squad header ── */}
         {squad ? (
           <Rise duration={380}>
@@ -190,17 +201,17 @@ export default function SquadRequestsScreen() {
 
         {requests.length > 0 ? (
           <>
-            <View style={styles.sectionRow}>
+            <TourAnchor id="requests-list" style={styles.sectionRow}>
               <Text style={styles.sectionLabel}>Pending Requests</Text>
               <View style={styles.countBadge}>
                 <LinearGradient colors={flGradient.bronzeMetallic.colors} locations={flGradient.bronzeMetallic.locations} start={flGradient.bronzeMetallic.start} end={flGradient.bronzeMetallic.end} style={StyleSheet.absoluteFill} />
                 <Text style={styles.countBadgeText}>{requests.length}</Text>
               </View>
-            </View>
+            </TourAnchor>
 
-            {requests.map((r) => (
+            {requests.map((r, ri) => (
+              <TourAnchor key={r.userId} id={ri === 0 ? 'requests-actions' : undefined}>
               <RequestCard
-                key={r.userId}
                 request={r}
                 busy={busyId === r.userId}
                 leaving={!!leaving[r.userId]}
@@ -209,6 +220,7 @@ export default function SquadRequestsScreen() {
                 onApprove={() => resolve(r, 'approve')}
                 onDecline={() => resolve(r, 'decline')}
               />
+              </TourAnchor>
             ))}
 
             <View style={styles.footerNote}>
@@ -235,6 +247,8 @@ export default function SquadRequestsScreen() {
           </View>
         )}
       </ScrollView>
+
+      <ScreenTour screenKey="squad-requests" ready={requests.length > 0} />
 
       {/* ── Overflow menu (dead in the design; real here) ── */}
       <BottomSheet open={menuFor != null} onClose={() => setMenuFor(null)} title={menuFor?.name ?? ''}>

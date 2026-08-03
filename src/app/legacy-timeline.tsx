@@ -6,6 +6,9 @@ import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
+import { ScreenTour } from '@/components/tour/ScreenTour';
+import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 import {
@@ -77,6 +80,8 @@ const HALO = '0 0 0 4px rgba(8,11,14,0.7)';
 
 export default function LegacyTimelineScreen() {
   const router = useRouter();
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
   const { data, loading, error, refetch } = useQuery(fetchLegacyTimeline, []);
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/legacy'));
@@ -88,11 +93,12 @@ export default function LegacyTimelineScreen() {
    */
   const children: ReactNode[] = [];
   const sticky: number[] = [];
+  let seenEvent = false;
   if (data && data.nodes.length > 0) {
     children.push(
-      <Text key="intro" style={styles.intro}>
-        Every mark. In order.
-      </Text>,
+      <TourAnchor key="intro" id="timeline-rail">
+        <Text style={styles.intro}>Every mark. In order.</Text>
+      </TourAnchor>,
       // Brightest at the present, gone by the origin.
       <LinearGradient
         key="rail"
@@ -118,7 +124,14 @@ export default function LegacyTimelineScreen() {
         children.push(<ChapterHeader key={n.key} chapter={n.chapter} onPress={() => router.push({ pathname: '/chapter/[id]', params: { id } })} />);
       } else {
         const r = n.event.route;
-        children.push(<EventRow key={n.key} event={n.event} onPress={r ? () => router.push({ pathname: r.pathname, params: r.params } as Parameters<typeof router.push>[0]) : undefined} />);
+        // The first event carries the "weight is in the material" ring — a row is what that step is about.
+        const firstEvent = !seenEvent;
+        seenEvent = true;
+        children.push(
+          <TourAnchor key={n.key} id={firstEvent ? 'timeline-entry' : undefined}>
+            <EventRow event={n.event} onPress={r ? () => router.push({ pathname: r.pathname, params: r.params } as Parameters<typeof router.push>[0]) : undefined} />
+          </TourAnchor>,
+        );
       }
     }
 
@@ -166,10 +179,19 @@ export default function LegacyTimelineScreen() {
           <Text style={styles.emptyBody}>Your first workout opens the first chapter, and the rail starts from there.</Text>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} stickyHeaderIndices={sticky}>
+        <ScrollView
+        ref={tourScroller}
+        onScroll={onTourScroll}
+        scrollEventThrottle={16}
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          stickyHeaderIndices={sticky}
+        >
           {children}
         </ScrollView>
       )}
+
+      <ScreenTour screenKey="legacy-timeline" ready={!!data && data.nodes.length > 0} />
     </View>
   );
 }

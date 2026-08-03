@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { uploadAvatar } from '@/lib/avatar';
 import { firstNameOf, initialsOf } from './derive';
 
 /** Canonical Chapter I title (ONB-D14; PO-ruled over the design's "Building your Legacy"). */
@@ -11,17 +12,6 @@ export async function isHandleAvailable(handle: string): Promise<boolean> {
   const { data, error } = await supabase.from('profiles').select('id').eq('handle', clean).limit(1);
   if (error) throw error;
   return (data?.length ?? 0) === 0;
-}
-
-async function uploadAvatar(uid: string, uri: string): Promise<string> {
-  const res = await fetch(uri);
-  const bytes = await res.arrayBuffer();
-  const ext = (uri.split('.').pop() ?? 'jpg').toLowerCase().split('?')[0];
-  const contentType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
-  const path = `${uid}/avatar.${ext}`;
-  const { error } = await supabase.storage.from('avatars').upload(path, bytes, { contentType, upsert: true });
-  if (error) throw error;
-  return supabase.storage.from('avatars').getPublicUrl(path).data.publicUrl;
 }
 
 export interface OnboardingInput {

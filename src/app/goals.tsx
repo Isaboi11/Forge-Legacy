@@ -10,6 +10,9 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { ScreenBackground } from '@/components/screen-background';
+import { ScreenTour } from '@/components/tour/ScreenTour';
+import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import {
@@ -187,6 +190,8 @@ function GoalHub({
   onStartChapter: () => void;
 }) {
   const router = useRouter();
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
   const { primary, active, achieved } = goalSections(data.goals);
 
   const body = () => {
@@ -217,26 +222,29 @@ function GoalHub({
     }
     return (
       <>
-        <ChapterAnchor name={data.chapterName} />
-        {primary ? <PrimaryCard goal={primary} onPress={() => onOpen(primary.id)} /> : null}
+        <TourAnchor id="goals-chapter">
+          <ChapterAnchor name={data.chapterName} />
+          {primary ? <PrimaryCard goal={primary} onPress={() => onOpen(primary.id)} /> : null}
+        </TourAnchor>
 
         {active.length ? (
-          <View style={styles.group}>
+          <TourAnchor id="goals-progress" style={styles.group}>
             {active.map((g) => (
               <GoalRow key={g.id} goal={g} onPress={() => onOpen(g.id)} />
             ))}
-          </View>
+          </TourAnchor>
         ) : null}
 
         {achieved.length ? (
-          <View style={styles.group}>
+          <TourAnchor id="goals-history" style={styles.group}>
             <Text style={styles.groupLabel}>Achieved</Text>
             {achieved.map((g) => (
               <GoalRow key={g.id} goal={g} onPress={() => onOpen(g.id)} />
             ))}
-          </View>
+          </TourAnchor>
         ) : null}
 
+        <TourAnchor id="goals-add">
         {!primary ? (
           <Pressable onPress={() => onAdd(true)} accessibilityRole="button" accessibilityLabel="Add a chapter goal" style={styles.addBtn}>
             <Glyph d={PLUS} size={17} color={flColor.bronze300} width={2} />
@@ -248,6 +256,7 @@ function GoalHub({
             <Text style={styles.addText}>Add a Supporting Goal</Text>
           </Pressable>
         )}
+        </TourAnchor>
       </>
     );
   };
@@ -256,9 +265,17 @@ function GoalHub({
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(6,7,8,0.32)' }} />
       <AppBar title="Goals" serif onBack={() => router.back()} />
-      <ScrollView contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={tourScroller}
+        onScroll={onTourScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]}
+        showsVerticalScrollIndicator={false}
+      >
         {body()}
       </ScrollView>
+
+      <ScreenTour screenKey="goals" ready={data.goals.length > 0} />
     </View>
   );
 }

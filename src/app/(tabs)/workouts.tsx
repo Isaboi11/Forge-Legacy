@@ -26,6 +26,8 @@ import { useQuery } from '@/lib/useQuery';
 import { fetchTemplates, templateSummary } from '@/data/templates-live';
 import type { Program } from '@/domain/training/schema';
 import { ScreenTour } from '@/components/tour/ScreenTour';
+import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 
 /**
  * Workouts tab root (plural) — W-2 Program Browse / Programs Catalog.
@@ -65,6 +67,11 @@ export default function WorkoutsScreen() {
   const { startWorkout } = useWorkoutSession();
   const [tab, setTab] = useState<'mine' | 'discover'>('mine');
   const [family, setFamily] = useState<string>('All');
+  // Walkthrough anchors. The `+` is a bare Pressable in the AppBar, so it takes the ref directly;
+  // the sections are compositions and get a wrapper.
+  const startRef = useTourAnchor('workouts-start');
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
 
   // The athlete's own programs. Refetched on focus so a program just built, duplicated, or ended shows
   // up the moment they come back to this tab.
@@ -179,6 +186,7 @@ export default function WorkoutsScreen() {
         title={<Text style={styles.barTitle}>Workouts</Text>}
         actions={
           <Pressable
+            ref={startRef}
             onPress={() => setStartOpen(true)}
             accessibilityRole="button"
             accessibilityLabel="Start training"
@@ -192,17 +200,23 @@ export default function WorkoutsScreen() {
 
       {/* segmented control — two mindsets: own/train vs. find new */}
       <View style={styles.segWrap}>
-        <View style={styles.segTrack}>
+        <TourAnchor id="workouts-segments" style={styles.segTrack}>
           <Segment label="My Workouts" active={tab === 'mine'} onPress={() => setTab('mine')} />
           <Segment label="Discover" active={tab === 'discover'} onPress={() => setTab('discover')} />
-        </View>
+        </TourAnchor>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={tourScroller}
+        onScroll={onTourScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
         {tab === 'mine' ? (
           <View style={styles.stack}>
             {/* ACTIVE — the anchor */}
-            <View>
+            <TourAnchor id="workouts-active">
               <SectionHeader label="Active" />
               <View style={styles.sectionBody}>
                 {myActive ? (
@@ -217,12 +231,12 @@ export default function WorkoutsScreen() {
                   </View>
                 )}
               </View>
-            </View>
+            </TourAnchor>
 
             {/* YOUR PROGRAMS — always rendered, because the create row lives here and the moment you most
                 need it is the moment you have none. It used to be gated on `mine.length > 0`, which hid
                 authoring from exactly the athlete who had never authored anything. */}
-            <View>
+            <TourAnchor id="workouts-programs">
               <SectionHeader label="Your Programs" />
               <View style={[styles.sectionBody, styles.stackTight]}>
                 {mine.map((p) => (
@@ -237,11 +251,11 @@ export default function WorkoutsScreen() {
                     tab. */}
                 <CreateRow label="Build a Program" onPress={() => router.push('/program-builder')} />
               </View>
-            </View>
+            </TourAnchor>
 
             {/* YOUR TEMPLATES — a personal artifact, so it sits with programs rather than under "Library"
                 beside two platform surfaces everyone shares. That grouping was the real error. */}
-            <View>
+            <TourAnchor id="workouts-templates">
               <SectionHeader label="Your Templates" action={templates.length > 3 ? 'View all' : undefined} onAction={() => router.push('/templates')} />
               <View style={[styles.sectionBody, styles.stackTight]}>
                 {templates.slice(0, 3).map((t) => (
@@ -255,11 +269,11 @@ export default function WorkoutsScreen() {
                 ))}
                 <CreateRow label="Build a Workout" onPress={() => void startFreestyle()} />
               </View>
-            </View>
+            </TourAnchor>
 
             {/* REFERENCE — what's left once the personal things move out is genuinely reference, and the
                 section name is finally true. */}
-            <View>
+            <TourAnchor id="workouts-reference">
               <SectionHeader label="Reference" />
               <View style={[styles.sectionBody, styles.stackTight]}>
                 <LibraryRow
@@ -278,7 +292,7 @@ export default function WorkoutsScreen() {
                   onPress={() => router.push('/activity-history')}
                 />
               </View>
-            </View>
+            </TourAnchor>
           </View>
         ) : (
           <View style={styles.stack}>
@@ -402,7 +416,9 @@ export default function WorkoutsScreen() {
         </View>
       </BottomSheet>
 
-      <ScreenTour screenKey="workouts" />
+      {/* Held to the "My Workouts" side: four of the six steps ring sections that only exist there, and a
+          walkthrough that opened on Discover would silently drop them and teach a third of the screen. */}
+      <ScreenTour screenKey="workouts" ready={tab === 'mine'} restingBottom={108} />
     </View>
   );
 }

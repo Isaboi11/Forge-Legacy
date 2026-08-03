@@ -8,6 +8,9 @@ import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { ScreenBackground } from '@/components/screen-background';
+import { ScreenTour } from '@/components/tour/ScreenTour';
+import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import {
   deleteTransformationEntry,
@@ -46,6 +49,10 @@ export default function TransformationRoute() {
   const { data: remind, refetch: refetchRemind } = useQuery(getRemind, []);
 
   const [actionEntry, setActionEntry] = useState<TransformationEntry | null>(null);
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
+  const compareRef = useTourAnchor('transformation-compare');
+  const addRef = useTourAnchor('transformation-add');
   const [confirmDelete, setConfirmDelete] = useState<TransformationEntry | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -103,21 +110,29 @@ export default function TransformationRoute() {
         onBack={() => router.back()}
         actions={
           <>
-            <Pressable onPress={() => router.push('/transformation-compare')} accessibilityRole="button" accessibilityLabel="Compare" style={styles.barBtn} hitSlop={6}>
+            <Pressable ref={compareRef} onPress={() => router.push('/transformation-compare')} accessibilityRole="button" accessibilityLabel="Compare" style={styles.barBtn} hitSlop={6}>
               <CompareGlyph />
             </Pressable>
-            <Pressable onPress={() => router.push('/transformation-add')} accessibilityRole="button" accessibilityLabel="Add progress set" style={styles.barBtn} hitSlop={6}>
+            <Pressable ref={addRef} onPress={() => router.push('/transformation-add')} accessibilityRole="button" accessibilityLabel="Add progress set" style={styles.barBtn} hitSlop={6}>
               <PlusGlyph />
             </Pressable>
           </>
         }
       />
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={tourScroller}
+        onScroll={onTourScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
         {/* intro */}
-        <Text style={styles.introQ}>How have I changed?</Text>
+        <TourAnchor id="transformation-grid">
+          <Text style={styles.introQ}>How have I changed?</Text>
         <Text style={styles.introThesis}>A documentary record, chapter by chapter. Not a comparison — a chronicle.</Text>
-        <Text style={styles.introSummary}>{summaryLine}</Text>
+          <Text style={styles.introSummary}>{summaryLine}</Text>
+        </TourAnchor>
 
         {/* reminder */}
         <View style={styles.remindRow}>
@@ -183,6 +198,8 @@ export default function TransformationRoute() {
           </>
         )}
       </ScrollView>
+
+      <ScreenTour screenKey="transformation" ready={entries.length > 0} />
 
       {/* long-press actions */}
       <BottomSheet open={!!actionEntry} onClose={() => setActionEntry(null)} title={actionEntry ? `${actionEntry.label} · ${actionEntry.chapterName}` : undefined}>

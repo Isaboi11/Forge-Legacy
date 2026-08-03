@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { resolveRecommendationId, intendedProgramId, accessFor, FALLBACK_ID, ADVANCED_ID } from '../recommend-core.ts';
+import { resolveRecommendationId, intendedProgramId, accessFor, canRecommend, FALLBACK_ID, ADVANCED_ID } from '../recommend-core.ts';
 
 const SF_I = FALLBACK_ID; // strength-foundation-i-3day
 const SF_II = ADVANCED_ID; // strength-foundation-ii-4day
@@ -98,4 +98,56 @@ test('resolveRecommendationId — invariant: always a real catalog id (SF I or S
   }
   // no inputs at all → still a real id
   assert.ok([SF_I, SF_II].includes(resolveRecommendationId({})));
+});
+
+/**
+ * The invariant above is exactly why `canRecommend` cannot be written in terms of it: a fallback makes
+ * "an answer exists" true for every input, including the endurance athlete handed a barbell program.
+ */
+test('canRecommend — false on the real 2-program catalog', () => {
+  assert.equal(canRecommend([SF_I, SF_II]), false, 'strength is answered; the other five goals are not');
+  assert.equal(canRecommend([]), false);
+});
+
+test('canRecommend — a goal is unanswered until its own programs exist', () => {
+  // Everything the intake can intend across all 6 goals × 3 experiences × 3 access tiers.
+  const goals = ['strength', 'muscle', 'fatloss', 'endurance', 'health', 'athletic'];
+  const equips = [['fullgym'], ['dumbbells'], []];
+  const whole = [
+    ...new Set(
+      goals.flatMap((primaryGoal) =>
+        ['beginner', 'intermediate', 'advanced'].flatMap((experience) =>
+          equips.map((equipment) => intendedProgramId({ primaryGoal, experience, equipment })),
+        ),
+      ),
+    ),
+  ];
+  assert.equal(canRecommend(whole), true, 'the whole intended catalog answers every question asked');
+
+  // Drop any single one and the on-ramp closes again — no goal is optional. The three strength ids are
+  // excluded because CATALOG_ALIAS answers them without the catalog holding them (next test).
+  const aliased = ['strength-foundation-1', 'strength-powerbuilding-1', 'strength-531'];
+  for (const missing of whole.filter((id) => !aliased.includes(id))) {
+    assert.equal(
+      canRecommend(whole.filter((id) => id !== missing)),
+      false,
+      `${missing} missing should close the on-ramp`,
+    );
+  }
+});
+
+/**
+ * The strength ids are ALIASED rather than authored (SF I/II stand in for the design's three), and an
+ * alias is a deliberate answer — unlike the fallback, which is what happens when there is none.
+ */
+test('canRecommend — a deliberate alias counts as answered, the fallback does not', () => {
+  const nonStrength = [
+    'mb-arms-aesthetics', 'mb-hypertrophy-block', 'mb-ppl', 'mb-upper-lower',
+    'run-c25k', 'run-10k', 'run-half-base',
+    'cond-hiit', 'cond-circuit', 'cond-metcon', 'cond-engine',
+    'fbh-full-body-3', 'fbh-bodyweight-basics', 'fbh-dumbbell-only', 'fbh-home-minimalist',
+  ];
+  // The three strength ids are never in the catalog — only CATALOG_ALIAS reaches them — so this passing
+  // proves the alias is what carries strength.
+  assert.equal(canRecommend(nonStrength), true);
 });

@@ -11,6 +11,9 @@ import { Avatar } from '@/components/forge/composites/Avatar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { ScreenBackground } from '@/components/screen-background';
+import { ScreenTour } from '@/components/tour/ScreenTour';
+import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { SquadCrest } from '@/components/forge/SquadCrest';
 import { CommitmentPanel, AcceptCommitment } from '@/components/forge/compositions/Commitment';
@@ -92,6 +95,8 @@ export default function SquadPreviewScreen() {
 
   const [override, setOverride] = useState<SquadMembership | undefined>(undefined);
   const [busy, setBusy] = useState(false);
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
   // Requesting carries an optional note — the message the owner reads in their Join Requests queue.
   const [noteOpen, setNoteOpen] = useState(false);
   const [note, setNote] = useState('');
@@ -216,10 +221,16 @@ export default function SquadPreviewScreen() {
       {/* Title-less by design — the hero carries identity, so the bar doesn't repeat it. */}
       <AppBar onBack={goBack} />
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={tourScroller}
+        onScroll={onTourScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
         {/* ── Hero ── */}
         <Rise duration={420}>
-          <View style={styles.hero}>
+          <TourAnchor id="preview-identity" style={styles.hero}>
             <View style={styles.crest}>
               {squad.photoUrl ? <Image source={{ uri: squad.photoUrl }} style={styles.crestPhoto} contentFit="cover" /> : <SquadCrest crest={squad.crest} size={42} color={flColor.bronze300} strokeWidth={1.5} />}
             </View>
@@ -246,7 +257,7 @@ export default function SquadPreviewScreen() {
                 </View>
               ) : null}
             </View>
-          </View>
+          </TourAnchor>
         </Rise>
 
         {/* ── Stat strip ── */}
@@ -293,12 +304,12 @@ export default function SquadPreviewScreen() {
         ) : null}
 
         {/* ── Members peek ── */}
-        <View style={styles.membersHeader}>
+        <TourAnchor id="preview-roster" style={styles.membersHeader}>
           <Text style={styles.sectionLabelInline}>Members</Text>
           <Text style={styles.membersCount}>
             {squad.memberCount} {squad.memberCount === 1 ? 'Member' : 'Members'}
           </Text>
-        </View>
+        </TourAnchor>
         <View style={styles.membersCard}>
           {squad.roster.map((m, i) => {
             const activity = activityOf(m);
@@ -347,6 +358,7 @@ export default function SquadPreviewScreen() {
       </ScrollView>
 
       {/* ── Commit bar ── */}
+      <TourAnchor id="preview-request">
       <LinearGradient colors={['rgba(9,9,9,0.55)', 'rgba(9,9,9,0.86)']} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={[styles.commitBar, { paddingBottom: 16 + insets.bottom }]}>
         <Pressable
           onPress={commit.onPress}
@@ -368,6 +380,9 @@ export default function SquadPreviewScreen() {
           <Text style={[styles.commitLabel, commit.filled ? null : styles.commitLabelDone]}>{commit.label}</Text>
         </Pressable>
       </LinearGradient>
+      </TourAnchor>
+
+      <ScreenTour screenKey="squad-preview" />
 
       {/* ── Request note — what the owner reads in their queue ── */}
       <BottomSheet

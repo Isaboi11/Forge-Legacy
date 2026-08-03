@@ -10,6 +10,9 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { ScreenBackground } from '@/components/screen-background';
+import { ScreenTour } from '@/components/tour/ScreenTour';
+import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG, BG_RADIAL } from '@/constants/backgrounds';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
@@ -33,6 +36,28 @@ import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/fou
  * The design's check-ins / mission / competitions / hall / feed / honors / analytics sections need their own
  * Social backends and are intentionally omitted (later parts) — not stubbed with fake data.
  */
+/**
+ * Goal-window date helpers. Deliberately LOCAL-DATE, not UTC: `new Date('2026-03-01')` parses as UTC
+ * midnight, which is the previous evening for anyone west of Greenwich — a squad in Denver setting a goal
+ * to start on the 1st would have it start on Feb 28th. Building from parts keeps the date the athlete typed.
+ */
+function parseYmd(text: string): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text.trim());
+  if (!m) return null;
+  const [y, mo, da] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const d = new Date(y, mo - 1, da);
+  // Rejects 2026-02-31 and friends, which `new Date` would silently roll forward into March.
+  return d.getFullYear() === y && d.getMonth() === mo - 1 && d.getDate() === da ? d : null;
+}
+
+const ymdToday = (): string => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+/** A deadline of "the 31st" has to include the 31st. */
+const endOfDay = (d: Date): Date => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+
 const SQUAD_METRICS: [SquadGoalMetric, string][] = [
   ['workout_count', 'Workouts'],
   ['distance_total', 'Distance'],
@@ -67,6 +92,8 @@ const fmtProgress = (n: number): string => String(Number(n.toFixed(1)));
 export default function SquadDetailRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
   const squadId = String(id ?? '');
   const { data, loading, error, refetch } = useQuery(() => fetchSquad(squadId), [squadId]);
   const { showToast } = useToast();
@@ -107,6 +134,8 @@ export default function SquadDetailRoute() {
   const [goalTargetText, setGoalTargetText] = useState('');
   const [goalMetricKind, setGoalMetricKind] = useState<SquadGoalMetric>('workout_count');
   const [goalMetricKey, setGoalMetricKey] = useState<string | null>(null);
+  const [goalStartText, setGoalStartText] = useState('');
+  const [goalEndText, setGoalEndText] = useState('');
   const [savingGoal, setSavingGoal] = useState(false);
 
   useFocusEffect(
@@ -243,7 +272,28 @@ export default function SquadDetailRoute() {
 
   // ── Detail ──
   const goalPct = squad.goalTarget ? Math.min(100, Math.round((squad.goalProgress / squad.goalTarget) * 100)) : 0;
-  const goalValid = Number(goalTargetText) >= 1;
+  /**
+   * The window. Both fields are plain YYYY-MM-DD, matching how Accomplishments stands in for the native
+   * date wheel — `ForgeDateInput` exists but belongs to the legacy component library (old token system,
+   * reference-only), so new work does not reach for it.
+   *
+   * A blank START means "from today". A blank END means no deadline at all, which is the pre-0103
+   * behaviour and still entirely valid — plenty of squad goals are "until we get there".
+   */
+  const parsedStart = parseYmd(goalStartText);
+  const parsedEnd = parseYmd(goalEndText);
+  const startOk = goalStartText.trim() === '' || parsedStart != null;
+  const endOk = goalEndText.trim() === '' || parsedEnd != null;
+  // The DB enforces this too (`squads_goal_window_check`); catching it here turns a 400 into a sentence.
+  const windowOk = !(parsedStart && parsedEnd) || parsedEnd > parsedStart;
+  const goalValid = Number(goalTargetText) >= 1 && startOk && endOk && windowOk;
+  const windowError = !startOk
+    ? 'Start date needs to look like 2026-03-01.'
+    : !endOk
+      ? 'End date needs to look like 2026-03-31.'
+      : !windowOk
+        ? 'The end date has to come after the start.'
+        : null;
   const feedPosts = feedData ?? [];
   const canLoadMore = feedPosts.length === feedLimit;
   const checkinPeople = checkinsData?.members ?? [];
@@ -254,6 +304,8 @@ export default function SquadDetailRoute() {
     setGoalTargetText(squad.goalTarget != null ? String(squad.goalTarget) : '');
     setGoalMetricKind(squad.goalMetricKind);
     setGoalMetricKey(squad.goalMetricKey);
+    setGoalStartText(squad.goalStartedAt ? squad.goalStartedAt.slice(0, 10) : ymdToday());
+    setGoalEndText(squad.goalEndsAt ? squad.goalEndsAt.slice(0, 10) : '');
     setOptionsOpen(false);
     setGoalOpen(true);
   };
@@ -265,6 +317,10 @@ export default function SquadDetailRoute() {
       target: Number(goalTargetText),
       metricKind: goalMetricKind,
       metricKey: goalMetricKind === 'distance_total' ? goalMetricKey ?? 'running' : null,
+      // Blank start = today. The end is stored at the END of its day, so "ends 2026-03-31" includes the
+      // 31st — a deadline that silently excluded its own date would be a quiet lie.
+      startsAt: (parsedStart ?? new Date()).toISOString(),
+      endsAt: parsedEnd ? endOfDay(parsedEnd).toISOString() : null,
     }).then(
       () => {
         setSavingGoal(false);
@@ -360,7 +416,13 @@ export default function SquadDetailRoute() {
         }
       />
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={tourScroller}
+        onScroll={onTourScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
         {/* HERO */}
         <View style={styles.hero}>
           <View style={styles.heroHead}>
@@ -377,7 +439,7 @@ export default function SquadDetailRoute() {
             </View>
           </View>
 
-          <View style={styles.metaRow}>
+          <TourAnchor id="squad-hero" style={styles.metaRow}>
             <Pressable onPress={() => setView('members')} accessibilityRole="button" accessibilityLabel={`${members.length} members, view roster`} hitSlop={6} style={styles.metaBtn}>
               <PeopleIcon size={14} color={flColor.gray400} />
               <Text style={styles.metaText}>{members.length === 1 ? '1 member' : `${members.length} members`}</Text>
@@ -387,13 +449,13 @@ export default function SquadDetailRoute() {
               <View style={styles.greenDot} />
               <Text style={styles.metaText}>{squad.trainedToday} training today</Text>
             </View>
-          </View>
+          </TourAnchor>
 
           <View style={styles.heroDivider} />
 
           {/* CURRENT GOAL */}
           {squad.goalTarget != null ? (
-            <View>
+            <TourAnchor id="squad-goal">
               <View style={styles.goalHead}>
                 <Text style={styles.sectionLabel}>Current Goal</Text>
                 {squad.isOwner ? (
@@ -409,7 +471,25 @@ export default function SquadDetailRoute() {
               <Text style={styles.progressCaption}>
                 {fmtProgress(Math.min(squad.goalProgress, squad.goalTarget))} / {squad.goalTarget} {goalUnit(squad.goalMetricKind)} · {goalPct}% complete
               </Text>
-            </View>
+              {/*
+                THE DEADLINE, AND WHAT HAPPENS WHEN IT PASSES.
+
+                SQ-D3.5 and the anti-shame guardrails (CC-D3, SA-D4 — "non-participation is never shown as
+                failure") rule out "you missed it". So an expired goal reports what the squad DID, with no
+                target and no percentage beside it: "Goal ended · 312 workouts logged". The figure is stable
+                because 0103's `squad_metric_sum` stops accumulating at the deadline — without that freeze
+                this line would quietly keep counting the following month.
+              */}
+              {squad.goalEnded ? (
+                <Text style={styles.goalEnded}>
+                  Goal ended · {fmtProgress(squad.goalProgress)} {goalUnit(squad.goalMetricKind)} logged
+                </Text>
+              ) : squad.goalDaysLeft != null ? (
+                <Text style={styles.goalWindow}>
+                  {squad.goalDaysLeft === 1 ? 'Final day' : `${squad.goalDaysLeft} days left`}
+                </Text>
+              ) : null}
+            </TourAnchor>
           ) : squad.isOwner ? (
             <View>
               <Text style={styles.sectionLabel}>Current Goal</Text>
@@ -527,6 +607,7 @@ export default function SquadDetailRoute() {
             own "View All" is the entry, which is why the design has no such row: it assumes a squad
             always has a season going. This is that assumption's missing branch. */}
         {liveChallenge ? null : (
+          <TourAnchor id="squad-competitions">
           <Pressable
             onPress={() => router.push({ pathname: '/competitions', params: { id: squad.id } })}
             accessibilityRole="button"
@@ -542,9 +623,11 @@ export default function SquadDetailRoute() {
             </View>
             <ChevronRight />
           </Pressable>
+          </TourAnchor>
         )}
 
         {/* SQUAD RECORDS — content, not administration, so it gets a visible home rather than a menu row. */}
+        <TourAnchor id="squad-records">
         <Pressable
           onPress={() => router.push({ pathname: '/squad-records', params: { id: squad.id } })}
           accessibilityRole="button"
@@ -560,9 +643,10 @@ export default function SquadDetailRoute() {
           </View>
           <ChevronRight />
         </Pressable>
+        </TourAnchor>
 
         {/* CHECK-INS — ephemeral video stories (latest per member, <24h) */}
-        <View style={styles.checkinsSection}>
+        <TourAnchor id="squad-checkins" style={styles.checkinsSection}>
           <View style={styles.checkinHead}>
             <Text style={styles.feedLabel}>Check-ins</Text>
             <Text style={styles.checkinDate}>Video · disappears in 24h</Text>
@@ -574,10 +658,10 @@ export default function SquadDetailRoute() {
             ))}
           </ScrollView>
           {iHaveActive || checkinPeople.length ? null : <Text style={styles.checkinEmpty}>Be the first — post a quick video and let the squad see your effort.</Text>}
-        </View>
+        </TourAnchor>
 
         {/* SQUAD FEED */}
-        <View style={styles.feedSection}>
+        <TourAnchor id="squad-feed" style={styles.feedSection}>
           <View style={styles.feedHead}>
             <Text style={styles.feedLabel}>Squad Feed</Text>
             <Pressable onPress={goCompose} accessibilityRole="button" accessibilityLabel="New post" style={styles.newPostBtn} hitSlop={6}>
@@ -610,8 +694,10 @@ export default function SquadDetailRoute() {
               ) : null}
             </View>
           )}
-        </View>
+        </TourAnchor>
       </ScrollView>
+
+      <ScreenTour screenKey="squad-detail" ready={view === 'detail'} />
 
       {/* OPTIONS SHEET */}
       <BottomSheet open={optionsOpen} onClose={() => setOptionsOpen(false)}>
@@ -682,7 +768,31 @@ export default function SquadDetailRoute() {
             keyboardType="decimal-pad"
             placeholder={GOAL_TARGET_PLACEHOLDER[goalMetricKind]}
           />
-          <Text style={styles.goalAutoNote}>Progress updates automatically from your squad’s logged workouts.</Text>
+          <View style={styles.goalDateRow}>
+            <View style={styles.goalDateCol}>
+              <InputField
+                label="Starts"
+                value={goalStartText}
+                onChange={(v) => setGoalStartText(v.replace(/[^0-9-]/g, '').slice(0, 10))}
+                placeholder="YYYY-MM-DD"
+                keyboardType="numbers-and-punctuation"
+              />
+            </View>
+            <View style={styles.goalDateCol}>
+              <InputField
+                label="Ends (optional)"
+                value={goalEndText}
+                onChange={(v) => setGoalEndText(v.replace(/[^0-9-]/g, '').slice(0, 10))}
+                placeholder="No deadline"
+                keyboardType="numbers-and-punctuation"
+              />
+            </View>
+          </View>
+          {windowError ? <Text style={styles.goalDateErr}>{windowError}</Text> : null}
+          <Text style={styles.goalAutoNote}>
+            Progress updates automatically from your squad’s logged workouts. A start date in the past counts
+            work already done; leave the end blank and the goal runs until you reach it.
+          </Text>
           <Button variant="primary" fullWidth disabled={!goalValid || savingGoal} onPress={saveGoal} accessibilityLabel="Save goal">
             {savingGoal ? 'Saving…' : 'Save Goal'}
           </Button>
@@ -1299,6 +1409,11 @@ const styles = StyleSheet.create({
   goalChipText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
   goalChipTextOn: { color: flColor.bronze300 },
   goalAutoNote: { fontSize: 12, lineHeight: 17, color: flColor.gray600 },
+  goalDateRow: { flexDirection: 'row', gap: 12 },
+  goalDateCol: { flex: 1, minWidth: 0 },
+  goalDateErr: { fontSize: 12, color: flColor.redMuted },
+  goalWindow: { marginTop: 6, fontSize: 11.5, color: flColor.gray600 },
+  goalEnded: { marginTop: 6, fontSize: 12, color: flColor.bronze400, fontWeight: '600' },
   removeGoalBtn: { alignSelf: 'center', paddingVertical: 4 },
   removeGoalText: { fontSize: 13, fontWeight: '600', color: flColor.redMuted },
 

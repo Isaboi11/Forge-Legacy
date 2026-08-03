@@ -5,6 +5,9 @@ import Svg, { Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
+import { ScreenTour } from '@/components/tour/ScreenTour';
+import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -68,6 +71,8 @@ export default function HonorsScreen() {
     [],
   );
   const [selected, setSelected] = useState<HubHonor | null>(null);
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
 
   // The "view honor → then tutorial" hand-off: if the tour was deferred by "View Honor", resume it as the
   // athlete leaves this hub (unmount covers back button, swipe, and hardware back). No-op otherwise.
@@ -128,16 +133,24 @@ export default function HonorsScreen() {
       ) : total === 0 ? (
         <EmptyHonors />
       ) : (
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-          <Text style={styles.sectionLabel}>Recent</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
-            {recent.map((h) => (
-              <HonorTile key={h.slug} honor={h} size={72} showYear={recentNeedsYear} onPress={() => setSelected(h)} />
-            ))}
-          </ScrollView>
+        <ScrollView
+        ref={tourScroller}
+        onScroll={onTourScroll}
+        scrollEventThrottle={16}
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+        >
+          <TourAnchor id="honors-recent">
+            <Text style={styles.sectionLabel}>Recent</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
+              {recent.map((h) => (
+                <HonorTile key={h.slug} honor={h} size={72} showYear={recentNeedsYear} onPress={() => setSelected(h)} />
+              ))}
+            </ScrollView>
+          </TourAnchor>
 
-          {categories.map((group) => (
-            <View key={group.id} style={styles.catBlock}>
+          {categories.map((group, gi) => (
+            <TourAnchor key={group.id} id={gi === 0 ? 'honors-categories' : undefined} style={styles.catBlock}>
               <View style={styles.divider} />
               <View style={styles.catHeader}>
                 <View style={styles.catHeaderLeft}>
@@ -151,10 +164,13 @@ export default function HonorsScreen() {
                   <HonorTile key={h.slug} honor={h} size={56} onPress={() => setSelected(h)} />
                 ))}
               </ScrollView>
-            </View>
+            </TourAnchor>
           ))}
         </ScrollView>
       )}
+
+      {/* Only once they hold something — the empty state already explains that honors are awarded. */}
+      <ScreenTour screenKey="honors" ready={total > 0} />
 
       {selected ? (
         <HonorDetailSheet

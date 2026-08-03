@@ -6,11 +6,9 @@ import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { NotificationBell } from '@/components/forge/compositions/NotificationBell';
 import { Avatar } from '@/components/forge/composites/Avatar';
-import { Button } from '@/components/forge/composites/Button';
-import { Card } from '@/components/forge/composites/Surface';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
-import { BarbellIcon, ForgeMarkIcon, ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
+import { ForgeMarkIcon, ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { WorkoutsTabIcon, LegacyTabIcon, SquadsTabIcon } from '@/components/forge/primitives/icons/NavIcons';
 import { ChapterTitleBlock } from '@/components/forge/compositions/ChapterTitleBlock';
 import { TodaysWorkoutCard } from '@/components/forge/compositions/TodaysWorkoutCard';
@@ -37,6 +35,8 @@ import { getHomeLevel, setHomeLevel, clearHomeLevel } from '@/lib/home-level';
 import { getHomeIntake, setHomeIntake, clearHomeIntake } from '@/lib/home-intake';
 import { claimInitiativeHonor } from '@/data/honors-live';
 import { useTour } from '@/hooks/useTour';
+import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
+import { TourAnchor } from '@/components/tour/TourAnchor';
 import { adoptCatalogProgram, fetchMyPrograms, fetchProgramCompletedCount, startProgram } from '@/data/programs-live';
 import { structureFromDefinition } from '@/domain/program/adopt-core';
 import { itemByName } from '@/domain/exercise-picker/data';
@@ -47,6 +47,7 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { getActiveProgramById } from '@/domain/training/active-program';
 import { resolveRecommendationId } from '@/domain/onboarding/recommend-core';
+import { catalogCanRecommend } from '@/domain/onboarding/recommend';
 import { CARDIO_ACTIVITIES, CARDIO_DEFAULTS, deriveName, type CardioActivity } from '@/domain/workout/conditioning';
 import { hasLoggedWork, loadSession } from '@/domain/workout/autosave';
 import { doneSetCount } from '@/domain/workout/metrics';
@@ -73,35 +74,6 @@ function splitChapterTitle(full: string): { number: string; name: string } {
   const parts = full.split('—');
   if (parts.length >= 2) return { number: parts[0].trim(), name: parts.slice(1).join('—').trim() };
   return { number: 'Chapter I', name: full.trim() };
-}
-
-/**
- * ONB-D17 isNew hero — the fresh athlete's first-session empty state. Two real actions: Start Training
- * (primary → the demo-workout logger, the working first-workout path) and Programs (secondary → the
- * Programs tab, the hub for BOTH browsing prebuilt programs AND building your own). "Programs" — not
- * "Browse Programs" — deliberately, so someone who wants to build their own doesn't read it as prebuilt-only
- * (ONB-Amendment-002).
- */
-function FirstSessionCard({ onStart, onOpenPrograms }: { onStart: () => void; onOpenPrograms: () => void }) {
-  return (
-    <Card padding={24} style={styles.firstCard}>
-      <View style={styles.firstIcon}>
-        <BarbellIcon size={24} color={flColor.bronze400} />
-      </View>
-      <View style={styles.firstText}>
-        <Text style={styles.firstTitle}>Forge your first program</Text>
-        <Text style={styles.firstCopy}>Start your first session now, or head to Programs to browse the library or build your own.</Text>
-      </View>
-      <View style={styles.firstActions}>
-        <Button variant="primary" fullWidth onPress={onStart} accessibilityLabel="Start Training — begin your first workout">
-          Start Training
-        </Button>
-        <Button variant="secondary" fullWidth onPress={onOpenPrograms} accessibilityLabel="Programs — browse the library or build your own">
-          Programs
-        </Button>
-      </View>
-    </Card>
-  );
 }
 
 /** Two overlapping figures — the "friends" mark (distinct from the Squads glyph). */
@@ -177,6 +149,14 @@ function ExploreForgeSection({ onOpen }: { onOpen: (route: Href) => void }) {
  *
  * Shared by the first-run gate and the established athlete who has no program, because those two are the
  * same question asked at different times — and the second one used to be answered with a demo program.
+ *
+ * THE FIRST DOOR IS FREESTYLE UNTIL THE CATALOG EARNS IT BACK. `onGuided` is undefined while
+ * `catalogCanRecommend()` is false, and the slot that asked "Help me find one" offers to train today
+ * instead. Two programs are authored, both Strength Foundation — so the intake's three questions about
+ * goal, experience and equipment had one answer waiting whatever you said, and a runner with no barbell
+ * got it too. Offering to train now is the honest thing this screen can do; offering to find you a
+ * program is not, yet. The stepper, the recommendation and their tests are untouched and return on
+ * their own when the families land — see `canRecommend`.
  */
 function ProgramPathChooser({
   title,
@@ -184,26 +164,43 @@ function ProgramPathChooser({
   onGuided,
   onBuild,
   onBrowse,
+  onFreestyle,
 }: {
   title: string;
   subtitle?: string;
-  onGuided: () => void;
+  /** Undefined = the catalog cannot answer the intake's questions, so it is not asked. */
+  onGuided?: () => void;
   onBuild: () => void;
   onBrowse: () => void;
+  onFreestyle: () => void;
 }) {
   return (
     <View style={styles.pathBlock}>
       <Text style={styles.pathTitle}>{title}</Text>
       {subtitle ? <Text style={styles.pathCardSub}>{subtitle}</Text> : null}
-      <Pressable
-        onPress={onGuided}
-        accessibilityRole="button"
-        accessibilityLabel="Help me find a program"
-        style={({ pressed }) => [styles.pathCard, pressed ? styles.pathPressed : null]}
-      >
-        <Text style={styles.pathCardTitle}>Help me find one</Text>
-        <Text style={styles.pathCardSub}>A few questions, then a program picked for where you are.</Text>
-      </Pressable>
+      {onGuided ? (
+        <Pressable
+          onPress={onGuided}
+          accessibilityRole="button"
+          accessibilityLabel="Help me find a program"
+          style={({ pressed }) => [styles.pathCard, pressed ? styles.pathPressed : null]}
+        >
+          <Text style={styles.pathCardTitle}>Help me find one</Text>
+          <Text style={styles.pathCardSub}>A few questions, then a program picked for where you are.</Text>
+        </Pressable>
+      ) : (
+        <Pressable
+          onPress={onFreestyle}
+          accessibilityRole="button"
+          accessibilityLabel="Start a freestyle workout"
+          style={({ pressed }) => [styles.pathCard, pressed ? styles.pathPressed : null]}
+        >
+          <Text style={styles.pathCardTitle}>Start a freestyle workout</Text>
+          {/* Names cardio because the tap opens the "What are you training?" sheet, and with no program
+              there is no hero card — this is the only door to a conditioning session on Home. */}
+          <Text style={styles.pathCardSub}>Train today with nothing planned — lifts or cardio.</Text>
+        </Pressable>
+      )}
       <Pressable
         onPress={onBuild}
         accessibilityRole="button"
@@ -254,7 +251,11 @@ export default function HomeScreen() {
   const [elseView, setElseView] = useState<'root' | 'cardio'>('root');
   const router = useRouter();
   const { startWorkout } = useWorkoutSession();
-  const { requestPrompt, markAnnounced } = useTour();
+  const { requestPrompt, markAnnounced, requestTour } = useTour();
+  // The guided tour measures Home's real cards, and four of the seven sit below the fold — so it needs the
+  // scroll view itself, not just the anchors inside it.
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
   const { showToast } = useToast();
   // Live identity for the AppBar avatar. The artwork resolver below keeps its synchronous seed
   // profile — it must resolve the hero art on the first frame, and the art is static regardless.
@@ -396,11 +397,6 @@ export default function HomeScreen() {
   const missionTarget = (primaryGoal ?? activeGoals[0])?.name ?? 'Set a chapter goal';
   const goalsRemaining = goalList.filter((g) => g.achievedAt == null).length;
 
-  // Shared actions (used by both the still-collecting gate and the un-gated Home hero).
-  const startFirst = () => {
-    startWorkout('First Workout');
-    router.push('/workout');
-  };
   const openPrograms = () => router.push('/workouts');
   const openBuilder = () => router.push('/program-builder');
   const completeIntake = async (r: IntakeResult) => {
@@ -547,11 +543,31 @@ export default function HomeScreen() {
       ? { number: homeChapter.number, name: homeChapter.name, weekDay: homeChapter.weekDay }
       : { number: '', name: '', weekDay: '' };
 
-  // Phase B un-gate: the full Home opens as soon as the athlete has a program signal — a built program OR a
-  // chosen level (a suggestion exists). The single-card gate remains ONLY while a fresh athlete is still
-  // collecting their starting point (no program, no level yet). The first-workout ceremony (ONB-D18) is
-  // unaffected — it lives in the workout-complete flow, not this gate.
-  const stillCollecting = !!awaiting && !hasProgram && homeLevel == null;
+  /**
+   * THE HOME GATE IS GONE. Full Home from the very first launch — chapter, circle, quick actions and all —
+   * with the starting-point question living IN it rather than INSTEAD of it.
+   *
+   * This is Onboarding-Amendment-002 finally being applied, not a new direction. Its own origin section
+   * names the behaviour that was here as the defect it was written to remove: *"First Home is a pure program
+   * funnel — the awaiting-first-workout Home surfaces only a program card and omits every social/explore
+   * surface, so a new athlete dead-ends at 'start a workout'."* ONB-D13 is blunter still: the recommendation
+   * is **"an offer, never a gate."** A full-screen takeover that will not let you past until you answer is a
+   * gate however gently it asks.
+   *
+   * So these three are no longer branches AROUND Home. They are the states of one slot ON it, sitting where
+   * the Program | Mission grid will eventually go. The first-workout ceremony (ONB-D18) is untouched — it
+   * lives in the workout-complete flow and never had anything to do with this.
+   */
+  const needsStartingPoint = !hasProgram;
+  /**
+   * Whether the guided on-ramp is offered at all — false while the catalog cannot answer the questions
+   * the intake asks (`canRecommend`). Derived from the authored programs, so it turns itself back on.
+   *
+   * It also gates `hasSuggestion` below, so an athlete carrying a level in local storage from before this
+   * turned off is not left looking at a recommendation by a path nobody can reach. Nothing is cleared —
+   * their answers are still there when the on-ramp comes back.
+   */
+  const guidedOnRamp = catalogCanRecommend();
   /** Null until they pick a door. Local: it decides what to draw now, not anything worth persisting. */
   const [path, setPath] = useState<'guided' | null>(null);
   /**
@@ -560,7 +576,12 @@ export default function HomeScreen() {
    * dropped straight through to the full Home with a program silently assigned, so the athlete never
    * saw what was picked for them or had any say in it.
    */
-  const showSuggestion = !!awaiting && !hasProgram && homeLevel != null;
+  const hasSuggestion = needsStartingPoint && homeLevel != null && guidedOnRamp;
+  /**
+   * The chooser is up AND it has put freestyle in the first card slot — so the quiet "Or just train today"
+   * underneath is that same tap a second time, and is not drawn.
+   */
+  const freestyleIsACard = !hasSuggestion && path !== 'guided' && !guidedOnRamp;
   // A real "first move" — the athlete has built OR chosen a program (the unlock ceremony's trigger).
   //
   // This used to also accept `homeLevel != null`, which is only "they answered the experience question".
@@ -568,65 +589,28 @@ export default function HomeScreen() {
   // suggestion, before they had picked anything. A program, and nothing less, is the first move.
   const hasProgramSignal = hasProgram;
 
-  // First-move unlock (Onboarding-Amendment-003): once the full (un-gated) Home is settled AND a program
-  // exists, announce the "Legacy Unlocked" ceremony (which hands to the guided tour). Guarded on the awaiting
-  // query having resolved so the brief pre-load frame never fires early; `requestPrompt` is a no-op unless the
-  // tour is still pending, so it's safe on every settled focus. The real chapter feeds the ceremony's stats.
+  /*
+   * The two moments the guided tour hangs off, both reported from here because Home is the only screen that
+   * knows which of its two faces is up (Onboarding-Amendment-003).
+   *
+   * GATED → the four-pillar tabs leg. Reported only from the CHOOSER — the athlete has just arrived, has
+   * touched nothing, and the screen in front of them is one card. That is the moment a map of the app is
+   * worth having and costs nothing. Deliberately NOT reported mid-intake or over the recommendation: walking
+   * someone away from a half-answered question to look at the Squads tab is not guidance, and an athlete who
+   * skips past this moment simply keeps the leg owed — the planner chains it ahead of the Home leg later.
+   *
+   * UN-GATED → the seven-step spotlight walkthrough of the real cards, plus (once a program exists) the
+   * "Legacy Unlocked" ceremony that hands into it. Guarded on the awaiting query having resolved so the brief
+   * pre-load frame never fires early; both calls are no-ops unless something is actually owed, so they are
+   * safe on every settled focus. The real chapter feeds the ceremony's stats.
+   */
   useFocusEffect(
     useCallback(() => {
-      if (!awaitingLoading && !stillCollecting && hasProgramSignal) requestPrompt();
-    }, [awaitingLoading, stillCollecting, hasProgramSignal, requestPrompt]),
+      if (awaitingLoading) return;
+      requestTour(hasProgram ? 'has-program' : 'no-program');
+      if (hasProgramSignal) requestPrompt();
+    }, [awaitingLoading, hasProgram, hasProgramSignal, requestPrompt, requestTour]),
   );
-
-  if (stillCollecting || showSuggestion) {
-    return (
-      <View style={styles.root}>
-        <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.15)' }} />
-        <AppBar
-          title={<HomeWordmark />}
-          actions={<NotificationBell />}
-          avatar={<Avatar name={liveProfile?.name ?? ''} src={liveProfile?.avatarUrl ?? undefined} size="appBar" />}
-          onAvatar={() => router.push('/account-settings')}
-        />
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <ChapterTitleBlock
-            chapterNumber={chapter.number}
-            chapterName={chapter.name}
-            weekDay={chapter.weekDay}
-            principle={todaysPrinciple()}
-            showRankMedallion={false}
-          />
-          <View style={styles.content}>
-            {homeLevel === undefined ? (
-              // Level lens still loading — the first-session card (no flash of the stepper).
-              <FirstSessionCard onStart={startFirst} onOpenPrograms={openPrograms} />
-            ) : showSuggestion && homeLevel != null ? (
-              // Answered — show WHAT was recommended and why, with a real choice about it.
-              <ExperienceLevelCard
-                mode="suggested"
-                level={homeLevel}
-                intake={homeIntake ?? null}
-                homeGym={homeGymData ?? null}
-                onStart={(programId) => void acceptSuggestion(programId)}
-                onExplore={openPrograms}
-                onChange={changeIntake}
-              />
-            ) : path == null ? (
-              <ProgramPathChooser
-                title="How do you want to start?"
-                onGuided={() => setPath('guided')}
-                onBuild={openBuilder}
-                onBrowse={openPrograms}
-              />
-            ) : (
-              // Guided — the intake stepper (level → goals → equipment).
-              <ExperienceLevelCard mode="collect" onComplete={completeIntake} onBuild={openBuilder} />
-            )}
-          </View>
-        </ScrollView>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.root}>
@@ -639,53 +623,93 @@ export default function HomeScreen() {
         onAvatar={() => router.push('/account-settings')}
       />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <ChapterTitleBlock
-          chapterNumber={chapter.number}
-          chapterName={chapter.name}
-          weekDay={chapter.weekDay}
-          principle={todaysPrinciple()}
-          showRankMedallion={false}
-        />
+      <ScrollView
+        ref={tourScroller}
+        onScroll={onTourScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <TourAnchor id="chapter">
+          <ChapterTitleBlock
+            chapterNumber={chapter.number}
+            chapterName={chapter.name}
+            weekDay={chapter.weekDay}
+            principle={todaysPrinciple()}
+            showRankMedallion={false}
+          />
+        </TourAnchor>
 
         <View style={styles.content}>
           {/* Phase B.1: the built / chosen / demo program feeds the EXISTING slots — the Today's Workout hero
               and the Current Program tile — not a separate card. */}
           {home.workout ? (
-            <TodaysWorkoutCard
-              resolved={home.resolved}
-              title={home.workout.name}
-              focus={home.workout.focus}
-              exerciseCount={home.workout.exerciseCount ?? home.workout.exercises?.length ?? 0}
-              onStart={resumeSets ? continueWorkout : startHomeWorkout}
-              resumeSets={resumeSets}
-              /* No `onPreview`: W-3 is unbuilt, and the card now renders as content rather than as a
-                 button to nowhere when none is given. */
-              onFreestyle={startFreestyleFromHome}
-            />
+            <TourAnchor id="todays-workout">
+              <TodaysWorkoutCard
+                resolved={home.resolved}
+                title={home.workout.name}
+                focus={home.workout.focus}
+                exerciseCount={home.workout.exerciseCount ?? home.workout.exercises?.length ?? 0}
+                onStart={resumeSets ? continueWorkout : startHomeWorkout}
+                resumeSets={resumeSets}
+                /* No `onPreview`: W-3 is unbuilt, and the card now renders as content rather than as a
+                   button to nowhere when none is given. */
+                onFreestyle={startFreestyleFromHome}
+              />
+            </TourAnchor>
           ) : null}
 
-          {/* Past the first-run gate with no program of their own — a freestyle-only athlete. They used to
-              be handed the catalog's demo program here. Now they get the same two doors the gate offers,
-              plus the session they can start regardless. */}
-          {!home.name ? (
+          {/*
+            THE STARTING-POINT SLOT — where the gate used to be a screen.
+
+            Three states of one card, sitting exactly where the Program | Mission grid will go once there
+            IS a program. Everything around it — chapter, circle, quick actions, Explore Forge — is on
+            screen the whole time, which is the point: the question is an offer beside the app, not a door
+            in front of it (ONB-D13, "an offer, never a gate").
+
+            It serves the brand-new athlete and the long-time freestyle athlete with the same three cards,
+            because they want the same thing. "Or just train today" stays under all of them — the answer to
+            "how do you want to start" is allowed to be "I don't" — EXCEPT where the chooser has already
+            promoted freestyle into the card slot (no guided on-ramp), because the same action twice on one
+            card is not two choices.
+          */}
+          {needsStartingPoint ? (
             <>
-              <ProgramPathChooser
-                title="You don't have a program yet"
-                subtitle="Train freely as long as you like — or give the work a shape."
-                onGuided={changeIntake}
-                onBuild={openBuilder}
-                onBrowse={openPrograms}
-              />
-              <Pressable
-                onPress={startFreestyleFromHome}
-                accessibilityRole="button"
-                accessibilityLabel="Start a workout without a program"
-                hitSlop={8}
-                style={styles.pathQuiet}
-              >
-                <Text style={styles.pathQuietText}>Or just train today</Text>
-              </Pressable>
+              {hasSuggestion ? (
+                // Answered the questions — show WHAT was picked and why, with a real choice about it.
+                <ExperienceLevelCard
+                  mode="suggested"
+                  level={homeLevel!}
+                  intake={homeIntake ?? null}
+                  homeGym={homeGymData ?? null}
+                  onStart={(programId) => void acceptSuggestion(programId)}
+                  onExplore={openPrograms}
+                  onChange={changeIntake}
+                />
+              ) : path === 'guided' ? (
+                // Chose "Help me find one" — the intake stepper (level → goals → equipment), inline.
+                <ExperienceLevelCard mode="collect" onComplete={completeIntake} onBuild={openBuilder} />
+              ) : (
+                <ProgramPathChooser
+                  title={awaiting ? 'How do you want to start?' : "You don't have a program yet"}
+                  subtitle={awaiting ? undefined : 'Train freely as long as you like — or give the work a shape.'}
+                  onGuided={guidedOnRamp ? () => setPath('guided') : undefined}
+                  onBuild={openBuilder}
+                  onBrowse={openPrograms}
+                  onFreestyle={startFreestyleFromHome}
+                />
+              )}
+              {freestyleIsACard ? null : (
+                <Pressable
+                  onPress={startFreestyleFromHome}
+                  accessibilityRole="button"
+                  accessibilityLabel="Start a workout without a program"
+                  hitSlop={8}
+                  style={styles.pathQuiet}
+                >
+                  <Text style={styles.pathQuietText}>Or just train today</Text>
+                </Pressable>
+              )}
             </>
           ) : null}
 
@@ -706,18 +730,22 @@ export default function HomeScreen() {
                     : openPrograms
               }
               onMission={() => router.push('/goals')}
+              programAnchor="current-program"
+              missionAnchor="mission"
             />
           ) : null}
 
-          <YourCircleCard
-            liveUsers={live}
-            friendActivity={circleActivity}
-            hasCircle={hasCircle}
-            onAddFriends={() => router.push('/add-friend')}
-            onJoinLive={(userId) => router.push({ pathname: '/athlete/[id]', params: { id: userId } })}
-            onFriendActivity={() => router.push('/friends')}
-            onSeeCircle={() => router.push('/friends')}
-          />
+          <TourAnchor id="your-circle">
+            <YourCircleCard
+              liveUsers={live}
+              friendActivity={circleActivity}
+              hasCircle={hasCircle}
+              onAddFriends={() => router.push('/add-friend')}
+              onJoinLive={(userId) => router.push({ pathname: '/athlete/[id]', params: { id: userId } })}
+              onFriendActivity={() => router.push('/friends')}
+              onSeeCircle={() => router.push('/friends')}
+            />
+          </TourAnchor>
 
           {/* Two actions, both real. "Train Together" was "Challenge", which opened a sheet whose every
               row was inert — FRIENDS-context competitions are deferred, so it duplicated Competitions and
@@ -729,6 +757,8 @@ export default function HomeScreen() {
             trainingSummary={trainingSummary(live)}
             onTrainTogether={() => setFriendSheetOpen(true)}
             onCompetitions={() => router.push('/competitions')}
+            trainAnchor="train-together"
+            competitionsAnchor="competitions"
           />
 
           {/* "Explore Forge" invitation (ONB-A2-D4a) — the fresh athlete's map to the four pillars. Shown
@@ -862,21 +892,6 @@ const styles = StyleSheet.create({
   menuDivider: { height: 1, backgroundColor: flColor.charcoal600, marginHorizontal: 6 },
   menuItem: { paddingVertical: 12, paddingHorizontal: 14 },
   menuItemText: { fontFamily: flFont.sans, fontSize: 14, fontWeight: '600', color: flColor.cream100 },
-  firstCard: { alignItems: 'center', gap: 16 },
-  firstIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorderSubtle,
-    backgroundColor: flColor.charcoal800,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  firstText: { alignItems: 'center', gap: 6 },
-  firstTitle: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100, textAlign: 'center' },
-  firstCopy: { fontFamily: flFont.sans, fontSize: 14, lineHeight: 20, color: flColor.gray400, textAlign: 'center', maxWidth: 260 },
-  firstActions: { width: '100%', gap: 10 },
 
   // "Explore Forge" invitation grid
   explore: { gap: 4 },

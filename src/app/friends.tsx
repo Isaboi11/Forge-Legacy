@@ -9,6 +9,9 @@ import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { ScreenBackground } from '@/components/screen-background';
+import { ScreenTour } from '@/components/tour/ScreenTour';
+import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { BG_RADIAL } from '@/constants/backgrounds';
 import {
   EntryStrip,
@@ -101,6 +104,9 @@ export default function FriendsFeedScreen() {
   const { data: lists } = useQuery(() => fetchFriendLists().catch(() => null), []);
 
   const [composerOpen, setComposerOpen] = useState(false);
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
+  const addRef = useTourAnchor('friends-add');
   const [commentsFor, setCommentsFor] = useState<FeedPost | null>(null);
   const [pickerId, setPickerId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -132,6 +138,7 @@ export default function FriendsFeedScreen() {
         onBack={() => router.back()}
         actions={
           <Pressable
+            ref={addRef}
             onPress={() => router.push('/add-friend')}
             accessibilityRole="button"
             accessibilityLabel={pendingRequests > 0 ? `Friends, ${pendingRequests} pending requests` : 'Friends and requests'}
@@ -161,18 +168,27 @@ export default function FriendsFeedScreen() {
           </Pressable>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} onScrollBeginDrag={() => setPickerId(null)}>
+        <ScrollView
+          ref={tourScroller}
+          onScroll={onTourScroll}
+          scrollEventThrottle={16}
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          onScrollBeginDrag={() => setPickerId(null)}
+        >
+          <TourAnchor id="friends-feed">
           <Pressable onPress={() => setComposerOpen(true)} accessibilityRole="button" accessibilityLabel="Share a moment" style={styles.composerBar}>
             <Avatar name={profile?.name ?? ''} src={profile?.avatarUrl ?? undefined} size="listRow" />
             <Text style={styles.composerText}>What did you forge today?</Text>
           </Pressable>
+          </TourAnchor>
 
           {feed.length === 0 ? (
             <EmptyFeed onFind={() => router.push('/add-friend')} hasFriends={(lists?.friends.length ?? 0) > 0} />
           ) : (
-            feed.map((post) => (
+            feed.map((post, pi) => (
+              <TourAnchor key={post.id} id={pi === 0 ? 'friends-post' : undefined}>
               <PostCard
-                key={post.id}
                 post={post}
                 pickerOpen={pickerId === post.id}
                 busy={busyId === post.id}
@@ -181,10 +197,15 @@ export default function FriendsFeedScreen() {
                 onAuthor={() => router.push({ pathname: '/athlete/[id]', params: { id: post.authorId } })}
                 onComments={() => setCommentsFor(post)}
               />
+              </TourAnchor>
             ))
           )}
         </ScrollView>
       )}
+
+      {/* Authored in the first tour pass and never mounted until now — the walkthrough existed, the
+          line rendering it did not. */}
+      <ScreenTour screenKey="friends" />
 
       <Composer
         open={composerOpen}

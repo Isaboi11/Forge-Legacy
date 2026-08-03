@@ -102,3 +102,37 @@ const CATALOG_ALIAS: Record<string, string> = {
 export function resolveRecommendationId(input: RecommendInput): string {
   return CATALOG_ALIAS[intendedProgramId(input)] ?? FALLBACK_ID;
 }
+
+/** The 6 goals the intake asks about — every question the catalog has to be able to answer. */
+const GOALS: readonly GoalId[] = ['strength', 'muscle', 'fatloss', 'endurance', 'health', 'athletic'];
+const EXPERIENCES: readonly Experience[] = ['beginner', 'intermediate', 'advanced'];
+/** One equipment answer per access tier — `accessFor` reduces all five checkboxes to these three. */
+const ACCESS_ANSWERS: readonly (readonly EquipmentId[])[] = [['fullgym'], ['dumbbells'], []];
+
+/**
+ * IS THE GUIDED ON-RAMP WORTH OFFERING YET?
+ *
+ * `resolveRecommendationId` always returns a real id — that is its invariant, and it is achieved by a
+ * fallback. So "we can recommend" is NOT "the answer exists"; it is "the answer corresponds to what was
+ * asked". Today it does not: of the 54 goal × experience × access combinations the intake can produce,
+ * only gym-access strength lands on a program authored for that goal. An athlete who says *I want to run
+ * a 10k, bodyweight only* answers three questions and is handed a 3-day barbell program.
+ *
+ * That is a promise the catalog cannot keep, so Home does not make it — see the starting-point slot in
+ * `(tabs)/index.tsx`. This is a derived condition rather than a flag on purpose: when the Running,
+ * Conditioning, Muscle Building and Full Body families land (either authored under the design's own ids
+ * or aliased to them), the on-ramp returns without anyone having to remember it was switched off.
+ *
+ * A combination counts as answered only when its INTENDED program is real — present in the catalog, or
+ * deliberately aliased to something in it. Reaching `FALLBACK_ID` is precisely the case this rules out.
+ */
+export function canRecommend(catalogIds: readonly string[]): boolean {
+  const have = new Set(catalogIds);
+  const answered = (intended: string) => have.has(intended) || CATALOG_ALIAS[intended] != null;
+
+  return GOALS.every((primaryGoal) =>
+    EXPERIENCES.every((experience) =>
+      ACCESS_ANSWERS.every((equipment) => answered(intendedProgramId({ primaryGoal, experience, equipment }))),
+    ),
+  );
+}

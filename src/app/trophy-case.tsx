@@ -7,6 +7,9 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { ScreenBackground } from '@/components/screen-background';
+import { ScreenTour } from '@/components/tour/ScreenTour';
+import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 import {
@@ -119,6 +122,8 @@ const TIER: Record<TrophyTier, { accent: string; ring: string; emblem: readonly 
 
 export default function TrophyCaseScreen() {
   const router = useRouter();
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
   const { athlete } = useLocalSearchParams<{ athlete?: string }>();
   const athleteId = typeof athlete === 'string' && athlete.length > 0 ? athlete : null;
 
@@ -224,17 +229,25 @@ export default function TrophyCaseScreen() {
 
         {/* Only once there is something to tally — three zeroes are not a neutral read (CC-D3). */}
         {data.podiums > 0 ? (
-          <View style={styles.tally}>
+          <TourAnchor id="trophy-medals" style={styles.tally}>
             <TallyCell tier="gold" count={data.championships} label="Gold" divided />
             <TallyCell tier="silver" count={data.silvers} label="Silver" divided />
             <TallyCell tier="bronze" count={data.bronzes} label="Bronze" />
-          </View>
+          </TourAnchor>
         ) : null}
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={tourScroller}
+        onScroll={onTourScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
         {/* ── Career Record ── */}
-        <Text style={styles.sectionLabel}>Career Record</Text>
+        <TourAnchor id="trophy-record">
+          <Text style={styles.sectionLabel}>Career Record</Text>
+        </TourAnchor>
         {data.entered === 0 ? (
           <View style={styles.emptyBlock}>
             <View style={styles.emptyCrest}>
@@ -326,6 +339,8 @@ export default function TrophyCaseScreen() {
           </Pressable>
         ) : null}
       </ScrollView>
+
+      <ScreenTour screenKey="trophy-case" />
     </View>
   );
 }

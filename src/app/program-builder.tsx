@@ -44,6 +44,10 @@ import {
   type Modality,
 } from '@/domain/workout/conditioning';
 import { errorMessage } from '@/lib/useQuery';
+import { ScreenTour } from '@/components/tour/ScreenTour';
+import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
+import type { TourAnchorId } from '@/domain/onboarding/tour-plan';
 import {
   absorbBuilderInbox,
   activeDays,
@@ -592,6 +596,15 @@ export default function ProgramBuilderScreen() {
         />
       )}
 
+      {/*
+        TWO WALKTHROUGHS, ONE ROUTE. Setup and the Day Builder are different screens in every sense that
+        matters — different controls, different question being answered — and a single tour spanning both
+        would have to survive a view change mid-run. Each fires on its own first visit and is remembered
+        separately, so opening your first day months later still explains the day.
+      */}
+      <ScreenTour screenKey="program-builder" ready={!openDay && !weekView} />
+      <ScreenTour screenKey="day-builder" ready={!!openDay} />
+
       {/* Jump to week — the progress bar's destination. */}
       {/* Add a cardio block. Three activities — the modality is set on the card afterwards, and the
           targets are steppers rather than fields because either one can be left open. */}
@@ -1034,6 +1047,10 @@ function SetupView({
   const dayChips = Array.from({ length: DAYS_MAX - DAYS_MIN + 1 }, (_, i) => DAYS_MIN + i);
   const rise = useEntryRise(400);
   const builtWeeks = completedWeeks(draft);
+  // Walkthrough anchors + the scroller, so the spotlight can reach the list and the save bar below the fold.
+  const importRef = useTourAnchor('builder-import');
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
 
   const title = draft.mode === 'edit' ? 'Edit Program' : draft.mode === 'dup' ? 'Duplicate Program' : 'New Program';
   const saveLabel = draft.mode === 'edit' ? 'Save Changes' : draft.mode === 'dup' ? 'Create Copy' : 'Save Program';
@@ -1049,6 +1066,9 @@ function SetupView({
       <AppBar title={title} serif onClose={onCancel} />
 
       <Animated.ScrollView
+        ref={tourScroller}
+        onScroll={onTourScroll}
+        scrollEventThrottle={16}
         style={rise}
         contentContainerStyle={styles.setupScroll}
         keyboardShouldPersistTaps="handled"
@@ -1061,7 +1081,7 @@ function SetupView({
           </View>
         ) : null}
 
-        <View style={styles.detailsCard}>
+        <TourAnchor id="builder-details" style={styles.detailsCard}>
           <View style={styles.cardHeader}>
             <SectionHeader label="Program details" />
           </View>
@@ -1107,11 +1127,12 @@ function SetupView({
               })}
             </View>
           </View>
-        </View>
+        </TourAnchor>
 
         {/* "Import from a spreadsheet" — the design places it here, between the length controls and the
             structure choice, because importing decides both for you. */}
         <Pressable
+          ref={importRef}
           onPress={onOpenImport}
           accessibilityRole="button"
           accessibilityLabel="Import from a spreadsheet"
@@ -1123,7 +1144,7 @@ function SetupView({
           <Text style={styles.importLinkText}>Import from a spreadsheet</Text>
         </Pressable>
 
-        <View style={styles.structure}>
+        <TourAnchor id="builder-structure" style={styles.structure}>
           <SectionHeader label="Program structure" />
           <StructureOption
             selected={!draft.vary}
@@ -1137,7 +1158,7 @@ function SetupView({
             body="Build every week individually — copy a week forward and tweak."
             onPress={onVary}
           />
-        </View>
+        </TourAnchor>
 
         {draft.vary ? (
           <Pressable onPress={onOpenJump} accessibilityRole="button" accessibilityLabel="Jump to week" style={styles.progressBlock}>
@@ -1157,7 +1178,7 @@ function SetupView({
         </View>
 
         {draft.vary ? (
-          <View style={styles.dayRows}>
+          <TourAnchor id="builder-list" style={styles.dayRows}>
             {(draft.weekPlans ?? []).map((w, i) => {
               const total = w.days.reduce((a, d) => a + dayTotal(d), 0);
               const built = weekComplete(w);
@@ -1197,9 +1218,9 @@ function SetupView({
                 </View>
               );
             })}
-          </View>
+          </TourAnchor>
         ) : (
-        <View style={styles.dayRows}>
+        <TourAnchor id="builder-list" style={styles.dayRows}>
           {days.map((day, i) => {
             const total = dayTotal(day);
             const built = day.main.length > 0;
@@ -1240,22 +1261,24 @@ function SetupView({
               </View>
             );
           })}
-        </View>
+        </TourAnchor>
         )}
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
       </Animated.ScrollView>
 
       <LinearGradient colors={['rgba(6,7,8,0.35)', 'rgba(6,7,8,0.82)']} style={styles.footer}>
-        {!valid ? (
-          <View style={styles.checks}>
-            <CheckRow ok={nameOk} label="Program name" />
-            <CheckRow ok={mainOk} label="At least one main exercise" />
-          </View>
-        ) : null}
-        <Button variant="primary" fullWidth disabled={!valid || saving} onPress={onSave} accessibilityLabel={saveLabel}>
-          {saving ? 'Saving…' : saveLabel}
-        </Button>
+        <TourAnchor id="builder-save">
+          {!valid ? (
+            <View style={styles.checks}>
+              <CheckRow ok={nameOk} label="Program name" />
+              <CheckRow ok={mainOk} label="At least one main exercise" />
+            </View>
+          ) : null}
+          <Button variant="primary" fullWidth disabled={!valid || saving} onPress={onSave} accessibilityLabel={saveLabel}>
+            {saving ? 'Saving…' : saveLabel}
+          </Button>
+        </TourAnchor>
       </LinearGradient>
     </>
   );
@@ -1445,12 +1468,19 @@ function DayBuilder({
   const total = dayTotal(day);
   const est = Math.round((day.main.length * 9 + day.warmup.length * 4 + day.cooldown.length * 4) / 5) * 5;
   const rise = useEntryRise(360);
+  // This view replaces Setup's scroller while it's open; the registry releases by identity, so the swap
+  // in either direction is safe regardless of which unmounts first.
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
 
   return (
     <>
       <AppBar title={dayName(day)} serif onBack={onBack} />
 
       <Animated.ScrollView
+        ref={tourScroller}
+        onScroll={onTourScroll}
+        scrollEventThrottle={16}
         style={rise}
         contentContainerStyle={styles.dayScroll}
         keyboardShouldPersistTaps="handled"
@@ -1470,7 +1500,11 @@ function DayBuilder({
           const items = day[sec.key];
           const isMain = sec.key === 'main';
           return (
-            <View key={sec.key} style={[styles.section, si > 0 && styles.sectionRuled, si === SECTION_META.length - 1 && styles.sectionLast]}>
+            <TourAnchor
+              key={sec.key}
+              id={isMain ? 'day-sections' : undefined}
+              style={[styles.section, si > 0 && styles.sectionRuled, si === SECTION_META.length - 1 && styles.sectionLast]}
+            >
               <View style={styles.sectionHead}>
                 <Text style={[styles.sectionLabel, isMain && styles.sectionLabelMain]}>{sec.label}</Text>
                 <Text style={styles.sectionReq}>{sec.req}</Text>
@@ -1487,6 +1521,7 @@ function DayBuilder({
                     item={it}
                     first={i === 0}
                     last={i === items.length - 1}
+                    anchor={isMain && i === 0 ? 'day-reps' : undefined}
                     onUp={() => onMove(sec.key, i, -1)}
                     onDown={() => onMove(sec.key, i, 1)}
                     onRemove={() => onRemove(sec.key, i)}
@@ -1499,27 +1534,31 @@ function DayBuilder({
                 {/* Adding an exercise is the common path and stays bronze; adding cardio is available
                     but recessive. The hierarchy is the point. */}
                 <View style={styles.addRow}>
-                  <Pressable
-                    onPress={() => onAdd(sec.key)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Add ${sec.addLabel}`}
-                    style={[styles.addBtn, styles.addBtnGrow]}
-                  >
-                    <Glyph d={PLUS} size={15} color={flColor.bronze300} width={2} />
-                    <Text style={styles.addText}>Add {sec.addLabel}</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => onAddCardio(sec.key)}
-                    accessibilityRole="button"
-                    accessibilityLabel="Add a cardio block"
-                    style={styles.addCardioBtn}
-                  >
-                    <ActivityGlyph activity="run" size={17} color={flColor.gray400} />
-                    <Text style={styles.addCardioText}>Cardio</Text>
-                  </Pressable>
+                  <TourAnchor id={isMain ? 'day-add' : undefined} style={styles.addBtnGrow}>
+                    <Pressable
+                      onPress={() => onAdd(sec.key)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Add ${sec.addLabel}`}
+                      style={styles.addBtn}
+                    >
+                      <Glyph d={PLUS} size={15} color={flColor.bronze300} width={2} />
+                      <Text style={styles.addText}>Add {sec.addLabel}</Text>
+                    </Pressable>
+                  </TourAnchor>
+                  <TourAnchor id={isMain ? 'day-cardio' : undefined}>
+                    <Pressable
+                      onPress={() => onAddCardio(sec.key)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Add a cardio block"
+                      style={styles.addCardioBtn}
+                    >
+                      <ActivityGlyph activity="run" size={17} color={flColor.gray400} />
+                      <Text style={styles.addCardioText}>Cardio</Text>
+                    </Pressable>
+                  </TourAnchor>
                 </View>
               </View>
-            </View>
+            </TourAnchor>
           );
         })}
       </Animated.ScrollView>
@@ -1543,6 +1582,7 @@ function ExerciseCard({
   item,
   first,
   last,
+  anchor,
   onUp,
   onDown,
   onRemove,
@@ -1553,6 +1593,8 @@ function ExerciseCard({
   item: ProgramExercise;
   first: boolean;
   last: boolean;
+  /** Walkthrough target — set on the first main-section card so the sets/reps step has something to ring. */
+  anchor?: TourAnchorId;
   onUp: () => void;
   onDown: () => void;
   onRemove: () => void;
@@ -1582,7 +1624,7 @@ function ExerciseCard({
   const bOpen = cardio && (speed ? item.targetSpdMph == null : item.targetPaceSec == null);
 
   return (
-    <View style={styles.exCard}>
+    <TourAnchor id={anchor} style={styles.exCard}>
       <View style={styles.exTop}>
         <View style={styles.exIcon}>
           {cardio ? <ActivityGlyph activity={activity} size={19} color={flColor.bronze400} /> : <EquipIcon equip={item.equip} size={19} />}
@@ -1670,7 +1712,7 @@ function ExerciseCard({
           />
         </View>
       </View>
-    </View>
+    </TourAnchor>
   );
 }
 

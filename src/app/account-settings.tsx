@@ -37,9 +37,10 @@ import { useTour } from '@/hooks/useTour';
  *
  * HEADER SCOPE (a deliberate reversal of amendment §4 under PD-7, "the design governs"): the amendment
  * proposed rehoming @handle / athlete type / "Forging since" in this header, but the design keeps the
- * header to name + rank. Those three are editable identity, so they belong on P-1.1 Edit Profile (still
- * owed) rather than crammed into a header the design keeps clean. `fetchAccountIdentity` still returns
- * them, ready for that screen.
+ * header to name + rank. Those are editable identity, so they belong on **P-1.1 Edit Profile — now
+ * built**, which this header is the entry point to. The handle rides along under the rank because it is
+ * how other athletes reach you (handle search is the only Add Friend path), so it has to be legible
+ * somewhere; athlete type and "Forging since" stay on the editor rather than crowding the header.
  *
  * The App Bar avatar app-wide targets this screen directly. There is no Profile modal.
  *
@@ -48,7 +49,6 @@ import { useTour } from '@/hooks/useTour';
  *
  * DEFERRED vs the `.dc` (omitted, not faked):
  *  · Accent colour (10 palettes) — the tokens are compile-time constants; runtime theming is a rebuild.
- *  · P-1.1 Edit Profile — still owed (amendment §4); the header reads, it doesn't yet edit.
  *
  * The design's version string `2.4.1 (build 318)` is placeholder copy; this reports the real one.
  */
@@ -122,8 +122,15 @@ export default function AccountSettingsScreen() {
         </View>
       ) : (
         <ScrollView contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
-          {/* identity — the design's clean header: bronze disc, name, rank */}
-          <View style={styles.identity}>
+          {/* identity — the design's clean header: bronze disc, name, rank. Now the entry point to P-1.1
+              Edit Profile: the header is the identity, so tapping it to change the identity needs no new
+              row and keeps the design's uncluttered header intact. The chevron is the only addition. */}
+          <Pressable
+            onPress={() => router.push('/edit-profile')}
+            accessibilityRole="button"
+            accessibilityLabel="Edit profile"
+            style={({ pressed }) => [styles.identity, pressed ? { opacity: 0.7 } : null]}
+          >
             <LinearGradient colors={AVATAR_STOPS} locations={[0, 0.52, 1]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={styles.avatar}>
               <Text style={styles.avatarInitials}>{me?.initials ?? ''}</Text>
             </LinearGradient>
@@ -132,8 +139,10 @@ export default function AccountSettingsScreen() {
                 {me?.name ?? ''}
               </Text>
               {rankLine(me?.rankFamily, me?.rankLevel) ? <Text style={styles.rank}>{rankLine(me?.rankFamily, me?.rankLevel)}</Text> : null}
+              {me?.handle ? <Text style={styles.handle}>@{me.handle}</Text> : null}
             </View>
-          </View>
+            <Glyph d={CHEVRON} size={18} color={flColor.gray600} />
+          </Pressable>
 
           {/* guided tips */}
           <Text style={styles.sectionLabel}>Onboarding</Text>
@@ -235,6 +244,7 @@ const styles = StyleSheet.create({
   identityText: { flex: 1 },
   name: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', color: flColor.cream100 },
   rank: { fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400, marginTop: 3 },
+  handle: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray600, marginTop: 3 },
 
   sectionLabel: {
     fontSize: 10.5,

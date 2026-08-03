@@ -10,6 +10,8 @@ import React from 'react'
 import Svg, { Circle, Path } from 'react-native-svg'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation'
+import { useTourAnchor } from '@/hooks/useTourAnchors'
+import type { TourAnchorId } from '@/domain/onboarding/tour-plan'
 import { ProgressBar } from '../../composites/ProgressBar'
 import { ChevronRightIcon } from '../../primitives/icons/HomeIcons'
 
@@ -21,6 +23,9 @@ export interface ProgramMissionGridProps {
   goalsRemaining: number
   onProgram?: () => void
   onMission?: () => void
+  /** Guided-tour spotlight targets. Each tile is rung separately — they are two unrelated ideas. */
+  programAnchor?: TourAnchorId
+  missionAnchor?: TourAnchorId
 }
 
 function TileHeader({ label }: { label: string }) {
@@ -50,10 +55,16 @@ export function ProgramMissionGrid({
   goalsRemaining,
   onProgram,
   onMission,
+  programAnchor,
+  missionAnchor,
 }: ProgramMissionGridProps) {
+  const programRef = useTourAnchor(programAnchor)
+  const missionRef = useTourAnchor(missionAnchor)
+
   return (
     <View style={styles.grid}>
       <Pressable
+        ref={programRef}
         onPress={onProgram}
         accessibilityRole="button"
         accessibilityLabel={`Current program: ${programName}. ${completed} of ${total} workouts complete.`}
@@ -74,6 +85,7 @@ export function ProgramMissionGrid({
       </Pressable>
 
       <Pressable
+        ref={missionRef}
         onPress={onMission}
         accessibilityRole="button"
         accessibilityLabel={`Mission: ${missionTarget}. ${goalsRemaining} goals remaining.`}

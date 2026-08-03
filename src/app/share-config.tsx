@@ -21,9 +21,22 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
  * Share Configuration (SH-1) — built to `Forge Share Configuration.dc.html`, scoped to the `transformation`
  * kind. Compare shares carry a JSON `payload` (labels · elapsed · chapter · reflection · pose pairs w/
  * alignment) and offer a template picker (slider / side-by-side / stacked / multi-pose grid) + a pose
- * selector; entry shares are a single photo. The design's destinations were fake toasts — here **Share to
- * Squad is REAL** (creates a squad `transformation` post, storing the chosen `layout`). Friends / Community /
- * a-friend + the outside-Forge row stay honest; Share… uses the system sheet.
+ * selector; entry shares are a single photo.
+ *
+ * EVERY DESTINATION ON THIS SCREEN WORKS. That is the whole rule, and it cost three of them.
+ *
+ * The design drew six in-Forge destinations and four outside ones, most of them fake toasts. Squad and
+ * Friends became real (`addSquadPost` / `createFriendPost`); the rest were removed rather than left
+ * saying "coming soon" — or worse. **"Message" was the worst of them: it toasted "Message ready" with
+ * no message and nothing behind it — a surface reporting a success that never happened**, which is the
+ * one thing this codebase treats as unshippable. Removed with it: Community (not in the app at all),
+ * "A friend" (there is no direct-message surface to send to) and "Copy link" (there are no public URLs
+ * — every post is audience-scoped, so a link would need a sharing model and a privacy decision, not a
+ * clipboard call).
+ *
+ * Four destinations that all work beats ten where six lie. Same reasoning that omitted the Friends chip
+ * from Challenges and the Community filter from Discover: absent renders nothing, a fake renders a
+ * confident false claim.
  */
 
 type ToggleKey = 'chapter' | 'reflection' | 'date' | 'photo' | 'name';
@@ -65,7 +78,7 @@ export default function ShareConfigRoute() {
   })();
 
   const [incl, setIncl] = useState<Partial<Record<ToggleKey, boolean>>>({});
-  const [dest, setDest] = useState<'squad' | 'friends' | 'community' | 'friend'>('squad');
+  const [dest, setDest] = useState<'squad' | 'friends'>('squad');
   const [template, setTemplate] = useState<ShareTemplate>('slider');
   const [excluded, setExcluded] = useState<number[]>([]);
   const [mySquads, setMySquads] = useState<SquadSummary[] | null>(null);
@@ -126,7 +139,7 @@ export default function ShareConfigRoute() {
   ];
   const showPhoto = !isCompare && !!photo && eff('photo');
 
-  const destVerb: Record<typeof dest, string> = { squad: 'Share to Squad', friends: 'Share with Friends', community: 'Post to Community', friend: 'Send to a friend' };
+  const destVerb: Record<typeof dest, string> = { squad: 'Share to Squad', friends: 'Share with Friends' };
 
   const togglePose = (i: number) =>
     setExcluded((cur) => {
@@ -237,13 +250,7 @@ export default function ShareConfigRoute() {
       setSquadPickerOpen(true);
       return;
     }
-    if (dest === 'friends') {
-      void postToFriends();
-      return;
-    }
-    // "A friend" is a direct send, and there is no direct-message surface to send it to — a different
-    // thing from the Friends Feed, so it says so rather than borrowing the Community line.
-    showToast(dest === 'community' ? 'Community is coming soon' : 'Sending to one person is coming soon');
+    void postToFriends();
   };
 
   /**
@@ -411,17 +418,13 @@ export default function ShareConfigRoute() {
           <View style={styles.destGrid}>
             <DestTile label="Squad" icon={<SquadIcon />} on={dest === 'squad'} onPress={() => setDest('squad')} />
             <DestTile label="Friends" icon={<FriendsIcon />} on={dest === 'friends'} onPress={() => setDest('friends')} />
-            <DestTile label="Community" icon={<GlobeIcon />} on={dest === 'community'} onPress={() => setDest('community')} />
-            <DestTile label="A friend" icon={<FriendPlusIcon />} on={dest === 'friend'} onPress={() => setDest('friend')} />
           </View>
 
           {/* ── SHARE OUTSIDE FORGE ── */}
           <Text style={styles.sectionLabel}>Share outside Forge</Text>
           <View style={styles.outsideGrid}>
-            <OutsideRow label="Message" icon={<MessageIcon />} onPress={() => showToast('Message ready')} />
             <OutsideRow label="Share…" icon={<ShareDots />} onPress={onSystemShare} />
             <OutsideRow label="Save image" icon={<SaveIcon />} onPress={() => void onSaveImage()} />
-            <OutsideRow label="Copy link" icon={<LinkIcon />} onPress={() => showToast('Share links are coming soon')} />
           </View>
         </ScrollView>
 
@@ -525,43 +528,10 @@ function FriendsIcon() {
     </Svg>
   );
 }
-function GlobeIcon() {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.cream100} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={12} cy={12} r={9} />
-      <Path d="M3.5 12h17M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18" />
-    </Svg>
-  );
-}
-function FriendPlusIcon() {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.cream100} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={9} cy={8} r={3.4} />
-      <Path d="M3.5 20a5.5 5.5 0 0 1 11 0" />
-      <Path d="M18 7v6M15 10h6" />
-    </Svg>
-  );
-}
-function MessageIcon() {
-  return (
-    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M20 5H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h4v4l4-4h8a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1z" />
-    </Svg>
-  );
-}
 function SaveIcon() {
   return (
     <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
       <Path d="M12 4v11M8 11l4 4 4-4M5 19h14" />
-    </Svg>
-  );
-}
-function LinkIcon() {
-  return (
-    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M9.5 14.5l5-5" />
-      <Path d="M8 12l-2 2a3 3 0 0 0 4.2 4.2l2-2" />
-      <Path d="M16 12l2-2a3 3 0 0 0-4.2-4.2l-2 2" />
     </Svg>
   );
 }
