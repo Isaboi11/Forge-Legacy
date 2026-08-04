@@ -195,3 +195,51 @@ test('the gate never lets through something the athlete cannot do', () => {
     assert.ok(canDoExercise({ key: x.key, equipId: x.equipId }, owned), `${x.key} passed the filter but fails the gate`);
   }
 });
+
+// ── the cardio duplicates the conditioning system already owns ───────────────────────────────────────
+//
+// 61 rows carry `equipmentId: 'cardio'`, and 49 of them are variants of the seven activities
+// `CARDIO_ACTIVITIES` already handles properly. Those 49 are a TRAP rather than clutter: they are
+// ordinary catalogue rows, so picking "Interval Run" builds three sets of eight reps of a run — no
+// distance, no pace, no time — because only `cardio:*` keys resolve as conditioning. The worse of the
+// two ways to log a run was the easier one to find.
+//
+// These guard both directions: the duplicates stay out, and the twelve with no replacement stay IN.
+
+const CARDIO_ROWS = exercises.filter((e) => e.equipmentId === 'cardio');
+
+/** The twelve nothing else in the app can express. Hiding these would remove a capability. */
+const KEPT_CARDIO = [
+  'heavy-bag-boxing', 'shadow-boxing', 'boxing-mitt-work', 'kickboxing-bag-work',
+  'jump-rope', 'jump-rope-intervals', 'double-under',
+  'hike', 'ruck', 'ski-erg', 'ski-erg-intervals', 'arc-trainer',
+];
+
+test('the cardio catalogue is exactly 12 kept and 49 hidden', () => {
+  const kept = CARDIO_ROWS.filter((e) => !HIDDEN_EXERCISE_IDS.has(e.id)).map((e) => e.id).sort();
+  assert.deepEqual(kept, [...KEPT_CARDIO].sort());
+  assert.equal(CARDIO_ROWS.length - kept.length, 49);
+});
+
+test('no run or walk VARIANT is offered — Cardio owns those, with distance and pace', () => {
+  // The two the report named, plus the ones most likely to be re-added by hand later.
+  for (const id of ['interval-run', 'brisk-walk', 'easy-run', 'tempo-run', 'trail-run', 'treadmill-run', 'outdoor-walk', 'treadmill-walk', 'weighted-walk']) {
+    assert.ok(exercises.some((e) => e.id === id), `${id} should still EXIST in exercises.json — hidden, never deleted`);
+    assert.ok(HIDDEN_EXERCISE_IDS.has(id), `${id} is still offered in the picker`);
+  }
+});
+
+test('boxing, jump rope, hike, ruck and ski erg stay — nothing else offers them', () => {
+  for (const id of KEPT_CARDIO) {
+    assert.ok(!HIDDEN_EXERCISE_IDS.has(id), `${id} was hidden, and no conditioning activity replaces it`);
+  }
+});
+
+test('hiding is not deleting — every hidden id still resolves in the source data', () => {
+  // A row somebody has already LOGGED must keep resolving, or their history loses the name of what they
+  // did. This is the whole reason the cleanup used the hidden list rather than an edit to exercises.json.
+  const byId = new Set(exercises.map((e) => e.id));
+  for (const id of HIDDEN_EXERCISE_IDS) {
+    assert.ok(byId.has(id), `HIDDEN_EXERCISE_IDS names ${id}, which is not in exercises.json`);
+  }
+});

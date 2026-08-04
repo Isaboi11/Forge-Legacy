@@ -193,6 +193,88 @@ const asEquipClass = (v: string): EquipClass =>
  * one would lose the record of what they trained. Hiding is reversible; deleting history is not.
  */
 export const HIDDEN_EXERCISE_IDS: ReadonlySet<string> = new Set([
+  // ─────────────────────────────────────────────────────────────────────────
+  // CARDIO ACTIVITIES THE CONDITIONING SYSTEM ALREADY OWNS (49)
+  // ─────────────────────────────────────────────────────────────────────────
+  //
+  // Not clutter — a TRAP. These rows are ordinary catalogue entries, so picking "Interval Run" here
+  // builds three sets of eight reps of a run: no distance, no pace, no time. Only `cardio:run`,
+  // `cardio:walk` and their five siblings are recognised as conditioning (`activityFromKey`), and those
+  // live in `CARDIO_ACTIVITIES`, reachable from the picker's own "Running & Cardio" section and from
+  // Home's Cardio chooser. So the catalogue offered a second, worse way to log the same thing — and the
+  // worse one was the easier one to find, because it sat among the 794.
+  //
+  // HIDDEN, NOT DELETED, for two reasons. `exercises.json` is append/annotate-only by standing rule; and
+  // a row that somebody has already logged must keep resolving, or their history loses the name of what
+  // they did. Hiding removes it from what is OFFERED and touches nothing that was recorded.
+  //
+  // ══ WHAT IS DELIBERATELY KEPT (12) ══
+  //
+  // Boxing (heavy bag · mitts · shadow · kickboxing), Jump Rope, Double-Under, Hike, Ruck, Ski Erg ×2
+  // and Arc Trainer. None of the seven conditioning activities covers them, so hiding these would
+  // remove the capability rather than de-duplicate it — there would be no way to log a boxing session
+  // at all. They stay until conditioning grows to hold them.
+  //
+  // Two of the 49 are arguable and went with the group by PO decision: `weighted-walk` and `ruck` are a
+  // loaded carry, which is a strength stimulus Cardio's Walk cannot express. Ruck is KEPT; Weighted Walk
+  // is hidden, because "Walk" plus a weight is the thing Cardio already asks you to describe.
+  // Run — the Cardio activity measures a run in distance, pace and time; these measure it in sets.
+  'easy-run',
+  'fartlek-run',
+  'hill-repeats',
+  'hill-sprint',
+  'interval-run',
+  'long-run',
+  'progression-run',
+  'recovery-run',
+  'sprint',
+  'strides',
+  'tempo-run',
+  'threshold-run',
+  'track-repeats',
+  'trail-run',
+  'treadmill-run',
+  // Walk
+  'brisk-walk',
+  'outdoor-walk',
+  'run-walk-intervals',
+  'treadmill-incline-walk',
+  'treadmill-walk',
+  'weighted-walk',
+  // Ride
+  'air-bike',
+  'air-bike-intervals',
+  'cycling-intervals',
+  'cycling-sprints',
+  'endurance-ride',
+  'hill-climb-ride',
+  'indoor-cycling',
+  'mountain-biking',
+  'recovery-ride',
+  'recumbent-bike',
+  'road-cycling',
+  'stationary-bike',
+  'tempo-ride',
+  'threshold-ride',
+  // Row
+  'row-erg',
+  'row-erg-intervals',
+  'row-erg-sprint',
+  // Elliptical
+  'elliptical',
+  'elliptical-intervals',
+  // Stair
+  'stair-climb',
+  'stair-climber',
+  'stepmill',
+  // Swim
+  'open-water-swim',
+  'pool-intervals',
+  'swimming-backstroke',
+  'swimming-breaststroke',
+  'swimming-butterfly',
+  'swimming-freestyle',
+
   // ── Competition strongman: implements a commercial gym doesn't stock (PO decision) ──
   // NOT decided from `equipment.environments` — 23 of the 24 strongman movements are tagged
   // "Sled / Prowler", a catch-all bucket for odd objects, so that field reports Commercial Gym even for
