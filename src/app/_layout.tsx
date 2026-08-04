@@ -134,6 +134,10 @@ function RootNavigator() {
         <Stack.Screen name="log-activity" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="exercise-picker" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="program-builder" options={{ presentation: 'fullScreenModal' }} />
+        {/* Sending a program, and receiving one (0110). DECLARED, not merely present — the auth guard
+            gates by declaration, and an undeclared route is an ungated one (the 2026-08-01 audit). */}
+        <Stack.Screen name="send-program" options={{ presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="program-share/[id]" />
         <Stack.Screen name="workout-builder" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="workout-complete" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Screen name="pin-video" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />

@@ -22,7 +22,8 @@ export type NotificationKind =
   | 'friend_request'
   | 'friend_accepted'
   | 'challenge_invite'
-  | 'workout_invite';
+  | 'workout_invite'
+  | 'program_shared';
 
 export interface ForgeNotification {
   kind: NotificationKind;
@@ -39,6 +40,9 @@ export interface ForgeNotification {
   /** Set only on `workout_invite`. */
   inviteId: string | null;
   inviteName: string | null;
+  /** Set only on `program_shared` (0110). */
+  shareId: string | null;
+  shareName: string | null;
   /** The athlete the event is about — null for the kinds whose subject is the squad itself. */
   actorId: string | null;
   actorName: string | null;
@@ -57,6 +61,7 @@ const KINDS: NotificationKind[] = [
   'friend_accepted',
   'challenge_invite',
   'workout_invite',
+  'program_shared',
 ];
 const asKind = (v: string): NotificationKind | null => (KINDS as string[]).includes(v) ? (v as NotificationKind) : null;
 
@@ -73,6 +78,8 @@ interface FeedRow {
   challenge_name: string | null;
   invite_id: string | null;
   invite_name: string | null;
+  share_id: string | null;
+  share_name: string | null;
   actor_id: string | null;
   actor_name: string | null;
   actor_avatar_url: string | null;
@@ -104,6 +111,8 @@ export async function fetchNotifications(limit = 50): Promise<ForgeNotification[
       challengeName: r.challenge_name ?? null,
       inviteId: r.invite_id ?? null,
       inviteName: r.invite_name ?? null,
+      shareId: r.share_id ?? null,
+      shareName: r.share_name ?? null,
     });
   }
   return out;

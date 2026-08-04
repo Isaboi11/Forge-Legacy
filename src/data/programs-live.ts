@@ -1,6 +1,7 @@
 import type { CardioActivity } from '@/domain/workout/conditioning';
 import { supabase } from '@/lib/supabase';
 import type { LoggedWorkout, ProgramState } from '@/domain/program/progress-core';
+import type { LiftMaxes } from '@/domain/program/percent-max';
 
 /**
  * The Forge Program Builder `.dc` model, persisted to the `programs` table (0013), plus the lifecycle
@@ -45,6 +46,42 @@ export type ProgramExercise = {
   durationSec?: number | null;
   /** "(Optional) Stairmaster" — prescribed, but the athlete owes nothing by skipping it. */
   optional?: boolean;
+  /**
+   * ══ LOAD AS A PERCENTAGE OF A TESTED MAX ══
+   *
+   * "Back Squat 5 × 5 @ 75%". The percentage IS the prescription in a peaking block — strip it and you
+   * have not simplified the session, you have deleted the training and kept the shape.
+   *
+   * This is the one load field in the model, and it is deliberately NOT an absolute weight. The import
+   * path still discards loads it reads off somebody else's spreadsheet (`import-scheme.ts`), and that
+   * remains right: those percentages refer to a max this app has never seen. An AUTHORED percentage is
+   * different — the athlete tells us their max at adoption, and the number on the bar is derived.
+   *
+   * A RANGE ("70–75%") is authored as its floor, matching how the rep parser already reads "6–8 reps".
+   *
+   * Absent means no percentage, which is every program authored before this — the field is optional and
+   * `programs.structure` is jsonb, so none of them needed migrating.
+   */
+  percentOfMax?: number;
+  /**
+   * PER-SET percentages, parallel to `repScheme` — a ramp like `5@65, 4@75, 3@80, 2@87, 1@92` is
+   * `repScheme: [5,4,3,2,1]` and `percentScheme: [65,75,80,87,92]`.
+   *
+   * Flattening this to one percentage would erase the intensity curve that IS the session, exactly as
+   * flattening a ladder to `sets × reps` erases the rep curve. `null` at a position means that set
+   * prescribes no percentage; a short array leaves the remaining sets unprescribed rather than
+   * repeating the last value, because repeating it would invent a load nobody wrote.
+   */
+  percentScheme?: (number | null)[];
+  /**
+   * WHICH LIFT's max these percentages refer to. Absent means this exercise's own.
+   *
+   * Load-bearing, and the reason it is not inferred: real programs prescribe "Front Squat 3 × 4 @ 45%
+   * **of back squat max**" and "Close-Grip Bench, 100 reps @ 33% **of bench max**". A model that
+   * assumed "percentage of this exercise's own max" would resolve 45% against a front-squat max the
+   * athlete has never tested — putting a materially wrong weight on the bar, with full confidence.
+   */
+  percentOf?: string;
   /**
    * ══ CIRCUIT GROUPING ══
    *
@@ -132,6 +169,15 @@ export type SavedProgram = {
   createdAt: string;
   /** Set when this row was adopted from a built-in catalog program (0019). */
   sourceDefinitionId: string | null;
+  /**
+   * The maxes THIS RUN's percentages resolve against, frozen when the athlete answered the entry gate
+   * (0111). `{}` means unanswered — a real state, in which every percentage renders as a bare
+   * percentage rather than as a fabricated weight.
+   *
+   * Deliberately not the athlete's live figure: a PR in week 2 would otherwise raise every remaining
+   * prescription and land the week-4 rehearsal somewhere the program never intended.
+   */
+  liftMaxes: LiftMaxes;
 };
 
 /**
@@ -151,6 +197,8 @@ type ProgramRow = {
   ended_at: string | null;
   created_at: string;
   source_definition_id?: string | null;
+  /** Absent until 0111 is applied; see `toProgram`. */
+  lift_maxes?: unknown;
 };
 
 const asState = (v: string | null): ProgramState =>
@@ -165,6 +213,9 @@ const toProgram = (r: ProgramRow): SavedProgram => ({
   endedAt: r.ended_at,
   createdAt: r.created_at,
   sourceDefinitionId: r.source_definition_id ?? null,
+  // `?? {}` for the same reason `SELECT` is `*`: a row read from a database that has not had 0111
+  // applied yet simply comes back without the column, and an unanswered gate is the correct reading.
+  liftMaxes: (r.lift_maxes as LiftMaxes | null) ?? {},
 });
 
 /** Persist a user-authored program (owner RLS). Returns the new id. */

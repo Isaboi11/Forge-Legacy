@@ -10,10 +10,72 @@
  * Pure (type-only imports) so it runs under `node --test`.
  */
 
+import type { CardioActivity } from '@/domain/workout/conditioning';
 import type { ProgramDay, ProgramExercise, ProgramStructure as BuilderStructure } from '@/data/programs-live';
-import type { ProgramBlock, ProgramDefinition, ProgramWorkout } from '@/domain/training/schema';
+import type { ExercisePrescription, ProgramBlock, ProgramDefinition, ProgramWorkout } from '@/domain/training/schema';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+/**
+ * One prescription → one athlete-program exercise.
+ *
+ * ══ WHY THIS IS NOT A FOUR-FIELD LITERAL ANY MORE ══
+ *
+ * It used to copy `catalogKey`, `name`, `sets`, `reps` and stop. Every richer thing the definition
+ * could say — a ladder, a timed effort, circuit membership, an AMRAP cap, a cardio bout — was dropped
+ * silently on the way across, which is the worst shape a lossy conversion can take: the program in the
+ * catalog and the program the athlete actually runs disagree, and nothing anywhere reports it.
+ *
+ * Optional keys are OMITTED rather than written as `undefined`, because the result is serialized into
+ * `programs.structure` (jsonb) and `{"reps": null}` is not the same statement as no reps at all — the
+ * prescription reader distinguishes "the author said nothing" from "the author said zero", and an
+ * explicit null would collapse that distinction at the persistence boundary.
+ */
+function prescriptionToExercise(equipFor?: (catalogKey: string) => string | undefined) {
+  return (ex: ExercisePrescription): ProgramExercise => {
+    const out: ProgramExercise = {
+      catalogKey: ex.catalogKey,
+      name: ex.displayName,
+      sets: ex.sets,
+      reps: ex.reps,
+    };
+
+    // Equipment is looked up for real catalog ids only; `cardio:row` is not in `exercises.json`.
+    const equip = ex.kind === 'cardio' ? undefined : equipFor?.(ex.catalogKey);
+    if (equip) out.equip = equip;
+
+    if (ex.repScheme?.length) out.repScheme = [...ex.repScheme];
+    if (ex.durationSec != null) out.durationSec = ex.durationSec;
+    if (ex.optional) out.optional = true;
+
+    // Percentage loading (0111). Same crossing, same rule — a percentage dropped here would turn a
+    // peaking block into the same session with the intensity removed, and nothing would report it.
+    if (ex.percentOfMax != null) out.percentOfMax = ex.percentOfMax;
+    if (ex.percentScheme?.length) out.percentScheme = [...ex.percentScheme];
+    if (ex.percentOf) out.percentOf = ex.percentOf;
+
+    if (ex.groupId) {
+      out.groupId = ex.groupId;
+      if (ex.groupName) out.groupName = ex.groupName;
+      if (ex.groupKind) out.groupKind = ex.groupKind;
+      if (ex.groupRounds != null) out.groupRounds = ex.groupRounds;
+      // Deliberately kept when null — `groupCapSec: null` is how a ROUNDS block says it has no clock,
+      // and `groupFieldsOf` on the session side writes the same explicit null.
+      if (ex.groupCapSec !== undefined) out.groupCapSec = ex.groupCapSec;
+    }
+
+    if (ex.kind === 'cardio') {
+      out.kind = 'cardio';
+      if (ex.activity) out.activity = ex.activity as CardioActivity;
+      if (ex.modality) out.modality = ex.modality;
+      // Null survives uncoerced: it prescribes an open bout, and a 0 would read as a target already met.
+      if (ex.targetSec !== undefined) out.targetSec = ex.targetSec;
+      if (ex.targetMi !== undefined) out.targetMi = ex.targetMi;
+    }
+
+    return out;
+  };
+}
 
 /** The block covering a given 1-based week; falls back to the last block a long program runs past. */
 export function blockForWeek(blocks: readonly ProgramBlock[], week: number): ProgramBlock | null {
@@ -35,13 +97,7 @@ function workoutToDay(
   equipFor?: (catalogKey: string) => string | undefined,
   resolveKey?: (name: string) => string | undefined,
 ): ProgramDay {
-  const main: ProgramExercise[] = w.main.map((ex) => ({
-    catalogKey: ex.catalogKey,
-    name: ex.displayName,
-    sets: ex.sets,
-    reps: ex.reps,
-    equip: equipFor?.(ex.catalogKey),
-  }));
+  const main: ProgramExercise[] = w.main.map(prescriptionToExercise(equipFor));
 
   /**
    * Warm-up items carry a `name` ("Bodyweight Squat") and a separate `detail` ("10 reps"), with `text`

@@ -475,7 +475,86 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
-### 1. Two tester reports on the friend loop (2026-08-03, CODE + migration 0109) — ⏳ MIGRATION PENDING
+### 1. Iron & Engine, and the two things "share a program" can mean (2026-08-03, CODE + migration 0110) — ⏳ MIGRATION PENDING
+
+**A. The catalog could not express its own conditioning.** `ExercisePrescription` held `sets × reps` and
+nothing else, and `structureFromDefinition` — the ONLY path from a built-in program to a runnable one —
+copied four fields and dropped the rest. The athlete-program model had grown ladders, timed work,
+circuits, AMRAPs and cardio bouts; the CATALOG model never did. **So any program whose identity involves
+a finisher, a wave or a row erg could be built by an athlete in the builder and could not be shipped by
+us.** Extended additively (every new field mirrors one already on `ProgramExercise`, same name, same
+meaning); both Foundation programs set none of them and read unchanged. No migration — a catalog program
+reaches the database only through `programs.structure`, which is jsonb.
+
+**B. Iron & Engine — the first Forge-original program, and the first hybrid.** 6 weeks · **6 days** · 36
+sessions · 18 workouts · 3 blocks · **Advanced**. IRON is four primaries that never change (squat ·
+bench · pull-up · deadlift) waving `4×6 → 6-6-4-4 → 5-5-3-3`; ENGINE is a bounded finisher on every
+session, converting to steady-state erg work in weeks 5–6 precisely where fatigue is highest. Authored
+to `Forge-Program-Production-Standard` with its Design Record and Lock Record
+(`Programs/Conditioning/Iron and Engine/`).
+
+> **The six-day week is four IRON days + two ENGINE days, and that is load-bearing.** The PO asked for
+> 6 days after the program was first authored at 4. It was NOT scaled up: each primary is still trained
+> **once a week** — the two added days (C · Engine: Intervals, F · Engine: Long) carry no barbell
+> primary at all, and the IRON days dropped an accessory each to fit. Six heavy days on top of six
+> finishers is a program almost nobody completes, and the Standard is explicit about which side of that
+> Forge takes. Difficulty moved Intermediate → **Advanced**; the Coaching Audit was re-run at six days
+> and now names the single rest day as the program's headline risk, with the mitigations and the
+> residual risk both written down. The acceptance test asserts the 4+2 shape and that no primary is
+> trained twice in a week — the tempting future edit is to give C and F a barbell primary, which would
+> break recovery without changing a rep count.
+
+> **⚠ It is NOT the purchased Bridger Logan program of the same name.** That one stays personal-only,
+> outside `src/`, per its own README — shipping a bought program's prescription as a Forge built-in is
+> republishing someone else's paid product. **Nothing here is derived from it**: not a session, not a
+> scheme, not an exercise order. The PO chose "a Forge-original hybrid" when asked.
+>
+> **It ships un-LOCKED and says so.** Production-Standard phases 1–8 are complete and written down;
+> phase 9 is PO Lock Approval, which this repo cannot sign for itself. The acceptance test asserts the
+> status string, so promoting it to `LOCKED` without signing the Lock Record fails the build. **8 of 9
+> compliance rows met** — Coaching Notes is not, because `ProgramExercise` has nowhere to put one and a
+> field that gets dropped in adoption is worse than an honest gap.
+
+**C. `ShareSheet`'s primary button was a lie, and it was on every ceremony.** `onForgeShare` flashed
+"Shared to Squad" on a 900ms timer and inserted nothing. Every "Share …" secondary in the app — rank-up,
+honor earned, goal achieved, program graduated — ended there and told the athlete their squad had seen
+it. `share-config.tsx` had already made these exact two destinations real for transformation photos;
+this applies that fix to the surface everything else goes through (`addSquadPost` / `createFriendPost`,
+with a squad picker and a real failure path). **Removed rather than repaired:** Community (no such pillar
+in this build) and "Copy link" (flashed "Link copied", copied nothing — there are no public URLs).
+
+**D. Two share verbs, because they are two acts.** Program Detail gains **Share Card** (a keepsake, now
+reachable any time rather than only from the graduation ceremony) and **Send Program** (`/send-program`)
+— which hands over the PLAN. Migration **0110**: `program_shares` carrying a **snapshot** of the
+structure, never a reference, so the sender editing or deleting their copy cannot rewrite or delete a
+plan somebody else is running. Recipients are friends and squad-mates only (no send-by-handle — that is
+an unsolicited payload from a stranger). Declining DELETES the row, 0073's erasure rule. New
+`program_shared` notification kind, wired through `/inbox` to a full read-before-you-take-it screen.
+
+**⚠ 0110 rebuilds `notification_events()` again** (a `share_id` column, so `42P13` forces drop-and-
+rebuild — the same step that lost the friend branches twice). It is rebuilt from **0109's** body with all
+eight branches numbered in comments.
+
+**E. Percentage loading crosses too.** Another session's work synced into this tree mid-build
+(migration **0111**, `Docs/Percent-Of-Max-Loading-Architecture-v1.0.md`, `percent-max.ts`) adding
+`percentOfMax` / `percentScheme` / `percentOf` to the athlete-program model. They were not on the catalog
+model or in the crossing — the identical hole, one day old. Carried through and tested before any
+catalog program prescribes a percentage. `accept_program_share` deliberately does **not** copy
+`programs.lift_maxes`: the sender's tested max is not the recipient's, and inheriting it would load every
+percentage in the plan off somebody else's one-rep max.
+
+**⚠ MIGRATION NUMBERING:** 0110 (this work) and **0111 (the other session's, already on disk)** were
+authored independently. They do not conflict — 0111 touches no notification function — and they are
+order-independent. But **0111 was numbered as though 0110 existed when it did not**, so confirm both are
+applied and in which order.
+
+**Gates:** tsc 0 · eslint at baseline, clean on every touched surface · `expo export --platform web`
+clean · **934/934 tests**, including a new acceptance gate that actually covers the new program (the old
+one hardcoded two definitions and validated neither of the new ones). Two intermediate runs showed
+transient failures in files that passed in isolation and on re-run — consistent with OneDrive rewriting
+files mid-run while the other session synced in, not with a defect.
+
+### 2. Two tester reports on the friend loop (2026-08-03, CODE + migration 0109) — ⏳ MIGRATION PENDING
 
 Both from the first outside tester pair, and they are the two halves of the same journey — finding a person, and being told a person found you.
 

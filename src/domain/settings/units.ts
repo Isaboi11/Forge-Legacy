@@ -24,6 +24,21 @@ export function displayWeight(lb: number, system: UnitSystem): { value: number; 
   return { value: Math.round(lb), unit: 'lb' };
 }
 
+/** The unit's short name, for callers that build their own string. */
+export const unitLabel = (system: UnitSystem): 'lb' | 'kg' => (system === 'metric' ? 'kg' : 'lb');
+
+/**
+ * Pounds → the athlete's unit, UNROUNDED.
+ *
+ * `displayWeight` rounds to a whole number, which is right for showing a figure and wrong as an
+ * INTERMEDIATE step. A percentage-of-max prescription converts the max and then rounds the result to a
+ * loadable plate; doing both roundings compounds two errors, and across a ten-rung ramp that drifts the
+ * top sets by more than a plate. Convert with this, round exactly once, at the end.
+ */
+export function weightInExact(lb: number, system: UnitSystem): number {
+  return system === 'metric' ? lb * LB_PER_KG : lb;
+}
+
 /** "315 lb" / "143 kg", and with reps "315 lb × 3". The canonical load string, unit-aware. */
 export function formatLoad(lb: number, system: UnitSystem, reps?: number | null): string {
   const { value, unit } = displayWeight(lb, system);

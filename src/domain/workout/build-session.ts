@@ -4,6 +4,7 @@ import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { dayLabel, plannedDays, trainingDays } from '@/domain/program/progress-core';
 import { groupFieldsOf, sessionSetsFor } from './session-core';
 import type { ProgramStructure } from '@/data/programs-live';
+import type { LoadContext } from '@/domain/program/percent-max';
 import type { ActiveSession, SessionExercise, WorkoutSectionKind } from './types';
 import { EMPTY_RESULT, activityFromKey, cardioKey, deriveName, type Modality } from './conditioning';
 
@@ -58,6 +59,11 @@ export function buildSessionFromProgram(
   structure: ProgramStructure,
   weekIndex: number,
   dayIndex: number,
+  /**
+   * The run's frozen maxes, in the athlete's display unit — what a percentage prescription resolves
+   * against. Absent for every program that does not prescribe percentages, which is all of them today.
+   */
+  load?: LoadContext,
 ): ActiveSession | null {
   const days = trainingDays(plannedDays(structure, weekIndex));
   const day = days[dayIndex];
@@ -109,7 +115,7 @@ export function buildSessionFromProgram(
         ...group,
         section: sec.key,
         position: exercises.length,
-        sets: sessionSetsFor(ex),
+        sets: sessionSetsFor(ex, load),
       });
     }
   }

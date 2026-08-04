@@ -8,6 +8,7 @@
 
 import type { ProgramExercise } from '@/data/programs-live';
 import { repTargets } from '../program/prescription.ts';
+import { contextMaxFor, percentTargets, resolveLoad, type LoadContext } from '../program/percent-max.ts';
 import type { GroupKind, SessionExercise, SessionSet } from './types.ts';
 
 /**
@@ -20,7 +21,7 @@ import type { GroupKind, SessionExercise, SessionSet } from './types.ts';
  * along; the prescription was being flattened on its way in, so an intensity wave arrived as a block of
  * identical sets and the athlete trained a different session from the one they bought.
  */
-export function sessionSetsFor(ex: ProgramExercise): SessionSet[] {
+export function sessionSetsFor(ex: ProgramExercise, load?: LoadContext): SessionSet[] {
   /**
    * ══ IN A CIRCUIT, A ROUND IS A SET ══
    *
@@ -36,22 +37,44 @@ export function sessionSetsFor(ex: ProgramExercise): SessionSet[] {
   const base = repTargets(ex);
   const targets = rounds > 1 && base.length === 1 ? Array.from({ length: rounds }, () => base[0]) : base;
 
-  return targets.map((t, setIndex) => ({
-    setIndex,
-    weight: null,
-    /**
-     * A to-failure set carries ZERO, not a plausible-looking number.
-     *
-     * `targetReps` is arithmetic input — it feeds volume, the e1RM behind PR detection, and the reps
-     * column written at save. Inventing "8" for a set whose whole point is that nobody knows the number
-     * would put a fabricated rep count into the athlete's history and, worse, into a personal record.
-     */
-    targetReps: t === 'F' ? 0 : t,
-    ...(t === 'F' ? { toFailure: true } : null),
-    ...(ex.durationSec != null ? { targetSec: ex.durationSec } : null),
-    actualReps: null,
-    done: false,
-  }));
+  /**
+   * The bar each set is asking for, when the program prescribes a percentage and a max is known.
+   *
+   * Expanded exactly like the rep targets above, so a circuit member's rounds all carry the same load
+   * and a per-set ramp keeps one load per rung.
+   */
+  const pcts = percentTargets(ex);
+  const max = contextMaxFor(load, ex);
+  const loadFor = (i: number): number | null => {
+    const p = pcts.length === 1 && targets.length > 1 ? pcts[0] : pcts[i];
+    return resolveLoad(max, p, load?.rules)?.weight ?? null;
+  };
+
+  return targets.map((t, setIndex) => {
+    const target = loadFor(setIndex);
+    return {
+      setIndex,
+      /**
+       * NEVER seeded from the target. `weight` is what the athlete lifted; finishing a session without
+       * touching a set would otherwise record a lift that did not happen — and could announce a PR for
+       * it. The ask lives in `targetWeight`, beside it.
+       */
+      weight: null,
+      /**
+       * A to-failure set carries ZERO, not a plausible-looking number.
+       *
+       * `targetReps` is arithmetic input — it feeds volume, the e1RM behind PR detection, and the reps
+       * column written at save. Inventing "8" for a set whose whole point is that nobody knows the number
+       * would put a fabricated rep count into the athlete's history and, worse, into a personal record.
+       */
+      targetReps: t === 'F' ? 0 : t,
+      ...(t === 'F' ? { toFailure: true } : null),
+      ...(ex.durationSec != null ? { targetSec: ex.durationSec } : null),
+      ...(target != null ? { targetWeight: target } : null),
+      actualReps: null,
+      done: false,
+    };
+  });
 }
 
 /** Circuit membership, carried onto every exercise so the logger can rebuild the program's own blocks. */

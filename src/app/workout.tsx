@@ -22,6 +22,8 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { useSoundEnabled, useUnits } from '@/lib/settings';
+import { loadContextFor } from '@/domain/program/percent-max';
+import { unitLabel, weightInExact } from '@/domain/settings/units';
 import { playRestDing, primeDing } from '@/lib/ding';
 import { CardioBlockCard } from '@/components/workout/CardioBlockCard';
 import {
@@ -417,7 +419,14 @@ export default function WorkoutScreen() {
             // Resolve the next session HERE, from the live count, so the session trained is always the
             // one the progress bar is about to advance.
             const next = nextSession(program.structure, done);
-            if (next) fresh = buildSessionFromProgram(program.id, program.structure, next.weekIndex, next.dayIndex);
+            if (next) {
+              // Percentages resolve HERE, from the run's own frozen maxes, so each set carries the bar
+              // it is asking for and the athlete does no arithmetic mid-session. A program with no
+              // percentages, or one whose gate is unanswered, produces sets with no target weight —
+              // which is the honest result, not a zero.
+              const load = loadContextFor(program.liftMaxes, units === 'metric', (lb) => weightInExact(lb, units));
+              fresh = buildSessionFromProgram(program.id, program.structure, next.weekIndex, next.dayIndex, load);
+            }
           }
         } catch {
           // fall through to the default session — a lookup failure must not block training
@@ -435,6 +444,14 @@ export default function WorkoutScreen() {
       setSession(fresh ?? { workoutName: 'Freestyle Workout', activityType: 'strength', startedAt: new Date().toISOString(), exercises: [] });
       setPhase('active');
     })();
+    /*
+     * `units` is READ here and deliberately not a dependency. This effect SEEDS the session; re-running
+     * it rebuilds every exercise from the prescription, which would throw away sets the athlete has
+     * already logged. Flipping lb/kg mid-session must not cost someone their workout — the target
+     * weights stay in the unit the session was built in, and every figure they log is stored in pounds
+     * regardless, so nothing is misrecorded by the omission.
+     */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reloadKey]);
 
   // load the saved rest-timer preference (stays OFF until the athlete has turned it on before)
@@ -1436,6 +1453,12 @@ export default function WorkoutScreen() {
                     ) : (
                       <Text style={[styles.targetText, { color: valColor }]}>{set.targetReps}<Text style={styles.repsLabel}> Reps</Text></Text>
                     )}
+                    {/* The bar a percentage-based program is asking for. Shown UNDER the rep target
+                        rather than pre-filled into Weight, because Weight is what the athlete lifted:
+                        seeding it would record a lift nobody made and could announce a PR for it. */}
+                    {set.targetWeight != null ? (
+                      <Text style={styles.targetLoad}>{set.targetWeight} {unitLabel(units)}</Text>
+                    ) : null}
                   </View>
                   <Pressable style={[styles.cWeight, styles.weightBtn]} onPress={() => openSheet(exIdx, si, 'weight')} accessibilityRole="button" accessibilityLabel={`Edit weight, set ${si + 1}`}>
                     {popCell(si, 'weight', <Text style={[styles.weightText, { color: valColor }]}>{weightText(set)}</Text>)}
@@ -2311,7 +2334,7 @@ const styles = StyleSheet.create({
   // hero card
   hero: { backgroundColor: flColor.charcoal900, borderWidth: 1, borderColor: flColor.bronzeBorder, borderRadius: flRadius.xl, padding: 16, boxShadow: flShadow.card },
   heroRow: { flexDirection: 'row', gap: 16 },
-  mediaSlot: { width: 132, minHeight: 172, alignSelf: 'stretch', borderRadius: flRadius.lg, overflow: 'hidden', backgroundColor: flColor.surfaceRecessed, borderWidth: 1, borderColor: flColor.charcoal600, alignItems: 'center', justifyContent: 'center' },
+  mediaSlot: { width: 132, minHeight: 172, alignSelf: 'stretch', borderRadius: flRadius.lg, overflow: 'hidden', backgroundColor: flColor.charcoal600, borderWidth: 1, borderColor: flColor.bronzeBorder, boxShadow: 'inset 0 0 32px rgba(181, 138, 97, 0.10), 0 0 20px rgba(181, 138, 97, 0.14)', alignItems: 'center', justifyContent: 'center' },
   heroMeta: { flex: 1, minWidth: 0, gap: 10 },
   heroTitleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
   heroName: { flex: 1, fontFamily: flFont.display, fontSize: 23, fontWeight: '600', letterSpacing: -0.3, lineHeight: 26, color: flColor.cream100 },
@@ -2368,6 +2391,7 @@ const styles = StyleSheet.create({
   setNum: { width: 30, height: 30, borderRadius: 15, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   setNumText: { fontFamily: flFont.display, fontSize: 14, fontWeight: '600' },
   targetText: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600' },
+  targetLoad: { fontSize: 11, fontWeight: '600', color: flColor.bronze300, marginTop: 1 },
   repsLabel: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray600 },
   weightBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 6 },
   weightText: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600' },

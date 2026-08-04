@@ -30,12 +30,23 @@ import {
   equipmentOf,
   fmtVolume,
   nextSession,
+  totalSessions,
   viewForState,
   type LogWeek,
   type LoggedWorkout,
 } from '@/domain/program/progress-core';
+import { LiftMaxSheet } from '@/components/forge/LiftMaxSheet';
+import {
+  loadContextFor,
+  maxLiftNames,
+  missingMaxKeys,
+  requiredMaxKeys,
+} from '@/domain/program/percent-max';
+import { weightInExact } from '@/domain/settings/units';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { useUnits } from '@/lib/settings';
+import { useProfile } from '@/lib/profile';
+import { useShareSheet } from '@/hooks/useShareSheet';
 import { errorMessage } from '@/lib/useQuery';
 
 /**
@@ -48,8 +59,19 @@ import { errorMessage } from '@/lib/useQuery';
  * the log simply replaces a planned row with real sets once that slot has been trained. Nothing here is
  * a placeholder — an untrained program shows an honest empty log rather than invented history.
  *
- * DEFERRED vs the `.dc` (omitted, not faked): Share (needs the Share Configuration screen), and the
- * "What's Next" successor card (needs a catalog successor graph these authored programs don't have).
+ * SHARE IS LIVE, in both senses the word has here — and they are genuinely different features:
+ *
+ *   **Share Program** builds a keepsake card through SH-1 and posts it to a squad or to friends. It is
+ *   a picture of the training, and it was previously reachable only from the graduation ceremony, which
+ *   meant the one moment you could show anyone this program was the moment you finished it.
+ *
+ *   **Send to a Friend** hands over the PROGRAM — the plan itself, so they can run it. See
+ *   `/send-program`. The distinction is worth keeping sharp: one of these is a post, the other is a copy
+ *   of your training, and conflating them is how an athlete accidentally publishes a plan they meant to
+ *   pass to one person.
+ *
+ * DEFERRED vs the `.dc` (omitted, not faked): the "What's Next" successor card, which needs a catalog
+ * successor graph these authored programs don't have.
  */
 
 const CHEVRON = 'M6 9l6 6 6-6';
@@ -64,8 +86,10 @@ function Glyph({ d, size = 16, color, width = 2, flip = false }: { d: string; si
 
 export default function ProgramDetailScreen() {
   const router = useRouter();
+  const { openShare } = useShareSheet();
+  const { profile } = useProfile();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { load } = useUnits(); // "Heaviest" set, in the athlete's system
+  const { load, units } = useUnits(); // "Heaviest" set, in the athlete's system
 
   const [program, setProgram] = useState<SavedProgram | null>(null);
   const [workouts, setWorkouts] = useState<LoggedWorkout[]>([]);
@@ -75,6 +99,8 @@ export default function ProgramDetailScreen() {
   const [openWeek, setOpenWeek] = useState<number | null>(null);
   const [openDay, setOpenDay] = useState<string | null>(null);
   const [sheet, setSheet] = useState<'conflict' | 'end' | 'remove' | null>(null);
+  /** 'gate' = answering before the program starts; 'change' = correcting one mid-run. */
+  const [maxSheet, setMaxSheet] = useState<'gate' | 'change' | null>(null);
   const tourScroller = useTourScroller();
   const onTourScroll = useTourScrollTracker();
 
@@ -130,7 +156,35 @@ export default function ProgramDetailScreen() {
   const view = viewForState(state, true);
   const progress = computeProgress(structure, workouts.length);
   const stats = computeStats(workouts);
-  const weeks = buildLog(structure, workouts);
+
+  /**
+   * PERCENTAGE PRESCRIPTIONS resolve here, at render, against the run's own frozen maxes.
+   *
+   * Which is why changing a max needs no recalculation pass: `buildLog` draws a completed day from what
+   * was logged and a future day from the prescription, so a new max moves everything not yet trained
+   * and cannot touch anything already trained.
+   */
+  const loadCtx = loadContextFor(program.liftMaxes, units === 'metric', (lb) => weightInExact(lb, units));
+  const maxKeys = requiredMaxKeys(structure);
+  const missingKeys = missingMaxKeys(structure, program.liftMaxes);
+  const liftNames = maxLiftNames(structure);
+
+  /**
+   * What to say when a max is changed mid-run.
+   *
+   * Both halves are things this screen actually knows, not a guess at a "peaking phase" the program
+   * model has no concept of. The first sentence is always true and is the reassurance; the second is
+   * the honest warning, and it only appears once there is a run to disturb. Neither of them blocks the
+   * change — it is the athlete's training.
+   */
+  const changeWarning =
+    workouts.length > 0
+      ? `Sessions you've already trained won't change — they record what you actually lifted. This moves the ${
+          Math.max(0, totalSessions(structure) - workouts.length)
+        } sessions ahead of you, which are built from this number.`
+      : null;
+
+  const weeks = buildLog(structure, workouts, loadCtx);
   const equipment = equipmentOf(structure);
   const trained = workouts.length > 0;
   /** Sealed: a permanent legacy record. Not editable, not deletable, never reactivated (Amendment-001). */
@@ -141,6 +195,37 @@ export default function ProgramDetailScreen() {
     if (!nextSession(structure, workouts.length)) return; // program finished — nothing left to train
     await writeWorkoutLaunch({ programId: program.id });
     router.push('/workout');
+  };
+
+  /**
+   * The keepsake card. Every value is read off the record in front of you — `buildShareContent` drops a
+   * field whose value is empty, so a program with nothing to say about a slot renders SHORTER rather
+   * than filled in with something plausible.
+   *
+   * "Completion" is the one line that must not overstate: a program you have started but not finished
+   * says where you are, not that you finished. A sealed record says how it ended, in the same words the
+   * screen above it uses.
+   */
+  const openShareCard = () => {
+    // `fmtLongDate` and `workoutsLabel` both return null for input they can't read, so every piece is
+    // filtered rather than interpolated — a share card reading "Graduated · null" is the exact class of
+    // defect this file's own header is about, and it would be leaving the app when it happened.
+    const completion = terminal
+      ? [state === 'graduated' ? 'Graduated' : 'Ended early', workoutsLabel(workouts.length)].filter(Boolean).join(' · ')
+      : trained
+        ? `Week ${progress.week} of ${structure.weeks} · ${progress.pct}%`
+        : '';
+    const endedOn = terminal ? fmtLongDate(program.endedAt) : null;
+    const startedOn = fmtLongDate(program.startedAt);
+    const when = endedOn ?? (startedOn ? `Started ${startedOn}` : '');
+    openShare({
+      shareType: 'program',
+      overrides: {
+        title: program.name,
+        athlete: profile?.name,
+        values: { status: completion, date: when },
+      },
+    });
   };
 
   const onPrimary = async () => {
@@ -165,6 +250,19 @@ export default function ProgramDetailScreen() {
         const again = await runProgramAgain(program.id);
         router.push({ pathname: '/program/[id]', params: { id: again.id } });
       } else {
+        /*
+         * THE MAX GATE — a percentage-based program cannot prescribe anything until it has a number to
+         * work from, so it is asked for BEFORE the program becomes active rather than nagged for after.
+         *
+         * Only when something is actually missing: a program whose maxes are already known (carried over
+         * from the athlete's profile, or entered and then corrected) starts straight away. And only when
+         * the program uses percentages at all, which no shipped program does today.
+         */
+        if (missingKeys.length > 0) {
+          setBusy(false);
+          setMaxSheet('gate');
+          return;
+        }
         // Future → Active. start_program ends whatever else was active, atomically (0017).
         await startProgram(program.id);
         setProgram({ ...program, state: 'active' });
@@ -286,6 +384,42 @@ export default function ProgramDetailScreen() {
           </View>
         ) : null}
 
+        {/*
+          WORKING FROM — the maxes this run's percentages resolve against, and the way to change one.
+
+          Shown only for a program that actually prescribes percentages, which is no shipped program
+          today. A lift with no max yet reads "not set" rather than a number, because an unanswered
+          entry is a real state and a 0 would be a confident false claim about what the athlete lifts.
+        */}
+        {maxKeys.length ? (
+          <View style={styles.block}>
+            <Text style={styles.microLabel}>Working from</Text>
+            <Pressable
+              onPress={() => setMaxSheet('change')}
+              accessibilityRole="button"
+              accessibilityLabel="Change your maxes"
+              style={styles.maxRow}
+            >
+              <View style={styles.maxList}>
+                {maxKeys.map((k) => {
+                  const display = loadCtx.maxes[k];
+                  const src = program.liftMaxes[k]?.source;
+                  return (
+                    <Text key={k} style={styles.maxItem}>
+                      <Text style={styles.maxName}>{liftNames[k] ?? k}</Text>
+                      {'  '}
+                      {display != null
+                        ? `${Math.round(display)} ${loadCtx.unit}${src === 'estimated' ? ' (est.)' : ''}`
+                        : 'not set'}
+                    </Text>
+                  );
+                })}
+              </View>
+              <Text style={styles.maxChange}>Change</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
         {trained ? (
           <View style={styles.statRow}>
             <Stat label="Volume" value={fmtVolume(stats.volume)} />
@@ -355,6 +489,28 @@ export default function ProgramDetailScreen() {
             </Button>
           </View>
         </View>
+        {/* ── THE TWO KINDS OF SHARING, NAMED APART ──────────────────────────────────────────────────
+                "Share Program" posts a card about the training. "Send to a Friend" hands over the plan
+                itself. Sitting side by side with different verbs is deliberate: they are one word in
+                every other app and two entirely different acts here — one is visible to a whole squad,
+                the other puts a copy of your program in one person's library. ── */}
+        <View style={styles.ctaRow}>
+          <View style={styles.ctaHalf}>
+            <Button variant="secondary" fullWidth onPress={openShareCard} accessibilityLabel="Share a card about this program">
+              Share Card
+            </Button>
+          </View>
+          <View style={styles.ctaHalf}>
+            <Button
+              variant="secondary"
+              fullWidth
+              onPress={() => router.push({ pathname: '/send-program', params: { id: program.id } })}
+              accessibilityLabel="Send this program to a friend or squad"
+            >
+              Send Program
+            </Button>
+          </View>
+        </View>
         <View style={styles.secondaryRow}>
           {state === 'active' ? (
             <Pressable onPress={() => setSheet('end')} accessibilityRole="button" accessibilityLabel="End Program" style={styles.secondaryBtn}>
@@ -393,6 +549,31 @@ export default function ProgramDetailScreen() {
           </View>
         </View>
       </BottomSheet>
+
+      {/*
+        Remounted on open (the `key`) so the fields re-seed from whatever is currently known rather than
+        keeping a half-typed correction from last time — the same pattern LogWeightSheet uses.
+
+        `onSaved` writes the returned maxes straight onto the program in state, so the day list below
+        re-resolves immediately. Starting is NOT chained onto saving: answering the gate and choosing to
+        begin are two decisions, and an athlete who fills in their squat max to see the numbers should
+        not find the program running.
+      */}
+      {maxSheet != null ? (
+        <LiftMaxSheet
+          key={`${maxSheet}-${maxKeys.join(',')}`}
+          open
+          onClose={() => setMaxSheet(null)}
+          programId={program.id}
+          keys={maxKeys}
+          names={liftNames}
+          known={program.liftMaxes}
+          units={units}
+          title={maxSheet === 'gate' ? 'Before you start' : 'Change your max'}
+          warning={maxSheet === 'change' ? changeWarning : null}
+          onSaved={(maxes) => setProgram((p) => (p ? { ...p, liftMaxes: maxes } : p))}
+        />
+      ) : null}
     </View>
   );
 }
@@ -544,6 +725,22 @@ const styles = StyleSheet.create({
   equipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   equipPill: { paddingVertical: 7, paddingHorizontal: 13, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
   equipText: { fontSize: 12, fontWeight: '600', color: flColor.gray400 },
+  maxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingVertical: 11,
+    paddingHorizontal: 13,
+    borderRadius: flRadius.md,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.surfaceRecessed,
+  },
+  maxList: { flex: 1, gap: 4 },
+  maxItem: { fontSize: 13, color: flColor.cream100 },
+  maxName: { color: flColor.gray400 },
+  maxChange: { fontSize: 12, fontWeight: '600', color: flColor.bronze300 },
 
   statRow: { flexDirection: 'row', gap: 8, marginTop: 20 },
   stat: { flex: 1, minWidth: 0, paddingVertical: 12, paddingHorizontal: 6, borderWidth: 1, borderColor: flColor.charcoal600, borderRadius: flRadius.lg, backgroundColor: flColor.charcoal900, alignItems: 'center', gap: 4 },

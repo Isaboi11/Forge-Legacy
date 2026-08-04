@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { blockForWeek, structureFromDefinition } from '../adopt-core.ts';
 
 const rx = (name, sets, reps) => ({ catalogKey: name.toLowerCase().replace(/ /g, '-'), displayName: name, sets, reps, unit: 'reps' });
@@ -133,4 +134,98 @@ test('a definition with no blocks degrades to an empty week rather than throwing
   assert.deepEqual(s.days, []);
   assert.equal(s.weeks, 6);
   assert.ok(s.daysPerWeek >= 1, 'never zero — downstream divides by this');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THE CONDITIONING CROSSING — a catalog program's richer prescription must survive adoption
+//
+// `structureFromDefinition` is the ONLY path from a built-in program to a runnable one. It used to copy
+// four fields and drop the rest, so a shipped program could describe a ladder, a finisher or a row erg
+// and the athlete would receive plain sets of reps with no error anywhere. These assert the crossing
+// against the real Iron & Engine definition, not a fixture — the fixture would pass forever while the
+// shipped program silently lost its Engine.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const ironAndEngine = JSON.parse(
+  readFileSync(new URL('../../training/programs/iron-and-engine.json', import.meta.url), 'utf8'),
+);
+
+const adopted = structureFromDefinition(ironAndEngine);
+/** Every exercise the athlete would actually receive, across every authored week. */
+const allAdopted = [
+  ...adopted.days,
+  ...(adopted.weekPlans ?? []).flatMap((p) => p.days),
+].flatMap((d) => [...d.warmup, ...d.main, ...d.cooldown]);
+
+test('adoption carries the ladders across, per set', () => {
+  const squat = allAdopted.find((e) => e.catalogKey === 'barbell-back-squat' && e.repScheme);
+  assert.ok(squat, 'the squat ladder did not survive adoption');
+  assert.deepEqual(squat.repScheme, [6, 6, 4, 4]);
+
+  const pushUp = allAdopted.find((e) => e.catalogKey === 'push-up' && e.repScheme);
+  assert.deepEqual(pushUp.repScheme, ['F', 'F'], "to-failure must cross as 'F', not as a number");
+});
+
+test('adoption carries timed work across as a duration, not as reps', () => {
+  const sled = allAdopted.find((e) => e.catalogKey === 'sled-push');
+  assert.equal(sled.durationSec, 30);
+  assert.equal(sled.sets, 1, 'a circuit member is one bout — the block supplies the repetition');
+});
+
+test('adoption carries circuit membership, rounds and AMRAP caps', () => {
+  const rounds = allAdopted.find((e) => e.groupId === 'w12a-engine');
+  assert.equal(rounds.groupKind, 'circuit');
+  assert.equal(rounds.groupName, 'Engine — Sled Ladder');
+  assert.equal(rounds.groupRounds, 3);
+  assert.equal(rounds.groupCapSec, null, 'a rounds block states an explicit null cap');
+
+  const amrap = allAdopted.find((e) => e.groupId === 'w34a-engine');
+  assert.equal(amrap.groupCapSec, 480);
+  assert.equal(amrap.groupRounds, undefined, 'an AMRAP prescribes no round count');
+});
+
+test('adoption carries a cardio bout with its target intact', () => {
+  const bouts = allAdopted.filter((e) => e.kind === 'cardio');
+  assert.ok(bouts.length > 1, 'expected several cardio bouts across the program');
+
+  for (const b of bouts) {
+    assert.equal(b.catalogKey, `cardio:${b.activity}`, 'the key and the activity must agree');
+    assert.ok(b.modality === 'indoor' || b.modality === 'outdoor');
+    assert.ok(b.targetSec > 0, 'a bout that survived adoption still prescribes its duration');
+    assert.equal(b.targetMi, null, 'null is a real statement — no target — and must not become 0');
+    assert.equal(b.equip, undefined, 'a cardio key is not a row in exercises.json, so no equipment lookup');
+  }
+
+  // The steady pieces get LONGER block by block — asserted on the durations that actually crossed,
+  // rather than on one hard-coded number that moves whenever the program is re-authored.
+  const rowSecs = bouts.filter((b) => b.activity === 'row').map((b) => b.targetSec);
+  assert.ok(rowSecs.length >= 3, 'day F rows in every block');
+  assert.ok(Math.max(...rowSecs) > Math.min(...rowSecs), 'the steady row should not be the same length all six weeks');
+});
+
+test('a plain prescription still crosses as a plain prescription', () => {
+  // The two Foundation programs set none of the new fields; adoption must not invent any.
+  const s = structureFromDefinition(singleBlock);
+  const squat = s.days[0].main[0];
+  assert.deepEqual(Object.keys(squat).sort(), ['catalogKey', 'name', 'reps', 'sets']);
+});
+
+test('adoption carries percentage loading across (0111)', () => {
+  // No shipped catalog program prescribes a percentage yet, so this guards the crossing BEFORE one does
+  // — the same hole that swallowed ladders and circuits, closed while it is still theoretical.
+  const s = structureFromDefinition({
+    ...singleBlock,
+    blocks: [
+      block('Weeks 1–6', 1, 6, [
+        workout('A', 'Peak', [
+          { ...rx('Back Squat', 5, 5), percentOfMax: 75 },
+          { ...rx('Front Squat', 5, 5), percentScheme: [65, 75, 80, 87, 92], percentOf: 'back-squat' },
+        ]),
+      ]),
+    ],
+  });
+  const [squat, front] = s.days[0].main;
+  assert.equal(squat.percentOfMax, 75);
+  assert.deepEqual(front.percentScheme, [65, 75, 80, 87, 92]);
+  assert.equal(front.percentOf, 'back-squat', 'a percentage pointed at another lift must keep pointing there');
 });

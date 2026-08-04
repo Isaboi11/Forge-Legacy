@@ -80,6 +80,8 @@ export default function InboxScreen() {
     // A challenge invite is the only kind whose destination is the thing itself: the competition, where
     // opting in is one tap. Everything else routes to the squad or the person.
     if (n.kind === 'workout_invite' && n.inviteId) router.push({ pathname: '/workout-invite', params: { id: n.inviteId } });
+    // A shared program opens the program itself, where it can be read before it's taken.
+    else if (n.kind === 'program_shared' && n.shareId) router.push({ pathname: '/program-share/[id]', params: { id: n.shareId } });
     else if (n.kind === 'challenge_invite' && n.challengeId) router.push({ pathname: '/challenge/[id]', params: { id: n.challengeId } });
     else if (n.kind === 'join_request') router.push({ pathname: '/squad-requests', params: { id: n.squadId } });
     // Friend requests are answered on the asker's profile — one place holds the whole relationship.
@@ -122,7 +124,7 @@ export default function InboxScreen() {
               <Text style={styles.sectionLabel}>{group.label}</Text>
               <View style={styles.card}>
                 {group.items.map((n, i) => (
-                  <NotificationRow key={`${n.kind}-${n.squadId}-${n.actorId ?? 'squad'}-${n.at}`} notification={n} divided={i > 0} onPress={() => open(n)} />
+                  <NotificationRow key={`${n.kind}-${n.squadId}-${n.actorId ?? 'squad'}-${n.shareId ?? n.inviteId ?? ''}-${n.at}`} notification={n} divided={i > 0} onPress={() => open(n)} />
                 ))}
               </View>
             </View>
@@ -152,7 +154,8 @@ function NotificationRow({ notification: n, divided, onPress }: { notification: 
     n.kind === 'friend_request' ||
     n.kind === 'friend_accepted' ||
     n.kind === 'challenge_invite' ||
-    n.kind === 'workout_invite';
+    n.kind === 'workout_invite' ||
+    n.kind === 'program_shared';
 
   return (
     <Animated.View style={{ opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }] }}>
@@ -239,6 +242,12 @@ function bodyFor(n: ForgeNotification, actor: string) {
           <Text style={styles.strong}>{actor}</Text> wants to train <Text style={styles.strong}>{n.inviteName ?? 'together'}</Text> with you
         </>
       );
+    case 'program_shared':
+      return (
+        <>
+          <Text style={styles.strong}>{actor}</Text> sent you <Text style={styles.strong}>{n.shareName ?? 'a program'}</Text>
+        </>
+      );
   }
 }
 
@@ -260,6 +269,8 @@ function subFor(n: ForgeNotification): string {
       return 'Opt in to compete';
     case 'workout_invite':
       return 'Accept and start';
+    case 'program_shared':
+      return 'Read it before you take it';
   }
 }
 
@@ -282,6 +293,8 @@ function accessibilityLabelFor(n: ForgeNotification, actor: string): string {
       return `${actor} challenged you to ${n.challengeName ?? 'a competition'}, ${when} ago. Opt in to compete.`;
     case 'workout_invite':
       return `${actor} wants to train ${n.inviteName ?? 'together'} with you, ${when} ago. Accept and start.`;
+    case 'program_shared':
+      return `${actor} sent you the program ${n.shareName ?? 'a program'}, ${when} ago. Read it before you take it.`;
   }
 }
 
@@ -303,7 +316,19 @@ function glyphFor(kind: ForgeNotification['kind']) {
       return <SwordsGlyph size={11} color={flColor.bronze300} />;
     case 'workout_invite':
       return <PeopleGlyph size={11} color={flColor.bronze300} />;
+    case 'program_shared':
+      return <ProgramGlyph size={11} color={flColor.bronze300} />;
   }
+}
+
+/** A page with lines on it — the plan, as distinct from the people glyphs the invites use. */
+function ProgramGlyph({ size = 11, color = flColor.bronze300 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M6 3h9l4 4v14H6z" />
+      <Path d="M9 11h7M9 15h7" />
+    </Svg>
+  );
 }
 
 function SwordsGlyph({ size = 11, color = flColor.bronze300 }: { size?: number; color?: string }) {

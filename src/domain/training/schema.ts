@@ -302,9 +302,35 @@ export interface ExerciseSubstitution {
 
 export type PrescriptionUnit = 'reps' | 'seconds' | 'minutes' | 'yards';
 
-/** One prescribed main-work exercise, linked to the authoritative catalog by `catalogKey`. */
+/** A per-set rep target. `'F'` is to failure — mirrors `RepTarget` on the athlete-program side. */
+export type PrescriptionRepTarget = number | 'F';
+
+/**
+ * One prescribed main-work exercise, linked to the authoritative catalog by `catalogKey`.
+ *
+ * ══ THE CONDITIONING FIELDS, AND WHY THEY ARE HERE ══
+ *
+ * Everything from `repScheme` down is ADDITIVE and optional; every field mirrors one already on
+ * `ProgramExercise` in `@/data/programs-live`, by the same name and with the same meaning. Both
+ * Foundation programs read unchanged — they set none of them.
+ *
+ * The athlete-program model (a `programs` row) grew ladders, timed work, circuits, AMRAPs and cardio
+ * bouts when the prescription model was extended. The CATALOG model never did. So a built-in program
+ * could only ever say `sets × reps`, and `structureFromDefinition` — the one path from catalog to a
+ * runnable program — had nothing richer to copy across. That is a hard ceiling on what Forge is allowed
+ * to author for itself: any program whose identity involves a finisher, a wave, or a row erg could be
+ * built by an ATHLETE in the builder and could not be shipped BY US.
+ *
+ * Iron & Engine is the program that hit the ceiling. Half of it is conditioning.
+ *
+ * No migration: a catalog program reaches the database only by being written into `programs.structure`,
+ * which is `jsonb`.
+ */
 export interface ExercisePrescription {
-  /** Real id in `exercise-relationships/source/exercises.json` (validated at generation). */
+  /**
+   * Real id in `exercise-relationships/source/exercises.json` (validated at generation).
+   * For a cardio bout this is a `cardio:<activity>` key instead — see `kind`.
+   */
   catalogKey: string;
   /** Exercise name exactly as authored in the `.docx`. */
   displayName: string;
@@ -319,6 +345,49 @@ export interface ExercisePrescription {
   /** Weeks 5–6 top-set + backoff pattern collapsed into total sets. */
   intensity?: boolean;
   substitution?: ExerciseSubstitution | null;
+
+  /**
+   * NO per-exercise coaching note field, deliberately. The Production Standard asks programs to carry
+   * Coaching Notes, and `ProgramExercise` has nowhere to put one — so a `notes` here would be dropped
+   * on the way across and rendered by nothing. The program's coaching voice lives in `description` and
+   * its Design Record until there is a surface that shows a per-exercise note.
+   */
+
+  /** A per-set ladder: "6-6-4-4" is `[6, 6, 4, 4]`. When present its LENGTH is the set count. */
+  repScheme?: PrescriptionRepTarget[];
+  /** Performed for time rather than reps — a 30-second sled push. */
+  durationSec?: number | null;
+  /** Prescribed, but the athlete owes nothing by skipping it. */
+  optional?: boolean;
+
+  /**
+   * Percentage-of-max loading (0111). Mirrors `ProgramExercise` exactly: a flat `percentOfMax`, a
+   * per-set `percentScheme` parallel to `repScheme`, and `percentOf` naming a DIFFERENT lift's max.
+   *
+   * Carried here for the same reason as everything above it — the catalog must be able to author what
+   * an athlete can author, or a peaking block is a thing Forge can only receive and never ship.
+   */
+  percentOfMax?: number;
+  percentScheme?: (number | null)[];
+  percentOf?: string;
+
+  /** Adjacent prescriptions sharing a `groupId` are one block. Metadata repeats on every member. */
+  groupId?: string;
+  groupName?: string;
+  groupKind?: 'superset' | 'circuit';
+  groupRounds?: number;
+  /** An AMRAP's cap in seconds. When set, rounds are a ceiling nobody claims rather than a target. */
+  groupCapSec?: number | null;
+
+  /** Absent means 'strength'. 'cardio' prescribes a bout at any position in the day. */
+  kind?: 'strength' | 'cardio';
+  /** Cardio only. Mirrors `CardioActivity` — 'run' | 'walk' | 'bike' | 'row' | 'elliptical' | 'swim' | 'stair'. */
+  activity?: string;
+  /** Cardio only. The AUTHOR'S DEFAULT, not a rule — the athlete may switch it on the day. */
+  modality?: 'outdoor' | 'indoor';
+  /** Cardio only. `null` is meaningful: it prescribes an open bout, and must never be coerced to 0. */
+  targetSec?: number | null;
+  targetMi?: number | null;
 }
 
 export interface ProgramWorkout {

@@ -28,6 +28,18 @@ export interface SessionSet {
   /** Prescribed reps (the Target column). */
   targetReps: number;
   /**
+   * Prescribed WEIGHT, in the athlete's display unit — the bar a percentage-of-max program is asking
+   * for. Absent on every set that was not prescribed one, which is all of them outside such a program.
+   *
+   * ══ WHY THIS IS NOT `weight` PRE-FILLED ══
+   *
+   * `weight` is what the athlete ACTUALLY lifted, and it feeds volume, e1RM and the personal-record
+   * check. Seeding it with a target would write a claim they never made: finish a session without
+   * touching a set and the app would report a lift that did not happen, and could announce a PR for it.
+   * This is the ask; `weight` is the answer. Same separation as `targetSec` beside `durationSec`.
+   */
+  targetWeight?: number | null;
+  /**
    * Prescribed TO FAILURE — "Dips: F-F-F".
    *
    * Deliberately a flag beside `targetReps` rather than a widening of it to `number | 'F'`: that number

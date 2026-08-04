@@ -8,8 +8,11 @@
  * progress cursor to drift out of sync with the workouts the athlete actually logged.
  */
 
-import type { ProgramDay, ProgramStructure } from '@/data/programs-live';
+import type { ProgramDay, ProgramExercise, ProgramStructure } from '@/data/programs-live';
 import { blockRoundsText, deriveBlocks, isAmrap, schemeText, type PrescriptionBlock } from './prescription.ts';
+import { contextMaxFor, loadText, type LoadContext } from './percent-max.ts';
+
+export type { LoadContext };
 
 export type ProgramState = 'future' | 'active' | 'graduated' | 'ended_early';
 
@@ -226,7 +229,7 @@ export interface LogWeek {
 
 const fmtWeight = (w: number | null) => (w != null && w > 0 ? `${w} lb` : null);
 
-function plannedLine(d: ProgramDay): LogExercise[] {
+function plannedLine(d: ProgramDay, load?: LoadContext): LogExercise[] {
   // schemeText, not `sets × reps` — a ladder, a timed hold and a cardio bout all have to read as what
   // they are here, or the log describes a different session from the one the athlete is about to train.
   //
@@ -237,10 +240,20 @@ function plannedLine(d: ProgramDay): LogExercise[] {
     b.items.map((ex, i) => ({
       name: ex.name,
       sets: [],
-      planned: schemeText(ex),
+      planned: [schemeText(ex), plannedLoad(ex, load)].filter(Boolean).join(' '),
       ...(i === 0 && b.groupId && b.items.length > 1 ? { blockLabel: blockLabelOf(b) } : null),
     })),
   );
+}
+
+/**
+ * The load half of a planned line — "@ 75% — 305 lb".
+ *
+ * Empty when nothing prescribes a percentage. With no context, or with a lift whose max is unset, it
+ * degrades to the bare "@ 75%" rather than resolving a number from nothing.
+ */
+function plannedLoad(ex: ProgramExercise, load?: LoadContext): string {
+  return loadText(ex, contextMaxFor(load, ex), load?.unit ?? '', load?.rules);
 }
 
 /** "Superset · 2 exercises, alternated" · "HIIT Finisher · 4 rounds" · "AMRAP · 8:00 cap". */
@@ -276,7 +289,19 @@ const dateLabel = (iso: string) => {
  * swapped or renamed a day still gets a truthful log, and a workout logged off-plan still occupies the
  * slot it was trained in.
  */
-export function buildLog(structure: ProgramStructure, logged: LoggedWorkout[]): LogWeek[] {
+export function buildLog(
+  structure: ProgramStructure,
+  logged: LoggedWorkout[],
+  /**
+   * Percentage prescriptions resolve HERE, at render, against the run's frozen maxes — which is why
+   * changing a max needs no recalculation pass and no migration of past sessions.
+   *
+   * A completed day renders from `loggedLine` (what the athlete actually lifted) and a future day from
+   * `plannedLine` (what the program asks for). Changing the max therefore moves every session not yet
+   * trained and cannot move one already trained: the completed branch never reads a percentage at all.
+   */
+  load?: LoadContext,
+): LogWeek[] {
   const sizes = weekSizes(structure);
   const ordered = [...logged].sort((a, b) => Date.parse(a.startedAt) - Date.parse(b.startedAt));
   // Where each week starts in the flat session list. Ragged weeks mean this is a running total, not a
@@ -312,7 +337,7 @@ export function buildLog(structure: ProgramStructure, logged: LoggedWorkout[]): 
         completed: false,
         date: null,
         meta: plan ? `${plan.main.length + plan.warmup.length + plan.cooldown.length} planned` : 'Rest',
-        exercises: plan ? plannedLine(plan) : [],
+        exercises: plan ? plannedLine(plan, load) : [],
       };
     });
 

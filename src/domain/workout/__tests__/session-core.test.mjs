@@ -188,3 +188,76 @@ test('groupFieldsOf carries the kind through from the program', () => {
   assert.equal(groupFieldsOf({ name: 'x', groupId: 'g', groupKind: 'superset' }).groupKind, 'superset');
   assert.equal(groupFieldsOf({ name: 'x', groupId: 'g' }).groupKind, undefined, 'absent stays absent');
 });
+
+// ── percentage prescriptions carry the bar they ask for ──────────────────────
+
+const LOAD = { maxes: { 'back-squat': 405 }, unit: 'lb', rules: { increment: 5, bar: 45 } };
+
+test('a percentage prescription puts the resolved bar on every set', () => {
+  const ex = { name: 'Back Squat', catalogKey: 'back-squat', sets: 5, reps: 5, percentOfMax: 75 };
+  const sets = sessionSetsFor(ex, LOAD);
+  assert.equal(sets.length, 5);
+  assert.deepEqual(sets.map((s) => s.targetWeight), [305, 305, 305, 305, 305]);
+});
+
+test('THE ASK IS NOT THE ANSWER — weight stays unentered', () => {
+  // Seeding `weight` from the target would record a lift the athlete never made the moment they
+  // finished a session without touching a set, and could announce a personal record for it.
+  const ex = { name: 'Back Squat', catalogKey: 'back-squat', sets: 3, reps: 5, percentOfMax: 75 };
+  for (const s of sessionSetsFor(ex, LOAD)) {
+    assert.equal(s.weight, null);
+    assert.equal(s.targetWeight, 305);
+  }
+});
+
+test('a ramp carries one bar per rung', () => {
+  const ex = {
+    name: 'Back Squat',
+    catalogKey: 'back-squat',
+    repScheme: [5, 4, 3, 2, 1],
+    percentScheme: [65, 75, 80, 87, 92],
+  };
+  const sets = sessionSetsFor(ex, LOAD);
+  assert.deepEqual(sets.map((s) => s.targetReps), [5, 4, 3, 2, 1]);
+  assert.deepEqual(sets.map((s) => s.targetWeight), [265, 305, 325, 350, 375]);
+});
+
+test('a percentage against a lift with no max carries no target weight', () => {
+  const ex = { name: 'Bench Press', catalogKey: 'bench-press', sets: 5, reps: 5, percentOfMax: 75 };
+  for (const s of sessionSetsFor(ex, LOAD)) {
+    assert.equal(s.targetWeight, undefined, 'absent, never 0 — a 0 lb target is a false claim');
+  }
+});
+
+test('a percentage borrowed from another lift resolves against THAT lift', () => {
+  const ex = {
+    name: 'Front Squat',
+    catalogKey: 'front-squat',
+    sets: 3,
+    reps: 4,
+    percentOfMax: 45,
+    percentOf: 'back-squat',
+  };
+  assert.deepEqual(sessionSetsFor(ex, LOAD).map((s) => s.targetWeight), [180, 180, 180]);
+});
+
+test('a program without percentages is untouched by any of this', () => {
+  const ex = { name: 'Chin Up', catalogKey: 'chin-up', sets: 4, reps: 6 };
+  for (const s of sessionSetsFor(ex, LOAD)) assert.equal(s.targetWeight, undefined);
+  // And with no context at all, which is every session built before this existed.
+  for (const s of sessionSetsFor(ex)) assert.equal(s.targetWeight, undefined);
+});
+
+test('a circuit member repeats its bar across the rounds a round-per-set expansion creates', () => {
+  const ex = {
+    name: 'Back Squat',
+    catalogKey: 'back-squat',
+    reps: 3,
+    groupId: 'g1',
+    groupRounds: 4,
+    percentOfMax: 70,
+  };
+  const sets = sessionSetsFor(ex, LOAD);
+  assert.equal(sets.length, 4, 'four rounds are four rows to tick off');
+  assert.deepEqual(sets.map((s) => s.targetWeight), [285, 285, 285, 285]);
+});
