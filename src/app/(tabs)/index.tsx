@@ -32,6 +32,7 @@ import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { useProfile } from '@/lib/profile';
 import { ExperienceLevelCard, EXPERIENCE_FOR, type IntakeResult } from '@/components/forge/compositions/ExperienceLevelCard';
 import { getHomeLevel, setHomeLevel, clearHomeLevel } from '@/lib/home-level';
+import { getStartChoice, setStartChoice, type StartChoice } from '@/lib/program-intent';
 import { getHomeIntake, setHomeIntake, clearHomeIntake } from '@/lib/home-intake';
 import { claimInitiativeHonor } from '@/data/honors-live';
 import { useTour } from '@/hooks/useTour';
@@ -43,13 +44,15 @@ import { itemByName } from '@/domain/exercise-picker/data';
 import { getProgramDefinitions } from '@/domain/training/programs';
 import { nextSession, totalSessions } from '@/domain/program/progress-core';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
+import { StartStrengthSheet } from '@/components/forge/compositions/StartStrengthSheet';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { getActiveProgramById } from '@/domain/training/active-program';
 import { resolveRecommendationId } from '@/domain/onboarding/recommend-core';
 import { catalogCanRecommend } from '@/domain/onboarding/recommend';
 import { CARDIO_ACTIVITIES, CARDIO_DEFAULTS, deriveName, type CardioActivity } from '@/domain/workout/conditioning';
-import { hasLoggedWork, loadSession } from '@/domain/workout/autosave';
+import { loadSession, resumeSummary } from '@/domain/workout/autosave';
+import { composeHome, selectHomePrograms } from '@/domain/home/composition';
 import { doneSetCount } from '@/domain/workout/metrics';
 import type { Program, Workout } from '@/domain/training/schema';
 import { resolveHomeWorkoutArtwork } from '@/domain/home-artwork/resolver';
@@ -225,21 +228,29 @@ export default function HomeScreen() {
    * MUST be per-focus, not once on mount. Home is a mounted tab: read a single time, it would still be
    * advertising "Continue Workout · 12 sets logged" after the athlete had finished and saved that very
    * session — an offer to resume something that no longer exists.
+   *
+   * The NAME and COUNT now come with it, because the card that shows this no longer necessarily has a
+   * program behind it to supply them. For an athlete who never builds one, this local record is the only
+   * thing that knows what they were in the middle of.
    */
-  const [resumeSets, setResumeSets] = useState<number | null>(null);
+  const [resume, setResume] = useState<{ name: string; exerciseCount: number; sets: number } | null>(null);
   useFocusEffect(
     useCallback(() => {
       let alive = true;
       void loadSession().then((saved) => {
-        if (alive) setResumeSets(hasLoggedWork(saved) ? doneSetCount(saved!) : null);
+        if (!alive) return;
+        const summary = resumeSummary(saved);
+        setResume(summary ? { ...summary, sets: doneSetCount(saved!) } : null);
       });
       return () => {
         alive = false;
       };
     }, []),
   );
+  const resumeSets = resume?.sets ?? null;
 
   const [elseOpen, setElseOpen] = useState(false);
+  const [strengthOpen, setStrengthOpen] = useState(false);
   /**
    * The sheet has two pages: the choice, then the cardio list.
    *
@@ -268,10 +279,33 @@ export default function HomeScreen() {
   const { data: myPrograms, refetch: refetchPrograms } = useQuery(fetchMyPrograms, []);
   // How far into the built program the athlete is, so Home previews the NEXT session rather than always
   // day 1 — and so the card matches the session the workout screen will actually open.
-  // The ACTIVE program anchors Home, falling back to the most recent. Picking `[0]` alone meant starting
-  // an older program changed nothing here — Home kept showing whichever was created last.
-  const builtProgram = (myPrograms ?? []).find((p) => p.state === 'active') ?? myPrograms?.[0] ?? null;
-  const builtId = builtProgram?.id ?? null;
+  /*
+   * The ACTIVE program anchors Home, then a PLANNED one. Picking `[0]` alone meant starting an older
+   * program changed nothing here — Home kept showing whichever was created last.
+   *
+   * A SEALED PROGRAM IS NOT A WORKOUT TO OFFER. The fallback used to be `myPrograms[0]` — newest-first,
+   * which after a graduation is the program that just finished. Home would then advertise Day A of a
+   * completed program (`nextSession` returns null, so the card falls back to the first built day), and
+   * tapping it dropped the athlete into an empty session attributed to nothing. Latent while nothing
+   * could graduate; the normal ending the moment something could.
+   */
+  /*
+   * ══ A PLANNED PROGRAM IS NOT A PROGRAM YOU ARE ON ══
+   *
+   * Only an ACTIVE program may hand Home a session. The fallback here used to reach for a `future` one
+   * too, which meant the mere existence of a planned program turned Home into the enrolled Home — hero
+   * showing its Day A, "Continue Training" offering it — for somebody who had never pressed Start. There
+   * is no visual difference between that and being enrolled, because being enrolled is what it renders.
+   *
+   * It is the same defect already fixed twice in this file and once on Workouts: Home asserting a program
+   * relationship the athlete never entered. With no active program the hero falls to `open`, whose button
+   * IS the freestyle choice — the honest offer when nothing is running.
+   *
+   * The planned program is NOT hidden. It still names the Current Program tile and still links there, so
+   * Start is one tap away; it simply stops pretending to be underway.
+   */
+  const { active: activeProgram, anchor: anchorProgram } = selectHomePrograms(myPrograms);
+  const builtId = anchorProgram?.id ?? null;
   const { data: builtDone, refetch: refetchBuiltDone } = useQuery(
     () => (builtId ? fetchProgramCompletedCount(builtId) : Promise.resolve(0)),
     [builtId],
@@ -279,6 +313,8 @@ export default function HomeScreen() {
   // Opt-in Home experience-level LENS (local only, ONB-Amendment-002) — undefined = loading, null = not
   // chosen (show the question), a level = show the suggested starting program. No DB write; re-askable.
   const { data: homeLevel, refetch: refetchLevel } = useQuery(getHomeLevel, []);
+  // How they answered the starting-point question, if they have. Local; see `program-intent.ts`.
+  const { data: startChoice, refetch: refetchStartChoice } = useQuery(getStartChoice, []);
   // Goals + equipment intake (local only) — feeds the recommendation on the suggested face.
   const { data: homeIntake, refetch: refetchIntake } = useQuery(getHomeIntake, []);
   const { data: homeGymData, refetch: refetchHomeGym } = useQuery(fetchHomeGym, []);
@@ -326,7 +362,9 @@ export default function HomeScreen() {
   // Progress is 0/total (no athlete-progress backend); a built program has no catalog artwork, so the
   // resolver reads its exercises' composition (program=null) and degrades to the split/neutral art.
   const { home } = useMemo(() => {
-    const built = builtProgram;
+    // The tile names and counts the anchor (planned included); only an ACTIVE one yields a session.
+    const built = anchorProgram;
+    const offersSession = activeProgram != null;
 
     let program: Program | null = null;
     let workout: Workout | null = null;
@@ -340,7 +378,9 @@ export default function HomeScreen() {
       const done = builtDone ?? 0;
       const next = nextSession(built.structure, done);
       const day = next?.day ?? built.structure.days.find((d) => d.main.length > 0) ?? built.structure.days[0] ?? null;
-      workout = day
+      // A planned program contributes its NAME and its 0-of-N, never a session — `hasProgramSession`
+      // is what promotes the hero to a program day, and it must stay false until Start is pressed.
+      workout = offersSession && day
         ? {
             name: day.name.trim() || `Day ${day.letter}`,
             focus: day.name.trim() || undefined,
@@ -387,7 +427,7 @@ export default function HomeScreen() {
     });
 
     return { home: { workout, resolved, name, completed, total } };
-  }, [builtProgram, builtDone, awaiting, homeLevel, homeIntake, liveProfile?.sex]);
+  }, [anchorProgram, activeProgram, builtDone, awaiting, homeLevel, homeIntake, liveProfile?.sex]);
 
   // The Mission tile shows the REAL chapter goal now (0025), not the HOME_DATA placeholder. Primary
   // preferred, else the newest goal; count = goals still in progress. No goals → an invite to set one.
@@ -397,6 +437,21 @@ export default function HomeScreen() {
   const missionTarget = (primaryGoal ?? activeGoals[0])?.name ?? 'Set a chapter goal';
   const goalsRemaining = goalList.filter((g) => g.achievedAt == null).length;
 
+  /**
+   * The three doors off the starting-point chooser. Each RECORDS the choice before navigating.
+   *
+   * Walking through a door is the answer to "How do you want to start?" — so Home stops asking from that
+   * moment, not from the moment a workout is finally saved. Waiting for the save meant an athlete could
+   * be looking at their own half-logged session with the question still printed underneath it.
+   *
+   * `chooseStart` is called from the chooser only. The same two handlers are reused elsewhere on Home
+   * (the quiet program link, the suggestion card's "Explore") where there is no question to answer, so
+   * those pass the raw navigation and record nothing.
+   */
+  const chooseStart = (choice: StartChoice, go: () => void) => {
+    void setStartChoice(choice).finally(refetchStartChoice);
+    go();
+  };
   const openPrograms = () => router.push('/workouts');
   const openBuilder = () => router.push('/program-builder');
   const completeIntake = async (r: IntakeResult) => {
@@ -480,8 +535,21 @@ export default function HomeScreen() {
     setElseView('root');
   };
 
-  const startFreestyleStrength = async () => {
+  /**
+   * "Strength" from the What-are-you-training sheet opens the CHOOSER, not an empty session.
+   *
+   * Build-as-you-go is one of three legitimate answers (`Forge Strength Start.dc.html`) and Home was
+   * applying it as though it were the only one — so a template the athlete had saved was reachable
+   * from Home only by remembering that Workouts → Templates exists.
+   */
+  const chooseStrengthFromHome = () => {
     closeElse();
+    setStrengthOpen(true);
+  };
+
+  /** …and this is what the third option does once it has actually been chosen. */
+  const buildAsYouGo = async () => {
+    setStrengthOpen(false);
     await writeWorkoutLaunch({ freestyle: true });
     startWorkout('Freestyle Workout', []);
     router.push('/workout');
@@ -523,7 +591,9 @@ export default function HomeScreen() {
   const startHomeWorkout = async () => {
     const w = home.workout;
     if (!w) return;
-    if (builtId) await writeWorkoutLaunch({ programId: builtId });
+    // The ACTIVE program's id, never the anchor's: a workout must not be attributed to a program the
+    // athlete has not started, or its progress would advance before it began.
+    if (activeProgram) await writeWorkoutLaunch({ programId: activeProgram.id });
     const lifts = (w.exercises ?? [])
       .filter((e) => e.section === 'main' && !e.optional)
       .map((e) => ({ catalogKey: e.catalogKey, name: exerciseNameFor(e.catalogKey), workingSets: e.workingSets }));
@@ -557,8 +627,19 @@ export default function HomeScreen() {
    * So these three are no longer branches AROUND Home. They are the states of one slot ON it, sitting where
    * the Program | Mission grid will eventually go. The first-workout ceremony (ONB-D18) is untouched — it
    * lives in the workout-complete flow and never had anything to do with this.
+   *
+   * ══ AND THE SLOT IS FOR ARRIVING, NOT FOR LACKING ══
+   *
+   * It used to draw for anyone without a program, which meant an athlete who trains day to day and will
+   * never build one read **"You don't have a program yet"** on every launch of their lives. `awaiting` goes
+   * false the moment they log a session, so there was no exit from that sentence except to build a program
+   * they didn't want. That is the literal message `Home-Screen-Wireframe-Spec-H1.md` §6 forbids — *"No
+   * placeholder. No 'no program' message."* — on a screen whose own failure list ends with *"the screen
+   * communicates what the athlete has NOT done."*
+   *
+   * The question is now asked once, on arrival, and never again. Everyone past it gets the Tier 3 Workout
+   * CTA the same spec marks **Always** present and never disabled.
    */
-  const needsStartingPoint = !hasProgram;
   /**
    * Whether the guided on-ramp is offered at all — false while the catalog cannot answer the questions
    * the intake asks (`canRecommend`). Derived from the authored programs, so it turns itself back on.
@@ -576,12 +657,73 @@ export default function HomeScreen() {
    * dropped straight through to the full Home with a program silently assigned, so the athlete never
    * saw what was picked for them or had any say in it.
    */
-  const hasSuggestion = needsStartingPoint && homeLevel != null && guidedOnRamp;
+  const hasSuggestion = !hasProgram && homeLevel != null && guidedOnRamp;
+
   /**
-   * The chooser is up AND it has put freestyle in the first card slot — so the quiet "Or just train today"
-   * underneath is that same tap a second time, and is not drawn.
+   * WHAT HOME DRAWS — one call, so the rules can be read and tested in one place (`src/domain/home`).
+   *
+   * `awaitingLoading` matters more than it looks: `useQuery` starts at `data: null`, so `awaiting` reads
+   * false for a frame on every cold load. Passing it through means Home says nothing about the athlete
+   * until it knows something, instead of flashing a claim it then takes back.
    */
-  const freestyleIsACard = !hasSuggestion && path !== 'guided' && !guidedOnRamp;
+  const composition = composeHome({
+    chapterLoading: awaitingLoading,
+    awaiting: !!awaiting,
+    startChosen: startChoice != null,
+    hasProgram,
+    hasProgramSession: home.workout != null,
+    resumeSets,
+    guidedOnRamp,
+    hasSuggestion,
+    guidedPathOpen: path === 'guided',
+  });
+  /**
+   * The hero's three faces, resolved to one set of props. Null = nothing to say yet (the loading frame).
+   *
+   *   resume  — unfinished work in local storage. It is named and counted from the SESSION, because the
+   *             athlete showing this card may have no program to name it for them. This face was
+   *             unreachable for them before: `resumeSets` was computed and had no card to live in.
+   *   program — the planned next session. Unchanged.
+   *   open    — no program, nothing planned. "Train Today", and the button opens the same "What are you
+   *             training?" sheet that IS the spec's W-8 Activity Type Picker.
+   *
+   * `open` passes no `exerciseCount` — there is nothing to count, and "0 Exercises" is not that fact but
+   * a confident claim of emptiness.
+   */
+  const hero: {
+    eyebrow?: string;
+    title: string;
+    focus?: string;
+    exerciseCount?: number;
+    onStart: () => void;
+    resumeSets: number | null;
+  } | null =
+    composition.hero === 'resume'
+      ? {
+          eyebrow: 'In Progress',
+          title: resume?.name || 'Your workout',
+          exerciseCount: resume?.exerciseCount,
+          onStart: continueWorkout,
+          resumeSets,
+        }
+      : composition.hero === 'open'
+        ? {
+            eyebrow: 'Today',
+            title: 'Train Today',
+            focus: 'Nothing planned. Build it as you go.',
+            onStart: startFreestyleFromHome,
+            resumeSets: null,
+          }
+        : composition.hero === 'program' && home.workout
+          ? {
+              title: home.workout.name,
+              focus: home.workout.focus,
+              exerciseCount: home.workout.exerciseCount ?? home.workout.exercises?.length ?? 0,
+              onStart: startHomeWorkout,
+              resumeSets: null,
+            }
+          : null;
+
   // A real "first move" — the athlete has built OR chosen a program (the unlock ceremony's trigger).
   //
   // This used to also accept `homeLevel != null`, which is only "they answered the experience question".
@@ -593,23 +735,28 @@ export default function HomeScreen() {
    * The two moments the guided tour hangs off, both reported from here because Home is the only screen that
    * knows which of its two faces is up (Onboarding-Amendment-003).
    *
-   * GATED → the four-pillar tabs leg. Reported only from the CHOOSER — the athlete has just arrived, has
-   * touched nothing, and the screen in front of them is one card. That is the moment a map of the app is
-   * worth having and costs nothing. Deliberately NOT reported mid-intake or over the recommendation: walking
-   * someone away from a half-answered question to look at the Squads tab is not guidance, and an athlete who
-   * skips past this moment simply keeps the leg owed — the planner chains it ahead of the Home leg later.
+   * FIRST-RUN → the four-pillar tabs leg. Reported only while the athlete has just arrived, has touched
+   * nothing, and the screen in front of them is one card. That is the moment a map of the app is worth
+   * having and costs nothing. An athlete who skips past it simply keeps the leg owed — the planner chains
+   * it ahead of the Home leg later.
    *
-   * UN-GATED → the seven-step spotlight walkthrough of the real cards, plus (once a program exists) the
-   * "Legacy Unlocked" ceremony that hands into it. Guarded on the awaiting query having resolved so the brief
-   * pre-load frame never fires early; both calls are no-ops unless something is actually owed, so they are
-   * safe on every settled focus. The real chapter feeds the ceremony's stats.
+   * SETTLED → the spotlight walkthrough of the real cards, plus (once a program exists) the "Legacy
+   * Unlocked" ceremony that hands into it.
+   *
+   * ══ SETTLED IS NOT "HAS A PROGRAM", AND THAT WAS THE BUG ══
+   *
+   * This reported `has-program` / `no-program`, and the provider owed the Home leg only for the first. So
+   * the athlete who trains day to day and never builds a program was never, ever shown around the screen
+   * they open every morning — the same "forever" defect as the copy above, in a second place. The Home leg
+   * only ever needed cards to ring, and a settled Home now draws six of the seven it wants; the planner
+   * already drops the seventh (Current Program) because its anchor isn't mounted.
    */
   useFocusEffect(
     useCallback(() => {
       if (awaitingLoading) return;
-      requestTour(hasProgram ? 'has-program' : 'no-program');
+      requestTour(hasProgram || !awaiting ? 'settled' : 'first-run');
       if (hasProgramSignal) requestPrompt();
-    }, [awaitingLoading, hasProgram, hasProgramSignal, requestPrompt, requestTour]),
+    }, [awaitingLoading, awaiting, hasProgram, hasProgramSignal, requestPrompt, requestTour]),
   );
 
   return (
@@ -641,20 +788,38 @@ export default function HomeScreen() {
         </TourAnchor>
 
         <View style={styles.content}>
-          {/* Phase B.1: the built / chosen / demo program feeds the EXISTING slots — the Today's Workout hero
-              and the Current Program tile — not a separate card. */}
-          {home.workout ? (
+          {/*
+            THE WORKOUT CTA — H-1 Tier 3, "Always present. Never disabled. One button."
+
+            Phase B.1: the built / chosen / demo program feeds the EXISTING slots — this hero and the
+            Current Program tile — not a separate card. What's new is that the hero no longer REQUIRES a
+            program to exist. It wears three faces, and `composeHome` decides which:
+
+              resume  — unfinished work in local storage. Outranks a program day on purpose: the logger
+                        reads a launch intent landing on top of logged work as a conflict and asks about
+                        it, so proposing the program day here would walk the athlete into a question they
+                        never asked. It is also the face that was UNREACHABLE for anyone without a
+                        program — `resumeSets` was computed and then had no card to live in.
+              program — the planned next session. Unchanged.
+              open    — no program, nothing planned: "Train Today", and the button opens the same
+                        "What are you training?" sheet that IS the spec's W-8 Activity Type Picker.
+
+            The `open` face passes no `exerciseCount` (there is nothing to count and "0 Exercises" would be
+            a confident false claim) and no `onFreestyle` (its button already asks that question).
+          */}
+          {hero ? (
             <TourAnchor id="todays-workout">
               <TodaysWorkoutCard
                 resolved={home.resolved}
-                title={home.workout.name}
-                focus={home.workout.focus}
-                exerciseCount={home.workout.exerciseCount ?? home.workout.exercises?.length ?? 0}
-                onStart={resumeSets ? continueWorkout : startHomeWorkout}
-                resumeSets={resumeSets}
+                eyebrow={hero.eyebrow}
+                title={hero.title}
+                focus={hero.focus}
+                exerciseCount={hero.exerciseCount}
+                onStart={hero.onStart}
+                resumeSets={hero.resumeSets}
                 /* No `onPreview`: W-3 is unbuilt, and the card now renders as content rather than as a
                    button to nowhere when none is given. */
-                onFreestyle={startFreestyleFromHome}
+                onFreestyle={composition.heroOffersFreestyle ? startFreestyleFromHome : undefined}
               />
             </TourAnchor>
           ) : null}
@@ -667,15 +832,17 @@ export default function HomeScreen() {
             screen the whole time, which is the point: the question is an offer beside the app, not a door
             in front of it (ONB-D13, "an offer, never a gate").
 
-            It serves the brand-new athlete and the long-time freestyle athlete with the same three cards,
-            because they want the same thing. "Or just train today" stays under all of them — the answer to
-            "how do you want to start" is allowed to be "I don't" — EXCEPT where the chooser has already
-            promoted freestyle into the card slot (no guided on-ramp), because the same action twice on one
-            card is not two choices.
+            IT IS ASKED ON ARRIVAL AND NEVER AGAIN. It used to draw for anyone without a program, so the
+            athlete who trains day to day and never wants one read "You don't have a program yet" on every
+            launch, permanently. They now get the Workout CTA above instead, which is what H-1 always said
+            they should have. "Or just train today" stays under the chooser — the answer to "how do you want
+            to start" is allowed to be "I don't" — EXCEPT where the chooser has already promoted freestyle
+            into the card slot (no guided on-ramp), because the same action twice on one card is not two
+            choices.
           */}
-          {needsStartingPoint ? (
+          {composition.startingPoint !== 'none' ? (
             <>
-              {hasSuggestion ? (
+              {composition.startingPoint === 'suggestion' ? (
                 // Answered the questions — show WHAT was picked and why, with a real choice about it.
                 <ExperienceLevelCard
                   mode="suggested"
@@ -686,22 +853,25 @@ export default function HomeScreen() {
                   onExplore={openPrograms}
                   onChange={changeIntake}
                 />
-              ) : path === 'guided' ? (
+              ) : composition.startingPoint === 'intake' ? (
                 // Chose "Help me find one" — the intake stepper (level → goals → equipment), inline.
                 <ExperienceLevelCard mode="collect" onComplete={completeIntake} onBuild={openBuilder} />
               ) : (
+                /* Only ever seen on arrival now, so the title no longer has a second, sadder variant for
+                   the athlete who had simply been here a while. */
                 <ProgramPathChooser
-                  title={awaiting ? 'How do you want to start?' : "You don't have a program yet"}
-                  subtitle={awaiting ? undefined : 'Train freely as long as you like — or give the work a shape.'}
+                  title="How do you want to start?"
+                  /* "Help me find one" records nothing — it opens a stepper that lives on this same slot
+                     and ends in a program. The other three are exits, and an exit is an answer. */
                   onGuided={guidedOnRamp ? () => setPath('guided') : undefined}
-                  onBuild={openBuilder}
-                  onBrowse={openPrograms}
-                  onFreestyle={startFreestyleFromHome}
+                  onBuild={() => chooseStart('build_own', openBuilder)}
+                  onBrowse={() => chooseStart('browse', openPrograms)}
+                  onFreestyle={() => chooseStart('freestyle', startFreestyleFromHome)}
                 />
               )}
-              {freestyleIsACard ? null : (
+              {composition.showQuietFreestyle ? (
                 <Pressable
-                  onPress={startFreestyleFromHome}
+                  onPress={() => chooseStart('freestyle', startFreestyleFromHome)}
                   accessibilityRole="button"
                   accessibilityLabel="Start a workout without a program"
                   hitSlop={8}
@@ -709,13 +879,17 @@ export default function HomeScreen() {
                 >
                   <Text style={styles.pathQuietText}>Or just train today</Text>
                 </Pressable>
-              )}
+              ) : null}
             </>
           ) : null}
 
-          {home.name ? (
+          {/* THE MISSION TILE IS NOT THE PROGRAM'S. It reads live chapter goals and always did — but this
+              grid was guarded on the program's NAME, so an athlete without a program silently lost their
+              goal too. One `&&` over two tiles. The program half is now optional and Mission stands alone
+              (full width) when there is no program to sit beside. */}
+          {composition.showMissionTile ? (
             <ProgramMissionGrid
-              programName={home.name}
+              programName={composition.showProgramTile ? home.name : undefined}
               completed={home.completed}
               total={home.total}
               missionTarget={missionTarget}
@@ -733,6 +907,21 @@ export default function HomeScreen() {
               programAnchor="current-program"
               missionAnchor="mission"
             />
+          ) : null}
+
+          {/* A program is an OPTION, not a prerequisite — so it is one quiet line under the screen's real
+              content, not a card competing with it. `/workouts` already holds both doors (Build a Program
+              and Discover), so this is one tap to either rather than two cards for one decision. */}
+          {composition.showQuietProgramLink ? (
+            <Pressable
+              onPress={openPrograms}
+              accessibilityRole="button"
+              accessibilityLabel="Build or browse programs"
+              hitSlop={8}
+              style={styles.pathQuiet}
+            >
+              <Text style={styles.pathQuietText}>Want a plan? Build or browse programs →</Text>
+            </Pressable>
           ) : null}
 
           <TourAnchor id="your-circle">
@@ -775,6 +964,10 @@ export default function HomeScreen() {
         one tap in, behind a single Cardio row, so the athlete who wants to lift is not asked to read
         past a stair climber first.
       */}
+      {/* The three ways into a lifting session (`Forge Strength Start.dc.html`), reached from every Home
+          door that would otherwise have assumed build-as-you-go. */}
+      <StartStrengthSheet open={strengthOpen} onClose={() => setStrengthOpen(false)} onFreestyle={() => void buildAsYouGo()} />
+
       <BottomSheet
         open={elseOpen}
         onClose={closeElse}
@@ -785,13 +978,13 @@ export default function HomeScreen() {
           {elseView === 'root' ? (
             <>
               <Pressable
-                onPress={() => void startFreestyleStrength()}
+                onPress={chooseStrengthFromHome}
                 accessibilityRole="button"
-                accessibilityLabel="Freestyle workout — add lifts as you go"
+                accessibilityLabel="Strength — from a template, planned first, or built as you go"
                 style={({ pressed }) => [styles.elseRow, pressed ? styles.pathPressed : null]}
               >
-                <Text style={styles.pathCardTitle}>Freestyle workout</Text>
-                <Text style={styles.pathCardSub}>Add lifts as you go. Nothing planned.</Text>
+                <Text style={styles.pathCardTitle}>Strength</Text>
+                <Text style={styles.pathCardSub}>From a template, planned first, or built as you go.</Text>
               </Pressable>
               <Pressable
                 onPress={() => setElseView('cardio')}

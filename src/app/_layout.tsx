@@ -88,6 +88,7 @@ function RootNavigator() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="post/[id]" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Screen name="squad/[id]" />
+        <Stack.Screen name="squad/[id]/goal" />
         <Stack.Screen name="squad-settings" />
         <Stack.Screen name="squad-invite" />
         <Stack.Screen name="squad-transfer" />
@@ -133,6 +134,7 @@ function RootNavigator() {
         <Stack.Screen name="log-activity" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="exercise-picker" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="program-builder" options={{ presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="workout-builder" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="workout-complete" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Screen name="pin-video" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
 

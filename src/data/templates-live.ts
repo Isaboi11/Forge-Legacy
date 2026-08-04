@@ -36,6 +36,15 @@ export interface TemplateExercise {
    * what they were, since 0091 dropped the section when deriving the template in the first place.
    */
   section?: TemplateSection;
+  /**
+   * The block this lift belongs to (0106). A template made from a session built around a superset
+   * comes back as that superset, not as loose lifts in a suggestive order. Absent on every template
+   * saved before 0106 — those were flat, and read as flat.
+   */
+  groupId?: string | null;
+  groupName?: string | null;
+  groupKind?: 'superset' | 'circuit' | null;
+  groupRounds?: number | null;
   /** 'cardio' is a run/walk/ride block. Absent means strength, as every older template was. */
   kind?: 'strength' | 'cardio';
   /** How it was trained — carried so repeating a treadmill session doesn't put you on the road (0097). */
@@ -76,6 +85,12 @@ const toExercise = (e: Record<string, unknown>): TemplateExercise => ({
   sets: Number(e.sets ?? 0),
   targetReps: Number(e.targetReps ?? 0),
   section: (['warmup', 'main', 'cooldown'] as TemplateSection[]).includes(e.section as TemplateSection) ? (e.section as TemplateSection) : 'main',
+  groupId: (e.groupId as string) ?? null,
+  groupName: (e.groupName as string) ?? null,
+  // A grouped row that never said which kind it was is a circuit — the same reading the session and
+  // the database both take, so the three cannot drift.
+  groupKind: e.groupId == null ? null : e.groupKind === 'superset' ? 'superset' : 'circuit',
+  groupRounds: e.groupRounds == null ? null : Number(e.groupRounds),
   kind: e.kind === 'cardio' ? 'cardio' : 'strength',
   modality: e.modality === 'indoor' ? 'indoor' : e.modality === 'outdoor' ? 'outdoor' : undefined,
   targetMi: e.targetMi == null ? null : Number(e.targetMi),
@@ -192,6 +207,37 @@ export async function saveWorkoutAsTemplate(workoutId: string, name?: string): P
     throw error;
   }
   return (data as string | null) ?? null;
+}
+
+/**
+ * Author a template from nothing, or rewrite one — the Free Workout Builder's save (W-25).
+ *
+ * The SECOND way a template comes into existence. 0091 built templates from the capture end, which is
+ * still the better loop — a session you already did is a shape you know you can do — but it left no
+ * answer for "I want to plan Thursday before Thursday", which is the whole of `Forge Strength Start`'s
+ * "Build it first". A plain insert through the existing RLS policy; no RPC, because unlike
+ * `save_workout_as_template` there is nothing to derive: the client is describing the shape directly.
+ *
+ * Returns the template's id so the caller can land on it, or start it.
+ */
+export async function saveTemplate(name: string, exercises: TemplateExercise[], id?: string | null): Promise<string> {
+  const clean = name.trim().slice(0, 60) || 'Saved Workout';
+  if (id) {
+    const { error } = await supabase.from('workout_templates').update({ name: clean, exercises }).eq('id', id);
+    if (error) throw error;
+    return id;
+  }
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not signed in');
+  const { data, error } = await supabase
+    .from('workout_templates')
+    .insert({ athlete_id: user.id, name: clean, exercises })
+    .select('id')
+    .single();
+  if (error) throw error;
+  return (data as { id: string }).id;
 }
 
 export async function renameTemplate(id: string, name: string): Promise<void> {

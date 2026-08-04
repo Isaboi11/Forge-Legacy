@@ -22,6 +22,7 @@ import { fetchProgramCompletedCount } from '@/data/programs-live';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { dayLabel, nextSession, sessionsPerWeek, viewForState } from '@/domain/program/progress-core';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
+import { StartStrengthSheet } from '@/components/forge/compositions/StartStrengthSheet';
 import { useQuery } from '@/lib/useQuery';
 import { fetchTemplates, templateSummary } from '@/data/templates-live';
 import type { Program } from '@/domain/training/schema';
@@ -136,6 +137,7 @@ export default function WorkoutsScreen() {
   // The athlete's own active program wins over the built-in one — it's the thing actually tracking.
   const myActive = mine.find((p) => p.state === 'active') ?? null;
   const [startOpen, setStartOpen] = useState(false);
+  const [strengthOpen, setStrengthOpen] = useState(false);
 
   const startToday = async () => {
     setStartOpen(false);
@@ -147,10 +149,9 @@ export default function WorkoutsScreen() {
       router.push('/workout');
       return;
     }
-    // No active program: a session started from here is a one-off, not a phantom catalog day.
-    await writeWorkoutLaunch({ freestyle: true });
-    startWorkout('Freestyle Workout');
-    router.push('/workout');
+    // No active program: there is no "today's workout" to start, so ask how they want to begin rather
+    // than assuming the one-off. Assuming it was how a saved template became unreachable from here.
+    setStrengthOpen(true);
   };
 
   /** A one-off session, deliberately unattributed — it belongs to no program's progress. */
@@ -169,11 +170,25 @@ export default function WorkoutsScreen() {
     router.push('/workout');
   };
 
+  /**
+   * Build-as-you-go — one of THREE ways to start a lifting session, not the only one.
+   *
+   * Every entry that used to land here directly now opens the Start Strength chooser first
+   * (`Forge Strength Start.dc.html`): from a template · build it first · build as you go. This is what
+   * the third option does once it is chosen.
+   */
   const startFreestyle = async () => {
     setStartOpen(false);
+    setStrengthOpen(false);
     await writeWorkoutLaunch({ freestyle: true });
     startWorkout('Freestyle Workout');
     router.push('/workout');
+  };
+
+  /** Open the chooser. The `+` sheet closes first so two sheets are never stacked. */
+  const chooseStrength = () => {
+    setStartOpen(false);
+    setStrengthOpen(true);
   };
 
   const todayLabel = myActive ? myActive.name : null;
@@ -267,7 +282,7 @@ export default function WorkoutsScreen() {
                     onPress={() => router.push('/templates')}
                   />
                 ))}
-                <CreateRow label="Build a Workout" onPress={() => void startFreestyle()} />
+                <CreateRow label="Build a Workout" onPress={chooseStrength} />
               </View>
             </TourAnchor>
 
@@ -357,14 +372,14 @@ export default function WorkoutsScreen() {
             </Pressable>
           ) : null}
           <Pressable
-            onPress={() => void startFreestyle()}
+            onPress={chooseStrength}
             accessibilityRole="button"
-            accessibilityLabel="Start a freestyle workout"
+            accessibilityLabel="Start a strength workout"
             style={styles.libRow}
           >
             <View style={styles.rowBody}>
-              <Text style={styles.rowTitle}>Freestyle Workout</Text>
-              <Text style={styles.rowSub}>A one-off. Log whatever you train.</Text>
+              <Text style={styles.rowTitle}>Strength Workout</Text>
+              <Text style={styles.rowSub}>From a template, planned first, or built as you go.</Text>
             </View>
             <ChevronRightIcon size={18} color={flColor.bronze400} />
           </Pressable>
@@ -415,6 +430,10 @@ export default function WorkoutsScreen() {
           </Pressable>
         </View>
       </BottomSheet>
+
+      {/* The three ways into a lifting session (`Forge Strength Start.dc.html`). Every path that would
+          otherwise drop into an empty session opens this first. */}
+      <StartStrengthSheet open={strengthOpen} onClose={() => setStrengthOpen(false)} onFreestyle={() => void startFreestyle()} />
 
       {/* Held to the "My Workouts" side: four of the six steps ring sections that only exist there, and a
           walkthrough that opened on Discover would silently drop them and teach a third of the screen. */}

@@ -20,17 +20,16 @@ import { writeWorkoutLaunch } from '@/lib/workout-launch';
  * Workout Templates (W-26).
  * Built to `Forge Workout Templates.dc.html`.
  *
- * ── THE ONE STRUCTURAL DELTA: WHERE A TEMPLATE COMES FROM ────────────────────
+ * ── WHERE A TEMPLATE COMES FROM: NOW BOTH WAYS ───────────────────────────────
  *
- * The design's "New Template" opens a Free Workout Builder — author a workout from nothing, then keep it.
- * That builder does not exist here, and building it would be the second answer to a question already
- * answered: in this app a template is a session you ALREADY DID and want again (0091). You train, and The
- * Record offers to keep the shape.
+ * Templates were built from the CAPTURE end first (0091): you train, and The Record offers to keep the
+ * shape. That is still the better loop for most sessions — a workout you already did is one you know you
+ * can do, where a workout you author is a guess at your own capacity — and it is why capture was built
+ * before authoring rather than after.
  *
- * That is the better loop, not a substitute for one. Authoring a workout you have never done is guessing
- * at your own capacity; saving one you just finished is recording it. So New Template starts a freestyle
- * session — build it as you go, then keep it — and the empty state says exactly that instead of promising
- * a builder.
+ * But it answered only half the question. "I want to plan Thursday before Thursday" had no door at all,
+ * which is the design's "Build it first". So **New Template now opens the Free Workout Builder (W-25,
+ * `/workout-builder`)**, and the capture path is unchanged beside it.
  *
  * ── OTHER DELTAS ────────────────────────────────────────────────────────────
  *
@@ -67,11 +66,9 @@ export default function TemplatesScreen() {
     router.push('/workout');
   };
 
-  /* "New" starts a freestyle session rather than opening an authoring builder — see the header. */
-  const newTemplate = async () => {
-    await writeWorkoutLaunch({ freestyle: true });
-    router.push('/workout');
-  };
+  /* "New" opens the builder (W-25). Capture — train, then keep the shape — is still offered on The
+     Record; the two are complementary doors to the same table, not rivals. */
+  const newTemplate = () => router.push('/workout-builder');
 
   const remove = async (t: WorkoutTemplate) => {
     setConfirmDelete(null);
@@ -120,10 +117,11 @@ export default function TemplatesScreen() {
           </View>
           <Text style={styles.emptyTitle}>No templates yet</Text>
           <Text style={styles.emptyBody}>
-            Train a session and keep the shape — after any workout, The Record offers to save it. No program required.
+            Plan one here, or train a session and keep its shape — after any workout, The Record offers to save it.
+            No program required either way.
           </Text>
-          <Pressable onPress={newTemplate} accessibilityRole="button" accessibilityLabel="Start a workout" style={styles.primaryBtn}>
-            <Text style={styles.primaryBtnLabel}>Start a Workout</Text>
+          <Pressable onPress={newTemplate} accessibilityRole="button" accessibilityLabel="Build a workout" style={styles.primaryBtn}>
+            <Text style={styles.primaryBtnLabel}>Build a Workout</Text>
           </Pressable>
         </View>
       ) : (
@@ -205,9 +203,9 @@ export default function TemplatesScreen() {
           </TourAnchor>
 
           <TourAnchor id="templates-new">
-            <Pressable onPress={newTemplate} accessibilityRole="button" accessibilityLabel="Start a workout to make another" style={({ pressed }) => [styles.newRow, pressed ? styles.pressed : null]}>
+            <Pressable onPress={newTemplate} accessibilityRole="button" accessibilityLabel="Build a workout" style={({ pressed }) => [styles.newRow, pressed ? styles.pressed : null]}>
               <PlusGlyph size={16} />
-              <Text style={styles.newRowText}>Train one and keep it</Text>
+              <Text style={styles.newRowText}>Build a workout</Text>
             </Pressable>
           </TourAnchor>
         </ScrollView>

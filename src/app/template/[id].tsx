@@ -53,11 +53,11 @@ import {
  *   · A BROKEN ID IS NOT FOUND. The design fell back to the most recently used template when `?id` named
  *     nothing, so a stale link silently showed you a DIFFERENT template with no signal — worse than the
  *     not-found state it already had. A missing or unknown id lands on not-found.
- *   · "EDIT" IS "RENAME". The design's Edit opens a Free Workout Builder that does not exist in this app.
- *     Renaming is the part that does, so the button says what it does; a button labelled Edit that only
- *     renames is exactly the kind of small lie this codebase keeps removing. When a template builder
- *     lands, this becomes the full edit. (It also means the design's unconditional draft-clearing — which
- *     silently destroyed an unsaved draft of a DIFFERENT template — has nothing to destroy.)
+ *   · EDIT IS NOW A REAL EDIT. It used to be RENAME, because the design's Edit opens a Free Workout
+ *     Builder that did not exist here and a button labelled Edit that only renames is exactly the kind of
+ *     small lie this codebase keeps removing. That builder now exists (W-25, `/workout-builder`), so Edit
+ *     opens the template in it — exercises, order, sets, reps and supersets — and Rename stays beside it
+ *     for the common case of changing only the title.
  *   · ONE DATE FORMAT PER JOB, not three. Stats drop the year in the current year (scanned); history rows
  *     always carry it (read, and a log spanning years must not show two rows that look like one day).
  *
@@ -317,19 +317,16 @@ export default function TemplateDetailScreen() {
             </Pressable>
             <View style={styles.secondaryRow}>
               <Pressable
-                onPress={() => {
-                  setDraftName(t.name);
-                  setRenameOpen(true);
-                }}
+                onPress={() => router.push({ pathname: '/workout-builder', params: { id: t.id } })}
                 accessibilityRole="button"
-                accessibilityLabel="Rename this template"
+                accessibilityLabel="Edit this template"
                 style={({ pressed }) => [styles.secondaryBtn, pressed ? styles.pressed : null]}
               >
                 <Svg width={15} height={15} viewBox="0 0 24 24">
                   <Path d="M12 20h9" fill="none" stroke={flColor.gray400} strokeWidth={1.9} strokeLinecap="round" />
                   <Path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" fill="none" stroke={flColor.gray400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" />
                 </Svg>
-                <Text style={styles.secondaryText}>Rename</Text>
+                <Text style={styles.secondaryText}>Edit</Text>
               </Pressable>
               <Pressable
                 onPress={() => void doDuplicate()}
@@ -362,6 +359,24 @@ export default function TemplateDetailScreen() {
 
       {/* Delete lives behind the overflow deliberately — it should never be one tap from Start. */}
       <BottomSheet open={moreOpen} onClose={() => setMoreOpen(false)}>
+        {/* Renaming moved here when Edit became a real edit. It is still worth its own action — changing
+            only the title should not mean opening a builder and saving a whole shape back. */}
+        <Pressable
+          onPress={() => {
+            setMoreOpen(false);
+            setDraftName(t?.name ?? '');
+            setRenameOpen(true);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Rename template"
+          style={({ pressed }) => [styles.moreRow, pressed ? styles.pressed : null]}
+        >
+          <Svg width={18} height={18} viewBox="0 0 24 24">
+            <Path d="M12 20h9" fill="none" stroke={flColor.gray400} strokeWidth={1.9} strokeLinecap="round" />
+            <Path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" fill="none" stroke={flColor.gray400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" />
+          </Svg>
+          <Text style={styles.moreRowText}>Rename template</Text>
+        </Pressable>
         <Pressable
           onPress={() => {
             setMoreOpen(false);
@@ -508,6 +523,8 @@ const styles = StyleSheet.create({
   secondaryText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
   moreBtn: { width: 52, alignItems: 'center', justifyContent: 'center', paddingVertical: 11, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
 
+  moreRow: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 15, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal700, marginBottom: 8 },
+  moreRowText: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
   destructiveRow: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 15, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal700 },
   destructiveText: { fontSize: 14.5, fontWeight: '600', color: flColor.redMuted },
   cancelRow: { marginTop: 8, paddingVertical: 14, alignItems: 'center' },

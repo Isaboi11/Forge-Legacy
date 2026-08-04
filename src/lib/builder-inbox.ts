@@ -15,6 +15,12 @@ import type { PickedExercise } from '@/lib/exercise-inbox';
 export type BuilderSection = 'warmup' | 'main' | 'cooldown';
 
 export interface BuilderInbox {
+  /**
+   * WHICH builder is waiting for this. Two authoring surfaces now use the same round-trip — the Program
+   * Builder and the single-day Workout Builder (W-25) — and each must drain only its own picks. Absent
+   * means 'program', which is what every payload written before the second builder existed was.
+   */
+  dest?: 'program' | 'workout';
   vary: boolean; // targeting a per-week plan (true) or the repeating template (false)
   week: number; // index into weekPlans; 0 when !vary
   day: number; // index into that plan's days
