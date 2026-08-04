@@ -470,8 +470,17 @@ const topPctOf = (w, key) => {
   return all.length ? Math.max(...all) : 0;
 };
 
+/**
+ * THE RULE IS ABOUT PULLS, NOT ABOUT SESSIONS.
+ *
+ * This first asserted four sessions a week, which conflated the two and made the block look like it
+ * trained less than its siblings. It trains just as often — five days, like the squat and bench blocks.
+ * What is rationed is the COMPETITION PULL: twice a week, never heavy in back-to-back sessions. The
+ * other three days carry variations, squat work and pressing, which build the same positions at a
+ * fraction of the spinal cost.
+ */
 test('the deadlift block pulls twice a week, and never heavy twice in a row', () => {
-  assert.equal(dl.frequencyPerWeek, 4, 'four sessions, not five');
+  assert.equal(dl.frequencyPerWeek, 5, 'trains as often as its siblings');
   for (const b of dl.blocks) {
     const pulls = b.workouts.map((w) => w.main.some((ex) => ex.catalogKey === 'barbell-deadlift'));
     assert.equal(pulls.filter(Boolean).length, 2, `${b.label} does not pull exactly twice`);

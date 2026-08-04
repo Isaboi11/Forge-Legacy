@@ -13,11 +13,7 @@ import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons'
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { getPrograms } from '@/domain/training/active-program';
-import { getProgramDefinitions } from '@/domain/training/programs';
-import { equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
-import { structureFromDefinition } from '@/domain/program/adopt-core';
-import { itemByName } from '@/domain/exercise-picker/data';
-import { adoptCatalogProgram, fetchMyPrograms, type SavedProgram } from '@/data/programs-live';
+import { fetchMyPrograms, type SavedProgram } from '@/data/programs-live';
 import { fetchProgramCompletedCount } from '@/data/programs-live';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { dayLabel, nextSession, sessionsPerWeek, viewForState } from '@/domain/program/progress-core';
@@ -86,28 +82,22 @@ export default function WorkoutsScreen() {
   // Memoized: `?? []` would mint a fresh array every render and defeat the catalog memo below.
   const mine = useMemo(() => myPrograms ?? [], [myPrograms]);
   const templates = templateData ?? [];
-  const [adopting, setAdopting] = useState<string | null>(null);
 
   /**
-   * Open a built-in program. It has no database row until now, so adopt it first — that is what gives it
-   * an id, a lifecycle and somewhere for finished workouts to attach. Idempotent, so re-opening one the
-   * athlete already started resumes the same row rather than forking a second copy.
+   * Open a built-in program — to READ it.
+   *
+   * This used to adopt first: a built-in has no database row, and adopting was how it got an id to
+   * navigate with. The cost was that looking at a program put it on the athlete's list as "Planned",
+   * for a plan they had not chosen. Reported by the PO doing exactly what a catalog invites — browsing.
+   *
+   * Program Detail now takes a DEFINITION SLUG and renders a preview with no row behind it. Adoption
+   * moves to the Start button on that screen, which is the first moment the athlete has said they want
+   * it. If they already have this plan in flight, open THAT row instead so they land on their own
+   * progress rather than a preview of a program they are halfway through.
    */
-  const openCatalogProgram = async (p: Program) => {
-    if (adopting) return;
-    setAdopting(p.id);
-    try {
-      const def = getProgramDefinitions().find((d) => d.id === p.id);
-      if (!def) return;
-      const equipFor = (key: string) => equipmentForCatalogKey(key) ?? undefined;
-      const adopted = await adoptCatalogProgram(def.id, structureFromDefinition(def, equipFor, (n) => itemByName(n)?.key));
-      refetchMine();
-      router.push({ pathname: '/program/[id]', params: { id: adopted.id } });
-    } catch {
-      // leave the athlete where they are rather than dead-ending on an error screen
-    } finally {
-      setAdopting(null);
-    }
+  const openCatalogProgram = (p: Program) => {
+    const live = mine.find((m) => m.sourceDefinitionId === p.id && (m.state === 'future' || m.state === 'active'));
+    router.push({ pathname: '/program/[id]', params: { id: live?.id ?? p.id } });
   };
 
   /**

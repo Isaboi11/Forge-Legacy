@@ -4,14 +4,14 @@
  "family": "Strength",
  "difficulty": "Intermediate",
  "durationWeeks": 4,
- "frequencyPerWeek": 4,
+ "frequencyPerWeek": 5,
  "environment": "Commercial Gym",
- "description": "Four weeks built around one lift, pulled from the floor twice a week and never on back-to-back days. Every deadlift is loaded from a single max you test at the start and do not touch again until the last day. The other two sessions carry pull variations and squat work, which build the same positions for a fraction of the spinal cost. Volume peaks in week two, the bar keeps climbing to a rehearsal at 93%, then a short taper into a test.",
+ "description": "Four weeks built around one lift. You train five days a week and pull from the floor on two of them, never on back-to-back days. Every deadlift is loaded from a single max you test at the start and do not touch again until the last day. The other three sessions carry pull variations, squat work and pressing, which build the same positions and hold the rest of your strength for a fraction of the spinal cost. Volume peaks in week two, the bar keeps climbing to a rehearsal at 93%, then a short taper into a test.",
  "goals": [
   "Add weight to a tested deadlift",
   "Build the pull without pulling heavy every session",
   "Practise handling a near-maximal pull before testing one",
-  "Hold squat and upper-body strength through a pulling block"
+  "Hold squat and pressing strength through a pulling block"
  ],
  "successorName": null,
  "theme": "strength",
@@ -233,6 +233,69 @@
     },
     {
      "code": "D",
+     "name": "Press Volume",
+     "modality": "strength",
+     "split": "upper",
+     "warmup": [
+      {
+       "name": "Bike or brisk walk",
+       "detail": "3 minutes",
+       "text": "Bike or brisk walk — 3 minutes"
+      },
+      {
+       "name": "Band pull-apart",
+       "detail": "15 reps",
+       "text": "Band pull-apart — 15 reps"
+      },
+      {
+       "name": "Empty bar bench press",
+       "detail": "10 reps",
+       "text": "Empty bar bench press — 10 reps"
+      },
+      {
+       "name": "Build-up sets",
+       "detail": "to the first working weight",
+       "text": "Build-up sets — to the first working weight"
+      }
+     ],
+     "main": [
+      {
+       "catalogKey": "barbell-bench-press",
+       "displayName": "Bench Press",
+       "sets": 3,
+       "reps": 8,
+       "unit": "reps",
+       "restSec": 120,
+       "percentOfMax": 65
+      },
+      {
+       "catalogKey": "barbell-incline-bench-press",
+       "displayName": "Incline Bench Press",
+       "sets": 3,
+       "reps": 8,
+       "unit": "reps",
+       "restSec": 90
+      },
+      {
+       "catalogKey": "cable-face-pull",
+       "displayName": "Face Pull",
+       "sets": 3,
+       "reps": 15,
+       "unit": "reps",
+       "restSec": 60
+      },
+      {
+       "catalogKey": "cable-triceps-pushdown",
+       "displayName": "Triceps Pushdown",
+       "sets": 3,
+       "reps": 15,
+       "unit": "reps",
+       "restSec": 60
+      }
+     ]
+    },
+    {
+     "code": "E",
      "name": "Deficit Work",
      "modality": "strength",
      "split": "legs",
@@ -521,6 +584,82 @@
     },
     {
      "code": "D",
+     "name": "Press Ladder",
+     "modality": "strength",
+     "split": "upper",
+     "warmup": [
+      {
+       "name": "Bike or brisk walk",
+       "detail": "3 minutes",
+       "text": "Bike or brisk walk — 3 minutes"
+      },
+      {
+       "name": "Band pull-apart",
+       "detail": "15 reps",
+       "text": "Band pull-apart — 15 reps"
+      },
+      {
+       "name": "Empty bar bench press",
+       "detail": "10 reps",
+       "text": "Empty bar bench press — 10 reps"
+      },
+      {
+       "name": "Build-up sets",
+       "detail": "to the first working weight",
+       "text": "Build-up sets — to the first working weight"
+      }
+     ],
+     "main": [
+      {
+       "catalogKey": "barbell-bench-press",
+       "displayName": "Bench Press",
+       "sets": 5,
+       "reps": 8,
+       "unit": "reps",
+       "restSec": 120,
+       "repScheme": [
+        8,
+        6,
+        4,
+        6,
+        8
+       ],
+       "percentScheme": [
+        62,
+        68,
+        74,
+        68,
+        62
+       ]
+      },
+      {
+       "catalogKey": "barbell-close-grip-bench-press",
+       "displayName": "Close-Grip Bench Press",
+       "sets": 3,
+       "reps": 8,
+       "unit": "reps",
+       "restSec": 90
+      },
+      {
+       "catalogKey": "cable-face-pull",
+       "displayName": "Face Pull",
+       "sets": 3,
+       "reps": 15,
+       "unit": "reps",
+       "restSec": 60
+      },
+      {
+       "catalogKey": "barbell-skull-crusher",
+       "displayName": "Skull Crusher",
+       "sets": 3,
+       "reps": 12,
+       "unit": "reps",
+       "restSec": 60
+      }
+     ]
+    },
+    {
+     "code": "E",
      "name": "Pause Work",
      "modality": "strength",
      "split": "legs",
@@ -801,6 +940,68 @@
     },
     {
      "code": "D",
+     "name": "Overhead Volume",
+     "modality": "strength",
+     "split": "upper",
+     "warmup": [
+      {
+       "name": "Bike or brisk walk",
+       "detail": "3 minutes",
+       "text": "Bike or brisk walk — 3 minutes"
+      },
+      {
+       "name": "Band pull-apart",
+       "detail": "15 reps",
+       "text": "Band pull-apart — 15 reps"
+      },
+      {
+       "name": "Empty bar bench press",
+       "detail": "10 reps",
+       "text": "Empty bar bench press — 10 reps"
+      },
+      {
+       "name": "Build-up sets",
+       "detail": "to the first working weight",
+       "text": "Build-up sets — to the first working weight"
+      }
+     ],
+     "main": [
+      {
+       "catalogKey": "barbell-overhead-press",
+       "displayName": "Overhead Press",
+       "sets": 4,
+       "reps": 6,
+       "unit": "reps",
+       "restSec": 120
+      },
+      {
+       "catalogKey": "dumbbell-incline-bench-press",
+       "displayName": "Dumbbell Incline Bench Press",
+       "sets": 3,
+       "reps": 10,
+       "unit": "reps",
+       "restSec": 90
+      },
+      {
+       "catalogKey": "cable-face-pull",
+       "displayName": "Face Pull",
+       "sets": 3,
+       "reps": 15,
+       "unit": "reps",
+       "restSec": 60
+      },
+      {
+       "catalogKey": "barbell-biceps-curl",
+       "displayName": "Barbell Curl",
+       "sets": 3,
+       "reps": 12,
+       "unit": "reps",
+       "restSec": 60
+      }
+     ]
+    },
+    {
+     "code": "E",
      "name": "Dress Rehearsal",
      "modality": "strength",
      "split": "legs",
@@ -1052,6 +1253,68 @@
     },
     {
      "code": "D",
+     "name": "Press Maintenance",
+     "modality": "strength",
+     "split": "upper",
+     "warmup": [
+      {
+       "name": "Bike or brisk walk",
+       "detail": "3 minutes",
+       "text": "Bike or brisk walk — 3 minutes"
+      },
+      {
+       "name": "Band pull-apart",
+       "detail": "15 reps",
+       "text": "Band pull-apart — 15 reps"
+      },
+      {
+       "name": "Empty bar bench press",
+       "detail": "10 reps",
+       "text": "Empty bar bench press — 10 reps"
+      },
+      {
+       "name": "Build-up sets",
+       "detail": "to the first working weight",
+       "text": "Build-up sets — to the first working weight"
+      }
+     ],
+     "main": [
+      {
+       "catalogKey": "barbell-incline-bench-press",
+       "displayName": "Incline Bench Press",
+       "sets": 3,
+       "reps": 8,
+       "unit": "reps",
+       "restSec": 90
+      },
+      {
+       "catalogKey": "dumbbell-overhead-press",
+       "displayName": "Dumbbell Overhead Press",
+       "sets": 3,
+       "reps": 10,
+       "unit": "reps",
+       "restSec": 90
+      },
+      {
+       "catalogKey": "cable-face-pull",
+       "displayName": "Face Pull",
+       "sets": 3,
+       "reps": 15,
+       "unit": "reps",
+       "restSec": 60
+      },
+      {
+       "catalogKey": "barbell-biceps-curl",
+       "displayName": "Barbell Curl",
+       "sets": 3,
+       "reps": 12,
+       "unit": "reps",
+       "restSec": 60
+      }
+     ]
+    },
+    {
+     "code": "E",
      "name": "Flush",
      "modality": "strength",
      "split": "full_body",

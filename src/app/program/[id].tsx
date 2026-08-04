@@ -14,6 +14,7 @@ import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import {
+  adoptCatalogProgram,
   deleteProgram,
   endProgram,
   fetchProgram,
@@ -34,8 +35,12 @@ import {
   viewForState,
   type LogWeek,
   type LoggedWorkout,
+  type ProgramState,
 } from '@/domain/program/progress-core';
 import { getProgramDefinition } from '@/domain/training/programs';
+import { structureFromDefinition } from '@/domain/program/adopt-core';
+import { equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
+import { itemByName } from '@/domain/exercise-picker/data';
 import { LiftMaxSheet } from '@/components/forge/LiftMaxSheet';
 import {
   loadContextFor,
@@ -77,6 +82,9 @@ import { errorMessage } from '@/lib/useQuery';
 
 const CHEVRON = 'M6 9l6 6 6-6';
 
+/** A saved program's id is a uuid; a catalog program's is its definition slug. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function Glyph({ d, size = 16, color, width = 2, flip = false }: { d: string; size?: number; color: string; width?: number; flip?: boolean }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round" style={flip ? styles.flip : undefined}>
@@ -105,12 +113,32 @@ export default function ProgramDetailScreen() {
   const tourScroller = useTourScroller();
   const onTourScroll = useTourScrollTracker();
 
+  /**
+   * ══ LOOKING AT A PROGRAM IS NOT TAKING IT ON ══
+   *
+   * A built-in program has no database row, and this screen used to be reached by CREATING one — the
+   * catalog called `adoptCatalogProgram` purely to get an id to navigate with. So opening a program to
+   * read it put "Planned" on the athlete's list, for a plan they had not chosen. Reported by the PO
+   * doing exactly what the screen invites: having a look.
+   *
+   * A catalog `id` is a definition slug (`squat-ascent-intermediate`), not a UUID, and that is the
+   * signal. In preview there is NO row, NO fetch and NO write of any kind: the structure is built from
+   * the shipped definition, the log is empty because nothing has been trained, and adoption is deferred
+   * to the moment the athlete presses Start.
+   */
+  const previewDef = id && !UUID.test(id) ? getProgramDefinition(id) : null;
+
   // Refetch on focus so returning from a finished workout shows the new session immediately.
   useFocusEffect(
     useCallback(() => {
       let active = true;
       void (async () => {
         if (!id) return;
+        if (previewDef) {
+          // Nothing to read. A preview is derived entirely from shipped content.
+          setLoading(false);
+          return;
+        }
         try {
           const [p, w] = await Promise.all([fetchProgram(id), fetchProgramWorkouts(id)]);
           if (!active) return;
@@ -125,7 +153,7 @@ export default function ProgramDetailScreen() {
       return () => {
         active = false;
       };
-    }, [id]),
+    }, [id, previewDef]),
   );
 
   if (loading) {
@@ -140,7 +168,7 @@ export default function ProgramDetailScreen() {
     );
   }
 
-  if (!program) {
+  if (!program && !previewDef) {
     return (
       <View style={styles.root}>
         <ScreenBackground image={SCREEN_BG.slate2} overlay={{ flat: 'rgba(5,5,5,0.3)' }} />
@@ -153,8 +181,21 @@ export default function ProgramDetailScreen() {
     );
   }
 
-  const { structure, state } = program;
-  const view = viewForState(state, true);
+  /**
+   * One screen, two sources. An owned program reads its structure from its row; a preview builds the
+   * same shape from the shipped definition, so everything below — the schedule, the equipment pills, the
+   * max gate, the resolved percentages — works identically without a row existing.
+   */
+  const owned = program != null;
+  const structure = program
+    ? program.structure
+    : structureFromDefinition(previewDef!, (k) => equipmentForCatalogKey(k) ?? undefined, (n) => itemByName(n)?.key);
+  const state: ProgramState = program?.state ?? 'future';
+  /** A preview has no run, so no frozen maxes — the gate asks on Start, as it does for any program. */
+  const liftMaxes = program?.liftMaxes ?? {};
+  const view = viewForState(state, owned);
+  const programName = program?.name ?? previewDef!.name;
+  const sourceDefId = program?.sourceDefinitionId ?? previewDef!.id;
   const progress = computeProgress(structure, workouts.length);
   const stats = computeStats(workouts);
 
@@ -169,7 +210,7 @@ export default function ProgramDetailScreen() {
    * `null` for a program the athlete built themselves — there is no author to describe it, and this
    * screen would rather say nothing than say "A program you built." underneath the name they gave it.
    */
-  const def = program.sourceDefinitionId ? getProgramDefinition(program.sourceDefinitionId) : null;
+  const def = sourceDefId ? getProgramDefinition(sourceDefId) : null;
   const goals = def?.goals?.filter((g) => g.trim().length > 0) ?? [];
 
   /**
@@ -179,9 +220,8 @@ export default function ProgramDetailScreen() {
    * was logged and a future day from the prescription, so a new max moves everything not yet trained
    * and cannot touch anything already trained.
    */
-  const loadCtx = loadContextFor(program.liftMaxes, units === 'metric', (lb) => weightInExact(lb, units));
+  const loadCtx = loadContextFor(liftMaxes, units === 'metric', (lb) => weightInExact(lb, units));
   const maxKeys = requiredMaxKeys(structure);
-  const missingKeys = missingMaxKeys(structure, program.liftMaxes);
   const liftNames = maxLiftNames(structure);
 
   /**
@@ -208,7 +248,7 @@ export default function ProgramDetailScreen() {
 
   const goTrain = async () => {
     if (!nextSession(structure, workouts.length)) return; // program finished — nothing left to train
-    await writeWorkoutLaunch({ programId: program.id });
+    await writeWorkoutLaunch({ programId: program!.id });
     router.push('/workout');
   };
 
@@ -230,13 +270,13 @@ export default function ProgramDetailScreen() {
       : trained
         ? `Week ${progress.week} of ${structure.weeks} · ${progress.pct}%`
         : '';
-    const endedOn = terminal ? fmtLongDate(program.endedAt) : null;
-    const startedOn = fmtLongDate(program.startedAt);
+    const endedOn = terminal ? fmtLongDate(program?.endedAt ?? null) : null;
+    const startedOn = fmtLongDate(program?.startedAt ?? null);
     const when = endedOn ?? (startedOn ? `Started ${startedOn}` : '');
     openShare({
       shareType: 'program',
       overrides: {
-        title: program.name,
+        title: programName,
         athlete: profile?.name,
         values: { status: completion, date: when },
       },
@@ -262,25 +302,42 @@ export default function ProgramDetailScreen() {
          *
          * `push`, not `replace`: the original record is where they came from and back should return to it.
          */
-        const again = await runProgramAgain(program.id);
+        const again = await runProgramAgain(program!.id);
         router.push({ pathname: '/program/[id]', params: { id: again.id } });
       } else {
+        /*
+         * ADOPTION HAPPENS HERE — on Start, and nowhere else.
+         *
+         * This is the write that used to fire the moment the athlete OPENED a catalog program, which put
+         * "Planned" on their list for a plan they were only reading. Pressing Start is the first moment
+         * they have said they want it, so it is the first moment a row exists. Idempotent, so an athlete
+         * who already has this plan in flight resumes that row rather than forking a second copy.
+         */
+        let row = program;
+        if (!row) {
+          row = await adoptCatalogProgram(
+            previewDef!.id,
+            structureFromDefinition(previewDef!, (k) => equipmentForCatalogKey(k) ?? undefined, (n) => itemByName(n)?.key),
+          );
+          setProgram(row);
+        }
+
         /*
          * THE MAX GATE — a percentage-based program cannot prescribe anything until it has a number to
          * work from, so it is asked for BEFORE the program becomes active rather than nagged for after.
          *
-         * Only when something is actually missing: a program whose maxes are already known (carried over
-         * from the athlete's profile, or entered and then corrected) starts straight away. And only when
-         * the program uses percentages at all, which no shipped program does today.
+         * After adoption, deliberately: the gate writes the run's frozen maxes, which needs a row to
+         * write them to. `missingMaxKeys` is read off the row's own maxes so an athlete resuming a
+         * planned program they already answered is not asked twice.
          */
-        if (missingKeys.length > 0) {
+        if (missingMaxKeys(structure, row.liftMaxes).length > 0) {
           setBusy(false);
           setMaxSheet('gate');
           return;
         }
         // Future → Active. start_program ends whatever else was active, atomically (0017).
-        await startProgram(program.id);
-        setProgram({ ...program, state: 'active' });
+        await startProgram(row.id);
+        setProgram({ ...row, state: 'active' });
         // Land on Home, which is where the change is visible: the new program anchors Today's Workout
         // and Current Program. Staying here would leave the athlete to go and check for themselves
         // whether starting actually did anything.
@@ -301,10 +358,10 @@ export default function ProgramDetailScreen() {
     setError(null);
     try {
       if (kind === 'end') {
-        await endProgram(program.id, 'ended_early');
-        setProgram({ ...program, state: 'ended_early' });
+        await endProgram(program!.id, 'ended_early');
+        setProgram({ ...program!, state: 'ended_early' });
       } else if (kind === 'remove') {
-        await deleteProgram(program.id);
+        await deleteProgram(program!.id);
         router.back();
       }
     } catch (e) {
@@ -318,13 +375,13 @@ export default function ProgramDetailScreen() {
     sheet === 'end'
       ? {
           title: 'End this program?',
-          body: `“${program.name}” moves to your legacy as ended early. Everything you logged stays — this cannot be undone.`,
+          body: `“${programName}” moves to your legacy as ended early. Everything you logged stays — this cannot be undone.`,
           confirm: 'End Program',
         }
       : sheet === 'remove'
         ? {
             title: 'Delete this program?',
-            body: `“${program.name}” will be removed from your programs. Every workout you logged against it is kept — deleting a plan never deletes the training you did.`,
+            body: `“${programName}” will be removed from your programs. Every workout you logged against it is kept — deleting a plan never deletes the training you did.`,
             confirm: 'Delete',
           }
         : { title: '', body: '', confirm: '' };
@@ -349,7 +406,7 @@ export default function ProgramDetailScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>{program.name}</Text>
+        <Text style={styles.title}>{programName}</Text>
         {/* WAS HARDCODED "Custom". Squat Ascent Intermediate — a Strength/Intermediate catalog program —
             introduced itself to the athlete as Custom, which is simply untrue of anything adopted from
             the catalog. A program the athlete actually built keeps "Custom", and keeps the week shape
@@ -367,13 +424,13 @@ export default function ProgramDetailScreen() {
         {/* THE SEALED RECORD (W-3 §7). A finished program is history, and history states when and how
             much. `fmtLongDate`/`spanLabel` are the same functions the M-4 ceremony uses, so the modal
             congratulating you cannot disagree with the record it congratulates you on. */}
-        {terminal && program.endedAt ? (
+        {terminal && program?.endedAt ? (
           <View style={styles.sealed}>
             <Text style={styles.sealedWhen}>
-              {state === 'graduated' ? 'Graduated' : 'Ended'} {fmtLongDate(program.endedAt)}
+              {state === 'graduated' ? 'Graduated' : 'Ended'} {fmtLongDate(program?.endedAt ?? null)}
             </Text>
             <Text style={styles.sealedWhat}>
-              {[workoutsLabel(workouts.length), spanLabel(program.startedAt, program.endedAt)]
+              {[workoutsLabel(workouts.length), spanLabel(program?.startedAt ?? null, program?.endedAt ?? null)]
                 .filter(Boolean)
                 .join(' · ')}
             </Text>
@@ -449,7 +506,7 @@ export default function ProgramDetailScreen() {
               <View style={styles.maxList}>
                 {maxKeys.map((k) => {
                   const display = loadCtx.maxes[k];
-                  const src = program.liftMaxes[k]?.source;
+                  const src = liftMaxes[k]?.source;
                   return (
                     <Text key={k} style={styles.maxItem}>
                       <Text style={styles.maxName}>{liftNames[k] ?? k}</Text>
@@ -517,7 +574,7 @@ export default function ProgramDetailScreen() {
               <Button
                 variant="secondary"
                 fullWidth
-                onPress={() => router.push({ pathname: '/program-builder', params: { o: 'edit', id: program.id } })}
+                onPress={() => router.push({ pathname: '/program-builder', params: { o: 'edit', id: program!.id } })}
                 accessibilityLabel="Edit program"
               >
                 Edit
@@ -528,7 +585,7 @@ export default function ProgramDetailScreen() {
             <Button
               variant="secondary"
               fullWidth
-              onPress={() => router.push({ pathname: '/program-builder', params: { o: 'dup', id: program.id } })}
+              onPress={() => router.push({ pathname: '/program-builder', params: { o: 'dup', id: program!.id } })}
               accessibilityLabel="Duplicate program"
             >
               Duplicate
@@ -550,7 +607,7 @@ export default function ProgramDetailScreen() {
             <Button
               variant="secondary"
               fullWidth
-              onPress={() => router.push({ pathname: '/send-program', params: { id: program.id } })}
+              onPress={() => router.push({ pathname: '/send-program', params: { id: program!.id } })}
               accessibilityLabel="Send this program to a friend or squad"
             >
               Send Program
@@ -610,10 +667,10 @@ export default function ProgramDetailScreen() {
           key={`${maxSheet}-${maxKeys.join(',')}`}
           open
           onClose={() => setMaxSheet(null)}
-          programId={program.id}
+          programId={program!.id}
           keys={maxKeys}
           names={liftNames}
-          known={program.liftMaxes}
+          known={liftMaxes}
           units={units}
           title={maxSheet === 'gate' ? 'Before you start' : 'Change your max'}
           warning={maxSheet === 'change' ? changeWarning : null}

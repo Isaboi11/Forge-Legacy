@@ -34,12 +34,16 @@
  *
  * ══ THEY ARE NOT THREE COPIES OF ONE TEMPLATE ══
  *
- * Squat and Bench train their lift five days a week; DEADLIFT TRAINS IT TWICE, across four sessions,
- * never on consecutive days. The squat and the bench tolerate daily submaximal work and the deadlift
- * does not — five heavy pulls a week is how people get hurt, and shipping that as advice because it
- * matched a sibling's shape would be the template writing the training. The remaining pull sessions
- * carry variations and squat work, which build the same positions at a fraction of the spinal cost.
- * `Deadlift Measure Intermediate`'s Design Record §6 argues it in full.
+ * All three train five days a week. What differs is how often the SPECIALIZED LIFT itself is loaded:
+ * the squat and the bench are pressed or squatted every session, and the COMPETITION DEADLIFT is pulled
+ * TWICE, never heavy in back-to-back sessions. The squat and the bench tolerate daily submaximal work
+ * and heavy pulling does not — five heavy pulls a week is how people get hurt, and shipping that as
+ * advice because it matched a sibling's shape would be the template writing the training. The deadlift
+ * block's other three days carry variations, squat work and pressing, which build the same positions at
+ * a fraction of the spinal cost. Its Design Record §6 argues it in full.
+ *
+ * That distinction — sessions per week versus pulls per week — is worth keeping sharp. Conflating them
+ * once already made this block look like it trained less than its siblings when it never did.
  *
  * ══ PROVENANCE DIFFERS BETWEEN THEM, AND IS RECORDED ══
  *
