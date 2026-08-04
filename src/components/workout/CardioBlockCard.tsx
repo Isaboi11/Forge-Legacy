@@ -115,9 +115,21 @@ interface Props {
     /** Whether the distance was MEASURED or typed. A tracked run must never be filed as a claim. */
     source: 'tracked' | 'manual';
   }) => void;
+  /**
+   * A bout has started, or has ended.
+   *
+   * The screen above needs this because a bout under way is the one state in which leaving this
+   * exercise is wrong: an athlete who walks away from a running clock, trains something else and
+   * finishes ends up with a walk in their record that they never completed and the app never measured.
+   *
+   * Reported from the HANDLERS that start and end the bout rather than from an effect watching the
+   * timer — an effect here would be setState-during-render in the parent, which this repo's lint bans
+   * outright, and the handlers are the more precise signal anyway.
+   */
+  onLiveChange?: (live: boolean) => void;
 }
 
-export function CardioBlockCard({ exercise, index, units, onSetModality, onSave }: Props) {
+export function CardioBlockCard({ exercise, index, units, onSetModality, onSave, onLiveChange }: Props) {
   const activity: CardioActivity = exercise.activity ?? 'run';
   const modality: Modality = exercise.modality ?? 'outdoor';
   const treadmill = modality === 'indoor';
@@ -253,6 +265,7 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave 
     // duration they are in the middle of confirming.
     if (timer.running) timer.pause();
     if (tracking) tracker.stop();
+    onLiveChange?.(false);
     // The form's shape is decided ONCE, here, from how the bout was (or will be) recorded — not from
     // whatever the toggle says later. Otherwise editing an outdoor-toggled treadmill run drops its incline.
     const formTreadmill = logged && lm ? lm === 'indoor' : treadmill;
@@ -681,7 +694,13 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave 
                 <Button
                   variant={timer.elapsedSec > 0 || timer.running ? 'secondary' : 'primary'}
                   fullWidth
-                  onPress={timer.running ? timer.pause : timer.elapsedSec > 0 ? timer.resume : timer.start}
+                  onPress={() => {
+                    if (timer.running) timer.pause();
+                    else if (timer.elapsedSec > 0) timer.resume();
+                    else timer.start();
+                    // Paused still counts as under way: the bout is open until it is logged.
+                    onLiveChange?.(true);
+                  }}
                   accessibilityLabel={timer.running ? 'Pause the timer' : timer.elapsedSec > 0 ? 'Resume the timer' : 'Start the timer'}
                 >
                   {timer.running ? 'Pause' : timer.elapsedSec > 0 ? 'Resume' : 'Start Timer'}
@@ -760,7 +779,10 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave 
                 {/* PRESSING THIS STARTS THE RUN. It does not ask permission first and wait to find out
                     whether it is allowed to agree — that is what left an athlete who pressed Start with
                     no clock, no card and no way to end anything. GPS attaches underneath. */}
-                <Button variant="primary" fullWidth onPress={tracker.start} accessibilityLabel={`Start ${VERB[activity].toLowerCase()}`}>
+                <Button variant="primary" fullWidth onPress={() => {
+                    tracker.start();
+                    onLiveChange?.(true);
+                  }} accessibilityLabel={`Start ${VERB[activity].toLowerCase()}`}>
                   Start {VERB[activity]}
                 </Button>
                 <Pressable onPress={() => openLog()} accessibilityRole="button" accessibilityLabel="Already did it — log manually" style={styles.textBtn}>

@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { sessionActivityType } from './conditioning';
 import { detectPRs, doneSetCount, PR_MAX_REPS, sessionVolume } from './metrics';
+import { buildSaveExercises } from './save-core';
 import { playlistToRow } from './playlist';
 import type { ActiveSession } from './types';
 
@@ -11,6 +12,7 @@ export interface SaveResult {
   volume: number;
   sets: number;
 }
+
 
 /**
  * The Finish commit (W-9). Reads the athlete's current best e1RM per exercise, detects PRs domain-side,
@@ -81,39 +83,7 @@ export async function saveWorkout(session: ActiveSession, partners: string[] = [
   const prs = detectPRs(session, priorBest);
   const durationSec = Math.max(0, Math.round((Date.now() - Date.parse(session.startedAt)) / 1000));
 
-  const exercises = session.exercises.map((ex) => ({
-    name: ex.name,
-    catalog_key: ex.catalogKey ?? null,
-    section: ex.section,
-    position: ex.position,
-    /* The block, if this lift is in one (0106). A superset is created IN the session — pairing two
-       lifts mid-workout is an athlete's decision on the day, not something a program handed down — so
-       unless it rides along here it exists until Finish and then does not. */
-    group_id: ex.groupId ?? null,
-    group_name: ex.groupName ?? null,
-    group_kind: ex.groupKind ?? null,
-    group_rounds: ex.groupRounds ?? null,
-    sets: ex.sets
-      .filter((s) => s.done)
-      .map((s) =>
-        // A conditioning bout carries time and ground covered; a strength set carries load and reps.
-        // Sending a leg's `reps` as its target would record 8 repetitions of a three-mile run (0096).
-        ex.kind === 'cardio'
-          ? {
-              set_index: s.setIndex,
-              weight: null,
-              weight_unit: null,
-              reps: null,
-              duration_sec: s.durationSec ?? null,
-              distance: s.distanceMi ?? null,
-              distance_unit: s.distanceMi != null ? 'mi' : null,
-              // How it was RECORDED, not what the toggle currently says (0097).
-              modality: s.modality ?? null,
-              incline_pct: s.inclinePct ?? null,
-            }
-          : { set_index: s.setIndex, weight: s.weight, weight_unit: 'lb', reps: s.actualReps ?? s.targetReps },
-      ),
-  }));
+  const exercises = buildSaveExercises(session);
 
   const { data, error } = await supabase.rpc('save_workout', {
     p_workout_name: session.workoutName,

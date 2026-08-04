@@ -30,6 +30,7 @@ import {
   EMPTY_RESULT,
   activityFromKey,
   cardioKey,
+  VERB,
   deriveName,
   isCardioKey,
   newCardioBlock,
@@ -239,6 +240,13 @@ export default function WorkoutScreen() {
   const [durSec, setDurSec] = useState(30);
   const [overviewOpen, setOverviewOpen] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
+  /**
+   * The exercise index whose cardio bout is OPEN — started and not yet logged. Null when none is.
+   *
+   * Held here rather than in the card because it gates this screen's navigation, and a card cannot
+   * disable the bar above it.
+   */
+  const [liveBoutIdx, setLiveBoutIdx] = useState<number | null>(null);
   // Walkthrough plumbing. Fires on the FIRST session and nothing after — a PO call: the six things this
   // screen doesn't explain about itself are worth one overlay, and "Skip" is one tap for anyone who is
   // genuinely under a bar.
@@ -1058,13 +1066,35 @@ export default function WorkoutScreen() {
     }));
   };
 
+  /**
+   * ══ A BOUT UNDER WAY LOCKS THE SESSION TO IT ══
+   *
+   * Reported: an athlete started a treadmill walk, never ended it, added strength work and completed
+   * that. The finished record showed a walk AND a workout — except the walk was never stopped, so
+   * nothing was ever measured. It read as training that happened.
+   *
+   * The clock lives inside `CardioBlockCard`, so this screen could not see it and every exit stayed
+   * open: Next Exercise, Add Exercise, Skip, Replace and Finish. While a bout is open, all of them are
+   * closed. The way forward is the card's own end-and-log button, which is one tap away and always
+   * visible — so this is a lock, not a trap.
+   */
+  const boutLive = liveBoutIdx != null;
+  const blockedByBout = () => {
+    if (!boutLive) return false;
+    showToast(`End your ${VERB[session.exercises[liveBoutIdx!]?.activity ?? 'run'].toLowerCase()} first`);
+    return true;
+  };
+
   const isLastEx = exIdx >= session.exercises.length - 1;
   const primaryLabel = isLastEx ? 'Finish Workout' : 'Next Exercise';
   const goExercise = (idx: number) => {
+    // Guards the dot strip too, which jumps straight here without passing through onPrimary.
+    if (idx !== exIdx && blockedByBout()) return;
     setExIdx(Math.max(0, Math.min(session.exercises.length - 1, idx)));
     restSkip(); // leaving an exercise ends its rest
   };
   const onPrimary = () => {
+    if (blockedByBout()) return;
     if (isLastEx) {
       if (hasLoggedSet(session)) void finishToSeal();
     } else goExercise(exIdx + 1);
@@ -1074,18 +1104,22 @@ export default function WorkoutScreen() {
     pop && pop.ei === exIdx && pop.si === rowSi && pop.field === field ? <Pop key={pop.token}>{node}</Pop> : node;
   const openAdd = () => {
     setOptionsOpen(false);
+    if (blockedByBout()) return;
     router.push({ pathname: '/exercise-picker', params: { mode: 'add' } });
   };
   const openSwap = () => {
     setOptionsOpen(false);
+    if (blockedByBout()) return;
     router.push({ pathname: '/exercise-picker', params: { mode: 'replace', ex: ex.name, targetIdx: String(exIdx) } });
   };
   const skipExercise = () => {
     setOptionsOpen(false);
+    if (blockedByBout()) return;
     goExercise(exIdx + 1);
   };
   const endFromOptions = () => {
     setOptionsOpen(false);
+    if (blockedByBout()) return;
     void finishToSeal();
   };
   /*
@@ -1413,6 +1447,7 @@ export default function WorkoutScreen() {
             units={units}
             onSetModality={setCardioModality}
             onSave={saveCardioLog}
+            onLiveChange={(live) => setLiveBoutIdx(live ? exIdx : null)}
           />
         ) : (
         <TourAnchor id="workout-sets" style={styles.table}>

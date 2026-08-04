@@ -266,3 +266,78 @@ test('a bodyweight set sets no weight record', () => {
   // A weighted pull-up still records, and records the added load.
   assert.equal(bestRecordWeight([set(0, 0, 5, 5, true), set(1, 25, 5, 3, true)]), 25);
 });
+
+// ── a bout that measured nothing did not happen ──────────────────────────────
+
+test('an unfinished cardio bout is not part of the record', async () => {
+  // Reported from real use: an athlete started a treadmill walk, never ended it, trained something else
+  // and finished. The record showed a walk beside the strength work — with no time and no distance,
+  // because the bout was never stopped. The set filter already dropped the un-done set; the EXERCISE
+  // row was written anyway, which is what made the record claim it.
+  const { buildSaveExercises } = await import('../save-core.ts');
+  const session = {
+    workoutName: 'Test',
+    activityType: 'strength',
+    startedAt: new Date(0).toISOString(),
+    programId: null,
+    exercises: [
+      {
+        name: 'Treadmill Walk',
+        catalogKey: 'cardio:walk',
+        kind: 'cardio',
+        section: 'main',
+        position: 0,
+        sets: [{ setIndex: 0, weight: null, targetReps: 0, actualReps: null, done: false, durationSec: null, distanceMi: null }],
+      },
+      {
+        name: 'Barbell Back Squat',
+        catalogKey: 'barbell-back-squat',
+        section: 'main',
+        position: 1,
+        sets: [{ setIndex: 0, weight: 225, targetReps: 5, actualReps: 5, done: true }],
+      },
+    ],
+  };
+  const rows = buildSaveExercises(session);
+  assert.deepEqual(rows.map((r) => r.name), ['Barbell Back Squat'], 'the unfinished walk must not be recorded');
+});
+
+test('a cardio bout that WAS logged is recorded normally', async () => {
+  const { buildSaveExercises } = await import('../save-core.ts');
+  const session = {
+    workoutName: 'Test',
+    activityType: 'strength',
+    startedAt: new Date(0).toISOString(),
+    programId: null,
+    exercises: [
+      {
+        name: 'Treadmill Walk',
+        catalogKey: 'cardio:walk',
+        kind: 'cardio',
+        section: 'main',
+        position: 0,
+        sets: [{ setIndex: 0, weight: null, targetReps: 0, actualReps: null, done: true, durationSec: 1800, distanceMi: 1.5, modality: 'indoor' }],
+      },
+    ],
+  };
+  const rows = buildSaveExercises(session);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].sets[0].duration_sec, 1800);
+  assert.equal(rows[0].sets[0].distance, 1.5);
+});
+
+test('a strength exercise with no completed sets is still part of the session', async () => {
+  // A different statement from an unmeasured bout: "this was in the session and I did not get to it"
+  // is the athlete's own record of intent, not a measurement the app invented.
+  const { buildSaveExercises } = await import('../save-core.ts');
+  const session = {
+    workoutName: 'Test',
+    activityType: 'strength',
+    startedAt: new Date(0).toISOString(),
+    programId: null,
+    exercises: [
+      { name: 'Bench Press', catalogKey: 'barbell-bench-press', section: 'main', position: 0, sets: [{ setIndex: 0, weight: null, targetReps: 5, actualReps: null, done: false }] },
+    ],
+  };
+  assert.deepEqual(buildSaveExercises(session).map((r) => r.name), ['Bench Press']);
+});
