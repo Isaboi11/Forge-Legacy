@@ -16,9 +16,22 @@ import { ProgressBar } from '../../composites/ProgressBar'
 import { ChevronRightIcon } from '../../primitives/icons/HomeIcons'
 
 export interface ProgramMissionGridProps {
-  programName: string
-  completed: number
-  total: number
+  /**
+   * The active program — OMITTED when there isn't one, leaving Mission alone across the full width.
+   *
+   * ══ WHY THIS IS OPTIONAL, WHICH IS THE INTERESTING PART ══
+   *
+   * The Mission tile was never program-dependent. It reads the athlete's live chapter goals and has
+   * nothing to do with a program. But Home guarded this whole two-tile grid on one condition — the
+   * program's name being non-empty — so an athlete with no program silently lost their GOAL as well.
+   * Collateral damage from a single `&&`, and invisible precisely because nothing was drawn to notice.
+   *
+   * The day-to-day athlete is the one who had it taken; making the program half optional gives it back
+   * without a second component.
+   */
+  programName?: string
+  completed?: number
+  total?: number
   missionTarget: string
   goalsRemaining: number
   onProgram?: () => void
@@ -61,28 +74,33 @@ export function ProgramMissionGrid({
   const programRef = useTourAnchor(programAnchor)
   const missionRef = useTourAnchor(missionAnchor)
 
+  const done = completed ?? 0
+  const all = total ?? 0
+
   return (
     <View style={styles.grid}>
-      <Pressable
-        ref={programRef}
-        onPress={onProgram}
-        accessibilityRole="button"
-        accessibilityLabel={`Current program: ${programName}. ${completed} of ${total} workouts complete.`}
-        style={styles.tile}
-      >
-        <TileHeader label="Current Program" />
-        <Text style={styles.tileTitle} numberOfLines={2}>
-          {programName}
-        </Text>
-        <View style={styles.progressBlock}>
-          <View style={styles.countRow}>
-            <Text style={styles.countBig}>{completed}</Text>
-            <Text style={styles.countTotal}>/ {total}</Text>
-            <Text style={styles.countLabel}>Workouts</Text>
+      {programName ? (
+        <Pressable
+          ref={programRef}
+          onPress={onProgram}
+          accessibilityRole="button"
+          accessibilityLabel={`Current program: ${programName}. ${done} of ${all} workouts complete.`}
+          style={styles.tile}
+        >
+          <TileHeader label="Current Program" />
+          <Text style={styles.tileTitle} numberOfLines={2}>
+            {programName}
+          </Text>
+          <View style={styles.progressBlock}>
+            <View style={styles.countRow}>
+              <Text style={styles.countBig}>{done}</Text>
+              <Text style={styles.countTotal}>/ {all}</Text>
+              <Text style={styles.countLabel}>Workouts</Text>
+            </View>
+            <ProgressBar value={done} max={all} label={`Program progress: ${done} of ${all}`} />
           </View>
-          <ProgressBar value={completed} max={total} label={`Program progress: ${completed} of ${total}`} />
-        </View>
-      </Pressable>
+        </Pressable>
+      ) : null}
 
       <Pressable
         ref={missionRef}

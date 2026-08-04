@@ -4,9 +4,10 @@
  * separate system from whatever computes the event (Rank Computation, honor/goal
  * evaluation, …) — those enqueue a `CeremonyEvent`; the ceremony system consumes it.
  *
- * There is NO evaluator backend yet (no RCM→athlete, no honor/goal/program engine),
- * so nothing enqueues these in production — a flagged dev harness does, until real
- * triggers land. See `src/app/ceremony-harness.tsx`.
+ * All four earned kinds now have real triggers: `rankUp` from the Legacy tab's rank refresh,
+ * `goalAchieved` from the goals screen, `honorEarned` from the honor evaluator, and `programGraduated`
+ * from W-17 once `save_workout` seals the program (migration 0104). `src/app/ceremony-harness.tsx`
+ * remains as a dev-only way to look at each one on demand.
  */
 
 import type { RankTier } from '../rank-artwork/resolver';
@@ -42,6 +43,20 @@ export interface GoalAchievedCeremony extends CeremonyBase {
 export interface ProgramGraduatedCeremony extends CeremonyBase {
   kind: 'programGraduated';
   programName: string;
+  /**
+   * M-4 §4's context rows. Sourced from the same data W-3's sealed record reads, because §3 requires the
+   * ceremony and the permanent record to agree — a modal saying eight weeks in front of a record saying
+   * two months is the failure this shares a formatter to prevent (`domain/program/graduation.ts`).
+   *
+   * DURATION IS NOT A FIELD. §4 defines it as calculated from Started to Graduated, so it is derived by
+   * `spanLabel` rather than carried — one less thing that can arrive wrong.
+   *
+   * All optional: a row whose datum is missing is omitted rather than faked, and the dev harness's bare
+   * `{ programName }` still compiles.
+   */
+  startedAt?: string | null;
+  graduatedAt?: string | null;
+  workouts?: number;
 }
 /** M-2 Honor Earned — artwork is a pending-asset placeholder (honor art not imported). */
 export interface HonorEarnedCeremony extends CeremonyBase {

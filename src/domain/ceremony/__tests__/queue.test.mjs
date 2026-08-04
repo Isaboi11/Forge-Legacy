@@ -9,7 +9,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { orderCeremonies, CEREMONY_PRIORITY } from '../queue.ts';
+import { mergeCeremonies, orderCeremonies, CEREMONY_PRIORITY } from '../queue.ts';
 
 let n = 0;
 const ev = (kind, extra = {}) => ({ id: `${kind}-${n++}`, kind, ...extra });
@@ -57,4 +57,34 @@ test('premiumUpsell (not an earned ceremony) sorts last', () => {
   assert.equal(out[0].kind, 'rankUp');
   assert.equal(out[1].kind, 'premiumUpsell');
   assert.ok(CEREMONY_PRIORITY.premiumUpsell > CEREMONY_PRIORITY.honorEarned);
+});
+
+/*
+ * `CeremonyBase.id` has always been documented as the dedupe key and nothing ever deduped on it. That was
+ * harmless while every caller enqueued once from an effect that ran once, and stopped being harmless when
+ * W-17 began enqueueing M-4 from a `useQuery` result — which refetches whenever the units preference
+ * changes, re-announcing the same graduation.
+ */
+test('mergeCeremonies drops an id already pending, and re-orders what it adds', () => {
+  const grad = { id: 'program-grad-1', kind: 'programGraduated', programName: 'SF I' };
+  const rank = { id: 'rank-13', kind: 'rankUp', rank: { family: 'architect', level: 1 } };
+
+  const once = mergeCeremonies([], [grad]);
+  assert.equal(once.length, 1);
+  assert.deepEqual(mergeCeremonies(once, [grad]).map((e) => e.id), ['program-grad-1'], 'a refetch adds nothing');
+
+  // Still ordered: rank (priority 1) must come before a program graduation (3) even though it arrived later.
+  assert.deepEqual(mergeCeremonies(once, [rank]).map((e) => e.kind), ['rankUp', 'programGraduated']);
+});
+
+test('mergeCeremonies dedupes within a single batch too', () => {
+  const a = { id: 'x', kind: 'goalAchieved', goalName: 'Squat 315' };
+  assert.equal(mergeCeremonies([], [a, { ...a }]).length, 1);
+});
+
+test('mergeCeremonies never mutates the queue it was handed', () => {
+  const q = [{ id: 'a', kind: 'goalAchieved', goalName: 'g' }];
+  const out = mergeCeremonies(q, [{ id: 'b', kind: 'honorEarned', honorName: 'h' }]);
+  assert.equal(q.length, 1);
+  assert.equal(out.length, 2);
 });

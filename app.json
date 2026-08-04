@@ -50,7 +50,8 @@
         {
           "locationWhenInUsePermission": "Forge Legacy uses your location while you're running, walking, or riding to measure the distance and pace of that session. It is only read during a session you started, and the route is never shared."
         }
-      ]
+      ],
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true,

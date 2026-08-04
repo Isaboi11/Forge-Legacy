@@ -4,9 +4,9 @@
  *
  *   1. The GUIDED TOUR, which is TWO LEGS fired at TWO MOMENTS (`domain/onboarding/tour-plan.ts`):
  *      the TABS leg — four cards, one per pillar — on first arrival, and the HOME leg — seven spotlit
- *      steps over the real cards — once a program exists to fill them. Each leg persists its own
- *      terminal decision (`tour.ts`); the run itself (`run`/`stepIndex`) is transient in-memory, so
- *      quitting mid-tour leaves that leg owed and it comes back.
+ *      steps over the real cards — once the athlete is settled (a program, or a session logged). Each
+ *      leg persists its own terminal decision (`tour.ts`); the run itself (`run`/`stepIndex`) is
+ *      transient in-memory, so quitting mid-tour leaves that leg owed and it comes back.
  *
  *      A RUN HOLDS EXACTLY ONE LEG. When both are owed, the tabs leg runs, records itself, and the arm
  *      effect below fires the Home leg a beat later — planned fresh, against a mounted Home. Combining
@@ -71,14 +71,24 @@ import {
 export type { TourStep } from '@/domain/onboarding/tour-plan';
 
 /**
- * What Home currently holds. Home reports it; the provider decides which leg that state is owed.
+ * Which face Home is wearing. Home reports it; the provider decides which leg that state is owed.
  *
- * These were `gated` / `unlocked` while Home was a funnel that withheld itself until the athlete chose a
- * starting point. Home is now full from the first launch (Onboarding-Amendment-002), so there is no gate to
- * name — and the Home leg never actually depended on one. It depends on whether the cards it rings exist,
- * and three of its seven (Today's Workout, Current Program, Mission) appear only once there is a program.
+ * `first-run` — the athlete has arrived and not yet trained. Home is asking "how do you want to start?",
+ * so the map of the app (the tabs leg) is worth having and the seven-step Home walkthrough is not: there
+ * is one card in front of them and a question they haven't answered.
+ *
+ * `settled` — they have a program OR they have trained. Either way Home is drawing its real cards.
+ *
+ * ══ THESE WERE `no-program` / `has-program`, AND THAT EXCLUDED SOMEBODY ══
+ *
+ * The provider owed the Home leg only to the program face, which meant an athlete who trains day to day
+ * and never builds a program was never shown around Home — not once, ever, on the screen they open every
+ * morning. Having a program was standing in for "there is something here to show you", and it is simply
+ * not the same claim. Training is the thing that settles an athlete; a program is one way to do it.
+ *
+ * (Before that they were `gated`/`unlocked`, naming a gate removed by Onboarding-Amendment-002.)
  */
-export type TourFace = 'no-program' | 'has-program';
+export type TourFace = 'first-run' | 'settled';
 
 /**
  * The beat before a run starts — the screen has just settled and the athlete has not read it yet. The
@@ -244,7 +254,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
    * Plan against the CURRENT screen. Anchors are read here rather than held in state on purpose: the
    * registry is ref-held and notifies nobody, so the only correct time to ask it is the instant a run is
    * about to start. A card that hasn't mounted yet simply isn't in this run — which is exactly right for
-   * the freestyle athlete whose Home draws no Program | Mission grid at all.
+   * the day-to-day athlete, whose Home draws every card but Current Program. Their run reads "of 6".
    */
   const planNow = useCallback(
     (opts: { replay?: boolean; assumeFace?: TourFace } = {}) => {
@@ -252,7 +262,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       return planTour({
         tabsDone: tabsStatus !== 'pending',
         homeDone: homeStatus !== 'pending',
-        homeHasProgram: current === 'has-program',
+        homeHasCards: current === 'settled',
         anchors: registeredAnchors(),
         replay: opts.replay,
       });
@@ -283,7 +293,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!loaded || run || deferred || !tipsEnabled || face == null) return;
     if (ceremony || showUnlock) return; // never over an earned moment — it re-arms when the ceremony closes
-    const owed = face === 'no-program' ? tabsStatus === 'pending' : tabsStatus === 'pending' || homeStatus === 'pending';
+    const owed = face === 'first-run' ? tabsStatus === 'pending' : tabsStatus === 'pending' || homeStatus === 'pending';
     if (!owed) return;
     const t = setTimeout(() => beginRun(planNow()), START_BEAT_MS);
     return () => clearTimeout(t);
@@ -292,7 +302,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   /** "Keep Building" — straight into whatever the un-gated Home owes, no beat. */
   const startFromCeremony = useCallback(() => {
     setRequested(false);
-    beginRun(planNow({ assumeFace: 'has-program' }));
+    beginRun(planNow({ assumeFace: 'settled' }));
     // A plan that came back empty (tips off mid-flight, or Home not mounted) must still close the ceremony.
     setAnnounced(true);
     void setUnlockAnnounced();
@@ -314,7 +324,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     void setTourStatus('pending');
     void setHomeTourStatus('pending');
     void clearScreenPrompts();
-    beginRun(planNow({ replay: true, assumeFace: face ?? 'has-program' }));
+    beginRun(planNow({ replay: true, assumeFace: face ?? 'settled' }));
   }, [beginRun, planNow, face]);
 
   /**
@@ -371,7 +381,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const doResume = useCallback(() => {
     if (!deferred) return;
     setDeferred(false);
-    beginRun(planNow({ assumeFace: 'has-program' }));
+    beginRun(planNow({ assumeFace: 'settled' }));
   }, [deferred, beginRun, planNow]);
 
   /**

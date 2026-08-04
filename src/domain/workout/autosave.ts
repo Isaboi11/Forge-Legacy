@@ -49,3 +49,25 @@ export async function clearSession(): Promise<void> {
 export function hasLoggedWork(session: ActiveSession | null | undefined): boolean {
   return !!session?.exercises?.some((e) => e.sets?.some((s) => s.done));
 }
+
+/**
+ * What Home needs to DESCRIBE the resumable session, not merely to know one exists.
+ *
+ * Home used to show "Continue Workout" only inside the program-day card, so the program supplied the name
+ * and the exercise count and this was never needed. The card now appears for an athlete who has no program
+ * at all — the day-to-day athlete, for whom Continue was previously unreachable entirely — and it has to
+ * name the session out of the session itself.
+ *
+ * Gated on `hasLoggedWork` for the reason given above: a started-but-empty session is not resumable, and a
+ * summary of one would be an offer to continue nothing.
+ */
+export function resumeSummary(
+  session: ActiveSession | null | undefined,
+): { name: string; exerciseCount: number } | null {
+  if (!hasLoggedWork(session)) return null;
+  const exercises = session!.exercises ?? [];
+  // The count the athlete recognises is the work, not the warm-up. A cardio-only session has no `main`
+  // section at all, so an empty main falls back to the whole list rather than claiming zero exercises.
+  const main = exercises.filter((e) => e.section === 'main').length;
+  return { name: session!.workoutName, exerciseCount: main || exercises.length };
+}

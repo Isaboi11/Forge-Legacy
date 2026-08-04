@@ -29,11 +29,18 @@ export interface ModalProps {
   artwork?: React.ReactNode
   /** The locked ceremony line. */
   children?: React.ReactNode
+  /**
+   * Context rows between two dividers, label left / value right — M-4's anatomy, where the ceremony is
+   * also a record card ("Started · Graduated · Workouts · Duration"). Empty or absent draws nothing, so
+   * every other ceremony is unchanged. Rows are built by `domain/ceremony/details.ts`, which omits any
+   * row whose datum is missing rather than inventing one.
+   */
+  details?: readonly { label: string; value: string }[]
   /** Action buttons (stacked). */
   footer?: React.ReactNode
 }
 
-export function Modal({ open, onClose, eyebrow, title, subtitle, artwork, children, footer }: ModalProps) {
+export function Modal({ open, onClose, eyebrow, title, subtitle, artwork, children, details, footer }: ModalProps) {
   const reduceMotion = useReducedMotion()
   return (
     <RNModal
@@ -51,6 +58,16 @@ export function Modal({ open, onClose, eyebrow, title, subtitle, artwork, childr
           <Text style={styles.title}>{title}</Text>
           {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
           {children != null ? <Text style={styles.body}>{children}</Text> : null}
+          {details && details.length > 0 ? (
+            <View style={styles.details}>
+              {details.map((d) => (
+                <View key={d.label} style={styles.detailRow} accessibilityLabel={`${d.label}, ${d.value}`}>
+                  <Text style={styles.detailLabel}>{d.label}</Text>
+                  <Text style={styles.detailValue}>{d.value}</Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
           {footer ? <View style={styles.footer}>{footer}</View> : null}
         </View>
       </View>
@@ -116,6 +133,34 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: flColor.gray400,
     maxWidth: 300,
+  },
+  // The two dividers M-4's anatomy calls for are the block's own borders, so the rows sit in a bounded
+  // band rather than floating between the body and the buttons.
+  details: {
+    alignSelf: 'stretch',
+    marginTop: 4,
+    paddingVertical: 12,
+    gap: 8,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: flColor.charcoal600,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  detailLabel: {
+    fontSize: 13,
+    color: flColor.gray600,
+  },
+  detailValue: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: flColor.cream100,
+    flexShrink: 1,
+    textAlign: 'right',
   },
   footer: {
     alignSelf: 'stretch',

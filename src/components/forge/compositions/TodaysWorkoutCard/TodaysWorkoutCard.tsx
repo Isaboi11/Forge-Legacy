@@ -24,7 +24,22 @@ export interface TodaysWorkoutCardProps {
   resolved: ResolvedArtwork
   title: string
   focus?: string
-  exerciseCount: number
+  /**
+   * The kicker above the title. Defaults to "Today's Workout" — the program day this card was built for.
+   *
+   * It became a prop when the card started serving athletes who have no program: "Today's Workout" over a
+   * half-finished session the athlete abandoned yesterday is a small lie, and over a blank slate with
+   * nothing planned it is a larger one. One card telling the truth in three modes beats three cards.
+   */
+  eyebrow?: string
+  /**
+   * How many exercises are in the session — OMITTED ENTIRELY when there is no session to count.
+   *
+   * Optional rather than defaulting to 0 on purpose. An athlete about to build their day as they go has no
+   * exercise count; "0 Exercises" is not that fact, it is a confident claim of emptiness, and the card
+   * drops the whole meta row rather than make it.
+   */
+  exerciseCount?: number
   onStart?: () => void
   /**
    * Unfinished work waiting in local storage, as "N sets logged" — or null when there is none.
@@ -42,8 +57,12 @@ export interface TodaysWorkoutCardProps {
   onFreestyle?: () => void
 }
 
-export function TodaysWorkoutCard({ resolved, title, focus, exerciseCount, onStart, resumeSets, onPreview, onFreestyle }: TodaysWorkoutCardProps) {
+export function TodaysWorkoutCard({ resolved, title, focus, eyebrow, exerciseCount, onStart, resumeSets, onPreview, onFreestyle }: TodaysWorkoutCardProps) {
   const artSource = resolveArtworkSource(resolved.assetPath)
+  const kicker = eyebrow ?? 'Today’s Workout'
+  // "1 Exercises" was unreachable while this card only ever drew program days. A one-block cardio resume
+  // makes it reachable immediately, so the plural is decided rather than assumed.
+  const countLabel = exerciseCount == null ? null : `${exerciseCount} Exercise${exerciseCount === 1 ? '' : 's'}`
 
   return (
     <View style={styles.card}>
@@ -73,18 +92,21 @@ export function TodaysWorkoutCard({ resolved, title, focus, exerciseCount, onSta
           onPress={onPreview}
           disabled={!onPreview}
           accessibilityRole={onPreview ? 'button' : undefined}
-          accessibilityLabel={
-            onPreview
-              ? `Today's workout: ${title}. ${focus ?? ''} ${exerciseCount} exercises. Double-tap to preview.`
-              : `Today's workout: ${title}. ${focus ?? ''} ${exerciseCount} exercises.`
-          }
+          accessibilityLabel={[
+            `${kicker}: ${title}.`,
+            focus,
+            countLabel != null ? `${countLabel}.` : null,
+            onPreview ? 'Double-tap to preview.' : null,
+          ]
+            .filter(Boolean)
+            .join(' ')}
           style={styles.previewRow}
         >
           <View style={styles.iconChip}>
             <BarbellIcon size={24} />
           </View>
           <View style={styles.headText}>
-            <Text style={flType.missionEyebrowMuted}>Today’s Workout</Text>
+            <Text style={flType.missionEyebrowMuted}>{kicker}</Text>
             <Text style={styles.title} numberOfLines={2}>
               {title}
             </Text>
@@ -92,19 +114,23 @@ export function TodaysWorkoutCard({ resolved, title, focus, exerciseCount, onSta
           </View>
         </Pressable>
 
-        <View style={styles.metaBlock}>
-          <View style={styles.metaDivider} />
-          <View style={styles.metaRow}>
-            <BarbellIcon size={16} color={flColor.bronze400} />
-            <Text style={styles.metaText}>{exerciseCount} Exercises</Text>
-            {/* The chevron went with the dead preview — it pointed at a row that was never a row. */}
-            {onPreview ? (
-              <View style={styles.metaChevron}>
-                <ChevronRightIcon size={15} color={flColor.gray600} />
-              </View>
-            ) : null}
+        {/* No count, no row. See `exerciseCount` — an unplanned session has nothing to state here, and a
+            divider over "0 Exercises" would state it anyway. */}
+        {countLabel != null ? (
+          <View style={styles.metaBlock}>
+            <View style={styles.metaDivider} />
+            <View style={styles.metaRow}>
+              <BarbellIcon size={16} color={flColor.bronze400} />
+              <Text style={styles.metaText}>{countLabel}</Text>
+              {/* The chevron went with the dead preview — it pointed at a row that was never a row. */}
+              {onPreview ? (
+                <View style={styles.metaChevron}>
+                  <ChevronRightIcon size={15} color={flColor.gray600} />
+                </View>
+              ) : null}
+            </View>
           </View>
-        </View>
+        ) : null}
 
         <Button
           variant="primary"

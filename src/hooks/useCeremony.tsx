@@ -22,7 +22,8 @@ import { Button } from '@/components/forge/composites/Button'
 import { HonorCeremony } from '@/components/ceremony/HonorCeremony'
 import { HonorSymbol } from '@/components/ceremony/HonorSymbol'
 import type { CeremonyEvent } from '@/domain/ceremony/types'
-import { orderCeremonies } from '@/domain/ceremony/queue'
+import { mergeCeremonies } from '@/domain/ceremony/queue'
+import { ceremonyDetails } from '@/domain/ceremony/details'
 import { ceremonyCopy, rankTierLabel } from '@/domain/ceremony/copy'
 import { RankSeal } from '@/components/forge/RankSeal'
 import { useShareSheet } from '@/hooks/useShareSheet'
@@ -109,9 +110,12 @@ export function CeremonyProvider({ children }: { children: React.ReactNode }) {
   const [queue, setQueue] = useState<CeremonyEvent[]>([])
   const [toast, setToast] = useState<string | null>(null)
 
+  // `mergeCeremonies`, not a bare concat: `CeremonyBase.id` has always been documented as the dedupe key
+  // and nothing ever deduped on it. Harmless while every caller enqueued once from an effect that ran
+  // once; not harmless now that W-17 enqueues from a `useQuery` result that refetches.
   const enqueue = useCallback((events: CeremonyEvent | CeremonyEvent[]) => {
     const list = Array.isArray(events) ? events : [events]
-    setQueue((q) => orderCeremonies([...q, ...list]))
+    setQueue((q) => mergeCeremonies(q, list))
   }, [])
   const dismiss = useCallback(() => setQueue((q) => q.slice(1)), [])
   const showToast = useCallback((message: string) => setToast(message), [])
@@ -185,6 +189,9 @@ export function CeremonyProvider({ children }: { children: React.ReactNode }) {
               title={copy.title}
               subtitle={copy.subtitle}
               artwork={ceremonyArtwork(current)}
+              /* M-4 §4's context rows — Started / Graduated / Workouts / Duration. Empty for every other
+                 kind: a rank or an honor is a statement, not a record card. */
+              details={ceremonyDetails(current)}
               footer={ceremonyFooter}
             >
               {copy.body}

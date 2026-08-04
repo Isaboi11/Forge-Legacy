@@ -8,7 +8,7 @@ import {
   type PromotableFamily,
   type RankFamily,
 } from './thresholds.ts';
-import type { RankSignals } from './rank.ts';
+import { distinctStructuredDevelopment, structuredDevelopment, type RankSignals } from './rank.ts';
 
 /**
  * THE STANDARDS, IN WORDS AND NUMBERS — what each rank actually asks for, and how far along you are.
@@ -70,6 +70,10 @@ export function familyStandards(target: PromotableFamily, signals: RankSignals |
   // The engine's own arithmetic, not a re-derivation of it.
   const effectiveAW = signals ? signals.nativeActiveWeeks + credit * signals.importedActiveWeeks : null;
   const effectiveSessions = signals ? signals.nativeSessions + credit * signals.importedSessions : null;
+  // Literally the engine's functions, not a copy of the sum — the athlete must never be shown a total
+  // different from the one that promotes them (D-RCM-29).
+  const structure = signals ? structuredDevelopment(signals) : null;
+  const distinctStructure = signals ? distinctStructuredDevelopment(signals) : null;
 
   const rows: StandardRow[] = [];
   const add = (key: string, label: string, have: number | null, need: number, unit: string, detail?: string) => {
@@ -87,10 +91,19 @@ export function familyStandards(target: PromotableFamily, signals: RankSignals |
   }
   add('sessions', 'Sessions', effectiveSessions, r.volumeSessions, '',
     'Ten minutes or more, any activity — nothing is excluded for not being lifting.');
-  add('programs', 'Programs finished', signals?.programGraduations ?? null, r.programGraduations, '');
+  /*
+   * The detail line deliberately understates the rule: it says "six weeks, three or more days a week" and
+   * omits the eight-week window and the two tolerated weeks. Where this screen must be imprecise it is
+   * imprecise only in the direction that can pleasantly surprise — RS-D16 forbids hidden BLOCKERS, not
+   * hidden leniency — and, more importantly, the athlete is given nothing to protect. Print the window
+   * and there is a streak on the screen.
+   */
+  add('programs', 'Programs or blocks', structure, r.programGraduations, '',
+    'A program you graduated, or a training block you ran yourself — six weeks of training three or more days a week. They count the same.');
   if (r.distinctProgramGraduations != null) {
-    add('distinctPrograms', 'Different programs finished', signals?.distinctProgramGraduations ?? null,
-      r.distinctProgramGraduations, '', 'Running the same program twice counts once here.');
+    add('distinctPrograms', 'Different programs or blocks', distinctStructure,
+      r.distinctProgramGraduations, '',
+      'Running the same program twice counts once. Blocks never overlap, so every block is its own.');
   }
   add('chapters', 'Chapters sealed', signals?.sealedChapters ?? null, r.sealedChapters, '');
   add('goals', 'Goals resolved', signals?.goalEvents ?? null, r.goalEvents, '',
@@ -152,11 +165,14 @@ export interface SubTierRow {
   evidence?: string;
 }
 
+/* Mirrors `subTierEvidenceOk` in the engine — keys and copy both. The two program lines said "a program
+ * finished", which is a flat lie to an athlete who reached this family on self-directed blocks and can
+ * satisfy the same step the same way (D-RCM-29). */
 const SUBTIER_EVIDENCE: Partial<Record<RankFamily, Partial<Record<2 | 3 | 4, string>>>> = {
   craftsman: { 3: 'and a personal best' },
-  architect: { 3: 'and a program finished' },
+  architect: { 3: 'and a program or block finished' },
   established: { 4: 'and a third chapter sealed' },
-  legend: { 4: 'and a seventh program finished' },
+  legend: { 4: 'and a seventh program or block' },
 };
 
 export function subTierStandards(family: RankFamily, signals: RankSignals | null): SubTierRow[] {

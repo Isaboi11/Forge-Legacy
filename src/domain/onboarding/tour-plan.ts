@@ -7,10 +7,15 @@
  *   TABS — the athlete's first arrival, before they have a program. Four cards, one per tab, no spotlight:
  *   this leg is the map — here are the four pillars, this is the shape of the app you just walked into.
  *
- *   HOME — once a program exists. Seven SPOTLIT steps over the real cards, handed to from the Initiative
- *   honor ceremony's "Keep Building". This is the leg that teaches the screen the athlete opens every day,
- *   and it waits for a program because three of its seven steps ring cards a program-less Home does not
- *   draw (Today's Workout, Current Program, Mission).
+ *   HOME — once the athlete is settled: they have a program, or they have trained. Seven SPOTLIT steps
+ *   over the real cards, handed to from the Initiative honor ceremony's "Keep Building". This is the leg
+ *   that teaches the screen the athlete opens every day.
+ *
+ *   It used to wait for a PROGRAM, on the reasoning that three of its seven steps ring cards a
+ *   program-less Home doesn't draw. Two of those three now draw for everyone — Home always has a Workout
+ *   CTA, and the Mission tile never depended on a program in the first place — and the athlete who trains
+ *   day to day and never builds one had been silently excluded from the walkthrough entirely. Only Current
+ *   Program is genuinely program-only, and the anchor filter below has always handled exactly that.
  *
  * NEITHER LEG IS TIED TO A GATE ANY MORE. Home used to be a single-card funnel until the athlete chose a
  * starting point, and these two moments were "before the gate" and "at the un-gate". Home is now full from
@@ -239,7 +244,12 @@ export const HOME_STEPS: readonly TourStep[] = [
     leg: 'home',
     route: '/',
     title: 'Today’s workout',
-    body: 'Your next session, already built. Start it and log it set by set. Training something different today? “Something else today?” takes you to a freestyle session or cardio.',
+    /*
+     * STATE-NEUTRAL ON PURPOSE. This read "Your next session, already built" — true only for an athlete
+     * running a program, and this leg now runs for the athlete who never builds one, where it would have
+     * described a card that says "Train Today" and holds nothing.
+     */
+    body: 'Today’s training, and the one button that starts it. Running a program? This is your next session, already built. Not running one? Start Workout asks what you’re training — lifts or cardio — and you fill it in as you go.',
     anchor: 'todays-workout',
     pad: 10,
     radius: 20,
@@ -1202,14 +1212,21 @@ export interface TourPlanInput {
   /** The Home leg has already been walked (or skipped) on this device. */
   homeDone: boolean;
   /**
-   * Home holds a program, so the cards the Home leg rings actually exist.
+   * Home is drawing its settled face, so the cards the Home leg rings actually exist.
    *
-   * This used to be `homeUnlocked` — whether Home was past its gate. The gate is gone (Home is full from
-   * the first launch, per Onboarding-Amendment-002), so that name described nothing. What the Home leg has
-   * always actually depended on is whether Today's Workout and the Program | Mission grid are on screen to
-   * be rung, and those appear when there is a program. Same trigger moment, honest name.
+   * ══ THIS NAME HAS BEEN WRONG TWICE, AND THE SECOND TIME COST SOMEBODY THE TOUR ══
+   *
+   * It was `homeUnlocked` (whether Home was past a gate) until the gate was removed and the name described
+   * nothing. It then became `homeHasProgram` — closer, but still an approximation standing in for the real
+   * dependency, and the approximation had a victim: the athlete who trains day to day and never builds a
+   * program NEVER saw the Home walkthrough, on the screen they open every morning, for as long as they
+   * used the app.
+   *
+   * What this has always actually depended on is whether there are cards on screen to ring. A settled Home
+   * draws six of the seven (everything but Current Program), and the anchor filter below already handles
+   * the seventh — it needed no gate, just an honest question.
    */
-  homeHasProgram: boolean;
+  homeHasCards: boolean;
   /** Anchors registered by mounted components at this instant. Unregistered ids drop their step. */
   anchors: readonly TourAnchorId[];
   /** "Replay all tips" — re-run everything available regardless of what's already been seen. */
@@ -1232,13 +1249,13 @@ export interface TourPlanInput {
  * which is also, exactly, the two-moments design this tour was split into in the first place.
  */
 export function planTour(input: TourPlanInput): TourStep[] {
-  const { tabsDone, homeDone, homeHasProgram, anchors, replay = false } = input;
+  const { tabsDone, homeDone, homeHasCards, anchors, replay = false } = input;
 
   // Tabs first whenever it's owed — it is the shorter, more general orientation, and Home is still there
   // afterwards. Home's own moment comes next, on its own.
   if (replay || !tabsDone) return [...TAB_STEPS];
 
-  if (homeHasProgram && (replay || !homeDone)) {
+  if (homeHasCards && (replay || !homeDone)) {
     return HOME_STEPS.filter((s) => !s.anchor || anchors.includes(s.anchor));
   }
 

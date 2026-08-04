@@ -32,6 +32,33 @@ export const RECENT_ENGAGEMENT = { windowWeeks: 12, minActiveWeeks: 8 } as const
 /** Imported active-weeks / sessions count at 50% for prestige promotions (CAL Q11). */
 export const IMPORT_PRESTIGE_CREDIT = 0.5;
 
+/**
+ * A SELF-DIRECTED TRAINING BLOCK — what structured development looks like without a program row
+ * (RCM Amendment 002, D-RCM-29). Six qualifying weeks inside a span of eight consecutive calendar weeks,
+ * where a qualifying week has meaningful work on at least `minDaysPerWeek` DISTINCT days.
+ *
+ * `weeks` and `minDaysPerWeek` are calibrated to the shipped catalogue rather than invented: both Strength
+ * Foundation programs are `durationWeeks: 6` at `frequencyPerWeek: 3–4`. So "one block counts as much as
+ * one graduation" is measured against what a graduation actually IS in this app.
+ *
+ * ══ `windowWeeks` IS THE WHOLE DESIGN, AND IT IS NOT A ROUNDING ALLOWANCE ══
+ *
+ * Six CONSECUTIVE weeks would have been the obvious rule, and it is the wrong one twice over. It zeroes
+ * five weeks of work for one week of flu, and it punishes the deload week that real programs CONTAIN —
+ * an athlete training 5×/week with a planned light week would earn nothing while a flat 3×/week athlete
+ * earns a block. Worse, it is a streak: a forward counter the athlete must protect, one miss resets. That
+ * is the pattern Product DNA §10 prohibits, narrowed by CAL-D19 only for a backward-looking view that
+ * "feeds no progression" — and this feeds progression directly.
+ *
+ * Two tolerated weeks in eight removes the thing that could be broken. A gap costs nothing recoverable
+ * and destroys nothing already earned; the scan simply re-anchors at the next qualifying week. There is
+ * no state to defend, which is what makes this not a streak.
+ *
+ * 8 is the one number here that is judgment rather than derivation (6 + 2: a deload plus one life week,
+ * and not enough to stretch "six weeks of training" into a quarter). The amendment says so out loud.
+ */
+export const SELF_DIRECTED_BLOCK = { weeks: 6, minDaysPerWeek: 3, windowWeeks: 8 } as const;
+
 /** The improvement "shape" a family transition demands (CAL Q13). Checked in improvement.ts. */
 export type ImprovementRequirement = 'none' | 'first' | 'multi-period' | 'repeated' | 'multi-year' | 'multi-phase';
 

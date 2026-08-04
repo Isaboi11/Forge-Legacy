@@ -6,6 +6,7 @@ import {
   NO_IMPROVEMENT,
   countActiveWeeks,
   countRecentActiveWeeks,
+  countSelfDirectedBlocks,
   isMeaningfulWork,
   meetsImprovement,
   mondayWeekKey,
@@ -28,6 +29,7 @@ function signals(overrides = {}) {
     importedSessions: 0,
     programGraduations: 0,
     distinctProgramGraduations: 0,
+    selfDirectedBlocks: 0,
     sealedChapters: 0,
     goalEvents: 0,
     primaryGoalsAchieved: 0,
@@ -126,6 +128,7 @@ function architectSignals(extra = {}) {
     nativeSessions: 90,
     programGraduations: 1,
     distinctProgramGraduations: 1,
+    selfDirectedBlocks: 0, // this athlete got here on a PROGRAM — the block path is exercised below
     sealedChapters: 1,
     goalEvents: 1,
     improvement: { totalPBs: 3, hasTwoSeparatedBy30d: true, spanMonths: 2, distinctYears: 1 },
@@ -213,4 +216,151 @@ test('resolveSubTier derives within-family AW from cumulative − entry', () => 
   assert.equal(resolveSubTier('builder', signals({ nativeActiveWeeks: 6 })), 1);
   assert.equal(resolveSubTier('builder', signals({ nativeActiveWeeks: 12 })), 3);
   assert.equal(resolveSubTier('legacy', signals({ nativeActiveWeeks: 999 })), 1); // no sub-tiers
+});
+
+/*
+ * ══════════════════════════════════════════════════════════════════════════════════════════════════
+ * SELF-DIRECTED TRAINING BLOCKS (D-RCM-29)
+ *
+ * The athlete who trains day to day and never builds a program used to stop at Craftsman — permanently,
+ * whatever they did. `programGraduations` was a hard gate at Architect and above and nothing else could
+ * satisfy it.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════════
+ */
+
+/** Meaningful-work dates: `days` distinct days in each listed week index (0 = an arbitrary Monday). */
+const weeksOf = (spec) =>
+  spec.flatMap(([week, days]) => Array.from({ length: days }, (_, i) => addDays('2026-01-05', week * 7 + i)));
+
+test('six weeks of three days is one block; six weeks of two days is none', () => {
+  assert.equal(countSelfDirectedBlocks(weeksOf([[0, 3], [1, 3], [2, 3], [3, 3], [4, 3], [5, 3]])), 1);
+  assert.equal(
+    countSelfDirectedBlocks(weeksOf([[0, 2], [1, 2], [2, 2], [3, 2], [4, 2], [5, 2]])),
+    0,
+    'the density floor is what separates a block from a habit',
+  );
+});
+
+/**
+ * THE CASE THAT KILLED THE CONSECUTIVE-WEEKS RULE. A deload week is something real programs CONTAIN — an
+ * athlete training 5×/week with one planned light week is doing more, not less. Under "6 consecutive"
+ * they earned nothing across 11 weeks and 51 sessions while a flat 3×/week athlete earned a block.
+ */
+test('a deload week does not destroy the block around it', () => {
+  const withDeload = weeksOf([[0, 5], [1, 5], [2, 5], [3, 5], [4, 5], [5, 2], [6, 5], [7, 5], [8, 5], [9, 5], [10, 5]]);
+  assert.equal(countSelfDirectedBlocks(withDeload), 1, 'weeks 0–4 plus 6 = six qualifying weeks inside eight');
+});
+
+test('the window binds — six qualifying weeks spread over nine is not a block', () => {
+  assert.equal(countSelfDirectedBlocks(weeksOf([[0, 3], [2, 3], [4, 3], [6, 3], [8, 3], [10, 3]])), 0);
+});
+
+test('blocks never overlap — twelve straight weeks is two, seven is one', () => {
+  const twelve = Array.from({ length: 12 }, (_, w) => [w, 3]);
+  assert.equal(countSelfDirectedBlocks(weeksOf(twelve)), 2);
+  const seven = Array.from({ length: 7 }, (_, w) => [w, 3]);
+  assert.equal(countSelfDirectedBlocks(weeksOf(seven)), 1, 'a seventh week does not buy a second block');
+});
+
+/** Nothing decays and nothing resets — that absence is what makes this not a streak (DNA §10). */
+test('a year off destroys nothing already earned', () => {
+  const before = Array.from({ length: 6 }, (_, w) => [w, 3]);
+  const after = Array.from({ length: 6 }, (_, w) => [w + 60, 3]);
+  assert.equal(countSelfDirectedBlocks(weeksOf([...before, ...after])), 2);
+});
+
+test('three sessions in one day is one day, not a trained week', () => {
+  // Distinct DAYS, not sessions. Counting sessions would let one busy Saturday manufacture a block.
+  const sameDayEveryWeek = Array.from({ length: 6 }, (_, w) => addDays('2026-01-05', w * 7));
+  assert.equal(countSelfDirectedBlocks(sameDayEveryWeek.flatMap((d) => [d, d, d])), 0);
+});
+
+test('block counting is order-independent and safe on nothing', () => {
+  const dates = weeksOf([[0, 3], [1, 3], [2, 3], [3, 3], [4, 3], [5, 3]]);
+  assert.equal(countSelfDirectedBlocks([...dates].reverse()), 1);
+  assert.equal(countSelfDirectedBlocks([]), 0);
+});
+
+test('a week is Mon–Sun — Sunday plus the next Mon/Tue is not one qualifying week', () => {
+  // 2026-01-11 is a Sunday; 01-12 and 01-13 are the Monday and Tuesday of the NEXT week.
+  assert.equal(mondayWeekKey('2026-01-11'), '2026-01-05');
+  assert.equal(mondayWeekKey('2026-01-12'), '2026-01-12');
+  const straddling = Array.from({ length: 6 }, (_, w) => [
+    addDays('2026-01-11', w * 7), addDays('2026-01-12', w * 7), addDays('2026-01-13', w * 7),
+  ]).flat();
+  assert.equal(countSelfDirectedBlocks(straddling), 0, 'every week holds 2 days, not 3');
+});
+
+test('a freestyle athlete reaches Architect on blocks alone', () => {
+  const freestyle = architectSignals({ programGraduations: 0, distinctProgramGraduations: 0, selfDirectedBlocks: 1 });
+  assert.equal(resolveRank(freestyle).family, 'architect');
+  assert.equal(resolveRank({ ...freestyle, selfDirectedBlocks: 0 }).family, 'craftsman', 'and without one, they do not');
+});
+
+test('blocks and graduations are additive, not alternative', () => {
+  const established = (extra) => signals({
+    journeyElapsedDays: 540, nativeActiveWeeks: 72, recentActiveWeeks: 8, nativeSessions: 200,
+    sealedChapters: 2, goalEvents: 2, primaryGoalsAchieved: 1,
+    improvement: { totalPBs: 6, hasTwoSeparatedBy30d: true, spanMonths: 8, distinctYears: 2 },
+    ...extra,
+  });
+  assert.equal(resolveRank(established({ programGraduations: 1, selfDirectedBlocks: 2 })).family, 'established');
+  assert.equal(resolveRank(established({ programGraduations: 1, selfDirectedBlocks: 1 })).family, 'architect', '2 of 3');
+});
+
+test('the distinct requirement counts blocks — each occupies its own weeks', () => {
+  const legend = signals({
+    journeyElapsedDays: 1460, nativeActiveWeeks: 210, recentActiveWeeks: 8, nativeSessions: 400,
+    programGraduations: 2, distinctProgramGraduations: 1, selfDirectedBlocks: 5, // total 7 ≥ 6, distinct 6 ≥ 6
+    sealedChapters: 3, goalEvents: 4, primaryGoalsAchieved: 2,
+    improvement: { totalPBs: 10, hasTwoSeparatedBy30d: true, spanMonths: 30, distinctYears: 2 },
+  });
+  assert.equal(resolveRank(legend).family, 'legend');
+  assert.equal(resolveRank({ ...legend, selfDirectedBlocks: 4 }).family, 'established', 'distinct 5 < 6');
+});
+
+test('sub-tier confirming evidence accepts a block where it asked for a program', () => {
+  // Otherwise an athlete promoted INTO Architect on a block would stall at II for want of a graduation.
+  assert.equal(resolveSubTier('architect', architectSignals({
+    programGraduations: 0, selfDirectedBlocks: 1, nativeActiveWeeks: 36 + 12,
+  })), 3);
+  assert.equal(resolveSubTier('architect', architectSignals({
+    programGraduations: 0, selfDirectedBlocks: 0, nativeActiveWeeks: 36 + 12,
+  })), 2, 'no structured development at all still holds them at II');
+});
+
+/**
+ * ══ THE HONORS FIREWALL ══
+ *
+ * `honor_metrics()` computes `programs_graduated` as a live `count(*)` over graduated `programs` rows, and
+ * `first_program_graduated` / `programs_graduated_5|10|25|50` fire off it. A block must never reach that
+ * number. "5 Programs Graduated" awarded to someone who graduated none would be a false claim in a record
+ * this product promises cannot be rewritten — and unlike a rank, an honor cannot be quietly recomputed.
+ *
+ * The firewall is that the two numbers never meet outside a `>=`: this asserts the signal the honors path
+ * reads stays at zero even at the top of the ladder.
+ */
+test('reaching Legacy on blocks alone leaves the graduation count at zero', () => {
+  const freestyleLegacy = signals({
+    journeyElapsedDays: 2555, nativeActiveWeeks: 288, recentActiveWeeks: 8, nativeSessions: 700,
+    programGraduations: 0, distinctProgramGraduations: 0, selfDirectedBlocks: 10,
+    sealedChapters: 5, goalEvents: 6, primaryGoalsAchieved: 4,
+    improvement: { totalPBs: 15, hasTwoSeparatedBy30d: true, spanMonths: 40, distinctYears: 3 },
+  });
+  assert.equal(resolveRank(freestyleLegacy).family, 'legacy');
+  assert.equal(freestyleLegacy.programGraduations, 0, 'nothing was folded in — no program honor can fire');
+});
+
+/** The formal statement of "a looser gate can only promote". Rank never decreases, so this is also what
+ *  makes shipping safe: no stored rank can be contradicted by the new arithmetic. */
+test('blocks are monotonic — adding one never lowers a rank', () => {
+  const fixtures = [signals(), architectSignals(), signals({ journeyElapsedDays: 60, nativeActiveWeeks: 18, nativeSessions: 36, improvement: summarizeImprovement(['2026-01-01']) })];
+  for (const f of fixtures) {
+    let prev = 0;
+    for (let n = 0; n <= 12; n++) {
+      const level = resolveRank({ ...f, selfDirectedBlocks: n }).rankLevel;
+      assert.ok(level >= prev, `block ${n} lowered the rank`);
+      prev = level;
+    }
+  }
 });

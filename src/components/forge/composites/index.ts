@@ -44,6 +44,9 @@ export * from './TabBar'
 // CLA-C20  export { Modal }        from './Modal'
 // CLA-C21  BottomSheet (v2 — Claude Design visual system):
 export * from './BottomSheet'
+// Playlist chip + attach/edit sheet (Workout-Playlist-Amendment-001) — shared because W-9 §8.5 and
+// W-17 §8A.2 are explicitly the SAME sheet:
+export * from './Playlist'
 // CLA-C22  export { Toast }        from './Toast'
 // CLA-C23  export { Skeleton }     from './Skeleton'
 // CLA-C24  export { EmptyState }   from './EmptyState'

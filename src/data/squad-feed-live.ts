@@ -1,5 +1,8 @@
 import { supabase } from '@/lib/supabase';
 import { fetchCompletion } from '@/data/workout-complete-live';
+// Type only: the snapshot arrives already validated by `fetchCompletion`, and `RecapBlock` re-validates
+// it on the way back out of the post's jsonb.
+import type { WorkoutPlaylistLink } from '@/domain/workout/playlist';
 
 /**
  * Squad Feed data (Social · Part 1) — training-only threaded posts (`squad_posts`), flat comments
@@ -121,6 +124,9 @@ export interface WorkoutSummary {
   durationSec: number;
   prCount: number;
   exercises: RecapExercise[];
+  /** What they trained to, if they attached one. Optional because every post written before 0105 has no
+   *  such key — an old recap reads `undefined` and simply renders no chip. */
+  playlist?: WorkoutPlaylistLink | null;
 }
 
 export interface SquadPostTypeDef {
@@ -324,6 +330,7 @@ interface CompletionLike {
   volume: number;
   durationSec: number;
   exercises: { name: string; sets: number; topSet: string | null; isPR: boolean }[];
+  playlist?: WorkoutPlaylistLink | null;
 }
 
 /** Snapshot a Completion's stats into the recap `WorkoutSummary` stored on the post. */
@@ -333,6 +340,17 @@ export function recapSummaryFrom(c: CompletionLike): WorkoutSummary {
     durationSec: c.durationSec,
     prCount: c.exercises.filter((e) => e.isPR).length,
     exercises: c.exercises.map((e) => ({ name: e.name, sets: e.sets, topSet: e.topSet, isPR: e.isPR })),
+    /*
+     * WSR-001 §6.3 / Workout-Playlist-Amendment-001 §2 put the playlist on squad check-in cards.
+     *
+     * SNAPSHOTTED, like every other field here — the post keeps what the session looked like when it was
+     * shared, so removing the link from the workout later does not rewrite a card squadmates have already
+     * seen and commented on. That is the same rule the volume and the exercise list follow.
+     *
+     * This is also the reason migration 0105 checks the URL's host in the database rather than trusting
+     * the client: this value is about to become a tap target for somebody other than its author.
+     */
+    playlist: c.playlist ?? null,
   };
 }
 

@@ -6,6 +6,11 @@
 **Date:** June 2026
 **Authority:** Active-Workout-Flow-Spec-W9-W16 (LOCKED), Workout-Summary-Spec-W17 v1.2 (LOCKED), Activity-Detail-Wireframe-Spec-W19 v1.3 (LOCKED), WSR-001 v1.0.1 (LOCKED)
 **Merged into base docs:** Yes — see Change Log entries in each affected document
+**Implemented:** Yes — 2026-08-03, migration `0105` + `src/domain/workout/playlist.ts`. All four §2
+in-scope surfaces are live (W-9 §8.5 attach · W-17 §8A attach/edit/remove · W-19 §9A read-only · squad
+recap chip). The one §2 item deliberately NOT built is the playlist on the flattened, externally-rendered
+share-card image — `WorkoutShare`/`ShareContent` has no implementation to extend, and §5/§7 already record
+that surface as non-interactive by platform constraint.
 
 ---
 

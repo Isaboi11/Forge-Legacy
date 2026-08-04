@@ -6,17 +6,17 @@ import { HOME_STEPS, SCREEN_TOURS, TAB_STEPS, legsIn, planTour } from '../tour-p
 const ALL_ANCHORS = HOME_STEPS.map((s) => s.anchor).filter(Boolean);
 
 const plan = (over = {}) =>
-  planTour({ tabsDone: false, homeDone: false, homeHasProgram: false, anchors: ALL_ANCHORS, ...over });
+  planTour({ tabsDone: false, homeDone: false, homeHasCards: false, anchors: ALL_ANCHORS, ...over });
 
 test('a program-less Home gets the tabs leg and nothing else — there is nothing on it to spotlight', () => {
-  const steps = plan({ homeHasProgram: false });
+  const steps = plan({ homeHasCards: false });
   assert.deepEqual(legsIn(steps), ['tabs']);
   assert.equal(steps.length, TAB_STEPS.length);
   assert.deepEqual(steps.map((s) => s.title), ['Home', 'Workouts', 'Legacy', 'Squads']);
 });
 
 test('a program exists after the tabs leg was walked — the run is the seven Home steps alone', () => {
-  const steps = plan({ tabsDone: true, homeHasProgram: true });
+  const steps = plan({ tabsDone: true, homeHasCards: true });
   assert.deepEqual(legsIn(steps), ['home']);
   assert.equal(steps.length, 7);
   assert.deepEqual(
@@ -39,13 +39,13 @@ test('Train Together and Competitions are separate steps, not one card describin
  * it runs, against the screen it describes.
  */
 test('an athlete who arrives with a program already gets the map first — tabs only, Home follows separately', () => {
-  const steps = plan({ tabsDone: false, homeHasProgram: true });
+  const steps = plan({ tabsDone: false, homeHasCards: true });
   assert.deepEqual(legsIn(steps), ['tabs'], 'the Home leg is NOT bolted onto this run');
   assert.equal(steps.length, TAB_STEPS.length);
 });
 
 test('…and once the tabs leg is recorded, the very next plan is the Home leg', () => {
-  const steps = plan({ tabsDone: true, homeHasProgram: true });
+  const steps = plan({ tabsDone: true, homeHasCards: true });
   assert.deepEqual(legsIn(steps), ['home']);
   assert.equal(steps.length, HOME_STEPS.length);
 });
@@ -53,23 +53,60 @@ test('…and once the tabs leg is recorded, the very next plan is the Home leg',
 test('no plan ever mixes legs, under any input', () => {
   for (const tabsDone of [true, false])
     for (const homeDone of [true, false])
-      for (const homeHasProgram of [true, false])
+      for (const homeHasCards of [true, false])
         for (const replay of [true, false]) {
-          const legs = legsIn(plan({ tabsDone, homeDone, homeHasProgram, replay }));
-          assert.ok(legs.length <= 1, `mixed legs for ${JSON.stringify({ tabsDone, homeDone, homeHasProgram, replay })}`);
+          const legs = legsIn(plan({ tabsDone, homeDone, homeHasCards, replay }));
+          assert.ok(legs.length <= 1, `mixed legs for ${JSON.stringify({ tabsDone, homeDone, homeHasCards, replay })}`);
         }
 });
 
 test('a step whose card is not on screen is dropped from the run, not rung around nothing', () => {
-  // The freestyle athlete: no program, so Home draws the starting-point card where the grid would be.
   const anchors = ALL_ANCHORS.filter((a) => a !== 'current-program' && a !== 'mission');
-  const steps = plan({ tabsDone: true, homeHasProgram: true, anchors });
+  const steps = plan({ tabsDone: true, homeHasCards: true, anchors });
   assert.equal(steps.length, 5, 'and the counter reads "of 5" — never "of 7" with two dead steps');
   assert.ok(!steps.some((s) => s.anchor === 'current-program' || s.anchor === 'mission'));
 });
 
+/**
+ * THE DAY-TO-DAY ATHLETE GETS THE WALKTHROUGH. They used to get nothing: the Home leg was owed only to the
+ * `has-program` face, so someone who trains four times a week and never builds a program was never shown
+ * around the screen they open every morning — for as long as they used the app.
+ *
+ * Their Home draws every card but Current Program (the Workout CTA is always present, and Mission never
+ * depended on a program), so the anchor filter does the whole job: six real steps, no empty rectangle.
+ */
+test('a settled Home without a program plans six steps — only Current Program drops', () => {
+  const anchors = ALL_ANCHORS.filter((a) => a !== 'current-program');
+  const steps = plan({ tabsDone: true, homeHasCards: true, anchors });
+  assert.equal(steps.length, HOME_STEPS.length - 1, 'the counter reads "of 6"');
+  assert.ok(!steps.some((s) => s.anchor === 'current-program'));
+  assert.ok(steps.some((s) => s.anchor === 'mission'), 'Mission is theirs and always was');
+  assert.ok(steps.some((s) => s.anchor === 'todays-workout'), 'so is the Workout CTA');
+});
+
+/**
+ * The step that rings the Workout CTA runs for athletes with and without a program, so its copy must be
+ * true of both. It used to open "Your next session, already built" — a sentence with no referent on a card
+ * that says "Train Today" and holds nothing planned.
+ */
+test('the Today’s workout step describes a card that may hold no program', () => {
+  const step = HOME_STEPS.find((s) => s.anchor === 'todays-workout');
+  assert.ok(step, 'the Workout CTA still has a step');
+  assert.ok(
+    !/already built\.\s/.test(step.body.slice(0, 40)),
+    'it must not OPEN by asserting a program exists',
+  );
+  assert.match(step.body, /Not running one\?/, 'the program-less athlete is addressed explicitly');
+});
+
+/** The first-run face is still tabs-only — nobody eats the map and the walkthrough back to back. */
+test('a first-run Home is owed the map and nothing else', () => {
+  assert.deepEqual(legsIn(plan({ tabsDone: false, homeHasCards: false })), ['tabs']);
+  assert.deepEqual(plan({ tabsDone: true, homeHasCards: false }), [], 'and no Home leg follows it');
+});
+
 test('tabs steps survive an empty anchor registry — they spotlight nothing by design', () => {
-  const steps = plan({ homeHasProgram: true, anchors: [] });
+  const steps = plan({ homeHasCards: true, anchors: [] });
   assert.deepEqual(legsIn(steps), ['tabs'], 'every Home step dropped; the tabs leg is anchor-free');
   assert.equal(steps.length, TAB_STEPS.length);
 });
@@ -80,33 +117,33 @@ test('tabs steps survive an empty anchor registry — they spotlight nothing by 
  * nobody has seen a card of.
  */
 test('skipping inside the tabs leg leaves the Home leg owed', () => {
-  const run = plan({ tabsDone: false, homeHasProgram: true }); // tabs + home, one run
+  const run = plan({ tabsDone: false, homeHasCards: true }); // tabs + home, one run
   const skippedAtStep2 = legsIn(run.slice(0, 2));
   assert.deepEqual(skippedAtStep2, ['tabs'], 'only the leg being walked is retired');
 });
 
 test('skipping inside the Home leg retires the Home leg and nothing else', () => {
-  const run = plan({ tabsDone: true, homeHasProgram: true });
+  const run = plan({ tabsDone: true, homeHasCards: true });
   assert.deepEqual(legsIn(run.slice(0, 3)), ['home'], 'a run holds one leg, so a skip can only ever retire one');
 });
 
 test('both legs done = no run at all', () => {
-  assert.deepEqual(plan({ tabsDone: true, homeDone: true, homeHasProgram: true }), []);
+  assert.deepEqual(plan({ tabsDone: true, homeDone: true, homeHasCards: true }), []);
 });
 
 test('replay re-runs everything, one leg at a time', () => {
   // First plan after "Replay all tips": the map.
-  const first = plan({ tabsDone: true, homeDone: true, homeHasProgram: true, replay: true });
+  const first = plan({ tabsDone: true, homeDone: true, homeHasCards: true, replay: true });
   assert.deepEqual(legsIn(first), ['tabs']);
   assert.equal(first.length, TAB_STEPS.length);
   // The provider records that leg as it finishes, so the next plan is the Home walkthrough.
-  const second = plan({ tabsDone: true, homeDone: false, homeHasProgram: true });
+  const second = plan({ tabsDone: true, homeDone: false, homeHasCards: true });
   assert.deepEqual(legsIn(second), ['home']);
   assert.equal(second.length, HOME_STEPS.length);
 });
 
 test('replay with no program replays only the tabs — the Home leg has nothing to point at yet', () => {
-  const steps = plan({ tabsDone: true, homeDone: true, homeHasProgram: false, replay: true });
+  const steps = plan({ tabsDone: true, homeDone: true, homeHasCards: false, replay: true });
   assert.deepEqual(legsIn(steps), ['tabs']);
 });
 

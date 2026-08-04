@@ -188,9 +188,12 @@ ONB-D22 is preserved in spirit and in all but one clause:
 - [ ] The starting-point card cycles chooser → "Help me find one" stepper → recommendation, all inline, with
       everything around it still on screen.
 - [ ] "Or just train today" works from every one of those three states.
-- [ ] The tabs leg fires on first arrival; the Home leg waits for a program.
+- [ ] The tabs leg fires on first arrival; the Home leg waits. *(Superseded by ONB-A3-D8: it waits for the
+      athlete to be **settled**, not for a program.)*
 - [ ] The Initiative ceremony no longer says anything is being unlocked.
-- [ ] A freestyle athlete with no program sees the same card, and their Home leg is 5 steps, not 7.
+- [ ] ~~A freestyle athlete with no program sees the same card, and their Home leg is 5 steps, not 7.~~
+      **Superseded by ONB-A3-D8** — that athlete no longer sees the starting-point card at all (they get the
+      Workout CTA), and their Home leg is **6** steps.
 
 ### ONB-A3-D7 — The Home gate is removed; the tour's two moments are re-described *(2026-08-02, PO)*
 Home is **full from the very first launch** — chapter, Your Circle, quick actions, Explore Forge — with the
@@ -213,6 +216,44 @@ slot: chooser → intake stepper → recommendation, with "Or just train today" 
   itself. It now announces the honor and what actually changed — a program.
 - `FirstSessionCard` is **retired** (it was already unreachable: it keyed on a loading state `useQuery` never
   produces, and the gate was its only host).
+
+### ONB-A3-D8 — The Home leg belongs to every settled athlete, not only to program owners *(2026-08-02, PO)*
+
+**Amends ONB-A3-D7's second and third bullets. D7's own text is otherwise unchanged and still governs.**
+
+D7 tied the Home leg to a program on the reasoning that *"three of its seven steps ring cards a program-less
+Home does not draw."* That reasoning was sound at the time and is now false, because the screen changed:
+Home always draws the H-1 Tier 3 Workout CTA (*"Always present. Never disabled."*), and the Mission tile was
+never program-dependent — it reads live chapter goals and had been disappearing only because one guard
+covered a two-tile grid. **One** of the seven steps is genuinely program-only.
+
+**What the gate cost.** `awaiting` goes false the moment an athlete logs a session, and the Home leg was owed
+only to the program face — so an athlete who trains day to day and never builds a program was **never shown
+around Home, once, ever**, on the screen they open every morning. There was no exit from that except to build
+a program they did not want. That is the same defect the accompanying Home change fixes in copy, appearing a
+second time in the tour.
+
+**Consequences:**
+- The two moments are re-described again, and this time by what settles an athlete rather than by what they
+  own: **first run** (arrived, not yet trained) / **settled** (has a program **or** has trained).
+- `TourFace` is `'first-run' | 'settled'`; `planTour`'s input is `homeHasCards`. Each prior name — `gated`,
+  then `homeHasProgram` — was an approximation standing in for *"there are cards on screen to ring"*, which
+  is what the planner has always actually depended on.
+- **No new filtering was needed.** `planTour` already drops a step whose anchor isn't mounted, so a settled
+  program-less Home plans **6 of 7** steps and its counter says 6. Current Program drops itself.
+- The `home-workout` step's body is rewritten **state-neutral**. It opened *"Your next session, already
+  built"* — true only of a program, and this step now runs over a card that may read "Train Today" and hold
+  nothing planned.
+- The first-run face is unchanged: still the tabs leg alone, so nobody is handed the map and the walkthrough
+  back to back.
+
+### Validation checklist for ONB-A3-D8
+- [ ] An athlete with logged workouts and **no program** gets the Home leg, and its counter reads **6**.
+- [ ] No spotlight rings an empty rectangle where Current Program would be.
+- [ ] The Mission step rings a real, populated tile for that athlete.
+- [ ] A brand-new athlete (zero workouts) still gets the **tabs leg only** on first arrival.
+- [ ] "Keep Building" from the Initiative ceremony still hands straight into the Home leg.
+- [ ] The `home-workout` step's copy is true whether or not a program is running.
 
 ## Section 9 — Validation Checklist for ONB-A3-D6 (2026-08-02)
 - [ ] First arrival on **Workouts** → 6 spotlit steps; held to the "My Workouts" side (four steps ring

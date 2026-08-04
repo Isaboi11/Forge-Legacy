@@ -1,9 +1,16 @@
 # Rank Computation Model
-## Sessions 1–5 | LOCKED v1.0 — June 2026
+## Sessions 1–5 | LOCKED v1.1 — June 2026 (amended August 2026)
 
-**Status:** LOCKED v1.0
+**Status:** LOCKED v1.1
 **Type:** Computational Authority Document
-**Date:** June 2026
+**Date:** June 2026 · amended 2026-08-02
+
+> **AMENDMENTS APPLIED TO THIS DOCUMENT**
+> - `Rank-Computation-Model-Amendment-001.md` — administrative (DRAFT → LOCKED).
+> - **`Rank-Computation-Model-Amendment-002-Self-Directed-Blocks.md` (D-RCM-29, 2026-08-02)** — the Program
+>   Progression row becomes a *structured development* row admitting either a program graduation or a
+>   self-directed training block. **No threshold value changed.** Applied in §14.7, new §14.7.1, §14.11,
+>   §14.13 and §24.3. Pairs with RSA **R-D48**.
 
 **Authority Chain:**
 - Rank-System-Architecture.md v1.0 (LOCKED — architectural authority)
@@ -1469,18 +1476,35 @@ These qualitative descriptions align directly with the Major Rank Identity Tests
 
 The exact numeric thresholds (how many personal best events, across how many months) for the "pattern" and "multi-year" requirements are deferred to Session 4 as Q13. The structural model — Personal Best Progression with time-distributed evidence — is resolved here.
 
-### 14.7 Program Progression Thresholds
+### 14.7 Structured Development Thresholds (Program Progression)
 
-Program Progression (#3 category). Program Graduation is the primary signal (standardized per RSA §8.2, C-5).
+> **AMENDED by `Rank-Computation-Model-Amendment-002-Self-Directed-Blocks.md` (D-RCM-29, 2026-08-02).**
+> This row admits two forms of evidence. **No threshold value below changed.**
 
-| Transition | Program Graduations Required |
+Program Progression (#3 category). Program Graduation is the primary signal (standardized per RSA §8.2, C-5); a self-directed training block is the second admitted form (§14.7.1).
+
+| Transition | Structured Development Credits Required |
 |-----------|------------------------------|
 | F→B | 0 — not required |
 | B→C | 0 — programs materially accelerate but are not required at this stage |
-| C→A | 1 — at least 1 completed program graduation |
-| A→E | 3 — multiple programs as part of the Established signature milestone |
+| C→A | 1 — one program graduation, or one self-directed training block |
+| A→E | 3 — multiple structured development cycles, as part of the Established signature milestone |
 | E→L | 6 — multiple structured journeys across distinct development phases |
-| L→G | 10 — extensive program history representing multiple development cycles |
+| L→G | 10 — extensive structured-development history across multiple cycles |
+
+### 14.7.1 Structured development credits (D-RCM-29)
+
+One credit is earned by either:
+- a **program graduation** — a program record reaching the Graduated state (RSA §8.2, C-5); or
+- a **self-directed training block** — six qualifying weeks (a Mon–Sun week with meaningful work on at least three distinct days, per §3.5) falling inside a span of eight consecutive calendar weeks. Blocks are derived automatically from training history; the athlete declares nothing and no record is created. Blocks are non-overlapping: a qualifying week belongs to at most one block, assigned by a left-to-right earliest-completion scan.
+
+Credits are additive at full parity: one block satisfies exactly as much of the requirement as one graduation. `weeks` and `minDaysPerWeek` are calibrated to the shipped catalogue — both authored programs are 6 weeks at 3–4 sessions per week — so parity is measured against what a graduation actually is in this product.
+
+**A self-directed block is not a program graduation and must never be reported as one.** The Program Progression count consumed by the Honor Evaluation Service counts graduated program records only. **No honor may fire on a block.** This boundary is load-bearing: an honor is a permanent claim about a specific act, and "5 Programs Graduated" awarded to an athlete who graduated none would be a false permanent record in a product whose first principle is that history cannot be rewritten. Unlike a rank, an honor cannot be quietly recomputed.
+
+**No in-progress block may be displayed.** Completed blocks are counted; partial progress toward a block is never surfaced on any screen, in any notification, or in any share artefact. A visible partial count would be a forward counter the athlete must protect — the pattern Product DNA §10 prohibits and CAL-D19 narrowed only for a backward-looking view that feeds no progression. This one would feed progression directly.
+
+**Why an eight-week window rather than six consecutive weeks.** Six consecutive weeks would zero five weeks of work for one week of illness, would punish the deload week that real programs contain, and — decisively — would be a streak: a forward counter the athlete must protect, one miss resets. Two tolerated weeks in eight means there is no state that can be broken, which is what keeps this outside the DNA §10 prohibition. The window value is judgment rather than derivation; see Amendment 002 §2.
 
 **Defining "multiple" in the Established signature milestone:**
 RSA §14 states "multiple completed programs + multiple completed and sealed Chapters." This document defines:
@@ -1488,7 +1512,7 @@ RSA §14 states "multiple completed programs + multiple completed and sealed Cha
 - This is the structural definition that fills the "Multiple" placeholder in RSA §14 for Established.
 
 **Defining "multiple" and related terms for Legend and Legacy signature milestones:**
-- **Legend milestone** ("multiple programs representing distinct development phases"): 6 program graduations, spanning at least 2 different programs (not 6 repetitions of the same program). Distinct development phase requirement: at least 3 of the 6 graduations must be from different program categories or significantly different program designs.
+- **Legend milestone** ("multiple programs representing distinct development phases"): 6 structured development credits with distinct identity, where a program's identity is its **source plan** and a block's identity is **the span of weeks it occupies**. Blocks are distinct by construction — no two occupy the same week — so no de-duplication rule is needed for them; the partition of calendar time *is* the distinctness rule (D-RCM-29, and the cleanest available answer to what CAL Q14 reached for). For programs: not 6 repetitions of the same plan, and at least 3 of the 6 from different program categories or significantly different program designs.
 - **Legacy milestone** ("repeated cycles of commitment, development, achievement, reflection, and fulfillment"): 10 program graduations across multiple years.
 
 These definitions fill the placeholder descriptions in RSA §14 for the combination and pattern milestones.
@@ -1585,7 +1609,9 @@ This table consolidates all threshold types per transition. Requirements marked 
 
 F = Foundation, B = Builder, C = Craftsman, A = Architect, E = Established, L = Legend, G = Legacy
 
-**Every row is a hard requirement.** An athlete who satisfies all rows except one is not eligible for family promotion. There are no substitute paths — this is the multi-requirement convergence model. The value in any cell is the minimum that must be met; exceeding a threshold does not compensate for a deficit in another.
+**Every row is a hard requirement.** An athlete who satisfies all rows except one is not eligible for family promotion. There are no substitute paths **between rows** — this is the multi-requirement convergence model. The value in any cell is the minimum that must be met; exceeding a threshold does not compensate for a deficit in another.
+
+**Within a single row, a threshold may admit more than one form of evidence where the locked architecture defines more than one.** Two rows do. *Cumulative active weeks* and *volume* admit imported history at 50% (CAL Q11, R-D46). *Structured development* admits program graduations and self-directed training blocks at parity (D-RCM-29; RSA §15's Craftsman identity test already read "through programs **or deliberate programming**"). Admitting a second form of evidence for one row is not a substitute path: it never lets a row go unmet, and it never allows a surplus in one row to cover a deficit in another. That prohibition is unchanged and absolute. *(Amended by `Rank-Computation-Model-Amendment-002-Self-Directed-Blocks.md`, 2026-08-02.)*
 
 ### 14.12 The Signature Milestone Layer
 
@@ -1608,6 +1634,7 @@ R-D46 establishes that imported history provides partial credit and contextual r
 - Craftsman→Architect and all prestige rank transitions: Forge-native AW floor is required
 - Volume thresholds at prestige ranks accept imported sessions at partial credit (rate deferred)
 - Sealed chapters and program graduations are Forge-native-only: an imported chapter that was sealed pre-Forge counts toward sealed chapter counts under R-D46's recognition of historical chapters in the import architecture. Program graduations from pre-Forge programs count if the import record confirms graduation.
+- **Self-directed training blocks (§14.7.1) are derived from Forge-native session records only.** Whether imported sessions may form blocks, and at what credit, is deferred to the import workstream alongside Q3–Q6. *(D-RCM-29.)*
 - Goal participation events from pre-Forge history: import treatment is subject to Q4 (still open). If the import pipeline carries goal records, pre-Forge resolutions may count. If not, goal participation is Forge-native-only.
 
 **Forge-native-only (no import credit):**
@@ -3349,6 +3376,8 @@ The import full-recompute path (Section 20.10) touches several fields across mul
 **D-RCM-27:** Signal state fields including imported data must be fully recomputed on every `ImportCompleted` event. No additive merge is permitted.
 
 **D-RCM-28:** All seven category module updates must be idempotent. A module that has already processed a given `evaluationEventId` (identified by `lastEventIdProcessed`) skips re-processing without modifying its state.
+
+**D-RCM-29** *(added by `Rank-Computation-Model-Amendment-002-Self-Directed-Blocks.md`, 2026-08-02)**:* The Program Progression threshold row is a *structured development* row. One credit is earned by a program graduation **or** by a self-directed training block (six qualifying weeks within an eight-week span, non-overlapping, derived automatically from training history — §14.7.1). Credits are additive at parity. **Threshold values are unchanged at every transition.** Blocks are never recorded as program graduations, never enter the Program Progression honor metric, and are never displayed as an in-progress counter. Pairs with RSA **R-D48**, which restates the Established and Legend identity statements so RS-D18 continues to hold. D-RCM-18's canonical trigger set is unchanged — a block completes on the save of a meaningful session, which `MeaningfulWorkSessionSaved` already covers.
 
 ### 24.4 Open Questions Resolved This Session
 

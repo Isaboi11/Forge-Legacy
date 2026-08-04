@@ -50,3 +50,27 @@ export function orderCeremonies(events: readonly CeremonyEvent[]): CeremonyEvent
     })
     .map(({ e }) => e);
 }
+
+/**
+ * Add events to a pending queue, dropping any whose id is already there, then re-order.
+ *
+ * `CeremonyBase.id` has always been documented as "so the queue can key/dedupe entries" and nothing
+ * ever deduped on it — `enqueue` simply concatenated. That was harmless while ceremonies were enqueued
+ * once from an effect that ran once, and stops being harmless the moment a screen enqueues from a
+ * `useQuery` result: any refetch (W-17 refetches when the units preference changes) re-announced the
+ * same ceremony, and the athlete dismissed the same modal twice.
+ *
+ * Deduping here rather than in the provider keeps it pure, testable, and true for every kind at once.
+ */
+export function mergeCeremonies(
+  pending: readonly CeremonyEvent[],
+  incoming: readonly CeremonyEvent[],
+): CeremonyEvent[] {
+  const seen = new Set(pending.map((e) => e.id));
+  const added = incoming.filter((e) => {
+    if (seen.has(e.id)) return false;
+    seen.add(e.id); // also dedupes within `incoming` itself
+    return true;
+  });
+  return added.length === 0 ? [...pending] : orderCeremonies([...pending, ...added]);
+}

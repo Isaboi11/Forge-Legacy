@@ -17,6 +17,7 @@ const signals = (over = {}) => ({
   importedSessions: 0,
   programGraduations: 0,
   distinctProgramGraduations: 0,
+  selfDirectedBlocks: 0,
   sealedChapters: 0,
   goalEvents: 0,
   primaryGoalsAchieved: 0,
@@ -24,7 +25,7 @@ const signals = (over = {}) => ({
   ...over,
 });
 
-/** Signals that clear every requirement for `target`, with room to spare. */
+/** Signals that clear every requirement for `target`, with room to spare — on PROGRAMS. */
 const clearing = (target) => {
   const r = FAMILY_PROMOTIONS[target];
   return signals({
@@ -34,10 +35,33 @@ const clearing = (target) => {
     recentActiveWeeks: 12,
     programGraduations: Math.max(r.programGraduations, r.distinctProgramGraduations ?? 0) + 1,
     distinctProgramGraduations: (r.distinctProgramGraduations ?? 0) + 1,
+    // Deliberately and permanently 0 here: this baseline must stay program-only, or the
+    // `['programGraduations', 0]` breaker below stops breaking anything and the sweep silently weakens.
+    selfDirectedBlocks: 0,
     sealedChapters: r.sealedChapters + 1,
     goalEvents: r.goalEvents + 1,
     primaryGoalsAchieved: r.primaryGoalsAchieved + 1,
     improvement: { totalPBs: 20, hasTwoSeparatedBy30d: true, spanMonths: 48, distinctYears: 4 },
+  });
+};
+
+/**
+ * The same athlete, earned entirely freestyle: no graduations at all, blocks instead (D-RCM-29).
+ *
+ * ══ WHY A SECOND CLEARING SET AND NOT JUST A NEW BREAKER ══
+ *
+ * The screen⟺engine equivalence below is only PROVED for evidence some clearing set actually carries.
+ * Adding `['selfDirectedBlocks', 0]` to `breakers` while every baseline has it at zero would assert that
+ * breaking nothing changes nothing — a test that passes without testing. The whole sweep runs over both
+ * baselines so the block path is exercised on every row of every family.
+ */
+const clearingFreestyle = (target) => {
+  const r = FAMILY_PROMOTIONS[target];
+  return signals({
+    ...clearing(target),
+    programGraduations: 0,
+    distinctProgramGraduations: 0,
+    selfDirectedBlocks: Math.max(r.programGraduations, r.distinctProgramGraduations ?? 0) + 1,
   });
 };
 
@@ -50,34 +74,38 @@ const clearing = (target) => {
  * arbitrary. So the standards are not trusted to match `meetsFamilyPromotion`; they are asserted to.
  */
 test('every requirement met ⟺ the engine promotes — for every family, at every boundary', () => {
-  for (const target of PROMOTABLE) {
-    const ok = clearing(target);
-    assert.equal(allMet(familyStandards(target, ok)), true, `${target}: rows say not met on clearing signals`);
-    assert.equal(meetsFamilyPromotion(target, ok), true, `${target}: engine refuses clearing signals`);
+  // Both routes to the same rank. An athlete who got there on blocks must be told the truth too.
+  for (const [route, build] of [['programs', clearing], ['freestyle', clearingFreestyle]]) {
+    for (const target of PROMOTABLE) {
+      const ok = build(target);
+      assert.equal(allMet(familyStandards(target, ok)), true, `${target}/${route}: rows say not met on clearing signals`);
+      assert.equal(meetsFamilyPromotion(target, ok), true, `${target}/${route}: engine refuses clearing signals`);
 
-    // Now break each requirement in turn and confirm BOTH sides notice.
-    const breakers = [
-      ['journeyElapsedDays', 0],
-      ['nativeActiveWeeks', 0],
-      ['nativeSessions', 0],
-      ['programGraduations', 0],
-      ['sealedChapters', 0],
-      ['goalEvents', 0],
-      ['primaryGoalsAchieved', 0],
-      ['recentActiveWeeks', 0],
-      ['improvement', { totalPBs: 0, hasTwoSeparatedBy30d: false, spanMonths: 0, distinctYears: 0 }],
-    ];
-    for (const [field, value] of breakers) {
-      const broken = { ...ok, [field]: value };
-      // `distinctProgramGraduations` can never exceed the total, so keep them consistent.
-      if (field === 'programGraduations') broken.distinctProgramGraduations = 0;
-      const rowsSay = allMet(familyStandards(target, broken));
-      const engineSays = meetsFamilyPromotion(target, broken);
-      assert.equal(
-        rowsSay,
-        engineSays,
-        `${target} with ${field} broken: screen says ${rowsSay}, engine says ${engineSays}`,
-      );
+      // Now break each requirement in turn and confirm BOTH sides notice.
+      const breakers = [
+        ['journeyElapsedDays', 0],
+        ['nativeActiveWeeks', 0],
+        ['nativeSessions', 0],
+        ['programGraduations', 0],
+        ['selfDirectedBlocks', 0],
+        ['sealedChapters', 0],
+        ['goalEvents', 0],
+        ['primaryGoalsAchieved', 0],
+        ['recentActiveWeeks', 0],
+        ['improvement', { totalPBs: 0, hasTwoSeparatedBy30d: false, spanMonths: 0, distinctYears: 0 }],
+      ];
+      for (const [field, value] of breakers) {
+        const broken = { ...ok, [field]: value };
+        // `distinctProgramGraduations` can never exceed the total, so keep them consistent.
+        if (field === 'programGraduations') broken.distinctProgramGraduations = 0;
+        const rowsSay = allMet(familyStandards(target, broken));
+        const engineSays = meetsFamilyPromotion(target, broken);
+        assert.equal(
+          rowsSay,
+          engineSays,
+          `${target}/${route} with ${field} broken: screen says ${rowsSay}, engine says ${engineSays}`,
+        );
+      }
     }
   }
 });
@@ -100,6 +128,53 @@ test('imported history counts at half rate for prestige, on the screen exactly a
   assert.equal(aw.have, 36, 'the screen must show the credited figure the engine actually compares');
   assert.equal(aw.met, true);
   assert.equal(allMet(rows), meetsFamilyPromotion('architect', s));
+});
+
+/**
+ * The structured-development row is the one place two kinds of evidence are summed, so it is the one place
+ * the screen could quietly print a different number than the gate compares — and the athlete would read
+ * "2 of 3" while being promoted, or the reverse.
+ */
+test('the structured row shows the sum the engine actually compares', () => {
+  const s = signals({
+    journeyElapsedDays: 1500, nativeActiveWeeks: 215, recentActiveWeeks: 12, nativeSessions: 405,
+    programGraduations: 2, distinctProgramGraduations: 2, selfDirectedBlocks: 4, // 6 total, 6 distinct
+    sealedChapters: 4, goalEvents: 5, primaryGoalsAchieved: 3,
+    improvement: { totalPBs: 20, hasTwoSeparatedBy30d: true, spanMonths: 48, distinctYears: 4 },
+  });
+  const rows = familyStandards('legend', s);
+  assert.equal(rows.find((r) => r.key === 'programs').have, 6);
+  assert.equal(rows.find((r) => r.key === 'distinctPrograms').have, 6);
+  assert.equal(allMet(rows), meetsFamilyPromotion('legend', s));
+  assert.equal(meetsFamilyPromotion('legend', s), true);
+});
+
+test('the row is labelled for both routes — a freestyle athlete is not told to finish a program', () => {
+  const rows = familyStandards('architect', null);
+  const programs = rows.find((r) => r.key === 'programs');
+  assert.match(programs.label, /blocks/, `label reads "${programs.label}"`);
+  assert.match(programs.detail, /six weeks/, 'the block rule is stated, not left to be discovered');
+  // The window and its tolerance are deliberately NOT printed — that would put a streak on the screen.
+  assert.doesNotMatch(programs.detail, /eight|8 week|tolerance/i);
+});
+
+/**
+ * `SUBTIER_EVIDENCE` is prose that mirrors `subTierEvidenceOk`, and nothing tied the two together — a
+ * pre-existing gap this change sharpens, because the architect·III string said "a program finished" to
+ * athletes who can now satisfy it with a block. Assert the key set so editing one side fails loudly.
+ */
+test('sub-tier evidence copy covers exactly the engine’s evidence branches', () => {
+  const withEvidence = [];
+  for (const family of FAMILIES.slice(0, -1)) {
+    for (const row of subTierStandards(family, null)) {
+      if (row.evidence) withEvidence.push(`${family}:${row.tier}`);
+    }
+  }
+  assert.deepEqual(
+    withEvidence.sort(),
+    ['architect:3', 'craftsman:3', 'established:4', 'legend:4'],
+    'the engine has exactly four evidence branches — the copy must cover those and no others',
+  );
 });
 
 test('a requirement of zero is never printed', () => {

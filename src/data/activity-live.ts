@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import type { ActivityRecord, Modality } from '@/domain/activity/history-core';
 import type { ActivityDetail } from '@/domain/activity/detail-core';
+import { playlistFromRow, type WorkoutPlaylistLink } from '@/domain/workout/playlist';
 import { equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
 
 /**
@@ -130,7 +131,7 @@ export async function fetchActivityDetail(id: string): Promise<ActivityDetail | 
 
   // Everything below is decoration on a session that already loaded — a failure in any of it must not
   // take the detail screen down, so each piece degrades to absent.
-  const [chapterName, programName, partners, milestones, ordinal] = await Promise.all([
+  const [chapterName, programName, partners, playlist, milestones, ordinal] = await Promise.all([
     w.chapter_id
       ? supabase.from('chapters').select('name').eq('id', w.chapter_id).maybeSingle().then((r) => r.data?.name ?? null)
       : Promise.resolve(null),
@@ -140,6 +141,20 @@ export async function fetchActivityDetail(id: string): Promise<ActivityDetail | 
     (async (): Promise<string[]> => {
       const r = await supabase.from('workouts').select('partners').eq('id', id).maybeSingle();
       return (r.data as { partners: string[] | null } | null)?.partners ?? [];
+    })(),
+    /*
+     * The playlist (W-19 §9A). Its own query for the same reason `partners` has one: these columns arrive
+     * in migration 0105, and a column PostgREST cannot find fails the whole select with a 42703 rather
+     * than returning a null field. Named in the big select above, an unapplied 0105 would take the entire
+     * Activity Detail screen down for every session ever logged.
+     */
+    (async (): Promise<WorkoutPlaylistLink | null> => {
+      const r = await supabase
+        .from('workouts')
+        .select('playlist_url, playlist_service, playlist_name')
+        .eq('id', id)
+        .maybeSingle();
+      return playlistFromRow(r.data as Parameters<typeof playlistFromRow>[0]);
     })(),
     (async (): Promise<string[]> => {
       const r = await supabase
@@ -187,6 +202,7 @@ export async function fetchActivityDetail(id: string): Promise<ActivityDetail | 
     programId: w.program_id,
     programName,
     partners,
+    playlist,
     milestones: mine,
     ordinal,
   };

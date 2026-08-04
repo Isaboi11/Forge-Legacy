@@ -17,6 +17,8 @@ import { addSquadComment, fetchSquadPost, fmtDuration, fmtVolume, squadPostTypeD
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { openPlaylist, PlaylistChip } from '@/components/forge/composites/Playlist';
+import { playlistFromRow } from '@/domain/workout/playlist';
 
 /**
  * Squad Post Detail — the real, squad-backed thread (built to `Post Detail.dc.html`'s squad chrome).
@@ -214,6 +216,13 @@ function VideoBlock({ uri }: { uri: string }) {
 }
 
 function RecapBlock({ summary }: { summary: WorkoutSummary }) {
+  // Re-validated rather than trusted: the snapshot is jsonb on a row, so it is the one input here that
+  // did not come back through a typed column with 0105's constraint on it.
+  const playlist = playlistFromRow(
+    summary.playlist
+      ? { playlist_url: summary.playlist.url, playlist_service: summary.playlist.service, playlist_name: summary.playlist.displayName }
+      : null,
+  );
   return (
     <View style={styles.recapBlock}>
       <View style={styles.recapStatRow}>
@@ -249,6 +258,22 @@ function RecapBlock({ summary }: { summary: WorkoutSummary }) {
               </Text>
             </View>
           ))}
+        </View>
+      ) : null}
+
+      {/*
+        What they trained to — WSR-001 §6.3, the one squad-card exception the playlist shares with
+        duration.
+
+        SNAPSHOTTED ON THE POST, so it reads whatever the session looked like when it was shared. It is
+        also validated twice before it reaches this line: `playlistFromRow` re-checks the URL's host
+        against the service tag on the way out of the snapshot, and 0105's CHECK constraint stopped a
+        mismatched pair reaching the database at all. That matters here and nowhere else in the app,
+        because this is the one place the chip is tapped by somebody who did not type the link.
+      */}
+      {playlist ? (
+        <View style={styles.recapPlaylist}>
+          <PlaylistChip link={playlist} onOpen={() => void openPlaylist(playlist)} />
         </View>
       ) : null}
     </View>
@@ -345,6 +370,7 @@ const styles = StyleSheet.create({
 
   // recap breakdown
   recapBlock: { marginTop: 16 },
+  recapPlaylist: { marginTop: 12 },
   recapStatRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
   recapStat: { alignItems: 'center', gap: 3, paddingHorizontal: 16 },
   recapStatN: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', color: flColor.cream100 },

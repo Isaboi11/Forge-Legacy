@@ -2,6 +2,7 @@ import { getProgramDefinitions } from '@/domain/training/programs';
 import { DEMO_ACTIVE_ID } from '@/domain/training/active-program-core';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { dayLabel, plannedDays, trainingDays } from '@/domain/program/progress-core';
+import { groupFieldsOf, sessionSetsFor } from './session-core';
 import type { ProgramStructure } from '@/data/programs-live';
 import type { ActiveSession, SessionExercise, WorkoutSectionKind } from './types';
 import { EMPTY_RESULT, activityFromKey, cardioKey, deriveName, type Modality } from './conditioning';
@@ -75,6 +76,10 @@ export function buildSessionFromProgram(
       // are meaningless for it, and building three of them would ask the athlete to run the distance
       // three times. The prescription rides along, `null` included: null means the program set no
       // target, and coercing it to 0 would turn "run what you've got" into a permanently-met goal.
+      // Circuit membership rides along on every exercise, loose or grouped, so the logger can rebuild
+      // the same blocks the program describes without a second source of truth about where they end.
+      const group = groupFieldsOf(ex);
+
       if (ex.kind === 'cardio') {
         const activity = activityFromKey(ex.catalogKey) ?? 'run';
         const modality: Modality = ex.modality === 'indoor' ? 'indoor' : 'outdoor';
@@ -87,25 +92,24 @@ export function buildSessionFromProgram(
           targetMi: ex.targetMi ?? null,
           targetPaceSec: ex.targetPaceSec ?? null,
           targetSpdMph: ex.targetSpdMph ?? null,
+          targetSec: ex.targetSec ?? null,
           cardio: { ...EMPTY_RESULT },
+          ...group,
           section: sec.key,
           position: exercises.length,
           sets: [{ setIndex: 0, weight: null, targetReps: 0, actualReps: null, done: false, durationSec: null, distanceMi: null }],
         });
         continue;
       }
+
+      // The ladder survives the crossing — see `sessionSetsFor`, which owns that rule and is tested.
       exercises.push({
         catalogKey: ex.catalogKey,
         name: ex.name,
+        ...group,
         section: sec.key,
         position: exercises.length,
-        sets: Array.from({ length: Math.max(1, ex.sets ?? 3) }, (_, s) => ({
-          setIndex: s,
-          weight: null,
-          targetReps: ex.reps ?? 10,
-          actualReps: null,
-          done: false,
-        })),
+        sets: sessionSetsFor(ex),
       });
     }
   }

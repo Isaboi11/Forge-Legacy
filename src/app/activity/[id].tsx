@@ -20,6 +20,8 @@ import {
 } from '@/domain/activity/detail-core';
 import { useQuery } from '@/lib/useQuery';
 import { useUnits } from '@/lib/settings';
+import { openPlaylist } from '@/components/forge/composites/Playlist';
+import { playlistLabel, type WorkoutPlaylistLink } from '@/domain/workout/playlist';
 
 /**
  * W-19 Activity Detail (`Forge Activity Detail.dc.html`) — one logged session, read-only. Reached from
@@ -30,12 +32,13 @@ import { useUnits } from '@/lib/settings';
  *
  * DEFERRED vs the `.dc`, each because the data or destination doesn't exist (omitted, not faked):
  *  · Per-mile splits — nothing records split times; the design's are decorative offsets off the average.
- *  · Playlist — no such data.
  *  · Share / Export — the overflow menu's two items only raise toasts in the design; there is no share
  *    or export path here, and a button that only says "Exporting…" exports nothing.
  *  · The ordinal doesn't open the Legacy Timeline — that screen doesn't exist. Exercise rows and Program
  *    ARE tappable, because Exercise Detail (W-22) and Program Detail do.
  *  · Exercise media thumbs — the catalog has no media for any exercise, so the equipment glyph stands in.
+ *  · The playlist row's cover-art thumbnail — Workout-Playlist-Amendment-001 §2 rules out fetching any
+ *    playlist metadata, so there is no artwork to show. The row itself is BUILT (§9A, migration 0105).
  */
 
 function Glyph({ d, size = 16, color, width = 1.8 }: { d: string; size?: number; color: string; width?: number }) {
@@ -182,11 +185,31 @@ function Body({
       )}
 
       {/* attribution */}
-      {detail.partners.length || detail.chapterName || detail.programId ? (
+      {detail.partners.length || detail.playlist || detail.chapterName || detail.programId ? (
         <>
           <View style={styles.divider} />
           {detail.partners.length ? (
             <AttrRow label="Trained With" value={detail.partners.join(', ')} />
+          ) : null}
+          {/*
+            PLAYLIST — W-19 §9A, read-only. Between Trained With and Chapter, which is exactly where the
+            `.dc` puts it. §9A: tapping opens the link; there is no edit affordance here, because W-19 is
+            a record of a session and editing belongs to W-17's reflection window.
+
+            `playlistLabel` and not the raw URL, per §5 — and the external-link glyph rather than the
+            chevron the other rows use, because this one leaves the app.
+
+            The design's row also carries a 34×34 cover-art thumbnail. It is omitted rather than faked:
+            §2 rules out fetching any playlist metadata, so there is no artwork and never will be, and an
+            empty bronze square would be a slot advertising an absence.
+          */}
+          {detail.playlist ? (
+            <AttrRow
+              label="Playlist"
+              value={playlistLabel(detail.playlist)}
+              external
+              onPress={() => void openPlaylist(detail.playlist as WorkoutPlaylistLink)}
+            />
           ) : null}
           {detail.chapterName ? <AttrRow label="Chapter" value={detail.chapterName} /> : null}
           {detail.programId ? (
@@ -202,14 +225,21 @@ function Body({
   );
 }
 
-function AttrRow({ label, value, onPress }: { label: string; value: string; onPress?: () => void }) {
+/** `external` swaps the chevron for the ↗ the `.dc` uses on rows that leave the app. */
+function AttrRow({ label, value, onPress, external }: { label: string; value: string; onPress?: () => void; external?: boolean }) {
   const content = (
     <>
       <Text style={styles.attrLabel}>{label}</Text>
       <Text style={styles.attrValue} numberOfLines={2}>
         {value}
       </Text>
-      {onPress ? <Glyph d="M9 6l6 6-6 6" size={16} color={flColor.gray600} width={2} /> : null}
+      {onPress ? (
+        external ? (
+          <Glyph d="M7 17L17 7M9 7h8v8" size={15} color={flColor.bronze400} width={2} />
+        ) : (
+          <Glyph d="M9 6l6 6-6 6" size={16} color={flColor.gray600} width={2} />
+        )
+      ) : null}
     </>
   );
   if (!onPress) return <View style={styles.attrRow}>{content}</View>;

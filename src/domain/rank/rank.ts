@@ -16,6 +16,7 @@ import {
   IMPORT_PRESTIGE_CREDIT,
   MEANINGFUL_WORK_MIN_MINUTES,
   RECENT_ENGAGEMENT,
+  SELF_DIRECTED_BLOCK,
   SUBTIER_ACTIVE_WEEKS,
   type ActivityType,
   type ImprovementRequirement,
@@ -48,10 +49,28 @@ export interface RankSignals {
   /** Meaningful-work sessions, split for prestige import credit. */
   nativeSessions: number;
   importedSessions: number;
-  /** Program graduations, total incl. re-runs (RCM §14.7). */
+  /**
+   * Program graduations, total incl. re-runs (RCM §14.7). A REAL count of graduated program rows, and it
+   * stays that way — see `selfDirectedBlocks` for why nothing is ever folded into it.
+   */
   programGraduations: number;
-  /** Distinct program IDs — the Legend/Legacy milestone (CAL Q14). */
+  /** Distinct program PLANS — the Legend/Legacy milestone (CAL Q14). */
   distinctProgramGraduations: number;
+  /**
+   * Self-directed training blocks derived from the athlete's own history (D-RCM-29, RCM Amendment 002).
+   *
+   * ══ WHY THIS IS A SEPARATE FIELD AND NOT ADDED TO `programGraduations` ══
+   *
+   * It is combined with graduations at the GATE ONLY (`structuredDevelopment`). It must never be folded
+   * into the graduation count, because that count is also what the honors path means by a graduation:
+   * `honor_metrics()` computes `programs_graduated` as a live `count(*)` over `programs where state =
+   * 'graduated'`, and `first_program_graduated` / `programs_graduated_5|10|25|50` fire off it.
+   *
+   * An honor is a permanent claim about a specific act. "5 Programs Graduated" awarded to an athlete who
+   * graduated none would be a false statement in a record this product promises cannot be rewritten. The
+   * firewall is that there is nothing to fold — the two numbers never meet outside a `>=` comparison.
+   */
+  selfDirectedBlocks: number;
   sealedChapters: number;
   /** Goal participation events resolved via chapter sealing (RCM §14.9). */
   goalEvents: number;
@@ -108,6 +127,78 @@ export function countActiveWeeks(dateISOs: readonly string[]): number {
   return weeks.size;
 }
 
+/** Whole weeks between a Monday key and a fixed UTC Monday. Exact integers — UTC has no DST, so every
+ *  Monday is a whole multiple of 7 days from the epoch Monday. */
+function weekIndex(mondayKey: string): number {
+  return Math.round((Date.parse(`${mondayKey}T00:00:00Z`) - Date.parse('1970-01-05T00:00:00Z')) / (7 * 86_400_000));
+}
+
+/**
+ * SELF-DIRECTED TRAINING BLOCKS — structured development the athlete performed without a program row
+ * (D-RCM-29). Six qualifying weeks inside any eight consecutive calendar weeks; see `SELF_DIRECTED_BLOCK`
+ * for why the window exists and why consecutive weeks would have been a streak.
+ *
+ * DISTINCT DAYS, NOT SESSIONS. Three ten-minute walks on one Saturday is one day of training, not a
+ * trained week — and counting sessions would let it read as one. This is the whole reason the bucket is
+ * a `Set` of dates rather than a tally.
+ *
+ * Blocks NEVER OVERLAP: each qualifying week is consumed by at most one block. That is what makes
+ * "distinct blocks" well-defined for the Legend/Legacy milestone without any taxonomy — the partition of
+ * calendar time IS the distinctness rule, and no block can be "run twice" the way a program can.
+ *
+ * The scan is greedy by earliest completion, which is the optimal strategy for maximum non-overlapping
+ * intervals — so no athlete is ever under-credited by unlucky alignment of their qualifying weeks.
+ *
+ * KNOWN LIMITATION, inherited not introduced: `mondayWeekKey` buckets by UTC, so a Sunday-evening session
+ * in UTC−8 lands in the following week. `countActiveWeeks` has always had this. The two-week tolerance is
+ * incidentally the mitigation — one mis-bucketed session almost never costs a block — but the real fix
+ * (a local date on the workout) is a separate change, because it would move `nativeActiveWeeks` for every
+ * athlete in the #1 rank category.
+ */
+export function countSelfDirectedBlocks(dateISOs: readonly string[]): number {
+  const daysByWeek = new Map<string, Set<string>>();
+  for (const iso of dateISOs) {
+    const day = iso.slice(0, 10);
+    const wk = mondayWeekKey(day);
+    let days = daysByWeek.get(wk);
+    if (!days) daysByWeek.set(wk, (days = new Set()));
+    days.add(day);
+  }
+
+  const qualifying: number[] = [];
+  for (const [wk, days] of daysByWeek) {
+    if (days.size >= SELF_DIRECTED_BLOCK.minDaysPerWeek) qualifying.push(weekIndex(wk));
+  }
+  qualifying.sort((a, b) => a - b);
+
+  const { weeks, windowWeeks } = SELF_DIRECTED_BLOCK;
+  let blocks = 0;
+  for (let i = 0; i + weeks - 1 < qualifying.length; ) {
+    if (qualifying[i + weeks - 1] - qualifying[i] <= windowWeeks - 1) {
+      blocks++;
+      i += weeks; // consume them — a week belongs to one block only
+    } else {
+      i++; // too spread out; slide the anchor, losing nothing
+    }
+  }
+  return blocks;
+}
+
+/**
+ * STRUCTURED DEVELOPMENT — the evidence the Program Progression row actually admits (D-RCM-29).
+ *
+ * One definition, exported, because this sum is asked for in six places: the promotion gate, both
+ * sub-tier evidence branches, and two rows on the What's Next screen. Six copies of one rule is exactly
+ * the drift `standards.ts` exists to prevent — and the specific failure would be showing an athlete a
+ * different total than the one that promotes them. Callers must call this, never re-add the two fields.
+ */
+export const structuredDevelopment = (s: RankSignals): number => s.programGraduations + s.selfDirectedBlocks;
+
+/** The distinct variant (CAL Q14). Blocks need no de-duplication — they occupy disjoint spans of calendar
+ *  time by construction, so no two blocks are ever the same block counted twice. */
+export const distinctStructuredDevelopment = (s: RankSignals): number =>
+  s.distinctProgramGraduations + s.selfDirectedBlocks;
+
 /** Active weeks whose Monday falls within the last `windowWeeks` of `asOfISO` — the recent-engagement
  *  signal (native sessions only should be passed in). */
 export function countRecentActiveWeeks(dateISOs: readonly string[], asOfISO: string, windowWeeks = RECENT_ENGAGEMENT.windowWeeks): number {
@@ -153,14 +244,24 @@ export function meetsFamilyPromotion(target: import('./thresholds.ts').Promotabl
   const credit = prestige ? IMPORT_PRESTIGE_CREDIT : 1;
   const effectiveAW = s.nativeActiveWeeks + credit * s.importedActiveWeeks;
   const effectiveSessions = s.nativeSessions + credit * s.importedSessions;
+  /*
+   * The Program Progression row admits two forms of evidence (D-RCM-29), exactly as the active-weeks and
+   * volume rows above already admit two (native and imported, CAL Q11). That precedent is what makes this
+   * compatible with §14.11's "no substitute paths": the prohibition is on a surplus in ONE ROW covering a
+   * deficit in ANOTHER, and nothing here does that — every row below still binds independently.
+   *
+   * Blocks take no import multiplier: they are derived from native session dates only. When an import
+   * pipeline lands, whether an imported block credits at all is an open question in the amendment.
+   */
+  const structure = structuredDevelopment(s);
 
   return (
     s.journeyElapsedDays >= r.timeGateDays &&
     effectiveAW >= r.cumulativeActiveWeeks &&
     (r.nativeActiveWeekFloor == null || s.nativeActiveWeeks >= r.nativeActiveWeekFloor) &&
     effectiveSessions >= r.volumeSessions &&
-    s.programGraduations >= r.programGraduations &&
-    (r.distinctProgramGraduations == null || s.distinctProgramGraduations >= r.distinctProgramGraduations) &&
+    structure >= r.programGraduations &&
+    (r.distinctProgramGraduations == null || distinctStructuredDevelopment(s) >= r.distinctProgramGraduations) &&
     s.sealedChapters >= r.sealedChapters &&
     s.goalEvents >= r.goalEvents &&
     s.primaryGoalsAchieved >= r.primaryGoalsAchieved &&
@@ -172,9 +273,11 @@ export function meetsFamilyPromotion(target: import('./thresholds.ts').Promotabl
 /** Extra confirming evidence a specific sub-tier step demands beyond within-family AW (RCM §13.7). */
 function subTierEvidenceOk(family: RankFamily, targetSubTier: number, s: RankSignals): boolean {
   if (family === 'craftsman' && targetSubTier === 3) return s.improvement.totalPBs >= 1; // first improvement
-  if (family === 'architect' && targetSubTier === 3) return s.programGraduations >= 1; // 1 graduation
+  // Structured development, not graduations specifically (D-RCM-29) — same evidence rule as the gate, so
+  // an athlete cannot be promoted INTO Architect on a block and then held at II for want of one.
+  if (family === 'architect' && targetSubTier === 3) return structuredDevelopment(s) >= 1;
   if (family === 'established' && targetSubTier === 4) return s.sealedChapters >= 3; // entry 2 + 1 more
-  if (family === 'legend' && targetSubTier === 4) return s.programGraduations >= 7; // entry 6 + 1 more
+  if (family === 'legend' && targetSubTier === 4) return structuredDevelopment(s) >= 7; // entry 6 + 1 more
   return true;
 }
 

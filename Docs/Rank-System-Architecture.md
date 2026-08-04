@@ -1,8 +1,14 @@
-# Rank System Architecture v1.0
+# Rank System Architecture v1.1
 
-**Status:** LOCKED v1.0
+**Status:** LOCKED v1.1
 **Type:** Architecture Specification
-**Date:** June 2026
+**Date:** June 2026 · amended 2026-08-02
+
+> **AMENDMENT APPLIED:** `Rank-Computation-Model-Amendment-002-Self-Directed-Blocks.md` (**R-D48**,
+> 2026-08-02) — structured development may be evidenced by graduated programs **or** self-directed
+> training blocks. Applied in §14 (milestone table) and §15 (Established + Legend identity statements), so
+> RS-D18 continues to hold for an athlete who reached those ranks without a program. §15's Craftsman test
+> ("through programs **or deliberate programming**") is the source authority and is unchanged.
 
 **Authority Chain:**
 - FORGE_LEGACY_PRODUCT_DNA.md
@@ -443,7 +449,7 @@ No signature milestone is required for Foundation, Builder, or Craftsman. Signat
 | Builder | None |
 | Craftsman | None |
 | Architect | First completed and sealed Chapter |
-| Established | Combination milestone: multiple completed programs + multiple completed and sealed Chapters |
+| Established | Combination milestone: multiple completed **structured development cycles** (programs graduated or self-directed training blocks — R-D48) + multiple completed and sealed Chapters |
 | Legend | Combination milestone: multi-year development + program progression + chapter progression + sustained improvement |
 | Legacy | Repeated pattern milestone: repeated cycles of commitment, development, achievement, reflection, and fulfillment over many years |
 
@@ -484,8 +490,7 @@ Evidence required:
 Evidence required:
 - Sustained consistency
 - Repeated improvement — a pattern of growth, not a single peak
-- Structured development through multiple programs
-- Multiple graduated programs
+- Structured development through multiple training blocks — programs graduated, or blocks the athlete ran themselves *(R-D48; replaces the former pair of bullets "Structured development through multiple programs" / "Multiple graduated programs", which said one thing twice and excluded the program-less athlete from a rank they could otherwise honestly claim)*
 - Multiple completed and sealed Chapters
 - Goal fulfillment — goals set and achieved, not merely set
 - A substantial body of work
@@ -495,7 +500,7 @@ Evidence required:
 Evidence required:
 - Multi-year consistency
 - Repeated improvement across different time periods
-- Multiple structured journeys — multiple programs representing distinct development phases, not a single continuous program
+- Multiple structured journeys — multiple programs **or self-directed training blocks** representing distinct development phases, not a single continuous effort *(R-D48)*
 - Multiple Chapters that collectively tell a real story
 - Repeated goal fulfillment
 - Narrative depth — the athlete's training history constitutes a genuine journey, not merely a collection of sessions
@@ -615,6 +620,7 @@ Primary surface: P-2 Progress Hub What's Next section (consistent with the five-
 | RS-D18 | Identity Credibility Principle governs all timing decisions | Every decision about time gates, cadence, and spacing traces to the principle that promotions must feel believable. The athlete must be able to honestly say the rank's identity statement when they receive the promotion. |
 | R-D46 | Imported history receives partial credit and contextual recognition; prestige ranks (Architect and above) require Forge-native confirmation | Partial credit honors the "Never Charge For History" principle and recognizes genuine pre-Forge development in Training Volume, Consistency, Historical Improvement, Timeline History, P-2 Progress Context, and Athlete Background. Prestige-rank eligibility cannot be satisfied by import alone because the Identity Credibility Principle requires that Architect and above reflect intentional development within Forge Legacy itself — identity forged here, not imported. |
 | R-D47 | P-2 must surface both sub-tier progress and major rank progress simultaneously | Athletes need both the short-term journey (sub-tier — actionable, near-term) and the long-term journey (family-level — motivational context) at the same time. Surfacing only one creates tunnel vision or disorientation. Guided Transparency governs implementation: direction visible, formulas never visible. |
+| R-D48 | Structured development may be evidenced by graduated programs **or** by self-directed training blocks | Implements §15's Craftsman identity test ("through programs **or deliberate programming**") at every rank requiring structured development, and resolves the conflict between RS-D8 ("Programs… are not required at every rank transition") and the Program Progression thresholds as computed in RCM §14.7 — which made them a hard gate at four of six transitions, capping the program-less athlete at Craftsman permanently. The Established and Legend identity statements are restated so RS-D18 continues to hold: the athlete can honestly say what the rank claims. Programs remain primary category #3 and remain the faster route — a graduation credits at completion with no minimum weekly density, where a block requires six qualifying weeks. See `Rank-Computation-Model-Amendment-002-Self-Directed-Blocks.md` (D-RCM-29), 2026-08-02. |
 
 ---
 
