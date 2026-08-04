@@ -22,6 +22,7 @@ import {
 import type { Sex } from '@/domain/profile/schema';
 import { useToast } from '@/hooks/useCeremony';
 import { useMediaPicker } from '@/lib/useMediaPicker';
+import { AvatarCropEditor } from '@/components/forge/AvatarCropEditor';
 import { useProfile } from '@/lib/profile';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 
@@ -92,6 +93,8 @@ function Form({ initial, onDone }: { initial: AccountIdentity; onDone: () => voi
   const [sex, setSex] = useState<Sex>(initial.sex);
   const [athleteType, setAthleteType] = useState<AthleteType>((initial.athleteType as AthleteType) || 'Hybrid');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  /** The picked-but-not-yet-positioned image. Non-null while the crop editor is up. */
+  const [cropping, setCropping] = useState<string | null>(null);
   const [uStatus, setUStatus] = useState<UStatus>('unchanged');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -121,9 +124,17 @@ function Form({ initial, onDone }: { initial: AccountIdentity; onDone: () => voi
     }, 450);
   };
 
+  /**
+   * Pick, then POSITION.
+   *
+   * `allowsEditing` is left off deliberately: on web it does nothing, and on iOS its square hint is
+   * largely ignored — so on both platforms this app is actually used from, the OS crop was not a crop.
+   * The picked image goes to `AvatarCropEditor` instead, which produces an already-square file, so what
+   * lands in storage IS the avatar and every surface that draws one is untouched.
+   */
   const onPickPhoto = async () => {
-    const asset = await pick({ kind: 'images', title: 'Profile photo', allowsEditing: true, aspect: [1, 1], quality: 0.85 });
-    if (asset?.uri) setPhotoUri(asset.uri);
+    const asset = await pick({ kind: 'images', title: 'Profile photo', quality: 0.92 });
+    if (asset?.uri) setCropping(asset.uri);
   };
 
   const dirty =
@@ -136,6 +147,17 @@ function Form({ initial, onDone }: { initial: AccountIdentity; onDone: () => voi
   // 'idle' is a CLEARED handle, which 0009 allows (null) — not an error.
   const handleOk = uStatus === 'unchanged' || uStatus === 'available' || uStatus === 'idle';
   const canSave = dirty && handleOk && !!name.trim() && !saving;
+
+  const cropEditor = cropping ? (
+    <AvatarCropEditor
+      uri={cropping}
+      onClose={() => setCropping(null)}
+      onDone={(uri) => {
+        setCropping(null);
+        setPhotoUri(uri);
+      }}
+    />
+  ) : null;
 
   const onSave = async () => {
     if (!canSave) return;
@@ -161,6 +183,7 @@ function Form({ initial, onDone }: { initial: AccountIdentity; onDone: () => voi
 
   return (
     <>
+      {cropEditor}
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingBottom: 40 + insets.bottom }]}
         keyboardShouldPersistTaps="handled"
@@ -171,7 +194,7 @@ function Form({ initial, onDone }: { initial: AccountIdentity; onDone: () => voi
             <Avatar src={photoUri ?? initial.avatarUrl ?? undefined} name={name || '  '} size="profile" ring />
           </Pressable>
           <Pressable onPress={() => void onPickPhoto()} accessibilityRole="button" accessibilityLabel="Change photo">
-            <Text style={styles.changePhoto}>{photoUri ? 'Photo ready — save to apply' : 'Change photo'}</Text>
+            <Text style={styles.changePhoto}>{photoUri ? 'Positioned — save to apply' : 'Change photo'}</Text>
           </Pressable>
         </View>
 
