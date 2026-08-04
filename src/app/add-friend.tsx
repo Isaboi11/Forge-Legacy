@@ -18,6 +18,7 @@ import {
   requestFriend,
   type FriendSummary,
 } from '@/data/friends-live';
+import { rankLabel } from '@/data/athlete-profile-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flRadius, flShadow } from '@/constants/foundation';
@@ -60,6 +61,15 @@ import { flColor, flRadius, flShadow } from '@/constants/foundation';
  *
  * 4. THE ERROR TOAST NO LONGER SHOWS AN INVITE ICON. The design uses `invite` for every outcome including
  *    failures, tinting it sage or bronze but never changing the glyph.
+ *
+ * 5. A MATCH RENDERS AS A PERSON, NOT A SENTENCE. Reported by a tester: "it just says send them a request
+ *    but doesn't let me view their profile." It was accurate. A resolved handle produced one line of grey
+ *    status text and an armed Add button — the athlete's own name appeared only inside that sentence, and
+ *    nothing on the screen was tappable. So the only way to find out whether the account you found is the
+ *    person you meant was to send them a request and see. Every OTHER list on this screen is made of rows
+ *    that open `/athlete/[id]`; the search result, the one row you deliberately went looking for, was the
+ *    exception. It is now a row like the rest: face, name, handle, rank, and a press that opens the profile.
+ *    The Add button is unchanged — sending still takes one tap, it just no longer has to be a guess.
  *
  * THE INPUT IS PINNED, not scrolled. The design is a single scrolling column, which is fine at four
  * decorative suggestions and three fake requests — but with real lists of any length the Add field
@@ -224,6 +234,33 @@ export default function AddFriendScreen() {
           {status.icon}
           <Text style={[styles.statusText, { color: status.color }]}>{status.text}</Text>
         </View>
+
+        {/* ── THE MATCH, AS A PERSON. Shown for every resolved handle regardless of relationship — an
+                athlete you're already friends with is still someone you might have looked up to open. ── */}
+        {checked === raw && found ? (
+          <Pressable
+            onPress={() => router.push({ pathname: '/athlete/[id]', params: { id: found.id } })}
+            accessibilityRole="button"
+            accessibilityLabel={`View ${found.name}'s profile`}
+            style={({ pressed }) => [styles.result, pressed ? styles.pressed : null]}
+          >
+            <Avatar src={found.avatarUrl ?? undefined} name={found.name} size={42} />
+            <View style={styles.resultText}>
+              <Text style={styles.resultName} numberOfLines={1}>
+                {found.name}
+              </Text>
+              <Text style={styles.resultMeta} numberOfLines={1}>
+                {[found.handle ? `@${found.handle}` : null, rankLabel(found.rankFamily, found.rankLevel)]
+                  .filter(Boolean)
+                  .join('  ·  ')}
+              </Text>
+            </View>
+            <View style={styles.resultCta}>
+              <Text style={styles.resultCtaLabel}>Profile</Text>
+              <ChevronGlyph />
+            </View>
+          </Pressable>
+        ) : null}
       </View>
 
       <ScrollView
@@ -324,7 +361,8 @@ function statusFor(o: {
   if (o.pendingIn) return { text: `${o.pendingIn.name} already asked you — accepting is below.`, color: '#8FB295', icon: <CheckGlyph /> };
   // Only claim a request is sendable once we know somebody holds the handle.
   if (o.checked === o.raw && !o.found) return { text: `No athlete has the handle @${o.raw}.`, color: '#A97E68', icon: <WarnGlyph /> };
-  if (o.checked === o.raw && o.found) return { text: `Send a friend request to ${o.found.name}.`, color: '#8FB295', icon: <CheckGlyph /> };
+  // The name isn't repeated here — the card below says who it is. This says what Add will do.
+  if (o.checked === o.raw && o.found) return { text: 'Add sends them a request, or open their profile first.', color: '#8FB295', icon: <CheckGlyph /> };
   return { text: `Checking @${o.raw}…`, color: flColor.gray600, icon: info };
 }
 
@@ -397,6 +435,13 @@ function WarnGlyph({ size = 13, color = '#A97E68' }: { size?: number; color?: st
     </Svg>
   );
 }
+function ChevronGlyph({ size = 14, color = flColor.bronze400 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M9 5l7 7-7 7" />
+    </Svg>
+  );
+}
 function CheckGlyph({ size = 13, color = '#8FB295' }: { size?: number; color?: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
@@ -425,6 +470,13 @@ const styles = StyleSheet.create({
 
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 11, paddingHorizontal: 2 },
   statusText: { flex: 1, fontSize: 12, lineHeight: 17 },
+
+  result: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12, paddingVertical: 11, paddingLeft: 12, paddingRight: 12, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  resultText: { flex: 1, minWidth: 0 },
+  resultName: { fontSize: 15, fontWeight: '700', color: flColor.cream100 },
+  resultMeta: { marginTop: 2, fontSize: 11.5, color: flColor.gray400 },
+  resultCta: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 4 },
+  resultCtaLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.bronze400 },
 
   section: { marginTop: 22 },
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10, paddingHorizontal: 2 },
