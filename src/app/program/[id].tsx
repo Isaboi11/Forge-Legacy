@@ -18,9 +18,11 @@ import {
   endProgram,
   fetchProgram,
   fetchProgramWorkouts,
+  runProgramAgain,
   startProgram,
   type SavedProgram,
 } from '@/data/programs-live';
+import { fmtLongDate, spanLabel, workoutsLabel } from '@/domain/program/graduation';
 import {
   buildLog,
   computeProgress,
@@ -131,7 +133,9 @@ export default function ProgramDetailScreen() {
   const weeks = buildLog(structure, workouts);
   const equipment = equipmentOf(structure);
   const trained = workouts.length > 0;
-  const showProgress = state === 'active' || state === 'ended_early' || state === 'graduated';
+  /** Sealed: a permanent legacy record. Not editable, not deletable, never reactivated (Amendment-001). */
+  const terminal = state === 'graduated' || state === 'ended_early';
+  const showProgress = state === 'active' || terminal;
 
   const goTrain = async () => {
     if (!nextSession(structure, workouts.length)) return; // program finished — nothing left to train
@@ -146,8 +150,22 @@ export default function ProgramDetailScreen() {
     try {
       if (state === 'active') {
         await goTrain();
+      } else if (terminal) {
+        /*
+         * RUN IT AGAIN — a NEW program, never a rewind (W-3 §7.2).
+         *
+         * This branch used to fall through to `startProgram`, which had no state check, so the button on
+         * a finished program flipped the sealed record back to Active — erasing the graduation, its date
+         * and its place in the record. Amendment-001 §1: "A Graduated program cannot be reactivated…
+         * History cannot be rewritten." `start_program` now refuses outright (0104); this is the path
+         * that was always meant to be here.
+         *
+         * `push`, not `replace`: the original record is where they came from and back should return to it.
+         */
+        const again = await runProgramAgain(program.id);
+        router.push({ pathname: '/program/[id]', params: { id: again.id } });
       } else {
-        // start_program ends whatever else was active, atomically (0017).
+        // Future → Active. start_program ends whatever else was active, atomically (0017).
         await startProgram(program.id);
         setProgram({ ...program, state: 'active' });
         // Land on Home, which is where the change is visible: the new program anchors Today's Workout
@@ -224,6 +242,22 @@ export default function ProgramDetailScreen() {
           {structure.weeks} weeks • {progress.perWeek} {progress.perWeek === 1 ? 'day' : 'days'} / week
         </Text>
 
+        {/* THE SEALED RECORD (W-3 §7). A finished program is history, and history states when and how
+            much. `fmtLongDate`/`spanLabel` are the same functions the M-4 ceremony uses, so the modal
+            congratulating you cannot disagree with the record it congratulates you on. */}
+        {terminal && program.endedAt ? (
+          <View style={styles.sealed}>
+            <Text style={styles.sealedWhen}>
+              {state === 'graduated' ? 'Graduated' : 'Ended'} {fmtLongDate(program.endedAt)}
+            </Text>
+            <Text style={styles.sealedWhat}>
+              {[workoutsLabel(workouts.length), spanLabel(program.startedAt, program.endedAt)]
+                .filter(Boolean)
+                .join(' · ')}
+            </Text>
+          </View>
+        ) : null}
+
         {showProgress ? (
           <TourAnchor id="program-progress" style={styles.progressCard}>
             <View style={styles.progressHead}>
@@ -295,16 +329,21 @@ export default function ProgramDetailScreen() {
           {view.cta}
         </Button>
         <View style={styles.ctaRow}>
-          <View style={styles.ctaHalf}>
-            <Button
-              variant="secondary"
-              fullWidth
-              onPress={() => router.push({ pathname: '/program-builder', params: { o: 'edit', id: program.id } })}
-              accessibilityLabel="Edit program"
-            >
-              Edit
-            </Button>
-          </View>
+          {/* Edit is gone once the record is sealed — W-3 §7 calls it read-only, and editing the plan
+              behind a finished program would rewrite what the athlete actually did. Duplicate stays in
+              every state: it creates a new row and never touches the original. */}
+          {terminal ? null : (
+            <View style={styles.ctaHalf}>
+              <Button
+                variant="secondary"
+                fullWidth
+                onPress={() => router.push({ pathname: '/program-builder', params: { o: 'edit', id: program.id } })}
+                accessibilityLabel="Edit program"
+              >
+                Edit
+              </Button>
+            </View>
+          )}
           <View style={styles.ctaHalf}>
             <Button
               variant="secondary"
@@ -322,12 +361,16 @@ export default function ProgramDetailScreen() {
               <Text style={styles.secondaryText}>End Program</Text>
             </Pressable>
           ) : null}
-          {/* Delete is available in every state, not just Planned — a graduated or ended program the
-              athlete no longer wants was otherwise stuck in their library with no way out. The workouts
-              logged against it survive the delete (0018 nulls the link rather than cascading). */}
-          <Pressable onPress={() => setSheet('remove')} accessibilityRole="button" accessibilityLabel="Delete program" style={styles.secondaryBtn}>
-            <Text style={[styles.secondaryText, styles.deleteText]}>Delete Program</Text>
-          </Pressable>
+          {/* NOT on a sealed record. Amendment-001 §6: "Graduated and Ended Early programs are permanent
+              legacy records. They may never be deleted." The RLS policy refuses it too since 0104 — this
+              hides an action that would otherwise fail, rather than being the only thing standing in the
+              way. A live program's delete is unchanged; the workouts logged against it survive either way
+              (0018 nulls the link rather than cascading). */}
+          {terminal ? null : (
+            <Pressable onPress={() => setSheet('remove')} accessibilityRole="button" accessibilityLabel="Delete program" style={styles.secondaryBtn}>
+              <Text style={[styles.secondaryText, styles.deleteText]}>Delete Program</Text>
+            </Pressable>
+          )}
         </View>
       </TourAnchor>
 
@@ -442,6 +485,9 @@ function WeekCard({
                     ) : (
                       d.exercises.map((ex, xi) => (
                         <View key={`${ex.name}-${xi}`} style={styles.exRow}>
+                          {/* Named once, above the block it opens — so a superset reads as one thing
+                              you do rather than two lifts that happen to be listed together. */}
+                          {ex.blockLabel ? <Text style={styles.blockLabel}>{ex.blockLabel}</Text> : null}
                           <Text style={styles.exName}>{ex.name}</Text>
                           {ex.sets.length ? (
                             <View style={styles.setList}>
@@ -484,6 +530,9 @@ const styles = StyleSheet.create({
   metaFamily: { fontSize: 13.5, fontWeight: '600', color: flColor.gray400 },
   metaLine: { marginTop: 3, fontSize: 13, color: flColor.gray600 },
 
+  sealed: { marginTop: 16, gap: 4 },
+  sealedWhen: { fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
+  sealedWhat: { fontSize: 13, color: flColor.gray600 },
   progressCard: { marginTop: 18, padding: 16, borderRadius: flRadius.xl, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card, gap: 11 },
   progressHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
   progressWeek: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
@@ -529,6 +578,7 @@ const styles = StyleSheet.create({
 
   exList: { paddingLeft: 51, paddingRight: 15, paddingBottom: 12 },
   exRow: { paddingVertical: 9, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  blockLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 5 },
   exName: { fontSize: 13.5, fontWeight: '600', color: flColor.cream100, marginBottom: 5 },
   setList: { gap: 3 },
   setRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },

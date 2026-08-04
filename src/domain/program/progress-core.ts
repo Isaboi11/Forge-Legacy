@@ -9,6 +9,7 @@
  */
 
 import type { ProgramDay, ProgramStructure } from '@/data/programs-live';
+import { blockRoundsText, deriveBlocks, isAmrap, schemeText, type PrescriptionBlock } from './prescription.ts';
 
 export type ProgramState = 'future' | 'active' | 'graduated' | 'ended_early';
 
@@ -48,14 +49,86 @@ export function trainingDays(days: ProgramDay[]): ProgramDay[] {
   return days.filter((d) => d.warmup.length + d.main.length + d.cooldown.length > 0);
 }
 
-/** Sessions per week: what the athlete configured, floored by what is actually built. */
+/** How many weeks the program runs, floored at one. */
+const weekCount = (s: ProgramStructure): number => Math.max(1, s.weeks);
+
+/**
+ * Sessions in each week, one entry per week.
+ *
+ * ══ WHY THIS IS AN ARRAY ══
+ *
+ * Weeks are not all the same size. A real block runs six days for two weeks and then five, or drops a
+ * conditioning day in a deload. Deriving ONE number from week 1 and multiplying reported a length the
+ * program does not have, and — worse — walked the schedule with a stride that stopped matching it: on
+ * the first session past the first short week, `nextSession` asked a five-day week for its sixth day,
+ * got nothing, and returned null. The athlete's "Continue Training" button went dead mid-program with
+ * every session still unlogged.
+ *
+ * A week with nothing built falls back to the CONFIGURED count, so a program that is still being
+ * authored still reports a sane shape instead of a length of zero.
+ */
+export function weekSizes(structure: ProgramStructure): number[] {
+  return Array.from({ length: weekCount(structure) }, (_, wi) => {
+    const built = trainingDays(plannedDays(structure, wi)).length;
+    return Math.max(1, built || structure.daysPerWeek);
+  });
+}
+
+/** One prescribed session's place in the program. `day` is null only for an unbuilt fallback slot. */
+export interface ScheduleSlot {
+  weekIndex: number;
+  dayIndex: number;
+  day: ProgramDay | null;
+}
+
+/**
+ * Every prescribed session, in order — the single spine that progress, the log and "what's next" all
+ * read. Walking a real list rather than doing arithmetic with a stride is what makes ragged weeks work.
+ */
+export function scheduleSlots(structure: ProgramStructure): ScheduleSlot[] {
+  const out: ScheduleSlot[] = [];
+  weekSizes(structure).forEach((size, weekIndex) => {
+    const days = trainingDays(plannedDays(structure, weekIndex));
+    for (let dayIndex = 0; dayIndex < size; dayIndex += 1) {
+      out.push({ weekIndex, dayIndex, day: days[dayIndex] ?? null });
+    }
+  });
+  return out;
+}
+
+/**
+ * Sessions in the FIRST week — the headline "3 days a week" figure.
+ *
+ * Deliberately not used for scheduling any more; `scheduleSlots` is. Kept because a program's summary
+ * line still wants a single number, and week 1 is the honest one to show.
+ */
 export function sessionsPerWeek(structure: ProgramStructure): number {
-  const built = trainingDays(plannedDays(structure, 0)).length;
-  return Math.max(1, built || structure.daysPerWeek);
+  return weekSizes(structure)[0];
 }
 
 export function totalSessions(structure: ProgramStructure): number {
-  return Math.max(1, structure.weeks) * sessionsPerWeek(structure);
+  return scheduleSlots(structure).length;
+}
+
+/**
+ * Has the athlete logged every session this program prescribes? — i.e. the program has graduated.
+ *
+ * ══ THIS RULE IS IMPLEMENTED TWICE, AND THE OTHER COPY IS IN SQL ══
+ *
+ * `public.program_total_sessions(jsonb)` (migration `0104_program_graduation.sql`) is a transliteration
+ * of `weekSizes` + `totalSessions` above. It has to exist because `save_workout` decides graduation
+ * server-side — an athlete must not be able to assert their own graduation, since five permanent honors
+ * and a rank family hang off the count.
+ *
+ * **Change this rule and you must change that function.** The golden vectors in
+ * `__tests__/progress-core.test.mjs` are duplicated verbatim into a self-check in 0104 that aborts the
+ * migration on a mismatch, so the two can only drift through a deliberate edit to both test lists.
+ *
+ * Extracted from the anonymous `const done = completed >= total` inside `computeProgress` so the rule
+ * has a name, one TS implementation, and something for the SQL comment to point at.
+ */
+export function isFinalSession(structure: ProgramStructure, completedCount: number): boolean {
+  return completedCount >= totalSessions(structure);
 }
 
 export const dayLabel = (d: ProgramDay, i: number) => (d.name.trim() ? d.name : `Day ${d.letter || String.fromCharCode(65 + i)}`);
@@ -79,19 +152,27 @@ export interface ProgramProgress {
 }
 
 export function computeProgress(structure: ProgramStructure, completedCount: number): ProgramProgress {
-  const perWeek = sessionsPerWeek(structure);
-  const total = totalSessions(structure);
+  const slots = scheduleSlots(structure);
+  const total = slots.length;
   const completed = Math.max(0, Math.min(total, completedCount));
-  const done = completed >= total;
+  const done = isFinalSession(structure, completed);
+
+  // The slot the athlete is standing on — the next one owed, or the last one when the program is done.
+  const here = slots[done ? total - 1 : completed];
+  const weekIndex = here?.weekIndex ?? 0;
+  // Sessions that came before this week; what is left of `completed` is this week's own progress.
+  const weekStart = slots.findIndex((s) => s.weekIndex === weekIndex);
+  const perWeek = weekSizes(structure)[weekIndex] ?? 1;
+
   return {
     completed,
     total,
-    week: Math.min(Math.max(1, structure.weeks), Math.floor(completed / perWeek) + 1),
-    completedThisWeek: completed % perWeek,
+    week: weekIndex + 1,
+    completedThisWeek: Math.max(0, completed - Math.max(0, weekStart)),
     perWeek,
     pct: total > 0 ? Math.round((completed / total) * 100) : 0,
-    nextWeekIndex: done ? null : Math.floor(completed / perWeek),
-    nextDayIndex: done ? null : completed % perWeek,
+    nextWeekIndex: done ? null : here?.weekIndex ?? null,
+    nextDayIndex: done ? null : here?.dayIndex ?? null,
   };
 }
 
@@ -100,11 +181,10 @@ export function nextSession(
   structure: ProgramStructure,
   completedCount: number,
 ): { weekIndex: number; dayIndex: number; day: ProgramDay } | null {
-  const p = computeProgress(structure, completedCount);
-  if (p.nextWeekIndex == null || p.nextDayIndex == null) return null;
-  const days = trainingDays(plannedDays(structure, p.nextWeekIndex));
-  const day = days[p.nextDayIndex];
-  return day ? { weekIndex: p.nextWeekIndex, dayIndex: p.nextDayIndex, day } : null;
+  const slots = scheduleSlots(structure);
+  const next = slots[Math.max(0, completedCount)];
+  if (!next?.day) return null;
+  return { weekIndex: next.weekIndex, dayIndex: next.dayIndex, day: next.day };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -120,6 +200,14 @@ export interface LogExercise {
   sets: LogSet[];
   /** Prescription shown when the session hasn't been trained yet. */
   planned: string;
+  /**
+   * The block this row belongs to, stated on its FIRST member only — "Superset · 2 exercises,
+   * alternated", "HIIT Finisher · 4 rounds". Empty on a loose exercise and on every later member.
+   *
+   * Without it the log lists a superset as two unrelated lifts in a suggestive order, which is exactly
+   * how a superset gets trained as two ordinary exercises.
+   */
+  blockLabel?: string;
 }
 export interface LogDay {
   name: string;
@@ -139,11 +227,29 @@ export interface LogWeek {
 const fmtWeight = (w: number | null) => (w != null && w > 0 ? `${w} lb` : null);
 
 function plannedLine(d: ProgramDay): LogExercise[] {
-  return [...d.warmup, ...d.main, ...d.cooldown].map((ex) => ({
-    name: ex.name,
-    sets: [],
-    planned: ex.sets != null && ex.reps != null ? `${ex.sets} × ${ex.reps}` : '',
-  }));
+  // schemeText, not `sets × reps` — a ladder, a timed hold and a cardio bout all have to read as what
+  // they are here, or the log describes a different session from the one the athlete is about to train.
+  //
+  // Blocks are derived with `deriveBlocks` rather than read off each row, because the block a row
+  // belongs to is a property of its NEIGHBOURS — grouping by id alone fuses two circuits that happen
+  // to share one. The label sits on the first member so it reads as a heading, not a repeated tag.
+  return deriveBlocks([...d.warmup, ...d.main, ...d.cooldown]).flatMap((b) =>
+    b.items.map((ex, i) => ({
+      name: ex.name,
+      sets: [],
+      planned: schemeText(ex),
+      ...(i === 0 && b.groupId && b.items.length > 1 ? { blockLabel: blockLabelOf(b) } : null),
+    })),
+  );
+}
+
+/** "Superset · 2 exercises, alternated" · "HIIT Finisher · 4 rounds" · "AMRAP · 8:00 cap". */
+function blockLabelOf(b: PrescriptionBlock): string {
+  const name = b.name || (b.kind === 'superset' ? 'Superset' : 'Circuit');
+  if (isAmrap(b)) return `${name} · ${blockRoundsText(b)} cap`;
+  if (b.kind === 'superset') return `${name} · ${b.items.length} exercises, alternated`;
+  const r = blockRoundsText(b);
+  return r ? `${name} · ${r} rounds` : name;
 }
 
 function loggedLine(w: LoggedWorkout): LogExercise[] {
@@ -171,13 +277,16 @@ const dateLabel = (iso: string) => {
  * slot it was trained in.
  */
 export function buildLog(structure: ProgramStructure, logged: LoggedWorkout[]): LogWeek[] {
-  const perWeek = sessionsPerWeek(structure);
+  const sizes = weekSizes(structure);
   const ordered = [...logged].sort((a, b) => Date.parse(a.startedAt) - Date.parse(b.startedAt));
+  // Where each week starts in the flat session list. Ragged weeks mean this is a running total, not a
+  // multiplication — week 4 of a 6,6,5,… program starts at session 17, never at 4 × anything.
+  const offsets = sizes.reduce<number[]>((acc, size, i) => [...acc, (acc[i - 1] ?? 0) + (sizes[i - 1] ?? 0)], []);
 
-  return Array.from({ length: Math.max(1, structure.weeks) }, (_, wi) => {
+  return sizes.map((size, wi) => {
     const planned = trainingDays(plannedDays(structure, wi));
-    const days: LogDay[] = Array.from({ length: perWeek }, (_, di) => {
-      const slot = wi * perWeek + di;
+    const days: LogDay[] = Array.from({ length: size }, (_, di) => {
+      const slot = offsets[wi] + di;
       const done = ordered[slot];
       const plan = planned[di];
       const num = slot + 1;
@@ -266,8 +375,10 @@ export function viewForState(state: ProgramState, owned: boolean): StateView {
   switch (state) {
     case 'active':
       return { pill: 'Active', cta: 'Continue Training', secondary: 'End Program' };
+    // W-3 §7.2's own words. "Run Again" read like a rewind, which is exactly the thing this must not be
+    // and exactly what the button used to do — it creates a NEW program and leaves the record sealed.
     case 'graduated':
-      return { pill: 'Graduated', cta: 'Run Again', secondary: null };
+      return { pill: 'Graduated', cta: 'Run This Program Again', secondary: null };
     case 'ended_early':
       return { pill: 'Ended early', cta: 'Restart Program', secondary: null };
     default:

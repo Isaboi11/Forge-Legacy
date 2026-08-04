@@ -6,6 +6,14 @@ import type { LoggedWorkout, ProgramState } from '@/domain/program/progress-core
  * The Forge Program Builder `.dc` model, persisted to the `programs` table (0013), plus the lifecycle
  * (0017) and the workout attribution (0018) that Program Detail reads.
  */
+/**
+ * One prescribed rep count.
+ *
+ * `'F'` is to failure — a real prescription ("Dips: F-F-F"), and NOT the same as an absent target. A
+ * number would be a lie about what was asked for, and 0 would read as a set with nothing in it.
+ */
+export type RepTarget = number | 'F';
+
 export type ProgramExercise = {
   id?: string;
   catalogKey?: string;
@@ -15,6 +23,62 @@ export type ProgramExercise = {
   type?: string;
   sets?: number;
   reps?: number;
+  /**
+   * A PER-SET ladder — "6-6-4-4" is `[6, 6, 4, 4]`, "10-10-10-F" is `[10, 10, 10, 'F']`.
+   *
+   * When present this is authoritative and its LENGTH is the set count, so `sets`/`reps` are ignored.
+   * Absent means the flat case, and every program authored before this reads unchanged.
+   *
+   * ══ WHY THIS IS NOT `sets` × `reps` ══
+   *
+   * A wave like 6-6-4-4 is four different sets at four different loads; flattening it to 4×6 prescribes
+   * eight reps nobody asked for and erases the intensity curve that IS the program. The session model
+   * has always held `targetReps` per set — only the program layer was collapsing it.
+   */
+  repScheme?: RepTarget[];
+  /**
+   * Performed for TIME rather than reps — "30s Banded Pull Aparts", "1m Assault Bike".
+   *
+   * Mutually exclusive with reps in practice, and checked first when rendering a prescription: an item
+   * with both is read as timed, because that is the stricter reading of what the author wrote.
+   */
+  durationSec?: number | null;
+  /** "(Optional) Stairmaster" — prescribed, but the athlete owes nothing by skipping it. */
+  optional?: boolean;
+  /**
+   * ══ CIRCUIT GROUPING ══
+   *
+   * Adjacent items sharing a `groupId` are ONE block — a warm-up circuit, a HIIT finisher, an AMRAP.
+   * The array stays FLAT on purpose: every existing reader (`equipmentOf`, the log's planned line, the
+   * builder's day rows) walks `[...warmup, ...main, ...cooldown]` and keeps working untouched, because
+   * a circuit member is still an ordinary exercise. The grouping is a view, derived by adjacency.
+   *
+   * The metadata repeats on each member rather than living on the first. Redundant, and deliberately so:
+   * an item that is dragged, copied or filtered out of its block still says what it belonged to, instead
+   * of silently becoming a loose exercise or orphaning the rest of the round.
+   */
+  groupId?: string;
+  /** "HIIT Finisher", "Warm up muscle group" — the block's name, not the exercise's. */
+  groupName?: string;
+  /**
+   * WHICH KIND OF BLOCK — and therefore how the logger draws it.
+   *
+   * A SUPERSET is two to four lifts alternated set for set, resting only after the last of them; the
+   * logger fuses them into one card with A/B rows. A CIRCUIT is the same grouping performed as rounds
+   * with its own banner and (for an AMRAP) its own clock.
+   *
+   * ABSENT MEANS 'circuit', which is what every block authored before this was — so the shipped programs
+   * and every AMRAP render exactly as they did. Nothing needed a migration because the whole prescription
+   * lives in `programs.structure`, which is jsonb.
+   */
+  groupKind?: 'superset' | 'circuit';
+  /** How many times through — the `⟳3` on the card. For a superset, the number of sets each lift gets. */
+  groupRounds?: number;
+  /**
+   * An AMRAP's time cap in seconds ("8m" → 480). When set, `groupRounds` is not a prescription but a
+   * ceiling nobody claims: you go as many rounds as you get, and the clock ends it.
+   */
+  groupCapSec?: number | null;
   /**
    * 'cardio' prescribes a run, walk or ride at any position in the day. Absent means 'strength', so
    * every program authored before this reads unchanged. The structure is jsonb, so these cost no
@@ -32,6 +96,14 @@ export type ProgramExercise = {
   targetMi?: number | null;
   targetPaceSec?: number | null;
   targetSpdMph?: number | null;
+  /**
+   * A cardio bout prescribed by DURATION — "Treadmill Run 15 min", "Easy Row 5 min".
+   *
+   * The commonest way a lifting program prescribes cardio, and the one target the model had no field
+   * for: it held miles, pace and speed, so "row for 10 minutes" could only be stored as a distance the
+   * author never wrote.
+   */
+  targetSec?: number | null;
 };
 export type ProgramDay = {
   letter: string;
@@ -112,8 +184,21 @@ export async function createProgram(structure: ProgramStructure): Promise<{ id: 
 
 /**
  * Adopt a built-in catalog program: write it out as a real `programs` row so it can hold a lifecycle
- * and collect workouts. Idempotent — starting the same catalog program again resumes the existing row
- * (enforced by 0019's partial unique index) rather than forking a second copy with separate progress.
+ * and collect workouts.
+ *
+ * Idempotent for a LIVE copy — starting the same catalog program again resumes the row already in
+ * flight rather than forking a second one with separate progress (0019's intent, now enforced by
+ * `programs_one_live_per_source`).
+ *
+ * ══ IT MUST NOT RESUME A SEALED COPY, AND THE `.in(...)` IS WHY ══
+ *
+ * This used to match ANY row with the same source, in any state. Once a program could actually graduate
+ * (0104) that meant adopting Strength Foundation I again handed back the GRADUATED row — a finished
+ * record with a Start button on it, and no way ever to run the program a second time. Sealed copies
+ * accumulate as permanent history (Amendment-001 §6); only a live one is the same run.
+ *
+ * `.limit(1)` is load-bearing too: 0104 lets sealed duplicates exist, and `.maybeSingle()` THROWS on
+ * more than one row.
  */
 export async function adoptCatalogProgram(
   sourceDefinitionId: string,
@@ -129,6 +214,9 @@ export async function adoptCatalogProgram(
     .select(SELECT)
     .eq('athlete_id', user.id)
     .eq('source_definition_id', sourceDefinitionId)
+    .in('state', ['future', 'active'])
+    .order('created_at', { ascending: false })
+    .limit(1)
     .maybeSingle();
   if (fe) throw fe;
   if (existing) return toProgram(existing as ProgramRow);
@@ -197,13 +285,72 @@ export async function fetchActiveProgram(): Promise<SavedProgram | null> {
 /**
  * Start `id`, ending whatever was active. Atomic in the DB (0017) so the "one active program" rule
  * can't be broken by a race between two devices.
+ *
+ * RAISES on a graduated or ended program since 0104 — a sealed record is never reactivated
+ * (Amendment-001 §1). Use `runProgramAgain` for that; it is a new program, not a rewind.
  */
 export async function startProgram(id: string): Promise<void> {
   const { error } = await supabase.rpc('start_program', { p_program_id: id });
   if (error) throw error;
 }
 
-export async function endProgram(id: string, outcome: Extract<ProgramState, 'graduated' | 'ended_early'>): Promise<void> {
+/**
+ * Run a finished program again — W-3 §7.2 "Run This Program Again" / §14.6 "Restart Program", one path
+ * behind two labels.
+ *
+ * A NEW Future row: same name, same structure, fresh progress, **and the same `source_definition_id`**.
+ * The original is not touched, not linked to, and not readable from it (§7.2: "No visible link to the
+ * original"). Keeping the source id is what lets `distinctProgramCount` (src/domain/rank/signals.ts)
+ * read two graduations of one plan as two completions of one distinct plan — nulling it would hand out
+ * a second "different program" credit for repeating yourself.
+ */
+export async function runProgramAgain(id: string): Promise<SavedProgram> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not signed in.');
+
+  const src = await fetchProgram(id);
+  if (!src) throw new Error('Program not found.');
+
+  const { data, error } = await supabase
+    .from('programs')
+    .insert({
+      athlete_id: user.id,
+      name: src.name,
+      structure: src.structure,
+      source_definition_id: src.sourceDefinitionId,
+    })
+    .select(SELECT)
+    .single();
+
+  // 23505 = they already have a LIVE copy of this plan (planned it again before finishing this one).
+  // Opening the one they have beats refusing: two live copies is the single thing the index exists to
+  // prevent, and the athlete's intent — "I want to run this" — is already satisfied by that row.
+  if (error) {
+    if (error.code === '23505' && src.sourceDefinitionId) {
+      const { data: live } = await supabase
+        .from('programs')
+        .select(SELECT)
+        .eq('athlete_id', user.id)
+        .eq('source_definition_id', src.sourceDefinitionId)
+        .in('state', ['future', 'active'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (live) return toProgram(live as ProgramRow);
+    }
+    throw error;
+  }
+  return toProgram(data as ProgramRow);
+}
+
+/**
+ * End an ACTIVE program early. Deliberately not parameterised over 'graduated': graduation is automatic
+ * and server-side (Amendment-001 §4, and `save_workout` since 0104), so no client path may hand one out
+ * — what a graduation buys is five permanent honors and a rank family.
+ */
+export async function endProgram(id: string, outcome: Extract<ProgramState, 'ended_early'>): Promise<void> {
   const { error } = await supabase
     .from('programs')
     .update({ state: outcome, ended_at: new Date().toISOString(), updated_at: new Date().toISOString() })
@@ -214,6 +361,9 @@ export async function endProgram(id: string, outcome: Extract<ProgramState, 'gra
 /**
  * Delete a planned program. The workouts logged against it survive (0018 uses `on delete set null`) —
  * removing a plan must never erase training the athlete actually did.
+ *
+ * A sealed program cannot be deleted at all: the RLS policy refuses it (0104) and W-3 hides the action.
+ * Amendment-001 §6 — graduated and ended programs are permanent legacy records.
  */
 export async function deleteProgram(id: string): Promise<void> {
   const { error } = await supabase.from('programs').delete().eq('id', id);

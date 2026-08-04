@@ -242,6 +242,67 @@ export const hasMainExercise = (d: ProgramDraft) =>
     ? d.weekPlans.some((w) => w.days.some((day) => day.main.length > 0))
     : d.days.some((day) => day.main.length > 0);
 
+// ─────────────────────────────────────────────────────────────────────────────
+// SUPERSETS — authored in the builder, performed as one card in the logger
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Pair the exercise at `index` with the one after it, inside one section of one day.
+ *
+ * ADJACENT WITHIN A SECTION, always. Both the logger and the program layer resolve a block by walking
+ * adjacent items with the same `groupId`, so a pairing whose members are apart — or split across
+ * Warm-up and Main — would silently read as two separate one-member blocks. Pairing the LAST row is a
+ * no-op rather than an error: there is nothing after it to pair with.
+ *
+ * Joining an existing superset EXTENDS it (the whole run takes the same id and round count) rather than
+ * starting a rival block beside it.
+ *
+ * `groupRounds` is the longest member's set count, matching the logger's own rule, so a 3-set press
+ * paired with a 4-set row gives four rounds and the fourth simply has one lift in it.
+ */
+export function pairWithNext(list: ProgramExercise[], index: number): ProgramExercise[] {
+  if (index < 0 || index >= list.length - 1) return list;
+  const cur = list[index];
+  const gid = cur.groupKind === 'superset' && cur.groupId ? cur.groupId : `ss${newExerciseId()}`;
+  let start = index;
+  if (cur.groupKind === 'superset' && cur.groupId) {
+    while (start > 0 && list[start - 1].groupId === cur.groupId) start -= 1;
+  }
+  const end = index + 1;
+  let rounds = 1;
+  for (let i = start; i <= end; i += 1) rounds = Math.max(rounds, list[i].sets ?? 1);
+  return list.map((x, i) =>
+    i >= start && i <= end ? { ...x, groupId: gid, groupKind: 'superset' as const, groupName: 'Superset', groupRounds: rounds, groupCapSec: null } : x,
+  );
+}
+
+/** Dissolve the block containing `index` back into ordinary rows. Prescriptions are untouched. */
+export function unpairAt(list: ProgramExercise[], index: number): ProgramExercise[] {
+  const gid = list[index]?.groupId;
+  if (!gid) return list;
+  let a = index;
+  while (a > 0 && list[a - 1].groupId === gid) a -= 1;
+  let b = index;
+  while (b < list.length - 1 && list[b + 1].groupId === gid) b += 1;
+  return list.map((x, i) => {
+    if (i < a || i > b) return x;
+    const { groupId: _g, groupName: _n, groupKind: _k, groupRounds: _r, groupCapSec: _c, ...rest } = x;
+    return rest;
+  });
+}
+
+/** Which superset a row belongs to within its section: its position and the block's size. */
+export function pairingAt(list: ProgramExercise[], index: number): { pos: number; count: number } | null {
+  const gid = list[index]?.groupId;
+  if (!gid || list[index].groupKind !== 'superset') return null;
+  let a = index;
+  while (a > 0 && list[a - 1].groupId === gid) a -= 1;
+  let b = index;
+  while (b < list.length - 1 && list[b + 1].groupId === gid) b += 1;
+  if (b - a + 1 < 2) return null;
+  return { pos: index - a + 1, count: b - a + 1 };
+}
+
 /** The persisted shape — the draft minus its editing-session bookkeeping. */
 export function draftToStructure(d: ProgramDraft): ProgramStructure {
   return {

@@ -10,6 +10,9 @@ import {
   clampWeeks,
   daysLoseContent,
   draftHasContent,
+  pairWithNext,
+  pairingAt,
+  unpairAt,
   draftToStructure,
   ensureWeeks,
   hasMainExercise,
@@ -324,4 +327,61 @@ test('completedWeeks counts only weeks with a main exercise', () => {
   assert.equal(completedWeeks(d), 1);
   d = copyWeek(d, 0, 1);
   assert.equal(completedWeeks(d), 2);
+});
+
+// ── SUPERSETS, authored in the builder ──────────────────────────────────────────────────────────────
+
+const row = (name, sets, extra) => ({ id: name, name, sets, reps: 8, ...(extra ?? {}) });
+
+test('pairing joins a row to the one below it, and only those two', () => {
+  const out = pairWithNext([row('Press', 3), row('Row', 3), row('Curl', 3)], 0);
+  assert.equal(out[0].groupKind, 'superset');
+  assert.equal(out[1].groupKind, 'superset');
+  assert.equal(out[0].groupId, out[1].groupId, 'one block, one id');
+  assert.equal(out[2].groupId, undefined, 'the third row is untouched');
+  assert.equal(out[0].groupRounds, 3);
+});
+
+test('rounds come from the LONGEST member, so no prescribed set is dropped', () => {
+  const out = pairWithNext([row('Press', 3), row('Row', 4)], 0);
+  assert.equal(out[0].groupRounds, 4, 'four rounds — the press simply sits out the fourth');
+});
+
+test('pairing the LAST row is a no-op — there is nothing below it', () => {
+  const list = [row('Press', 3), row('Row', 3)];
+  assert.deepEqual(pairWithNext(list, 1), list);
+});
+
+test('joining an existing superset EXTENDS it rather than forking a rival block beside it', () => {
+  const two = pairWithNext([row('Press', 3), row('Row', 3), row('Fly', 3)], 0);
+  const three = pairWithNext(two, 1); // from the second member, add the third
+  assert.equal(three[0].groupId, three[1].groupId);
+  assert.equal(three[1].groupId, three[2].groupId, 'all three are one block');
+  assert.deepEqual(pairingAt(three, 2), { pos: 3, count: 3 });
+});
+
+test('pairingAt reports the letter position the logger will show', () => {
+  const out = pairWithNext([row('Press', 3), row('Row', 3)], 0);
+  assert.deepEqual(pairingAt(out, 0), { pos: 1, count: 2 }, 'A');
+  assert.deepEqual(pairingAt(out, 1), { pos: 2, count: 2 }, 'B');
+});
+
+test('a circuit is not reported as a pairing — the builder only authors supersets', () => {
+  const circuit = [row('Burpee', 1, { groupId: 'c1', groupRounds: 4 }), row('Wall Ball', 1, { groupId: 'c1', groupRounds: 4 })];
+  assert.equal(pairingAt(circuit, 0), null, 'no groupKind means circuit, and this affordance is not about circuits');
+});
+
+test('unpairing dissolves the whole block and leaves the prescriptions alone', () => {
+  const paired = pairWithNext([row('Press', 3), row('Row', 4), row('Curl', 3)], 0);
+  const flat = unpairAt(paired, 1);
+  assert.equal(pairingAt(flat, 0), null);
+  assert.ok(!('groupId' in flat[0]) && !('groupKind' in flat[0]), 'the fields are removed, not nulled');
+  assert.equal(flat[0].sets, 3);
+  assert.equal(flat[1].sets, 4, 'set counts are untouched by the ungrouping');
+  assert.equal(flat.length, 3);
+});
+
+test('unpairing a loose row changes nothing', () => {
+  const list = [row('Press', 3)];
+  assert.deepEqual(unpairAt(list, 0), list);
 });

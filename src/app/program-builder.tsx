@@ -76,7 +76,10 @@ import {
   newDraft,
   nextIncompleteWeek,
   normalizeDraft,
+  pairWithNext,
+  pairingAt,
   saveProgramDraft,
+  unpairAt,
   setRepeatMode,
   setVaryMode,
   weekBuilt,
@@ -333,7 +336,10 @@ export default function ProgramBuilderScreen() {
       let active = true;
       void (async () => {
         const stored = await loadProgramDraft();
-        const inbox = await readBuilderInbox();
+        // Only picks addressed to THIS builder. The single-day Workout Builder (W-25) shares the same
+        // round-trip, and a pick meant for it must not be absorbed into a program day.
+        const raw = await readBuilderInbox();
+        const inbox = raw && (raw.dest ?? 'program') === 'program' ? raw : null;
         let d = stored ? normalizeDraft(stored) : null;
 
         // Edit / Duplicate entry (from Program Detail). Hydrate from the source UNLESS this is the same
@@ -518,6 +524,10 @@ export default function ProgramBuilderScreen() {
             });
           }}
           onRemove={(section, i) => patchSection(draft.openDay!, section, (list) => list.filter((_, k) => k !== i))}
+          // Superset authoring (0106). Pure list-in/list-out, so the rules — adjacency, extend rather
+          // than fork, rounds from the longest member — live in the tested draft model, not in a handler.
+          onPair={(section, i) => patchSection(draft.openDay!, section, (list) => pairWithNext(list, i))}
+          onUnpair={(section, i) => patchSection(draft.openDay!, section, (list) => unpairAt(list, i))}
           onMove={(section, i, dir) =>
             patchSection(draft.openDay!, section, (list) => {
               const j = i + dir;
@@ -1447,6 +1457,8 @@ function DayBuilder({
   onModality,
   onSlotA,
   onSlotB,
+  onPair,
+  onUnpair,
 }: {
   day: ProgramDay;
   index: number;
@@ -1464,6 +1476,9 @@ function DayBuilder({
   onSlotA: (section: BuilderSection, i: number, dir: 1 | -1) => void;
   /** Reps for a lift, pace or speed for a block. */
   onSlotB: (section: BuilderSection, i: number, dir: 1 | -1) => void;
+  /** Pair a row with the one below it — a superset, authored (see `pairWithNext`). */
+  onPair: (section: BuilderSection, i: number) => void;
+  onUnpair: (section: BuilderSection, i: number) => void;
 }) {
   const total = dayTotal(day);
   const est = Math.round((day.main.length * 9 + day.warmup.length * 4 + day.cooldown.length * 4) / 5) * 5;
@@ -1522,12 +1537,15 @@ function DayBuilder({
                     first={i === 0}
                     last={i === items.length - 1}
                     anchor={isMain && i === 0 ? 'day-reps' : undefined}
+                    pairing={pairingAt(items, i)}
                     onUp={() => onMove(sec.key, i, -1)}
                     onDown={() => onMove(sec.key, i, 1)}
                     onRemove={() => onRemove(sec.key, i)}
                     onModality={(m) => onModality(sec.key, i, m)}
                     onSlotA={(dir) => onSlotA(sec.key, i, dir)}
                     onSlotB={(dir) => onSlotB(sec.key, i, dir)}
+                    onPair={() => onPair(sec.key, i)}
+                    onUnpair={() => onUnpair(sec.key, i)}
                   />
                 ))}
 
@@ -1583,24 +1601,31 @@ function ExerciseCard({
   first,
   last,
   anchor,
+  pairing,
   onUp,
   onDown,
   onRemove,
   onModality,
   onSlotA,
   onSlotB,
+  onPair,
+  onUnpair,
 }: {
   item: ProgramExercise;
   first: boolean;
   last: boolean;
   /** Walkthrough target — set on the first main-section card so the sets/reps step has something to ring. */
   anchor?: TourAnchorId;
+  /** Which superset this row is in, if any — its letter position and the block's size. */
+  pairing: { pos: number; count: number } | null;
   onUp: () => void;
   onDown: () => void;
   onRemove: () => void;
   onModality: (m: Modality) => void;
   onSlotA: (dir: 1 | -1) => void;
   onSlotB: (dir: 1 | -1) => void;
+  onPair: () => void;
+  onUnpair: () => void;
 }) {
   /**
    * The SAME card for a lift and a run — same shell, header and reorder cluster. Only two things differ:
@@ -1624,14 +1649,24 @@ function ExerciseCard({
   const bOpen = cardio && (speed ? item.targetSpdMph == null : item.targetPaceSec == null);
 
   return (
-    <TourAnchor id={anchor} style={styles.exCard}>
+    <TourAnchor id={anchor} style={[styles.exCard, pairing ? styles.exCardPaired : null]}>
+      {/* A superset, said once at the top of the block rather than repeated on every member. The A/B
+          letter is what the logger will show, so the athoring surface and the doing surface agree. */}
+      {pairing && pairing.pos === 1 ? (
+        <View style={styles.pairHead}>
+          <Text style={styles.pairHeadText}>Superset · {pairing.count} exercises, alternated</Text>
+          <Pressable onPress={onUnpair} accessibilityRole="button" accessibilityLabel="Break this superset" hitSlop={8}>
+            <Text style={styles.pairBreak}>Break</Text>
+          </Pressable>
+        </View>
+      ) : null}
       <View style={styles.exTop}>
         <View style={styles.exIcon}>
           {cardio ? <ActivityGlyph activity={activity} size={19} color={flColor.bronze400} /> : <EquipIcon equip={item.equip} size={19} />}
         </View>
         <View style={styles.exText}>
           <Text style={styles.exName} numberOfLines={1}>
-            {item.name}
+            {pairing ? `${String.fromCharCode(64 + pairing.pos)}  ` : ''}{item.name}
           </Text>
           {item.equip ? (
             <Text style={styles.exEquip} numberOfLines={1}>
@@ -1663,6 +1698,15 @@ function ExerciseCard({
           </Pressable>
         </View>
       </View>
+
+      {/* The link lives BETWEEN two rows because that is what it joins. Offered only where there is
+          something below to join to — the last row in a section has nothing to pair with. */}
+      {!last ? (
+        <Pressable onPress={onPair} accessibilityRole="button" accessibilityLabel={`Superset ${item.name} with the exercise below`} style={styles.pairLink}>
+          <Glyph d="M9 7H6a5 5 0 0 0 0 10h3M15 7h3a5 5 0 0 1 0 10h-3M8 12h8" size={14} color={flColor.bronze400} />
+          <Text style={styles.pairLinkText}>{pairing ? 'Add the next one to this superset' : 'Superset with the next exercise'}</Text>
+        </Pressable>
+      ) : null}
 
       {cardio ? (
         <View style={styles.modRow}>
@@ -2030,6 +2074,12 @@ const styles = StyleSheet.create({
     boxShadow: flShadow.borderInset,
     overflow: 'hidden',
   },
+  exCardPaired: { borderColor: flColor.bronzeBorder },
+  pairHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, paddingVertical: 7, paddingHorizontal: 13, backgroundColor: flColor.bronzeTint, borderBottomWidth: 1, borderBottomColor: flColor.bronzeBorderSubtle },
+  pairHeadText: { flex: 1, fontSize: 10.5, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.bronze400 },
+  pairBreak: { fontSize: 10.5, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray400 },
+  pairLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 8, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  pairLinkText: { fontSize: 11, fontWeight: '600', letterSpacing: 0.5, color: flColor.bronze400 },
   exTop: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 12, paddingHorizontal: 13 },
   exIcon: {
     width: 36,
