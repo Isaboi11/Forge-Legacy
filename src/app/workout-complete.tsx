@@ -10,12 +10,14 @@ import { Card } from '@/components/forge/composites/Surface';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { errorMessage, useQuery } from '@/lib/useQuery';
-import { useToast } from '@/hooks/useCeremony';
+import { useCeremony, useToast } from '@/hooks/useCeremony';
 import { saveWorkoutAsTemplate } from '@/data/templates-live';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useUnits } from '@/lib/settings';
 import { displayWeight } from '@/domain/settings/units';
-import { fetchCompletion, saveReflection, type CompletionCardio, type CompletionHero, type ExerciseDelta } from '@/data/workout-complete-live';
+import { fetchCompletion, savePlaylist, saveReflection, type CompletionCardio, type CompletionHero, type ExerciseDelta } from '@/data/workout-complete-live';
+import { openPlaylist, PlaylistChip, PlaylistSheet } from '@/components/forge/composites/Playlist';
+import type { WorkoutPlaylistLink } from '@/domain/workout/playlist';
 import { distanceLabel, fmtClock, fmtPace, toDistance, toPace, type UnitSystem } from '@/domain/run/run-core';
 import { addSquadPost, recapSummaryFrom } from '@/data/squad-feed-live';
 import { fetchMySquads, type SquadSummary } from '@/data/squad-live';
@@ -65,6 +67,33 @@ export default function WorkoutComplete() {
   // Volume is stored in lb; show it in the athlete's system. `fmt` re-expresses per-set strings.
   const { units, fmt } = useUnits();
   const { data, loading, error } = useQuery(() => fetchCompletion(String(id), units), [id, units]);
+
+  /**
+   * M-4 PROGRAM GRADUATED — fired here because W-17's load IS the consumption point (M-4 §6.2), and
+   * because W-17 is the only screen that knows the session just landed.
+   *
+   * The fact comes from `data.graduation`, which the data layer derived from the database rather than
+   * being told by whoever navigated here — so a cold start into this screen still fires it, and nothing
+   * can announce a graduation that did not happen.
+   *
+   * The ceremony renders in the app-level `CeremonyProvider`, so W-17 stays visible and dimmed beneath
+   * it and this screen owns none of the presentation. `mergeCeremonies` dedupes on the id, which matters
+   * because `useQuery` refetches whenever the units preference changes.
+   */
+  const { enqueue } = useCeremony();
+  const graduation = data?.graduation ?? null;
+  useEffect(() => {
+    if (!graduation) return;
+    enqueue({
+      id: `program-grad-${graduation.programId}`,
+      kind: 'programGraduated',
+      programName: graduation.programName,
+      startedAt: graduation.startedAt,
+      graduatedAt: graduation.graduatedAt,
+      workouts: graduation.workouts,
+    });
+  }, [graduation, enqueue]);
+
   const [mySquads, setMySquads] = useState<SquadSummary[] | null>(null);
   const [squadPickerOpen, setSquadPickerOpen] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -81,6 +110,19 @@ export default function WorkoutComplete() {
   const [nameOpen, setNameOpen] = useState(false);
   const [templateName, setTemplateName] = useState('');
   const [note, setNote] = useState('');
+  /*
+   * The playlist, as it stands after any edit made on this screen (§8A.2).
+   *
+   * `undefined` means "untouched — whatever the database said"; null means "the athlete removed it". The
+   * distinction matters because `useQuery` refetches whenever the units preference changes, and a plain
+   * `useState(data?.playlist)` seeded from a load would either be reset by that refetch or need an effect
+   * to re-sync it. Deriving it during render instead is one expression and no effect, which is also what
+   * this repo's react-compiler lint requires.
+   */
+  const [playlistEdit, setPlaylistEdit] = useState<WorkoutPlaylistLink | null | undefined>(undefined);
+  const [playlistSheetOpen, setPlaylistSheetOpen] = useState(false);
+  const [savingPlaylist, setSavingPlaylist] = useState(false);
+  const playlist = playlistEdit !== undefined ? playlistEdit : (data?.playlist ?? null);
   const [sealed, setSealed] = useState(false);
   const [hold] = useState(() => new Animated.Value(0));
   const [holdPct, setHoldPct] = useState(0); // mirror of the hold value → "Keep holding…" + ink-flip past 55%
@@ -126,6 +168,47 @@ export default function WorkoutComplete() {
     }
   };
 
+  /**
+   * ⚠ THIS SHEET MUST RENDER IN THE SAME BRANCH AS THE BUTTON THAT OPENS IT.
+   *
+   * That is not a style note — it is the bug this variable exists to fix. This screen is four early
+   * returns (`seal` / `record` / `reflect` / `share`), and the sheet was written once at the bottom of
+   * the file, inside the LAST of them. "Save this day as a template" lives on the Record step, which
+   * returns long before that line is reached — so the button set `nameOpen` to true and absolutely
+   * nothing appeared. The feature, the data layer, the RPC and the table were all correct and had been
+   * for weeks; the sheet was simply never mounted when it was asked for.
+   *
+   * Held in a variable so both branches render the identical sheet rather than a copy that drifts.
+   */
+  const templateNameSheet = (
+    // Name it here, while you still remember what it was. Prefilled with the session's own name so
+    // keeping that is one tap, and changing it is the same one tap it would have been later.
+    <BottomSheet open={nameOpen} onClose={() => setNameOpen(false)} title="Name this template">
+      <TextInput
+        value={templateName}
+        onChangeText={setTemplateName}
+        placeholder="e.g. Push Day A"
+        placeholderTextColor={flColor.gray600}
+        style={styles.nameInput}
+        accessibilityLabel="Template name"
+        maxLength={60}
+        autoFocus
+        selectTextOnFocus
+        returnKeyType="done"
+        onSubmitEditing={() => void keepAsTemplate()}
+      />
+      <Text style={styles.nameHint}>You&apos;ll find it under Workouts → Templates.</Text>
+      <View style={styles.nameActions}>
+        <Button variant="secondary" fullWidth onPress={() => setNameOpen(false)} accessibilityLabel="Cancel">
+          Cancel
+        </Button>
+        <Button variant="primary" fullWidth onPress={() => void keepAsTemplate()} accessibilityLabel="Save template">
+          {savingTemplate ? 'Saving…' : 'Save Template'}
+        </Button>
+      </View>
+    </BottomSheet>
+  );
+
   const startHold = () => {
     Animated.timing(hold, { toValue: 1, duration: 900, useNativeDriver: false }).start(({ finished }) => {
       if (finished) {
@@ -152,6 +235,42 @@ export default function WorkoutComplete() {
     }
     goHome();
   };
+  /*
+   * §8A.2: the link "saves immediately on 'Save Playlist' confirmation, independent of 'Done'." There is
+   * no save state on W-17 and no Save button — additions here persist the moment they are confirmed,
+   * exactly as notes do (§9.2).
+   *
+   * The optimistic write is reverted on failure rather than left standing. A chip that survives the
+   * failure of the write behind it is the worst outcome available: the athlete stops thinking about it,
+   * and the link is quietly gone by the time they look at W-19.
+   */
+  const onSavePlaylist = (link: WorkoutPlaylistLink | null) => {
+    if (!data || savingPlaylist) return;
+    const previous = playlist;
+    setPlaylistEdit(link);
+    setPlaylistSheetOpen(false);
+    setSavingPlaylist(true);
+    savePlaylist(data.workoutId, link).then(
+      () => {
+        setSavingPlaylist(false);
+        showToast(link ? 'Playlist saved to this session.' : 'Playlist removed.');
+      },
+      (e: unknown) => {
+        setSavingPlaylist(false);
+        setPlaylistEdit(previous);
+        showToast(errorMessage(e));
+      },
+    );
+  };
+  const onOpenPlaylist = () => {
+    if (!playlist) return;
+    void openPlaylist(playlist).then((ok) => {
+      // §2 rules out checking that a link resolves to a real playlist, so this only reports that nothing
+      // on the device would take it — never that the playlist is gone.
+      if (!ok) showToast('Nothing on this device could open that link.');
+    });
+  };
+
   const onShare = () => {
     if (!data) return;
     void Share.share({ title: 'Forge Legacy', message: `${data.workoutName} — sealed. ${vol(data.volume)} ${volUnit} moved.` });
@@ -468,6 +587,9 @@ export default function WorkoutComplete() {
             </Button>
           </View>
         </ScrollView>
+        {/* The Record step owns "Save this day as a template", so it has to own the sheet too — see the
+            note where `templateNameSheet` is built. */}
+        {templateNameSheet}
       </Shell>
     );
   }
@@ -508,6 +630,40 @@ export default function WorkoutComplete() {
             <Text style={styles.addMediaLabel}>Add a Photo or Video</Text>
           </Pressable>
 
+          {/*
+            PLAYLIST — W-17 §8A, Tier 5.
+            The spec files it "alongside notes in this tier", and on this screen the reflection step IS
+            Tier 5, so it sits under the note and the photo offer rather than in its own labelled card.
+
+            §8A.1: when there's no link, the "+ Attach a playlist" CTA is the SOLE element — no empty-state
+            copy, nothing explaining what a playlist section would be. An athlete who doesn't want one
+            should read one short line and move on.
+
+            Authored to the app's language rather than traced: `Forge Workout Complete.dc.html` has no
+            playlist in it (the design's playlist row lives on W-19's `.dc`, which §9A matches exactly).
+            The chip's shape — glyph · name · "Open ›" — is §5's, which both surfaces share.
+          */}
+          {playlist ? (
+            <View style={styles.playlistBlock}>
+              <PlaylistChip
+                link={playlist}
+                onOpen={onOpenPlaylist}
+                onEdit={() => setPlaylistSheetOpen(true)}
+                onRemove={() => onSavePlaylist(null)}
+              />
+            </View>
+          ) : (
+            <Pressable
+              onPress={() => setPlaylistSheetOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Attach a playlist to this session"
+              style={({ pressed }) => [styles.addMedia, styles.playlistBlock, pressed ? styles.addMediaPressed : null]}
+            >
+              <NoteGlyph />
+              <Text style={styles.addMediaLabel}>Attach a Playlist</Text>
+            </Pressable>
+          )}
+
           <View style={styles.reflectActions}>
             <Button variant="primary" fullWidth onPress={onSealNote} accessibilityLabel="Seal the note">
               Seal the Note
@@ -517,6 +673,17 @@ export default function WorkoutComplete() {
             </Button>
           </View>
         </View>
+
+        {/* The same sheet W-9's "⋯ Options" opens (§8A.2). Mounted only while open so its draft fields
+            seed from the current link — see PlaylistSheetProps. */}
+        {playlistSheetOpen ? (
+          <PlaylistSheet
+            initial={playlist}
+            onClose={() => setPlaylistSheetOpen(false)}
+            onSave={onSavePlaylist}
+            saving={savingPlaylist}
+          />
+        ) : null}
       </Shell>
     );
   }
@@ -569,32 +736,7 @@ export default function WorkoutComplete() {
         </Pressable>
       </Modal>
 
-      {/* Name it here, while you still remember what it was. Prefilled with the session's own name so
-          keeping that is one tap, and changing it is the same one tap it would have been later. */}
-      <BottomSheet open={nameOpen} onClose={() => setNameOpen(false)} title="Name this template">
-        <TextInput
-          value={templateName}
-          onChangeText={setTemplateName}
-          placeholder="e.g. Push Day A"
-          placeholderTextColor={flColor.gray600}
-          style={styles.nameInput}
-          accessibilityLabel="Template name"
-          maxLength={60}
-          autoFocus
-          selectTextOnFocus
-          returnKeyType="done"
-          onSubmitEditing={() => void keepAsTemplate()}
-        />
-        <Text style={styles.nameHint}>You&apos;ll find it under Workouts → Templates.</Text>
-        <View style={styles.nameActions}>
-          <Button variant="secondary" fullWidth onPress={() => setNameOpen(false)} accessibilityLabel="Cancel">
-            Cancel
-          </Button>
-          <Button variant="primary" fullWidth onPress={() => void keepAsTemplate()} accessibilityLabel="Save template">
-            {savingTemplate ? 'Saving…' : 'Save Template'}
-          </Button>
-        </View>
-      </BottomSheet>
+      {templateNameSheet}
     </Shell>
   );
 }
@@ -787,6 +929,16 @@ function CameraGlyph({ size = 17, color = flColor.bronze300 }: { size?: number; 
   );
 }
 
+/** §5's music-note mark — the same glyph the chip and the ⋯ Options row use. */
+function NoteGlyph({ size = 17, color = flColor.bronze300 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M9 18V5l11-2v13" />
+      <Path d="M9 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0zM20 16a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
+    </Svg>
+  );
+}
+
 function TemplateGlyph({ size = 15, color = flColor.bronze400 }: { size?: number; color?: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
@@ -865,6 +1017,9 @@ const styles = StyleSheet.create({
   addMedia: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, marginTop: 18, paddingVertical: 14, borderRadius: flRadius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
   addMediaPressed: { opacity: 0.88, borderColor: flColor.bronzeBorder },
   addMediaLabel: { fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },
+  // Tighter than `addMedia`'s own marginTop: the playlist follows the photo offer as the second of two
+  // optional additions, so it reads as a pair rather than as another separated section.
+  playlistBlock: { marginTop: 10 },
   root: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 30, gap: 12 },
   scroll: { paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40 },
