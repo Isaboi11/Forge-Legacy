@@ -14,6 +14,7 @@ import type { Difficulty, ExerciseCategoryKey, PickerItem } from '@/domain/exerc
 // Relative + explicit extension: this is a VALUE import, and `hub-core` has to stay runnable under
 // `node --test`, where the `@/` alias doesn't resolve.
 import { canDoExercise } from '../home-gym/equipment.ts';
+import { matchesSearch } from '../exercise-picker/search-core.ts';
 
 /** The athlete's owned equipment, or `null` when they've never set a Home Gym up. */
 export type HomeGymProfile = readonly string[] | null;
@@ -64,16 +65,19 @@ export function passFilters(x: PickerItem, f: LibraryFilters, homeGym: HomeGymPr
   return true;
 }
 
-/** Name, muscle, equipment or category — the design's four search fields. */
+/**
+ * Name, alias, vernacular, muscle or equipment — token-AND, exactly as the Picker matches.
+ *
+ * TWO SEARCH BOXES OVER THE SAME 794 ROWS MUST NOT DISAGREE. This had drifted twice from the Picker's
+ * rule: it matched one contiguous substring (so "press incline" found nothing), and it never consulted
+ * `ALIASES_BY_ID` at all — so the vernacular names in `aliases.ts` worked in the Picker and silently did
+ * not work here, on the screen literally called the Exercise Library.
+ *
+ * It now delegates to the same matcher rather than restating it, which is the only way the two stay
+ * honest as the alias list grows.
+ */
 export function matchesQuery(x: PickerItem, query: string): boolean {
-  const q = query.trim().toLowerCase();
-  if (!q) return true;
-  return (
-    x.name.toLowerCase().includes(q) ||
-    x.aliases.some((a) => a.toLowerCase().includes(q)) ||
-    x.muscles.some((m) => m.toLowerCase().includes(q)) ||
-    x.equip.toLowerCase().includes(q)
-  );
+  return matchesSearch(x, query);
 }
 
 export interface LibraryState {

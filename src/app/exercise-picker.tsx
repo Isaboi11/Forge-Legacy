@@ -27,6 +27,8 @@ import {
   filterCount,
   filtersActive,
   itemByKey,
+  matchesTokens,
+  searchTokens,
   MUSCLE_FILTER_GROUPS,
   PICKER_DB,
   type Difficulty,
@@ -81,6 +83,7 @@ export default function ExercisePickerScreen() {
     week?: string;
     day?: string;
     section?: string;
+    dest?: string;
   }>();
   const isBuilder = params.mode === 'builder';
   const isReplace = !isBuilder && params.mode !== 'add';
@@ -217,6 +220,9 @@ export default function ExercisePickerScreen() {
       if (!items.length) return;
       if (isBuilder) {
         void writeBuilderInbox({
+          // Which builder asked. Two authoring surfaces share this round-trip now, and each drains
+          // only its own picks (see `builder-inbox`).
+          dest: params.dest === 'workout' ? 'workout' : 'program',
           vary: params.vary === '1',
           week: Number(params.week ?? 0) || 0,
           day: Number(params.day ?? 0) || 0,
@@ -451,8 +457,10 @@ export default function ExercisePickerScreen() {
                 rare one. Search is where finding them actually matters, and it still surfaces them
                 instantly. */}
             {(() => {
-              const q = search.trim().toLowerCase();
-              const rows = q ? CONDITIONING_ROWS.filter((c) => c.name.toLowerCase().includes(q)) : CONDITIONING_ROWS;
+              // Token-AND, the same rule the catalogue uses — otherwise "treadmill run" finds a
+              // lift and misses the treadmill sitting three rows below it.
+              const tokens = searchTokens(search);
+              const rows = tokens.length ? CONDITIONING_ROWS.filter((c) => matchesTokens(tokens, [c.name])) : CONDITIONING_ROWS;
               return rows.length ? (
                 <View style={styles.section}>
                   <SectionHeader label="Running & Cardio" />

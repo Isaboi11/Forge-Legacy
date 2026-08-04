@@ -20,6 +20,7 @@
 import { CARDIO_ACTIVITIES, cardioKey } from '../workout/conditioning.ts';
 import { type MatchResult } from '../program/exercise-match.ts';
 import { ALIASES_BY_ID, resolveAgainstCatalog } from './aliases.ts';
+import { matchesSearch, rankFor } from './search-core.ts';
 import equipmentData from '../exercise-relationships/source/equipment.json';
 import exerciseMusclesData from '../exercise-relationships/source/exercise_muscles.json';
 import exercisesData from '../exercise-relationships/source/exercises.json';
@@ -39,6 +40,8 @@ import {
 } from './catalog-core';
 
 export { EXERCISE_CATEGORIES, DIFFS } from './catalog-core';
+// Re-exported so a screen has one import site for search, not two.
+export { matchesSearch, matchesTokens, rankFor, searchFields, searchTokens } from './search-core.ts';
 export type { Difficulty, ExerciseCategoryKey, PickerItem, EquipClass } from './catalog-core';
 
 export const PICKER_DB: PickerItem[] = buildPickerDb({
@@ -115,7 +118,14 @@ export function filterCount(f: PickerFilters): number {
   return f.equip.length + f.muscle.length + f.diff.length + f.cat.length;
 }
 
-/** AND across groups, OR within a group. `excludeName` drops the exercise being replaced. */
+/**
+ * AND across groups, OR within a group. `excludeName` drops the exercise being replaced.
+ *
+ * The SEARCH half is `matchesSearch` in `search-core` — token-AND across name, aliases, vernacular,
+ * muscles and equipment. It lives there rather than here so `node --test` can load the rule (this file
+ * imports the catalogue JSON, which it cannot) and so the Exercise Library can run the identical
+ * matcher instead of a second copy that drifts.
+ */
 export function matchItem(x: PickerItem, search: string, f: PickerFilters, excludeName: string | null): boolean {
   if (excludeName && x.name === excludeName) return false;
   if (f.equip.length && !f.equip.includes(x.equipId)) return false;
@@ -123,30 +133,12 @@ export function matchItem(x: PickerItem, search: string, f: PickerFilters, exclu
   if (f.cat.length && !f.cat.includes(x.cat)) return false;
   if (f.muscle.length && !f.muscle.some((m) => x.muscleIds.includes(m))) return false;
 
-  const q = search.trim().toLowerCase();
-  if (!q) return true;
-  return (
-    x.name.toLowerCase().includes(q) ||
-    x.aliases.some((a) => a.toLowerCase().includes(q)) ||
-    // What people call it, which is often not what the catalogue calls it — see `aliases.ts`.
-    (ALIASES_BY_ID.get(x.key) ?? []).some((a) => a.includes(q)) ||
-    x.muscles.some((m) => m.toLowerCase().includes(q)) ||
-    x.equip.toLowerCase().includes(q)
-  );
+  return matchesSearch(x, search);
 }
 
-/**
- * Search ranking, W-23 §11.3: exact name > prefix > contains > muscle/equipment, then alphabetical.
- * (Favourites/recency tiers are part of the same locked rule but need backends that don't exist yet.)
- */
+/** Search ranking, W-23 §11.3 — the rule lives in `search-core` alongside the matcher it must agree with. */
 export function searchRank(x: PickerItem, search: string): number {
-  const q = search.trim().toLowerCase();
-  if (!q) return 3;
-  const n = x.name.toLowerCase();
-  if (n === q) return 0;
-  if (n.startsWith(q)) return 1;
-  if (n.includes(q)) return 2;
-  return 3;
+  return rankFor(x.name, search);
 }
 
 /**
