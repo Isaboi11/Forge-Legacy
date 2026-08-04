@@ -718,3 +718,117 @@ export async function regenerateSquadCode(squadId: string): Promise<string> {
   if (error) throw error;
   return String(data ?? '');
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SQUAD GOAL DETAIL (0107) — `Squad Goal Detail.dc.html`
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface GoalContribution {
+  athleteId: string;
+  name: string;
+  handle: string | null;
+  avatarUrl: string | null;
+  value: number;
+  isSelf: boolean;
+}
+
+export interface GoalEvent {
+  workoutId: string;
+  at: string;
+  who: string;
+  isSelf: boolean;
+  name: string | null;
+  distance: number | null;
+  durationSec: number | null;
+}
+
+export interface PastGoal {
+  goal: string | null;
+  target: number;
+  metricKind: SquadGoalMetric;
+  startedAt: string;
+  completedAt: string;
+}
+
+export interface SquadGoalDetail {
+  squadId: string;
+  squadName: string;
+  goal: string | null;
+  target: number | null;
+  metricKind: SquadGoalMetric;
+  metricKey: string | null;
+  startedAt: string | null;
+  endsAt: string | null;
+  total: number;
+  isOwner: boolean;
+  memberCount: number;
+  contributions: GoalContribution[];
+  weeks: { weekStart: string; value: number }[];
+  events: GoalEvent[];
+  past: PastGoal[];
+}
+
+const asMetric = (v: unknown): SquadGoalMetric =>
+  (['workout_count', 'distance_total', 'volume_total', 'time_total', 'pr_count'] as SquadGoalMetric[]).includes(v as SquadGoalMetric)
+    ? (v as SquadGoalMetric)
+    : 'workout_count';
+
+/**
+ * Everything Squad Goal Detail renders, in ONE round trip (0107).
+ *
+ * Not five calls. Five would be five chances for one to fail on its own and leave a page that is partly
+ * about a goal — a contribution list beside a total that never arrived is worse than a page that admits
+ * it could not load.
+ *
+ * Null means "no such squad, or not yours to see" — the RPC deliberately answers those the same way, so
+ * a private squad's existence is not confirmable by probing.
+ */
+export async function fetchSquadGoalDetail(squadId: string): Promise<SquadGoalDetail | null> {
+  const { data, error } = await supabase.rpc('squad_goal_detail', { p_squad: squadId });
+  if (error) {
+    if ((error as { code?: string }).code === 'PGRST202') {
+      throw new Error('Squad goal detail isn’t available yet — migration 0107 hasn’t been applied.');
+    }
+    throw error;
+  }
+  if (!data) return null;
+  const d = data as Record<string, unknown>;
+  return {
+    squadId: String(d.squadId),
+    squadName: String(d.squadName ?? 'Your Squad'),
+    goal: (d.goal as string) ?? null,
+    target: d.target == null ? null : Number(d.target),
+    metricKind: asMetric(d.metricKind),
+    metricKey: (d.metricKey as string) ?? null,
+    startedAt: (d.startedAt as string) ?? null,
+    endsAt: (d.endsAt as string) ?? null,
+    total: Number(d.total ?? 0),
+    isOwner: !!d.isOwner,
+    memberCount: Number(d.memberCount ?? 0),
+    contributions: ((d.contributions ?? []) as Record<string, unknown>[]).map((c) => ({
+      athleteId: String(c.athleteId),
+      name: String(c.name ?? 'Athlete'),
+      handle: (c.handle as string) ?? null,
+      avatarUrl: (c.avatarUrl as string) ?? null,
+      value: Number(c.value ?? 0),
+      isSelf: !!c.isSelf,
+    })),
+    weeks: ((d.weeks ?? []) as Record<string, unknown>[]).map((w) => ({ weekStart: String(w.weekStart), value: Number(w.value ?? 0) })),
+    events: ((d.events ?? []) as Record<string, unknown>[]).map((e) => ({
+      workoutId: String(e.workoutId),
+      at: String(e.at),
+      who: String(e.who ?? 'Athlete'),
+      isSelf: !!e.isSelf,
+      name: (e.name as string) ?? null,
+      distance: e.distance == null ? null : Number(e.distance),
+      durationSec: e.durationSec == null ? null : Number(e.durationSec),
+    })),
+    past: ((d.past ?? []) as Record<string, unknown>[]).map((h) => ({
+      goal: (h.goal as string) ?? null,
+      target: Number(h.target ?? 0),
+      metricKind: asMetric(h.metricKind),
+      startedAt: String(h.startedAt),
+      completedAt: String(h.completedAt),
+    })),
+  };
+}

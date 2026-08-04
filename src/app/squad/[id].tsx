@@ -10,6 +10,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { ScreenBackground } from '@/components/screen-background';
+import { CalendarField } from '@/components/forge/composites/CalendarField';
 import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
 import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
@@ -90,7 +91,7 @@ const goalUnit = (kind: SquadGoalMetric): string => GOAL_UNITS[kind];
 const fmtProgress = (n: number): string => String(Number(n.toFixed(1)));
 
 export default function SquadDetailRoute() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, editGoal } = useLocalSearchParams<{ id: string; editGoal?: string }>();
   const router = useRouter();
   const tourScroller = useTourScroller();
   const onTourScroll = useTourScrollTracker();
@@ -129,7 +130,15 @@ export default function SquadDetailRoute() {
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  /*
+   * The goal editor opens EITHER from the pencil here or from `?editGoal=1`, which is how Squad Goal
+   * Detail hands the athlete back for an edit. Derived rather than opened from an effect: this repo's
+   * react-compiler rules make a synchronous `setState` in an effect body an ERROR, and a pure `||` says
+   * the same thing without one. `goalDismissed` is what lets Close actually close it while the param
+   * is still on the URL.
+   */
   const [goalOpen, setGoalOpen] = useState(false);
+  const [goalDismissed, setGoalDismissed] = useState(false);
   const [goalTitle, setGoalTitle] = useState('');
   const [goalTargetText, setGoalTargetText] = useState('');
   const [goalMetricKind, setGoalMetricKind] = useState<SquadGoalMetric>('workout_count');
@@ -273,27 +282,18 @@ export default function SquadDetailRoute() {
   // ── Detail ──
   const goalPct = squad.goalTarget ? Math.min(100, Math.round((squad.goalProgress / squad.goalTarget) * 100)) : 0;
   /**
-   * The window. Both fields are plain YYYY-MM-DD, matching how Accomplishments stands in for the native
-   * date wheel — `ForgeDateInput` exists but belongs to the legacy component library (old token system,
-   * reference-only), so new work does not reach for it.
+   * The window. A calendar grid picks both, so the only thing left to check is their ORDER — the picker
+   * cannot produce a malformed date, which is most of why it replaced the two text fields.
    *
-   * A blank START means "from today". A blank END means no deadline at all, which is the pre-0103
-   * behaviour and still entirely valid — plenty of squad goals are "until we get there".
+   * A blank START means "from today". A blank END means no deadline at all — the pre-0103 behaviour, still
+   * entirely valid, and plenty of squad goals are "until we get there".
    */
   const parsedStart = parseYmd(goalStartText);
   const parsedEnd = parseYmd(goalEndText);
-  const startOk = goalStartText.trim() === '' || parsedStart != null;
-  const endOk = goalEndText.trim() === '' || parsedEnd != null;
   // The DB enforces this too (`squads_goal_window_check`); catching it here turns a 400 into a sentence.
   const windowOk = !(parsedStart && parsedEnd) || parsedEnd > parsedStart;
-  const goalValid = Number(goalTargetText) >= 1 && startOk && endOk && windowOk;
-  const windowError = !startOk
-    ? 'Start date needs to look like 2026-03-01.'
-    : !endOk
-      ? 'End date needs to look like 2026-03-31.'
-      : !windowOk
-        ? 'The end date has to come after the start.'
-        : null;
+  const goalValid = Number(goalTargetText) >= 1 && windowOk;
+  const windowError = windowOk ? null : 'The end date has to come after the start.';
   const feedPosts = feedData ?? [];
   const canLoadMore = feedPosts.length === feedLimit;
   const checkinPeople = checkinsData?.members ?? [];
@@ -325,6 +325,7 @@ export default function SquadDetailRoute() {
       () => {
         setSavingGoal(false);
         setGoalOpen(false);
+        setGoalDismissed(true); // …or the `?editGoal=1` on the URL would reopen it the moment it closed
         refetch();
         showToast('Goal updated');
       },
@@ -341,6 +342,7 @@ export default function SquadDetailRoute() {
       () => {
         setSavingGoal(false);
         setGoalOpen(false);
+        setGoalDismissed(true);
         refetch();
       },
       () => setSavingGoal(false),
@@ -464,6 +466,15 @@ export default function SquadDetailRoute() {
                   </Pressable>
                 ) : null}
               </View>
+              {/* THE CARD IS NOW A DOOR. S-2 §15.3 gives the goal card exactly one tap target — editing —
+                  which meant the number could move and nobody could ask why. It opens Squad Goal Detail;
+                  the pencil above keeps editing, so the two actions stay distinct. */}
+              <Pressable
+                onPress={() => router.push({ pathname: '/squad/[id]/goal', params: { id } })}
+                accessibilityRole="button"
+                accessibilityLabel="See this goal's progress"
+                style={({ pressed }) => (pressed ? styles.goalPressed : null)}
+              >
               <Text style={styles.goalTitle}>{squad.goal || `Reach ${squad.goalTarget} ${goalUnit(squad.goalMetricKind)}`}</Text>
               <View style={styles.progressTrack}>
                 <LinearGradient colors={flGradient.bronzeMetallic.colors} locations={flGradient.bronzeMetallic.locations} start={flGradient.bronzeMetallic.start} end={flGradient.bronzeMetallic.end} style={[styles.progressFill, { width: `${goalPct}%` }]} />
@@ -489,6 +500,8 @@ export default function SquadDetailRoute() {
                   {squad.goalDaysLeft === 1 ? 'Final day' : `${squad.goalDaysLeft} days left`}
                 </Text>
               ) : null}
+              <Text style={styles.goalMore}>See the progress ›</Text>
+              </Pressable>
             </TourAnchor>
           ) : squad.isOwner ? (
             <View>
@@ -729,7 +742,14 @@ export default function SquadDetailRoute() {
       {mediaPickerSheet}
 
       {/* EDIT GOAL SHEET */}
-      <BottomSheet open={goalOpen} onClose={() => setGoalOpen(false)} title="Edit Squad Goal">
+      <BottomSheet
+        open={goalOpen || (editGoal === '1' && !goalDismissed)}
+        onClose={() => {
+          setGoalOpen(false);
+          setGoalDismissed(true);
+        }}
+        title="Edit Squad Goal"
+      >
         <View style={styles.goalSheetBody}>
           <Text style={styles.goalSheetSub}>One shared objective the whole squad pushes toward together.</Text>
           <InputField label="Goal" value={goalTitle} onChange={setGoalTitle} maxLength={60} showCount placeholder="e.g. Run 200 miles together" />
@@ -768,26 +788,14 @@ export default function SquadDetailRoute() {
             keyboardType="decimal-pad"
             placeholder={GOAL_TARGET_PLACEHOLDER[goalMetricKind]}
           />
-          <View style={styles.goalDateRow}>
-            <View style={styles.goalDateCol}>
-              <InputField
-                label="Starts"
-                value={goalStartText}
-                onChange={(v) => setGoalStartText(v.replace(/[^0-9-]/g, '').slice(0, 10))}
-                placeholder="YYYY-MM-DD"
-                keyboardType="numbers-and-punctuation"
-              />
-            </View>
-            <View style={styles.goalDateCol}>
-              <InputField
-                label="Ends (optional)"
-                value={goalEndText}
-                onChange={(v) => setGoalEndText(v.replace(/[^0-9-]/g, '').slice(0, 10))}
-                placeholder="No deadline"
-                keyboardType="numbers-and-punctuation"
-              />
-            </View>
-          </View>
+          <CalendarField label="Starts" value={goalStartText || null} onChange={(v) => setGoalStartText(v ?? '')} placeholder="Today" />
+          <CalendarField
+            label="Ends"
+            value={goalEndText || null}
+            onChange={(v) => setGoalEndText(v ?? '')}
+            placeholder="No deadline"
+            clearable
+          />
           {windowError ? <Text style={styles.goalDateErr}>{windowError}</Text> : null}
           <Text style={styles.goalAutoNote}>
             Progress updates automatically from your squad’s logged workouts. A start date in the past counts
@@ -1413,6 +1421,8 @@ const styles = StyleSheet.create({
   goalDateCol: { flex: 1, minWidth: 0 },
   goalDateErr: { fontSize: 12, color: flColor.redMuted },
   goalWindow: { marginTop: 6, fontSize: 11.5, color: flColor.gray600 },
+  goalMore: { marginTop: 8, fontSize: 11.5, fontWeight: '600', color: flColor.bronze400 },
+  goalPressed: { opacity: 0.82 },
   goalEnded: { marginTop: 6, fontSize: 12, color: flColor.bronze400, fontWeight: '600' },
   removeGoalBtn: { alignSelf: 'center', paddingVertical: 4 },
   removeGoalText: { fontSize: 13, fontWeight: '600', color: flColor.redMuted },
