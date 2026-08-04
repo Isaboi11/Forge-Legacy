@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { e1rm, sessionVolume, doneSetCount, hasLoggedSet, detectPRs, bestRecordWeight, PR_MAX_REPS } from '../metrics.ts';
+import { e1rm, sessionVolume, doneSetCount, hasLoggedSet, detectPRs, bestRecordWeight, completionSetCount, PR_MAX_REPS } from '../metrics.ts';
 
 const set = (setIndex, weight, targetReps, actualReps, done) => ({ setIndex, weight, targetReps, actualReps, done });
 const session = {
@@ -219,4 +219,50 @@ test('an exercise with no catalogue key still falls back to its name', () => {
   };
   assert.deepEqual(detectPRs(s, { 'Coach Special': 120 }), [], 'name identity still applies');
   assert.equal(detectPRs(s, { 'Coach Special': 80 })[0]?.weight, 100);
+});
+
+// ── completionSetCount — the "3 warm-up sets showed as 0 sets" regression ───────────────────────────
+//
+// The Record screen counted only sets carrying BOTH a weight and a rep count, so an exercise done for
+// three unweighted warm-up sets reported "0 sets" beside a header that said 3. These guard the rule
+// that replaced it: a row exists because a set was logged, and the load is a property of the set.
+
+test('completionSetCount — unweighted sets still count', () => {
+  const warmups = [{ weight: null, reps: 10 }, { weight: null, reps: 10 }, { weight: null, reps: 8 }];
+  assert.equal(completionSetCount(warmups), 3, 'three warm-up sets are three sets, not zero');
+});
+
+test('completionSetCount — bodyweight (0 lb) sets still count', () => {
+  const pullups = [{ weight: 0, reps: 8 }, { weight: 0, reps: 7 }];
+  assert.equal(completionSetCount(pullups), 2);
+});
+
+test('completionSetCount — a set with no reps either still counts', () => {
+  // Logged is logged. A set the athlete resolved without saying how many is still a set they did.
+  assert.equal(completionSetCount([{ weight: null, reps: null }]), 1);
+});
+
+test('completionSetCount — weighted sets are unaffected', () => {
+  assert.equal(completionSetCount([{ weight: 315, reps: 5 }, { weight: 315, reps: 3 }]), 2);
+});
+
+test('completionSetCount — a conditioning bout is one bout, however it was stored', () => {
+  // A run is one unit of work; it must not report the number of rows it happens to occupy.
+  assert.equal(completionSetCount([{ distance: 3.1, durationSec: 1620 }]), 1);
+  assert.equal(completionSetCount([{ distance: 3.1, durationSec: 1620 }, { distance: null, durationSec: null }]), 1);
+  assert.equal(completionSetCount([{ distance: null, durationSec: 900 }]), 1, 'a timed bout with no distance is still a bout');
+});
+
+test('completionSetCount — an empty exercise is zero, and that is the only zero', () => {
+  assert.equal(completionSetCount([]), 0);
+});
+
+test('a bodyweight set sets no weight record', () => {
+  // BW writes weight 0. A personal record measured in pounds cannot be 0 of them, and announcing
+  // "Pull-Up — 0 lb" to someone who just did their first chin-up is the record system lying.
+  const bw = [set(0, 0, 5, 5, true), set(1, 0, 5, 4, true)];
+  assert.equal(bestRecordWeight(bw), null);
+
+  // A weighted pull-up still records, and records the added load.
+  assert.equal(bestRecordWeight([set(0, 0, 5, 5, true), set(1, 25, 5, 3, true)]), 25);
 });

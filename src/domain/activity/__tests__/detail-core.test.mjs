@@ -82,10 +82,19 @@ test('sections come out in order and empty ones are dropped', () => {
 
 test('a set renders only what was actually recorded', () => {
   assert.equal(setLine(set(0, 225, 5)), '225 lbs × 5');
-  assert.equal(setLine(set(0, null, 12)), '12 reps', 'bodyweight reads as reps, not "0 lbs"');
+  assert.equal(setLine(set(0, null, 12)), '12 reps', 'no weight entered reads as reps, not "0 lbs"');
   assert.equal(setLine(set(0, 225, null)), '225 lbs × —', 'a missing rep count is a dash, not a guess');
   assert.equal(setLine(set(0, null, null)), '');
   assert.equal(setLine(set(0, 100, 5, 'kg')), '100 kg × 5', 'the stored unit is respected');
+});
+
+test('0 lb is BODYWEIGHT, and it is not the same fact as no weight at all', () => {
+  // The athlete tapped BW: they said this set carried nothing. That is an answer, and it renders.
+  assert.equal(setLine(set(0, 0, 12)), 'BW × 12');
+  // Nothing entered is NOT a claim that the set was bodyweight — a warm-up with an empty bar is not
+  // a bodyweight set, and the app must not decide that it was.
+  assert.equal(setLine(set(0, null, 12)), '12 reps');
+  assert.equal(setLine(set(0, 0, null)), '', 'BW with no rep count says nothing, and says it honestly');
 });
 
 // ── non-strength body ───────────────────────────────────────────────────────

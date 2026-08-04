@@ -1,7 +1,8 @@
 import { supabase } from '@/lib/supabase';
+import { playlistFromRow, playlistToRow, type WorkoutPlaylistLink } from '@/domain/workout/playlist';
 import { personalBests, type ActivityKind, type PersonalBest, type UnitSystem } from '@/domain/run/run-core';
 import { fetchPriorSessions } from '@/data/runs-live';
-import { e1rm } from '@/domain/workout/metrics';
+import { completionSetCount, e1rm } from '@/domain/workout/metrics';
 import { fetchProgram, fetchProgramCompletedCount } from '@/data/programs-live';
 import { dayLabel, nextSession } from '@/domain/program/progress-core';
 
@@ -91,6 +92,14 @@ export interface Completion {
   hero: CompletionHero | null;
   pastReflection: { label: string; text: string } | null;
   reflection: string | null;
+  /**
+   * The attached playlist, or null — Workout-Playlist-Amendment-001 §8A.
+   *
+   * Rebuilt through `playlistFromRow`, which re-checks the URL's host against the service tag, so a row
+   * that predates 0105's constraint reads as "no playlist" rather than rendering a service-labelled chip
+   * the app would refuse to open.
+   */
+  playlist: WorkoutPlaylistLink | null;
   /** True iff this is the EARLIEST saved workout in its chapter — id-scoped + re-fetch-stable (ONB-D18
    *  first-run reveal). Never a workout_count snapshot: re-opening workout #1 always reads true. */
   isFirstWorkout: boolean;
@@ -99,6 +108,24 @@ export interface Completion {
   honorsEarned: { honorType: string; displayName: string }[];
   /** The next session in THIS workout's program, or null for a session that wasn't part of one. */
   nextWorkoutName: string | null;
+  /**
+   * The program THIS workout graduated, or null — the M-4 ceremony's trigger and payload.
+   *
+   * ══ DERIVED FROM THE DATABASE, NOT HANDED OVER BY WHOEVER NAVIGATED HERE ══
+   *
+   * Matched by `programs.ended_at = workouts.saved_at`: both are the same `now()` inside `save_workout`'s
+   * transaction (0104), which is the identical trick `honorsEarned` above uses and for the identical
+   * reason. It survives a cold start, needs no navigation param, and — the part that matters — it cannot
+   * claim a graduation that did not actually happen, because the only thing that writes that timestamp
+   * is the transition itself.
+   */
+  graduation: {
+    programId: string;
+    programName: string;
+    startedAt: string | null;
+    graduatedAt: string;
+    workouts: number;
+  } | null;
 }
 
 interface WorkoutRow {
@@ -153,6 +180,7 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
    * themselves the name was never found and the line silently disappeared.
    */
   let nextWorkoutName: string | null = null;
+  let graduation: Completion['graduation'] = null;
   if (workout.program_id) {
     try {
       const [program, done] = await Promise.all([
@@ -162,6 +190,21 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
       if (program) {
         const next = nextSession(program.structure, done);
         if (next) nextWorkoutName = dayLabel(next.day, next.dayIndex);
+
+        /*
+         * Did THIS save graduate it? `ended_at === saved_at` is the proof — both are the same `now()`
+         * from inside save_workout's transaction (0104). Re-opening an older workout of the same program
+         * reads false, so the ceremony belongs to the session that actually earned it and to no other.
+         */
+        if (program.state === 'graduated' && workout.saved_at && program.endedAt === workout.saved_at) {
+          graduation = {
+            programId: program.id,
+            programName: program.name,
+            startedAt: program.startedAt,
+            graduatedAt: program.endedAt,
+            workouts: done,
+          };
+        }
       }
     } catch {
       // a lookup failure just means no "Up next" line — never fail the completion screen over it
@@ -189,6 +232,31 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
   const chapterName = workout.chapter_id
     ? ((await supabase.from('chapters').select('name').eq('id', workout.chapter_id).single()).data?.name ?? null)
     : null;
+
+  /*
+   * The playlist columns, FETCHED SEPARATELY AND TOLERANTLY — exactly as `partners` is read in
+   * activity-live.ts, and for the identical reason.
+   *
+   * ══ A MISSING COLUMN IS A 42703, AND 42703 FAILS THE WHOLE SELECT ══
+   *
+   * These three columns arrive in migration 0105. Naming them in the big select above would mean that on
+   * any database where 0105 has not been applied yet, `fetchCompletion` throws and W-17 — the screen an
+   * athlete lands on the instant they finish training — shows "Couldn't load your summary" for every
+   * session. The playlist is an optional annotation; it must never be able to take the summary down with
+   * it.
+   *
+   * So it is its own query, and its failure is swallowed into "no playlist attached", which is also the
+   * honest answer on a database that cannot store one yet.
+   */
+  let playlist: WorkoutPlaylistLink | null = null;
+  {
+    const { data: plRow } = await supabase
+      .from('workouts')
+      .select('playlist_url, playlist_service, playlist_name')
+      .eq('id', workoutId)
+      .maybeSingle();
+    playlist = playlistFromRow(plRow as Parameters<typeof playlistFromRow>[0]);
+  }
 
   // First-run detection (ONB-D18): is THIS workout the earliest saved workout in its chapter? Id-scoped
   // by identity, not the mutable counter — re-opening workout #1 after more workouts still reads true.
@@ -383,10 +451,22 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
 
     return {
       name: ex.name,
-      topSet: top ? `${top.weight} × ${top.reps}` : null,
+      // A set logged at 0 lb is a bodyweight set, and "0 × 12" is not what the athlete did.
+      topSet: top ? `${top.weight === 0 ? 'BW' : top.weight} × ${top.reps}` : null,
       cardio,
-      // A block counts as the one bout it is, the same way it counts as one unit of progress.
-      sets: bout ? 1 : exSets.filter((s) => s.weight != null && s.reps != null).length,
+      /*
+       * EVERY SET THAT WAS LOGGED, whether or not it carried a weight.
+       *
+       * This filtered on `s.weight != null && s.reps != null`, so an exercise done for three unweighted
+       * warm-up sets reported "0 sets" — to an athlete who had just done three. The header count on the
+       * same screen is `sets.length`, unfiltered, so the screen also contradicted itself: 3 at the top,
+       * 0 on the row. Bodyweight work, banded work and warm-ups were all invisible by the same rule.
+       *
+       * The rule now lives in the domain with a test around it (`completionSetCount`) so it cannot
+       * quietly regain a weight filter. Volume and top-set still require a load, and correctly so — a set
+       * with nothing on the bar moves no volume — but the COUNT of what you did never depended on it.
+       */
+      sets: completionSetCount(exSets.map((s) => ({ weight: s.weight, reps: s.reps, distance: s.distance, durationSec: s.duration_sec }))),
       isPR: prByExercise.has(ex.name),
       delta: bout ? null : deltaOf(now, priorTop.get(ex.name) ?? null),
     };
@@ -440,15 +520,37 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
     prs: [...prByExercise.entries()].map(([exercise, v]) => ({ exercise, weight: v.weight, reps: v.reps })),
     hero,
     pastReflection,
+    playlist,
     reflection: workout.reflection ?? null,
     isFirstWorkout,
     honorsEarned,
     nextWorkoutName,
+    graduation,
   };
 }
 
 /** Persist the Reflect note — a post-commit single-row owner-scoped update (no RPC). */
 export async function saveReflection(workoutId: string, text: string): Promise<void> {
   const { error } = await supabase.from('workouts').update({ reflection: text }).eq('id', workoutId);
+  if (error) throw error;
+}
+
+/**
+ * Attach, edit or REMOVE the session's playlist link — §8A.2.
+ *
+ * Pass null to remove; `playlistToRow` writes three explicit nulls, because clearing only the URL would
+ * leave an orphan name that 0105's `workouts_playlist_name_needs_link` rejects outright.
+ *
+ * ══ THIS ONE THROWS, UNLIKE THE ATTACH DURING THE WORKOUT ══
+ *
+ * `saveWorkout` swallows its playlist write because a failure there would cost a session that had already
+ * been committed. Here there is no session at risk — the workout is long since durable — and the athlete
+ * is watching a sheet they just tapped "Save Playlist" in. Silence would leave them believing a link was
+ * attached that wasn't, and they would find out on W-19, weeks later, when it wasn't there.
+ *
+ * §8A.2: saving "updates the session record immediately, independent of 'Done'."
+ */
+export async function savePlaylist(workoutId: string, link: WorkoutPlaylistLink | null): Promise<void> {
+  const { error } = await supabase.from('workouts').update(playlistToRow(link)).eq('id', workoutId);
   if (error) throw error;
 }

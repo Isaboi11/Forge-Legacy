@@ -92,7 +92,11 @@ test('app prefs default to imperial, haptics/sound on, reduce-motion off', () =>
 
 test('exactly the toggles with a real consumer today are marked live', () => {
   const live = EXPERIENCE_TOGGLES.filter((t) => t.live).map((t) => t.key);
-  assert.deepEqual(live, ['reduceMotion'], 'haptics and sound have no consumer on web — do not claim they fire');
+  // SOUND became real when the rest timer got its ding (`lib/ding`, gated by `useSoundEnabled`) — it
+  // fires on web and native alike. HAPTICS is still an intent with nothing behind it: the app has no
+  // haptics layer, and the single vibration in the codebase is web-only. Marking it live would be the
+  // settings screen claiming a capability the app does not have.
+  assert.deepEqual(live, ['sound', 'reduceMotion'], 'haptics still has no consumer — do not claim it fires');
 });
 
 test('sanitizePrefs coerces each field and survives a malformed blob', () => {

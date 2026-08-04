@@ -21,7 +21,8 @@ import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/us
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
-import { useUnits } from '@/lib/settings';
+import { useSoundEnabled, useUnits } from '@/lib/settings';
+import { playRestDing, primeDing } from '@/lib/ding';
 import { CardioBlockCard } from '@/components/workout/CardioBlockCard';
 import {
   EMPTY_RESULT,
@@ -35,13 +36,18 @@ import {
 import { buildSessionFromProgram } from '@/domain/workout/build-session';
 import { fetchProgram, fetchProgramCompletedCount } from '@/data/programs-live';
 import { nextSession } from '@/domain/program/progress-core';
+import { durText } from '@/domain/program/prescription';
 import { clearWorkoutLaunch, readWorkoutLaunch } from '@/lib/workout-launch';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { clearSession, hasLoggedWork, loadSession, persistSession } from '@/domain/workout/autosave';
+import { blockAt, breakBlock, endsSupersetRound, makeSuperset, nextInSuperset, supersetRounds } from '@/domain/workout/session-core';
 import { doneSetCount, hasLoggedSet, PR_MAX_REPS } from '@/domain/workout/metrics';
 import { fetchPriorRecords, saveWorkout } from '@/domain/workout/save';
+import { PlaylistSheet } from '@/components/forge/composites/Playlist';
+import { playlistLabel } from '@/domain/workout/playlist';
 import { equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
 import { getRestTimerEnabled, setRestTimerEnabled } from '@/lib/rest-timer-pref';
+import { getWheelInput, setWheelInput } from '@/lib/set-input-pref';
 import { clearExerciseInbox, readExerciseInbox, type PickedExercise } from '@/lib/exercise-inbox';
 import type { ActiveSession, SessionExercise, SessionSet } from '@/domain/workout/types';
 
@@ -49,11 +55,21 @@ const AnimatedSvg = Animated.createAnimatedComponent(Svg);
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
 type Phase = 'loading' | 'resume' | 'active' | 'saving';
-type Picker = { exIdx: number; setIdx: number; field: 'weight' | 'reps' };
+/**
+ * The set being edited, and which of its two fields has the caret (or the wheel).
+ *
+ * ONE SHEET, BOTH NUMBERS — this replaced a pair of single-field pickers, which made logging a set
+ * three separate modal trips (weight, then reps, then a check) for what W-9 §6.2 has always specified
+ * as one: weight and reps together under a single "Log Set".
+ */
+type SetSheet = { exIdx: number; setIdx: number; focus: 'weight' | 'reps' };
 
 const WEIGHT_OPTS = Array.from({ length: 101 }, (_, i) => i * 5); // 0–500 lb by 5 (free weights / machines)
 const WEIGHT_OPTS_CABLE = Array.from({ length: 201 }, (_, i) => i * 2.5); // 0–500 lb by 2.5 (cable stacks)
-const REPS_OPTS = Array.from({ length: 31 }, (_, i) => i); // 0–30
+// 0–50. Was 0–30, which silently clamped a set of 40 air squats down to 30 and recorded a number the
+// athlete did not do — the same class of quiet falsehood as counting an unweighted set as no set at all.
+const REPS_OPTS = Array.from({ length: 51 }, (_, i) => i);
+const REPS_MAX = 999; // typed entry is not bounded by what fits on a wheel
 const DUR_MIN_OPTS = Array.from({ length: 11 }, (_, i) => i); // 0–10 min
 const DUR_SEC_OPTS = Array.from({ length: 12 }, (_, i) => i * 5); // 0–55 by 5
 
@@ -85,6 +101,50 @@ function fmtMMSS(sec: number): string {
   const m = Math.floor(sec / 60);
   const s = sec % 60;
   return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+/**
+ * The Actual column.
+ *
+ * A to-failure set with nothing entered shows an em dash, never its target: that target is 0 by design
+ * (nobody prescribed a count), and rendering it would tell the athlete they did zero reps of an exercise
+ * they just finished.
+ */
+function actualText(set: SessionSet): string {
+  if (set.actualReps != null) return String(set.actualReps);
+  return set.toFailure ? '—' : String(set.targetReps);
+}
+
+/**
+ * The Weight column — and the difference between "no load" and "no answer".
+ *
+ * `0` means BODYWEIGHT: the athlete said this set carried nothing, and "BW" is the honest render of
+ * that. `null` means nothing was entered — an em dash, not "BW", because a warm-up done with an empty
+ * bar is not a bodyweight set and the app must not decide it was. Both are LOGGED sets; the count of
+ * what you did never depended on the load, and the day it did it told an athlete who pressed through
+ * three warm-up sets that they had done zero.
+ */
+function weightText(set: SessionSet): string {
+  if (set.weight === 0) return 'BW';
+  return set.weight != null ? String(set.weight) : '—';
+}
+
+/**
+ * The Goal line — what this exercise asks for, in one phrase.
+ *
+ * Read off the SETS rather than recomputed from a prescription, because by the time the athlete is
+ * looking at it they may have added or removed some. A ladder shows every rung: "4×6-6-4-4" is the whole
+ * point of the exercise, and "4×6" would be describing a different one.
+ */
+function goalTextFor(sets: readonly SessionSet[]): string {
+  if (!sets.length) return '—';
+  if (sets[0].targetSec != null) {
+    const d = durText(sets[0].targetSec);
+    return sets.length > 1 ? `${sets.length}×${d}` : d;
+  }
+  const parts = sets.map((s) => (s.toFailure ? 'F' : String(s.targetReps)));
+  const uniform = parts.every((p) => p === parts[0]);
+  return uniform ? `${sets.length}×${parts[0]}` : `${sets.length}×${parts.join('-')}`;
 }
 /** Thousands separators without leaning on Intl (Hermes-safe). */
 function fmtNum(n: number): string {
@@ -130,10 +190,15 @@ export default function WorkoutScreen() {
   const [exIdx, setExIdx] = useState(0);
   // A conditioning leg shows distance in the athlete's own system; the record stays in miles.
   const { units } = useUnits();
+  const soundOn = useSoundEnabled();
   const [phase, setPhase] = useState<Phase>('loading');
-  const [picker, setPicker] = useState<Picker | null>(null);
-  const [pickerValue, setPickerValue] = useState('');
-  const [wheelMode, setWheelMode] = useState(true);
+  const [sheet, setSheet] = useState<SetSheet | null>(null);
+  /* Drafts, as STRINGS — '' is a real state ("nothing entered"), and a number cannot hold it. The old
+     picker collapsed the two: it seeded '' and rendered the wheel at `Number('') || 0`, so a wheel you
+     opened and did not scroll showed 0, reported nothing, and wrote the weight back as null. */
+  const [draftW, setDraftW] = useState('');
+  const [draftR, setDraftR] = useState('');
+  const [wheelMode, setWheelMode] = useState(false); // typing is the default; the saved pref loads on mount
   const [error, setError] = useState<string | null>(null);
   const [heroPref, setHeroPref] = useState<Record<number, 'expanded' | 'collapsed'>>({});
   const [autoCollapsed, setAutoCollapsed] = useState<Record<number, boolean>>({});
@@ -157,6 +222,14 @@ export default function WorkoutScreen() {
   const [pausedRemaining, setPausedRemaining] = useState<number | null>(null);
   const [restTotal, setRestTotal] = useState(90);
   const [now, setNow] = useState(() => Date.now());
+  /**
+   * An AMRAP's clock, tagged with the block it belongs to.
+   *
+   * Tagged rather than bare so it survives moving BETWEEN members of the same circuit — which is the
+   * whole shape of an AMRAP, you cycle its exercises while one clock runs — and simply stops being shown
+   * the moment you leave the block, with no cleanup effect to get wrong.
+   */
+  const [amrap, setAmrap] = useState<{ groupId: string; endsAt: number } | null>(null);
   const [toast, setToast] = useState<{ msg: string; token: number } | null>(null);
   const [pop, setPop] = useState<{ ei: number; si: number; field: 'weight' | 'reps'; token: number } | null>(null);
   const [durationPicker, setDurationPicker] = useState(false);
@@ -173,6 +246,7 @@ export default function WorkoutScreen() {
   const sessionRef = useRef(session);
   // partner tagging — persists onto the saved workout; Finish opens the 4-stage seal (W-17) on real data
   const [taggedPartners, setTaggedPartners] = useState<string[]>([]);
+  const [playlistSheetOpen, setPlaylistSheetOpen] = useState(false);
   const [partnerSheetOpen, setPartnerSheetOpen] = useState(false);
 
   const showToast = useCallback((msg: string) => {
@@ -294,6 +368,16 @@ export default function WorkoutScreen() {
                       // round trip as of 0095, and the logger is where that has to show up.
                       section: e.section ?? 'main',
                       position: i,
+                      // …and its blocks (0106). Repeating a session you built around a superset must
+                      // give you the superset back, not two lifts that merely sit next to each other.
+                      ...(e.groupId
+                        ? {
+                            groupId: e.groupId,
+                            groupName: e.groupName ?? undefined,
+                            groupKind: e.groupKind ?? 'circuit',
+                            groupRounds: e.groupRounds ?? undefined,
+                          }
+                        : null),
                   sets: Array.from({ length: Math.max(1, e.sets) }, (_, si) => ({
                     setIndex: si,
                     targetReps: e.targetReps || 8,
@@ -358,6 +442,11 @@ export default function WorkoutScreen() {
     getRestTimerEnabled().then(setRestEnabled);
   }, []);
 
+  // …and the input preference. Typing unless they have chosen the wheel before.
+  useEffect(() => {
+    getWheelInput().then(setWheelMode);
+  }, []);
+
   // autosave on every change while active
   useEffect(() => {
     if (phase === 'active' && session) void persistSession(session);
@@ -389,11 +478,27 @@ export default function WorkoutScreen() {
       const ms = Date.now();
       if (ms >= restEndsAt) {
         setRestEndsAt(null);
+        // A small ding, and only if they want one. The toast alone required looking at the phone,
+        // which is exactly what an athlete resting between sets has put down.
+        if (soundOn) playRestDing();
         showToast('Rest complete — next set.');
       } else setNow(ms);
     }, 500);
     return () => clearInterval(t);
-  }, [restEndsAt, restPaused, showToast]);
+  }, [restEndsAt, restPaused, showToast, soundOn]);
+
+  // AMRAP ticker — same deadline-based shape as the rest timer, so a re-render never loses the count
+  useEffect(() => {
+    if (!amrap) return;
+    const t = setInterval(() => {
+      const ms = Date.now();
+      if (ms >= amrap.endsAt) {
+        setAmrap(null);
+        showToast('Time — that’s the AMRAP.');
+      } else setNow(ms);
+    }, 500);
+    return () => clearInterval(t);
+  }, [amrap, showToast]);
 
   // keep the latest session in a ref so the focus drain reads it without re-subscribing on every edit
   useEffect(() => {
@@ -431,6 +536,15 @@ export default function WorkoutScreen() {
   const mutate = useCallback((fn: (s: ActiveSession) => ActiveSession) => setSession((s) => (s ? fn(s) : s)), []);
 
   const startRest = useCallback(() => {
+    /*
+     * UNLOCK THE AUDIO HERE, INSIDE THE TAP.
+     *
+     * Rest expiry fires from a setInterval, and iOS Safari will not let a timer make a sound: an
+     * AudioContext starts suspended and only resumes inside a user gesture. This runs synchronously
+     * from the athlete's press on "Log Set", so the action that STARTS the rest is what buys the
+     * permission to end it out loud. No-op on native. See `lib/ding.web.ts`.
+     */
+    primeDing();
     const ms = Date.now();
     setNow(ms);
     setRestTotal(restSec);
@@ -485,9 +599,27 @@ export default function WorkoutScreen() {
     setDurationPicker(false);
   };
 
-  const completeSet = (ei: number, si: number) => {
-    if (!session) return;
-    const ns = patchSet(session, ei, si, (set) => ({ ...set, done: true, actualReps: set.actualReps ?? set.targetReps }));
+  /**
+   * Mark a set logged.
+   *
+   * `base` lets a caller hand in a session it has ALREADY patched — the Set Input Sheet writes weight
+   * and reps and completes in one action, and reading `session` from the closure here would complete
+   * the set as it was before those values landed.
+   */
+  const completeSet = (ei: number, si: number, base?: ActiveSession) => {
+    const from = base ?? session;
+    if (!from) return;
+    /**
+     * Completing a set back-fills the actual from the target — EXCEPT to failure, where there is no
+     * target to back-fill from. Its `targetReps` is 0 by design, so the old back-fill would have written
+     * a zero-rep set into the athlete's history and into the volume behind their records. A failure set
+     * stays blank until they say what they got, which is the only number that set was ever about.
+     */
+    const ns = patchSet(from, ei, si, (set) => ({
+      ...set,
+      done: true,
+      actualReps: set.actualReps ?? (set.toFailure ? null : set.targetReps),
+    }));
     setSession(ns);
     const ex = ns.exercises[ei];
     const done = ex.sets[si];
@@ -536,7 +668,16 @@ export default function WorkoutScreen() {
       setTimeout(() => setSeal((sl) => (sl && sl.token === token ? null : sl)), 2800);
     } else {
       showToast('Set logged');
-      if (restEnabled) startRest();
+      /*
+       * REST BELONGS AT THE END OF A ROUND, NOT IN THE MIDDLE OF ONE.
+       *
+       * The point of a superset is that A and B are done back to back. Firing the rest overlay after A
+       * would be the app arguing with the training method the athlete just chose — so inside a superset
+       * the timer waits until no member still owes this round. Everywhere else, unchanged.
+       */
+      const b = blockAt(ns.exercises, ei);
+      const holdRest = b?.kind === 'superset' && !endsSupersetRound(ns.exercises, b, ei, si);
+      if (restEnabled && !holdRest) startRest();
     }
   };
   const uncompleteSet = (ei: number, si: number) => mutate((s) => patchSet(s, ei, si, (set) => ({ ...set, done: false })));
@@ -554,25 +695,62 @@ export default function WorkoutScreen() {
       return replaceExercise(s, ei, { ...ex, sets: ex.sets.slice(0, -1) });
     });
 
-  const openPicker = (exI: number, setI: number, field: 'weight' | 'reps') => {
+  const openSheet = (exI: number, setI: number, focus: 'weight' | 'reps') => {
     const set = session?.exercises[exI]?.sets[setI];
-    setPickerValue(field === 'weight' ? (set?.weight != null ? String(set.weight) : '') : String(set?.actualReps ?? set?.targetReps ?? ''));
-    setPicker({ exIdx: exI, setIdx: setI, field });
+    if (!set) return;
+    /* Seeded from what is THERE, not from a blank. A set already carrying 135 lb opens showing 135, so
+       confirming without touching anything keeps 135 — the behaviour the wheel only appeared to have. */
+    setDraftW(set.weight != null ? String(set.weight) : '');
+    setDraftR(set.actualReps != null ? String(set.actualReps) : set.toFailure ? '' : String(set.targetReps));
+    setSheet({ exIdx: exI, setIdx: setI, focus });
   };
-  const confirmPicker = () => {
-    if (!picker) return;
-    const raw = Number(pickerValue);
-    const ok = pickerValue !== '' && Number.isFinite(raw) && raw >= 0;
-    const clamped = picker.field === 'weight' ? Math.min(500, raw) : Math.min(30, Math.round(raw));
-    mutate((s) =>
-      patchSet(s, picker.exIdx, picker.setIdx, (set) =>
-        picker.field === 'weight' ? { ...set, weight: ok ? clamped : null } : { ...set, actualReps: ok ? clamped : set.actualReps },
-      ),
-    );
+
+  /** Parse a draft field. '' is "nothing entered" and stays null; garbage keeps whatever was there. */
+  const readDraft = (raw: string, prev: number | null, max: number, round: boolean): number | null => {
+    const t = raw.trim();
+    if (t === '') return null;
+    const n = Number(t);
+    if (!Number.isFinite(n) || n < 0) return prev;
+    return Math.min(max, round ? Math.round(n) : n);
+  };
+
+  /**
+   * Log the set: write both numbers, then complete it.
+   *
+   * Two taps became one. The sheet used to write a value and leave the set open, so every logged set
+   * needed a separate tap on a green check the athlete had no reason to expect — "I pressed Set, why is
+   * it not set?" A set that is ALREADY done is only edited: no re-completion, no second rest timer, no
+   * PR toast for a record it already announced.
+   */
+  const commitSheet = () => {
+    if (!sheet || !session) return;
+    const { exIdx: ei, setIdx: si } = sheet;
+    const set = session.exercises[ei]?.sets[si];
+    if (!set) {
+      setSheet(null);
+      return;
+    }
+    const weight = readDraft(draftW, set.weight, 500, false);
+    const reps = readDraft(draftR, set.actualReps, REPS_MAX, true);
+    const base = patchSet(session, ei, si, (s) => ({ ...s, weight, actualReps: reps }));
+
     const token = Date.now();
-    setPop({ ei: picker.exIdx, si: picker.setIdx, field: picker.field, token }); // value-pop on the edited cell
+    setPop({ ei, si, field: sheet.focus, token }); // value-pop on the edited cell
     setTimeout(() => setPop((p) => (p && p.token === token ? null : p)), 340);
-    setPicker(null);
+    setSheet(null);
+
+    // Only the CURRENT set completes. Editing a done set, or pre-filling a later one, just writes.
+    const currentIdx = session.exercises[ei].sets.findIndex((s) => !s.done);
+    if (!set.done && si === currentIdx) completeSet(ei, si, base);
+    else setSession(base);
+  };
+
+  /* Written out rather than folded into the updater: a state updater must stay pure (StrictMode calls
+     it twice), and this one persists. Same shape as `toggleRest`. */
+  const toggleWheel = () => {
+    const next = !wheelMode;
+    setWheelMode(next);
+    void setWheelInput(next);
   };
 
   // End / Finish → commit the workout, then open the four-stage seal ceremony (W-17) on the committed data.
@@ -723,15 +901,84 @@ export default function WorkoutScreen() {
   const setsDone = doneSetCount(session);
   const workoutComplete = hasLoggedSet(session) && session.exercises.every((e) => e.sets.every((s) => s.done));
   const currentSetIdx = ex.sets.findIndex((s) => !s.done); // -1 = all done
-  const goalText = `${ex.sets.length}×${ex.sets[0]?.targetReps ?? '—'}`;
-  const pickerCable = picker != null && equipmentForCatalogKey(session.exercises[picker.exIdx]?.catalogKey) === 'cable';
-  const pickerWeightOpts = pickerCable ? WEIGHT_OPTS_CABLE : WEIGHT_OPTS;
+  const goalText = goalTextFor(ex.sets);
+  const sheetCable = sheet != null && equipmentForCatalogKey(session.exercises[sheet.exIdx]?.catalogKey) === 'cable';
+  const sheetWeightOpts = sheetCable ? WEIGHT_OPTS_CABLE : WEIGHT_OPTS;
+  /* Everything the sheet needs to describe itself: which lift, which set of how many, and whether this
+     is the set that is next up (only that one completes on Log Set — see `commitSheet`). */
+  const sheetEx = sheet ? session.exercises[sheet.exIdx] : null;
+  const sheetSet = sheet && sheetEx ? sheetEx.sets[sheet.setIdx] : null;
+  const sheetIsCurrent = !!(sheet && sheetEx && sheetSet && !sheetSet.done && sheet.setIdx === sheetEx.sets.findIndex((s) => !s.done));
   const heroExpanded = (heroPref[exIdx] ?? 'expanded') !== 'collapsed'; // expand on arrival unless manually collapsed here
   const setHero = (collapsed: boolean) => {
     setHeroPref((p) => ({ ...p, [exIdx]: collapsed ? 'collapsed' : 'expanded' }));
     setAutoCollapsed((a) => ({ ...a, [exIdx]: true })); // a manual choice also blocks the one-time auto-collapse
   };
   const isCardio = ex.kind === 'cardio';
+
+  /**
+   * The block this exercise sits in, if any — its kind, its name, its size and where in it we are.
+   *
+   * The walk itself now lives in `session-core` with tests around it, because the adjacency rule is
+   * load-bearing in three places (here, the superset card, and grouping) and getting it wrong swallows a
+   * later block that happens to share an id. Without this the athlete sees three unrelated exercises in a
+   * row and no indication that they are one block performed four times — which is most of what a
+   * finisher IS, and all of what a superset is.
+   */
+  const block = blockAt(session.exercises, exIdx);
+  const blockPos = block ? exIdx - block.start + 1 : 0;
+  const isSuperset = block?.kind === 'superset';
+  /* Where the athlete is inside the pairing, scanned ROUND-MAJOR (A1 → B1 → A2 → B2). Null once the
+     whole block is logged. `ssRounds` is the LONGEST member's set count, so a 4-set row paired with a
+     3-set press still shows four rounds rather than hiding the fourth. */
+  const ssNext = block && isSuperset ? nextInSuperset(session.exercises, block) : null;
+  const ssRounds = block && isSuperset ? supersetRounds(session.exercises, block) : 0;
+
+  /** One more time through — adds a set to every member, so a round is a round on all of them. */
+  const addSupersetRound = () => {
+    if (!block) return;
+    mutate((s) => ({
+      ...s,
+      exercises: s.exercises.map((e, i) => {
+        if (i < block.start || i >= block.start + block.count) return e;
+        const last = e.sets[e.sets.length - 1];
+        return {
+          ...e,
+          groupRounds: (block.rounds ?? e.sets.length) + 1,
+          sets: [...e.sets, { setIndex: e.sets.length, weight: last?.weight ?? null, targetReps: last?.targetReps ?? 8, actualReps: null, done: false }],
+        };
+      }),
+    }));
+  };
+
+  /**
+   * Pair this lift with the one after it.
+   *
+   * Adjacent by construction: `blockAt` walks by adjacency, so a pairing whose members sit apart would
+   * silently read as two separate one-member blocks. Joining an existing superset extends it rather than
+   * starting a rival block beside it.
+   */
+  const supersetWithNext = () => {
+    setOptionsOpen(false);
+    if (isLastEx) return;
+    const existing = blockAt(session.exercises, exIdx);
+    const start = existing?.kind === 'superset' ? existing.start : exIdx;
+    const count = existing?.kind === 'superset' ? existing.count + 1 : 2;
+    const gid = existing?.kind === 'superset' ? existing.groupId : `ss${Date.now()}`;
+    mutate((s) => ({ ...s, exercises: makeSuperset(s.exercises, start, count, gid) }));
+    setExIdx(start);
+    showToast('Superset — log them back to back.');
+  };
+
+  const breakSuperset = () => {
+    setOptionsOpen(false);
+    mutate((s) => ({ ...s, exercises: breakBlock(s.exercises, exIdx) }));
+    showToast('Superset broken.');
+  };
+
+  /** Seconds left on the AMRAP clock, but only while we are still inside the block that started it. */
+  const amrapLeft =
+    amrap && amrap.groupId === ex.groupId ? Math.max(0, Math.ceil((amrap.endsAt - now) / 1000)) : null;
 
   /**
    * Commit a cardio block: its single set carries the time and the ground covered, and `done` marks it
@@ -823,6 +1070,20 @@ export default function WorkoutScreen() {
   const endFromOptions = () => {
     setOptionsOpen(false);
     void finishToSeal();
+  };
+  /*
+   * Attach what you're training to (Workout-Playlist-Amendment-001 §4).
+   *
+   * HERE rather than before the workout, deliberately — §4: pre-workout attachment "would add a step to
+   * workout initiation, which Forge Legacy keeps as low-friction as possible (W-1 → 'Start Workout' is one
+   * tap)." The Options menu is already the place optional extras live.
+   *
+   * It writes to the SESSION, not to the cloud, because nothing about this workout exists server-side
+   * until Finish. `saveWorkout` puts it on the row afterwards; autosave carries it through a crash.
+   */
+  const openPlaylistSheet = () => {
+    setOptionsOpen(false);
+    setPlaylistSheetOpen(true);
   };
 
   return (
@@ -916,10 +1177,134 @@ export default function WorkoutScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        {/* The block this exercise belongs to, named above it — an AMRAP announces its clock, a circuit
+            its round count, and both say which of their members you are standing on. */}
+        {block && !isSuperset ? (
+          <View style={[styles.blockBanner, block.capSec ? styles.blockBannerAmrap : null]}>
+            <View style={styles.blockBannerHead}>
+              <Text style={styles.blockKicker}>{block.capSec ? 'AMRAP' : 'Circuit'}</Text>
+              {block.capSec ? (
+                <Text style={styles.blockRounds}>{durText(block.capSec)} cap</Text>
+              ) : block.rounds && block.rounds > 1 ? (
+                <Text style={styles.blockRounds}>{block.rounds} rounds</Text>
+              ) : null}
+            </View>
+            <Text style={styles.blockName} numberOfLines={1}>{block.name}</Text>
+            <Text style={styles.blockMeta}>
+              Exercise {blockPos} of {block.count}
+              {block.capSec ? ' · as many rounds as you get' : ''}
+            </Text>
+            {/* The cap, made real. Stating "8m" without a way to run it leaves the athlete timing an
+                AMRAP on their phone's clock while the app watches. */}
+            {block.capSec && ex.groupId ? (
+              <Pressable
+                onPress={() =>
+                  amrapLeft != null
+                    ? setAmrap(null)
+                    : setAmrap({ groupId: ex.groupId as string, endsAt: Date.now() + (block.capSec as number) * 1000 })
+                }
+                accessibilityRole="button"
+                accessibilityLabel={amrapLeft != null ? 'Stop the AMRAP clock' : 'Start the AMRAP clock'}
+                style={[styles.amrapBtn, amrapLeft != null ? styles.amrapBtnOn : null]}
+              >
+                <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={amrapLeft != null ? flColor.cream100 : flColor.bronze300} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+                  {amrapLeft != null ? <Path d="M7 6h10v12H7z" /> : <Path d="M12 5a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM12 9v4l2.5 1.5M9 2h6" />}
+                </Svg>
+                <Text style={[styles.amrapBtnText, amrapLeft != null ? styles.amrapBtnTextOn : null]}>
+                  {amrapLeft != null ? fmtMMSS(amrapLeft) : `Start ${durText(block.capSec)}`}
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
+
+        {/*
+          * THE SUPERSET, AS ONE CARD.
+          *
+          * A superset is not two exercises that happen to be adjacent — it is one thing you do, A then B
+          * then A again, resting only at the end of a round. Drawn as separate cards it would need the
+          * athlete to page between them between every single set, and the rest timer would fire in the
+          * middle of the round, which is the one thing a superset exists to avoid.
+          *
+          * The whole card is driven by `nextInSuperset`, which scans round-major — so "what do I do now"
+          * is answered by the domain, with tests, rather than by the render.
+          */}
+        {block && isSuperset ? (
+          <View style={styles.supersetCard}>
+            <View style={styles.supersetHead}>
+              <Text style={styles.blockKicker}>Superset</Text>
+              <Text style={styles.blockRounds}>
+                {ssNext ? `Round ${ssNext.round + 1} of ${ssRounds}` : `${ssRounds} rounds · complete`}
+              </Text>
+            </View>
+            {Array.from({ length: block.count }, (_, m) => {
+              const mi = block.start + m;
+              const mex = session.exercises[mi];
+              const round = ssNext?.round ?? ssRounds - 1;
+              const mset = mex.sets[round];
+              const isNext = ssNext?.exIdx === mi;
+              return (
+                <View key={mi} style={[styles.ssRow, isNext && styles.ssRowNext]}>
+                  <View style={[styles.ssTag, isNext && styles.ssTagNext]}>
+                    <Text style={[styles.ssTagText, isNext && styles.ssTagTextNext]}>{String.fromCharCode(65 + m)}</Text>
+                  </View>
+                  <View style={styles.ssBody}>
+                    <Pressable onPress={() => goExercise(mi)} accessibilityRole="button" accessibilityLabel={`Open ${mex.name}`}>
+                      <Text style={styles.ssName} numberOfLines={1}>{mex.name}</Text>
+                    </Pressable>
+                    {mset ? (
+                      <Text style={[styles.ssSet, mset.done && styles.ssSetDone]}>
+                        {mset.done
+                          ? `${weightText(mset)} × ${actualText(mset)}  ✓`
+                          : `Goal ${mset.toFailure ? 'max' : mset.targetSec != null ? durText(mset.targetSec) : `${mset.targetReps} reps`}`}
+                      </Text>
+                    ) : (
+                      <Text style={styles.ssSetNone}>— no set this round</Text>
+                    )}
+                  </View>
+                  {mset && !mset.done ? (
+                    <Pressable
+                      onPress={() => openSheet(mi, round, 'weight')}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Log ${mex.name}, round ${round + 1}`}
+                      style={[styles.ssLog, isNext && styles.ssLogNext]}
+                    >
+                      <Text style={[styles.ssLogText, isNext && styles.ssLogTextNext]}>Log Set</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              );
+            })}
+            {/* Every round, at a glance — so the card is the whole block and not just the next thing in
+                it. A round is done when no member still owes it. */}
+            <View style={styles.ssRounds}>
+              {Array.from({ length: ssRounds }, (_, r) => {
+                const owed = Array.from({ length: block.count }, (_, m) => session.exercises[block.start + m].sets[r]).filter((s) => s && !s.done).length;
+                const current = ssNext?.round === r;
+                return (
+                  <View key={r} style={[styles.ssRoundChip, owed === 0 && styles.ssRoundChipDone, current && styles.ssRoundChipCurrent]}>
+                    <Text style={[styles.ssRoundChipText, owed === 0 && styles.ssRoundChipTextDone, current && styles.ssRoundChipTextCurrent]}>{r + 1}</Text>
+                  </View>
+                );
+              })}
+              <Pressable onPress={addSupersetRound} accessibilityRole="button" accessibilityLabel="Add a round" style={styles.ssAddRound}>
+                <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round">
+                  <Path d="M12 5v14M5 12h14" />
+                </Svg>
+                <Text style={styles.ssAddRoundText}>Round</Text>
+              </Pressable>
+            </View>
+            <Text style={styles.ssFoot}>No rest between them — the timer starts once the round is done.</Text>
+          </View>
+        ) : null}
+
         {/* A cardio block replaces the hero as well as the set table. There is no demonstration to play,
             no How To to read and no per-lift Memories strip for a run — and leaving the lifting hero above
             it left two headers stacked on one exercise. The block's own card is the whole surface. */}
-        {isCardio ? null : heroExpanded ? (
+        {/* In a superset the merged card above IS the surface — the hero names one member and the
+            table logs one member, and both would be arguing with a card whose whole point is that the
+            pairing is a single thing you do. Tapping a member's name in the card opens it on its own. */}
+        {isCardio || isSuperset ? null : heroExpanded ? (
           <TourAnchor id="workout-hero" style={styles.hero}>
             <View style={styles.heroRow}>
               {/* media slot — engraved dumbbell placeholder (animation art is Phase-4) */}
@@ -1004,7 +1389,7 @@ export default function WorkoutScreen() {
 
         {/* The block stands where the hero AND the table would: same position in the session, entirely
             different measurement. Sets of reps have nothing to say about three miles. */}
-        {isCardio ? (
+        {isSuperset ? null : isCardio ? (
           <CardioBlockCard
             exercise={ex}
             index={exIdx}
@@ -1041,19 +1426,34 @@ export default function WorkoutScreen() {
                     ) : null}
                   </View>
                   <View style={styles.cTarget}>
-                    <Text style={[styles.targetText, { color: valColor }]}>{set.targetReps}<Text style={styles.repsLabel}> Reps</Text></Text>
+                    {/* Three kinds of ask, and only one of them is a rep count. A to-failure set showing
+                        "0 Reps" — which is what the hard-coded label produced — reads as a set with
+                        nothing in it, the opposite of what it prescribes. */}
+                    {set.toFailure ? (
+                      <Text style={[styles.targetText, { color: valColor }]}>F<Text style={styles.repsLabel}> Max</Text></Text>
+                    ) : set.targetSec != null ? (
+                      <Text style={[styles.targetText, { color: valColor }]}>{durText(set.targetSec)}</Text>
+                    ) : (
+                      <Text style={[styles.targetText, { color: valColor }]}>{set.targetReps}<Text style={styles.repsLabel}> Reps</Text></Text>
+                    )}
                   </View>
-                  <Pressable style={[styles.cWeight, styles.weightBtn]} onPress={() => openPicker(exIdx, si, 'weight')} accessibilityRole="button" accessibilityLabel={`Edit weight, set ${si + 1}`}>
-                    {popCell(si, 'weight', <Text style={[styles.weightText, { color: valColor }]}>{set.weight != null ? set.weight : '—'}</Text>)}
+                  <Pressable style={[styles.cWeight, styles.weightBtn]} onPress={() => openSheet(exIdx, si, 'weight')} accessibilityRole="button" accessibilityLabel={`Edit weight, set ${si + 1}`}>
+                    {popCell(si, 'weight', <Text style={[styles.weightText, { color: valColor }]}>{weightText(set)}</Text>)}
                     <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" opacity={0.85}>
                       <Path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
                     </Svg>
                   </Pressable>
+                  {/* THE ACTUAL IS EDITABLE, and it now looks it. It was a bare label beside an emphatic
+                      weight button carrying a pencil, so the one number the athlete most often has to
+                      change read as a printed target. Same bordered cell, same pencil, both states. */}
                   <View style={[styles.cActual, styles.actualCell]}>
                     {isDone ? (
                       <>
-                        <Pressable onPress={() => openPicker(exIdx, si, 'reps')} accessibilityLabel={`Edit actual reps, set ${si + 1}`}>
-                          {popCell(si, 'reps', <Text style={styles.actualDone}>{set.actualReps ?? set.targetReps}</Text>)}
+                        <Pressable style={styles.actualBtn} onPress={() => openSheet(exIdx, si, 'reps')} accessibilityRole="button" accessibilityLabel={`Edit actual reps, set ${si + 1}`}>
+                          {popCell(si, 'reps', <Text style={styles.actualDone}>{actualText(set)}</Text>)}
+                          <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" opacity={0.8}>
+                            <Path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+                          </Svg>
                         </Pressable>
                         <Pressable onPress={() => uncompleteSet(exIdx, si)} accessibilityRole="button" accessibilityLabel={`Mark set ${si + 1} incomplete`} style={styles.checkDoneBtn}>
                           <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.greenMuted} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
@@ -1063,8 +1463,11 @@ export default function WorkoutScreen() {
                       </>
                     ) : isCurrent ? (
                       <>
-                        <Pressable onPress={() => openPicker(exIdx, si, 'reps')} accessibilityLabel={`Edit actual reps, set ${si + 1}`}>
-                          {popCell(si, 'reps', <Text style={styles.actualCurrent}>{set.actualReps ?? set.targetReps}</Text>)}
+                        <Pressable style={[styles.actualBtn, styles.actualBtnCurrent]} onPress={() => openSheet(exIdx, si, 'reps')} accessibilityRole="button" accessibilityLabel={`Edit actual reps, set ${si + 1}`}>
+                          {popCell(si, 'reps', <Text style={styles.actualCurrent}>{actualText(set)}</Text>)}
+                          <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+                            <Path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+                          </Svg>
                         </Pressable>
                         <Pressable onPress={() => completeSet(exIdx, si)} accessibilityRole="button" accessibilityLabel={`Complete set ${si + 1}`} style={styles.checkCurrent}>
                           <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
@@ -1073,8 +1476,12 @@ export default function WorkoutScreen() {
                         </Pressable>
                       </>
                     ) : (
+                      /* A pending row is tappable too — so you can put set 3's weight in before you get
+                         there. It writes only: sets still resolve top-down (see `commitSheet`). */
                       <>
-                        <Text style={styles.actualPending}>—</Text>
+                        <Pressable style={styles.actualBtn} onPress={() => openSheet(exIdx, si, 'reps')} accessibilityRole="button" accessibilityLabel={`Pre-fill set ${si + 1}`}>
+                          <Text style={styles.actualPending}>{set.actualReps != null ? String(set.actualReps) : '—'}</Text>
+                        </Pressable>
                         <View style={styles.checkPending} />
                       </>
                     )}
@@ -1098,6 +1505,12 @@ export default function WorkoutScreen() {
                 </Pressable>
               ) : null}
             </TourAnchor>
+            {/* Says the one thing the table does not say about itself, and stops saying it the moment
+                it stops being news. Derived from the session rather than a stored "seen" flag — there
+                is nothing to persist, nothing to clear on account switch, and no effect to get wrong. */}
+            {setsDone === 0 ? (
+              <Text style={styles.tableHint}>Tap a weight or a rep count to change it — then Log Set marks it done.</Text>
+            ) : null}
           </View>
         </TourAnchor>
         )}
@@ -1145,10 +1558,21 @@ export default function WorkoutScreen() {
             <Text style={styles.completeNoteText}>All exercises complete</Text>
           </View>
         ) : null}
+        {/*
+          * ADD EXERCISE, not a second End Workout.
+          *
+          * This slot held "End Workout" beside a primary that reads "Finish Workout" on the last
+          * exercise — two buttons, side by side, both calling `finishToSeal`. Meanwhile the one thing an
+          * athlete mid-session actually reaches for, adding a lift, was three taps deep in the ⋮ menu.
+          *
+          * Ending is not lost: the primary IS "Finish Workout" once you are on the last exercise, ⋮ still
+          * carries "End workout" (now with the §13.2 empty-session guard the footer button never had),
+          * and ← Exit still offers Save & Exit.
+          */}
         <View style={styles.bottomRow}>
           <View style={styles.endWrap}>
-            <Button variant="secondary" fullWidth onPress={() => void finishToSeal()} accessibilityLabel="End workout">
-              End Workout
+            <Button variant="secondary" fullWidth onPress={openAdd} accessibilityLabel="Add an exercise">
+              Add Exercise
             </Button>
           </View>
           <View style={[styles.primaryWrap, workoutComplete && styles.primaryGlow]}>
@@ -1249,39 +1673,83 @@ export default function WorkoutScreen() {
         </View>
       ) : null}
 
-      {/* weight / reps picker — wheel (default) or type */}
-      {picker ? (
+      {/*
+        * SET INPUT SHEET (W-9 §6.2) — weight and reps together, one Log Set.
+        *
+        * Typing is the default and the wheel is the opt-in, persisted per athlete. In wheel mode the two
+        * fields become selectors for a single wheel below them, so there is one wheel on screen and it
+        * always says which number it is turning.
+        */}
+      {sheet && sheetSet ? (
         <View style={styles.pickerWrap}>
-          <Pressable style={styles.pickerBackdrop} onPress={() => setPicker(null)} accessibilityLabel="Close picker" />
+          <Pressable style={styles.pickerBackdrop} onPress={() => setSheet(null)} accessibilityLabel="Close" />
           <View style={styles.picker}>
             <View style={styles.pickerHead}>
-              <Text style={styles.pickerTitle}>{picker.field === 'weight' ? 'Weight' : 'Actual Reps'}</Text>
-              <Pressable onPress={() => setWheelMode((v) => !v)} accessibilityRole="button" accessibilityLabel={wheelMode ? 'Type the value' : 'Use the wheel'} style={styles.pickerToggle}>
+              <View style={styles.setSheetTitleWrap}>
+                <Text style={styles.pickerTitle} numberOfLines={1}>{sheetEx?.name ?? 'Set'}</Text>
+                <Text style={styles.setSheetSub}>
+                  Set {sheet.setIdx + 1} of {sheetEx?.sets.length ?? 1}
+                  {sheetSet.toFailure ? ' · to failure' : sheetSet.targetSec != null ? ` · goal ${durText(sheetSet.targetSec)}` : ` · goal ${sheetSet.targetReps} reps`}
+                </Text>
+              </View>
+              <Pressable onPress={toggleWheel} accessibilityRole="button" accessibilityLabel={wheelMode ? 'Type the values' : 'Use the wheel'} style={styles.pickerToggle}>
                 <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
                   {wheelMode ? <Path d="M2 6h20v12H2zM6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10" /> : <Path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2" />}
                 </Svg>
                 <Text style={styles.pickerToggleText}>{wheelMode ? 'Type' : 'Wheel'}</Text>
               </Pressable>
             </View>
+
+            <View style={styles.fieldRow}>
+              <SetField
+                label="Weight (lb)"
+                value={draftW}
+                display={draftW === '' ? '—' : draftW === '0' ? 'BW' : draftW}
+                active={sheet.focus === 'weight'}
+                typing={!wheelMode}
+                onFocus={() => setSheet({ ...sheet, focus: 'weight' })}
+                onChange={(t) => setDraftW(t.replace(/[^0-9.]/g, ''))}
+                onSubmit={() => setSheet({ ...sheet, focus: 'reps' })}
+              />
+              <SetField
+                label="Actual Reps"
+                value={draftR}
+                display={draftR === '' ? '—' : draftR}
+                active={sheet.focus === 'reps'}
+                typing={!wheelMode}
+                onFocus={() => setSheet({ ...sheet, focus: 'reps' })}
+                onChange={(t) => setDraftR(t.replace(/[^0-9]/g, ''))}
+                onSubmit={commitSheet}
+              />
+            </View>
+
+            {/* BODYWEIGHT IS AN ANSWER. It writes 0, which is a different fact from an empty field —
+                one says "nothing on the bar", the other says "I didn't say". The app must not guess. */}
+            <Pressable
+              onPress={() => setDraftW(draftW === '0' ? '' : '0')}
+              accessibilityRole="button"
+              accessibilityState={{ selected: draftW === '0' }}
+              accessibilityLabel="Bodyweight — no added load"
+              style={[styles.bwChip, draftW === '0' && styles.bwChipOn]}
+            >
+              <Text style={[styles.bwChipText, draftW === '0' && styles.bwChipTextOn]}>BW</Text>
+              <Text style={styles.bwChipSub}>Bodyweight — no added load</Text>
+            </Pressable>
+
             {wheelMode ? (
               <WheelPicker
-                options={picker.field === 'weight' ? pickerWeightOpts : REPS_OPTS}
-                value={Number(pickerValue) || 0}
-                unit={picker.field === 'weight' ? 'lb' : 'Reps'}
-                onChange={(v) => setPickerValue(String(v))}
+                options={sheet.focus === 'weight' ? sheetWeightOpts : REPS_OPTS}
+                value={Number(sheet.focus === 'weight' ? draftW : draftR) || 0}
+                unit={sheet.focus === 'weight' ? 'lb' : 'Reps'}
+                onChange={(v) => (sheet.focus === 'weight' ? setDraftW(String(v)) : setDraftR(String(v)))}
               />
-            ) : (
-              <View style={styles.keypad}>
-                <Text style={styles.keypadHint}>Type the value</Text>
-                <TextInput style={styles.keypadInput} value={pickerValue} onChangeText={(t) => setPickerValue(t.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" autoFocus onSubmitEditing={confirmPicker} accessibilityLabel="Value" />
-                <Text style={styles.keypadUnit}>{picker.field === 'weight' ? 'lb' : 'Reps'}</Text>
-              </View>
-            )}
+            ) : null}
+
             <View style={styles.pickerBtns}>
-              <Button variant="primary" fullWidth onPress={confirmPicker} accessibilityLabel="Set value">
-                Set
+              <Button variant="primary" fullWidth onPress={commitSheet} accessibilityLabel={sheetIsCurrent ? 'Log set' : 'Save set'}>
+                {sheetIsCurrent ? 'Log Set' : 'Save'}
               </Button>
-              <Button variant="text" fullWidth onPress={() => setPicker(null)} accessibilityLabel="Cancel">
+              <Button variant="text" fullWidth onPress={() => setSheet(null)} accessibilityLabel="Cancel">
                 Cancel
               </Button>
             </View>
@@ -1376,6 +1844,25 @@ export default function WorkoutScreen() {
             <View style={styles.optList}>
               <OptionRow onPress={openAdd} tint title="Add an exercise" sub="Pick another movement for this session" icon={<Path d="M12 5v14M5 12h14" />} />
                       <OptionRow onPress={openSwap} title="Swap this exercise" sub="Pick a different movement" icon={<Path d="M4 7h13l-3-3M20 17H7l3 3" />} />
+              {/* Pairing is a decision made ON THE DAY — "I'll do these back to back" — so it lives
+                  here rather than only in the builder. Joining extends the block you are already in
+                  instead of starting a rival one beside it. */}
+              {isSuperset ? (
+                <OptionRow
+                  onPress={breakSuperset}
+                  title="Break the superset"
+                  sub="Log these as ordinary exercises again"
+                  icon={<Path d="M9 7H6a5 5 0 0 0 0 10h3M15 7h3a5 5 0 0 1 0 10h-3M4 4l16 16" />}
+                />
+              ) : null}
+              {!isLastEx ? (
+                <OptionRow
+                  onPress={supersetWithNext}
+                  title={isSuperset ? 'Add the next exercise to it' : 'Superset with next exercise'}
+                  sub={`Alternate with ${session.exercises[exIdx + 1].name} — one rest, at the end of the round`}
+                  icon={<Path d="M9 7H6a5 5 0 0 0 0 10h3M15 7h3a5 5 0 0 1 0 10h-3M8 12h8" />}
+                />
+              ) : null}
               <OptionRow onPress={skipExercise} title="Skip this exercise" sub="Move on to the next one" icon={<Path d="M5 5l9 7-9 7zM18 5v14" />} />
               <OptionRow
                 onPress={() => {
@@ -1392,10 +1879,47 @@ export default function WorkoutScreen() {
                   </>
                 }
               />
-              <OptionRow onPress={endFromOptions} danger title="End workout" sub="Finish and save your session" icon={<Rect x={6} y={6} width={12} height={12} rx={1.5} />} />
+              {/* §8.5. The sub-line names what's attached, so the row reports the state instead of
+                  making you open the sheet to find out. */}
+              <OptionRow
+                onPress={openPlaylistSheet}
+                title={session.playlist ? 'Change the playlist' : 'Attach a playlist'}
+                sub={session.playlist ? playlistLabel(session.playlist) : 'Spotify or Apple Music — a link, not a player'}
+                icon={
+                  <>
+                    <Path d="M9 18V5l11-2v13" />
+                    <Path d="M9 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0zM20 16a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
+                  </>
+                }
+              />
+              {/* §13.2 — an empty session cannot be saved. The footer button this replaced carried no
+                  such guard, so "End Workout" on a session with nothing logged ran the whole save. */}
+              <OptionRow
+                onPress={endFromOptions}
+                danger
+                disabled={!hasLoggedSet(session)}
+                title="End workout"
+                sub={hasLoggedSet(session) ? 'Finish and save your session' : 'Log at least one set to save'}
+                icon={<Rect x={6} y={6} width={12} height={12} rx={1.5} />}
+              />
             </View>
           </View>
         </View>
+      ) : null}
+
+      {/* Playlist attach/edit (§8.5) — the same sheet W-17 opens. Mounted only while open so its draft
+          fields seed from the session on the way in (see PlaylistSheetProps). Saving mutates the session;
+          the commit carries it to the row. */}
+      {playlistSheetOpen ? (
+        <PlaylistSheet
+          initial={session.playlist ?? null}
+          onClose={() => setPlaylistSheetOpen(false)}
+          onSave={(link) => {
+            mutate((s) => ({ ...s, playlist: link }));
+            setPlaylistSheetOpen(false);
+            showToast(link ? `Playlist attached · ${playlistLabel(link)}` : 'Playlist removed');
+          }}
+        />
       ) : null}
 
       {/* partner selection sheet (W-20) — opened from ⋮ Invite; tags persist onto the saved workout */}
@@ -1547,9 +2071,66 @@ function Pop({ children }: { children: ReactNode }) {
   return <Animated.View style={{ transform: [{ scale: s }] }}>{children}</Animated.View>;
 }
 
-function OptionRow({ onPress, title, sub, icon, tint, danger }: { onPress: () => void; title: string; sub: string; icon: ReactNode; tint?: boolean; danger?: boolean }) {
+/**
+ * One number in the Set Input Sheet.
+ *
+ * In TYPING mode it is a real input with the numeric keypad. In WHEEL mode it becomes a selector: the
+ * value is read-only text and tapping it points the single wheel below at this field — one wheel on
+ * screen, always labelled with what it is turning, rather than two wheels competing for the thumb.
+ */
+function SetField({
+  label,
+  value,
+  display,
+  active,
+  typing,
+  onFocus,
+  onChange,
+  onSubmit,
+}: {
+  label: string;
+  value: string;
+  display: string;
+  active: boolean;
+  typing: boolean;
+  onFocus: () => void;
+  onChange: (t: string) => void;
+  onSubmit: () => void;
+}) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={[styles.optRow, tint && styles.optRowTint, danger && styles.optRowDanger]}>
+    <Pressable onPress={onFocus} accessibilityRole="button" accessibilityLabel={label} style={[styles.field, active && styles.fieldActive]}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      {typing ? (
+        <TextInput
+          style={styles.fieldInput}
+          value={value}
+          onChangeText={onChange}
+          onFocus={onFocus}
+          placeholder="—"
+          placeholderTextColor={flColor.gray600}
+          keyboardType="decimal-pad"
+          returnKeyType="next"
+          selectTextOnFocus
+          onSubmitEditing={onSubmit}
+          accessibilityLabel={label}
+        />
+      ) : (
+        <Text style={[styles.fieldValue, display === '—' && styles.fieldValueEmpty]}>{display}</Text>
+      )}
+    </Pressable>
+  );
+}
+
+function OptionRow({ onPress, title, sub, icon, tint, danger, disabled }: { onPress: () => void; title: string; sub: string; icon: ReactNode; tint?: boolean; danger?: boolean; disabled?: boolean }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityState={{ disabled: !!disabled }}
+      style={[styles.optRow, tint && styles.optRowTint, danger && styles.optRowDanger, disabled && styles.optRowDisabled]}
+    >
       <View style={[styles.optIcon, danger && styles.optIconDanger]}>
         <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={danger ? flColor.redMuted : flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
           {icon}
@@ -1758,6 +2339,19 @@ const styles = StyleSheet.create({
   heroStripMeta: { fontSize: 11, fontWeight: '600', color: flColor.gray400 },
   heroStripGoal: { color: flColor.bronze300, fontWeight: '700' },
 
+  // circuit / AMRAP banner — names the block the current exercise belongs to
+  blockBanner: { gap: 3, paddingVertical: 10, paddingHorizontal: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  blockBannerAmrap: { borderColor: flColor.bronzeBorderSubtle },
+  blockBannerHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  blockKicker: { fontSize: 9, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronze400 },
+  blockRounds: { fontSize: 11, fontWeight: '700', letterSpacing: 0.3, color: flColor.bronze300, fontVariant: ['tabular-nums'] },
+  blockName: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
+  blockMeta: { fontSize: 11, fontWeight: '600', color: flColor.gray400 },
+  amrapBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, marginTop: 8, paddingVertical: 8, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal900 },
+  amrapBtnOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
+  amrapBtnText: { fontSize: 13, fontWeight: '700', letterSpacing: 0.4, color: flColor.bronze300, fontVariant: ['tabular-nums'] },
+  amrapBtnTextOn: { color: flColor.cream100 },
+
   // set table
   table: { backgroundColor: flColor.charcoal900, borderRadius: flRadius.xl, paddingHorizontal: 14, paddingTop: 14, paddingBottom: 12 },
   headRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6, paddingBottom: 8, gap: 6 },
@@ -1778,6 +2372,9 @@ const styles = StyleSheet.create({
   weightBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 6 },
   weightText: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600' },
   actualCell: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 9 },
+  actualBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4, paddingHorizontal: 8, borderRadius: flRadius.sm, borderWidth: 1, borderColor: flColor.charcoal600 },
+  actualBtnCurrent: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  tableHint: { fontSize: 11.5, lineHeight: 16, color: flColor.gray600, textAlign: 'center', paddingHorizontal: 10, paddingTop: 4 },
   actualDone: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', color: flColor.cream100, paddingVertical: 6 },
   actualCurrent: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', color: flColor.bronze400, paddingVertical: 6 },
   actualPending: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', color: flColor.gray600 },
@@ -1841,11 +2438,50 @@ const styles = StyleSheet.create({
   wheelTextDim: { color: flColor.gray600 },
   wheelUnit: { position: 'absolute', top: 110, right: 24, zIndex: 3, fontSize: 11, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase', color: flColor.bronze400 },
 
-  // keypad
-  keypad: { height: 240, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  keypadHint: { fontSize: 10, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.gray600 },
-  keypadInput: { width: 190, textAlign: 'center', fontFamily: flFont.display, fontSize: 54, fontWeight: '600', color: flColor.cream100, borderBottomWidth: 2, borderColor: flColor.bronzeBorder, paddingVertical: 6 },
-  keypadUnit: { fontSize: 12, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase', color: flColor.bronze400 },
+  // superset — one merged card for a pairing performed round by round
+  supersetCard: { borderWidth: 1, borderColor: flColor.bronzeBorder, borderRadius: flRadius.lg, backgroundColor: flColor.charcoal800, padding: 14, gap: 10, boxShadow: flShadow.trainTogetherCard },
+  supersetHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  ssRow: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 9, paddingHorizontal: 10, borderRadius: flRadius.md, borderWidth: 1, borderColor: 'transparent' },
+  ssRowNext: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  ssTag: { width: 26, height: 26, borderRadius: 13, borderWidth: 1.4, borderColor: flColor.charcoal500, alignItems: 'center', justifyContent: 'center' },
+  ssTagNext: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
+  ssTagText: { fontFamily: flFont.display, fontSize: 13, fontWeight: '700', color: flColor.gray600 },
+  ssTagTextNext: { color: flColor.bronze300 },
+  ssBody: { flex: 1, minWidth: 0, gap: 3 },
+  ssName: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
+  ssSet: { fontSize: 12, color: flColor.gray400 },
+  ssSetDone: { color: flColor.greenMuted },
+  ssSetNone: { fontSize: 12, color: flColor.gray600 },
+  ssLog: { paddingVertical: 8, paddingHorizontal: 13, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600 },
+  ssLogNext: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  ssLogText: { fontSize: 11.5, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray400 },
+  ssLogTextNext: { color: flColor.bronze300 },
+  ssRounds: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 7, paddingTop: 4 },
+  ssRoundChip: { width: 26, height: 26, borderRadius: 13, borderWidth: 1, borderColor: flColor.charcoal600, alignItems: 'center', justifyContent: 'center' },
+  ssRoundChipDone: { borderColor: flColor.greenMuted },
+  ssRoundChipCurrent: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
+  ssRoundChipText: { fontSize: 11.5, fontWeight: '700', color: flColor.gray600 },
+  ssRoundChipTextDone: { color: flColor.greenMuted },
+  ssRoundChipTextCurrent: { color: flColor.bronze300 },
+  ssAddRound: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 5, paddingHorizontal: 10, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600 },
+  ssAddRoundText: { fontSize: 11, fontWeight: '600', letterSpacing: 0.5, textTransform: 'uppercase', color: flColor.bronze400 },
+  ssFoot: { fontSize: 11.5, lineHeight: 16, color: flColor.gray600 },
+
+  // set input sheet — two fields, one Log Set
+  setSheetTitleWrap: { flex: 1, paddingRight: 12 },
+  setSheetSub: { fontSize: 11.5, color: flColor.gray400, marginTop: 3 },
+  fieldRow: { flexDirection: 'row', gap: 10, marginTop: 4 },
+  field: { flex: 1, borderWidth: 1, borderColor: flColor.charcoal600, borderRadius: flRadius.md, backgroundColor: flColor.charcoal900, paddingVertical: 12, paddingHorizontal: 12, gap: 4 },
+  fieldActive: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  fieldLabel: { fontSize: 9.5, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronze400 },
+  fieldInput: { fontFamily: flFont.display, fontSize: 34, fontWeight: '600', color: flColor.cream100, padding: 0, minHeight: 42 },
+  fieldValue: { fontFamily: flFont.display, fontSize: 34, fontWeight: '600', color: flColor.cream100, minHeight: 42 },
+  fieldValueEmpty: { color: flColor.gray600 },
+  bwChip: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10, paddingVertical: 9, paddingHorizontal: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600 },
+  bwChipOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  bwChipText: { fontSize: 12, fontWeight: '700', letterSpacing: 1, color: flColor.gray400 },
+  bwChipTextOn: { color: flColor.bronze300 },
+  bwChipSub: { flex: 1, fontSize: 11.5, color: flColor.gray600 },
 
   // duration dual wheel
   durHeader: { flexDirection: 'row', justifyContent: 'center', gap: 20, marginBottom: 2 },
@@ -1870,6 +2506,7 @@ const styles = StyleSheet.create({
   optRow: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
   optRowTint: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   optRowDanger: { borderColor: 'rgba(190,90,76,0.3)', backgroundColor: 'rgba(190,90,76,0.12)' },
+  optRowDisabled: { opacity: 0.45 },
   optIcon: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.surfaceRecessed, alignItems: 'center', justifyContent: 'center' },
   optIconDanger: { borderColor: 'rgba(190,90,76,0.3)', backgroundColor: 'rgba(190,90,76,0.14)' },
   optText: { flex: 1, minWidth: 0, gap: 2 },

@@ -20,9 +20,10 @@ import { useQuery } from '@/lib/useQuery';
  *
  * Units is real: it persists (`profiles.app_prefs`, 0022), drives the live preview here, and every weight
  * display across the app reads it through `useUnits`. Reduce Motion is real (gates animation via
- * `useReduceMotion`). Haptics and Sound persist the athlete's intent, but their consumers are native-only
- * — on the web preview there is nothing to fire — so they carry an honest "native only" note rather than
- * pretending to act. Saving refetches the shared settings provider so a units change lands app-wide at once.
+ * `useReduceMotion`). SOUND IS NOW REAL: it gates the rest-timer ding through `useSoundEnabled`, on web
+ * and native alike. Haptics still persists the athlete's intent only — the app has no haptics layer — so
+ * it alone carries the honest "native only" note rather than pretending to act. Saving refetches the
+ * shared settings provider so a units change lands app-wide at once.
  */
 
 const UNIT_OPTIONS: { id: UnitSystem; label: string }[] = [

@@ -3,9 +3,9 @@
  * `Forge Preferences.dc.html`.
  *
  * Units is real and drives every weight display through `units.ts`. Reduce Motion is real and gates
- * animation through `useReduceMotion`. Haptics and Sound are persisted preferences whose consumers are
- * native-only: on the web preview they are no-ops, and the app has no haptics/audio layer yet, so they
- * record intent (exactly as the design persists them) rather than pretending to fire.
+ * animation through `useReduceMotion`. SOUND IS NOW REAL TOO — it gates the rest-timer ding through
+ * `useSoundEnabled` + `lib/ding`, on web and native alike. Haptics is still a recorded intent: the app
+ * has no haptics layer, and the one vibration in it is web-only.
  */
 
 import { DEFAULT_UNITS, isUnitSystem, type UnitSystem } from './units.ts';
@@ -38,7 +38,7 @@ export interface ExperienceToggle {
 
 export const EXPERIENCE_TOGGLES: ExperienceToggle[] = [
   { key: 'haptics', label: 'Haptics', desc: 'Subtle taps confirm actions and PRs', icon: 'haptics', live: false },
-  { key: 'sound', label: 'Sound Effects', desc: 'Rest-timer chimes and completion tones', icon: 'sound', live: false },
+  { key: 'sound', label: 'Sound Effects', desc: 'A small ding when your rest timer runs out', icon: 'sound', live: true },
   { key: 'reduceMotion', label: 'Reduce Motion', desc: 'Simplifies animations across Forge', icon: 'motion', live: true },
 ];
 

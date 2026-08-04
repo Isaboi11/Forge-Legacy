@@ -53,3 +53,8 @@ export function useUnits(): {
 export function useReduceMotion(): boolean {
   return useAppPrefs().prefs.reduceMotion;
 }
+
+/** Whether the app is allowed to make a sound. Real since the rest-timer ding — see `lib/ding`. */
+export function useSoundEnabled(): boolean {
+  return useAppPrefs().prefs.sound;
+}

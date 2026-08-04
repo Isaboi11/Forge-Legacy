@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { sessionActivityType } from './conditioning';
 import { detectPRs, doneSetCount, PR_MAX_REPS, sessionVolume } from './metrics';
+import { playlistToRow } from './playlist';
 import type { ActiveSession } from './types';
 
 export interface SaveResult {
@@ -17,7 +18,9 @@ export interface SaveResult {
  * timeline + chapter bump, all-or-nothing). Only DONE sets persist; skipped/pending sets are no data.
  *
  * `partners` are the "Trained With" tags (names) — attribution on the athlete's OWN workout row, written
- * best-effort after the commit; a failure never fails the save (the session is already logged).
+ * best-effort after the commit; a failure never fails the save (the session is already logged). The
+ * playlist link the athlete attached from "⋯ Options" rides the same post-commit write, for the same
+ * reason.
  */
 export async function saveWorkout(session: ActiveSession, partners: string[] = []): Promise<SaveResult> {
   const {
@@ -83,6 +86,13 @@ export async function saveWorkout(session: ActiveSession, partners: string[] = [
     catalog_key: ex.catalogKey ?? null,
     section: ex.section,
     position: ex.position,
+    /* The block, if this lift is in one (0106). A superset is created IN the session — pairing two
+       lifts mid-workout is an athlete's decision on the day, not something a program handed down — so
+       unless it rides along here it exists until Finish and then does not. */
+    group_id: ex.groupId ?? null,
+    group_name: ex.groupName ?? null,
+    group_kind: ex.groupKind ?? null,
+    group_rounds: ex.groupRounds ?? null,
     sets: ex.sets
       .filter((s) => s.done)
       .map((s) =>
@@ -122,10 +132,29 @@ export async function saveWorkout(session: ActiveSession, partners: string[] = [
   });
   if (error) throw error;
 
-  // attribution (best-effort) — never fail the save over a partner tag
-  if (partners.length) {
+  /*
+   * ANNOTATIONS, WRITTEN AFTER THE COMMIT — never part of it.
+   *
+   * `partners` (0016) and the playlist link (0105) are both optional marks ON a session rather than parts
+   * OF one, and neither is worth a signature change to `save_workout`, whose 11 arguments have been
+   * frozen since 0095 and which every client path calls.
+   *
+   * BEST-EFFORT, AND THAT IS THE POINT (0018's principle): the session is the thing worth saving. It is
+   * already durably committed by the time this line runs, so a failure here costs a tag or a link — never
+   * the workout. A throw would surface to W-9's Finish handler as a failed save of a session that in fact
+   * saved perfectly.
+   *
+   * One statement for both, because they are one update to one row.
+   */
+  const annotations: Record<string, unknown> = {};
+  if (partners.length) annotations.partners = partners;
+  // Only when there IS one: `playlistToRow(null)` writes three explicit nulls, and sending those on every
+  // save would be a pointless write on the overwhelming majority of sessions that have no playlist.
+  if (session.playlist) Object.assign(annotations, playlistToRow(session.playlist));
+
+  if (Object.keys(annotations).length) {
     try {
-      await supabase.from('workouts').update({ partners }).eq('id', data.workout_id);
+      await supabase.from('workouts').update(annotations).eq('id', data.workout_id);
     } catch {
       // ignore — the workout is already saved
     }

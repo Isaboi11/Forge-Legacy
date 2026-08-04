@@ -1,8 +1,11 @@
 /** The active-workout session model (W-9). Local-first: this lives in memory + AsyncStorage during the
  *  session; nothing reaches the cloud until the atomic Finish commit (save_workout). */
 import type { CardioActivity, CardioResult, ExerciseKind, Modality } from './conditioning';
+import type { WorkoutPlaylistLink } from './playlist';
 
 export type WorkoutSectionKind = 'warmup' | 'main' | 'cooldown';
+/** What a grouped block IS. See `SessionExercise.groupKind`; absent reads as 'circuit'. */
+export type GroupKind = 'superset' | 'circuit';
 
 export type { CardioActivity, CardioResult, ExerciseKind, Modality };
 
@@ -24,6 +27,24 @@ export interface SessionSet {
   modality?: Modality | null;
   /** Prescribed reps (the Target column). */
   targetReps: number;
+  /**
+   * Prescribed TO FAILURE — "Dips: F-F-F".
+   *
+   * Deliberately a flag beside `targetReps` rather than a widening of it to `number | 'F'`: that number
+   * is arithmetic input for volume, e1RM and the reps column written at save, and a string flowing into
+   * any of those is a silent corruption rather than a type error. A failure set carries `targetReps: 0`,
+   * which contributes no invented volume, and completing one does NOT back-fill the actual from the
+   * target — the athlete has to say what they got, because that count is the entire point of the set.
+   */
+  toFailure?: boolean;
+  /**
+   * Prescribed WORK TIME — "30s Banded Pull Aparts", "45s Assault Bike".
+   *
+   * Not to be confused with `durationSec` above, which is what was actually recorded. This is the ask;
+   * that is the answer. Keeping them apart is what lets a card show "45s" as a target while the athlete
+   * logs the 38 they managed.
+   */
+  targetSec?: number | null;
   /** Entered reps (the Actual column); null until edited — completing back-fills actual = target. */
   actualReps: number | null;
   done: boolean;
@@ -47,8 +68,32 @@ export interface SessionExercise {
   targetMi?: number | null;
   targetPaceSec?: number | null;
   targetSpdMph?: number | null;
+  /** A cardio bout prescribed by the clock — "Treadmill Run, 15 min". */
+  targetSec?: number | null;
   /** What was actually covered, once it was. Written at log time; see `CardioResult`. */
   cardio?: CardioResult;
+  /**
+   * ══ CIRCUIT MEMBERSHIP ══
+   *
+   * Carried through from the program so the logger can draw a warm-up circuit, a finisher or an AMRAP as
+   * the single block the athlete actually performs, instead of loose exercises that happen to sit next to
+   * each other. Adjacent exercises sharing `groupId` are one block — the same adjacency rule the program
+   * layer uses, so a session and the program it came from can never disagree about where a circuit ends.
+   *
+   * The exercise list stays FLAT. Every existing reader — volume, PR detection, the save commit, the
+   * section grouping — walks `session.exercises` and is untouched by a block it does not know about.
+   */
+  groupId?: string;
+  groupName?: string;
+  /**
+   * 'superset' — alternated set for set, rest only after the last member, drawn as ONE merged card.
+   * 'circuit' — rounds, its own banner, and an optional clock. Absent reads as 'circuit', which is what
+   * every block that existed before supersets was.
+   */
+  groupKind?: GroupKind;
+  groupRounds?: number;
+  /** An AMRAP's cap in seconds; rounds are then uncounted by design. */
+  groupCapSec?: number | null;
   section: WorkoutSectionKind;
   position: number;
   sets: SessionSet[];
@@ -68,4 +113,16 @@ export interface ActiveSession {
    * not a session you trained.
    */
   templateId?: string;
+  /**
+   * What they're training to — Workout-Playlist-Amendment-001 §4, attached from the "⋯ Options" menu.
+   *
+   * It lives on the SESSION rather than being written straight to the cloud because that is the only
+   * place it can live before Finish: nothing about this workout exists server-side until the atomic
+   * commit. Riding here means it survives a crash and a resume for free (the whole session is
+   * JSON-serialised by `persistSession`), and `saveWorkout` writes it onto the row afterwards — the same
+   * post-commit path `partners` already takes, for the same reason.
+   *
+   * At most one (§3). Attaching a new one replaces it; there is no list and no history.
+   */
+  playlist?: WorkoutPlaylistLink | null;
 }

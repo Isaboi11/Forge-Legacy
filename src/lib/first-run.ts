@@ -3,8 +3,11 @@ import { clearHomeIntake } from './home-intake';
 import { clearHomeTourStatus, clearTourStatus, clearUnlockAnnounced } from './tour';
 import { clearScreenPrompts } from './screen-prompts';
 import { clearRestTimerPref } from './rest-timer-pref';
+import { clearWheelInputPref } from './set-input-pref';
 import { clearSeenPodiums } from './podium-seen';
 import { clearProgramDraft } from './program-draft';
+import { clearWorkoutDraft } from './workout-builder-draft';
+import { clearStartChoice } from './program-intent';
 import { clearSession } from '@/domain/workout/autosave';
 import { clearSquadFavorites } from './squad-favorites';
 
@@ -37,9 +40,14 @@ export async function resetFirstRunFlags(): Promise<void> {
     clearUnlockAnnounced(),
     clearScreenPrompts(),
     clearRestTimerPref(),
+    clearWheelInputPref(),
     clearSeenPodiums(),
     clearSession(),
     clearProgramDraft(),
+    // Same reasoning as the program draft: half-authored work belonging to whoever was signed in before.
+    clearWorkoutDraft(),
+    // Without this the next account is never asked how it wants to start — it inherits the answer.
+    clearStartChoice(),
     clearSquadFavorites(),
   ]);
 }

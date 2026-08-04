@@ -39,6 +39,30 @@ export function hasLoggedSet(session: ActiveSession): boolean {
   return doneSetCount(session) > 0;
 }
 
+/** The shape a persisted set arrives in when a finished workout is read back. */
+export interface PersistedSet {
+  weight?: number | null;
+  reps?: number | null;
+  distance?: number | null;
+  durationSec?: number | null;
+}
+
+/**
+ * How many sets a finished exercise reports on The Record and in Activity History.
+ *
+ * A CONDITIONING BOUT counts as the one bout it is — a run is one unit of work, not the four rows some
+ * future importer might split it into. Everything else counts every persisted row.
+ *
+ * It does NOT filter on weight, and that is the whole point of it living here with a test around it.
+ * The Record screen used to count only sets with both a weight and a rep count, so three unweighted
+ * warm-up sets rendered as "0 sets" beside a header that said 3. A row exists because a set was logged;
+ * the load is a property of the set, not a licence for it to be counted.
+ */
+export function completionSetCount(sets: readonly PersistedSet[]): number {
+  const isBout = sets.some((s) => (s.distance ?? 0) > 0 || (s.durationSec ?? 0) > 0);
+  return isBout ? 1 : sets.length;
+}
+
 export interface DetectedPR {
   exercise: string;
   weight: number;
@@ -72,7 +96,13 @@ export const PR_MAX_REPS = 5;
 export function bestRecordWeight(sets: readonly SessionSet[]): number | null {
   let best: number | null = null;
   for (const s of sets) {
-    if (!s.done || s.weight == null) continue;
+    /*
+     * A BODYWEIGHT SET SETS NO WEIGHT RECORD. `weight: 0` is a real answer — the athlete marked the set
+     * as carrying nothing — but a record measured in pounds cannot be 0 of them. Without this, the first
+     * chin-up anyone logged wrote "Pull-Up — 0 lb" into their personal records and announced it.
+     * The same reasoning as the cardio and warm-up exclusions in `detectPRs`: no load, no load record.
+     */
+    if (!s.done || s.weight == null || s.weight <= 0) continue;
     const reps = effectiveReps(s);
     if (reps < 1 || reps > PR_MAX_REPS) continue;
     if (best == null || s.weight > best) best = s.weight;

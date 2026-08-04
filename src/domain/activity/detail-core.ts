@@ -7,6 +7,7 @@
  */
 
 import { ACTIVITY_LABEL, fmtDuration, type Modality } from './history-core.ts';
+import type { WorkoutPlaylistLink } from '../workout/playlist.ts';
 
 export interface DetailSet {
   setIndex: number;
@@ -34,6 +35,13 @@ export interface ActivityDetail {
   programId: string | null;
   programName: string | null;
   partners: string[];
+  /**
+   * The playlist attached to this session, or null — W-19 §9A, read-only here.
+   *
+   * The `.dc` has always drawn this row (`hasPlaylist` / `playlistName` in Forge Activity Detail.dc.html);
+   * the screen carried a comment saying "Playlist — no such data", which was true until migration 0105.
+   */
+  playlist: WorkoutPlaylistLink | null;
   /** PRs set in this session, e.g. "315 lb Back Squat". */
   milestones: string[];
   /** 1-based position in the athlete's history — strength counted separately from all sessions. */
@@ -110,12 +118,20 @@ export function sectionsOf(d: ActivityDetail): DetailSection[] {
   })).filter((s) => s.exercises.length > 0);
 }
 
-/** `225 lbs × 5` · `12 reps` · `225 lbs × —` · '' — never invents the half it doesn't have. */
+/**
+ * `225 lbs × 5` · `BW × 12` · `12 reps` · `225 lbs × —` · '' — never invents the half it doesn't have.
+ *
+ * THREE STATES, not two. A weight of `0` is an ANSWER — the athlete marked the set bodyweight — and
+ * reads as "BW". A weight of `null` is the absence of an answer and reads as reps alone, because a
+ * warm-up set logged without a weight is not a claim that it carried none.
+ */
 export function setLine(s: DetailSet): string {
   const unit = s.weightUnit ?? 'lbs';
   const hasW = s.weight != null && s.weight > 0;
+  const isBw = s.weight === 0;
   if (hasW && s.reps != null) return `${s.weight} ${unit} × ${s.reps}`;
   if (hasW) return `${s.weight} ${unit} × —`;
+  if (isBw && s.reps != null) return `BW × ${s.reps}`;
   if (s.reps != null) return `${s.reps} reps`;
   return '';
 }
