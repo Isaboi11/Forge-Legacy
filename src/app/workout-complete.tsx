@@ -61,7 +61,27 @@ function quoteFor(id: string): string {
  * the secondary "See the details → Reflect" branch, so most workouts intentionally carry no reflection.
  */
 export default function WorkoutComplete() {
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, review: reviewParam } = useLocalSearchParams<{ id?: string; review?: string }>();
+  /*
+   * ══ REVIEW: THE SAME SUMMARY, RE-OPENED FROM HISTORY ══
+   *
+   * This screen is parameterised by a workout id, so it can already describe ANY saved session — it was
+   * simply only ever reached once, in the seconds after Finish. Activity Detail now links back to it so
+   * the full summary is a thing you can return to rather than a thing you got one look at.
+   *
+   * Three things must NOT replay, because they are moments rather than facts:
+   *   · the PROGRAM GRADUATION ceremony — enqueueing it here would throw a full-screen celebration at
+   *     somebody idly scrolling their history months later;
+   *   · the FIRST-WORKOUT reveal ("Your Chapter begins") — an arrival, and you only arrive once;
+   *   · HOLD TO SEAL — it is already sealed. The hold writes nothing (the session was committed by
+   *     `save_workout` long before this screen drew), so re-holding is harmless but dishonest: it offers
+   *     a ritual whose outcome already happened.
+   *
+   * Everything that is a FACT stays: the medallion, the stats, the PR, the record breakdown. And the
+   * writes that are still meaningful later stay available too — add a reflection, save it as a template,
+   * attach a playlist, share it to a squad. None of those expire at the end of the session.
+   */
+  const review = reviewParam === '1';
   const router = useRouter();
   const { showToast } = useToast();
   // Volume is stored in lb; show it in the athlete's system. `fmt` re-expresses per-set strings.
@@ -81,7 +101,8 @@ export default function WorkoutComplete() {
    * because `useQuery` refetches whenever the units preference changes.
    */
   const { enqueue } = useCeremony();
-  const graduation = data?.graduation ?? null;
+  // Not in review — a graduation is a moment, and it has already had it. See the note on `review`.
+  const graduation = review ? null : (data?.graduation ?? null);
   useEffect(() => {
     if (!graduation) return;
     enqueue({
@@ -129,14 +150,23 @@ export default function WorkoutComplete() {
   // First-run "Chapter comes alive" reveal (ONB-D18) — a restrained bronze fade/scale-in on workout #1.
   const [reveal] = useState(() => new Animated.Value(0));
   useEffect(() => {
-    if (data?.isFirstWorkout) Animated.timing(reveal, { toValue: 1, duration: 1100, useNativeDriver: true }).start();
-  }, [data?.isFirstWorkout, reveal]);
+    if (!review && data?.isFirstWorkout) Animated.timing(reveal, { toValue: 1, duration: 1100, useNativeDriver: true }).start();
+  }, [review, data?.isFirstWorkout, reveal]);
   useEffect(() => {
     const listenerId = hold.addListener(({ value }) => setHoldPct(value));
     return () => hold.removeListener(listenerId);
   }, [hold]);
 
-  const goHome = () => router.replace('/(tabs)/legacy');
+  /* Finishing a workout lands in Legacy, where the session just went. Reviewing an old one returns to
+     wherever it was opened from — Activity Detail, usually — because nothing has moved. */
+  const goHome = () => {
+    if (review) {
+      if (router.canGoBack()) router.back();
+      else router.replace('/activity-history');
+      return;
+    }
+    router.replace('/(tabs)/legacy');
+  };
 
   /** Opens the naming sheet, prefilled with what the session was called. */
   const openTemplateName = () => {
@@ -334,7 +364,7 @@ export default function WorkoutComplete() {
 
     // First-run reveal (ONB-D18): the chapter comes alive on workout #1. Arrival, not achievement — no
     // reward/rank/honor/streak language (honest against D22; leaves the First-Honor check for ONB-D19).
-    if (data.isFirstWorkout) {
+    if (data.isFirstWorkout && !review) {
       const scale = reveal.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1] });
       return (
         <Shell>
@@ -349,7 +379,7 @@ export default function WorkoutComplete() {
           <View style={styles.center}>
             <Text style={styles.firstEyebrow}>Your Chapter begins</Text>
             <Animated.View style={{ opacity: reveal, transform: [{ scale }] }}>
-              <SealMedallion size={132} sealed={sealed} />
+              <SealMedallion size={132} sealed={sealed || review} />
             </Animated.View>
             <Animated.Text style={[styles.revealChapter, { opacity: reveal, transform: [{ scale }] }]}>
               {data.chapterName ?? 'Your Chapter'}
@@ -391,13 +421,13 @@ export default function WorkoutComplete() {
         </Pressable>
         <View style={styles.center}>
           {data.chapterName ? <Text style={styles.eyebrow}>{data.chapterName}</Text> : null}
-          <SealMedallion size={132} sealed={sealed} />
+          <SealMedallion size={132} sealed={sealed || review} />
           {/*
             Name the destination. "Session Sealed" tells the athlete something happened but not where it
             went — and the chapter card is the only place it lands, so say so.
           */}
-          <Text style={[styles.sealStatus, sealed && styles.sealStatusSealed]}>
-            {sealed ? (data.chapterName ? `Sealed to ${data.chapterName}` : 'Session Sealed') : 'Session Complete'}
+          <Text style={[styles.sealStatus, (sealed || review) && styles.sealStatusSealed]}>
+            {sealed || review ? (data.chapterName ? `Sealed to ${data.chapterName}` : 'Session Sealed') : 'Session Complete'}
           </Text>
           <Text style={styles.sealTitle}>{data.workoutName}</Text>
           {data.dateLabel ? <Text style={styles.sealSubtitle}>{data.dateLabel}</Text> : null}
@@ -421,22 +451,37 @@ export default function WorkoutComplete() {
                 <Text style={styles.upNextText}>Up next · {nextName}</Text>
               </View>
             ) : null}
-            <Pressable
-              style={[styles.holdBtn, styles.holdBtnInSection]}
-              onPressIn={startHold}
-              onPressOut={cancelHold}
-              accessibilityRole="button"
-              accessibilityLabel="Press and hold to seal"
-            >
-              <AnimatedGradient
-                colors={flGradient.bronzeMetallic.colors}
-                locations={flGradient.bronzeMetallic.locations}
-                start={flGradient.bronzeMetallic.start}
-                end={flGradient.bronzeMetallic.end}
-                style={[styles.holdFill, { width: fillW }]}
-              />
-              <Text style={[styles.holdText, (sealed || holdPct > 0.55) && styles.holdTextDark]}>{sealed ? 'Sealed' : holdPct > 0 ? 'Keep holding…' : 'Hold to Seal'}</Text>
-            </Pressable>
+            {/* REVIEW SHOWS NO HOLD. The ritual already happened, and the hold writes nothing — offering
+                it again would be theatre over a settled fact. A plain Done returns where you came from. */}
+            {review ? (
+              <Pressable style={[styles.holdBtn, styles.holdBtnInSection]} onPress={goHome} accessibilityRole="button" accessibilityLabel="Done">
+                <AnimatedGradient
+                  colors={flGradient.bronzeMetallic.colors}
+                  locations={flGradient.bronzeMetallic.locations}
+                  start={flGradient.bronzeMetallic.start}
+                  end={flGradient.bronzeMetallic.end}
+                  style={[styles.holdFill, styles.holdFillFull]}
+                />
+                <Text style={[styles.holdText, styles.holdTextDark]}>Done</Text>
+              </Pressable>
+            ) : (
+              <Pressable
+                style={[styles.holdBtn, styles.holdBtnInSection]}
+                onPressIn={startHold}
+                onPressOut={cancelHold}
+                accessibilityRole="button"
+                accessibilityLabel="Press and hold to seal"
+              >
+                <AnimatedGradient
+                  colors={flGradient.bronzeMetallic.colors}
+                  locations={flGradient.bronzeMetallic.locations}
+                  start={flGradient.bronzeMetallic.start}
+                  end={flGradient.bronzeMetallic.end}
+                  style={[styles.holdFill, { width: fillW }]}
+                />
+                <Text style={[styles.holdText, (sealed || holdPct > 0.55) && styles.holdTextDark]}>{sealed ? 'Sealed' : holdPct > 0 ? 'Keep holding…' : 'Hold to Seal'}</Text>
+              </Pressable>
+            )}
             <Pressable onPress={() => setStep('record')} accessibilityRole="button" accessibilityLabel="See the details" style={styles.textLink}>
               <Text style={styles.textLinkText}>See the details</Text>
             </Pressable>
@@ -1054,6 +1099,7 @@ const styles = StyleSheet.create({
 
   holdBtn: { marginTop: 26, width: '100%', height: 54, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', boxShadow: flShadow.borderInset },
   holdFill: { position: 'absolute', left: 0, top: 0, bottom: 0 },
+  holdFillFull: { right: 0 },
   holdBtnInSection: { marginTop: 0 },
   sealBottom: { width: '100%', maxWidth: 320, marginTop: 32 },
   upNext: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 15 },

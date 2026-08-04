@@ -75,6 +75,7 @@ export default function ActivityDetailScreen() {
           detail={data}
           onOpenProgram={(pid) => router.push({ pathname: '/program/[id]', params: { id: pid } })}
           onOpenExercise={(key) => router.push({ pathname: '/exercise/[id]', params: { id: key } })}
+          onOpenSummary={() => router.push({ pathname: '/workout-complete', params: { id, review: '1' } })}
         />
       )}
     </View>
@@ -85,10 +86,12 @@ function Body({
   detail,
   onOpenProgram,
   onOpenExercise,
+  onOpenSummary,
 }: {
   detail: ActivityDetail;
   onOpenProgram: (programId: string) => void;
   onOpenExercise: (keyOrName: string) => void;
+  onOpenSummary: () => void;
 }) {
   const sections = sectionsOf(detail);
   const tiles = statTiles(detail);
@@ -221,6 +224,30 @@ function Body({
           ) : null}
         </>
       ) : null}
+
+      {/*
+        THE FULL SUMMARY, RE-OPENABLE.
+        W-17's completion screen is parameterised by a workout id, so it has always been able to describe
+        any saved session — it was simply only ever reached in the seconds after Finish, and the medallion,
+        the volume figure, the PR and the exercise-by-exercise breakdown were a thing you got one look at.
+        `review=1` re-opens it as a record rather than a ceremony: no graduation replay, no first-workout
+        reveal, no hold-to-seal over something already sealed.
+      */}
+      <Pressable
+        onPress={onOpenSummary}
+        accessibilityRole="button"
+        accessibilityLabel="See the full summary for this session"
+        style={({ pressed }) => [styles.summaryRow, pressed ? styles.summaryRowPressed : null]}
+      >
+        <View style={styles.summaryIcon}>
+          <Glyph d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" size={17} color={flColor.bronze400} />
+        </View>
+        <View style={styles.summaryText}>
+          <Text style={styles.summaryTitle}>See the full summary</Text>
+          <Text style={styles.summarySub}>The seal, the volume, and the session in full</Text>
+        </View>
+        <Glyph d="M9 6l6 6-6 6" size={16} color={flColor.bronze400} width={2} />
+      </Pressable>
     </ScrollView>
   );
 }
@@ -352,6 +379,33 @@ const styles = StyleSheet.create({
   tileLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray600 },
   tileValue: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', color: flColor.cream100 },
 
+  summaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 13,
+    marginTop: 22,
+    paddingVertical: 15,
+    paddingHorizontal: 15,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    backgroundColor: flColor.charcoal800,
+    boxShadow: flShadow.borderInset,
+  },
+  summaryRowPressed: { opacity: 0.82 },
+  summaryIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: flRadius.round,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    backgroundColor: flColor.bronzeTint,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  summaryText: { flex: 1, minWidth: 0, gap: 2 },
+  summaryTitle: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
+  summarySub: { fontSize: 11.5, color: flColor.gray400 },
   attrRow: {
     flexDirection: 'row',
     alignItems: 'center',
