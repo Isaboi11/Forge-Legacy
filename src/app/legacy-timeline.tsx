@@ -210,8 +210,11 @@ function ChapterHeader({ chapter: c, onPress }: { chapter: TimelineChapter; onPr
           locations={flGradient.bronzeMetallic.locations}
           start={flGradient.bronzeMetallic.start}
           end={flGradient.bronzeMetallic.end}
-          style={StyleSheet.absoluteFill}
+          style={[StyleSheet.absoluteFill, styles.chapterMarkFill]}
         />
+        {/* THREE STATES, NOT TWO. `sealed` and `isActive` are separate facts and a chapter can be
+            neither — closed without being sealed. That case used to take the active branch by default,
+            so it got the open-book emblem AND a live green dot claiming it was still being written. */}
         {c.sealed ? <FlameGlyph size={15} color="#1A1206" /> : <BookGlyph size={15} color="#1A1206" />}
       </View>
 
@@ -225,11 +228,15 @@ function ChapterHeader({ chapter: c, onPress }: { chapter: TimelineChapter; onPr
               <FlameGlyph size={10} color={flColor.gray600} />
               <Text style={styles.chapterStatusSealed}>Sealed</Text>
             </>
-          ) : (
+          ) : c.isActive ? (
             <>
               <View style={styles.liveDot} />
               <Text style={styles.chapterStatusActive}>Active</Text>
             </>
+          ) : (
+            /* Not sealed, not active. `isActive` was fetched and never read, so this chapter used to
+               claim a live green dot — the app asserting someone is still writing a chapter they left. */
+            <Text style={styles.chapterStatusSealed}>Not active</Text>
           )}
           <Text style={styles.chapterRange} numberOfLines={1}>
             {chapterRange(c)} · {chapterSummary(c)}
@@ -304,24 +311,45 @@ function EventGlyph({ kind, color }: { kind: TimelineKind; color: string }) {
       return <SparkGlyph size={s} color={color} />;
   }
 }
+/*
+ * ══ THESE ARE THE LIBRARY'S PATHS, NOT LOOKALIKES ══
+ *
+ * Each of the three below was hand-drawn here and diverged from `forge-symbols.js` — the same library
+ * `ForgeSymbol.tsx` already ports and that the Legacy tab and Chapter Detail already draw from. The
+ * chapter emblem was the visible casualty: the old "book" was
+ *
+ *     M4 5.5A2 2 0 0 1 6 4h5v16H6a2 2 0 0 0-2 1.5zM20 5.5A2 2 0 0 0 18 4h-5v16h5a2 2 0 0 1 2 1.5z
+ *
+ * — two tall boxy slabs spanning y 4→21.5 in a 24 viewBox, so vertically off-centre by three quarters
+ * of a unit and bottom-heavy. Stroked near-black on a solid bronze coin at 15px it read as a dark blob,
+ * not an open book. The canonical path is two curves that actually look like facing pages.
+ *
+ * The same file drew a bespoke flame and a shield missing the design's inner chevron. All three now
+ * carry the library's own `d`, so the timeline agrees with every other surface that draws a chapter.
+ * (`Legacy-Timeline-Wireframe-Spec-L2.md` specifies no emblem at all — the mark is a `.dc` invention —
+ * so the authority here is the symbol library, and it is now being followed.)
+ */
 function BookGlyph({ size = 14, color = flColor.bronze300 }: { size?: number; color?: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 5.5A2 2 0 0 1 6 4h5v16H6a2 2 0 0 0-2 1.5zM20 5.5A2 2 0 0 0 18 4h-5v16h5a2 2 0 0 1 2 1.5z" />
+      <Path d="M12 6.5C10 5 7 4.5 4 5v12c3-.5 6 0 8 1.5" />
+      <Path d="M12 6.5C14 5 17 4.5 20 5v12c-3-.5-6 0-8 1.5z" />
     </Svg>
   );
 }
 function FlameGlyph({ size = 14, color = flColor.bronze300 }: { size?: number; color?: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 3s5 4.2 5 8.6a5 5 0 0 1-10 0C7 9 9 7 9 7s.6 2 1.6 2.6C11.4 8 12 5.6 12 3z" />
+      <Path d="M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z" />
     </Svg>
   );
 }
 function ShieldGlyph({ size = 14, color = flColor.bronze300 }: { size?: number; color?: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 3l7 3v6c0 4.2-3 7.6-7 9-4-1.4-7-4.8-7-9V6z" />
+      <Path d="M12 3.4l6.8 2.6v5.3c0 4.2-2.8 7-6.8 8.6-4-1.6-6.8-4.4-6.8-8.6V6L12 3.4z" />
+      {/* The chevron the hand-drawn copy dropped — without it a rank-up reads as a plain crest. */}
+      <Path d="M8.8 11l3.2 2.2 3.2-2.2" />
     </Svg>
   );
 }
@@ -329,6 +357,8 @@ function MedalGlyph({ size = 14, color = flColor.bronze300 }: { size?: number; c
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
       <Circle cx={12} cy={14.5} r={4.8} />
+      {/* The library's inner ring, which the hand-drawn copy left out — a medal without it is a coin. */}
+      <Circle cx={12} cy={14.5} r={1.8} />
       <Path d="M8.8 10.4L6 4h4l2 3.2L14 4h4l-2.8 6.4" />
     </Svg>
   );
@@ -395,7 +425,11 @@ const styles = StyleSheet.create({
   yearLabel: { fontFamily: flFont.display, fontSize: 14, fontWeight: '700', letterSpacing: 3, color: flColor.gray400 },
 
   chapterRow: { flexDirection: 'row', alignItems: 'center', gap: GAP, paddingTop: 16, paddingBottom: 12, paddingHorizontal: 2 },
-  chapterMark: { width: MARKER, height: MARKER, flexShrink: 0, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: flRadius.round, boxShadow: `${HALO}, ${flShadow.glowBadge}` },
+  /* NO `overflow: 'hidden'` — it clips the halo and the badge glow, which are drawn OUTSIDE the coin.
+     The gradient fill is already round because it inherits this view's radius, so the overflow was
+     buying nothing and costing the ring the mark is supposed to sit inside. */
+  chapterMark: { width: MARKER, height: MARKER, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round, boxShadow: `${HALO}, ${flShadow.glowBadge}` },
+  chapterMarkFill: { borderRadius: flRadius.round },
   chapterBody: { flex: 1, minWidth: 0, gap: 4 },
   chapterName: { fontFamily: flFont.display, fontSize: 17, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
   chapterMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
