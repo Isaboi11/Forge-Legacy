@@ -1,0 +1,6 @@
+# Python deps for the exercise-animation pipeline (Python 3.10+).
+#   pip install -r requirements.txt
+# Also needs ffmpeg on PATH (Windows: `winget install Gyan.FFmpeg`).
+pillow>=10
+numpy>=1.24
+scipy>=1.10
