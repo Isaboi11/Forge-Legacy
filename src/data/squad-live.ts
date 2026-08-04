@@ -38,7 +38,7 @@ export interface SquadSummary {
   role: SquadRole;
   memberCount: number;
   avatars: SquadMemberAvatar[]; // up to 4, owner first (real photos / initials)
-  trainedToday: number; // members who logged a workout today (you, for now — real check-ins land later)
+  trainedToday: number; // members who trained today — a saved workout OR a posted check-in (0108)
 }
 
 export interface SquadDetail {
@@ -72,7 +72,7 @@ export interface SquadDetail {
   privacy: SquadPrivacy;
   ownerId: string;
   isOwner: boolean;
-  trainedToday: number; // members trained today (you, for now)
+  trainedToday: number; // members who trained today — a saved workout OR a posted check-in (0108)
 }
 
 export interface SquadMemberView {
@@ -131,20 +131,23 @@ export async function fetchMySquads(): Promise<SquadSummary[]> {
     }
   }
 
-  // "Trained today" — members who checked in as 'trained' today, per squad (0048). Pre-0048 fallback: did I
-  // train today (applied to every squad).
+  /*
+   * "Trained today" — members who actually TRAINED today (0108): a saved workout OR a posted check-in.
+   *
+   * This counted CHECK-INS ALONE, which is a video somebody filmed, so a squadmate who trained and
+   * logged every set moved the number by nothing. The card says "trained today" in its largest type; it
+   * was reporting something else, and the bug report was exactly that ("someone in the squad worked out
+   * and it didn't update").
+   *
+   * It has to be an RPC because RLS on `workouts` is own-row — a member cannot see whether anybody else
+   * trained, which is why the client had settled for the only cross-member signal it could read.
+   */
   const trainedMap = new Map<string, number>();
   let fellBack = false;
   if (ids.length) {
-    const { data: ci, error: ciErr } = await supabase.from('squad_checkins').select('squad_id, user_id').in('squad_id', ids).gte('created_at', checkinCutoff());
-    if (!ciErr) {
-      const seen = new Map<string, Set<string>>();
-      for (const c of (ci ?? []) as { squad_id: string; user_id: string }[]) {
-        const set = seen.get(c.squad_id) ?? new Set<string>();
-        set.add(c.user_id);
-        seen.set(c.squad_id, set);
-      }
-      for (const [sid, set] of seen) trainedMap.set(sid, set.size);
+    const { data: tr, error: trErr } = await supabase.rpc('squads_trained_since', { p_squads: ids, p_since: localMidnight() });
+    if (!trErr) {
+      for (const r of (tr ?? []) as { squad_id: string; trained: number }[]) trainedMap.set(r.squad_id, Number(r.trained ?? 0));
     } else {
       fellBack = true;
     }
@@ -236,12 +239,13 @@ export async function fetchSquad(id: string): Promise<{ squad: SquadDetail; memb
     }
   }
 
-  // "Training today" for the hero — distinct members with a live check-in (<24h) (0049). Pre-0049 fallback: did I train today.
+  // "Training today" for the hero — members who trained today, workout OR check-in (0108). Same defect
+  // and same fix as the hub card; see the note there. Pre-0108 fallback: did I train today.
   let trainedToday = 0;
   {
-    const { data: ci, error: ciErr } = await supabase.from('squad_checkins').select('user_id').eq('squad_id', id).gte('created_at', checkinCutoff());
-    if (!ciErr) {
-      trainedToday = new Set((ci ?? []).map((c: { user_id: string }) => c.user_id)).size;
+    const { data: tr, error: trErr } = await supabase.rpc('squad_trained_since', { p_squad: id, p_since: localMidnight() });
+    if (!trErr) {
+      trainedToday = Number(tr ?? 0);
     } else if (uid) {
       const midnight = new Date();
       midnight.setHours(0, 0, 0, 0);
@@ -348,6 +352,20 @@ export async function fetchSquadInvite(id: string): Promise<SquadInviteInfo | nu
 /** Check-ins are ephemeral video "stories": only a member's LATEST shows, and only within 24h (0049). */
 const CHECKIN_WINDOW_MS = 24 * 60 * 60 * 1000;
 const checkinCutoff = (): string => new Date(Date.now() - CHECKIN_WINDOW_MS).toISOString();
+
+/**
+ * When the athlete's day started, in their own timezone.
+ *
+ * "Trained today" is a claim about a day, and a squad spans timezones — the server has no opinion about
+ * whose. The viewer's local midnight is the honest boundary for the person reading the card, and passing
+ * it to the RPC means the workout half and the check-in half are measured against the SAME instant
+ * instead of one using local midnight and the other a trailing 24 hours.
+ */
+export function localMidnight(): string {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+}
 
 export interface SquadCheckin {
   id: string;

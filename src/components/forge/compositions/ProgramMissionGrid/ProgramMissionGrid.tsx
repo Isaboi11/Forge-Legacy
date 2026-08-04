@@ -30,6 +30,16 @@ export interface ProgramMissionGridProps {
    * without a second component.
    */
   programName?: string
+  /**
+   * TRUE when the program is PLANNED but never started.
+   *
+   * The tile was hard-labelled "Current Program" and fed whichever program Home could find, falling back
+   * to a `future` one — so a program the athlete had adopted and never pressed Start on was announced as
+   * the one they are on, with a progress bar under it reading 0 of 32. `index.tsx` had already stopped
+   * the HERO from offering its sessions for exactly this reason ("Home asserting a program relationship
+   * the athlete never entered"); the fix stopped one element short of the tile's own label.
+   */
+  programPlanned?: boolean
   completed?: number
   total?: number
   missionTarget: string
@@ -62,6 +72,7 @@ function TargetIcon() {
 
 export function ProgramMissionGrid({
   programName,
+  programPlanned,
   completed,
   total,
   missionTarget,
@@ -84,21 +95,38 @@ export function ProgramMissionGrid({
           ref={programRef}
           onPress={onProgram}
           accessibilityRole="button"
-          accessibilityLabel={`Current program: ${programName}. ${done} of ${all} workouts complete.`}
+          accessibilityLabel={
+            programPlanned
+              ? `Planned program: ${programName}, ${all} workouts. Not started.`
+              : `Current program: ${programName}. ${done} of ${all} workouts complete.`
+          }
           style={styles.tile}
         >
-          <TileHeader label="Current Program" />
+          <TileHeader label={programPlanned ? 'Planned Program' : 'Current Program'} />
           <Text style={styles.tileTitle} numberOfLines={2}>
             {programName}
           </Text>
-          <View style={styles.progressBlock}>
-            <View style={styles.countRow}>
-              <Text style={styles.countBig}>{done}</Text>
-              <Text style={styles.countTotal}>/ {all}</Text>
-              <Text style={styles.countLabel}>Workouts</Text>
+          {/* A PLANNED program shows its SIZE, not its progress. An empty bar under "0 / 32 Workouts"
+              is the picture of somebody who has started and done nothing, which is a different and
+              worse thing to say to an athlete than "you have not started this yet". */}
+          {programPlanned ? (
+            <View style={styles.progressBlock}>
+              <View style={styles.countRow}>
+                <Text style={styles.countBig}>{all}</Text>
+                <Text style={styles.countLabel}>Workouts</Text>
+              </View>
+              <Text style={styles.plannedNote}>Not started — tap to begin</Text>
             </View>
-            <ProgressBar value={done} max={all} label={`Program progress: ${done} of ${all}`} />
-          </View>
+          ) : (
+            <View style={styles.progressBlock}>
+              <View style={styles.countRow}>
+                <Text style={styles.countBig}>{done}</Text>
+                <Text style={styles.countTotal}>/ {all}</Text>
+                <Text style={styles.countLabel}>Workouts</Text>
+              </View>
+              <ProgressBar value={done} max={all} label={`Program progress: ${done} of ${all}`} />
+            </View>
+          )}
         </Pressable>
       ) : null}
 
@@ -192,6 +220,11 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textTransform: 'uppercase',
     color: flColor.gray600,
+  },
+  plannedNote: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: flColor.bronze400,
   },
   subtle: {
     fontSize: 12.5,

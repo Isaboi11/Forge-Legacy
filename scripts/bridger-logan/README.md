@@ -1,6 +1,12 @@
-# Bridger Logan — 6 Weeks
+# Iron & Engine — 6 Weeks
 
 A program the athlete **purchased**, transcribed from screenshots for their own training.
+
+The directory keeps the author's name so its provenance is unambiguous; the PROGRAM is called
+**Iron & Engine**, because the athlete's Home screen should carry a description of the training rather
+than the name of whoever sold it. IRON is the barbell spine — bench, squat, deadlift, military press,
+descending ladders into 5×5 and peaking on max-effort triples in week 6. ENGINE is the conditioning
+that closes nearly every session: sled work, wall ball complexes, AMRAPs, assault bike, rowing.
 
 **Personal only.** Do not move this into `src/domain/training/programs/` or give it a
 `source_definition_id`. Transcribing a bought program for yourself is ordinary use; shipping its

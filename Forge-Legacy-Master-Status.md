@@ -24,7 +24,7 @@
 | **Architecture Design** | **~100%** | All 21 Architecture Freeze rows ✅ Complete; V1 Architecture Freeze officially **FROZEN 2026-06-30** |
 | **UI / Wireframes** | **~95%** | Nearly all screens specced; W18/W19 both lock-candidate (W18 corrected 2026-07-09 — previously misdashboarded as LOCKED; W19 blocked on W18, see Decision Queue #16); no Search/Rest-Timer/Community wireframe yet — Communities is architecture-only in this pass, no pixel layout authored |
 | **Content Authoring** | **Split — 92% coaching · 8% programs** | Was a single "~12%", which was wrong in both directions. **Coaching: 735 of 797 exercises Published, 62 Needs Review.** **Honors: data** (`honor_catalog`, **179 awardable** across 14 categories — 0099 filled the five empty ones). **Programs: 2 of 24 generated** — the real gap. **Exercise media: 0 of 797** |
-| **Backend / Data** | **BUILT (Supabase) — 107 migrations, 0001–0107, ALL APPLIED** (0106–0107 applied 2026-08-03) | auth · profiles · chapters · workouts+sets+conditioning legs · PRs · honors (`honor_catalog` + table-driven evaluator) · programs · goals · rank · body metrics · photos · squads+feed+discovery · friends · challenges · notifications · templates · train-together. RLS on all 35 tables; 52/52 `SECURITY DEFINER` pin `search_path`. Design doc still ratifies Firebase — the BUILD is Supabase (PD-7: build governs) |
+| **Backend / Data** | **BUILT (Supabase) — 108 migrations, 0001–0108, ALL APPLIED** (0106–0108 applied 2026-08-03) | auth · profiles · chapters · workouts+sets+conditioning legs · PRs · honors (`honor_catalog` + table-driven evaluator) · programs · goals · rank · body metrics · photos · squads+feed+discovery · friends · challenges · notifications · templates · train-together. RLS on all 35 tables; 52/52 `SECURITY DEFINER` pin `search_path`. Design doc still ratifies Firebase — the BUILD is Supabase (PD-7: build governs) |
 | **Code Implementation** | **~76%** *(74 screens, essentially all backend-wired)* | **74 screens** — 71 plus `/workout-builder` (W-25) and `/squad/[id]/goal` (S-2b) shipped 2026-08-03, and 72 until `/active-run` was retired 2026-08-01 (one run surface, folded onto the workout card). **73 of 74 read real Supabase.** The whole SOCIAL pillar — Squads · Squad Detail · Friends · Feed · Athlete Profile — is live, not mock; the old "fully MOCK, quarantined in `*-placeholder.ts`" reading was stale by weeks. Remaining: content, media production, and the deferred items in Current Sprint |
 | **Testing** | **878 tests green** *(coverage % not instrumented → not measured)* | 59 files, all passing. Invariant/golden (comment ⊆ thread · check-in ⊆ roster · records ⊆ roster · one-active-program), resolver matrices, domain validators, and four regression guards: `route-guard` (every screen declared, else it answers a URL signed-out), `chapter-tallies` (a chapter with honors never reports 0), **`completionSetCount` (an unweighted set is still a set) and `overlay-branch` (a sheet is mounted in the branch that can open it — verified by removing the fix and watching it fail)**. Behavioural coverage of built layers, NOT whole-app coverage |
 
@@ -116,7 +116,31 @@ what they looked like.
       can reach a Watch; iOS has neither a HealthKit web API nor Web Bluetooth. The cheapest real route is
       an Apple Health import in a native build, with no watchOS code at all
 
-**Migrations 0106 and 0107 APPLIED 2026-08-03** (bundled at `supabase/apply/pending-0106-0107.sql`),
+**Two more defects, reported from real use after the deploy and fixed the same day:**
+
+- [x] **"N / M trained today" counted VIDEO CHECK-INS, not workouts.** A squadmate trained, logged every
+      set, and moved the Squads card's largest figure by nothing. The card was neither stale nor
+      mis-fetching — it counted a different thing from the one its own label names, the same class as
+      `chapters.honor_count` (0098). RLS on `workouts` is own-row, which is WHY the client had settled
+      for check-ins: it was the only cross-member signal it could read. Migration **0108** adds a
+      `security definer`, membership-gated count of members with a saved workout OR a check-in since the
+      caller's local midnight. It returns a COUNT, never a roster — naming who did not train is a
+      different product (SA-D4)
+- [x] **Home called a program you never started "Current Program".** The tile is hard-labelled and falls
+      back to a `future` program so Start stays one tap away. `index.tsx` had already stopped the HERO
+      from making that claim ("Home asserting a program relationship the athlete never entered") and the
+      fix stopped one element short of the tile. Now "Planned Program · Not started — tap to begin", with
+      the program's SIZE instead of an empty progress bar — an empty bar under "0 / 32" is the picture of
+      somebody who started and did nothing
+- [x] **The personal 6-week import renamed `Bridger Logan — 6 Weeks` → `Iron & Engine`.** The old name
+      put the person who SOLD the program on the athlete's Home screen and made a purchased product look
+      like a Forge title. IRON is the barbell spine (bench · squat · deadlift · military press, ladders
+      into 5×5, peaking on max-effort triples in week 6); ENGINE is what closes nearly every session
+      (sled, wall ball complexes, AMRAPs, assault bike, rowing). Deliberately NOT catalogue-style naming,
+      which would make a personal import read as a Forge built-in — see the standing "never promote to
+      catalog" rule
+
+**Migrations 0106, 0107 and 0108 APPLIED 2026-08-03** (0106–0107 bundled at `supabase/apply/pending-0106-0107.sql`),
 confirmed by a structural check of the four `workout_exercises.group_*` columns and all five functions.
 Both redefine PL/pgSQL that resolves column references at RUN time, so that check proves they EXIST, not
 that they WORK — the run-time proof is pressing the buttons: log a superset and save it as a template

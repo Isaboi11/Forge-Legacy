@@ -890,6 +890,10 @@ export default function HomeScreen() {
           {composition.showMissionTile ? (
             <ProgramMissionGrid
               programName={composition.showProgramTile ? home.name : undefined}
+              // The tile names the ANCHOR, which falls back to a planned program so Start stays one tap
+              // away. Saying "Current Program" over one nobody pressed Start on is the same claim
+              // `selectHomePrograms` already refuses to let the hero make.
+              programPlanned={!activeProgram && anchorProgram?.state === 'future'}
               completed={home.completed}
               total={home.total}
               missionTarget={missionTarget}

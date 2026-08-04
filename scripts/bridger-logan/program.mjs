@@ -470,7 +470,23 @@ export const WEEKS = [W1, W2, W3, W4, W5, W6];
 
 /** The `ProgramStructure` that goes into the `programs` row. */
 export const STRUCTURE = {
-  name: 'Bridger Logan — 6 Weeks',
+  /*
+   * ══ THE NAME IS THE ATHLETE'S, NOT THE AUTHOR'S ══
+   *
+   * "Bridger Logan — 6 Weeks" named the person who SOLD the program, which is wrong twice over: it put
+   * a third party's name on the athlete's own Home screen, and it made a purchased product look like a
+   * Forge title to anyone glancing at the card.
+   *
+   * "Iron & Engine" describes what the six weeks actually are. IRON is the barbell spine — bench, squat,
+   * deadlift and military press, which start as descending rep ladders (10-8-6-4), settle into 5×5, and
+   * peak in week 6 on max-effort TRIPLES. ENGINE is what closes almost every session: sled push/pull,
+   * wall ball complexes, AMRAPs, assault bike, rowing intervals, HIIT finishers. Neither half is a
+   * garnish — the program is a hybrid, and a name that said only "strength" or only "conditioning"
+   * would describe a different block.
+   *
+   * Short on purpose: the Home tile clamps to two lines in a narrow column.
+   */
+  name: 'Iron & Engine',
   weeks: 6,
   // The headline figure. Weeks 3-6 run five days; `weekSizes` reads each week for itself.
   daysPerWeek: 6,
