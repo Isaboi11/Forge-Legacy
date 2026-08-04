@@ -35,6 +35,7 @@ import {
   type LogWeek,
   type LoggedWorkout,
 } from '@/domain/program/progress-core';
+import { getProgramDefinition } from '@/domain/training/programs';
 import { LiftMaxSheet } from '@/components/forge/LiftMaxSheet';
 import {
   loadContextFor,
@@ -156,6 +157,20 @@ export default function ProgramDetailScreen() {
   const view = viewForState(state, true);
   const progress = computeProgress(structure, workouts.length);
   const stats = computeStats(workouts);
+
+  /**
+   * WHAT THIS PROGRAM IS, before you agree to run it.
+   *
+   * Read off the catalog definition this run was adopted from — `sourceDefinitionId` (0019) is already
+   * stored, so the prose costs no column and no migration. It is deliberately NOT copied into the saved
+   * row: the description is the CATALOG's account of the program, and freezing a snapshot of it per run
+   * would leave a corrected description stranded behind every athlete who had already adopted it.
+   *
+   * `null` for a program the athlete built themselves — there is no author to describe it, and this
+   * screen would rather say nothing than say "A program you built." underneath the name they gave it.
+   */
+  const def = program.sourceDefinitionId ? getProgramDefinition(program.sourceDefinitionId) : null;
+  const goals = def?.goals?.filter((g) => g.trim().length > 0) ?? [];
 
   /**
    * PERCENTAGE PRESCRIPTIONS resolve here, at render, against the run's own frozen maxes.
@@ -335,7 +350,16 @@ export default function ProgramDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.title}>{program.name}</Text>
-        <Text style={styles.metaFamily}>Custom · {structure.vary ? 'Per-week' : 'Repeating week'}</Text>
+        {/* WAS HARDCODED "Custom". Squat Ascent Intermediate — a Strength/Intermediate catalog program —
+            introduced itself to the athlete as Custom, which is simply untrue of anything adopted from
+            the catalog. A program the athlete actually built keeps "Custom", and keeps the week shape
+            alongside it: the `.dc` fills that slot with the difficulty too, but "Custom • Custom" says
+            half as much as "Custom • Repeating week" and there is no authored difficulty to put there. */}
+        <Text style={styles.metaFamily}>
+          {def
+            ? [def.family, def.difficulty].filter(Boolean).join(' • ')
+            : `Custom • ${structure.vary ? 'Per-week' : 'Repeating week'}`}
+        </Text>
         <Text style={styles.metaLine}>
           {structure.weeks} weeks • {progress.perWeek} {progress.perWeek === 1 ? 'day' : 'days'} / week
         </Text>
@@ -369,6 +393,28 @@ export default function ProgramDetailScreen() {
               Workout {progress.completed} of {progress.total}
             </Text>
           </TourAnchor>
+        ) : null}
+
+        {/* ── WHAT THIS IS ───────────────────────────────────────────────────────────────────────────
+                The `.dc` puts the description here, between the progress card and Equipment, and the
+                build had dropped it — the athlete decided whether to run four weeks of five-day squatting
+                from a name and a week count. "What this builds" is NOT in the `.dc`; it renders the
+                `goals` the program definitions have always carried, because the paragraph says what you
+                will DO and these say what it is FOR, which is the half that answers "is this for me". ── */}
+        {def?.description ? <Text style={styles.description}>{def.description}</Text> : null}
+
+        {goals.length ? (
+          <View style={styles.block}>
+            <Text style={styles.microLabel}>What this builds</Text>
+            <View style={styles.goalList}>
+              {goals.map((g) => (
+                <View key={g} style={styles.goalRow}>
+                  <View style={styles.goalMark} />
+                  <Text style={styles.goalText}>{g}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
         ) : null}
 
         {equipment.length ? (
@@ -720,7 +766,17 @@ const styles = StyleSheet.create({
   progressPct: { fontFamily: flFont.display, fontSize: 20, fontWeight: '600', color: flColor.bronze300, fontVariant: ['tabular-nums'] },
   progressSub: { fontSize: 12, color: flColor.gray600 },
 
+  // 14.5 / 1.6 / text-secondary — the `.dc`'s paragraph spec exactly.
+  description: { marginTop: 18, fontSize: 14.5, lineHeight: 23, color: flColor.gray400 },
+
   block: { marginTop: 18 },
+  goalList: { gap: 9 },
+  goalRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  // The bronze diamond the design uses for its "Next ·" marker, reused so the list reads as Forge's
+  // rather than as a generic bullet.
+  goalMark: { width: 5, height: 5, marginTop: 7, transform: [{ rotate: '45deg' }], backgroundColor: flColor.bronze400 },
+  goalText: { flex: 1, fontSize: 13.5, lineHeight: 20, color: flColor.gray400 },
+
   microLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.gray600, marginBottom: 9 },
   equipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   equipPill: { paddingVertical: 7, paddingHorizontal: 13, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },

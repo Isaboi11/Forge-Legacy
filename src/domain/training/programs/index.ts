@@ -10,6 +10,8 @@
  * AUTHORED IN-REPO, with no `.docx` behind it:
  *   - Iron & Engine
  *   - Squat Ascent Intermediate
+ *   - Bench Approach Intermediate
+ *   - Deadlift Measure Intermediate
  *
  * ── WHY ONE PROGRAM HAS NO `.docx` ───────────────────────────────────────────────────────────────────
  *
@@ -23,15 +25,28 @@
  * Its `status` is deliberately NOT `LOCKED`. Phases 1–8 of the Production Standard are complete and
  * written down; Lock Approval is the product owner's, and claiming it here would be forging a signature.
  *
- * ── THE FIRST PERCENTAGE-BASED PROGRAM ───────────────────────────────────────────────────────────────
+ * ── THE PERCENTAGE-LOADED SPECIALIZATION BLOCKS ──────────────────────────────────────────────────────
  *
- * Squat Ascent Intermediate loads every squat as a fraction of a tested max (0111). It is the
- * first program in the catalog to do so, and the only one whose prescriptions cannot be read without the
- * athlete answering the max gate first. Its `status` is likewise NOT `LOCKED`.
+ * Squat Ascent, Bench Approach and Deadlift Measure load their specialized lift as a fraction of a
+ * tested max (0111). They are the only programs in the catalog whose prescriptions cannot be read at all
+ * until the athlete answers the max gate. All three are standalone blocks run BETWEEN general programs —
+ * no successor, no predecessor, not rungs on the Strength Foundation ladder. None is `LOCKED`.
  *
- * Its METHOD was analysed from a publicly-posted training month; its structure, prescriptions, session
- * names and copy are original, and none of the source's are reproduced. The provenance is written down
- * in its Design Record rather than left to memory — see `sourceFile`.
+ * ══ THEY ARE NOT THREE COPIES OF ONE TEMPLATE ══
+ *
+ * Squat and Bench train their lift five days a week; DEADLIFT TRAINS IT TWICE, across four sessions,
+ * never on consecutive days. The squat and the bench tolerate daily submaximal work and the deadlift
+ * does not — five heavy pulls a week is how people get hurt, and shipping that as advice because it
+ * matched a sibling's shape would be the template writing the training. The remaining pull sessions
+ * carry variations and squat work, which build the same positions at a fraction of the spinal cost.
+ * `Deadlift Measure Intermediate`'s Design Record §6 argues it in full.
+ *
+ * ══ PROVENANCE DIFFERS BETWEEN THEM, AND IS RECORDED ══
+ *
+ * Squat Ascent's METHOD was analysed from a publicly-posted training month — structure, prescriptions,
+ * session names and copy original, none of the source's reproduced. Bench Approach and Deadlift Measure
+ * were EXTRAPOLATED from that method with no source consulted at all, so their loading carries a weaker
+ * warrant than their sibling's. Each Design Record says which it is, in its own §1.
  */
 
 import type { ProgramDefinition } from '../schema';
@@ -39,6 +54,8 @@ import foundationI3Day from './strength-foundation-i-3day.json';
 import foundationII4Day from './strength-foundation-ii-4day.json';
 import ironAndEngine from './iron-and-engine.json';
 import squatAscent from './squat-ascent-intermediate.json';
+import benchApproach from './bench-approach-intermediate.json';
+import deadliftMeasure from './deadlift-measure-intermediate.json';
 
 // JSON import types widen literals (e.g. theme:string); the validator test enforces the
 // real ProgramDefinition contract, so a single narrowing cast here is safe.
@@ -47,6 +64,8 @@ const DEFINITIONS: readonly ProgramDefinition[] = [
   foundationII4Day,
   ironAndEngine,
   squatAscent,
+  benchApproach,
+  deadliftMeasure,
 ] as unknown as ProgramDefinition[];
 
 /** All converted, PO-approved program definitions. */

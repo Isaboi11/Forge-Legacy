@@ -93,10 +93,20 @@ function parseMeta(lines) {
   const freq = kv('Frequency');
   meta.frequencyPerWeek = freq ? parseInt(freq, 10) : null;
   meta.successor = kv('Successor Program');
+  /*
+   * A SECTION ALSO ENDS WHERE THE DOCUMENT STARTS OVER.
+   *
+   * Some sources repeat their whole header partway through (a duplicated cover block). Without the
+   * title as a terminator, `sliceBetween` runs straight past it and the section absorbs the repeat:
+   * Foundation I's goals ended up holding "Version: 1.0Status: LOCKED…", "Program Description" and the
+   * description paragraphs as if an athlete were meant to read them. Every section gets this guard,
+   * not just goals — the next document to repeat itself will do so under whichever heading it likes.
+   */
+  const restart = [meta.title];
   // Description = the paragraph(s) between "Program Description" and "Program Goals".
-  meta.description = sliceBetween(lines, 'Program Description', ['Program Goals', 'Program Outcome']).join(' ') || null;
-  meta.goals = sliceBetween(lines, 'Program Goals', ['Program Outcome', 'Weeks', 'Program Notes']).map(stripBullet);
-  meta.outcome = sliceBetween(lines, 'Program Outcome', ['Weeks', 'Program Notes']).map(stripBullet);
+  meta.description = sliceBetween(lines, 'Program Description', ['Program Goals', 'Program Outcome', ...restart]).join(' ') || null;
+  meta.goals = sliceBetween(lines, 'Program Goals', ['Program Outcome', 'Weeks', 'Program Notes', ...restart]).map(stripBullet);
+  meta.outcome = sliceBetween(lines, 'Program Outcome', ['Weeks', 'Program Notes', ...restart]).map(stripBullet);
   return meta;
 }
 

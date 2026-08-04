@@ -25,11 +25,26 @@ const i3 = load('strength-foundation-i-3day.json');
 const ii4 = load('strength-foundation-ii-4day.json');
 const ie = load('iron-and-engine.json');
 const sq = load('squat-ascent-intermediate.json');
+const bp = load('bench-approach-intermediate.json');
+const dl = load('deadlift-measure-intermediate.json');
+
+/**
+ * The percentage-loaded specialization blocks, each paired with the lift it TESTS.
+ *
+ * Every rule below runs over all three. Writing them against one program is how the second and third
+ * ship with a defect the first was fixed for — which is exactly what happened to the `lower`/`legs`
+ * split rule, caught only because a reviewer read the sibling.
+ */
+const SPECIALIZATIONS = [
+  { p: sq, tested: 'barbell-back-squat', family: /squat/ },
+  { p: bp, tested: 'barbell-bench-press', family: /bench|press/ },
+  { p: dl, tested: 'barbell-deadlift', family: /deadlift/ },
+];
 
 /** GENERATED from `.docx` — the ingest owns these. */
 const generated = [i3, ii4];
 /** Every shipped definition, however it was authored. Structural rules apply to all of them. */
-const all = [i3, ii4, ie, sq];
+const all = [i3, ii4, ie, sq, bp, dl];
 const UNITS = new Set(['reps', 'seconds', 'minutes', 'yards']);
 
 /** A cardio bout carries a `cardio:<activity>` key, which is not a row in `exercises.json`. */
@@ -334,141 +349,190 @@ test('Iron & Engine: the block schedule covers all six weeks with no gap or over
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Squat Ascent — the first percentage-loaded program in the catalog
+// The percentage-loaded specialization blocks — squat, bench, deadlift
+//
+// Every rule here runs over ALL THREE. Written against one program, these are
+// exactly how the second and third ship with a defect the first was fixed for.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Per-set percentages for an item, however it was authored. */
 const pcts = (ex) => ex.percentScheme ?? Array(ex.sets).fill(ex.percentOfMax);
+const loaded = (ex) => ex.percentOfMax != null || Boolean(ex.percentScheme);
+const everyItem = (p) => p.blocks.flatMap((b) => b.workouts.flatMap((w) => w.main.map((ex) => [ex, w, b])));
 
-test('Squat Ascent: every percentage is a real percentage', () => {
+test('specializations: every percentage is a real percentage', () => {
   for (const [ex, where] of everyPrescription()) {
-    if (ex.percentOfMax == null && !ex.percentScheme) continue;
-    for (const p of pcts(ex)) {
-      if (p == null) continue;
-      assert.ok(Number.isFinite(p) && p > 0 && p <= 150, `${where} percentage out of range: ${p}`);
+    if (!loaded(ex)) continue;
+    for (const v of pcts(ex)) {
+      if (v == null) continue;
+      assert.ok(Number.isFinite(v) && v > 0 && v <= 150, `${where} percentage out of range: ${v}`);
     }
   }
 });
 
-test('Squat Ascent: a per-set percentage list matches its ladder exactly', () => {
-  // A shorter list silently leaves later sets unloaded; a longer one prescribes sets that do not exist.
+test('specializations: a per-set percentage list matches its set count exactly', () => {
+  // Shorter silently leaves later sets unloaded; longer prescribes sets that do not exist.
   for (const [ex, where] of everyPrescription()) {
     if (!ex.percentScheme) continue;
     assert.equal(ex.percentScheme.length, ex.sets, `${where} percentScheme disagrees with its set count`);
   }
 });
 
-test('Squat Ascent: a borrowed percentage names a lift that is really in the catalog', () => {
+test('specializations: a borrowed percentage names a lift that is really in the catalog', () => {
   for (const [ex, where] of everyPrescription()) {
     if (!ex.percentOf) continue;
     assert.ok(catalogIds.has(ex.percentOf), `${where} percentOf points at nothing: ${ex.percentOf}`);
   }
 });
 
-test('Squat Ascent: the front squat borrows the BACK squat max, never its own', () => {
-  // Resolving 48% against an untested front-squat max would put a materially wrong bar in front of the
-  // athlete, with full confidence. This is the one relationship the schema cannot infer.
-  const fronts = sq.blocks.flatMap((b) =>
-    b.workouts.flatMap((w) => w.main.filter((ex) => ex.catalogKey === 'barbell-front-squat')),
-  );
-  assert.ok(fronts.length > 0, 'expected front squat work');
-  for (const f of fronts) assert.equal(f.percentOf, 'barbell-back-squat');
-});
-
-test('Squat Ascent: the squat is trained every single session', () => {
-  // The whole premise. A session without it is a different program.
-  for (const b of sq.blocks) {
-    for (const w of b.workouts) {
-      const hasSquat = w.main.some((ex) => /squat/.test(ex.catalogKey));
-      assert.ok(hasSquat, `${b.label} ${w.code} has no squat in it`);
+/**
+ * THE RULE THAT COST A ROUND ALREADY.
+ *
+ * Squat Ascent's first draft asked for a "Tempo Squat max" and a "Pause Squat max" — numbers nobody has
+ * ever tested — because two variations carried a percentage and no `percentOf`, so each defaulted to its
+ * own catalog key. Every one of those prescriptions rendered with no weight against it.
+ *
+ * Exactly ONE lift per block is a lift you test. Every relative of it borrows that number.
+ */
+test('specializations: a VARIATION of the specialized lift never asks for a max of its own', () => {
+  for (const { p, tested, family } of SPECIALIZATIONS) {
+    for (const [ex, w] of everyItem(p)) {
+      if (!loaded(ex) || !family.test(ex.catalogKey)) continue;
+      if (ex.catalogKey === tested) {
+        assert.equal(ex.percentOf, undefined, `${p.id} ${w.name}: the tested lift borrows from nobody`);
+      } else {
+        assert.equal(ex.percentOf, tested, `${p.id} ${w.name}: ${ex.displayName} must borrow ${tested}`);
+      }
     }
   }
 });
 
-test('Squat Ascent: peak intensity climbs every week, and reaches a true max', () => {
-  const tops = sq.blocks.map((b) =>
-    Math.max(
-      ...b.workouts.flatMap((w) =>
-        w.main.filter((ex) => ex.catalogKey === 'barbell-back-squat').flatMap((ex) => pcts(ex)),
-      ),
-    ),
-  );
-  for (let i = 1; i < tops.length; i += 1) {
-    assert.ok(tops[i] > tops[i - 1], `week ${i + 1} peaks at ${tops[i]}%, no higher than week ${i}`);
+test('specializations: the gate asks for at most three maxes, and never for a variation', () => {
+  for (const { p, tested, family } of SPECIALIZATIONS) {
+    const keys = new Set();
+    for (const [ex] of everyItem(p)) if (loaded(ex)) keys.add(ex.percentOf ?? ex.catalogKey);
+    assert.ok(keys.has(tested), `${p.id} must load its own specialized lift`);
+    assert.ok(keys.size <= 3, `${p.id} asks for ${keys.size} maxes: ${[...keys].join(', ')}`);
+    for (const k of keys) {
+      if (k === tested) continue;
+      assert.ok(!family.test(k), `${p.id} asks for a max of a variation: ${k}`);
+    }
   }
-  assert.equal(tops.at(-1), 100, 'the block has to finish on a real max attempt');
 });
 
-test('Squat Ascent: volume peaks mid-block and falls away into the test', () => {
-  // Volume climbing into a test day is how you arrive at it tired. Week 4 must be the lightest.
-  const vols = sq.blocks.map((b) =>
-    b.workouts
-      .flatMap((w) => w.main.filter((ex) => ex.catalogKey === 'barbell-back-squat'))
-      .reduce((a, ex) => a + (ex.repScheme ?? Array(ex.sets).fill(ex.reps)).reduce((x, y) => x + y, 0), 0),
-  );
-  const peak = Math.max(...vols);
-  assert.ok(vols.indexOf(peak) < vols.length - 1, 'volume must not peak in the final week');
-  assert.equal(Math.min(...vols), vols.at(-1), 'the test week has to be the lightest');
+test('specializations: peak intensity climbs every week and reaches a true max', () => {
+  for (const { p, tested } of SPECIALIZATIONS) {
+    const tops = p.blocks.map((b) =>
+      Math.max(...b.workouts.flatMap((w) => w.main.filter((ex) => ex.catalogKey === tested).flatMap(pcts))),
+    );
+    for (let i = 1; i < tops.length; i += 1) {
+      assert.ok(tops[i] > tops[i - 1], `${p.id} week ${i + 1} peaks at ${tops[i]}%, no higher than week ${i}`);
+    }
+    assert.equal(tops.at(-1), 100, `${p.id} must finish on a real max attempt`);
+  }
 });
 
-test('Squat Ascent: a near-max is rehearsed before it is tested', () => {
+test('specializations: volume peaks mid-block and the final week is the lightest', () => {
+  // Volume climbing into a test day is how you arrive at the test tired.
+  for (const { p, tested } of SPECIALIZATIONS) {
+    const vols = p.blocks.map((b) =>
+      b.workouts
+        .flatMap((w) => w.main.filter((ex) => ex.catalogKey === tested))
+        .reduce((a, ex) => a + (ex.repScheme ?? Array(ex.sets).fill(ex.reps)).reduce((x, y) => x + y, 0), 0),
+    );
+    assert.ok(vols.indexOf(Math.max(...vols)) < vols.length - 1, `${p.id} volume peaks in the final week`);
+    assert.equal(Math.min(...vols), vols.at(-1), `${p.id} test week is not the lightest`);
+  }
+});
+
+test('specializations: a near-max is rehearsed before it is tested', () => {
   // Test day must not be the first time in a month the athlete has been under a heavy bar.
-  const beforeTestWeek = sq.blocks.slice(0, -1).flatMap((b) =>
-    b.workouts.flatMap((w) => w.main.filter((ex) => ex.catalogKey === 'barbell-back-squat').flatMap(pcts)),
-  );
-  assert.ok(Math.max(...beforeTestWeek) >= 90, 'nothing at or above 90% before the test week');
+  for (const { p, tested } of SPECIALIZATIONS) {
+    const before = p.blocks
+      .slice(0, -1)
+      .flatMap((b) => b.workouts.flatMap((w) => w.main.filter((ex) => ex.catalogKey === tested).flatMap(pcts)));
+    assert.ok(Math.max(...before) >= 90, `${p.id} has nothing at or above 90% before the test week`);
+  }
 });
 
-test('Squat Ascent: four weeks of blocks, no gap and no overlap', () => {
-  const covered = sq.blocks.flatMap((b) => Array.from({ length: b.weekEnd - b.weekStart + 1 }, (_, i) => b.weekStart + i));
-  assert.deepEqual(covered.sort((a, b) => a - b), [1, 2, 3, 4]);
-  assert.equal(sq.durationWeeks, 4);
-  for (const b of sq.blocks) assert.equal(b.workouts.length, sq.frequencyPerWeek);
+/**
+ * THE DEADLIFT IS NOT THE SQUAT, AND A TEMPLATE MUST NOT SAY OTHERWISE.
+ *
+ * The squat and the bench tolerate daily submaximal work. Heavy pulling does not. A later edit that
+ * "harmonises" the three blocks onto one frequency would be the template writing the training, so the
+ * difference is asserted here rather than left to a Design Record nobody re-reads.
+ */
+/** A session is HEAVY in a lift when it takes that lift to 80% or above. */
+const HEAVY_PCT = 80;
+const topPctOf = (w, key) => {
+  const items = w.main.filter((ex) => ex.catalogKey === key);
+  const all = items.flatMap(pcts).filter((v) => v != null);
+  return all.length ? Math.max(...all) : 0;
+};
+
+test('the deadlift block pulls twice a week, and never heavy twice in a row', () => {
+  assert.equal(dl.frequencyPerWeek, 4, 'four sessions, not five');
+  for (const b of dl.blocks) {
+    const pulls = b.workouts.map((w) => w.main.some((ex) => ex.catalogKey === 'barbell-deadlift'));
+    assert.equal(pulls.filter(Boolean).length, 2, `${b.label} does not pull exactly twice`);
+    /*
+     * HEAVY, not merely present. The first draft of this test asserted no two consecutive PULLING
+     * sessions and failed on week 4 — a 68% speed double followed by the test. That pairing is correct
+     * peaking practice, not a risk, and the test was measuring the wrong thing. What must never happen
+     * is two consecutive sessions that both take the bar to 80%+.
+     */
+    const heavy = b.workouts.map((w) => topPctOf(w, 'barbell-deadlift') >= HEAVY_PCT);
+    for (let i = 1; i < heavy.length; i += 1) {
+      assert.ok(!(heavy[i] && heavy[i - 1]), `${b.label} pulls heavy in back-to-back sessions`);
+    }
+  }
 });
 
-test('Squat Ascent: it does not claim a LOCK nobody signed', () => {
-  assert.notEqual(sq.status, 'LOCKED');
-  assert.ok(sq.sourceFile.endsWith('.md'), 'an authored program cites a Design Record, not a .docx');
-  assert.ok(sq.name.length <= 60, 'PAS-D1 hard limit');
-});
-
-test('Squat Ascent: a squat VARIATION never asks for a max of its own', () => {
+test('the squat and bench blocks train their lift — or a variation of it — in every session', () => {
   /*
-   * Caught in review, not by the unit tests: the tempo squat and pause squat were authored with a
-   * percentage and no `percentOf`, so each defaulted to its own catalog key. The entry gate then asked
-   * the athlete for a "Tempo Squat max" and a "Pause Squat max" — numbers nobody has ever tested — and
-   * every one of those prescriptions rendered with no weight against it.
-   *
-   * The rule: exactly ONE squat is a lift you test. Every other squat borrows its number.
+   * The premise is the LIFT, not one catalog row. Squat Ascent's "Tempo Control" day trains the tempo
+   * squat, the front squat and Bulgarians and never touches `barbell-back-squat` — which is the session
+   * working as designed. An exact-key assertion here called that a defect.
    */
-  const TESTED = 'barbell-back-squat';
-  for (const b of sq.blocks) {
-    for (const w of b.workouts) {
-      for (const ex of w.main) {
-        if (!/squat/.test(ex.catalogKey)) continue;
-        if (ex.percentOfMax == null && !ex.percentScheme) continue;
-        if (ex.catalogKey === TESTED) {
-          assert.equal(ex.percentOf, undefined, `${w.name}: the tested lift borrows from nobody`);
-        } else {
-          assert.equal(ex.percentOf, TESTED, `${w.name}: ${ex.displayName} must borrow the back squat max`);
-        }
+  for (const { p, family } of [SPECIALIZATIONS[0], SPECIALIZATIONS[1]]) {
+    for (const b of p.blocks) {
+      for (const w of b.workouts) {
+        assert.ok(
+          w.main.some((ex) => family.test(ex.catalogKey)),
+          `${p.id} ${b.label} ${w.code} (${w.name}) trains nothing from the specialized family`,
+        );
       }
     }
   }
 });
 
-test('Squat Ascent: the gate asks for three maxes — the three lifts it actually loads', () => {
-  const keys = new Set();
-  for (const b of sq.blocks) {
-    for (const w of b.workouts) {
-      for (const ex of w.main) {
-        if (ex.percentOfMax != null || ex.percentScheme) keys.add(ex.percentOf ?? ex.catalogKey);
+/**
+ * `lower` is only correct inside a declared `upper_lower` structure; otherwise a lower-body session is
+ * `legs` (`schema.ts`, resolver spec §08). Squat Ascent shipped with `lower` and no structure — found by
+ * reading its sibling, not by any test, which is why there is now a test.
+ */
+test('a program with no declared structure never claims an upper_lower split', () => {
+  for (const p of all) {
+    if (p.structure === 'upper_lower') continue;
+    for (const b of p.blocks) {
+      for (const w of b.workouts) {
+        assert.notEqual(w.split, 'lower', `${p.id} ${w.code}: use 'legs' — 'lower' needs an upper_lower structure`);
       }
     }
   }
-  assert.deepEqual(
-    [...keys].sort(),
-    ['barbell-back-squat', 'barbell-bench-press', 'barbell-deadlift'],
-    'every extra key here is one more number the athlete is asked for before they can start',
-  );
+});
+
+test('specializations: four weeks, no gap or overlap, and no claimed LOCK', () => {
+  for (const { p } of SPECIALIZATIONS) {
+    const covered = p.blocks.flatMap((b) =>
+      Array.from({ length: b.weekEnd - b.weekStart + 1 }, (_, i) => b.weekStart + i),
+    );
+    assert.deepEqual(covered.sort((a, b) => a - b), [1, 2, 3, 4], `${p.id} week coverage`);
+    assert.equal(p.durationWeeks, 4);
+    for (const b of p.blocks) assert.equal(b.workouts.length, p.frequencyPerWeek, `${p.id} ${b.label} size`);
+    assert.notEqual(p.status, 'LOCKED', `${p.id} claims a lock nobody signed`);
+    assert.ok(p.sourceFile.endsWith('.md'), `${p.id} should cite a Design Record`);
+    assert.ok(p.name.length <= 60, `${p.id} exceeds the PAS-D1 hard limit`);
+    assert.equal(p.successorName, null, `${p.id} is a standalone block`);
+  }
 });

@@ -1,34 +1,34 @@
 {
- "id": "squat-ascent-intermediate",
- "name": "Squat Ascent Intermediate",
+ "id": "deadlift-measure-intermediate",
+ "name": "Deadlift Measure Intermediate",
  "family": "Strength",
  "difficulty": "Intermediate",
  "durationWeeks": 4,
- "frequencyPerWeek": 5,
+ "frequencyPerWeek": 4,
  "environment": "Commercial Gym",
- "description": "Four weeks built around one lift. You squat five days a week, every session loaded from a single max you test at the start and do not touch again until the last day. Most of the work sits at moderate weight; the bar only gets genuinely heavy four times. Volume peaks in week two and falls away into a rehearsal, two short speed sessions and a test.",
+ "description": "Four weeks built around one lift, pulled from the floor twice a week and never on back-to-back days. Every deadlift is loaded from a single max you test at the start and do not touch again until the last day. The other two sessions carry pull variations and squat work, which build the same positions for a fraction of the spinal cost. Volume peaks in week two, the bar keeps climbing to a rehearsal at 93%, then a short taper into a test.",
  "goals": [
-  "Add weight to a tested back squat",
-  "Build tolerance to squatting at high frequency",
-  "Practise handling a near-maximal bar before testing one",
-  "Hold upper-body and posterior strength through a lower-body block"
+  "Add weight to a tested deadlift",
+  "Build the pull without pulling heavy every session",
+  "Practise handling a near-maximal pull before testing one",
+  "Hold squat and upper-body strength through a pulling block"
  ],
  "successorName": null,
  "theme": "strength",
  "status": "AUTHORED — original program, PO Lock Approval outstanding",
  "source": "forge",
- "sourceFile": "Programs/Strength/Squat Ascent Intermediate/Design-Record.md",
+ "sourceFile": "Programs/Strength/Deadlift Measure Intermediate/Design-Record.md",
  "blocks": [
   {
-   "label": "Week 1 — Establish",
+   "label": "Week 1 — Anchor",
    "weekStart": 1,
    "weekEnd": 1,
    "workouts": [
     {
      "code": "A",
-     "name": "Set the Anchor",
+     "name": "Straight Sets",
      "modality": "strength",
-     "split": "legs",
+     "split": "full_body",
      "warmup": [
       {
        "name": "Bike or brisk walk",
@@ -36,14 +36,14 @@
        "text": "Bike or brisk walk — 3 minutes"
       },
       {
-       "name": "Bodyweight Squat",
+       "name": "Bodyweight hip hinge",
        "detail": "10 reps",
-       "text": "Bodyweight Squat — 10 reps"
+       "text": "Bodyweight hip hinge — 10 reps"
       },
       {
-       "name": "Empty bar squats",
+       "name": "Empty bar deadlifts",
        "detail": "10 reps",
-       "text": "Empty bar squats — 10 reps"
+       "text": "Empty bar deadlifts — 10 reps"
       },
       {
        "name": "Build-up sets",
@@ -53,12 +53,12 @@
      ],
      "main": [
       {
-       "catalogKey": "barbell-back-squat",
-       "displayName": "Back Squat",
-       "sets": 5,
+       "catalogKey": "barbell-deadlift",
+       "displayName": "Deadlift",
+       "sets": 4,
        "reps": 5,
        "unit": "reps",
-       "restSec": 150,
+       "restSec": 180,
        "percentOfMax": 70
       },
       {
@@ -71,26 +71,26 @@
        "percentOfMax": 70
       },
       {
-       "catalogKey": "chin-up",
-       "displayName": "Chin-Up",
+       "catalogKey": "barbell-bent-over-row",
+       "displayName": "Bent-Over Row",
        "sets": 4,
-       "reps": 5,
+       "reps": 8,
        "unit": "reps",
        "restSec": 90
       },
       {
-       "catalogKey": "barbell-romanian-deadlift",
-       "displayName": "Romanian Deadlift",
+       "catalogKey": "plank",
+       "displayName": "Plank",
        "sets": 3,
-       "reps": 8,
-       "unit": "reps",
-       "restSec": 90
+       "reps": 45,
+       "unit": "seconds",
+       "restSec": 60
       }
      ]
     },
     {
      "code": "B",
-     "name": "Descending Ladder",
+     "name": "Squat Base",
      "modality": "strength",
      "split": "legs",
      "warmup": [
@@ -119,30 +119,27 @@
       {
        "catalogKey": "barbell-back-squat",
        "displayName": "Back Squat",
-       "sets": 5,
-       "reps": 8,
+       "sets": 4,
+       "reps": 6,
        "unit": "reps",
        "restSec": 150,
-       "repScheme": [
-        8,
-        6,
-        4,
-        6,
-        8
-       ],
-       "percentScheme": [
-        62,
-        68,
-        74,
-        68,
-        62
-       ]
+       "percentOfMax": 68
       },
       {
-       "catalogKey": "barbell-bent-over-row",
-       "displayName": "Bent-Over Row",
+       "catalogKey": "barbell-front-squat",
+       "displayName": "Front Squat",
+       "sets": 3,
+       "reps": 6,
+       "unit": "reps",
+       "restSec": 120,
+       "percentOfMax": 50,
+       "percentOf": "barbell-back-squat"
+      },
+      {
+       "catalogKey": "chin-up",
+       "displayName": "Chin-Up",
        "sets": 4,
-       "reps": 8,
+       "reps": 6,
        "unit": "reps",
        "restSec": 90
       },
@@ -153,22 +150,14 @@
        "reps": 15,
        "unit": "reps",
        "restSec": 60
-      },
-      {
-       "catalogKey": "farmer-carry",
-       "displayName": "Farmer Carry",
-       "sets": 3,
-       "reps": 30,
-       "unit": "yards",
-       "restSec": 90
       }
      ]
     },
     {
      "code": "C",
-     "name": "Tempo Control",
+     "name": "Descending Ladder",
      "modality": "strength",
-     "split": "legs",
+     "split": "pull",
      "warmup": [
       {
        "name": "Bike or brisk walk",
@@ -176,14 +165,14 @@
        "text": "Bike or brisk walk — 3 minutes"
       },
       {
-       "name": "Bodyweight Squat",
+       "name": "Bodyweight hip hinge",
        "detail": "10 reps",
-       "text": "Bodyweight Squat — 10 reps"
+       "text": "Bodyweight hip hinge — 10 reps"
       },
       {
-       "name": "Empty bar squats",
+       "name": "Empty bar deadlifts",
        "detail": "10 reps",
-       "text": "Empty bar squats — 10 reps"
+       "text": "Empty bar deadlifts — 10 reps"
       },
       {
        "name": "Build-up sets",
@@ -192,96 +181,43 @@
       }
      ],
      "main": [
-      {
-       "catalogKey": "barbell-tempo-squat",
-       "displayName": "Tempo Squat",
-       "sets": 4,
-       "reps": 4,
-       "unit": "reps",
-       "restSec": 150,
-       "percentOfMax": 62,
-       "percentOf": "barbell-back-squat"
-      },
-      {
-       "catalogKey": "barbell-front-squat",
-       "displayName": "Front Squat",
-       "sets": 3,
-       "reps": 5,
-       "unit": "reps",
-       "restSec": 120,
-       "percentOfMax": 48,
-       "percentOf": "barbell-back-squat"
-      },
-      {
-       "catalogKey": "dumbbell-bulgarian-split-squat",
-       "displayName": "Bulgarian Split Squat",
-       "sets": 3,
-       "reps": 6,
-       "unit": "reps",
-       "per": "leg",
-       "restSec": 90
-      },
-      {
-       "catalogKey": "barbell-skull-crusher",
-       "displayName": "Skull Crusher",
-       "sets": 3,
-       "reps": 12,
-       "unit": "reps",
-       "restSec": 60
-      }
-     ]
-    },
-    {
-     "code": "D",
-     "name": "Triples",
-     "modality": "strength",
-     "split": "full_body",
-     "warmup": [
-      {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
-       "name": "Bodyweight Squat",
-       "detail": "10 reps",
-       "text": "Bodyweight Squat — 10 reps"
-      },
-      {
-       "name": "Empty bar squats",
-       "detail": "10 reps",
-       "text": "Empty bar squats — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
-      }
-     ],
-     "main": [
-      {
-       "catalogKey": "barbell-back-squat",
-       "displayName": "Back Squat",
-       "sets": 6,
-       "reps": 3,
-       "unit": "reps",
-       "restSec": 150,
-       "percentOfMax": 78
-      },
       {
        "catalogKey": "barbell-deadlift",
        "displayName": "Deadlift",
-       "sets": 4,
+       "sets": 5,
        "reps": 4,
        "unit": "reps",
-       "restSec": 150,
-       "percentOfMax": 70
+       "restSec": 180,
+       "repScheme": [
+        4,
+        3,
+        2,
+        3,
+        4
+       ],
+       "percentScheme": [
+        62,
+        68,
+        72,
+        68,
+        62
+       ]
+      },
+      {
+       "catalogKey": "barbell-romanian-deadlift",
+       "displayName": "Romanian Deadlift",
+       "sets": 3,
+       "reps": 8,
+       "unit": "reps",
+       "restSec": 90,
+       "percentOfMax": 55,
+       "percentOf": "barbell-deadlift"
       },
       {
        "catalogKey": "pull-up",
        "displayName": "Pull-Up",
        "sets": 4,
-       "reps": 5,
+       "reps": 6,
        "unit": "reps",
        "restSec": 90
       },
@@ -296,8 +232,8 @@
      ]
     },
     {
-     "code": "E",
-     "name": "Long Sets",
+     "code": "D",
+     "name": "Deficit Work",
      "modality": "strength",
      "split": "legs",
      "warmup": [
@@ -307,14 +243,14 @@
        "text": "Bike or brisk walk — 3 minutes"
       },
       {
-       "name": "Bodyweight Squat",
+       "name": "Bodyweight hip hinge",
        "detail": "10 reps",
-       "text": "Bodyweight Squat — 10 reps"
+       "text": "Bodyweight hip hinge — 10 reps"
       },
       {
-       "name": "Empty bar squats",
+       "name": "Empty bar deadlifts",
        "detail": "10 reps",
-       "text": "Empty bar squats — 10 reps"
+       "text": "Empty bar deadlifts — 10 reps"
       },
       {
        "name": "Build-up sets",
@@ -324,39 +260,39 @@
      ],
      "main": [
       {
-       "catalogKey": "barbell-back-squat",
-       "displayName": "Back Squat",
-       "sets": 3,
-       "reps": 8,
+       "catalogKey": "barbell-deficit-deadlift",
+       "displayName": "Deficit Deadlift",
+       "sets": 4,
+       "reps": 5,
        "unit": "reps",
        "restSec": 150,
-       "percentOfMax": 65
+       "percentOfMax": 60,
+       "percentOf": "barbell-deadlift"
       },
       {
-       "catalogKey": "barbell-bench-press",
-       "displayName": "Bench Press",
+       "catalogKey": "barbell-back-squat",
+       "displayName": "Back Squat",
        "sets": 4,
+       "reps": 5,
+       "unit": "reps",
+       "restSec": 150,
+       "percentOfMax": 70
+      },
+      {
+       "catalogKey": "barbell-overhead-press",
+       "displayName": "Overhead Press",
+       "sets": 3,
        "reps": 8,
        "unit": "reps",
-       "restSec": 120,
-       "percentOfMax": 65
+       "restSec": 90
       },
       {
-       "catalogKey": "single-arm-dumbbell-row",
-       "displayName": "Single-Arm Row",
+       "catalogKey": "farmer-carry",
+       "displayName": "Farmer Carry",
        "sets": 3,
-       "reps": 10,
-       "unit": "reps",
-       "per": "side",
-       "restSec": 75
-      },
-      {
-       "catalogKey": "kettlebell-swing",
-       "displayName": "Kettlebell Swing",
-       "sets": 4,
-       "reps": 12,
-       "unit": "reps",
-       "restSec": 60
+       "reps": 30,
+       "unit": "yards",
+       "restSec": 90
       }
      ]
     }
@@ -369,9 +305,9 @@
    "workouts": [
     {
      "code": "A",
-     "name": "Ascending Five",
+     "name": "Ascending Sets",
      "modality": "strength",
-     "split": "legs",
+     "split": "full_body",
      "warmup": [
       {
        "name": "Bike or brisk walk",
@@ -379,14 +315,14 @@
        "text": "Bike or brisk walk — 3 minutes"
       },
       {
-       "name": "Bodyweight Squat",
+       "name": "Bodyweight hip hinge",
        "detail": "10 reps",
-       "text": "Bodyweight Squat — 10 reps"
+       "text": "Bodyweight hip hinge — 10 reps"
       },
       {
-       "name": "Empty bar squats",
+       "name": "Empty bar deadlifts",
        "detail": "10 reps",
-       "text": "Empty bar squats — 10 reps"
+       "text": "Empty bar deadlifts — 10 reps"
       },
       {
        "name": "Build-up sets",
@@ -396,25 +332,25 @@
      ],
      "main": [
       {
-       "catalogKey": "barbell-back-squat",
-       "displayName": "Back Squat",
+       "catalogKey": "barbell-deadlift",
+       "displayName": "Deadlift",
        "sets": 5,
        "reps": 5,
        "unit": "reps",
-       "restSec": 150,
+       "restSec": 180,
        "repScheme": [
         5,
         5,
-        5,
-        5,
-        5
+        4,
+        3,
+        2
        ],
        "percentScheme": [
-        65,
-        70,
-        73,
-        76,
-        79
+        62,
+        68,
+        74,
+        78,
+        82
        ]
       },
       {
@@ -427,26 +363,26 @@
        "percentOfMax": 72
       },
       {
-       "catalogKey": "chin-up",
-       "displayName": "Chin-Up",
+       "catalogKey": "barbell-bent-over-row",
+       "displayName": "Bent-Over Row",
        "sets": 4,
-       "reps": 6,
+       "reps": 8,
        "unit": "reps",
        "restSec": 90
       },
       {
-       "catalogKey": "dumbbell-romanian-deadlift",
-       "displayName": "Dumbbell Romanian Deadlift",
+       "catalogKey": "plank",
+       "displayName": "Plank",
        "sets": 3,
-       "reps": 10,
-       "unit": "reps",
-       "restSec": 90
+       "reps": 60,
+       "unit": "seconds",
+       "restSec": 60
       }
      ]
     },
     {
      "code": "B",
-     "name": "Volume Block",
+     "name": "Squat Ladder",
      "modality": "strength",
      "split": "legs",
      "warmup": [
@@ -475,17 +411,38 @@
       {
        "catalogKey": "barbell-back-squat",
        "displayName": "Back Squat",
-       "sets": 6,
+       "sets": 5,
        "reps": 6,
        "unit": "reps",
        "restSec": 150,
-       "percentOfMax": 68
+       "repScheme": [
+        6,
+        5,
+        4,
+        5,
+        6
+       ],
+       "percentScheme": [
+        62,
+        68,
+        74,
+        68,
+        62
+       ]
       },
       {
-       "catalogKey": "barbell-bent-over-row",
-       "displayName": "Bent-Over Row",
-       "sets": 4,
+       "catalogKey": "barbell-hip-thrust",
+       "displayName": "Hip Thrust",
+       "sets": 3,
        "reps": 10,
+       "unit": "reps",
+       "restSec": 90
+      },
+      {
+       "catalogKey": "chin-up",
+       "displayName": "Chin-Up",
+       "sets": 4,
+       "reps": 6,
        "unit": "reps",
        "restSec": 90
       },
@@ -496,10 +453,65 @@
        "reps": 15,
        "unit": "reps",
        "restSec": 60
+      }
+     ]
+    },
+    {
+     "code": "C",
+     "name": "Clusters",
+     "modality": "strength",
+     "split": "pull",
+     "warmup": [
+      {
+       "name": "Bike or brisk walk",
+       "detail": "3 minutes",
+       "text": "Bike or brisk walk — 3 minutes"
       },
       {
-       "catalogKey": "barbell-skull-crusher",
-       "displayName": "Skull Crusher",
+       "name": "Bodyweight hip hinge",
+       "detail": "10 reps",
+       "text": "Bodyweight hip hinge — 10 reps"
+      },
+      {
+       "name": "Empty bar deadlifts",
+       "detail": "10 reps",
+       "text": "Empty bar deadlifts — 10 reps"
+      },
+      {
+       "name": "Build-up sets",
+       "detail": "to the first working weight",
+       "text": "Build-up sets — to the first working weight"
+      }
+     ],
+     "main": [
+      {
+       "catalogKey": "barbell-deadlift",
+       "displayName": "Deadlift",
+       "sets": 9,
+       "reps": 3,
+       "unit": "reps",
+       "restSec": 120,
+       "percentOfMax": 72
+      },
+      {
+       "catalogKey": "barbell-pendlay-row",
+       "displayName": "Pendlay Row",
+       "sets": 4,
+       "reps": 6,
+       "unit": "reps",
+       "restSec": 90
+      },
+      {
+       "catalogKey": "machine-lat-pulldown",
+       "displayName": "Lat Pulldown",
+       "sets": 3,
+       "reps": 12,
+       "unit": "reps",
+       "restSec": 60
+      },
+      {
+       "catalogKey": "barbell-shrug",
+       "displayName": "Barbell Shrug",
        "sets": 3,
        "reps": 12,
        "unit": "reps",
@@ -508,7 +520,7 @@
      ]
     },
     {
-     "code": "C",
+     "code": "D",
      "name": "Pause Work",
      "modality": "strength",
      "split": "legs",
@@ -519,14 +531,14 @@
        "text": "Bike or brisk walk — 3 minutes"
       },
       {
-       "name": "Bodyweight Squat",
+       "name": "Bodyweight hip hinge",
        "detail": "10 reps",
-       "text": "Bodyweight Squat — 10 reps"
+       "text": "Bodyweight hip hinge — 10 reps"
       },
       {
-       "name": "Empty bar squats",
+       "name": "Empty bar deadlifts",
        "detail": "10 reps",
-       "text": "Empty bar squats — 10 reps"
+       "text": "Empty bar deadlifts — 10 reps"
       },
       {
        "name": "Build-up sets",
@@ -536,162 +548,31 @@
      ],
      "main": [
       {
-       "catalogKey": "barbell-pause-squat",
-       "displayName": "Pause Squat",
+       "catalogKey": "barbell-pause-deadlift",
+       "displayName": "Pause Deadlift",
        "sets": 5,
        "reps": 3,
        "unit": "reps",
        "restSec": 150,
        "percentOfMax": 70,
-       "percentOf": "barbell-back-squat"
+       "percentOf": "barbell-deadlift"
       },
-      {
-       "catalogKey": "barbell-front-squat",
-       "displayName": "Front Squat",
-       "sets": 3,
-       "reps": 5,
-       "unit": "reps",
-       "restSec": 120,
-       "percentOfMax": 50,
-       "percentOf": "barbell-back-squat"
-      },
-      {
-       "catalogKey": "barbell-walking-lunge",
-       "displayName": "Walking Lunge",
-       "sets": 3,
-       "reps": 10,
-       "unit": "reps",
-       "per": "leg",
-       "restSec": 90
-      },
-      {
-       "catalogKey": "farmer-carry",
-       "displayName": "Farmer Carry",
-       "sets": 3,
-       "reps": 30,
-       "unit": "yards",
-       "restSec": 90
-      }
-     ]
-    },
-    {
-     "code": "D",
-     "name": "Heavy Doubles",
-     "modality": "strength",
-     "split": "full_body",
-     "warmup": [
-      {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
-       "name": "Bodyweight Squat",
-       "detail": "10 reps",
-       "text": "Bodyweight Squat — 10 reps"
-      },
-      {
-       "name": "Empty bar squats",
-       "detail": "10 reps",
-       "text": "Empty bar squats — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
-      }
-     ],
-     "main": [
       {
        "catalogKey": "barbell-back-squat",
        "displayName": "Back Squat",
-       "sets": 6,
-       "reps": 2,
-       "unit": "reps",
-       "restSec": 180,
-       "percentOfMax": 85
-      },
-      {
-       "catalogKey": "barbell-deadlift",
-       "displayName": "Deadlift",
        "sets": 4,
-       "reps": 3,
+       "reps": 5,
        "unit": "reps",
        "restSec": 150,
-       "percentOfMax": 78
+       "percentOfMax": 75
       },
       {
-       "catalogKey": "pull-up",
-       "displayName": "Pull-Up",
-       "sets": 4,
-       "reps": 5,
+       "catalogKey": "barbell-overhead-press",
+       "displayName": "Overhead Press",
+       "sets": 3,
+       "reps": 8,
        "unit": "reps",
        "restSec": 90
-      },
-      {
-       "catalogKey": "barbell-biceps-curl",
-       "displayName": "Barbell Curl",
-       "sets": 3,
-       "reps": 12,
-       "unit": "reps",
-       "restSec": 60
-      }
-     ]
-    },
-    {
-     "code": "E",
-     "name": "Back Off",
-     "modality": "strength",
-     "split": "legs",
-     "warmup": [
-      {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
-       "name": "Bodyweight Squat",
-       "detail": "10 reps",
-       "text": "Bodyweight Squat — 10 reps"
-      },
-      {
-       "name": "Empty bar squats",
-       "detail": "10 reps",
-       "text": "Empty bar squats — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
-      }
-     ],
-     "main": [
-      {
-       "catalogKey": "barbell-back-squat",
-       "displayName": "Back Squat",
-       "sets": 4,
-       "reps": 8,
-       "unit": "reps",
-       "restSec": 120,
-       "percentOfMax": 62
-      },
-      {
-       "catalogKey": "barbell-bench-press",
-       "displayName": "Bench Press",
-       "sets": 4,
-       "reps": 8,
-       "unit": "reps",
-       "restSec": 120,
-       "percentOfMax": 68
-      },
-      {
-       "catalogKey": "single-arm-dumbbell-row",
-       "displayName": "Single-Arm Row",
-       "sets": 3,
-       "reps": 12,
-       "unit": "reps",
-       "per": "side",
-       "restSec": 75
       },
       {
        "catalogKey": "kettlebell-swing",
@@ -712,9 +593,9 @@
    "workouts": [
     {
      "code": "A",
-     "name": "The Ramp",
+     "name": "Two Waves",
      "modality": "strength",
-     "split": "legs",
+     "split": "full_body",
      "warmup": [
       {
        "name": "Bike or brisk walk",
@@ -722,14 +603,14 @@
        "text": "Bike or brisk walk — 3 minutes"
       },
       {
-       "name": "Bodyweight Squat",
+       "name": "Bodyweight hip hinge",
        "detail": "10 reps",
-       "text": "Bodyweight Squat — 10 reps"
+       "text": "Bodyweight hip hinge — 10 reps"
       },
       {
-       "name": "Empty bar squats",
+       "name": "Empty bar deadlifts",
        "detail": "10 reps",
-       "text": "Empty bar squats — 10 reps"
+       "text": "Empty bar deadlifts — 10 reps"
       },
       {
        "name": "Build-up sets",
@@ -739,25 +620,27 @@
      ],
      "main": [
       {
-       "catalogKey": "barbell-back-squat",
-       "displayName": "Back Squat",
-       "sets": 5,
-       "reps": 5,
+       "catalogKey": "barbell-deadlift",
+       "displayName": "Deadlift",
+       "sets": 6,
+       "reps": 4,
        "unit": "reps",
        "restSec": 180,
        "repScheme": [
-        5,
         4,
         3,
         2,
-        1
+        4,
+        3,
+        2
        ],
        "percentScheme": [
-        65,
+        68,
+        76,
+        82,
         72,
-        79,
-        85,
-        90
+        80,
+        88
        ]
       },
       {
@@ -770,26 +653,26 @@
        "percentOfMax": 80
       },
       {
-       "catalogKey": "chin-up",
-       "displayName": "Chin-Up",
+       "catalogKey": "pull-up",
+       "displayName": "Pull-Up",
        "sets": 4,
        "reps": 6,
        "unit": "reps",
        "restSec": 90
       },
       {
-       "catalogKey": "barbell-romanian-deadlift",
-       "displayName": "Romanian Deadlift",
+       "catalogKey": "back-extension",
+       "displayName": "Back Extension",
        "sets": 3,
-       "reps": 8,
+       "reps": 12,
        "unit": "reps",
-       "restSec": 90
+       "restSec": 60
       }
      ]
     },
     {
      "code": "B",
-     "name": "Clusters",
+     "name": "Heavy Triples",
      "modality": "strength",
      "split": "legs",
      "warmup": [
@@ -818,11 +701,21 @@
       {
        "catalogKey": "barbell-back-squat",
        "displayName": "Back Squat",
-       "sets": 8,
+       "sets": 5,
        "reps": 3,
        "unit": "reps",
+       "restSec": 180,
+       "percentOfMax": 80
+      },
+      {
+       "catalogKey": "barbell-front-squat",
+       "displayName": "Front Squat",
+       "sets": 3,
+       "reps": 5,
+       "unit": "reps",
        "restSec": 120,
-       "percentOfMax": 75
+       "percentOfMax": 55,
+       "percentOf": "barbell-back-squat"
       },
       {
        "catalogKey": "barbell-bent-over-row",
@@ -831,14 +724,6 @@
        "reps": 8,
        "unit": "reps",
        "restSec": 90
-      },
-      {
-       "catalogKey": "dumbbell-rear-delt-fly",
-       "displayName": "Rear Delt Fly",
-       "sets": 3,
-       "reps": 15,
-       "unit": "reps",
-       "restSec": 60
       },
       {
        "catalogKey": "cable-triceps-pushdown",
@@ -852,9 +737,9 @@
     },
     {
      "code": "C",
-     "name": "Front and Pause",
+     "name": "Snatch-Grip Pulls",
      "modality": "strength",
-     "split": "legs",
+     "split": "pull",
      "warmup": [
       {
        "name": "Bike or brisk walk",
@@ -862,14 +747,14 @@
        "text": "Bike or brisk walk — 3 minutes"
       },
       {
-       "name": "Bodyweight Squat",
+       "name": "Bodyweight hip hinge",
        "detail": "10 reps",
-       "text": "Bodyweight Squat — 10 reps"
+       "text": "Bodyweight hip hinge — 10 reps"
       },
       {
-       "name": "Empty bar squats",
+       "name": "Empty bar deadlifts",
        "detail": "10 reps",
-       "text": "Empty bar squats — 10 reps"
+       "text": "Empty bar deadlifts — 10 reps"
       },
       {
        "name": "Build-up sets",
@@ -879,123 +764,43 @@
      ],
      "main": [
       {
-       "catalogKey": "barbell-front-squat",
-       "displayName": "Front Squat",
+       "catalogKey": "barbell-snatch-grip-deadlift",
+       "displayName": "Snatch-Grip Deadlift",
        "sets": 4,
-       "reps": 4,
-       "unit": "reps",
-       "restSec": 150,
-       "percentOfMax": 55,
-       "percentOf": "barbell-back-squat"
-      },
-      {
-       "catalogKey": "barbell-pause-squat",
-       "displayName": "Pause Squat",
-       "sets": 3,
        "reps": 3,
        "unit": "reps",
        "restSec": 150,
-       "percentOfMax": 72,
-       "percentOf": "barbell-back-squat"
+       "percentOfMax": 60,
+       "percentOf": "barbell-deadlift"
       },
       {
-       "catalogKey": "dumbbell-bulgarian-split-squat",
-       "displayName": "Bulgarian Split Squat",
-       "sets": 3,
+       "catalogKey": "chin-up",
+       "displayName": "Chin-Up",
+       "sets": 4,
        "reps": 6,
        "unit": "reps",
-       "per": "leg",
        "restSec": 90
       },
       {
-       "catalogKey": "kettlebell-swing",
-       "displayName": "Kettlebell Swing",
-       "sets": 4,
-       "reps": 12,
+       "catalogKey": "dumbbell-rear-delt-fly",
+       "displayName": "Rear Delt Fly",
+       "sets": 3,
+       "reps": 15,
        "unit": "reps",
        "restSec": 60
+      },
+      {
+       "catalogKey": "farmer-carry",
+       "displayName": "Farmer Carry",
+       "sets": 3,
+       "reps": 30,
+       "unit": "yards",
+       "restSec": 90
       }
      ]
     },
     {
      "code": "D",
-     "name": "Three Waves",
-     "modality": "strength",
-     "split": "full_body",
-     "warmup": [
-      {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
-       "name": "Bodyweight Squat",
-       "detail": "10 reps",
-       "text": "Bodyweight Squat — 10 reps"
-      },
-      {
-       "name": "Empty bar squats",
-       "detail": "10 reps",
-       "text": "Empty bar squats — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
-      }
-     ],
-     "main": [
-      {
-       "catalogKey": "barbell-back-squat",
-       "displayName": "Back Squat",
-       "sets": 9,
-       "reps": 5,
-       "unit": "reps",
-       "restSec": 150,
-       "repScheme": [
-        5,
-        4,
-        3,
-        5,
-        4,
-        3,
-        5,
-        4,
-        3
-       ],
-       "percentScheme": [
-        65,
-        72,
-        78,
-        68,
-        75,
-        81,
-        70,
-        77,
-        84
-       ]
-      },
-      {
-       "catalogKey": "barbell-deadlift",
-       "displayName": "Deadlift",
-       "sets": 4,
-       "reps": 2,
-       "unit": "reps",
-       "restSec": 180,
-       "percentOfMax": 82
-      },
-      {
-       "catalogKey": "pull-up",
-       "displayName": "Pull-Up",
-       "sets": 4,
-       "reps": 5,
-       "unit": "reps",
-       "restSec": 90
-      }
-     ]
-    },
-    {
-     "code": "E",
      "name": "Dress Rehearsal",
      "modality": "strength",
      "split": "legs",
@@ -1006,14 +811,14 @@
        "text": "Bike or brisk walk — 3 minutes"
       },
       {
-       "name": "Bodyweight Squat",
+       "name": "Bodyweight hip hinge",
        "detail": "10 reps",
-       "text": "Bodyweight Squat — 10 reps"
+       "text": "Bodyweight hip hinge — 10 reps"
       },
       {
-       "name": "Empty bar squats",
+       "name": "Empty bar deadlifts",
        "detail": "10 reps",
-       "text": "Empty bar squats — 10 reps"
+       "text": "Empty bar deadlifts — 10 reps"
       },
       {
        "name": "Build-up sets",
@@ -1023,8 +828,8 @@
      ],
      "main": [
       {
-       "catalogKey": "barbell-back-squat",
-       "displayName": "Back Squat",
+       "catalogKey": "barbell-deadlift",
+       "displayName": "Deadlift",
        "sets": 5,
        "reps": 5,
        "unit": "reps",
@@ -1101,7 +906,7 @@
       {
        "catalogKey": "barbell-back-squat",
        "displayName": "Back Squat",
-       "sets": 4,
+       "sets": 3,
        "reps": 5,
        "unit": "reps",
        "restSec": 120,
@@ -1138,7 +943,7 @@
      "code": "B",
      "name": "Speed Doubles",
      "modality": "strength",
-     "split": "legs",
+     "split": "pull",
      "warmup": [
       {
        "name": "Bike or brisk walk",
@@ -1146,14 +951,14 @@
        "text": "Bike or brisk walk — 3 minutes"
       },
       {
-       "name": "Bodyweight Squat",
+       "name": "Bodyweight hip hinge",
        "detail": "10 reps",
-       "text": "Bodyweight Squat — 10 reps"
+       "text": "Bodyweight hip hinge — 10 reps"
       },
       {
-       "name": "Empty bar squats",
+       "name": "Empty bar deadlifts",
        "detail": "10 reps",
-       "text": "Empty bar squats — 10 reps"
+       "text": "Empty bar deadlifts — 10 reps"
       },
       {
        "name": "Build-up sets",
@@ -1163,90 +968,34 @@
      ],
      "main": [
       {
-       "catalogKey": "barbell-back-squat",
-       "displayName": "Back Squat",
-       "sets": 6,
+       "catalogKey": "barbell-deadlift",
+       "displayName": "Deadlift",
+       "sets": 5,
        "reps": 2,
        "unit": "reps",
        "restSec": 120,
-       "percentOfMax": 70
-      },
-      {
-       "catalogKey": "barbell-bench-press",
-       "displayName": "Bench Press",
-       "sets": 5,
-       "reps": 3,
-       "unit": "reps",
-       "restSec": 120,
-       "percentOfMax": 72
+       "percentOfMax": 68
       },
       {
        "catalogKey": "chin-up",
        "displayName": "Chin-Up",
        "sets": 3,
-       "reps": 5,
+       "reps": 6,
        "unit": "reps",
        "restSec": 90
+      },
+      {
+       "catalogKey": "plank",
+       "displayName": "Plank",
+       "sets": 3,
+       "reps": 45,
+       "unit": "seconds",
+       "restSec": 60
       }
      ]
     },
     {
      "code": "C",
-     "name": "Sharpen",
-     "modality": "strength",
-     "split": "legs",
-     "warmup": [
-      {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
-       "name": "Bodyweight Squat",
-       "detail": "10 reps",
-       "text": "Bodyweight Squat — 10 reps"
-      },
-      {
-       "name": "Empty bar squats",
-       "detail": "10 reps",
-       "text": "Empty bar squats — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
-      }
-     ],
-     "main": [
-      {
-       "catalogKey": "barbell-back-squat",
-       "displayName": "Back Squat",
-       "sets": 3,
-       "reps": 3,
-       "unit": "reps",
-       "restSec": 90,
-       "percentOfMax": 55
-      },
-      {
-       "catalogKey": "kettlebell-swing",
-       "displayName": "Kettlebell Swing",
-       "sets": 3,
-       "reps": 10,
-       "unit": "reps",
-       "restSec": 60
-      },
-      {
-       "catalogKey": "farmer-carry",
-       "displayName": "Farmer Carry",
-       "sets": 2,
-       "reps": 30,
-       "unit": "yards",
-       "restSec": 90
-      }
-     ]
-    },
-    {
-     "code": "D",
      "name": "Test Day",
      "modality": "strength",
      "split": "legs",
@@ -1257,14 +1006,14 @@
        "text": "Bike or brisk walk — 3 minutes"
       },
       {
-       "name": "Bodyweight Squat",
+       "name": "Bodyweight hip hinge",
        "detail": "10 reps",
-       "text": "Bodyweight Squat — 10 reps"
+       "text": "Bodyweight hip hinge — 10 reps"
       },
       {
-       "name": "Empty bar squats",
+       "name": "Empty bar deadlifts",
        "detail": "10 reps",
-       "text": "Empty bar squats — 10 reps"
+       "text": "Empty bar deadlifts — 10 reps"
       },
       {
        "name": "Build-up sets",
@@ -1274,8 +1023,8 @@
      ],
      "main": [
       {
-       "catalogKey": "barbell-back-squat",
-       "displayName": "Back Squat",
+       "catalogKey": "barbell-deadlift",
+       "displayName": "Deadlift",
        "sets": 7,
        "reps": 5,
        "unit": "reps",
@@ -1302,10 +1051,10 @@
      ]
     },
     {
-     "code": "E",
+     "code": "D",
      "name": "Flush",
      "modality": "strength",
-     "split": "legs",
+     "split": "full_body",
      "warmup": [
       {
        "name": "Bike or brisk walk",
@@ -1332,7 +1081,7 @@
       {
        "catalogKey": "barbell-back-squat",
        "displayName": "Back Squat",
-       "sets": 4,
+       "sets": 3,
        "reps": 5,
        "unit": "reps",
        "restSec": 90,
@@ -1357,12 +1106,12 @@
        "restSec": 75
       },
       {
-       "catalogKey": "barbell-biceps-curl",
-       "displayName": "Barbell Curl",
+       "catalogKey": "dumbbell-romanian-deadlift",
+       "displayName": "Dumbbell Romanian Deadlift",
        "sets": 3,
-       "reps": 15,
+       "reps": 10,
        "unit": "reps",
-       "restSec": 60
+       "restSec": 90
       }
      ]
     }
