@@ -21,7 +21,7 @@
 
 > **Consuming-authority pointer — `Backend-Data-Model-Architecture-v1.0.md` (LOCK-CANDIDATE, June 2026).** `Friend`, `Post` (incl. the audience enum and COMMUNITY-mutual-exclusivity rule), `Reaction`, and `Comment` are formalized as canonical entities in that document's Section 12. The Performance Firewall this document establishes is generalized into a server-side, query-layer enforcement rule in Section 18.1 there (API Philosophy principle 6, Section 6). This document remains the sole authority on social *philosophy* and behavior — the Backend doc only gives that philosophy a data-model and enforcement home.
 
-**Amendment Log:** v1.0 — **LOCKED June 2026** (PO-approved; ready for the Architecture Freeze). **v1.1 (June 2026): `Social-Architecture-Amendment-001-Communities.md` merged** — Communities added as a peer layer to Squads in the Social Hierarchy (SOC-D1A); `Post.audience` extended with `COMMUNITY` + required/immutable `communityId` (SOC-D7/D8); Friends Feed audience-scoping restated for the new value (SOC-D9). No other decision changed.
+**Amendment Log:** v1.0 — **LOCKED June 2026** (PO-approved; ready for the Architecture Freeze). **v1.2 (August 2026): `Social-Architecture-Amendment-003-Athlete-Search.md` merged** — SOC-D15's "at most one athlete" implementation reading superseded; athlete search returns a LIST matching name and handle, restoring `Identity-Amendment-001` §4, which had been locked and unbuilt (SOC-A3-D1); deterministic non-social ranking (SOC-A3-D2); Identity §7.1's discoverability toggle made real (SOC-A3-D3), governing name search only (SOC-A3-D4). SOC-D15's never-list is unchanged and restated. **v1.2 (August 2026): `Social-Architecture-Amendment-002-Workout-Recap-Posts.md` merged** — `recap` admitted as a MANUAL post type on the FRIENDS and BOTH audiences (SOC-A2-D1); the bar on automatic workout-log posts restated and unchanged (SOC-A2-D2); "Both" is one row and requires a squad, per the audience check constraint's equivalence (SOC-A2-D3); CC-D2 and FR-D3 untouched (SOC-A2-D4). No other decision changed. **v1.1 (June 2026): `Social-Architecture-Amendment-001-Communities.md` merged** — Communities added as a peer layer to Squads in the Social Hierarchy (SOC-D1A); `Post.audience` extended with `COMMUNITY` + required/immutable `communityId` (SOC-D7/D8); Friends Feed audience-scoping restated for the new value (SOC-D9). No other decision changed.
 
 **Downstream dependents (reconciled in a later pass, after lock):** DNA §10 (pointer to SOC-D4 narrowing); FR-Amendment-001 (FR-D4 marked superseded); WSR-001 (coexistence note); P-1 Profile spec; L-12 Accomplishments; P-5 v1.2 (Post Comments / optional Post Reactions rows); Honor Catalog / Honor-Evaluation-Service (milestone → optional auto-post hook, no schema change); Challenge/Squad specs (Friend-Challenge entry from the social surface; feed Firewall); **Community-System-Architecture-v1.0 / Community-Feed-Specification-v1.0 (v1.1 — Communities pillar + Post audience extension).**
 
@@ -219,9 +219,11 @@ Posts are **permanent, archivable, and deletable**:
 
 The Friends Feed is **NOT an automatic workout log.** It is a **private, intentional-sharing feed** of two kinds of content:
 
-**Manual posts** (athlete-initiated, §7): photos, videos, PR media, progress photos, captions.
+**Manual posts** (athlete-initiated, §7): photos, videos, PR media, progress photos, captions, **and — v1.2 — a sealed workout recap (`Social-Architecture-Amendment-002-Workout-Recap-Posts.md`, SOC-A2-D1)**.
 
 **Automatic milestone posts** (system-generated, governed by §12): **Honors earned, Program completed, Chapter completed, and other major milestones** only.
+
+> **v1.2 — `recap` is a MANUAL post type, and the automatic bar below is untouched.** An athlete may share the session they just sealed, from W-17's share step, choosing Friends · a Squad · Both per post. The identical post has existed on the Squad feed since it shipped, under the same table, `type` and `workout_summary`; the Friends feed's inability to receive one was an omission in the `friends_feed()` RPC, not a policy. Nothing posts on the athlete's behalf, there is no default-on setting, and SOC-A2-D2 restates the automatic bar in stronger terms than it is written here. See SOC-A2-D1 through SOC-A2-D4.
 
 The Friends Feed **never** automatically posts: completed "[muscle group] day," started workout, finished workout, daily workout logs, sets, reps, weight, pace, scores, rankings, or any performance comparison.
 
@@ -315,6 +317,8 @@ The entire social layer emits **no** progression-contributing event and writes *
 
 **Never introduced:** **Suggested Friends**, **"People You May Know,"** mutual-friend recommendations, or any **discovery algorithm.** Discovery is always an act the athlete chooses, never a surface the system populates.
 
+> **v1.2 — AMENDED by `Social-Architecture-Amendment-003-Athlete-Search.md` (SOC-A3-D1…D4).** This section's clause above is unchanged and still binding. What is superseded is the **implementation reading** that a search must return *at most one athlete*, which produced `find_athlete_by_handle` (migration 0073) and an exact-handle-only screen. **`Identity-Amendment-001` §4 — cited by this very section — has specified a name-and-handle search returning a LIST, with its ranking (§4.2), row format (§4.3), empty state (§4.4) and no-results copy (§4.5), since before this section was written.** Two locked documents disagreed and the narrower won by being the one that got built. Search now returns a list; the never-list above is restated verbatim in SOC-A3-D1 and nothing on it is permitted. Identity §7.1's discoverability toggle — cited above and never implemented — ships with it (SOC-A3-D3), governing name search only (SOC-A3-D4). ⚠ `profiles_read` is `using (true)`, so the toggle is advisory until that policy is narrowed; its copy must never promise more than "hide me from name search."
+
 ---
 
 ## Section 17 — SOC-D16 — Integration & the Privacy Firewall
@@ -353,9 +357,9 @@ Reinforcing stance (SOC-D1): Forge **optimizes for** accountability, encourageme
 ## Non-Behaviors
 
 - **No public social graph, followers, follower/friend counts as metrics, popularity scores, engagement rankings, or public friend lists** (SOC-D5/SOC-D1).
-- **No suggested friends / PYMK / discovery algorithm** — discovery is intentional only; QR codes / profile links are permitted as intentional methods, not recommendations (SOC-D15).
+- **No suggested friends / PYMK / discovery algorithm** — discovery is intentional only; QR codes / profile links are permitted as intentional methods, not recommendations (SOC-D15). **Unchanged by v1.2:** SOC-A3-D1 permits a RESULT LIST for a query the athlete typed (per `Identity-Amendment-001` §4) and permits nothing on this never-list — no surface populates itself, and no result is ranked by popularity or mutual-friend count.
 - **No Stories / ephemeral content** (SOC-D7).
-- **No automatic workout-log posts** — automatic posts are milestone-only (SOC-D9).
+- **No automatic workout-log posts** — automatic posts are milestone-only (SOC-D9). **Unchanged by v1.2:** SOC-A2-D1 admits a workout recap as a *manual* post the athlete composes at the Seal; SOC-A2-D2 restates that nothing may post a workout on their behalf, on any audience, by any trigger or default.
 - **No engagement-based feed ordering, trending, or interaction-based ranking; comments never bump posts** (SOC-D10/SOC-D11).
 - **No visibility granted by relationship** — visibility is governed only by public/private profile settings, the Firewall, and explicit feature permissions (SOC-D2).
 - **No progression effect from any social action** (SOC-D13).

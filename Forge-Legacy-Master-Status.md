@@ -55,7 +55,25 @@
 
 ## 🏃 Current Sprint
 
-**Sprint:** PO training-session feedback (2026-08-03) — fourteen items from actually using it
+**Sprint:** PO training-session feedback, **batch 2** (2026-08-04) — eight items, one retracted
+
+**Status: code complete and deployed; migrations 0112–0115 pending** (`supabase/apply/pending-0112-0115.sql`).
+Full write-up in **Recently Completed #1**. The short version: the PO trained again and wrote down eight
+more things. He retracted one on investigation (the video check-in *does* expire), and three of the
+remaining seven turned out not to be what they looked like — **supersets already worked and already took
+3+ exercises** (what was missing was declaring one at PICK time, building as you go), **"End workout" had
+no confirmation at all** in a path that is irreversible, and **name search was an unapplied locked spec
+rather than a new request** (`Identity-Amendment-001` §4 vs SOC-D15 — two locked docs disagreed and the
+narrower one won by being the one that got built). Also: the set inputs now raise the keyboard on the tap
+that asked for it; the **M-2 honor ceremony fires for the first time ever**, on Legacy; a sealed session
+can be shared to the Friends feed; and Forge ships six starter templates.
+
+New docs: `Social-Architecture-Amendment-002-Workout-Recap-Posts` ·
+`Social-Architecture-Amendment-003-Athlete-Search` · `W26-Amendment-001-Forge-Starter-Templates` — all
+three with banners applied to their parent specs in the same pass, per the standing rule that an
+amendment left unmerged is the failure mode this project keeps rediscovering.
+
+**Prior sprint:** PO training-session feedback (2026-08-03) — fourteen items from actually using it
 
 **Where the batch came from:** the PO trained a real session on the web preview and wrote down everything
 that got in the way. That is a different and better bug report than an audit, because every item is
@@ -475,7 +493,78 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
-### 1. A program can be loaded from a tested max — and Squat Ascent, the first one that is (2026-08-03, CODE + migration 0111) — ✅ APPLIED
+### 1. PO training-session feedback, batch 2 — and three of the eight were not what they looked like (2026-08-04, CODE + migrations 0112–0115) — ⏳ MIGRATIONS PENDING
+
+**Eight items from a live session. One was retracted by the PO on investigation** — the squad video
+check-in *does* expire after 24h (`squad-live.ts` filters on `created_at >= now − 24h` and refetches on
+focus). That leaves seven, and looking at three of them changed what they were:
+
+- **Supersets already worked, and already took 3+ exercises.** `makeSuperset` has no cap and the ⋮ menu
+  offers "Add the next exercise to it". What was missing was the entry path the PO went looking for:
+  building as you go, "these three are a superset" is known at PICK time, and the ⋮ route meant adding
+  three lifts and then restating a decision already made, one pairing at a time. The Picker already
+  multi-selected and already handed back a LIST, so this cost one optional field on the inbox
+  (`group?: 'superset'`), a toggle in the confirm bar, and one existing `makeSuperset` call in the drain.
+- **"End workout" had no confirmation anywhere in its path.** `endFromOptions` called `finishToSeal()`
+  on one tap, from a menu opened to do something else, two rows under "Add an exercise" — and the seal
+  is irreversible (EL-D6). Now a `ConfirmSheet` that states the cost in numbers: *"You've logged 2 of 4
+  sets."* The primary "Finish Workout" button is deliberately NOT confirmed — it only appears once every
+  set is logged, so there is nothing left to lose.
+- **Name search was never a new decision. It was an unapplied one.**
+  `Identity-Amendment-001-Username.md` §4 has specified name+handle search — with its ranking (§4.2),
+  row format (§4.3), empty state (§4.4) and no-results copy (§4.5) — since before SOC-D15 narrowed
+  discovery to one exact handle. Two LOCKED documents disagreed and **the narrower won by being the one
+  that got built**. `Social-Architecture-Amendment-003` settles it for Identity and restates SOC-D15's
+  never-list, which is unchanged: no PYMK, no suggestions, no ranking by popularity, nothing for an
+  empty query.
+
+**Also shipped.** The Set Input Sheet **raises the keyboard on the tap that asked for it** — `SetField`
+had `selectTextOnFocus` set and no ref, so every logged set cost a second tap on the input the athlete
+had already pointed at. **M-2 moved to Legacy**: the forged-medallion `HonorCeremony` was built, wired
+into `CeremonyProvider`, mounted app-wide, and enqueued **nowhere outside the dev harness** — an honor
+got one line of text on the Seal screen. It now fires on the tab W-17 already navigates to, alongside
+the rank-up that has used that exact pattern for weeks. **A sealed session can be shared to Friends**
+(`Social-Architecture-Amendment-002`) — the post type, the table, the column and the audience all
+existed; `friends_feed()` simply never selected `workout_summary`, so a recap arrived with its stats
+stripped. **Forge ships six starter templates** (`W26-Amendment-001`) as adopted copies, mirroring
+`adoptCatalogProgram` — so a new athlete's first Templates screen is six ready sessions instead of an
+empty panel under a heading that promised templates, and `Forge Strength Start`'s "or one built by
+Forge" becomes true.
+
+**Verified:** `tsc` clean · lint at baseline (1 pre-existing error, 13 warnings, none in changed files) ·
+**989 `node --test` green** (+10 new: a starter-template validator that resolves every `catalogKey`
+against the real 794-exercise catalogue, because a typo'd key survives tsc, lint and every other test in
+this repo and fails only when a brand-new athlete taps the first thing Forge offered them) · web export
+clean, all ten new strings present in the bundle.
+
+**⚠ Migrations 0112–0115 NOT YET APPLIED** — bundled at `supabase/apply/pending-0112-0115.sql`. Three of
+the four redefine functions, and PL/pgSQL binds column references at RUN time, so applying proves the
+bodies parsed and nothing more. Each has a button to press: land on Legacy after earning an honor (0112);
+post a recap to Friends and look for the stats strip, not the bare bronze card (0113); **type `%` into
+Add Friend and get "No athletes found" rather than every athlete alive** (0114, the escaping test); adopt
+a starter, train it, and see "Times used 1" (0115, which is what proves `save_workout`'s ownership check
+passed). Until applied, the app degrades honestly rather than silently: the ceremony doesn't fire, a
+recap renders as a milestone card, search reports the real error instead of "no athletes found", and
+adopting a starter names the missing migration.
+
+**One more, found by the PO the same day and fixed immediately (CODE only, no migration).** **The
+Accomplishments section on Legacy hid itself when empty, and every route into `/accomplishments` was
+inside it** — the "View all" action, a card tap, and a pinned-item tap, all three. So an athlete with
+zero accomplishments had no door to the screen where you add one: **you needed an accomplishment to add
+an accomplishment.** Found by the PO looking for somewhere to record a deadlift he hit months ago, which
+is precisely the case L-12 exists for — an accomplishment takes any date, and most of an athlete's best
+work predates the app. The section now keeps its header and offers a real invitation ("Add what you've
+already done"), with the action reading **Add** instead of **View all** when there is nothing yet.
+**Honors below it still hides when empty, deliberately** — the two are not symmetrical: an honor is
+earned and cannot be authored, so an empty honors section would be a list of things you haven't done,
+which is the same reasoning that keeps the honor-catalogue screen unbuilt.
+
+**Recorded, not fixed:** `profiles_read` is `create policy … using (true)` (0001), so the new
+`discoverable` toggle is **advisory UX, not enforcement** — any client with the anon key can already page
+the profile table through PostgREST. Its copy must say "hide me from name search" and never an absolute.
+Narrowing that policy is its own ruling and is listed in the amendment's open items.
+
+### 2. A program can be loaded from a tested max — and Squat Ascent, the first one that is (2026-08-03, CODE + migration 0111) — ✅ APPLIED
 
 **The prescription model had no load field of any kind.** Sets, reps, per-set ladders, timed work and
 circuits — but nothing that could say *"at 75%"*. A peaking block could only be stored as "5 × 5": the
@@ -531,7 +620,7 @@ detector for a flag nothing writes is the exact defect the 2026-08-01 audit name
 Gate: **tsc 0 · eslint at baseline (1 pre-existing error, 13 warnings) · 955 `node --test` green · web
 export clean · deployed and verified live** (live `entry-95187cbe…js` matches the build). Commit `35a341e`.
 
-### 2. Iron & Engine, and the two things "share a program" can mean (2026-08-03, CODE + migration 0110) — ⏳ MIGRATION PENDING
+### 3. Iron & Engine, and the two things "share a program" can mean (2026-08-03, CODE + migration 0110) — ⏳ MIGRATION PENDING
 
 **A. The catalog could not express its own conditioning.** `ExercisePrescription` held `sets × reps` and
 nothing else, and `structureFromDefinition` — the ONLY path from a built-in program to a runnable one —
@@ -610,7 +699,7 @@ one hardcoded two definitions and validated neither of the new ones). Two interm
 transient failures in files that passed in isolation and on re-run — consistent with OneDrive rewriting
 files mid-run while the other session synced in, not with a defect.
 
-### 3. Two tester reports on the friend loop (2026-08-03, CODE + migration 0109) — ⏳ MIGRATION PENDING
+### 4. Two tester reports on the friend loop (2026-08-03, CODE + migration 0109) — ⏳ MIGRATION PENDING
 
 Both from the first outside tester pair, and they are the two halves of the same journey — finding a person, and being told a person found you.
 
@@ -636,7 +725,7 @@ exception. Now a row like the rest (face · name · handle · rank → profile).
 **Apply:** `supabase/migrations/0109_restore_friend_notifications.sql`, SQL editor. Verify by having a
 second account request you — the bell should count it and `/inbox` should show it.
 
-### 4. The playlist link — an amendment that was LOCKED, merged, and built nowhere (2026-08-03, CODE + migration 0105) — ✅ APPLIED
+### 5. The playlist link — an amendment that was LOCKED, merged, and built nowhere (2026-08-03, CODE + migration 0105) — ✅ APPLIED
 
 **`Workout-Playlist-Amendment-001` was LOCKED in June 2026 and merged into four base specs** — W-9–W-16
 §8.5, W-17 §8A, W-19 §9A and WSR-001 — each with its own wireframe, tap-target table and validation
@@ -683,7 +772,7 @@ hand-typed copy — the copy had inherited the same bug, so probe and constraint
 wrong, and only the EXPECTED column caught it. Re-proved against all 15 vectors under real three-valued
 logic before re-handing it over. **Nothing reached live data at any point.**
 
-### 5. A program can finally graduate (2026-08-03, CODE + migration 0104) — ✅ APPLIED
+### 6. A program can finally graduate (2026-08-03, CODE + migration 0104) — ✅ APPLIED
 
 **Nothing in this app or this database had ever written `programs.state = 'graduated'.`** Found while
 answering "is sharing a program live?" — it is not, and neither was the thing underneath it. The only
@@ -749,7 +838,7 @@ error, 13 warnings). **The migration has NOT been applied and none of the SQL ha
 self-checks that abort it on failure, a pre-migration dry run in its header, and a four-step VERIFY
 footer. Until it is applied, nothing above is true in the database.
 
-### 6. Self-directed training blocks — the freestyle athlete can climb the whole ladder (2026-08-02, CODE + RCM Amendment 002)
+### 7. Self-directed training blocks — the freestyle athlete can climb the whole ladder (2026-08-02, CODE + RCM Amendment 002)
 
 **An athlete who trains day to day and never builds a program could not progress past Craftsman. Ever.**
 `programGraduations` was a hard gate at Architect (1), Established (3), Legend (6) and Legacy (10) — so no
@@ -818,7 +907,7 @@ and freestyle-earned — because adding the new field to the old baseline alone 
 breaking nothing changes nothing. **The guard was checked empirically:** reverting the gate to the old rule
 fails two tests; restoring it passes.
 
-### 7. The athlete who never builds a program gets a Home of their own (2026-08-02, CODE)
+### 8. The athlete who never builds a program gets a Home of their own (2026-08-02, CODE)
 
 **"There's going to be people that don't want to build a 4-week program and just go day to day"** (PO). Home
 did not serve them. It told them what they lacked, withheld the one button they needed, took their goal away
@@ -886,7 +975,7 @@ byte-identical composition.
 **Verified:** `tsc` 0 · **751 `node --test` green** (+23 over the pre-session baseline: 18 composition, 4
 autosave, 3 tour) · `eslint src` at baseline (1 pre-existing error, 13 warnings).
 
-### 8. Home stops offering to find you a program it doesn't have (2026-08-02, CODE)
+### 9. Home stops offering to find you a program it doesn't have (2026-08-02, CODE)
 
 **The first card on a program-less Home read "Help me find one — a few questions, then a program picked for
 where you are."** It then asked three: experience, primary goal, equipment. **Only one combination of those
@@ -921,7 +1010,7 @@ drop-one sweep proving no goal is optional; an alias counts as answered where th
 first draft of that sweep asserted the strength ids too and correctly failed) · `eslint src` at baseline
 (1 pre-existing error, 13 warnings).
 
-### 9. The tutorial that kept coming back — a lost-update race in the seen-set (2026-08-02, CODE)
+### 10. The tutorial that kept coming back — a lost-update race in the seen-set (2026-08-02, CODE)
 
 **Reported as "the walkthroughs pop up again after I've already done them."** They did — and the cause was
 neither the trigger logic nor the copy. It was that finishing one was sometimes never written down.
@@ -962,7 +1051,7 @@ rather than a live defect.)
 **Verified:** `tsc` 0 · **704 `node --test` green** (+9, including the control) · `eslint src` at baseline
 (1 pre-existing error, 13 warnings).
 
-### 10. The Home gate is gone — full Home from the first launch (2026-08-02, CODE)
+### 11. The Home gate is gone — full Home from the first launch (2026-08-02, CODE)
 
 **Applying Onboarding-Amendment-002, not amending it.** A fresh athlete used to get a single-card takeover
 until they chose a starting point. 002's own origin section names that as the defect it was written to
@@ -992,7 +1081,7 @@ athlete now get the same card, because they want the same thing.
 Verified: tsc 0 · lint at baseline (1 pre-existing error, 13 warnings) · **695 `node --test` green** · clean
 web export. Amendment 003 gains **ONB-A3-D7** and a validation checklist; ONB-A3-D5's table is restated.
 
-### 11. The Squads cluster tutorialized — ten surfaces, 31 spotlit steps (2026-08-02, CODE)
+### 12. The Squads cluster tutorialized — ten surfaces, 31 spotlit steps (2026-08-02, CODE)
 
 Completes the third and last cluster. Where Workouts teaches mechanics and Legacy teaches ideas, **Squads
 teaches a consent model** — one rule the screens genuinely never state out loud:
@@ -1021,7 +1110,7 @@ form that names its own fields does not need a tour, and adding one is noise.
 Verified: tsc 0 · lint at baseline (1 pre-existing error, 13 warnings) · **695 `node --test` green, 2 new** ·
 clean web export.
 
-### 12. The Legacy cluster tutorialized — ten surfaces, 35 spotlit steps (2026-08-02, CODE)
+### 13. The Legacy cluster tutorialized — ten surfaces, 35 spotlit steps (2026-08-02, CODE)
 
 Where Workouts is mechanics — which control does what — **Legacy is where the product's ideas live**, so
 these walkthroughs explain concepts rather than buttons: what a chapter is, what sealing costs you, what you
@@ -1063,7 +1152,7 @@ the failure the stale Workouts tour was guilty of, and it is now guarded against
 Verified: tsc 0 · lint at baseline (1 pre-existing error, 13 warnings) · **689 `node --test` green, 4 new** ·
 clean web export.
 
-### 13. The Workouts cluster tutorialized — seven surfaces, 28 spotlit steps (2026-08-02, CODE)
+### 14. The Workouts cluster tutorialized — seven surfaces, 28 spotlit steps (2026-08-02, CODE)
 
 **The tab that fans out to the two largest screens in the app taught none of it.** Workouts had a two-card
 walkthrough; Program Builder (2053 lines) and the live session (1890) had none, and neither did Program
@@ -1113,7 +1202,7 @@ with no affordance**, which wants a micro-hint on the button rather than a tour 
 Verified: tsc 0 · lint at baseline (1 pre-existing error, 13 warnings) · **685 `node --test` green, 7 new** ·
 clean web export.
 
-### 14. P-1.1 Edit Profile built, and three share destinations that lied were removed (2026-08-02, CODE)
+### 15. P-1.1 Edit Profile built, and three share destinations that lied were removed (2026-08-02, CODE)
 
 **Pre-tester hardening pass.** Two gaps that a beta tester would hit in their first hour, closed — plus one
 board entry that has been wrong for weeks.
@@ -1164,7 +1253,7 @@ list from the filesystem and passes, so the new route is properly declared insid
 `eslint src` at baseline (1 pre-existing error, 13 warnings — nothing new) · `expo export --platform web`
 clean, `edit-profile.html` rendered among 59 routes.
 
-### 15. The guided tour split into two legs, and Home finally gets explained (2026-08-02, CODE)
+### 16. The guided tour split into two legs, and Home finally gets explained (2026-08-02, CODE)
 
 **The tour ran at one moment and taught the wrong screen.** The four-tab tour existed only as the honor
 ceremony's continuation, so it fired at the exact instant Home un-gated: the athlete was handed a map of four
@@ -1207,7 +1296,7 @@ only when a run is planned. `useScreenPrompt`, the Guided Tips master switch, th
 Verified: tsc 0 · lint at baseline (1 pre-existing error, 13 warnings) · **678 `node --test` green, 11 new** ·
 clean web export.
 
-### 16. FULL-APP AUDIT — seven passes, three defects closed, one reported (2026-08-02, CODE)
+### 17. FULL-APP AUDIT — seven passes, three defects closed, one reported (2026-08-02, CODE)
 
 A deliberate attempt to break the app: reachability · data contract · dangling loops · persona walks ·
 computation truth · hostile input · server-side authority. Commit `ce472b8`, migration **0101**.
@@ -1248,7 +1337,7 @@ radius in the project (see the 0095–0097 lesson). Designed, not shipped; await
 `chapters.honor_count`, no surface displays it). ~69 dangling exports, mostly type-constant arrays, plus
 two superseded duplicates (`fetchPublicProfile`, `getNextWorkout`).
 
-### 17. Import from a spreadsheet · PR semantics · Rank standards (2026-08-02, CODE)
+### 18. Import from a spreadsheet · PR semantics · Rank standards (2026-08-02, CODE)
 
 **IMPORT IS BUILT.** It was in the design all along — not a screen, a BottomSheet inside the Program
 Builder — which is why a search for an import `.dc.html` found nothing. That supersedes
@@ -1293,7 +1382,7 @@ Gate held at every step: tsc 0 · lint at baseline · **635 `node --test` green*
 deploy.
 
 
-### 18. Cardio consolidated onto one surface · the five empty honor categories filled (2026-08-01, CODE + migration 0099)
+### 19. Cardio consolidated onto one surface · the five empty honor categories filled (2026-08-01, CODE + migration 0099)
 
 **Runs.** GPS measured nothing because `ACCURACY_FLOOR_M` was 25 m — right for a phone under open sky, wrong
 for a browser geolocating off wi-fi at 30–80 m, so every fix was discarded and the distance sat at 0.00

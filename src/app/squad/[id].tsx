@@ -21,7 +21,8 @@ import { InputField } from '@/components/forge/composites/InputField';
 import { SquadCrest } from '@/components/forge/SquadCrest';
 import { fetchSquadInvite, GOAL_UNITS, fetchSquad, fetchSquadCheckins, uploadCheckinVideo, postCheckin, markCheckinViewed, setSquadGoal, clearSquadGoal, deleteSquad, removeSquadMember, type SquadCheckin, type SquadMemberView, type SquadGoalMetric } from '@/data/squad-live';
 import { CHALLENGE_TYPES, daysLeft, fetchSquadActiveChallenge, fetchSquadHall, formatScore, placeLabel } from '@/data/challenges-live';
-import { detailFor, ensureWeeklyRecap, fetchSquadFeed, fmtDuration, fmtVolume, leadFor, recapSummaryLine, timeAgo, toggleSquadReaction, type SquadFeedPost, type SquadPostType } from '@/data/squad-feed-live';
+import { detailFor, ensureWeeklyRecap, fetchSquadFeed, leadFor, recapSummaryLine, timeAgo, toggleSquadReaction, type SquadFeedPost, type SquadPostType } from '@/data/squad-feed-live';
+import { RecapStrip } from '@/components/forge/compositions/RecapStrip';
 import { FlameIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { useQuery } from '@/lib/useQuery';
 import { useMediaPicker } from '@/lib/useMediaPicker';
@@ -938,15 +939,6 @@ function CheckinViewer({ checkin, onClose, onReplace }: { checkin: SquadCheckin;
   );
 }
 
-function RecapStatSmall({ n, label }: { n: string; label: string }) {
-  return (
-    <View style={styles.recapStatSmall}>
-      <Text style={styles.recapStatSmallN}>{n}</Text>
-      <Text style={styles.recapStatSmallLabel}>{label}</Text>
-    </View>
-  );
-}
-
 function FeedCard({ post, reacted, respect, onOpen, onReact }: { post: SquadFeedPost; reacted: boolean; respect: number; onOpen: () => void; onReact: () => void }) {
   const isDiscussion = post.type === 'discussion';
   const lead = isDiscussion ? post.body ?? '' : leadFor(post);
@@ -989,12 +981,7 @@ function FeedCard({ post, reacted, respect, onOpen, onReact }: { post: SquadFeed
             {` ${lead}`}
           </Text>
           {summary ? (
-            <View style={styles.recapStrip}>
-              <RecapStatSmall n={fmtVolume(summary.volume)} label="Vol" />
-              <RecapStatSmall n={fmtDuration(summary.durationSec)} label="Time" />
-              <RecapStatSmall n={String(summary.exercises.length)} label="Lifts" />
-              {summary.prCount > 0 ? <RecapStatSmall n={String(summary.prCount)} label={summary.prCount === 1 ? 'PR' : 'PRs'} /> : null}
-            </View>
+            <RecapStrip summary={summary} />
           ) : detail ? (
             <Text style={styles.feedDetail} numberOfLines={2}>
               {detail}
@@ -1547,10 +1534,8 @@ const styles = StyleSheet.create({
   feedLine: { fontSize: 14, lineHeight: 19, color: flColor.cream100 },
   feedWho: { fontWeight: '600' },
   feedDetail: { fontSize: 12.5, lineHeight: 17, color: flColor.gray400, marginTop: 3 },
-  recapStrip: { flexDirection: 'row', flexWrap: 'wrap', gap: 18, marginTop: 8 },
-  recapStatSmall: { gap: 2 },
-  recapStatSmallN: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.bronze300 },
-  recapStatSmallLabel: { fontSize: 8.5, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase', color: flColor.gray600 },
+  // (the recap stats strip moved to `components/forge/compositions/RecapStrip` — the Friends feed
+  //  renders the identical four numbers since 0113, and two copies would drift)
   feedMediaImage: { width: '100%', height: 180, borderRadius: flRadius.md, marginTop: 10, backgroundColor: flColor.charcoal900 },
   feedVideoTile: { height: 96, borderRadius: flRadius.md, marginTop: 10, backgroundColor: '#171009', borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, alignItems: 'center', justifyContent: 'center' },
   feedPlayDisc: { width: 40, height: 40, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.4)', borderWidth: 1, borderColor: flColor.bronzeBorder },

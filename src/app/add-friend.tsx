@@ -13,22 +13,28 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import {
   acceptFriendRequest,
   fetchFriendLists,
-  findAthleteByHandle,
+  findAthletes,
   removeFriendship,
   requestFriend,
-  type FriendSummary,
+  type AthleteSearchResult,
+  type FriendState,
 } from '@/data/friends-live';
-import { rankLabel } from '@/data/athlete-profile-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flRadius, flShadow } from '@/constants/foundation';
 
 /**
- * Add Friend by Handle — built to `Add Friend by Handle.dc.html`.
+ * Add Friend — built to `Add Friend by Handle.dc.html`, now searching by NAME as well.
  *
- * The only way to reach an athlete you don't already share a squad with, and by SOC-D15 the only sanctioned
- * one: "Friend discovery is intentional. Discovery is always an act the athlete chooses, never a surface
- * the system populates."
+ * The only way to reach an athlete you don't already share a squad with. SOC-D15's principle is intact —
+ * "Discovery is always an act the athlete chooses, never a surface the system populates" — and what
+ * changed is the reading of it. See `Social-Architecture-Amendment-003-Athlete-Search.md`: two locked
+ * documents disagreed, because `Identity-Amendment-001` §4 has specified name+handle search with its
+ * ranking, row format, empty state and no-results copy since before SOC-D15 narrowed it to one exact
+ * handle. A list you typed a query to get is not a surface that populates itself.
+ *
+ * A LEADING `@` FORCES HANDLE-ONLY (Identity §4.1). Without it both fields are queried, which is what
+ * makes the default feel name-based rather than address-based.
  *
  * ── "PEOPLE YOU MAY KNOW" IS NOT BUILT ────────────────────────────────────────────────────────────────
  * The design has a suggestions section with four athletes under that heading. It is not a design call to
@@ -65,24 +71,27 @@ import { flColor, flRadius, flShadow } from '@/constants/foundation';
  * 5. A MATCH RENDERS AS A PERSON, NOT A SENTENCE. Reported by a tester: "it just says send them a request
  *    but doesn't let me view their profile." It was accurate. A resolved handle produced one line of grey
  *    status text and an armed Add button — the athlete's own name appeared only inside that sentence, and
- *    nothing on the screen was tappable. So the only way to find out whether the account you found is the
- *    person you meant was to send them a request and see. Every OTHER list on this screen is made of rows
- *    that open `/athlete/[id]`; the search result, the one row you deliberately went looking for, was the
- *    exception. It is now a row like the rest: face, name, handle, rank, and a press that opens the profile.
- *    The Add button is unchanged — sending still takes one tap, it just no longer has to be a guess.
+ *    nothing on the screen was tappable. Every row on this screen now opens `/athlete/[id]`.
  *
- * THE INPUT IS PINNED, not scrolled. The design is a single scrolling column, which is fine at four
- * decorative suggestions and three fake requests — but with real lists of any length the Add field
- * scrolls away, and it is the only thing on the screen you came to use.
+ * 6. THE ADD BUTTON LEFT THE INPUT, and had to. With one handle there was exactly one person "whatever is
+ *    typed" could mean, so a button beside the field could send to them. With a list there is no such
+ *    person, and a button that guesses which row you meant is worse than no button. Sending moved onto
+ *    each row, where it also gets to be the RIGHT verb — Add, Accept or Withdraw depending on where you
+ *    already stand with that athlete, which `friendAction` has always known and this screen never asked.
  *
- * Faithful: the `@` prefix as a live affordance that lights bronze exactly when the button arms, leading
- * `@`s stripped so `@@ada` normalizes, lowercase coercion, the four-way status cascade with its own icon
- * and colour per state, the armed/disarmed Add button, the bronze count badge on the requests header, and
- * the 220ms rise on rows.
+ * THE INPUT IS PINNED, not scrolled; the RESULTS SCROLL. The field is the one control you came for and
+ * must not scroll away — but 25 result rows pinned above the fold would eat the screen and defeat the
+ * point, so results are the first section inside the scroller.
+ *
+ * Faithful: the `@` prefix as a live affordance (now meaning handle-only mode), leading `@`s stripped so
+ * `@@ada` normalizes, the status cascade with its own icon and colour per state, the bronze count badge
+ * on the requests header, and the 220ms rise on rows.
  */
 
 /** 3–20, letters/digits/dots/underscores — what `profiles.handle` can actually hold. */
 const HANDLE_RE = /^[a-z0-9._]{3,20}$/;
+/** Identity §4.4 / the RPC's own floor: nothing is searched for under two characters. */
+const MIN_QUERY = 2;
 
 export default function AddFriendScreen() {
   const router = useRouter();
@@ -93,72 +102,99 @@ export default function AddFriendScreen() {
   const [busy, setBusy] = useState(false);
   const tourScroller = useTourScroller();
   const onTourScroll = useTourScrollTracker();
-  const [found, setFound] = useState<Awaited<ReturnType<typeof findAthleteByHandle>> | null>(null);
+  const [results, setResults] = useState<AthleteSearchResult[]>([]);
   const [checked, setChecked] = useState<string | null>(null);
+  /* A FAILED SEARCH IS NOT AN EMPTY ONE. Without this, an unapplied 0114 — or any network error —
+     renders "No athletes found. Check the spelling", which blames the athlete for the app's problem
+     and is exactly the class of silent falsehood the honors guard was rewritten to stop telling. */
+  const [searchError, setSearchError] = useState<string | null>(null);
+  /** Rows we've just acted on, so the button flips without waiting for a round trip. */
+  const [optimistic, setOptimistic] = useState<Record<string, FriendState>>({});
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/friends'));
 
-  // Strip any number of leading @ and lowercase, as the design does.
-  const raw = query.trim().replace(/^@+/, '').toLowerCase();
-  const valid = HANDLE_RE.test(raw);
-
+  /*
+   * TWO MODES OFF ONE FIELD (Identity §4.1).
+   *
+   * A leading `@` means "I know their handle" and keeps the old strict validation. Anything else is a
+   * NAME, and names are not `[a-z0-9._]` — they have spaces, apostrophes and accents — so the only
+   * gate on that side is a length floor. The query is NOT lowercased for display any more either:
+   * lowercasing somebody's name in the box they typed it into is wrong, and the server lowercases for
+   * matching anyway.
+   */
+  const typed = query.trim();
+  const handleMode = typed.startsWith('@');
+  const raw = typed.replace(/^@+/, '');
+  const searchable = handleMode ? HANDLE_RE.test(raw.toLowerCase()) : raw.length >= MIN_QUERY;
   const lists = data ?? { friends: [], incoming: [], outgoing: [] };
-  const existingFriend = lists.friends.find((f) => f.handle?.toLowerCase() === raw);
-  const pendingOut = lists.outgoing.find((f) => f.handle?.toLowerCase() === raw);
-  const pendingIn = lists.incoming.find((f) => f.handle?.toLowerCase() === raw);
-  const armed = valid && !existingFriend && !pendingOut && !busy;
 
-  // Look the handle up once it's well-formed, so the status line can name a real athlete rather than
-  // promising a request to a handle that doesn't exist.
+  // Debounced search. `checked === raw` is the stale-response guard and does the same job it always
+  // did: a result from a previous keystroke can never render, so nothing needs clearing on the way out
+  // (a synchronous setState in an effect body is also what this project's react-compiler lint rejects).
   useEffect(() => {
-    // No clearing on the way out: every consumer gates on `checked === raw`, so a result from a previous
-    // handle can never be read. Clearing here would also be a synchronous setState in an effect body,
-    // which this project's react-compiler lint rejects — the guard is both cheaper and stricter.
-    if (!valid) return undefined;
+    if (!searchable) return undefined;
     let alive = true;
     const t = setTimeout(() => {
-      findAthleteByHandle(raw).then(
+      findAthletes(raw).then(
         (r) => {
           if (!alive) return;
-          setFound(r);
+          setResults(r);
+          setSearchError(null);
           setChecked(raw);
         },
-        () => alive && setChecked(raw),
+        (e: unknown) => {
+          if (!alive) return;
+          setResults([]);
+          setSearchError(errorMessage(e));
+          setChecked(raw);
+        },
       );
     }, 320);
     return () => {
       alive = false;
       clearTimeout(t);
     };
-  }, [raw, valid]);
+  }, [raw, searchable]);
 
-  const send = (handle: string, athleteId?: string) => {
+  const showing = checked === raw && searchable ? results : [];
+  const stateOf = (r: AthleteSearchResult): FriendState => optimistic[r.id] ?? r.state;
+
+  /*
+   * Send to a specific athlete. The id comes from the ROW, always — there is no "whoever is typed"
+   * to resolve any more, which is what deleted the old id-resolution fallback and its
+   * "No athlete has that handle" toast along with it.
+   *
+   * The query is deliberately NOT cleared afterwards. With one result, consuming it made sense; with a
+   * list, an athlete adding two people from one search should not have to type it again.
+   */
+  const send = (r: AthleteSearchResult) => {
     if (busy) return;
-    const target = athleteId ?? (checked === handle ? found?.id : undefined);
-    if (!target) {
-      showToast('No athlete has that handle');
-      return;
-    }
     setBusy(true);
-    requestFriend(target).then(
+    setOptimistic((o) => ({ ...o, [r.id]: 'outgoing' }));
+    requestFriend(r.id).then(
       (state) => {
         setBusy(false);
-        setQuery('');
-        setFound(null);
-        setChecked(null);
-        showToast(state === 'friends' ? 'You’re now friends' : `Request sent to @${handle}`);
+        setOptimistic((o) => ({ ...o, [r.id]: state }));
+        showToast(state === 'friends' ? 'You’re now friends' : `Request sent to ${r.name}`);
         refetch();
       },
       (e: unknown) => {
         setBusy(false);
+        setOptimistic((o) => {
+          const { [r.id]: _undo, ...rest } = o;
+          return rest;
+        });
         showToast(errorMessage(e));
       },
     );
   };
 
-  const withdraw = (f: FriendSummary) => {
+  /* `{ id, name }` rather than `FriendSummary`: the same three actions now fire from a search result
+     as well as from a list row, and `id` is the athlete id in both. */
+  const withdraw = (f: { id: string; name: string }) => {
     if (busy) return;
     setBusy(true);
+    setOptimistic((o) => ({ ...o, [f.id]: 'none' }));
     removeFriendship(f.id).then(
       () => {
         setBusy(false);
@@ -167,14 +203,16 @@ export default function AddFriendScreen() {
       },
       (e: unknown) => {
         setBusy(false);
+        setOptimistic((o) => ({ ...o, [f.id]: 'outgoing' }));
         showToast(errorMessage(e));
       },
     );
   };
 
-  const accept = (f: FriendSummary) => {
+  const accept = (f: { id: string; name: string }) => {
     if (busy) return;
     setBusy(true);
+    setOptimistic((o) => ({ ...o, [f.id]: 'friends' }));
     acceptFriendRequest(f.id).then(
       () => {
         setBusy(false);
@@ -183,12 +221,13 @@ export default function AddFriendScreen() {
       },
       (e: unknown) => {
         setBusy(false);
+        setOptimistic((o) => ({ ...o, [f.id]: 'incoming' }));
         showToast(errorMessage(e));
       },
     );
   };
 
-  const status = statusFor({ raw, valid, existingFriend, pendingOut, pendingIn, found, checked });
+  const status = statusFor({ raw, handleMode, searchable, checked, count: showing.length, searchError });
 
   return (
     <View style={styles.root}>
@@ -199,68 +238,32 @@ export default function AddFriendScreen() {
               run to any length, and an Add field that disappears as you read them is the field you came for.
               Same pattern as Competition History's header. ── */}
       <View style={styles.pinned}>
-        <Text style={styles.lede}>Friends are added by handle, one at a time. You’ll need to know theirs.</Text>
+        <Text style={styles.lede}>Search by name, or type @ and their handle.</Text>
 
-        {/* The @ prefix lights exactly when the button arms. */}
-        <TourAnchor id="addfriend-search" style={[styles.inputRow, armed ? styles.inputRowArmed : null]}>
-          <Text style={[styles.prefix, armed ? styles.prefixArmed : null]}>@</Text>
+        {/* The @ prefix lights when the field is in handle-only mode — the same affordance, now saying
+            which of the two searches is running rather than whether a button is armed. */}
+        <TourAnchor id="addfriend-search" style={[styles.inputRow, searchable ? styles.inputRowArmed : null]}>
+          <Text style={[styles.prefix, handleMode ? styles.prefixArmed : null]}>@</Text>
           <TextInput
             value={query}
             onChangeText={setQuery}
-            onSubmitEditing={() => armed && send(raw)}
-            placeholder="handle"
+            placeholder="name or handle"
             placeholderTextColor={flColor.gray600}
             style={styles.input}
-            accessibilityLabel="Athlete handle"
+            accessibilityLabel="Search athletes by name or handle"
             autoCapitalize="none"
             autoCorrect={false}
             spellCheck={false}
-            maxLength={21}
-            returnKeyType="send"
+            maxLength={40}
+            returnKeyType="search"
           />
-          <Pressable
-            onPress={() => send(raw)}
-            disabled={!armed}
-            accessibilityRole="button"
-            accessibilityLabel="Send friend request"
-            accessibilityState={{ disabled: !armed }}
-            style={({ pressed }) => [styles.addBtn, armed ? styles.addBtnArmed : null, pressed && armed ? styles.pressed : null]}
-          >
-            {busy ? <ActivityIndicator size="small" color={flColor.bronze300} /> : <Text style={[styles.addBtnLabel, armed ? styles.addBtnLabelArmed : null]}>Add</Text>}
-          </Pressable>
+          {checked !== raw && searchable ? <ActivityIndicator size="small" color={flColor.bronze300} /> : null}
         </TourAnchor>
 
         <View style={styles.statusRow}>
           {status.icon}
           <Text style={[styles.statusText, { color: status.color }]}>{status.text}</Text>
         </View>
-
-        {/* ── THE MATCH, AS A PERSON. Shown for every resolved handle regardless of relationship — an
-                athlete you're already friends with is still someone you might have looked up to open. ── */}
-        {checked === raw && found ? (
-          <Pressable
-            onPress={() => router.push({ pathname: '/athlete/[id]', params: { id: found.id } })}
-            accessibilityRole="button"
-            accessibilityLabel={`View ${found.name}'s profile`}
-            style={({ pressed }) => [styles.result, pressed ? styles.pressed : null]}
-          >
-            <Avatar src={found.avatarUrl ?? undefined} name={found.name} size={42} />
-            <View style={styles.resultText}>
-              <Text style={styles.resultName} numberOfLines={1}>
-                {found.name}
-              </Text>
-              <Text style={styles.resultMeta} numberOfLines={1}>
-                {[found.handle ? `@${found.handle}` : null, rankLabel(found.rankFamily, found.rankLevel)]
-                  .filter(Boolean)
-                  .join('  ·  ')}
-              </Text>
-            </View>
-            <View style={styles.resultCta}>
-              <Text style={styles.resultCtaLabel}>Profile</Text>
-              <ChevronGlyph />
-            </View>
-          </Pressable>
-        ) : null}
       </View>
 
       <ScrollView
@@ -271,6 +274,44 @@ export default function AddFriendScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
+
+        {/* ── RESULTS. Inside the scroller, not pinned: at 25 rows a pinned block would swallow the
+                screen and defeat the reason the input is pinned in the first place. The action is the
+                one `friendAction` already computes from where you stand — Add · Accept · Withdraw ·
+                already Friends — so a row you're mid-conversation with offers the right verb. ── */}
+        {showing.length > 0 ? (
+          <Section label="Results" count={showing.length}>
+            {showing.map((r, i) => {
+              const state = stateOf(r);
+              return (
+                <PersonRow
+                  key={r.id}
+                  person={r}
+                  index={i}
+                  sub={r.sharedSquad}
+                  onOpen={() => router.push({ pathname: '/athlete/[id]', params: { id: r.id } })}
+                  action={
+                    state === 'friends' ? (
+                      <FriendsMark />
+                    ) : state === 'incoming' ? (
+                      <Pressable onPress={() => accept(r)} disabled={busy} accessibilityRole="button" accessibilityLabel={`Accept ${r.name}`} style={({ pressed }) => [styles.rowBtn, styles.rowBtnArmed, pressed ? styles.pressed : null]}>
+                        <Text style={styles.rowBtnLabelArmed}>Accept</Text>
+                      </Pressable>
+                    ) : state === 'outgoing' ? (
+                      <Pressable onPress={() => withdraw(r)} disabled={busy} accessibilityRole="button" accessibilityLabel={`Withdraw request to ${r.name}`} style={({ pressed }) => [styles.rowBtn, pressed ? styles.pressed : null]}>
+                        <Text style={styles.rowBtnLabel}>Withdraw</Text>
+                      </Pressable>
+                    ) : (
+                      <Pressable onPress={() => send(r)} disabled={busy} accessibilityRole="button" accessibilityLabel={`Send ${r.name} a friend request`} style={({ pressed }) => [styles.rowBtn, styles.rowBtnArmed, pressed ? styles.pressed : null]}>
+                        <Text style={styles.rowBtnLabelArmed}>Add</Text>
+                      </Pressable>
+                    )
+                  }
+                />
+              );
+            })}
+          </Section>
+        ) : null}
 
         {/* ── Awaiting your answer. Not in the design; without it there is no surface to accept from. ── */}
         {lists.incoming.length > 0 ? (
@@ -343,27 +384,37 @@ export default function AddFriendScreen() {
   );
 }
 
-/** The design's four-way cascade, in its priority order, extended for "no such handle". */
+/**
+ * The screen's state machine, in priority order.
+ *
+ * The old cascade's middle three branches — already-friends, request-pending, they-asked-you — are
+ * gone from here and now live on the ROW. They only ever made sense when one handle meant one person;
+ * with a list, "a request to @x is already pending" is a statement about one of twenty rows and
+ * belongs beside that row's button.
+ */
 function statusFor(o: {
   raw: string;
-  valid: boolean;
-  existingFriend?: FriendSummary;
-  pendingOut?: FriendSummary;
-  pendingIn?: FriendSummary;
-  found: Awaited<ReturnType<typeof findAthleteByHandle>> | null;
+  handleMode: boolean;
+  searchable: boolean;
   checked: string | null;
+  count: number;
+  searchError: string | null;
 }): { text: string; color: string; icon: React.ReactNode } {
   const info = <InfoGlyph />;
-  if (!o.raw) return { text: 'Enter a handle to send a friend request.', color: flColor.gray600, icon: info };
-  if (!o.valid) return { text: 'Handles are 3–20 letters, numbers, dots and underscores.', color: '#A97E68', icon: <WarnGlyph /> };
-  if (o.existingFriend) return { text: `${o.existingFriend.name} is already your friend.`, color: flColor.gray600, icon: info };
-  if (o.pendingOut) return { text: `A request to @${o.raw} is already pending.`, color: flColor.gray600, icon: info };
-  if (o.pendingIn) return { text: `${o.pendingIn.name} already asked you — accepting is below.`, color: '#8FB295', icon: <CheckGlyph /> };
-  // Only claim a request is sendable once we know somebody holds the handle.
-  if (o.checked === o.raw && !o.found) return { text: `No athlete has the handle @${o.raw}.`, color: '#A97E68', icon: <WarnGlyph /> };
-  // The name isn't repeated here — the card below says who it is. This says what Add will do.
-  if (o.checked === o.raw && o.found) return { text: 'Add sends them a request, or open their profile first.', color: '#8FB295', icon: <CheckGlyph /> };
-  return { text: `Checking @${o.raw}…`, color: flColor.gray600, icon: info };
+  if (!o.raw) return { text: 'Search by name, or type @ and their handle.', color: flColor.gray600, icon: info };
+  if (!o.searchable) {
+    return o.handleMode
+      ? { text: 'Handles are 3–20 letters, numbers, dots and underscores.', color: '#A97E68', icon: <WarnGlyph /> }
+      : { text: 'Keep typing — at least two characters.', color: flColor.gray600, icon: info };
+  }
+  if (o.checked !== o.raw) return { text: 'Searching…', color: flColor.gray600, icon: info };
+  // The search FAILED — say so. "No athletes found" here would blame the athlete's spelling for the
+  // app's problem, and would look identical to a genuine miss.
+  if (o.searchError) return { text: o.searchError, color: '#A97E68', icon: <WarnGlyph /> };
+  // Identity §4.5, verbatim — the copy is specified, and it says what to do next rather than only
+  // reporting a miss.
+  if (o.count === 0) return { text: 'No athletes found. Check the spelling or ask them to share their username.', color: '#A97E68', icon: <WarnGlyph /> };
+  return { text: 'Tap a name to open their profile, or Add to send a request.', color: '#8FB295', icon: <CheckGlyph /> };
 }
 
 function Section({ label, count, children }: { label: string; count: number; children: React.ReactNode }) {
@@ -382,7 +433,24 @@ function Section({ label, count, children }: { label: string; count: number; chi
   );
 }
 
-function PersonRow({ person, index, onOpen, action }: { person: FriendSummary; index: number; onOpen: () => void; action: React.ReactNode }) {
+/**
+ * `person` is structural rather than `FriendSummary` so a search result fits it unchanged — the two
+ * types agree on the four fields this row draws, and widening it beat converting one into the other.
+ * `sub` is Identity §4.3's tertiary line (a shared squad), shown only when there is one.
+ */
+function PersonRow({
+  person,
+  index,
+  onOpen,
+  action,
+  sub,
+}: {
+  person: { id: string; name: string; handle: string | null; avatarUrl: string | null };
+  index: number;
+  onOpen: () => void;
+  action: React.ReactNode;
+  sub?: string | null;
+}) {
   const [rise] = useState(() => new Animated.Value(0));
   useEffect(() => {
     const anim = Animated.sequence([
@@ -402,6 +470,7 @@ function PersonRow({ person, index, onOpen, action }: { person: FriendSummary; i
             {person.name}
           </Text>
           {person.handle ? <Text style={styles.rowHandle} numberOfLines={1}>@{person.handle}</Text> : null}
+          {sub ? <Text style={styles.rowSquad} numberOfLines={1}>{sub}</Text> : null}
         </View>
       </Pressable>
       {action}
@@ -435,13 +504,6 @@ function WarnGlyph({ size = 13, color = '#A97E68' }: { size?: number; color?: st
     </Svg>
   );
 }
-function ChevronGlyph({ size = 14, color = flColor.bronze400 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M9 5l7 7-7 7" />
-    </Svg>
-  );
-}
 function CheckGlyph({ size = 13, color = '#8FB295' }: { size?: number; color?: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
@@ -471,12 +533,8 @@ const styles = StyleSheet.create({
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 11, paddingHorizontal: 2 },
   statusText: { flex: 1, fontSize: 12, lineHeight: 17 },
 
-  result: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12, paddingVertical: 11, paddingLeft: 12, paddingRight: 12, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
-  resultText: { flex: 1, minWidth: 0 },
-  resultName: { fontSize: 15, fontWeight: '700', color: flColor.cream100 },
-  resultMeta: { marginTop: 2, fontSize: 11.5, color: flColor.gray400 },
-  resultCta: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 4 },
-  resultCtaLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  // (the single pinned result card is gone — a search returns a LIST now, and it renders as a
+  //  `Results` Section of ordinary `PersonRow`s inside the scroller. See 0114 / SOC-A3-D1.)
 
   section: { marginTop: 22 },
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10, paddingHorizontal: 2 },
@@ -490,6 +548,7 @@ const styles = StyleSheet.create({
   rowText: { flex: 1, minWidth: 0 },
   rowName: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   rowHandle: { marginTop: 1, fontSize: 11, color: flColor.gray600 },
+  rowSquad: { marginTop: 1, fontSize: 10.5, color: flColor.bronze400 },
   rowBtn: { flexShrink: 0, paddingHorizontal: 12, paddingVertical: 7, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600 },
   rowBtnArmed: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   rowBtnLabel: { fontSize: 11.5, fontWeight: '600', color: flColor.gray600 },

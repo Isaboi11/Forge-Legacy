@@ -19,7 +19,18 @@ export interface PickedExercise {
 }
 
 export type ExerciseInbox =
-  | { kind: 'add'; items: PickedExercise[] }
+  /**
+   * `group: 'superset'` — the athlete said so AT PICK TIME, ticking the exercises together and
+   * declaring the pairing in the same breath.
+   *
+   * The ⋮ menu's "Superset with next exercise" answers a different question: the exercises are
+   * already in the session (a program day) and the athlete decides on the day to alternate them.
+   * Building as you go, that path means adding three lifts and then pairing them one at a time
+   * afterwards, which is the pairing you already knew about spelled out three more times.
+   *
+   * OPTIONAL, so an inbox written by an older build still drains as an ordinary add.
+   */
+  | { kind: 'add'; items: PickedExercise[]; group?: 'superset' }
   | { kind: 'replace'; targetIdx: number; item: PickedExercise };
 
 const KEY = 'forge_active_exercise_inbox_v1';

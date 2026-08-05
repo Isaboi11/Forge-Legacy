@@ -9,11 +9,14 @@
 
 ## Section 1 — Screen Purpose
 
+> **v1.1 — AMENDED by `Docs/Amendments/W26-Amendment-001-Forge-Starter-Templates.md` (W26-A1-D1…D8).** Forge now ships six starter templates, shown as a **"From Forge" shelf above the athlete's own list**. They are shipped DEFINITIONS; taking one writes the athlete their own row stamped with `source_definition_id` (migration 0115), after which it is an ordinary template in every respect. §4's empty state now requires BOTH lists to be empty — a new athlete's first Templates screen is six ready sessions, not a locked door. W-25 and W-27 are NOT amended: the preview is a new sibling route (`/starter-template/[id]`), and editing an adopted copy is an ordinary W-25 edit.
+
 W-26 is the athlete's personal library of reusable workout templates. It serves as:
 
 - The central discovery surface for `WorkoutTemplate` records
 - The primary launch point for template-based `WorkoutSession` creation
 - The entry point for creating new templates via W-25
+- **(v1.1)** The adoption surface for Forge's starter templates
 
 **W-26 is NOT:**
 - A program browser — W-2 owns that
@@ -146,6 +149,8 @@ Standard vertical scroll. No pagination. No sticky section headers. No category 
 ## Section 4 — Empty State
 
 Displayed when the athlete has zero templates. This state is the feature's introduction surface — a new athlete reaches it via the always-present W-1 entry point.
+
+> **v1.1 (W26-A1-D6) — the condition is now "zero templates AND every starter already adopted."** The Forge shelf is the introduction surface a new athlete meets instead; this panel remains for the case that now produces it (every starter taken, every copy deleted). A starter template is real content — real catalogue exercises, real prescriptions, trainable — so the shelf is not the placeholder content this section bars.
 
 ```
 [Template icon — thematic, not literal]

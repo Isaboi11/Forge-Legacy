@@ -17,9 +17,14 @@ import { supabase } from '@/lib/supabase';
  *   · No decline notification. Accepting notifies; declining is silent. "N declined your request" is a
  *     notification whose only content is a small rejection.
  *
- *   · No friend count as a metric, no public or squad-visible friend list (FR-D3), no suggestions or
- *     People-You-May-Know (SOC-D15). Discovery is one exact handle at a time — a search returning a LIST
- *     would be the discovery surface SOC-D15 bars.
+ *   · No friend count as a metric, and no public or squad-visible friend list (FR-D3).
+ *
+ *   · No suggestions and no People-You-May-Know. `find_athletes` (0114) returns a LIST, which this file
+ *     used to say SOC-D15 barred — see `Social-Architecture-Amendment-003-Athlete-Search.md`, which
+ *     settles a disagreement between two locked documents in favour of `Identity-Amendment-001` §4.
+ *     What SOC-D15 bars is unchanged and is everything the SYSTEM populates: Suggested Friends, PYMK,
+ *     mutual-friend recommendations, ranking by engagement or popularity, and any result at all for a
+ *     query the athlete did not type. A list you asked for is not a surface that populates itself.
  */
 
 /** Where the viewer stands with an athlete. `outgoing` = I asked; `incoming` = they asked. */
@@ -37,6 +42,8 @@ export interface AthleteSearchResult {
   rankFamily: string | null;
   rankLevel: number | null;
   state: FriendState;
+  /** Identity §4.3's tertiary line — one squad you're both in, or null. */
+  sharedSquad?: string | null;
 }
 
 export interface FriendSummary {
@@ -86,6 +93,39 @@ export async function findAthleteByHandle(handle: string): Promise<AthleteSearch
     rankLevel: d.rank_level == null ? null : Number(d.rank_level),
     state: asState(d.state),
   };
+}
+
+/**
+ * Search athletes by NAME or handle (migration 0114). A leading `@` forces handle-only mode, per
+ * Identity §4.1 — the default queries both fields, which is what makes the experience feel name-based
+ * rather than address-based.
+ *
+ * Returns `[]` under two characters without calling the server: Identity §4.4 shows nothing before a
+ * query, and the empty string is the one input that would otherwise mean everybody.
+ */
+export async function findAthletes(query: string, limit = 20): Promise<AthleteSearchResult[]> {
+  const clean = query.trim();
+  if (clean.replace(/^@+/, '').length < 2) return [];
+
+  const { data, error } = await supabase.rpc('find_athletes', { p_query: clean, p_limit: limit });
+  if (error) {
+    if ((error as { code?: string })?.code === 'PGRST202') {
+      throw new Error('Athlete search isn’t available yet — migration 0114 hasn’t been applied.');
+    }
+    throw error;
+  }
+
+  return ((data ?? []) as Record<string, unknown>[]).map((d) => ({
+    id: String(d.id),
+    name: String(d.name),
+    handle: (d.handle as string) ?? null,
+    avatarUrl: (d.avatar_url as string) ?? null,
+    athleteType: (d.athlete_type as string) ?? null,
+    rankFamily: (d.rank_family as string) ?? null,
+    rankLevel: d.rank_level == null ? null : Number(d.rank_level),
+    state: asState(d.state),
+    sharedSquad: (d.shared_squad as string) ?? null,
+  }));
 }
 
 /**

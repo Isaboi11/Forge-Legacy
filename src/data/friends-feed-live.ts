@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import type { WorkoutSummary } from './squad-feed-live';
 
 /**
  * The Friends Feed (migration 0074) — SOC-D9's intentional-sharing feed.
@@ -61,6 +62,11 @@ export interface FeedPost {
   prValue: string | null;
   prExercise: string | null;
   prLabel: string | null;
+  /** The workout a `recap` post was shared from — a tap target onto Activity Detail. */
+  workoutId: string | null;
+  /** Stats snapshotted at share time. Null on every post that isn't a recap (and on every recap
+   *  written before 0113 taught `friends_feed` to return the column it was already storing). */
+  workoutSummary: WorkoutSummary | null;
   commentCount: number;
   reactionCount: number;
   myReaction: Reaction | null;
@@ -68,10 +74,15 @@ export interface FeedPost {
 }
 
 /** What the card renders, derived from the media rather than stored as a type — see 0074. */
-export type PostShape = 'note' | 'photo' | 'video' | 'progress' | 'milestone';
+export type PostShape = 'note' | 'photo' | 'video' | 'progress' | 'milestone' | 'recap';
 
 export function shapeOf(p: FeedPost): PostShape {
   if (p.type === 'progress') return 'progress';
+  /* A recap with its stats renders the Vol/Time/Lifts/PRs strip the Squad feed has always shown.
+     A recap WITHOUT them still falls through to the bronze milestone card below — which is every
+     recap written before 0113, and every row read from a database that hasn't applied it yet. No
+     backfill, no regression, no version check. */
+  if (p.type === 'recap' && p.workoutSummary) return 'recap';
   if (p.type === 'milestone' || p.type === 'pr' || p.type === 'weekly' || p.type === 'recap') return 'milestone';
   if (p.media.some((m) => m.kind === 'video')) return 'video';
   if (p.media.length > 0) return 'photo';
@@ -119,6 +130,8 @@ export async function fetchFriendsFeed(limit = 40, before?: string): Promise<Fee
     prValue: (r.pr_value as string) ?? null,
     prExercise: (r.pr_exercise as string) ?? null,
     prLabel: (r.pr_label as string) ?? null,
+    workoutId: (r.workout_id as string) ?? null,
+    workoutSummary: (r.workout_summary as WorkoutSummary) ?? null,
     commentCount: Number(r.comment_count ?? 0),
     reactionCount: Number(r.reaction_count ?? 0),
     myReaction: asReaction(r.my_reaction),
@@ -153,8 +166,11 @@ export interface NewPost {
   /** Present for a squad or Both post; null for friends-only. */
   squadId: string | null;
   media: PostMedia[];
-  /** `progress` when two before/after images are attached. */
+  /** `progress` when two before/after images are attached; `recap` when a workout is attached. */
   type?: PostType;
+  /** Recap only — the workout being shared and the stats snapshotted from it. */
+  workoutId?: string | null;
+  workoutSummary?: WorkoutSummary | null;
 }
 
 export async function createFriendPost(input: NewPost): Promise<string> {
@@ -163,6 +179,7 @@ export async function createFriendPost(input: NewPost): Promise<string> {
   } = await supabase.auth.getUser();
   if (!user) throw new Error('Not signed in');
 
+  const isRecap = input.type === 'recap';
   const { data, error } = await supabase
     .from('squad_posts')
     .insert({
@@ -173,6 +190,10 @@ export async function createFriendPost(input: NewPost): Promise<string> {
       type: input.type ?? 'discussion',
       body: input.body.trim() || null,
       media: input.media,
+      /* Gated on the TYPE, the same way `addSquadPost` gates it, so a discussion post can never carry
+         a workout snapshot a caller left on the input by accident. */
+      workout_id: isRecap ? (input.workoutId ?? null) : null,
+      workout_summary: isRecap ? (input.workoutSummary ?? null) : null,
     })
     .select('id')
     .single();

@@ -61,6 +61,10 @@ export interface WorkoutTemplate {
   useCount: number;
   lastUsedAt: string | null;
   createdAt: string;
+  /** The Forge starter this was adopted from (0115), or null for a captured/authored one. Provenance
+   *  only: the row belongs to the athlete and behaves like any other template. Reads null on a
+   *  database without 0115, which is the right answer for every row that predates it. */
+  sourceDefinitionId: string | null;
 }
 
 /** One finished session trained from this template. */
@@ -104,6 +108,7 @@ const toTemplate = (r: Record<string, unknown>): WorkoutTemplate => ({
   useCount: Number(r.use_count ?? 0),
   lastUsedAt: (r.last_used_at as string) ?? null,
   createdAt: String(r.created_at),
+  sourceDefinitionId: (r.source_definition_id as string) ?? null,
 });
 
 /**
@@ -234,6 +239,48 @@ export async function saveTemplate(name: string, exercises: TemplateExercise[], 
   const { data, error } = await supabase
     .from('workout_templates')
     .insert({ athlete_id: user.id, name: clean, exercises })
+    .select('id')
+    .single();
+  if (error) throw error;
+  return (data as { id: string }).id;
+}
+
+/**
+ * Take a Forge starter as your own (0115).
+ *
+ * Structurally `adoptCatalogProgram`: look for a copy you already took, return that if it exists, and
+ * otherwise write one. IDEMPOTENT — the athlete's copy is the thing, not the definition, so adopting
+ * twice must resume rather than fork. The partial unique index on `(athlete_id, source_definition_id)`
+ * backstops a double-tap that races past this check.
+ *
+ * Returns the template id, so the caller can land on it.
+ */
+export async function adoptStarterTemplate(def: { id: string; name: string; exercises: TemplateExercise[] }): Promise<string> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not signed in');
+
+  const { data: existing, error: lookupError } = await supabase
+    .from('workout_templates')
+    .select('id')
+    .eq('athlete_id', user.id)
+    .eq('source_definition_id', def.id)
+    .maybeSingle();
+  /* 42703 = the column doesn't exist, i.e. 0115 hasn't been applied. Named explicitly because a
+     stopped migration chain fails on a missing COLUMN, and the PGRST205/PGRST202 guards used
+     elsewhere in this repo do NOT catch that. Silence here would adopt a fresh copy on every tap. */
+  if (lookupError) {
+    if ((lookupError as { code?: string }).code === '42703') {
+      throw new Error('Forge templates aren’t available yet — migration 0115 hasn’t been applied.');
+    }
+    throw lookupError;
+  }
+  if (existing) return String((existing as { id: string }).id);
+
+  const { data, error } = await supabase
+    .from('workout_templates')
+    .insert({ athlete_id: user.id, name: def.name, exercises: def.exercises, source_definition_id: def.id })
     .select('id')
     .single();
   if (error) throw error;

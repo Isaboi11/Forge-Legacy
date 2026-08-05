@@ -8,6 +8,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { RecapStrip } from '@/components/forge/compositions/RecapStrip';
 import { ScreenBackground } from '@/components/screen-background';
 import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
@@ -196,6 +197,7 @@ export default function FriendsFeedScreen() {
                 onReact={(r) => react(post, r)}
                 onAuthor={() => router.push({ pathname: '/athlete/[id]', params: { id: post.authorId } })}
                 onComments={() => setCommentsFor(post)}
+                onWorkout={() => post.workoutId && router.push({ pathname: '/activity/[id]', params: { id: post.workoutId } })}
               />
               </TourAnchor>
             ))
@@ -252,6 +254,7 @@ function PostCard({
   onReact,
   onAuthor,
   onComments,
+  onWorkout,
 }: {
   post: FeedPost;
   pickerOpen: boolean;
@@ -260,6 +263,7 @@ function PostCard({
   onReact: (r: Reaction) => void;
   onAuthor: () => void;
   onComments: () => void;
+  onWorkout: () => void;
 }) {
   const shape = shapeOf(post);
   const line = acknowledgedLine(post);
@@ -294,6 +298,24 @@ function PostCard({
             <PlayGlyph />
           </View>
         </View>
+      ) : shape === 'recap' && post.workoutSummary ? (
+        /* A shared workout, in the same bronze frame as a milestone but saying what it actually was.
+           `shapeOf` only returns 'recap' when the summary is there, so this never renders an empty
+           strip — a recap without stats is still a milestone card. Tapping opens the session itself. */
+        <Pressable
+          onPress={onWorkout}
+          disabled={!post.workoutId}
+          accessibilityRole={post.workoutId ? 'button' : undefined}
+          accessibilityLabel={post.workoutId ? `Open ${post.isMine ? 'your' : `${post.authorName}'s`} workout` : undefined}
+          style={styles.milestone}
+        >
+          <LinearGradient colors={['rgba(186, 134, 84,0.14)', 'transparent'] as const} locations={[0, 0.7] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+          <View style={styles.milestoneHead}>
+            <MedalGlyph />
+            <Text style={styles.milestoneKind}>Workout</Text>
+          </View>
+          <RecapStrip summary={post.workoutSummary} />
+        </Pressable>
       ) : shape === 'milestone' ? (
         <View style={styles.milestone}>
           <LinearGradient colors={['rgba(186, 134, 84,0.14)', 'transparent'] as const} locations={[0, 0.7] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />

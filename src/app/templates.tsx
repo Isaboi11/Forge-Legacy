@@ -12,6 +12,7 @@ import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { deleteTemplate, fetchTemplates, templateSummary, type WorkoutTemplate } from '@/data/templates-live';
+import { getStarterTemplates, starterSummary } from '@/domain/workout/starter-templates';
 import { useToast } from '@/hooks/useCeremony';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
@@ -82,6 +83,11 @@ export default function TemplatesScreen() {
   };
 
   const list = data ?? [];
+  /* The shelf shows what you HAVEN'T taken. An adopted starter is an ordinary template of yours and
+     belongs in your list, not on the shelf offering it again — filtered here rather than by a second
+     query, because the answer is already in hand. */
+  const adopted = new Set(list.map((t) => t.sourceDefinitionId).filter(Boolean));
+  const starters = getStarterTemplates().filter((s) => !adopted.has(s.id));
 
   return (
     <View style={styles.root}>
@@ -110,7 +116,9 @@ export default function TemplatesScreen() {
             <Text style={styles.outlineBtnLabel}>Try Again</Text>
           </Pressable>
         </View>
-      ) : list.length === 0 ? (
+      ) : list.length === 0 && starters.length === 0 ? (
+        /* Only reachable once every starter has been adopted AND every copy deleted — but it stays,
+           because the alternative is a screen that says nothing when that happens. */
         <View style={styles.center}>
           <View style={styles.emptyCrest}>
             <LinesGlyph />
@@ -134,6 +142,44 @@ export default function TemplatesScreen() {
         >
           <Text style={styles.lede}>Reusable workouts, ready whenever you are. Recently used appear first.</Text>
 
+          {/* ── FROM FORGE ────────────────────────────────────────────────────────────────────────
+              Above your own, and the whole reason this screen no longer greets a new athlete with an
+              empty panel under a heading that promised templates. The card body PREVIEWS; only Add
+              writes anything — the same "body and action are distinct targets" rule the cards below
+              follow. Taking one makes it yours: editable, deletable, keeping its own history. ── */}
+          {starters.length > 0 ? (
+            <View style={styles.shelf}>
+              <View style={styles.shelfHead}>
+                <Text style={styles.shelfLabel}>From Forge</Text>
+                <Text style={styles.shelfSub}>Ready to train, or to make your own</Text>
+              </View>
+              {starters.map((s) => (
+                <Pressable
+                  key={s.id}
+                  onPress={() => router.push({ pathname: '/starter-template/[id]', params: { id: s.id } })}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Preview ${s.name} — ${s.blurb}`}
+                  style={({ pressed }) => [styles.starterCard, pressed ? styles.pressed : null]}
+                >
+                  <View style={styles.starterText}>
+                    <Text style={styles.starterName} numberOfLines={1}>
+                      {s.name}
+                    </Text>
+                    <Text style={styles.starterStructure}>
+                      {starterSummary(s)} · {s.level}
+                    </Text>
+                    <Text style={styles.starterBlurb} numberOfLines={2}>
+                      {s.blurb}
+                    </Text>
+                  </View>
+                  <View style={styles.starterCta}>
+                    <Text style={styles.starterCtaLabel}>Preview</Text>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
+
           <TourAnchor id="templates-list" style={styles.stack}>
             {list.map((t) => (
               <View key={t.id} style={[styles.card, t.lastUsedAt ? styles.cardUsed : null]}>
@@ -155,6 +201,12 @@ export default function TemplatesScreen() {
                       </Text>
                       <Text style={styles.cardStructure}>{templateSummary(t)}</Text>
                     </View>
+                    {/* Provenance, not ownership — this row is the athlete's and Remove still removes it. */}
+                    {t.sourceDefinitionId ? (
+                      <View style={styles.forgePill}>
+                        <Text style={styles.forgePillText}>FORGE</Text>
+                      </View>
+                    ) : null}
                     <View style={styles.usedPill}>
                       <View style={[styles.usedDot, t.lastUsedAt ? styles.usedDotOn : null]} />
                       <Text style={styles.usedLabel}>{usedLabel(t.lastUsedAt)}</Text>
@@ -285,6 +337,21 @@ const styles = StyleSheet.create({
   usedDot: { width: 5, height: 5, borderRadius: flRadius.round, backgroundColor: flColor.charcoal500 },
   usedDotOn: { backgroundColor: flColor.bronze400 },
   usedLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 0.3, color: flColor.gray600 },
+  forgePill: { flexShrink: 0, paddingHorizontal: 8, paddingVertical: 4, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  forgePillText: { fontSize: 9, fontWeight: '700', letterSpacing: 1, color: flColor.bronze300 },
+
+  // "From Forge" shelf
+  shelf: { marginBottom: 22, gap: 10 },
+  shelfHead: { marginBottom: 2 },
+  shelfLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  shelfSub: { marginTop: 3, fontSize: 12, color: flColor.gray600 },
+  starterCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
+  starterText: { flex: 1, minWidth: 0 },
+  starterName: { fontFamily: flFont.display, fontSize: 16.5, fontWeight: '600', color: flColor.cream100 },
+  starterStructure: { marginTop: 3, fontSize: 11.5, color: flColor.bronze400 },
+  starterBlurb: { marginTop: 5, fontSize: 12, lineHeight: 17, color: flColor.gray600 },
+  starterCta: { flexShrink: 0, paddingHorizontal: 12, paddingVertical: 7, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  starterCtaLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.bronze300 },
 
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 },
   pill: { maxWidth: '48%', paddingHorizontal: 9, paddingVertical: 4, borderRadius: flRadius.xs, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },

@@ -72,6 +72,13 @@ export interface CompletionExercise {
   isPR: boolean;
   delta: ExerciseDelta | null; // vs this lift's previous session (null = no prior)
 }
+/**
+ * `'honor'` IS NO LONGER PRODUCED — `fetchCompletion` stopped electing it as the hero when M-2 moved
+ * to the Legacy tab (migration 0112; see the hero block below). The variant and its laurel glyph are
+ * kept rather than deleted because the shape is still correct for an honor and the artwork exists
+ * nowhere else in the tree; nothing renders it today. Do not read a live `kind: 'honor'` as evidence
+ * that the summary still announces honors — reach it and you have reintroduced the thing that moved.
+ */
 export type CompletionHero =
   | { kind: 'honor' | 'pr'; eyebrow: string; title: string; note: string; featured: true }
   | { kind: 'milestone' | 'consistency'; eyebrow: string; title: string; note: string; featured: false };
@@ -492,11 +499,20 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
     runBests = personalBests(Number(workout.distance), workout.duration_sec ?? 0, priors, runKind, units);
   }
 
-  // ── hero moment: honor > PR > milestone (every 10th) > consistency ──
+  /*
+   * ── hero moment: PR > milestone (every 10th) > consistency ──
+   *
+   * HONORS USED TO OUTRANK ALL OF THESE, and no longer appear here at all. An honor is a Legacy fact,
+   * not a fact about the session just trained, and announcing it as a line of text on the Seal screen
+   * both put it in the wrong room and spent the moment cheaply — the forged-medallion M-2 ceremony was
+   * built for exactly this and had never once played. It now fires on the Legacy tab, which is where
+   * this screen navigates next anyway (`goHome` → `/(tabs)/legacy`). See migration 0112.
+   *
+   * `honorsEarned` stays on the payload: the Record stage still lists what this session earned. It is
+   * the HEADLINE that moved, not the information.
+   */
   let hero: CompletionHero | null = null;
-  if (honorsEarned.length) {
-    hero = { kind: 'honor', eyebrow: 'Honor Earned', title: honorsEarned[0].displayName, note: honorsEarned.length > 1 ? `+${honorsEarned.length - 1} more this session` : 'A permanent mark', featured: true };
-  } else if (prByExercise.size) {
+  if (prByExercise.size) {
     const [name, v] = [...prByExercise.entries()][0];
     hero = { kind: 'pr', eyebrow: 'New Personal Record', title: `${name} · ${v.weight} × ${v.reps}`, note: 'A new best', featured: true };
   } else if (chapterOrdinal && chapterOrdinal % 10 === 0) {

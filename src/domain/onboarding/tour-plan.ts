@@ -47,6 +47,7 @@ export type TourAnchorId =
   // Workouts tab
   | 'workouts-segments'
   | 'workouts-active'
+  | 'workouts-planned'
   | 'workouts-programs'
   | 'workouts-templates'
   | 'workouts-reference'
@@ -377,9 +378,17 @@ export const SCREEN_TOURS: Record<ScreenTourKey, readonly ScreenTourStep[]> = {
       radius: 18,
     },
     {
+      key: 'wk-planned',
+      title: 'Planned',
+      body: 'Programs you’ve queued but haven’t started. When the active one ends you begin the next from here, so there’s no gap in the work. Nothing lands here by being looked at — only by your pressing Start.',
+      anchor: 'workouts-planned',
+      pad: 8,
+      radius: 18,
+    },
+    {
       key: 'wk-programs',
       title: 'Your Programs',
-      body: 'Everything you own, whatever state it’s in — active, planned, finished. The tag on each row tells you which. “Build a Program” at the bottom designs one from scratch, week by week.',
+      body: 'The ones you built yourself. Forge programs live in Discover until you take one on, and go back there once you’ve finished with them — a program you graduated is on the shelf again, not gone. “Build a Program” designs one from scratch, week by week.',
       anchor: 'workouts-programs',
       pad: 8,
       radius: 18,
@@ -1189,8 +1198,8 @@ export const SCREEN_TOURS: Record<ScreenTourKey, readonly ScreenTourStep[]> = {
   'add-friend': [
     {
       key: 'af-search',
-      title: 'By handle, exactly',
-      body: 'Search finds an athlete by the handle they chose. There’s no directory to browse on purpose — nobody appears in someone’s search results without having picked a name to be found by.',
+      title: 'By name, or by handle',
+      body: 'Type a name to find an athlete, or start with @ to search handles only. Nothing appears until you ask for it — Forge never suggests people, and there’s no directory to browse.',
       anchor: 'addfriend-search',
       pad: 8,
       radius: 14,

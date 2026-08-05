@@ -150,6 +150,46 @@ export async function claimEarnedHonors(): Promise<number> {
   return Array.isArray(data) ? data.length : 0;
 }
 
+// ── M-2 ceremony state (0112) ────────────────────────────────────────────────
+
+export interface UncelebratedHonor {
+  /** `honor_instances.id` — what gets marked once the ceremony closes. */
+  id: string;
+  slug: string;
+  name: string;
+  date: string;
+}
+
+/**
+ * Honors this athlete has earned and never been shown, oldest first.
+ *
+ * Read-only: it marks nothing. A ceremony a crash or a closed tab cut short must play again next
+ * time — showing an honor twice costs a shrug, and swallowing it loses the moment the honor exists
+ * for. `markHonorsCelebrated` is the other half, and it is called on dismissal.
+ *
+ * Returns `[]` rather than throwing when 0112 hasn't been applied. This one is a genuine exception to
+ * the "never turn a schema error into an empty answer" rule the `claimEarnedHonors` comment above
+ * argues for, and the reason is the direction of the failure: a backfill that silently grants nothing
+ * hides missing honors, whereas a ceremony that silently doesn't fire leaves the honor itself intact,
+ * still earned, still on the Hub, still on Legacy. The cost is a ceremony, not a record.
+ */
+export async function fetchUncelebratedHonors(): Promise<UncelebratedHonor[]> {
+  const { data, error } = await supabase.rpc('uncelebrated_honors');
+  if (error) {
+    if ((error as { code?: string }).code === 'PGRST202') return [];
+    throw error;
+  }
+  const rows = (data ?? []) as { id: string; honorType: string; displayName: string; dateEarned: string }[];
+  return rows.map((r) => ({ id: r.id, slug: r.honorType, name: r.displayName, date: r.dateEarned }));
+}
+
+/** Mark honors shown. Called AFTER the ceremony is dismissed. Best-effort — never blocks the UI. */
+export async function markHonorsCelebrated(ids: string[]): Promise<void> {
+  if (!ids.length) return;
+  const { error } = await supabase.rpc('mark_honors_celebrated', { p_ids: ids });
+  if (error && (error as { code?: string }).code !== 'PGRST202') throw error;
+}
+
 // ── The Hub read (L-10) ──────────────────────────────────────────────────────
 
 

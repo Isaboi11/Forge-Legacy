@@ -1,4 +1,4 @@
-import { useCallback, useState, type ReactNode, useMemo } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode, useMemo } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,6 +20,7 @@ import { RankSeal } from '@/components/forge/RankSeal';
 import { fetchLegacyData } from '@/data/legacy-live';
 import { refreshRank } from '@/data/rank-live';
 import { useCeremony } from '@/hooks/useCeremony';
+import { fetchUncelebratedHonors, markHonorsCelebrated } from '@/data/honors-live';
 import { fetchAccomplishments } from '@/data/accomplishments-live';
 import { fetchLegacyArchive } from '@/data/legacy-archive-live';
 import { LegacyArchiveBand } from '@/components/forge/LegacyArchiveBand';
@@ -95,7 +96,7 @@ const PIN_GLYPH: Record<PinKind, SymbolName> = {
 export default function LegacyScreen() {
   const router = useRouter();
   const { profile } = useProfile();
-  const { enqueue } = useCeremony();
+  const { enqueue, current } = useCeremony();
   const { data, error, refetch } = useQuery(fetchLegacyData, []);
   // Accomplishments are now LIVE (0023) — replacing the fixture. Newest first; the strip shows a few and
   // "View all" opens the full L-12 screen. `featured` drives the filled star.
@@ -119,9 +120,13 @@ export default function LegacyScreen() {
   const tourScroller = useTourScroller();
   const onTourScroll = useTourScrollTracker();
   /**
-   * "One you write, one you earn" is a single idea about two adjacent sections, either of which can be
-   * absent — both hide entirely when empty. The step rings whichever exists, preferring Accomplishments
-   * (the authored half, and the one that needs explaining). With neither, the step drops itself.
+   * "One you write, one you earn" is a single idea about two adjacent sections.
+   *
+   * The step rings whichever has CONTENT, preferring Accomplishments (the authored half, and the one
+   * that needs explaining). Deliberately still keyed on `length > 0` now that Accomplishments renders
+   * its own empty invitation: spotlighting an empty box and narrating it as a collection would
+   * describe the spec rather than the screen. Honors still hides when empty. With neither, the step
+   * drops itself.
    */
   const collectionsAnchor = liveAccomplishments.length > 0 ? 'accomplishments' : (data?.honors.length ?? 0) > 0 ? 'honors' : null;
   // Open a pinned museum item at its real home: a video plays; a chapter/honor/accomplishment opens its
@@ -157,6 +162,28 @@ export default function LegacyScreen() {
         .finally(() => {
           if (!cancelled) refetch();
         });
+      /*
+       * M-2 HONOR EARNED — here, not at the end of the workout.
+       *
+       * The Seal screen used to headline a new honor, which is the wrong room for it: W-17 is about
+       * the session just trained, and an honor is a LEGACY fact — it belongs where the athlete's
+       * record lives, on the screen they land on next anyway (`workout-complete` replaces to this
+       * tab). It also earns the forged-medallion ceremony rather than a line of text, which has been
+       * built and unreachable since the component shipped.
+       *
+       * Same shape as the rank refresh directly above, and for the same reason: focus is the trigger,
+       * so an honor granted by a retroactive `claim_earned_honors` sweep — never near a workout —
+       * still gets its moment. `enqueue` dedupes on id, so a refocus mid-ceremony re-enqueues nothing.
+       */
+      void fetchUncelebratedHonors()
+        .then((honors) => {
+          if (cancelled || !honors.length) return;
+          enqueue(honors.map((h) => ({ id: `honor-${h.id}`, kind: 'honorEarned' as const, honorName: h.name })));
+        })
+        .catch(() => {
+          // An honor that fails to announce itself is still earned, still on the Hub, still on this
+          // screen. Never let it take the tab down with it.
+        });
       // The archive band too. It was fetched once at mount and never again, so adding a photo — or an
       // entry, or finishing a competition — and walking back to Legacy showed the band exactly as it was
       // when the tab first loaded: an empty Photos tile next to a gallery that now had photos in it.
@@ -166,6 +193,27 @@ export default function LegacyScreen() {
       };
     }, [enqueue, refetch, refetchArchive]),
   );
+
+  /*
+   * Mark an honor celebrated the moment its ceremony STOPS being the current one — i.e. the athlete
+   * dismissed it (or shared from it, which also advances the queue).
+   *
+   * Deliberately not at fetch time. `uncelebrated_honors()` reads and marks nothing precisely so that
+   * a force-quit, a crash or a closed tab mid-ceremony leaves the honor still owed. One honor at a
+   * time, as each is dismissed, so walking away after the first of three keeps the other two owed
+   * rather than swallowing them together.
+   */
+  const shownHonorRef = useRef<string | null>(null);
+  useEffect(() => {
+    const previous = shownHonorRef.current;
+    const showing = current?.kind === 'honorEarned' ? current.id : null;
+    if (previous && previous !== showing) {
+      void markHonorsCelebrated([previous.slice('honor-'.length)]).catch(() => {
+        // Failing to mark replays the ceremony next time. That is the safe direction of this error.
+      });
+    }
+    shownHonorRef.current = showing;
+  }, [current]);
 
   // First load only: wait for the live Legacy read + the shared profile, with a retryable error. Once
   // data is in hand it stays rendered through any background refetch.
@@ -327,19 +375,55 @@ export default function LegacyScreen() {
             </TourAnchor>
           </View>
 
-          {/* Accomplishments — live (0023). Section hides entirely when the athlete has none. */}
-          {liveAccomplishments.length > 0 ? (
-            <TourAnchor id={collectionsAnchor === 'accomplishments' ? 'legacy-collections' : undefined}>
-              <View style={styles.sectionHeaderPad}>
-                <SectionHeader label="Accomplishments" action="View all" onAction={() => router.push('/accomplishments')} />
-              </View>
+          {/*
+            ── ACCOMPLISHMENTS — live (0023), and the section NO LONGER HIDES WHEN EMPTY ──
+
+            It used to, and that closed the only door to L-12. Every route into `/accomplishments` —
+            the "View all" action, a card tap, and a pinned-item tap — sat INSIDE this conditional, so
+            an athlete with zero accomplishments had no way to reach the screen where you add one. You
+            needed an accomplishment to add an accomplishment. Reported by the PO looking for where to
+            put a deadlift he hit months ago, which is exactly the case this feature exists for: an
+            accomplishment takes any date, and most of an athlete's best work predates the app.
+
+            The empty state is a real invitation rather than a placeholder card, so nothing here draws
+            a thing that isn't there.
+
+            HONORS BELOW STAYS HIDDEN WHEN EMPTY, deliberately — the two are not symmetrical. An honor
+            is EARNED and cannot be authored, so an empty honors section offers nothing to do; it would
+            be a list of things you haven't done, which is the same reasoning that keeps the honor
+            catalogue screen unbuilt.
+          */}
+          <TourAnchor id={collectionsAnchor === 'accomplishments' ? 'legacy-collections' : undefined}>
+            <View style={styles.sectionHeaderPad}>
+              <SectionHeader
+                label="Accomplishments"
+                action={liveAccomplishments.length > 0 ? 'View all' : 'Add'}
+                onAction={() => router.push('/accomplishments')}
+              />
+            </View>
+            {liveAccomplishments.length > 0 ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stripPad}>
                 {liveAccomplishments.map((a) => (
                   <AccomplishmentCard key={a.id} item={a} onPress={() => router.push('/accomplishments')} />
                 ))}
               </ScrollView>
-            </TourAnchor>
-          ) : null}
+            ) : (
+              <View style={styles.sectionHeaderPad}>
+                <Pressable
+                  onPress={() => router.push('/accomplishments')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Add an accomplishment"
+                  style={({ pressed }) => [styles.accEmpty, pressed ? styles.accEmptyPressed : null]}
+                >
+                  <Text style={styles.accEmptyTitle}>Add what you’ve already done</Text>
+                  <Text style={styles.accEmptyBody}>
+                    A lift, a race, a milestone — it doesn’t have to have happened in Forge. Give it the date it
+                    really happened and it takes its place on your Legacy.
+                  </Text>
+                </Pressable>
+              </View>
+            )}
+          </TourAnchor>
 
           {/* Honors — reserved from the workout card, legitimate here; art is pending-asset */}
           {data.honors.length > 0 ? (
@@ -642,6 +726,12 @@ const styles = StyleSheet.create({
   sectionPad: { marginTop: 46, paddingHorizontal: 24 },
   sectionHeaderPad: { paddingHorizontal: 24 },
   stripPad: { gap: 12, paddingHorizontal: 24, paddingTop: 8 },
+  // The empty Accomplishments invitation — dashed, so it reads as a slot to fill rather than a card
+  // that already holds something.
+  accEmpty: { padding: 16, borderRadius: flRadius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
+  accEmptyPressed: { opacity: 0.75 },
+  accEmptyTitle: { fontFamily: flFont.display, fontSize: 15.5, fontWeight: '600', color: flColor.bronze300 },
+  accEmptyBody: { marginTop: 6, fontSize: 12.5, lineHeight: 18.5, color: flColor.gray600 },
   honorStripPad: { gap: 18, paddingHorizontal: 24, paddingTop: 10 },
   overline: {
     fontSize: 10,
