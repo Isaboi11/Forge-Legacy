@@ -10,6 +10,8 @@ import {
   scheduleSlots,
   sessionsPerWeek,
   isFinalSession,
+  liveSourceIds,
+  shelvePrograms,
   totalSessions,
   viewForState,
   weekSizes,
@@ -321,4 +323,53 @@ test('the graduated CTA offers a new run, not a rewind', () => {
   assert.equal(viewForState('graduated', true).cta, 'Run This Program Again');
   assert.equal(viewForState('graduated', true).pill, 'Graduated');
   assert.equal(viewForState('graduated', true).secondary, null, 'a sealed record offers nothing else');
+});
+
+// ── Shelves: where each program sits on the Workouts tab ─────────────────────────────────────────────
+
+const row = (id, state, sourceDefinitionId = null) => ({ id, state, sourceDefinitionId });
+
+test('the active program is not also listed among the ones you built', () => {
+  const mine = [row('a', 'active'), row('b', 'graduated')];
+  const s = shelvePrograms(mine);
+
+  assert.equal(s.active.id, 'a');
+  assert.deepEqual(s.built.map((p) => p.id), ['b'], 'active appeared twice — once as Active, once under Your Programs');
+});
+
+test('a planned program is queued, not something the athlete wrote', () => {
+  // The whole point of the Planned section: a catalog program you have taken on is NOT authorship, and
+  // filing it under "Your Programs" is what made an athlete ask why looking at a program built them one.
+  const mine = [row('c', 'future', 'squat-ascent-intermediate'), row('d', 'future')];
+  const s = shelvePrograms(mine);
+
+  assert.deepEqual(s.planned.map((p) => p.id), ['c', 'd'], 'both queued programs belong to Planned');
+  assert.deepEqual(s.built, [], 'a queued program is never listed as one you built');
+});
+
+test('a sealed Forge run keeps a home, and an authored one stays with your programs', () => {
+  const mine = [row('e', 'graduated', 'strength-foundation-1'), row('f', 'ended_early')];
+  const s = shelvePrograms(mine);
+
+  assert.deepEqual(s.past.map((p) => p.id), ['e'], 'a finished Forge program needs somewhere to be read from');
+  assert.deepEqual(s.built.map((p) => p.id), ['f'], 'a program you wrote stays yours after it ends');
+});
+
+test('Discover withholds only what you have a live claim on', () => {
+  const live = liveSourceIds([
+    row('g', 'future', 'planned-one'),
+    row('h', 'active', 'active-one'),
+    row('i', 'graduated', 'finished-one'),
+    row('j', 'ended_early', 'abandoned-one'),
+    row('k', 'future'), // authored — nothing to withhold from a catalogue it was never in
+  ]);
+
+  assert.ok(live.has('planned-one'), 'a queued program is already yours, not something to find');
+  assert.ok(live.has('active-one'));
+  // THE REGRESSION. This set was every program ever adopted, so graduating one deleted it from the
+  // catalogue for good — while 0104 dropped the one-row-per-source index precisely so it could be run
+  // a second time. A shelf you can only take from is not a shelf.
+  assert.equal(live.has('finished-one'), false, 'a graduated program goes back on the shelf');
+  assert.equal(live.has('abandoned-one'), false, 'so does one you ended early');
+  assert.equal(live.size, 2);
 });

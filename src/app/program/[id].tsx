@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
@@ -110,6 +110,20 @@ export default function ProgramDetailScreen() {
   const [sheet, setSheet] = useState<'conflict' | 'end' | 'remove' | null>(null);
   /** 'gate' = answering before the program starts; 'change' = correcting one mid-run. */
   const [maxSheet, setMaxSheet] = useState<'gate' | 'change' | null>(null);
+  /**
+   * A row that exists but that the athlete has NOT agreed to keep.
+   *
+   * Start adopts before it opens the max gate, because the gate writes the run's frozen maxes and needs
+   * a row to write them to. Which means backing out of that gate would leave the same "Planned" program
+   * on the list that browsing used to leave — one press further in, and no less unasked for. So the id
+   * is held here from adoption until the athlete commits (answers the gate, or the program starts), and
+   * if they close the gate before either, the row goes with it.
+   *
+   * A REF, not state: `LiftMaxSheet` calls `onSaved` and then `onClose` in the same tick, and both close
+   * over the same render — a state flag cleared in the first would still read as set in the second, and
+   * this screen would delete the program they had just answered for.
+   */
+  const provisionalRef = useRef<string | null>(null);
   const tourScroller = useTourScroller();
   const onTourScroll = useTourScrollTracker();
 
@@ -319,6 +333,8 @@ export default function ProgramDetailScreen() {
             previewDef!.id,
             structureFromDefinition(previewDef!, (k) => equipmentForCatalogKey(k) ?? undefined, (n) => itemByName(n)?.key),
           );
+          // Not theirs yet — see `provisionalRef`. Cleared the moment they answer the gate or it starts.
+          provisionalRef.current = row.id;
           setProgram(row);
         }
 
@@ -337,6 +353,7 @@ export default function ProgramDetailScreen() {
         }
         // Future → Active. start_program ends whatever else was active, atomically (0017).
         await startProgram(row.id);
+        provisionalRef.current = null; // running it is the strongest form of keeping it
         setProgram({ ...row, state: 'active' });
         // Land on Home, which is where the change is visible: the new program anchors Today's Workout
         // and Current Program. Staying here would leave the athlete to go and check for themselves
@@ -347,6 +364,28 @@ export default function ProgramDetailScreen() {
       setError(errorMessage(e));
     } finally {
       setBusy(false);
+    }
+  };
+
+  /**
+   * They pressed Start, saw what it wanted, and backed out. Undo the adoption.
+   *
+   * The alternative is a program sitting on their list as "Planned" because they looked at the gate —
+   * which is the same complaint as browsing creating one, and the athlete cannot tell the two apart.
+   * Nothing can have been logged against a row this new, so there is no training to lose.
+   *
+   * A failed delete is swallowed on purpose: the athlete abandoned this, and an error toast about a
+   * program they are walking away from explains nothing they can act on.
+   */
+  const discardProvisional = async () => {
+    const id = provisionalRef.current;
+    if (!id) return;
+    provisionalRef.current = null;
+    try {
+      await deleteProgram(id);
+      if (previewDef) setProgram(null); // back to the preview it was before Start
+    } catch {
+      // leave it — `supabase/maintenance/clear-unstarted-catalog-programs.sql` is the sweep for residue
     }
   };
 
@@ -666,7 +705,10 @@ export default function ProgramDetailScreen() {
         <LiftMaxSheet
           key={`${maxSheet}-${maxKeys.join(',')}`}
           open
-          onClose={() => setMaxSheet(null)}
+          onClose={() => {
+            setMaxSheet(null);
+            void discardProvisional();
+          }}
           programId={program!.id}
           keys={maxKeys}
           names={liftNames}
@@ -674,7 +716,12 @@ export default function ProgramDetailScreen() {
           units={units}
           title={maxSheet === 'gate' ? 'Before you start' : 'Change your max'}
           warning={maxSheet === 'change' ? changeWarning : null}
-          onSaved={(maxes) => setProgram((p) => (p ? { ...p, liftMaxes: maxes } : p))}
+          onSaved={(maxes) => {
+            // Answering the gate IS keeping it — the row stops being provisional here, before the sheet's
+            // own `onClose` fires and asks whether to throw it away.
+            provisionalRef.current = null;
+            setProgram((p) => (p ? { ...p, liftMaxes: maxes } : p));
+          }}
         />
       ) : null}
     </View>

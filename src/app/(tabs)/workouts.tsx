@@ -16,7 +16,7 @@ import { getPrograms } from '@/domain/training/active-program';
 import { fetchMyPrograms, type SavedProgram } from '@/data/programs-live';
 import { fetchProgramCompletedCount } from '@/data/programs-live';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
-import { dayLabel, nextSession, sessionsPerWeek, viewForState } from '@/domain/program/progress-core';
+import { dayLabel, liveSourceIds, nextSession, sessionsPerWeek, shelvePrograms, viewForState } from '@/domain/program/progress-core';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { StartStrengthSheet } from '@/components/forge/compositions/StartStrengthSheet';
 import { useQuery } from '@/lib/useQuery';
@@ -112,9 +112,19 @@ export default function WorkoutsScreen() {
    */
   const { catalog, families } = useMemo(() => {
     const programs = getPrograms();
-    // "Recommended Next" pool = the real catalog minus whatever the athlete already has.
-    const owned = new Set(mine.map((p) => p.sourceDefinitionId).filter((id): id is string => !!id));
-    const catalog = programs.filter((p) => !owned.has(p.id));
+    /*
+     * A LIVE CLAIM ONLY — planned or active.
+     *
+     * This subtracted every program the athlete had EVER adopted, in any state, so finishing one removed
+     * it from the catalogue permanently: graduate Strength Foundation I and you can never browse to it
+     * again, though the model has supported running it a second time since 0104 dropped the one-row-per-
+     * source index. A catalogue that quietly shrinks as you train is the opposite of what it is for.
+     *
+     * Planned and active still come out, because they are not something to FIND — they are already
+     * yours, and they have their own sections in My Workouts. Finished ones go back on the shelf.
+     */
+    const live = liveSourceIds(mine);
+    const catalog = programs.filter((p) => !live.has(p.id));
     const families = ['All', ...Array.from(new Set(programs.map((p) => p.family)))];
     return { catalog, families };
   }, [mine]);
@@ -124,8 +134,26 @@ export default function WorkoutsScreen() {
     [family, catalog],
   );
 
+  /**
+   * ══ FOUR THINGS, NOT ONE LIST ══
+   *
+   * "Your Programs" used to be every row the athlete owned, in every state — so the active program was
+   * listed twice (once under Active, once here), a program merely queued sat under a heading that reads
+   * as "the ones I built", and a finished one sat beside a plan for next month as though they were the
+   * same kind of object. The `.dc` never said that: it has an Active card, a PLANNED section, and a
+   * "Your Programs · custom-built" list, and this screen's own header admitted Planned was omitted for
+   * want of a backend. That backend arrived with 0017.
+   *
+   *   planned — queued, not started. Where the next block waits while this one finishes.
+   *   built   — programs the athlete AUTHORED (no catalog source). What the heading has always meant.
+   *   past    — sealed runs of Forge programs. They leave the live sections but not the screen: a
+   *             permanent record with nowhere to be read from is a record you have lost.
+   */
   // The athlete's own active program wins over the built-in one — it's the thing actually tracking.
-  const myActive = mine.find((p) => p.state === 'active') ?? null;
+  const { active: myActive, planned, built, past } = useMemo(() => shelvePrograms(mine), [mine]);
+  /** The design collapses Planned to a digest at 2+, so a queue never outweighs the program in flight. */
+  const [plannedExpanded, setPlannedExpanded] = useState(false);
+  const plannedCollapsed = planned.length >= 2 && !plannedExpanded;
   const [startOpen, setStartOpen] = useState(false);
   const [strengthOpen, setStrengthOpen] = useState(false);
 
@@ -238,13 +266,43 @@ export default function WorkoutsScreen() {
               </View>
             </TourAnchor>
 
+            {/* PLANNED — queued, not started. The section the `.dc` always had and this screen never
+                built, which is why a planned program had to sit in "Your Programs" pretending to be one
+                the athlete wrote. Omitted entirely when empty: a heading over nothing is not a queue. */}
+            {planned.length > 0 ? (
+              <TourAnchor id="workouts-planned">
+                <SectionHeader
+                  label="Planned"
+                  action={plannedCollapsed ? 'View all' : undefined}
+                  onAction={() => setPlannedExpanded(true)}
+                />
+                <View style={[styles.sectionBody, styles.stackTight]}>
+                  {plannedCollapsed ? (
+                    <PlannedDigest
+                      programs={planned}
+                      onOpen={(p) => router.push({ pathname: '/program/[id]', params: { id: p.id } })}
+                      onExpand={() => setPlannedExpanded(true)}
+                    />
+                  ) : (
+                    planned.map((p) => (
+                      <SavedProgramRow
+                        key={p.id}
+                        program={p}
+                        onPress={() => router.push({ pathname: '/program/[id]', params: { id: p.id } })}
+                      />
+                    ))
+                  )}
+                </View>
+              </TourAnchor>
+            ) : null}
+
             {/* YOUR PROGRAMS — always rendered, because the create row lives here and the moment you most
                 need it is the moment you have none. It used to be gated on `mine.length > 0`, which hid
                 authoring from exactly the athlete who had never authored anything. */}
             <TourAnchor id="workouts-programs">
               <SectionHeader label="Your Programs" />
               <View style={[styles.sectionBody, styles.stackTight]}>
-                {mine.map((p) => (
+                {built.map((p) => (
                   <SavedProgramRow
                     key={p.id}
                     program={p}
@@ -257,6 +315,25 @@ export default function WorkoutsScreen() {
                 <CreateRow label="Build a Program" onPress={() => router.push('/program-builder')} />
               </View>
             </TourAnchor>
+
+            {/* PAST PROGRAMS — Forge programs you finished. Sealed records (Amendment-001 §6), so they are
+                out of the live sections above, but they keep a home here: they used to be the only place
+                on this screen a graduated run could be read from, and dropping them to match the `.dc`'s
+                custom-only "Your Programs" would have deleted that access rather than moved it. */}
+            {past.length > 0 ? (
+              <View>
+                <SectionHeader label="Past Programs" />
+                <View style={[styles.sectionBody, styles.stackTight]}>
+                  {past.map((p) => (
+                    <SavedProgramRow
+                      key={p.id}
+                      program={p}
+                      onPress={() => router.push({ pathname: '/program/[id]', params: { id: p.id } })}
+                    />
+                  ))}
+                </View>
+              </View>
+            ) : null}
 
             {/* YOUR TEMPLATES — a personal artifact, so it sits with programs rather than under "Library"
                 beside two platform surfaces everyone shares. That grouping was the real error. */}
@@ -474,6 +551,53 @@ function CompactProgramCard({ program, onOpen }: { program: Program; onOpen: () 
         {program.difficulty}
       </Pill>
     </Pressable>
+  );
+}
+
+/**
+ * Planned, at 2+ — one card instead of a stack of them.
+ *
+ * A queue is a fact about later, and at full size it competes with the program actually in flight. The
+ * digest still names every one of them and still opens each: it is smaller, not shorter.
+ */
+function PlannedDigest({
+  programs,
+  onOpen,
+  onExpand,
+}: {
+  programs: SavedProgram[];
+  onOpen: (p: SavedProgram) => void;
+  onExpand: () => void;
+}) {
+  return (
+    <View style={styles.digest}>
+      <Text style={styles.digestCount}>
+        {programs.length} planned {programs.length === 1 ? 'program' : 'programs'}
+      </Text>
+      {programs.map((p) => (
+        <Pressable
+          key={p.id}
+          onPress={() => onOpen(p)}
+          accessibilityRole="button"
+          accessibilityLabel={`${p.name}, planned`}
+          style={styles.digestRow}
+        >
+          <View style={styles.digestMark} />
+          <View style={styles.rowBody}>
+            <Text style={styles.digestName} numberOfLines={1}>
+              {p.name}
+            </Text>
+            <Text style={styles.rowSub} numberOfLines={1}>
+              {p.structure.weeks} wk · {sessionsPerWeek(p.structure)}/wk
+            </Text>
+          </View>
+          <ChevronRightIcon size={16} color={flColor.gray600} />
+        </Pressable>
+      ))}
+      <Pressable onPress={onExpand} accessibilityRole="button" accessibilityLabel="View all planned programs" style={styles.digestAll}>
+        <Text style={styles.digestAllText}>View all</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -739,6 +863,44 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // planned digest
+  digest: {
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    borderRadius: flRadius.xl,
+    backgroundColor: flColor.charcoal900,
+    boxShadow: flShadow.card,
+    overflow: 'hidden',
+  },
+  digestCount: {
+    paddingTop: 13,
+    paddingHorizontal: 16,
+    paddingBottom: 6,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+    color: flColor.gray600,
+  },
+  digestRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.03)',
+  },
+  digestMark: { width: 5, height: 5, flexShrink: 0, transform: [{ rotate: '45deg' }], backgroundColor: flColor.bronze400 },
+  digestName: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
+  digestAll: {
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: flColor.charcoal700,
+  },
+  digestAllText: { fontSize: 12.5, fontWeight: '700', letterSpacing: 0.4, color: flColor.bronze300 },
+
   rowBody: { flex: 1, minWidth: 0 },
   rowTitle: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   rowTitleRetired: { color: flColor.gray400 },

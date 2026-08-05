@@ -70,6 +70,33 @@ test('adoption happens on Start, and only there', () => {
   assert.ok(at > 0 && start > at, 'adoption must precede startProgram inside the Start branch');
 });
 
+/**
+ * The same defect, one press further in. Start adopts BEFORE the max gate (the gate writes the run's
+ * frozen maxes and needs a row to write them to), so closing that gate without answering would leave
+ * exactly the "Planned" program on the list that browsing used to leave. The adoption is provisional
+ * until the athlete answers or the program starts.
+ */
+test('backing out of the max gate takes the row with it', () => {
+  const src = read('program/[id].tsx');
+
+  assert.match(src, /provisionalRef/, 'no provisional adoption — abandoning the max gate keeps the row');
+
+  // A REF, not state: LiftMaxSheet calls onSaved then onClose in the same tick, both closing over the
+  // same render, so a state flag cleared in the first still reads as set in the second — and the screen
+  // would delete the program the athlete had just answered for.
+  assert.match(src, /useRef<string \| null>\(null\)/, 'provisional id must be a ref, not state');
+
+  // Cleared on both ways of keeping it, and acted on when the gate closes.
+  const saved = src.indexOf('onSaved={');
+  assert.ok(saved > 0 && /provisionalRef\.current = null/.test(src.slice(saved, saved + 400)), 'answering the gate must clear the provisional id');
+  assert.match(src, /await startProgram\(row\.id\);\s*\n\s*provisionalRef\.current = null/, 'starting must clear the provisional id');
+  assert.match(src, /onClose=\{\(\) => \{[\s\S]{0,160}?discardProvisional\(\)/, 'the gate’s close must discard an unkept adoption');
+
+  // And discarding is a real delete, not just forgetting the id.
+  const disc = src.indexOf('const discardProvisional');
+  assert.ok(disc > 0 && /await deleteProgram\(id\)/.test(src.slice(disc, disc + 600)), 'discard must delete the row');
+});
+
 test('a preview is never handed to a screen that needs a real program id', () => {
   // `/send-program`, the builder's edit and duplicate modes, and the max sheet all write against a row.
   // Reaching them from a preview would pass a definition slug where a uuid is required.

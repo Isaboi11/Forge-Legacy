@@ -411,6 +411,58 @@ export function viewForState(state: ProgramState, owned: boolean): StateView {
   }
 }
 
+/**
+ * ══ WHERE EACH PROGRAM SITS ON THE WORKOUTS TAB ══
+ *
+ * Four shelves, not one list (`Forge Programs Catalog.dc`): the one in flight, the ones queued behind
+ * it, the ones the athlete WROTE, and the ones they have finished. The screen used to put every row it
+ * owned under "Your Programs", which listed the active program twice, filed a plan for next month as
+ * something the athlete had authored, and stood a sealed record beside a live one.
+ *
+ * Generic over the row so this stays a pure derivation the tests can drive with plain objects.
+ */
+export interface Shelvable {
+  state: ProgramState;
+  /** The catalog definition this run came from; null for a program the athlete built. */
+  sourceDefinitionId: string | null;
+}
+
+export interface ProgramShelves<T> {
+  active: T | null;
+  /** Queued, not started. */
+  planned: T[];
+  /** Authored by the athlete, and not already shown as active or planned. */
+  built: T[];
+  /** Sealed runs of Forge programs — permanent records (Amendment-001 §6). */
+  past: T[];
+}
+
+export function shelvePrograms<T extends Shelvable>(mine: T[]): ProgramShelves<T> {
+  const sealed = (p: T) => p.state === 'graduated' || p.state === 'ended_early';
+  return {
+    active: mine.find((p) => p.state === 'active') ?? null,
+    planned: mine.filter((p) => p.state === 'future'),
+    built: mine.filter((p) => p.sourceDefinitionId == null && p.state !== 'active' && p.state !== 'future'),
+    past: mine.filter((p) => p.sourceDefinitionId != null && sealed(p)),
+  };
+}
+
+/**
+ * The catalog definitions the athlete has a LIVE claim on — what Discover leaves out.
+ *
+ * Deliberately not "everything they have ever adopted". That hid a program from the catalogue the
+ * moment it was finished, permanently, though 0104 dropped the one-row-per-source index precisely so a
+ * program could be run again. Discover is a shelf, and a finished program goes back on it.
+ */
+export function liveSourceIds(mine: Shelvable[]): Set<string> {
+  return new Set(
+    mine
+      .filter((p) => p.state === 'future' || p.state === 'active')
+      .map((p) => p.sourceDefinitionId)
+      .filter((id): id is string => !!id),
+  );
+}
+
 /** Distinct equipment across the program, for the Equipment pills. */
 export function equipmentOf(structure: ProgramStructure): string[] {
   const seen = new Set<string>();
