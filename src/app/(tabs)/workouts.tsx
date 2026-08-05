@@ -16,7 +16,7 @@ import { getPrograms } from '@/domain/training/active-program';
 import { fetchMyPrograms, type SavedProgram } from '@/data/programs-live';
 import { fetchProgramCompletedCount } from '@/data/programs-live';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
-import { dayLabel, liveSourceIds, nextSession, sessionsPerWeek, shelvePrograms, viewForState } from '@/domain/program/progress-core';
+import { dayLabel, nextSession, sessionsPerWeek, shelvePrograms, viewForState } from '@/domain/program/progress-core';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { StartStrengthSheet } from '@/components/forge/compositions/StartStrengthSheet';
 import { useQuery } from '@/lib/useQuery';
@@ -113,21 +113,25 @@ export default function WorkoutsScreen() {
   const { catalog, families } = useMemo(() => {
     const programs = getPrograms();
     /*
-     * A LIVE CLAIM ONLY — planned or active.
+     * DISCOVER SUBTRACTS NOTHING. It is the catalogue, and the catalogue is a fixed list of what Forge
+     * offers — not a list of what the athlete has left to take.
      *
-     * This subtracted every program the athlete had EVER adopted, in any state, so finishing one removed
-     * it from the catalogue permanently: graduate Strength Foundation I and you can never browse to it
-     * again, though the model has supported running it a second time since 0104 dropped the one-row-per-
-     * source index. A catalogue that quietly shrinks as you train is the opposite of what it is for.
+     * Two rounds of this. First it subtracted every program ever adopted in ANY state, so finishing one
+     * removed it permanently: graduate Strength Foundation I and you could never browse to it again,
+     * though the model has supported a second run since 0104 dropped the one-row-per-source index. That
+     * was fixed by exempting finished ones — and the exemption's own argument, that a catalogue which
+     * quietly shrinks as you train is the opposite of what a catalogue is for, applies just as well to
+     * the planned ones it kept hiding. Planning something is not consuming it.
      *
-     * Planned and active still come out, because they are not something to FIND — they are already
-     * yours, and they have their own sections in My Workouts. Finished ones go back on the shelf.
+     * Reported by the PO, who planned a program and watched it vanish from the page he found it on.
+     *
+     * They are MARKED instead — the card carries an "In your plans" / "Active" pill — and
+     * `openCatalogProgram` already routes a live one to the athlete's own row rather than a preview, so
+     * tapping it lands on real progress. Nothing about that needed the row to be hidden.
      */
-    const live = liveSourceIds(mine);
-    const catalog = programs.filter((p) => !live.has(p.id));
     const families = ['All', ...Array.from(new Set(programs.map((p) => p.family)))];
-    return { catalog, families };
-  }, [mine]);
+    return { catalog: programs, families };
+  }, []);
 
   const discover = useMemo(
     () => (family === 'All' ? catalog : catalog.filter((p) => p.family === family)),
@@ -411,7 +415,12 @@ export default function WorkoutsScreen() {
               </Text>
               <View style={styles.stackTight}>
                 {discover.map((p) => (
-                  <CompactProgramCard key={p.id} program={p} onOpen={() => void openCatalogProgram(p)} />
+                  <CompactProgramCard
+                    key={p.id}
+                    program={p}
+                    mine={mine.find((m) => m.sourceDefinitionId === p.id && (m.state === 'future' || m.state === 'active'))?.state ?? null}
+                    onOpen={() => void openCatalogProgram(p)}
+                  />
                 ))}
                 {discover.length === 0 ? (
                   <View style={styles.noResults}>
@@ -536,9 +545,20 @@ function Segment({ label, active, onPress }: { label: string; active: boolean; o
 }
 
 
-function CompactProgramCard({ program, onOpen }: { program: Program; onOpen: () => void }) {
+/**
+ * `mine` — the athlete's state for this definition, when they already hold it ('future' | 'active').
+ * The card says so rather than the catalogue hiding the row: a program you planned is still a program
+ * Forge offers, and the tap already opens YOUR copy of it.
+ */
+function CompactProgramCard({ program, mine, onOpen }: { program: Program; mine?: string | null; onOpen: () => void }) {
+  const held = mine === 'active' ? 'Active' : mine === 'future' ? 'In your plans' : null;
   return (
-    <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={`Open ${program.name}`} style={styles.compactCard}>
+    <Pressable
+      onPress={onOpen}
+      accessibilityRole="button"
+      accessibilityLabel={held ? `Open ${program.name} — ${held}` : `Open ${program.name}`}
+      style={styles.compactCard}
+    >
       <View style={styles.compactBody}>
         <Text style={styles.compactName} numberOfLines={1}>
           {program.name}
@@ -547,8 +567,8 @@ function CompactProgramCard({ program, onOpen }: { program: Program; onOpen: () 
           {compactMeta(program)}
         </Text>
       </View>
-      <Pill tone="muted" size="sm">
-        {program.difficulty}
+      <Pill tone={held ? 'bronze' : 'muted'} size="sm">
+        {held ?? program.difficulty}
       </Pill>
     </Pressable>
   );
