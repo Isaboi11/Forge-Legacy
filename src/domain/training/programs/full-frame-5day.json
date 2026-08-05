@@ -1,0 +1,1438 @@
+{
+  "id": "full-frame-5day",
+  "name": "Full Frame (5-Day)",
+  "family": "Muscle Building",
+  "difficulty": "Intermediate",
+  "durationWeeks": 6,
+  "frequencyPerWeek": 5,
+  "environment": "Commercial Gym",
+  "description": "Five days a week, every muscle group trained twice. Push, Pull and Legs open the week, then Upper and Lower hit it all again — the two five-day templates people usually argue about, run together. The big lifts never change, so you can actually chase a number on them: bench, squat, deadlift and sumo are the same movements in week 6 as in week 1, only heavier. Everything around them moves. Reps start high and come down as the loads climb, and the isolation work swaps to new angles for the final block, so the last fortnight is not a photocopy of the first.",
+  "goals": [
+    "Add muscle across the whole body",
+    "Train every muscle group twice a week",
+    "Add weight to the bench, squat and deadlift over six weeks",
+    "Hold a five-day week without missing sessions"
+  ],
+  "theme": "hypertrophy",
+  "blocks": [
+    {
+      "label": "Weeks 1-2 · Groove",
+      "weekStart": 1,
+      "weekEnd": 2,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Push",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            {
+              "name": "Rowing machine or bike",
+              "detail": "4 minutes easy",
+              "text": "Rowing machine or bike — 4 minutes easy"
+            },
+            {
+              "name": "Band pull-apart",
+              "detail": "15 reps",
+              "text": "Band pull-apart — 15 reps"
+            },
+            {
+              "name": "Push-Up",
+              "detail": "10 reps",
+              "text": "Push-Up — 10 reps"
+            },
+            {
+              "name": "Empty-bar bench press",
+              "detail": "2 x 10 reps",
+              "text": "Empty-bar bench press — 2 x 10 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-bench-press",
+              "displayName": "Bench Press",
+              "sets": 4,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 120
+            },
+            {
+              "catalogKey": "dumbbell-incline-bench-press",
+              "displayName": "Incline Dumbbell Press",
+              "sets": 3,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 120
+            },
+            {
+              "catalogKey": "barbell-overhead-press",
+              "displayName": "Shoulder Press",
+              "sets": 3,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "dumbbell-lateral-raise",
+              "displayName": "Lateral Raises",
+              "sets": 3,
+              "reps": 12,
+              "repsMax": 15,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "parallel-bar-dip",
+              "displayName": "Tricep Dips",
+              "sets": 3,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "cable-cross-body-triceps-extension",
+              "displayName": "Katana Extension",
+              "sets": 3,
+              "reps": 12,
+              "repsMax": 15,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "high-to-low-cable-fly",
+              "displayName": "Cable Flyes",
+              "sets": 3,
+              "reps": 12,
+              "repsMax": 15,
+              "unit": "reps",
+              "restSec": 60
+            }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Pull",
+          "modality": "strength",
+          "split": "pull",
+          "warmup": [
+            {
+              "name": "Rowing machine",
+              "detail": "4 minutes easy",
+              "text": "Rowing machine — 4 minutes easy"
+            },
+            {
+              "name": "Band pull-apart",
+              "detail": "15 reps",
+              "text": "Band pull-apart — 15 reps"
+            },
+            {
+              "name": "Dead hang",
+              "detail": "20 seconds",
+              "text": "Dead hang — 20 seconds"
+            },
+            {
+              "name": "Light lat pulldown",
+              "detail": "12 reps",
+              "text": "Light lat pulldown — 12 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-deadlift",
+              "displayName": "Deadlift",
+              "sets": 4,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 120
+            },
+            {
+              "catalogKey": "pull-up",
+              "displayName": "Pull-Ups",
+              "sets": 4,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 120
+            },
+            {
+              "catalogKey": "barbell-bent-over-row",
+              "displayName": "Barbell Rows",
+              "sets": 3,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "cable-lat-pulldown",
+              "displayName": "Lat Pulldowns",
+              "sets": 3,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "cable-face-pull",
+              "displayName": "Face Pulls",
+              "sets": 3,
+              "reps": 15,
+              "repsMax": 20,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "barbell-biceps-curl",
+              "displayName": "Bicep Curls",
+              "sets": 3,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "dumbbell-hammer-curl",
+              "displayName": "Hammer Curls",
+              "sets": 3,
+              "reps": 12,
+              "repsMax": 15,
+              "unit": "reps",
+              "restSec": 60
+            }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Legs",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            {
+              "name": "Bike",
+              "detail": "5 minutes easy",
+              "text": "Bike — 5 minutes easy"
+            },
+            {
+              "name": "Bodyweight Squat",
+              "detail": "15 reps",
+              "text": "Bodyweight Squat — 15 reps"
+            },
+            {
+              "name": "Walking lunge",
+              "detail": "10 per side",
+              "text": "Walking lunge — 10 per side"
+            },
+            {
+              "name": "Empty-bar back squat",
+              "detail": "2 x 10 reps",
+              "text": "Empty-bar back squat — 2 x 10 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-back-squat",
+              "displayName": "Squats",
+              "sets": 4,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 120
+            },
+            {
+              "catalogKey": "dumbbell-walking-lunge",
+              "displayName": "Lunges",
+              "sets": 3,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "machine-leg-press",
+              "displayName": "Leg Press",
+              "sets": 3,
+              "reps": 12,
+              "repsMax": 15,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "barbell-romanian-deadlift",
+              "displayName": "Romanian Deadlifts",
+              "sets": 3,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "lying-leg-curl-machine",
+              "displayName": "Leg Curls",
+              "sets": 3,
+              "reps": 12,
+              "repsMax": 15,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "standing-calf-raise-machine",
+              "displayName": "Calf Raises",
+              "sets": 3,
+              "reps": 12,
+              "repsMax": 15,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "plank",
+              "displayName": "Planks",
+              "sets": 3,
+              "reps": 30,
+              "repsMax": 45,
+              "unit": "seconds",
+              "restSec": 45
+            }
+          ]
+        },
+        {
+          "code": "D",
+          "name": "Upper Body",
+          "modality": "strength",
+          "split": "upper",
+          "warmup": [
+            {
+              "name": "Rowing machine",
+              "detail": "4 minutes easy",
+              "text": "Rowing machine — 4 minutes easy"
+            },
+            {
+              "name": "Band pull-apart",
+              "detail": "15 reps",
+              "text": "Band pull-apart — 15 reps"
+            },
+            {
+              "name": "Push-Up",
+              "detail": "10 reps",
+              "text": "Push-Up — 10 reps"
+            },
+            {
+              "name": "Light lat pulldown",
+              "detail": "12 reps",
+              "text": "Light lat pulldown — 12 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-bench-press",
+              "displayName": "Bench Press",
+              "sets": 4,
+              "reps": 12,
+              "repsMax": 15,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "pull-up",
+              "displayName": "Pull-Ups",
+              "sets": 4,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "seated-dumbbell-shoulder-press",
+              "displayName": "Shoulder Press",
+              "sets": 3,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "dumbbell-incline-bench-press",
+              "displayName": "Incline Dumbbell Press",
+              "sets": 3,
+              "reps": 12,
+              "repsMax": 15,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "cable-lat-pulldown",
+              "displayName": "Lat Pulldowns",
+              "sets": 3,
+              "reps": 12,
+              "repsMax": 15,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "cable-face-pull",
+              "displayName": "Face Pulls",
+              "sets": 3,
+              "reps": 15,
+              "repsMax": 20,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "cable-seated-row",
+              "displayName": "Seated Rows",
+              "sets": 3,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 60
+            }
+          ]
+        },
+        {
+          "code": "E",
+          "name": "Lower Body",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            {
+              "name": "Bike",
+              "detail": "5 minutes easy",
+              "text": "Bike — 5 minutes easy"
+            },
+            {
+              "name": "Bodyweight Squat",
+              "detail": "15 reps",
+              "text": "Bodyweight Squat — 15 reps"
+            },
+            {
+              "name": "Glute bridge",
+              "detail": "15 reps",
+              "text": "Glute bridge — 15 reps"
+            },
+            {
+              "name": "Light hack squat",
+              "detail": "2 x 10 reps",
+              "text": "Light hack squat — 2 x 10 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "hack-squat-machine",
+              "displayName": "Hack Squat",
+              "sets": 3,
+              "reps": 12,
+              "repsMax": 15,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "barbell-sumo-deadlift",
+              "displayName": "Sumo Deadlift",
+              "sets": 4,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 120
+            },
+            {
+              "catalogKey": "barbell-hip-thrust",
+              "displayName": "Hip Thrusts",
+              "sets": 3,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "machine-leg-press",
+              "displayName": "Leg Press",
+              "sets": 3,
+              "reps": 12,
+              "repsMax": 15,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "seated-leg-curl-machine",
+              "displayName": "Leg Curls",
+              "sets": 3,
+              "reps": 12,
+              "repsMax": 15,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "crunch",
+              "displayName": "Crunches",
+              "sets": 3,
+              "reps": 15,
+              "repsMax": 20,
+              "unit": "reps",
+              "restSec": 45
+            },
+            {
+              "catalogKey": "seated-calf-raise-machine",
+              "displayName": "Calf Raises",
+              "sets": 3,
+              "reps": 12,
+              "repsMax": 15,
+              "unit": "reps",
+              "restSec": 60
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Weeks 3-4 · Build",
+      "weekStart": 3,
+      "weekEnd": 4,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Push",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            {
+              "name": "Rowing machine or bike",
+              "detail": "4 minutes easy",
+              "text": "Rowing machine or bike — 4 minutes easy"
+            },
+            {
+              "name": "Band pull-apart",
+              "detail": "15 reps",
+              "text": "Band pull-apart — 15 reps"
+            },
+            {
+              "name": "Push-Up",
+              "detail": "10 reps",
+              "text": "Push-Up — 10 reps"
+            },
+            {
+              "name": "Empty-bar bench press",
+              "detail": "2 x 10 reps",
+              "text": "Empty-bar bench press — 2 x 10 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-bench-press",
+              "displayName": "Bench Press",
+              "sets": 5,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 120
+            },
+            {
+              "catalogKey": "dumbbell-incline-bench-press",
+              "displayName": "Incline Dumbbell Press",
+              "sets": 4,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 120
+            },
+            {
+              "catalogKey": "barbell-overhead-press",
+              "displayName": "Shoulder Press",
+              "sets": 3,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "dumbbell-lateral-raise",
+              "displayName": "Lateral Raises",
+              "sets": 3,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "parallel-bar-dip",
+              "displayName": "Tricep Dips",
+              "sets": 3,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "cable-cross-body-triceps-extension",
+              "displayName": "Katana Extension",
+              "sets": 3,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "high-to-low-cable-fly",
+              "displayName": "Cable Flyes",
+              "sets": 3,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 60
+            }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Pull",
+          "modality": "strength",
+          "split": "pull",
+          "warmup": [
+            {
+              "name": "Rowing machine",
+              "detail": "4 minutes easy",
+              "text": "Rowing machine — 4 minutes easy"
+            },
+            {
+              "name": "Band pull-apart",
+              "detail": "15 reps",
+              "text": "Band pull-apart — 15 reps"
+            },
+            {
+              "name": "Dead hang",
+              "detail": "20 seconds",
+              "text": "Dead hang — 20 seconds"
+            },
+            {
+              "name": "Light lat pulldown",
+              "detail": "12 reps",
+              "text": "Light lat pulldown — 12 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-deadlift",
+              "displayName": "Deadlift",
+              "sets": 4,
+              "reps": 6,
+              "repsMax": 8,
+              "unit": "reps",
+              "restSec": 120
+            },
+            {
+              "catalogKey": "pull-up",
+              "displayName": "Pull-Ups",
+              "sets": 4,
+              "reps": 6,
+              "repsMax": 8,
+              "unit": "reps",
+              "restSec": 120
+            },
+            {
+              "catalogKey": "barbell-bent-over-row",
+              "displayName": "Barbell Rows",
+              "sets": 3,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "cable-lat-pulldown",
+              "displayName": "Lat Pulldowns",
+              "sets": 3,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "cable-face-pull",
+              "displayName": "Face Pulls",
+              "sets": 3,
+              "reps": 15,
+              "repsMax": 20,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "barbell-biceps-curl",
+              "displayName": "Bicep Curls",
+              "sets": 3,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "dumbbell-hammer-curl",
+              "displayName": "Hammer Curls",
+              "sets": 3,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 60
+            }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Legs",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            {
+              "name": "Bike",
+              "detail": "5 minutes easy",
+              "text": "Bike — 5 minutes easy"
+            },
+            {
+              "name": "Bodyweight Squat",
+              "detail": "15 reps",
+              "text": "Bodyweight Squat — 15 reps"
+            },
+            {
+              "name": "Walking lunge",
+              "detail": "10 per side",
+              "text": "Walking lunge — 10 per side"
+            },
+            {
+              "name": "Empty-bar back squat",
+              "detail": "2 x 10 reps",
+              "text": "Empty-bar back squat — 2 x 10 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-back-squat",
+              "displayName": "Squats",
+              "sets": 5,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 120
+            },
+            {
+              "catalogKey": "dumbbell-walking-lunge",
+              "displayName": "Lunges",
+              "sets": 4,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "machine-leg-press",
+              "displayName": "Leg Press",
+              "sets": 3,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "barbell-romanian-deadlift",
+              "displayName": "Romanian Deadlifts",
+              "sets": 3,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "lying-leg-curl-machine",
+              "displayName": "Leg Curls",
+              "sets": 3,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "standing-calf-raise-machine",
+              "displayName": "Calf Raises",
+              "sets": 3,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "plank",
+              "displayName": "Planks",
+              "sets": 3,
+              "reps": 45,
+              "repsMax": 60,
+              "unit": "seconds",
+              "restSec": 45
+            }
+          ]
+        },
+        {
+          "code": "D",
+          "name": "Upper Body",
+          "modality": "strength",
+          "split": "upper",
+          "warmup": [
+            {
+              "name": "Rowing machine",
+              "detail": "4 minutes easy",
+              "text": "Rowing machine — 4 minutes easy"
+            },
+            {
+              "name": "Band pull-apart",
+              "detail": "15 reps",
+              "text": "Band pull-apart — 15 reps"
+            },
+            {
+              "name": "Push-Up",
+              "detail": "10 reps",
+              "text": "Push-Up — 10 reps"
+            },
+            {
+              "name": "Light lat pulldown",
+              "detail": "12 reps",
+              "text": "Light lat pulldown — 12 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-bench-press",
+              "displayName": "Bench Press",
+              "sets": 4,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "pull-up",
+              "displayName": "Pull-Ups",
+              "sets": 4,
+              "reps": 6,
+              "repsMax": 8,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "seated-dumbbell-shoulder-press",
+              "displayName": "Shoulder Press",
+              "sets": 3,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "dumbbell-incline-bench-press",
+              "displayName": "Incline Dumbbell Press",
+              "sets": 3,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "cable-lat-pulldown",
+              "displayName": "Lat Pulldowns",
+              "sets": 3,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "cable-face-pull",
+              "displayName": "Face Pulls",
+              "sets": 3,
+              "reps": 15,
+              "repsMax": 20,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "cable-seated-row",
+              "displayName": "Seated Rows",
+              "sets": 3,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 60
+            }
+          ]
+        },
+        {
+          "code": "E",
+          "name": "Lower Body",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            {
+              "name": "Bike",
+              "detail": "5 minutes easy",
+              "text": "Bike — 5 minutes easy"
+            },
+            {
+              "name": "Bodyweight Squat",
+              "detail": "15 reps",
+              "text": "Bodyweight Squat — 15 reps"
+            },
+            {
+              "name": "Glute bridge",
+              "detail": "15 reps",
+              "text": "Glute bridge — 15 reps"
+            },
+            {
+              "name": "Light hack squat",
+              "detail": "2 x 10 reps",
+              "text": "Light hack squat — 2 x 10 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "hack-squat-machine",
+              "displayName": "Hack Squat",
+              "sets": 4,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "barbell-sumo-deadlift",
+              "displayName": "Sumo Deadlift",
+              "sets": 4,
+              "reps": 6,
+              "repsMax": 8,
+              "unit": "reps",
+              "restSec": 120
+            },
+            {
+              "catalogKey": "barbell-hip-thrust",
+              "displayName": "Hip Thrusts",
+              "sets": 3,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "machine-leg-press",
+              "displayName": "Leg Press",
+              "sets": 3,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 90
+            },
+            {
+              "catalogKey": "seated-leg-curl-machine",
+              "displayName": "Leg Curls",
+              "sets": 3,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "crunch",
+              "displayName": "Crunches",
+              "sets": 3,
+              "reps": 15,
+              "repsMax": 20,
+              "unit": "reps",
+              "restSec": 45
+            },
+            {
+              "catalogKey": "seated-calf-raise-machine",
+              "displayName": "Calf Raises",
+              "sets": 3,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 60
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Weeks 5-6 · Press",
+      "weekStart": 5,
+      "weekEnd": 6,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Push",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            {
+              "name": "Rowing machine or bike",
+              "detail": "4 minutes easy",
+              "text": "Rowing machine or bike — 4 minutes easy"
+            },
+            {
+              "name": "Band pull-apart",
+              "detail": "15 reps",
+              "text": "Band pull-apart — 15 reps"
+            },
+            {
+              "name": "Push-Up",
+              "detail": "10 reps",
+              "text": "Push-Up — 10 reps"
+            },
+            {
+              "name": "Empty-bar bench press",
+              "detail": "2 x 10 reps",
+              "text": "Empty-bar bench press — 2 x 10 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-bench-press",
+              "displayName": "Bench Press",
+              "sets": 5,
+              "reps": 6,
+              "repsMax": 8,
+              "unit": "reps",
+              "restSec": 150
+            },
+            {
+              "catalogKey": "dumbbell-incline-bench-press",
+              "displayName": "Incline Dumbbell Press",
+              "sets": 4,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 150
+            },
+            {
+              "catalogKey": "barbell-overhead-press",
+              "displayName": "Shoulder Press",
+              "sets": 3,
+              "reps": 6,
+              "repsMax": 8,
+              "unit": "reps",
+              "restSec": 105
+            },
+            {
+              "catalogKey": "cable-lateral-raise",
+              "displayName": "Lateral Raises",
+              "sets": 3,
+              "reps": 12,
+              "repsMax": 15,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "parallel-bar-dip",
+              "displayName": "Tricep Dips",
+              "sets": 3,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 105
+            },
+            {
+              "catalogKey": "cable-overhead-triceps-extension",
+              "displayName": "Katana Extension",
+              "sets": 3,
+              "reps": 12,
+              "repsMax": 15,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "pec-deck-fly",
+              "displayName": "Cable Flyes",
+              "sets": 3,
+              "reps": 12,
+              "repsMax": 15,
+              "unit": "reps",
+              "restSec": 60
+            }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Pull",
+          "modality": "strength",
+          "split": "pull",
+          "warmup": [
+            {
+              "name": "Rowing machine",
+              "detail": "4 minutes easy",
+              "text": "Rowing machine — 4 minutes easy"
+            },
+            {
+              "name": "Band pull-apart",
+              "detail": "15 reps",
+              "text": "Band pull-apart — 15 reps"
+            },
+            {
+              "name": "Dead hang",
+              "detail": "20 seconds",
+              "text": "Dead hang — 20 seconds"
+            },
+            {
+              "name": "Light lat pulldown",
+              "detail": "12 reps",
+              "text": "Light lat pulldown — 12 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-deadlift",
+              "displayName": "Deadlift",
+              "sets": 4,
+              "reps": 5,
+              "repsMax": 6,
+              "unit": "reps",
+              "restSec": 150
+            },
+            {
+              "catalogKey": "pull-up",
+              "displayName": "Pull-Ups",
+              "sets": 4,
+              "reps": 6,
+              "repsMax": 8,
+              "unit": "reps",
+              "restSec": 150
+            },
+            {
+              "catalogKey": "barbell-bent-over-row",
+              "displayName": "Barbell Rows",
+              "sets": 4,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 105
+            },
+            {
+              "catalogKey": "close-grip-cable-lat-pulldown",
+              "displayName": "Lat Pulldowns",
+              "sets": 3,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 105
+            },
+            {
+              "catalogKey": "cable-face-pull",
+              "displayName": "Face Pulls",
+              "sets": 3,
+              "reps": 15,
+              "repsMax": 20,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "barbell-biceps-curl",
+              "displayName": "Bicep Curls",
+              "sets": 3,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "cable-rope-hammer-curl",
+              "displayName": "Hammer Curls",
+              "sets": 3,
+              "reps": 12,
+              "repsMax": 15,
+              "unit": "reps",
+              "restSec": 60
+            }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Legs",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            {
+              "name": "Bike",
+              "detail": "5 minutes easy",
+              "text": "Bike — 5 minutes easy"
+            },
+            {
+              "name": "Bodyweight Squat",
+              "detail": "15 reps",
+              "text": "Bodyweight Squat — 15 reps"
+            },
+            {
+              "name": "Walking lunge",
+              "detail": "10 per side",
+              "text": "Walking lunge — 10 per side"
+            },
+            {
+              "name": "Empty-bar back squat",
+              "detail": "2 x 10 reps",
+              "text": "Empty-bar back squat — 2 x 10 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-back-squat",
+              "displayName": "Squats",
+              "sets": 5,
+              "reps": 6,
+              "repsMax": 8,
+              "unit": "reps",
+              "restSec": 150
+            },
+            {
+              "catalogKey": "bulgarian-split-squat",
+              "displayName": "Lunges",
+              "sets": 3,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 105
+            },
+            {
+              "catalogKey": "machine-leg-press",
+              "displayName": "Leg Press",
+              "sets": 3,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 105
+            },
+            {
+              "catalogKey": "barbell-romanian-deadlift",
+              "displayName": "Romanian Deadlifts",
+              "sets": 3,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 105
+            },
+            {
+              "catalogKey": "lying-leg-curl-machine",
+              "displayName": "Leg Curls",
+              "sets": 3,
+              "reps": 12,
+              "repsMax": 15,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "standing-calf-raise-machine",
+              "displayName": "Calf Raises",
+              "sets": 4,
+              "reps": 12,
+              "repsMax": 15,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "plank",
+              "displayName": "Planks",
+              "sets": 3,
+              "reps": 60,
+              "repsMax": 75,
+              "unit": "seconds",
+              "restSec": 45
+            }
+          ]
+        },
+        {
+          "code": "D",
+          "name": "Upper Body",
+          "modality": "strength",
+          "split": "upper",
+          "warmup": [
+            {
+              "name": "Rowing machine",
+              "detail": "4 minutes easy",
+              "text": "Rowing machine — 4 minutes easy"
+            },
+            {
+              "name": "Band pull-apart",
+              "detail": "15 reps",
+              "text": "Band pull-apart — 15 reps"
+            },
+            {
+              "name": "Push-Up",
+              "detail": "10 reps",
+              "text": "Push-Up — 10 reps"
+            },
+            {
+              "name": "Light lat pulldown",
+              "detail": "12 reps",
+              "text": "Light lat pulldown — 12 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-bench-press",
+              "displayName": "Bench Press",
+              "sets": 4,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 105
+            },
+            {
+              "catalogKey": "pull-up",
+              "displayName": "Pull-Ups",
+              "sets": 4,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 105
+            },
+            {
+              "catalogKey": "seated-dumbbell-shoulder-press",
+              "displayName": "Shoulder Press",
+              "sets": 3,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 105
+            },
+            {
+              "catalogKey": "dumbbell-incline-bench-press",
+              "displayName": "Incline Dumbbell Press",
+              "sets": 3,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 105
+            },
+            {
+              "catalogKey": "cable-lat-pulldown",
+              "displayName": "Lat Pulldowns",
+              "sets": 3,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "cable-face-pull",
+              "displayName": "Face Pulls",
+              "sets": 3,
+              "reps": 15,
+              "repsMax": 20,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "chest-supported-row-machine",
+              "displayName": "Seated Rows",
+              "sets": 3,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 60
+            }
+          ]
+        },
+        {
+          "code": "E",
+          "name": "Lower Body",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            {
+              "name": "Bike",
+              "detail": "5 minutes easy",
+              "text": "Bike — 5 minutes easy"
+            },
+            {
+              "name": "Bodyweight Squat",
+              "detail": "15 reps",
+              "text": "Bodyweight Squat — 15 reps"
+            },
+            {
+              "name": "Glute bridge",
+              "detail": "15 reps",
+              "text": "Glute bridge — 15 reps"
+            },
+            {
+              "name": "Light hack squat",
+              "detail": "2 x 10 reps",
+              "text": "Light hack squat — 2 x 10 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "hack-squat-machine",
+              "displayName": "Hack Squat",
+              "sets": 4,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 105
+            },
+            {
+              "catalogKey": "barbell-sumo-deadlift",
+              "displayName": "Sumo Deadlift",
+              "sets": 4,
+              "reps": 5,
+              "repsMax": 6,
+              "unit": "reps",
+              "restSec": 150
+            },
+            {
+              "catalogKey": "barbell-hip-thrust",
+              "displayName": "Hip Thrusts",
+              "sets": 4,
+              "reps": 8,
+              "repsMax": 10,
+              "unit": "reps",
+              "restSec": 105
+            },
+            {
+              "catalogKey": "machine-leg-press",
+              "displayName": "Leg Press",
+              "sets": 3,
+              "reps": 12,
+              "repsMax": 15,
+              "unit": "reps",
+              "restSec": 105
+            },
+            {
+              "catalogKey": "seated-leg-curl-machine",
+              "displayName": "Leg Curls",
+              "sets": 3,
+              "reps": 10,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 60
+            },
+            {
+              "catalogKey": "crunch",
+              "displayName": "Crunches",
+              "sets": 3,
+              "reps": 20,
+              "repsMax": 25,
+              "unit": "reps",
+              "restSec": 45
+            },
+            {
+              "catalogKey": "seated-calf-raise-machine",
+              "displayName": "Calf Raises",
+              "sets": 4,
+              "reps": 12,
+              "repsMax": 15,
+              "unit": "reps",
+              "restSec": 60
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "status": "AUTHORED — original program, PO Lock Approval outstanding",
+  "source": "forge",
+  "sourceFile": "Programs/Hypertrophy/Full Frame/Design-Record.md"
+}

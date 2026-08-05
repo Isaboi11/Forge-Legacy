@@ -9,7 +9,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -43,8 +43,31 @@ const SPECIALIZATIONS = [
 
 /** GENERATED from `.docx` — the ingest owns these. */
 const generated = [i3, ii4];
-/** Every shipped definition, however it was authored. Structural rules apply to all of them. */
-const all = [i3, ii4, ie, sq, bp, dl];
+
+/**
+ * EVERY shipped definition, READ FROM THE DIRECTORY — not a hand-kept list.
+ *
+ * This was `[i3, ii4, ie, sq, bp, dl]`, and a seventh program was added without being added to it. The
+ * whole file then passed, 31 green, having validated nothing about the new one — no dangling-key check,
+ * no split check, no unit check. A guard that silently stops covering what it is for is worse than no
+ * guard, because the green is read as an answer.
+ *
+ * Same fix as `route-guard.test.mjs`: derive the list from the filesystem so it cannot fall behind.
+ */
+const all = readdirSync(PROGRAMS)
+  .filter((f) => f.endsWith('.json'))
+  .sort()
+  .map(load);
+
+test('the validator covers every definition in the directory', () => {
+  // The named imports above must all be IN that list — a rename would otherwise leave a test
+  // asserting things about a file the catalog no longer ships.
+  const ids = new Set(all.map((p) => p.id));
+  for (const p of [i3, ii4, ie, sq, bp, dl]) {
+    assert.ok(ids.has(p.id), `${p.id} is imported by name but not present in the programs directory`);
+  }
+  assert.ok(all.length >= 6, `expected at least the six known programs, found ${all.length}`);
+});
 const UNITS = new Set(['reps', 'seconds', 'minutes', 'yards']);
 
 /** A cardio bout carries a `cardio:<activity>` key, which is not a row in `exercises.json`. */

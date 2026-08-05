@@ -60,6 +60,7 @@ import ironAndEngine from './iron-and-engine.json';
 import squatAscent from './squat-ascent-intermediate.json';
 import benchApproach from './bench-approach-intermediate.json';
 import deadliftMeasure from './deadlift-measure-intermediate.json';
+import fullFrame from './full-frame-5day.json';
 
 // JSON import types widen literals (e.g. theme:string); the validator test enforces the
 // real ProgramDefinition contract, so a single narrowing cast here is safe.
@@ -70,6 +71,7 @@ const DEFINITIONS: readonly ProgramDefinition[] = [
   squatAscent,
   benchApproach,
   deadliftMeasure,
+  fullFrame,
 ] as unknown as ProgramDefinition[];
 
 /** All converted, PO-approved program definitions. */
