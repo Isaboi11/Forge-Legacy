@@ -1,0 +1,86 @@
+{
+  "_comment": "Missing exercise animations the PO flags during workouts, queued for a bulk process+upload pass. Each entry: as_sent (what the user called it), catalog_id (resolved slug), male_file / female_file (matched raw filenames under D:/Forge Legacy Animations/MP4/{MALE,FEMALE}, or null), status (queued|no-source|uploaded), note.",
+  "pending": [
+    {
+      "as_sent": "Alternating dumbbell curl",
+      "catalog_id": "alternating-dumbbell-curl",
+      "name": "Alternating Dumbbell Curl",
+      "male_src": "D:/Forge Legacy Animations/MP4/MALE/Gym_Workout_/Dumbbell-Alternate-Biceps-Curl_Upper-Arms-FIX_.mp4",
+      "female_src": "D:/Forge Legacy Animations/MP4/FEMALE/Gym_Workout_/Dumbbell-Alternate-Biceps-Curl-(female)_Upper-Arms.mp4",
+      "status": "queued",
+      "note": "Standing dumbbell alternating biceps curl. High confidence; excluded seated/incline/hammer/reverse variants. Male uses the -FIX- cleaned version."
+    },
+    {
+      "as_sent": "Dumbbell chest fly",
+      "catalog_id": "dumbbell-chest-fly",
+      "name": "Dumbbell Chest Fly",
+      "male_src": "D:/Forge Legacy Animations/MP4/MALE/Gym_Workout_/Dumbbell-Alternative-Fly-(male)_Chest_.mp4",
+      "female_src": "D:/Forge Legacy Animations/MP4/FEMALE/Gym_Workout_/Dumbbell-Fly-(female)_Chest.mp4",
+      "status": "queued",
+      "note": "Flat-bench dumbbell fly, VISUALLY VERIFIED both genders (frame extract). Male's plain flat-bench clip is labelled 'Alternative-Fly' in the library; excluded incline/decline/floor/low/one-arm."
+    },
+    {
+      "as_sent": "Single arm dumbbell lateral raise",
+      "catalog_id": "single-arm-dumbbell-lateral-raise",
+      "name": "Single Arm Dumbbell Lateral Raise",
+      "male_src": "D:/Forge Legacy Animations/MP4/MALE/Gym_Workout_/Dumbbell-One-Arm-Lateral-Raise_Shoulder.mp4",
+      "female_src": null,
+      "status": "queued",
+      "note": "MALE ONLY — female already mapped/uploaded (Dumbbell-Single-arm-Leaning-Lateral-Raise-(female)). Standing one-arm dumbbell lateral raise; excluded incline/lying-rear/bodyweight. Do NOT re-upload female."
+    },
+    {
+      "as_sent": "Dumbbell pullover row",
+      "catalog_id": "dumbbell-pullover-row",
+      "name": "Dumbbell Pullover Row",
+      "male_src": null,
+      "female_src": null,
+      "status": "no-source",
+      "note": "No pullover-ROW clip exists in the 9,333 raw library (only plain pullovers, which map to the separate dumbbell-pullover). Not substituting a different movement."
+    },
+    {
+      "as_sent": "Alternating dumbbell bench press",
+      "catalog_id": "alternating-dumbbell-bench-press",
+      "name": "Alternating Dumbbell Bench Press",
+      "male_src": "D:/Forge Legacy Animations/MP4/MALE/Gym_Workout_/Dumbbell-Alternate-Bench-Press-(high-start)_Chest_.mp4",
+      "female_src": null,
+      "status": "queued",
+      "note": "MALE ONLY — flat-bench alternating dumbbell press. Female library has only a FLOOR press (different movement), not substituting it; female stays on the glyph fallback."
+    },
+    {
+      "as_sent": "Assisted dip machine",
+      "catalog_id": "assisted-dip-machine",
+      "name": "Assisted Dip Machine",
+      "male_src": "D:/Forge Legacy Animations/MP4/MALE/Gym_Workout_/Assisted-Triceps-Dip-(kneeling)_Upper-Arms.mp4",
+      "female_src": "D:/Forge Legacy Animations/MP4/FEMALE/Gym_Workout_/Assisted-Triceps-Dip-(kneeling)-(female)_Upper-Arms.mp4",
+      "status": "queued",
+      "note": "VISUALLY VERIFIED (male frame) — counterweight/kneeling assisted dip machine. Distinct from band-assisted-dip and lever-seated-dip."
+    },
+    {
+      "as_sent": "Band rear delt fly",
+      "catalog_id": "band-rear-delt-fly",
+      "name": "Band Rear Delt Fly",
+      "male_src": "D:/Forge Legacy Animations/MP4/MALE/Gym_Workout_/Band-Reverse-Fly_Shoulders_.mp4",
+      "female_src": "D:/Forge Legacy Animations/MP4/FEMALE/Home_Workout_/Resistance-Band-Bent-Over-Reverse-Fly-(female)_Sho.mp4",
+      "status": "queued",
+      "note": "Name-match (band reverse fly = rear delt, Shoulders-tagged). Male frame consistent with bent-over reverse fly. Confirm at processing QA."
+    },
+    {
+      "as_sent": "Barbell behind the neck press",
+      "catalog_id": "barbell-behind-the-neck-press",
+      "name": "Barbell Behind-the-Neck Press",
+      "male_src": "D:/Forge Legacy Animations/MP4/MALE/Home_Workout_/Standing-Behind-Neck-Press_Shoulders.mp4",
+      "female_src": null,
+      "status": "queued",
+      "note": "MALE ONLY — VISUALLY VERIFIED barbell standing behind-neck press. No female behind-neck press clip in the library."
+    },
+    {
+      "as_sent": "Barbell Bradford press",
+      "catalog_id": "barbell-bradford-press",
+      "name": "Barbell Bradford Press",
+      "male_src": null,
+      "female_src": null,
+      "status": "no-source",
+      "note": "No Bradford / front-to-back overhead press clip anywhere in the 9,333 raw library."
+    }
+  ]
+}
