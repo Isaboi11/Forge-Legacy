@@ -5,11 +5,15 @@ import Svg, { Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { EquipIcon } from '@/components/forge/EquipIcon';
+import { ExercisePoster } from '@/components/forge/ExercisePoster';
 import { SectionHeader } from '@/components/forge/composites/SectionHeader';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { buildExerciseDetail } from '@/domain/exercise-detail/view';
+import { exerciseDemoUrl, type AthleteSex } from '@/domain/exercise-detail/media';
+import { ExerciseDemo } from '@/components/forge/ExerciseDemo';
+import { useProfile } from '@/lib/profile';
 
 /**
  * W-22 Exercise Detail (`Forge Exercise Detail.dc.html`) — the read-only reference page for one
@@ -24,8 +28,11 @@ import { buildExerciseDetail } from '@/domain/exercise-detail/view';
  * loaded barbell is the one thing this system is designed to prevent. Publish content and these sections
  * appear with no code change.
  *
+ * SECTION ORDER IS THE `.dc`'s: demonstration · what it is · why it matters · what it trains · how to
+ * do it · cues · common mistakes · alternatives. The demo leads deliberately — you look at the movement
+ * before you read about it, and every word under "How to do it" is describing the thing on screen.
+ *
  * DEFERRED vs the `.dc` (omitted, not faked):
- *  · Demonstration loop — no media exists for any of the 794 exercises.
  *  · Favourite button — the picker already owns bookmarking (long-press); a second, unpersisted toggle
  *    here would be a different answer to the same question.
  *  · Replace / Actions block — it needs a live workout slot to replace INTO. Reached from a past
@@ -44,6 +51,10 @@ export default function ExerciseDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const detail = useMemo(() => (id ? buildExerciseDetail(id) : null), [id]);
+  /* The clip is rendered for the athlete's own sex where they gave one; `demoVariant` decides, not
+     this screen. Reading the shared profile costs nothing here — it is already loaded app-wide. */
+  const { profile } = useProfile();
+  const demoUrl = useMemo(() => exerciseDemoUrl(id, profile?.sex as AthleteSex | undefined), [id, profile?.sex]);
 
   if (!detail) {
     return (
@@ -72,8 +83,11 @@ export default function ExerciseDetailScreen() {
       <AppBar title="Exercise" serif onBack={() => router.back()} />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* identity */}
-        <Text style={styles.tag}>
+        {/* 1 · demonstration — the `.dc`'s first block, above the name */}
+        <ExerciseDemo url={demoUrl} />
+
+        {/* 2 · identity */}
+        <Text style={[styles.tag, styles.tagAfterDemo]}>
           {detail.modality} · {detail.categoryLabel}
         </Text>
         <Text style={styles.name}>{detail.name}</Text>
@@ -210,7 +224,7 @@ export default function ExerciseDetailScreen() {
                   style={[styles.altRow, a.best && styles.altRowBest]}
                 >
                   <View style={styles.altIcon}>
-                    <EquipIcon equip={a.equipId} size={19} />
+                    <ExercisePoster exerciseId={a.key} radius={21} fallback={<EquipIcon equip={a.equipId} size={19} />} />
                   </View>
                   <View style={styles.altText}>
                     <View style={styles.altNameLine}>
@@ -247,6 +261,8 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 22, paddingBottom: 44 },
 
   tag: { marginTop: 6, fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  // The demo now sits above the identity block; the `.dc` breathes here rather than butting them up.
+  tagAfterDemo: { marginTop: 20 },
   name: { marginTop: 6, fontFamily: flFont.display, fontSize: 30, fontWeight: '600', letterSpacing: -0.3, color: flColor.cream100 },
   equipLine: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
   equipText: { fontSize: 11.5, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.gray600 },

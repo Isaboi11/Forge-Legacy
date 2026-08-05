@@ -4,6 +4,7 @@ import Svg, { Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { EquipIcon } from '@/components/forge/EquipIcon';
+import { ExercisePoster } from '@/components/forge/ExercisePoster';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
@@ -141,7 +142,7 @@ function Body({
                       style={styles.exHead}
                     >
                       <View style={styles.exIcon}>
-                        <EquipIcon equip={ex.equip ?? undefined} size={19} />
+                        <ExercisePoster exerciseId={ex.catalogKey} radius={18} fallback={<EquipIcon equip={ex.equip ?? undefined} size={19} />} />
                       </View>
                       <Text style={styles.exName} numberOfLines={1}>
                         {ex.name}

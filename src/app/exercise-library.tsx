@@ -7,6 +7,7 @@ import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { EquipIcon } from '@/components/forge/EquipIcon';
+import { ExercisePoster } from '@/components/forge/ExercisePoster';
 import { ScreenBackground } from '@/components/screen-background';
 import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
@@ -144,7 +145,7 @@ export default function ExerciseLibraryScreen() {
     return (
       <Pressable onPress={() => openEx(x.key)} accessibilityRole="button" accessibilityLabel={x.name} style={styles.row}>
         <View style={styles.rowIcon}>
-          <EquipIcon equip={x.equipId} size={19} />
+          <ExercisePoster exerciseId={x.key} radius={20} fallback={<EquipIcon equip={x.equipId} size={19} />} />
         </View>
         <View style={styles.rowText}>
           <Text style={styles.rowName} numberOfLines={1}>

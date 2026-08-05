@@ -14,6 +14,7 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { itemByKey } from '@/domain/exercise-picker/data';
+import { ExercisePoster } from '@/components/forge/ExercisePoster';
 import {
   deleteTemplate,
   duplicateTemplate,
@@ -448,7 +449,7 @@ function ExerciseRow({ ex }: { ex: TemplateExercise }) {
       style={({ pressed }) => [styles.exRow, open && pressed ? styles.exRowPressed : null]}
     >
       <View style={styles.exIcon}>
-        <EquipGlyph cls={rec?.equipClass ?? 'Bodyweight'} />
+        <ExercisePoster exerciseId={ex.catalogKey} radius={18} fallback={<EquipGlyph cls={rec?.equipClass ?? 'Bodyweight'} />} />
       </View>
       <View style={styles.exText}>
         <Text style={styles.exName} numberOfLines={1}>

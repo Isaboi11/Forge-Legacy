@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 
@@ -11,6 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
+import { ExerciseLoop } from '@/components/forge/ExerciseLoop';
 import { Card } from '@/components/forge/composites/Surface';
 import { Pill } from '@/components/forge/composites/Pill';
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
@@ -47,6 +48,7 @@ import { blockAt, breakBlock, endsSupersetRound, makeSuperset, nextInSuperset, s
 import { doneSetCount, hasLoggedSet, PR_MAX_REPS } from '@/domain/workout/metrics';
 import { fetchPriorRecords, saveWorkout } from '@/domain/workout/save';
 import { PlaylistSheet } from '@/components/forge/composites/Playlist';
+import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
 import { playlistLabel } from '@/domain/workout/playlist';
 import { equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
 import { getRestTimerEnabled, setRestTimerEnabled } from '@/lib/rest-timer-pref';
@@ -201,7 +203,11 @@ export default function WorkoutScreen() {
      opened and did not scroll showed 0, reported nothing, and wrote the weight back as null. */
   const [draftW, setDraftW] = useState('');
   const [draftR, setDraftR] = useState('');
+  /* The two sheet inputs, so the tap that OPENS the sheet can also focus the field it named. */
+  const weightInputRef = useRef<TextInput | null>(null);
+  const repsInputRef = useRef<TextInput | null>(null);
   const [wheelMode, setWheelMode] = useState(false); // typing is the default; the saved pref loads on mount
+  const [endConfirmOpen, setEndConfirmOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [heroPref, setHeroPref] = useState<Record<number, 'expanded' | 'collapsed'>>({});
   const [autoCollapsed, setAutoCollapsed] = useState<Record<number, boolean>>({});
@@ -541,9 +547,23 @@ export default function WorkoutScreen() {
         if (!cur) return;
         if (inbox.kind === 'add') {
           const base = cur.exercises.length;
-          setSession((s) => (s ? { ...s, exercises: [...s.exercises, ...inbox.items.map((p, i) => pickedToExercise(p, base + i))] } : s));
+          /* A superset declared in the Picker is the SAME block the ⋮ menu builds — `makeSuperset`
+             already takes N ≥ 2 and derives the round count from the longest member, so grouping
+             three at once needs no grouping logic of its own. Appended contiguously, which is what
+             `blockAt`'s adjacency walk requires. */
+          const asSuperset = inbox.group === 'superset' && inbox.items.length >= 2;
+          const gid = `ss${Date.now()}`;
+          setSession((s) => {
+            if (!s) return s;
+            const appended = [...s.exercises, ...inbox.items.map((p, i) => pickedToExercise(p, base + i))];
+            return { ...s, exercises: asSuperset ? makeSuperset(appended, base, inbox.items.length, gid) : appended };
+          });
           setExIdx(base);
-          showToast(`Added ${inbox.items.length} ${inbox.items.length === 1 ? 'exercise' : 'exercises'}`);
+          showToast(
+            asSuperset
+              ? `Added ${inbox.items.length} exercises as a superset`
+              : `Added ${inbox.items.length} ${inbox.items.length === 1 ? 'exercise' : 'exercises'}`,
+          );
         } else {
           const idx = inbox.targetIdx;
           if (idx < 0 || idx >= cur.exercises.length) return;
@@ -729,6 +749,35 @@ export default function WorkoutScreen() {
     setDraftR(set.actualReps != null ? String(set.actualReps) : set.toFailure ? '' : String(set.targetReps));
     setSheet({ exIdx: exI, setIdx: setI, focus });
   };
+
+  /**
+   * RAISE THE KEYBOARD ON THE TAP THAT ASKED FOR IT.
+   *
+   * Tapping a weight or reps cell opened the sheet with that field HIGHLIGHTED and nothing focused,
+   * so logging a set cost a second tap on the input the athlete had already pointed at. The field's
+   * `selectTextOnFocus` was set the whole time and never fired, because focus never happened.
+   *
+   * Depends on the sheet's PRIMITIVES, not the object. `SetField.onFocus` writes a fresh sheet object
+   * on the focus event this effect causes; depending on identity would refocus an already-focused
+   * input and re-run its selection out from under a typing thumb.
+   *
+   * Wheel mode is excluded deliberately — there is no TextInput to focus, and a keyboard rising under
+   * the wheel is the opposite of what choosing the wheel asked for.
+   *
+   * One frame, not a bare call: on web the input mounts in the same commit as this effect and Safari
+   * drops a `focus()` issued before the node is in the document. A timeout is the unreliable version
+   * of the same idea.
+   */
+  const sheetOpen = sheet != null;
+  const sheetFocus = sheet?.focus ?? null;
+  const sheetExI = sheet?.exIdx ?? -1;
+  const sheetSetI = sheet?.setIdx ?? -1;
+  useEffect(() => {
+    if (!sheetOpen || wheelMode) return;
+    const target = sheetFocus === 'weight' ? weightInputRef : repsInputRef;
+    const frame = requestAnimationFrame(() => target.current?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, [sheetOpen, sheetFocus, sheetExI, sheetSetI, wheelMode]);
 
   /** Parse a draft field. '' is "nothing entered" and stays null; garbage keeps whatever was there. */
   const readDraft = (raw: string, prev: number | null, max: number, round: boolean): number | null => {
@@ -1117,9 +1166,28 @@ export default function WorkoutScreen() {
     if (blockedByBout()) return;
     goExercise(exIdx + 1);
   };
+  /**
+   * ⋮ → End workout — ASK FIRST.
+   *
+   * This ended the session on one tap, with no confirmation anywhere in the path, and it is the door
+   * an athlete goes through by accident: it sits in a menu they opened to do something else, two rows
+   * under "Add an exercise". Finishing is irreversible in a way the other options are not — the seal
+   * commits the workout and a committed workout cannot be reopened and added to (EL-D6; a session is a
+   * record, and editing belongs to W-17's reflection window).
+   *
+   * The confirmation states the cost in NUMBERS rather than asking "are you sure": what is unlogged is
+   * the thing the athlete is about to lose, and it is the one fact that decides the answer.
+   *
+   * The primary "Finish Workout" button is deliberately NOT confirmed. It only appears once every set
+   * is logged, so there is nothing left to lose — a confirm there would be a tax on the normal path.
+   */
   const endFromOptions = () => {
     setOptionsOpen(false);
     if (blockedByBout()) return;
+    setEndConfirmOpen(true);
+  };
+  const confirmEnd = () => {
+    setEndConfirmOpen(false);
     void finishToSeal();
   };
   /*
@@ -1358,11 +1426,17 @@ export default function WorkoutScreen() {
         {isCardio || isSuperset ? null : heroExpanded ? (
           <TourAnchor id="workout-hero" style={styles.hero}>
             <View style={styles.heroRow}>
-              {/* media slot — engraved dumbbell placeholder (animation art is Phase-4) */}
+              {/* media slot — the exercise's looping demonstration, falling back to the engraved
+                  dumbbell for lifts the library doesn't cover (strongman, most mobility). */}
               <View style={styles.mediaSlot}>
-                <Svg width={74} height={74} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.1} strokeLinecap="round" strokeLinejoin="round" opacity={0.14}>
-                  <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />
-                </Svg>
+                <ExerciseLoop
+                  exerciseId={ex.catalogKey}
+                  fallback={
+                    <Svg width={74} height={74} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.1} strokeLinecap="round" strokeLinejoin="round" opacity={0.14}>
+                      <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />
+                    </Svg>
+                  }
+                />
               </View>
               {/* meta */}
               <View style={styles.heroMeta}>
@@ -1765,6 +1839,7 @@ export default function WorkoutScreen() {
                 display={draftW === '' ? '—' : draftW === '0' ? 'BW' : draftW}
                 active={sheet.focus === 'weight'}
                 typing={!wheelMode}
+                inputRef={weightInputRef}
                 onFocus={() => setSheet({ ...sheet, focus: 'weight' })}
                 onChange={(t) => setDraftW(t.replace(/[^0-9.]/g, ''))}
                 onSubmit={() => setSheet({ ...sheet, focus: 'reps' })}
@@ -1775,6 +1850,7 @@ export default function WorkoutScreen() {
                 display={draftR === '' ? '—' : draftR}
                 active={sheet.focus === 'reps'}
                 typing={!wheelMode}
+                inputRef={repsInputRef}
                 onFocus={() => setSheet({ ...sheet, focus: 'reps' })}
                 onChange={(t) => setDraftR(t.replace(/[^0-9]/g, ''))}
                 onSubmit={commitSheet}
@@ -1814,6 +1890,23 @@ export default function WorkoutScreen() {
           </View>
         </View>
       ) : null}
+
+      {/* END WORKOUT — mounted in the SAME branch as the ⋮ row that opens it (see
+          `overlay-branch.test.mjs`: a sheet declared outside the branch its trigger lives in
+          sets state that nothing renders, and the button does nothing at all). */}
+      <ConfirmSheet
+        open={endConfirmOpen}
+        onClose={() => setEndConfirmOpen(false)}
+        headline="End this workout?"
+        body={
+          setsDone === totalSets
+            ? `All ${totalSets} ${totalSets === 1 ? 'set is' : 'sets are'} logged. Sealing is final — you can’t add to this workout afterward.`
+            : `You’ve logged ${setsDone} of ${totalSets} sets. The rest won’t be recorded, and sealing is final — you can’t add to this workout afterward.`
+        }
+        confirmLabel="End workout"
+        cancelLabel="Keep training"
+        onConfirm={confirmEnd}
+      />
 
       {/* rest-duration picker — minutes : seconds dual wheel */}
       {durationPicker ? (
@@ -2142,6 +2235,7 @@ function SetField({
   display,
   active,
   typing,
+  inputRef,
   onFocus,
   onChange,
   onSubmit,
@@ -2151,6 +2245,8 @@ function SetField({
   display: string;
   active: boolean;
   typing: boolean;
+  /** Held by the screen so opening the sheet can focus the field the athlete tapped. */
+  inputRef?: RefObject<TextInput | null>;
   onFocus: () => void;
   onChange: (t: string) => void;
   onSubmit: () => void;
@@ -2160,6 +2256,7 @@ function SetField({
       <Text style={styles.fieldLabel}>{label}</Text>
       {typing ? (
         <TextInput
+          ref={inputRef}
           style={styles.fieldInput}
           value={value}
           onChangeText={onChange}

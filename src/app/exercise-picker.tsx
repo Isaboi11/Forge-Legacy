@@ -6,6 +6,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
 import { EquipIcon } from '@/components/forge/EquipIcon';
+import { ExercisePoster } from '@/components/forge/ExercisePoster';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
@@ -87,12 +88,14 @@ export default function ExercisePickerScreen() {
   }>();
   const isBuilder = params.mode === 'builder';
   const isReplace = !isBuilder && params.mode !== 'add';
+  const isAdd = !isBuilder && !isReplace;
   const replacingName = params.ex ? canonicalName(params.ex) : null;
   const targetIdx = params.targetIdx != null ? Number(params.targetIdx) : -1;
 
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<string | null>(null); // replace: single key
   const [picked, setPicked] = useState<string[]>([]); // add: many keys
+  const [asSuperset, setAsSuperset] = useState(false); // add: group the picks into one block
   const [applied, setApplied] = useState<PickerFilters>(EMPTY_FILTERS);
   const [draft, setDraft] = useState<PickerFilters>(EMPTY_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
@@ -230,20 +233,27 @@ export default function ExercisePickerScreen() {
           items: items.map(toPicked),
         });
       } else {
-        void writeExerciseInbox({ kind: 'add', items: items.map(toPicked) });
+        void writeExerciseInbox({ kind: 'add', items: items.map(toPicked), group: supersetOn ? 'superset' : undefined });
       }
       router.back();
     }
   };
+
+  /* DERIVED, not a second piece of state. Un-ticking back down to one exercise must not leave a
+     stale "as a superset" flag armed behind a control that is no longer on screen — and deriving it
+     avoids a setState-in-effect, which this repo's react-compiler lint treats as an error. */
+  const supersetOn = isAdd && asSuperset && picked.length >= 2;
 
   const confirmDisabled = isReplace ? selected == null : picked.length === 0;
   const confirmLabel = isReplace
     ? selected != null
       ? `Replace with ${itemByKey(selected)?.name ?? ''}`
       : 'Select an exercise'
-    : picked.length
-      ? `Add ${picked.length} ${picked.length === 1 ? 'exercise' : 'exercises'}`
-      : 'Select exercises';
+    : supersetOn
+      ? `Add ${picked.length} exercises as a superset`
+      : picked.length
+        ? `Add ${picked.length} ${picked.length === 1 ? 'exercise' : 'exercises'}`
+        : 'Select exercises';
 
   const appliedChips: { group: keyof PickerFilters; value: string; label: string }[] = [
     ...applied.cat.map((v) => ({ group: 'cat' as const, value: v, label: labelFor.get(v) ?? v })),
@@ -267,7 +277,7 @@ export default function ExercisePickerScreen() {
         style={[styles.row, sel && styles.rowSel]}
       >
         <View style={styles.rowIcon}>
-          <EquipIcon equip={x.equipId} />
+          <ExercisePoster exerciseId={x.key} radius={20} fallback={<EquipIcon equip={x.equipId} />} />
         </View>
         <View style={styles.rowText}>
           <View style={styles.rowNameLine}>
@@ -486,6 +496,31 @@ export default function ExercisePickerScreen() {
 
       {/* footer confirm */}
       <View style={styles.footer}>
+        {/* SAY IT WHILE YOU PICK THEM.
+            Building as you go, the ⋮ menu's "Superset with next exercise" means adding three lifts
+            and then pairing them one at a time — restating a decision already made. Ticking them
+            together is when the athlete knows. Appears only once there are two to pair. */}
+        {isAdd && picked.length >= 2 ? (
+          <Pressable
+            onPress={() => setAsSuperset((v) => !v)}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: supersetOn }}
+            accessibilityLabel="Add these as a superset — alternate them, one rest at the end of the round"
+            style={[styles.ssRow, supersetOn && styles.ssRowOn]}
+          >
+            <View style={[styles.ssBox, supersetOn && styles.ssBoxOn]}>
+              {supersetOn ? (
+                <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.charcoal900} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                  <Path d="M4 12.5l5.2 5.2L20 7" />
+                </Svg>
+              ) : null}
+            </View>
+            <View style={styles.ssText}>
+              <Text style={[styles.ssTitle, supersetOn && styles.ssTitleOn]}>Add as a superset</Text>
+              <Text style={styles.ssSub}>Alternate them — one rest, at the end of the round</Text>
+            </View>
+          </Pressable>
+        ) : null}
         <Button variant="primary" fullWidth disabled={confirmDisabled} onPress={onConfirm} accessibilityLabel={confirmLabel}>
           {confirmLabel}
         </Button>
@@ -693,7 +728,17 @@ const styles = StyleSheet.create({
   emptyTitle: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', color: flColor.cream100 },
   emptyBody: { fontSize: 13, lineHeight: 19, color: flColor.gray400, textAlign: 'center', maxWidth: 230 },
 
-  footer: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 18, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: flColor.charcoal900 },
+  footer: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 18, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: flColor.charcoal900, gap: 12 },
+
+  // "Add as a superset" — the pick-time pairing declaration
+  ssRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, paddingHorizontal: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: 'transparent' },
+  ssRowOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  ssBox: { width: 20, height: 20, borderRadius: 5, borderWidth: 1.5, borderColor: flColor.charcoal600, alignItems: 'center', justifyContent: 'center' },
+  ssBoxOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronze400 },
+  ssText: { flex: 1 },
+  ssTitle: { fontSize: 13.5, fontWeight: '600', color: flColor.gray400 },
+  ssTitleOn: { color: flColor.bronze300 },
+  ssSub: { fontSize: 11.5, color: flColor.gray600, marginTop: 2 },
 
   // sheets
   sheetWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'flex-end' },
