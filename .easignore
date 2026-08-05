@@ -1,8 +1,48 @@
-# EAS Hosting deploy manifest — overrides .gitignore for `eas deploy`.
+# EAS upload manifest — read by BOTH `eas deploy` (web hosting) and `eas build` (native).
 #
-# Without this, eas deploy inherits .gitignore (which ignores dist/, node_modules/, .expo/) and skips the
-# exported /_expo/ (JS) and /assets/ (images) folders, so the live site 404s all static assets — the
-# Welcome logo + onboarding slate backgrounds + favicon all vanished. An (almost) empty .easignore means
-# "upload the whole dist as exported." We only exclude the vestigial node_modules assets copied into the
-# export, which aren't referenced by the web bundle.
-dist/assets/node_modules/
+# ⚠ EAS uses this file INSTEAD OF .gitignore, not in addition to it: "If you create a .easignore
+# file, the EAS CLI prioritizes it over the .gitignore file." So every .gitignore rule that must
+# keep holding has to be repeated below — that is why `node_modules/` and `.env` appear here even
+# though git already ignores them. Before this pass the file was one line, which was correct for
+# `eas deploy` and would have had the first native build upload node_modules (646 MB) and the
+# whole design reference alongside the app.
+#
+# `dist/` is deliberately NOT ignored. `eas deploy` uploads the exported web build from there, and
+# inheriting .gitignore (which ignores dist/) is what made the live site 404 every static asset —
+# the Welcome logo + onboarding slate backgrounds + favicon all vanished. A native build therefore
+# also carries dist/ (~73 MB). That is waste, not breakage; keeping the web deploy working wins.
+#
+# `node_modules/` is unanchored, so it also covers the vestigial dist/assets/node_modules/ that the
+# previous version of this file existed to exclude.
+
+# --- repeated from .gitignore: never upload ---
+node_modules/
+.expo/
+web-build/
+.env
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+.metro-health-check*
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.DS_Store
+supabase/.temp/
+supabase/.branches/
+src/domain/training/ingest/out/
+/Scratch/
+/_repo-audit/
+index_extract_tmp.txt
+legacy-design-test.zip
+.design-sync/
+
+# --- authoring sources and reference material: nothing in src/ imports them (verified by grep) ---
+Docs/
+Programs/
+design_reference/
+ds-bundle/
