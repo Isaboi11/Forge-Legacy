@@ -125,7 +125,13 @@ def matte(rgb):
     feather = FEATHER * rs
     big_flat = BIG_FLAT_FRAC * H * W
 
-    thr = WHITE_THR
+    # Adaptive white threshold: most sources are pure-255 white, but some have a slightly
+    # off-white background (~250, occasionally a dimmer channel) that a fixed >250 test misses,
+    # leaving the whole background opaque. Sample the corners and key just under it.
+    corners = np.concatenate([rgb[:8, :8].reshape(-1, 3), rgb[:8, -8:].reshape(-1, 3),
+                              rgb[-8:, :8].reshape(-1, 3), rgb[-8:, -8:].reshape(-1, 3)])
+    bg_min = int(np.median(corners.min(axis=1)))
+    thr = min(WHITE_THR, bg_min - 5)
     white = (rgb[..., 0] > thr) & (rgb[..., 1] > thr) & (rgb[..., 2] > thr)
     exact = (rgb[..., 0] == 255) & (rgb[..., 1] == 255) & (rgb[..., 2] == 255)
     gray = rgb.min(axis=2)
