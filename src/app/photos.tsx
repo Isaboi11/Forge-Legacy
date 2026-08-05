@@ -59,7 +59,8 @@ import { useReduceMotion } from '@/lib/settings';
  * you may be browsing a chapter sealed years ago — but its empty state does, because there is always
  * exactly one active chapter for a first photo to land in.
  *
- * NOT CARRIED: the "X of 50 photos" counter. `Monetization-Amendment-001` sets a 50-photo free ceiling
+ * NOT CARRIED: the "X of 100 photos" counter. `Monetization-Amendment-001` sets a 100-photo free ceiling
+ * (raised from 50 in the 2026-08-05 storage revision, once downscaling made a photo ~8× cheaper to keep)
  * and requires the counter here, but P-8 Subscription and the M-7 upsell are both unbuilt, so there is
  * no premium tier and no way to lift the cap. A limit nobody can pay to remove is a threat, not a
  * counter. Recorded in the amendment as owed-on-P-8 rather than shipped as a dead ultimatum.

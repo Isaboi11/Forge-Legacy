@@ -489,7 +489,7 @@ function Composer({ open, onClose, onPosted }: { open: boolean; onClose: () => v
   }, [entries]);
 
   const attach = async (want: 'images' | 'videos') => {
-    const asset = await pickSource({ kind: want, title: want === 'videos' ? 'Add a video' : 'Add a photo', quality: 0.7, videoMaxDuration: 60 });
+    const asset = await pickSource({ kind: want, title: want === 'videos' ? 'Add a video' : 'Add a photo', quality: 0.7 });
     if (!asset?.uri) return;
     const kind = asset.type === 'video' ? 'video' : 'image';
     setUploading(true);

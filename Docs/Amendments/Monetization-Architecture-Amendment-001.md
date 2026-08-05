@@ -1,8 +1,10 @@
 # Forge Legacy — Monetization Architecture Amendment 001
 ## MVP Monetization Framework
-### Status: Locked — MVP Approved Assumption | June 2026 (Amendment 002 merged)
+### Status: Locked — MVP Approved Assumption | June 2026 (Amendment 002 merged) | **Storage-economics revision 2026-08-05**
 
 **Authority:** Forge Legacy Master PRD Section 18 | Forge Legacy Product DNA | **Amendment 002 (June 2026):** `Community-System-Architecture-v1.0.md` COM-D4
+
+> **Revision 2026-08-05 — the word "unlimited" is gone from every storage-bearing row, and the numbers moved.** Section 3's limits were always flagged provisional; this is the first revision to exercise that. Two things forced it. (1) **Photos were uploading at full camera resolution** — the picker's `quality` re-encodes the JPEG and never touches the pixel count, so a 4032 × 3024 iPhone photo was being stored forever to render something no surface displays above ~1200 px. Capping the long edge at 1600 px cut a stored photo from roughly 3 MB to roughly 350 KB, which is what made a generous free tier affordable: 100 photos an athlete is now ~35 MB, and a thousand free athletes is a rounding error rather than the bill. (2) **"Unlimited photos" and "unlimited squads" were an uncapped liability against a fixed subscription price.** One athlete uploading 4K video can cost more per month than they pay, every month, and there is no lever to stop them — an unfunded promise is worse than a generous number. Every limit below is now finite. See Section 4A.
 **Supersedes:** PRD Section 18 monetization prose where they conflict
 **Scope:** All screens where premium limits apply — W-4 (program creation), S-1/S-3 (squad creation/join), W-1/W-2/L-5 (import entry points), L-15 (photo counter), M-7 (upsell sheet), **Community Hub / Community Page join CTA (Amendment 002)**
 
@@ -63,25 +65,36 @@ Free tier includes:
 | Feature | Free Tier Limit | Notes |
 |---------|----------------|-------|
 | Custom programs | 3 | One Active program maximum applies to all tiers per Program Amendment 001 |
-| Photos | 50 | Account-wide (not per-chapter). Counter shown on L-15: "X of 50 photos" |
+| Photos | **100** *(revised 2026-08-05, was 50)* | Account-wide (not per-chapter). Counter shown on L-15: "X of 100 photos". Raised because downscaling made a photo ~8× cheaper to keep; the free tier got the saving rather than the margin |
+| Videos | **5** *(new 2026-08-05)* | Account-wide. Video is the one medium that can cost more than a subscription, so it is the one counted separately from photos rather than folded in |
+| Video length | **30 seconds** *(new 2026-08-05)* | All tiers — a product rule, not a paywall. A form check is fifteen seconds and a working set is twenty; 30 is sufficiency, not restriction. Enforced centrally in `useMediaPicker` |
+| Day templates | **5** *(new 2026-08-05)* | Athlete-authored templates (W-26/W-27). Forge's own shipped templates are catalogue content and never count |
 | Squads | 2 | Athlete may belong to or create up to 2 squads. Account-wide. |
 | Imports | 1 lifetime import | One completed import flow (one W-IM-4 confirmation). See Section 8. |
 | **Community memberships** *(Amendment 002)* | **1** | Athlete may **join** 1 community. No limit on the size of any community at any tier. Community **ownership** is capped at 1 for **all** tiers — a non-monetized product constraint, not a paywall. See Section 15. |
 
 **All numerical limits are flagged as Initial MVP Assumptions — Subject to Future Revision.**
 
-The 3-program limit, 50-photo limit, 2-squad limit, 1-import model, and 1-community-membership limit reflect initial MVP monetization assumptions. They may change based on user feedback, retention data, conversion data, storage costs, and business needs. The principles in Section 2 and Section 9 do not change.
+The 3-program limit, **100-photo limit** *(revised 2026-08-05, was 50)*, 5-video limit, 5-template limit, 2-squad limit, 1-import model, and 1-community-membership limit reflect initial MVP monetization assumptions. They may change based on user feedback, retention data, conversion data, storage costs, and business needs. The principles in Section 2 and Section 9 do not change.
 
 ---
 
 ## Section 4 — Premium Tier Definition (MVP)
 
-Premium removes creation and storage limits and unlocks unlimited import capability.
+Premium raises every creation and storage limit and unlocks unlimited import capability.
+
+**Revised 2026-08-05: Premium no longer says "unlimited" for anything that costs storage.** The numbers below are set so that no legitimate athlete reaches them — they are a ceiling on the product's downside, not a wall the customer is meant to feel. See Section 4A.
 
 Premium includes everything in Free, plus:
-- Unlimited custom programs
-- Unlimited photos
-- Unlimited squads
+
+| Feature | Premium Limit | Was |
+|---|---|---|
+| Custom programs | **50** | Unlimited |
+| Photos | **1,000** | Unlimited |
+| Videos | **100** | *(not previously counted)* |
+| Day templates | **Unlimited** | *(new — costs no storage, so it stays uncapped)* |
+| Squads | **10** | Unlimited |
+
 - Unlimited imports (W-IM-1 through W-IM-4)
 - **Unlimited community memberships** *(Amendment 002)* — community **ownership** remains capped at 1 for all tiers; this is not unlocked by Premium (Section 15)
 - Future: AI features (deferred to post-MVP)
@@ -90,14 +103,60 @@ Premium includes everything in Free, plus:
 
 ---
 
+## Section 4A — Storage Economics (Revision 2026-08-05)
+
+**Why "unlimited" was removed, recorded so the next person does not put it back.**
+
+Every other limit in this document caps something that costs the product nothing to allow — a program is
+a row, a squad is a row. **Photos and video are different: they cost real money every month, forever,
+whether or not the athlete ever opens them again.** A subscription price is fixed. An unlimited storage
+promise is not. The gap between them is unbounded, it compounds monthly, and the athlete who opens it is
+by definition the one who values the product most — so there is no version of enforcement that is not
+punishing your best customer after the fact. A finite number set high enough that nobody reaches it is
+kinder than an unlimited promise that has to be withdrawn.
+
+**What made the generous numbers affordable was fixing the upload, not lowering the tier.** Photos were
+being stored at full camera resolution — roughly 3 MB each — to render an image no surface in the app
+displays above about 1200 px. Capping the long edge at 1600 px brings that to roughly 350 KB with no
+visible difference on a phone. That single change is worth more than any limit in this document:
+
+| | Before | After |
+|---|---|---|
+| One photo | ~3 MB | ~350 KB |
+| 100 photos (free tier) | ~300 MB | ~35 MB |
+| 1,000 free athletes | ~300 GB | ~35 GB |
+
+Which is why the free photo allowance went **up** (50 → 100) in the same revision that removed the word
+unlimited. The saving was spent on the athlete rather than the margin.
+
+**Video is the exception that stays tight.** A 30-second clip is tens of megabytes; a single video can
+outweigh an athlete's entire photo album. Duration is capped at 30 seconds for all tiers as a product
+rule, and video is counted separately from photos rather than folded into one number, so that the
+expensive medium is the one being governed.
+
+**The honest limit of the video cap, recorded rather than glossed:** `videoMaxDuration` holds on every
+platform, but resolution can only be capped on what the app RECORDS, and only on iOS (`videoQuality`).
+A video chosen from the library arrives at whatever size the phone saved it. Genuinely bounding that
+needs transcoding, which nothing in the stack does today. If video storage becomes a real cost line, that
+is the next lever — not a lower count.
+
+**Downgrade behaviour is unchanged and non-negotiable.** Nothing in this revision deletes anything.
+Section 2 governs: history stays, at every tier, forever.
+
+---
+
 ## Section 5 — Photo Limit Behavior
+
+*(Numbers revised 2026-08-05: free 50 → 100; premium unlimited → 1,000. Behaviour unchanged.)*
 
 | Scenario | Behavior |
 |----------|---------|
-| Free user attempts photo 51 | M-7 Premium Upsell Sheet fires |
-| Free user upgrades then downgrades | All photos remain. No deletion. Cannot add new photos while over 50. |
-| Premium user adds unlimited photos, then downgrades | All photos remain permanently — visible forever. Cannot add new photos while at or above 50. |
-| Photo counter display | "X of 50 photos" (free) / "X photos" (premium) — shown on L-15 |
+| Free user attempts photo 101 | M-7 Premium Upsell Sheet fires |
+| Free user upgrades then downgrades | All photos remain. No deletion. Cannot add new photos while over 100. |
+| Premium user adds photos up to 1,000, then downgrades | All photos remain permanently — visible forever. Cannot add new photos while at or above 100. |
+| Premium user attempts photo 1,001 | Blocked with a plain explanation, **not** an upsell — there is no higher tier to sell. Copy must not imply the athlete did something wrong. |
+| Photo counter display | "X of 100 photos" (free) / "X of 1,000 photos" (premium) — shown on L-15 |
+| Video counter | Counted and displayed separately from photos at both tiers (5 free / 100 premium) |
 
 ---
 
@@ -122,6 +181,7 @@ Premium includes everything in Free, plus:
 |----------|---------|
 | Free user in 2 squads attempts to create or join a third | M-7 Premium Upsell Sheet fires |
 | Free user upgrades, joins more squads, then downgrades | Remains in all squads. Cannot join or create new squads while at or above 2. No squad deletion on downgrade. |
+| Premium user attempts an 11th squad *(cap added 2026-08-05)* | Blocked with a plain explanation, not an upsell. A squad is a row and costs nothing to store; the cap exists because an account in fifty squads is an automation, not an athlete |
 | Squad invitation received by free user already in 2 squads | Invitation visible but cannot be accepted until user upgrades or leaves a current squad |
 | Free user who leaves a squad | Free slot restored. May join or create until reaching 2-squad limit. |
 
@@ -187,8 +247,8 @@ Charging for the first import creates a gap in the "Never Charge For History" pr
 ## Section 9 — Monetization Philosophy (Locked)
 
 **Forge Legacy monetizes:**
-- Creation beyond the free tier (programs, squads)
-- Storage beyond the free tier (photos)
+- Creation beyond the free tier (programs, squads, **day templates** *(added 2026-08-05)*)
+- Storage beyond the free tier (photos, **video** *(added 2026-08-05)*)
 - Repeated import workflows (import sessions beyond the first)
 - Power-user workflows and convenience
 - Future advanced tools (AI, analytics, premium legacy features)

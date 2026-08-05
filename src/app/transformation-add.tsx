@@ -89,7 +89,7 @@ export default function TransformationAddRoute() {
     });
   const pickVideo = async () => {
     if (uploading) return;
-    const asset = await pick({ kind: 'videos', title: 'Add a video', videoMaxDuration: 60 });
+    const asset = await pick({ kind: 'videos', title: 'Add a video' });
     if (!asset?.uri) return;
     setUploading('video');
     try {

@@ -176,7 +176,7 @@ export default function SquadComposerRoute() {
   const selectPR = (pr: RecentPR) => setForm((f) => ({ ...f, prExercise: pr.exercise, prValue: pr.value, prLabel: f.prLabel || 'Squad PR' }));
 
   const pickMedia = async (videoOnly: boolean) => {
-    const asset = await pickMediaSource({ kind: videoOnly ? 'videos' : 'both', title: videoOnly ? 'Add a video' : 'Add a photo or video', quality: 0.7, videoMaxDuration: 60 });
+    const asset = await pickMediaSource({ kind: videoOnly ? 'videos' : 'both', title: videoOnly ? 'Add a video' : 'Add a photo or video', quality: 0.7 });
     if (!asset?.uri) return;
     const kind: SquadMediaKind = asset.type === 'video' ? 'video' : 'image';
     setUploading(true);

@@ -1,11 +1,13 @@
 import { type ReactNode, useCallback, useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import Svg, { Path } from 'react-native-svg';
 
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor } from '@/constants/foundation';
+import { DOWNSCALE_COMPRESS, downscaleTarget } from '@/lib/image-downscale-core';
 
 /**
  * useMediaPicker — one consistent "camera or library" chooser for every place the app captures a photo or a
@@ -16,6 +18,17 @@ import { flColor } from '@/constants/foundation';
  */
 export type MediaKind = 'images' | 'videos' | 'both';
 
+/**
+ * Video ceiling, enforced here rather than at the call sites, for the same reason the photo resize is.
+ *
+ * A form check is fifteen seconds and a working set is twenty, so thirty is what the feature actually
+ * needs — this is a cap, not a compromise. It is also the only video lever that works everywhere:
+ * `videoQuality` caps the RESOLUTION of what the app RECORDS, and only on iOS. A video chosen from the
+ * library arrives at whatever size the phone saved it, on both platforms. Genuinely bounding that would
+ * need transcoding, which nothing in the stack does today.
+ */
+export const MAX_VIDEO_SECONDS = 30;
+
 export interface MediaPickConfig {
   kind: MediaKind;
   title?: string;
@@ -23,7 +36,7 @@ export interface MediaPickConfig {
   allowsEditing?: boolean;
   aspect?: [number, number];
   quality?: number;
-  videoMaxDuration?: number;
+  videoMaxDuration?: number; // silently clamped to MAX_VIDEO_SECONDS; omit unless a surface wants LESS
   cameraType?: ImagePicker.CameraType; // camera-only (e.g. front for a selfie check-in)
   directCamera?: boolean; // skip the chooser and open the camera straight away (library is not offered)
 }
@@ -31,6 +44,31 @@ export interface MediaPickConfig {
 type Resolver = (asset: ImagePicker.ImagePickerAsset | null) => void;
 
 const cameraLabel = (kind: MediaKind): string => (kind === 'images' ? 'Take a photo' : kind === 'videos' ? 'Record a video' : 'Take a photo or video');
+
+/**
+ * Cap a picked photo's pixel dimensions before anyone can upload it.
+ *
+ * This sits here, in the app's single capture path, rather than in each of the seven upload call sites —
+ * `quality` was already being passed at every one of them and did nothing about resolution, because the
+ * picker's quality flag re-encodes the JPEG and keeps all 12 megapixels. Every consumer reads
+ * `asset.uri`, so replacing it is enough; the upload paths set their `contentType` from the fetched
+ * blob's own type rather than from the asset, so the PNG→JPEG re-encode cannot mislabel anything.
+ *
+ * A failure here returns the ORIGINAL asset. Losing an athlete's photo to a storage optimisation would
+ * be a far worse outcome than storing one photo at full size.
+ */
+async function downscalePhoto(asset: ImagePicker.ImagePickerAsset): Promise<ImagePicker.ImagePickerAsset> {
+  if (asset.type === 'video') return asset; // ImageManipulator cannot touch video; duration is its cap
+  const target = downscaleTarget(asset.width, asset.height);
+  if (!target) return asset;
+  try {
+    const rendered = await ImageManipulator.manipulate(asset.uri).resize(target).renderAsync();
+    const out = await rendered.saveAsync({ format: SaveFormat.JPEG, compress: DOWNSCALE_COMPRESS });
+    return { ...asset, uri: out.uri, width: out.width, height: out.height, mimeType: 'image/jpeg', fileSize: undefined };
+  } catch {
+    return asset;
+  }
+}
 
 export function useMediaPicker() {
   const { showToast } = useToast();
@@ -53,7 +91,10 @@ export function useMediaPicker() {
         allowsEditing: config.allowsEditing,
         aspect: config.aspect,
         quality: config.quality,
-        videoMaxDuration: config.videoMaxDuration,
+        // A caller may ask for less than the ceiling but never more — 0 means "no limit" to the picker,
+        // so it has to clamp up to the cap rather than through it.
+        videoMaxDuration: config.videoMaxDuration && config.videoMaxDuration > 0 ? Math.min(config.videoMaxDuration, MAX_VIDEO_SECONDS) : MAX_VIDEO_SECONDS,
+        videoQuality: ImagePicker.UIImagePickerControllerQualityType.IFrame1280x720, // iOS-only; 720p is plenty for a form check
       };
       try {
         if (source === 'camera') {
@@ -65,7 +106,8 @@ export function useMediaPicker() {
           }
         }
         const res = source === 'camera' ? await ImagePicker.launchCameraAsync({ ...opts, cameraType: config.cameraType }) : await ImagePicker.launchImageLibraryAsync(opts);
-        settle(res.canceled ? null : res.assets?.[0] ?? null);
+        const picked = res.canceled ? null : res.assets?.[0] ?? null;
+        settle(picked ? await downscalePhoto(picked) : null);
       } catch {
         showToast(source === 'camera' ? 'Couldn’t open your camera.' : 'Couldn’t open your library.');
         settle(null);
