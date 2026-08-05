@@ -42,7 +42,13 @@ legacy-design-test.zip
 .design-sync/
 
 # --- authoring sources and reference material: nothing in src/ imports them (verified by grep) ---
-Docs/
-Programs/
-design_reference/
-ds-bundle/
+#
+# ⚠ ANCHORED WITH A LEADING SLASH, AND THAT IS NOT COSMETIC. An unanchored `Programs/` matches a
+# directory of that name at ANY depth, and the iOS builder is a Mac — a case-INSENSITIVE filesystem —
+# so it also swallowed `src/domain/training/programs/`, the entire program catalogue. The build died at
+# "Unable to resolve module @/domain/training/programs" while `expo export` on Windows was perfectly
+# green, because the file was only ever missing from the UPLOAD. Anchor every root-level exclusion.
+/Docs/
+/Programs/
+/design_reference/
+/ds-bundle/
