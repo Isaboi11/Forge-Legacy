@@ -59,12 +59,27 @@ test('Program Detail renders a catalog program without reading or writing a row'
   );
 });
 
-test('adoption happens on Start, and only there', () => {
-  const src = read('program/[id].tsx');
+/** Comments stripped: a source guard that a COMMENT can trip is one a comment can also satisfy. */
+const codeOf = (f) =>
+  read(f)
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '');
+
+test('adoption happens where the athlete asked for it, through one call', () => {
+  const src = codeOf('program/[id].tsx');
   const calls = src.match(/adoptCatalogProgram\(/g) ?? [];
   assert.equal(calls.length, 1, `expected exactly one adopt call, found ${calls.length}`);
 
-  // It must sit after the terminal/active branches — i.e. in the branch that starts a program.
+  /*
+   * TWO DOORS, ONE WRITE. Start and "Add to Planned" both take a Forge program — the first begins it,
+   * the second queues it — and both go through `adoptPreview`. Keeping the actual call to exactly one
+   * is what lets this test mean anything: two call sites and "adoption only happens when asked" stops
+   * being checkable. Browsing still adopts nothing, which is the rule that matters.
+   */
+  assert.match(src, /const adoptPreview = async/, 'both doors must adopt through one helper');
+  assert.match(src, /const onAddToPlanned = async/, 'there must be a way to plan a program without starting it');
+
+  // The write must still sit ahead of the start, so starting resumes the row rather than forking one.
   const at = src.indexOf('adoptCatalogProgram(');
   const start = src.indexOf('await startProgram(');
   assert.ok(at > 0 && start > at, 'adoption must precede startProgram inside the Start branch');

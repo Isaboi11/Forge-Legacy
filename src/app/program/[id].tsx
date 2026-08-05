@@ -258,6 +258,9 @@ export default function ProgramDetailScreen() {
   const trained = workouts.length > 0;
   /** Sealed: a permanent legacy record. Not editable, not deletable, never reactivated (Amendment-001). */
   const terminal = state === 'graduated' || state === 'ended_early';
+  /* A copy of something Forge ships, rather than something the athlete wrote. Decides whether the
+     destructive action reads "Remove from Planned" or "Delete Program" — see the action row. */
+  const isForgeProgram = program != null && program.sourceDefinitionId != null;
   const showProgress = state === 'active' || terminal;
 
   const goTrain = async () => {
@@ -297,6 +300,53 @@ export default function ProgramDetailScreen() {
     });
   };
 
+  /**
+   * Take a Forge program as your own — the ONE place a catalog definition becomes a row.
+   *
+   * Both doors call this: "Add to Planned" (queue it for later) and "Start Program" (queue it and
+   * begin). Extracted rather than duplicated so `browse-is-not-adopt.test.mjs` can keep counting a
+   * single `adoptCatalogProgram(` call in this file — two would make "adoption happens where the
+   * athlete asked for it" a claim nobody could check.
+   *
+   * Idempotent: an athlete who already holds this plan resumes that row instead of forking a copy.
+   */
+  const adoptPreview = async () => {
+    const row = await adoptCatalogProgram(
+      previewDef!.id,
+      structureFromDefinition(previewDef!, (k) => equipmentForCatalogKey(k) ?? undefined, (n) => itemByName(n)?.key),
+    );
+    setProgram(row);
+    return row;
+  };
+
+  /**
+   * ADD TO PLANNED — say yes to a program without starting it today.
+   *
+   * Start was the only way to take a Forge program, which made "I want this next" and "I am doing this
+   * now" the same button. An athlete reading Monday's program on a Saturday had to either start it two
+   * days early or remember to come back. The queue already existed — `state: 'future'` is what
+   * `adoptCatalogProgram` writes, and the Workouts tab has had a Planned shelf all along; there was
+   * simply no way to put anything on it deliberately.
+   *
+   * NO max gate here, unlike Start. The gate exists so a percentage-based program has numbers to
+   * prescribe from before it prescribes; a planned program is not prescribing anything yet, and asking
+   * for a tested max to answer "maybe next month" is the wrong moment. Start still asks.
+   *
+   * Not provisional either — see `provisionalRef`. This IS the athlete keeping it.
+   */
+  const onAddToPlanned = async () => {
+    if (busy || program) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await adoptPreview();
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const onPrimary = async () => {
     if (busy) return;
     setBusy(true);
@@ -329,13 +379,9 @@ export default function ProgramDetailScreen() {
          */
         let row = program;
         if (!row) {
-          row = await adoptCatalogProgram(
-            previewDef!.id,
-            structureFromDefinition(previewDef!, (k) => equipmentForCatalogKey(k) ?? undefined, (n) => itemByName(n)?.key),
-          );
+          row = await adoptPreview();
           // Not theirs yet — see `provisionalRef`. Cleared the moment they answer the gate or it starts.
           provisionalRef.current = row.id;
-          setProgram(row);
         }
 
         /*
@@ -418,11 +464,17 @@ export default function ProgramDetailScreen() {
           confirm: 'End Program',
         }
       : sheet === 'remove'
-        ? {
-            title: 'Delete this program?',
-            body: `“${programName}” will be removed from your programs. Every workout you logged against it is kept — deleting a plan never deletes the training you did.`,
-            confirm: 'Delete',
-          }
+        ? isForgeProgram
+          ? {
+              title: 'Remove from your plans?',
+              body: `“${programName}” comes off your list. It stays in Discover, so you can pick it up again whenever you want — and every workout you logged against it is kept.`,
+              confirm: 'Remove',
+            }
+          : {
+              title: 'Delete this program?',
+              body: `“${programName}” is yours — deleting it is permanent, and there is no copy in Discover to take again. Every workout you logged against it is kept.`,
+              confirm: 'Delete',
+            }
         : { title: '', body: '', confirm: '' };
 
   return (
@@ -604,6 +656,14 @@ export default function ProgramDetailScreen() {
         <Button variant="primary" fullWidth disabled={busy} onPress={onPrimary} accessibilityLabel={view.cta}>
           {view.cta}
         </Button>
+        {/* ── ADD TO PLANNED — only on a preview, because it is the only state without a row yet.
+                "I want this next" and "I am doing this now" were the same button; this separates them.
+                Once it is taken the button is gone and the header pill reads Planned. ── */}
+        {!program && previewDef ? (
+          <Button variant="secondary" fullWidth disabled={busy} onPress={() => void onAddToPlanned()} accessibilityLabel="Add this program to your planned list">
+            Add to Planned
+          </Button>
+        ) : null}
         <View style={styles.ctaRow}>
           {/* Edit is gone once the record is sealed — W-3 §7 calls it read-only, and editing the plan
               behind a finished program would rewrite what the athlete actually did. Duplicate stays in
@@ -659,14 +719,33 @@ export default function ProgramDetailScreen() {
               <Text style={styles.secondaryText}>End Program</Text>
             </Pressable>
           ) : null}
-          {/* NOT on a sealed record. Amendment-001 §6: "Graduated and Ended Early programs are permanent
-              legacy records. They may never be deleted." The RLS policy refuses it too since 0104 — this
-              hides an action that would otherwise fail, rather than being the only thing standing in the
-              way. A live program's delete is unchanged; the workouts logged against it survive either way
-              (0018 nulls the link rather than cascading). */}
-          {terminal ? null : (
-            <Pressable onPress={() => setSheet('remove')} accessibilityRole="button" accessibilityLabel="Delete program" style={styles.secondaryBtn}>
-              <Text style={[styles.secondaryText, styles.deleteText]}>Delete Program</Text>
+          {/*
+            ── YOU CANNOT DELETE A FORGE PROGRAM, BECAUSE YOU DO NOT HAVE ONE ──
+
+            What the athlete holds is a COPY: `sourceDefinitionId` points at a definition that ships in
+            the app and stays in Discover whether they keep their copy or not. Calling that "Delete
+            Program" said the wrong thing twice — it implied the program itself was being destroyed, and
+            it made removing a plan feel like a decision that costs something. It is `Remove from
+            Planned`, which is what `viewForState` has returned for this state all along while the screen
+            hardcoded the other word.
+
+            A program the athlete AUTHORED is the other case, and it keeps `Delete Program`, because
+            deleting really is deleting: there is no catalogue entry behind it and no way back.
+
+            NEITHER appears on a sealed record. Amendment-001 §6: "Graduated and Ended Early programs are
+            permanent legacy records. They may never be deleted." The RLS policy refuses it too since
+            0104 — this hides an action that would otherwise fail rather than being the only thing
+            standing in the way. Workouts logged against a removed plan survive either way (0018 nulls
+            the link rather than cascading).
+          */}
+          {terminal || !program ? null : (
+            <Pressable
+              onPress={() => setSheet('remove')}
+              accessibilityRole="button"
+              accessibilityLabel={isForgeProgram ? 'Remove from planned' : 'Delete program'}
+              style={styles.secondaryBtn}
+            >
+              <Text style={[styles.secondaryText, styles.deleteText]}>{isForgeProgram ? 'Remove from Planned' : 'Delete Program'}</Text>
             </Pressable>
           )}
         </View>
