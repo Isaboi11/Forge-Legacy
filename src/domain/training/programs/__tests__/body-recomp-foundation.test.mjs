@@ -57,8 +57,9 @@ test('metadata matches the LOCKED Blueprint exactly', () => {
  * records what was signed still exists beside it.
  *
  * The lock was granted with **three items open and accepted, not resolved** — see Lock-Record.md §What
- * was accepted. The most consequential is the PAS-D9 cool-down violation, which is now LOCKED IN rather
- * than outstanding. That is a materially different thing from a clean lock and the Lock Record says so.
+ * was accepted. One of them (the PAS-D9 cool-down) was resolved hours later by amending the rule rather
+ * than the program; two remain open. That is a materially different thing from a clean lock, and the
+ * Lock Record is where it is written down.
  */
 test('it is LOCKED, and the Lock Record beside it says what was signed', () => {
   assert.equal(p.status, 'LOCKED');
@@ -69,7 +70,29 @@ test('it is LOCKED, and the Lock Record beside it says what was signed', () => {
   const lockRecord = join(HERE, '..', '..', '..', '..', '..', 'Programs', 'Conditioning', 'Body Recomposition Foundation', 'Lock-Record.md');
   const text = readFileSync(lockRecord, 'utf8');
   assert.match(text, /Lock approved by/i, 'the Lock Record carries no approval line');
-  assert.match(text, /cool-down/i, 'the Lock Record must still name the PAS-D9 violation it locked in');
+  // The lock was signed over a recommendation to hold. A record that stops saying so is a clean-looking
+  // lock that never was — so the section naming what was accepted has to survive.
+  assert.match(text, /accepted, not resolved/i, 'the Lock Record no longer says the items were accepted rather than resolved');
+  assert.match(text, /nobody has trained it/i, 'the Lock Record must still name the items left open');
+});
+
+/**
+ * PAS-A3-D4 — a cool-down is never faked by appending a stretch to `main`.
+ *
+ * COOL_DOWN stopped being required on 2026-08-06 (PAS Amendment 003), and this program is the reason the
+ * rule was found unsatisfiable. The amendment removed the requirement; it did NOT license the workaround.
+ * A stretch in `main` is counted by `setCount` as working volume and rendered and logged by W-9 as a
+ * working set, which inflates every volume figure §5 of the Design Record reports.
+ *
+ * The tempting later edit is "the rule is gone, so we can put the stretch back in". This is what stops it.
+ */
+test('no cool-down is smuggled into main as a working set', () => {
+  const COOLDOWN_ISH = /stretch|cool.?down|foam roll|breath/i;
+  for (const [w, b] of everyWorkout()) {
+    for (const ex of lifts(w)) {
+      assert.doesNotMatch(ex.displayName, COOLDOWN_ISH, `${b.label} ${w.code}: "${ex.displayName}" is cool-down work counted as a working set (PAS-A3-D4)`);
+    }
+  }
 });
 
 test('the 32 sessions are really there — 8 weeks covered with no gap or overlap', () => {

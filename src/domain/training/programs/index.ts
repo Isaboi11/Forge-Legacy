@@ -63,23 +63,35 @@
  * `LOSE_FAT + BUILD_MUSCLE`, a Week-7 deload and the 12–24 MAIN-set envelope, and the acceptance test
  * holds the JSON to each of them.
  *
- * The one thing it CANNOT satisfy is PAS-D9's cool-down, because `ProgramWorkout` has no cooldown field.
- * That is Iron & Engine's finding 7, unchanged and now load-bearing for a second program: the gap is
- * recorded in the Design Record rather than papered over by appending a stretch to `main`, where it would
- * be counted as a working set and rendered as one.
+ * It is **LOCKED** (2026-08-06), over its own Design Record §9 recommendation to hold. `Lock-Record.md`
+ * is the signed record and names what was accepted rather than resolved: nobody has trained it, and the
+ * Week-8 rest/rep pairing is unreviewed in practice.
  *
- * ⚠ **It is LOCKED (2026-08-06), and the cool-down violation went in WITH it.** The Design Record's §9
- * recommended holding; the product owner approved anyway, accepting three open items rather than
- * resolving them. That makes this the FIRST LOCKED program that breaks PAS-D9 — before it, the violation
- * only existed in un-locked drafts, where it read as a gap awaiting a fix. The Production Standard and
- * the locked catalog now disagree in writing, and stay that way until `ProgramWorkout` grows a cooldown
- * field with a surface that renders it, or PAS-D9 is amended. `Lock-Record.md` is the signed record.
+ * ── THE COOL-DOWN RULE DIED HERE, AND THAT IS THE USEFUL PART ─────────────────────────────────────────
  *
- * So the third `status` convention in this file is now in play, and they mean different things:
- *   · `LOCKED`                          — Strength Foundation I/II (clean), Body Recomp Foundation (with
- *                                          three accepted open items, named in its Lock Record)
- *   · `AUTHORED — … outstanding`        — ships and is adoptable, nobody has signed it
- * Reading `LOCKED` as "no open items" is the mistake this comment exists to prevent.
+ * `ProgramWorkout` has `warmup` and `main`. There is no third section, so **no in-repo authored program
+ * has ever been able to express a cool-down** — while PAS-D9 required one for every CONDITIONING program.
+ * Iron & Engine recorded that as finding 7 and shipped. This program hit it again and was LOCKED with it
+ * open, which turned a draft's known gap into a written contradiction between the Standard and the
+ * locked catalog — and that is what finally forced the question.
+ *
+ * The product owner amended the rule rather than the programs:
+ * `Docs/Amendments/Program-Authoring-Standard-Amendment-003-Cooldown-Not-Required.md` (LOCKED) makes
+ * COOL_DOWN optional for every category. **No JSON changed. Nothing an athlete sees changed.** Both
+ * programs are now compliant, because a requirement no author can satisfy is not a standard — it just
+ * teaches authors to skim the compliance table, which is how the next real violation gets missed.
+ *
+ * Two things survive the amendment and are worth not re-litigating:
+ *   · **Never fake it in `main`** (PAS-A3-D4). `setCount` counts a stretch there as working volume and
+ *     W-9 renders and logs it as a working set, inflating every volume figure the program reports.
+ *   · **A field alone does not revive the rule** (PAS-A3-D3). It needs a field AND a surface that shows
+ *     it — the same reason `ExercisePrescription` deliberately has no `notes`.
+ *
+ * ── `LOCKED` DOES NOT MEAN "NO OPEN ITEMS" ────────────────────────────────────────────────────────────
+ *
+ *   · `LOCKED`                   — Strength Foundation I/II (clean), Body Recomp Foundation (signed with
+ *                                   two open items still named in its Lock Record)
+ *   · `AUTHORED — … outstanding` — ships and is adoptable, nobody has signed it
  */
 
 import type { ProgramDefinition } from '../schema';

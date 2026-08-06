@@ -477,16 +477,32 @@ Programs are sequential and not calendar-based. The athlete cannot skip sessions
 
 ### 9.1 Requirements by Category (PAS-D9)
 
+> **⚠ AMENDED 2026-08-06 — `Program-Authoring-Standard-Amendment-003-Cooldown-Not-Required.md` (LOCKED).**
+> **COOL_DOWN is no longer required for any category.** `ProgramWorkout` in `src/domain/training/schema.ts`
+> has only `warmup` and `main` — there is no third section, so no in-repo authored program can express a
+> cool-down at all. The requirement had already failed silently twice (Iron & Engine finding 7; Body
+> Recomposition Foundation, locked with the violation open). A requirement no author can satisfy teaches
+> authors to ignore the compliance table, which is what makes the next real violation invisible.
+> **WARM_UP is unchanged and still required.** The table below reflects the amendment.
+
 | Category | WARM_UP Section | COOL_DOWN Section |
 |----------|-----------------|------------------|
 | STRENGTH | **Required** | Optional (recommended for heavy compound programs) |
 | HYPERTROPHY | **Required** | Optional |
-| CONDITIONING | **Required** | **Required** |
-| RUNNING | **Required** (dynamic only; no static stretching pre-run) | **Required** (post-run static stretch) |
-| CYCLING | **Required** (easy cadence ramp + activation) | **Required** (cooldown spin + stretch) |
-| COMBAT_SPORTS | **Required** | **Required** |
+| CONDITIONING | **Required** | Optional *(was Required — PAS-A3-D1)* |
+| RUNNING | **Required** (dynamic only; no static stretching pre-run) | Optional *(was Required — PAS-A3-D1)* |
+| CYCLING | **Required** (easy cadence ramp + activation) | Optional *(was Required — PAS-A3-D1)* |
+| COMBAT_SPORTS | **Required** | Optional *(was Required — PAS-A3-D1)* |
 | FULL_BODY | **Required** | Optional |
 | MOBILITY | None — the program itself is the mobility practice; `MAIN` only | None |
+
+**A cool-down must never be faked by appending a stretch to `MAIN` (PAS-A3-D4).** `setCount` counts it as
+working volume and W-9 renders and logs it as a working set, which inflates every volume figure the
+program reports.
+
+**The requirement returns only with a field AND a surface that renders it (PAS-A3-D3)** — a stored,
+never-displayed field is the failure mode `ExercisePrescription`'s deliberately-absent `notes` field
+already documents.
 
 ### 9.2 Warm-Up Must Use the WARM_UP Section (PAS-D10)
 
@@ -508,6 +524,11 @@ Warm-up exercises for Forge programs must be authored as a proper `WARM_UP` sect
 | Alignment | Warm-up prepares the primary muscle groups trained in MAIN; a squat-focused session warms up hips, ankles, and quads |
 
 ### 9.4 Cooldown Content Guidance
+
+> **⚠ NON-BINDING as of 2026-08-06 — PAS Amendment 003.** No category requires a cool-down, and the
+> in-repo `ProgramWorkout` model cannot hold one. This section is retained deliberately rather than
+> deleted: it is the specification to build against on the day a cooldown field and a surface that
+> renders it both exist (PAS-A3-D3). It binds nobody today.
 
 | Property | Guidance |
 |----------|----------|
@@ -965,7 +986,7 @@ Complete this checklist before exporting CSV and submitting to the import tool. 
 - [ ] Rep range upper bounds are encoded in `notes` using the standard format: `Rep target: [min]–[max]. Add weight when all sets reach [max].`
 - [ ] All slots in deload weeks are tagged with `[DELOAD]` in the slot name per PAS-D8
 - [ ] WARM_UP sections are present where required per PAS-D9, and are authored as proper `WARM_UP` section rows (not notes on MAIN exercises)
-- [ ] COOL_DOWN sections are present where required per PAS-D9
+- [ ] ~~COOL_DOWN sections are present where required per PAS-D9~~ — **removed 2026-08-06, PAS Amendment 003.** No category requires one. If a cool-down IS authored, it must be a real COOL_DOWN section and never a stretch appended to MAIN (PAS-A3-D4)
 - [ ] Volume guardrails (Section 10.1) are satisfied, or a written deviation note exists in the authoring sheet
 - [ ] Estimated session duration falls within the category range in Section 10.2, or a written deviation note explains why
 - [ ] No exercise appears more than once within the same section of the same slot
@@ -1084,7 +1105,7 @@ The Program Authoring Standard does NOT:
 | **PAS-D6 — Progression Models Used in the Launch Catalog** | Models used across the 24 launch programs: (1) Linear Progression — STRENGTH BEGINNER, FULL_BODY, CONDITIONING BEGINNER; (2) Double Progression — HYPERTROPHY all levels, STRENGTH INTERMEDIATE/ADVANCED, CONDITIONING INTERMEDIATE; (3) Block Periodization — STRENGTH ADVANCED, HYPERTROPHY ADVANCED, RUNNING all levels, CYCLING all levels; (4) Volume Accumulation — HYPERTROPHY BEGINNER/INTERMEDIATE (layered), COMBAT_SPORTS; (5) Time-Based Progression — MOBILITY all levels, cardio interval elements. Additional evidence-supported progression models may be used when justified in the program Blueprint and approved through Group C review, without requiring a PAS amendment (PAS-Amendment-002). |
 | **PAS-D7 — Deload Requirements by Program Length** | 4–6 weeks: no mandatory deload; optional at author's discretion. 7–10 weeks: one mandatory deload at the penultimate week, leaving the final week as peak. 11–14 weeks: two mandatory deloads — first at Week 4 (concluding the opening mesocycle), second at the penultimate week, leaving the final week as peak. |
 | **PAS-D8 — Deload Encoding Convention** | Deload weeks are encoded by: (1) including `[DELOAD]` in every slot name for the deload week; (2) reducing `sets` on primary compound exercises by 40–50% compared to the preceding week's equivalent session; (3) maintaining the same `workoutsPerWeek` as all other weeks; (4) using the same exercises as the preceding week's equivalent session (no new exercise introductions in deload weeks). Weight values are held at the previous week's level or reduced 10–15%. |
-| **PAS-D9 — WARM_UP and COOL_DOWN Requirements by Category** | WARM_UP section required: STRENGTH, HYPERTROPHY, CONDITIONING, RUNNING, CYCLING, COMBAT_SPORTS, FULL_BODY. COOL_DOWN section required: CONDITIONING, RUNNING, CYCLING, COMBAT_SPORTS. MOBILITY programs use MAIN only — no WARM_UP or COOL_DOWN sections. WARM_UP and COOL_DOWN are optional (not prohibited) for STRENGTH, HYPERTROPHY, and FULL_BODY cooldowns. |
+| **PAS-D9 — WARM_UP and COOL_DOWN Requirements by Category** | ⚠️ **AMENDED 2026-08-06 by PAS Amendment 003 (LOCKED).** WARM_UP section required: STRENGTH, HYPERTROPHY, CONDITIONING, RUNNING, CYCLING, COMBAT_SPORTS, FULL_BODY — unchanged. **COOL_DOWN is required for NO category** (was: CONDITIONING, RUNNING, CYCLING, COMBAT_SPORTS); it is optional everywhere, because `ProgramWorkout` has no cooldown field and no in-repo authored program can express one. MOBILITY programs use MAIN only. A cool-down must never be faked by appending a stretch to MAIN (PAS-A3-D4); the requirement returns only with a field **and** a surface that renders it (PAS-A3-D3). |
 | **PAS-D10 — Warm-Up Must Use the WARM_UP Section** | Warm-up exercises for Forge programs must be authored as a proper `WARM_UP` section with `ExercisePrescription` rows. Warm-up content must not be encoded as `notes` on MAIN section exercises or as free text in slot names. This ensures W-9 renders section headers correctly, prescription data is complete, and athletes see a clearly structured session layout in-app. |
 | **PAS-D11 — Volume Guardrails by Category** | Permitted MAIN section ranges: STRENGTH 4–6 exercises / 15–25 sets; HYPERTROPHY 5–8 / 18–30; CONDITIONING 4–8 / 12–24; RUNNING 1–3 duration-based; CYCLING 1–3 duration-based; COMBAT_SPORTS 4–7 / 12–20; FULL_BODY 4–7 / 12–20; MOBILITY 5–10 duration-based holds. Programs outside these ranges require a written deviation justification in the authoring sheet, confirmed by the quality reviewer. |
 | **PAS-D12 — Post-MVP RPE Field Amendment (Forward Reference)** | A dedicated `rpe: integer \| null` field on `ExercisePrescription` is the correct long-term solution for intensity prescription in STRENGTH and HYPERTROPHY programs. PAS-D3's `notes` encoding is explicitly temporary. This schema amendment — cascading through the import pipeline, W-9, W-24, and W-19 — is recommended as the first post-launch prescription enhancement. When implemented, MVP programs with RPE in `notes` should be reviewed and migrated via a `v1.1` version update. |

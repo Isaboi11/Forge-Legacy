@@ -22,7 +22,7 @@
 | 4 — Authoring | Authoring Draft | ✅ 5 blocks, **20 workouts / 32 sessions** (8 weeks × 4 days) |
 | 5 — Coaching Audit | Coaching Audit Report | ✅ Design Record §7 — 6 findings |
 | 6 — Revision | Revised Draft | ✅ 1 applied (finding 6), 4 accepted with reasons, **1 open (finding 1)** |
-| 7 — PAS Compliance Review | Compliance Review | ⚠️ Design Record §8 — **10 of 11 met**, cool-down not met (schema gap) |
+| 7 — PAS Compliance Review | Compliance Review | ✅ Design Record §8 — **11 of 11 met** as of 2026-08-06 (was 10 of 11; the cool-down requirement was removed by PAS Amendment 003, not satisfied) |
 | 8 — Lock Recommendation | Recommendation | ⚠️ Design Record §9 recommended **HOLD** — see below |
 | 9 — **Lock Approval** | **PO signature** | ✅ **GRANTED 2026-08-06** |
 
@@ -36,14 +36,21 @@ quietly absorbed its own open items would be worth less than no lock at all.
 
 ### What was accepted
 
-**1. PAS-D9 cool-down — a standing violation, now locked in.**
-Nothing in this program prescribes a cool-down, because `ProgramWorkout` has no cooldown field. This is
-Iron & Engine's finding 7 unchanged, and Body Recomposition Foundation is the **second** CONDITIONING
-program to break the same rule the same way — and the **first LOCKED one**. Before today the violation
-lived only in un-locked drafts, where it read as a known gap awaiting a fix. It is now signed into the
-catalog. Either `ProgramWorkout` grows the field and a surface that renders it, or PAS-D9 is amended to
-say the catalog model cannot express one. **Until one of those happens, the Production Standard and the
-locked catalog disagree in writing.**
+**1. PAS-D9 cool-down — ✅ RESOLVED 2026-08-06, by amending the rule.**
+
+*As accepted at lock:* nothing in this program prescribes a cool-down, because `ProgramWorkout` has no
+cooldown field. Iron & Engine's finding 7 unchanged, and this was the **first LOCKED program** to carry
+it — which is what turned a draft's known gap into a written contradiction between the Production
+Standard and the locked catalog.
+
+*Resolution, same day:* the product owner took the second of the two exits — **the rule changed, not the
+program.** `Program-Authoring-Standard-Amendment-003-Cooldown-Not-Required.md` (LOCKED) sets COOL_DOWN to
+**Optional for every category**, on the grounds that a requirement no author can satisfy is not a
+standard. **No program content changed and nothing an athlete sees is different.** This program is now
+**11 of 11 on PAS compliance**, and the contradiction is closed.
+
+Recorded rather than deleted, because the sequence matters: this program is the reason the rule was
+found, and it was locked in violation for the few hours between.
 
 **2. Nobody has trained it.** No athlete has run a session of this program. The lock certifies the design
 against the Blueprint and the Standard; it certifies nothing about how it feels in week 6.

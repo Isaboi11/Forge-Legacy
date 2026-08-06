@@ -148,7 +148,7 @@ Reviewed as an independent coach would. Findings, and what was changed:
 | 4 | **`4 × 6` pull-ups is a hard opening prescription.** | The band-assisted substitution was added because of this finding. |
 | 5 | **An earlier draft put the finisher before the accessories.** | Corrected: every session runs Primary → Secondary → Development → Core/Carry → Engine, matching the Standard's session flow. A finisher before accessory work makes the accessories junk volume. |
 | 6 | **Day C and day F are shorter than the 45-minute target if the accessories are thin.** | Fixed by adding a fourth item to each (face pulls on C, plank on F) — both now land in the 45–55 minute band rather than reading as half-sessions. |
-| 7 | **Nothing prescribes a cool-down.** | Not fixed — the `ProgramWorkout` schema has no cooldown field and inventing one for a single program is worse than the omission. Recorded as an open gap; day F's steady erg partly serves the purpose. |
+| 7 | **Nothing prescribes a cool-down.** | ✅ **CLOSED 2026-08-06 — the rule changed.** Originally: not fixed, because the `ProgramWorkout` schema has no cooldown field and inventing one for a single program is worse than the omission. That reasoning held, and a second program (Body Recomposition Foundation) hit it and was locked in violation, which forced the question. **PAS Amendment 003** makes COOL_DOWN optional for every category. Day F's steady erg still partly serves the purpose. |
 
 ## 6. Phase 6 — Revision
 
@@ -180,8 +180,10 @@ The audit above is the re-audit at six days, not the four-day one carried forwar
 model as far as it goes — the first shipped program with ladders, circuits, AMRAPs, timed work and cardio
 bouts. Primaries are stable and honestly progressive.
 
-**Weaknesses.** No cool-down (schema gap). No coaching notes (schema gap). Equipment-heavy, so it is
-unavailable to home athletes. No successor program.
+**Weaknesses.** ~~No cool-down (schema gap).~~ — no longer a compliance weakness as of 2026-08-06;
+PAS Amendment 003 makes COOL_DOWN optional for every category, since no authored program can express
+one. No coaching notes (schema gap). Equipment-heavy, so it is unavailable to home athletes. No
+successor program.
 
 **Risks.** Finding 2 — four finishers a week — is the adherence risk, and it is the thing to watch in
 testing. If athletes drop day D, the finisher count is why.

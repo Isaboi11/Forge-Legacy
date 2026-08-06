@@ -159,7 +159,7 @@ read as a target already met the moment the athlete starts.
 
 | # | Finding | Resolution |
 |---|---|---|
-| 1 | **Nothing prescribes a cool-down**, which PAS-D9 requires for CONDITIONING. | **Not fixed.** `ProgramWorkout` has no cooldown field — Iron & Engine finding 7, unchanged. Recorded as an open gap rather than papered over by appending a stretch to `main`, where it would be counted as a working set and rendered as one. The steady walk that closes days B and D partly serves the purpose; days A and C do not. **This is the program's one known standard violation.** |
+| 1 | **Nothing prescribes a cool-down**, which PAS-D9 required for CONDITIONING. | ✅ **CLOSED 2026-08-06 — the rule changed, not the program.** `ProgramWorkout` has no cooldown field, so no authored program could satisfy this; **PAS Amendment 003** makes COOL_DOWN optional for every category. Refusing to fake it by appending a stretch to `main` — where it would be counted and logged as a working set — was the right call and is now written into the Standard as PAS-A3-D4. The steady walk closing days B and D still partly serves the purpose. |
 | 2 | **Week 8 is the hardest week, and it is the last week.** No taper. | Deliberate. This block does not test anything, so there is nothing to arrive fresh for. The peak is the point: the athlete should finish knowing they did more in week 8 than in week 1. The successor opens at a lower dose. |
 | 3 | **Machine-heavy, so it is unavailable to home athletes.** | Accepted — environment is GYM, fixed by the Blueprint. Home Conditioning (Sort 21) is the home answer and is unbuilt. |
 | 4 | **Rest drops to 60 s in Week 8 while reps rise to 15.** Compounding difficulty on two axes at once. | Accepted and flagged as the thing to watch in testing. It is one week, it follows a deload, and the loads are machine-based and self-selected. If the peak proves unrealistic, shortening rest is the change to reverse first. |
@@ -175,7 +175,7 @@ read as a target already met the moment the athlete starts.
 | PAS-D1 name length ≤ 60 | ✅ 29 |
 | PAS-D3 no RPE at BEGINNER | ✅ none |
 | PAS-D7/D8 one deload, frequency held | ✅ Week 7, still 4 sessions |
-| PAS-D9 WARM_UP + COOL_DOWN | ⚠️ warm-up ✅ · **cool-down ❌ — schema gap, finding 1** |
+| PAS-D9 WARM_UP (+ COOL_DOWN, until 2026-08-06) | ✅ warm-up ✅ · cool-down **no longer required** — PAS Amendment 003, finding 1 |
 | PAS-D11 4–8 exercises / 12–24 MAIN sets | ✅ 5–7 / 12–18 |
 | PAS §7.2 permitted progression model | ✅ Volume Accumulation |
 | PAS §10.2 30–60 min sessions | ✅ ~35–55 incl. finisher |
@@ -189,15 +189,20 @@ read as a target already met the moment the athlete starts.
 ## 9. Lock recommendation
 
 > **⚠ SUPERSEDED 2026-08-06 — LOCK APPROVED, THIS RECOMMENDATION OVERRIDDEN.**
-> The product owner granted Lock Approval with all three items below still open. They are **accepted,
-> not resolved.** `status` is now `LOCKED`; the record of what was signed and what was carried into the
-> lock is `Lock-Record.md`. Item 3 is the consequential one: **the PAS-D9 cool-down violation is now
-> locked into the catalog rather than pending in a draft**, so the Production Standard and the locked
-> catalog disagree in writing until the schema grows a cooldown field or PAS-D9 is amended.
+> The product owner granted Lock Approval with all three items below still open. `status` is now
+> `LOCKED`; `Lock-Record.md` is the record of what was signed.
+>
+> **Item 3 was then resolved the same day, and not by fixing the program.** Locking it made the PAS-D9
+> cool-down violation a written contradiction between the Standard and the locked catalog — so the
+> product owner amended the rule. `Program-Authoring-Standard-Amendment-003-Cooldown-Not-Required.md`
+> (LOCKED) makes COOL_DOWN optional for every category, on the grounds that `ProgramWorkout` has no
+> field for one and a requirement no author can satisfy is not a standard. **Items 1 and 2 remain open:
+> nobody has trained it, and the Week-8 rest/rep pairing is unreviewed in practice.**
 >
 > This section is left standing rather than rewritten. A recommendation that gets overridden is part of
 > the program's history, and editing it to agree with the outcome would erase the fact that the question
-> was asked.
+> was asked — and in this case the override is what surfaced a rule that had been quietly unsatisfiable
+> since Iron & Engine.
 
 **Recommend: hold.** Stage 2 is complete and the machine-checkable half of the Production Standard is
 green, but three things are outstanding and none of them is a document's to settle:
