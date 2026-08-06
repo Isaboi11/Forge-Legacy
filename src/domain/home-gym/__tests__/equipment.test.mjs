@@ -7,6 +7,8 @@ import {
   EXERCISE_GEAR,
   HOME_GYM_EQUIPMENT,
   HOME_GYM_GROUPS,
+  NEEDS_BENCH,
+  NEEDS_ELEVATION,
   ownedSummary,
   programCoverage,
   QUICK_PICK_IDS,
@@ -221,4 +223,87 @@ test('the commit bar counts honestly and pluralises', () => {
   assert.equal(ownedSummary(0), 'Nothing added yet — bodyweight only');
   assert.equal(ownedSummary(1), '1 item in your gym');
   assert.equal(ownedSummary(7), '7 items in your gym');
+});
+
+// ── the bench, and the AND it needed (2026-08-06) ───────────────────────────
+
+/**
+ * `bench` sat in the inventory AND in the ten-item onboarding quick-pick while unlocking nothing, which
+ * is worse than not offering it: the athlete ticks a box and the app ignores them. Authoring
+ * `close-quarters-6day` — dumbbells-only, twelve prescriptions needing a bench — is what forced it.
+ */
+test('every bench/elevation id is a real, visible catalogue exercise', () => {
+  const known = new Set(CATALOG.map((e) => e.id));
+  const ghosts = [...NEEDS_BENCH, ...NEEDS_ELEVATION].filter((id) => !known.has(id));
+  assert.deepEqual(ghosts, [], 'these gate an exercise that does not exist');
+});
+
+test('the two sets are disjoint — a rear foot does not care which surface it is', () => {
+  const both = [...NEEDS_BENCH].filter((id) => NEEDS_ELEVATION.has(id));
+  assert.deepEqual(both, []);
+});
+
+/**
+ * THE NARROWING THAT MADE THE PASS TRACTABLE. A chest press machine, a preacher station and a seated row
+ * have the pad built in — gating them behind a separate bench would tell a machine owner they cannot use
+ * their own machine, and it is what turns this from "~90 pressing movements" into a checkable list.
+ */
+test('no machine exercise is gated behind a bench — a machine brings its own seat', () => {
+  const equipById = new Map(CATALOG.map((e) => [e.id, e.equipmentId]));
+  const machine = [...NEEDS_BENCH, ...NEEDS_ELEVATION].filter((id) =>
+    ['selectorized_machine', 'smith_machine'].includes(equipById.get(id)),
+  );
+  assert.deepEqual(machine, []);
+});
+
+test('a bench requirement is AND, not OR — the thing a bare list could not say', () => {
+  const press = ex('dumbbell-bench-press', 'dumbbell');
+  assert.equal(canDoExercise(press, ['dumbbells']), false, 'dumbbells alone is not enough');
+  // The reason the shape had to change: ['dumbbells','bench'] as an OR would pass this.
+  assert.equal(canDoExercise(press, ['bench']), false, 'a bench with nothing to press is not enough');
+  assert.equal(canDoExercise(press, ['dumbbells', 'bench']), true);
+});
+
+test('the floor press is still trainable with dumbbells alone — it is the movement that exists for that', () => {
+  assert.equal(canDoExercise(ex('dumbbell-floor-press', 'dumbbell'), ['dumbbells']), true);
+  assert.equal(canDoExercise(ex('dumbbell-glute-bridge', 'dumbbell'), ['dumbbells']), true);
+});
+
+test('elevation takes a bench OR a plyo box, and needs one of them', () => {
+  const split = ex('dumbbell-bulgarian-split-squat', 'dumbbell');
+  assert.equal(canDoExercise(split, ['dumbbells', 'plyobox']), true);
+  assert.equal(canDoExercise(split, ['dumbbells', 'bench']), true);
+  assert.equal(canDoExercise(split, ['dumbbells']), false);
+});
+
+/**
+ * A bodyweight movement that only needs a bench composes to `all: [[], ['bench']]`. The empty group is
+ * the floor requirement and must read as satisfied — if it ever reads as "impossible", every bodyweight
+ * exercise in both sets silently becomes untrainable no matter what the athlete owns.
+ */
+test('an empty requirement group is satisfied, not impossible', () => {
+  assert.equal(canDoExercise(ex('bench-dip', 'bodyweight'), ['bench']), true);
+  assert.equal(canDoExercise(ex('bench-dip', 'bodyweight'), []), false);
+});
+
+test('nothing else changed — the pre-existing OR requirements behave exactly as before', () => {
+  assert.equal(canDoExercise(ex('push-up', 'bodyweight'), []), true, 'bodyweight needs nothing');
+  assert.equal(canDoExercise(ex('pull-up', 'bodyweight'), []), false);
+  assert.equal(canDoExercise(ex('pull-up', 'bodyweight'), ['pullup']), true);
+  assert.equal(canDoExercise(ex('pull-up', 'bodyweight'), ['rings']), false, 'a bar, not rings');
+  assert.equal(canDoExercise(ex('machine-chest-press', 'selectorized_machine'), ['legpress']), true);
+  // requirementFor still returns a bare array for anything outside the two new sets.
+  assert.ok(Array.isArray(requirementFor(ex('dumbbell-curl', 'dumbbell'))));
+});
+
+/**
+ * The athlete who never opens the editor is the case this whole system must not punish. `canDoExercise`
+ * is only ever consulted once a profile EXISTS (`hub-core.passFilters` falls back to the generic
+ * environment while it is null), so an empty list means "I set up a gym and own nothing" — bodyweight —
+ * and is a different answer from never having been asked.
+ */
+test('owning nothing leaves every no-gear movement trainable', () => {
+  const free = CATALOG.filter((e) => canDoExercise(ex(e.id, e.equipmentId), []));
+  assert.ok(free.length > 100, `only ${free.length} exercises survive an empty gym`);
+  assert.ok(free.every((e) => !NEEDS_BENCH.has(e.id)), 'a bench movement survived an empty gym');
 });

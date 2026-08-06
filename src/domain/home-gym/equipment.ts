@@ -25,9 +25,30 @@
  * editor deliberately doesn't offer — those exercises are simply never claimed as trainable at home,
  * which is the honest answer rather than a false yes.
  *
- * KNOWN LOOSENESS, inherited from the design on purpose: `Bench` unlocks nothing. Pressing movements
- * don't require it, so a bench-less gym still sees Bench Press. Tightening that needs a per-exercise
- * pass over ~90 pressing movements and a product call, not a regex on "bench|incline|seated".
+ * ══ THE BENCH, AND WHY THIS FILE NEEDED AN "AND" (2026-08-06) ══
+ *
+ * This header used to read: "KNOWN LOOSENESS, inherited from the design on purpose: `Bench` unlocks
+ * nothing. Pressing movements don't require it, so a bench-less gym still sees Bench Press. Tightening
+ * that needs a per-exercise pass over ~90 pressing movements and a product call, not a regex on
+ * bench|incline|seated."
+ *
+ * That is what happened. The product call came from authoring `close-quarters-6day` — a dumbbells-only
+ * home program in which TWELVE prescriptions need a bench, every one of which passed every home check
+ * the app had. `bench` was already in the inventory AND in the ten-item onboarding quick-pick, so an
+ * athlete could tick it and have it change nothing, which is worse than not offering it.
+ *
+ * **A press needs dumbbells AND a bench, and OR could not say that.** `['dumbbells', 'bench']` reads as
+ * *either*, so a bench-owner with no dumbbells would still be shown Dumbbell Bench Press. Hence
+ * `GearRequirement`: a plain array is unchanged (any-of), and `{ all: [...] }` is every group satisfied
+ * by any one of its members. Every pre-existing entry stays a plain array.
+ *
+ * The bench is composed onto the LOAD requirement rather than written into each entry, so `EQUIP_UNLOCK`
+ * stays the single source of truth for what a dumbbell exercise needs and the two cannot drift.
+ *
+ * THE NARROWING THAT MADE THE PASS TRACTABLE: a machine brings its own seat. A chest press machine, a
+ * preacher curl station and a seated row all have the pad built in, so `bench` is only ever composed
+ * onto FREE-WEIGHT and BODYWEIGHT movements. That is what takes it from "~90 pressing movements" to the
+ * two hand-checked sets below.
  */
 
 export interface HomeGymItem {
@@ -219,16 +240,85 @@ export const EXERCISE_GEAR: Record<string, readonly string[]> = {
   'bodyweight-row': ['rack', 'pullup', 'trx', 'rings'],
 };
 
-/** What an exercise needs: the per-exercise override if there is one, else its equipment's unlock. */
-export function requirementFor(ex: { key: string; equipId: string }): readonly string[] {
-  const override = EXERCISE_GEAR[ex.key];
-  if (override) return override;
-  return EQUIP_UNLOCK[ex.equipId] ?? [];
+/**
+ * You must LIE ON or SIT ON a bench to do these, and nothing else in the inventory serves.
+ *
+ * Hand-checked, because a regex cannot do it in either direction. `dumbbell-chest-fly` names no bench
+ * and needs one; `dumbbell-floor-press` is the movement that exists precisely because you have not got
+ * one. Machine equivalents are absent by construction — see the header.
+ */
+export const NEEDS_BENCH: ReadonlySet<string> = new Set([
+  // Pressing, on your back or on an incline
+  'barbell-bench-press', 'barbell-close-grip-bench-press', 'barbell-decline-bench-press',
+  'barbell-incline-bench-press', 'dumbbell-bench-press', 'dumbbell-decline-bench-press',
+  'dumbbell-incline-bench-press', 'dumbbell-neutral-grip-bench-press',
+  'alternating-dumbbell-bench-press', 'single-arm-dumbbell-bench-press',
+  'single-arm-dumbbell-incline-press', 'dumbbell-squeeze-press', 'dumbbell-jm-press',
+  'dumbbell-tate-press',
+  // Seated pressing — a seat with a back, not a stool
+  'barbell-seated-overhead-press', 'seated-dumbbell-shoulder-press',
+  // Flys. The flat one names no bench and needs one, which is the whole argument against a regex.
+  'dumbbell-chest-fly', 'dumbbell-decline-chest-fly', 'dumbbell-incline-chest-fly',
+  'incline-dumbbell-rear-delt-fly',
+  // Pullovers
+  'barbell-pullover', 'dumbbell-pullover', 'kettlebell-pullover', 'dumbbell-pullover-row',
+  // Rows that brace the torso on a bench
+  'dumbbell-chest-supported-row', 'dumbbell-incline-bench-row', 'barbell-seal-row', 'dumbbell-seal-row',
+  // Triceps on your back
+  'barbell-skull-crusher', 'dumbbell-skull-crusher',
+  // Curls braced against a pad or an incline
+  'dumbbell-incline-curl', 'dumbbell-spider-curl', 'barbell-preacher-curl', 'dumbbell-preacher-curl',
+  // Shoulders on the bench
+  'barbell-hip-thrust', 'dumbbell-hip-thrust', 'band-hip-thrust',
+  // Seated barbell work
+  'barbell-seated-good-morning',
+  // Bodyweight and mobility that name the bench as the implement
+  'bench-dip', 'lat-stretch-on-bench', 'thoracic-extension-on-bench',
+]);
+
+/**
+ * These need something sturdy and raised — a bench OR a plyo box, either will do.
+ *
+ * Kept separate from `NEEDS_BENCH` because a rear foot or a lead foot does not care which it is, and
+ * collapsing the two would tell a box owner they cannot do a split squat.
+ *
+ * NOT here, deliberately: incline and decline PUSH-UPS. They want an elevated surface too, but a stair,
+ * a sofa or a kitchen counter all serve, and gating a bodyweight push-up behind gym furniture buys
+ * accuracy nobody asked for at the cost of the most available exercise in the catalogue.
+ */
+export const NEEDS_ELEVATION: ReadonlySet<string> = new Set([
+  'bulgarian-split-squat', 'barbell-bulgarian-split-squat', 'dumbbell-bulgarian-split-squat',
+  'kettlebell-bulgarian-split-squat', 'cable-bulgarian-split-squat',
+  'step-up', 'barbell-step-up', 'dumbbell-step-up', 'kettlebell-step-up', 'cable-step-up',
+  'dumbbell-box-step-down', 'box-squat-to-bench',
+]);
+
+/**
+ * ANY ONE of these ids unlocks it (OR), or EVERY group in `all` must be satisfied by any one of its
+ * members (AND-of-ORs). A bare array is the original shape and still means exactly what it did.
+ */
+export type GearRequirement = readonly string[] | { readonly all: readonly (readonly string[])[] };
+
+const isAllOf = (r: GearRequirement): r is { readonly all: readonly (readonly string[])[] } =>
+  !Array.isArray(r);
+
+/**
+ * What an exercise needs: the per-exercise override if there is one, else its equipment's unlock —
+ * and then whatever it needs to lie on or step onto, composed on top.
+ */
+export function requirementFor(ex: { key: string; equipId: string }): GearRequirement {
+  const base = EXERCISE_GEAR[ex.key] ?? EQUIP_UNLOCK[ex.equipId] ?? [];
+  if (NEEDS_BENCH.has(ex.key)) return { all: [base, ['bench']] };
+  if (NEEDS_ELEVATION.has(ex.key)) return { all: [base, ['bench', 'plyobox']] };
+  return base;
 }
 
 /** Can this exercise be trained with what the athlete owns? Nothing required = always yes. */
 export function canDoExercise(ex: { key: string; equipId: string }, owned: readonly string[]): boolean {
   const req = requirementFor(ex);
+  // An empty group is satisfied by definition — a bodyweight movement that only needs a bench still
+  // resolves to `all: [[], ['bench']]`, and the floor half of that must not read as "impossible".
+  if (isAllOf(req)) return req.all.every((g) => g.length === 0 || g.some((id) => owned.includes(id)));
   if (req.length === 0) return true;
   return req.some((id) => owned.includes(id));
 }
