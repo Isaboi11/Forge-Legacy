@@ -549,22 +549,39 @@ into an athlete's history. Full Frame's 105 ranges came back.
 week 9 (primaries cut exactly 40%), peak week 10 at 29–30. The first program in the catalog that can
 honestly say "4 × 6–10".
 
-**⚠ The Blueprint's own balance table does not close, under either convention — recorded, not smoothed.**
-§4 sets weekly per-muscle bands and §1 calls balance the program's identity, but never says how to count
-a set. Counting **direct only**, arms land at 3 against a band of 8–14 — unreachable without four
-isolation exercises per upper day, which breaks the 8-exercise ceiling. Counting **direct + indirect at
-half**, shoulders land at 26.5 against 10–16, because every press feeds the front delt and *nothing*
-feeds the lateral except direct work. **8 of 10 bands are met** on the second reading, which the program
-is authored to; both are tabulated in Design Record §5, and the two that miss are asserted as missing so
-the finding cannot go stale. Feed back to Stage 1: §4 needs to state its convention.
+**⚠ Then the balance table turned out to be hiding an untrained muscle — PAS Amendment 004.**
+§4 sets weekly per-muscle bands and §1 calls balance the program's identity, but the Standard **never
+said what counts as a set for a muscle.** A 5-set bench press is 5 chest sets — and 5 triceps sets, or 0?
+The two readings disagreed on **six of twelve** groups, so the band could be asserted but never checked.
+**Five Blueprints carry such a table**, making it a Standard-level gap rather than one document's.
+
+**What the gap was hiding is the point.** The Blueprint's single *"Shoulders 10–16"* row is
+unsatisfiable by construction — pressing feeds the front delt whatever the program does, and **nothing
+but direct work feeds the lateral or the rear.** It read a healthy **26 while the rear delt sat at 5**:
+an actually under-trained muscle, invisible behind a total that looked fine. The first draft had dropped
+direct rear-delt work while balancing everything else, and the combined row is why that passed. The
+Blueprint had also **narrowed PAS's own 10–20** to 10–16/12–18 with no rationale — the program failed
+those numbers, not the Standard's.
+
+**Amendment 004** (LOCKED, merged into §11.2 and the Blueprint's §4 in the same pass): a set counts
+**1.0 for PRIMARY, 0.5 for each SECONDARY** (PAS-A4-D1); the **delts are three groups, never one row**
+(D2); the band applies to **working blocks**, since an accumulation ramp-in and a deload are *supposed*
+to sit below it (D3); and **10–20 governs** — a Blueprint may not narrow it without a stated reason (D4).
+Half-weighting was chosen because it is the only one of the three candidates under which a normal,
+balanced 4-day program lands in band on every group, which is the test of a counting rule. The four other
+Blueprints with per-muscle tables are **flagged, not edited** — Stage-1 docs for unbuilt programs.
+
+**The program was rebalanced with it:** direct rear-delt work on both upper days, isolation raised in
+weeks 3–4 and week 10. **All twelve major groups now sit inside 10–20 across weeks 3–10**, asserted — and
+a second test asserts the ramp *is* a ramp, so "below the band" cannot quietly become an excuse.
 
 **A test caught a real thing about the program:** the deload check read `main[0]` as the primary and
 reported Day D at a 25% cut. Day D opens on the hack squat at a *secondary* dose and carries its primary
 load on the hip thrust behind it — Blueprint §3 fixes the order, not the dose. The test was measuring
 position and calling it weight.
 
-12 acceptance tests here, 10 on the range, **all mutation-verified**. tsc 0 · lint at baseline ·
-**1135 of 1135**. Catalog: **11 definitions, 4 locked, 4 of 24 planned.**
+14 acceptance tests here, 10 on the range, **all mutation-verified**. tsc 0 · lint at baseline ·
+**1137 of 1137**. Catalog: **11 definitions, 4 locked, 4 of 24 planned.**
 
 ### 2. Close Quarters (6-Day) — the first program that claims to work at home, and the gate that cannot see a bench (2026-08-06, CONTENT + test — no migration)
 
