@@ -111,6 +111,23 @@
  * **Neither is `Muscle Building Intermediate` (Sort 6), which remains UNBUILT.** That Blueprint is LOCKED
  * at 10 weeks × **4** sessions; authoring a 5-day under that name would break a locked Blueprint to match
  * a PDF, and a locked Blueprint outranks a PDF. Both of these ship outside the locked 24.
+ *
+ * ── CLOSE QUARTERS IS THE FIRST PROGRAM THAT CLAIMS TO WORK AT HOME ───────────────────────────────────
+ *
+ * Every one of its 40 prescriptions is `equipmentId: 'dumbbell'`, held to `HOME_EQUIPMENT` from
+ * `starter-templates/core.ts` — the product's existing, deliberately narrow answer to what a home session
+ * may assume, which excludes the barbell that `equipment.json` calls home equipment.
+ *
+ * ⚠ **The equipment gate cannot see a bench, and twelve of these need one.** `dumbbell-bench-press` is
+ * tagged `dumbbell` because the field records what you LOAD, not what you lie on — so a third of this
+ * program passes a home check while being impossible with dumbbells alone. The product owner chose to
+ * keep the bench and state it, so the requirement lives in `environment`, which is the only place the
+ * athlete is told. **A test asserts that string still contains the word "bench":** shortened to "Home",
+ * the program silently starts claiming a spare room is enough.
+ *
+ * It is also the first program that can honestly set `structure: 'ppl'`. Full Frame and Frame by Frame
+ * both omit `structure`, correctly — five days including Upper and Lower is not PPL, and a body-part
+ * split is not either.
  */
 
 import type { ProgramDefinition } from '../schema';
@@ -123,6 +140,7 @@ import deadliftMeasure from './deadlift-measure-intermediate.json';
 import fullFrame from './full-frame-5day.json';
 import bodyRecompFoundation from './body-recomposition-foundation.json';
 import frameByFrame from './frame-by-frame-5day.json';
+import closeQuarters from './close-quarters-6day.json';
 
 // JSON import types widen literals (e.g. theme:string); the validator test enforces the
 // real ProgramDefinition contract, so a single narrowing cast here is safe.
@@ -136,6 +154,7 @@ const DEFINITIONS: readonly ProgramDefinition[] = [
   fullFrame,
   bodyRecompFoundation,
   frameByFrame,
+  closeQuarters,
 ] as unknown as ProgramDefinition[];
 
 /** All converted, PO-approved program definitions. */

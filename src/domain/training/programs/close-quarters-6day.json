@@ -1,0 +1,757 @@
+{
+  "id": "close-quarters-6day",
+  "name": "Close Quarters (6-Day)",
+  "family": "Muscle Building",
+  "difficulty": "Intermediate",
+  "durationWeeks": 12,
+  "frequencyPerWeek": 6,
+  "environment": "Home — dumbbells and an adjustable bench",
+  "description": "Twelve weeks of push, pull and legs twice a week, built entirely from a pair of dumbbells and a bench. Nothing here needs a rack, a cable or a machine, so it runs in a spare room, a garage or a hotel gym that only got the basics right. Six days is what makes the volume work without any one session running long. Weeks 4 and 11 back off; week 12 is the most work in the block.",
+  "goals": ["Build muscle with dumbbells alone, wherever you train", "Train every muscle group twice a week for twelve weeks", "Hold six short sessions instead of four long ones", "Progress by adding reps and sets, not by buying heavier weights", "Come back off two deload weeks stronger than you went into them"],
+  "successorName": null,
+  "theme": "hypertrophy",
+  "structure": "ppl",
+  "status": "AUTHORED — original program, PO Lock Approval outstanding",
+  "source": "forge",
+  "sourceFile": "Programs/Hypertrophy/Close Quarters/Design-Record.md",
+  "blocks": [
+    {
+      "label": "Weeks 1–3",
+      "weekStart": 1,
+      "weekEnd": 3,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Push — Chest Lead",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-bench-press", "displayName": "Dumbbell Bench Press", "sets": 4, "reps": 8, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-decline-bench-press", "displayName": "Dumbbell Decline Bench Press", "sets": 3, "reps": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-floor-press", "displayName": "Dumbbell Floor Press", "sets": 3, "reps": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "seated-dumbbell-shoulder-press", "displayName": "Seated Dumbbell Shoulder Press", "sets": 3, "reps": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "two-hand-dumbbell-overhead-triceps-extension", "displayName": "Two-Hand Dumbbell Overhead Triceps Extension", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Pull — Row Lead",
+          "modality": "strength",
+          "split": "pull",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" },
+            { "name": "Bird Dog", "detail": "8 each side", "text": "Bird Dog — 8 each side" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-bent-over-row", "displayName": "Dumbbell Bent-Over Row", "sets": 4, "reps": 8, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-chest-supported-row", "displayName": "Dumbbell Chest-Supported Row", "sets": 3, "reps": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-pullover", "displayName": "Dumbbell Pullover", "sets": 3, "reps": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-rear-delt-fly", "displayName": "Dumbbell Rear Delt Fly", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-biceps-curl", "displayName": "Dumbbell Biceps Curl", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-zottman-curl", "displayName": "Dumbbell Zottman Curl", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Legs — Squat Lead",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Squat", "detail": "12 reps", "text": "Bodyweight Squat — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-goblet-squat", "displayName": "Dumbbell Goblet Squat", "sets": 4, "reps": 8, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-front-squat", "displayName": "Dumbbell Front Squat", "sets": 3, "reps": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-bulgarian-split-squat", "displayName": "Dumbbell Bulgarian Split Squat", "sets": 3, "reps": 10, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "dumbbell-hip-thrust", "displayName": "Dumbbell Hip Thrust", "sets": 3, "reps": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-calf-raise", "displayName": "Dumbbell Calf Raise", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 3, "reps": 10, "unit": "reps", "per": "leg", "restSec": 120 }
+          ]
+        },
+        {
+          "code": "D",
+          "name": "Push — Shoulder Lead",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-incline-bench-press", "displayName": "Dumbbell Incline Bench Press", "sets": 4, "reps": 8, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-overhead-press", "displayName": "Dumbbell Overhead Press", "sets": 3, "reps": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-arnold-press", "displayName": "Dumbbell Arnold Press", "sets": 3, "reps": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-incline-chest-fly", "displayName": "Dumbbell Incline Chest Fly", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-skull-crusher", "displayName": "Dumbbell Skull Crusher", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "E",
+          "name": "Pull — Unilateral Lead",
+          "modality": "strength",
+          "split": "pull",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" },
+            { "name": "Bird Dog", "detail": "8 each side", "text": "Bird Dog — 8 each side" }
+          ],
+          "main": [
+            { "catalogKey": "single-arm-dumbbell-row", "displayName": "Single-Arm Dumbbell Row", "sets": 4, "reps": 8, "unit": "reps", "per": "side", "restSec": 150 },
+            { "catalogKey": "dumbbell-incline-bench-row", "displayName": "Dumbbell Incline Bench Row", "sets": 3, "reps": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-pullover", "displayName": "Dumbbell Pullover", "sets": 3, "reps": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-hammer-curl", "displayName": "Dumbbell Hammer Curl", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-reverse-curl", "displayName": "Dumbbell Reverse Curl", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "incline-dumbbell-rear-delt-fly", "displayName": "Incline Dumbbell Rear Delt Fly", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "F",
+          "name": "Legs — Hinge Lead",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Squat", "detail": "12 reps", "text": "Bodyweight Squat — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-romanian-deadlift", "displayName": "Dumbbell Romanian Deadlift", "sets": 4, "reps": 8, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-sumo-deadlift", "displayName": "Dumbbell Sumo Deadlift", "sets": 3, "reps": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-split-squat", "displayName": "Dumbbell Split Squat", "sets": 3, "reps": 10, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "dumbbell-glute-bridge", "displayName": "Dumbbell Glute Bridge", "sets": 3, "reps": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "single-leg-dumbbell-romanian-deadlift", "displayName": "Single-Leg Dumbbell Romanian Deadlift", "sets": 3, "reps": 10, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "single-leg-dumbbell-calf-raise", "displayName": "Single-Leg Dumbbell Calf Raise", "sets": 3, "reps": 10, "unit": "reps", "per": "leg", "restSec": 60 }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Week 4 — Deload",
+      "weekStart": 4,
+      "weekEnd": 4,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Push — Chest Lead",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-bench-press", "displayName": "Dumbbell Bench Press", "sets": 3, "reps": 6, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-decline-bench-press", "displayName": "Dumbbell Decline Bench Press", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-floor-press", "displayName": "Dumbbell Floor Press", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "seated-dumbbell-shoulder-press", "displayName": "Seated Dumbbell Shoulder Press", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "two-hand-dumbbell-overhead-triceps-extension", "displayName": "Two-Hand Dumbbell Overhead Triceps Extension", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Pull — Row Lead",
+          "modality": "strength",
+          "split": "pull",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" },
+            { "name": "Bird Dog", "detail": "8 each side", "text": "Bird Dog — 8 each side" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-bent-over-row", "displayName": "Dumbbell Bent-Over Row", "sets": 3, "reps": 6, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-chest-supported-row", "displayName": "Dumbbell Chest-Supported Row", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-pullover", "displayName": "Dumbbell Pullover", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-rear-delt-fly", "displayName": "Dumbbell Rear Delt Fly", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-biceps-curl", "displayName": "Dumbbell Biceps Curl", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-zottman-curl", "displayName": "Dumbbell Zottman Curl", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Legs — Squat Lead",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Squat", "detail": "12 reps", "text": "Bodyweight Squat — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-goblet-squat", "displayName": "Dumbbell Goblet Squat", "sets": 3, "reps": 6, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-front-squat", "displayName": "Dumbbell Front Squat", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-bulgarian-split-squat", "displayName": "Dumbbell Bulgarian Split Squat", "sets": 3, "reps": 8, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "dumbbell-hip-thrust", "displayName": "Dumbbell Hip Thrust", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-calf-raise", "displayName": "Dumbbell Calf Raise", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 3, "reps": 8, "unit": "reps", "per": "leg", "restSec": 120 }
+          ]
+        },
+        {
+          "code": "D",
+          "name": "Push — Shoulder Lead",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-incline-bench-press", "displayName": "Dumbbell Incline Bench Press", "sets": 3, "reps": 6, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-overhead-press", "displayName": "Dumbbell Overhead Press", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-arnold-press", "displayName": "Dumbbell Arnold Press", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-incline-chest-fly", "displayName": "Dumbbell Incline Chest Fly", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-skull-crusher", "displayName": "Dumbbell Skull Crusher", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "E",
+          "name": "Pull — Unilateral Lead",
+          "modality": "strength",
+          "split": "pull",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" },
+            { "name": "Bird Dog", "detail": "8 each side", "text": "Bird Dog — 8 each side" }
+          ],
+          "main": [
+            { "catalogKey": "single-arm-dumbbell-row", "displayName": "Single-Arm Dumbbell Row", "sets": 3, "reps": 6, "unit": "reps", "per": "side", "restSec": 150 },
+            { "catalogKey": "dumbbell-incline-bench-row", "displayName": "Dumbbell Incline Bench Row", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-pullover", "displayName": "Dumbbell Pullover", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-hammer-curl", "displayName": "Dumbbell Hammer Curl", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-reverse-curl", "displayName": "Dumbbell Reverse Curl", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "incline-dumbbell-rear-delt-fly", "displayName": "Incline Dumbbell Rear Delt Fly", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "F",
+          "name": "Legs — Hinge Lead",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Squat", "detail": "12 reps", "text": "Bodyweight Squat — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-romanian-deadlift", "displayName": "Dumbbell Romanian Deadlift", "sets": 3, "reps": 6, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-sumo-deadlift", "displayName": "Dumbbell Sumo Deadlift", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-split-squat", "displayName": "Dumbbell Split Squat", "sets": 3, "reps": 8, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "dumbbell-glute-bridge", "displayName": "Dumbbell Glute Bridge", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "single-leg-dumbbell-romanian-deadlift", "displayName": "Single-Leg Dumbbell Romanian Deadlift", "sets": 3, "reps": 8, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "single-leg-dumbbell-calf-raise", "displayName": "Single-Leg Dumbbell Calf Raise", "sets": 3, "reps": 8, "unit": "reps", "per": "leg", "restSec": 60 }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Weeks 5–7",
+      "weekStart": 5,
+      "weekEnd": 7,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Push — Chest Lead",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-bench-press", "displayName": "Dumbbell Bench Press", "sets": 4, "reps": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-decline-bench-press", "displayName": "Dumbbell Decline Bench Press", "sets": 3, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-floor-press", "displayName": "Dumbbell Floor Press", "sets": 3, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "seated-dumbbell-shoulder-press", "displayName": "Seated Dumbbell Shoulder Press", "sets": 3, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "two-hand-dumbbell-overhead-triceps-extension", "displayName": "Two-Hand Dumbbell Overhead Triceps Extension", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Pull — Row Lead",
+          "modality": "strength",
+          "split": "pull",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" },
+            { "name": "Bird Dog", "detail": "8 each side", "text": "Bird Dog — 8 each side" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-bent-over-row", "displayName": "Dumbbell Bent-Over Row", "sets": 4, "reps": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-chest-supported-row", "displayName": "Dumbbell Chest-Supported Row", "sets": 3, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-pullover", "displayName": "Dumbbell Pullover", "sets": 3, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-rear-delt-fly", "displayName": "Dumbbell Rear Delt Fly", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-biceps-curl", "displayName": "Dumbbell Biceps Curl", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-zottman-curl", "displayName": "Dumbbell Zottman Curl", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Legs — Squat Lead",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Squat", "detail": "12 reps", "text": "Bodyweight Squat — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-goblet-squat", "displayName": "Dumbbell Goblet Squat", "sets": 4, "reps": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-front-squat", "displayName": "Dumbbell Front Squat", "sets": 3, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-bulgarian-split-squat", "displayName": "Dumbbell Bulgarian Split Squat", "sets": 3, "reps": 12, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "dumbbell-hip-thrust", "displayName": "Dumbbell Hip Thrust", "sets": 3, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-calf-raise", "displayName": "Dumbbell Calf Raise", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 3, "reps": 12, "unit": "reps", "per": "leg", "restSec": 120 }
+          ]
+        },
+        {
+          "code": "D",
+          "name": "Push — Shoulder Lead",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-incline-bench-press", "displayName": "Dumbbell Incline Bench Press", "sets": 4, "reps": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-overhead-press", "displayName": "Dumbbell Overhead Press", "sets": 3, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-arnold-press", "displayName": "Dumbbell Arnold Press", "sets": 3, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-incline-chest-fly", "displayName": "Dumbbell Incline Chest Fly", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-skull-crusher", "displayName": "Dumbbell Skull Crusher", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "E",
+          "name": "Pull — Unilateral Lead",
+          "modality": "strength",
+          "split": "pull",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" },
+            { "name": "Bird Dog", "detail": "8 each side", "text": "Bird Dog — 8 each side" }
+          ],
+          "main": [
+            { "catalogKey": "single-arm-dumbbell-row", "displayName": "Single-Arm Dumbbell Row", "sets": 4, "reps": 10, "unit": "reps", "per": "side", "restSec": 150 },
+            { "catalogKey": "dumbbell-incline-bench-row", "displayName": "Dumbbell Incline Bench Row", "sets": 3, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-pullover", "displayName": "Dumbbell Pullover", "sets": 3, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-hammer-curl", "displayName": "Dumbbell Hammer Curl", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-reverse-curl", "displayName": "Dumbbell Reverse Curl", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "incline-dumbbell-rear-delt-fly", "displayName": "Incline Dumbbell Rear Delt Fly", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "F",
+          "name": "Legs — Hinge Lead",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Squat", "detail": "12 reps", "text": "Bodyweight Squat — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-romanian-deadlift", "displayName": "Dumbbell Romanian Deadlift", "sets": 4, "reps": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-sumo-deadlift", "displayName": "Dumbbell Sumo Deadlift", "sets": 3, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-split-squat", "displayName": "Dumbbell Split Squat", "sets": 3, "reps": 12, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "dumbbell-glute-bridge", "displayName": "Dumbbell Glute Bridge", "sets": 3, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "single-leg-dumbbell-romanian-deadlift", "displayName": "Single-Leg Dumbbell Romanian Deadlift", "sets": 3, "reps": 12, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "single-leg-dumbbell-calf-raise", "displayName": "Single-Leg Dumbbell Calf Raise", "sets": 3, "reps": 12, "unit": "reps", "per": "leg", "restSec": 60 }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Weeks 8–10",
+      "weekStart": 8,
+      "weekEnd": 10,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Push — Chest Lead",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-bench-press", "displayName": "Dumbbell Bench Press", "sets": 5, "reps": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-decline-bench-press", "displayName": "Dumbbell Decline Bench Press", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-floor-press", "displayName": "Dumbbell Floor Press", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "seated-dumbbell-shoulder-press", "displayName": "Seated Dumbbell Shoulder Press", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "two-hand-dumbbell-overhead-triceps-extension", "displayName": "Two-Hand Dumbbell Overhead Triceps Extension", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-chest-fly", "displayName": "Dumbbell Chest Fly", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Pull — Row Lead",
+          "modality": "strength",
+          "split": "pull",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" },
+            { "name": "Bird Dog", "detail": "8 each side", "text": "Bird Dog — 8 each side" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-bent-over-row", "displayName": "Dumbbell Bent-Over Row", "sets": 5, "reps": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-chest-supported-row", "displayName": "Dumbbell Chest-Supported Row", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-pullover", "displayName": "Dumbbell Pullover", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-rear-delt-fly", "displayName": "Dumbbell Rear Delt Fly", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-biceps-curl", "displayName": "Dumbbell Biceps Curl", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-zottman-curl", "displayName": "Dumbbell Zottman Curl", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-shrug", "displayName": "Dumbbell Shrug", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Legs — Squat Lead",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Squat", "detail": "12 reps", "text": "Bodyweight Squat — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-goblet-squat", "displayName": "Dumbbell Goblet Squat", "sets": 5, "reps": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-front-squat", "displayName": "Dumbbell Front Squat", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-bulgarian-split-squat", "displayName": "Dumbbell Bulgarian Split Squat", "sets": 4, "reps": 12, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "dumbbell-hip-thrust", "displayName": "Dumbbell Hip Thrust", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-calf-raise", "displayName": "Dumbbell Calf Raise", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 4, "reps": 12, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "dumbbell-sumo-squat", "displayName": "Dumbbell Sumo Squat", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 }
+          ]
+        },
+        {
+          "code": "D",
+          "name": "Push — Shoulder Lead",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-incline-bench-press", "displayName": "Dumbbell Incline Bench Press", "sets": 5, "reps": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-overhead-press", "displayName": "Dumbbell Overhead Press", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-arnold-press", "displayName": "Dumbbell Arnold Press", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-incline-chest-fly", "displayName": "Dumbbell Incline Chest Fly", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-skull-crusher", "displayName": "Dumbbell Skull Crusher", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-front-raise", "displayName": "Dumbbell Front Raise", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "E",
+          "name": "Pull — Unilateral Lead",
+          "modality": "strength",
+          "split": "pull",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" },
+            { "name": "Bird Dog", "detail": "8 each side", "text": "Bird Dog — 8 each side" }
+          ],
+          "main": [
+            { "catalogKey": "single-arm-dumbbell-row", "displayName": "Single-Arm Dumbbell Row", "sets": 5, "reps": 10, "unit": "reps", "per": "side", "restSec": 150 },
+            { "catalogKey": "dumbbell-incline-bench-row", "displayName": "Dumbbell Incline Bench Row", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-pullover", "displayName": "Dumbbell Pullover", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-hammer-curl", "displayName": "Dumbbell Hammer Curl", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-reverse-curl", "displayName": "Dumbbell Reverse Curl", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "incline-dumbbell-rear-delt-fly", "displayName": "Incline Dumbbell Rear Delt Fly", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-upright-row", "displayName": "Dumbbell Upright Row", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "F",
+          "name": "Legs — Hinge Lead",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Squat", "detail": "12 reps", "text": "Bodyweight Squat — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-romanian-deadlift", "displayName": "Dumbbell Romanian Deadlift", "sets": 5, "reps": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-sumo-deadlift", "displayName": "Dumbbell Sumo Deadlift", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-split-squat", "displayName": "Dumbbell Split Squat", "sets": 4, "reps": 12, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "dumbbell-glute-bridge", "displayName": "Dumbbell Glute Bridge", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "single-leg-dumbbell-romanian-deadlift", "displayName": "Single-Leg Dumbbell Romanian Deadlift", "sets": 4, "reps": 12, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "single-leg-dumbbell-calf-raise", "displayName": "Single-Leg Dumbbell Calf Raise", "sets": 4, "reps": 12, "unit": "reps", "per": "leg", "restSec": 60 },
+            { "catalogKey": "dumbbell-reverse-lunge", "displayName": "Dumbbell Reverse Lunge", "sets": 4, "reps": 12, "unit": "reps", "per": "leg", "restSec": 120 }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Week 11 — Deload",
+      "weekStart": 11,
+      "weekEnd": 11,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Push — Chest Lead",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-bench-press", "displayName": "Dumbbell Bench Press", "sets": 3, "reps": 8, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-decline-bench-press", "displayName": "Dumbbell Decline Bench Press", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-floor-press", "displayName": "Dumbbell Floor Press", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "seated-dumbbell-shoulder-press", "displayName": "Seated Dumbbell Shoulder Press", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "two-hand-dumbbell-overhead-triceps-extension", "displayName": "Two-Hand Dumbbell Overhead Triceps Extension", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Pull — Row Lead",
+          "modality": "strength",
+          "split": "pull",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" },
+            { "name": "Bird Dog", "detail": "8 each side", "text": "Bird Dog — 8 each side" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-bent-over-row", "displayName": "Dumbbell Bent-Over Row", "sets": 3, "reps": 8, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-chest-supported-row", "displayName": "Dumbbell Chest-Supported Row", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-pullover", "displayName": "Dumbbell Pullover", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-rear-delt-fly", "displayName": "Dumbbell Rear Delt Fly", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-biceps-curl", "displayName": "Dumbbell Biceps Curl", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-zottman-curl", "displayName": "Dumbbell Zottman Curl", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Legs — Squat Lead",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Squat", "detail": "12 reps", "text": "Bodyweight Squat — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-goblet-squat", "displayName": "Dumbbell Goblet Squat", "sets": 3, "reps": 8, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-front-squat", "displayName": "Dumbbell Front Squat", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-bulgarian-split-squat", "displayName": "Dumbbell Bulgarian Split Squat", "sets": 3, "reps": 8, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "dumbbell-hip-thrust", "displayName": "Dumbbell Hip Thrust", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-calf-raise", "displayName": "Dumbbell Calf Raise", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 3, "reps": 8, "unit": "reps", "per": "leg", "restSec": 120 }
+          ]
+        },
+        {
+          "code": "D",
+          "name": "Push — Shoulder Lead",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-incline-bench-press", "displayName": "Dumbbell Incline Bench Press", "sets": 3, "reps": 8, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-overhead-press", "displayName": "Dumbbell Overhead Press", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-arnold-press", "displayName": "Dumbbell Arnold Press", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-incline-chest-fly", "displayName": "Dumbbell Incline Chest Fly", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-skull-crusher", "displayName": "Dumbbell Skull Crusher", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "E",
+          "name": "Pull — Unilateral Lead",
+          "modality": "strength",
+          "split": "pull",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" },
+            { "name": "Bird Dog", "detail": "8 each side", "text": "Bird Dog — 8 each side" }
+          ],
+          "main": [
+            { "catalogKey": "single-arm-dumbbell-row", "displayName": "Single-Arm Dumbbell Row", "sets": 3, "reps": 8, "unit": "reps", "per": "side", "restSec": 150 },
+            { "catalogKey": "dumbbell-incline-bench-row", "displayName": "Dumbbell Incline Bench Row", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-pullover", "displayName": "Dumbbell Pullover", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-hammer-curl", "displayName": "Dumbbell Hammer Curl", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-reverse-curl", "displayName": "Dumbbell Reverse Curl", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "incline-dumbbell-rear-delt-fly", "displayName": "Incline Dumbbell Rear Delt Fly", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "F",
+          "name": "Legs — Hinge Lead",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Squat", "detail": "12 reps", "text": "Bodyweight Squat — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-romanian-deadlift", "displayName": "Dumbbell Romanian Deadlift", "sets": 3, "reps": 8, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-sumo-deadlift", "displayName": "Dumbbell Sumo Deadlift", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-split-squat", "displayName": "Dumbbell Split Squat", "sets": 3, "reps": 8, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "dumbbell-glute-bridge", "displayName": "Dumbbell Glute Bridge", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "single-leg-dumbbell-romanian-deadlift", "displayName": "Single-Leg Dumbbell Romanian Deadlift", "sets": 3, "reps": 8, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "single-leg-dumbbell-calf-raise", "displayName": "Single-Leg Dumbbell Calf Raise", "sets": 3, "reps": 8, "unit": "reps", "per": "leg", "restSec": 60 }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Week 12 — Peak",
+      "weekStart": 12,
+      "weekEnd": 12,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Push — Chest Lead",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-bench-press", "displayName": "Dumbbell Bench Press", "sets": 5, "reps": 12, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-decline-bench-press", "displayName": "Dumbbell Decline Bench Press", "sets": 4, "reps": 15, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-floor-press", "displayName": "Dumbbell Floor Press", "sets": 4, "reps": 15, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "seated-dumbbell-shoulder-press", "displayName": "Seated Dumbbell Shoulder Press", "sets": 4, "reps": 15, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "two-hand-dumbbell-overhead-triceps-extension", "displayName": "Two-Hand Dumbbell Overhead Triceps Extension", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-chest-fly", "displayName": "Dumbbell Chest Fly", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Pull — Row Lead",
+          "modality": "strength",
+          "split": "pull",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" },
+            { "name": "Bird Dog", "detail": "8 each side", "text": "Bird Dog — 8 each side" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-bent-over-row", "displayName": "Dumbbell Bent-Over Row", "sets": 5, "reps": 12, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-chest-supported-row", "displayName": "Dumbbell Chest-Supported Row", "sets": 4, "reps": 15, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-pullover", "displayName": "Dumbbell Pullover", "sets": 4, "reps": 15, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-rear-delt-fly", "displayName": "Dumbbell Rear Delt Fly", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-biceps-curl", "displayName": "Dumbbell Biceps Curl", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-zottman-curl", "displayName": "Dumbbell Zottman Curl", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-shrug", "displayName": "Dumbbell Shrug", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Legs — Squat Lead",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Squat", "detail": "12 reps", "text": "Bodyweight Squat — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-goblet-squat", "displayName": "Dumbbell Goblet Squat", "sets": 5, "reps": 12, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-front-squat", "displayName": "Dumbbell Front Squat", "sets": 4, "reps": 15, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-bulgarian-split-squat", "displayName": "Dumbbell Bulgarian Split Squat", "sets": 4, "reps": 15, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "dumbbell-hip-thrust", "displayName": "Dumbbell Hip Thrust", "sets": 4, "reps": 15, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-calf-raise", "displayName": "Dumbbell Calf Raise", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 4, "reps": 15, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "dumbbell-sumo-squat", "displayName": "Dumbbell Sumo Squat", "sets": 4, "reps": 15, "unit": "reps", "restSec": 120 }
+          ]
+        },
+        {
+          "code": "D",
+          "name": "Push — Shoulder Lead",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-incline-bench-press", "displayName": "Dumbbell Incline Bench Press", "sets": 5, "reps": 12, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-overhead-press", "displayName": "Dumbbell Overhead Press", "sets": 4, "reps": 15, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-arnold-press", "displayName": "Dumbbell Arnold Press", "sets": 4, "reps": 15, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-incline-chest-fly", "displayName": "Dumbbell Incline Chest Fly", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-skull-crusher", "displayName": "Dumbbell Skull Crusher", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-front-raise", "displayName": "Dumbbell Front Raise", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "E",
+          "name": "Pull — Unilateral Lead",
+          "modality": "strength",
+          "split": "pull",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" },
+            { "name": "Bird Dog", "detail": "8 each side", "text": "Bird Dog — 8 each side" }
+          ],
+          "main": [
+            { "catalogKey": "single-arm-dumbbell-row", "displayName": "Single-Arm Dumbbell Row", "sets": 5, "reps": 12, "unit": "reps", "per": "side", "restSec": 150 },
+            { "catalogKey": "dumbbell-incline-bench-row", "displayName": "Dumbbell Incline Bench Row", "sets": 4, "reps": 15, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-pullover", "displayName": "Dumbbell Pullover", "sets": 4, "reps": 15, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-hammer-curl", "displayName": "Dumbbell Hammer Curl", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-reverse-curl", "displayName": "Dumbbell Reverse Curl", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "incline-dumbbell-rear-delt-fly", "displayName": "Incline Dumbbell Rear Delt Fly", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-upright-row", "displayName": "Dumbbell Upright Row", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "F",
+          "name": "Legs — Hinge Lead",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Squat", "detail": "12 reps", "text": "Bodyweight Squat — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "dumbbell-romanian-deadlift", "displayName": "Dumbbell Romanian Deadlift", "sets": 5, "reps": 12, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-sumo-deadlift", "displayName": "Dumbbell Sumo Deadlift", "sets": 4, "reps": 15, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-split-squat", "displayName": "Dumbbell Split Squat", "sets": 4, "reps": 15, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "dumbbell-glute-bridge", "displayName": "Dumbbell Glute Bridge", "sets": 4, "reps": 15, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "single-leg-dumbbell-romanian-deadlift", "displayName": "Single-Leg Dumbbell Romanian Deadlift", "sets": 4, "reps": 15, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "single-leg-dumbbell-calf-raise", "displayName": "Single-Leg Dumbbell Calf Raise", "sets": 4, "reps": 15, "unit": "reps", "per": "leg", "restSec": 60 },
+            { "catalogKey": "dumbbell-reverse-lunge", "displayName": "Dumbbell Reverse Lunge", "sets": 4, "reps": 15, "unit": "reps", "per": "leg", "restSec": 120 }
+          ]
+        }
+      ]
+    }
+  ]
+}
