@@ -100,10 +100,10 @@ same trap `plannedSetCount` was written for. Every block sits inside PAS-D11's 1
 
 | # | Finding | Resolution |
 |---|---|---|
-| 1 | **Three sessions a week is thin for a conditioning program.** | The Blueprint fixes it, and defends it: this is the family's only 3-day program and a deliberate beginner-recovery choice. The athlete is new to structured conditioning entirely. |
+| 1 | **Three sessions a week is thin for a conditioning program**, and week 1 is ~30 easy minutes. | The Blueprint fixes the frequency and defends it, and on a second read the "thin" charge is **withdrawn**: §4 specifies *"beginner intensity and density … base-building, not performance maximization"* and §1 calls it deliberately sub-threshold. A light week 1 is the design working. Recorded because the audit raised it and an unexplained finding that quietly disappears is worse than one that is argued down. |
 | 2 | **The three sessions share one shape**, differing only in bout and circuit contents. | Deliberate — the shape *is* the method being taught (bout → circuit → simple lifts). A beginner learning work-to-rest structure benefits from repetition of the frame, not variety in it. Worth revisiting at the Intermediate rung. |
 | 3 | **Week 8 jumps to 6 rounds from 5**, on top of an 18-minute bout. | It is the peak, it follows a deload, and rounds are the honest axis for a work-capacity program. First thing to reverse if it proves unrealistic. |
-| 4 | **Carries (farmer carry) are prescribed in reps**, which is not how a carry is measured. | Accepted with a note: `ExercisePrescription` supports `durationSec`, but a carry inside a circuit reads more naturally as a set piece than a timer, and the model has no distance field for a carry. Recorded rather than fudged. |
+| 4 | **Carries were prescribed in reps**, which is not how a carry is measured. | ✅ **FIXED 2026-08-06 by a coaching audit.** "12 reps" of a farmer carry is not a thing anyone can perform — you walk until the clock stops. Now `durationSec: 40`. The original was accepted here with a rationalisation, and the rationalisation was wrong: the validator passed it because 12 is a legal rep count, and reading it as a coach took two seconds. |
 | 5 | No cool-down. | Not a finding as of 2026-08-06 — PAS Amendment 003 — though CONDITIONING is the category that most wants one. |
 
 ---

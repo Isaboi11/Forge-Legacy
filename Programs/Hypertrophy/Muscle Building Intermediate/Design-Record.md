@@ -87,14 +87,31 @@ and are easy to conflate:
 - **Volume accumulation** is the program's job, across blocks: **sets** climb weeks 1–8, reset at the
   week-9 deload, and peak in week 10.
 
+> ## ⚠ CAPPED 2026-08-06 BY A COACHING AUDIT
+>
+> **The peak ran to 30 sets** — five sets of bench then five of barbell row at 150 s rest, seventy
+> minutes, with sets four and five of everything junk volume for an intermediate.
+>
+> **The lateral raise ran to six sets a session, twelve a week.** That number existed to land inside a
+> band in §4's table, not because a coach would prescribe it — **the clearest case in the catalog of
+> fitting the training to the spec instead of to the person.** It is now 4.
+>
+> Restructured to **three** working blocks so a real deload fits: PAS-D8 wants 40–50% off and PAS-D11's
+> floor is 18 sets. Half of 26 is 13, so the two cannot both hold — the first draft honoured the floor and
+> offered a 19% deload, which every test passed because the floor is checked and the depth is not.
+> Resolved the way PAS-A4-D3 resolved the muscle band: **the envelope governs working blocks.**
+
 | Block | Weeks | Primary | Secondary | High-vol isolation | Isolation | Sets/session (A B C D) |
 |---|---|---:|---:|---:|---:|---|
-| 1 | 1–2 | 3 | 3 | 4 | 3 | 22 · 19 · 22 · 19 |
-| 2 | 3–4 | 4 | 3 | 5 | 3 | 25 · 22 · 25 · 21 |
-| 3 | 5–6 | 4 | 4 | 5 | 3 | 27 · 24 · 27 · 24 |
-| 4 | 7–8 | 5 | 4 | 5 | 3 | 29 · 26 · 29 · 25 |
-| 5 | **9 — Deload** | 3 | 3 | 3 | 3 | **21 · 18 · 21 · 18** |
-| 6 | **10 — Peak** | 5 | 4 | 6 | 3 | **30 · 27 · 30 · 26** |
+| 1 | 1–3 | 3 | 3 | 4 | 3 | 22 · 19 · 22 · 19 |
+| 2 | 4–6 | 3 | 4 | 4 | 3 | 24 · 21 · 24 · 22 |
+| 3 | 7–8 | 4 | 4 | 4 | 3 | 26 · 23 · 26 · 23 |
+| 4 | **9 — Deload** | 2 | 2 | 3 | 2 | **15 · 13 · 15 · 13** |
+| 5 | **10 — Peak** | 5 | 4 | 4 | 3 | **28 · 25 · 28 · 24** |
+
+The session ceiling came down from 30 to 28, which is **a smaller win than it sounds and is stated
+honestly**: at seven exercises the arithmetic will not go lower without breaking the 18-set floor at the
+other end. The real fix was the isolation tier, not the total.
 
 Every session sits inside PAS-D11 (5–8 exercises, 18–30 sets), **including both ends** — the Blueprint's
 "opening weeks near 18–22, peak weeks approaching 26–28" is met, with the peak at 26–30.
@@ -181,7 +198,7 @@ violation, and the test asserts the ramp is genuinely a ramp rather than letting
 | PAS-D10 warm-up in its own section | ✅ |
 | PAS-D11 5–8 exercises / 18–30 sets | ✅ 6–7 / 18–30 |
 | PAS §10.3 INTERMEDIATE rest | ✅ 150 / 120 / 75 / 60 s |
-| PAS §11.2 per-muscle weekly band | ✅ **12 of 12** inside 10–20, weeks 3–10 — §5 |
+| PAS §11.2 per-muscle weekly band | ⚠️ **10 of 12** — the capped lateral delt and calf sit at 8/week against a 10 floor. **The band is a guideline and the coaching cap is the judgement**; the judgement wins. §5 |
 | QC-2 visible progression | ✅ §4, both axes |
 
 ---

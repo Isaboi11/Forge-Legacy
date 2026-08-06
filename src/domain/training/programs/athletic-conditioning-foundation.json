@@ -52,7 +52,7 @@
             { "catalogKey": "cardio:walk", "displayName": "Incline Walk", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "walk", "modality": "indoor", "targetSec": 600, "targetMi": null, "restSec": 90 },
             { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 1, "reps": 12, "unit": "reps", "per": "leg", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 3 },
             { "catalogKey": "machine-chest-press", "displayName": "Machine Chest Press", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 3 },
-            { "catalogKey": "dumbbell-farmer-carry", "displayName": "Dumbbell Farmer Carry", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 3 },
+            { "catalogKey": "dumbbell-farmer-carry", "displayName": "Dumbbell Farmer Carry", "sets": 1, "reps": 0, "unit": "seconds", "durationSec": 40, "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 3 },
             { "catalogKey": "machine-lat-pulldown", "displayName": "Machine Lat Pulldown", "sets": 2, "reps": 12, "unit": "reps", "restSec": 75 },
             { "catalogKey": "plank", "displayName": "Plank", "sets": 2, "reps": 0, "unit": "seconds", "durationSec": 30, "restSec": 75 }
           ]
@@ -116,7 +116,7 @@
             { "catalogKey": "cardio:walk", "displayName": "Incline Walk", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "walk", "modality": "indoor", "targetSec": 720, "targetMi": null, "restSec": 90 },
             { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 1, "reps": 12, "unit": "reps", "per": "leg", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 4 },
             { "catalogKey": "machine-chest-press", "displayName": "Machine Chest Press", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 4 },
-            { "catalogKey": "dumbbell-farmer-carry", "displayName": "Dumbbell Farmer Carry", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 4 },
+            { "catalogKey": "dumbbell-farmer-carry", "displayName": "Dumbbell Farmer Carry", "sets": 1, "reps": 0, "unit": "seconds", "durationSec": 40, "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 4 },
             { "catalogKey": "machine-lat-pulldown", "displayName": "Machine Lat Pulldown", "sets": 2, "reps": 12, "unit": "reps", "restSec": 75 },
             { "catalogKey": "plank", "displayName": "Plank", "sets": 2, "reps": 0, "unit": "seconds", "durationSec": 30, "restSec": 75 }
           ]
@@ -180,7 +180,7 @@
             { "catalogKey": "cardio:walk", "displayName": "Incline Walk", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "walk", "modality": "indoor", "targetSec": 900, "targetMi": null, "restSec": 90 },
             { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 1, "reps": 12, "unit": "reps", "per": "leg", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 5 },
             { "catalogKey": "machine-chest-press", "displayName": "Machine Chest Press", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 5 },
-            { "catalogKey": "dumbbell-farmer-carry", "displayName": "Dumbbell Farmer Carry", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 5 },
+            { "catalogKey": "dumbbell-farmer-carry", "displayName": "Dumbbell Farmer Carry", "sets": 1, "reps": 0, "unit": "seconds", "durationSec": 40, "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 5 },
             { "catalogKey": "machine-lat-pulldown", "displayName": "Machine Lat Pulldown", "sets": 2, "reps": 15, "unit": "reps", "restSec": 75 },
             { "catalogKey": "plank", "displayName": "Plank", "sets": 2, "reps": 0, "unit": "seconds", "durationSec": 30, "restSec": 75 }
           ]
@@ -244,7 +244,7 @@
             { "catalogKey": "cardio:walk", "displayName": "Incline Walk", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "walk", "modality": "indoor", "targetSec": 480, "targetMi": null, "restSec": 90 },
             { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 1, "reps": 12, "unit": "reps", "per": "leg", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 3 },
             { "catalogKey": "machine-chest-press", "displayName": "Machine Chest Press", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 3 },
-            { "catalogKey": "dumbbell-farmer-carry", "displayName": "Dumbbell Farmer Carry", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 3 },
+            { "catalogKey": "dumbbell-farmer-carry", "displayName": "Dumbbell Farmer Carry", "sets": 1, "reps": 0, "unit": "seconds", "durationSec": 40, "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 3 },
             { "catalogKey": "machine-lat-pulldown", "displayName": "Machine Lat Pulldown", "sets": 1, "reps": 12, "unit": "reps", "restSec": 75 },
             { "catalogKey": "plank", "displayName": "Plank", "sets": 1, "reps": 0, "unit": "seconds", "durationSec": 30, "restSec": 75 }
           ]
@@ -308,7 +308,7 @@
             { "catalogKey": "cardio:walk", "displayName": "Incline Walk", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "walk", "modality": "indoor", "targetSec": 1080, "targetMi": null, "restSec": 90 },
             { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 1, "reps": 12, "unit": "reps", "per": "leg", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 6 },
             { "catalogKey": "machine-chest-press", "displayName": "Machine Chest Press", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 6 },
-            { "catalogKey": "dumbbell-farmer-carry", "displayName": "Dumbbell Farmer Carry", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 6 },
+            { "catalogKey": "dumbbell-farmer-carry", "displayName": "Dumbbell Farmer Carry", "sets": 1, "reps": 0, "unit": "seconds", "durationSec": 40, "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 6 },
             { "catalogKey": "machine-lat-pulldown", "displayName": "Machine Lat Pulldown", "sets": 2, "reps": 15, "unit": "reps", "restSec": 75 },
             { "catalogKey": "plank", "displayName": "Plank", "sets": 2, "reps": 0, "unit": "seconds", "durationSec": 30, "restSec": 75 }
           ]

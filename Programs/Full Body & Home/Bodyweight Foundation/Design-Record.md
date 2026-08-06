@@ -34,7 +34,7 @@ That leaves two bad options and one honest one:
 |---|---|
 | **Omit the pull** | Ships a push-dominant beginner program. Six weeks of pressing with no pulling is how beginners build the exact posture problem a general-fitness program should prevent. |
 | **Require a bar** | Breaks the featured promise. This program's entire premise (Blueprint §1) is *"the lowest possible barrier to starting: no equipment, train anywhere."* |
-| **✅ Prescribe it as `optional`** | The model already defines `optional` as *"prescribed, but the athlete owes nothing by skipping it."* The pattern is named and programmed for anyone with a bar, a set of straps or a sturdy table; the athlete with none of that runs a complete session without it and is not told they failed. |
+| **✅ Prescribe it as `optional`, with a BAND substitute** | The model already defines `optional` as *"prescribed, but the athlete owes nothing by skipping it."* The pattern is named for anyone with a bar, straps or a sturdy table — and since 2026-08-06 it carries `band-seated-row` as a **substitution**, because `resistance_band` is already in `HOME_EQUIPMENT`, the Blueprint already permits *"bands optional"*, and a band needs no fixture at all. Prescribing a substitute is what the field is for. **Recommending anyone buy one is not ours to do** (PO decision), so the program offers a second route and says nothing about acquiring it. |
 
 Both halves are asserted, because either one alone rots: a test requires that **a pull is present in every
 session**, and that it is **the only prescription in the program needing gear**. Adding a required
@@ -53,9 +53,9 @@ Six weeks, three days a week, 18 sessions, three blocks. Full body every session
 
 | | |
 |---|---|
-| **A — Squat Focus** | squat · push · *pull* · hinge · brace · calf |
+| **A — Squat Focus** | squat · push · *pull* · hinge · brace · scapular |
 | **B — Push Focus** | push · squat · *pull* · hinge · brace · shoulder |
-| **C — Hinge Focus** | hinge · squat · push · *pull* · brace · calf |
+| **C — Hinge Focus** | hinge · squat · push · *pull* · brace · scapular |
 
 Six exercises, 18 sets per session — inside PAS-D11's FULL_BODY envelope of 4–7 and 12–20. Every session
 covers **squat, push, hinge and brace**, asserted; the pull is the fifth pattern and is §2's exception.
@@ -73,12 +73,22 @@ Blueprint §4 names the replacement: **linear rep progression, then variation di
 Each slot is a **three-rung ladder**, one rung per block, and the rep range is the gate between rungs —
 the Blueprint's own example is *"master 3 × 15 before progressing to Pike Push-Ups."*
 
+> **⚠ RESCALED 2026-08-06 BY A COACHING AUDIT.** The push ladder topped out at `3 × 12–20` **diamond
+> push-ups** in week 5. Anyone who can do twenty diamond push-ups is not a beginner, and the rung above
+> "push-up" was two steps too far. Day A now ends on a plain push-up and day B on close-grip.
+>
+> The same pass replaced the **calf raises**, which occupied a slot in two of three sessions — wasted on a
+> beginner who needs patterns, not isolation — with **scapular and superman work**. That fixed a second
+> finding at the same time: sessions A and C previously had *no* ungated upper-back work at all, so an
+> athlete without a bar did eighteen sessions of pushing and squatting with nothing for the back.
+
 | Slot (day A) | Weeks 1–2 | Weeks 3–4 | Weeks 5–6 |
 |---|---|---|---|
 | Squat | Bodyweight Squat | Prisoner Squat | Split Squat |
-| Push | Knee Push-Up | Push-Up | Close-Grip Push-Up |
+| Push | Knee Push-Up | Incline Push-Up | Push-Up |
 | Hinge | Glute Bridge | Single-Leg Glute Bridge | Bodyweight Good Morning |
 | Brace | Dead Bug | Plank | Hollow Body Hold |
+| Scap | Scapular Wall Slide | Scapular Push-Up | Superman Hold |
 | Reps | **8–12** | **10–15** | **12–20** |
 
 **⚠ Sets stay at 3 for all six weeks, deliberately.** The Blueprint prescribes Linear rep progression,
@@ -113,7 +123,7 @@ this; a test now holds this program to it.
 
 | # | Finding | Resolution |
 |---|---|---|
-| 1 | **A beginner who owns nothing gets no pulling at all.** | §2. The honest answer is the optional pull plus posterior-chain work (superman, back extension, good morning) in every session, which is not a substitute for a row and is not claimed to be. **The strongest argument for shipping a cheap door-frame bar recommendation alongside this program** — a product decision, not a program one. |
+| 1 | **A beginner who owns nothing gets no pulling at all.** | Partly closed 2026-08-06. The optional pull now carries a **band substitute** (§2), which reaches an athlete with an £8 band and no fixture — a much larger group than those with a bar. Every session also gained **ungated scapular work**, which sessions A and C previously lacked entirely. Neither is a row, and neither is claimed to be. ⚠️ **The product owner has ruled out recommending equipment**, so the remaining gap stays open by decision: an athlete with literally nothing still gets no true pull. |
 | 2 | **Three sessions a week is the floor of useful frequency.** | The Blueprint fixes it. It is also the right floor for the athlete this targets: someone who has not trained before and needs the habit more than the dose. |
 | 3 | **Week 5–6's split squat and single-leg work is a real jump** from bilateral. | Accepted — it is the ladder working. The rung behind it is available if they are not ready, which is the mechanic rather than a workaround. |
 | 4 | **No conditioning.** | Deliberate, and the crux of the Blueprint's convergence test against Home Conditioning (Sort 21): conditioning here is an incidental byproduct, never the organizing principle. |

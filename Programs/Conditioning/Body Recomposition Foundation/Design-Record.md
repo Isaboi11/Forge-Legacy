@@ -1,6 +1,6 @@
 # Body Recomposition Foundation — Design Record
 
-**Status:** ✅ **LOCKED** — PO Lock Approval granted 2026-08-06, over a §9 recommendation to hold. See `Lock-Record.md`.
+**Status:** ⛔ **LOCK WITHDRAWN 2026-08-06** — a coaching audit found the program working against its own goal; re-authored and awaiting a fresh signature. See `Lock-Record.md`.
 **Authored:** 2026-08-06, directly against `src/domain/training/schema.ts`. No `.docx` behind it.
 **Definition:** `src/domain/training/programs/body-recomposition-foundation.json`
 **Blueprint (LOCKED):** `Docs/Body-Recomposition-Foundation-Blueprint-v1.0.md`
@@ -113,13 +113,37 @@ PAS §7.2 permits Linear Progression **or** Volume Accumulation at CONDITIONING 
 uses **Volume Accumulation**, because load progression on machines is a beginner guessing at pin
 positions, whereas "one more exercise, three more reps" is a target they can read.
 
+
+> ## ⛔ THE PROGRESSION IN THIS SECTION WAS WRONG, AND IT WAS LOCKED
+>
+> **As shipped:** `3 × 10 @ 90 s` in week 1, `3 × 15 @ 60 s` in week 8.
+>
+> Rising reps with **shrinking rest** is a metabolic stimulus. This program exists to **retain muscle in a
+> caloric deficit**, where the driver is *intensity* — you hold the load and trim the volume. It
+> prescribed the reverse of its own purpose: the "high reps to tone" error, in the one program whose
+> justification is that it is not that. Four sessions a week, rising volume and a finisher climbing to 22
+> minutes put **88 minutes of steady cardio a week** on a beginner in a deficit on top of it.
+>
+> **Fourteen acceptance tests passed it.** All fourteen measured the *envelope* — sets inside PAS-D11,
+> reps inside 8–15, rest inside 60–90, a deload in the right week. Every number was individually legal.
+> None of them asked which **direction** the numbers moved, or whether that direction served the goal.
+>
+> The table below is the corrected one.
+
 | Block | Weeks | Exercises | MAIN sets | Reps | Rest (comp/iso) | Finisher |
-|---|---|---:|---:|---:|---|---:|
-| 1 | 1–2 | 5 + finisher | 15 | 10 | 90 / 60 s | 15 min |
-| 2 | 3–4 | 5 + finisher | 15 | 12 | 90 / 60 s | 18 min |
-| 3 | 5–6 | 6 + finisher | 18 | 12 | 75 / 60 s | 20 min |
-| 4 | **7 — Deload** | 4 + finisher | 12 | 8 | 90 / 90 s | 12 min |
-| 5 | **8 — Peak** | 6 + finisher | 18 | 15 | 60 / 60 s | 22 min |
+|---|---|---:|---:|---|---|---:|
+| 1 | 1–2 | 5 + finisher | 15 | **8–12** | 90 / 75 s | 15 min |
+| 2 | 3–4 | 5 + finisher | 20 | **8–12** | 90 / 75 s | 15 min |
+| 3 | 5–6 | 6 + finisher | 24 | **8–12** | 90 / 75 s | 18 min |
+| 4 | **7 — Deload** | 4 + finisher | 12 | **8–12** | 90 / 75 s | 12 min |
+| 5 | **8 — Peak** | 6 + finisher | 24 | **10–15** | 90 / 75 s | 18 min |
+
+**Rest is constant and a test asserts it never falls.** Volume progresses through **sets**, not reps. The
+finisher is **capped at 18 minutes** — 72 min/week rather than 88.
+
+**Every prescription is a rep range**, which is the effort instruction: *8–12, and if you can beat 12 the
+weight is too light.* It is rendered by machinery that already exists, so intensity is finally stated
+without adding a thing to the workout screen.
 
 Every row sits inside PAS-D11 (4–8 exercises, 12–24 MAIN sets), every rep count inside beginner
 hypertrophy (8–15), every rest inside PAS §10.3 (60–90 s). Asserted, not asserted-about — see
