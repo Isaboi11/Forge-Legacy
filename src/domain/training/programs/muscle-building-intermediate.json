@@ -36,7 +36,8 @@
             { "catalogKey": "dumbbell-incline-bench-press", "displayName": "Dumbbell Incline Bench Press", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
             { "catalogKey": "cable-lat-pulldown", "displayName": "Cable Lat Pulldown", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
             { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 4, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "barbell-biceps-curl", "displayName": "Barbell Biceps Curl", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+            { "catalogKey": "barbell-biceps-curl", "displayName": "Barbell Biceps Curl", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "machine-rear-delt-fly", "displayName": "Machine Rear Delt Fly", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
           ]
         },
         {
@@ -74,7 +75,8 @@
             { "catalogKey": "dumbbell-bench-press", "displayName": "Dumbbell Bench Press", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
             { "catalogKey": "assisted-pull-up-machine", "displayName": "Assisted Pull-Up Machine", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
             { "catalogKey": "cable-lateral-raise", "displayName": "Cable Lateral Raise", "sets": 4, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "cable-overhead-triceps-extension", "displayName": "Cable Overhead Triceps Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+            { "catalogKey": "cable-overhead-triceps-extension", "displayName": "Cable Overhead Triceps Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "dumbbell-rear-delt-fly", "displayName": "Dumbbell Rear Delt Fly", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
           ]
         },
         {
@@ -118,8 +120,9 @@
             { "catalogKey": "barbell-bent-over-row", "displayName": "Barbell Bent-Over Row", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
             { "catalogKey": "dumbbell-incline-bench-press", "displayName": "Dumbbell Incline Bench Press", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
             { "catalogKey": "cable-lat-pulldown", "displayName": "Cable Lat Pulldown", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
-            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 4, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "barbell-biceps-curl", "displayName": "Barbell Biceps Curl", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 5, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "barbell-biceps-curl", "displayName": "Barbell Biceps Curl", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "machine-rear-delt-fly", "displayName": "Machine Rear Delt Fly", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
           ]
         },
         {
@@ -137,7 +140,7 @@
             { "catalogKey": "barbell-romanian-deadlift", "displayName": "Barbell Romanian Deadlift", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
             { "catalogKey": "leg-extension-machine", "displayName": "Leg Extension Machine", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
             { "catalogKey": "lying-leg-curl-machine", "displayName": "Lying Leg Curl Machine", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
-            { "catalogKey": "seated-calf-raise-machine", "displayName": "Seated Calf Raise Machine", "sets": 4, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "seated-calf-raise-machine", "displayName": "Seated Calf Raise Machine", "sets": 5, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
             { "catalogKey": "cable-crunch", "displayName": "Cable Crunch", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
           ]
         },
@@ -156,8 +159,9 @@
             { "catalogKey": "cable-seated-row", "displayName": "Cable Seated Row", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
             { "catalogKey": "dumbbell-bench-press", "displayName": "Dumbbell Bench Press", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
             { "catalogKey": "assisted-pull-up-machine", "displayName": "Assisted Pull-Up Machine", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
-            { "catalogKey": "cable-lateral-raise", "displayName": "Cable Lateral Raise", "sets": 4, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "cable-overhead-triceps-extension", "displayName": "Cable Overhead Triceps Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+            { "catalogKey": "cable-lateral-raise", "displayName": "Cable Lateral Raise", "sets": 5, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-overhead-triceps-extension", "displayName": "Cable Overhead Triceps Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "dumbbell-rear-delt-fly", "displayName": "Dumbbell Rear Delt Fly", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
           ]
         },
         {
@@ -175,7 +179,7 @@
             { "catalogKey": "barbell-hip-thrust", "displayName": "Barbell Hip Thrust", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
             { "catalogKey": "seated-leg-curl-machine", "displayName": "Seated Leg Curl Machine", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
             { "catalogKey": "dumbbell-bulgarian-split-squat", "displayName": "Dumbbell Bulgarian Split Squat", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "per": "leg", "restSec": 120 },
-            { "catalogKey": "standing-calf-raise-machine", "displayName": "Standing Calf Raise Machine", "sets": 4, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "standing-calf-raise-machine", "displayName": "Standing Calf Raise Machine", "sets": 5, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
             { "catalogKey": "machine-back-extension", "displayName": "Machine Back Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
           ]
         }
@@ -202,7 +206,8 @@
             { "catalogKey": "dumbbell-incline-bench-press", "displayName": "Dumbbell Incline Bench Press", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
             { "catalogKey": "cable-lat-pulldown", "displayName": "Cable Lat Pulldown", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
             { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 5, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "barbell-biceps-curl", "displayName": "Barbell Biceps Curl", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+            { "catalogKey": "barbell-biceps-curl", "displayName": "Barbell Biceps Curl", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "machine-rear-delt-fly", "displayName": "Machine Rear Delt Fly", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
           ]
         },
         {
@@ -240,7 +245,8 @@
             { "catalogKey": "dumbbell-bench-press", "displayName": "Dumbbell Bench Press", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
             { "catalogKey": "assisted-pull-up-machine", "displayName": "Assisted Pull-Up Machine", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
             { "catalogKey": "cable-lateral-raise", "displayName": "Cable Lateral Raise", "sets": 5, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "cable-overhead-triceps-extension", "displayName": "Cable Overhead Triceps Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+            { "catalogKey": "cable-overhead-triceps-extension", "displayName": "Cable Overhead Triceps Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "dumbbell-rear-delt-fly", "displayName": "Dumbbell Rear Delt Fly", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
           ]
         },
         {
@@ -285,7 +291,8 @@
             { "catalogKey": "dumbbell-incline-bench-press", "displayName": "Dumbbell Incline Bench Press", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
             { "catalogKey": "cable-lat-pulldown", "displayName": "Cable Lat Pulldown", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
             { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 5, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "barbell-biceps-curl", "displayName": "Barbell Biceps Curl", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+            { "catalogKey": "barbell-biceps-curl", "displayName": "Barbell Biceps Curl", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "machine-rear-delt-fly", "displayName": "Machine Rear Delt Fly", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
           ]
         },
         {
@@ -323,7 +330,8 @@
             { "catalogKey": "dumbbell-bench-press", "displayName": "Dumbbell Bench Press", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
             { "catalogKey": "assisted-pull-up-machine", "displayName": "Assisted Pull-Up Machine", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
             { "catalogKey": "cable-lateral-raise", "displayName": "Cable Lateral Raise", "sets": 5, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "cable-overhead-triceps-extension", "displayName": "Cable Overhead Triceps Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+            { "catalogKey": "cable-overhead-triceps-extension", "displayName": "Cable Overhead Triceps Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "dumbbell-rear-delt-fly", "displayName": "Dumbbell Rear Delt Fly", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
           ]
         },
         {
@@ -368,7 +376,8 @@
             { "catalogKey": "dumbbell-incline-bench-press", "displayName": "Dumbbell Incline Bench Press", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
             { "catalogKey": "cable-lat-pulldown", "displayName": "Cable Lat Pulldown", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
             { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "barbell-biceps-curl", "displayName": "Barbell Biceps Curl", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+            { "catalogKey": "barbell-biceps-curl", "displayName": "Barbell Biceps Curl", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "machine-rear-delt-fly", "displayName": "Machine Rear Delt Fly", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
           ]
         },
         {
@@ -406,7 +415,8 @@
             { "catalogKey": "dumbbell-bench-press", "displayName": "Dumbbell Bench Press", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
             { "catalogKey": "assisted-pull-up-machine", "displayName": "Assisted Pull-Up Machine", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
             { "catalogKey": "cable-lateral-raise", "displayName": "Cable Lateral Raise", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "cable-overhead-triceps-extension", "displayName": "Cable Overhead Triceps Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+            { "catalogKey": "cable-overhead-triceps-extension", "displayName": "Cable Overhead Triceps Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "dumbbell-rear-delt-fly", "displayName": "Dumbbell Rear Delt Fly", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
           ]
         },
         {
@@ -446,12 +456,13 @@
             { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" }
           ],
           "main": [
-            { "catalogKey": "barbell-bench-press", "displayName": "Barbell Bench Press", "sets": 6, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
-            { "catalogKey": "barbell-bent-over-row", "displayName": "Barbell Bent-Over Row", "sets": 6, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
-            { "catalogKey": "dumbbell-incline-bench-press", "displayName": "Dumbbell Incline Bench Press", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
-            { "catalogKey": "cable-lat-pulldown", "displayName": "Cable Lat Pulldown", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
-            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 5, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "barbell-biceps-curl", "displayName": "Barbell Biceps Curl", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+            { "catalogKey": "barbell-bench-press", "displayName": "Barbell Bench Press", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "barbell-bent-over-row", "displayName": "Barbell Bent-Over Row", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-incline-bench-press", "displayName": "Dumbbell Incline Bench Press", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "cable-lat-pulldown", "displayName": "Cable Lat Pulldown", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 6, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "barbell-biceps-curl", "displayName": "Barbell Biceps Curl", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "machine-rear-delt-fly", "displayName": "Machine Rear Delt Fly", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
           ]
         },
         {
@@ -465,11 +476,11 @@
             { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
           ],
           "main": [
-            { "catalogKey": "barbell-back-squat", "displayName": "Barbell Back Squat", "sets": 6, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
-            { "catalogKey": "barbell-romanian-deadlift", "displayName": "Barbell Romanian Deadlift", "sets": 6, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
-            { "catalogKey": "leg-extension-machine", "displayName": "Leg Extension Machine", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
-            { "catalogKey": "lying-leg-curl-machine", "displayName": "Lying Leg Curl Machine", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
-            { "catalogKey": "seated-calf-raise-machine", "displayName": "Seated Calf Raise Machine", "sets": 5, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "barbell-back-squat", "displayName": "Barbell Back Squat", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "barbell-romanian-deadlift", "displayName": "Barbell Romanian Deadlift", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "leg-extension-machine", "displayName": "Leg Extension Machine", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "lying-leg-curl-machine", "displayName": "Lying Leg Curl Machine", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "seated-calf-raise-machine", "displayName": "Seated Calf Raise Machine", "sets": 6, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
             { "catalogKey": "cable-crunch", "displayName": "Cable Crunch", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
           ]
         },
@@ -484,12 +495,13 @@
             { "name": "Band Face Pull", "detail": "15 reps", "text": "Band Face Pull — 15 reps" }
           ],
           "main": [
-            { "catalogKey": "barbell-overhead-press", "displayName": "Barbell Overhead Press", "sets": 6, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
-            { "catalogKey": "cable-seated-row", "displayName": "Cable Seated Row", "sets": 6, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
-            { "catalogKey": "dumbbell-bench-press", "displayName": "Dumbbell Bench Press", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
-            { "catalogKey": "assisted-pull-up-machine", "displayName": "Assisted Pull-Up Machine", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
-            { "catalogKey": "cable-lateral-raise", "displayName": "Cable Lateral Raise", "sets": 5, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "cable-overhead-triceps-extension", "displayName": "Cable Overhead Triceps Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+            { "catalogKey": "barbell-overhead-press", "displayName": "Barbell Overhead Press", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "cable-seated-row", "displayName": "Cable Seated Row", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-bench-press", "displayName": "Dumbbell Bench Press", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "assisted-pull-up-machine", "displayName": "Assisted Pull-Up Machine", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "cable-lateral-raise", "displayName": "Cable Lateral Raise", "sets": 6, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-overhead-triceps-extension", "displayName": "Cable Overhead Triceps Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "dumbbell-rear-delt-fly", "displayName": "Dumbbell Rear Delt Fly", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
           ]
         },
         {
@@ -503,11 +515,11 @@
             { "name": "Bird Dog", "detail": "8 each side", "text": "Bird Dog — 8 each side" }
           ],
           "main": [
-            { "catalogKey": "hack-squat-machine", "displayName": "Hack Squat Machine", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
-            { "catalogKey": "barbell-hip-thrust", "displayName": "Barbell Hip Thrust", "sets": 6, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
-            { "catalogKey": "seated-leg-curl-machine", "displayName": "Seated Leg Curl Machine", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
-            { "catalogKey": "dumbbell-bulgarian-split-squat", "displayName": "Dumbbell Bulgarian Split Squat", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "per": "leg", "restSec": 120 },
-            { "catalogKey": "standing-calf-raise-machine", "displayName": "Standing Calf Raise Machine", "sets": 5, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "hack-squat-machine", "displayName": "Hack Squat Machine", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "barbell-hip-thrust", "displayName": "Barbell Hip Thrust", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "seated-leg-curl-machine", "displayName": "Seated Leg Curl Machine", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-bulgarian-split-squat", "displayName": "Dumbbell Bulgarian Split Squat", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "standing-calf-raise-machine", "displayName": "Standing Calf Raise Machine", "sets": 6, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
             { "catalogKey": "machine-back-extension", "displayName": "Machine Back Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
           ]
         }

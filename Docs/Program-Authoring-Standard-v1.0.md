@@ -628,6 +628,20 @@ Estimates assume: the athlete sets up promptly, follows prescribed rest periods,
 
 **Volume target:** 10–20 sets per muscle group per week. Distribute across sessions; do not concentrate all sets for one muscle group into a single session.
 
+> **⚠ AMENDED 2026-08-06 — `Program-Authoring-Standard-Amendment-004-Weekly-Volume-Counting.md` (LOCKED).**
+> The band above was unusable as written because it never said **what counts as a set for a muscle**, and
+> the two reasonable readings disagreed on six of twelve groups in the first program authored against it.
+>
+> - **PAS-A4-D1** — a set counts **1.0** for the exercise's PRIMARY muscles and **0.5** for each
+>   SECONDARY, per `exercise_muscles.json`. A 5-set bench press is 5 chest, 2.5 triceps, 2.5 front delt.
+> - **PAS-A4-D2** — the delts are **three** groups (front / lateral / rear), never one "Shoulders" row.
+>   Pressing feeds the front head regardless; nothing but direct work feeds the lateral or the rear, so
+>   collapsing them hides an untrained rear delt behind a healthy-looking total.
+> - **PAS-A4-D3** — the band applies to a program's **working blocks**, not to every week. A Volume
+>   Accumulation ramp-in and a deload are *supposed* to sit below it.
+> - **PAS-A4-D4** — **10–20 is the governing band.** A Blueprint may not narrow it without a stated
+>   reason under §10.1 review.
+
 **Exercise order:** Compound movements first (Barbell Bench Press, Barbell Row, Squat variations, Barbell Romanian Deadlift). Isolation work last (dumbbell fly, leg curl, lateral raise). Cable and machine exercises are appropriate — do not avoid them.
 
 **Load prescription:** Double progression (Model 2) with volume accumulation layered across the program (Model 4). RPE notes permitted at INTERMEDIATE and ADVANCED levels.

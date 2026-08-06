@@ -192,28 +192,61 @@ const weeklyVolume = (block) => {
   return t;
 };
 
-test('8 of the 10 muscle bands are met at peak accumulation, and the 2 that are not are named', () => {
-  const v = weeklyVolume(p.blocks[3]); // weeks 7–8, the reference block
-  const BANDS = {
-    chest: [10, 16], lats: [12, 18], upper_back: [12, 18], biceps: [8, 14], triceps: [8, 14],
-    quadriceps: [12, 18], hamstrings: [10, 16], calves: [8, 14],
-  };
-  for (const [m, [lo, hi]] of Object.entries(BANDS)) {
-    const n = v[m] ?? 0;
-    assert.ok(n >= lo && n <= hi, `${m} is at ${n}, outside its ${lo}–${hi} band`);
+/** The twelve the Blueprint calls "major", with the delts as three heads rather than one row. */
+const MAJOR = [
+  'chest', 'lats', 'upper_back', 'front_deltoids', 'lateral_deltoids', 'rear_deltoids',
+  'biceps', 'triceps', 'quadriceps', 'hamstrings', 'glutes', 'calves',
+];
+/** Blocks where the band applies: the working blocks and the peak, NOT the ramp-in or the deload. */
+const BANDED = [1, 2, 3, PEAK];
+
+test('every major muscle group sits inside PAS §11.2’s 10–20 band, in every working block', () => {
+  for (const i of BANDED) {
+    const v = weeklyVolume(p.blocks[i]);
+    for (const m of MAJOR) {
+      const n = v[m] ?? 0;
+      assert.ok(n >= 10 && n <= 20, `${p.blocks[i].label}: ${m} at ${n} sets, outside 10–20`);
+    }
   }
-  /*
-   * The two that cannot fit, asserted as OUT so the Design Record's finding cannot silently go stale.
-   * Shoulders: every press feeds the front delt and nothing but direct work feeds the lateral.
-   * Glutes: every squat pattern contributes and both hinges are primary — half a set over.
-   */
-  assert.ok(v.shoulders > 16, 'shoulders came into band — Design Record §5 needs updating, not the test');
-  assert.ok(v.glutes > 16 && v.glutes < 18, `glutes at ${v.glutes}; §5 records it as marginally over`);
 });
 
-test('no region is starved — every major group gets real weekly work', () => {
+/**
+ * ⚠ THE RAMP-IN AND THE DELOAD ARE *SUPPOSED* TO SIT BELOW THE BAND, AND SAYING SO IS THE POINT.
+ *
+ * Volume Accumulation opens deliberately light and week 9 deliberately lighter. A test that demanded
+ * 10–20 everywhere would force week 1 up to working volume and flatten the whole model — so the band is
+ * asserted on the working blocks above, and the ramp is asserted as a ramp here.
+ */
+test('weeks 1–2 and the deload sit BELOW the band, on purpose', () => {
+  const working = weeklyVolume(p.blocks[3]);
+  for (const i of [0, DELOAD]) {
+    const v = weeklyVolume(p.blocks[i]);
+    const lighter = MAJOR.filter((m) => (v[m] ?? 0) < (working[m] ?? 0));
+    assert.ok(lighter.length >= 10, `${p.blocks[i].label} is not meaningfully lighter than the working blocks`);
+  }
+});
+
+/**
+ * Rear delts are the group this program lost and got back. An early draft dropped their direct work
+ * while balancing everything else, leaving them at 5 — rows are the only other source, and they carry
+ * the rear delt as a SECONDARY. Nothing else in the split feeds it.
+ */
+test('rear delts get direct work on both upper days', () => {
+  for (const b of p.blocks) {
+    for (const code of ['A', 'C']) {
+      const w = b.workouts.find((x) => x.code === code);
+      assert.ok(
+        w.main.some((ex) => /rear-delt/.test(ex.catalogKey)),
+        `${b.label} ${code} has no direct rear-delt work — rows alone leave them at half a band`,
+      );
+    }
+  }
+});
+
+test('no region is starved — no major group is trained less than half of the largest', () => {
   const v = weeklyVolume(p.blocks[3]);
-  for (const m of ['chest', 'lats', 'quadriceps', 'hamstrings', 'glutes', 'calves', 'biceps', 'triceps']) {
-    assert.ok((v[m] ?? 0) >= 8, `${m} is at ${v[m] ?? 0} — that is a specialization, not a balanced split`);
+  const top = Math.max(...MAJOR.map((m) => v[m] ?? 0));
+  for (const m of MAJOR) {
+    assert.ok((v[m] ?? 0) >= top / 2, `${m} at ${v[m] ?? 0} against a top of ${top} — that is a specialization`);
   }
 });

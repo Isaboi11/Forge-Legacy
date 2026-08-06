@@ -108,6 +108,25 @@ Exercise order is fixed by PAS §11.2: compounds first, isolation last; cables a
 
 ## Section 4 — Weekly Muscle-Group Coverage
 
+> **⚠ AMENDED 2026-08-06 — `Program-Authoring-Standard-Amendment-004-Weekly-Volume-Counting.md` (LOCKED).**
+> **The table below is superseded in two ways, and both were found by authoring the program against it.**
+>
+> 1. **It narrowed PAS §11.2's 10–20 band** to 10–16 and 12–18 per group, with no rationale recorded.
+>    PAS-A4-D4 restores 10–20 as the governing band; a Blueprint may not narrow it without a stated
+>    reason. The authored program failed these narrower numbers, not the Standard's.
+> 2. **Its single "Shoulders" row is unsatisfiable by construction.** PAS-A4-D2 splits the delts into
+>    three groups. Pressing feeds the front head whatever the program does, and *nothing but direct work*
+>    feeds the lateral or the rear — so one combined row reads healthy at 26 while the rear delt sits at
+>    5, which is precisely what the first draft did.
+>
+> The Standard also now states **how a set is counted** (PAS-A4-D1: Primary 1.0, Secondary 0.5) and that
+> the band applies to **working blocks**, not the ramp-in or the deload (PAS-A4-D3). Without those, §1's
+> claim that balance is this program's identity could be asserted but never checked.
+>
+> The authored program satisfies all twelve major groups inside 10–20 across weeks 3–10, asserted in
+> `muscle-building-intermediate.test.mjs`.
+
+
 The architecture's defining test is that the four sessions sum to a **balanced** weekly distribution. With two Upper and two Lower sessions, each major group gets two weekly exposures:
 
 | Muscle group | Trained on | Target weekly sets (PAS §11.2 band) |

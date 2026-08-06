@@ -61,9 +61,9 @@ Ten weeks, four days a week, 40 sessions, six blocks. **Upper / Lower, twice eac
 
 | | | |
 |---|---|---|
-| **A — Upper, Chest Lead** | `upper` | bench · barbell row · incline · pulldown · lateral raise · curl |
+| **A — Upper, Chest Lead** | `upper` | bench · barbell row · incline · pulldown · lateral raise · curl · rear-delt fly |
 | **B — Lower, Squat Lead** | `legs` | back squat · RDL · leg extension · lying curl · seated calf · cable crunch |
-| **C — Upper, Shoulder Lead** | `upper` | overhead press · seated row · dumbbell bench · pull-up · cable lateral · triceps |
+| **C — Upper, Shoulder Lead** | `upper` | overhead press · seated row · dumbbell bench · pull-up · cable lateral · triceps · rear-delt fly |
 | **D — Lower, Hinge Lead** | `legs` | hack squat · hip thrust · seated curl · Bulgarian · standing calf · back extension |
 
 Session order follows Blueprint §3 exactly: press or squat compound first, row or hinge compound second,
@@ -89,15 +89,15 @@ and are easy to conflate:
 
 | Block | Weeks | Primary | Secondary | High-vol isolation | Isolation | Sets/session (A B C D) |
 |---|---|---:|---:|---:|---:|---|
-| 1 | 1–2 | 3 | 3 | 4 | 3 | 19 · 19 · 19 · 19 |
-| 2 | 3–4 | 4 | 3 | 4 | 3 | 21 · 21 · 21 · 20 |
-| 3 | 5–6 | 4 | 4 | 5 | 3 | 24 · 24 · 24 · 24 |
-| 4 | 7–8 | 5 | 4 | 5 | 3 | 26 · 26 · 26 · 25 |
-| 5 | **9 — Deload** | 3 | 3 | 3 | 3 | **18 · 18 · 18 · 18** |
-| 6 | **10 — Peak** | 6 | 5 | 5 | 3 | **30 · 30 · 30 · 29** |
+| 1 | 1–2 | 3 | 3 | 4 | 3 | 22 · 19 · 22 · 19 |
+| 2 | 3–4 | 4 | 3 | 5 | 3 | 25 · 22 · 25 · 21 |
+| 3 | 5–6 | 4 | 4 | 5 | 3 | 27 · 24 · 27 · 24 |
+| 4 | 7–8 | 5 | 4 | 5 | 3 | 29 · 26 · 29 · 25 |
+| 5 | **9 — Deload** | 3 | 3 | 3 | 3 | **21 · 18 · 21 · 18** |
+| 6 | **10 — Peak** | 5 | 4 | 6 | 3 | **30 · 27 · 30 · 26** |
 
 Every session sits inside PAS-D11 (5–8 exercises, 18–30 sets), **including both ends** — the Blueprint's
-"opening weeks near 18–22, peak weeks approaching 26–28" is met, with the peak at 29–30.
+"opening weeks near 18–22, peak weeks approaching 26–28" is met, with the peak at 26–30.
 
 The deload cuts primary sets **from 5 to 3 (40%)**, which is the bottom of PAS-D8's 40–50% band, and
 holds all four sessions.
@@ -109,47 +109,51 @@ Amendment 003 was written over.
 
 ---
 
-## 5. ⚠ The Blueprint's per-muscle bands, measured — and why two do not fit
+## 5. The Blueprint's per-muscle bands — the finding, and the fix
 
-Blueprint §4 sets weekly per-muscle-group targets and §1 makes them the program's identity: *"every major
-muscle group is trained inside the 10–20 sets/week band, with no region prioritized over another."*
+Blueprint §4 set weekly per-muscle targets and §1 made them the program's identity: *"every major muscle
+group is trained inside the 10–20 sets/week band, with no region prioritized over another."*
 
-**The Blueprint does not say how to count a set.** That is not a quibble — it changes the answer
-completely, so both readings are given here rather than the flattering one. Measured at weeks 7–8:
+**Authoring against it exposed two problems in the Blueprint, both now fixed at the Standard.**
 
-| Muscle | Band | Direct only | Direct + indirect (secondary at ½) |
-|---|---|---:|---:|
-| Chest | 10–16 | 13 ✅ | 15.5 ✅ |
-| Lats | 12–18 | 8 ❌ | 13 ✅ |
-| Upper back | 12–18 | 10 ❌ | 14 ✅ |
-| **Shoulders** | 10–16 | 15 ✅ | **26.5 ❌** |
-| Biceps | 8–14 | 3 ❌ | 12 ✅ |
-| Triceps | 8–14 | 3 ❌ | 12 ✅ |
-| Quadriceps | 12–18 | 17 ✅ | 17 ✅ |
-| Hamstrings | 10–16 | 8 ❌ | 14.5 ✅ |
-| **Glutes** | 10–16 | 10 ✅ | **16.5 ❌** |
-| Calves | 8–14 | 10 ✅ | 10 ✅ |
-| | | **6 of 10** | **8 of 10** |
+**1. It never said what counts as a set for a muscle.** A 5-set bench press is 5 chest sets — and is it
+5 triceps sets, or 0? Measured both ways, the readings disagreed on **six of twelve** groups. Counting
+direct only, arms landed at 3 against a 10–20 band, unreachable without four isolation exercises per
+upper day. Counting indirect at full weight, front delts absorbed every press.
 
-**The program is authored to the second reading**, which is how weekly hypertrophy volume is normally
-counted and which meets 8 of 10.
+**2. Its "Shoulders 10–16" row is unsatisfiable by construction**, and worse, it *hid* a real defect.
+Pressing feeds the front delt whatever the program does; **nothing but direct work feeds the lateral or
+the rear.** One combined row read a healthy 26 while the **rear delt sat at 5** — an actually
+under-trained muscle, invisible behind a total that looked fine.
 
-**Neither reading can meet all ten, and that is a property of the Blueprint rather than of this program:**
+It also narrowed PAS §11.2's own **10–20** band to 10–16 and 12–18, with no rationale recorded. The first
+draft failed those narrower numbers, not the Standard's.
 
-- **Direct-only makes arms unreachable.** 3 sets against a band of 8–14. Closing it needs four isolation
-  exercises per upper day, which breaks PAS-D11's 8-exercise ceiling once the four compounds are in.
-- **Direct-plus-indirect makes shoulders unavoidable.** 26.5 against 10–16. Every horizontal and vertical
-  press feeds the front delt, and **nothing feeds the lateral delt except direct work** — so cutting
-  lateral raises to hit the band would starve the one head that has no other source. The band and the
-  split are in tension, not the band and this program.
-- **Glutes at 16.5 miss by half a set**, because every squat pattern contributes and two hinges are
-  primary. Trimmable, and deliberately not trimmed: half a set is inside the noise of a counting
-  convention the Blueprint never specified.
+### What changed
 
-**Recommendation to feed back:** §4 should state its counting convention, and the Shoulders row should
-either split by head or widen.
+`Program-Authoring-Standard-Amendment-004-Weekly-Volume-Counting.md` (LOCKED) states the convention once,
+for all five Blueprints that carry a per-muscle table:
 
----
+- **PAS-A4-D1** — a set counts **1.0** for the exercise's PRIMARY muscles, **0.5** for each SECONDARY.
+- **PAS-A4-D2** — the delts are **three** groups, never one row.
+- **PAS-A4-D3** — the band applies to **working blocks**, not the ramp-in or the deload.
+- **PAS-A4-D4** — **10–20 governs**; a Blueprint may not narrow it without a stated reason.
+
+### And what changed in the program
+
+Direct rear-delt work was restored to **both** upper days — the first draft had dropped it while
+balancing everything else, which is how it reached 5. Isolation doses in weeks 3–4 and week 10 were
+raised so the lateral delt and the calf clear the floor at the peak rather than dipping under it.
+
+**All twelve major groups now sit inside 10–20 across weeks 3–10:**
+
+| | wk 1–2 | wk 3–4 | wk 5–6 | wk 7–8 | wk 9 | wk 10 |
+|---|---|---|---|---|---|---|
+| all 12 major groups inside 10–20 | ramp-in | ✅ | ✅ | ✅ | deload | ✅ |
+
+Weeks 1–2 and week 9 sit **below** the band deliberately — that is Volume Accumulation opening light and
+the deload discharging fatigue. PAS-A4-D3 exists so that reads as the model working rather than as a
+violation, and the test asserts the ramp is genuinely a ramp rather than letting it pass unexamined.
 
 ## 6. Coaching audit — findings
 
@@ -177,19 +181,22 @@ either split by head or widen.
 | PAS-D10 warm-up in its own section | ✅ |
 | PAS-D11 5–8 exercises / 18–30 sets | ✅ 6–7 / 18–30 |
 | PAS §10.3 INTERMEDIATE rest | ✅ 150 / 120 / 75 / 60 s |
-| PAS §11.2 per-muscle weekly band | ⚠️ **8 of 10** — §5 |
+| PAS §11.2 per-muscle weekly band | ✅ **12 of 12** inside 10–20, weeks 3–10 — §5 |
 | QC-2 visible progression | ✅ §4, both axes |
 
 ---
 
 ## 8. Lock recommendation
 
-**Recommend: hold**, on two things:
+**Recommend: hold**, on one thing.
 
-1. **The §5 band finding.** Two groups sit outside the Blueprint's table under the convention this
-   program is authored to, and the Blueprint never stated a convention. That is a Stage-1 question and
-   should be answered before a Stage-2 program is locked against it.
-2. **Nobody has trained it.** Findings 1 and 2 are the ones to watch.
+~~1. **The §5 band finding.**~~ ✅ **RESOLVED 2026-08-06** — the Standard now states the counting
+convention (PAS Amendment 004), the delts are three groups rather than one, and the program was
+rebalanced to satisfy all twelve major groups inside 10–20. The under-trained rear delt that the
+combined "Shoulders" row was hiding has direct work on both upper days.
+
+1. **Nobody has trained it.** Findings 2 and 4 in §6 — the week-10 primary jump and the arm dose — are
+   the ones to watch. This is the only remaining reason to hold.
 
 `successorName` is `Muscle Building Advanced` (Sort 7), which is **blueprinted and unbuilt** — so the
 successor link resolves to nothing today. Import order is terminal-first (PAS §17.2).
