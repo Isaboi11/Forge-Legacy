@@ -26,6 +26,19 @@ import { execSync } from 'node:child_process';
  * A source guard that greps for a string it must also SAY is a shape worth recognising: any test written
  * this way has to exclude itself, or it is born failing the moment it lands.
  */
+/**
+ * ⚠ COMMENT LINES ARE FILTERED OUT, and that is a fix rather than a loophole.
+ *
+ * The pathspec below excludes this one file, and for a while that was enough. Then `src/lib/svg-color.ts`
+ * was written to make the bug unwriteable — and its doc comment has to SPELL OUT the forbidden pattern to
+ * explain what it prevents, so the guard went red on the file that fixes the problem.
+ *
+ * Growing the exclusion list once per explanation is the wrong direction: every excluded file is a file
+ * the rule no longer covers. Dropping comment lines instead keeps every file in scope and only ignores
+ * prose, which cannot render anything. A `stopColor="rgba(` in real code is still caught anywhere.
+ */
+const isComment = (line) => /^[^:]+:\d+:\s*(\*|\/\/|\/\*)/.test(line);
+
 test('no SVG gradient stop carries its alpha inside an rgba() string', () => {
   let hits = '';
   try {
@@ -39,6 +52,7 @@ test('no SVG gradient stop carries its alpha inside an rgba() string', () => {
   } catch {
     hits = '';
   }
+  hits = hits.split('\n').filter(Boolean).filter((l) => !isComment(l)).join('\n');
 
   assert.equal(
     hits,
@@ -83,6 +97,7 @@ test('a <Stop> with a computed colour states its opacity', () => {
   const offenders = hits
     .split('\n')
     .filter(Boolean)
+    .filter((l) => !isComment(l))
     // A computed colour — `stopColor={…}` — with no `stopOpacity` anywhere on the line.
     .filter((l) => /stopColor=\{/.test(l) && !/stopOpacity/.test(l));
 

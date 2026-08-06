@@ -1,11 +1,35 @@
-import { Image } from 'expo-image';
 import { useState } from 'react';
-import { Dimensions, StyleSheet, View } from 'react-native';
+import { Dimensions, StyleSheet } from 'react-native';
 import Animated, { Easing, Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
+/**
+ * The hand-off from the NATIVE splash to the first painted frame.
+ *
+ * ══ THIS SHIPPED AS A FLASH OF EXPO BLUE, AND ONLY ON A PHONE ══
+ *
+ * Reported from the tester build: "the first splash screen, then a blue splash, then the home screen."
+ * That middle frame was this component, filling the screen with **`#208AEF`** — Expo's brand blue,
+ * straight out of the `create-expo-app` template — for 600ms on every single launch.
+ *
+ * It survived because **the web twin (`animated-icon.web.tsx`) returns `null`**, so forgelegacy.expo.app
+ * never showed it. Every review of this app happens on the web preview. The one surface that renders it
+ * is the one nobody can open on a Windows machine.
+ *
+ * The fill is now the splash background itself (`#0E0E12`, the `expo-splash-screen` plugin colour in
+ * `app.json`), which is the only value that makes this component invisible — it exists to COVER the gap
+ * while the first frame mounts, then scale and fade away. Any colour that is not the splash's is a flash
+ * by construction, and `splash-continuity.test.mjs` now fails if the two ever drift apart.
+ */
 const INITIAL_SCALE_FACTOR = Dimensions.get('screen').height / 90;
 const DURATION = 600;
+
+/**
+ * Must equal `expo.plugins['expo-splash-screen'].backgroundColor` in `app.json`.
+ * Not imported from there: this runs in the render path and `app.json` is build config, so the guard
+ * asserts the equality instead of the bundle carrying a JSON read to prove it.
+ */
+export const SPLASH_BACKGROUND = '#0E0E12';
 
 export function AnimatedSplashOverlay() {
   const [visible, setVisible] = useState(true);
@@ -44,89 +68,10 @@ export function AnimatedSplashOverlay() {
   );
 }
 
-const keyframe = new Keyframe({
-  0: {
-    transform: [{ scale: INITIAL_SCALE_FACTOR }],
-  },
-  100: {
-    transform: [{ scale: 1 }],
-    easing: Easing.elastic(0.7),
-  },
-});
-
-const logoKeyframe = new Keyframe({
-  0: {
-    transform: [{ scale: 1.3 }],
-    opacity: 0,
-  },
-  40: {
-    transform: [{ scale: 1.3 }],
-    opacity: 0,
-    easing: Easing.elastic(0.7),
-  },
-  100: {
-    opacity: 1,
-    transform: [{ scale: 1 }],
-    easing: Easing.elastic(0.7),
-  },
-});
-
-const glowKeyframe = new Keyframe({
-  0: {
-    transform: [{ rotateZ: '0deg' }],
-  },
-  100: {
-    transform: [{ rotateZ: '7200deg' }],
-  },
-});
-
-export function AnimatedIcon() {
-  return (
-    <View style={styles.iconContainer}>
-      <Animated.View entering={glowKeyframe.duration(60 * 1000 * 4)} style={styles.glow}>
-        <Image style={styles.glow} source={require('@/assets/images/logo-glow.png')} />
-      </Animated.View>
-
-      <Animated.View entering={keyframe.duration(DURATION)} style={styles.background} />
-      <Animated.View style={styles.imageContainer} entering={logoKeyframe.duration(DURATION)}>
-        <Image style={styles.image} source={require('@/assets/images/expo-logo.png')} />
-      </Animated.View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  imageContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  glow: {
-    width: 201,
-    height: 201,
-    position: 'absolute',
-  },
-  iconContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 128,
-    height: 128,
-    zIndex: 100,
-  },
-  image: {
-    position: 'absolute',
-    width: 76,
-    height: 71,
-  },
-  background: {
-    borderRadius: 40,
-    experimental_backgroundImage: `linear-gradient(180deg, #3C9FFE, #0274DF)`,
-    width: 128,
-    height: 128,
-    position: 'absolute',
-  },
   backgroundSolidColor: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#208AEF',
+    backgroundColor: SPLASH_BACKGROUND,
     zIndex: 1000,
   },
 });
