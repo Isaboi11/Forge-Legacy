@@ -65,6 +65,15 @@ export function durText(sec: number | null | undefined): string {
 }
 
 /**
+ * The side a per-side prescription refers to, as it is spoken: " per leg", " per side".
+ *
+ * Empty for everything else, so every existing prescription renders byte-for-byte as it did.
+ */
+function perText(ex: ProgramExercise): string {
+  return ex.per === 'leg' ? ' per leg' : ex.per === 'side' ? ' per side' : '';
+}
+
+/**
  * The prescription as one line — what the athlete reads before they start.
  *
  *   4 × 6-6-4-4      a ladder, shown IN FULL rather than averaged
@@ -73,9 +82,14 @@ export function durText(sec: number | null | undefined): string {
  *   30s              timed, single round
  *   3 × 30s          timed, repeated
  *   15 min           a cardio bout prescribed by duration
+ *   3 × 10 per leg   a side the athlete owes twice
  *
  * A ladder is never collapsed to its first or highest number. The whole point of 10-8-6-4 is that it
  * descends, and a card reading "4 × 10" would be describing a different session.
+ *
+ * The per-side suffix hangs off the END of every shape above rather than being woven into any of them,
+ * because it modifies the whole ask: "3 × 10-12 per leg" and "2 × 30s per side" are both sentences, and
+ * neither needs the rep half to know anything about sides.
  */
 export function schemeText(ex: ProgramExercise): string {
   if (ex.kind === 'cardio') {
@@ -97,7 +111,7 @@ export function schemeText(ex: ProgramExercise): string {
   if (isTimed(ex)) {
     const n = setCount(ex);
     const d = durText(ex.durationSec);
-    return n > 1 ? `${n} × ${d}` : d;
+    return (n > 1 ? `${n} × ${d}` : d) + perText(ex);
   }
 
   const targets = repTargets(ex);
@@ -120,8 +134,8 @@ export function schemeText(ex: ProgramExercise): string {
    * the block above it already says ⟳4, and a member reading "1 × 12" invites "one set of twelve" when
    * the athlete owes four.
    */
-  if (ex.groupId && targets.length === 1) return body;
-  return `${targets.length} × ${body}`;
+  if (ex.groupId && targets.length === 1) return body + perText(ex);
+  return `${targets.length} × ${body}${perText(ex)}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

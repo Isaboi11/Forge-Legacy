@@ -109,10 +109,13 @@ export function buildSessionFromProgram(
       }
 
       // The ladder survives the crossing — see `sessionSetsFor`, which owns that rule and is tested.
+      // So does the SIDE: without it a per-leg prescription reaches the logger as half of itself,
+      // looking complete. `ex.per` is null for every item that never had one.
       exercises.push({
         catalogKey: ex.catalogKey,
         name: ex.name,
         ...group,
+        ...(ex.per ? { per: ex.per } : {}),
         section: sec.key,
         position: exercises.length,
         sets: sessionSetsFor(ex, load),

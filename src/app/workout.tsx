@@ -1452,7 +1452,7 @@ export default function WorkoutScreen() {
                       <Text style={[styles.ssSet, mset.done && styles.ssSetDone]}>
                         {mset.done
                           ? `${weightText(mset)} × ${actualText(mset)}  ✓`
-                          : `Goal ${mset.toFailure ? 'max' : mset.targetSec != null ? durText(mset.targetSec) : `${targetRepsText(mset)} reps`}`}
+                          : `Goal ${mset.toFailure ? 'max' : mset.targetSec != null ? durText(mset.targetSec) : `${targetRepsText(mset)} reps`}${mex.per ? ` per ${mex.per}` : ''}`}
                       </Text>
                     ) : (
                       <Text style={styles.ssSetNone}>— no set this round</Text>
@@ -1639,6 +1639,10 @@ export default function WorkoutScreen() {
                     ) : (
                       <Text style={[styles.targetText, { color: valColor }]}>{targetRepsText(set)}<Text style={styles.repsLabel}> Reps</Text></Text>
                     )}
+                    {/* THE SIDE. "10 Reps" for a split squat is half the prescription wearing the whole
+                        prescription's clothes — the athlete has no way to tell it apart from a real
+                        thirty-rep day. Shown per row because the row is where they are looking. */}
+                    {ex.per ? <Text style={styles.targetPer}>per {ex.per}</Text> : null}
                     {/* The bar a percentage-based program is asking for. Shown UNDER the rep target
                         rather than pre-filled into Weight, because Weight is what the athlete lifted:
                         seeding it would record a lift nobody made and could announce a PR for it. */}
@@ -1901,6 +1905,9 @@ export default function WorkoutScreen() {
                 <Text style={styles.setSheetSub}>
                   Set {sheet.setIdx + 1} of {sheetEx?.sets.length ?? 1}
                   {sheetSet.toFailure ? ' · to failure' : sheetSet.targetSec != null ? ` · goal ${durText(sheetSet.targetSec)}` : ` · goal ${sheetSet.targetReps} reps`}
+                  {/* The sheet is where the number gets typed, so it is the last place the side can be
+                      stated before it is too late to matter. */}
+                  {sheetEx?.per ? ` per ${sheetEx.per}` : ''}
                 </Text>
               </View>
               <Pressable onPress={toggleWheel} accessibilityRole="button" accessibilityLabel={wheelMode ? 'Type the values' : 'Use the wheel'} style={styles.pickerToggle}>
@@ -2712,6 +2719,7 @@ const styles = StyleSheet.create({
   targetText: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600' },
   targetLoad: { fontSize: 11, fontWeight: '600', color: flColor.bronze300, marginTop: 1 },
   repsLabel: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray600 },
+  targetPer: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.bronze300, marginTop: 1 },
   weightBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 6 },
   weightText: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600' },
   actualCell: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 9 },

@@ -51,6 +51,13 @@ function prescriptionToExercise(equipFor?: (catalogKey: string) => string | unde
      * already states every set's target.
      */
     if (ex.repsMax != null && !ex.repScheme?.length) out.repsMax = ex.repsMax;
+    /*
+     * Per-leg / per-side. Dropped here until 2026-08-06, across 142 prescriptions in all thirteen
+     * programs — the same write-only field as `repsMax` above, and worse in one respect: a missing range
+     * shows less than was asked for, while a missing side shows HALF of it as if that were the whole
+     * prescription. Unlike a range this rides alongside a ladder happily: "6-6-4-4 per leg" is coherent.
+     */
+    if (ex.per) out.per = ex.per;
     if (ex.durationSec != null) out.durationSec = ex.durationSec;
     if (ex.optional) out.optional = true;
 

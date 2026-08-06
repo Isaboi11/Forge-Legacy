@@ -117,6 +117,14 @@ export interface SessionExercise {
   groupRounds?: number;
   /** An AMRAP's cap in seconds; rounds are then uncounted by design. */
   groupCapSec?: number | null;
+  /**
+   * "10 reps PER LEG" — carried from the program so the Target column states the whole ask.
+   *
+   * It sits on the EXERCISE and not on the set, because a side is a property of the movement: every set
+   * of a split squat is per leg, and repeating it per set would be the same fact written five times.
+   * Nothing counts it — `targetReps` stays what the athlete logs, exactly as with a rep range.
+   */
+  per?: 'leg' | 'side';
   section: WorkoutSectionKind;
   position: number;
   sets: SessionSet[];

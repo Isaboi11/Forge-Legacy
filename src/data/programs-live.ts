@@ -48,6 +48,27 @@ export type ProgramExercise = {
    */
   repsMax?: number | null;
   /**
+   * WHICH SIDE the rep count refers to — "3 × 10 **per leg**", "30s **per side**".
+   *
+   * ══ WHY THIS IS NOT COSMETIC ══
+   *
+   * An athlete reading "Bulgarian Split Squat 3 × 10" does thirty reps. The author prescribed sixty. It
+   * is the only field in the model where dropping it does not remove information from the screen — it
+   * leaves a DIFFERENT, complete-looking prescription in place, and the athlete has no way to tell.
+   *
+   * ══ WHY THE NUMBER STAYS PER-SIDE ══
+   *
+   * `reps` remains what the athlete logs and what volume counts, exactly as `repsMax` left it alone. The
+   * alternative — doubling `reps` for a per-side item — would put twenty in the reps column for a set of
+   * ten-a-side and corrupt every e1RM, PR and history row downstream. This field is DISPLAY ONLY, and it
+   * is display of something the prescription always said.
+   *
+   * It was on the CATALOG side (`ExercisePrescription.per`) and nowhere else: **142 prescriptions across
+   * all thirteen programs** authored it and not one reached an athlete. Same write-only shape as
+   * `repsMax`, found the same way, and this is the third time.
+   */
+  per?: 'leg' | 'side' | null;
+  /**
    * A PER-SET ladder — "6-6-4-4" is `[6, 6, 4, 4]`, "10-10-10-F" is `[10, 10, 10, 'F']`.
    *
    * When present this is authoritative and its LENGTH is the set count, so `sets`/`reps` are ignored.
