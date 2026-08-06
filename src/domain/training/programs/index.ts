@@ -17,6 +17,7 @@
  *   - Muscle Building Intermediate
  *   - Bodyweight Foundation
  *   - Athletic Conditioning Foundation
+ *   - Mobility Foundation
  *
  * ── WHY ONE PROGRAM HAS NO `.docx` ───────────────────────────────────────────────────────────────────
  *
@@ -149,6 +150,28 @@
  * It is also the first program that can honestly set `structure: 'ppl'`. Full Frame and Frame by Frame
  * both omit `structure`, correctly — five days including Upper and Lower is not PPL, and a body-part
  * split is not either.
+ *
+ * ── MOBILITY FOUNDATION IS THE FIRST PROGRAM THAT IS NOT SETS AND REPS ───────────────────────────────
+ *
+ * Sort 23, and the sixth and final family's BEGINNER rung. It is the one program in the catalog with
+ * **no warm-up at all** — MOBILITY is MAIN-only by PAS-D9, so `warmup: []` on all twenty sessions is the
+ * family's structural signature rather than the omission it would be anywhere else.
+ *
+ * Its progressed variable is **hold duration** (Time-Based Progression, Model 5): the positions never
+ * get harder, and the athlete stays in them for 20s in week 1 and 50s in week 4. The dynamic drills keep
+ * their sets and reps for all four weeks ON PURPOSE — progressing volume as well would make it a volume
+ * program wearing a mobility program's name, and the harder-variation lever is the single content
+ * boundary the whole Foundation ↔ Intermediate distinction rests on (Blueprint §4, §9).
+ *
+ * **It could not have been authored a day earlier, for the same reason Muscle Building Intermediate
+ * could not.** 76 of its 140 prescriptions are per side, and `per` was dropped between the catalog and
+ * the athlete — a stretch held on one side is not the stretch. That was fixed first, and the 142
+ * per-side prescriptions the other twelve programs had been quietly losing came back with it.
+ *
+ * ⚠ It is the one program authored **entirely from the `Mobility` movement pattern** and nowhere else.
+ * That is what keeps it honest at HOME: every one of its 24 distinct exercises is `bodyweight`, so the
+ * foam rollers, lacrosse balls, benches and pull-up bars that make up a third of that pattern are
+ * excluded by hand rather than by a gate that cannot see them — the lesson Close Quarters' bench taught.
  */
 
 import type { ProgramDefinition } from '../schema';
@@ -165,6 +188,7 @@ import closeQuarters from './close-quarters-6day.json';
 import muscleBuildingIntermediate from './muscle-building-intermediate.json';
 import bodyweightFoundation from './bodyweight-foundation.json';
 import athleticConditioningFoundation from './athletic-conditioning-foundation.json';
+import mobilityFoundation from './mobility-foundation.json';
 
 // JSON import types widen literals (e.g. theme:string); the validator test enforces the
 // real ProgramDefinition contract, so a single narrowing cast here is safe.
@@ -182,6 +206,7 @@ const DEFINITIONS: readonly ProgramDefinition[] = [
   muscleBuildingIntermediate,
   bodyweightFoundation,
   athleticConditioningFoundation,
+  mobilityFoundation,
 ] as unknown as ProgramDefinition[];
 
 /** All converted, PO-approved program definitions. */
