@@ -4,7 +4,8 @@ import { useFocusEffect, useRouter } from 'expo-router';
 
 import { fetchTodaysChapterPhotos } from '@/data/photos-live';
 import { fetchTrainingPartners } from '@/data/train-together-live';
-import { fetchTemplates } from '@/data/templates-live';
+import { fetchTemplates, type TemplateExercise } from '@/data/templates-live';
+import { getStarterTemplate } from '@/domain/workout/starter-templates';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -53,11 +54,15 @@ import { playlistLabel } from '@/domain/workout/playlist';
 import { equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
 import { getRestTimerEnabled, setRestTimerEnabled } from '@/lib/rest-timer-pref';
 import { getWheelInput, setWheelInput } from '@/lib/set-input-pref';
+import { useKeyboardInset } from '@/lib/useKeyboardInset';
 import { clearExerciseInbox, readExerciseInbox, type PickedExercise } from '@/lib/exercise-inbox';
 import type { ActiveSession, SessionExercise, SessionSet } from '@/domain/workout/types';
 
 const AnimatedSvg = Animated.createAnimatedComponent(Svg);
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
+
+/** Stable no-op, so the primer's `onChangeText` is not a fresh closure on every render. */
+const noop = () => {};
 
 type Phase = 'loading' | 'resume' | 'active' | 'saving';
 /**
@@ -118,6 +123,19 @@ function fmtMMSS(sec: number): string {
 function actualText(set: SessionSet): string {
   if (set.actualReps != null) return String(set.actualReps);
   return set.toFailure ? '—' : String(set.targetReps);
+}
+
+/**
+ * The Target column — "10" flat, or "10-12" when the program prescribed a range.
+ *
+ * ⚠ `actualText` above deliberately still back-fills from `targetReps` ALONE. Completing a set without
+ * typing anything records the FLOOR, which is the conservative claim: the athlete may have hit twelve,
+ * but the app must not enter a number they never said. The range is what to aim for; the floor is what
+ * gets written when they say nothing.
+ */
+function targetRepsText(set: SessionSet): string {
+  const top = set.targetRepsMax;
+  return top != null && top > set.targetReps ? `${set.targetReps}-${top}` : String(set.targetReps);
 }
 
 /**
@@ -206,6 +224,10 @@ export default function WorkoutScreen() {
   /* The two sheet inputs, so the tap that OPENS the sheet can also focus the field it named. */
   const weightInputRef = useRef<TextInput | null>(null);
   const repsInputRef = useRef<TextInput | null>(null);
+  /* The keyboard primer — an always-mounted invisible input, focused synchronously inside the tap so
+     the browser will open a keyboard at all. Full reasoning above the focus effect. */
+  const primerRef = useRef<TextInput | null>(null);
+  const keyboardInset = useKeyboardInset();
   const [wheelMode, setWheelMode] = useState(false); // typing is the default; the saved pref loads on mount
   const [endConfirmOpen, setEndConfirmOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -246,6 +268,8 @@ export default function WorkoutScreen() {
   const [durSec, setDurSec] = useState(30);
   const [overviewOpen, setOverviewOpen] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
+  const [wNameOpen, setWNameOpen] = useState(false);
+  const [wNameDraft, setWNameDraft] = useState('');
   /**
    * The exercise index whose cardio bout is OPEN — started and not yet logged. Null when none is.
    *
@@ -289,7 +313,9 @@ export default function WorkoutScreen() {
        */
       const launch = await readWorkoutLaunch();
       const hasWork = hasLoggedWork(saved); // the same rule Home uses to offer "Continue" — see `autosave.ts`
-      const wantsSomething = !!launch && (!!launch.conditioning || !!launch.templateId || !!launch.freestyle || !!launch.programId || !!launch.exercises?.length);
+      const wantsSomething =
+        !!launch &&
+        (!!launch.conditioning || !!launch.templateId || !!launch.starterId || !!launch.freestyle || !!launch.programId || !!launch.exercises?.length);
 
       if (hasWork) {
         setResumable(saved);
@@ -363,46 +389,7 @@ export default function WorkoutScreen() {
               // Attributes the saved workout back to the template (0095) — what makes its "Times used"
               // and session history real, and what makes them count only sessions actually finished.
               templateId: t.id,
-              exercises: t.exercises.map((e, i) => {
-                // A template that ended in a run comes back as a cardio block, not as sets of it. The
-                // modality it was trained in comes back too (0097) — a treadmill session shouldn't
-                // silently become a road run the next time you repeat it.
-                const act = activityFromKey(e.catalogKey);
-                if (e.kind === 'cardio' && act) {
-                  return cardioExercise(act, i, {
-                    section: e.section ?? 'main',
-                    modality: e.modality ?? 'outdoor',
-                    targetMi: e.targetMi ?? null,
-                    targetPaceSec: null,
-                    targetSpdMph: null,
-                  });
-                }
-                return {
-                      name: e.name,
-                      catalogKey: e.catalogKey ?? undefined,
-                      // The template's own section, not a flat 'main' — warm-up and cool-down survived the
-                      // round trip as of 0095, and the logger is where that has to show up.
-                      section: e.section ?? 'main',
-                      position: i,
-                      // …and its blocks (0106). Repeating a session you built around a superset must
-                      // give you the superset back, not two lifts that merely sit next to each other.
-                      ...(e.groupId
-                        ? {
-                            groupId: e.groupId,
-                            groupName: e.groupName ?? undefined,
-                            groupKind: e.groupKind ?? 'circuit',
-                            groupRounds: e.groupRounds ?? undefined,
-                          }
-                        : null),
-                  sets: Array.from({ length: Math.max(1, e.sets) }, (_, si) => ({
-                    setIndex: si,
-                    targetReps: e.targetReps || 8,
-                    weight: null,
-                    actualReps: null,
-                    done: false,
-                  })),
-                } satisfies SessionExercise;
-              }),
+              exercises: templateToSessionExercises(t.exercises),
             });
             setPhase('active');
             return;
@@ -411,6 +398,31 @@ export default function WorkoutScreen() {
           // a missing template must not block training — fall through to a freestyle session
         }
         setSession({ workoutName: launch.workoutName ?? 'Shared Workout', activityType: 'strength', startedAt: new Date().toISOString(), exercises: [] });
+        setPhase('active');
+        return;
+      }
+
+      /*
+       * A FORGE SESSION, TRAINED WITHOUT BEING OWNED.
+       *
+       * The preview screen had one action — "Add to My Templates" — so the only way to train one of the
+       * 81 shipped sessions was to first put a copy in your library. That is the wrong order for the
+       * commonest case: you are standing in a gym looking at a push day and you want to do it, not file
+       * it. Adopting stays exactly where it was, for when you want to keep and edit it.
+       *
+       * NO `templateId` IS STAMPED, because there is no row to stamp — the session saves as an ordinary
+       * free workout under the definition's name. That is honest: nothing yet claims "times used" for a
+       * template the athlete does not have. Taking it first, then training it, still attributes normally.
+       */
+      if (launch?.starterId) {
+        await clearWorkoutLaunch();
+        const def = getStarterTemplate(launch.starterId);
+        setSession({
+          workoutName: launch.workoutName ?? def?.name ?? 'Workout',
+          activityType: 'strength',
+          startedAt: new Date().toISOString(),
+          exercises: def ? templateToSessionExercises(def.exercises) : [],
+        });
         setPhase('active');
         return;
       }
@@ -747,6 +759,9 @@ export default function WorkoutScreen() {
        confirming without touching anything keeps 135 — the behaviour the wheel only appeared to have. */
     setDraftW(set.weight != null ? String(set.weight) : '');
     setDraftR(set.actualReps != null ? String(set.actualReps) : set.toFailure ? '' : String(set.targetReps));
+    /* Synchronously, INSIDE the tap — see `primerRef`. Must happen before the setState below, because
+       React may process the update and return control to the browser first. */
+    if (!wheelMode) primerRef.current?.focus();
     setSheet({ exIdx: exI, setIdx: setI, focus });
   };
 
@@ -764,9 +779,19 @@ export default function WorkoutScreen() {
    * Wheel mode is excluded deliberately — there is no TextInput to focus, and a keyboard rising under
    * the wheel is the opposite of what choosing the wheel asked for.
    *
-   * One frame, not a bare call: on web the input mounts in the same commit as this effect and Safari
-   * drops a `focus()` issued before the node is in the document. A timeout is the unreliable version
-   * of the same idea.
+   * ══ THIS EFFECT ALONE IS NOT ENOUGH ON WEB, AND THAT IS WHY THE PRIMER EXISTS ══
+   *
+   * A browser opens the software keyboard only for a `focus()` issued INSIDE the user-gesture call
+   * stack. Anything deferred — a frame, a timeout, an effect after a state commit — moves the call
+   * outside that stack, and iOS Safari then focuses the element and silently declines to show a
+   * keyboard. The previous fix deferred by one `requestAnimationFrame`, which is precisely the
+   * disqualifying step, and it passed review because native RN has no such rule.
+   *
+   * The field itself cannot be focused from the tap: the sheet is not mounted yet at that moment.
+   * So `primerRef` — a permanently-mounted, invisible input — takes focus synchronously during the
+   * gesture and opens the keyboard, and this effect then MOVES focus to the real field once it
+   * mounts. Moving focus between inputs while a keyboard is already up needs no gesture, which is
+   * the property the whole arrangement rests on.
    */
   const sheetOpen = sheet != null;
   const sheetFocus = sheet?.focus ?? null;
@@ -775,9 +800,20 @@ export default function WorkoutScreen() {
   useEffect(() => {
     if (!sheetOpen || wheelMode) return;
     const target = sheetFocus === 'weight' ? weightInputRef : repsInputRef;
+    /* Try immediately — when the sheet is already open and the athlete taps the OTHER field, the node
+       exists and this hands over in the same commit with no visible switch. The frame is the fallback
+       for the mounting case. Both are cheap, and focusing an already-focused input is a no-op. */
+    target.current?.focus();
     const frame = requestAnimationFrame(() => target.current?.focus());
     return () => cancelAnimationFrame(frame);
   }, [sheetOpen, sheetFocus, sheetExI, sheetSetI, wheelMode]);
+
+  /* Let the keyboard go when the sheet does. Without this the primer can hold focus after a Cancel and
+     leave a keyboard up over a screen with nothing to type into. */
+  useEffect(() => {
+    if (sheetOpen) return;
+    primerRef.current?.blur();
+  }, [sheetOpen]);
 
   /** Parse a draft field. '' is "nothing entered" and stays null; garbage keeps whatever was there. */
   const readDraft = (raw: string, prev: number | null, max: number, round: boolean): number | null => {
@@ -1151,6 +1187,32 @@ export default function WorkoutScreen() {
   const primaryDisabled = isLastEx && !hasLoggedSet(session);
   const popCell = (rowSi: number, field: 'weight' | 'reps', node: ReactNode) =>
     pop && pop.ei === exIdx && pop.si === rowSi && pop.field === field ? <Pop key={pop.token}>{node}</Pop> : node;
+  /**
+   * NAME THE SESSION WHILE IT IS STILL HAPPENING.
+   *
+   * `Active-Workout-Flow-Spec-W9-W16` §4.2 has listed "workout name edit for free workouts" among the
+   * ⋯ Options sheet's contents since it locked, and it was never built — one more amendment-shaped
+   * gap of the kind this project keeps rediscovering. A free workout is called "Freestyle Workout"
+   * until the athlete says otherwise, and until now they could not.
+   *
+   * NOTHING IS WRITTEN HERE. The session is local-first until the atomic Finish commit, so this edits
+   * `session.workoutName` in memory and autosave carries it; `save_workout` sends it with everything
+   * else. Reaching for the database mid-session would create a row that does not exist yet.
+   */
+  const openWorkoutName = () => {
+    setOptionsOpen(false);
+    setWNameDraft(session?.workoutName ?? '');
+    setWNameOpen(true);
+  };
+  const commitWorkoutName = () => {
+    const next = wNameDraft.trim().slice(0, 60);
+    // Blank keeps the current name rather than clearing it: mid-session the header would be left
+    // empty, and this screen has no fallback to show there. Clearing belongs on W-17, after the
+    // session exists and Activity History has an activity type to fall back to.
+    if (next) mutate((sess) => ({ ...sess, workoutName: next }));
+    setWNameOpen(false);
+  };
+
   const openAdd = () => {
     setOptionsOpen(false);
     if (blockedByBout()) return;
@@ -1207,6 +1269,21 @@ export default function WorkoutScreen() {
 
   return (
     <Shell>
+      {/* THE KEYBOARD PRIMER. Invisible, unreachable, and never typed into — its whole job is to be
+          mounted BEFORE the tap so `openSheet` has something it can focus inside the gesture, which
+          is the only kind of focus a browser will open a keyboard for. `decimal-pad` matches the real
+          fields so the keypad does not visibly change type when focus hands over a frame later.
+          Never `display: none` — a hidden element cannot take focus, which would defeat the point. */}
+      <TextInput
+        ref={primerRef}
+        style={styles.keyboardPrimer}
+        keyboardType="decimal-pad"
+        caretHidden
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        value=""
+        onChangeText={noop}
+      />
       <AppBar
         title={<Text style={styles.barTitle} numberOfLines={1}>{session.workoutName}</Text>}
         serif
@@ -1375,7 +1452,7 @@ export default function WorkoutScreen() {
                       <Text style={[styles.ssSet, mset.done && styles.ssSetDone]}>
                         {mset.done
                           ? `${weightText(mset)} × ${actualText(mset)}  ✓`
-                          : `Goal ${mset.toFailure ? 'max' : mset.targetSec != null ? durText(mset.targetSec) : `${mset.targetReps} reps`}`}
+                          : `Goal ${mset.toFailure ? 'max' : mset.targetSec != null ? durText(mset.targetSec) : `${targetRepsText(mset)} reps`}`}
                       </Text>
                     ) : (
                       <Text style={styles.ssSetNone}>— no set this round</Text>
@@ -1560,7 +1637,7 @@ export default function WorkoutScreen() {
                     ) : set.targetSec != null ? (
                       <Text style={[styles.targetText, { color: valColor }]}>{durText(set.targetSec)}</Text>
                     ) : (
-                      <Text style={[styles.targetText, { color: valColor }]}>{set.targetReps}<Text style={styles.repsLabel}> Reps</Text></Text>
+                      <Text style={[styles.targetText, { color: valColor }]}>{targetRepsText(set)}<Text style={styles.repsLabel}> Reps</Text></Text>
                     )}
                     {/* The bar a percentage-based program is asking for. Shown UNDER the rep target
                         rather than pre-filled into Weight, because Weight is what the athlete lifted:
@@ -1813,7 +1890,9 @@ export default function WorkoutScreen() {
         * always says which number it is turning.
         */}
       {sheet && sheetSet ? (
-        <View style={styles.pickerWrap}>
+        /* `paddingBottom` and not `bottom`: the backdrop must keep covering the full screen, including
+           the strip behind the keyboard, or a tap that lands there closes nothing. */
+        <View style={[styles.pickerWrap, keyboardInset > 0 && { paddingBottom: keyboardInset }]}>
           <Pressable style={styles.pickerBackdrop} onPress={() => setSheet(null)} accessibilityLabel="Close" />
           <View style={styles.picker}>
             <View style={styles.pickerHead}>
@@ -1884,6 +1963,40 @@ export default function WorkoutScreen() {
                 {sheetIsCurrent ? 'Log Set' : 'Save'}
               </Button>
               <Button variant="text" fullWidth onPress={() => setSheet(null)} accessibilityLabel="Cancel">
+                Cancel
+              </Button>
+            </View>
+          </View>
+        </View>
+      ) : null}
+
+      {/* Same rule as the End Workout sheet below: mounted in the branch that can open it. The row
+          lives in ⋯ Options, which closes first, so this is a sibling of it rather than a child. */}
+      {wNameOpen ? (
+        <View style={[styles.pickerWrap, keyboardInset > 0 && { paddingBottom: keyboardInset }]}>
+          <Pressable style={styles.pickerBackdrop} onPress={() => setWNameOpen(false)} accessibilityLabel="Close" />
+          <View style={styles.picker}>
+            <Text style={styles.pickerTitle}>Name this workout</Text>
+            <TextInput
+              value={wNameDraft}
+              onChangeText={setWNameDraft}
+              placeholder="e.g. Heavy pull"
+              placeholderTextColor={flColor.gray600}
+              style={styles.wNameInput}
+              accessibilityLabel="Workout name"
+              maxLength={60}
+              autoFocus
+              selectTextOnFocus
+              selectionColor={flColor.bronze300}
+              underlineColorAndroid="transparent"
+              returnKeyType="done"
+              onSubmitEditing={commitWorkoutName}
+            />
+            <View style={styles.pickerBtns}>
+              <Button variant="primary" fullWidth onPress={commitWorkoutName} accessibilityLabel="Save name">
+                Save Name
+              </Button>
+              <Button variant="text" fullWidth onPress={() => setWNameOpen(false)} accessibilityLabel="Cancel">
                 Cancel
               </Button>
             </View>
@@ -1993,6 +2106,12 @@ export default function WorkoutScreen() {
           <View style={styles.picker}>
             <Text style={styles.pickerTitle}>Workout Options</Text>
             <View style={styles.optList}>
+              <OptionRow
+                onPress={openWorkoutName}
+                title="Name this workout"
+                sub={session.workoutName}
+                icon={<><Path d="M12 20h9" /><Path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></>}
+              />
               <OptionRow onPress={openAdd} tint title="Add an exercise" sub="Pick another movement for this session" icon={<Path d="M12 5v14M5 12h14" />} />
                       <OptionRow onPress={openSwap} title="Swap this exercise" sub="Pick a different movement" icon={<Path d="M4 7h13l-3-3M20 17H7l3 3" />} />
               {/* Pairing is a decision made ON THE DAY — "I'll do these back to back" — so it lives
@@ -2169,6 +2288,58 @@ function cardioExercise(
   };
 }
 
+/**
+ * Template rows → session exercises. The ONE crossing, used by both doors into it: a saved template the
+ * athlete owns (`templateId`) and a Forge definition trained without being adopted (`starterId`).
+ *
+ * It was written inline in the `templateId` branch, and "start this Forge session" would have needed a
+ * second copy — which is how the sections, the cardio branch and the superset fields drift apart one
+ * feature at a time. `StarterTemplateDefinition.exercises` is `TemplateExercise[]` already, so there is
+ * nothing to convert; the two callers differ only in where the rows came from.
+ */
+function templateToSessionExercises(rows: readonly TemplateExercise[]): SessionExercise[] {
+  return rows.map((e, i) => {
+    // A template that ended in a run comes back as a cardio block, not as sets of it. The modality it
+    // was trained in comes back too (0097) — a treadmill session shouldn't silently become a road run
+    // the next time you repeat it.
+    const act = activityFromKey(e.catalogKey);
+    if (e.kind === 'cardio' && act) {
+      return cardioExercise(act, i, {
+        section: e.section ?? 'main',
+        modality: e.modality ?? 'outdoor',
+        targetMi: e.targetMi ?? null,
+        targetPaceSec: null,
+        targetSpdMph: null,
+      });
+    }
+    return {
+      name: e.name,
+      catalogKey: e.catalogKey ?? undefined,
+      // The template's own section, not a flat 'main' — warm-up and cool-down survived the round trip
+      // as of 0095, and the logger is where that has to show up.
+      section: e.section ?? 'main',
+      position: i,
+      // …and its blocks (0106). Repeating a session you built around a superset must give you the
+      // superset back, not two lifts that merely sit next to each other.
+      ...(e.groupId
+        ? {
+            groupId: e.groupId,
+            groupName: e.groupName ?? undefined,
+            groupKind: e.groupKind ?? 'circuit',
+            groupRounds: e.groupRounds ?? undefined,
+          }
+        : null),
+      sets: Array.from({ length: Math.max(1, e.sets) }, (_, si) => ({
+        setIndex: si,
+        targetReps: e.targetReps || 8,
+        weight: null,
+        actualReps: null,
+        done: false,
+      })),
+    } satisfies SessionExercise;
+  });
+}
+
 function pickedToExercise(p: PickedExercise, position: number): SessionExercise {
   // A run picked from the catalog becomes a CARDIO BLOCK, not three sets of eight — the picker returns
   // it like any other exercise, and this is where the two kinds diverge. Added ad hoc, so it carries no
@@ -2255,6 +2426,11 @@ function SetField({
     <Pressable onPress={onFocus} accessibilityRole="button" accessibilityLabel={label} style={[styles.field, active && styles.fieldActive]}>
       <Text style={styles.fieldLabel}>{label}</Text>
       {typing ? (
+        /* The focus affordance on this field is the BRONZE BORDER on the wrapper above (`fieldActive`).
+           The platform draws its own on top of that and does not ask: react-native-web's TextInput
+           reset covers appearance, border, font and padding but NOT `outline`, so the browser paints a
+           blue focus ring; Android draws the theme-accent EditText underline for the same reason.
+           Both are suppressed here, and the app's own bronze remains the only focus signal. */
         <TextInput
           ref={inputRef}
           style={styles.fieldInput}
@@ -2266,6 +2442,8 @@ function SetField({
           keyboardType="decimal-pad"
           returnKeyType="next"
           selectTextOnFocus
+          selectionColor={flColor.bronze300}
+          underlineColorAndroid="transparent"
           onSubmitEditing={onSubmit}
           accessibilityLabel={label}
         />
@@ -2308,9 +2486,18 @@ function OptionRow({ onPress, title, sub, icon, tint, danger, disabled }: { onPr
 function FuseFlash() {
   const [d, setD] = useState<{ w: number; h: number } | null>(null);
   const anim = useState(() => new Animated.Value(0))[0];
+  /*
+   * START ON MEASURE, NOT ON MOUNT.
+   *
+   * The SVG cannot be drawn until `onLayout` reports the row's size, so mounting kicked off a 1200 ms
+   * animation over a subtree that rendered `null` for its first frames. The fuse then appeared
+   * part-drawn — a stripe materialising halfway round the box instead of starting from the corner.
+   * Gating on `d` costs nothing and makes the celebration begin where it looks like it begins.
+   */
   useEffect(() => {
+    if (!d) return;
     Animated.timing(anim, { toValue: 1, duration: 1200, easing: Easing.inOut(Easing.quad), useNativeDriver: false }).start();
-  }, [anim]);
+  }, [anim, d]);
   const rx = 10;
   const per = d ? 2 * (d.w + d.h) - 8 * rx + 2 * Math.PI * rx : 0;
   const opacity = anim.interpolate({ inputRange: [0, 0.72, 1], outputRange: [1, 1, 0] });
@@ -2573,6 +2760,22 @@ const styles = StyleSheet.create({
   resumeActions: { width: '100%', gap: 6, marginTop: 12 },
 
   // picker sheet
+  /* Off-screen rather than invisible: `opacity: 0` alone still occupies layout, and `display: none`
+     would make it unfocusable, which is the one thing it exists to be. */
+  keyboardPrimer: { position: 'absolute', top: -1000, left: -1000, width: 1, height: 1, opacity: 0 },
+
+  wNameInput: {
+    fontFamily: flFont.sans,
+    fontSize: 17,
+    color: flColor.cream100,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    borderRadius: flRadius.md,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    outlineWidth: 0,
+  },
+
   pickerWrap: { position: 'absolute', left: 0, right: 0, bottom: 0, top: 0, justifyContent: 'flex-end' },
   pickerBackdrop: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(6,9,12,0.62)' },
   picker: { backgroundColor: flColor.charcoal900, borderTopLeftRadius: flRadius.xl, borderTopRightRadius: flRadius.xl, borderTopWidth: 1, borderColor: flColor.charcoal600, paddingHorizontal: 22, paddingTop: 16, paddingBottom: 24, gap: 12 },
@@ -2630,7 +2833,10 @@ const styles = StyleSheet.create({
   field: { flex: 1, borderWidth: 1, borderColor: flColor.charcoal600, borderRadius: flRadius.md, backgroundColor: flColor.charcoal900, paddingVertical: 12, paddingHorizontal: 12, gap: 4 },
   fieldActive: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   fieldLabel: { fontSize: 9.5, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronze400 },
-  fieldInput: { fontFamily: flFont.display, fontSize: 34, fontWeight: '600', color: flColor.cream100, padding: 0, minHeight: 42 },
+  /* `outlineWidth: 0` belt-and-braces alongside the `:focus` rule in `global.css` — this one field is
+     large, bordered and bronze-highlighted, so a ring on it is never the thing telling you where you
+     are. Native ignores the key. */
+  fieldInput: { fontFamily: flFont.display, fontSize: 34, fontWeight: '600', color: flColor.cream100, padding: 0, minHeight: 42, outlineWidth: 0 },
   fieldValue: { fontFamily: flFont.display, fontSize: 34, fontWeight: '600', color: flColor.cream100, minHeight: 42 },
   fieldValueEmpty: { color: flColor.gray600 },
   bwChip: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10, paddingVertical: 9, paddingHorizontal: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600 },

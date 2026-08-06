@@ -25,6 +25,29 @@ export type ProgramExercise = {
   sets?: number;
   reps?: number;
   /**
+   * The TOP of a rep range — "4 × 10–12" is `reps: 10, repsMax: 12`.
+   *
+   * ══ WHY THE FLOOR STAYS IN `reps` ══
+   *
+   * `reps` is arithmetic input: volume, the e1RM behind PR detection, and the reps column written at
+   * save. It must stay one number, and the floor is the honest one — the same convention `percentOfMax`
+   * already follows for "70–75%" and `import-scheme.ts` follows for "6–8 reps". This field is DISPLAY
+   * ONLY, and every consumer of `reps` reads unchanged.
+   *
+   * ══ WHY IT EXISTS AT ALL ══
+   *
+   * It was on the CATALOG side (`ExercisePrescription.repsMax`) and nowhere else, so `adoptCatalogProgram`
+   * dropped it and nothing rendered it. Full Frame authored a range on **105 of 105** prescriptions and
+   * every one reached the athlete as its floor — a program whose entire premise is "work the range, add
+   * weight when you top it", with the top invisible. That is the same defect its first draft was rejected
+   * for, in a different costume, and it is exactly the write-only-field failure the schema's absent
+   * `notes` field exists to warn about.
+   *
+   * Ignored when `repScheme` is present: a per-set ladder already states each set's target, and a range
+   * on top of it prescribes two different things at once.
+   */
+  repsMax?: number | null;
+  /**
    * A PER-SET ladder — "6-6-4-4" is `[6, 6, 4, 4]`, "10-10-10-F" is `[10, 10, 10, 'F']`.
    *
    * When present this is authoritative and its LENGTH is the set count, so `sets`/`reps` are ignored.

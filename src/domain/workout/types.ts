@@ -25,8 +25,19 @@ export interface SessionSet {
   distanceMi?: number | null;
   inclinePct?: number | null;
   modality?: Modality | null;
-  /** Prescribed reps (the Target column). */
+  /** Prescribed reps (the Target column). The FLOOR when a range was prescribed — see `targetRepsMax`. */
   targetReps: number;
+  /**
+   * The TOP of a prescribed rep range — "10–12" is `targetReps: 10, targetRepsMax: 12`.
+   *
+   * DISPLAY ONLY, and deliberately not a widening of `targetReps`. That number is arithmetic input for
+   * volume, the e1RM behind PR detection, and the reps column written at save; a range flowing into any
+   * of those would be a silent corruption. Same separation as `targetWeight` beside `weight` and
+   * `targetSec` beside `durationSec` — this is the ask, and the athlete's entry is the answer.
+   *
+   * Absent on every set outside a range-prescribed program, which is most of them.
+   */
+  targetRepsMax?: number | null;
   /**
    * Prescribed WEIGHT, in the athlete's display unit — the bar a percentage-of-max program is asking
    * for. Absent on every set that was not prescribed one, which is all of them outside such a program.

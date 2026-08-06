@@ -103,7 +103,18 @@ export function schemeText(ex: ProgramExercise): string {
   const targets = repTargets(ex);
   if (!targets.length) return '';
   const uniform = targets.every((t) => t === targets[0]);
-  const body = uniform ? String(targets[0]) : targets.join('-');
+  /*
+   * A RANGE READS AS "10-12", A LADDER AS "6-6-4-4", AND THEY MUST NOT BE CONFUSED.
+   *
+   * Both use a hyphen, so the range is only ever rendered for a UNIFORM prescription with no ladder —
+   * which is the only shape it can mean anything on. `repsMax` is display-only; `repTargets` still
+   * reports the floor, so set counts, volume and the logger are untouched.
+   */
+  const first = targets[0];
+  // `typeof first === 'number'` also excludes 'F': a to-failure set has no ceiling to state.
+  const hasRange =
+    uniform && typeof first === 'number' && !ex.repScheme?.length && ex.repsMax != null && ex.repsMax > first;
+  const body = hasRange ? `${first}-${ex.repsMax}` : uniform ? String(first) : targets.join('-');
   /**
    * A circuit member states its reps alone. The "1 ×" is noise at best and a contradiction at worst —
    * the block above it already says ⟳4, and a member reading "1 × 12" invites "one set of twelve" when

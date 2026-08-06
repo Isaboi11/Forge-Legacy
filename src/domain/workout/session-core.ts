@@ -68,6 +68,14 @@ export function sessionSetsFor(ex: ProgramExercise, load?: LoadContext): Session
        * would put a fabricated rep count into the athlete's history and, worse, into a personal record.
        */
       targetReps: t === 'F' ? 0 : t,
+      /*
+       * The top of the range, carried through so the athlete can see what they are working toward at
+       * the set rather than only on the program screen. Never on a to-failure set (there is no ceiling)
+       * and never alongside a ladder, whose targets are already per-set.
+       */
+      ...(t !== 'F' && ex.repsMax != null && !ex.repScheme?.length && ex.repsMax > t
+        ? { targetRepsMax: ex.repsMax }
+        : null),
       ...(t === 'F' ? { toFailure: true } : null),
       ...(ex.durationSec != null ? { targetSec: ex.durationSec } : null),
       ...(target != null ? { targetWeight: target } : null),

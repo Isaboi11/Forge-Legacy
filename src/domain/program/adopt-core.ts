@@ -45,6 +45,12 @@ function prescriptionToExercise(equipFor?: (catalogKey: string) => string | unde
     if (equip) out.equip = equip;
 
     if (ex.repScheme?.length) out.repScheme = [...ex.repScheme];
+    /*
+     * The top of a rep range. Dropped here until 2026-08-06, which cost Full Frame all 105 of its
+     * ranges — authored as "4 × 10–12" and adopted as "4 × 10". Ignored alongside a ladder, which
+     * already states every set's target.
+     */
+    if (ex.repsMax != null && !ex.repScheme?.length) out.repsMax = ex.repsMax;
     if (ex.durationSec != null) out.durationSec = ex.durationSec;
     if (ex.optional) out.optional = true;
 
