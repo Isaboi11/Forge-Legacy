@@ -67,6 +67,37 @@ export const EXERCISE_SYNONYMS: Record<string, string> = {
   'military press': 'barbell-overhead-press',
   'strict press': 'barbell-overhead-press',
   'standing press': 'barbell-overhead-press',
+  /*
+   * ── "SHOULDER PRESS" — THE WORD THE CATALOGUE FILES UNDER "OVERHEAD" ──────────────────────────
+   *
+   * Reported from a real session: the PO went looking for a barbell shoulder press and the app had
+   * nothing. It has one. It is `barbell-overhead-press`, and the reason 723 rows read as empty is
+   * that search is token-AND — every word must appear somewhere — and "shoulder" appears in NONE of
+   * this row's fields. Not the name ("Barbell Overhead Press"), not its aliases (military · strict ·
+   * standing), not its equipment, and not its muscles, because the muscle is called "Front Deltoids"
+   * and no muscle in the vocabulary is named "Shoulders".
+   *
+   * So the catalogue is split down a vocabulary line nobody chose: the MACHINE and DUMBBELL versions
+   * are named "… Shoulder Press" and answer, and the BARBELL and BAND versions are named "…
+   * Overhead Press" and do not. Typing the plainest possible name for the most common barbell press
+   * in the world returned zero.
+   *
+   * Only the misses are listed. A bare `shoulder press` is deliberately absent for the reason given
+   * in the header — four real catalogue rows are named that, and an alias must never shadow a real
+   * name — and every entry below was verified to return 0 results before it was added.
+   */
+  'barbell shoulder press': 'barbell-overhead-press',
+  'seated barbell shoulder press': 'barbell-seated-overhead-press',
+  'band shoulder press': 'band-overhead-press',
+  'single arm band shoulder press': 'single-arm-band-overhead-press',
+  'single arm dumbbell shoulder press': 'single-arm-dumbbell-overhead-press',
+  /*
+   * NOT LISTED, on purpose: a bare `dumbbell shoulder press`. It is tempting — it currently returns
+   * only the SEATED variant, and the standing `dumbbell-overhead-press` arguably belongs beside it —
+   * but "Seated Dumbbell Shoulder Press" is a real, visible catalogue name, so an alias here would be
+   * one the matcher already answers. That is the shape this file forbids, and the invariant test
+   * rejects it. Widening that result is a SEARCH change, and it belongs in the matcher, not here.
+   */
   'side lateral raise': 'dumbbell-lateral-raise',
   'side laterals': 'dumbbell-lateral-raise',
   'side raise': 'dumbbell-lateral-raise',
@@ -86,6 +117,26 @@ export const EXERCISE_SYNONYMS: Record<string, string> = {
   'dumbbell curl': 'dumbbell-biceps-curl',
   pushdown: 'cable-triceps-pushdown',
   pulldown: 'cable-lat-pulldown',
+  /*
+   * The one name in this file that used to be a real catalogue entry. `cable-reverse-fly` was the
+   * duplicate half of a pair and is now hidden (`HIDDEN_EXERCISE_IDS`), which is exactly what makes
+   * this alias legal under the ordering rule — the matcher can no longer answer it, so this rescues a
+   * miss rather than shadowing a name. It also means the athletes who logged sets under the old name
+   * still land on a real exercise instead of nothing.
+   */
+  'cable reverse fly': 'cable-rear-delt-fly',
+  /*
+   * NO ALIAS FOR "squat jump", and the tests are why. Hiding `squat-jump` (PO ruling 2026-08-05) left
+   * the obvious follow-up — alias the retired ordering onto the survivor — and both invariants above
+   * rejected it: `aliasKey` SORTS tokens, so "squat jump" and "Jump Squat" normalise to the identical
+   * key. The alias would have been a duplicate of a real catalogue name and something the matcher
+   * already answers, in one line.
+   *
+   * Which is the point: word order was never the problem here. The tokenizer discards it, so the
+   * retired name has resolved to the surviving row since before either was written down. This pair
+   * needed the hide and nothing else — unlike `cable reverse fly` above, which is genuinely different
+   * words and does need its line.
+   */
 };
 
 /**

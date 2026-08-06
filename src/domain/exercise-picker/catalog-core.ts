@@ -313,6 +313,50 @@ export const HIDDEN_EXERCISE_IDS: ReadonlySet<string> = new Set([
   'ring-muscle-up',
   'skin-the-cat',
   'wall-handstand-push-up',
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // ONE LIFT FILED TWICE (1)
+  // ─────────────────────────────────────────────────────────────────────────
+  //
+  // `cable-reverse-fly` and `cable-rear-delt-fly` are the same exercise. Same equipment (`cable`),
+  // same movement pattern (Horizontal Push), same difficulty, same primary muscle (`rear_deltoids`).
+  // They differ in one authored string — `family`, "Reverse Fly" against "Rear Delt Fly" — and in
+  // nothing an athlete could see or feel. They even name each other as rank-1 substitutes, which is
+  // the graph saying, in its own vocabulary, that they are interchangeable.
+  //
+  // Two rows for one lift is worse than clutter, and worse in a way the picker does not show: pick
+  // one on Monday and the other on Thursday and the same movement holds two separate histories, so
+  // neither is the truth about what this athlete presses. `personal_records` is keyed by display
+  // name, so it splits too.
+  //
+  // KEPT: `cable-rear-delt-fly`. Its name matches the four siblings (Band · Dumbbell · Machine ·
+  // Incline Dumbbell Rear Delt Fly), and it carries three coaching entries to the other's one.
+  //
+  // HIDDEN, NOT DELETED — 65 references across 6 files point at these two ids (38 relationship
+  // edges, 6 muscle links, 4 coaching entries, 2 manifest lines), plus `catalog_key` values already
+  // written into `workout_exercises` and `exercise_favorites`, neither of which is a foreign key.
+  // Deleting the row would leave every one of those resolving to nothing, silently. The vernacular
+  // alias `cable reverse fly` (see `aliases.ts`) points the old name at the kept row, so an athlete
+  // who logged it still reaches a real exercise.
+  //
+  // ── ONE LIFT FILED TWICE (2) ──
+  //
+  // `jump-squat` ("Jump Squat") and `squat-jump` ("Squat Jump") are the same movement under the same
+  // two words in the other order, same pattern and same difficulty. PO ruling 2026-08-05: Jump Squat
+  // lives.
+  //
+  // They disagree on ONE field — `jump-squat` is `bodyweight`, `squat-jump` is `plyo_box` — and that
+  // is not a real distinction. Every row in the plyometrics family carries `plyo_box`, including
+  // Bounding, Broad Jump and Pogo Jump, none of which touch a box. It is a family default, not
+  // equipment, so it does not describe two exercises.
+  'squat-jump',
+
+  // ⚠ THE MEDIA IS A SEPARATE, MANUAL STEP. Demo URLs are DERIVED from the id with no manifest, so
+  // hiding a row does not move its animation. The PO preferred `cable-reverse-fly`'s loop, and it
+  // must be copied over `cable-rear-delt-fly`'s in FOUR places in the `exercise-media` bucket:
+  // `male/`, `female/`, `poster/male/`, `poster/female/`. Until that is done the kept row keeps its
+  // own, which is a worse animation but never a broken one.
+  'cable-reverse-fly',
 ]);
 
 /** Join the four source tables into the flat, name-sorted list the Picker renders. */

@@ -10,13 +10,28 @@ import {
   aliasKey,
   resolveAgainstCatalog,
 } from '../aliases.ts';
+import { HIDDEN_EXERCISE_IDS } from '../catalog-core.ts';
 import { matchExercise } from '../../program/exercise-match.ts';
 
 /** The real catalogue, read as data — `data.ts` imports JSON in a way `node --test` cannot load. */
 const raw = JSON.parse(
   fs.readFileSync(path.join(process.cwd(), 'src/domain/exercise-relationships/source/exercises.json'), 'utf8'),
 );
-const CATALOG = (Array.isArray(raw) ? raw : (raw.exercises ?? [])).map((r) => ({
+const ROWS = Array.isArray(raw) ? raw : (raw.exercises ?? []);
+
+/**
+ * ⚠ THE VISIBLE CATALOGUE, NOT THE FILE.
+ *
+ * `resolveExerciseName` matches against `catalogForMatching()`, which is derived from `PICKER_DB` —
+ * and `PICKER_DB` has `HIDDEN_EXERCISE_IDS` filtered out. A hidden row is not an answer this app is
+ * allowed to give, anywhere: not in browse, not in search, and not in a program import either.
+ *
+ * This test used to build its catalogue straight from `exercises.json` and so modelled 797 rows the
+ * matcher never sees. That made the safety property below assert something stricter than production
+ * enforces, and it would have rejected a legitimate alias for a name whose row had been RETIRED —
+ * which is precisely how a duplicate is supposed to be resolved here.
+ */
+const CATALOG = ROWS.filter((r) => !HIDDEN_EXERCISE_IDS.has(r.id)).map((r) => ({
   key: r.id,
   name: r.name,
   aliases: r.aliases ?? [],
@@ -26,6 +41,15 @@ const ALL = { ...EXERCISE_SYNONYMS, ...EXERCISE_CONVENTIONS };
 
 test('the catalogue is the real one', () => {
   assert.ok(CATALOG.length > 700, `expected the full catalogue, got ${CATALOG.length}`);
+  assert.ok(ROWS.length > CATALOG.length, 'nothing is hidden — this test is no longer proving anything');
+});
+
+test('every alias points at a VISIBLE exercise', () => {
+  // Pointing at a hidden row would resolve a name to something the athlete can never reach again.
+  const visible = new Set(CATALOG.map((e) => e.key));
+  for (const [alias, id] of Object.entries({ ...EXERCISE_SYNONYMS, ...EXERCISE_CONVENTIONS })) {
+    assert.ok(visible.has(id), `"${alias}" → "${id}", which is hidden from the app`);
+  }
 });
 
 /*
@@ -98,6 +122,44 @@ test('the names that failed the real import now resolve to the right lift', () =
   for (const [written, want] of expected) {
     assert.equal(r(written)?.name, want, `"${written}"`);
   }
+});
+
+/*
+ * ══ THE TWO THE PO HIT IN A REAL SESSION (2026-08-05) ══
+ */
+
+test('a barbell shoulder press is findable by that name', () => {
+  /*
+   * It was not. The lift is filed as "Barbell Overhead Press", search is token-AND, and the token
+   * "shoulder" appears in none of that row's fields — not the name, not its aliases (military ·
+   * strict · standing), not its equipment, and not its muscles, because the muscle is called "Front
+   * Deltoids" and nothing in the vocabulary is named "Shoulders". So the single most common barbell
+   * press in the world returned zero results out of 723.
+   */
+  assert.equal(r('Barbell Shoulder Press')?.key, 'barbell-overhead-press');
+  assert.equal(r('barbell shoulder press')?.key, 'barbell-overhead-press');
+  assert.equal(r('Seated Barbell Shoulder Press')?.key, 'barbell-seated-overhead-press');
+  assert.equal(r('Band Shoulder Press')?.key, 'band-overhead-press');
+});
+
+test('the machine and dumbbell shoulder presses still win their own names', () => {
+  // The half of the vocabulary split that always worked must keep working — an alias for the other
+  // half must not reach across and claim these.
+  assert.equal(r('Machine Shoulder Press')?.key, 'machine-shoulder-press');
+  assert.equal(r('Seated Dumbbell Shoulder Press')?.key, 'seated-dumbbell-shoulder-press');
+  assert.equal(r('Smith Machine Shoulder Press')?.key, 'smith-machine-shoulder-press');
+});
+
+test('the retired half of a duplicate pair still lands on the lift that survived', () => {
+  /*
+   * `cable-reverse-fly` and `cable-rear-delt-fly` were one exercise filed twice — same equipment,
+   * pattern, difficulty and primary muscle, differing in one authored `family` string. The duplicate
+   * is hidden rather than deleted, so anyone who logged it keeps a real exercise to open.
+   */
+  assert.equal(r('Cable Reverse Fly')?.key, 'cable-rear-delt-fly');
+  assert.equal(r('cable reverse flys')?.key, 'cable-rear-delt-fly', 'plurals fold through the tokenizer');
+  assert.ok(HIDDEN_EXERCISE_IDS.has('cable-reverse-fly'), 'the duplicate must stay hidden');
+  assert.ok(!HIDDEN_EXERCISE_IDS.has('cable-rear-delt-fly'), 'the kept row must stay visible');
 });
 
 test('casing, plurals and punctuation do not change the answer', () => {
