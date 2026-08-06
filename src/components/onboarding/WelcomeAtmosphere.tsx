@@ -51,9 +51,9 @@ export function WelcomeAtmosphere() {
         <Svg width={540} height={540}>
           <Defs>
             <RadialGradient id="wa-focal" cx="50%" cy="42%" r="64%">
-              <Stop offset="0" stopColor="rgba(201,128,44,0.11)" />
-              <Stop offset="0.52" stopColor="rgba(163,112,52,0.05)" />
-              <Stop offset="1" stopColor="rgba(201,128,44,0)" />
+              <Stop offset="0" stopColor="rgb(201,128,44)" stopOpacity={0.11} />
+              <Stop offset="0.52" stopColor="rgb(163,112,52)" stopOpacity={0.05} />
+              <Stop offset="1" stopColor="rgb(201,128,44)" stopOpacity={0} />
             </RadialGradient>
           </Defs>
           <Rect width={540} height={540} fill="url(#wa-focal)" />
@@ -65,9 +65,9 @@ export function WelcomeAtmosphere() {
         <Svg width="100%" height="100%">
           <Defs>
             <RadialGradient id="wa-forge" cx="50%" cy="100%" rx="58%" ry="82%">
-              <Stop offset="0" stopColor="rgba(201,128,44,0.055)" />
-              <Stop offset="0.36" stopColor="rgba(120,70,20,0.028)" />
-              <Stop offset="0.72" stopColor="rgba(201,128,44,0)" />
+              <Stop offset="0" stopColor="rgb(201,128,44)" stopOpacity={0.055} />
+              <Stop offset="0.36" stopColor="rgb(120,70,20)" stopOpacity={0.028} />
+              <Stop offset="0.72" stopColor="rgb(201,128,44)" stopOpacity={0} />
             </RadialGradient>
           </Defs>
           <Rect width="100%" height="100%" fill="url(#wa-forge)" />
@@ -78,8 +78,8 @@ export function WelcomeAtmosphere() {
       <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
         <Defs>
           <RadialGradient id="wa-vignette" cx="50%" cy="42%" rx="80%" ry="68%">
-            <Stop offset="0.44" stopColor="rgba(4,6,8,0)" />
-            <Stop offset="1" stopColor="rgba(4,6,8,0.5)" />
+            <Stop offset="0.44" stopColor="rgb(4,6,8)" stopOpacity={0} />
+            <Stop offset="1" stopColor="rgb(4,6,8)" stopOpacity={0.5} />
           </RadialGradient>
         </Defs>
         <Rect width="100%" height="100%" fill="url(#wa-vignette)" />
@@ -90,9 +90,9 @@ export function WelcomeAtmosphere() {
         <Svg width={280} height={340}>
           <Defs>
             <RadialGradient id="wa-ember" cx="50%" cy="44%" rx="46%" ry="40%">
-              <Stop offset="0" stopColor="rgba(201,128,44,0.10)" />
-              <Stop offset="0.42" stopColor="rgba(186, 134, 84,0.04)" />
-              <Stop offset="0.72" stopColor="rgba(120,70,20,0)" />
+              <Stop offset="0" stopColor="rgb(201,128,44)" stopOpacity={0.10} />
+              <Stop offset="0.42" stopColor="rgb(186,134,84)" stopOpacity={0.04} />
+              <Stop offset="0.72" stopColor="rgb(120,70,20)" stopOpacity={0} />
             </RadialGradient>
           </Defs>
           <Rect width={280} height={340} fill="url(#wa-ember)" />

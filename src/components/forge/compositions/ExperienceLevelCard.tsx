@@ -75,8 +75,8 @@ function HeroShell({ children }: { children: ReactNode }) {
       <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
         <Defs>
           <RadialGradient id="spc-wash" cx="50%" cy="0%" rx="120%" ry="90%">
-            <Stop offset="0" stopColor="rgba(186, 134, 84,0.16)" />
-            <Stop offset="0.62" stopColor="rgba(186, 134, 84,0)" />
+            <Stop offset="0" stopColor="rgb(186,134,84)" stopOpacity={0.16} />
+            <Stop offset="0.62" stopColor="rgb(186,134,84)" stopOpacity={0} />
           </RadialGradient>
         </Defs>
         <Rect width="100%" height="100%" fill="url(#spc-wash)" />

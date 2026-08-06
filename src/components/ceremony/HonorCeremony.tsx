@@ -117,9 +117,9 @@ export function HonorCeremony({ open, eyebrow = 'Honor Earned', honorName, body,
               <Svg width="100%" height="100%">
                 <Defs>
                   <RadialGradient id="honor-bloom" cx="50%" cy="50%" rx="50%" ry="50%">
-                    <Stop offset="0" stopColor="rgba(186, 134, 84,0.38)" />
-                    <Stop offset="0.46" stopColor="rgba(186, 134, 84,0.09)" />
-                    <Stop offset="0.7" stopColor="rgba(186, 134, 84,0)" />
+                    <Stop offset="0" stopColor="rgb(186,134,84)" stopOpacity={0.38} />
+                    <Stop offset="0.46" stopColor="rgb(186,134,84)" stopOpacity={0.09} />
+                    <Stop offset="0.7" stopColor="rgb(186,134,84)" stopOpacity={0} />
                   </RadialGradient>
                 </Defs>
                 <Rect width="100%" height="100%" fill="url(#honor-bloom)" />
@@ -139,9 +139,9 @@ export function HonorCeremony({ open, eyebrow = 'Honor Earned', honorName, body,
                   <Svg width="100%" height="100%">
                     <Defs>
                       <RadialGradient id="honor-sym" cx="50%" cy="60%" rx="50%" ry="50%">
-                        <Stop offset="0" stopColor="rgba(201, 151, 103,0.55)" />
-                        <Stop offset="0.45" stopColor="rgba(186, 134, 84,0.16)" />
-                        <Stop offset="0.72" stopColor="rgba(186, 134, 84,0)" />
+                        <Stop offset="0" stopColor="rgb(201,151,103)" stopOpacity={0.55} />
+                        <Stop offset="0.45" stopColor="rgb(186,134,84)" stopOpacity={0.16} />
+                        <Stop offset="0.72" stopColor="rgb(186,134,84)" stopOpacity={0} />
                       </RadialGradient>
                     </Defs>
                     <Rect width="100%" height="100%" fill="url(#honor-sym)" />

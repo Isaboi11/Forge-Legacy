@@ -33,9 +33,9 @@ export function WelcomeLogo() {
         <Svg width={140} height={140}>
           <Defs>
             <RadialGradient id="wl-breath" cx="50%" cy="50%" r="50%">
-              <Stop offset="0" stopColor="rgba(201,128,44,0.10)" />
-              <Stop offset="0.48" stopColor="rgba(186, 134, 84,0.035)" />
-              <Stop offset="1" stopColor="rgba(201,128,44,0)" />
+              <Stop offset="0" stopColor="rgb(201,128,44)" stopOpacity={0.10} />
+              <Stop offset="0.48" stopColor="rgb(186,134,84)" stopOpacity={0.035} />
+              <Stop offset="1" stopColor="rgb(201,128,44)" stopOpacity={0} />
             </RadialGradient>
           </Defs>
           <Rect width={140} height={140} fill="url(#wl-breath)" />
