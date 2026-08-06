@@ -29,28 +29,7 @@
      "name": "Straight Sets",
      "modality": "strength",
      "split": "full_body",
-     "warmup": [
-      {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
-       "name": "Bodyweight hip hinge",
-       "detail": "10 reps",
-       "text": "Bodyweight hip hinge — 10 reps"
-      },
-      {
-       "name": "Empty bar deadlifts",
-       "detail": "10 reps",
-       "text": "Empty bar deadlifts — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
-      }
-     ],
+     "warmup": [],
      "main": [
       {
        "catalogKey": "barbell-deadlift",
@@ -95,24 +74,9 @@
      "split": "legs",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Bodyweight Squat",
        "detail": "10 reps",
        "text": "Bodyweight Squat — 10 reps"
-      },
-      {
-       "name": "Empty bar squats",
-       "detail": "10 reps",
-       "text": "Empty bar squats — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [
@@ -158,28 +122,7 @@
      "name": "Descending Ladder",
      "modality": "strength",
      "split": "pull",
-     "warmup": [
-      {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
-       "name": "Bodyweight hip hinge",
-       "detail": "10 reps",
-       "text": "Bodyweight hip hinge — 10 reps"
-      },
-      {
-       "name": "Empty bar deadlifts",
-       "detail": "10 reps",
-       "text": "Empty bar deadlifts — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
-      }
-     ],
+     "warmup": [],
      "main": [
       {
        "catalogKey": "barbell-deadlift",
@@ -238,24 +181,9 @@
      "split": "upper",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Band pull-apart",
        "detail": "15 reps",
        "text": "Band pull-apart — 15 reps"
-      },
-      {
-       "name": "Empty bar bench press",
-       "detail": "10 reps",
-       "text": "Empty bar bench press — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [
@@ -299,28 +227,7 @@
      "name": "Deficit Work",
      "modality": "strength",
      "split": "legs",
-     "warmup": [
-      {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
-       "name": "Bodyweight hip hinge",
-       "detail": "10 reps",
-       "text": "Bodyweight hip hinge — 10 reps"
-      },
-      {
-       "name": "Empty bar deadlifts",
-       "detail": "10 reps",
-       "text": "Empty bar deadlifts — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
-      }
-     ],
+     "warmup": [],
      "main": [
       {
        "catalogKey": "barbell-deficit-deadlift",
@@ -371,28 +278,7 @@
      "name": "Ascending Sets",
      "modality": "strength",
      "split": "full_body",
-     "warmup": [
-      {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
-       "name": "Bodyweight hip hinge",
-       "detail": "10 reps",
-       "text": "Bodyweight hip hinge — 10 reps"
-      },
-      {
-       "name": "Empty bar deadlifts",
-       "detail": "10 reps",
-       "text": "Empty bar deadlifts — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
-      }
-     ],
+     "warmup": [],
      "main": [
       {
        "catalogKey": "barbell-deadlift",
@@ -450,24 +336,9 @@
      "split": "legs",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Bodyweight Squat",
        "detail": "10 reps",
        "text": "Bodyweight Squat — 10 reps"
-      },
-      {
-       "name": "Empty bar squats",
-       "detail": "10 reps",
-       "text": "Empty bar squats — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [
@@ -524,28 +395,7 @@
      "name": "Clusters",
      "modality": "strength",
      "split": "pull",
-     "warmup": [
-      {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
-       "name": "Bodyweight hip hinge",
-       "detail": "10 reps",
-       "text": "Bodyweight hip hinge — 10 reps"
-      },
-      {
-       "name": "Empty bar deadlifts",
-       "detail": "10 reps",
-       "text": "Empty bar deadlifts — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
-      }
-     ],
+     "warmup": [],
      "main": [
       {
        "catalogKey": "barbell-deadlift",
@@ -589,24 +439,9 @@
      "split": "upper",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Band pull-apart",
        "detail": "15 reps",
        "text": "Band pull-apart — 15 reps"
-      },
-      {
-       "name": "Empty bar bench press",
-       "detail": "10 reps",
-       "text": "Empty bar bench press — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [
@@ -663,28 +498,7 @@
      "name": "Pause Work",
      "modality": "strength",
      "split": "legs",
-     "warmup": [
-      {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
-       "name": "Bodyweight hip hinge",
-       "detail": "10 reps",
-       "text": "Bodyweight hip hinge — 10 reps"
-      },
-      {
-       "name": "Empty bar deadlifts",
-       "detail": "10 reps",
-       "text": "Empty bar deadlifts — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
-      }
-     ],
+     "warmup": [],
      "main": [
       {
        "catalogKey": "barbell-pause-deadlift",
@@ -735,28 +549,7 @@
      "name": "Two Waves",
      "modality": "strength",
      "split": "full_body",
-     "warmup": [
-      {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
-       "name": "Bodyweight hip hinge",
-       "detail": "10 reps",
-       "text": "Bodyweight hip hinge — 10 reps"
-      },
-      {
-       "name": "Empty bar deadlifts",
-       "detail": "10 reps",
-       "text": "Empty bar deadlifts — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
-      }
-     ],
+     "warmup": [],
      "main": [
       {
        "catalogKey": "barbell-deadlift",
@@ -816,24 +609,9 @@
      "split": "legs",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Bodyweight Squat",
        "detail": "10 reps",
        "text": "Bodyweight Squat — 10 reps"
-      },
-      {
-       "name": "Empty bar squats",
-       "detail": "10 reps",
-       "text": "Empty bar squats — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [
@@ -879,28 +657,7 @@
      "name": "Snatch-Grip Pulls",
      "modality": "strength",
      "split": "pull",
-     "warmup": [
-      {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
-       "name": "Bodyweight hip hinge",
-       "detail": "10 reps",
-       "text": "Bodyweight hip hinge — 10 reps"
-      },
-      {
-       "name": "Empty bar deadlifts",
-       "detail": "10 reps",
-       "text": "Empty bar deadlifts — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
-      }
-     ],
+     "warmup": [],
      "main": [
       {
        "catalogKey": "barbell-snatch-grip-deadlift",
@@ -945,24 +702,9 @@
      "split": "upper",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Band pull-apart",
        "detail": "15 reps",
        "text": "Band pull-apart — 15 reps"
-      },
-      {
-       "name": "Empty bar bench press",
-       "detail": "10 reps",
-       "text": "Empty bar bench press — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [
@@ -1005,28 +747,7 @@
      "name": "Dress Rehearsal",
      "modality": "strength",
      "split": "legs",
-     "warmup": [
-      {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
-       "name": "Bodyweight hip hinge",
-       "detail": "10 reps",
-       "text": "Bodyweight hip hinge — 10 reps"
-      },
-      {
-       "name": "Empty bar deadlifts",
-       "detail": "10 reps",
-       "text": "Empty bar deadlifts — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
-      }
-     ],
+     "warmup": [],
      "main": [
       {
        "catalogKey": "barbell-deadlift",
@@ -1083,24 +804,9 @@
      "split": "legs",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Bodyweight Squat",
        "detail": "10 reps",
        "text": "Bodyweight Squat — 10 reps"
-      },
-      {
-       "name": "Empty bar squats",
-       "detail": "10 reps",
-       "text": "Empty bar squats — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [
@@ -1145,28 +851,7 @@
      "name": "Speed Doubles",
      "modality": "strength",
      "split": "pull",
-     "warmup": [
-      {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
-       "name": "Bodyweight hip hinge",
-       "detail": "10 reps",
-       "text": "Bodyweight hip hinge — 10 reps"
-      },
-      {
-       "name": "Empty bar deadlifts",
-       "detail": "10 reps",
-       "text": "Empty bar deadlifts — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
-      }
-     ],
+     "warmup": [],
      "main": [
       {
        "catalogKey": "barbell-deadlift",
@@ -1200,28 +885,7 @@
      "name": "Test Day",
      "modality": "strength",
      "split": "legs",
-     "warmup": [
-      {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
-       "name": "Bodyweight hip hinge",
-       "detail": "10 reps",
-       "text": "Bodyweight hip hinge — 10 reps"
-      },
-      {
-       "name": "Empty bar deadlifts",
-       "detail": "10 reps",
-       "text": "Empty bar deadlifts — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
-      }
-     ],
+     "warmup": [],
      "main": [
       {
        "catalogKey": "barbell-deadlift",
@@ -1258,24 +922,9 @@
      "split": "upper",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Band pull-apart",
        "detail": "15 reps",
        "text": "Band pull-apart — 15 reps"
-      },
-      {
-       "name": "Empty bar bench press",
-       "detail": "10 reps",
-       "text": "Empty bar bench press — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [
@@ -1320,24 +969,9 @@
      "split": "full_body",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Bodyweight Squat",
        "detail": "10 reps",
        "text": "Bodyweight Squat — 10 reps"
-      },
-      {
-       "name": "Empty bar squats",
-       "detail": "10 reps",
-       "text": "Empty bar squats — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [

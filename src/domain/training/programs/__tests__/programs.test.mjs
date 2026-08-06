@@ -14,11 +14,52 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 import { MODALITIES, SPLITS, PROGRAM_THEMES, PROGRAM_FAMILIES, PROGRAM_STRUCTURES } from '../../schema.ts';
+import { buildPickerDb } from '../../../exercise-picker/catalog-core.ts';
+import { ALIASES_BY_ID } from '../../../exercise-picker/aliases.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PROGRAMS = join(HERE, '..');
-const CATALOG = join(HERE, '..', '..', '..', 'exercise-relationships', 'source', 'exercises.json');
-const catalogIds = new Set(JSON.parse(readFileSync(CATALOG, 'utf8')).map((e) => e.id));
+const SOURCE = join(HERE, '..', '..', '..', 'exercise-relationships', 'source');
+const source = (f) => JSON.parse(readFileSync(join(SOURCE, f), 'utf8'));
+
+/**
+ * ⚠ THE VISIBLE CATALOGUE, NOT THE FILE — the same correction `aliases.test.mjs` already carries.
+ *
+ * This was `new Set(exercises.json.map(e => e.id))`, all 797 rows, and that is not what a program is
+ * allowed to prescribe. `HIDDEN_EXERCISE_IDS` removes 76 of them from browse, search and the picker, so
+ * a program naming one prescribes an exercise the athlete cannot open, cannot read coaching for, and
+ * cannot swap out. It is a dangling key in every way that matters to the person training.
+ *
+ * It passed for months: Iron & Engine's Engine circuits prescribed `air-bike`, a row that exists in the
+ * file and is hidden from the app, and this test said the program was clean 7 times over.
+ */
+const PICKER_DB = buildPickerDb({
+  exercises: source('exercises.json'),
+  exerciseMuscles: source('exercise_muscles.json'),
+  muscles: source('muscles.json'),
+  equipment: source('equipment.json'),
+});
+const catalogIds = new Set(PICKER_DB.map((x) => x.key));
+
+/**
+ * `itemByName`, which is what `structureFromDefinition` resolves a prose warm-up with. Copied rather
+ * than imported because `data.ts` imports JSON in a way `node --test` cannot load — same reason, and
+ * same shape, as the copy in `aliases.test.mjs`.
+ */
+const normName = (s) =>
+  s
+    .split(/[—–]|\s-\s/)[0]
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '');
+const BY_NAME = new Map();
+for (const x of PICKER_DB) {
+  BY_NAME.set(normName(x.name), x);
+  for (const a of x.aliases ?? []) if (!BY_NAME.has(normName(a))) BY_NAME.set(normName(a), x);
+}
+for (const x of PICKER_DB) {
+  for (const a of ALIASES_BY_ID.get(x.key) ?? []) if (!BY_NAME.has(normName(a))) BY_NAME.set(normName(a), x);
+}
+const resolvesByName = (n) => BY_NAME.has(normName(n ?? ''));
 
 const load = (f) => JSON.parse(readFileSync(join(PROGRAMS, f), 'utf8'));
 const i3 = load('strength-foundation-i-3day.json');
@@ -257,10 +298,44 @@ test('4-day program surfaces the upper accessory day (honest per-workout split)'
   assert.ok(splits.has('full_body'), 'expected full-body workouts in II-4day');
 });
 
-test('warm-ups are preserved as freeform prep (not catalog-linked)', () => {
+/**
+ * ── WARM-UPS: PREP THE APP CAN SHOW, AND NOTHING ELSE ───────────────────────────────────────────────
+ *
+ * PO decision 2026-08-06: a program prescribes only exercises that are really in the catalogue, and it
+ * does not prescribe ramp sets — "people will warm up properly on their own".
+ *
+ * That retired 244 of the 405 authored warm-up items. They fell into two groups, and BOTH were invisible
+ * to the old assertions, which only checked that an item had `text` and no `catalogKey`:
+ *
+ *  · 232 resolved to NOTHING. "Build-up sets", "Bike or brisk walk", "Empty bar squats", "Light lat
+ *    pulldown". A warm-up is matched back to the catalogue BY NAME (`structureFromDefinition` →
+ *    `itemByName`), so these entered the athlete's session as a row with no demo, no coaching and no
+ *    logging identity — a line of prose wearing an exercise's clothes.
+ *  · 12 resolved fine and were still ramp sets: "Barbell Bench Press — empty bar, 8 reps".
+ *
+ * The rule below is the one that would have caught both.
+ */
+test('every warm-up is freeform prep that resolves to a REAL, visible exercise', () => {
+  for (const p of all) {
+    for (const b of p.blocks) {
+      for (const w of b.workouts) {
+        assert.ok(Array.isArray(w.warmup), `${p.id} ${w.code} warmup array`);
+        for (const item of w.warmup) {
+          const where = `${p.id} ${b.label} ${w.code} "${item.name}"`;
+          assert.ok(item.text, `${where} has no text`);
+          assert.ok(!('catalogKey' in item), `${where} is catalog-linked; warm-ups are freeform`);
+          assert.ok(resolvesByName(item.name), `${where} resolves to no visible exercise`);
+          assert.doesNotMatch(item.detail ?? '', /empty[\s-]bar/i, `${where} is a ramp set, not prep`);
+        }
+      }
+    }
+  }
+});
+
+test('the beginner program still opens with prep, and it is real', () => {
+  // The floor the sweep above must not be allowed to reach: stripping everything would also pass it.
   const w = i3.blocks[0].workouts[0];
-  assert.ok(Array.isArray(w.warmup) && w.warmup.length > 0);
-  for (const item of w.warmup) assert.ok(item.text && !('catalogKey' in item));
+  assert.ok(w.warmup.length > 0, 'Confidence Builder lost its warm-up entirely');
 });
 
 /**
@@ -270,12 +345,22 @@ test('warm-ups are preserved as freeform prep (not catalog-linked)', () => {
  * before complexity", the coaching audit — lives in the Design Record, where a human signs it.
  */
 
-test('Iron & Engine: the Standard\'s warm-up shape, every session', () => {
+/**
+ * ⚠ AMENDED 2026-08-06, AND THE PRODUCTION STANDARD NOW DISAGREES WITH THE CODE.
+ *
+ * This asserted the Standard's shape: 1 general + 1–2 pattern prep + 1 rehearsal, so 3–4 items. Two of
+ * those three elements are exactly what the PO ordered removed — the "general" was a 2-minute bike or
+ * rowing machine, the "rehearsal" was an empty-bar set of the day's lift. What survives is the pattern
+ * prep, which is the part that was catalogue-backed all along.
+ *
+ * So the ceiling stays (warm-ups are not workouts) and the floor moves to 2. `Forge-Program-Production
+ * -Standard.docx` §warm-up is now stale and needs the PO's amendment — it is a .docx under the
+ * append/annotate-only rule, so it is flagged, not edited.
+ */
+test('Iron & Engine: every session opens with real pattern prep', () => {
   for (const b of ie.blocks) {
     for (const w of b.workouts) {
-      // 1 general + 1–2 pattern prep + 1 rehearsal, and a hard ceiling: warm-ups are not workouts.
-      assert.ok(w.warmup.length >= 3 && w.warmup.length <= 4, `${b.label} ${w.code} warm-up length`);
-      for (const item of w.warmup) assert.ok(item.text && !('catalogKey' in item));
+      assert.ok(w.warmup.length >= 2 && w.warmup.length <= 4, `${b.label} ${w.code} warm-up length`);
     }
   }
 });

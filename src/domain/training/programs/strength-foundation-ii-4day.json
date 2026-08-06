@@ -31,11 +31,6 @@
           "split": "full_body",
           "warmup": [
             {
-              "name": "Light treadmill walk",
-              "detail": "2 minutes",
-              "text": "Light treadmill walk — 2 minutes"
-            },
-            {
               "name": "Bodyweight Squat",
               "detail": "10 reps",
               "text": "Bodyweight Squat — 10 reps"
@@ -99,20 +94,11 @@
           "split": "upper",
           "warmup": [
             {
-              "name": "Light treadmill walk",
-              "detail": "2 minutes",
-              "text": "Light treadmill walk — 2 minutes"
-            },
-            {
               "name": "Band Pull Apart",
               "detail": "15 reps",
               "text": "Band Pull Apart — 15 reps"
             },
-            {
-              "name": "Incline Push",
-              "detail": "Up — 10 reps",
-              "text": "Incline Push-Up — 10 reps"
-            }
+            { "name": "Incline Push-Up", "detail": "10 reps", "text": "Incline Push-Up — 10 reps" }
           ],
           "main": [
             {
@@ -181,11 +167,6 @@
           "split": "full_body",
           "warmup": [
             {
-              "name": "Light treadmill walk",
-              "detail": "2 minutes",
-              "text": "Light treadmill walk — 2 minutes"
-            },
-            {
               "name": "Glute Bridge",
               "detail": "10 reps",
               "text": "Glute Bridge — 10 reps"
@@ -250,20 +231,11 @@
           "split": "full_body",
           "warmup": [
             {
-              "name": "Light treadmill walk",
-              "detail": "2 minutes",
-              "text": "Light treadmill walk — 2 minutes"
-            },
-            {
               "name": "Bodyweight Squat",
               "detail": "10 reps",
               "text": "Bodyweight Squat — 10 reps"
             },
-            {
-              "name": "Incline Push",
-              "detail": "Up — 10 reps",
-              "text": "Incline Push-Up — 10 reps"
-            }
+            { "name": "Incline Push-Up", "detail": "10 reps", "text": "Incline Push-Up — 10 reps" }
           ],
           "main": [
             {

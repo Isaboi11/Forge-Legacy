@@ -31,10 +31,8 @@
           "modality": "strength",
           "split": "legs",
           "warmup": [
-            { "name": "Stationary bike", "detail": "2 minutes", "text": "Stationary bike — 2 minutes" },
             { "name": "Bodyweight Squat", "detail": "10 reps", "text": "Bodyweight Squat — 10 reps" },
-            { "name": "Glute Bridge", "detail": "10 reps", "text": "Glute Bridge — 10 reps" },
-            { "name": "Barbell Back Squat", "detail": "empty bar, 5 reps", "text": "Barbell Back Squat — empty bar, 5 reps" }
+            { "name": "Glute Bridge", "detail": "10 reps", "text": "Glute Bridge — 10 reps" }
           ],
           "main": [
             { "catalogKey": "barbell-back-squat", "displayName": "Barbell Back Squat", "sets": 4, "reps": 6, "unit": "reps", "restSec": 150 },
@@ -42,7 +40,7 @@
             { "catalogKey": "dumbbell-bulgarian-split-squat", "displayName": "Bulgarian Split Squat", "sets": 3, "reps": 8, "unit": "reps", "per": "leg", "restSec": 75 },
             { "catalogKey": "sled-push", "displayName": "Sled Push", "sets": 1, "reps": 0, "unit": "seconds", "durationSec": 30, "groupId": "w12a-engine", "groupName": "Engine — Sled Ladder", "groupKind": "circuit", "groupRounds": 3, "groupCapSec": null },
             { "catalogKey": "kettlebell-swing", "displayName": "Kettlebell Swing", "sets": 1, "reps": 15, "unit": "reps", "groupId": "w12a-engine", "groupName": "Engine — Sled Ladder", "groupKind": "circuit", "groupRounds": 3, "groupCapSec": null },
-            { "catalogKey": "air-bike", "displayName": "Air Bike", "sets": 1, "reps": 0, "unit": "seconds", "durationSec": 45, "groupId": "w12a-engine", "groupName": "Engine — Sled Ladder", "groupKind": "circuit", "groupRounds": 3, "groupCapSec": null }
+            { "catalogKey": "burpee", "displayName": "Burpee", "sets": 1, "reps": 10, "unit": "reps", "groupId": "w12a-engine", "groupName": "Engine — Sled Ladder", "groupKind": "circuit", "groupRounds": 3, "groupCapSec": null }
           ]
         },
         {
@@ -51,10 +49,8 @@
           "modality": "strength",
           "split": "push",
           "warmup": [
-            { "name": "Rowing machine", "detail": "2 minutes", "text": "Rowing machine — 2 minutes" },
             { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
-            { "name": "Push-Up", "detail": "8 reps", "text": "Push-Up — 8 reps" },
-            { "name": "Barbell Bench Press", "detail": "empty bar, 8 reps", "text": "Barbell Bench Press — empty bar, 8 reps" }
+            { "name": "Push-Up", "detail": "8 reps", "text": "Push-Up — 8 reps" }
           ],
           "main": [
             { "catalogKey": "barbell-bench-press", "displayName": "Barbell Bench Press", "sets": 4, "reps": 6, "unit": "reps", "restSec": 150 },
@@ -62,7 +58,7 @@
             { "catalogKey": "dumbbell-incline-bench-press", "displayName": "Incline Dumbbell Press", "sets": 3, "reps": 10, "unit": "reps", "restSec": 90 },
             { "catalogKey": "battle-rope-slams", "displayName": "Battle Rope Slams", "sets": 1, "reps": 0, "unit": "seconds", "durationSec": 30, "groupId": "w12b-engine", "groupName": "Engine — Rope & Burpee", "groupKind": "circuit", "groupRounds": 3, "groupCapSec": null },
             { "catalogKey": "burpee", "displayName": "Burpee", "sets": 1, "reps": 10, "unit": "reps", "groupId": "w12b-engine", "groupName": "Engine — Rope & Burpee", "groupKind": "circuit", "groupRounds": 3, "groupCapSec": null },
-            { "catalogKey": "air-bike", "displayName": "Air Bike", "sets": 1, "reps": 0, "unit": "seconds", "durationSec": 45, "groupId": "w12b-engine", "groupName": "Engine — Rope & Burpee", "groupKind": "circuit", "groupRounds": 3, "groupCapSec": null }
+            { "catalogKey": "ski-erg", "displayName": "Ski Erg", "sets": 1, "reps": 0, "unit": "seconds", "durationSec": 45, "groupId": "w12b-engine", "groupName": "Engine — Rope & Burpee", "groupKind": "circuit", "groupRounds": 3, "groupCapSec": null }
           ]
         },
         {
@@ -71,7 +67,6 @@
           "modality": "conditioning",
           "split": "conditioning",
           "warmup": [
-            { "name": "Air Bike", "detail": "2 minutes", "text": "Air Bike — 2 minutes" },
             { "name": "World's Greatest Stretch", "detail": "5 per side", "text": "World's Greatest Stretch — 5 per side" },
             { "name": "Bodyweight Squat", "detail": "10 reps", "text": "Bodyweight Squat — 10 reps" }
           ],
@@ -91,10 +86,8 @@
           "modality": "strength",
           "split": "legs",
           "warmup": [
-            { "name": "Treadmill walk", "detail": "2 minutes", "text": "Treadmill walk — 2 minutes" },
             { "name": "Dead Bug", "detail": "10 reps", "text": "Dead Bug — 10 reps" },
-            { "name": "Kettlebell Romanian Deadlift", "detail": "light, 10 reps", "text": "Kettlebell Romanian Deadlift — light, 10 reps" },
-            { "name": "Barbell Deadlift", "detail": "empty bar, 5 reps", "text": "Barbell Deadlift — empty bar, 5 reps" }
+            { "name": "Kettlebell Romanian Deadlift", "detail": "light, 10 reps", "text": "Kettlebell Romanian Deadlift — light, 10 reps" }
           ],
           "main": [
             { "catalogKey": "barbell-deadlift", "displayName": "Barbell Deadlift", "sets": 4, "reps": 5, "unit": "reps", "restSec": 180 },
@@ -102,7 +95,7 @@
             { "catalogKey": "step-up", "displayName": "Box Step-Up", "sets": 3, "reps": 10, "unit": "reps", "per": "leg", "restSec": 60 },
             { "catalogKey": "forward-sled-drag", "displayName": "Forward Sled Drag", "sets": 1, "reps": 0, "unit": "seconds", "durationSec": 30, "groupId": "w12d-engine", "groupName": "Engine — Drag & Swing", "groupKind": "circuit", "groupRounds": 3, "groupCapSec": null },
             { "catalogKey": "kettlebell-swing", "displayName": "Kettlebell Swing", "sets": 1, "reps": 20, "unit": "reps", "groupId": "w12d-engine", "groupName": "Engine — Drag & Swing", "groupKind": "circuit", "groupRounds": 3, "groupCapSec": null },
-            { "catalogKey": "air-bike", "displayName": "Air Bike", "sets": 1, "reps": 0, "unit": "seconds", "durationSec": 45, "groupId": "w12d-engine", "groupName": "Engine — Drag & Swing", "groupKind": "circuit", "groupRounds": 3, "groupCapSec": null }
+            { "catalogKey": "burpee", "displayName": "Burpee", "sets": 1, "reps": 10, "unit": "reps", "groupId": "w12d-engine", "groupName": "Engine — Drag & Swing", "groupKind": "circuit", "groupRounds": 3, "groupCapSec": null }
           ]
         },
         {
@@ -111,10 +104,8 @@
           "modality": "strength",
           "split": "pull",
           "warmup": [
-            { "name": "Air Bike", "detail": "2 minutes", "text": "Air Bike — 2 minutes" },
             { "name": "Scapular Pull-Up", "detail": "8 reps", "text": "Scapular Pull-Up — 8 reps" },
-            { "name": "Band Face Pull", "detail": "15 reps", "text": "Band Face Pull — 15 reps" },
-            { "name": "Barbell Bent-Over Row", "detail": "empty bar, 8 reps", "text": "Barbell Bent-Over Row — empty bar, 8 reps" }
+            { "name": "Band Face Pull", "detail": "15 reps", "text": "Band Face Pull — 15 reps" }
           ],
           "main": [
             { "catalogKey": "pull-up", "displayName": "Pull-Up", "sets": 4, "reps": 6, "unit": "reps", "restSec": 150, "substitution": { "catalogKey": "band-assisted-pull-up", "name": "Band Assisted Pull-Up", "sets": 4, "reps": 6, "unit": "reps" } },
@@ -122,7 +113,7 @@
             { "catalogKey": "cable-lat-pulldown", "displayName": "Lat Pulldown", "sets": 3, "reps": 10, "unit": "reps", "restSec": 90 },
             { "catalogKey": "medicine-ball-side-slam", "displayName": "Medicine Ball Side Slam", "sets": 1, "reps": 12, "unit": "reps", "groupId": "w12e-engine", "groupName": "Engine — Slam & Jump", "groupKind": "circuit", "groupRounds": 3, "groupCapSec": null },
             { "catalogKey": "box-jump", "displayName": "Box Jump", "sets": 1, "reps": 8, "unit": "reps", "groupId": "w12e-engine", "groupName": "Engine — Slam & Jump", "groupKind": "circuit", "groupRounds": 3, "groupCapSec": null },
-            { "catalogKey": "air-bike", "displayName": "Air Bike", "sets": 1, "reps": 0, "unit": "seconds", "durationSec": 45, "groupId": "w12e-engine", "groupName": "Engine — Slam & Jump", "groupKind": "circuit", "groupRounds": 3, "groupCapSec": null }
+            { "catalogKey": "burpee", "displayName": "Burpee", "sets": 1, "reps": 10, "unit": "reps", "groupId": "w12e-engine", "groupName": "Engine — Slam & Jump", "groupKind": "circuit", "groupRounds": 3, "groupCapSec": null }
           ]
         },
         {
@@ -131,7 +122,6 @@
           "modality": "conditioning",
           "split": "conditioning",
           "warmup": [
-            { "name": "Rowing machine", "detail": "2 minutes easy", "text": "Rowing machine — 2 minutes easy" },
             { "name": "Cat-Cow", "detail": "10 reps", "text": "Cat-Cow — 10 reps" },
             { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" }
           ],
@@ -155,10 +145,8 @@
           "modality": "strength",
           "split": "legs",
           "warmup": [
-            { "name": "Stationary bike", "detail": "2 minutes", "text": "Stationary bike — 2 minutes" },
             { "name": "Bodyweight Squat", "detail": "10 reps", "text": "Bodyweight Squat — 10 reps" },
-            { "name": "Glute Bridge", "detail": "10 reps", "text": "Glute Bridge — 10 reps" },
-            { "name": "Barbell Back Squat", "detail": "empty bar, 5 reps", "text": "Barbell Back Squat — empty bar, 5 reps" }
+            { "name": "Glute Bridge", "detail": "10 reps", "text": "Glute Bridge — 10 reps" }
           ],
           "main": [
             { "catalogKey": "barbell-back-squat", "displayName": "Barbell Back Squat", "sets": 4, "reps": 6, "unit": "reps", "repScheme": [6, 6, 4, 4], "restSec": 165 },
@@ -175,10 +163,8 @@
           "modality": "strength",
           "split": "push",
           "warmup": [
-            { "name": "Rowing machine", "detail": "2 minutes", "text": "Rowing machine — 2 minutes" },
             { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
-            { "name": "Push-Up", "detail": "8 reps", "text": "Push-Up — 8 reps" },
-            { "name": "Barbell Bench Press", "detail": "empty bar, 8 reps", "text": "Barbell Bench Press — empty bar, 8 reps" }
+            { "name": "Push-Up", "detail": "8 reps", "text": "Push-Up — 8 reps" }
           ],
           "main": [
             { "catalogKey": "barbell-bench-press", "displayName": "Barbell Bench Press", "sets": 4, "reps": 6, "unit": "reps", "repScheme": [6, 6, 4, 4], "restSec": 165 },
@@ -186,7 +172,7 @@
             { "catalogKey": "dumbbell-incline-bench-press", "displayName": "Incline Dumbbell Press", "sets": 3, "reps": 10, "unit": "reps", "restSec": 90 },
             { "catalogKey": "battle-rope-slams", "displayName": "Battle Rope Slams", "sets": 1, "reps": 0, "unit": "seconds", "durationSec": 30, "groupId": "w34b-engine", "groupName": "Engine — Rope & Burpee", "groupKind": "circuit", "groupRounds": 4, "groupCapSec": null },
             { "catalogKey": "burpee", "displayName": "Burpee", "sets": 1, "reps": 10, "unit": "reps", "groupId": "w34b-engine", "groupName": "Engine — Rope & Burpee", "groupKind": "circuit", "groupRounds": 4, "groupCapSec": null },
-            { "catalogKey": "air-bike", "displayName": "Air Bike", "sets": 1, "reps": 0, "unit": "seconds", "durationSec": 45, "groupId": "w34b-engine", "groupName": "Engine — Rope & Burpee", "groupKind": "circuit", "groupRounds": 4, "groupCapSec": null }
+            { "catalogKey": "ski-erg", "displayName": "Ski Erg", "sets": 1, "reps": 0, "unit": "seconds", "durationSec": 45, "groupId": "w34b-engine", "groupName": "Engine — Rope & Burpee", "groupKind": "circuit", "groupRounds": 4, "groupCapSec": null }
           ]
         },
         {
@@ -195,7 +181,6 @@
           "modality": "conditioning",
           "split": "conditioning",
           "warmup": [
-            { "name": "Air Bike", "detail": "2 minutes", "text": "Air Bike — 2 minutes" },
             { "name": "World's Greatest Stretch", "detail": "5 per side", "text": "World's Greatest Stretch — 5 per side" },
             { "name": "Bodyweight Squat", "detail": "10 reps", "text": "Bodyweight Squat — 10 reps" }
           ],
@@ -215,10 +200,8 @@
           "modality": "strength",
           "split": "legs",
           "warmup": [
-            { "name": "Treadmill walk", "detail": "2 minutes", "text": "Treadmill walk — 2 minutes" },
             { "name": "Dead Bug", "detail": "10 reps", "text": "Dead Bug — 10 reps" },
-            { "name": "Kettlebell Romanian Deadlift", "detail": "light, 10 reps", "text": "Kettlebell Romanian Deadlift — light, 10 reps" },
-            { "name": "Barbell Deadlift", "detail": "empty bar, 5 reps", "text": "Barbell Deadlift — empty bar, 5 reps" }
+            { "name": "Kettlebell Romanian Deadlift", "detail": "light, 10 reps", "text": "Kettlebell Romanian Deadlift — light, 10 reps" }
           ],
           "main": [
             { "catalogKey": "barbell-deadlift", "displayName": "Barbell Deadlift", "sets": 4, "reps": 5, "unit": "reps", "repScheme": [5, 5, 3, 3], "restSec": 180 },
@@ -226,7 +209,7 @@
             { "catalogKey": "step-up", "displayName": "Box Step-Up", "sets": 3, "reps": 12, "unit": "reps", "per": "leg", "restSec": 60 },
             { "catalogKey": "forward-sled-drag", "displayName": "Forward Sled Drag", "sets": 1, "reps": 0, "unit": "seconds", "durationSec": 30, "groupId": "w34d-engine", "groupName": "Engine — Drag & Swing", "groupKind": "circuit", "groupRounds": 4, "groupCapSec": null },
             { "catalogKey": "kettlebell-swing", "displayName": "Kettlebell Swing", "sets": 1, "reps": 20, "unit": "reps", "groupId": "w34d-engine", "groupName": "Engine — Drag & Swing", "groupKind": "circuit", "groupRounds": 4, "groupCapSec": null },
-            { "catalogKey": "air-bike", "displayName": "Air Bike", "sets": 1, "reps": 0, "unit": "seconds", "durationSec": 45, "groupId": "w34d-engine", "groupName": "Engine — Drag & Swing", "groupKind": "circuit", "groupRounds": 4, "groupCapSec": null }
+            { "catalogKey": "burpee", "displayName": "Burpee", "sets": 1, "reps": 10, "unit": "reps", "groupId": "w34d-engine", "groupName": "Engine — Drag & Swing", "groupKind": "circuit", "groupRounds": 4, "groupCapSec": null }
           ]
         },
         {
@@ -235,10 +218,8 @@
           "modality": "strength",
           "split": "pull",
           "warmup": [
-            { "name": "Air Bike", "detail": "2 minutes", "text": "Air Bike — 2 minutes" },
             { "name": "Scapular Pull-Up", "detail": "8 reps", "text": "Scapular Pull-Up — 8 reps" },
-            { "name": "Band Face Pull", "detail": "15 reps", "text": "Band Face Pull — 15 reps" },
-            { "name": "Barbell Bent-Over Row", "detail": "empty bar, 8 reps", "text": "Barbell Bent-Over Row — empty bar, 8 reps" }
+            { "name": "Band Face Pull", "detail": "15 reps", "text": "Band Face Pull — 15 reps" }
           ],
           "main": [
             { "catalogKey": "pull-up", "displayName": "Pull-Up", "sets": 4, "reps": 6, "unit": "reps", "repScheme": [6, 6, 4, 4], "restSec": 165, "substitution": { "catalogKey": "band-assisted-pull-up", "name": "Band Assisted Pull-Up", "sets": 4, "reps": 6, "unit": "reps" } },
@@ -246,7 +227,7 @@
             { "catalogKey": "cable-lat-pulldown", "displayName": "Lat Pulldown", "sets": 3, "reps": 10, "unit": "reps", "restSec": 90 },
             { "catalogKey": "medicine-ball-side-slam", "displayName": "Medicine Ball Side Slam", "sets": 1, "reps": 12, "unit": "reps", "groupId": "w34e-engine", "groupName": "Engine — Slam & Jump", "groupKind": "circuit", "groupRounds": 4, "groupCapSec": null },
             { "catalogKey": "box-jump", "displayName": "Box Jump", "sets": 1, "reps": 8, "unit": "reps", "groupId": "w34e-engine", "groupName": "Engine — Slam & Jump", "groupKind": "circuit", "groupRounds": 4, "groupCapSec": null },
-            { "catalogKey": "air-bike", "displayName": "Air Bike", "sets": 1, "reps": 0, "unit": "seconds", "durationSec": 45, "groupId": "w34e-engine", "groupName": "Engine — Slam & Jump", "groupKind": "circuit", "groupRounds": 4, "groupCapSec": null }
+            { "catalogKey": "burpee", "displayName": "Burpee", "sets": 1, "reps": 10, "unit": "reps", "groupId": "w34e-engine", "groupName": "Engine — Slam & Jump", "groupKind": "circuit", "groupRounds": 4, "groupCapSec": null }
           ]
         },
         {
@@ -255,7 +236,6 @@
           "modality": "conditioning",
           "split": "conditioning",
           "warmup": [
-            { "name": "Rowing machine", "detail": "2 minutes easy", "text": "Rowing machine — 2 minutes easy" },
             { "name": "Cat-Cow", "detail": "10 reps", "text": "Cat-Cow — 10 reps" },
             { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" }
           ],
@@ -279,10 +259,8 @@
           "modality": "strength",
           "split": "legs",
           "warmup": [
-            { "name": "Stationary bike", "detail": "2 minutes", "text": "Stationary bike — 2 minutes" },
             { "name": "Bodyweight Squat", "detail": "10 reps", "text": "Bodyweight Squat — 10 reps" },
-            { "name": "Glute Bridge", "detail": "10 reps", "text": "Glute Bridge — 10 reps" },
-            { "name": "Barbell Back Squat", "detail": "empty bar, 5 reps", "text": "Barbell Back Squat — empty bar, 5 reps" }
+            { "name": "Glute Bridge", "detail": "10 reps", "text": "Glute Bridge — 10 reps" }
           ],
           "main": [
             { "catalogKey": "barbell-back-squat", "displayName": "Barbell Back Squat", "sets": 4, "reps": 5, "unit": "reps", "repScheme": [5, 5, 3, 3], "restSec": 180, "intensity": true },
@@ -299,10 +277,8 @@
           "modality": "strength",
           "split": "push",
           "warmup": [
-            { "name": "Rowing machine", "detail": "2 minutes", "text": "Rowing machine — 2 minutes" },
             { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
-            { "name": "Push-Up", "detail": "8 reps", "text": "Push-Up — 8 reps" },
-            { "name": "Barbell Bench Press", "detail": "empty bar, 8 reps", "text": "Barbell Bench Press — empty bar, 8 reps" }
+            { "name": "Push-Up", "detail": "8 reps", "text": "Push-Up — 8 reps" }
           ],
           "main": [
             { "catalogKey": "barbell-bench-press", "displayName": "Barbell Bench Press", "sets": 4, "reps": 5, "unit": "reps", "repScheme": [5, 5, 3, 3], "restSec": 180, "intensity": true },
@@ -317,7 +293,6 @@
           "modality": "conditioning",
           "split": "conditioning",
           "warmup": [
-            { "name": "Air Bike", "detail": "2 minutes", "text": "Air Bike — 2 minutes" },
             { "name": "World's Greatest Stretch", "detail": "5 per side", "text": "World's Greatest Stretch — 5 per side" },
             { "name": "Bodyweight Squat", "detail": "10 reps", "text": "Bodyweight Squat — 10 reps" }
           ],
@@ -337,10 +312,8 @@
           "modality": "strength",
           "split": "legs",
           "warmup": [
-            { "name": "Treadmill walk", "detail": "2 minutes", "text": "Treadmill walk — 2 minutes" },
             { "name": "Dead Bug", "detail": "10 reps", "text": "Dead Bug — 10 reps" },
-            { "name": "Kettlebell Romanian Deadlift", "detail": "light, 10 reps", "text": "Kettlebell Romanian Deadlift — light, 10 reps" },
-            { "name": "Barbell Deadlift", "detail": "empty bar, 5 reps", "text": "Barbell Deadlift — empty bar, 5 reps" }
+            { "name": "Kettlebell Romanian Deadlift", "detail": "light, 10 reps", "text": "Kettlebell Romanian Deadlift — light, 10 reps" }
           ],
           "main": [
             { "catalogKey": "barbell-deadlift", "displayName": "Barbell Deadlift", "sets": 3, "reps": 3, "unit": "reps", "repScheme": [3, 3, 3], "restSec": 210, "intensity": true },
@@ -357,10 +330,8 @@
           "modality": "strength",
           "split": "pull",
           "warmup": [
-            { "name": "Air Bike", "detail": "2 minutes", "text": "Air Bike — 2 minutes" },
             { "name": "Scapular Pull-Up", "detail": "8 reps", "text": "Scapular Pull-Up — 8 reps" },
-            { "name": "Band Face Pull", "detail": "15 reps", "text": "Band Face Pull — 15 reps" },
-            { "name": "Barbell Bent-Over Row", "detail": "empty bar, 8 reps", "text": "Barbell Bent-Over Row — empty bar, 8 reps" }
+            { "name": "Band Face Pull", "detail": "15 reps", "text": "Band Face Pull — 15 reps" }
           ],
           "main": [
             { "catalogKey": "pull-up", "displayName": "Pull-Up", "sets": 4, "reps": 5, "unit": "reps", "repScheme": [5, 5, 3, 3], "restSec": 180, "intensity": true, "substitution": { "catalogKey": "band-assisted-pull-up", "name": "Band Assisted Pull-Up", "sets": 4, "reps": 5, "unit": "reps" } },
@@ -375,7 +346,6 @@
           "modality": "conditioning",
           "split": "conditioning",
           "warmup": [
-            { "name": "Rowing machine", "detail": "2 minutes easy", "text": "Rowing machine — 2 minutes easy" },
             { "name": "Cat-Cow", "detail": "10 reps", "text": "Cat-Cow — 10 reps" },
             { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" }
           ],

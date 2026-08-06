@@ -31,11 +31,6 @@
      "split": "upper",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Band Pull-Apart",
        "detail": "20 reps",
        "text": "Band Pull-Apart — 20 reps"
@@ -44,11 +39,6 @@
        "name": "Push-Up",
        "detail": "10 reps",
        "text": "Push-Up — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [
@@ -94,11 +84,6 @@
      "split": "upper",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Band Pull-Apart",
        "detail": "20 reps",
        "text": "Band Pull-Apart — 20 reps"
@@ -107,11 +92,6 @@
        "name": "Push-Up",
        "detail": "10 reps",
        "text": "Push-Up — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [
@@ -170,11 +150,6 @@
      "split": "full_body",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Band Pull-Apart",
        "detail": "20 reps",
        "text": "Band Pull-Apart — 20 reps"
@@ -183,11 +158,6 @@
        "name": "Push-Up",
        "detail": "10 reps",
        "text": "Push-Up — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [
@@ -236,11 +206,6 @@
      "split": "push",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Band Pull-Apart",
        "detail": "20 reps",
        "text": "Band Pull-Apart — 20 reps"
@@ -249,11 +214,6 @@
        "name": "Push-Up",
        "detail": "10 reps",
        "text": "Push-Up — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [
@@ -301,11 +261,6 @@
      "split": "full_body",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Band Pull-Apart",
        "detail": "20 reps",
        "text": "Band Pull-Apart — 20 reps"
@@ -314,11 +269,6 @@
        "name": "Push-Up",
        "detail": "10 reps",
        "text": "Push-Up — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [
@@ -373,11 +323,6 @@
      "split": "upper",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Band Pull-Apart",
        "detail": "20 reps",
        "text": "Band Pull-Apart — 20 reps"
@@ -386,11 +331,6 @@
        "name": "Push-Up",
        "detail": "10 reps",
        "text": "Push-Up — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [
@@ -449,11 +389,6 @@
      "split": "upper",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Band Pull-Apart",
        "detail": "20 reps",
        "text": "Band Pull-Apart — 20 reps"
@@ -462,11 +397,6 @@
        "name": "Push-Up",
        "detail": "10 reps",
        "text": "Push-Up — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [
@@ -512,11 +442,6 @@
      "split": "full_body",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Band Pull-Apart",
        "detail": "20 reps",
        "text": "Band Pull-Apart — 20 reps"
@@ -525,11 +450,6 @@
        "name": "Push-Up",
        "detail": "10 reps",
        "text": "Push-Up — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [
@@ -578,11 +498,6 @@
      "split": "push",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Band Pull-Apart",
        "detail": "20 reps",
        "text": "Band Pull-Apart — 20 reps"
@@ -591,11 +506,6 @@
        "name": "Push-Up",
        "detail": "10 reps",
        "text": "Push-Up — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [
@@ -643,11 +553,6 @@
      "split": "full_body",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Band Pull-Apart",
        "detail": "20 reps",
        "text": "Band Pull-Apart — 20 reps"
@@ -656,11 +561,6 @@
        "name": "Push-Up",
        "detail": "10 reps",
        "text": "Push-Up — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [
@@ -715,11 +615,6 @@
      "split": "upper",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Band Pull-Apart",
        "detail": "20 reps",
        "text": "Band Pull-Apart — 20 reps"
@@ -728,11 +623,6 @@
        "name": "Push-Up",
        "detail": "10 reps",
        "text": "Push-Up — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [
@@ -791,11 +681,6 @@
      "split": "full_body",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Band Pull-Apart",
        "detail": "20 reps",
        "text": "Band Pull-Apart — 20 reps"
@@ -804,11 +689,6 @@
        "name": "Push-Up",
        "detail": "10 reps",
        "text": "Push-Up — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [
@@ -856,11 +736,6 @@
      "split": "full_body",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Band Pull-Apart",
        "detail": "20 reps",
        "text": "Band Pull-Apart — 20 reps"
@@ -869,11 +744,6 @@
        "name": "Push-Up",
        "detail": "10 reps",
        "text": "Push-Up — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [
@@ -922,11 +792,6 @@
      "split": "upper",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Band Pull-Apart",
        "detail": "20 reps",
        "text": "Band Pull-Apart — 20 reps"
@@ -935,11 +800,6 @@
        "name": "Push-Up",
        "detail": "10 reps",
        "text": "Push-Up — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [
@@ -998,11 +858,6 @@
      "split": "push",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Band Pull-Apart",
        "detail": "20 reps",
        "text": "Band Pull-Apart — 20 reps"
@@ -1011,11 +866,6 @@
        "name": "Push-Up",
        "detail": "10 reps",
        "text": "Push-Up — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [
@@ -1075,11 +925,6 @@
      "split": "upper",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Band Pull-Apart",
        "detail": "20 reps",
        "text": "Band Pull-Apart — 20 reps"
@@ -1088,11 +933,6 @@
        "name": "Push-Up",
        "detail": "10 reps",
        "text": "Push-Up — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [
@@ -1138,11 +978,6 @@
      "split": "push",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Band Pull-Apart",
        "detail": "20 reps",
        "text": "Band Pull-Apart — 20 reps"
@@ -1151,11 +986,6 @@
        "name": "Push-Up",
        "detail": "10 reps",
        "text": "Push-Up — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [
@@ -1195,11 +1025,6 @@
      "split": "full_body",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Band Pull-Apart",
        "detail": "20 reps",
        "text": "Band Pull-Apart — 20 reps"
@@ -1208,11 +1033,6 @@
        "name": "Push-Up",
        "detail": "10 reps",
        "text": "Push-Up — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [
@@ -1251,11 +1071,6 @@
      "split": "push",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Band Pull-Apart",
        "detail": "20 reps",
        "text": "Band Pull-Apart — 20 reps"
@@ -1264,11 +1079,6 @@
        "name": "Push-Up",
        "detail": "10 reps",
        "text": "Push-Up — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [
@@ -1307,11 +1117,6 @@
      "split": "upper",
      "warmup": [
       {
-       "name": "Bike or brisk walk",
-       "detail": "3 minutes",
-       "text": "Bike or brisk walk — 3 minutes"
-      },
-      {
        "name": "Band Pull-Apart",
        "detail": "20 reps",
        "text": "Band Pull-Apart — 20 reps"
@@ -1320,11 +1125,6 @@
        "name": "Push-Up",
        "detail": "10 reps",
        "text": "Push-Up — 10 reps"
-      },
-      {
-       "name": "Build-up sets",
-       "detail": "to the first working weight",
-       "text": "Build-up sets — to the first working weight"
       }
      ],
      "main": [

@@ -27,11 +27,6 @@
           "split": "push",
           "warmup": [
             {
-              "name": "Rowing machine or bike",
-              "detail": "4 minutes easy",
-              "text": "Rowing machine or bike — 4 minutes easy"
-            },
-            {
               "name": "Band pull-apart",
               "detail": "15 reps",
               "text": "Band pull-apart — 15 reps"
@@ -40,11 +35,6 @@
               "name": "Push-Up",
               "detail": "10 reps",
               "text": "Push-Up — 10 reps"
-            },
-            {
-              "name": "Empty-bar bench press",
-              "detail": "2 x 10 reps",
-              "text": "Empty-bar bench press — 2 x 10 reps"
             }
           ],
           "main": [
@@ -94,8 +84,8 @@
               "restSec": 90
             },
             {
-              "catalogKey": "cable-cross-body-triceps-extension",
-              "displayName": "Katana Extension",
+              "catalogKey": "cable-overhead-triceps-extension",
+              "displayName": "Cable Overhead Triceps Extension",
               "sets": 3,
               "reps": 12,
               "repsMax": 15,
@@ -120,11 +110,6 @@
           "split": "pull",
           "warmup": [
             {
-              "name": "Rowing machine",
-              "detail": "4 minutes easy",
-              "text": "Rowing machine — 4 minutes easy"
-            },
-            {
               "name": "Band pull-apart",
               "detail": "15 reps",
               "text": "Band pull-apart — 15 reps"
@@ -133,11 +118,6 @@
               "name": "Dead hang",
               "detail": "20 seconds",
               "text": "Dead hang — 20 seconds"
-            },
-            {
-              "name": "Light lat pulldown",
-              "detail": "12 reps",
-              "text": "Light lat pulldown — 12 reps"
             }
           ],
           "main": [
@@ -213,11 +193,6 @@
           "split": "legs",
           "warmup": [
             {
-              "name": "Bike",
-              "detail": "5 minutes easy",
-              "text": "Bike — 5 minutes easy"
-            },
-            {
               "name": "Bodyweight Squat",
               "detail": "15 reps",
               "text": "Bodyweight Squat — 15 reps"
@@ -226,11 +201,6 @@
               "name": "Walking lunge",
               "detail": "10 per side",
               "text": "Walking lunge — 10 per side"
-            },
-            {
-              "name": "Empty-bar back squat",
-              "detail": "2 x 10 reps",
-              "text": "Empty-bar back squat — 2 x 10 reps"
             }
           ],
           "main": [
@@ -306,11 +276,6 @@
           "split": "upper",
           "warmup": [
             {
-              "name": "Rowing machine",
-              "detail": "4 minutes easy",
-              "text": "Rowing machine — 4 minutes easy"
-            },
-            {
               "name": "Band pull-apart",
               "detail": "15 reps",
               "text": "Band pull-apart — 15 reps"
@@ -319,11 +284,6 @@
               "name": "Push-Up",
               "detail": "10 reps",
               "text": "Push-Up — 10 reps"
-            },
-            {
-              "name": "Light lat pulldown",
-              "detail": "12 reps",
-              "text": "Light lat pulldown — 12 reps"
             }
           ],
           "main": [
@@ -399,11 +359,6 @@
           "split": "legs",
           "warmup": [
             {
-              "name": "Bike",
-              "detail": "5 minutes easy",
-              "text": "Bike — 5 minutes easy"
-            },
-            {
               "name": "Bodyweight Squat",
               "detail": "15 reps",
               "text": "Bodyweight Squat — 15 reps"
@@ -412,11 +367,6 @@
               "name": "Glute bridge",
               "detail": "15 reps",
               "text": "Glute bridge — 15 reps"
-            },
-            {
-              "name": "Light hack squat",
-              "detail": "2 x 10 reps",
-              "text": "Light hack squat — 2 x 10 reps"
             }
           ],
           "main": [
@@ -499,11 +449,6 @@
           "split": "push",
           "warmup": [
             {
-              "name": "Rowing machine or bike",
-              "detail": "4 minutes easy",
-              "text": "Rowing machine or bike — 4 minutes easy"
-            },
-            {
               "name": "Band pull-apart",
               "detail": "15 reps",
               "text": "Band pull-apart — 15 reps"
@@ -512,11 +457,6 @@
               "name": "Push-Up",
               "detail": "10 reps",
               "text": "Push-Up — 10 reps"
-            },
-            {
-              "name": "Empty-bar bench press",
-              "detail": "2 x 10 reps",
-              "text": "Empty-bar bench press — 2 x 10 reps"
             }
           ],
           "main": [
@@ -566,8 +506,8 @@
               "restSec": 90
             },
             {
-              "catalogKey": "cable-cross-body-triceps-extension",
-              "displayName": "Katana Extension",
+              "catalogKey": "cable-overhead-triceps-extension",
+              "displayName": "Cable Overhead Triceps Extension",
               "sets": 3,
               "reps": 10,
               "repsMax": 12,
@@ -592,11 +532,6 @@
           "split": "pull",
           "warmup": [
             {
-              "name": "Rowing machine",
-              "detail": "4 minutes easy",
-              "text": "Rowing machine — 4 minutes easy"
-            },
-            {
               "name": "Band pull-apart",
               "detail": "15 reps",
               "text": "Band pull-apart — 15 reps"
@@ -605,11 +540,6 @@
               "name": "Dead hang",
               "detail": "20 seconds",
               "text": "Dead hang — 20 seconds"
-            },
-            {
-              "name": "Light lat pulldown",
-              "detail": "12 reps",
-              "text": "Light lat pulldown — 12 reps"
             }
           ],
           "main": [
@@ -685,11 +615,6 @@
           "split": "legs",
           "warmup": [
             {
-              "name": "Bike",
-              "detail": "5 minutes easy",
-              "text": "Bike — 5 minutes easy"
-            },
-            {
               "name": "Bodyweight Squat",
               "detail": "15 reps",
               "text": "Bodyweight Squat — 15 reps"
@@ -698,11 +623,6 @@
               "name": "Walking lunge",
               "detail": "10 per side",
               "text": "Walking lunge — 10 per side"
-            },
-            {
-              "name": "Empty-bar back squat",
-              "detail": "2 x 10 reps",
-              "text": "Empty-bar back squat — 2 x 10 reps"
             }
           ],
           "main": [
@@ -778,11 +698,6 @@
           "split": "upper",
           "warmup": [
             {
-              "name": "Rowing machine",
-              "detail": "4 minutes easy",
-              "text": "Rowing machine — 4 minutes easy"
-            },
-            {
               "name": "Band pull-apart",
               "detail": "15 reps",
               "text": "Band pull-apart — 15 reps"
@@ -791,11 +706,6 @@
               "name": "Push-Up",
               "detail": "10 reps",
               "text": "Push-Up — 10 reps"
-            },
-            {
-              "name": "Light lat pulldown",
-              "detail": "12 reps",
-              "text": "Light lat pulldown — 12 reps"
             }
           ],
           "main": [
@@ -871,11 +781,6 @@
           "split": "legs",
           "warmup": [
             {
-              "name": "Bike",
-              "detail": "5 minutes easy",
-              "text": "Bike — 5 minutes easy"
-            },
-            {
               "name": "Bodyweight Squat",
               "detail": "15 reps",
               "text": "Bodyweight Squat — 15 reps"
@@ -884,11 +789,6 @@
               "name": "Glute bridge",
               "detail": "15 reps",
               "text": "Glute bridge — 15 reps"
-            },
-            {
-              "name": "Light hack squat",
-              "detail": "2 x 10 reps",
-              "text": "Light hack squat — 2 x 10 reps"
             }
           ],
           "main": [
@@ -971,11 +871,6 @@
           "split": "push",
           "warmup": [
             {
-              "name": "Rowing machine or bike",
-              "detail": "4 minutes easy",
-              "text": "Rowing machine or bike — 4 minutes easy"
-            },
-            {
               "name": "Band pull-apart",
               "detail": "15 reps",
               "text": "Band pull-apart — 15 reps"
@@ -984,11 +879,6 @@
               "name": "Push-Up",
               "detail": "10 reps",
               "text": "Push-Up — 10 reps"
-            },
-            {
-              "name": "Empty-bar bench press",
-              "detail": "2 x 10 reps",
-              "text": "Empty-bar bench press — 2 x 10 reps"
             }
           ],
           "main": [
@@ -1039,7 +929,7 @@
             },
             {
               "catalogKey": "cable-overhead-triceps-extension",
-              "displayName": "Katana Extension",
+              "displayName": "Cable Overhead Triceps Extension",
               "sets": 3,
               "reps": 12,
               "repsMax": 15,
@@ -1064,11 +954,6 @@
           "split": "pull",
           "warmup": [
             {
-              "name": "Rowing machine",
-              "detail": "4 minutes easy",
-              "text": "Rowing machine — 4 minutes easy"
-            },
-            {
               "name": "Band pull-apart",
               "detail": "15 reps",
               "text": "Band pull-apart — 15 reps"
@@ -1077,11 +962,6 @@
               "name": "Dead hang",
               "detail": "20 seconds",
               "text": "Dead hang — 20 seconds"
-            },
-            {
-              "name": "Light lat pulldown",
-              "detail": "12 reps",
-              "text": "Light lat pulldown — 12 reps"
             }
           ],
           "main": [
@@ -1157,11 +1037,6 @@
           "split": "legs",
           "warmup": [
             {
-              "name": "Bike",
-              "detail": "5 minutes easy",
-              "text": "Bike — 5 minutes easy"
-            },
-            {
               "name": "Bodyweight Squat",
               "detail": "15 reps",
               "text": "Bodyweight Squat — 15 reps"
@@ -1170,11 +1045,6 @@
               "name": "Walking lunge",
               "detail": "10 per side",
               "text": "Walking lunge — 10 per side"
-            },
-            {
-              "name": "Empty-bar back squat",
-              "detail": "2 x 10 reps",
-              "text": "Empty-bar back squat — 2 x 10 reps"
             }
           ],
           "main": [
@@ -1250,11 +1120,6 @@
           "split": "upper",
           "warmup": [
             {
-              "name": "Rowing machine",
-              "detail": "4 minutes easy",
-              "text": "Rowing machine — 4 minutes easy"
-            },
-            {
               "name": "Band pull-apart",
               "detail": "15 reps",
               "text": "Band pull-apart — 15 reps"
@@ -1263,11 +1128,6 @@
               "name": "Push-Up",
               "detail": "10 reps",
               "text": "Push-Up — 10 reps"
-            },
-            {
-              "name": "Light lat pulldown",
-              "detail": "12 reps",
-              "text": "Light lat pulldown — 12 reps"
             }
           ],
           "main": [
@@ -1343,11 +1203,6 @@
           "split": "legs",
           "warmup": [
             {
-              "name": "Bike",
-              "detail": "5 minutes easy",
-              "text": "Bike — 5 minutes easy"
-            },
-            {
               "name": "Bodyweight Squat",
               "detail": "15 reps",
               "text": "Bodyweight Squat — 15 reps"
@@ -1356,11 +1211,6 @@
               "name": "Glute bridge",
               "detail": "15 reps",
               "text": "Glute bridge — 15 reps"
-            },
-            {
-              "name": "Light hack squat",
-              "detail": "2 x 10 reps",
-              "text": "Light hack squat — 2 x 10 reps"
             }
           ],
           "main": [
