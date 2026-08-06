@@ -16,6 +16,7 @@
  *   - Body Recomposition Foundation
  *   - Muscle Building Intermediate
  *   - Bodyweight Foundation
+ *   - Athletic Conditioning Foundation
  *
  * ── WHY ONE PROGRAM HAS NO `.docx` ───────────────────────────────────────────────────────────────────
  *
@@ -163,6 +164,7 @@ import frameByFrame from './frame-by-frame-5day.json';
 import closeQuarters from './close-quarters-6day.json';
 import muscleBuildingIntermediate from './muscle-building-intermediate.json';
 import bodyweightFoundation from './bodyweight-foundation.json';
+import athleticConditioningFoundation from './athletic-conditioning-foundation.json';
 
 // JSON import types widen literals (e.g. theme:string); the validator test enforces the
 // real ProgramDefinition contract, so a single narrowing cast here is safe.
@@ -179,6 +181,7 @@ const DEFINITIONS: readonly ProgramDefinition[] = [
   closeQuarters,
   muscleBuildingIntermediate,
   bodyweightFoundation,
+  athleticConditioningFoundation,
 ] as unknown as ProgramDefinition[];
 
 /** All converted, PO-approved program definitions. */

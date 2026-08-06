@@ -1,0 +1,338 @@
+{
+  "id": "athletic-conditioning-foundation",
+  "name": "Athletic Conditioning Foundation",
+  "family": "Conditioning",
+  "difficulty": "Beginner",
+  "durationWeeks": 8,
+  "frequencyPerWeek": 3,
+  "environment": "Commercial Gym",
+  "description": "Eight weeks, three days a week, for someone who wants to be fitter and has never trained conditioning on purpose. Every session opens on a steady bout, carries its work in a short circuit you repeat, and finishes with two simple lifts — the conditioning is the point and the weights are there to support it. Rounds and minutes climb for six weeks. Week 7 backs off. Week 8 is the most work in the block.",
+  "goals": ["Build a base of work capacity from a standing start", "Learn how a circuit and a work-to-rest structure actually feel", "Get well-rounded fitness without chasing a number", "Hold three sessions a week for eight weeks", "Arrive ready for Conditioning Intermediate"],
+  "successorName": "Conditioning Intermediate",
+  "theme": "athletic_performance",
+  "status": "AUTHORED — Stage 2 complete, PO Lock Approval outstanding",
+  "source": "forge",
+  "sourceFile": "Programs/Conditioning/Athletic Conditioning Foundation/Design-Record.md",
+  "blocks": [
+    {
+      "label": "Weeks 1–2",
+      "weekStart": 1,
+      "weekEnd": 2,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Ride & Circuit",
+          "modality": "conditioning",
+          "split": "conditioning",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Bodyweight Squat", "detail": "10 reps", "text": "Bodyweight Squat — 10 reps" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" }
+          ],
+          "main": [
+            { "catalogKey": "cardio:bike", "displayName": "Steady Ride", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "bike", "modality": "indoor", "targetSec": 600, "targetMi": null, "restSec": 90 },
+            { "catalogKey": "dumbbell-goblet-squat", "displayName": "Dumbbell Goblet Squat", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "a-circuit", "groupName": "Base Circuit", "groupKind": "circuit", "groupRounds": 3 },
+            { "catalogKey": "push-up", "displayName": "Push-Up", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "a-circuit", "groupName": "Base Circuit", "groupKind": "circuit", "groupRounds": 3 },
+            { "catalogKey": "machine-seated-row", "displayName": "Machine Seated Row", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "a-circuit", "groupName": "Base Circuit", "groupKind": "circuit", "groupRounds": 3 },
+            { "catalogKey": "machine-leg-press", "displayName": "Machine Leg Press", "sets": 2, "reps": 12, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "dead-bug", "displayName": "Dead Bug", "sets": 2, "reps": 12, "unit": "reps", "per": "side", "restSec": 75 }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Walk & Circuit",
+          "modality": "conditioning",
+          "split": "conditioning",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "cardio:walk", "displayName": "Incline Walk", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "walk", "modality": "indoor", "targetSec": 600, "targetMi": null, "restSec": 90 },
+            { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 1, "reps": 12, "unit": "reps", "per": "leg", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 3 },
+            { "catalogKey": "machine-chest-press", "displayName": "Machine Chest Press", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 3 },
+            { "catalogKey": "dumbbell-farmer-carry", "displayName": "Dumbbell Farmer Carry", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 3 },
+            { "catalogKey": "machine-lat-pulldown", "displayName": "Machine Lat Pulldown", "sets": 2, "reps": 12, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "plank", "displayName": "Plank", "sets": 2, "reps": 0, "unit": "seconds", "durationSec": 30, "restSec": 75 }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Row & Circuit",
+          "modality": "conditioning",
+          "split": "conditioning",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Inchworm", "detail": "5 reps", "text": "Inchworm — 5 reps" }
+          ],
+          "main": [
+            { "catalogKey": "cardio:row", "displayName": "Steady Row", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "row", "modality": "indoor", "targetSec": 600, "targetMi": null, "restSec": 90 },
+            { "catalogKey": "dumbbell-step-up", "displayName": "Dumbbell Step-Up", "sets": 1, "reps": 12, "unit": "reps", "per": "leg", "restSec": 30, "groupId": "c-circuit", "groupName": "Engine Circuit", "groupKind": "circuit", "groupRounds": 3 },
+            { "catalogKey": "machine-shoulder-press", "displayName": "Machine Shoulder Press", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "c-circuit", "groupName": "Engine Circuit", "groupKind": "circuit", "groupRounds": 3 },
+            { "catalogKey": "bird-dog", "displayName": "Bird Dog", "sets": 1, "reps": 12, "unit": "reps", "per": "side", "restSec": 30, "groupId": "c-circuit", "groupName": "Engine Circuit", "groupKind": "circuit", "groupRounds": 3 },
+            { "catalogKey": "seated-leg-curl-machine", "displayName": "Seated Leg Curl Machine", "sets": 2, "reps": 12, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "machine-abdominal-crunch", "displayName": "Machine Abdominal Crunch", "sets": 2, "reps": 12, "unit": "reps", "restSec": 75 }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Weeks 3–4",
+      "weekStart": 3,
+      "weekEnd": 4,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Ride & Circuit",
+          "modality": "conditioning",
+          "split": "conditioning",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Bodyweight Squat", "detail": "10 reps", "text": "Bodyweight Squat — 10 reps" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" }
+          ],
+          "main": [
+            { "catalogKey": "cardio:bike", "displayName": "Steady Ride", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "bike", "modality": "indoor", "targetSec": 720, "targetMi": null, "restSec": 90 },
+            { "catalogKey": "dumbbell-goblet-squat", "displayName": "Dumbbell Goblet Squat", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "a-circuit", "groupName": "Base Circuit", "groupKind": "circuit", "groupRounds": 4 },
+            { "catalogKey": "push-up", "displayName": "Push-Up", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "a-circuit", "groupName": "Base Circuit", "groupKind": "circuit", "groupRounds": 4 },
+            { "catalogKey": "machine-seated-row", "displayName": "Machine Seated Row", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "a-circuit", "groupName": "Base Circuit", "groupKind": "circuit", "groupRounds": 4 },
+            { "catalogKey": "machine-leg-press", "displayName": "Machine Leg Press", "sets": 2, "reps": 12, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "dead-bug", "displayName": "Dead Bug", "sets": 2, "reps": 12, "unit": "reps", "per": "side", "restSec": 75 }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Walk & Circuit",
+          "modality": "conditioning",
+          "split": "conditioning",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "cardio:walk", "displayName": "Incline Walk", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "walk", "modality": "indoor", "targetSec": 720, "targetMi": null, "restSec": 90 },
+            { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 1, "reps": 12, "unit": "reps", "per": "leg", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 4 },
+            { "catalogKey": "machine-chest-press", "displayName": "Machine Chest Press", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 4 },
+            { "catalogKey": "dumbbell-farmer-carry", "displayName": "Dumbbell Farmer Carry", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 4 },
+            { "catalogKey": "machine-lat-pulldown", "displayName": "Machine Lat Pulldown", "sets": 2, "reps": 12, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "plank", "displayName": "Plank", "sets": 2, "reps": 0, "unit": "seconds", "durationSec": 30, "restSec": 75 }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Row & Circuit",
+          "modality": "conditioning",
+          "split": "conditioning",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Inchworm", "detail": "5 reps", "text": "Inchworm — 5 reps" }
+          ],
+          "main": [
+            { "catalogKey": "cardio:row", "displayName": "Steady Row", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "row", "modality": "indoor", "targetSec": 720, "targetMi": null, "restSec": 90 },
+            { "catalogKey": "dumbbell-step-up", "displayName": "Dumbbell Step-Up", "sets": 1, "reps": 12, "unit": "reps", "per": "leg", "restSec": 30, "groupId": "c-circuit", "groupName": "Engine Circuit", "groupKind": "circuit", "groupRounds": 4 },
+            { "catalogKey": "machine-shoulder-press", "displayName": "Machine Shoulder Press", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "c-circuit", "groupName": "Engine Circuit", "groupKind": "circuit", "groupRounds": 4 },
+            { "catalogKey": "bird-dog", "displayName": "Bird Dog", "sets": 1, "reps": 12, "unit": "reps", "per": "side", "restSec": 30, "groupId": "c-circuit", "groupName": "Engine Circuit", "groupKind": "circuit", "groupRounds": 4 },
+            { "catalogKey": "seated-leg-curl-machine", "displayName": "Seated Leg Curl Machine", "sets": 2, "reps": 12, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "machine-abdominal-crunch", "displayName": "Machine Abdominal Crunch", "sets": 2, "reps": 12, "unit": "reps", "restSec": 75 }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Weeks 5–6",
+      "weekStart": 5,
+      "weekEnd": 6,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Ride & Circuit",
+          "modality": "conditioning",
+          "split": "conditioning",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Bodyweight Squat", "detail": "10 reps", "text": "Bodyweight Squat — 10 reps" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" }
+          ],
+          "main": [
+            { "catalogKey": "cardio:bike", "displayName": "Steady Ride", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "bike", "modality": "indoor", "targetSec": 900, "targetMi": null, "restSec": 90 },
+            { "catalogKey": "dumbbell-goblet-squat", "displayName": "Dumbbell Goblet Squat", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "a-circuit", "groupName": "Base Circuit", "groupKind": "circuit", "groupRounds": 5 },
+            { "catalogKey": "push-up", "displayName": "Push-Up", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "a-circuit", "groupName": "Base Circuit", "groupKind": "circuit", "groupRounds": 5 },
+            { "catalogKey": "machine-seated-row", "displayName": "Machine Seated Row", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "a-circuit", "groupName": "Base Circuit", "groupKind": "circuit", "groupRounds": 5 },
+            { "catalogKey": "machine-leg-press", "displayName": "Machine Leg Press", "sets": 2, "reps": 15, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "dead-bug", "displayName": "Dead Bug", "sets": 2, "reps": 15, "unit": "reps", "per": "side", "restSec": 75 }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Walk & Circuit",
+          "modality": "conditioning",
+          "split": "conditioning",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "cardio:walk", "displayName": "Incline Walk", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "walk", "modality": "indoor", "targetSec": 900, "targetMi": null, "restSec": 90 },
+            { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 1, "reps": 12, "unit": "reps", "per": "leg", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 5 },
+            { "catalogKey": "machine-chest-press", "displayName": "Machine Chest Press", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 5 },
+            { "catalogKey": "dumbbell-farmer-carry", "displayName": "Dumbbell Farmer Carry", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 5 },
+            { "catalogKey": "machine-lat-pulldown", "displayName": "Machine Lat Pulldown", "sets": 2, "reps": 15, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "plank", "displayName": "Plank", "sets": 2, "reps": 0, "unit": "seconds", "durationSec": 30, "restSec": 75 }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Row & Circuit",
+          "modality": "conditioning",
+          "split": "conditioning",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Inchworm", "detail": "5 reps", "text": "Inchworm — 5 reps" }
+          ],
+          "main": [
+            { "catalogKey": "cardio:row", "displayName": "Steady Row", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "row", "modality": "indoor", "targetSec": 900, "targetMi": null, "restSec": 90 },
+            { "catalogKey": "dumbbell-step-up", "displayName": "Dumbbell Step-Up", "sets": 1, "reps": 12, "unit": "reps", "per": "leg", "restSec": 30, "groupId": "c-circuit", "groupName": "Engine Circuit", "groupKind": "circuit", "groupRounds": 5 },
+            { "catalogKey": "machine-shoulder-press", "displayName": "Machine Shoulder Press", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "c-circuit", "groupName": "Engine Circuit", "groupKind": "circuit", "groupRounds": 5 },
+            { "catalogKey": "bird-dog", "displayName": "Bird Dog", "sets": 1, "reps": 12, "unit": "reps", "per": "side", "restSec": 30, "groupId": "c-circuit", "groupName": "Engine Circuit", "groupKind": "circuit", "groupRounds": 5 },
+            { "catalogKey": "seated-leg-curl-machine", "displayName": "Seated Leg Curl Machine", "sets": 2, "reps": 15, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "machine-abdominal-crunch", "displayName": "Machine Abdominal Crunch", "sets": 2, "reps": 15, "unit": "reps", "restSec": 75 }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Week 7 — Deload",
+      "weekStart": 7,
+      "weekEnd": 7,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Ride & Circuit",
+          "modality": "conditioning",
+          "split": "conditioning",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Bodyweight Squat", "detail": "10 reps", "text": "Bodyweight Squat — 10 reps" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" }
+          ],
+          "main": [
+            { "catalogKey": "cardio:bike", "displayName": "Steady Ride", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "bike", "modality": "indoor", "targetSec": 480, "targetMi": null, "restSec": 90 },
+            { "catalogKey": "dumbbell-goblet-squat", "displayName": "Dumbbell Goblet Squat", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "a-circuit", "groupName": "Base Circuit", "groupKind": "circuit", "groupRounds": 3 },
+            { "catalogKey": "push-up", "displayName": "Push-Up", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "a-circuit", "groupName": "Base Circuit", "groupKind": "circuit", "groupRounds": 3 },
+            { "catalogKey": "machine-seated-row", "displayName": "Machine Seated Row", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "a-circuit", "groupName": "Base Circuit", "groupKind": "circuit", "groupRounds": 3 },
+            { "catalogKey": "machine-leg-press", "displayName": "Machine Leg Press", "sets": 1, "reps": 12, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "dead-bug", "displayName": "Dead Bug", "sets": 1, "reps": 12, "unit": "reps", "per": "side", "restSec": 75 }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Walk & Circuit",
+          "modality": "conditioning",
+          "split": "conditioning",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "cardio:walk", "displayName": "Incline Walk", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "walk", "modality": "indoor", "targetSec": 480, "targetMi": null, "restSec": 90 },
+            { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 1, "reps": 12, "unit": "reps", "per": "leg", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 3 },
+            { "catalogKey": "machine-chest-press", "displayName": "Machine Chest Press", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 3 },
+            { "catalogKey": "dumbbell-farmer-carry", "displayName": "Dumbbell Farmer Carry", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 3 },
+            { "catalogKey": "machine-lat-pulldown", "displayName": "Machine Lat Pulldown", "sets": 1, "reps": 12, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "plank", "displayName": "Plank", "sets": 1, "reps": 0, "unit": "seconds", "durationSec": 30, "restSec": 75 }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Row & Circuit",
+          "modality": "conditioning",
+          "split": "conditioning",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Inchworm", "detail": "5 reps", "text": "Inchworm — 5 reps" }
+          ],
+          "main": [
+            { "catalogKey": "cardio:row", "displayName": "Steady Row", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "row", "modality": "indoor", "targetSec": 480, "targetMi": null, "restSec": 90 },
+            { "catalogKey": "dumbbell-step-up", "displayName": "Dumbbell Step-Up", "sets": 1, "reps": 12, "unit": "reps", "per": "leg", "restSec": 30, "groupId": "c-circuit", "groupName": "Engine Circuit", "groupKind": "circuit", "groupRounds": 3 },
+            { "catalogKey": "machine-shoulder-press", "displayName": "Machine Shoulder Press", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "c-circuit", "groupName": "Engine Circuit", "groupKind": "circuit", "groupRounds": 3 },
+            { "catalogKey": "bird-dog", "displayName": "Bird Dog", "sets": 1, "reps": 12, "unit": "reps", "per": "side", "restSec": 30, "groupId": "c-circuit", "groupName": "Engine Circuit", "groupKind": "circuit", "groupRounds": 3 },
+            { "catalogKey": "seated-leg-curl-machine", "displayName": "Seated Leg Curl Machine", "sets": 1, "reps": 12, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "machine-abdominal-crunch", "displayName": "Machine Abdominal Crunch", "sets": 1, "reps": 12, "unit": "reps", "restSec": 75 }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Week 8 — Peak",
+      "weekStart": 8,
+      "weekEnd": 8,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Ride & Circuit",
+          "modality": "conditioning",
+          "split": "conditioning",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Bodyweight Squat", "detail": "10 reps", "text": "Bodyweight Squat — 10 reps" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" }
+          ],
+          "main": [
+            { "catalogKey": "cardio:bike", "displayName": "Steady Ride", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "bike", "modality": "indoor", "targetSec": 1080, "targetMi": null, "restSec": 90 },
+            { "catalogKey": "dumbbell-goblet-squat", "displayName": "Dumbbell Goblet Squat", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "a-circuit", "groupName": "Base Circuit", "groupKind": "circuit", "groupRounds": 6 },
+            { "catalogKey": "push-up", "displayName": "Push-Up", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "a-circuit", "groupName": "Base Circuit", "groupKind": "circuit", "groupRounds": 6 },
+            { "catalogKey": "machine-seated-row", "displayName": "Machine Seated Row", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "a-circuit", "groupName": "Base Circuit", "groupKind": "circuit", "groupRounds": 6 },
+            { "catalogKey": "machine-leg-press", "displayName": "Machine Leg Press", "sets": 2, "reps": 15, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "dead-bug", "displayName": "Dead Bug", "sets": 2, "reps": 15, "unit": "reps", "per": "side", "restSec": 75 }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Walk & Circuit",
+          "modality": "conditioning",
+          "split": "conditioning",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "cardio:walk", "displayName": "Incline Walk", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "walk", "modality": "indoor", "targetSec": 1080, "targetMi": null, "restSec": 90 },
+            { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 1, "reps": 12, "unit": "reps", "per": "leg", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 6 },
+            { "catalogKey": "machine-chest-press", "displayName": "Machine Chest Press", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 6 },
+            { "catalogKey": "dumbbell-farmer-carry", "displayName": "Dumbbell Farmer Carry", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "b-circuit", "groupName": "Work Circuit", "groupKind": "circuit", "groupRounds": 6 },
+            { "catalogKey": "machine-lat-pulldown", "displayName": "Machine Lat Pulldown", "sets": 2, "reps": 15, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "plank", "displayName": "Plank", "sets": 2, "reps": 0, "unit": "seconds", "durationSec": 30, "restSec": 75 }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Row & Circuit",
+          "modality": "conditioning",
+          "split": "conditioning",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Inchworm", "detail": "5 reps", "text": "Inchworm — 5 reps" }
+          ],
+          "main": [
+            { "catalogKey": "cardio:row", "displayName": "Steady Row", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "row", "modality": "indoor", "targetSec": 1080, "targetMi": null, "restSec": 90 },
+            { "catalogKey": "dumbbell-step-up", "displayName": "Dumbbell Step-Up", "sets": 1, "reps": 12, "unit": "reps", "per": "leg", "restSec": 30, "groupId": "c-circuit", "groupName": "Engine Circuit", "groupKind": "circuit", "groupRounds": 6 },
+            { "catalogKey": "machine-shoulder-press", "displayName": "Machine Shoulder Press", "sets": 1, "reps": 12, "unit": "reps", "restSec": 30, "groupId": "c-circuit", "groupName": "Engine Circuit", "groupKind": "circuit", "groupRounds": 6 },
+            { "catalogKey": "bird-dog", "displayName": "Bird Dog", "sets": 1, "reps": 12, "unit": "reps", "per": "side", "restSec": 30, "groupId": "c-circuit", "groupName": "Engine Circuit", "groupKind": "circuit", "groupRounds": 6 },
+            { "catalogKey": "seated-leg-curl-machine", "displayName": "Seated Leg Curl Machine", "sets": 2, "reps": 15, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "machine-abdominal-crunch", "displayName": "Machine Abdominal Crunch", "sets": 2, "reps": 15, "unit": "reps", "restSec": 75 }
+          ]
+        }
+      ]
+    }
+  ]
+}
