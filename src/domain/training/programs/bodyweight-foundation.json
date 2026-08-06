@@ -1,0 +1,211 @@
+{
+  "id": "bodyweight-foundation",
+  "name": "Bodyweight Foundation",
+  "family": "Full Body & Home",
+  "difficulty": "Beginner",
+  "durationWeeks": 6,
+  "frequencyPerWeek": 3,
+  "environment": "Anywhere — no equipment required",
+  "description": "Six weeks, three days a week, no equipment and nowhere you have to be. Each session trains the whole body through the five patterns a person actually needs — squat, push, pull, hinge and brace — and progresses the way bodyweight training has to: more reps first, then a harder version of the same movement. A knee push-up becomes a push-up becomes a close-grip push-up. Nothing is added to the bar because there is no bar.",
+  "goals": ["Build a general-fitness base with no equipment and no gym", "Learn to squat, push, pull, hinge and brace with competent form", "Earn a harder variation rather than rushing it", "Hold three sessions a week for six weeks", "Arrive ready for Bodyweight Strength"],
+  "successorName": "Bodyweight Strength",
+  "theme": "beginner",
+  "structure": "full_body",
+  "status": "AUTHORED — Stage 2 complete, PO Lock Approval outstanding",
+  "source": "forge",
+  "sourceFile": "Programs/Full Body & Home/Bodyweight Foundation/Design-Record.md",
+  "blocks": [
+    {
+      "label": "Weeks 1–2",
+      "weekStart": 1,
+      "weekEnd": 2,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Full Body — Squat Focus",
+          "modality": "strength",
+          "split": "full_body",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Bodyweight Squat", "detail": "10 reps", "text": "Bodyweight Squat — 10 reps" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" }
+          ],
+          "main": [
+            { "catalogKey": "bodyweight-squat", "displayName": "Bodyweight Squat", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "knee-push-up", "displayName": "Knee Push-Up", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "inverted-row", "displayName": "Inverted Row", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 60, "optional": true },
+            { "catalogKey": "glute-bridge", "displayName": "Glute Bridge", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dead-bug", "displayName": "Dead Bug", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "per": "side", "restSec": 60 },
+            { "catalogKey": "calf-raise", "displayName": "Calf Raise", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Full Body — Push Focus",
+          "modality": "strength",
+          "split": "full_body",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "incline-push-up", "displayName": "Incline Push-Up", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "reverse-lunge", "displayName": "Reverse Lunge", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "per": "leg", "restSec": 60 },
+            { "catalogKey": "inverted-row", "displayName": "Inverted Row", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 60, "optional": true },
+            { "catalogKey": "superman-hold", "displayName": "Superman Hold", "sets": 3, "reps": 0, "unit": "seconds", "durationSec": 20, "restSec": 60 },
+            { "catalogKey": "bird-dog", "displayName": "Bird Dog", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "per": "side", "restSec": 60 },
+            { "catalogKey": "scapular-wall-slide", "displayName": "Scapular Wall Slide", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Full Body — Hinge Focus",
+          "modality": "strength",
+          "split": "full_body",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "Inchworm", "detail": "5 reps", "text": "Inchworm — 5 reps" }
+          ],
+          "main": [
+            { "catalogKey": "glute-bridge", "displayName": "Glute Bridge", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "wall-sit", "displayName": "Wall Sit", "sets": 3, "reps": 0, "unit": "seconds", "durationSec": 20, "restSec": 60 },
+            { "catalogKey": "incline-push-up", "displayName": "Incline Push-Up", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "inverted-row", "displayName": "Inverted Row", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 60, "optional": true },
+            { "catalogKey": "crunch", "displayName": "Crunch", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "calf-raise", "displayName": "Calf Raise", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 60 }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Weeks 3–4",
+      "weekStart": 3,
+      "weekEnd": 4,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Full Body — Squat Focus",
+          "modality": "strength",
+          "split": "full_body",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Bodyweight Squat", "detail": "10 reps", "text": "Bodyweight Squat — 10 reps" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" }
+          ],
+          "main": [
+            { "catalogKey": "prisoner-squat", "displayName": "Prisoner Squat", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "push-up", "displayName": "Push-Up", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "inverted-row", "displayName": "Inverted Row", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60, "optional": true },
+            { "catalogKey": "single-leg-glute-bridge", "displayName": "Single-Leg Glute Bridge", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "per": "leg", "restSec": 60 },
+            { "catalogKey": "plank", "displayName": "Plank", "sets": 3, "reps": 0, "unit": "seconds", "durationSec": 30, "restSec": 60 },
+            { "catalogKey": "calf-raise", "displayName": "Calf Raise", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Full Body — Push Focus",
+          "modality": "strength",
+          "split": "full_body",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "push-up", "displayName": "Push-Up", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "forward-lunge", "displayName": "Forward Lunge", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "per": "leg", "restSec": 60 },
+            { "catalogKey": "inverted-row", "displayName": "Inverted Row", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60, "optional": true },
+            { "catalogKey": "back-extension", "displayName": "Back Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "side-plank", "displayName": "Side Plank", "sets": 3, "reps": 0, "unit": "seconds", "per": "side", "durationSec": 30, "restSec": 60 },
+            { "catalogKey": "scapular-push-up", "displayName": "Scapular Push-Up", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Full Body — Hinge Focus",
+          "modality": "strength",
+          "split": "full_body",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "Inchworm", "detail": "5 reps", "text": "Inchworm — 5 reps" }
+          ],
+          "main": [
+            { "catalogKey": "bodyweight-good-morning", "displayName": "Bodyweight Good Morning", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "bodyweight-squat", "displayName": "Bodyweight Squat", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "wide-push-up", "displayName": "Wide Push-Up", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "inverted-row", "displayName": "Inverted Row", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60, "optional": true },
+            { "catalogKey": "reverse-crunch", "displayName": "Reverse Crunch", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "single-leg-calf-raise", "displayName": "Single-Leg Calf Raise", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "per": "leg", "restSec": 60 }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Weeks 5–6",
+      "weekStart": 5,
+      "weekEnd": 6,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Full Body — Squat Focus",
+          "modality": "strength",
+          "split": "full_body",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Bodyweight Squat", "detail": "10 reps", "text": "Bodyweight Squat — 10 reps" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" }
+          ],
+          "main": [
+            { "catalogKey": "split-squat", "displayName": "Split Squat", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "per": "leg", "restSec": 60 },
+            { "catalogKey": "close-grip-push-up", "displayName": "Close-Grip Push-Up", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "underhand-inverted-row", "displayName": "Underhand Inverted Row", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60, "optional": true },
+            { "catalogKey": "bodyweight-good-morning", "displayName": "Bodyweight Good Morning", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "hollow-body-hold", "displayName": "Hollow Body Hold", "sets": 3, "reps": 0, "unit": "seconds", "durationSec": 40, "restSec": 60 },
+            { "catalogKey": "single-leg-calf-raise", "displayName": "Single-Leg Calf Raise", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "per": "leg", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Full Body — Push Focus",
+          "modality": "strength",
+          "split": "full_body",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "diamond-push-up", "displayName": "Diamond Push-Up", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "walking-lunge", "displayName": "Walking Lunge", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "per": "leg", "restSec": 60 },
+            { "catalogKey": "feet-elevated-inverted-row", "displayName": "Feet-Elevated Inverted Row", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60, "optional": true },
+            { "catalogKey": "single-leg-glute-bridge", "displayName": "Single-Leg Glute Bridge", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "per": "leg", "restSec": 60 },
+            { "catalogKey": "plank-shoulder-tap", "displayName": "Plank Shoulder Tap", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "per": "side", "restSec": 60 },
+            { "catalogKey": "pike-push-up", "displayName": "Pike Push-Up", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Full Body — Hinge Focus",
+          "modality": "strength",
+          "split": "full_body",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "Inchworm", "detail": "5 reps", "text": "Inchworm — 5 reps" }
+          ],
+          "main": [
+            { "catalogKey": "single-leg-glute-bridge", "displayName": "Single-Leg Glute Bridge", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "per": "leg", "restSec": 60 },
+            { "catalogKey": "lateral-lunge", "displayName": "Lateral Lunge", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "per": "leg", "restSec": 60 },
+            { "catalogKey": "push-up", "displayName": "Push-Up", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "inverted-row", "displayName": "Inverted Row", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60, "optional": true },
+            { "catalogKey": "v-up", "displayName": "V-Up", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "single-leg-calf-raise", "displayName": "Single-Leg Calf Raise", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "per": "leg", "restSec": 60 }
+          ]
+        }
+      ]
+    }
+  ]
+}
