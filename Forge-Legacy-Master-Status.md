@@ -23,7 +23,7 @@
 |---|---:|---|
 | **Architecture Design** | **~100%** | All 21 Architecture Freeze rows ✅ Complete; V1 Architecture Freeze officially **FROZEN 2026-06-30** |
 | **UI / Wireframes** | **~95%** | Nearly all screens specced; W18/W19 both lock-candidate (W18 corrected 2026-07-09 — previously misdashboarded as LOCKED; W19 blocked on W18, see Decision Queue #16); no Search/Rest-Timer/Community wireframe yet — Communities is architecture-only in this pass, no pixel layout authored |
-| **Content Authoring** | **Split — 92% coaching · 8% programs** | Was a single "~12%", which was wrong in both directions. **Coaching: 735 of 797 exercises Published, 62 Needs Review.** **Honors: data** (`honor_catalog`, **179 awardable** across 14 categories — 0099 filled the five empty ones). **Programs: 3 of the locked 24** — Strength Foundation I (3-day) and II (4-day), generated from `.docx`, plus **Body Recomposition Foundation** (Sort 13, 2026-08-06), the first authored straight against a LOCKED Stage-1 Blueprint rather than converted. Plus **7 authored outside the 24** (Iron & Engine; Squat Ascent, Bench Approach and Deadlift Measure Intermediate; Full Frame; Frame by Frame; Close Quarters) — 10 definitions shipped, but the locked catalog is still the real gap, and shipping outside it does not close it. ⚠ **Full Frame and Frame by Frame are both Muscle Building / Intermediate / 5-day** — a knowing overlap (PO decision 2026-08-06); the locked 4-day **Muscle Building Intermediate (Sort 6) remains UNBUILT**. **Exercise media: 0 of 797**. **Day-workout templates: 81 shipped** (2026-08-05) — 7 focuses × gym/home × 3 levels × men/women, 579 rows over 240 distinct catalogue exercises, every key test-verified against the **VISIBLE** catalogue (721 rows, not `exercises.json`’s 797) — audited again 2026-08-06 and clean 579/579, which is where the 7 catalog programs were not |
+| **Content Authoring** | **Split — 92% coaching · 8% programs** | Was a single "~12%", which was wrong in both directions. **Coaching: 735 of 797 exercises Published, 62 Needs Review.** **Honors: data** (`honor_catalog`, **179 awardable** across 14 categories — 0099 filled the five empty ones). **Programs: 4 of the locked 24** — Strength Foundation I (3-day) and II (4-day), generated from `.docx`, plus **Body Recomposition Foundation** (Sort 13) and **Muscle Building Intermediate** (Sort 6), both authored straight against a LOCKED Stage-1 Blueprint rather than converted. Plus **7 authored outside the 24** (Iron & Engine; Squat Ascent, Bench Approach and Deadlift Measure Intermediate; Full Frame; Frame by Frame; Close Quarters) — 11 definitions shipped, but the locked catalog is still the real gap, and shipping outside it does not close it. ⚠ **Full Frame and Frame by Frame are both Muscle Building / Intermediate / 5-day** — a knowing overlap (PO decision 2026-08-06); the locked 4-day **Muscle Building Intermediate (Sort 6) remains UNBUILT**. **Exercise media: 0 of 797**. **Day-workout templates: 81 shipped** (2026-08-05) — 7 focuses × gym/home × 3 levels × men/women, 579 rows over 240 distinct catalogue exercises, every key test-verified against the **VISIBLE** catalogue (721 rows, not `exercises.json`’s 797) — audited again 2026-08-06 and clean 579/579, which is where the 7 catalog programs were not |
 | **Backend / Data** | **BUILT (Supabase) — 118 migration files, 0001–0118. APPLIED THROUGH 0118** (0117–0118 applied 2026-08-06, `supabase/apply/pending-0117-0118.sql`); ⏳ **run-time verification still open** — the three button-presses in Recently Completed #1 have not been reported back, and in this repo applying is not evidence of working. 0109–0116 went in as one paste after a first attempt failed on 0109 (`42P13` — `create or replace` cannot change a return type; the revised file DROPs first), which is the same reason **0117 DROPped `squad_feed`/`squad_post_one`** rather than replacing them. ⚠ **0118 renamed `accomplishments.photo_url` → `media_url`** — the one non-additive statement in the pair; the deploy carrying the client half was already live, so this apply is what closed a `42703` the data layer was swallowing into an empty accomplishments list | auth · profiles · chapters · workouts+sets+conditioning legs · PRs · honors (`honor_catalog` + table-driven evaluator) · programs · goals · rank · body metrics · photos · squads+feed+discovery · friends · challenges · notifications · templates · train-together. RLS on all 35 tables; 52/52 `SECURITY DEFINER` pin `search_path`. Design doc still ratifies Firebase — the BUILD is Supabase (PD-7: build governs) |
 | **Code Implementation** | **~76%** *(75 screens, essentially all backend-wired)* | **75 screens** — 71 plus `/workout-builder` (W-25) and `/squad/[id]/goal` (S-2b) shipped 2026-08-03 and `/forge-templates` 2026-08-05, and 72 until `/active-run` was retired 2026-08-01 (one run surface, folded onto the workout card). **74 of 75 read real Supabase** — `/forge-templates` browses shipped definitions and reads the athlete’s own templates only to mark what they already own. The whole SOCIAL pillar — Squads · Squad Detail · Friends · Feed · Athlete Profile — is live, not mock; the old "fully MOCK, quarantined in `*-placeholder.ts`" reading was stale by weeks. Remaining: content, media production, and the deferred items in Current Sprint |
 | **Testing** | **1057 tests green** *(coverage % not instrumented → not measured)* | All passing. Newest three files guard the 2026-08-05 PO batch: `lift-series` (the chart plots a weight actually moved, a bodyweight lift charts in reps, a lift can go DOWN), `template-day` (a cool-down row does not land in Main; a cardio finisher does not become sets of a run), and `templateIntoDay` (group ids remap, so two templates in one day stay two blocks). Older: Invariant/golden (comment ⊆ thread · check-in ⊆ roster · records ⊆ roster · one-active-program), resolver matrices, domain validators, and four regression guards: `route-guard` (every screen declared, else it answers a URL signed-out), `chapter-tallies` (a chapter with honors never reports 0), **`completionSetCount` (an unweighted set is still a set) and `overlay-branch` (a sheet is mounted in the branch that can open it — verified by removing the fix and watching it fail)**. Newest: percentage-of-max resolution (35 cases, incl. the Epley single-rep inflation) and the program-acceptance rules that caught Squat Ascent asking for two maxes nobody tests. Behavioural coverage of built layers, NOT whole-app coverage |
@@ -31,11 +31,11 @@
 | Snapshot | Value |
 |---|---|
 | **Current Phase** | **Post-audit hardening.** 72 screens on a live Supabase backend (97 migrations), 508 tests, live at forgelegacy.expo.app. The 2026-08-01 audit found the build materially healthier than this board claimed — and one class of defect it did not: values displayed from columns nothing writes |
-| **Current Focus** | Correctness over breadth. Closed this session: the chapter honor tally (0098), the auth guard on 17 routes, invented athletes in the production bundle, and three silent failures. **Next: CONTENT** — 3 of 24 programs is the largest remaining gap; then the deferred decisions (F7 counter, `rank-progression`, dropping the dead column) |
-| **Biggest Blocker** | **Programs content — 3 of 24 authored** (Body Recomposition Foundation added 2026-08-06; Wave 2 of the Stage-2 plan is otherwise untouched). The old entry here ("the Social backend") has been wrong for weeks: Squads, Friends, Squad Detail and the feed are all Supabase-backed. Secondary: 0 of 797 exercises have media |
+| **Current Focus** | Correctness over breadth. Closed this session: the chapter honor tally (0098), the auth guard on 17 routes, invented athletes in the production bundle, and three silent failures. **Next: CONTENT** — 4 of 24 programs is the largest remaining gap; then the deferred decisions (F7 counter, `rank-progression`, dropping the dead column) |
+| **Biggest Blocker** | **Programs content — 4 of 24 authored** (Body Recomposition Foundation added 2026-08-06; Wave 2 of the Stage-2 plan is otherwise untouched). The old entry here ("the Social backend") has been wrong for weeks: Squads, Friends, Squad Detail and the feed are all Supabase-backed. Secondary: 0 of 797 exercises have media |
 | **Last Updated** | 2026-08-05 (**Native build config + OTA updates.** Bundle IDs (`com.qest4.forgelegacy`), `eas.json` with three profiles, EAS environment variables on the SAME Supabase project as web, and `expo-updates` at `fingerprint` runtime-version policy. `slug` untouched so forgelegacy.expo.app is unaffected — verified by re-exporting web and reading the PWA title/manifest back. ⚠ `.easignore` replaces rather than supplements `.gitignore`; the one-line version would have uploaded 900 MB on the first build. tsc 0 · 996 tests · web export clean. **No build run, no store accounts yet.** See Recently Completed #1.) Prior 2026-08-03 (**PO TRAINING-SESSION PASS — fourteen items from actually using it, and two of them were not what they looked like.** The active workout screen was fighting the athlete: one Set Input Sheet (weight + reps + Log Set completes it) replaces two single-field pickers and a stray green check, typing is the default and the wheel the opt-in, Add Exercise takes the footer slot that held a duplicate End Workout. **Two silent falsehoods closed**: the wheel wrote `null` for any weight you didn't scroll to, and The Record counted only weighted sets — so three unweighted warm-ups read "0 sets" beside a header that said 3. `weight: 0` is now BW (an answer), `null` is unentered (an absence). **Supersets end to end** on the existing circuit model (migration 0106), **Strength Start's three doors** wired to every entry that had assumed build-as-you-go, **the Free Workout Builder built** (W-25), **token search** unified across picker and library, **a rest-timer ding** (Sound preference became real), **avatar positioning**, and **Squad Goal Detail** to its `.dc` (migration 0107, which also closes the expired-goal contribution drift 0103 recorded and declined to fix). "Save this day as a template" was **never the database** — the naming sheet lived in the wrong render branch, so the button set state nothing rendered; a source guard now catches it. The Legacy Timeline's "weird emblem" was a hand-drawn path where the symbol library's own was three files away. **Apple Watch answered, not built.** tsc 0 · lint at baseline · 878 tests · web export clean. 0106 and 0107 applied same day. See Current Sprint.) Prior 2026-08-03 (**Workout playlist link built — `Workout-Playlist-Amendment-001` had been LOCKED and merged into four base specs since June and implemented on zero surfaces; the W-19 `.dc` drew the row the whole time.** Attach on W-9 ⋯ Options, attach/edit/remove on W-17, read-only on W-19, chip on squad recap cards. Migration **0105** enforces the URL host against the service tag in the database, because the squad card makes this the one column in the app that becomes a tap target for someone who did not type it. tsc 0 · lint at baseline · 819/819. See Recently Completed #1.) Prior 2026-08-01 (**PROJECT AUDIT + CORRECTION PASS** — 72 screens · 97 migrations (all applied) · 508 tests · tsc 0. Five defects closed incl. a chapter honor tally that was always zero on four surfaces, 17 ungated routes, and fabricated identity in the production bundle. Critical path moved from the social backend — long since built — to CONTENT. See Recently Completed #1.) Prior 2026-07-23 (**PROJECT AUDIT** — dashboard reconciled to the built tree. Real state: **334 TS/TSX · 52,713 LOC · 31 routes · 385 tests green · 24 migrations · tsc 0 · lint clean.** Sessions 07-19..07-23 built (all UNCOMMITTED, ~484 working-tree changes): **Home Gym** (owned-equipment gating) · **Exercise Library/Picker → real 794 catalog** · **Coaching content** (732 published) · **Activity History + Detail** · **Program Detail** · **Exercise Detail W-22** · **P-1 DISSOLUTION** (P-1 Profile + P-4 Settings Root dissolved into Legacy + Account Settings; avatar → Account Settings; PD-7) · **Account Settings + Profile Visibility + Notifications + Preferences** (real app-wide Units) · **Accomplishments L-12/13/14 CRUD** · **Pinned Legacy museum + L-13 pin manager** (accomplishments pinnable). Migrations 0021–0024 added. **Biggest findings: (1) the whole build is uncommitted — needs a commit sweep; (2) social/goals remain the only placeholder cluster.** Next: commit, then Goals or the social backend.) Prior 2026-07-14 (Design-handoff — `Programs/*.docx` → structured data conversion COMPLETE + PROMOTED; non-destructive `ingest/` pipeline generated the 2 LOCKED Strength programs to `training/programs/*.json`, wired `getActiveProgram()` to real data, deleted the placeholder; active = Foundation I (3-day) → `training_split:full_body`; tsc 0 / eslint clean / 45 tests; `.docx` untouched; I-4day held (DRAFT), II-3day excluded (mislabeled); Strength-only content gap noted). Prior: 2026-07-13 (Design-handoff Phase 1 — Home Workout Artwork Resolver + asset manifest + §16 test matrix built in `src/domain/home-artwork`; deterministic 7-rung port, reserved Legacy/Honors guard, MovementPattern→family + MuscleId→split bridges, real-catalog enrichment; `tsc`/ESLint clean, 40/40 tests; **§16 gate green → Phase 2 Home re-layout unblocked**; not yet committed). Prior: 2026-07-13 (Design-handoff Phase 0 — data-model foundation implemented (CODE) in `src/domain/profile` + `src/domain/training`; typed schemas + placeholder seed, non-breaking; sex-default bug fixed at model level; `tsc`/ESLint/7-test/e2e-resolver all green; MovementPattern→family and muscle-id→split bridges pending in Phase 1; not yet committed). Prior: 2026-07-12 (Onboarding reconciliation — O-1 → v1.1, O-2 → v2.0, O-3 ⛔ superseded, H-1 → v1.6 conformed to the governing Onboarding architecture; unified path, derived Athlete Type, silent Chapter I; docs-only — no onboarding code exists; see Recently Completed #1). Prior: 2026-07-11 (Exercise Coaching Content System built — `src/domain/exercise-coaching/`, infrastructure only, no content generated, gated on approval). Prior: 2026-07-09 (W18/W19 lock-dependency documentation correction — `Activity History (W18)` was misdashboarded as LOCKED; corrected to LOCK CANDIDATE, and the concrete reason W-19 remains unlocked is now recorded in Decision Queue #16). Prior: 2026-07-07 (Communities promoted to the 5th bottom-navigation tab, reversing the 2026-07-02 Home/Squads discovery-entry-point model — `Docs/Amendments/Community-Architecture-Amendment-002-Fifth-Tab.md`. Prior: 2026-07-02, Communities navigation finalized [Home "Explore Communities" primary, Squads secondary entry point]; new Transformation Gallery Legacy feature [L-17/L-18] added; both formalized from the design blueprint into official architecture. Earlier same-day: all 6 committed Forge component libraries reclassified LEGACY/REFERENCE — visual design system being rebuilt in Claude Design first) |
 
-> **30-second read:** Forge Legacy is a fully-architected fitness-legacy app (257 docs, ~208 mentioning LOCKED) with **a real, backend-wired product** live at forgelegacy.expo.app: **72 screens, 71 of them reading real Supabase data**, over **97 migrations (0001–0098, all applied)** with RLS on all 35 tables. 430 TS/TSX · 87,450 LOC · **508 `node --test` green** · tsc 0 · lint at baseline. *(Two readings that were stale for weeks and are now corrected: the social pillar is NOT placeholder — Squads, Squad Detail, Friends, the feed and Athlete Profile are all live; and this app is Supabase, not the Firebase the design doc ratifies.)* **Content is the critical path now, not plumbing:** exercise coaching is 735 of 797 published (92%) and honors are real data (139 awardable rows), but **programs are 3 of 24** and **exercise media is 0 of 797**. **Open, deliberately deferred** (reasons in Current Sprint): `chapters.workout_count` is a stored counter that is correct only until a delete-workout path ships; ~~`rank-progression` is built but orphaned~~ (**false — corrected 2026-08-02**: the Progress Hub links to it); the dead `chapters.honor_count` column awaits a change that already touches onboarding. **A standing lesson from the 2026-08-01 audit, worth keeping in view: a value that is only ever its default is worse than an absent one — absent renders nothing, a stale default renders a confident, specific, false claim about the athlete.** **The Backend/Data-Model architecture is now LOCKED** (`Backend-Data-Model-Architecture-v1.0.1` — Firebase stack, 12 runtime services, all entity schemas canonical). **Global Search is now also LOCKED** (`Global-Search-Architecture-v1.0.md` — Catalog Search/Discovery Search category split, Never-Searchable list, Performance Firewall-extended ranking/display rules, full reconciliation with both Backend §14 and `Community-Discovery-and-Search-v1.0`). The project can begin implementation as soon as the remaining Freeze rows resolve (Rest Timer, Component Library). **Rank is now ✅ Complete** — all 16 TBDs resolved/closed; RSA, RCM, Calibration Decisions, M-1, P-1, P-2 all LOCKED. Content authoring (programs/exercises) is also early (~12%). **New this session:** the Homepage Principles system is now fully architected and LOCKED — a quiet, rotating "digital inscription" of original Forge Legacy principles and reflection questions on Home (H-1), governed by `Homepage-Principles-Architecture-v1.0` with its canonical content in `Homepage-Principles-Library-v1.0`; the architecture states no fixed entry count so it cannot go stale as the library changes. **Also new this session:** the Communities subsystem (the fourth relationship pillar — Legacy/Friends/Squads/**Communities**) is now fully architected and LOCKED, with `Community-System-Architecture-v1.0`, `Community-Feed-Specification-v1.0`, `Community-Discovery-and-Search-v1.0`, `Community-Roles-and-Moderation-v1.0`, and a complete downstream reconciliation across Social, Challenge, Honor, Notification, Monetization, and Navigation architecture. **Also new this session:** the Squad System Architecture is LOCKED — Goals, Missions, daily Check-ins, a shared Streak, Momentum, a Weekly Summary, a Squad Feed, Honors integration (new `SQUAD` catalog category), inline Competition standings, and Analytics, all scoped to Squad-internal surfaces only. This **deliberately lifts the Performance Firewall for Squad surfaces alone** — Friends Feed, Communities, and Calendar keep the original no-comparison Firewall unchanged — superseding `Squad-Architecture-Amendment-001`/`002` and WSR-001's bounded Check-ins model for those surfaces. **Also new this session:** Exercise Library Phase 4 (Media Architecture & Standards) is LOCKED — new governing doc `Exercise-Media-Architecture-v1.0.md` adds `muscleTargetImageUrl` as a new "Exercise Anatomy" schema group and defines production standards for all 5 media/anatomy fields, including mandatory consistency rules for looping animations (neutral-stance start/end) and muscle target images (fixed model/pose/camera template). This is standards and schema only — media production itself remains entirely unstarted for all 195 exercises. **Also new this session:** the Exercise Library's 5 flagged naming-duplicate pairs are fully resolved (Phase 5) — one canonical V1 name locked per pair (Box Step-Up, Back Squat, Front Plank, Barbell Romanian Deadlift, Barbell Bench Press), catalog reduced from 200 to 195 exercises (44 anchors, down from 45), and a new `Exercise-Naming-Standard-v1.0.md` locks the naming principles and an immutability-after-publication governance rule for future authoring. **Also new this session:** the Honors System Final V1 Architecture is LOCKED — reconciled two previously-parallel, never-merged catalog lineages (the locked 82-type catalog and six unmerged Expansion Pass documents) into one coherent system, merged Endurance/Consistency/Prestige, and added a new Hidden category, reaching **167 honor types across 13 categories**; two brand-new Strength honor families (Sex-Specific Milestones, Relative Strength Milestones — 24 types) were designed in full and then deferred to V2 by PO decision before final lock; also discovered and fixed significant pre-existing staleness in `Honors-Spec-L10.md` (still showing the original 7 categories from before this project's own prior Competition/Communities/Squad work). Architecture and schema only — the full L-11 descriptive-content catalog pass remains a separate, future task.
+> **30-second read:** Forge Legacy is a fully-architected fitness-legacy app (257 docs, ~208 mentioning LOCKED) with **a real, backend-wired product** live at forgelegacy.expo.app: **72 screens, 71 of them reading real Supabase data**, over **97 migrations (0001–0098, all applied)** with RLS on all 35 tables. 430 TS/TSX · 87,450 LOC · **508 `node --test` green** · tsc 0 · lint at baseline. *(Two readings that were stale for weeks and are now corrected: the social pillar is NOT placeholder — Squads, Squad Detail, Friends, the feed and Athlete Profile are all live; and this app is Supabase, not the Firebase the design doc ratifies.)* **Content is the critical path now, not plumbing:** exercise coaching is 735 of 797 published (92%) and honors are real data (139 awardable rows), but **programs are 4 of 24** and **exercise media is 0 of 797**. **Open, deliberately deferred** (reasons in Current Sprint): `chapters.workout_count` is a stored counter that is correct only until a delete-workout path ships; ~~`rank-progression` is built but orphaned~~ (**false — corrected 2026-08-02**: the Progress Hub links to it); the dead `chapters.honor_count` column awaits a change that already touches onboarding. **A standing lesson from the 2026-08-01 audit, worth keeping in view: a value that is only ever its default is worse than an absent one — absent renders nothing, a stale default renders a confident, specific, false claim about the athlete.** **The Backend/Data-Model architecture is now LOCKED** (`Backend-Data-Model-Architecture-v1.0.1` — Firebase stack, 12 runtime services, all entity schemas canonical). **Global Search is now also LOCKED** (`Global-Search-Architecture-v1.0.md` — Catalog Search/Discovery Search category split, Never-Searchable list, Performance Firewall-extended ranking/display rules, full reconciliation with both Backend §14 and `Community-Discovery-and-Search-v1.0`). The project can begin implementation as soon as the remaining Freeze rows resolve (Rest Timer, Component Library). **Rank is now ✅ Complete** — all 16 TBDs resolved/closed; RSA, RCM, Calibration Decisions, M-1, P-1, P-2 all LOCKED. Content authoring (programs/exercises) is also early (~12%). **New this session:** the Homepage Principles system is now fully architected and LOCKED — a quiet, rotating "digital inscription" of original Forge Legacy principles and reflection questions on Home (H-1), governed by `Homepage-Principles-Architecture-v1.0` with its canonical content in `Homepage-Principles-Library-v1.0`; the architecture states no fixed entry count so it cannot go stale as the library changes. **Also new this session:** the Communities subsystem (the fourth relationship pillar — Legacy/Friends/Squads/**Communities**) is now fully architected and LOCKED, with `Community-System-Architecture-v1.0`, `Community-Feed-Specification-v1.0`, `Community-Discovery-and-Search-v1.0`, `Community-Roles-and-Moderation-v1.0`, and a complete downstream reconciliation across Social, Challenge, Honor, Notification, Monetization, and Navigation architecture. **Also new this session:** the Squad System Architecture is LOCKED — Goals, Missions, daily Check-ins, a shared Streak, Momentum, a Weekly Summary, a Squad Feed, Honors integration (new `SQUAD` catalog category), inline Competition standings, and Analytics, all scoped to Squad-internal surfaces only. This **deliberately lifts the Performance Firewall for Squad surfaces alone** — Friends Feed, Communities, and Calendar keep the original no-comparison Firewall unchanged — superseding `Squad-Architecture-Amendment-001`/`002` and WSR-001's bounded Check-ins model for those surfaces. **Also new this session:** Exercise Library Phase 4 (Media Architecture & Standards) is LOCKED — new governing doc `Exercise-Media-Architecture-v1.0.md` adds `muscleTargetImageUrl` as a new "Exercise Anatomy" schema group and defines production standards for all 5 media/anatomy fields, including mandatory consistency rules for looping animations (neutral-stance start/end) and muscle target images (fixed model/pose/camera template). This is standards and schema only — media production itself remains entirely unstarted for all 195 exercises. **Also new this session:** the Exercise Library's 5 flagged naming-duplicate pairs are fully resolved (Phase 5) — one canonical V1 name locked per pair (Box Step-Up, Back Squat, Front Plank, Barbell Romanian Deadlift, Barbell Bench Press), catalog reduced from 200 to 195 exercises (44 anchors, down from 45), and a new `Exercise-Naming-Standard-v1.0.md` locks the naming principles and an immutability-after-publication governance rule for future authoring. **Also new this session:** the Honors System Final V1 Architecture is LOCKED — reconciled two previously-parallel, never-merged catalog lineages (the locked 82-type catalog and six unmerged Expansion Pass documents) into one coherent system, merged Endurance/Consistency/Prestige, and added a new Hidden category, reaching **167 honor types across 13 categories**; two brand-new Strength honor families (Sex-Specific Milestones, Relative Strength Milestones — 24 types) were designed in full and then deferred to V2 by PO decision before final lock; also discovered and fixed significant pre-existing staleness in `Honors-Spec-L10.md` (still showing the original 7 categories from before this project's own prior Competition/Communities/Squad work). Architecture and schema only — the full L-11 descriptive-content catalog pass remains a separate, future task.
 
 ---
 
@@ -45,7 +45,7 @@
 |---|:---:|---|
 | **Architecture** | 🟢 | All 21 Freeze rows ✅ Complete; **V1 Architecture Freeze FROZEN 2026-06-30** |
 | **Documentation** | 🟡 | 257 `Docs/*.md` (42 Amendments), ~208 mentioning LOCKED. Specs are strong; the lag is in THIS dashboard and in amendments authored but never merged into their parent docs — the recurring pattern |
-| **Content** | 🟠 | Mixed, and previously mis-scored as one number. **Coaching content 735 of 797 published (92%)**; honors ARE data (139 awardable rows). **Programs 3 of 24** and **exercise media 0** — those two are the real gap |
+| **Content** | 🟠 | Mixed, and previously mis-scored as one number. **Coaching content 735 of 797 published (92%)**; honors ARE data (139 awardable rows). **Programs 4 of 24** and **exercise media 0** — those two are the real gap |
 | **Backend** | 🟢 | **Supabase, built & live** — 97 migrations (0001–0098, all applied), RLS on all 35 tables with ≥1 policy each, 52/52 `SECURITY DEFINER` functions pin `search_path`. Audit verified 53 RPC names, 61 call sites, 434 select columns and 119 write payloads all resolve |
 | **Code** | 🟢 | **72 screens, 71 of them on real Supabase data.** The one fixture-backed screen was deferred out of the routed tree 2026-08-01. ~150 components · 68 domain modules · 39 data modules |
 | **Testing** | 🟢 | **508 green** across 40 files (`node --test`) + live Supabase round-trip proofs; gates every unit. Coverage % still not instrumented → not measured |
@@ -250,7 +250,7 @@ pre-implementation sprint that stood here until now had been complete for five w
       links" reading was stale in this board AND in `_layout.tsx`'s comment; both corrected 2026-08-02
 - [ ] Decide whether to drop the dead `chapters.honor_count` column — needs a `complete_onboarding` rewrite, so it
       should ride with the next change that already touches onboarding
-- [ ] Programs content: 3 of 24. **This is still the single largest real gap in the project**
+- [ ] Programs content: 4 of 24. **This is still the single largest real gap in the project**
 
 **Sprint Complete When:** no surface displays a value nothing writes; every route is guarded by declaration; the
 dashboard's numbers match a fresh measurement.
@@ -454,7 +454,7 @@ Architecture for these is LOCKED; the rows below track **authored content volume
 | **Badge / Honor Artwork** | 7 rank-family badge sets | 81+ | ~9% | Rank badges shipped and wired; honor medallions still 0 |
 | **Transformation Gallery (as data)** | live feature, athlete-authored | — | ✅ | Built (L-17, migration 0044); volume is per-athlete, not an authoring target |
 
-**Content roll-up:** no longer one number — the old "~12% overall" was wrong in both directions. **Coaching content is 92% published and honors are real data**; **programs (3 of 24) and exercise media (0 of 797) are the actual gap.** Averaging those into a single percentage is what let the coaching work stay invisible on this board for weeks. Documentation completeness and content volume remain independent axes.
+**Content roll-up:** no longer one number — the old "~12% overall" was wrong in both directions. **Coaching content is 92% published and honors are real data**; **programs (4 of 24) and exercise media (0 of 797) are the actual gap.** Averaging those into a single percentage is what let the coaching work stay invisible on this board for weeks. Documentation completeness and content volume remain independent axes.
 
 ---
 
@@ -523,7 +523,50 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
-### 1. Close Quarters (6-Day) — the first program that claims to work at home, and the gate that cannot see a bench (2026-08-06, CONTENT + test — no migration)
+### 1. Muscle Building Intermediate (Sort 6) — and the rep range that was authored and thrown away (2026-08-06, CODE + CONTENT + test — no migration)
+
+**Asked for:** a fourth free muscleandstrength.com PDF, 4 days a week. The first of the four whose
+**frequency matched the unbuilt Sort 6 slot** — the one flagged twice as the locked catalog's real gap.
+
+**⚠ It could not be authored, and finding out why exposed a live defect.** The Sort 6 Blueprint requires
+**Double Progression** — a rep range, load rises when the athlete tops it. `ExercisePrescription.repsMax`
+existed on the CATALOG side and nowhere else: `structureFromDefinition` never copied it, `ProgramExercise`
+had no field for it, nothing rendered it. **A write-only field** — the exact failure the schema's
+deliberately-absent `notes` field exists to warn about.
+
+**Full Frame had authored a range on 105 of 105 prescriptions and lost every one.** "4 × 10–12" reached
+the athlete as "4 × 10", in a program whose entire premise is *work the range, add weight when you top
+it*. Its first draft was rejected for progression that "existed only in prose nobody reads mid-set"; the
+rebuild shipped with the same defect in a different costume.
+
+Fixed end to end, following the model's own convention — the ask beside the answer, like `targetWeight`
+beside `weight`: `ProgramExercise.repsMax` → `adopt-core` → `schemeText` → `SessionSet.targetRepsMax` →
+the Target column. **`reps` stays ONE NUMBER and stays the FLOOR**, because it feeds volume, the e1RM
+behind PR detection, and the reps column written at save; widening it would put reps nobody performed
+into an athlete's history. Full Frame's 105 ranges came back.
+
+**Then Sort 6:** Upper/Lower × 2, 10 weeks, **40 sessions**, sets accumulating 19 → 21 → 24 → 26, deload
+week 9 (primaries cut exactly 40%), peak week 10 at 29–30. The first program in the catalog that can
+honestly say "4 × 6–10".
+
+**⚠ The Blueprint's own balance table does not close, under either convention — recorded, not smoothed.**
+§4 sets weekly per-muscle bands and §1 calls balance the program's identity, but never says how to count
+a set. Counting **direct only**, arms land at 3 against a band of 8–14 — unreachable without four
+isolation exercises per upper day, which breaks the 8-exercise ceiling. Counting **direct + indirect at
+half**, shoulders land at 26.5 against 10–16, because every press feeds the front delt and *nothing*
+feeds the lateral except direct work. **8 of 10 bands are met** on the second reading, which the program
+is authored to; both are tabulated in Design Record §5, and the two that miss are asserted as missing so
+the finding cannot go stale. Feed back to Stage 1: §4 needs to state its convention.
+
+**A test caught a real thing about the program:** the deload check read `main[0]` as the primary and
+reported Day D at a 25% cut. Day D opens on the hack squat at a *secondary* dose and carries its primary
+load on the hip thrust behind it — Blueprint §3 fixes the order, not the dose. The test was measuring
+position and calling it weight.
+
+12 acceptance tests here, 10 on the range, **all mutation-verified**. tsc 0 · lint at baseline ·
+**1135 of 1135**. Catalog: **11 definitions, 4 locked, 4 of 24 planned.**
+
+### 2. Close Quarters (6-Day) — the first program that claims to work at home, and the gate that cannot see a bench (2026-08-06, CONTENT + test — no migration)
 
 **Asked for:** a third free muscleandstrength.com PDF — *Dumbbell Only Workout: 6 Day Split* — with "this
 could be an at home workout don't you think?"
@@ -566,7 +609,7 @@ in one day**; the locked catalog is still **3 of 24**.
 
 tsc 0 · lint at baseline · **1098 of 1098**.
 
-### 2. Frame by Frame (5-Day) — a body-part split, and a guard against the mistake that got Full Frame's first draft rejected (2026-08-06, CONTENT + test — no migration)
+### 3. Frame by Frame (5-Day) — a body-part split, and a guard against the mistake that got Full Frame's first draft rejected (2026-08-06, CONTENT + test — no migration)
 
 **Asked for:** a second free muscleandstrength.com PDF — *M-F Workout Routine: 5 Day Body Part Split* —
 with "make a Forge workout program just like this."
@@ -607,7 +650,7 @@ any session named after a weekday.
 12 acceptance tests, **each verified by mutation**. 36 catalog keys, all resolving against the visible
 721. tsc 0 · lint at baseline · **1086 of 1086**.
 
-### 3. A rule no author could satisfy, and a guard that failed the moment it was committed (2026-08-06, DOCS + test — no migration)
+### 4. A rule no author could satisfy, and a guard that failed the moment it was committed (2026-08-06, DOCS + test — no migration)
 
 Two defects of the same shape — **something that had been quietly broken since the day it landed, reading
 as fine because nothing could see it.**
@@ -646,7 +689,7 @@ failing.**
 Gates: tsc 0 · lint at baseline · **1074 of 1074 `node --test`, nothing excluded** — the first fully
 green suite in this working tree. Commits `947a082`, `0b8b179`.
 
-### 4. Body Recomposition Foundation — the first program the catalog plan actually asked for (2026-08-06, CONTENT + test — no migration)
+### 5. Body Recomposition Foundation — the first program the catalog plan actually asked for (2026-08-06, CONTENT + test — no migration)
 
 **Asked for:** the PO brought in a free third-party PDF — *8 Week Beginner Fat Loss Workout*
 (muscleandstrength.com) — and asked to "tweak it a little" into the catalog.
@@ -697,7 +740,7 @@ Gates: **tsc 0 · lint at baseline (1 pre-existing error + 13 warnings) · 1072 
 the one failure being the self-matching SVG guard above. `status` is deliberately **not** `LOCKED` —
 Lock Approval is a signature this repo cannot give itself. Not committed.
 
-### 5. The programs prescribed 244 things the app cannot show, and the guard said they were clean (2026-08-06, CONTENT + test — no migration)
+### 6. The programs prescribed 244 things the app cannot show, and the guard said they were clean (2026-08-06, CONTENT + test — no migration)
 
 **Asked for:** "make sure that only workouts that we have in our exercise list are actually in the
 programs. Also, anything like the empty barbell bench just get rid of, people will warm up properly on
@@ -796,7 +839,7 @@ test that encoded it (`Iron & Engine: the Standard's warm-up shape`) has been am
 with the reason written in. **The .docx is under the append/annotate-only rule, so it is flagged, not
 edited — it needs the PO's amendment.**
 
-### 6. PO batch 3 — four items, and two of them were charts and links that had quietly stopped being true (2026-08-05, migrations 0117–0118 — ✅ APPLIED 2026-08-06)
+### 7. PO batch 3 — four items, and two of them were charts and links that had quietly stopped being true (2026-08-05, migrations 0117–0118 — ✅ APPLIED 2026-08-06)
 
 **Where the batch came from:** the PO used the app and wrote down four things. Two were plain gaps. The
 other two looked like missing features and were something worse — a screen and a link that both looked
@@ -877,7 +920,7 @@ post page · (2) a friend's recap shows their sets under a "shared with you" ban
 accomplishment saves with a photo and shows it on the detail. Until those are pressed, treat 0117–0118
 as applied-but-unproven.
 
-### 7. The app gets a native identity — bundle IDs, EAS build config, and over-the-air updates (2026-08-05, CONFIG — no migration)
+### 8. The app gets a native identity — bundle IDs, EAS build config, and over-the-air updates (2026-08-05, CONFIG — no migration)
 
 **Nothing here is a feature. This is the plumbing that has to exist before a single native build can
 start, and none of it existed.** The repo had no `eas.json` at all, and `app.json` carried no
@@ -939,7 +982,7 @@ no Apple Developer or Google Play account exists yet, and `submit.production` in
 object awaiting the Apple credentials. Privacy-policy URL, support URL, store screenshots, and the
 privacy-nutrition disclosures are all still outstanding — see § Next Milestones.
 
-### 8. The Forge template library: 6 day-sessions → 81, and the shelf that could no longer be a list (2026-08-05, CODE — no migration)
+### 9. The Forge template library: 6 day-sessions → 81, and the shelf that could no longer be a list (2026-08-05, CODE — no migration)
 
 **PO request: a day-workout template for each common split, for the gym and for home, at three levels,
 male and female, with cardio where it fits.** Seven focuses — push · pull · legs · arms · chest-triceps ·
@@ -1020,7 +1063,7 @@ All eight artefacts verified present after the run.
 **994 `node --test` green**, 22 of them in `definitions.test.mjs` (was 10). No migration — starter
 templates are shipped definitions, and `0115` (`source_definition_id`) already carries adoption.
 
-### 9. PO training-session feedback, batch 2 — and three of the eight were not what they looked like (2026-08-04, CODE + migrations 0112–0115) — ✅ APPLIED 2026-08-05
+### 10. PO training-session feedback, batch 2 — and three of the eight were not what they looked like (2026-08-04, CODE + migrations 0112–0115) — ✅ APPLIED 2026-08-05
 
 **Eight items from a live session. One was retracted by the PO on investigation** — the squad video
 check-in *does* expire after 24h (`squad-live.ts` filters on `created_at >= now − 24h` and refetches on
@@ -1091,7 +1134,7 @@ which is the same reasoning that keeps the honor-catalogue screen unbuilt.
 the profile table through PostgREST. Its copy must say "hide me from name search" and never an absolute.
 Narrowing that policy is its own ruling and is listed in the amendment's open items.
 
-### 10. A program can be loaded from a tested max — and Squat Ascent, the first one that is (2026-08-03, CODE + migration 0111) — ✅ APPLIED
+### 11. A program can be loaded from a tested max — and Squat Ascent, the first one that is (2026-08-03, CODE + migration 0111) — ✅ APPLIED
 
 **The prescription model had no load field of any kind.** Sets, reps, per-set ladders, timed work and
 circuits — but nothing that could say *"at 75%"*. A peaking block could only be stored as "5 × 5": the
@@ -1147,7 +1190,7 @@ detector for a flag nothing writes is the exact defect the 2026-08-01 audit name
 Gate: **tsc 0 · eslint at baseline (1 pre-existing error, 13 warnings) · 955 `node --test` green · web
 export clean · deployed and verified live** (live `entry-95187cbe…js` matches the build). Commit `35a341e`.
 
-### 11. Iron & Engine, and the two things "share a program" can mean (2026-08-03, CODE + migration 0110) — ✅ APPLIED 2026-08-05
+### 12. Iron & Engine, and the two things "share a program" can mean (2026-08-03, CODE + migration 0110) — ✅ APPLIED 2026-08-05
 
 **A. The catalog could not express its own conditioning.** `ExercisePrescription` held `sets × reps` and
 nothing else, and `structureFromDefinition` — the ONLY path from a built-in program to a runnable one —
@@ -1226,7 +1269,7 @@ one hardcoded two definitions and validated neither of the new ones). Two interm
 transient failures in files that passed in isolation and on re-run — consistent with OneDrive rewriting
 files mid-run while the other session synced in, not with a defect.
 
-### 12. Two tester reports on the friend loop (2026-08-03, CODE + migration 0109) — ✅ APPLIED 2026-08-05
+### 13. Two tester reports on the friend loop (2026-08-03, CODE + migration 0109) — ✅ APPLIED 2026-08-05
 
 Both from the first outside tester pair, and they are the two halves of the same journey — finding a person, and being told a person found you.
 
@@ -1252,7 +1295,7 @@ exception. Now a row like the rest (face · name · handle · rank → profile).
 **Apply:** `supabase/migrations/0109_restore_friend_notifications.sql`, SQL editor. Verify by having a
 second account request you — the bell should count it and `/inbox` should show it.
 
-### 13. The playlist link — an amendment that was LOCKED, merged, and built nowhere (2026-08-03, CODE + migration 0105) — ✅ APPLIED
+### 14. The playlist link — an amendment that was LOCKED, merged, and built nowhere (2026-08-03, CODE + migration 0105) — ✅ APPLIED
 
 **`Workout-Playlist-Amendment-001` was LOCKED in June 2026 and merged into four base specs** — W-9–W-16
 §8.5, W-17 §8A, W-19 §9A and WSR-001 — each with its own wireframe, tap-target table and validation
@@ -1299,7 +1342,7 @@ hand-typed copy — the copy had inherited the same bug, so probe and constraint
 wrong, and only the EXPECTED column caught it. Re-proved against all 15 vectors under real three-valued
 logic before re-handing it over. **Nothing reached live data at any point.**
 
-### 14. A program can finally graduate (2026-08-03, CODE + migration 0104) — ✅ APPLIED
+### 15. A program can finally graduate (2026-08-03, CODE + migration 0104) — ✅ APPLIED
 
 **Nothing in this app or this database had ever written `programs.state = 'graduated'.`** Found while
 answering "is sharing a program live?" — it is not, and neither was the thing underneath it. The only
@@ -1365,7 +1408,7 @@ error, 13 warnings). **The migration has NOT been applied and none of the SQL ha
 self-checks that abort it on failure, a pre-migration dry run in its header, and a four-step VERIFY
 footer. Until it is applied, nothing above is true in the database.
 
-### 15. Self-directed training blocks — the freestyle athlete can climb the whole ladder (2026-08-02, CODE + RCM Amendment 002)
+### 16. Self-directed training blocks — the freestyle athlete can climb the whole ladder (2026-08-02, CODE + RCM Amendment 002)
 
 **An athlete who trains day to day and never builds a program could not progress past Craftsman. Ever.**
 `programGraduations` was a hard gate at Architect (1), Established (3), Legend (6) and Legacy (10) — so no
@@ -1434,7 +1477,7 @@ and freestyle-earned — because adding the new field to the old baseline alone 
 breaking nothing changes nothing. **The guard was checked empirically:** reverting the gate to the old rule
 fails two tests; restoring it passes.
 
-### 16. The athlete who never builds a program gets a Home of their own (2026-08-02, CODE)
+### 17. The athlete who never builds a program gets a Home of their own (2026-08-02, CODE)
 
 **"There's going to be people that don't want to build a 4-week program and just go day to day"** (PO). Home
 did not serve them. It told them what they lacked, withheld the one button they needed, took their goal away
@@ -1502,7 +1545,7 @@ byte-identical composition.
 **Verified:** `tsc` 0 · **751 `node --test` green** (+23 over the pre-session baseline: 18 composition, 4
 autosave, 3 tour) · `eslint src` at baseline (1 pre-existing error, 13 warnings).
 
-### 17. Home stops offering to find you a program it doesn't have (2026-08-02, CODE)
+### 18. Home stops offering to find you a program it doesn't have (2026-08-02, CODE)
 
 **The first card on a program-less Home read "Help me find one — a few questions, then a program picked for
 where you are."** It then asked three: experience, primary goal, equipment. **Only one combination of those
@@ -1537,7 +1580,7 @@ drop-one sweep proving no goal is optional; an alias counts as answered where th
 first draft of that sweep asserted the strength ids too and correctly failed) · `eslint src` at baseline
 (1 pre-existing error, 13 warnings).
 
-### 18. The tutorial that kept coming back — a lost-update race in the seen-set (2026-08-02, CODE)
+### 19. The tutorial that kept coming back — a lost-update race in the seen-set (2026-08-02, CODE)
 
 **Reported as "the walkthroughs pop up again after I've already done them."** They did — and the cause was
 neither the trigger logic nor the copy. It was that finishing one was sometimes never written down.
@@ -1578,7 +1621,7 @@ rather than a live defect.)
 **Verified:** `tsc` 0 · **704 `node --test` green** (+9, including the control) · `eslint src` at baseline
 (1 pre-existing error, 13 warnings).
 
-### 19. The Home gate is gone — full Home from the first launch (2026-08-02, CODE)
+### 20. The Home gate is gone — full Home from the first launch (2026-08-02, CODE)
 
 **Applying Onboarding-Amendment-002, not amending it.** A fresh athlete used to get a single-card takeover
 until they chose a starting point. 002's own origin section names that as the defect it was written to
@@ -1608,7 +1651,7 @@ athlete now get the same card, because they want the same thing.
 Verified: tsc 0 · lint at baseline (1 pre-existing error, 13 warnings) · **695 `node --test` green** · clean
 web export. Amendment 003 gains **ONB-A3-D7** and a validation checklist; ONB-A3-D5's table is restated.
 
-### 20. The Squads cluster tutorialized — ten surfaces, 31 spotlit steps (2026-08-02, CODE)
+### 21. The Squads cluster tutorialized — ten surfaces, 31 spotlit steps (2026-08-02, CODE)
 
 Completes the third and last cluster. Where Workouts teaches mechanics and Legacy teaches ideas, **Squads
 teaches a consent model** — one rule the screens genuinely never state out loud:
@@ -1637,7 +1680,7 @@ form that names its own fields does not need a tour, and adding one is noise.
 Verified: tsc 0 · lint at baseline (1 pre-existing error, 13 warnings) · **695 `node --test` green, 2 new** ·
 clean web export.
 
-### 21. The Legacy cluster tutorialized — ten surfaces, 35 spotlit steps (2026-08-02, CODE)
+### 22. The Legacy cluster tutorialized — ten surfaces, 35 spotlit steps (2026-08-02, CODE)
 
 Where Workouts is mechanics — which control does what — **Legacy is where the product's ideas live**, so
 these walkthroughs explain concepts rather than buttons: what a chapter is, what sealing costs you, what you
@@ -1679,7 +1722,7 @@ the failure the stale Workouts tour was guilty of, and it is now guarded against
 Verified: tsc 0 · lint at baseline (1 pre-existing error, 13 warnings) · **689 `node --test` green, 4 new** ·
 clean web export.
 
-### 22. The Workouts cluster tutorialized — seven surfaces, 28 spotlit steps (2026-08-02, CODE)
+### 23. The Workouts cluster tutorialized — seven surfaces, 28 spotlit steps (2026-08-02, CODE)
 
 **The tab that fans out to the two largest screens in the app taught none of it.** Workouts had a two-card
 walkthrough; Program Builder (2053 lines) and the live session (1890) had none, and neither did Program
@@ -1729,7 +1772,7 @@ with no affordance**, which wants a micro-hint on the button rather than a tour 
 Verified: tsc 0 · lint at baseline (1 pre-existing error, 13 warnings) · **685 `node --test` green, 7 new** ·
 clean web export.
 
-### 23. P-1.1 Edit Profile built, and three share destinations that lied were removed (2026-08-02, CODE)
+### 24. P-1.1 Edit Profile built, and three share destinations that lied were removed (2026-08-02, CODE)
 
 **Pre-tester hardening pass.** Two gaps that a beta tester would hit in their first hour, closed — plus one
 board entry that has been wrong for weeks.
@@ -1780,7 +1823,7 @@ list from the filesystem and passes, so the new route is properly declared insid
 `eslint src` at baseline (1 pre-existing error, 13 warnings — nothing new) · `expo export --platform web`
 clean, `edit-profile.html` rendered among 59 routes.
 
-### 24. The guided tour split into two legs, and Home finally gets explained (2026-08-02, CODE)
+### 25. The guided tour split into two legs, and Home finally gets explained (2026-08-02, CODE)
 
 **The tour ran at one moment and taught the wrong screen.** The four-tab tour existed only as the honor
 ceremony's continuation, so it fired at the exact instant Home un-gated: the athlete was handed a map of four
@@ -1823,7 +1866,7 @@ only when a run is planned. `useScreenPrompt`, the Guided Tips master switch, th
 Verified: tsc 0 · lint at baseline (1 pre-existing error, 13 warnings) · **678 `node --test` green, 11 new** ·
 clean web export.
 
-### 25. FULL-APP AUDIT — seven passes, three defects closed, one reported (2026-08-02, CODE)
+### 26. FULL-APP AUDIT — seven passes, three defects closed, one reported (2026-08-02, CODE)
 
 A deliberate attempt to break the app: reachability · data contract · dangling loops · persona walks ·
 computation truth · hostile input · server-side authority. Commit `ce472b8`, migration **0101**.
@@ -1864,7 +1907,7 @@ radius in the project (see the 0095–0097 lesson). Designed, not shipped; await
 `chapters.honor_count`, no surface displays it). ~69 dangling exports, mostly type-constant arrays, plus
 two superseded duplicates (`fetchPublicProfile`, `getNextWorkout`).
 
-### 26. Import from a spreadsheet · PR semantics · Rank standards (2026-08-02, CODE)
+### 27. Import from a spreadsheet · PR semantics · Rank standards (2026-08-02, CODE)
 
 **IMPORT IS BUILT.** It was in the design all along — not a screen, a BottomSheet inside the Program
 Builder — which is why a search for an import `.dc.html` found nothing. That supersedes
@@ -1909,7 +1952,7 @@ Gate held at every step: tsc 0 · lint at baseline · **635 `node --test` green*
 deploy.
 
 
-### 27. Cardio consolidated onto one surface · the five empty honor categories filled (2026-08-01, CODE + migration 0099)
+### 28. Cardio consolidated onto one surface · the five empty honor categories filled (2026-08-01, CODE + migration 0099)
 
 **Runs.** GPS measured nothing because `ACCURACY_FLOOR_M` was 25 m — right for a phone under open sky, wrong
 for a browser geolocating off wi-fi at 30–80 m, so every fix was discarded and the distance sat at 0.00

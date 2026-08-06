@@ -14,6 +14,7 @@
  *   - Deadlift Measure Intermediate
  *   - Full Frame (5-day)
  *   - Body Recomposition Foundation
+ *   - Muscle Building Intermediate
  *
  * ── WHY ONE PROGRAM HAS NO `.docx` ───────────────────────────────────────────────────────────────────
  *
@@ -108,9 +109,27 @@
  * Catalog surface shows name, duration and frequency**, so to an athlete choosing between them these
  * read as "the 6-week one" and "the 10-week one". Frame by Frame's Design Record §2 argues both sides.
  *
- * **Neither is `Muscle Building Intermediate` (Sort 6), which remains UNBUILT.** That Blueprint is LOCKED
- * at 10 weeks × **4** sessions; authoring a 5-day under that name would break a locked Blueprint to match
- * a PDF, and a locked Blueprint outranks a PDF. Both of these ship outside the locked 24.
+ * **Neither is `Muscle Building Intermediate` (Sort 6)** — that Blueprint is LOCKED at 10 weeks × **4**
+ * sessions, and authoring a 5-day under that name would break a locked Blueprint to match a PDF. Both of
+ * these ship outside the locked 24. **Sort 6 was then authored properly** — see below.
+ *
+ * ── MUSCLE BUILDING INTERMEDIATE (SORT 6) IS THE SECOND ENTRY FROM THE LOCKED PLAN ────────────────────
+ *
+ * Upper/Lower × 2, 10 weeks, 40 sessions, to `Muscle-Building-Intermediate-Blueprint-v1.0.md`. It is the
+ * first program in the catalog to run **Double Progression** — every prescription is a rep RANGE, and the
+ * athlete adds load once they reach the top of it on all sets.
+ *
+ * **It could not have been authored a day earlier.** `repsMax` was dropped between the catalog and the
+ * athlete, so a range reached them as its floor; that was fixed first, and Full Frame's 105 lost ranges
+ * came back with it.
+ *
+ * ⚠ **The Blueprint's §4 per-muscle bands are not simultaneously satisfiable, under either convention**,
+ * and the Design Record §5 shows both readings side by side rather than picking the flattering one.
+ * Counting DIRECT sets only, arms land at 3 against a band of 8–14 — unreachable without four isolation
+ * exercises per upper day. Counting direct + indirect at half, shoulders land at 26.5 against 10–16,
+ * because every press feeds the front delt and nothing else feeds the lateral. 8 of 10 bands are met on
+ * the second reading, which is the one the program is authored to. This is a finding for the Blueprint,
+ * not a defect in the program, and it is recorded rather than smoothed over.
  *
  * ── CLOSE QUARTERS IS THE FIRST PROGRAM THAT CLAIMS TO WORK AT HOME ───────────────────────────────────
  *
@@ -141,6 +160,7 @@ import fullFrame from './full-frame-5day.json';
 import bodyRecompFoundation from './body-recomposition-foundation.json';
 import frameByFrame from './frame-by-frame-5day.json';
 import closeQuarters from './close-quarters-6day.json';
+import muscleBuildingIntermediate from './muscle-building-intermediate.json';
 
 // JSON import types widen literals (e.g. theme:string); the validator test enforces the
 // real ProgramDefinition contract, so a single narrowing cast here is safe.
@@ -155,6 +175,7 @@ const DEFINITIONS: readonly ProgramDefinition[] = [
   bodyRecompFoundation,
   frameByFrame,
   closeQuarters,
+  muscleBuildingIntermediate,
 ] as unknown as ProgramDefinition[];
 
 /** All converted, PO-approved program definitions. */

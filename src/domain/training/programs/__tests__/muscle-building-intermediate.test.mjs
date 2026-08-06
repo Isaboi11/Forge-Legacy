@@ -1,0 +1,219 @@
+/**
+ * muscle-building-intermediate.test.mjs — Sort 6 against its LOCKED Blueprint.
+ *
+ * The second program authored from the Stage-2 production plan, and the first to run DOUBLE PROGRESSION:
+ * every prescription is a rep RANGE, and the athlete adds load once they reach the top of it on all sets.
+ *
+ * ⚠ That was unauthorable until the same day. `repsMax` was dropped between the catalog and the athlete,
+ * so a range arrived as its floor — see `rep-range.test.mjs`. The first test below is the one that would
+ * catch a silent regression there, because a program whose whole progression model is a range would keep
+ * passing every other check in this file with the ranges stripped out.
+ *
+ * Run:  node --test src/domain/training/programs/__tests__/muscle-building-intermediate.test.mjs
+ */
+
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const p = JSON.parse(readFileSync(join(HERE, '..', 'muscle-building-intermediate.json'), 'utf8'));
+const SRC = join(HERE, '..', '..', '..', 'exercise-relationships', 'source');
+const MUSCLES = JSON.parse(readFileSync(join(SRC, 'exercise_muscles.json'), 'utf8'));
+
+const everyWorkout = () => p.blocks.flatMap((b) => b.workouts.map((w) => [w, b]));
+const sessionSets = (w) => w.main.reduce((a, ex) => a + ex.sets, 0);
+const DELOAD = 4; // Week 9
+const PEAK = 5; //  Week 10
+const WORK = [0, 1, 2, 3]; // the four accumulating blocks
+
+// ── double progression: the model this program exists to run ────────────────
+
+test('EVERY prescription is a rep range — the model is not optional here', () => {
+  for (const [w, b] of everyWorkout()) {
+    for (const ex of w.main) {
+      const where = `${b.label} ${w.code} ${ex.displayName}`;
+      assert.ok(ex.repsMax != null, `${where} has no rep range — double progression cannot run on it`);
+      assert.ok(ex.repsMax > ex.reps, `${where} range does not widen: ${ex.reps}-${ex.repsMax}`);
+      assert.equal(ex.repScheme, undefined, `${where} carries a ladder, which would override the range`);
+    }
+  }
+});
+
+/**
+ * The RANGE is what the athlete progresses within; the SETS are what the program progresses across
+ * blocks. Conflating them is the easy mistake — widening the range block by block would be a third
+ * progression model nobody asked for, and would stop the athlete ever topping out a range.
+ */
+test('the range never moves between blocks — only the sets do', () => {
+  for (const code of ['A', 'B', 'C', 'D']) {
+    const byExercise = new Map();
+    for (const b of p.blocks) {
+      for (const ex of b.workouts.find((w) => w.code === code).main) {
+        const seen = byExercise.get(ex.catalogKey);
+        const range = `${ex.reps}-${ex.repsMax}`;
+        if (seen) assert.equal(range, seen, `day ${code}: ${ex.displayName} changed its range in ${b.label}`);
+        else byExercise.set(ex.catalogKey, range);
+      }
+    }
+  }
+});
+
+// ── the Blueprint's locked metadata ─────────────────────────────────────────
+
+test('metadata matches the LOCKED Blueprint exactly', () => {
+  assert.equal(p.id, 'muscle-building-intermediate');
+  assert.equal(p.name, 'Muscle Building Intermediate');
+  assert.equal(p.family, 'Muscle Building');
+  assert.equal(p.difficulty, 'Intermediate');
+  assert.equal(p.durationWeeks, 10);
+  assert.equal(p.frequencyPerWeek, 4);
+  assert.equal(p.structure, 'upper_lower');
+  assert.equal(p.successorName, 'Muscle Building Advanced');
+  assert.ok(p.name.length <= 60, 'PAS-D1 hard limit');
+  assert.notEqual(p.status, 'LOCKED', 'claims a lock nobody signed');
+});
+
+test('40 sessions across 10 weeks, no gap or overlap', () => {
+  const sorted = [...p.blocks].sort((a, b) => a.weekStart - b.weekStart);
+  assert.equal(sorted[0].weekStart, 1);
+  assert.equal(sorted.at(-1).weekEnd, 10);
+  for (let i = 1; i < sorted.length; i += 1) {
+    assert.equal(sorted[i].weekStart, sorted[i - 1].weekEnd + 1, `gap or overlap before ${sorted[i].label}`);
+  }
+  for (const b of sorted) assert.equal(b.workouts.length, 4, `${b.label} day count`);
+  assert.equal(sorted.reduce((a, b) => a + (b.weekEnd - b.weekStart + 1) * b.workouts.length, 0), 40);
+});
+
+test('upper and lower alternate, twice each — and the two upper days differ', () => {
+  for (const b of p.blocks) {
+    assert.deepEqual(b.workouts.map((w) => w.code), ['A', 'B', 'C', 'D'], `${b.label} day codes`);
+    assert.deepEqual(b.workouts.map((w) => w.split), ['upper', 'legs', 'upper', 'legs'], `${b.label} splits`);
+    // A is chest-led and C shoulder-led. Identical upper days would make this Upper/Lower in name only.
+    const [a, , c] = b.workouts;
+    assert.notEqual(a.main[0].catalogKey, c.main[0].catalogKey, `${b.label}: both upper days open on the same lift`);
+  }
+});
+
+/** Blueprint §3: press or squat compound first, row or hinge compound second, isolation last. */
+test('compounds open every session and isolation never does', () => {
+  for (const [w, b] of everyWorkout()) {
+    const rests = w.main.map((ex) => ex.restSec);
+    assert.ok(rests[0] >= 120, `${b.label} ${w.code} does not open on a compound (rest ${rests[0]}s)`);
+    assert.ok(rests[1] >= 120, `${b.label} ${w.code} has no second compound`);
+    assert.ok(rests.at(-1) <= 90, `${b.label} ${w.code} does not end on isolation`);
+  }
+});
+
+test('every session sits inside the HYPERTROPHY envelope — 5–8 exercises, 18–30 sets', () => {
+  for (const [w, b] of everyWorkout()) {
+    const where = `${b.label} ${w.code}`;
+    assert.ok(w.main.length >= 5 && w.main.length <= 8, `${where} has ${w.main.length} exercises`);
+    const n = sessionSets(w);
+    assert.ok(n >= 18 && n <= 30, `${where} has ${n} sets (envelope 18–30)`);
+  }
+});
+
+test('rest sits inside PAS §10.3 INTERMEDIATE', () => {
+  for (const [w, b] of everyWorkout()) {
+    for (const ex of w.main) {
+      assert.ok(ex.restSec >= 60 && ex.restSec <= 180, `${b.label} ${w.code} ${ex.displayName} rests ${ex.restSec}s`);
+    }
+  }
+});
+
+// ── volume accumulation, one deload, a peak ─────────────────────────────────
+
+test('sets accumulate across weeks 1–8, reset at week 9, and peak in week 10', () => {
+  for (const code of ['A', 'B', 'C', 'D']) {
+    const n = (i) => sessionSets(p.blocks[i].workouts.find((w) => w.code === code));
+    for (let k = 1; k < WORK.length; k += 1) {
+      assert.ok(n(WORK[k]) > n(WORK[k - 1]), `day ${code}: ${p.blocks[WORK[k]].label} does not accumulate`);
+    }
+    const all = p.blocks.map((_, i) => n(i));
+    assert.equal(Math.min(...all), n(DELOAD), `day ${code}: week 9 is not the lightest`);
+    assert.equal(Math.max(...all), n(PEAK), `day ${code}: week 10 is not the heaviest`);
+  }
+});
+
+/** PAS-D8: a deload cuts primary volume 40–50% and never touches frequency. */
+test('week 9 cuts the primaries 40–50% and holds all four sessions', () => {
+  const d = p.blocks[DELOAD];
+  assert.equal(d.weekStart, 9);
+  assert.match(d.label, /deload/i);
+  assert.equal(d.workouts.length, 4, 'a deload drops volume, not sessions');
+
+  /*
+   * ⚠ THE PRIMARY IS NOT ALWAYS main[0], AND THIS TEST FAILED BEFORE IT SAID SO.
+   *
+   * Blueprint §3 fixes the ORDER — squat-pattern compound first — not the dose. Day D opens on the hack
+   * squat at a secondary dose and carries its primary load on the hip thrust behind it, which is the
+   * design working as intended and read as a 25% cut by a test that assumed position meant weight.
+   *
+   * The primary dose is the heaviest prescription in the session, so that is what is measured.
+   */
+  const primaryDose = (w) => Math.max(...w.main.map((ex) => ex.sets));
+  for (const code of ['A', 'B', 'C', 'D']) {
+    const before = primaryDose(p.blocks[3].workouts.find((w) => w.code === code));
+    const during = primaryDose(d.workouts.find((w) => w.code === code));
+    const cut = 1 - during / before;
+    assert.ok(cut >= 0.39 && cut <= 0.51, `day ${code}: primary cut ${Math.round(cut * 100)}% (PAS-D8 wants 40–50)`);
+  }
+});
+
+// ── the balance claim, measured ─────────────────────────────────────────────
+
+/**
+ * Blueprint §1 makes balance the program's IDENTITY: "every major muscle group inside the 10–20
+ * sets/week band, with no region prioritized over another".
+ *
+ * ⚠ The Blueprint never states how to count a set, and the answer changes completely with the
+ * convention — Design Record §5 shows both. This asserts the one the program is authored to (primary
+ * 1.0, secondary 0.5) and the two groups that provably cannot fit, so the gap stays visible rather than
+ * being quietly re-baselined by a later edit.
+ */
+const ROLES = new Map();
+for (const r of MUSCLES) {
+  if (!ROLES.has(r.exerciseId)) ROLES.set(r.exerciseId, []);
+  ROLES.get(r.exerciseId).push(r);
+}
+const weeklyVolume = (block) => {
+  const t = {};
+  for (const w of block.workouts) {
+    for (const ex of w.main) {
+      for (const r of ROLES.get(ex.catalogKey) ?? []) {
+        t[r.muscleId] = (t[r.muscleId] ?? 0) + ex.sets * (r.role === 'Primary' ? 1 : 0.5);
+      }
+    }
+  }
+  t.shoulders = ['front_deltoids', 'lateral_deltoids', 'rear_deltoids'].reduce((a, m) => a + (t[m] ?? 0), 0);
+  return t;
+};
+
+test('8 of the 10 muscle bands are met at peak accumulation, and the 2 that are not are named', () => {
+  const v = weeklyVolume(p.blocks[3]); // weeks 7–8, the reference block
+  const BANDS = {
+    chest: [10, 16], lats: [12, 18], upper_back: [12, 18], biceps: [8, 14], triceps: [8, 14],
+    quadriceps: [12, 18], hamstrings: [10, 16], calves: [8, 14],
+  };
+  for (const [m, [lo, hi]] of Object.entries(BANDS)) {
+    const n = v[m] ?? 0;
+    assert.ok(n >= lo && n <= hi, `${m} is at ${n}, outside its ${lo}–${hi} band`);
+  }
+  /*
+   * The two that cannot fit, asserted as OUT so the Design Record's finding cannot silently go stale.
+   * Shoulders: every press feeds the front delt and nothing but direct work feeds the lateral.
+   * Glutes: every squat pattern contributes and both hinges are primary — half a set over.
+   */
+  assert.ok(v.shoulders > 16, 'shoulders came into band — Design Record §5 needs updating, not the test');
+  assert.ok(v.glutes > 16 && v.glutes < 18, `glutes at ${v.glutes}; §5 records it as marginally over`);
+});
+
+test('no region is starved — every major group gets real weekly work', () => {
+  const v = weeklyVolume(p.blocks[3]);
+  for (const m of ['chest', 'lats', 'quadriceps', 'hamstrings', 'glutes', 'calves', 'biceps', 'triceps']) {
+    assert.ok((v[m] ?? 0) >= 8, `${m} is at ${v[m] ?? 0} — that is a specialization, not a balanced split`);
+  }
+});

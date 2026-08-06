@@ -1,0 +1,517 @@
+{
+  "id": "muscle-building-intermediate",
+  "name": "Muscle Building Intermediate",
+  "family": "Muscle Building",
+  "difficulty": "Intermediate",
+  "durationWeeks": 10,
+  "frequencyPerWeek": 4,
+  "environment": "Commercial Gym",
+  "description": "Ten weeks of upper and lower, twice each per week, with every major muscle group trained inside a balanced weekly dose — no region carried at another's expense. Every exercise is prescribed as a rep range: hit the top of it on all sets and the load goes up. Sets climb from week 1 to week 8, week 9 backs off, and week 10 is the most work in the block. It is the middle rung of the Muscle Building ladder and the on-ramp to a periodized program.",
+  "goals": ["Add muscle across the whole physique, not one favoured region", "Run a rep range properly — add load when you reach the top of it on every set", "Absorb a rising weekly set count across eight weeks and recover from it", "Train each muscle group twice a week for ten weeks", "Arrive ready for the block periodization of Muscle Building Advanced"],
+  "successorName": "Muscle Building Advanced",
+  "theme": "hypertrophy",
+  "structure": "upper_lower",
+  "status": "AUTHORED — Stage 2 complete, PO Lock Approval outstanding",
+  "source": "forge",
+  "sourceFile": "Programs/Hypertrophy/Muscle Building Intermediate/Design-Record.md",
+  "blocks": [
+    {
+      "label": "Weeks 1–2",
+      "weekStart": 1,
+      "weekEnd": 2,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Upper — Chest Lead",
+          "modality": "strength",
+          "split": "upper",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-bench-press", "displayName": "Barbell Bench Press", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "barbell-bent-over-row", "displayName": "Barbell Bent-Over Row", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-incline-bench-press", "displayName": "Dumbbell Incline Bench Press", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "cable-lat-pulldown", "displayName": "Cable Lat Pulldown", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 4, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "barbell-biceps-curl", "displayName": "Barbell Biceps Curl", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Lower — Squat Lead",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Squat", "detail": "12 reps", "text": "Bodyweight Squat — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-back-squat", "displayName": "Barbell Back Squat", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "barbell-romanian-deadlift", "displayName": "Barbell Romanian Deadlift", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "leg-extension-machine", "displayName": "Leg Extension Machine", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "lying-leg-curl-machine", "displayName": "Lying Leg Curl Machine", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "seated-calf-raise-machine", "displayName": "Seated Calf Raise Machine", "sets": 4, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-crunch", "displayName": "Cable Crunch", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Upper — Shoulder Lead",
+          "modality": "strength",
+          "split": "upper",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Shoulder External Rotation", "detail": "12 each arm", "text": "Band Shoulder External Rotation — 12 each arm" },
+            { "name": "Band Face Pull", "detail": "15 reps", "text": "Band Face Pull — 15 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-overhead-press", "displayName": "Barbell Overhead Press", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "cable-seated-row", "displayName": "Cable Seated Row", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-bench-press", "displayName": "Dumbbell Bench Press", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "assisted-pull-up-machine", "displayName": "Assisted Pull-Up Machine", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "cable-lateral-raise", "displayName": "Cable Lateral Raise", "sets": 4, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-overhead-triceps-extension", "displayName": "Cable Overhead Triceps Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+          ]
+        },
+        {
+          "code": "D",
+          "name": "Lower — Hinge Lead",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Good Morning", "detail": "12 reps", "text": "Bodyweight Good Morning — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "Bird Dog", "detail": "8 each side", "text": "Bird Dog — 8 each side" }
+          ],
+          "main": [
+            { "catalogKey": "hack-squat-machine", "displayName": "Hack Squat Machine", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "barbell-hip-thrust", "displayName": "Barbell Hip Thrust", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "seated-leg-curl-machine", "displayName": "Seated Leg Curl Machine", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-bulgarian-split-squat", "displayName": "Dumbbell Bulgarian Split Squat", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "standing-calf-raise-machine", "displayName": "Standing Calf Raise Machine", "sets": 4, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "machine-back-extension", "displayName": "Machine Back Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Weeks 3–4",
+      "weekStart": 3,
+      "weekEnd": 4,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Upper — Chest Lead",
+          "modality": "strength",
+          "split": "upper",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-bench-press", "displayName": "Barbell Bench Press", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "barbell-bent-over-row", "displayName": "Barbell Bent-Over Row", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-incline-bench-press", "displayName": "Dumbbell Incline Bench Press", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "cable-lat-pulldown", "displayName": "Cable Lat Pulldown", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 4, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "barbell-biceps-curl", "displayName": "Barbell Biceps Curl", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Lower — Squat Lead",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Squat", "detail": "12 reps", "text": "Bodyweight Squat — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-back-squat", "displayName": "Barbell Back Squat", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "barbell-romanian-deadlift", "displayName": "Barbell Romanian Deadlift", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "leg-extension-machine", "displayName": "Leg Extension Machine", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "lying-leg-curl-machine", "displayName": "Lying Leg Curl Machine", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "seated-calf-raise-machine", "displayName": "Seated Calf Raise Machine", "sets": 4, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-crunch", "displayName": "Cable Crunch", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Upper — Shoulder Lead",
+          "modality": "strength",
+          "split": "upper",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Shoulder External Rotation", "detail": "12 each arm", "text": "Band Shoulder External Rotation — 12 each arm" },
+            { "name": "Band Face Pull", "detail": "15 reps", "text": "Band Face Pull — 15 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-overhead-press", "displayName": "Barbell Overhead Press", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "cable-seated-row", "displayName": "Cable Seated Row", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-bench-press", "displayName": "Dumbbell Bench Press", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "assisted-pull-up-machine", "displayName": "Assisted Pull-Up Machine", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "cable-lateral-raise", "displayName": "Cable Lateral Raise", "sets": 4, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-overhead-triceps-extension", "displayName": "Cable Overhead Triceps Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+          ]
+        },
+        {
+          "code": "D",
+          "name": "Lower — Hinge Lead",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Good Morning", "detail": "12 reps", "text": "Bodyweight Good Morning — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "Bird Dog", "detail": "8 each side", "text": "Bird Dog — 8 each side" }
+          ],
+          "main": [
+            { "catalogKey": "hack-squat-machine", "displayName": "Hack Squat Machine", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "barbell-hip-thrust", "displayName": "Barbell Hip Thrust", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "seated-leg-curl-machine", "displayName": "Seated Leg Curl Machine", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-bulgarian-split-squat", "displayName": "Dumbbell Bulgarian Split Squat", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "standing-calf-raise-machine", "displayName": "Standing Calf Raise Machine", "sets": 4, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "machine-back-extension", "displayName": "Machine Back Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Weeks 5–6",
+      "weekStart": 5,
+      "weekEnd": 6,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Upper — Chest Lead",
+          "modality": "strength",
+          "split": "upper",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-bench-press", "displayName": "Barbell Bench Press", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "barbell-bent-over-row", "displayName": "Barbell Bent-Over Row", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-incline-bench-press", "displayName": "Dumbbell Incline Bench Press", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "cable-lat-pulldown", "displayName": "Cable Lat Pulldown", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 5, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "barbell-biceps-curl", "displayName": "Barbell Biceps Curl", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Lower — Squat Lead",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Squat", "detail": "12 reps", "text": "Bodyweight Squat — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-back-squat", "displayName": "Barbell Back Squat", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "barbell-romanian-deadlift", "displayName": "Barbell Romanian Deadlift", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "leg-extension-machine", "displayName": "Leg Extension Machine", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "lying-leg-curl-machine", "displayName": "Lying Leg Curl Machine", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "seated-calf-raise-machine", "displayName": "Seated Calf Raise Machine", "sets": 5, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-crunch", "displayName": "Cable Crunch", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Upper — Shoulder Lead",
+          "modality": "strength",
+          "split": "upper",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Shoulder External Rotation", "detail": "12 each arm", "text": "Band Shoulder External Rotation — 12 each arm" },
+            { "name": "Band Face Pull", "detail": "15 reps", "text": "Band Face Pull — 15 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-overhead-press", "displayName": "Barbell Overhead Press", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "cable-seated-row", "displayName": "Cable Seated Row", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-bench-press", "displayName": "Dumbbell Bench Press", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "assisted-pull-up-machine", "displayName": "Assisted Pull-Up Machine", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "cable-lateral-raise", "displayName": "Cable Lateral Raise", "sets": 5, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-overhead-triceps-extension", "displayName": "Cable Overhead Triceps Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+          ]
+        },
+        {
+          "code": "D",
+          "name": "Lower — Hinge Lead",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Good Morning", "detail": "12 reps", "text": "Bodyweight Good Morning — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "Bird Dog", "detail": "8 each side", "text": "Bird Dog — 8 each side" }
+          ],
+          "main": [
+            { "catalogKey": "hack-squat-machine", "displayName": "Hack Squat Machine", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "barbell-hip-thrust", "displayName": "Barbell Hip Thrust", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "seated-leg-curl-machine", "displayName": "Seated Leg Curl Machine", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-bulgarian-split-squat", "displayName": "Dumbbell Bulgarian Split Squat", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "standing-calf-raise-machine", "displayName": "Standing Calf Raise Machine", "sets": 5, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "machine-back-extension", "displayName": "Machine Back Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Weeks 7–8",
+      "weekStart": 7,
+      "weekEnd": 8,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Upper — Chest Lead",
+          "modality": "strength",
+          "split": "upper",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-bench-press", "displayName": "Barbell Bench Press", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "barbell-bent-over-row", "displayName": "Barbell Bent-Over Row", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-incline-bench-press", "displayName": "Dumbbell Incline Bench Press", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "cable-lat-pulldown", "displayName": "Cable Lat Pulldown", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 5, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "barbell-biceps-curl", "displayName": "Barbell Biceps Curl", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Lower — Squat Lead",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Squat", "detail": "12 reps", "text": "Bodyweight Squat — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-back-squat", "displayName": "Barbell Back Squat", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "barbell-romanian-deadlift", "displayName": "Barbell Romanian Deadlift", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "leg-extension-machine", "displayName": "Leg Extension Machine", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "lying-leg-curl-machine", "displayName": "Lying Leg Curl Machine", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "seated-calf-raise-machine", "displayName": "Seated Calf Raise Machine", "sets": 5, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-crunch", "displayName": "Cable Crunch", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Upper — Shoulder Lead",
+          "modality": "strength",
+          "split": "upper",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Shoulder External Rotation", "detail": "12 each arm", "text": "Band Shoulder External Rotation — 12 each arm" },
+            { "name": "Band Face Pull", "detail": "15 reps", "text": "Band Face Pull — 15 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-overhead-press", "displayName": "Barbell Overhead Press", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "cable-seated-row", "displayName": "Cable Seated Row", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-bench-press", "displayName": "Dumbbell Bench Press", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "assisted-pull-up-machine", "displayName": "Assisted Pull-Up Machine", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "cable-lateral-raise", "displayName": "Cable Lateral Raise", "sets": 5, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-overhead-triceps-extension", "displayName": "Cable Overhead Triceps Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+          ]
+        },
+        {
+          "code": "D",
+          "name": "Lower — Hinge Lead",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Good Morning", "detail": "12 reps", "text": "Bodyweight Good Morning — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "Bird Dog", "detail": "8 each side", "text": "Bird Dog — 8 each side" }
+          ],
+          "main": [
+            { "catalogKey": "hack-squat-machine", "displayName": "Hack Squat Machine", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "barbell-hip-thrust", "displayName": "Barbell Hip Thrust", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "seated-leg-curl-machine", "displayName": "Seated Leg Curl Machine", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-bulgarian-split-squat", "displayName": "Dumbbell Bulgarian Split Squat", "sets": 4, "reps": 6, "repsMax": 10, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "standing-calf-raise-machine", "displayName": "Standing Calf Raise Machine", "sets": 5, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "machine-back-extension", "displayName": "Machine Back Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Week 9 — Deload",
+      "weekStart": 9,
+      "weekEnd": 9,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Upper — Chest Lead",
+          "modality": "strength",
+          "split": "upper",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-bench-press", "displayName": "Barbell Bench Press", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "barbell-bent-over-row", "displayName": "Barbell Bent-Over Row", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-incline-bench-press", "displayName": "Dumbbell Incline Bench Press", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "cable-lat-pulldown", "displayName": "Cable Lat Pulldown", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "barbell-biceps-curl", "displayName": "Barbell Biceps Curl", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Lower — Squat Lead",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Squat", "detail": "12 reps", "text": "Bodyweight Squat — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-back-squat", "displayName": "Barbell Back Squat", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "barbell-romanian-deadlift", "displayName": "Barbell Romanian Deadlift", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "leg-extension-machine", "displayName": "Leg Extension Machine", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "lying-leg-curl-machine", "displayName": "Lying Leg Curl Machine", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "seated-calf-raise-machine", "displayName": "Seated Calf Raise Machine", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-crunch", "displayName": "Cable Crunch", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Upper — Shoulder Lead",
+          "modality": "strength",
+          "split": "upper",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Shoulder External Rotation", "detail": "12 each arm", "text": "Band Shoulder External Rotation — 12 each arm" },
+            { "name": "Band Face Pull", "detail": "15 reps", "text": "Band Face Pull — 15 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-overhead-press", "displayName": "Barbell Overhead Press", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "cable-seated-row", "displayName": "Cable Seated Row", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-bench-press", "displayName": "Dumbbell Bench Press", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "assisted-pull-up-machine", "displayName": "Assisted Pull-Up Machine", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "cable-lateral-raise", "displayName": "Cable Lateral Raise", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-overhead-triceps-extension", "displayName": "Cable Overhead Triceps Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+          ]
+        },
+        {
+          "code": "D",
+          "name": "Lower — Hinge Lead",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Good Morning", "detail": "12 reps", "text": "Bodyweight Good Morning — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "Bird Dog", "detail": "8 each side", "text": "Bird Dog — 8 each side" }
+          ],
+          "main": [
+            { "catalogKey": "hack-squat-machine", "displayName": "Hack Squat Machine", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "barbell-hip-thrust", "displayName": "Barbell Hip Thrust", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "seated-leg-curl-machine", "displayName": "Seated Leg Curl Machine", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-bulgarian-split-squat", "displayName": "Dumbbell Bulgarian Split Squat", "sets": 3, "reps": 6, "repsMax": 10, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "standing-calf-raise-machine", "displayName": "Standing Calf Raise Machine", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "machine-back-extension", "displayName": "Machine Back Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Week 10 — Peak",
+      "weekStart": 10,
+      "weekEnd": 10,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Upper — Chest Lead",
+          "modality": "strength",
+          "split": "upper",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-bench-press", "displayName": "Barbell Bench Press", "sets": 6, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "barbell-bent-over-row", "displayName": "Barbell Bent-Over Row", "sets": 6, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-incline-bench-press", "displayName": "Dumbbell Incline Bench Press", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "cable-lat-pulldown", "displayName": "Cable Lat Pulldown", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 5, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "barbell-biceps-curl", "displayName": "Barbell Biceps Curl", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Lower — Squat Lead",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Squat", "detail": "12 reps", "text": "Bodyweight Squat — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-back-squat", "displayName": "Barbell Back Squat", "sets": 6, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "barbell-romanian-deadlift", "displayName": "Barbell Romanian Deadlift", "sets": 6, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "leg-extension-machine", "displayName": "Leg Extension Machine", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "lying-leg-curl-machine", "displayName": "Lying Leg Curl Machine", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "seated-calf-raise-machine", "displayName": "Seated Calf Raise Machine", "sets": 5, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-crunch", "displayName": "Cable Crunch", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Upper — Shoulder Lead",
+          "modality": "strength",
+          "split": "upper",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Shoulder External Rotation", "detail": "12 each arm", "text": "Band Shoulder External Rotation — 12 each arm" },
+            { "name": "Band Face Pull", "detail": "15 reps", "text": "Band Face Pull — 15 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-overhead-press", "displayName": "Barbell Overhead Press", "sets": 6, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "cable-seated-row", "displayName": "Cable Seated Row", "sets": 6, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-bench-press", "displayName": "Dumbbell Bench Press", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "assisted-pull-up-machine", "displayName": "Assisted Pull-Up Machine", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "cable-lateral-raise", "displayName": "Cable Lateral Raise", "sets": 5, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-overhead-triceps-extension", "displayName": "Cable Overhead Triceps Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+          ]
+        },
+        {
+          "code": "D",
+          "name": "Lower — Hinge Lead",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Good Morning", "detail": "12 reps", "text": "Bodyweight Good Morning — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "Bird Dog", "detail": "8 each side", "text": "Bird Dog — 8 each side" }
+          ],
+          "main": [
+            { "catalogKey": "hack-squat-machine", "displayName": "Hack Squat Machine", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "barbell-hip-thrust", "displayName": "Barbell Hip Thrust", "sets": 6, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "seated-leg-curl-machine", "displayName": "Seated Leg Curl Machine", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "dumbbell-bulgarian-split-squat", "displayName": "Dumbbell Bulgarian Split Squat", "sets": 5, "reps": 6, "repsMax": 10, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "standing-calf-raise-machine", "displayName": "Standing Calf Raise Machine", "sets": 5, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "machine-back-extension", "displayName": "Machine Back Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 }
+          ]
+        }
+      ]
+    }
+  ]
+}
