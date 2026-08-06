@@ -12,6 +12,8 @@
  *   - Squat Ascent Intermediate
  *   - Bench Approach Intermediate
  *   - Deadlift Measure Intermediate
+ *   - Full Frame (5-day)
+ *   - Body Recomposition Foundation
  *
  * ── WHY ONE PROGRAM HAS NO `.docx` ───────────────────────────────────────────────────────────────────
  *
@@ -51,6 +53,20 @@
  * session names and copy original, none of the source's reproduced. Bench Approach and Deadlift Measure
  * were EXTRAPOLATED from that method with no source consulted at all, so their loading carries a weaker
  * warrant than their sibling's. Each Design Record says which it is, in its own §1.
+ *
+ * ── BODY RECOMPOSITION FOUNDATION IS THE FIRST ONE THE CATALOG PLAN ASKED FOR ─────────────────────────
+ *
+ * Every program above it was authored because someone wanted to author it. This is the first entry from
+ * the LOCKED Stage-2 production plan — Sort 13, Conditioning family, BEGINNER rung — and the first
+ * authored against a LOCKED Stage-1 Blueprint rather than against a blank page. Its metadata is not a
+ * judgement call: `Body-Recomposition-Foundation-Blueprint-v1.0.md` fixes 8 weeks, 4 sessions, GYM,
+ * `LOSE_FAT + BUILD_MUSCLE`, a Week-7 deload and the 12–24 MAIN-set envelope, and the acceptance test
+ * holds the JSON to each of them.
+ *
+ * The one thing it CANNOT satisfy is PAS-D9's cool-down, because `ProgramWorkout` has no cooldown field.
+ * That is Iron & Engine's finding 7, unchanged and now load-bearing for a second program: the gap is
+ * recorded in the Design Record rather than papered over by appending a stretch to `main`, where it would
+ * be counted as a working set and rendered as one.
  */
 
 import type { ProgramDefinition } from '../schema';
@@ -61,6 +77,7 @@ import squatAscent from './squat-ascent-intermediate.json';
 import benchApproach from './bench-approach-intermediate.json';
 import deadliftMeasure from './deadlift-measure-intermediate.json';
 import fullFrame from './full-frame-5day.json';
+import bodyRecompFoundation from './body-recomposition-foundation.json';
 
 // JSON import types widen literals (e.g. theme:string); the validator test enforces the
 // real ProgramDefinition contract, so a single narrowing cast here is safe.
@@ -72,6 +89,7 @@ const DEFINITIONS: readonly ProgramDefinition[] = [
   benchApproach,
   deadliftMeasure,
   fullFrame,
+  bodyRecompFoundation,
 ] as unknown as ProgramDefinition[];
 
 /** All converted, PO-approved program definitions. */
