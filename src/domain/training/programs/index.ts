@@ -92,6 +92,25 @@
  *   · `LOCKED`                   — Strength Foundation I/II (clean), Body Recomp Foundation (signed with
  *                                   two open items still named in its Lock Record)
  *   · `AUTHORED — … outstanding` — ships and is adoptable, nobody has signed it
+ *
+ * ── TWO MUSCLE BUILDING / INTERMEDIATE / 5-DAY PROGRAMS SHIP, ON PURPOSE ──────────────────────────────
+ *
+ * `full-frame-5day` and `frame-by-frame-5day` share family, level and frequency. That overlap was put to
+ * the product owner before the second was authored, with the alternatives of building the locked 4-day
+ * slot instead or not building at all, and the instruction was to build the five-day.
+ *
+ * They differ on the thing the argument is actually about: **Full Frame splits by MOVEMENT PATTERN**
+ * (Push/Pull/Legs/Upper/Lower, ~2× per muscle per week, 6 weeks) and **Frame by Frame splits by BODY
+ * PART** (Back/Chest/Legs/Shoulders/Arms, 1× per muscle at much higher per-session volume, 10 weeks with
+ * a deload). Frequency against per-session volume is a real choice.
+ *
+ * ⚠ The honest caveat, recorded where someone deciding the catalog's shape will see it: **the Program
+ * Catalog surface shows name, duration and frequency**, so to an athlete choosing between them these
+ * read as "the 6-week one" and "the 10-week one". Frame by Frame's Design Record §2 argues both sides.
+ *
+ * **Neither is `Muscle Building Intermediate` (Sort 6), which remains UNBUILT.** That Blueprint is LOCKED
+ * at 10 weeks × **4** sessions; authoring a 5-day under that name would break a locked Blueprint to match
+ * a PDF, and a locked Blueprint outranks a PDF. Both of these ship outside the locked 24.
  */
 
 import type { ProgramDefinition } from '../schema';
@@ -103,6 +122,7 @@ import benchApproach from './bench-approach-intermediate.json';
 import deadliftMeasure from './deadlift-measure-intermediate.json';
 import fullFrame from './full-frame-5day.json';
 import bodyRecompFoundation from './body-recomposition-foundation.json';
+import frameByFrame from './frame-by-frame-5day.json';
 
 // JSON import types widen literals (e.g. theme:string); the validator test enforces the
 // real ProgramDefinition contract, so a single narrowing cast here is safe.
@@ -115,6 +135,7 @@ const DEFINITIONS: readonly ProgramDefinition[] = [
   deadliftMeasure,
   fullFrame,
   bodyRecompFoundation,
+  frameByFrame,
 ] as unknown as ProgramDefinition[];
 
 /** All converted, PO-approved program definitions. */

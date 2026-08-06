@@ -1,0 +1,741 @@
+{
+  "id": "frame-by-frame-5day",
+  "name": "Frame by Frame (5-Day)",
+  "family": "Muscle Building",
+  "difficulty": "Intermediate",
+  "durationWeeks": 10,
+  "frequencyPerWeek": 5,
+  "environment": "Commercial Gym",
+  "description": "Ten weeks, five days, one body part at a time — back, chest, legs, shoulders, arms. Each day gets a heavy compound to open it and then everything else that muscle can absorb, which is the trade a body-part split makes: you train each part once a week, so you train it properly when you get there. Sets and reps climb for eight weeks. Week 9 backs off. Week 10 is the most work in the block.",
+  "goals": ["Add size to every major muscle group over ten weeks", "Train one body part per session, hard enough to justify the week between", "Hold a five-day week without the sessions bleeding into each other", "Progress by adding reps and sets, not by guessing at weight", "Finish the block having done more in week 10 than in week 1"],
+  "successorName": null,
+  "theme": "bodybuilding",
+  "status": "AUTHORED — original program, PO Lock Approval outstanding",
+  "source": "forge",
+  "sourceFile": "Programs/Hypertrophy/Frame by Frame/Design-Record.md",
+  "blocks": [
+    {
+      "label": "Weeks 1–2",
+      "weekStart": 1,
+      "weekEnd": 2,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Back",
+          "modality": "strength",
+          "split": "pull",
+          "warmup": [
+            { "name": "Scapular Pull-Up", "detail": "10 reps", "text": "Scapular Pull-Up — 10 reps" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-deadlift", "displayName": "Barbell Deadlift", "sets": 4, "reps": 6, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "cable-lat-pulldown", "displayName": "Cable Lat Pulldown", "sets": 3, "reps": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "single-arm-dumbbell-row", "displayName": "Single-Arm Dumbbell Row", "sets": 3, "reps": 10, "unit": "reps", "per": "side", "restSec": 120 },
+            { "catalogKey": "machine-t-bar-row", "displayName": "Machine T-Bar Row", "sets": 3, "reps": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "cable-seated-row", "displayName": "Cable Seated Row", "sets": 3, "reps": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "cable-pullover", "displayName": "Cable Pullover", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Chest & Core",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-incline-bench-press", "displayName": "Barbell Incline Bench Press", "sets": 4, "reps": 6, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-bench-press", "displayName": "Dumbbell Bench Press", "sets": 3, "reps": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "machine-chest-press", "displayName": "Machine Chest Press", "sets": 3, "reps": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "machine-chest-fly", "displayName": "Machine Chest Fly", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 },
+            {
+              "catalogKey": "push-up",
+              "displayName": "Push-Up",
+              "sets": 3,
+              "reps": 0,
+              "unit": "reps",
+              "restSec": 90,
+              "repScheme": ["F", "F", "F"]
+            },
+            { "catalogKey": "hanging-leg-raise", "displayName": "Hanging Leg Raise", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Legs",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Squat", "detail": "12 reps", "text": "Bodyweight Squat — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-back-squat", "displayName": "Barbell Back Squat", "sets": 4, "reps": 6, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "barbell-romanian-deadlift", "displayName": "Barbell Romanian Deadlift", "sets": 3, "reps": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "45-degree-leg-press", "displayName": "45-Degree Leg Press", "sets": 3, "reps": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "lying-leg-curl-machine", "displayName": "Lying Leg Curl Machine", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 3, "reps": 10, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "seated-calf-raise-machine", "displayName": "Seated Calf Raise Machine", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "D",
+          "name": "Shoulders & Core",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Shoulder External Rotation", "detail": "12 each arm", "text": "Band Shoulder External Rotation — 12 each arm" },
+            { "name": "Band Face Pull", "detail": "15 reps", "text": "Band Face Pull — 15 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-overhead-press", "displayName": "Barbell Overhead Press", "sets": 4, "reps": 6, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "reverse-pec-deck", "displayName": "Reverse Pec Deck", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "machine-shoulder-press", "displayName": "Machine Shoulder Press", "sets": 3, "reps": 10, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "barbell-shrug", "displayName": "Barbell Shrug", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "ab-wheel-rollout", "displayName": "Ab Wheel Rollout", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "E",
+          "name": "Arms",
+          "modality": "strength",
+          "split": "upper",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-biceps-curl", "displayName": "Barbell Biceps Curl", "sets": 4, "reps": 6, "unit": "reps", "restSec": 150 },
+            {
+              "catalogKey": "parallel-bar-dip",
+              "displayName": "Parallel Bar Dip",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 120,
+              "substitution": { "catalogKey": "assisted-dip-machine", "name": "Assisted Dip Machine", "sets": 3, "reps": 10, "unit": "reps" }
+            },
+            { "catalogKey": "dumbbell-spider-curl", "displayName": "Dumbbell Spider Curl", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-overhead-triceps-extension", "displayName": "Cable Overhead Triceps Extension", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-rope-hammer-curl", "displayName": "Cable Rope Hammer Curl", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-triceps-pushdown", "displayName": "Cable Triceps Pushdown", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Weeks 3–4",
+      "weekStart": 3,
+      "weekEnd": 4,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Back",
+          "modality": "strength",
+          "split": "pull",
+          "warmup": [
+            { "name": "Scapular Pull-Up", "detail": "10 reps", "text": "Scapular Pull-Up — 10 reps" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-deadlift", "displayName": "Barbell Deadlift", "sets": 4, "reps": 8, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "cable-lat-pulldown", "displayName": "Cable Lat Pulldown", "sets": 3, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "single-arm-dumbbell-row", "displayName": "Single-Arm Dumbbell Row", "sets": 3, "reps": 12, "unit": "reps", "per": "side", "restSec": 120 },
+            { "catalogKey": "machine-t-bar-row", "displayName": "Machine T-Bar Row", "sets": 3, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "cable-seated-row", "displayName": "Cable Seated Row", "sets": 3, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "cable-pullover", "displayName": "Cable Pullover", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Chest & Core",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-incline-bench-press", "displayName": "Barbell Incline Bench Press", "sets": 4, "reps": 8, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-bench-press", "displayName": "Dumbbell Bench Press", "sets": 3, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "machine-chest-press", "displayName": "Machine Chest Press", "sets": 3, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "machine-chest-fly", "displayName": "Machine Chest Fly", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
+            {
+              "catalogKey": "push-up",
+              "displayName": "Push-Up",
+              "sets": 3,
+              "reps": 0,
+              "unit": "reps",
+              "restSec": 90,
+              "repScheme": ["F", "F", "F"]
+            },
+            { "catalogKey": "hanging-leg-raise", "displayName": "Hanging Leg Raise", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Legs",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Squat", "detail": "12 reps", "text": "Bodyweight Squat — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-back-squat", "displayName": "Barbell Back Squat", "sets": 4, "reps": 8, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "barbell-romanian-deadlift", "displayName": "Barbell Romanian Deadlift", "sets": 3, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "45-degree-leg-press", "displayName": "45-Degree Leg Press", "sets": 3, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "lying-leg-curl-machine", "displayName": "Lying Leg Curl Machine", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 3, "reps": 12, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "seated-calf-raise-machine", "displayName": "Seated Calf Raise Machine", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "D",
+          "name": "Shoulders & Core",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Shoulder External Rotation", "detail": "12 each arm", "text": "Band Shoulder External Rotation — 12 each arm" },
+            { "name": "Band Face Pull", "detail": "15 reps", "text": "Band Face Pull — 15 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-overhead-press", "displayName": "Barbell Overhead Press", "sets": 4, "reps": 8, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "reverse-pec-deck", "displayName": "Reverse Pec Deck", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "machine-shoulder-press", "displayName": "Machine Shoulder Press", "sets": 3, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "barbell-shrug", "displayName": "Barbell Shrug", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "ab-wheel-rollout", "displayName": "Ab Wheel Rollout", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "E",
+          "name": "Arms",
+          "modality": "strength",
+          "split": "upper",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-biceps-curl", "displayName": "Barbell Biceps Curl", "sets": 4, "reps": 8, "unit": "reps", "restSec": 150 },
+            {
+              "catalogKey": "parallel-bar-dip",
+              "displayName": "Parallel Bar Dip",
+              "sets": 3,
+              "reps": 12,
+              "unit": "reps",
+              "restSec": 120,
+              "substitution": { "catalogKey": "assisted-dip-machine", "name": "Assisted Dip Machine", "sets": 3, "reps": 12, "unit": "reps" }
+            },
+            { "catalogKey": "dumbbell-spider-curl", "displayName": "Dumbbell Spider Curl", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-overhead-triceps-extension", "displayName": "Cable Overhead Triceps Extension", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-rope-hammer-curl", "displayName": "Cable Rope Hammer Curl", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-triceps-pushdown", "displayName": "Cable Triceps Pushdown", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Weeks 5–6",
+      "weekStart": 5,
+      "weekEnd": 6,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Back",
+          "modality": "strength",
+          "split": "pull",
+          "warmup": [
+            { "name": "Scapular Pull-Up", "detail": "10 reps", "text": "Scapular Pull-Up — 10 reps" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-deadlift", "displayName": "Barbell Deadlift", "sets": 4, "reps": 8, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "cable-lat-pulldown", "displayName": "Cable Lat Pulldown", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "single-arm-dumbbell-row", "displayName": "Single-Arm Dumbbell Row", "sets": 4, "reps": 12, "unit": "reps", "per": "side", "restSec": 120 },
+            { "catalogKey": "machine-t-bar-row", "displayName": "Machine T-Bar Row", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "cable-seated-row", "displayName": "Cable Seated Row", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "cable-pullover", "displayName": "Cable Pullover", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-shrug", "displayName": "Dumbbell Shrug", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Chest & Core",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-incline-bench-press", "displayName": "Barbell Incline Bench Press", "sets": 4, "reps": 8, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-bench-press", "displayName": "Dumbbell Bench Press", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "machine-chest-press", "displayName": "Machine Chest Press", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "machine-chest-fly", "displayName": "Machine Chest Fly", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            {
+              "catalogKey": "push-up",
+              "displayName": "Push-Up",
+              "sets": 4,
+              "reps": 0,
+              "unit": "reps",
+              "restSec": 90,
+              "repScheme": ["F", "F", "F", "F"]
+            },
+            { "catalogKey": "hanging-leg-raise", "displayName": "Hanging Leg Raise", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-crunch", "displayName": "Cable Crunch", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Legs",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Squat", "detail": "12 reps", "text": "Bodyweight Squat — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-back-squat", "displayName": "Barbell Back Squat", "sets": 4, "reps": 8, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "barbell-romanian-deadlift", "displayName": "Barbell Romanian Deadlift", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "45-degree-leg-press", "displayName": "45-Degree Leg Press", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "lying-leg-curl-machine", "displayName": "Lying Leg Curl Machine", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 4, "reps": 12, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "seated-calf-raise-machine", "displayName": "Seated Calf Raise Machine", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "leg-extension-machine", "displayName": "Leg Extension Machine", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "D",
+          "name": "Shoulders & Core",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Shoulder External Rotation", "detail": "12 each arm", "text": "Band Shoulder External Rotation — 12 each arm" },
+            { "name": "Band Face Pull", "detail": "15 reps", "text": "Band Face Pull — 15 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-overhead-press", "displayName": "Barbell Overhead Press", "sets": 4, "reps": 8, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "reverse-pec-deck", "displayName": "Reverse Pec Deck", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "machine-shoulder-press", "displayName": "Machine Shoulder Press", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "barbell-shrug", "displayName": "Barbell Shrug", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "ab-wheel-rollout", "displayName": "Ab Wheel Rollout", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-lateral-raise", "displayName": "Cable Lateral Raise", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "E",
+          "name": "Arms",
+          "modality": "strength",
+          "split": "upper",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-biceps-curl", "displayName": "Barbell Biceps Curl", "sets": 4, "reps": 8, "unit": "reps", "restSec": 150 },
+            {
+              "catalogKey": "parallel-bar-dip",
+              "displayName": "Parallel Bar Dip",
+              "sets": 4,
+              "reps": 12,
+              "unit": "reps",
+              "restSec": 120,
+              "substitution": { "catalogKey": "assisted-dip-machine", "name": "Assisted Dip Machine", "sets": 4, "reps": 12, "unit": "reps" }
+            },
+            { "catalogKey": "dumbbell-spider-curl", "displayName": "Dumbbell Spider Curl", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-overhead-triceps-extension", "displayName": "Cable Overhead Triceps Extension", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-rope-hammer-curl", "displayName": "Cable Rope Hammer Curl", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-triceps-pushdown", "displayName": "Cable Triceps Pushdown", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-concentration-curl", "displayName": "Dumbbell Concentration Curl", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Weeks 7–8",
+      "weekStart": 7,
+      "weekEnd": 8,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Back",
+          "modality": "strength",
+          "split": "pull",
+          "warmup": [
+            { "name": "Scapular Pull-Up", "detail": "10 reps", "text": "Scapular Pull-Up — 10 reps" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-deadlift", "displayName": "Barbell Deadlift", "sets": 5, "reps": 8, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "cable-lat-pulldown", "displayName": "Cable Lat Pulldown", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "single-arm-dumbbell-row", "displayName": "Single-Arm Dumbbell Row", "sets": 4, "reps": 12, "unit": "reps", "per": "side", "restSec": 120 },
+            { "catalogKey": "machine-t-bar-row", "displayName": "Machine T-Bar Row", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "cable-seated-row", "displayName": "Cable Seated Row", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "cable-pullover", "displayName": "Cable Pullover", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-shrug", "displayName": "Dumbbell Shrug", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Chest & Core",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-incline-bench-press", "displayName": "Barbell Incline Bench Press", "sets": 5, "reps": 8, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-bench-press", "displayName": "Dumbbell Bench Press", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "machine-chest-press", "displayName": "Machine Chest Press", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "machine-chest-fly", "displayName": "Machine Chest Fly", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            {
+              "catalogKey": "push-up",
+              "displayName": "Push-Up",
+              "sets": 4,
+              "reps": 0,
+              "unit": "reps",
+              "restSec": 90,
+              "repScheme": ["F", "F", "F", "F"]
+            },
+            { "catalogKey": "hanging-leg-raise", "displayName": "Hanging Leg Raise", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-crunch", "displayName": "Cable Crunch", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Legs",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Squat", "detail": "12 reps", "text": "Bodyweight Squat — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-back-squat", "displayName": "Barbell Back Squat", "sets": 5, "reps": 8, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "barbell-romanian-deadlift", "displayName": "Barbell Romanian Deadlift", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "45-degree-leg-press", "displayName": "45-Degree Leg Press", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "lying-leg-curl-machine", "displayName": "Lying Leg Curl Machine", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 4, "reps": 12, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "seated-calf-raise-machine", "displayName": "Seated Calf Raise Machine", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "leg-extension-machine", "displayName": "Leg Extension Machine", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "D",
+          "name": "Shoulders & Core",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Shoulder External Rotation", "detail": "12 each arm", "text": "Band Shoulder External Rotation — 12 each arm" },
+            { "name": "Band Face Pull", "detail": "15 reps", "text": "Band Face Pull — 15 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-overhead-press", "displayName": "Barbell Overhead Press", "sets": 5, "reps": 8, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "reverse-pec-deck", "displayName": "Reverse Pec Deck", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "machine-shoulder-press", "displayName": "Machine Shoulder Press", "sets": 4, "reps": 12, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "barbell-shrug", "displayName": "Barbell Shrug", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "ab-wheel-rollout", "displayName": "Ab Wheel Rollout", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-lateral-raise", "displayName": "Cable Lateral Raise", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "E",
+          "name": "Arms",
+          "modality": "strength",
+          "split": "upper",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-biceps-curl", "displayName": "Barbell Biceps Curl", "sets": 5, "reps": 8, "unit": "reps", "restSec": 150 },
+            {
+              "catalogKey": "parallel-bar-dip",
+              "displayName": "Parallel Bar Dip",
+              "sets": 4,
+              "reps": 12,
+              "unit": "reps",
+              "restSec": 120,
+              "substitution": { "catalogKey": "assisted-dip-machine", "name": "Assisted Dip Machine", "sets": 4, "reps": 12, "unit": "reps" }
+            },
+            { "catalogKey": "dumbbell-spider-curl", "displayName": "Dumbbell Spider Curl", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-overhead-triceps-extension", "displayName": "Cable Overhead Triceps Extension", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-rope-hammer-curl", "displayName": "Cable Rope Hammer Curl", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-triceps-pushdown", "displayName": "Cable Triceps Pushdown", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-concentration-curl", "displayName": "Dumbbell Concentration Curl", "sets": 4, "reps": 12, "unit": "reps", "restSec": 60 }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Week 9 — Deload",
+      "weekStart": 9,
+      "weekEnd": 9,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Back",
+          "modality": "strength",
+          "split": "pull",
+          "warmup": [
+            { "name": "Scapular Pull-Up", "detail": "10 reps", "text": "Scapular Pull-Up — 10 reps" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-deadlift", "displayName": "Barbell Deadlift", "sets": 3, "reps": 6, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "cable-lat-pulldown", "displayName": "Cable Lat Pulldown", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "single-arm-dumbbell-row", "displayName": "Single-Arm Dumbbell Row", "sets": 3, "reps": 8, "unit": "reps", "per": "side", "restSec": 120 },
+            { "catalogKey": "machine-t-bar-row", "displayName": "Machine T-Bar Row", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "cable-seated-row", "displayName": "Cable Seated Row", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "cable-pullover", "displayName": "Cable Pullover", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Chest & Core",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-incline-bench-press", "displayName": "Barbell Incline Bench Press", "sets": 3, "reps": 6, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-bench-press", "displayName": "Dumbbell Bench Press", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "machine-chest-press", "displayName": "Machine Chest Press", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "machine-chest-fly", "displayName": "Machine Chest Fly", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 },
+            {
+              "catalogKey": "push-up",
+              "displayName": "Push-Up",
+              "sets": 3,
+              "reps": 0,
+              "unit": "reps",
+              "restSec": 90,
+              "repScheme": ["F", "F", "F"]
+            },
+            { "catalogKey": "hanging-leg-raise", "displayName": "Hanging Leg Raise", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Legs",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Squat", "detail": "12 reps", "text": "Bodyweight Squat — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-back-squat", "displayName": "Barbell Back Squat", "sets": 3, "reps": 6, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "barbell-romanian-deadlift", "displayName": "Barbell Romanian Deadlift", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "45-degree-leg-press", "displayName": "45-Degree Leg Press", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "lying-leg-curl-machine", "displayName": "Lying Leg Curl Machine", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 3, "reps": 8, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "seated-calf-raise-machine", "displayName": "Seated Calf Raise Machine", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "D",
+          "name": "Shoulders & Core",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Shoulder External Rotation", "detail": "12 each arm", "text": "Band Shoulder External Rotation — 12 each arm" },
+            { "name": "Band Face Pull", "detail": "15 reps", "text": "Band Face Pull — 15 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-overhead-press", "displayName": "Barbell Overhead Press", "sets": 3, "reps": 6, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "reverse-pec-deck", "displayName": "Reverse Pec Deck", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "machine-shoulder-press", "displayName": "Machine Shoulder Press", "sets": 3, "reps": 8, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "barbell-shrug", "displayName": "Barbell Shrug", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "ab-wheel-rollout", "displayName": "Ab Wheel Rollout", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "E",
+          "name": "Arms",
+          "modality": "strength",
+          "split": "upper",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-biceps-curl", "displayName": "Barbell Biceps Curl", "sets": 3, "reps": 6, "unit": "reps", "restSec": 150 },
+            {
+              "catalogKey": "parallel-bar-dip",
+              "displayName": "Parallel Bar Dip",
+              "sets": 3,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 120,
+              "substitution": { "catalogKey": "assisted-dip-machine", "name": "Assisted Dip Machine", "sets": 3, "reps": 8, "unit": "reps" }
+            },
+            { "catalogKey": "dumbbell-spider-curl", "displayName": "Dumbbell Spider Curl", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-overhead-triceps-extension", "displayName": "Cable Overhead Triceps Extension", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-rope-hammer-curl", "displayName": "Cable Rope Hammer Curl", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-triceps-pushdown", "displayName": "Cable Triceps Pushdown", "sets": 3, "reps": 8, "unit": "reps", "restSec": 60 }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Week 10 — Peak",
+      "weekStart": 10,
+      "weekEnd": 10,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Back",
+          "modality": "strength",
+          "split": "pull",
+          "warmup": [
+            { "name": "Scapular Pull-Up", "detail": "10 reps", "text": "Scapular Pull-Up — 10 reps" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Cat-Cow", "detail": "8 reps", "text": "Cat-Cow — 8 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-deadlift", "displayName": "Barbell Deadlift", "sets": 5, "reps": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "cable-lat-pulldown", "displayName": "Cable Lat Pulldown", "sets": 4, "reps": 15, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "single-arm-dumbbell-row", "displayName": "Single-Arm Dumbbell Row", "sets": 4, "reps": 15, "unit": "reps", "per": "side", "restSec": 120 },
+            { "catalogKey": "machine-t-bar-row", "displayName": "Machine T-Bar Row", "sets": 4, "reps": 15, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "cable-seated-row", "displayName": "Cable Seated Row", "sets": 4, "reps": 15, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "cable-pullover", "displayName": "Cable Pullover", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-shrug", "displayName": "Dumbbell Shrug", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Chest & Core",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-incline-bench-press", "displayName": "Barbell Incline Bench Press", "sets": 5, "reps": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-bench-press", "displayName": "Dumbbell Bench Press", "sets": 4, "reps": 15, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "machine-chest-press", "displayName": "Machine Chest Press", "sets": 4, "reps": 15, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "machine-chest-fly", "displayName": "Machine Chest Fly", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 },
+            {
+              "catalogKey": "push-up",
+              "displayName": "Push-Up",
+              "sets": 4,
+              "reps": 0,
+              "unit": "reps",
+              "restSec": 90,
+              "repScheme": ["F", "F", "F", "F"]
+            },
+            { "catalogKey": "hanging-leg-raise", "displayName": "Hanging Leg Raise", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-crunch", "displayName": "Cable Crunch", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Legs",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            { "name": "Bodyweight Squat", "detail": "12 reps", "text": "Bodyweight Squat — 12 reps" },
+            { "name": "Glute Bridge", "detail": "12 reps", "text": "Glute Bridge — 12 reps" },
+            { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-back-squat", "displayName": "Barbell Back Squat", "sets": 5, "reps": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "barbell-romanian-deadlift", "displayName": "Barbell Romanian Deadlift", "sets": 4, "reps": 15, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "45-degree-leg-press", "displayName": "45-Degree Leg Press", "sets": 4, "reps": 15, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "lying-leg-curl-machine", "displayName": "Lying Leg Curl Machine", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 4, "reps": 15, "unit": "reps", "per": "leg", "restSec": 120 },
+            { "catalogKey": "seated-calf-raise-machine", "displayName": "Seated Calf Raise Machine", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "leg-extension-machine", "displayName": "Leg Extension Machine", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "D",
+          "name": "Shoulders & Core",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Shoulder External Rotation", "detail": "12 each arm", "text": "Band Shoulder External Rotation — 12 each arm" },
+            { "name": "Band Face Pull", "detail": "15 reps", "text": "Band Face Pull — 15 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-overhead-press", "displayName": "Barbell Overhead Press", "sets": 5, "reps": 10, "unit": "reps", "restSec": 150 },
+            { "catalogKey": "dumbbell-lateral-raise", "displayName": "Dumbbell Lateral Raise", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "reverse-pec-deck", "displayName": "Reverse Pec Deck", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "machine-shoulder-press", "displayName": "Machine Shoulder Press", "sets": 4, "reps": 15, "unit": "reps", "restSec": 120 },
+            { "catalogKey": "barbell-shrug", "displayName": "Barbell Shrug", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "ab-wheel-rollout", "displayName": "Ab Wheel Rollout", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-lateral-raise", "displayName": "Cable Lateral Raise", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 }
+          ]
+        },
+        {
+          "code": "E",
+          "name": "Arms",
+          "modality": "strength",
+          "split": "upper",
+          "warmup": [
+            { "name": "Arm Circles", "detail": "10 each direction", "text": "Arm Circles — 10 each direction" },
+            { "name": "Band Pull-Apart", "detail": "15 reps", "text": "Band Pull-Apart — 15 reps" },
+            { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" }
+          ],
+          "main": [
+            { "catalogKey": "barbell-biceps-curl", "displayName": "Barbell Biceps Curl", "sets": 5, "reps": 10, "unit": "reps", "restSec": 150 },
+            {
+              "catalogKey": "parallel-bar-dip",
+              "displayName": "Parallel Bar Dip",
+              "sets": 4,
+              "reps": 15,
+              "unit": "reps",
+              "restSec": 120,
+              "substitution": { "catalogKey": "assisted-dip-machine", "name": "Assisted Dip Machine", "sets": 4, "reps": 15, "unit": "reps" }
+            },
+            { "catalogKey": "dumbbell-spider-curl", "displayName": "Dumbbell Spider Curl", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-overhead-triceps-extension", "displayName": "Cable Overhead Triceps Extension", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-rope-hammer-curl", "displayName": "Cable Rope Hammer Curl", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "cable-triceps-pushdown", "displayName": "Cable Triceps Pushdown", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "dumbbell-concentration-curl", "displayName": "Dumbbell Concentration Curl", "sets": 4, "reps": 15, "unit": "reps", "restSec": 60 }
+          ]
+        }
+      ]
+    }
+  ]
+}
