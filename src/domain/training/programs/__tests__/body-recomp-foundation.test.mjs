@@ -48,11 +48,28 @@ test('metadata matches the LOCKED Blueprint exactly', () => {
   assert.ok(p.name.length <= 60, 'PAS-D1 hard limit');
 });
 
-test('it claims no lock nobody signed, and cites a Design Record', () => {
-  assert.notEqual(p.status, 'LOCKED');
-  assert.match(p.status, /Lock Approval outstanding/i);
+/**
+ * ⚠ THIS TEST WAS INVERTED ON 2026-08-06, AND THE INVERSION IS THE POINT.
+ *
+ * It asserted `status !== 'LOCKED'` — the guard against this repo forging a signature it cannot give
+ * itself. The product owner then gave it. So the guard now protects the opposite fact: that a program
+ * carrying a real Lock Approval does not silently drift back to draft, and that the Lock Record which
+ * records what was signed still exists beside it.
+ *
+ * The lock was granted with **three items open and accepted, not resolved** — see Lock-Record.md §What
+ * was accepted. The most consequential is the PAS-D9 cool-down violation, which is now LOCKED IN rather
+ * than outstanding. That is a materially different thing from a clean lock and the Lock Record says so.
+ */
+test('it is LOCKED, and the Lock Record beside it says what was signed', () => {
+  assert.equal(p.status, 'LOCKED');
   assert.ok(p.sourceFile.endsWith('.md'), 'authored in-repo — cites a Design Record, not a .docx');
   assert.equal(p.source, 'forge');
+
+  // A lock with no Lock Record is a status string nobody can audit.
+  const lockRecord = join(HERE, '..', '..', '..', '..', '..', 'Programs', 'Conditioning', 'Body Recomposition Foundation', 'Lock-Record.md');
+  const text = readFileSync(lockRecord, 'utf8');
+  assert.match(text, /Lock approved by/i, 'the Lock Record carries no approval line');
+  assert.match(text, /cool-down/i, 'the Lock Record must still name the PAS-D9 violation it locked in');
 });
 
 test('the 32 sessions are really there — 8 weeks covered with no gap or overlap', () => {

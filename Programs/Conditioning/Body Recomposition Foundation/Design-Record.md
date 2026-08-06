@@ -1,6 +1,6 @@
 # Body Recomposition Foundation — Design Record
 
-**Status:** AUTHORED — Stage 2 complete. PO Lock Approval outstanding.
+**Status:** ✅ **LOCKED** — PO Lock Approval granted 2026-08-06, over a §9 recommendation to hold. See `Lock-Record.md`.
 **Authored:** 2026-08-06, directly against `src/domain/training/schema.ts`. No `.docx` behind it.
 **Definition:** `src/domain/training/programs/body-recomposition-foundation.json`
 **Blueprint (LOCKED):** `Docs/Body-Recomposition-Foundation-Blueprint-v1.0.md`
@@ -187,6 +187,17 @@ read as a target already met the moment the athlete starts.
 ---
 
 ## 9. Lock recommendation
+
+> **⚠ SUPERSEDED 2026-08-06 — LOCK APPROVED, THIS RECOMMENDATION OVERRIDDEN.**
+> The product owner granted Lock Approval with all three items below still open. They are **accepted,
+> not resolved.** `status` is now `LOCKED`; the record of what was signed and what was carried into the
+> lock is `Lock-Record.md`. Item 3 is the consequential one: **the PAS-D9 cool-down violation is now
+> locked into the catalog rather than pending in a draft**, so the Production Standard and the locked
+> catalog disagree in writing until the schema grows a cooldown field or PAS-D9 is amended.
+>
+> This section is left standing rather than rewritten. A recommendation that gets overridden is part of
+> the program's history, and editing it to agree with the outcome would erase the fact that the question
+> was asked.
 
 **Recommend: hold.** Stage 2 is complete and the machine-checkable half of the Production Standard is
 green, but three things are outstanding and none of them is a document's to settle:

@@ -67,6 +67,19 @@
  * That is Iron & Engine's finding 7, unchanged and now load-bearing for a second program: the gap is
  * recorded in the Design Record rather than papered over by appending a stretch to `main`, where it would
  * be counted as a working set and rendered as one.
+ *
+ * ⚠ **It is LOCKED (2026-08-06), and the cool-down violation went in WITH it.** The Design Record's §9
+ * recommended holding; the product owner approved anyway, accepting three open items rather than
+ * resolving them. That makes this the FIRST LOCKED program that breaks PAS-D9 — before it, the violation
+ * only existed in un-locked drafts, where it read as a gap awaiting a fix. The Production Standard and
+ * the locked catalog now disagree in writing, and stay that way until `ProgramWorkout` grows a cooldown
+ * field with a surface that renders it, or PAS-D9 is amended. `Lock-Record.md` is the signed record.
+ *
+ * So the third `status` convention in this file is now in play, and they mean different things:
+ *   · `LOCKED`                          — Strength Foundation I/II (clean), Body Recomp Foundation (with
+ *                                          three accepted open items, named in its Lock Record)
+ *   · `AUTHORED — … outstanding`        — ships and is adoptable, nobody has signed it
+ * Reading `LOCKED` as "no open items" is the mistake this comment exists to prevent.
  */
 
 import type { ProgramDefinition } from '../schema';
