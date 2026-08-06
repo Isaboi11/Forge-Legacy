@@ -1,6 +1,6 @@
 # Close Quarters (6-Day) — Design Record
 
-**Status:** AUTHORED — original program. PO Lock Approval outstanding.
+**Status:** ✅ **LOCKED** — PO Lock Approval granted 2026-08-06, after §8's blocking item was closed. See `Lock-Record.md`.
 **Authored:** 2026-08-06, directly against `src/domain/training/schema.ts`. No `.docx` behind it.
 **Definition:** `src/domain/training/programs/close-quarters-6day.json`
 **Family:** Muscle Building · **Theme:** hypertrophy · **Structure:** `ppl` · **Difficulty:** Intermediate
@@ -166,6 +166,14 @@ one.
 ---
 
 ## 8. Lock recommendation
+
+> **✅ RESOLVED 2026-08-06 — item 1 was CLOSED, then the program was LOCKED.**
+> Told that the Program screen still did not warn a benchless athlete, the product owner chose to close
+> the gap before signing rather than accept it. Two passes did it: the gear model learned **AND**
+> (`bench` had been in the inventory and the onboarding quick-pick while unlocking nothing), and the
+> Program screen now calls `programGymCoverage` before Start — it existed, was tested, and was called in
+> exactly one onboarding card. A dumbbells-only athlete now reads *"Your gym covers 27 of 40 movements"*.
+> **Items 2 and 3 remain open and accepted.** `Lock-Record.md` is the signed record.
 
 **Recommend: hold**, on three things:
 

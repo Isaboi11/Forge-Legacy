@@ -40,6 +40,8 @@ import {
 import { getProgramDefinition } from '@/domain/training/programs';
 import { structureFromDefinition } from '@/domain/program/adopt-core';
 import { equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
+import { fetchHomeGym } from '@/data/home-gym-live';
+import { programGymCoverage } from '@/domain/onboarding/recommend';
 import { itemByName } from '@/domain/exercise-picker/data';
 import { LiftMaxSheet } from '@/components/forge/LiftMaxSheet';
 import {
@@ -108,6 +110,8 @@ export default function ProgramDetailScreen() {
   const [openWeek, setOpenWeek] = useState<number | null>(null);
   const [openDay, setOpenDay] = useState<string | null>(null);
   const [sheet, setSheet] = useState<'conflict' | 'end' | 'remove' | null>(null);
+  /** The athlete's owned gear, or null when they have never built a Home Gym. Null shows nothing. */
+  const [homeGym, setHomeGym] = useState<string[] | null>(null);
   /** 'gate' = answering before the program starts; 'change' = correcting one mid-run. */
   const [maxSheet, setMaxSheet] = useState<'gate' | 'change' | null>(null);
   /**
@@ -148,8 +152,27 @@ export default function ProgramDetailScreen() {
       let active = true;
       void (async () => {
         if (!id) return;
+
+        /*
+         * THE GEAR PROFILE IS READ IN BOTH STATES, AND IT IS THE ONE THING A PREVIEW DOES FETCH.
+         *
+         * A preview needs it to warn BEFORE Start — which is the whole point, since `environment` is a
+         * string on a screen the athlete may never open, and Close Quarters needs a bench that the
+         * equipment table cannot see. An adopted program needs it too, because a gym changes after the
+         * program was started.
+         *
+         * A failure is swallowed to null on purpose: null already means "no profile to judge against"
+         * and renders nothing, which is the honest outcome. Failing to read someone's gear is not
+         * evidence they lack a bench, and it must never take down the screen.
+         */
+        void fetchHomeGym()
+          .then((g) => {
+            if (active) setHomeGym(g);
+          })
+          .catch(() => {});
+
         if (previewDef) {
-          // Nothing to read. A preview is derived entirely from shipped content.
+          // Nothing else to read. A preview is otherwise derived entirely from shipped content.
           setLoading(false);
           return;
         }
@@ -208,8 +231,29 @@ export default function ProgramDetailScreen() {
   /** A preview has no run, so no frozen maxes — the gate asks on Start, as it does for any program. */
   const liftMaxes = program?.liftMaxes ?? {};
   const view = viewForState(state, owned);
-  const programName = program?.name ?? previewDef!.name;
-  const sourceDefId = program?.sourceDefinitionId ?? previewDef!.id;
+  const programName = program?.name ?? previewDef?.name ?? 'Program';
+  /*
+   * ⚠ THE WHITE SCREEN. This read `previewDef!.id`, and the `!` was wrong in the one case the comment
+   * directly below has always described: `sourceDefinitionId` is NULL for a program the athlete built
+   * themselves — `createProgram` inserts no `source_definition_id` at all.
+   *
+   * The `??` chain only reaches the fallback when the left side is null, and an OWNED program reaches
+   * this line with `previewDef` NULL, because `previewDef` is only resolved for a non-UUID id (a
+   * catalogue preview). So a self-built program evaluated `null.id` during render, threw, and took the
+   * whole tree down — a blank white screen with no error, since a production export has no boundary
+   * to catch it. Every program made in the Program Builder opened this way.
+   *
+   * Falling back to null is the correct value, not merely a safe one: `def` below is then null, which
+   * is exactly what that comment asks for — no author, so no description and no goals.
+   */
+  const sourceDefId = program?.sourceDefinitionId ?? previewDef?.id ?? null;
+  /*
+   * Keyed off `sourceDefId` rather than `previewDef`, so an ALREADY-ADOPTED catalog program is covered
+   * too — a gym changes after a program is started. `programGymCoverage` returns null for a null
+   * profile and for an id that is not a shipped definition, so a builder-made program shows nothing.
+   */
+  const coverage = sourceDefId ? programGymCoverage(sourceDefId, homeGym) : null;
+  const gearGap = coverage && coverage.total > 0 && coverage.doable < coverage.total ? coverage : null;
   const progress = computeProgress(structure, workouts.length);
   const stats = computeStats(workouts);
 
@@ -581,17 +625,25 @@ export default function ProgramDetailScreen() {
         {/*
           WORKING FROM — the maxes this run's percentages resolve against, and the way to change one.
 
-          Shown only for a program that actually prescribes percentages, which is no shipped program
-          today. A lift with no max yet reads "not set" rather than a number, because an unanswered
-          entry is a real state and a 0 would be a confident false claim about what the athlete lifts.
+          Shown only for a program that actually prescribes percentages — Squat Ascent, Bench Approach
+          and Deadlift Measure since 0111. A lift with no max yet reads "not set" rather than a number,
+          because an unanswered entry is a real state and a 0 would be a confident false claim about
+          what the athlete lifts.
+
+          ⚠ CHANGE IS OWNED-ONLY, and that is a crash fix as much as a rule. `LiftMaxSheet` writes
+          against `program!.id`, and a PREVIEW has no row — so opening this sheet from a preview
+          dereferenced null during render and whited out the screen. There is also nothing it could
+          honestly do: a max is frozen onto a RUN at the gate, and a preview has no run to freeze it
+          onto. The gate asks on Start, which is what the comment beside `liftMaxes` already promised.
         */}
         {maxKeys.length ? (
           <View style={styles.block}>
             <Text style={styles.microLabel}>Working from</Text>
             <Pressable
-              onPress={() => setMaxSheet('change')}
-              accessibilityRole="button"
-              accessibilityLabel="Change your maxes"
+              onPress={owned ? () => setMaxSheet('change') : undefined}
+              disabled={!owned}
+              accessibilityRole={owned ? 'button' : undefined}
+              accessibilityLabel={owned ? 'Change your maxes' : undefined}
               style={styles.maxRow}
             >
               <View style={styles.maxList}>
@@ -609,7 +661,7 @@ export default function ProgramDetailScreen() {
                   );
                 })}
               </View>
-              <Text style={styles.maxChange}>Change</Text>
+              {owned ? <Text style={styles.maxChange}>Change</Text> : null}
             </Pressable>
           </View>
         ) : null}
@@ -653,6 +705,22 @@ export default function ProgramDetailScreen() {
       </ScrollView>
 
       <TourAnchor id="program-actions" style={styles.cta}>
+        {/* ── WHAT YOUR GYM CANNOT DO, SAID BEFORE YOU START ─────────────────────────────────────────
+                `environment` is a string ("Home — dumbbells and an adjustable bench") on a screen the
+                athlete may never scroll to, and the equipment table cannot see a bench at all: a
+                dumbbell bench press is tagged `dumbbell`, because that records what you LOAD, not what
+                you lie on. So a home athlete could start a program a third of which they cannot do.
+
+                Same rule and same wording as the onboarding card: shown ONLY when a real profile exists
+                AND something is genuinely missing. "You can train all of it" is the expected case, and
+                saying so every time is noise dressed up as reassurance. ── */}
+        {gearGap ? (
+          <Text style={styles.gearGap}>
+            Your gym covers {gearGap.doable} of {gearGap.total} movements — you&apos;ll need to swap{' '}
+            {gearGap.missing.slice(0, 2).join(' and ')}
+            {gearGap.missing.length > 2 ? ` and ${gearGap.missing.length - 2} more` : ''}.
+          </Text>
+        ) : null}
         <Button variant="primary" fullWidth disabled={busy} onPress={onPrimary} accessibilityLabel={view.cta}>
           {view.cta}
         </Button>
@@ -780,7 +848,9 @@ export default function ProgramDetailScreen() {
         begin are two decisions, and an athlete who fills in their squat max to see the numbers should
         not find the program running.
       */}
-      {maxSheet != null ? (
+      {/* `&& program` is the belt to the owned-only braces above: the sheet's every write needs a row,
+          so it must never mount without one, whatever future path sets `maxSheet`. */}
+      {maxSheet != null && program ? (
         <LiftMaxSheet
           key={`${maxSheet}-${maxKeys.join(',')}`}
           open
@@ -788,7 +858,7 @@ export default function ProgramDetailScreen() {
             setMaxSheet(null);
             void discardProvisional();
           }}
-          programId={program!.id}
+          programId={program.id}
           keys={maxKeys}
           names={liftNames}
           known={liftMaxes}
@@ -1026,6 +1096,8 @@ const styles = StyleSheet.create({
   error: { marginTop: 16, fontSize: 13, color: flColor.redMuted },
 
   cta: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 20, borderTopWidth: 1, borderTopColor: flColor.charcoal600, backgroundColor: flColor.charcoal900, gap: 8 },
+  // Bronze, not red: needing to swap two movements is information, not an error.
+  gearGap: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
   ctaRow: { flexDirection: 'row', gap: 8 },
   ctaHalf: { flex: 1 },
   secondaryRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginTop: 2 },

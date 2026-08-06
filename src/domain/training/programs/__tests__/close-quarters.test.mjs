@@ -94,8 +94,30 @@ test('metadata is what the Design Record says it is', () => {
   // Genuinely push/pull/legs twice through — the first program in the catalog that can honestly say so.
   assert.equal(p.structure, 'ppl');
   assert.ok(p.name.length <= 60, 'PAS-D1 hard limit');
-  assert.notEqual(p.status, 'LOCKED', 'claims a lock nobody signed');
   assert.equal(p.successorName, null, 'standalone block, outside the locked 24');
+});
+
+/**
+ * ⚠ INVERTED 2026-08-06. This asserted `status !== 'LOCKED'` — the guard against this repo forging a
+ * signature it cannot give itself. The product owner gave it, and unlike Body Recomposition Foundation
+ * he closed the blocking item first: the Program screen now shows gear coverage before Start, so a
+ * benchless athlete is told rather than finding out on day 1.
+ *
+ * What remains open is recorded in the Lock Record, and the guard now protects the record's existence
+ * rather than the lock's absence.
+ */
+test('it is LOCKED, and the Lock Record beside it says what was signed', () => {
+  assert.equal(p.status, 'LOCKED');
+  assert.ok(p.sourceFile.endsWith('.md'), 'authored in-repo — cites a Design Record, not a .docx');
+  assert.equal(p.source, 'forge');
+
+  const lockRecord = join(HERE, '..', '..', '..', '..', '..', 'Programs', 'Hypertrophy', 'Close Quarters', 'Lock-Record.md');
+  const text = readFileSync(lockRecord, 'utf8');
+  assert.match(text, /Lock approved by/i, 'the Lock Record carries no approval line');
+  // The bench is the whole reason this program mattered beyond itself. A record that stops naming it
+  // loses the only account of why the gear model grew an AND.
+  assert.match(text, /bench/i, 'the Lock Record no longer names the bench requirement');
+  assert.match(text, /nobody has trained it/i, 'the Lock Record must still name what stayed open');
 });
 
 test('72 sessions across 12 weeks, no gap or overlap', () => {
