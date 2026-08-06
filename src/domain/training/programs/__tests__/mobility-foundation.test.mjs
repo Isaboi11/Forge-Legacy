@@ -205,9 +205,13 @@ test('nothing here needs equipment a beginner at home may not own', () => {
  * that then cannot progress — bending the training to hit a number in a table, which is the exact error
  * the 2026-08-06 coaching audit found in Muscle Building Intermediate's twelve sets of lateral raises.
  * The Blueprint itself says the 5-day cadence is "practice consistency, not training stress" (§6), and a
- * nine-minute session that grows to thirteen is how a five-day habit survives its first week. Recorded
- * as a Standard conflict in the Design Record; the ceiling, which is the half that protects the athlete,
- * is asserted exactly.
+ * nine-minute session that grows to thirteen is how a five-day habit survives its first week.
+ *
+ * ↩️ It was first written up as a STANDARD CONFLICT and it is not one. §10.2 calls its own ranges
+ * "quality-review guidelines, not import rules" and asks for a written note when a program falls
+ * outside — which the Design Record §7 is. The program is compliant by the route the Standard specifies.
+ * The floor below stays at 5 deliberately: it guards against a session collapsing to nothing, and the
+ * CEILING is asserted exactly, because the ceiling is the half that protects the athlete.
  */
 test('every session is short enough to actually be done five times a week', () => {
   const minutes = (w) => {

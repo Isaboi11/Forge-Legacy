@@ -167,10 +167,13 @@ nine-minute first week that grows to thirteen is how a five-day habit survives.
 
 **The ceiling is asserted exactly**, because the ceiling is the half that protects the athlete.
 
-This is the **fourth** conflict of this shape found in the Standards, after PAS-D8 vs PAS-D11, the
-band-vs-coaching-cap, and the cool-down (Amendment 003). The pattern is consistent and now hard to
-dismiss: **the Standards encode volume, frequency and duration, and nothing in them encodes whether the
-session is any good.**
+> **↩️ CORRECTED 2026-08-06 — this was first written up as "the fourth Standard conflict", and it is
+> not a conflict at all.** §10.2 says of itself that its ranges are *"quality-review guidelines, not
+> import rules"* and that *"programs outside the range require a written note explaining why."* The
+> Standard anticipated this exact case and provided the mechanism; **this section is that note**, so the
+> program is compliant by the route specified for it. The correction is recorded rather than quietly
+> made, and the reasoning above is kept, because the coaching judgement is unchanged — only the claim
+> that a rule was broken. See `Docs/Program-Authoring-Standard-Reconciliation-2026-08-06.md` Finding 8.
 
 ---
 

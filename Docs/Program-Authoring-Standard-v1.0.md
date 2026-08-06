@@ -1,5 +1,5 @@
 # Forge Legacy — Program Authoring Standard
-## Version 1.4 | June 2026
+## Version 1.6 | June 2026 · amended 2026-08-06
 
 **Status:** LOCKED
 **Authority:** Program-Catalog-Architecture-v1.0.md, Program-Ecosystem-Architecture-v1.0.md, ExercisePrescription-Amendment-001.md, Exercise-Library-Architecture-v1.0.md, FORGE_LEGACY_PRODUCT_DNA.md
@@ -485,16 +485,29 @@ Programs are sequential and not calendar-based. The athlete cannot skip sessions
 > authors to ignore the compliance table, which is what makes the next real violation invisible.
 > **WARM_UP is unchanged and still required.** The table below reflects the amendment.
 
+> **⚠ AMENDED AGAIN 2026-08-06 — `Program-Authoring-Standard-Amendment-005-Warmup-Reconciled.md` (LOCKED).**
+> **The WARM_UP column now reads "Required where authorable" (PAS-A5-D1).** The product owner's
+> 2026-08-06 instruction retired 244 of 405 authored warm-up items — everything that resolved to no
+> visible exercise, and every ramp set of the working lift. **19 of 244 non-MOBILITY sessions now open
+> directly on MAIN**, because their entire prep was a bike, an empty bar and "Build-up sets", none of
+> which is authorable. A further 95 sit below §9.3's old floor of three. That is **114 of 244 sessions —
+> 47% of the catalog** — put out of compliance by a decision this document had not absorbed.
+
 | Category | WARM_UP Section | COOL_DOWN Section |
 |----------|-----------------|------------------|
-| STRENGTH | **Required** | Optional (recommended for heavy compound programs) |
-| HYPERTROPHY | **Required** | Optional |
-| CONDITIONING | **Required** | Optional *(was Required — PAS-A3-D1)* |
-| RUNNING | **Required** (dynamic only; no static stretching pre-run) | Optional *(was Required — PAS-A3-D1)* |
-| CYCLING | **Required** (easy cadence ramp + activation) | Optional *(was Required — PAS-A3-D1)* |
-| COMBAT_SPORTS | **Required** | Optional *(was Required — PAS-A3-D1)* |
-| FULL_BODY | **Required** | Optional |
+| STRENGTH | **Required where authorable** *(PAS-A5-D1)* | Optional (recommended for heavy compound programs) |
+| HYPERTROPHY | **Required where authorable** *(PAS-A5-D1)* | Optional |
+| CONDITIONING | **Required where authorable** *(PAS-A5-D1)* | Optional *(was Required — PAS-A3-D1)* |
+| RUNNING | **Required where authorable** (dynamic only; no static stretching pre-run) | Optional *(was Required — PAS-A3-D1)* |
+| CYCLING | **Required where authorable** (easy cadence ramp + activation) | Optional *(was Required — PAS-A3-D1)* |
+| COMBAT_SPORTS | **Required where authorable** *(PAS-A5-D1)* | Optional *(was Required — PAS-A3-D1)* |
+| FULL_BODY | **Required where authorable** *(PAS-A5-D1)* | Optional |
 | MOBILITY | None — the program itself is the mobility practice; `MAIN` only | None |
+
+**"Where authorable" is a burden, not a loophole (PAS-A5-D1).** A session may open on `MAIN` only when
+every candidate prep movement for it either resolves to nothing in the **visible** catalogue (721 rows,
+not `exercises.json`'s 797) or would be a ramp set of the day's work. Every item that IS authored is
+still held to both rules by `programs.test.mjs`.
 
 **A cool-down must never be faked by appending a stretch to `MAIN` (PAS-A3-D4).** `setCount` counts it as
 working volume and W-9 renders and logs it as a working set, which inflates every volume figure the
@@ -506,6 +519,15 @@ already documents.
 
 ### 9.2 Warm-Up Must Use the WARM_UP Section (PAS-D10)
 
+> **⚠ RECONCILED 2026-08-06 — PAS Amendment 005 (PAS-A5-D3).** In-repo authored programs — now most of
+> the catalog — hold warm-ups as `WarmupItem` (`{ name, detail, text }`, **deliberately not
+> catalog-linked**, resolved by name at adoption), not as `ExercisePrescription` rows. So the rule below
+> is satisfied in **intent** by every program (a real section the logger renders, never notes smuggled
+> onto a MAIN row) and violated in **letter** by all of them. The intent is what mattered and it stands;
+> the letter is corrected: **a warm-up item is a `WarmupItem` whose `name` resolves to a visible
+> exercise.** The `.docx` import path, which does produce `ExercisePrescription` rows with
+> `section: WARM_UP`, is unaffected and still conforms as written.
+
 Warm-up exercises for Forge programs must be authored as a proper `WARM_UP` section with `ExercisePrescription` rows. They must not be:
 - Encoded as `notes` on MAIN section exercises
 - Listed as free text in the slot name
@@ -515,12 +537,19 @@ Warm-up exercises for Forge programs must be authored as a proper `WARM_UP` sect
 
 ### 9.3 Warm-Up Content Guidance
 
+> **⚠ AMENDED 2026-08-06 — PAS Amendment 005 (PAS-A5-D2, PAS-A5-D4).** The count was **3–6**, written
+> when a warm-up could hold a general cardio piece, pattern prep, and a rehearsal of the day's lift.
+> **Two of those three are no longer authorable**, so what survives is the pattern prep — and three to
+> six pieces of pattern prep is a session, not a warm-up.
+
 | Property | Guidance |
 |----------|----------|
-| Exercise count | 3–6 exercises |
+| Exercise count | **1–4 exercises** *(was 3–6 — PAS-A5-D2)* |
+| **Must resolve** | **Every item's `name` must resolve to an exercise in the VISIBLE catalogue (721), not merely to a row in `exercises.json` (797).** A line that resolves to nothing enters the session with no demo, no coaching and no logging identity — prose wearing an exercise's clothes. Enforced by `programs.test.mjs` |
+| **No ramp sets** | **An item that works up to the first working weight is not prep and is not authorable** *(PAS-A5-D4)* — an empty bar, build-up sets, a percentage ramp. This catches what the rule above cannot: "Barbell Bench Press — empty bar, 8 reps" resolves perfectly and is still a ramp set |
 | Prescription type | Primarily `durationSeconds` for mobility and activation; `sets × reps` for activation movements |
 | Rest | Omit `restSeconds`; athletes flow through warm-up continuously |
-| Exercise selection | Use MOBILITY category exercises (Stretch Dynamic, Joint Mobility, Foam Roll, Breathwork); activation exercises from FULL_BODY or LEGS_AND_GLUTES categories |
+| Exercise selection | Use MOBILITY category exercises (Stretch Dynamic, Joint Mobility, Breathwork); activation exercises from FULL_BODY or LEGS_AND_GLUTES categories. **Foam Roll is no longer a safe recommendation** — those rows require a tool the athlete may not own, and the product owner has ruled out recommending equipment |
 | Alignment | Warm-up prepares the primary muscle groups trained in MAIN; a squat-focused session warms up hips, ankles, and quads |
 
 ### 9.4 Cooldown Content Guidance
@@ -556,7 +585,23 @@ The following ranges govern the **MAIN section only**. WARM_UP and COOL_DOWN are
 | FULL_BODY | 4–7 | 12–20 | HOME environment may use higher reps with lower weights |
 | MOBILITY | 5–10 | N/A — duration-based | All holds use `durationSeconds` |
 
+> **⚠ AMENDED 2026-08-06 — `Program-Authoring-Standard-Amendment-006-Deload-Exempt-From-Volume-Floor.md` (LOCKED).**
+> **A deload week is exempt from the FLOOR (PAS-A6-D1); the CEILING still applies everywhere
+> (PAS-A6-D2).** PAS-D7 makes a deload mandatory at 7+ weeks and PAS-D8 cuts sets by 40–50%, which for a
+> HYPERTROPHY program at the middle of its own band lands at 14 against a floor of 18 — so obeying
+> PAS-D7 and PAS-D8 breached PAS-D11 by construction, every time. Seven sessions in two shipped
+> programs were live examples, one of them **locked** with it open. The floor guarantees a training
+> stimulus; a deload's purpose is to remove one. Same scoping principle as PAS-A4-D3.
+
 Programs authored outside these ranges require a written deviation note in the authoring sheet. The quality reviewer (Section 16, Group C) confirms the deviation is justified.
+
+**⚠ This mechanism is currently under-used, and that is a live compliance gap.** 34 non-deload sessions
+across four programs sit below their floor — the three percentage-loaded specialization blocks and Iron
+& Engine — and **none of the four filed a deviation note**. They train five and six days a week, so
+14 sets × 5 sessions is more weekly work than a three-day program at 22 sets a session: **PAS-D11 is a
+per-session rule being applied to programs whose training reality is per-week, and it silently penalises
+frequency.** Whether the guardrail should be read per week above a frequency threshold is an open
+product decision — see `Program-Authoring-Standard-Reconciliation-2026-08-06.md` Finding 4.
 
 Volume distribution pattern, including even distribution versus concentrated body-part-split distribution, is a methodology choice. Deviations from the category default require a written rationale and Group C reviewer confirmation.
 
@@ -585,7 +630,11 @@ Estimates assume: the athlete sets up promptly, follows prescribed rest periods,
 
 **No duplicate exercises per section.** If the same exercise appears twice in a MAIN section, combine it into one prescription row with the total set count.
 
-**Superset encoding.** The schema does not natively support superset groupings at MVP. If supersets are intended, indicate this in `notes` on adjacent exercises: `notes: "Superset with the exercise above."` W-9 will present them as individual sequential exercises.
+**Superset encoding.** ⚠ **SUPERSEDED 2026-08-03 by `Program-Authoring-Standard-Amendment-001-Superset-Encoding.md` (LOCKED) — merged into this section 2026-08-06, having been left unmerged for three days and found during the reconciliation audit.** The paragraph below is retained as the historical record and **binds nobody**.
+
+The prescription model **does** support grouping and has since it grew circuits, ladders and AMRAPs: `groupId` / `groupName` / `groupKind` / `groupRounds` / `groupCapSec`, resolved by adjacency in `deriveBlocks`, with `groupKind: 'superset'` alternating set-for-set and resting once per round (migration 0106). **Author a superset as a real group.** The old workaround's second clause was its real cost — "W-9 will present them as individual sequential exercises" is precisely how a superset gets trained as two ordinary exercises, because the app told the athlete to rest after A. A note in a field is a comment; it changes nothing about what the app does. It is also unauthorable today: `ExercisePrescription` has **no `notes` field** (see the Reconciliation, Finding 1).
+
+> *(Superseded original)* **Superset encoding.** The schema does not natively support superset groupings at MVP. If supersets are intended, indicate this in `notes` on adjacent exercises: `notes: "Superset with the exercise above."` W-9 will present them as individual sequential exercises.
 
 **Rest prescription (`restSeconds`) guidance by level:**
 
@@ -999,9 +1048,9 @@ Complete this checklist before exporting CSV and submitting to the import tool. 
 - [ ] RPE notes (if present) comply with PAS-D3 and PAS-D5: INTERMEDIATE or ADVANCED STRENGTH or HYPERTROPHY only; exact format `RPE [value]`; no other content in the same notes field when RPE is present
 - [ ] Rep range upper bounds are encoded in `notes` using the standard format: `Rep target: [min]–[max]. Add weight when all sets reach [max].`
 - [ ] All slots in deload weeks are tagged with `[DELOAD]` in the slot name per PAS-D8
-- [ ] WARM_UP sections are present where required per PAS-D9, and are authored as proper `WARM_UP` section rows (not notes on MAIN exercises)
+- [ ] WARM_UP sections are present **where authorable** per PAS-D9/PAS-A5-D1, and are authored as a real warm-up section (not notes on MAIN exercises). **Every item resolves to an exercise in the VISIBLE catalogue** (PAS-A5-D2), and **no item is a ramp set of the day's work** (PAS-A5-D4). Where a session has none, the author can say which candidate movements were considered and why each was unauthorable
 - [ ] ~~COOL_DOWN sections are present where required per PAS-D9~~ — **removed 2026-08-06, PAS Amendment 003.** No category requires one. If a cool-down IS authored, it must be a real COOL_DOWN section and never a stretch appended to MAIN (PAS-A3-D4)
-- [ ] Volume guardrails (Section 10.1) are satisfied, or a written deviation note exists in the authoring sheet
+- [ ] Volume guardrails (Section 10.1) are satisfied, or a written deviation note exists in the authoring sheet. **Deload weeks are exempt from the floor** (PAS-A6-D1) and still bound by the ceiling (PAS-A6-D2). **If a working week is below the floor, the deviation note is not optional** — four shipped programs are below it today and none filed one
 - [ ] Estimated session duration falls within the category range in Section 10.2, or a written deviation note explains why
 - [ ] No exercise appears more than once within the same section of the same slot
 - [ ] Weight units (`lbs` or `kg`) are consistent across all slots within the program
@@ -1119,9 +1168,9 @@ The Program Authoring Standard does NOT:
 | **PAS-D6 — Progression Models Used in the Launch Catalog** | Models used across the 24 launch programs: (1) Linear Progression — STRENGTH BEGINNER, FULL_BODY, CONDITIONING BEGINNER; (2) Double Progression — HYPERTROPHY all levels, STRENGTH INTERMEDIATE/ADVANCED, CONDITIONING INTERMEDIATE; (3) Block Periodization — STRENGTH ADVANCED, HYPERTROPHY ADVANCED, RUNNING all levels, CYCLING all levels; (4) Volume Accumulation — HYPERTROPHY BEGINNER/INTERMEDIATE (layered), COMBAT_SPORTS; (5) Time-Based Progression — MOBILITY all levels, cardio interval elements. Additional evidence-supported progression models may be used when justified in the program Blueprint and approved through Group C review, without requiring a PAS amendment (PAS-Amendment-002). |
 | **PAS-D7 — Deload Requirements by Program Length** | 4–6 weeks: no mandatory deload; optional at author's discretion. 7–10 weeks: one mandatory deload at the penultimate week, leaving the final week as peak. 11–14 weeks: two mandatory deloads — first at Week 4 (concluding the opening mesocycle), second at the penultimate week, leaving the final week as peak. |
 | **PAS-D8 — Deload Encoding Convention** | Deload weeks are encoded by: (1) including `[DELOAD]` in every slot name for the deload week; (2) reducing `sets` on primary compound exercises by 40–50% compared to the preceding week's equivalent session; (3) maintaining the same `workoutsPerWeek` as all other weeks; (4) using the same exercises as the preceding week's equivalent session (no new exercise introductions in deload weeks). Weight values are held at the previous week's level or reduced 10–15%. |
-| **PAS-D9 — WARM_UP and COOL_DOWN Requirements by Category** | ⚠️ **AMENDED 2026-08-06 by PAS Amendment 003 (LOCKED).** WARM_UP section required: STRENGTH, HYPERTROPHY, CONDITIONING, RUNNING, CYCLING, COMBAT_SPORTS, FULL_BODY — unchanged. **COOL_DOWN is required for NO category** (was: CONDITIONING, RUNNING, CYCLING, COMBAT_SPORTS); it is optional everywhere, because `ProgramWorkout` has no cooldown field and no in-repo authored program can express one. MOBILITY programs use MAIN only. A cool-down must never be faked by appending a stretch to MAIN (PAS-A3-D4); the requirement returns only with a field **and** a surface that renders it (PAS-A3-D3). |
-| **PAS-D10 — Warm-Up Must Use the WARM_UP Section** | Warm-up exercises for Forge programs must be authored as a proper `WARM_UP` section with `ExercisePrescription` rows. Warm-up content must not be encoded as `notes` on MAIN section exercises or as free text in slot names. This ensures W-9 renders section headers correctly, prescription data is complete, and athletes see a clearly structured session layout in-app. |
-| **PAS-D11 — Volume Guardrails by Category** | Permitted MAIN section ranges: STRENGTH 4–6 exercises / 15–25 sets; HYPERTROPHY 5–8 / 18–30; CONDITIONING 4–8 / 12–24; RUNNING 1–3 duration-based; CYCLING 1–3 duration-based; COMBAT_SPORTS 4–7 / 12–20; FULL_BODY 4–7 / 12–20; MOBILITY 5–10 duration-based holds. Programs outside these ranges require a written deviation justification in the authoring sheet, confirmed by the quality reviewer. |
+| **PAS-D9 — WARM_UP and COOL_DOWN Requirements by Category** | ⚠️ **AMENDED TWICE 2026-08-06 — by PAS Amendment 003 (cool-down) and PAS Amendment 005 (warm-up), both LOCKED.** WARM_UP section **required where authorable** (PAS-A5-D1) in STRENGTH, HYPERTROPHY, CONDITIONING, RUNNING, CYCLING, COMBAT_SPORTS, FULL_BODY: a session may open on MAIN only when every candidate prep movement resolves to nothing in the visible catalogue or would be a ramp set. 19 of 244 non-MOBILITY sessions do. **COOL_DOWN is required for NO category** (was: CONDITIONING, RUNNING, CYCLING, COMBAT_SPORTS); it is optional everywhere, because `ProgramWorkout` has no cooldown field and no in-repo authored program can express one. MOBILITY programs use MAIN only. A cool-down must never be faked by appending a stretch to MAIN (PAS-A3-D4); the requirement returns only with a field **and** a surface that renders it (PAS-A3-D3). |
+| **PAS-D10 — Warm-Up Must Use the WARM_UP Section** | ⚠️ **RECONCILED 2026-08-06 by PAS Amendment 005 (PAS-A5-D3).** In-repo authored programs hold warm-ups as `WarmupItem` — freeform, deliberately not catalog-linked, resolved by name — so the rule is met in intent by every program and in letter by none of them. **A warm-up item is a `WarmupItem` whose `name` resolves to a visible exercise**; the `.docx` import path still produces `ExercisePrescription` rows and conforms as originally written. Original text follows. Warm-up exercises for Forge programs must be authored as a proper `WARM_UP` section with `ExercisePrescription` rows. Warm-up content must not be encoded as `notes` on MAIN section exercises or as free text in slot names. This ensures W-9 renders section headers correctly, prescription data is complete, and athletes see a clearly structured session layout in-app. |
+| **PAS-D11 — Volume Guardrails by Category** | ⚠️ **AMENDED 2026-08-06 by PAS Amendment 006 (LOCKED). A deload week is exempt from the FLOOR (PAS-A6-D1); the CEILING applies in every week (PAS-A6-D2).** Obeying PAS-D7 (mandatory deload) and PAS-D8 (40–50% set cut) breached this rule by construction — there is no set count that satisfies all three. Permitted MAIN section ranges: STRENGTH 4–6 exercises / 15–25 sets; HYPERTROPHY 5–8 / 18–30; CONDITIONING 4–8 / 12–24; RUNNING 1–3 duration-based; CYCLING 1–3 duration-based; COMBAT_SPORTS 4–7 / 12–20; FULL_BODY 4–7 / 12–20; MOBILITY 5–10 duration-based holds. Programs outside these ranges require a written deviation justification in the authoring sheet, confirmed by the quality reviewer. |
 | **PAS-D12 — Post-MVP RPE Field Amendment (Forward Reference)** | A dedicated `rpe: integer \| null` field on `ExercisePrescription` is the correct long-term solution for intensity prescription in STRENGTH and HYPERTROPHY programs. PAS-D3's `notes` encoding is explicitly temporary. This schema amendment — cascading through the import pipeline, W-9, W-24, and W-19 — is recommended as the first post-launch prescription enhancement. When implemented, MVP programs with RPE in `notes` should be reviewed and migrated via a `v1.1` version update. |
 
 ---
@@ -1130,6 +1179,8 @@ The Program Authoring Standard does NOT:
 
 | Version | Date | Change |
 |---------|------|--------|
+| v1.6 | 2026-08-06 | **PAS Amendment 005 (Warm-Up Reconciled) applied.** §9.1's WARM_UP column: "Required" → "**Required where authorable**" (PAS-A5-D1), with the burden of proof on the author. §9.3: exercise count **3–6 → 1–4** (PAS-A5-D2), plus two new binding rows — every item must resolve to the **VISIBLE** catalogue (721, not 797), and **no ramp sets** (PAS-A5-D4), which catch different things. §9.2/PAS-D10 reconciled to `WarmupItem` (PAS-A5-D3): met in intent by every in-repo program, in letter by none. §16 Group B checklist line rewritten. **Why it was needed: the product owner's 2026-08-06 instruction retired 244 of 405 warm-up items and this document never absorbed it, leaving 114 of 244 sessions — 47% of the catalog — out of compliance with a LOCKED standard.** No program content changed; no JSON re-authored; nothing an athlete sees is different. ⚠ `Programs/Forge-Program-Production-Standard.docx` §warm-up remains stale and is flagged, not edited (data-protected). Status: LOCKED. |
+| v1.5 | 2026-08-06 | **PAS Amendments 003 (Cool-Down Not Required) and 004 (Weekly Volume Counting) applied**, both LOCKED. Recorded here retroactively: both were authored, applied to their sections, and never entered this change log — the same unmerged-amendment failure the log exists to prevent. §9.1's COOL_DOWN column reads Optional for every category (PAS-A3-D1) because `ProgramWorkout` has no cooldown field; §9.4 retained as non-binding guidance for the day a field **and** a surface both exist (PAS-A3-D3); a cool-down must never be faked in MAIN (PAS-A3-D4). Amendment 004 fixes the weekly-volume counting convention. Status: LOCKED. |
 | v1.4 | June 2026 | PAS-Amendment-002 (Methodology Pluralism) applied. Reframed §11.1–§11.8's per-category "Session structure" lines from hard requirements to defaults, each now permitting a Blueprint-justified alternative subject to §10.1 deviation-note review and Group C approval. Reframed PAS-D6/§7.1 from "Approved MVP Progression Models" (amendment-gated) to "Progression Models Used in the Launch Catalog" — additional evidence-supported models are now usable via Blueprint justification + Group C review, without a PAS amendment; added a cross-reference note to §7.2's model-selection table. Added a clarifying sentence to §10.1 (PAS-D11) stating that volume distribution pattern — including concentrated body-part-split distribution — is a methodology choice, subject to the same deviation-note/Group C path as guardrail deviations. Clarified QC-3's test scope (§15) to evaluate balance across the program's full declared weekly/cyclical structure rather than assuming a PPL/Upper-Lower split or a single-session view. No changes to schema, taxonomy (category/level/environment/goalAlignment), the 24 launch program seeds, or any QC pass/fail threshold — this amendment relaxes launch-catalog authoring defaults, not quality standards. Status: LOCKED. |
 | v1.3 | June 2026 | Muscle Building Rename Amendment 001 applied. Renamed the three general Hypertrophy programs to Muscle Building Foundation/Intermediate/Advanced across §7.1 (Models 2, 3, 4 program lists), §13's reference table (name + successor columns), §14's deload schedule table and deload-naming example, the terminal-programs note beneath §13, and §17.2's import order. The stored category enum `HYPERTROPHY` is unchanged (no schema change, no migration); Lower Body Foundation/Intermediate unchanged. Status: LOCKED. |
 | v1.2 | June 2026 | Program Ecosystem Amendment 001 (Powerbuilding Intermediate Retirement) applied. Removed Powerbuilding Intermediate from §7.1's Model 2 program list, §13's reference table, §14's deload schedule table, and §17.2's import order; updated the terminal-programs note beneath §13. Powerbuilding Foundation's successor changed from Powerbuilding Intermediate to Strength Foundation II (Sort 2). Renumbered every program at old Sort 6+ down by one (new catalog: Sort 1–24, 24 programs total). Updated live "25 launch programs"/"25 programs" references to 24 (§1.1, §1.2, §1.4, §13, §14, §18.4, §19) — the v1.0 Change Log entry below is left as a historical record and not altered. Status: LOCKED. |
@@ -1138,7 +1189,7 @@ The Program Authoring Standard does NOT:
 
 ---
 
-*Forge Legacy — Program Authoring Standard — v1.4*
-*June 2026*
+*Forge Legacy — Program Authoring Standard — v1.6*
+*June 2026 · amended 2026-08-06 (Amendments 003, 004, 005)*
 *Internal authority for all `source: 'FORGE'` program authoring, validation, and import.*
 *Implements PC-D4, PC-D7, PC-D9. Operationalizes the import pipeline defined in Program-Ecosystem-Architecture-v1.0.md §6. Extends ExercisePrescription-Amendment-001.md with authoring guidance. Records PAS-R1 Difficulty Calibration Audit as the pre-launch catalog governance checkpoint. PAS-Amendment-002 (Methodology Pluralism) reframes launch-catalog session-structure and progression-model defaults as Blueprint-adjustable via existing Group C review, without new schema or taxonomy.*
