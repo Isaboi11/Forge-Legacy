@@ -61,19 +61,62 @@ test('metadata matches the LOCKED Blueprint exactly', () => {
  * than the program; two remain open. That is a materially different thing from a clean lock, and the
  * Lock Record is where it is written down.
  */
-test('it is LOCKED, and the Lock Record beside it says what was signed', () => {
-  assert.equal(p.status, 'LOCKED');
+test('it is UNLOCKED, and the Lock Record records the withdrawal', () => {
+  assert.notEqual(p.status, 'LOCKED', 'the lock was withdrawn by the coaching audit');
+  assert.match(p.status, /audit/i, 'the status should say why it is no longer locked');
   assert.ok(p.sourceFile.endsWith('.md'), 'authored in-repo — cites a Design Record, not a .docx');
   assert.equal(p.source, 'forge');
 
-  // A lock with no Lock Record is a status string nobody can audit.
   const lockRecord = join(HERE, '..', '..', '..', '..', '..', 'Programs', 'Conditioning', 'Body Recomposition Foundation', 'Lock-Record.md');
   const text = readFileSync(lockRecord, 'utf8');
-  assert.match(text, /Lock approved by/i, 'the Lock Record carries no approval line');
-  // The lock was signed over a recommendation to hold. A record that stops saying so is a clean-looking
-  // lock that never was — so the section naming what was accepted has to survive.
-  assert.match(text, /accepted, not resolved/i, 'the Lock Record no longer says the items were accepted rather than resolved');
-  assert.match(text, /nobody has trained it/i, 'the Lock Record must still name the items left open');
+  assert.match(text, /WITHDRAWN/i, 'the Lock Record does not record that the lock was withdrawn');
+  assert.match(text, /rest/i, 'the Lock Record must name the defect that cost it the lock');
+});
+
+/**
+ * ══ THE DEFECT THAT COST THIS PROGRAM ITS LOCK ══
+ *
+ * It shipped as `3 × 10 @ 90s` in week 1 and `3 × 15 @ 60s` in week 8. Rising reps with SHRINKING REST is
+ * a metabolic stimulus — and this program exists to RETAIN MUSCLE IN A CALORIC DEFICIT, where the driver
+ * is intensity, not rep count. Retention wants the load held and the volume trimmed; the program did the
+ * reverse of its own stated goal. It is the "high reps to tone" error.
+ *
+ * Every structural test passed it, because every structural test measured the ENVELOPE rather than the
+ * training. A test on the DIRECTION of a number is the only thing that catches this class of defect.
+ */
+test('rest NEVER falls across the block — the defect that cost the lock', () => {
+  /*
+   * Compared PER EXERCISE, not per session. A session minimum moves when the exercise LIST changes — the
+   * deload drops the isolation work, so its cheapest rest is a compound's — and that reads as a rest cut
+   * that never happened. The first draft of this test did exactly that and failed on a program that was
+   * correct. What matters is that a given lift never gets less rest than it got last block.
+   */
+  for (const code of ['A', 'B', 'C', 'D']) {
+    const restFor = p.blocks.map((b) => {
+      const m = new Map();
+      for (const ex of lifts(b.workouts.find((x) => x.code === code))) m.set(ex.catalogKey, ex.restSec);
+      return m;
+    });
+    for (let i = 1; i < restFor.length; i += 1) {
+      for (const [key, now] of restFor[i]) {
+        const before = restFor[i - 1].get(key);
+        if (before == null) continue;
+        assert.ok(now >= before, `day ${code}: ${key} rest drops ${before}s → ${now}s in ${p.blocks[i].label}`);
+      }
+    }
+  }
+});
+
+/**
+ * The rep RANGE is the effort instruction, and it is why nothing had to be added to the logger:
+ * "8–12, and if you can beat 12 the weight is too light" states intensity without a word of new UI.
+ */
+test('every prescription carries a rep range — the effort signal, at no cost to the screen', () => {
+  for (const [w, b] of everyWorkout()) {
+    for (const ex of lifts(w)) {
+      assert.ok(ex.repsMax > ex.reps, `${b.label} ${w.code} ${ex.displayName} has no range: ${ex.reps}`);
+    }
+  }
 });
 
 /**
@@ -203,13 +246,22 @@ test('the deload reduces volume while HOLDING four sessions (PAS-D8)', () => {
   }
 });
 
-test('the conditioning finisher progresses with the block and eases at the deload', () => {
+/**
+ * ⚠ THE FINISHER IS CAPPED, NOT CLIMBING — changed by the coaching audit.
+ *
+ * It used to rise 15 → 18 → 20 → 22 minutes. At four sessions a week that is 88 minutes of steady cardio
+ * stacked on rising lifting volume, in a caloric deficit, for a beginner. That is a burnout schedule, and
+ * the cardio is the least valuable thing in the program to defend when recovery runs out.
+ *
+ * It now tops out at 18 (72 min/week) and the deload is still the shortest.
+ */
+test('the conditioning finisher is capped, and the deload is still the easiest', () => {
   const secs = p.blocks.map((b) => b.workouts[0].main.at(-1).targetSec);
-  for (let i = 1; i <= 2; i += 1) {
-    assert.ok(secs[i] > secs[i - 1], `${p.blocks[i].label} finisher does not lengthen`);
+  for (const [i, s] of secs.entries()) {
+    assert.ok(s <= 18 * 60, `${p.blocks[i].label} finisher is ${s / 60} min — capped at 18`);
   }
   assert.equal(Math.min(...secs), secs[DELOAD], 'the deload should carry the shortest finisher');
-  assert.equal(Math.max(...secs), secs[PEAK], 'the peak should carry the longest finisher');
+  assert.ok(secs[PEAK] > secs[0], 'the peak finisher should still be longer than week 1');
 });
 
 /**

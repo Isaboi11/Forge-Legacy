@@ -1,5 +1,44 @@
 # Body Recomposition Foundation — Lock Record
 
+> # ⛔ LOCK WITHDRAWN — 2026-08-06, the same day it was granted
+>
+> **A coaching audit found the program working against its own goal, and the product owner withdrew the
+> lock rather than ship it.** Everything below this banner is the record of the lock as it was signed. It
+> is kept, not deleted: a lock granted and revoked is a thing that happened, and the next person to sign
+> one should be able to read why this one did not hold.
+>
+> ## What the audit found
+>
+> The program shipped as **`3 × 10 @ 90s rest` in week 1 and `3 × 15 @ 60s rest` in week 8.**
+>
+> Rising reps with **shrinking rest** is a metabolic stimulus. This program exists to **retain muscle in a
+> caloric deficit**, and retention is driven by *intensity* — you hold the load and can afford to trim the
+> volume. It prescribed the opposite of its own stated purpose. It is the "high reps to tone" error, in
+> the one program in the catalog whose entire justification is that it is *not* that.
+>
+> Compounding it: four sessions a week, rising lifting volume, and a finisher climbing to 22 minutes —
+> **88 minutes of steady cardio a week on top, in a deficit, for a beginner.**
+>
+> ## Why nothing caught it
+>
+> Fourteen acceptance tests passed, plus the whole generic validator. **Every one of them measured the
+> envelope rather than the training**: set counts inside PAS-D11, reps inside 8–15, rest inside 60–90,
+> a deload in the right week. Each number was individually legal. What no test asked was which
+> *direction* the numbers were moving, or whether the direction served the goal.
+>
+> ## What changed
+>
+> · **Rest is now constant** (90 s compound / 75 s isolation) and a test asserts it never falls.
+> · **Every prescription is a rep range, 8–12** — the effort instruction, rendered by machinery that
+>   already exists, with nothing added to the workout screen.
+> · **Volume progresses through sets**, not reps: 15 → 20 → 24, deload 12, peak 24.
+> · **The finisher is capped at 18 minutes** — 72 min/week instead of 88.
+>
+> `status` is back to `AUTHORED`. Re-locking is a fresh signature on a re-authored program, and the
+> Design Record's §9 hold list applies again.
+
+---
+
 **Program:** Body Recomposition Foundation
 **Version:** 1.0
 **Shape:** 8 weeks · 4 days per week · 32 sessions · Beginner · CONDITIONING / GYM

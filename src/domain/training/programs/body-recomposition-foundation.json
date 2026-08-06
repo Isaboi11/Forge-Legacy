@@ -17,7 +17,7 @@
   "successorName": "Body Recomposition Intermediate",
   "theme": "cutting",
   "structure": "upper_lower",
-  "status": "LOCKED",
+  "status": "AUTHORED — re-authored after a coaching audit; PO Lock Approval outstanding",
   "source": "forge",
   "sourceFile": "Programs/Conditioning/Body Recomposition Foundation/Design-Record.md",
   "blocks": [
@@ -37,11 +37,11 @@
             { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" }
           ],
           "main": [
-            { "catalogKey": "machine-chest-press", "displayName": "Machine Chest Press", "sets": 3, "reps": 10, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "machine-lat-pulldown", "displayName": "Machine Lat Pulldown", "sets": 3, "reps": 10, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "seated-dumbbell-shoulder-press", "displayName": "Seated Dumbbell Shoulder Press", "sets": 3, "reps": 10, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "machine-seated-row", "displayName": "Machine Seated Row", "sets": 3, "reps": 10, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "machine-triceps-extension", "displayName": "Machine Triceps Extension", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "machine-chest-press", "displayName": "Machine Chest Press", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "machine-lat-pulldown", "displayName": "Machine Lat Pulldown", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "seated-dumbbell-shoulder-press", "displayName": "Seated Dumbbell Shoulder Press", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "machine-seated-row", "displayName": "Machine Seated Row", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "machine-triceps-extension", "displayName": "Machine Triceps Extension", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 75 },
             { "catalogKey": "cardio:bike", "displayName": "Steady Ride", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "bike", "modality": "indoor", "targetSec": 900, "targetMi": null }
           ]
         },
@@ -56,11 +56,11 @@
             { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
           ],
           "main": [
-            { "catalogKey": "machine-leg-press", "displayName": "Machine Leg Press", "sets": 3, "reps": 10, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "dumbbell-goblet-squat", "displayName": "Dumbbell Goblet Squat", "sets": 3, "reps": 10, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "seated-leg-curl-machine", "displayName": "Seated Leg Curl Machine", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 3, "reps": 10, "unit": "reps", "per": "leg", "restSec": 90 },
-            { "catalogKey": "seated-calf-raise-machine", "displayName": "Seated Calf Raise Machine", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "machine-leg-press", "displayName": "Machine Leg Press", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "dumbbell-goblet-squat", "displayName": "Dumbbell Goblet Squat", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "seated-leg-curl-machine", "displayName": "Seated Leg Curl Machine", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "per": "leg", "restSec": 90 },
+            { "catalogKey": "seated-calf-raise-machine", "displayName": "Seated Calf Raise Machine", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 75 },
             { "catalogKey": "cardio:walk", "displayName": "Steady Incline Walk", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "walk", "modality": "indoor", "targetSec": 900, "targetMi": null }
           ]
         },
@@ -75,19 +75,20 @@
             { "name": "Scapular Pull-Up", "detail": "8 reps", "text": "Scapular Pull-Up — 8 reps" }
           ],
           "main": [
-            { "catalogKey": "chest-supported-row-machine", "displayName": "Chest-Supported Row Machine", "sets": 3, "reps": 10, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "machine-incline-chest-press", "displayName": "Machine Incline Chest Press", "sets": 3, "reps": 10, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "machine-rear-delt-fly", "displayName": "Machine Rear Delt Fly", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "chest-supported-row-machine", "displayName": "Chest-Supported Row Machine", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "machine-incline-chest-press", "displayName": "Machine Incline Chest Press", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "machine-rear-delt-fly", "displayName": "Machine Rear Delt Fly", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 75 },
             {
               "catalogKey": "assisted-pull-up-machine",
               "displayName": "Assisted Pull-Up Machine",
               "sets": 3,
-              "reps": 10,
+              "reps": 8,
+              "repsMax": 12,
               "unit": "reps",
               "restSec": 90,
-              "substitution": { "catalogKey": "machine-lat-pulldown", "name": "Machine Lat Pulldown", "sets": 3, "reps": 10, "unit": "reps" }
+              "substitution": { "catalogKey": "machine-lat-pulldown", "name": "Machine Lat Pulldown", "sets": 3, "reps": 8, "unit": "reps" }
             },
-            { "catalogKey": "machine-biceps-curl", "displayName": "Machine Biceps Curl", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "machine-biceps-curl", "displayName": "Machine Biceps Curl", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 75 },
             { "catalogKey": "cardio:elliptical", "displayName": "Steady Elliptical", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "elliptical", "modality": "indoor", "targetSec": 900, "targetMi": null }
           ]
         },
@@ -102,11 +103,11 @@
             { "name": "Bird Dog", "detail": "8 each side", "text": "Bird Dog — 8 each side" }
           ],
           "main": [
-            { "catalogKey": "hip-thrust-machine", "displayName": "Hip Thrust Machine", "sets": 3, "reps": 10, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "dumbbell-romanian-deadlift", "displayName": "Dumbbell Romanian Deadlift", "sets": 3, "reps": 10, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "leg-extension-machine", "displayName": "Leg Extension Machine", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "dumbbell-step-up", "displayName": "Dumbbell Step-Up", "sets": 3, "reps": 10, "unit": "reps", "per": "leg", "restSec": 90 },
-            { "catalogKey": "machine-back-extension", "displayName": "Machine Back Extension", "sets": 3, "reps": 10, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "hip-thrust-machine", "displayName": "Hip Thrust Machine", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "dumbbell-romanian-deadlift", "displayName": "Dumbbell Romanian Deadlift", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "leg-extension-machine", "displayName": "Leg Extension Machine", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "dumbbell-step-up", "displayName": "Dumbbell Step-Up", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "per": "leg", "restSec": 90 },
+            { "catalogKey": "machine-back-extension", "displayName": "Machine Back Extension", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 75 },
             { "catalogKey": "cardio:walk", "displayName": "Steady Incline Walk", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "walk", "modality": "indoor", "targetSec": 900, "targetMi": null }
           ]
         }
@@ -128,12 +129,12 @@
             { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" }
           ],
           "main": [
-            { "catalogKey": "machine-chest-press", "displayName": "Machine Chest Press", "sets": 3, "reps": 12, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "machine-lat-pulldown", "displayName": "Machine Lat Pulldown", "sets": 3, "reps": 12, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "seated-dumbbell-shoulder-press", "displayName": "Seated Dumbbell Shoulder Press", "sets": 3, "reps": 12, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "machine-seated-row", "displayName": "Machine Seated Row", "sets": 3, "reps": 12, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "machine-triceps-extension", "displayName": "Machine Triceps Extension", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "cardio:bike", "displayName": "Steady Ride", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "bike", "modality": "indoor", "targetSec": 1080, "targetMi": null }
+            { "catalogKey": "machine-chest-press", "displayName": "Machine Chest Press", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "machine-lat-pulldown", "displayName": "Machine Lat Pulldown", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "seated-dumbbell-shoulder-press", "displayName": "Seated Dumbbell Shoulder Press", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "machine-seated-row", "displayName": "Machine Seated Row", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "machine-triceps-extension", "displayName": "Machine Triceps Extension", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "cardio:bike", "displayName": "Steady Ride", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "bike", "modality": "indoor", "targetSec": 900, "targetMi": null }
           ]
         },
         {
@@ -147,12 +148,12 @@
             { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
           ],
           "main": [
-            { "catalogKey": "machine-leg-press", "displayName": "Machine Leg Press", "sets": 3, "reps": 12, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "dumbbell-goblet-squat", "displayName": "Dumbbell Goblet Squat", "sets": 3, "reps": 12, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "seated-leg-curl-machine", "displayName": "Seated Leg Curl Machine", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 3, "reps": 12, "unit": "reps", "per": "leg", "restSec": 90 },
-            { "catalogKey": "seated-calf-raise-machine", "displayName": "Seated Calf Raise Machine", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "cardio:walk", "displayName": "Steady Incline Walk", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "walk", "modality": "indoor", "targetSec": 1080, "targetMi": null }
+            { "catalogKey": "machine-leg-press", "displayName": "Machine Leg Press", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "dumbbell-goblet-squat", "displayName": "Dumbbell Goblet Squat", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "seated-leg-curl-machine", "displayName": "Seated Leg Curl Machine", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "per": "leg", "restSec": 90 },
+            { "catalogKey": "seated-calf-raise-machine", "displayName": "Seated Calf Raise Machine", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "cardio:walk", "displayName": "Steady Incline Walk", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "walk", "modality": "indoor", "targetSec": 900, "targetMi": null }
           ]
         },
         {
@@ -166,20 +167,21 @@
             { "name": "Scapular Pull-Up", "detail": "8 reps", "text": "Scapular Pull-Up — 8 reps" }
           ],
           "main": [
-            { "catalogKey": "chest-supported-row-machine", "displayName": "Chest-Supported Row Machine", "sets": 3, "reps": 12, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "machine-incline-chest-press", "displayName": "Machine Incline Chest Press", "sets": 3, "reps": 12, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "machine-rear-delt-fly", "displayName": "Machine Rear Delt Fly", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "chest-supported-row-machine", "displayName": "Chest-Supported Row Machine", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "machine-incline-chest-press", "displayName": "Machine Incline Chest Press", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "machine-rear-delt-fly", "displayName": "Machine Rear Delt Fly", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 75 },
             {
               "catalogKey": "assisted-pull-up-machine",
               "displayName": "Assisted Pull-Up Machine",
-              "sets": 3,
-              "reps": 12,
+              "sets": 4,
+              "reps": 8,
+              "repsMax": 12,
               "unit": "reps",
               "restSec": 90,
-              "substitution": { "catalogKey": "machine-lat-pulldown", "name": "Machine Lat Pulldown", "sets": 3, "reps": 12, "unit": "reps" }
+              "substitution": { "catalogKey": "machine-lat-pulldown", "name": "Machine Lat Pulldown", "sets": 4, "reps": 8, "unit": "reps" }
             },
-            { "catalogKey": "machine-biceps-curl", "displayName": "Machine Biceps Curl", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "cardio:elliptical", "displayName": "Steady Elliptical", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "elliptical", "modality": "indoor", "targetSec": 1080, "targetMi": null }
+            { "catalogKey": "machine-biceps-curl", "displayName": "Machine Biceps Curl", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "cardio:elliptical", "displayName": "Steady Elliptical", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "elliptical", "modality": "indoor", "targetSec": 900, "targetMi": null }
           ]
         },
         {
@@ -193,12 +195,12 @@
             { "name": "Bird Dog", "detail": "8 each side", "text": "Bird Dog — 8 each side" }
           ],
           "main": [
-            { "catalogKey": "hip-thrust-machine", "displayName": "Hip Thrust Machine", "sets": 3, "reps": 12, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "dumbbell-romanian-deadlift", "displayName": "Dumbbell Romanian Deadlift", "sets": 3, "reps": 12, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "leg-extension-machine", "displayName": "Leg Extension Machine", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "dumbbell-step-up", "displayName": "Dumbbell Step-Up", "sets": 3, "reps": 12, "unit": "reps", "per": "leg", "restSec": 90 },
-            { "catalogKey": "machine-back-extension", "displayName": "Machine Back Extension", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "cardio:walk", "displayName": "Steady Incline Walk", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "walk", "modality": "indoor", "targetSec": 1080, "targetMi": null }
+            { "catalogKey": "hip-thrust-machine", "displayName": "Hip Thrust Machine", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "dumbbell-romanian-deadlift", "displayName": "Dumbbell Romanian Deadlift", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "leg-extension-machine", "displayName": "Leg Extension Machine", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "dumbbell-step-up", "displayName": "Dumbbell Step-Up", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "per": "leg", "restSec": 90 },
+            { "catalogKey": "machine-back-extension", "displayName": "Machine Back Extension", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "cardio:walk", "displayName": "Steady Incline Walk", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "walk", "modality": "indoor", "targetSec": 900, "targetMi": null }
           ]
         }
       ]
@@ -219,13 +221,13 @@
             { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" }
           ],
           "main": [
-            { "catalogKey": "machine-chest-press", "displayName": "Machine Chest Press", "sets": 3, "reps": 12, "unit": "reps", "restSec": 75 },
-            { "catalogKey": "machine-lat-pulldown", "displayName": "Machine Lat Pulldown", "sets": 3, "reps": 12, "unit": "reps", "restSec": 75 },
-            { "catalogKey": "seated-dumbbell-shoulder-press", "displayName": "Seated Dumbbell Shoulder Press", "sets": 3, "reps": 12, "unit": "reps", "restSec": 75 },
-            { "catalogKey": "machine-seated-row", "displayName": "Machine Seated Row", "sets": 3, "reps": 12, "unit": "reps", "restSec": 75 },
-            { "catalogKey": "machine-triceps-extension", "displayName": "Machine Triceps Extension", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "machine-biceps-curl", "displayName": "Machine Biceps Curl", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "cardio:bike", "displayName": "Steady Ride", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "bike", "modality": "indoor", "targetSec": 1200, "targetMi": null }
+            { "catalogKey": "machine-chest-press", "displayName": "Machine Chest Press", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "machine-lat-pulldown", "displayName": "Machine Lat Pulldown", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "seated-dumbbell-shoulder-press", "displayName": "Seated Dumbbell Shoulder Press", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "machine-seated-row", "displayName": "Machine Seated Row", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "machine-triceps-extension", "displayName": "Machine Triceps Extension", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "machine-biceps-curl", "displayName": "Machine Biceps Curl", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "cardio:bike", "displayName": "Steady Ride", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "bike", "modality": "indoor", "targetSec": 1080, "targetMi": null }
           ]
         },
         {
@@ -239,13 +241,13 @@
             { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
           ],
           "main": [
-            { "catalogKey": "machine-leg-press", "displayName": "Machine Leg Press", "sets": 3, "reps": 12, "unit": "reps", "restSec": 75 },
-            { "catalogKey": "dumbbell-goblet-squat", "displayName": "Dumbbell Goblet Squat", "sets": 3, "reps": 12, "unit": "reps", "restSec": 75 },
-            { "catalogKey": "seated-leg-curl-machine", "displayName": "Seated Leg Curl Machine", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 3, "reps": 12, "unit": "reps", "per": "leg", "restSec": 75 },
-            { "catalogKey": "seated-calf-raise-machine", "displayName": "Seated Calf Raise Machine", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "dead-bug", "displayName": "Dead Bug", "sets": 3, "reps": 12, "unit": "reps", "per": "side", "restSec": 60 },
-            { "catalogKey": "cardio:walk", "displayName": "Steady Incline Walk", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "walk", "modality": "indoor", "targetSec": 1200, "targetMi": null }
+            { "catalogKey": "machine-leg-press", "displayName": "Machine Leg Press", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "dumbbell-goblet-squat", "displayName": "Dumbbell Goblet Squat", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "seated-leg-curl-machine", "displayName": "Seated Leg Curl Machine", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "per": "leg", "restSec": 90 },
+            { "catalogKey": "seated-calf-raise-machine", "displayName": "Seated Calf Raise Machine", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "dead-bug", "displayName": "Dead Bug", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "per": "side", "restSec": 75 },
+            { "catalogKey": "cardio:walk", "displayName": "Steady Incline Walk", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "walk", "modality": "indoor", "targetSec": 1080, "targetMi": null }
           ]
         },
         {
@@ -259,21 +261,22 @@
             { "name": "Scapular Pull-Up", "detail": "8 reps", "text": "Scapular Pull-Up — 8 reps" }
           ],
           "main": [
-            { "catalogKey": "chest-supported-row-machine", "displayName": "Chest-Supported Row Machine", "sets": 3, "reps": 12, "unit": "reps", "restSec": 75 },
-            { "catalogKey": "machine-incline-chest-press", "displayName": "Machine Incline Chest Press", "sets": 3, "reps": 12, "unit": "reps", "restSec": 75 },
-            { "catalogKey": "machine-rear-delt-fly", "displayName": "Machine Rear Delt Fly", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "chest-supported-row-machine", "displayName": "Chest-Supported Row Machine", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "machine-incline-chest-press", "displayName": "Machine Incline Chest Press", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "machine-rear-delt-fly", "displayName": "Machine Rear Delt Fly", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 75 },
             {
               "catalogKey": "assisted-pull-up-machine",
               "displayName": "Assisted Pull-Up Machine",
-              "sets": 3,
-              "reps": 12,
+              "sets": 4,
+              "reps": 8,
+              "repsMax": 12,
               "unit": "reps",
-              "restSec": 75,
-              "substitution": { "catalogKey": "machine-lat-pulldown", "name": "Machine Lat Pulldown", "sets": 3, "reps": 12, "unit": "reps" }
+              "restSec": 90,
+              "substitution": { "catalogKey": "machine-lat-pulldown", "name": "Machine Lat Pulldown", "sets": 4, "reps": 8, "unit": "reps" }
             },
-            { "catalogKey": "machine-biceps-curl", "displayName": "Machine Biceps Curl", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "machine-lateral-raise", "displayName": "Machine Lateral Raise", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "cardio:elliptical", "displayName": "Steady Elliptical", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "elliptical", "modality": "indoor", "targetSec": 1200, "targetMi": null }
+            { "catalogKey": "machine-biceps-curl", "displayName": "Machine Biceps Curl", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "machine-lateral-raise", "displayName": "Machine Lateral Raise", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "cardio:elliptical", "displayName": "Steady Elliptical", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "elliptical", "modality": "indoor", "targetSec": 1080, "targetMi": null }
           ]
         },
         {
@@ -287,13 +290,13 @@
             { "name": "Bird Dog", "detail": "8 each side", "text": "Bird Dog — 8 each side" }
           ],
           "main": [
-            { "catalogKey": "hip-thrust-machine", "displayName": "Hip Thrust Machine", "sets": 3, "reps": 12, "unit": "reps", "restSec": 75 },
-            { "catalogKey": "dumbbell-romanian-deadlift", "displayName": "Dumbbell Romanian Deadlift", "sets": 3, "reps": 12, "unit": "reps", "restSec": 75 },
-            { "catalogKey": "leg-extension-machine", "displayName": "Leg Extension Machine", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "dumbbell-step-up", "displayName": "Dumbbell Step-Up", "sets": 3, "reps": 12, "unit": "reps", "per": "leg", "restSec": 75 },
-            { "catalogKey": "machine-back-extension", "displayName": "Machine Back Extension", "sets": 3, "reps": 12, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "bird-dog", "displayName": "Bird Dog", "sets": 3, "reps": 12, "unit": "reps", "per": "side", "restSec": 60 },
-            { "catalogKey": "cardio:walk", "displayName": "Steady Incline Walk", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "walk", "modality": "indoor", "targetSec": 1200, "targetMi": null }
+            { "catalogKey": "hip-thrust-machine", "displayName": "Hip Thrust Machine", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "dumbbell-romanian-deadlift", "displayName": "Dumbbell Romanian Deadlift", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "leg-extension-machine", "displayName": "Leg Extension Machine", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "dumbbell-step-up", "displayName": "Dumbbell Step-Up", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "per": "leg", "restSec": 90 },
+            { "catalogKey": "machine-back-extension", "displayName": "Machine Back Extension", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "bird-dog", "displayName": "Bird Dog", "sets": 4, "reps": 8, "repsMax": 12, "unit": "reps", "per": "side", "restSec": 75 },
+            { "catalogKey": "cardio:walk", "displayName": "Steady Incline Walk", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "walk", "modality": "indoor", "targetSec": 1080, "targetMi": null }
           ]
         }
       ]
@@ -314,10 +317,10 @@
             { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" }
           ],
           "main": [
-            { "catalogKey": "machine-chest-press", "displayName": "Machine Chest Press", "sets": 3, "reps": 8, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "machine-lat-pulldown", "displayName": "Machine Lat Pulldown", "sets": 3, "reps": 8, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "seated-dumbbell-shoulder-press", "displayName": "Seated Dumbbell Shoulder Press", "sets": 3, "reps": 8, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "machine-seated-row", "displayName": "Machine Seated Row", "sets": 3, "reps": 8, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "machine-chest-press", "displayName": "Machine Chest Press", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "machine-lat-pulldown", "displayName": "Machine Lat Pulldown", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "seated-dumbbell-shoulder-press", "displayName": "Seated Dumbbell Shoulder Press", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "machine-seated-row", "displayName": "Machine Seated Row", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
             { "catalogKey": "cardio:walk", "displayName": "Easy Walk", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "walk", "modality": "indoor", "targetSec": 720, "targetMi": null }
           ]
         },
@@ -332,10 +335,10 @@
             { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
           ],
           "main": [
-            { "catalogKey": "machine-leg-press", "displayName": "Machine Leg Press", "sets": 3, "reps": 8, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "dumbbell-goblet-squat", "displayName": "Dumbbell Goblet Squat", "sets": 3, "reps": 8, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "seated-leg-curl-machine", "displayName": "Seated Leg Curl Machine", "sets": 3, "reps": 8, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 3, "reps": 8, "unit": "reps", "per": "leg", "restSec": 90 },
+            { "catalogKey": "machine-leg-press", "displayName": "Machine Leg Press", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "dumbbell-goblet-squat", "displayName": "Dumbbell Goblet Squat", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "seated-leg-curl-machine", "displayName": "Seated Leg Curl Machine", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "per": "leg", "restSec": 90 },
             { "catalogKey": "cardio:walk", "displayName": "Easy Walk", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "walk", "modality": "indoor", "targetSec": 720, "targetMi": null }
           ]
         },
@@ -350,14 +353,15 @@
             { "name": "Scapular Pull-Up", "detail": "8 reps", "text": "Scapular Pull-Up — 8 reps" }
           ],
           "main": [
-            { "catalogKey": "chest-supported-row-machine", "displayName": "Chest-Supported Row Machine", "sets": 3, "reps": 8, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "machine-incline-chest-press", "displayName": "Machine Incline Chest Press", "sets": 3, "reps": 8, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "machine-rear-delt-fly", "displayName": "Machine Rear Delt Fly", "sets": 3, "reps": 8, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "chest-supported-row-machine", "displayName": "Chest-Supported Row Machine", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "machine-incline-chest-press", "displayName": "Machine Incline Chest Press", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "machine-rear-delt-fly", "displayName": "Machine Rear Delt Fly", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 75 },
             {
               "catalogKey": "assisted-pull-up-machine",
               "displayName": "Assisted Pull-Up Machine",
               "sets": 3,
               "reps": 8,
+              "repsMax": 12,
               "unit": "reps",
               "restSec": 90,
               "substitution": { "catalogKey": "machine-lat-pulldown", "name": "Machine Lat Pulldown", "sets": 3, "reps": 8, "unit": "reps" }
@@ -376,10 +380,10 @@
             { "name": "Bird Dog", "detail": "8 each side", "text": "Bird Dog — 8 each side" }
           ],
           "main": [
-            { "catalogKey": "hip-thrust-machine", "displayName": "Hip Thrust Machine", "sets": 3, "reps": 8, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "dumbbell-romanian-deadlift", "displayName": "Dumbbell Romanian Deadlift", "sets": 3, "reps": 8, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "leg-extension-machine", "displayName": "Leg Extension Machine", "sets": 3, "reps": 8, "unit": "reps", "restSec": 90 },
-            { "catalogKey": "dumbbell-step-up", "displayName": "Dumbbell Step-Up", "sets": 3, "reps": 8, "unit": "reps", "per": "leg", "restSec": 90 },
+            { "catalogKey": "hip-thrust-machine", "displayName": "Hip Thrust Machine", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "dumbbell-romanian-deadlift", "displayName": "Dumbbell Romanian Deadlift", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "leg-extension-machine", "displayName": "Leg Extension Machine", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "dumbbell-step-up", "displayName": "Dumbbell Step-Up", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "per": "leg", "restSec": 90 },
             { "catalogKey": "cardio:walk", "displayName": "Easy Walk", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "walk", "modality": "indoor", "targetSec": 720, "targetMi": null }
           ]
         }
@@ -401,13 +405,13 @@
             { "name": "Scapular Push-Up", "detail": "10 reps", "text": "Scapular Push-Up — 10 reps" }
           ],
           "main": [
-            { "catalogKey": "machine-chest-press", "displayName": "Machine Chest Press", "sets": 3, "reps": 15, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "machine-lat-pulldown", "displayName": "Machine Lat Pulldown", "sets": 3, "reps": 15, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "seated-dumbbell-shoulder-press", "displayName": "Seated Dumbbell Shoulder Press", "sets": 3, "reps": 15, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "machine-seated-row", "displayName": "Machine Seated Row", "sets": 3, "reps": 15, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "machine-triceps-extension", "displayName": "Machine Triceps Extension", "sets": 3, "reps": 15, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "machine-biceps-curl", "displayName": "Machine Biceps Curl", "sets": 3, "reps": 15, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "cardio:bike", "displayName": "Steady Ride", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "bike", "modality": "indoor", "targetSec": 1320, "targetMi": null }
+            { "catalogKey": "machine-chest-press", "displayName": "Machine Chest Press", "sets": 4, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "machine-lat-pulldown", "displayName": "Machine Lat Pulldown", "sets": 4, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "seated-dumbbell-shoulder-press", "displayName": "Seated Dumbbell Shoulder Press", "sets": 4, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "machine-seated-row", "displayName": "Machine Seated Row", "sets": 4, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "machine-triceps-extension", "displayName": "Machine Triceps Extension", "sets": 4, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "machine-biceps-curl", "displayName": "Machine Biceps Curl", "sets": 4, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "cardio:bike", "displayName": "Steady Ride", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "bike", "modality": "indoor", "targetSec": 1080, "targetMi": null }
           ]
         },
         {
@@ -421,13 +425,13 @@
             { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
           ],
           "main": [
-            { "catalogKey": "machine-leg-press", "displayName": "Machine Leg Press", "sets": 3, "reps": 15, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "dumbbell-goblet-squat", "displayName": "Dumbbell Goblet Squat", "sets": 3, "reps": 15, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "seated-leg-curl-machine", "displayName": "Seated Leg Curl Machine", "sets": 3, "reps": 15, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 3, "reps": 15, "unit": "reps", "per": "leg", "restSec": 60 },
-            { "catalogKey": "seated-calf-raise-machine", "displayName": "Seated Calf Raise Machine", "sets": 3, "reps": 15, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "dead-bug", "displayName": "Dead Bug", "sets": 3, "reps": 15, "unit": "reps", "per": "side", "restSec": 60 },
-            { "catalogKey": "cardio:walk", "displayName": "Steady Incline Walk", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "walk", "modality": "indoor", "targetSec": 1320, "targetMi": null }
+            { "catalogKey": "machine-leg-press", "displayName": "Machine Leg Press", "sets": 4, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "dumbbell-goblet-squat", "displayName": "Dumbbell Goblet Squat", "sets": 4, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "seated-leg-curl-machine", "displayName": "Seated Leg Curl Machine", "sets": 4, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "dumbbell-walking-lunge", "displayName": "Dumbbell Walking Lunge", "sets": 4, "reps": 10, "repsMax": 15, "unit": "reps", "per": "leg", "restSec": 90 },
+            { "catalogKey": "seated-calf-raise-machine", "displayName": "Seated Calf Raise Machine", "sets": 4, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "dead-bug", "displayName": "Dead Bug", "sets": 4, "reps": 10, "repsMax": 15, "unit": "reps", "per": "side", "restSec": 75 },
+            { "catalogKey": "cardio:walk", "displayName": "Steady Incline Walk", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "walk", "modality": "indoor", "targetSec": 1080, "targetMi": null }
           ]
         },
         {
@@ -441,21 +445,22 @@
             { "name": "Scapular Pull-Up", "detail": "8 reps", "text": "Scapular Pull-Up — 8 reps" }
           ],
           "main": [
-            { "catalogKey": "chest-supported-row-machine", "displayName": "Chest-Supported Row Machine", "sets": 3, "reps": 15, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "machine-incline-chest-press", "displayName": "Machine Incline Chest Press", "sets": 3, "reps": 15, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "machine-rear-delt-fly", "displayName": "Machine Rear Delt Fly", "sets": 3, "reps": 15, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "chest-supported-row-machine", "displayName": "Chest-Supported Row Machine", "sets": 4, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "machine-incline-chest-press", "displayName": "Machine Incline Chest Press", "sets": 4, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "machine-rear-delt-fly", "displayName": "Machine Rear Delt Fly", "sets": 4, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 },
             {
               "catalogKey": "assisted-pull-up-machine",
               "displayName": "Assisted Pull-Up Machine",
-              "sets": 3,
-              "reps": 15,
+              "sets": 4,
+              "reps": 10,
+              "repsMax": 15,
               "unit": "reps",
-              "restSec": 60,
-              "substitution": { "catalogKey": "machine-lat-pulldown", "name": "Machine Lat Pulldown", "sets": 3, "reps": 15, "unit": "reps" }
+              "restSec": 90,
+              "substitution": { "catalogKey": "machine-lat-pulldown", "name": "Machine Lat Pulldown", "sets": 4, "reps": 10, "unit": "reps" }
             },
-            { "catalogKey": "machine-biceps-curl", "displayName": "Machine Biceps Curl", "sets": 3, "reps": 15, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "machine-lateral-raise", "displayName": "Machine Lateral Raise", "sets": 3, "reps": 15, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "cardio:elliptical", "displayName": "Steady Elliptical", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "elliptical", "modality": "indoor", "targetSec": 1320, "targetMi": null }
+            { "catalogKey": "machine-biceps-curl", "displayName": "Machine Biceps Curl", "sets": 4, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "machine-lateral-raise", "displayName": "Machine Lateral Raise", "sets": 4, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "cardio:elliptical", "displayName": "Steady Elliptical", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "elliptical", "modality": "indoor", "targetSec": 1080, "targetMi": null }
           ]
         },
         {
@@ -469,13 +474,13 @@
             { "name": "Bird Dog", "detail": "8 each side", "text": "Bird Dog — 8 each side" }
           ],
           "main": [
-            { "catalogKey": "hip-thrust-machine", "displayName": "Hip Thrust Machine", "sets": 3, "reps": 15, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "dumbbell-romanian-deadlift", "displayName": "Dumbbell Romanian Deadlift", "sets": 3, "reps": 15, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "leg-extension-machine", "displayName": "Leg Extension Machine", "sets": 3, "reps": 15, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "dumbbell-step-up", "displayName": "Dumbbell Step-Up", "sets": 3, "reps": 15, "unit": "reps", "per": "leg", "restSec": 60 },
-            { "catalogKey": "machine-back-extension", "displayName": "Machine Back Extension", "sets": 3, "reps": 15, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "bird-dog", "displayName": "Bird Dog", "sets": 3, "reps": 15, "unit": "reps", "per": "side", "restSec": 60 },
-            { "catalogKey": "cardio:walk", "displayName": "Steady Incline Walk", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "walk", "modality": "indoor", "targetSec": 1320, "targetMi": null }
+            { "catalogKey": "hip-thrust-machine", "displayName": "Hip Thrust Machine", "sets": 4, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "dumbbell-romanian-deadlift", "displayName": "Dumbbell Romanian Deadlift", "sets": 4, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 90 },
+            { "catalogKey": "leg-extension-machine", "displayName": "Leg Extension Machine", "sets": 4, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "dumbbell-step-up", "displayName": "Dumbbell Step-Up", "sets": 4, "reps": 10, "repsMax": 15, "unit": "reps", "per": "leg", "restSec": 90 },
+            { "catalogKey": "machine-back-extension", "displayName": "Machine Back Extension", "sets": 4, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 75 },
+            { "catalogKey": "bird-dog", "displayName": "Bird Dog", "sets": 4, "reps": 10, "repsMax": 15, "unit": "reps", "per": "side", "restSec": 75 },
+            { "catalogKey": "cardio:walk", "displayName": "Steady Incline Walk", "sets": 1, "reps": 0, "unit": "minutes", "kind": "cardio", "activity": "walk", "modality": "indoor", "targetSec": 1080, "targetMi": null }
           ]
         }
       ]

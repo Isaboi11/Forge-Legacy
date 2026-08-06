@@ -132,8 +132,13 @@ test('Full Frame’s ranges survive adoption — all of them', () => {
 });
 
 test('a program that authors no ranges is completely unchanged', () => {
-  // Body Recomposition Foundation is flat reps throughout — the regression case for every edit above.
-  const adopted = prescriptions(structureFromDefinition(def('body-recomposition-foundation.json')));
+  /*
+   * Athletic Conditioning Foundation is flat reps throughout — the regression case for every edit above.
+   * It replaced Body Recomposition Foundation as the control on 2026-08-06, when a coaching audit gave
+   * that program ranges. A control that quietly stops being a control is worse than none: this test went
+   * red the moment it happened, which is the behaviour to want.
+   */
+  const adopted = prescriptions(structureFromDefinition(def('athletic-conditioning-foundation.json')));
   assert.ok(adopted.length > 0);
   assert.ok(adopted.every((x) => x.repsMax == null), 'a range appeared in a program that authored none');
   const strength = adopted.filter((x) => x.kind !== 'cardio');

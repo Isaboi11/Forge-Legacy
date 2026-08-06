@@ -33,10 +33,20 @@
           "main": [
             { "catalogKey": "bodyweight-squat", "displayName": "Bodyweight Squat", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 60 },
             { "catalogKey": "knee-push-up", "displayName": "Knee Push-Up", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "inverted-row", "displayName": "Inverted Row", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 60, "optional": true },
+            {
+              "catalogKey": "inverted-row",
+              "displayName": "Inverted Row",
+              "sets": 3,
+              "reps": 8,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 60,
+              "optional": true,
+              "substitution": { "catalogKey": "band-seated-row", "name": "Band Seated Row", "sets": 3, "reps": 8, "unit": "reps" }
+            },
             { "catalogKey": "glute-bridge", "displayName": "Glute Bridge", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 60 },
             { "catalogKey": "dead-bug", "displayName": "Dead Bug", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "per": "side", "restSec": 60 },
-            { "catalogKey": "calf-raise", "displayName": "Calf Raise", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 60 }
+            { "catalogKey": "scapular-wall-slide", "displayName": "Scapular Wall Slide", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 60 }
           ]
         },
         {
@@ -52,7 +62,17 @@
           "main": [
             { "catalogKey": "incline-push-up", "displayName": "Incline Push-Up", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 60 },
             { "catalogKey": "reverse-lunge", "displayName": "Reverse Lunge", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "per": "leg", "restSec": 60 },
-            { "catalogKey": "inverted-row", "displayName": "Inverted Row", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 60, "optional": true },
+            {
+              "catalogKey": "inverted-row",
+              "displayName": "Inverted Row",
+              "sets": 3,
+              "reps": 8,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 60,
+              "optional": true,
+              "substitution": { "catalogKey": "band-seated-row", "name": "Band Seated Row", "sets": 3, "reps": 8, "unit": "reps" }
+            },
             { "catalogKey": "superman-hold", "displayName": "Superman Hold", "sets": 3, "reps": 0, "unit": "seconds", "durationSec": 20, "restSec": 60 },
             { "catalogKey": "bird-dog", "displayName": "Bird Dog", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "per": "side", "restSec": 60 },
             { "catalogKey": "scapular-wall-slide", "displayName": "Scapular Wall Slide", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 60 }
@@ -72,9 +92,19 @@
             { "catalogKey": "glute-bridge", "displayName": "Glute Bridge", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 60 },
             { "catalogKey": "wall-sit", "displayName": "Wall Sit", "sets": 3, "reps": 0, "unit": "seconds", "durationSec": 20, "restSec": 60 },
             { "catalogKey": "incline-push-up", "displayName": "Incline Push-Up", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "inverted-row", "displayName": "Inverted Row", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 60, "optional": true },
+            {
+              "catalogKey": "inverted-row",
+              "displayName": "Inverted Row",
+              "sets": 3,
+              "reps": 8,
+              "repsMax": 12,
+              "unit": "reps",
+              "restSec": 60,
+              "optional": true,
+              "substitution": { "catalogKey": "band-seated-row", "name": "Band Seated Row", "sets": 3, "reps": 8, "unit": "reps" }
+            },
             { "catalogKey": "crunch", "displayName": "Crunch", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "calf-raise", "displayName": "Calf Raise", "sets": 3, "reps": 8, "repsMax": 12, "unit": "reps", "restSec": 60 }
+            { "catalogKey": "superman-hold", "displayName": "Superman Hold", "sets": 3, "reps": 0, "unit": "seconds", "durationSec": 20, "restSec": 60 }
           ]
         }
       ]
@@ -96,11 +126,21 @@
           ],
           "main": [
             { "catalogKey": "prisoner-squat", "displayName": "Prisoner Squat", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "push-up", "displayName": "Push-Up", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "inverted-row", "displayName": "Inverted Row", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60, "optional": true },
+            { "catalogKey": "incline-push-up", "displayName": "Incline Push-Up", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60 },
+            {
+              "catalogKey": "inverted-row",
+              "displayName": "Inverted Row",
+              "sets": 3,
+              "reps": 10,
+              "repsMax": 15,
+              "unit": "reps",
+              "restSec": 60,
+              "optional": true,
+              "substitution": { "catalogKey": "band-seated-row", "name": "Band Seated Row", "sets": 3, "reps": 10, "unit": "reps" }
+            },
             { "catalogKey": "single-leg-glute-bridge", "displayName": "Single-Leg Glute Bridge", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "per": "leg", "restSec": 60 },
             { "catalogKey": "plank", "displayName": "Plank", "sets": 3, "reps": 0, "unit": "seconds", "durationSec": 30, "restSec": 60 },
-            { "catalogKey": "calf-raise", "displayName": "Calf Raise", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60 }
+            { "catalogKey": "scapular-push-up", "displayName": "Scapular Push-Up", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60 }
           ]
         },
         {
@@ -116,7 +156,17 @@
           "main": [
             { "catalogKey": "push-up", "displayName": "Push-Up", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60 },
             { "catalogKey": "forward-lunge", "displayName": "Forward Lunge", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "per": "leg", "restSec": 60 },
-            { "catalogKey": "inverted-row", "displayName": "Inverted Row", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60, "optional": true },
+            {
+              "catalogKey": "inverted-row",
+              "displayName": "Inverted Row",
+              "sets": 3,
+              "reps": 10,
+              "repsMax": 15,
+              "unit": "reps",
+              "restSec": 60,
+              "optional": true,
+              "substitution": { "catalogKey": "band-seated-row", "name": "Band Seated Row", "sets": 3, "reps": 10, "unit": "reps" }
+            },
             { "catalogKey": "back-extension", "displayName": "Back Extension", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60 },
             { "catalogKey": "side-plank", "displayName": "Side Plank", "sets": 3, "reps": 0, "unit": "seconds", "per": "side", "durationSec": 30, "restSec": 60 },
             { "catalogKey": "scapular-push-up", "displayName": "Scapular Push-Up", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60 }
@@ -136,9 +186,19 @@
             { "catalogKey": "bodyweight-good-morning", "displayName": "Bodyweight Good Morning", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60 },
             { "catalogKey": "bodyweight-squat", "displayName": "Bodyweight Squat", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60 },
             { "catalogKey": "wide-push-up", "displayName": "Wide Push-Up", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "inverted-row", "displayName": "Inverted Row", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60, "optional": true },
+            {
+              "catalogKey": "inverted-row",
+              "displayName": "Inverted Row",
+              "sets": 3,
+              "reps": 10,
+              "repsMax": 15,
+              "unit": "reps",
+              "restSec": 60,
+              "optional": true,
+              "substitution": { "catalogKey": "band-seated-row", "name": "Band Seated Row", "sets": 3, "reps": 10, "unit": "reps" }
+            },
             { "catalogKey": "reverse-crunch", "displayName": "Reverse Crunch", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "single-leg-calf-raise", "displayName": "Single-Leg Calf Raise", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "per": "leg", "restSec": 60 }
+            { "catalogKey": "scapular-wall-slide", "displayName": "Scapular Wall Slide", "sets": 3, "reps": 10, "repsMax": 15, "unit": "reps", "restSec": 60 }
           ]
         }
       ]
@@ -160,11 +220,21 @@
           ],
           "main": [
             { "catalogKey": "split-squat", "displayName": "Split Squat", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "per": "leg", "restSec": 60 },
-            { "catalogKey": "close-grip-push-up", "displayName": "Close-Grip Push-Up", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "underhand-inverted-row", "displayName": "Underhand Inverted Row", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60, "optional": true },
+            { "catalogKey": "push-up", "displayName": "Push-Up", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            {
+              "catalogKey": "underhand-inverted-row",
+              "displayName": "Underhand Inverted Row",
+              "sets": 3,
+              "reps": 12,
+              "repsMax": 20,
+              "unit": "reps",
+              "restSec": 60,
+              "optional": true,
+              "substitution": { "catalogKey": "band-seated-row", "name": "Band Seated Row", "sets": 3, "reps": 12, "unit": "reps" }
+            },
             { "catalogKey": "bodyweight-good-morning", "displayName": "Bodyweight Good Morning", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
             { "catalogKey": "hollow-body-hold", "displayName": "Hollow Body Hold", "sets": 3, "reps": 0, "unit": "seconds", "durationSec": 40, "restSec": 60 },
-            { "catalogKey": "single-leg-calf-raise", "displayName": "Single-Leg Calf Raise", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "per": "leg", "restSec": 60 }
+            { "catalogKey": "superman-hold", "displayName": "Superman Hold", "sets": 3, "reps": 0, "unit": "seconds", "durationSec": 40, "restSec": 60 }
           ]
         },
         {
@@ -178,9 +248,19 @@
             { "name": "World's Greatest Stretch", "detail": "5 each side", "text": "World's Greatest Stretch — 5 each side" }
           ],
           "main": [
-            { "catalogKey": "diamond-push-up", "displayName": "Diamond Push-Up", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
+            { "catalogKey": "close-grip-push-up", "displayName": "Close-Grip Push-Up", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
             { "catalogKey": "walking-lunge", "displayName": "Walking Lunge", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "per": "leg", "restSec": 60 },
-            { "catalogKey": "feet-elevated-inverted-row", "displayName": "Feet-Elevated Inverted Row", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60, "optional": true },
+            {
+              "catalogKey": "feet-elevated-inverted-row",
+              "displayName": "Feet-Elevated Inverted Row",
+              "sets": 3,
+              "reps": 12,
+              "repsMax": 20,
+              "unit": "reps",
+              "restSec": 60,
+              "optional": true,
+              "substitution": { "catalogKey": "band-seated-row", "name": "Band Seated Row", "sets": 3, "reps": 12, "unit": "reps" }
+            },
             { "catalogKey": "single-leg-glute-bridge", "displayName": "Single-Leg Glute Bridge", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "per": "leg", "restSec": 60 },
             { "catalogKey": "plank-shoulder-tap", "displayName": "Plank Shoulder Tap", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "per": "side", "restSec": 60 },
             { "catalogKey": "pike-push-up", "displayName": "Pike Push-Up", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 }
@@ -200,9 +280,19 @@
             { "catalogKey": "single-leg-glute-bridge", "displayName": "Single-Leg Glute Bridge", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "per": "leg", "restSec": 60 },
             { "catalogKey": "lateral-lunge", "displayName": "Lateral Lunge", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "per": "leg", "restSec": 60 },
             { "catalogKey": "push-up", "displayName": "Push-Up", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "inverted-row", "displayName": "Inverted Row", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60, "optional": true },
+            {
+              "catalogKey": "inverted-row",
+              "displayName": "Inverted Row",
+              "sets": 3,
+              "reps": 12,
+              "repsMax": 20,
+              "unit": "reps",
+              "restSec": 60,
+              "optional": true,
+              "substitution": { "catalogKey": "band-seated-row", "name": "Band Seated Row", "sets": 3, "reps": 12, "unit": "reps" }
+            },
             { "catalogKey": "v-up", "displayName": "V-Up", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 },
-            { "catalogKey": "single-leg-calf-raise", "displayName": "Single-Leg Calf Raise", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "per": "leg", "restSec": 60 }
+            { "catalogKey": "scapular-push-up", "displayName": "Scapular Push-Up", "sets": 3, "reps": 12, "repsMax": 20, "unit": "reps", "restSec": 60 }
           ]
         }
       ]
