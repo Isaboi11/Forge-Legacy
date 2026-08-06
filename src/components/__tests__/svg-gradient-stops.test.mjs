@@ -48,3 +48,49 @@ test('no SVG gradient stop carries its alpha inside an rgba() string', () => {
       hits,
   );
 });
+
+/**
+ * ══ THE HOLE THE RULE ABOVE LEFT, AND WHAT WENT THROUGH IT ══
+ *
+ * The literal rule can only see `stopColor="rgba(`. It cannot see `stopColor={r.color}` — and that is
+ * exactly how the same defect survived the pass that added this file.
+ *
+ * `ScreenBackground` renders every screen-level radial glow from `ScreenRadial.color`, an rgba string
+ * transcribed verbatim from the `.dc`. It was passed straight into `<Stop stopColor={r.color}>`, so on
+ * device the 6%-opacity steel apex haze painted as a SOLID slab of #587CA0 and the 5% bronze radials
+ * as solid bronze — on Friends Feed and Squad Detail — while every web preview looked correct. Fixed
+ * by splitting the colour through `svgStop()`.
+ *
+ * The rule below is what would have caught it, and it generalises: **a stop whose colour is a computed
+ * expression must state its opacity.** A hex literal is provably alpha-free and needs no ceremony; a
+ * variable is not, and the author declaring `stopOpacity` is what forces them to think about the alpha
+ * that `react-native-svg` is about to throw away. Six provably-safe stops (a bronze token, five rank
+ * bevel colours) gained an explicit `stopOpacity={1}`, which reads better than the silence did.
+ */
+test('a <Stop> with a computed colour states its opacity', () => {
+  let hits = '';
+  try {
+    hits = execSync(
+      'git grep -n "<Stop" -- src ":!src/components/__tests__/svg-gradient-stops.test.mjs"',
+      { maxBuffer: 1e8 },
+    )
+      .toString()
+      .trim();
+  } catch {
+    hits = '';
+  }
+
+  const offenders = hits
+    .split('\n')
+    .filter(Boolean)
+    // A computed colour — `stopColor={…}` — with no `stopOpacity` anywhere on the line.
+    .filter((l) => /stopColor=\{/.test(l) && !/stopOpacity/.test(l));
+
+  assert.deepEqual(
+    offenders,
+    [],
+    'A computed stopColor may hide an rgba string, whose alpha react-native-svg silently drops.\n' +
+      'Add an explicit stopOpacity — or split the colour with svgStop() from @/lib/svg-color:\n\n' +
+      offenders.join('\n'),
+  );
+});

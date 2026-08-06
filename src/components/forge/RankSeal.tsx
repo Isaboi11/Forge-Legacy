@@ -91,11 +91,11 @@ export function RankSeal({ size = 300, family = 'Foundation', level = 1 }: { siz
           <Stop offset="100%" stopColor="#090B0D" />
         </RadialGradient>
         <LinearGradient id="bevelAccent" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0%" stopColor={acc.bevel[0]} />
-          <Stop offset="16%" stopColor={acc.bevel[1]} />
-          <Stop offset="50%" stopColor={acc.bevel[2]} />
-          <Stop offset="80%" stopColor={acc.bevel[3]} />
-          <Stop offset="100%" stopColor={acc.bevel[4]} />
+          <Stop offset="0%" stopColor={acc.bevel[0]} stopOpacity={1} />
+          <Stop offset="16%" stopColor={acc.bevel[1]} stopOpacity={1} />
+          <Stop offset="50%" stopColor={acc.bevel[2]} stopOpacity={1} />
+          <Stop offset="80%" stopColor={acc.bevel[3]} stopOpacity={1} />
+          <Stop offset="100%" stopColor={acc.bevel[4]} stopOpacity={1} />
         </LinearGradient>
         <RadialGradient id="flameGlow" cx="50%" cy="50%" r="50%">
           <Stop offset="0%" stopColor={acc.glowInner} stopOpacity={glowInnerOp} />

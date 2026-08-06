@@ -122,7 +122,7 @@ export function ForgeMarkIcon({ width = 19, height = 28, rich = false }: { width
         ) : (
           <LinearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
             <Stop offset="0%" stopColor="#DCB57A" />
-            <Stop offset="52%" stopColor={flColor.bronze400} />
+            <Stop offset="52%" stopColor={flColor.bronze400} stopOpacity={1} />
             <Stop offset="100%" stopColor="#835F32" />
           </LinearGradient>
         )}

@@ -4,6 +4,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { flGradient } from '@/constants/foundation';
+import { svgStop } from '@/lib/svg-color';
 
 /**
  * ScreenBackground — the ONE background layer for every product screen. Each screen renders its
@@ -99,18 +100,35 @@ function Overlay({ overlay }: { overlay: ScreenOverlay }) {
   return <LinearGradient colors={colors} locations={locations} style={StyleSheet.absoluteFill} />;
 }
 
-/** Renders each radial as an elliptical object-bounding-box gradient filling the screen. */
+/**
+ * Renders each radial as an elliptical object-bounding-box gradient filling the screen.
+ *
+ * ⚠ THE STOP COLOUR IS SPLIT, AND IT HAS TO BE. `ScreenRadial.color` is an rgba string transcribed
+ * verbatim from the `.dc`'s `radial-gradient(…)`, and **`react-native-svg` drops the alpha out of an
+ * rgba `stopColor`** — so passing `r.color` straight in painted the 6%-opacity steel apex haze as a
+ * SOLID slab of #587CA0 on device, and the 5% bronze radials as solid bronze, while every web preview
+ * looked correct. Same defect that shipped two opaque bronze rectangles behind the Welcome logo in the
+ * first TestFlight build (`157bf34`); that pass fixed the five files with a LITERAL rgba stopColor and
+ * could not see this one, because here the string arrives in a variable.
+ *
+ * `svgStop` is applied to every stop rather than only the ones known to carry alpha — a hex or plain
+ * `rgb()` passes through untouched at opacity 1, so there is no colour an author can write here that
+ * silently loses its alpha again.
+ */
 function ScreenRadials({ radials }: { radials: readonly ScreenRadial[] }) {
   const uid = React.useId();
   return (
     <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
       <Defs>
-        {radials.map((r, i) => (
-          <RadialGradient key={i} id={`${uid}-${i}`} cx={r.cx} cy={r.cy} rx={r.rx} ry={r.ry}>
-            <Stop offset="0" stopColor={r.color} />
-            <Stop offset={String(r.stop ?? 0.6)} stopColor={r.color} stopOpacity={0} />
-          </RadialGradient>
-        ))}
+        {radials.map((r, i) => {
+          const peak = svgStop(r.color);
+          return (
+            <RadialGradient key={i} id={`${uid}-${i}`} cx={r.cx} cy={r.cy} rx={r.rx} ry={r.ry}>
+              <Stop offset="0" stopColor={peak.color} stopOpacity={peak.opacity} />
+              <Stop offset={String(r.stop ?? 0.6)} stopColor={peak.color} stopOpacity={0} />
+            </RadialGradient>
+          );
+        })}
       </Defs>
       {radials.map((r, i) => (
         <Rect key={i} x="0" y="0" width="100%" height="100%" fill={`url(#${uid}-${i})`} />
