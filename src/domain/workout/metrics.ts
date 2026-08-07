@@ -197,3 +197,61 @@ export function detectPRs(
   return prs;
 }
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THE SEAL SCREEN'S HEADLINE — which one moment a finished session gets to claim
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** The three things a finished session can lead with, in the order they outrank each other. */
+export type CompletionHeroKind = 'pr' | 'milestone' | 'consistency' | null;
+
+/**
+ * Which headline a finished session earns — or none.
+ *
+ * ══ WHY THIS IS A FUNCTION AND NOT AN `if` CHAIN IN THE DATA LAYER ══
+ *
+ * It was an `if` chain, and it told a tester finishing his FIRST EVER workout
+ * **"Consistency · Another one down"** — under "The first page is written", beside a note reading
+ * "Your 1st session this chapter".
+ *
+ * The first session is the one case where every other branch is unreachable:
+ *   · `pr` — the first time you lift something is a BASELINE, not a record (a deliberate rule that
+ *     lives in the data layer's `hasHistory` check). A first session can never produce one.
+ *   · `milestone` — every 10th session, and 1 is not a multiple of 10.
+ *   · `consistency` — the catch-all, written for a repeat, inherited by the one session that is not.
+ *
+ * And it landed on the exact screen forbidden to say it. The first-run face in `workout-complete.tsx`
+ * is gated on `isFirstWorkout` and cites the rule in its own comment: **ONB-D18 — "Arrival, not
+ * achievement — no reward/rank/honor/streak language."** "Another one down" is streak language.
+ *
+ * Pure, so `node --test` can hold the rule directly instead of it living inside an async Supabase call
+ * where nothing could reach it.
+ */
+export function completionHeroKind(input: {
+  /** Did this session set a real record — a lift with history behind it? */
+  hasPR: boolean;
+  /** "Your Nth session this chapter", 1-based. Null when the session has no chapter. */
+  chapterOrdinal: number | null;
+  /** Is this the earliest saved workout in its chapter? */
+  isFirstWorkout: boolean;
+}): CompletionHeroKind {
+  if (input.hasPR) return 'pr';
+  /*
+   * ARRIVAL, NOT ACHIEVEMENT (ONB-D18) — and checked BEFORE the ordinal branches, not after.
+   *
+   * Ordering it after `milestone` left "Milestone · 10th Session" reachable on a first workout. That
+   * combination is impossible while `chapterOrdinal` and `isFirstWorkout` agree (the earliest session
+   * in a chapter is its 1st), which is exactly why it should not be load-bearing: the rule is "a first
+   * session claims nothing", not "a first session claims nothing as long as the arithmetic holds".
+   *
+   * Suppressed rather than reworded: the first-run face already says the arrival — "Your Chapter
+   * begins", the medallion, "The first page is written", and two honest stats. A fourth line
+   * congratulating them on consistency they have not had yet is what the decision rules out.
+   *
+   * A PR deliberately still wins, above — see the test that pins it.
+   */
+  if (input.isFirstWorkout) return null;
+  if (input.chapterOrdinal && input.chapterOrdinal % 10 === 0) return 'milestone';
+  if (input.chapterOrdinal) return 'consistency';
+  return null;
+}

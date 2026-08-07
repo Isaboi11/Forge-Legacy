@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { playlistFromRow, playlistToRow, type WorkoutPlaylistLink } from '@/domain/workout/playlist';
 import { personalBests, type ActivityKind, type PersonalBest, type UnitSystem } from '@/domain/run/run-core';
 import { fetchPriorSessions } from '@/data/runs-live';
-import { completionSetCount, e1rm } from '@/domain/workout/metrics';
+import { completionHeroKind, completionSetCount, e1rm } from '@/domain/workout/metrics';
 import { fetchProgram, fetchProgramCompletedCount } from '@/data/programs-live';
 import { dayLabel, nextSession } from '@/domain/program/progress-core';
 
@@ -511,15 +511,51 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
    * `honorsEarned` stays on the payload: the Record stage still lists what this session earned. It is
    * the HEADLINE that moved, not the information.
    */
+  /*
+   * WHICH headline is `completionHeroKind`'s call, in the domain with a test around it. Only the COPY
+   * lives here — the ranking, and the first-session suppression that stopped a tester being told
+   * "Another one down" after his first ever workout, are a rule rather than a rendering detail.
+   */
+  const heroKind = completionHeroKind({ hasPR: prByExercise.size > 0, chapterOrdinal, isFirstWorkout });
   let hero: CompletionHero | null = null;
-  if (prByExercise.size) {
+  if (heroKind === 'pr') {
     const [name, v] = [...prByExercise.entries()][0];
     hero = { kind: 'pr', eyebrow: 'New Personal Record', title: `${name} · ${v.weight} × ${v.reps}`, note: 'A new best', featured: true };
-  } else if (chapterOrdinal && chapterOrdinal % 10 === 0) {
-    hero = { kind: 'milestone', eyebrow: 'Milestone', title: `${ordinal(chapterOrdinal)} Session`, note: chapterName ?? 'and climbing', featured: false };
-  } else if (chapterOrdinal) {
-    hero = { kind: 'consistency', eyebrow: 'Consistency', title: 'Another one down', note: `Your ${ordinal(chapterOrdinal)} session this chapter`, featured: false };
+  } else if (heroKind === 'milestone') {
+    hero = { kind: 'milestone', eyebrow: 'Milestone', title: `${ordinal(chapterOrdinal!)} Session`, note: chapterName ?? 'and climbing', featured: false };
+  } else if (heroKind === 'consistency') {
+    hero = { kind: 'consistency', eyebrow: 'Consistency', title: 'Another one down', note: `Your ${ordinal(chapterOrdinal!)} session this chapter`, featured: false };
   }
+
+  /*
+   * ⚠ `!isFirstWorkout` ON THE CONSISTENCY BRANCH, AND IT IS NOT A STYLE CHOICE.
+   *
+   * A tester finished his FIRST EVER workout and the seal screen told him **"Consistency · Another one
+   * down"**, directly under "The first page is written", with the note reading "Your 1st session this
+   * chapter". Another one down from one.
+   *
+   * It reached him because the first session is the one case where NO other branch can fire:
+   *   · PR      — the first time you lift something is a baseline, not a record (see `hasHistory`
+   *               above). Deliberate, and correct. So a first session can never produce a PR hero.
+   *   · milestone — every 10th, and 1 is not a multiple of 10.
+   *   · consistency — the catch-all, written for a repeat, inherited by the one session that is not one.
+   *
+   * And it landed on the exact screen that is forbidden to say it. `workout-complete.tsx`'s first-run
+   * face is gated on `data.isFirstWorkout` and its own comment cites the rule:
+   *
+   *     First-run reveal (ONB-D18): the chapter comes alive on workout #1. Arrival, not achievement —
+   *     no reward/rank/honor/streak language.
+   *
+   * "Another one down" is streak language and "Consistency" is achievement framing, rendered inside the
+   * branch that exists to carry neither. The screen had the flag the whole time; the payload it was
+   * handed did not use it.
+   *
+   * Suppressed rather than reworded: ONB-D18 asks for ARRIVAL, and the face already says it — "Your
+   * Chapter begins", the medallion, "The first page is written", the two honest stats. A fourth line
+   * congratulating them on consistency they have not had yet is the thing the decision rules out. The
+   * other two branches are unreachable here, so this makes the first session heroless by construction
+   * rather than by luck.
+   */
 
   return {
     workoutId,
@@ -549,6 +585,37 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
 export async function saveReflection(workoutId: string, text: string): Promise<void> {
   const { error } = await supabase.from('workouts').update({ reflection: text }).eq('id', workoutId);
   if (error) throw error;
+}
+
+/** The longest a session name may be. Matches `workout_templates.name`, so a session can become one. */
+export const WORKOUT_NAME_MAX = 60;
+
+/**
+ * Name — or rename — a logged session.
+ *
+ * ══ NO MIGRATION, BECAUSE THE COLUMN HAS ALWAYS BEEN THERE ══
+ *
+ * `workouts.workout_name` was created in 0001, is written on every save, and is read by Activity
+ * History, Activity Detail and the seal screen. What never existed is any way for an athlete to SET
+ * it: a program session takes the program's slot name, a freestyle one takes the literal
+ * "Freestyle Workout", and neither could be changed afterwards. `Active-Workout-Flow-Spec-W9-W16`
+ * §4.2 has listed "workout name edit for free workouts" in the ⋯ Options sheet since it locked.
+ *
+ * Same post-commit, owner-scoped shape as `saveReflection` above. `workouts_own` (0001) is a
+ * `for all` policy, so the owner may update their own row and nobody may touch anyone else's.
+ *
+ * ══ AN EMPTY NAME IS A REAL ANSWER ══
+ *
+ * Clearing the field writes NULL, not "". Null is what W-18 §5.2's fallback is waiting for — it
+ * renders the activity type ("Strength", "Run") when a session has no explicit name. A blank string
+ * would satisfy every not-null check while displaying as an empty row.
+ */
+export async function renameWorkout(workoutId: string, name: string): Promise<string | null> {
+  const trimmed = name.trim().slice(0, WORKOUT_NAME_MAX);
+  const value = trimmed === '' ? null : trimmed;
+  const { error } = await supabase.from('workouts').update({ workout_name: value }).eq('id', workoutId);
+  if (error) throw error;
+  return value;
 }
 
 /**
