@@ -22,6 +22,20 @@ export interface PinCandidate {
   title: string;
   subtitle: string;
   icon: SymbolName;
+  /**
+   * The keepsake this pin should SHOW, when the thing being pinned has one.
+   *
+   * ⚠ The museum has always been able to display media — `pins.media_url`, `poster_url` and `is_video`
+   * are 0005 columns and `PinnedCard` renders them behind a play button — and nothing ever wrote them.
+   * So every pin fell back to its bronze emblem, which is what a pinned photo looked like: an empty
+   * card with a small trophy on it.
+   *
+   * Only accomplishments can carry one today (0118). Honors and chapters have no media of their own, so
+   * they keep the emblem, which is correct rather than a gap: `icon` is what a pin looks like when there
+   * is nothing to look at.
+   */
+  mediaUrl?: string | null;
+  isVideo?: boolean;
 }
 
 /** A current pin, as far as curation cares — its own id, and what it points at. */
@@ -68,6 +82,10 @@ export function candidatesFromContent(content: ContentForPins): PinCandidate[] {
       title: a.name,
       subtitle: [d, ch].filter(Boolean).join(' · ') || 'Accomplishment',
       icon: 'trophy' as const,
+      // `mediaKind` is the both-or-neither flag the column pair guarantees, so branching on it and
+      // trusting the URL is safe — see the `Accomplishment` model.
+      mediaUrl: a.mediaUrl,
+      isVideo: a.mediaKind === 'video',
     };
   });
 

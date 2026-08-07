@@ -11,6 +11,7 @@
 
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
@@ -232,11 +233,46 @@ export function TimelineRow({ entry }: { entry: TimelineEntry }) {
   );
 }
 
+/**
+ * A single accomplishment on Legacy and on a public profile.
+ *
+ * ⚠ IT SHOWS THE KEEPSAKE NOW. An accomplishment gained a photo or a video in 0118, and this card —
+ * the one place on Legacy an athlete actually browses them — had no media slot at all. So an athlete who
+ * attached their finish-line photo saw a bordered rectangle with a star and two lines of text, which is
+ * what "it just shows a blank square" means: nothing was broken, the picture simply had nowhere to go.
+ *
+ * The media sits BEHIND the existing content rather than beside it — the card is 184×200 with a fixed
+ * layout the `.dc` specifies, and a thumbnail carved out of that would shrink the title it exists to
+ * carry. A scrim keeps the text legible over any photo.
+ *
+ * A video shows its own first frame under a play badge. It does not autoplay: this is a browsing strip,
+ * and six cards playing at once is a different screen from the one that was designed.
+ */
 export function AccomplishmentCard({ item, onPress }: { item: Accomplishment; onPress?: () => void }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={item.text} style={s.accCard}>
-      <View style={s.accStar}>
-        <StarIcon filled={item.featured} />
+      {item.mediaUrl ? (
+        <>
+          <Image source={{ uri: item.mediaUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
+          <LinearGradient
+            pointerEvents="none"
+            colors={['rgba(8,11,14,0.35)', 'rgba(8,11,14,0.15)', 'rgba(8,11,14,0.92)']}
+            locations={[0, 0.42, 1]}
+            style={StyleSheet.absoluteFill}
+          />
+        </>
+      ) : null}
+      <View style={s.accTopRow}>
+        <View style={s.accStar}>
+          <StarIcon filled={item.featured} />
+        </View>
+        {item.mediaKind === 'video' ? (
+          <View style={s.accPlay}>
+            <Svg width={12} height={12} viewBox="0 0 24 24" style={{ marginLeft: 2 }}>
+              <Path d="M9 7.5l8 4.5-8 4.5z" fill={flColor.bronze300} />
+            </Svg>
+          </View>
+        ) : null}
       </View>
       <View style={s.accBody}>
         <Text style={s.accTitle}>{item.text}</Text>
@@ -458,6 +494,7 @@ const s = StyleSheet.create({
 
   // accomplishments
   accCard: {
+    overflow: 'hidden', // the media is absolutely filled; without this it escapes the rounded corners
     width: 184,
     height: 200,
     borderRadius: flRadius.lg,
@@ -467,6 +504,17 @@ const s = StyleSheet.create({
     padding: 16,
     justifyContent: 'space-between',
     boxShadow: flShadow.card,
+  },
+  accTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  accPlay: {
+    width: 26,
+    height: 26,
+    borderRadius: flRadius.round,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    backgroundColor: 'rgba(8,11,14,0.55)',
   },
   accStar: {
     width: 34,

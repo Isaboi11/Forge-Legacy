@@ -64,6 +64,16 @@ export type Accomplishment = {
   monthYear: string
   /** "Featured on Profile" — a filled star vs an outline on the Legacy strip. */
   featured?: boolean
+  /**
+   * The keepsake, when the athlete attached one (0118). Both-or-neither with `mediaKind`, mirroring the
+   * database's own constraint, so a consumer can branch on the kind and trust the URL.
+   *
+   * OPTIONAL because the public profile deliberately does not pass it: whether another athlete may see
+   * the photo attached to your accomplishment is a visibility question nobody has answered, and the
+   * conservative default is that they may not. Legacy — your own — passes it.
+   */
+  mediaUrl?: string | null
+  mediaKind?: 'image' | 'video' | null
 }
 
 export type Honor = {

@@ -112,6 +112,11 @@ export default function LegacyScreen() {
         text: a.name,
         monthYear: formatAccDate(a.date) || formatAccDate(a.createdAt),
         featured: a.featured,
+        // The fetch has carried these since 0118 and this mapping dropped them, so the card had nothing
+        // to draw and rendered as an empty bordered square. The same shape as every other field that
+        // was authored, fetched, and flattened away one layer short of the screen.
+        mediaUrl: a.mediaUrl,
+        mediaKind: a.mediaKind,
       })),
     [accData],
   );
@@ -627,7 +632,11 @@ function ProgressBadge({ rankFamily, rankLevel, sex, onPress }: { rankFamily?: R
         )}
       </View>
       <View style={styles.progressPill}>
-        <Text style={styles.progressPillText}>Progress</Text>
+        {/* Belt and braces with the `minWidth` above: a larger accessibility text size can still outgrow
+            the room, and a pill that ellipsises reads better than one that breaks a single word. */}
+        <Text style={styles.progressPillText} numberOfLines={1}>
+          Progress
+        </Text>
         <ChevronRightIcon size={9} color={flColor.bronze300} />
       </View>
     </Pressable>
@@ -699,7 +708,16 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     color: flColor.bronze300,
   },
-  progressBadge: { width: 76, alignItems: 'center', gap: 6 },
+  /*
+   * `minWidth`, NOT `width`. It was a hard 76, and the pill below it needs more than that: 18pt of
+   * horizontal padding + a 3pt gap + a 9pt chevron leaves 46pt for the label, and "PROGRESS" at 8.5pt
+   * with 1.1 letter-spacing measures ~51. So it wrapped, and the final S sat alone on a second line.
+   *
+   * The row is `flexDirection: 'row'` with the name column flexing, so growing by ~5pt is absorbed
+   * there — and the name already carries `numberOfLines={1}`. A minimum keeps the badge's alignment
+   * with the portrait for athletes whose rank art is narrower.
+   */
+  progressBadge: { minWidth: 76, alignItems: 'center', gap: 6 },
   badgeShield: { width: 66, height: 92, alignItems: 'center', justifyContent: 'center' },
   badgeArt: { width: 66, height: 92 },
   progressPill: {

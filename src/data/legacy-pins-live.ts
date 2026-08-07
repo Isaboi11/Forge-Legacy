@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { candidatesFromContent, type PinCandidate, type PinRef } from '@/domain/legacy/pins';
+import { fmtDate } from '@/lib/format';
 import { fetchAccomplishments } from './accomplishments-live';
 
 /**
@@ -36,7 +37,9 @@ export async function fetchPinManager(): Promise<PinManagerData> {
   const honors = ((honorsRes.data ?? []) as { id: string; display_name: string; date_earned: string }[]).map((h) => ({
     id: h.id,
     name: h.display_name,
-    dateEarned: h.date_earned,
+    // `candidatesFromContent` prints this straight into the subtitle, so it has to arrive as a display
+    // string — the raw column is `2026-08-06`, which read as "Honor · 2026-08-06" in the sheet.
+    dateEarned: fmtDate(h.date_earned),
   }));
   const chapters = ((chaptersRes.data ?? []) as { id: string; name: string; is_active: boolean; sealed_at: string | null }[]).map((c) => ({
     id: c.id,
@@ -65,6 +68,18 @@ export async function pinCandidate(candidate: PinCandidate): Promise<void> {
     subtitle: candidate.subtitle,
     ref_id: candidate.refId,
     position: count ?? 0,
+    /*
+     * The keepsake, denormalized alongside the title — the same posture the rest of this row takes, and
+     * the reason `saveAccomplishment` already syncs `pins.title` on a rename. It syncs the media there
+     * too, so replacing an accomplishment's photo updates the pin instead of leaving the museum showing
+     * a picture the athlete deleted.
+     *
+     * `poster_url` stays null: a video pin wants a still frame, and nothing in the app extracts one yet.
+     * `PinnedCard` reads `posterUrl ?? mediaUrl`, so a video falls back to its own first frame, which is
+     * what the platform players render for a bare video URL.
+     */
+    media_url: candidate.mediaUrl ?? null,
+    is_video: candidate.isVideo ?? false,
   });
 }
 
