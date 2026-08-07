@@ -25,6 +25,7 @@ import { fetchAccomplishments } from '@/data/accomplishments-live';
 import { fetchLegacyArchive } from '@/data/legacy-archive-live';
 import { LegacyArchiveBand } from '@/components/forge/LegacyArchiveBand';
 import { formatAccDate } from '@/domain/legacy/accomplishments';
+import { MediaThumb } from '@/components/forge/MediaThumb';
 import { useQuery } from '@/lib/useQuery';
 import type { Pin, PinKind } from '@/types/legacy';
 import {
@@ -528,7 +529,10 @@ function PinnedCard({ pin, onPress }: { pin: Pin; onPress: () => void }) {
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`Open ${pin.title}`} style={styles.pinCard}>
       {media ? (
         <>
-          <Image source={{ uri: media }} style={StyleSheet.absoluteFill} contentFit="cover" />
+          {/* A pin with no `posterUrl` falls through to its raw media, and for a video that is an `.mp4`
+              that `<Image>` renders as an empty box. `MediaThumb` branches on the kind instead — the
+              same defect the accomplishment card shipped with, waiting here for the first video pin. */}
+          <MediaThumb url={media} kind={pin.posterUrl ? 'image' : pin.isVideo ? 'video' : 'image'} />
           <LinearGradient
             pointerEvents="none"
             colors={['rgba(8,11,14,0.5)', 'rgba(8,11,14,0)', 'rgba(8,11,14,0)', 'rgba(8,11,14,0.92)']}

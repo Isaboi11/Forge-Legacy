@@ -11,12 +11,12 @@
 
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { HonorMedallion } from '@/components/honor/HonorMedallion';
+import { MediaThumb } from '@/components/forge/MediaThumb';
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { ForgeSymbol, type SymbolName } from '@/components/forge/ForgeSymbol';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
@@ -253,7 +253,9 @@ export function AccomplishmentCard({ item, onPress }: { item: Accomplishment; on
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={item.text} style={s.accCard}>
       {item.mediaUrl ? (
         <>
-          <Image source={{ uri: item.mediaUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
+          {/* NOT `<Image>` — a video URL renders as an empty box in it, which is what shipped first and
+              produced a dark card with a play badge and no picture. `MediaThumb` owns that branch. */}
+          <MediaThumb url={item.mediaUrl} kind={item.mediaKind} />
           <LinearGradient
             pointerEvents="none"
             colors={['rgba(8,11,14,0.35)', 'rgba(8,11,14,0.15)', 'rgba(8,11,14,0.92)']}
