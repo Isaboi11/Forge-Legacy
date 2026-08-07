@@ -84,6 +84,49 @@ test('the sheet reports its real dismissal, and the fallback exists for platform
   assert.ok(ms <= 800, `fallback ${ms}ms is long enough to read as a broken tap`);
 });
 
+/**
+ * ══ THE SECOND REPORT, THE OTHER DIRECTION ══
+ *
+ * *"Tried uploading a picture on my profile from my photos and it would not pull up. Same issue as the
+ * other time."* — and it was the same rule, with the two view controllers swapped.
+ *
+ * `expo-image-picker` resolves BEFORE it dismisses (`ImagePickerHandler` calls the result handler, then
+ * `picker.dismiss(animated: true)` with no completion), so `pick()` used to hand the asset back while the
+ * picker was still on screen. Profile photo is the one caller that OPENS something with it —
+ * `AvatarCropEditor`, an RN `Modal` — and RN presents a modal from the screen's own view controller,
+ * which was still presenting the picker. iOS dropped it silently: choose a photo, land back on an
+ * unchanged Edit Profile.
+ */
+test('a chosen asset is not handed back until the picker is gone', () => {
+  const gone = src.indexOf('pickerGone()');
+  const settleAsset = src.indexOf('settle(asset)');
+  assert.ok(gone > 0, 'useMediaPicker no longer waits for the system picker to be dismissed');
+  assert.ok(settleAsset > 0, 'the resolve moved — this guard needs updating with it');
+  assert.ok(gone < settleAsset, 'the asset is handed back before the picker is known to be off screen');
+  assert.match(
+    src,
+    /Promise\.all\(\[[^\]]*pickerGone\(\)[^\]]*\]\)/,
+    'the dismissal wait is no longer awaited alongside the downscale, so it now costs the athlete real time',
+  );
+});
+
+test('the picker dismissal wait outlasts the iOS animation', () => {
+  const ms = Number(/PICKER_DISMISS_MS\s*=\s*(\d+)/.exec(src)?.[1]);
+  assert.ok(ms >= 500, `${ms}ms leaves no margin over the ~350ms iOS dismissal it must outlast`);
+  assert.ok(ms <= 1200, `${ms}ms is long enough that the app looks stuck after a photo is chosen`);
+});
+
+/**
+ * A browser opens a file input only from inside the tap that asked for it. Every `await` before the
+ * launch is a chance to lose that, and neither wait buys web anything — there is no view controller to
+ * collide with, and the web camera permission call is a stub that always returns granted.
+ */
+test('web reaches the picker without awaiting anything first', () => {
+  assert.match(src, /if \(fromSheet && native\) await sheetGone\(\)/, 'web now awaits the sheet it never had on screen');
+  assert.match(src, /if \(source === 'camera' && native\)/, 'web now awaits a permission stub before opening its capture input');
+  assert.match(src, /Platform\.OS === 'web'\s*\?\s*Promise\.resolve\(\)/, 'web now pays the native picker-dismissal wait');
+});
+
 test('BottomSheet actually forwards onDismiss to the native modal', () => {
   const sheet = readFileSync(join(HERE, '..', '..', 'components', 'forge', 'composites', 'BottomSheet', 'BottomSheet.tsx'), 'utf8');
   const code = sheet.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');

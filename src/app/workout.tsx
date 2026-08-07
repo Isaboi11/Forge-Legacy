@@ -39,8 +39,8 @@ import {
   type CardioActivity,
 } from '@/domain/workout/conditioning';
 import { buildSessionFromProgram } from '@/domain/workout/build-session';
-import { fetchProgram, fetchProgramCompletedCount } from '@/data/programs-live';
-import { nextSession } from '@/domain/program/progress-core';
+import { fetchProgram, fetchProgramSessions } from '@/data/programs-live';
+import { nextOpenSlot } from '@/domain/program/progress-core';
 import { durText } from '@/domain/program/prescription';
 import { clearWorkoutLaunch, readWorkoutLaunch } from '@/lib/workout-launch';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -437,14 +437,25 @@ export default function WorkoutScreen() {
       if (launch?.programId) {
         await clearWorkoutLaunch(); // consume it, so a later ad-hoc workout isn't credited to this program
         try {
-          const [program, done] = await Promise.all([
+          const [program, marks] = await Promise.all([
             fetchProgram(launch.programId),
-            fetchProgramCompletedCount(launch.programId),
+            fetchProgramSessions(launch.programId),
           ]);
           if (program) {
-            // Resolve the next session HERE, from the live count, so the session trained is always the
-            // one the progress bar is about to advance.
-            const next = nextSession(program.structure, done);
+            /*
+             * WHICH session to open. A slot the athlete PICKED wins; otherwise the first one with
+             * nothing against it, resolved HERE from live state so the session trained is always the
+             * one the progress bar is about to advance.
+             *
+             * It read `nextSession(structure, count)` until 0119, and a count can only describe a
+             * program done strictly in order — the reason a swap was impossible rather than merely
+             * unbuilt. `nextOpenSlot` walks the schedule and skips anything already trained OR skipped.
+             */
+            const chosen =
+              launch.programWeek != null && launch.programDay != null
+                ? { weekIndex: launch.programWeek, dayIndex: launch.programDay }
+                : null;
+            const next = chosen ?? nextOpenSlot(program.structure, marks);
             if (next) {
               // Percentages resolve HERE, from the run's own frozen maxes, so each set carries the bar
               // it is asking for and the athlete does no arithmetic mid-session. A program with no
@@ -452,6 +463,9 @@ export default function WorkoutScreen() {
               // which is the honest result, not a zero.
               const load = loadContextFor(program.liftMaxes, units === 'metric', (lb) => weightInExact(lb, units));
               fresh = buildSessionFromProgram(program.id, program.structure, next.weekIndex, next.dayIndex, load);
+              // Only a deliberate pick travels to the commit; the default path leaves it to the server,
+              // which resolves the same first-open slot from the same rows.
+              if (fresh && chosen) fresh = { ...fresh, programWeek: chosen.weekIndex, programDay: chosen.dayIndex };
             }
           }
         } catch {

@@ -1,30 +1,27 @@
 import { supabase } from '@/lib/supabase';
 import { countActiveWeeks, mondayWeekKey } from '@/domain/rank/rank';
-import { e1rm } from '@/domain/workout/metrics';
+import { buildLiftSeries, prDayKey, type LoggedSet, type MetricSeries } from '@/domain/progress/lift-series';
 import { fetchStoredRank } from '@/data/rank-live';
 import { fetchMyPrograms, fetchProgramCompletedCount } from '@/data/programs-live';
 import { dayLabel, nextSession } from '@/domain/program/progress-core';
 import type { RankFamily } from '@/domain/rank-artwork/resolver';
 
 /**
- * P-2 Progress Hub aggregation (Slice A) — one read that assembles the hub's real sections from live
- * activity: rank (for the hero + journey), identity facts, the pinned PR, strength cards (personal-best
- * series → sparklines), consistency stats, and the active program for "What's Next". Honors + body come
- * from their own fetchers / a later slice. Read-only.
+ * P-2 Progress Hub aggregation — one read that assembles the hub's real sections from live activity:
+ * rank (for the hero + journey), identity facts, the pinned PR, the strength series behind the
+ * sparklines and the metric chart, consistency stats, and the active program for "What's Next". Honors
+ * and body metrics come from their own fetchers. Read-only.
+ *
+ * ── THE STRENGTH SERIES NOW COMES FROM LOGGED SETS, NOT FROM `personal_records` ───────────────────
+ *
+ * It used to read `personal_records` and plot Epley e1RM per PR row. That table only gains a row when a
+ * set BEATS the standing best, so the chart was a plot of record days with every ordinary session
+ * missing — see `domain/progress/lift-series.ts` for the full reasoning and what replaced it. The PR
+ * table is still read, for two jobs it is genuinely the authority on: the pinned headline, and marking
+ * WHICH days on the line were records.
  */
 
-export interface MetricPoint {
-  date: string; // ISO (YYYY-MM-DD)
-  value: number; // best e1RM that day, rounded
-}
-export interface MetricSeries {
-  id: string; // exercise name (the metric key)
-  name: string;
-  category: string; // 'Strength'
-  points: MetricPoint[]; // dated best-e1RM progression, ascending
-  current: number;
-  improving: boolean;
-}
+export type { MetricPoint, MetricSeries } from '@/domain/progress/lift-series';
 export interface ConsistencyStats {
   lifetime: number;
   hoursForged: number;
@@ -62,6 +59,55 @@ interface PRRow {
   load_value: number | null;
   load_reps: number | null;
 }
+/** The set-level read behind every lift chart. Its own query — see `fetchLoggedSets`. */
+interface SetSourceRow {
+  started_at: string;
+  workout_exercises:
+    | { name: string; workout_sets: { weight: number | null; weight_unit: string | null; reps: number | null }[] | null }[]
+    | null;
+}
+
+/** Pounds are canonical everywhere in this app; a kg row would otherwise plot below every lb one. */
+const toLb = (v: number | null, unit: string | null): number | null =>
+  v == null ? null : unit === 'kg' ? v * 2.2046226 : v;
+
+/**
+ * Every set the athlete has logged, flattened for `buildLiftSeries`.
+ *
+ * ITS OWN QUERY, not an embed on the consistency read above, because the two want different shapes and
+ * different limits: consistency counts sessions and needs all of them, this needs the sets inside a
+ * bounded recent window. `SESSION_WINDOW` caps how far back a chart reaches — a five-year log is a lot
+ * of rows to pull to draw a line whose x-axis has four ticks on it.
+ *
+ * A failure here degrades to NO metrics rather than taking the hub down: the rank hero, consistency and
+ * "what's next" are all independent of it, and a Progress screen with no charts still says plenty.
+ */
+const SESSION_WINDOW = 300;
+
+async function fetchLoggedSets(uid: string): Promise<LoggedSet[]> {
+  const { data, error } = await supabase
+    .from('workouts')
+    .select('started_at, workout_exercises(name, workout_sets(weight, weight_unit, reps))')
+    .eq('athlete_id', uid)
+    .eq('state', 'saved')
+    .order('started_at', { ascending: false })
+    .limit(SESSION_WINDOW);
+  if (error) return [];
+
+  const out: LoggedSet[] = [];
+  for (const w of (data ?? []) as unknown as SetSourceRow[]) {
+    const date = (w.started_at ?? '').slice(0, 10);
+    if (!date) continue;
+    for (const ex of w.workout_exercises ?? []) {
+      const name = ex.name?.trim();
+      if (!name) continue;
+      for (const s of ex.workout_sets ?? []) {
+        out.push({ date, exercise: name, weightLb: toLb(s.weight, s.weight_unit), reps: s.reps });
+      }
+    }
+  }
+  return out;
+}
 
 /** Longest run of consecutive Mon–Sun weeks in a set of active-week Monday keys. */
 function bestStreak(weekKeys: string[]): number {
@@ -96,12 +142,13 @@ export async function fetchProgressHub(): Promise<ProgressHubData> {
   const now = new Date();
   const nowMonth = now.toISOString().slice(0, 7);
 
-  const [rank, workoutsRes, prRes, chapterRes, myPrograms] = await Promise.all([
+  const [rank, workoutsRes, prRes, chapterRes, myPrograms, loggedSets] = await Promise.all([
     fetchStoredRank(),
     supabase.from('workouts').select('saved_at, started_at, duration_sec').eq('athlete_id', uid).eq('state', 'saved'),
     supabase.from('personal_records').select('exercise, achieved_on, created_at, load_value, load_reps').eq('athlete_id', uid).eq('measure_kind', 'load'),
     supabase.from('chapters').select('name, is_active').eq('athlete_id', uid).eq('is_active', true).maybeSingle(),
     fetchMyPrograms(),
+    fetchLoggedSets(uid),
   ]);
 
   const workouts = (workoutsRes.data ?? []) as WorkoutRow[];
@@ -114,36 +161,25 @@ export async function fetchProgressHub(): Promise<ProgressHubData> {
   const weeksActive = countActiveWeeks(dates) || 1;
   const earliestYear = dates.length ? dates.reduce((a, b) => (a < b ? a : b)).slice(0, 4) : String(now.getUTCFullYear());
 
-  // ── metrics: personal-best e1RM progression per exercise (all lifts, dated), most-recent first ──
+  // ── metrics: one point per day trained, per lift, from the sets themselves ──
   const prs = (prRes.data ?? []) as PRRow[];
-  const byExercise = new Map<string, { date: string; e: number }[]>();
-  for (const p of prs) {
-    if (p.load_value == null) continue;
-    const date = (p.achieved_on ?? p.created_at ?? '').slice(0, 10);
-    const arr = byExercise.get(p.exercise) ?? [];
-    arr.push({ date, e: e1rm(p.load_value, p.load_reps ?? 1) });
-    byExercise.set(p.exercise, arr);
-  }
-  const metrics: MetricSeries[] = [...byExercise.entries()]
-    .map(([name, pts]) => {
-      const sorted = pts.sort((a, b) => a.date.localeCompare(b.date));
-      const points: MetricPoint[] = sorted.map((p) => ({ date: p.date, value: Math.round(p.e) }));
-      const current = points[points.length - 1]?.value ?? 0;
-      const prev = points[points.length - 2]?.value ?? current;
-      return { id: name, name, category: 'Strength', points, current, improving: current > prev, lastDate: points[points.length - 1]?.date ?? '' };
-    })
-    .sort((a, b) => b.lastDate.localeCompare(a.lastDate))
-    .map(({ lastDate: _lastDate, ...m }) => m);
+  // Which days were records, so the chart can mark them. `personal_records` stays the authority on
+  // what a record IS; the series only asks it which days had one.
+  const prDays = new Set(
+    prs.map((p) => prDayKey(p.exercise, (p.achieved_on ?? p.created_at ?? '').slice(0, 10))),
+  );
+  const metrics: MetricSeries[] = buildLiftSeries(loggedSets, prDays);
 
-  // ── pinned: highest e1RM among the big three ──
+  // ── pinned: the heaviest weight ACTUALLY MOVED among the big three ──
+  // Was the highest Epley e1RM, which put a weight on the athlete's own Progress hero that they had
+  // never lifted. `metrics.ts` settled this for records and the same reasoning applies to displaying one.
   let pinned: string | null = null;
   let best = 0;
   for (const p of prs) {
     if (p.load_value == null) continue;
     if (!/dead\s*lift|squat|bench/i.test(p.exercise)) continue;
-    const e = e1rm(p.load_value, p.load_reps ?? 1);
-    if (e > best) {
-      best = e;
+    if (p.load_value > best) {
+      best = p.load_value;
       pinned = `${p.exercise} ${Math.round(p.load_value)} lb · Personal Record`;
     }
   }

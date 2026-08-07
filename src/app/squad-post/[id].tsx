@@ -143,7 +143,33 @@ export default function SquadPostRoute() {
 
           {post.body ? <Text style={styles.bodyText}>{post.body}</Text> : null}
 
-          {post.type === 'recap' && post.workoutSummary ? <RecapBlock summary={post.workoutSummary} /> : null}
+          {post.type === 'recap' && post.workoutSummary ? (
+            <>
+              <RecapBlock summary={post.workoutSummary} />
+              {/*
+                THE SNAPSHOT IS NO LONGER THE ONLY THING A VIEWER CAN SEE.
+                `workout_summary` holds per-exercise names, set counts and top sets — a real summary,
+                but not the session: no set-by-set breakdown, no warm-up or cool-down sections, no
+                per-set weights. Migration 0117 lets anyone entitled to this post open the actual
+                session on Activity Detail, which is what Amendment 002 §3 specified all along. The
+                block above stays because a comment thread should show what is being discussed without
+                a navigation first.
+              */}
+              {post.workoutId ? (
+                <Pressable
+                  onPress={() => router.push({ pathname: '/activity/[id]', params: { id: post.workoutId as string } })}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open the full session"
+                  style={({ pressed }) => [styles.openSession, pressed ? { opacity: 0.85 } : null]}
+                >
+                  <Text style={styles.openSessionText}>See every set</Text>
+                  <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <Path d="M9 6l6 6-6 6" />
+                  </Svg>
+                </Pressable>
+              ) : null}
+            </>
+          ) : null}
 
           {post.type === 'transformation' && post.layout ? (
             <View style={styles.sliderWrap}>
@@ -371,6 +397,8 @@ const styles = StyleSheet.create({
   // recap breakdown
   recapBlock: { marginTop: 16 },
   recapPlaylist: { marginTop: 12 },
+  openSession: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, marginTop: 12, paddingVertical: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  openSessionText: { fontSize: 13, fontWeight: '700', letterSpacing: 0.3, color: flColor.bronze300 },
   recapStatRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
   recapStat: { alignItems: 'center', gap: 3, paddingHorizontal: 16 },
   recapStatN: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', color: flColor.cream100 },

@@ -99,6 +99,16 @@ export async function saveWorkout(session: ActiveSession, partners: string[] = [
     p_distance: null,
     p_distance_unit: null,
     p_template_id: session.templateId ?? null,
+    /*
+     * WHICH session of the program this was — sent ONLY when the athlete deliberately chose one (0119).
+     *
+     * Absent is the normal case and is not a gap: the server then assigns the first session with nothing
+     * against it, which is what `workout-launch.ts` protects — "carrying the week/day too would let a
+     * stale card (Home rendered minutes ago) train the wrong session". A card cannot go stale about a
+     * choice the athlete made two taps ago, so an explicit swap is allowed to travel.
+     */
+    p_program_week: session.programWeek ?? null,
+    p_program_day: session.programDay ?? null,
   });
   if (error) throw error;
 

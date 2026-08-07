@@ -15,7 +15,7 @@ import { saveWorkoutAsTemplate } from '@/data/templates-live';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useUnits } from '@/lib/settings';
 import { displayWeight } from '@/domain/settings/units';
-import { fetchCompletion, savePlaylist, saveReflection, type CompletionCardio, type CompletionHero, type ExerciseDelta } from '@/data/workout-complete-live';
+import { WORKOUT_NAME_MAX, fetchCompletion, renameWorkout, savePlaylist, saveReflection, type CompletionCardio, type CompletionHero, type ExerciseDelta } from '@/data/workout-complete-live';
 import { openPlaylist, PlaylistChip, PlaylistSheet } from '@/components/forge/composites/Playlist';
 import type { WorkoutPlaylistLink } from '@/domain/workout/playlist';
 import { distanceLabel, fmtClock, fmtPace, toDistance, toPace, type UnitSystem } from '@/domain/run/run-core';
@@ -133,6 +133,16 @@ export default function WorkoutComplete() {
      to open to identify, and by the time you notice you're on a different screen. */
   const [nameOpen, setNameOpen] = useState(false);
   const [templateName, setTemplateName] = useState('');
+  /*
+   * The session's own name, once the athlete has changed it. Same three-state idiom as `playlistEdit`
+   * below and for the same reason: `undefined` means "not edited, show what loaded", while `null` is a
+   * real answer meaning the name was CLEARED. A plain `useState(data?.workoutName)` would be reset by
+   * the refetch that any units change triggers.
+   */
+  const [nameEdit, setNameEdit] = useState<string | null | undefined>(undefined);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameDraft, setRenameDraft] = useState('');
+  const [savingName, setSavingName] = useState(false);
   const [note, setNote] = useState('');
   /*
    * The playlist, as it stands after any edit made on this screen (§8A.2).
@@ -171,11 +181,55 @@ export default function WorkoutComplete() {
     router.replace('/(tabs)/legacy');
   };
 
+  /*
+   * What this session is CALLED right now — the edit if there is one, otherwise what loaded.
+   * Everything below renders this rather than `data.workoutName`, so a rename shows immediately
+   * instead of waiting for a refetch that may never come.
+   */
+  const sessionName = (nameEdit !== undefined ? nameEdit : (data?.workoutName ?? null))?.trim() || null;
+  /* A cleared name shows the same word the data layer already falls back to, so this screen and
+     Activity Detail never disagree about what an unnamed session is called. */
+  const shownName = sessionName ?? 'Workout';
+
   /** Opens the naming sheet, prefilled with what the session was called. */
   const openTemplateName = () => {
     if (!data || savingTemplate || savedTemplate) return;
-    setTemplateName(data.workoutName ?? '');
+    setTemplateName(sessionName ?? '');
     setNameOpen(true);
+  };
+
+  const openRename = () => {
+    if (!data || savingName) return;
+    setRenameDraft(sessionName ?? '');
+    setRenameOpen(true);
+  };
+
+  /**
+   * Name the session, or clear its name.
+   *
+   * ══ WHY THIS IS OFFERED AT THE FINISH ══
+   *
+   * The name is decided at the START today — a program hands over its slot name, and a free workout
+   * gets the literal "Freestyle Workout" — and the athlete has never been able to touch it. But at the
+   * start you do not yet know what the session was. "Freestyle Workout" is what the app calls a day
+   * you have not done yet; "Heavy pull, felt strong" is what you call it afterwards.
+   *
+   * Blank is allowed and means something: it writes NULL, and Activity History then shows the activity
+   * type per W-18 §5.2 rather than an empty row.
+   */
+  const commitRename = async () => {
+    if (!data || savingName) return;
+    setSavingName(true);
+    try {
+      const saved = await renameWorkout(data.workoutId, renameDraft);
+      setNameEdit(saved);
+      setRenameOpen(false);
+      showToast(saved ? `Named “${saved}”.` : 'Name cleared.');
+    } catch (e) {
+      showToast(errorMessage(e));
+    } finally {
+      setSavingName(false);
+    }
   };
 
   const keepAsTemplate = async () => {
@@ -188,7 +242,7 @@ export default function WorkoutComplete() {
       if (id) {
         setSavedTemplate(true);
         setNameOpen(false);
-        showToast(`Saved “${templateName.trim() || data.workoutName}” to your templates.`);
+        showToast(`Saved “${templateName.trim() || shownName}” to your templates.`);
       } else {
         // Nothing was logged, so there is no shape to keep — say that rather than claiming a success.
         setNameOpen(false);
@@ -237,6 +291,35 @@ export default function WorkoutComplete() {
         </Button>
         <Button variant="primary" fullWidth onPress={() => void keepAsTemplate()} accessibilityLabel="Save template">
           {savingTemplate ? 'Saving…' : 'Save Template'}
+        </Button>
+      </View>
+    </BottomSheet>
+  );
+
+  /* Held in a variable and rendered alongside `templateNameSheet` for the reason written above it: on a
+     screen of four early returns, a sheet declared once at the bottom is mounted in only one of them. */
+  const renameSheet = (
+    <BottomSheet open={renameOpen} onClose={() => setRenameOpen(false)} title="Name this workout">
+      <TextInput
+        value={renameDraft}
+        onChangeText={setRenameDraft}
+        placeholder="e.g. Heavy pull"
+        placeholderTextColor={flColor.gray600}
+        style={styles.nameInput}
+        accessibilityLabel="Workout name"
+        maxLength={WORKOUT_NAME_MAX}
+        autoFocus
+        selectTextOnFocus
+        returnKeyType="done"
+        onSubmitEditing={() => void commitRename()}
+      />
+      <Text style={styles.nameHint}>This is how the session appears in your history. Leave it empty to drop the name.</Text>
+      <View style={styles.nameActions}>
+        <Button variant="secondary" fullWidth onPress={() => setRenameOpen(false)} accessibilityLabel="Cancel">
+          Cancel
+        </Button>
+        <Button variant="primary" fullWidth onPress={() => void commitRename()} accessibilityLabel="Save name">
+          {savingName ? 'Saving…' : 'Save Name'}
         </Button>
       </View>
     </BottomSheet>
@@ -306,7 +389,7 @@ export default function WorkoutComplete() {
 
   const onShare = () => {
     if (!data) return;
-    void Share.share({ title: 'Forge Legacy', message: `${data.workoutName} — sealed. ${vol(data.volume)} ${volUnit} moved.` });
+    void Share.share({ title: 'Forge Legacy', message: `${shownName} — sealed. ${vol(data.volume)} ${volUnit} moved.` });
   };
   /**
    * Share the sealed session inside Forge — to friends, to a squad, or to both.
@@ -461,7 +544,7 @@ export default function WorkoutComplete() {
           <Text style={[styles.sealStatus, (sealed || review) && styles.sealStatusSealed]}>
             {sealed || review ? (data.chapterName ? `Sealed to ${data.chapterName}` : 'Session Sealed') : 'Session Complete'}
           </Text>
-          <Text style={styles.sealTitle}>{data.workoutName}</Text>
+          <Text style={styles.sealTitle}>{shownName}</Text>
           {data.dateLabel ? <Text style={styles.sealSubtitle}>{data.dateLabel}</Text> : null}
           <View style={styles.sealStats}>
             <Stat n={fmtDuration(data.durationSec)} label="Under Iron" />
@@ -541,10 +624,26 @@ export default function WorkoutComplete() {
           <Text style={styles.recHeaderTitle}>The Record</Text>
         </View>
         <ScrollView contentContainerStyle={styles.recScroll} showsVerticalScrollIndicator={false}>
-          <Text style={styles.recEyebrow}>
-            {data.workoutName}
-            {data.dateLabel ? ` · Sealed ${data.dateLabel}` : ''}
-          </Text>
+          {/* NAME IT HERE, WHERE YOU ALREADY KNOW WHAT IT WAS. The eyebrow has always shown the
+              session's name; it was simply not a control, and nothing anywhere else was either — the
+              app could name a workout and the athlete could not. Tapping opens the same sheet the
+              ⋯ Options menu uses mid-session, so there is one way to do this and one place it lives. */}
+          <Pressable
+            onPress={openRename}
+            accessibilityRole="button"
+            accessibilityLabel={`Rename this workout. Currently ${shownName}`}
+            style={styles.recEyebrowRow}
+            hitSlop={8}
+          >
+            <Text style={styles.recEyebrow}>
+              {shownName}
+              {data.dateLabel ? ` · Sealed ${data.dateLabel}` : ''}
+            </Text>
+            <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M12 20h9" />
+              <Path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+            </Svg>
+          </Pressable>
 
           <View style={styles.recEvidence}>
             <View style={styles.recEvidenceLeft}>
@@ -574,7 +673,7 @@ export default function WorkoutComplete() {
           {volUp ? (
             <View style={styles.tangible}>
               <View style={styles.tangibleDiamond} />
-              <Text style={styles.tangibleText}>Your heaviest {data.workoutName} in a while</Text>
+              <Text style={styles.tangibleText}>Your heaviest {shownName} in a while</Text>
             </View>
           ) : null}
 
@@ -664,9 +763,10 @@ export default function WorkoutComplete() {
             </Button>
           </View>
         </ScrollView>
-        {/* The Record step owns "Save this day as a template", so it has to own the sheet too — see the
-            note where `templateNameSheet` is built. */}
+        {/* The Record step owns "Save this day as a template" and the name on its eyebrow, so it has to
+            own both sheets too — see the note where `templateNameSheet` is built. */}
         {templateNameSheet}
+        {renameSheet}
       </Shell>
     );
   }
@@ -772,7 +872,7 @@ export default function WorkoutComplete() {
         <Card variant="hero" style={styles.shareCard}>
           <SealMedallion size={96} />
           <Text style={styles.shareSealed}>Session Sealed</Text>
-          <Text style={styles.shareName}>{data.workoutName}</Text>
+          <Text style={styles.shareName}>{shownName}</Text>
           {data.chapterName || data.dateLabel ? <Text style={styles.shareChapter}>{[data.chapterName, data.dateLabel].filter(Boolean).join(' · ')}</Text> : null}
           <View style={styles.shareDivider} />
           <View style={styles.sealStats}>
@@ -1295,7 +1395,8 @@ const styles = StyleSheet.create({
   recBack: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   recHeaderTitle: { fontSize: 13, fontWeight: '700', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.cream100 },
   recScroll: { paddingHorizontal: 22, paddingTop: 24, paddingBottom: 30 },
-  recEyebrow: { fontSize: 10, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.gray600, marginBottom: 12 },
+  recEyebrowRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 },
+  recEyebrow: { fontSize: 10, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.gray600, flexShrink: 1 },
   recEvidence: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 },
   recEvidenceLeft: { gap: 6, flexShrink: 1 },
   recEvidenceRight: { alignItems: 'flex-end', gap: 2, paddingBottom: 4 },

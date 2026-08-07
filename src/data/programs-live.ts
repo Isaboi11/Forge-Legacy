@@ -1,6 +1,6 @@
 import type { CardioActivity } from '@/domain/workout/conditioning';
 import { supabase } from '@/lib/supabase';
-import type { LoggedWorkout, ProgramState } from '@/domain/program/progress-core';
+import type { LoggedWorkout, ProgramState, SessionMark, SessionState } from '@/domain/program/progress-core';
 import type { LiftMaxes } from '@/domain/program/percent-max';
 
 /**
@@ -470,14 +470,55 @@ export async function deleteProgram(id: string): Promise<void> {
  * A HEAD count, so Home can pick the right next workout without pulling the whole log.
  * Returns 0 (rather than throwing) pre-0018, so Home keeps working on an un-migrated database.
  */
+/**
+ * How many of a program's sessions are ACCOUNTED FOR — trained or skipped (0119).
+ *
+ * ⚠ It counted `workouts` until 0119, and that is the number the whole schedule used to turn on. It
+ * could only ever describe a program done strictly in order: a session done out of turn advanced the
+ * count, so the app served the same one again and never offered the one that was passed over. And a
+ * skipped session could not exist at all, because nothing but a workout could move the number.
+ *
+ * Counting `program_sessions` fixes both, and keeps the graduation the SQL now computes from the same
+ * rows. A skip counts here — that is the product decision — while `state` on the row keeps saying which
+ * it was, so nothing downstream can present a skip as a workout.
+ */
 export async function fetchProgramCompletedCount(programId: string): Promise<number> {
   const { count, error } = await supabase
-    .from('workouts')
+    .from('program_sessions')
     .select('id', { count: 'exact', head: true })
-    .eq('program_id', programId)
-    .eq('state', 'saved');
+    .eq('program_id', programId);
   if (error) return 0;
   return count ?? 0;
+}
+
+/** Which sessions of a program have been touched, and how. Empty on any read failure. */
+export async function fetchProgramSessions(programId: string): Promise<SessionMark[]> {
+  const { data, error } = await supabase
+    .from('program_sessions')
+    .select('week_index, day_index, state')
+    .eq('program_id', programId);
+  if (error || !data) return [];
+  return (data as { week_index: number; day_index: number; state: SessionState }[]).map((r) => ({
+    weekIndex: r.week_index,
+    dayIndex: r.day_index,
+    state: r.state,
+  }));
+}
+
+/**
+ * Pass over one prescribed session. It counts toward finishing the program and can therefore graduate
+ * it, which is what "a skip still counts" has to mean.
+ *
+ * The RPC validates the slot against the program's own schedule and treats an already-touched session
+ * as a no-op — skipping something you already trained must never overwrite the record of training it.
+ */
+export async function skipProgramSession(programId: string, weekIndex: number, dayIndex: number): Promise<void> {
+  const { error } = await supabase.rpc('skip_program_session', {
+    p_program_id: programId,
+    p_week_index: weekIndex,
+    p_day_index: dayIndex,
+  });
+  if (error) throw error;
 }
 
 type WorkoutRow = {

@@ -161,6 +161,76 @@ export function absorbBuilderInbox(draft: ProgramDraft, inbox: BuilderInbox): Pr
   return { ...withActiveDays(d, days.map((x, i) => (i === inbox.day ? nextDay : x))), openDay: inbox.day };
 }
 
+/**
+ * ══ DROP A WHOLE TEMPLATE INTO THE DAY BEING BUILT ══
+ *
+ * The Day Builder could add one exercise at a time and nothing else, so an athlete who had already
+ * captured "Push Day" as a template — or who was looking at one of the 81 Forge ships — had to rebuild
+ * it lift by lift to use it as a program day. Reported by the PO: *"you should be able to add a
+ * template day while building a program, putting that template as the day you're working on."*
+ *
+ * The rows arrive ALREADY CONVERTED (`templateRowsToDay`, called where the exercise catalogue is
+ * reachable) so this stays pure and testable. What it owns is what happens to the day:
+ *
+ *  · **replace** — the template BECOMES the day, which is what "putting that template as the day"
+ *    means. Offered only behind a confirmation when the day already has content.
+ *  · **append** — its rows land after what is already there, for building a day out of two shapes.
+ *
+ * THE DAY'S NAME is taken only when the day has none. An athlete who typed "Heavy Push" and then
+ * pulled in a template called "Push Day A" meant to fill the day, not to rename it.
+ *
+ * GROUP IDS ARE REMAPPED on every application. They are the template's own, and grouping in this model
+ * is derived by ADJACENCY within a section — so appending the same template twice would put two blocks
+ * carrying one id next to each other, and they would fuse into a single superset nobody authored.
+ */
+export function templateIntoDay(
+  d: ProgramDraft,
+  dayIndex: number,
+  rows: { warmup: ProgramExercise[]; main: ProgramExercise[]; cooldown: ProgramExercise[] },
+  opts: { mode: 'replace' | 'append'; name?: string } = { mode: 'replace' },
+): ProgramDraft {
+  const days = activeDays(d);
+  const day = days[dayIndex];
+  if (!day) return d;
+
+  // One remap table per application, shared across the three sections — a block that spans a section
+  // boundary is not a thing the model builds, but if one ever arrives it must stay one block.
+  const remap = new Map<string, string>();
+  const fresh = (list: ProgramExercise[]): ProgramExercise[] =>
+    list.map((x) => {
+      let groupId = x.groupId;
+      if (groupId) {
+        const seen = remap.get(groupId);
+        if (seen) groupId = seen;
+        else {
+          const next = newExerciseId();
+          remap.set(groupId, next);
+          groupId = next;
+        }
+      }
+      return {
+        ...x,
+        id: newExerciseId(),
+        ...(groupId ? { groupId } : null),
+        // The builder's steppers reach 1–8 sets and 1–60 reps. A template row outside that would sit in
+        // the day at a value no control on the screen can express or correct.
+        ...(x.kind === 'cardio' ? null : { sets: clampSets(x.sets ?? 1), reps: clampReps(x.reps ?? 1) }),
+      };
+    });
+
+  const merge = (existing: ProgramExercise[], incoming: ProgramExercise[]): ProgramExercise[] =>
+    opts.mode === 'replace' ? fresh(incoming) : [...existing, ...fresh(incoming)];
+
+  const nextDay: ProgramDay = {
+    ...day,
+    name: day.name.trim() ? day.name : (opts.name ?? day.name),
+    warmup: merge(day.warmup, rows.warmup),
+    main: merge(day.main, rows.main),
+    cooldown: merge(day.cooldown, rows.cooldown),
+  };
+  return { ...withActiveDays(d, days.map((x, i) => (i === dayIndex ? nextDay : x))), openDay: dayIndex };
+}
+
 /** Switch to the repeating-template mode, closing any open week. */
 export function setRepeatMode(d: ProgramDraft): ProgramDraft {
   return { ...d, vary: false, openWeek: null, openDay: null };

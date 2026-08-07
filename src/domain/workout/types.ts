@@ -138,6 +138,15 @@ export interface ActiveSession {
   /** Set when the session was launched from a program — attributes the saved workout to it (0018). */
   programId?: string;
   /**
+   * WHICH session of that program the athlete chose to train (0119) — 0-based, both or neither.
+   *
+   * Absent means "whichever is next", resolved server-side at commit. Present only when they picked a
+   * specific one, which is what swapping is. Carrying it any further than that would reintroduce the
+   * stale-card risk `workout-launch.ts` exists to describe.
+   */
+  programWeek?: number;
+  programDay?: number;
+  /**
    * Set when the session was launched from a saved template — attributes the saved workout back (0095),
    * which is what makes the template's "Times used" and session history real. Derived from these rows
    * rather than counted, so an abandoned start never inflates the number: a session you didn't save is

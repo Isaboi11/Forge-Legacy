@@ -1,7 +1,14 @@
-import type { TemplateExercise } from '@/data/templates-live';
+import type { Sex } from '@/domain/profile/schema';
+import DEFINITIONS_JSON from './definitions.json';
+import {
+  filterStarters as filterIn,
+  suggestedStarters as suggestIn,
+  type StarterFilter,
+  type StarterTemplateDefinition,
+} from './core';
 
 /**
- * FORGE STARTER TEMPLATES — the six sessions an athlete has before they have made one.
+ * FORGE STARTER TEMPLATES — the sessions an athlete has before they have made one.
  *
  * Templates were capture-only, then authorable (W-25). Both require the athlete to have already done
  * something: you can keep a session you trained, or plan one you intend to. Neither answers the first
@@ -33,125 +40,87 @@ import type { TemplateExercise } from '@/data/templates-live';
  * As definitions, an app update that rewrites `push-day` cannot rewrite what anyone already adopted —
  * the same contract a live program holds against its catalogue entry.
  *
+ * ── THE LIBRARY: 6 → 81 ──────────────────────────────────────────────────────────────────────────
+ *
+ * The original six were one session per common split, gym only, and unisex by omission. They are still
+ * here and their IDS ARE UNCHANGED — `push-day`, `pull-day` and `leg-day` are now the gym/Intermediate
+ * men's slots of a full grid rather than one-offs, which is why their DISPLAY NAMES gained
+ * "— Intermediate" to sit beside their siblings. Renaming a definition is safe where renumbering an id
+ * would not be: `adoptStarterTemplate` snapshots the name into the athlete's row, so a copy taken
+ * yesterday keeps the name it was taken under and only the shelf changes.
+ *
+ * The grid around them is seven FOCUSES × two VENUES × three LEVELS, tracked for men and women, minus
+ * the men's glute day nobody asked for:
+ *
+ *   focus    push · pull · legs · arms · chest-triceps · back-biceps · glutes
+ *   venue    gym · home          — 'home' means no rack, no cable, no stack (`HOME_EQUIPMENT`)
+ *   level    Beginner · Intermediate · Advanced
+ *   audience men · women · all   — 'all' is the three legacy splits that predate the axis
+ *
+ * At 81 the shelf stopped being a list: `/templates` now samples one per focus and `/forge-templates`
+ * browses the grid.
+ *
+ * ── WHY `venue` IS AUTHORED, NOT DERIVED ─────────────────────────────────────────────────────────
+ *
+ * It could be derived — every row's equipment is in the catalogue, so "does this need a gym" is a
+ * computable question. The two answers differ, and `HOME_EQUIPMENT`'s comment in `core.ts` says how.
+ *
+ * ── ⚠ NO ISOMETRIC HOLDS, AND THE TRAP THAT LOOKS LIKE ONE ───────────────────────────────────────
+ *
+ * The design's Leg Day cools down with a Plank at "45 reps", which means 45 SECONDS. `TemplateExercise`
+ * has `targetReps`, and `targetMi`/`targetDurationSec` for cardio blocks only — a strength row cannot
+ * express a hold.
+ *
+ * `schemeText` LOOKS like it can: a cooldown row with `targetReps >= 30` renders as "2 × 30s". That
+ * convention lives only on the preview surfaces (the starter preview, W-27, program share). The LOGGER
+ * renders `{targetReps} Reps` flat, so a 45-second plank authored that way previews as "45s" and then
+ * asks the athlete for forty-five planks. `definitions.test.mjs` fails any strength row with
+ * `targetReps >= 30` for exactly this reason. If holds are ever wanted here, the session model already
+ * has `targetSec` — `TemplateExercise` is the layer that would need to carry it.
+ *
+ * ── CARDIO FINISHERS ─────────────────────────────────────────────────────────────────────────────
+ *
+ * A cooldown row may be a conditioning block. It carries `kind: 'cardio'` and a `cardio:<activity>` key,
+ * which `workout.tsx` turns back into a real cardio block rather than sets of a run. Its target is
+ * `targetMi` and ONLY `targetMi` — `cardioExercise` does not read `targetDurationSec`, so a duration
+ * would be accepted, stored, and silently dropped on the way into the session. The test rejects one.
+ *
  * ── CONTENT PROVENANCE ───────────────────────────────────────────────────────────────────────────
  *
  * Push Day · Pull Day · Leg Day · Full Body Express are the design's own, from
  * `design_reference/Forge Modal Library Design/forge-templates.js` `seeds()`, lift for lift and set
- * for set. Upper Body and Lower Body are added to cover the other common split, built from the same
- * movements. Every `catalogKey` is a real id in the 794-exercise catalogue and is checked by
- * `__tests__/definitions.test.mjs` — a typo here would reach an athlete as a lift with no detail page.
+ * for set. Upper Body and Lower Body cover the other common split, built from the same movements. The
+ * 75 added around them are authored in-repo against the 794-exercise catalogue.
  *
- * ⚠ NO ISOMETRIC HOLDS. The design's Leg Day cools down with a Plank at "45 reps", which means 45
- * SECONDS. `TemplateExercise` has `targetReps`, and `targetDurationSec` for cardio blocks only — a
- * strength row cannot express a hold. The plank is omitted rather than shipped as a prescription for
- * forty-five planks. This is a pre-existing limit of the model (W-25's builder has it too), not one
- * this file introduces.
+ * Every `catalogKey` is a real id in that catalogue and is checked by `__tests__/definitions.test.mjs`
+ * — a typo here would reach an athlete as a lift with no detail page, and this is the only content in
+ * the app that names catalogue exercises by hand rather than picking them.
  */
 
-export interface StarterTemplateDefinition {
-  /** Stable — becomes `workout_templates.source_definition_id`. Never renumber or reuse. */
-  id: string;
-  name: string;
-  /** One line for the shelf card. */
-  blurb: string;
-  level: 'Beginner' | 'Intermediate';
-  exercises: TemplateExercise[];
-}
+/* Everything from `core` EXCEPT `filterStarters` and `suggestedStarters`, which are re-bound below to
+   the shipped set. A blanket `export *` re-exports the two-argument originals under the same names and
+   collides with the wrappers. */
+export {
+  HOME_EQUIPMENT,
+  STARTER_FOCUSES,
+  STARTER_LEVELS,
+  defaultAudiences,
+  focusLabel,
+  starterMeta,
+  starterSummary,
+} from './core';
+export type {
+  StarterAudience,
+  StarterFilter,
+  StarterFocus,
+  StarterLevel,
+  StarterTemplateDefinition,
+  StarterVenue,
+} from './core';
 
-/** Terser than repeating the object shape thirty-four times, and it keeps every row the same shape. */
-const ex = (catalogKey: string, name: string, sets: number, targetReps: number, section: 'warmup' | 'main' | 'cooldown' = 'main'): TemplateExercise => ({
-  catalogKey,
-  name,
-  sets,
-  targetReps,
-  section,
-  kind: 'strength',
-});
-
-export const STARTER_TEMPLATES: readonly StarterTemplateDefinition[] = [
-  {
-    id: 'push-day',
-    name: 'Push Day',
-    blurb: 'Chest, shoulders and triceps — the pressing half of an upper/lower split.',
-    level: 'Intermediate',
-    exercises: [
-      ex('push-up', 'Push-Up', 2, 15, 'warmup'),
-      ex('barbell-bench-press', 'Barbell Bench Press', 4, 8),
-      ex('barbell-overhead-press', 'Barbell Overhead Press', 3, 8),
-      ex('dumbbell-incline-bench-press', 'Dumbbell Incline Bench Press', 3, 10),
-      ex('high-to-low-cable-fly', 'High-to-Low Cable Fly', 3, 12),
-      ex('cable-triceps-pushdown', 'Cable Triceps Pushdown', 3, 12),
-    ],
-  },
-  {
-    id: 'pull-day',
-    name: 'Pull Day',
-    blurb: 'Back and biceps. Starts heavy off the floor, finishes with the arms.',
-    level: 'Intermediate',
-    exercises: [
-      ex('cable-face-pull', 'Cable Face Pull', 2, 15, 'warmup'),
-      ex('barbell-deadlift', 'Barbell Deadlift', 3, 5),
-      ex('pull-up', 'Pull-Up', 4, 8),
-      ex('barbell-bent-over-row', 'Barbell Bent-Over Row', 3, 10),
-      ex('cable-lat-pulldown', 'Cable Lat Pulldown', 3, 12),
-      ex('barbell-biceps-curl', 'Barbell Biceps Curl', 3, 12),
-    ],
-  },
-  {
-    id: 'leg-day',
-    name: 'Leg Day',
-    blurb: 'Squat first, then everything that holds the squat up.',
-    level: 'Intermediate',
-    exercises: [
-      ex('barbell-back-squat', 'Barbell Back Squat', 4, 6),
-      ex('barbell-romanian-deadlift', 'Barbell Romanian Deadlift', 3, 8),
-      ex('machine-leg-press', 'Machine Leg Press', 3, 12),
-      ex('dumbbell-walking-lunge', 'Dumbbell Walking Lunge', 3, 10),
-      ex('lying-leg-curl-machine', 'Lying Leg Curl Machine', 3, 12),
-    ],
-  },
-  {
-    id: 'full-body-express',
-    name: 'Full Body Express',
-    blurb: 'Four compound lifts, whole body. For the day you have forty minutes.',
-    level: 'Beginner',
-    exercises: [
-      ex('push-up', 'Push-Up', 2, 12, 'warmup'),
-      ex('barbell-back-squat', 'Barbell Back Squat', 3, 8),
-      ex('barbell-bench-press', 'Barbell Bench Press', 3, 8),
-      ex('barbell-bent-over-row', 'Barbell Bent-Over Row', 3, 10),
-      ex('barbell-overhead-press', 'Barbell Overhead Press', 3, 10),
-    ],
-  },
-  {
-    id: 'upper-body',
-    name: 'Upper Body',
-    blurb: 'Push and pull in the same session — the upper half of an upper/lower week.',
-    level: 'Beginner',
-    exercises: [
-      ex('barbell-bench-press', 'Barbell Bench Press', 4, 6),
-      ex('barbell-bent-over-row', 'Barbell Bent-Over Row', 4, 6),
-      ex('seated-dumbbell-shoulder-press', 'Seated Dumbbell Shoulder Press', 3, 10),
-      ex('cable-lat-pulldown', 'Cable Lat Pulldown', 3, 12),
-      ex('dumbbell-hammer-curl', 'Dumbbell Hammer Curl', 3, 12),
-      ex('cable-triceps-pushdown', 'Cable Triceps Pushdown', 3, 12),
-    ],
-  },
-  {
-    id: 'lower-body',
-    name: 'Lower Body',
-    blurb: 'Quads, hamstrings, glutes and calves — the other half of the week.',
-    level: 'Beginner',
-    exercises: [
-      ex('barbell-back-squat', 'Barbell Back Squat', 4, 6),
-      ex('barbell-hip-thrust', 'Barbell Hip Thrust', 3, 10),
-      ex('bulgarian-split-squat', 'Bulgarian Split Squat', 3, 10),
-      ex('seated-leg-curl-machine', 'Seated Leg Curl Machine', 3, 12),
-      ex('leg-extension-machine', 'Leg Extension Machine', 3, 15),
-      ex('standing-calf-raise-machine', 'Standing Calf Raise Machine', 4, 12),
-    ],
-  },
-];
+/** JSON import widens literals (level: string); the definitions test enforces the real contract. */
+export const STARTER_TEMPLATES: readonly StarterTemplateDefinition[] =
+  DEFINITIONS_JSON as unknown as StarterTemplateDefinition[];
 
 export function getStarterTemplates(): readonly StarterTemplateDefinition[] {
   return STARTER_TEMPLATES;
@@ -161,9 +130,16 @@ export function getStarterTemplate(id: string): StarterTemplateDefinition | null
   return STARTER_TEMPLATES.find((t) => t.id === id) ?? null;
 }
 
-/** "6 lifts · 21 sets" — the same phrasing `templateSummary` gives an adopted one. */
-export function starterSummary(t: StarterTemplateDefinition): string {
-  const lifts = t.exercises.length;
-  const sets = t.exercises.reduce((n, e) => n + e.sets, 0);
-  return `${lifts} ${lifts === 1 ? 'lift' : 'lifts'} · ${sets} ${sets === 1 ? 'set' : 'sets'}`;
+/** `core.filterStarters` bound to the shipped set — what every screen actually wants. */
+export function filterStarters(f: StarterFilter = {}): StarterTemplateDefinition[] {
+  return filterIn(STARTER_TEMPLATES, f);
+}
+
+/** `core.suggestedStarters` bound to the shipped set. */
+export function suggestedStarters(
+  sex: Sex | null | undefined,
+  adopted: ReadonlySet<string>,
+  limit = 4,
+): StarterTemplateDefinition[] {
+  return suggestIn(STARTER_TEMPLATES, sex, adopted, limit);
 }

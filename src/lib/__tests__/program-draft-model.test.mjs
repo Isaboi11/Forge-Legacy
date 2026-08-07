@@ -29,6 +29,7 @@ import {
   clearWeek,
   nextIncompleteWeek,
   completedWeeks,
+  templateIntoDay,
 } from '../program-draft-model.ts';
 
 const ex = (name) => ({ id: name, name, equip: 'Barbell', muscles: ['Chest'], type: 'Compound', sets: 3, reps: 10 });
@@ -384,4 +385,86 @@ test('unpairing dissolves the whole block and leaves the prescriptions alone', (
 test('unpairing a loose row changes nothing', () => {
   const list = [row('Press', 3)];
   assert.deepEqual(unpairAt(list, 0), list);
+});
+
+// ── templateIntoDay: a whole workout template dropped into the day being built ──────────────────
+
+/** A day-worth of converted template rows, in the three-section shape `templateRowsToDay` produces. */
+const rows = (over = {}) => ({
+  warmup: [ex('Band Pull-Apart')],
+  main: [ex('Bench Press'), ex('Incline DB Press')],
+  cooldown: [ex('Chest Stretch')],
+  ...over,
+});
+
+/** A draft with day 0 open and empty. */
+function openDraft(dayIndex = 0) {
+  return { ...newDraft(), openDay: dayIndex };
+}
+
+test('templateIntoDay fills an empty day and names it', () => {
+  const d = templateIntoDay(openDraft(), 0, rows(), { mode: 'replace', name: 'Push Day' });
+  const day = activeDays(d)[0];
+  assert.equal(day.name, 'Push Day');
+  assert.equal(day.warmup.length, 1);
+  assert.equal(day.main.length, 2);
+  assert.equal(day.cooldown.length, 1);
+  assert.equal(d.openDay, 0, 'the day stays open — you land back on what you just filled');
+});
+
+test('templateIntoDay never overwrites a name the athlete typed', () => {
+  const base = withActiveDays(openDraft(), openDraft().days.map((day, i) => (i === 0 ? { ...day, name: 'Heavy Push' } : day)));
+  const d = templateIntoDay(base, 0, rows(), { mode: 'replace', name: 'Push Day' });
+  assert.equal(activeDays(d)[0].name, 'Heavy Push');
+});
+
+test('replace discards what was there; append keeps it', () => {
+  const seeded = templateIntoDay(openDraft(), 0, rows(), { mode: 'replace' });
+  const replaced = templateIntoDay(seeded, 0, rows(), { mode: 'replace' });
+  assert.equal(activeDays(replaced)[0].main.length, 2);
+  const appended = templateIntoDay(seeded, 0, rows(), { mode: 'append' });
+  assert.equal(activeDays(appended)[0].main.length, 4);
+});
+
+test('every applied row gets a fresh id, so two copies are separately editable', () => {
+  const twice = templateIntoDay(templateIntoDay(openDraft(), 0, rows(), { mode: 'replace' }), 0, rows(), { mode: 'append' });
+  const ids = activeDays(twice)[0].main.map((x) => x.id);
+  assert.equal(new Set(ids).size, ids.length, 'duplicate ids would make move/remove hit the wrong row');
+});
+
+test('group ids are remapped, so appending a template twice does not fuse two blocks into one', () => {
+  const sup = {
+    warmup: [],
+    cooldown: [],
+    main: [
+      { ...ex('Press'), groupId: 'g1', groupKind: 'superset' },
+      { ...ex('Row'), groupId: 'g1', groupKind: 'superset' },
+    ],
+  };
+  const twice = templateIntoDay(templateIntoDay(openDraft(), 0, sup, { mode: 'replace' }), 0, sup, { mode: 'append' });
+  const main = activeDays(twice)[0].main;
+  assert.equal(main[0].groupId, main[1].groupId, 'the first block is still one block');
+  assert.equal(main[2].groupId, main[3].groupId, 'and so is the second');
+  assert.notEqual(main[1].groupId, main[2].groupId, 'but they are NOT the same block');
+  assert.equal(pairingAt(main, 0).count, 2, 'a four-lift superset is not what was authored');
+});
+
+test('a template row outside the builder clamps into what the steppers can reach', () => {
+  const wild = { warmup: [], cooldown: [], main: [{ ...ex('Press'), sets: 40, reps: 500 }] };
+  const day = activeDays(templateIntoDay(openDraft(), 0, wild, { mode: 'replace' }))[0];
+  assert.equal(day.main[0].sets, clampSets(40));
+  assert.equal(day.main[0].reps, clampReps(500));
+});
+
+test('a cardio block keeps its open targets rather than being clamped to a set count', () => {
+  const cardio = { warmup: [], cooldown: [], main: [{ id: 'c', name: 'Run', kind: 'cardio', activity: 'run', modality: 'outdoor', targetMi: 1, targetPaceSec: null, targetSpdMph: null }] };
+  const block = activeDays(templateIntoDay(openDraft(), 0, cardio, { mode: 'replace' }))[0].main[0];
+  assert.equal(block.targetMi, 1);
+  assert.equal(block.targetPaceSec, null, 'null is an OPEN target and must not become 0');
+  assert.ok(block.sets === undefined, 'a run is not sets of a run');
+});
+
+test('templateIntoDay on a day that does not exist changes nothing', () => {
+  const d = openDraft();
+  assert.equal(templateIntoDay(d, 99, rows(), { mode: 'replace' }), d);
 });

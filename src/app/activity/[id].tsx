@@ -1,8 +1,11 @@
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
+import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { Button } from '@/components/forge/composites/Button';
 import { EquipIcon } from '@/components/forge/EquipIcon';
 import { ExercisePoster } from '@/components/forge/ExercisePoster';
 import { ScreenBackground } from '@/components/screen-background';
@@ -19,7 +22,8 @@ import {
   whenLine,
   type ActivityDetail,
 } from '@/domain/activity/detail-core';
-import { useQuery } from '@/lib/useQuery';
+import { WORKOUT_NAME_MAX, renameWorkout } from '@/data/workout-complete-live';
+import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useUnits } from '@/lib/settings';
 import { openPlaylist } from '@/components/forge/composites/Playlist';
 import { playlistLabel, type WorkoutPlaylistLink } from '@/domain/workout/playlist';
@@ -57,6 +61,47 @@ export default function ActivityDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data, loading, error } = useQuery(() => fetchActivityDetail(id), [id]);
 
+  /*
+   * RENAMING A SESSION AFTERWARDS.
+   *
+   * `workouts.workout_name` has existed since 0001 and the athlete could never set it: a program
+   * session took its slot name, a free one took the literal "Freestyle Workout", and no control
+   * existed anywhere in the app. It is now editable at the finish (W-17) and here — which is where
+   * you are when you realise a session deserved a better name than the one it was handed.
+   *
+   * Same three-state idiom as W-17: `undefined` = untouched, `null` = deliberately cleared.
+   */
+  const [nameEdit, setNameEdit] = useState<string | null | undefined>(undefined);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameDraft, setRenameDraft] = useState('');
+  const [savingName, setSavingName] = useState(false);
+  const [renameError, setRenameError] = useState<string | null>(null);
+  const title = nameEdit !== undefined ? (nameEdit ?? 'Workout') : (data?.title ?? 'Workout');
+
+  const openRename = () => {
+    /* The STORED name, not the displayed fallback. `fetchActivityDetail` renders a nameless session
+       as "Workout"; offering that word for editing would make an unnamed session look named, and
+       tapping Save would then write it to a row that never had one. */
+    const stored = nameEdit !== undefined ? (nameEdit ?? '') : data?.title === 'Workout' ? '' : (data?.title ?? '');
+    setRenameDraft(stored);
+    setRenameError(null);
+    setRenameOpen(true);
+  };
+
+  const commitRename = async () => {
+    if (savingName) return;
+    setSavingName(true);
+    setRenameError(null);
+    try {
+      setNameEdit(await renameWorkout(id, renameDraft));
+      setRenameOpen(false);
+    } catch (e) {
+      setRenameError(errorMessage(e));
+    } finally {
+      setSavingName(false);
+    }
+  };
+
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.legacy} overlay={{ flat: 'rgba(5,5,5,0.3)' }} />
@@ -72,12 +117,44 @@ export default function ActivityDetailScreen() {
           <Text style={styles.errorDetail}>{error ?? 'It may have been deleted.'}</Text>
         </View>
       ) : (
-        <Body
-          detail={data}
-          onOpenProgram={(pid) => router.push({ pathname: '/program/[id]', params: { id: pid } })}
-          onOpenExercise={(key) => router.push({ pathname: '/exercise/[id]', params: { id: key } })}
-          onOpenSummary={() => router.push({ pathname: '/workout-complete', params: { id, review: '1' } })}
-        />
+        <>
+          <Body
+            detail={data}
+            title={title}
+            onRename={openRename}
+            onOpenProgram={(pid) => router.push({ pathname: '/program/[id]', params: { id: pid } })}
+            onOpenExercise={(key) => router.push({ pathname: '/exercise/[id]', params: { id: key } })}
+            onOpenSummary={() => router.push({ pathname: '/workout-complete', params: { id, review: '1' } })}
+          />
+          {/* Mounted beside the Body that opens it, never at the bottom of the file — see
+              `overlay-branch.test.mjs` for the session that rule cost. */}
+          <BottomSheet open={renameOpen} onClose={() => setRenameOpen(false)} title="Name this workout">
+            <TextInput
+              value={renameDraft}
+              onChangeText={setRenameDraft}
+              placeholder="e.g. Heavy pull"
+              placeholderTextColor={flColor.gray600}
+              style={styles.nameInput}
+              accessibilityLabel="Workout name"
+              maxLength={WORKOUT_NAME_MAX}
+              autoFocus
+              selectTextOnFocus
+              returnKeyType="done"
+              onSubmitEditing={() => void commitRename()}
+            />
+            <Text style={renameError ? styles.nameError : styles.nameHint}>
+              {renameError ?? 'This is how the session appears in your history. Leave it empty to drop the name.'}
+            </Text>
+            <View style={styles.nameActions}>
+              <Button variant="secondary" fullWidth onPress={() => setRenameOpen(false)} accessibilityLabel="Cancel">
+                Cancel
+              </Button>
+              <Button variant="primary" fullWidth onPress={() => void commitRename()} accessibilityLabel="Save name">
+                {savingName ? 'Saving…' : 'Save Name'}
+              </Button>
+            </View>
+          </BottomSheet>
+        </>
       )}
     </View>
   );
@@ -85,11 +162,16 @@ export default function ActivityDetailScreen() {
 
 function Body({
   detail,
+  title,
+  onRename,
   onOpenProgram,
   onOpenExercise,
   onOpenSummary,
 }: {
   detail: ActivityDetail;
+  /** Passed in rather than read off `detail`, so a rename shows without waiting for a refetch. */
+  title: string;
+  onRename: () => void;
   onOpenProgram: (programId: string) => void;
   onOpenExercise: (keyOrName: string) => void;
   onOpenSummary: () => void;
@@ -98,16 +180,47 @@ function Body({
   const tiles = statTiles(detail);
   const isStrength = detail.type === 'strength';
   const { fmt } = useUnits(); // re-express logged "225 lbs × 5" in the athlete's chosen system
+  /* Somebody else's session, opened from the recap post they shared (migration 0117). The session is
+     all here; what changes is that nothing on this screen may WRITE to a row that is not theirs. */
+  const shared = detail.viewer === 'shared';
+  const ordinal = ordinalLine(detail);
 
   return (
     <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      {/* Says whose this is before anything else, because every number below belongs to them and the
+          screen is otherwise identical to the one showing your own training. */}
+      {shared ? (
+        <View style={styles.sharedBanner}>
+          <Glyph d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" size={14} color={flColor.bronze300} width={1.7} />
+          <Text style={styles.sharedBannerText}>{detail.authorName}&apos;s session · shared with you</Text>
+        </View>
+      ) : null}
+
       {/* hero */}
       <View style={styles.hero}>
         <View style={styles.heroIcon}>
           <EquipIcon equip={detail.exercises[0]?.equip ?? undefined} size={24} />
         </View>
         <View style={styles.heroText}>
-          <Text style={styles.title}>{detail.title}</Text>
+          {/* Renaming writes `workouts.workout_name`, which RLS would refuse for a viewer — so on a
+              shared session the title is plain text, not a control that fails. */}
+          {shared ? (
+            <Text style={styles.title}>{title}</Text>
+          ) : (
+            <Pressable
+              onPress={onRename}
+              accessibilityRole="button"
+              accessibilityLabel={`Rename this workout. Currently ${title}`}
+              style={styles.titleRow}
+              hitSlop={8}
+            >
+              <Text style={styles.title}>{title}</Text>
+              <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+                <Path d="M12 20h9" />
+                <Path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+              </Svg>
+            </Pressable>
+          )}
           <Text style={styles.programTag}>{programTag(detail)}</Text>
         </View>
       </View>
@@ -121,7 +234,9 @@ function Body({
 
       <Text style={styles.summary}>{summaryLine(detail)}</Text>
       <Text style={styles.when}>{whenLine(detail.startedAt)}</Text>
-      <Text style={styles.ordinal}>{ordinalLine(detail)}</Text>
+      {/* Empty on a shared session — the ordinal counts the author's whole training life and the
+          chapter is their own Legacy prose. Absent, not zeroed. */}
+      {ordinal ? <Text style={styles.ordinal}>{ordinal}</Text> : null}
 
       <View style={styles.divider} />
 
@@ -189,7 +304,7 @@ function Body({
       )}
 
       {/* attribution */}
-      {detail.partners.length || detail.playlist || detail.chapterName || detail.programId ? (
+      {detail.partners.length || detail.playlist || detail.chapterName || detail.programId || detail.programName ? (
         <>
           <View style={styles.divider} />
           {detail.partners.length ? (
@@ -216,12 +331,17 @@ function Body({
             />
           ) : null}
           {detail.chapterName ? <AttrRow label="Chapter" value={detail.chapterName} /> : null}
+          {/* On a shared session the program is NAMED but not tappable — 0117 withholds its id
+              deliberately, because a viewer cannot open somebody else's program and a link that leads
+              to a permission error is worse than a label. */}
           {detail.programId ? (
             <AttrRow
               label="Program"
-              value={detail.programName ? `${detail.programName} — ${detail.title}` : detail.title}
+              value={detail.programName ? `${detail.programName} — ${title}` : title}
               onPress={() => onOpenProgram(detail.programId as string)}
             />
+          ) : detail.programName ? (
+            <AttrRow label="Program" value={detail.programName} />
           ) : null}
         </>
       ) : null}
@@ -234,21 +354,25 @@ function Body({
         `review=1` re-opens it as a record rather than a ceremony: no graduation replay, no first-workout
         reveal, no hold-to-seal over something already sealed.
       */}
-      <Pressable
-        onPress={onOpenSummary}
-        accessibilityRole="button"
-        accessibilityLabel="See the full summary for this session"
-        style={({ pressed }) => [styles.summaryRow, pressed ? styles.summaryRowPressed : null]}
-      >
-        <View style={styles.summaryIcon}>
-          <Glyph d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" size={17} color={flColor.bronze400} />
-        </View>
-        <View style={styles.summaryText}>
-          <Text style={styles.summaryTitle}>See the full summary</Text>
-          <Text style={styles.summarySub}>The seal, the volume, and the session in full</Text>
-        </View>
-        <Glyph d="M9 6l6 6-6 6" size={16} color={flColor.bronze400} width={2} />
-      </Pressable>
+      {/* W-17 reads the athlete's OWN completion (and offers to seal, rename and save as a template),
+          so it is not a door on somebody else's session. Omitted, not disabled. */}
+      {shared ? null : (
+        <Pressable
+          onPress={onOpenSummary}
+          accessibilityRole="button"
+          accessibilityLabel="See the full summary for this session"
+          style={({ pressed }) => [styles.summaryRow, pressed ? styles.summaryRowPressed : null]}
+        >
+          <View style={styles.summaryIcon}>
+            <Glyph d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" size={17} color={flColor.bronze400} />
+          </View>
+          <View style={styles.summaryText}>
+            <Text style={styles.summaryTitle}>See the full summary</Text>
+            <Text style={styles.summarySub}>The seal, the volume, and the session in full</Text>
+          </View>
+          <Glyph d="M9 6l6 6-6 6" size={16} color={flColor.bronze400} width={2} />
+        </Pressable>
+      )}
     </ScrollView>
   );
 }
@@ -295,7 +419,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   heroText: { flex: 1, minWidth: 0, gap: 2 },
-  title: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', color: flColor.cream100 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  title: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', color: flColor.cream100, flexShrink: 1 },
+
+  // the rename sheet — same metrics as W-17's, so the two read as one control in two places
+  nameInput: {
+    fontFamily: flFont.sans,
+    fontSize: 16,
+    color: flColor.cream100,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    borderRadius: flRadius.md,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    outlineWidth: 0,
+  },
+  nameHint: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray600, marginTop: 10 },
+  nameError: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.redMuted, marginTop: 10 },
+  nameActions: { flexDirection: 'row', gap: 10, marginTop: 18 },
   programTag: { fontSize: 12, fontWeight: '600', color: flColor.gray600 },
 
   milestone: {
@@ -316,6 +457,8 @@ const styles = StyleSheet.create({
   summary: { marginTop: 14, fontSize: 15, fontWeight: '500', color: flColor.gray400 },
   when: { marginTop: 4, fontSize: 13.5, color: flColor.gray600 },
   ordinal: { marginTop: 2, fontSize: 13.5, color: flColor.gray600 },
+  sharedBanner: { flexDirection: 'row', alignItems: 'center', gap: 9, alignSelf: 'flex-start', marginBottom: 14, paddingVertical: 7, paddingHorizontal: 12, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
+  sharedBannerText: { fontSize: 11.5, fontWeight: '600', letterSpacing: 0.2, color: flColor.bronze300 },
 
   divider: { height: 1, backgroundColor: flColor.charcoal700, marginVertical: 22 },
 

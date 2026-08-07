@@ -38,13 +38,14 @@ import { claimInitiativeHonor } from '@/data/honors-live';
 import { useTour } from '@/hooks/useTour';
 import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { TourAnchor } from '@/components/tour/TourAnchor';
-import { adoptCatalogProgram, fetchMyPrograms, fetchProgramCompletedCount, startProgram } from '@/data/programs-live';
+import { adoptCatalogProgram, fetchMyPrograms, fetchProgramSessions, startProgram } from '@/data/programs-live';
 import type { ProgramDay } from '@/data/programs-live';
+import type { SessionMark } from '@/domain/program/progress-core';
 import { WorkoutPreviewSheet } from '@/components/forge/WorkoutPreviewSheet';
 import { structureFromDefinition } from '@/domain/program/adopt-core';
 import { itemByName } from '@/domain/exercise-picker/data';
 import { getProgramDefinitions } from '@/domain/training/programs';
-import { nextSession, totalSessions } from '@/domain/program/progress-core';
+import { nextOpenSlot, totalSessions } from '@/domain/program/progress-core';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { StartStrengthSheet } from '@/components/forge/compositions/StartStrengthSheet';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
@@ -308,8 +309,13 @@ export default function HomeScreen() {
    */
   const { active: activeProgram, anchor: anchorProgram } = selectHomePrograms(myPrograms);
   const builtId = anchorProgram?.id ?? null;
-  const { data: builtDone, refetch: refetchBuiltDone } = useQuery(
-    () => (builtId ? fetchProgramCompletedCount(builtId) : Promise.resolve(0)),
+  /*
+   * WHICH sessions are accounted for, not merely HOW MANY (0119). The count it used to fetch could only
+   * describe a program done strictly in order; with swapping and skipping it would offer the wrong
+   * session the moment one was done out of turn.
+   */
+  const { data: builtMarks, refetch: refetchBuiltDone } = useQuery(
+    () => (builtId ? fetchProgramSessions(builtId) : Promise.resolve([] as SessionMark[])),
     [builtId],
   );
   // Opt-in Home experience-level LENS (local only, ONB-Amendment-002) — undefined = loading, null = not
@@ -385,8 +391,9 @@ export default function HomeScreen() {
     if (built) {
       // The NEXT unfinished session, not always the first — otherwise Home would keep offering Day A
       // forever while the program's progress moved on beneath it.
-      const done = builtDone ?? 0;
-      const next = nextSession(built.structure, done);
+      const marks = builtMarks ?? [];
+      const done = marks.length;
+      const next = nextOpenSlot(built.structure, marks);
       const day = next?.day ?? built.structure.days.find((d) => d.main.length > 0) ?? built.structure.days[0] ?? null;
       // A planned program contributes its NAME and its 0-of-N, never a session — `hasProgramSession`
       // is what promotes the hero to a program day, and it must stay false until Start is pressed.
@@ -438,7 +445,7 @@ export default function HomeScreen() {
     });
 
     return { home: { workout, resolved, name, completed, total }, plannedDay: day2 };
-  }, [anchorProgram, activeProgram, builtDone, awaiting, homeLevel, homeIntake, liveProfile?.sex]);
+  }, [anchorProgram, activeProgram, builtMarks, awaiting, homeLevel, homeIntake, liveProfile?.sex]);
 
   // The Mission tile shows the REAL chapter goal now (0025), not the HOME_DATA placeholder. Primary
   // preferred, else the newest goal; count = goals still in progress. No goals → an invite to set one.

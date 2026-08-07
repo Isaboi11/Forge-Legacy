@@ -16,10 +16,31 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export interface WorkoutLaunch {
   /** The program this session belongs to. Absent for a freestyle, one-off session. */
   programId?: string;
+  /**
+   * A session the athlete explicitly PICKED out of the program's schedule (0119) — 0-based.
+   *
+   * ⚠ The header above says only the id travels, and that reasoning still holds for the DEFAULT path:
+   * Home's Continue sends no slot, and the schedule position is resolved at open time from the same
+   * source of truth the progress bar reads, so a card rendered minutes ago cannot train the wrong
+   * session. This field is the exception it names — a deliberate choice, made two taps earlier, which
+   * cannot go stale in the way a passively-rendered card can.
+   */
+  programWeek?: number;
+  programDay?: number;
   /** A one-off workout: start empty and let the athlete add exercises as they go. */
   freestyle?: boolean;
   /** A saved template to open with (0091). */
   templateId?: string;
+  /**
+   * A Forge starter template to open with, by definition id — trained WITHOUT being adopted.
+   *
+   * Its own field rather than `templateId`, because a shipped definition has no row in
+   * `workout_templates` and therefore no id to attribute the saved workout back to. And not `exercises`
+   * either: that field carries the four fields an invite snapshots (`catalogKey`/`name`/`sets`/reps),
+   * which would silently drop the warm-up and cool-down sections and turn the 29 definitions that end
+   * in a conditioning block into sets of a run. The definition is read whole at open time instead.
+   */
+  starterId?: string;
   /**
    * An explicit shape to open with (0093) — what an invite carries. Distinct from `templateId` because an
    * invite SNAPSHOTS its workout rather than pointing at one: the guest may not own the source program.
@@ -80,6 +101,7 @@ export async function readWorkoutLaunch(): Promise<WorkoutLaunch | null> {
       !!v.freestyle ||
       (typeof v.programId === 'string' && !!v.programId) ||
       (typeof v.templateId === 'string' && !!v.templateId) ||
+      (typeof v.starterId === 'string' && !!v.starterId) ||
       !!v.conditioning ||
       (Array.isArray(v.exercises) && v.exercises.length > 0) ||
       (typeof v.partnerId === 'string' && !!v.partnerId);

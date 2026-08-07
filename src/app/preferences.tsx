@@ -27,8 +27,8 @@ import { useQuery } from '@/lib/useQuery';
  */
 
 const UNIT_OPTIONS: { id: UnitSystem; label: string }[] = [
-  { id: 'imperial', label: 'Imperial' },
-  { id: 'metric', label: 'Metric' },
+  { id: 'imperial', label: 'Lbs' },
+  { id: 'metric', label: 'Kgs' },
 ];
 
 export default function PreferencesScreen() {

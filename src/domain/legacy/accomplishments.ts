@@ -17,7 +17,18 @@ export interface Accomplishment {
   chapterId: string | null;
   featured: boolean;
   note: string | null;
-  photoUrl: string | null;
+  /**
+   * The photo or video attached to it (migration 0118), or null.
+   *
+   * ONE URL AND A KIND, not a `photoUrl` beside a `videoUrl`. Two fields meaning "the media on this
+   * row" forces every reader to decide which wins, and the first one that decides wrong renders a
+   * photo over a video. The database makes the invalid pair unrepresentable (`media_url` and
+   * `media_kind` are both-or-neither), so a consumer can branch on `mediaKind` and trust the URL.
+   *
+   * This replaced `photoUrl`, which 0023 created for the `.dc`'s file-drop slot and nothing ever wrote.
+   */
+  mediaUrl: string | null;
+  mediaKind: 'image' | 'video' | null;
   createdAt: string;
 }
 

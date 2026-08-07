@@ -44,8 +44,33 @@ export interface ActivityDetail {
   playlist: WorkoutPlaylistLink | null;
   /** PRs set in this session, e.g. "315 lb Back Squat". */
   milestones: string[];
-  /** 1-based position in the athlete's history — strength counted separately from all sessions. */
-  ordinal: number;
+  /**
+   * 1-based position in the athlete's history — strength counted separately from all sessions.
+   *
+   * `null` on a SHARED session (see `viewer`): the ordinal is a running count of the author's entire
+   * training life, and the post shared one workout, not a lifetime total. The screen renders its
+   * absence as absence rather than as "Workout #0".
+   */
+  ordinal: number | null;
+  /**
+   * ══ WHOSE SESSION THIS IS ══
+   *
+   * `'own'` — the athlete's, read from `workouts` under their own RLS. Everything below is present and
+   * the screen is fully interactive: rename, open the program, re-open the summary.
+   *
+   * `'shared'` — somebody else's, reached by tapping a workout-recap post they wrote and resolved
+   * through `shared_workout_detail` (migration 0117). The session is all there — every exercise, every
+   * set, the records set in it — but `ordinal`, `chapterName`, `partners` and `programId` are withheld
+   * by the RPC, and the screen must not offer an action that would write to a row that is not theirs.
+   *
+   * ONE SCREEN, TWO SOURCES, and that is the point: `Social-Architecture-Amendment-002` §3 says a recap
+   * taps through to *"the session on Activity Detail"*, and building a second, lesser screen for the
+   * shared case is what the app was doing before — a snapshot rebuild on `/squad-post/[id]` that could
+   * not show a single set.
+   */
+  viewer: 'own' | 'shared';
+  /** Who trained it — rendered only when `viewer` is `'shared'`, where it is the first thing to say. */
+  authorName: string | null;
 }
 
 const SECTION_LABEL: Record<DetailExercise['section'], string> = {
@@ -92,8 +117,17 @@ export function whenLine(iso: string): string {
   return `${date} · ${time}`;
 }
 
-/** "Workout #12 · Chapter I" — strength sessions are numbered apart from everything else. */
+/**
+ * "Workout #12 · Chapter I" — strength sessions are numbered apart from everything else.
+ *
+ * Empty on a SHARED session. Neither half of that line is the viewer's to see: the ordinal counts the
+ * author's whole training life and the chapter is their own Legacy prose, so `shared_workout_detail`
+ * returns neither. Rendering "Workout #0" from the missing value is exactly the defect class the
+ * 2026-08-01 audit named — a default displayed as a fact — so this returns nothing and the screen
+ * draws nothing.
+ */
 export function ordinalLine(d: ActivityDetail): string {
+  if (d.ordinal == null) return '';
   const noun = d.type === 'strength' ? 'Workout' : 'Session';
   const short = d.chapterName ? d.chapterName.split(/[·—]/)[0].trim() : '';
   return short ? `${noun} #${d.ordinal} · ${short}` : `${noun} #${d.ordinal}`;

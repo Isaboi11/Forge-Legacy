@@ -47,6 +47,28 @@ export const MAX_VIDEO_SECONDS = 30;
  */
 const SHEET_DISMISS_FALLBACK_MS = 400;
 
+/**
+ * How long to wait for the SYSTEM picker to be gone before `pick()` hands the asset back.
+ *
+ * ══ THE OTHER HALF OF THE SAME BUG ══
+ *
+ * The wait above stops the app presenting the picker over a modal. This one stops it presenting a modal
+ * over the PICKER, and it is needed because `expo-image-picker` resolves FIRST and dismisses SECOND:
+ * `ImagePickerHandler.imagePickerController(_:didFinishPickingMediaWithInfo:)` calls the result handler
+ * and only then `picker.dismiss(animated: true)` — with no completion block. So `launchImageLibraryAsync`
+ * settles while the picker is still sliding off the screen.
+ *
+ * Any caller that OPENS something in response to the chosen asset therefore walks into the same iOS rule.
+ * Profile photo is one: it hands the image to `AvatarCropEditor`, an RN `Modal`, and RN presents a modal
+ * from the SCREEN's view controller (`RCTModalHostViewComponentView.presentViewController`) — the very
+ * one still presenting the picker. iOS drops it silently, `_isPresented` is set to YES anyway, and the
+ * athlete who just chose a photo is dropped back on an unchanged screen with nothing to show for it.
+ *
+ * Comfortably longer than the ~350ms iOS dismissal, and invisible in practice: it is spent watching the
+ * picker slide away, and it runs concurrently with the downscale rather than after it.
+ */
+const PICKER_DISMISS_MS = 600;
+
 export interface MediaPickConfig {
   kind: MediaKind;
   title?: string;
@@ -154,12 +176,31 @@ export function useMediaPicker() {
     [],
   );
 
+  /**
+   * Resolves once the system picker's own dismissal has had time to finish. See `PICKER_DISMISS_MS`.
+   *
+   * Web has no view controller to collide with, and paying 600ms there would only delay the athlete.
+   */
+  const pickerGone = useCallback(
+    () =>
+      Platform.OS === 'web'
+        ? Promise.resolve()
+        : new Promise<void>((resolve) => {
+            setTimeout(resolve, PICKER_DISMISS_MS);
+          }),
+    [],
+  );
+
   const launch = useCallback(
     async (config: MediaPickConfig, source: 'camera' | 'library', fromSheet: boolean) => {
+      const native = Platform.OS !== 'web';
       setOpen(false);
       // Only when the chooser was actually on screen. The direct paths below (desktop web, and
       // `directCamera`) never opened it, so there is nothing to wait for and no delay to pay.
-      if (fromSheet) await sheetGone();
+      //
+      // On web the wait is not merely pointless, it is a hazard: a browser opens a file input only from
+      // inside the tap that asked for it, and a single `await` can be enough to lose that permission.
+      if (fromSheet && native) await sheetGone();
       const mediaTypes: ('images' | 'videos')[] = config.kind === 'both' ? ['images', 'videos'] : [config.kind];
       const opts: ImagePicker.ImagePickerOptions = {
         mediaTypes,
@@ -172,7 +213,9 @@ export function useMediaPicker() {
         videoQuality: ImagePicker.UIImagePickerControllerQualityType.IFrame1280x720, // iOS-only; 720p is plenty for a form check
       };
       try {
-        if (source === 'camera') {
+        // Native only. On web the "camera" IS a file input with `capture` set, this call is a stub that
+        // always resolves granted, and awaiting it spends the tap that has to open the input.
+        if (source === 'camera' && native) {
           const perm = await ImagePicker.requestCameraPermissionsAsync();
           if (!perm.granted) {
             showToast('Camera access is needed to capture here.');
@@ -182,13 +225,16 @@ export function useMediaPicker() {
         }
         const res = source === 'camera' ? await ImagePicker.launchCameraAsync({ ...opts, cameraType: config.cameraType }) : await ImagePicker.launchImageLibraryAsync(opts);
         const picked = res.canceled ? null : res.assets?.[0] ?? null;
-        settle(picked ? await downscalePhoto(picked) : null);
+        // Together, not one after the other: the resize is the only real work here, so on any photo big
+        // enough to need resizing the dismissal wait costs nothing at all.
+        const [asset] = await Promise.all([picked ? downscalePhoto(picked) : null, pickerGone()]);
+        settle(asset);
       } catch {
         showToast(source === 'camera' ? 'Couldn’t open your camera.' : 'Couldn’t open your library.');
         settle(null);
       }
     },
-    [settle, showToast, sheetGone],
+    [settle, showToast, sheetGone, pickerGone],
   );
 
   const pick = useCallback(

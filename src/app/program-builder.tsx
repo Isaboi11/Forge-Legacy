@@ -43,7 +43,12 @@ import {
   type CardioActivity,
   type Modality,
 } from '@/domain/workout/conditioning';
-import { errorMessage } from '@/lib/useQuery';
+import { errorMessage, useQuery } from '@/lib/useQuery';
+import { fetchTemplates } from '@/data/templates-live';
+import { daySectionsSummary, templateRowsToDay, type DaySections } from '@/domain/program/template-day';
+import { defaultAudiences, filterStarters, starterMeta } from '@/domain/workout/starter-templates';
+import { useProfile } from '@/lib/profile';
+import type { Sex } from '@/domain/profile/schema';
 import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
 import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
@@ -82,6 +87,7 @@ import {
   unpairAt,
   setRepeatMode,
   setVaryMode,
+  templateIntoDay,
   weekBuilt,
   weekComplete,
   weeksLoseContent,
@@ -149,6 +155,8 @@ const CHECK = 'M20 6L9 17l-5-5';
 const CROSS = 'M18 6L6 18M6 6l12 12';
 const PLUS = 'M12 5v14M5 12h14';
 const DOTS = 'M12 5.4v.2M12 11.9v.2M12 18.4v.2';
+/** The stacked rules W-26 uses for a template — the same mark, so the shortcut names its destination. */
+const LINES = 'M4 6h16M4 12h16M4 18h10';
 
 /**
  * The design's `pbRise` entry animation (`opacity 0→1`, `translateY 8→0`, `--fl-ease-out`) on the body of
@@ -174,6 +182,7 @@ function useEntryRise(duration: number) {
 export default function ProgramBuilderScreen() {
   const { showToast } = useToast();
   const router = useRouter();
+  const { profile } = useProfile();
   const { o: entryMode, id: entryId } = useLocalSearchParams<{ o?: string; id?: string }>();
   const [draft, setDraft] = useState<ProgramDraft | null>(null);
   const [saving, setSaving] = useState(false);
@@ -328,6 +337,9 @@ export default function ProgramBuilderScreen() {
   const [dayMenu, setDayMenu] = useState<number | null>(null);
   /** The section the cardio sheet was opened from; null = closed. */
   const [cardioSheet, setCardioSheet] = useState<BuilderSection | null>(null);
+  /** "Use a template" for the open day — the chooser, and the replace/add question it can raise. */
+  const [templateSheet, setTemplateSheet] = useState(false);
+  const [templatePending, setTemplatePending] = useState<{ name: string; rows: DaySections } | null>(null);
 
   // Boot + picker round-trip in one pass: read the stored draft, absorb anything the Picker handed back,
   // persist, then render. Runs on every focus, so returning from the Picker lands the new exercises.
@@ -383,6 +395,33 @@ export default function ProgramBuilderScreen() {
 
   const patchSection = (idx: number, section: BuilderSection, fn: (list: ProgramExercise[]) => ProgramExercise[]) =>
     patchActiveDay(idx, (day) => ({ ...day, [section]: fn(day[section]) }));
+
+  /**
+   * A template was chosen for the open day.
+   *
+   * An EMPTY day just takes it — asking "replace or add?" of a day with nothing in it is a question with
+   * one real answer. A day with content asks, because replacing is destructive and the athlete may well
+   * have meant to build a day out of two shapes.
+   */
+  const chooseTemplate = (name: string, rows: DaySections) => {
+    setTemplateSheet(false);
+    if (draft?.openDay == null) return;
+    const day = activeDays(draft)[draft.openDay];
+    if (day && dayTotal(day) > 0) {
+      setTemplatePending({ name, rows });
+      return;
+    }
+    mutate((d) => templateIntoDay(d, d.openDay ?? 0, rows, { mode: 'replace', name }));
+    showToast(`${name} added to this day.`);
+  };
+
+  const applyPendingTemplate = (mode: 'replace' | 'append') => {
+    const p = templatePending;
+    setTemplatePending(null);
+    if (!p) return;
+    mutate((d) => templateIntoDay(d, d.openDay ?? 0, p.rows, { mode, name: p.name }));
+    showToast(mode === 'replace' ? `This day is now ${p.name}.` : `${p.name} added to this day.`);
+  };
 
   // Shrinking weeks/days can destroy built content — confirm first (design `pendingResize`).
   const requestWeeks = (n: number) => {
@@ -538,6 +577,7 @@ export default function ProgramBuilderScreen() {
             })
           }
           onAddCardio={(section) => setCardioSheet(section)}
+          onUseTemplate={() => setTemplateSheet(true)}
           onModality={(section, i, m) =>
             patchSection(draft.openDay!, section, (list) =>
               list.map((x, k) => {
@@ -653,6 +693,46 @@ export default function ProgramBuilderScreen() {
               <Glyph d="M9 6l6 6-6 6" size={15} color={flColor.gray600} width={2} />
             </Pressable>
           ))}
+        </View>
+      </BottomSheet>
+
+      {/* ── USE A TEMPLATE AS THIS DAY ──────────────────────────────────────────────────────────────
+          Both libraries in one list, because from the builder's point of view they are one thing: a
+          workout shape to put in a day. The athlete's own come FIRST — they are fewer, they are theirs,
+          and a saved "Push Day" is a better answer to "what goes in day A" than the eighty-first
+          suggestion from Forge. The Forge set is capped to the profile's own track and searched rather
+          than listed, because 81 rows in a sheet is a scroll, not a choice. */}
+      <TemplateDaySheet
+        open={templateSheet}
+        onClose={() => setTemplateSheet(false)}
+        onChoose={chooseTemplate}
+        sex={profile?.sex}
+      />
+
+      {/* Replace is destructive and irreversible in a draft that autosaves, so it is never the tap that
+          chose the template — it is a second, named choice. */}
+      <BottomSheet
+        open={templatePending != null}
+        onClose={() => setTemplatePending(null)}
+        title={templatePending ? templatePending.name : ''}
+      >
+        <View style={styles.resizeSheet}>
+          <Text style={styles.resizeMsg}>
+            This day already has exercises in it. Replace them with {templatePending?.name ?? 'this template'}, or add it
+            after what&apos;s already here?
+          </Text>
+          <View style={styles.resizeActions}>
+            <View style={styles.resizeBtn}>
+              <Button variant="secondary" fullWidth onPress={() => applyPendingTemplate('append')} accessibilityLabel="Add to this day">
+                Add to it
+              </Button>
+            </View>
+            <View style={styles.resizeBtn}>
+              <Button variant="destructive" fullWidth onPress={() => applyPendingTemplate('replace')} accessibilityLabel="Replace this day">
+                Replace
+              </Button>
+            </View>
+          </View>
         </View>
       </BottomSheet>
 
@@ -991,6 +1071,131 @@ export default function ProgramBuilderScreen() {
 // ─────────────────────────────────────────────────────────────────────────────
 // SETUP — program details, length, training days, the weekly split
 // ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * The template chooser for a program day — the athlete's saved workouts above Forge's shipped sessions.
+ *
+ * ONE SEARCH OVER BOTH. Splitting them into two tabs would ask the athlete to know which library the
+ * thing they want is in before they can look for it, and the answer to "where's my push day" is
+ * genuinely "either". The sections stay labelled so provenance is never in doubt.
+ *
+ * THE FORGE SET IS FILTERED TO THEIR TRACK by default (`defaultAudiences`), the same rule the browse
+ * screen opens on — and `'unspecified'` still sees everything, because the profile model's standing rule
+ * is that an unset sex is never quietly read as male.
+ *
+ * The athlete's own list loads on open rather than on mount: this sheet is optional, most builds never
+ * open it, and the builder must not spend a network round-trip on a screen that may never ask.
+ */
+function TemplateDaySheet({
+  open,
+  onClose,
+  onChoose,
+  sex,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onChoose: (name: string, rows: DaySections) => void;
+  sex: Sex | null | undefined;
+}) {
+  const [q, setQ] = useState('');
+  const { data: mine, loading } = useQuery(() => (open ? fetchTemplates() : Promise.resolve([])), [open]);
+
+  const needle = q.trim().toLowerCase();
+  const match = (name: string) => !needle || name.toLowerCase().includes(needle);
+
+  const ownRows = (mine ?? []).filter((t) => match(t.name));
+  const forgeRows = filterStarters({ audiences: defaultAudiences(sex) }).filter((t) => match(t.name));
+  const nothing = !loading && ownRows.length === 0 && forgeRows.length === 0;
+
+  return (
+    <BottomSheet open={open} onClose={onClose} title="Use a template" scroll>
+      <View style={styles.tplCol}>
+        <Text style={styles.tplIntro}>
+          Its exercises, sets and reps become this day. You can change anything afterwards — nothing is linked, so
+          editing the day never touches the template.
+        </Text>
+
+        <TextInput
+          value={q}
+          onChangeText={setQ}
+          placeholder="Search templates"
+          placeholderTextColor={flColor.gray600}
+          accessibilityLabel="Search templates"
+          style={styles.tplSearch}
+        />
+
+        {loading ? <Text style={styles.tplEmpty}>Loading your templates…</Text> : null}
+
+        {ownRows.length ? (
+          <>
+            <Text style={styles.tplGroupLabel}>Your templates</Text>
+            {ownRows.map((t) => (
+              <TemplateDayRow
+                key={t.id}
+                name={t.name}
+                rows={templateRowsToDay(t.exercises)}
+                meta={t.sourceDefinitionId ? 'From Forge · yours' : 'Yours'}
+                onChoose={onChoose}
+              />
+            ))}
+          </>
+        ) : null}
+
+        {forgeRows.length ? (
+          <>
+            <Text style={styles.tplGroupLabel}>Built by Forge</Text>
+            {forgeRows.map((t) => (
+              <TemplateDayRow
+                key={t.id}
+                name={t.name}
+                rows={templateRowsToDay(t.exercises)}
+                meta={starterMeta(t)}
+                onChoose={onChoose}
+              />
+            ))}
+          </>
+        ) : null}
+
+        {nothing ? (
+          <Text style={styles.tplEmpty}>
+            {needle ? `Nothing matches “${q.trim()}”.` : 'No templates yet — save a session as one and it shows up here.'}
+          </Text>
+        ) : null}
+      </View>
+    </BottomSheet>
+  );
+}
+
+function TemplateDayRow({
+  name,
+  rows,
+  meta,
+  onChoose,
+}: {
+  name: string;
+  rows: DaySections;
+  meta: string;
+  onChoose: (name: string, rows: DaySections) => void;
+}) {
+  return (
+    <Pressable
+      onPress={() => onChoose(name, rows)}
+      accessibilityRole="button"
+      accessibilityLabel={`Use ${name} — ${daySectionsSummary(rows)}`}
+      style={({ pressed }) => [styles.tplRow, pressed ? styles.pressed : null]}
+    >
+      <View style={styles.tplRowText}>
+        <Text style={styles.tplRowName} numberOfLines={1}>
+          {name}
+        </Text>
+        <Text style={styles.tplRowSub} numberOfLines={1}>
+          {daySectionsSummary(rows)} · {meta}
+        </Text>
+      </View>
+      <Glyph d="M9 6l6 6-6 6" size={15} color={flColor.gray600} width={2} />
+    </Pressable>
+  );
+}
 
 function ImpStep({ glyph, label, onPress }: { glyph: string; label: string; onPress: () => void }) {
   return (
@@ -1452,6 +1657,7 @@ function DayBuilder({
   onName,
   onAdd,
   onAddCardio,
+  onUseTemplate,
   onRemove,
   onMove,
   onModality,
@@ -1469,6 +1675,8 @@ function DayBuilder({
   onName: (v: string) => void;
   onAdd: (section: BuilderSection) => void;
   onAddCardio: (section: BuilderSection) => void;
+  /** Fill (or extend) the whole day from a saved template or a Forge session. */
+  onUseTemplate: () => void;
   onRemove: (section: BuilderSection, i: number) => void;
   onMove: (section: BuilderSection, i: number, dir: -1 | 1) => void;
   onModality: (section: BuilderSection, i: number, m: Modality) => void;
@@ -1579,6 +1787,28 @@ function DayBuilder({
             </TourAnchor>
           );
         })}
+
+        {/*
+          ── THE WHOLE DAY AT ONCE ──────────────────────────────────────────────────────────────────
+          Below the three sections rather than inside one, because a template is not a warm-up or a main
+          — it fills all three. Placed after them so the exercise-by-exercise path stays the default
+          reading of the screen and this reads as the shortcut it is.
+        */}
+        <Pressable
+          onPress={onUseTemplate}
+          accessibilityRole="button"
+          accessibilityLabel="Fill this day from a template"
+          style={({ pressed }) => [styles.templateLink, pressed ? styles.pressed : null]}
+        >
+          <Glyph d={LINES} size={16} color={flColor.bronze300} width={1.8} />
+          <View style={styles.templateLinkText}>
+            <Text style={styles.templateLinkTitle}>Use a template</Text>
+            <Text style={styles.templateLinkSub}>
+              {total > 0 ? 'Add one of your saved workouts, or a Forge session, to this day' : 'Start this day from one of your saved workouts, or a Forge session'}
+            </Text>
+          </View>
+          <Glyph d="M9 6l6 6-6 6" size={15} color={flColor.gray600} width={2} />
+        </Pressable>
       </Animated.ScrollView>
 
       <LinearGradient colors={['rgba(6,7,8,0.35)', 'rgba(6,7,8,0.82)']} style={styles.footer}>
@@ -1873,6 +2103,21 @@ const styles = StyleSheet.create({
   cardioRowName: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   cardioRowSub: { fontSize: 11.5, color: flColor.gray600 },
   cardioIntro: { fontSize: 12.5, lineHeight: 19, color: flColor.gray600, marginBottom: 2 },
+
+  // "Use a template" — the whole-day shortcut, and its chooser
+  templateLink: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 22, paddingVertical: 14, paddingHorizontal: 15, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
+  templateLinkText: { flex: 1, minWidth: 0, gap: 3 },
+  templateLinkTitle: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
+  templateLinkSub: { fontSize: 11.5, lineHeight: 16, color: flColor.gray600 },
+  tplCol: { gap: 10 },
+  tplIntro: { fontSize: 12.5, lineHeight: 19, color: flColor.gray600 },
+  tplSearch: { paddingHorizontal: 13, paddingVertical: 11, minHeight: 44, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, fontSize: 14, color: flColor.cream100 },
+  tplGroupLabel: { marginTop: 8, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.bronze400 },
+  tplRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.charcoal900 },
+  tplRowText: { flex: 1, minWidth: 0, gap: 2 },
+  tplRowName: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
+  tplRowSub: { fontSize: 11.5, color: flColor.gray600 },
+  tplEmpty: { paddingVertical: 22, fontSize: 12.5, lineHeight: 18, color: flColor.gray600, textAlign: 'center' },
 
   // ── setup
   setupScroll: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 24 },

@@ -1,0 +1,5583 @@
+[
+  {
+    "id": "push-gym-beginner",
+    "name": "Push Day — Beginner",
+    "blurb": "Machines and dumbbells for the pressing muscles. Learn the patterns before you load them.",
+    "level": "Beginner",
+    "focus": "push",
+    "venue": "gym",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "band-pull-apart",
+        "name": "Band Pull-Apart",
+        "sets": 2,
+        "targetReps": 15,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "machine-chest-press",
+        "name": "Machine Chest Press",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "machine-shoulder-press",
+        "name": "Machine Shoulder Press",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "machine-incline-chest-press",
+        "name": "Machine Incline Chest Press",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-lateral-raise",
+        "name": "Dumbbell Lateral Raise",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "machine-triceps-press",
+        "name": "Machine Triceps Press",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:bike",
+        "name": "Indoor Ride",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "indoor",
+        "targetMi": 3
+      }
+    ]
+  },
+  {
+    "id": "push-day",
+    "name": "Push Day — Intermediate",
+    "blurb": "Chest, shoulders and triceps — the pressing half of an upper/lower split.",
+    "level": "Intermediate",
+    "focus": "push",
+    "venue": "gym",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "push-up",
+        "name": "Push-Up",
+        "sets": 2,
+        "targetReps": 15,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-bench-press",
+        "name": "Barbell Bench Press",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-overhead-press",
+        "name": "Barbell Overhead Press",
+        "sets": 3,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-incline-bench-press",
+        "name": "Dumbbell Incline Bench Press",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "high-to-low-cable-fly",
+        "name": "High-to-Low Cable Fly",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-triceps-pushdown",
+        "name": "Cable Triceps Pushdown",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "push-gym-advanced",
+    "name": "Push Day — Advanced",
+    "blurb": "Incline barbell heavy, then dips, laterals and two ways to finish the triceps.",
+    "level": "Advanced",
+    "focus": "push",
+    "venue": "gym",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "barbell-incline-bench-press",
+        "name": "Barbell Incline Bench Press",
+        "sets": 5,
+        "targetReps": 4,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-push-press",
+        "name": "Barbell Push Press",
+        "sets": 4,
+        "targetReps": 5,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "parallel-bar-dip",
+        "name": "Parallel Bar Dip",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-crossover",
+        "name": "Cable Crossover",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "leaning-dumbbell-lateral-raise",
+        "name": "Leaning Dumbbell Lateral Raise",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-skull-crusher",
+        "name": "Dumbbell Skull Crusher",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-rope-pushdown",
+        "name": "Cable Rope Pushdown",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "push-home-beginner",
+    "name": "Push Day at Home — Beginner",
+    "blurb": "Chest, shoulders and triceps with a pair of dumbbells and a bit of floor.",
+    "level": "Beginner",
+    "focus": "push",
+    "venue": "home",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "arm-circles",
+        "name": "Arm Circles",
+        "sets": 2,
+        "targetReps": 15,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-floor-press",
+        "name": "Dumbbell Floor Press",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "seated-dumbbell-shoulder-press",
+        "name": "Seated Dumbbell Shoulder Press",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "incline-push-up",
+        "name": "Incline Push-Up",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-lateral-raise",
+        "name": "Dumbbell Lateral Raise",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-triceps-kickback",
+        "name": "Dumbbell Triceps Kickback",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:walk",
+        "name": "Outdoor Walk",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "outdoor",
+        "targetMi": 1.5
+      }
+    ]
+  },
+  {
+    "id": "push-home-intermediate",
+    "name": "Push Day at Home — Intermediate",
+    "blurb": "Dumbbells and a band. Two chest angles, an overhead press, and the side delts after.",
+    "level": "Intermediate",
+    "focus": "push",
+    "venue": "home",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "scapular-push-up",
+        "name": "Scapular Push-Up",
+        "sets": 2,
+        "targetReps": 10,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-neutral-grip-bench-press",
+        "name": "Dumbbell Neutral-Grip Bench Press",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-overhead-press",
+        "name": "Dumbbell Overhead Press",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "decline-push-up",
+        "name": "Decline Push-Up",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-chest-fly",
+        "name": "Dumbbell Chest Fly",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-lateral-raise",
+        "name": "Band Lateral Raise",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-arm-dumbbell-overhead-triceps-extension",
+        "name": "Single-Arm Dumbbell Overhead Triceps Extension",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "push-home-advanced",
+    "name": "Push Day at Home — Advanced",
+    "blurb": "Dips and deficit push-ups at home, with the dumbbells heavy and the sets long.",
+    "level": "Advanced",
+    "focus": "push",
+    "venue": "home",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "dumbbell-incline-bench-press",
+        "name": "Dumbbell Incline Bench Press",
+        "sets": 5,
+        "targetReps": 6,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-push-press",
+        "name": "Dumbbell Push Press",
+        "sets": 4,
+        "targetReps": 5,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "straight-bar-dip",
+        "name": "Straight-Bar Dip",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "deficit-push-up",
+        "name": "Deficit Push-Up",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-decline-chest-fly",
+        "name": "Dumbbell Decline Chest Fly",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-arm-dumbbell-lateral-raise",
+        "name": "Single-Arm Dumbbell Lateral Raise",
+        "sets": 4,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-jm-press",
+        "name": "Dumbbell JM Press",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "chest-tri-gym-beginner",
+    "name": "Chest & Triceps — Beginner",
+    "blurb": "Three chest angles and two triceps movements, guided by machines throughout.",
+    "level": "Beginner",
+    "focus": "chest-triceps",
+    "venue": "gym",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "scapular-wall-slide",
+        "name": "Scapular Wall Slide",
+        "sets": 2,
+        "targetReps": 12,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "converging-chest-press",
+        "name": "Converging Chest Press",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "smith-machine-incline-bench-press",
+        "name": "Smith Machine Incline Bench Press",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "machine-chest-fly",
+        "name": "Machine Chest Fly",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-rope-pushdown",
+        "name": "Cable Rope Pushdown",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "machine-triceps-extension",
+        "name": "Machine Triceps Extension",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:row",
+        "name": "Row",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "indoor",
+        "targetMi": 1.5
+      }
+    ]
+  },
+  {
+    "id": "chest-tri-gym-intermediate",
+    "name": "Chest & Triceps — Intermediate",
+    "blurb": "Bench, incline and close grip, then the triceps on their own terms.",
+    "level": "Intermediate",
+    "focus": "chest-triceps",
+    "venue": "gym",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "push-up",
+        "name": "Push-Up",
+        "sets": 2,
+        "targetReps": 15,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-bench-press",
+        "name": "Barbell Bench Press",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-incline-bench-press",
+        "name": "Dumbbell Incline Bench Press",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-close-grip-bench-press",
+        "name": "Barbell Close-Grip Bench Press",
+        "sets": 3,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "pec-deck-fly",
+        "name": "Pec Deck Fly",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-skull-crusher",
+        "name": "Barbell Skull Crusher",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-triceps-pushdown",
+        "name": "Cable Triceps Pushdown",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "chest-tri-gym-advanced",
+    "name": "Chest & Triceps — Advanced",
+    "blurb": "Heavy off the flat bench, a decline angle, and a long block of triceps work.",
+    "level": "Advanced",
+    "focus": "chest-triceps",
+    "venue": "gym",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "barbell-bench-press",
+        "name": "Barbell Bench Press",
+        "sets": 5,
+        "targetReps": 4,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-decline-bench-press",
+        "name": "Barbell Decline Bench Press",
+        "sets": 4,
+        "targetReps": 6,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "low-to-high-cable-fly",
+        "name": "Low-to-High Cable Fly",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-jm-press",
+        "name": "Barbell JM Press",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-overhead-triceps-extension",
+        "name": "Cable Overhead Triceps Extension",
+        "sets": 4,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-arm-cable-pushdown",
+        "name": "Single-Arm Cable Pushdown",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "chest-tri-home-beginner",
+    "name": "Chest & Triceps at Home — Beginner",
+    "blurb": "Dumbbells and a band. Three angles on the chest, two on the triceps, then a mile.",
+    "level": "Beginner",
+    "focus": "chest-triceps",
+    "venue": "home",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "wall-angel",
+        "name": "Wall Angel",
+        "sets": 2,
+        "targetReps": 12,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-squeeze-press",
+        "name": "Dumbbell Squeeze Press",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-incline-bench-press",
+        "name": "Dumbbell Incline Bench Press",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-chest-fly",
+        "name": "Band Chest Fly",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-triceps-pushdown",
+        "name": "Band Triceps Pushdown",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "two-hand-dumbbell-overhead-triceps-extension",
+        "name": "Two-Hand Dumbbell Overhead Triceps Extension",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:run",
+        "name": "Outdoor Run",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "outdoor",
+        "targetMi": 1
+      }
+    ]
+  },
+  {
+    "id": "chest-tri-home-intermediate",
+    "name": "Chest & Triceps at Home — Intermediate",
+    "blurb": "Flat press and dips lead, then a fly and two ways of loading the elbow.",
+    "level": "Intermediate",
+    "focus": "chest-triceps",
+    "venue": "home",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "band-shoulder-dislocate",
+        "name": "Band Shoulder Dislocate",
+        "sets": 2,
+        "targetReps": 12,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-bench-press",
+        "name": "Dumbbell Bench Press",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "parallel-bar-dip",
+        "name": "Parallel Bar Dip",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-chest-fly",
+        "name": "Dumbbell Chest Fly",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "close-grip-push-up",
+        "name": "Close-Grip Push-Up",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-skull-crusher",
+        "name": "Dumbbell Skull Crusher",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "chest-tri-home-advanced",
+    "name": "Chest & Triceps at Home — Advanced",
+    "blurb": "Five sets on the press, three chest angles, and triceps until the lockout goes.",
+    "level": "Advanced",
+    "focus": "chest-triceps",
+    "venue": "home",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "dumbbell-bench-press",
+        "name": "Dumbbell Bench Press",
+        "sets": 5,
+        "targetReps": 5,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-decline-bench-press",
+        "name": "Dumbbell Decline Bench Press",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-incline-chest-fly",
+        "name": "Dumbbell Incline Chest Fly",
+        "sets": 4,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "diamond-push-up",
+        "name": "Diamond Push-Up",
+        "sets": 4,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "suspension-trainer-triceps-extension",
+        "name": "Suspension Trainer Triceps Extension",
+        "sets": 4,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-tate-press",
+        "name": "Dumbbell Tate Press",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "pull-gym-beginner",
+    "name": "Pull Day — Beginner",
+    "blurb": "Machines and an assisted bar — the pulling day learned before it is loaded.",
+    "level": "Beginner",
+    "focus": "pull",
+    "venue": "gym",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "band-pull-apart",
+        "name": "Band Pull-Apart",
+        "sets": 2,
+        "targetReps": 15,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "assisted-pull-up-machine",
+        "name": "Assisted Pull-Up Machine",
+        "sets": 3,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "chest-supported-row-machine",
+        "name": "Chest-Supported Row Machine",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "machine-lat-pulldown",
+        "name": "Machine Lat Pulldown",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "reverse-pec-deck",
+        "name": "Reverse Pec Deck",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "machine-biceps-curl",
+        "name": "Machine Biceps Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:row",
+        "name": "Row",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "indoor",
+        "targetMi": 1
+      }
+    ]
+  },
+  {
+    "id": "pull-day",
+    "name": "Pull Day — Intermediate",
+    "blurb": "Back and biceps. Starts heavy off the floor, finishes with the arms.",
+    "level": "Intermediate",
+    "focus": "pull",
+    "venue": "gym",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "cable-face-pull",
+        "name": "Cable Face Pull",
+        "sets": 2,
+        "targetReps": 15,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-deadlift",
+        "name": "Barbell Deadlift",
+        "sets": 3,
+        "targetReps": 5,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "pull-up",
+        "name": "Pull-Up",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-bent-over-row",
+        "name": "Barbell Bent-Over Row",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-lat-pulldown",
+        "name": "Cable Lat Pulldown",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-biceps-curl",
+        "name": "Barbell Biceps Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "pull-gym-advanced",
+    "name": "Pull Day — Advanced",
+    "blurb": "Deficit pulls, chest-to-bar work and strict rows, for a back with years behind it.",
+    "level": "Advanced",
+    "focus": "pull",
+    "venue": "gym",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "scapular-pull-up",
+        "name": "Scapular Pull-Up",
+        "sets": 3,
+        "targetReps": 8,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-deficit-deadlift",
+        "name": "Barbell Deficit Deadlift",
+        "sets": 5,
+        "targetReps": 3,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "chest-to-bar-pull-up",
+        "name": "Chest-to-Bar Pull-Up",
+        "sets": 4,
+        "targetReps": 6,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-pendlay-row",
+        "name": "Barbell Pendlay Row",
+        "sets": 4,
+        "targetReps": 6,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "half-kneeling-single-arm-lat-pulldown",
+        "name": "Half-Kneeling Single-Arm Lat Pulldown",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-y-raise",
+        "name": "Cable Y-Raise",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-drag-curl",
+        "name": "Barbell Drag Curl",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-hammer-curl",
+        "name": "Dumbbell Hammer Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "pull-home-beginner",
+    "name": "Pull Day at Home — Beginner",
+    "blurb": "A band and a pair of dumbbells — a whole pulling session with no bar in the room.",
+    "level": "Beginner",
+    "focus": "pull",
+    "venue": "home",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "scapular-wall-slide",
+        "name": "Scapular Wall Slide",
+        "sets": 2,
+        "targetReps": 12,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-lat-pulldown",
+        "name": "Band Lat Pulldown",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-chest-supported-row",
+        "name": "Dumbbell Chest-Supported Row",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-arm-dumbbell-row",
+        "name": "Single-Arm Dumbbell Row",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-face-pull",
+        "name": "Band Face Pull",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-biceps-curl",
+        "name": "Dumbbell Biceps Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:walk",
+        "name": "Outdoor Walk",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "outdoor",
+        "targetMi": 1.5
+      }
+    ]
+  },
+  {
+    "id": "pull-home-intermediate",
+    "name": "Pull Day at Home — Intermediate",
+    "blurb": "Pull-ups lead, dumbbells and straps fill it out, and no cable stack is required.",
+    "level": "Intermediate",
+    "focus": "pull",
+    "venue": "home",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "band-shoulder-dislocate",
+        "name": "Band Shoulder Dislocate",
+        "sets": 2,
+        "targetReps": 12,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "pull-up",
+        "name": "Pull-Up",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-bent-over-row",
+        "name": "Dumbbell Bent-Over Row",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "suspension-trainer-row",
+        "name": "Suspension Trainer Row",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "suspension-trainer-face-pull",
+        "name": "Suspension Trainer Face Pull",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "alternating-dumbbell-curl",
+        "name": "Alternating Dumbbell Curl",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "pull-home-advanced",
+    "name": "Pull Day at Home — Advanced",
+    "blurb": "Hard bodyweight pulling and heavy single-arm rows, finished at the traps and elbows.",
+    "level": "Advanced",
+    "focus": "pull",
+    "venue": "home",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "inchworm",
+        "name": "Inchworm",
+        "sets": 2,
+        "targetReps": 8,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "chest-to-bar-pull-up",
+        "name": "Chest-to-Bar Pull-Up",
+        "sets": 5,
+        "targetReps": 5,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-gorilla-row",
+        "name": "Dumbbell Gorilla Row",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "feet-elevated-inverted-row",
+        "name": "Feet-Elevated Inverted Row",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-pullover",
+        "name": "Dumbbell Pullover",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "suspension-trainer-y-raise",
+        "name": "Suspension Trainer Y-Raise",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-shrug",
+        "name": "Dumbbell Shrug",
+        "sets": 4,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-zottman-curl",
+        "name": "Dumbbell Zottman Curl",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "back-bi-gym-beginner",
+    "name": "Back & Biceps — Beginner",
+    "blurb": "Lats, mid-back and both curl grips, on equipment that holds your position for you.",
+    "level": "Beginner",
+    "focus": "back-biceps",
+    "venue": "gym",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "cat-cow",
+        "name": "Cat-Cow",
+        "sets": 2,
+        "targetReps": 10,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "wide-grip-cable-lat-pulldown",
+        "name": "Wide-Grip Cable Lat Pulldown",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "machine-t-bar-row",
+        "name": "Machine T-Bar Row",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "machine-back-extension",
+        "name": "Machine Back Extension",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-biceps-curl",
+        "name": "Dumbbell Biceps Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-hammer-curl",
+        "name": "Dumbbell Hammer Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:bike",
+        "name": "Indoor Ride",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "indoor",
+        "targetMi": 3
+      }
+    ]
+  },
+  {
+    "id": "back-bi-gym-intermediate",
+    "name": "Back & Biceps — Intermediate",
+    "blurb": "Rack pulls into chin-ups, then rows, then two curls that finish the arms off.",
+    "level": "Intermediate",
+    "focus": "back-biceps",
+    "venue": "gym",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "barbell-rack-pull",
+        "name": "Barbell Rack Pull",
+        "sets": 4,
+        "targetReps": 6,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "chin-up",
+        "name": "Chin-Up",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-yates-row",
+        "name": "Barbell Yates Row",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "close-grip-cable-seated-row",
+        "name": "Close-Grip Cable Seated Row",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "straight-arm-cable-pulldown",
+        "name": "Straight-Arm Cable Pulldown",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-preacher-curl",
+        "name": "Barbell Preacher Curl",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-rope-hammer-curl",
+        "name": "Cable Rope Hammer Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "back-bi-gym-advanced",
+    "name": "Back & Biceps — Advanced",
+    "blurb": "Snatch-grip pulls, wide pull-ups and Meadows rows — the long version of a back day.",
+    "level": "Advanced",
+    "focus": "back-biceps",
+    "venue": "gym",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "barbell-snatch-grip-deadlift",
+        "name": "Barbell Snatch-Grip Deadlift",
+        "sets": 5,
+        "targetReps": 3,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "wide-grip-pull-up",
+        "name": "Wide-Grip Pull-Up",
+        "sets": 4,
+        "targetReps": 6,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-meadows-row",
+        "name": "Barbell Meadows Row",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-arm-cable-row",
+        "name": "Single-Arm Cable Row",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "neutral-grip-cable-lat-pulldown",
+        "name": "Neutral-Grip Cable Lat Pulldown",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-shrug",
+        "name": "Barbell Shrug",
+        "sets": 4,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "bayesian-cable-curl",
+        "name": "Bayesian Cable Curl",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cross-body-hammer-curl",
+        "name": "Cross-Body Hammer Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "back-bi-home-beginner",
+    "name": "Back & Biceps at Home — Beginner",
+    "blurb": "Band-assisted pulling, a back extension and two curl grips, all from the floor up.",
+    "level": "Beginner",
+    "focus": "back-biceps",
+    "venue": "home",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "wall-angel",
+        "name": "Wall Angel",
+        "sets": 2,
+        "targetReps": 12,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-assisted-pull-up",
+        "name": "Band Assisted Pull-Up",
+        "sets": 3,
+        "targetReps": 6,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-seated-row",
+        "name": "Band Seated Row",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "back-extension",
+        "name": "Back Extension",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-biceps-curl",
+        "name": "Band Biceps Curl",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-hammer-curl",
+        "name": "Band Hammer Curl",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "back-bi-home-intermediate",
+    "name": "Back & Biceps at Home — Intermediate",
+    "blurb": "Chin-ups and seal rows, hinged posterior work, and a run to close the session.",
+    "level": "Intermediate",
+    "focus": "back-biceps",
+    "venue": "home",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "chin-up",
+        "name": "Chin-Up",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-seal-row",
+        "name": "Dumbbell Seal Row",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "underhand-inverted-row",
+        "name": "Underhand Inverted Row",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-romanian-deadlift",
+        "name": "Dumbbell Romanian Deadlift",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-incline-curl",
+        "name": "Dumbbell Incline Curl",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-preacher-curl",
+        "name": "Dumbbell Preacher Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:run",
+        "name": "Outdoor Run",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "outdoor",
+        "targetMi": 2
+      }
+    ]
+  },
+  {
+    "id": "back-bi-home-advanced",
+    "name": "Back & Biceps at Home — Advanced",
+    "blurb": "Archer pull-ups, kettlebell rows and spider curls, with only what a home rack holds.",
+    "level": "Advanced",
+    "focus": "back-biceps",
+    "venue": "home",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "archer-pull-up",
+        "name": "Archer Pull-Up",
+        "sets": 4,
+        "targetReps": 5,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-arm-kettlebell-row",
+        "name": "Single-Arm Kettlebell Row",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-renegade-row",
+        "name": "Dumbbell Renegade Row",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "kettlebell-romanian-deadlift",
+        "name": "Kettlebell Romanian Deadlift",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-straight-arm-pulldown",
+        "name": "Band Straight-Arm Pulldown",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "suspension-trainer-t-raise",
+        "name": "Suspension Trainer T-Raise",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-spider-curl",
+        "name": "Dumbbell Spider Curl",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cross-body-hammer-curl",
+        "name": "Cross-Body Hammer Curl",
+        "sets": 4,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "legs-gym-beginner",
+    "name": "Leg Day — Beginner",
+    "blurb": "Machines and a goblet squat — legs trained before the barbell earns a place in it.",
+    "level": "Beginner",
+    "focus": "legs",
+    "venue": "gym",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "90-90-hip-switch",
+        "name": "90/90 Hip Switch",
+        "sets": 2,
+        "targetReps": 8,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-goblet-squat",
+        "name": "Dumbbell Goblet Squat",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "machine-leg-press",
+        "name": "Machine Leg Press",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "hip-thrust-machine",
+        "name": "Hip Thrust Machine",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "seated-leg-curl-machine",
+        "name": "Seated Leg Curl Machine",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "seated-calf-raise-machine",
+        "name": "Seated Calf Raise Machine",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:walk",
+        "name": "Treadmill Walk",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "indoor",
+        "targetMi": 1
+      }
+    ]
+  },
+  {
+    "id": "leg-day",
+    "name": "Leg Day — Intermediate",
+    "blurb": "Squat first, then everything that holds the squat up.",
+    "level": "Intermediate",
+    "focus": "legs",
+    "venue": "gym",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "barbell-back-squat",
+        "name": "Barbell Back Squat",
+        "sets": 4,
+        "targetReps": 6,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-romanian-deadlift",
+        "name": "Barbell Romanian Deadlift",
+        "sets": 3,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "machine-leg-press",
+        "name": "Machine Leg Press",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-walking-lunge",
+        "name": "Dumbbell Walking Lunge",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "lying-leg-curl-machine",
+        "name": "Lying Leg Curl Machine",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "legs-gym-advanced",
+    "name": "Leg Day — Advanced",
+    "blurb": "Pause squats, then a deficit pull — a leg day for a training age measured in years.",
+    "level": "Advanced",
+    "focus": "legs",
+    "venue": "gym",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "barbell-pause-squat",
+        "name": "Barbell Pause Squat",
+        "sets": 5,
+        "targetReps": 4,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-deficit-deadlift",
+        "name": "Barbell Deficit Deadlift",
+        "sets": 4,
+        "targetReps": 5,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-bulgarian-split-squat",
+        "name": "Barbell Bulgarian Split Squat",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "nordic-hamstring-curl",
+        "name": "Nordic Hamstring Curl",
+        "sets": 3,
+        "targetReps": 6,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "standing-calf-raise-machine",
+        "name": "Standing Calf Raise Machine",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "seated-calf-raise-machine",
+        "name": "Seated Calf Raise Machine",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "legs-home-beginner",
+    "name": "Leg Day at Home — Beginner",
+    "blurb": "A pair of dumbbells and a step: the squat and the hinge, learned side by side.",
+    "level": "Beginner",
+    "focus": "legs",
+    "venue": "home",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "inchworm",
+        "name": "Inchworm",
+        "sets": 2,
+        "targetReps": 8,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-goblet-squat",
+        "name": "Dumbbell Goblet Squat",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-romanian-deadlift",
+        "name": "Dumbbell Romanian Deadlift",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-step-up",
+        "name": "Dumbbell Step-Up",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "glute-bridge",
+        "name": "Glute Bridge",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-calf-raise",
+        "name": "Dumbbell Calf Raise",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:walk",
+        "name": "Outdoor Walk",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "outdoor",
+        "targetMi": 1
+      }
+    ]
+  },
+  {
+    "id": "legs-home-intermediate",
+    "name": "Leg Day at Home — Intermediate",
+    "blurb": "Front-rack bells, single-leg hinges and swings — no rack required, no pattern skipped.",
+    "level": "Intermediate",
+    "focus": "legs",
+    "venue": "home",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "double-kettlebell-front-squat",
+        "name": "Double Kettlebell Front Squat",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-leg-dumbbell-romanian-deadlift",
+        "name": "Single-Leg Dumbbell Romanian Deadlift",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-walking-lunge",
+        "name": "Dumbbell Walking Lunge",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "kettlebell-swing",
+        "name": "Kettlebell Swing",
+        "sets": 3,
+        "targetReps": 20,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "sliding-hamstring-curl",
+        "name": "Sliding Hamstring Curl",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-leg-dumbbell-calf-raise",
+        "name": "Single-Leg Dumbbell Calf Raise",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "legs-home-advanced",
+    "name": "Leg Day at Home — Advanced",
+    "blurb": "Pistols, Nordics and loaded split squats — single-leg work with nowhere to hide.",
+    "level": "Advanced",
+    "focus": "legs",
+    "venue": "home",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "dumbbell-bulgarian-split-squat",
+        "name": "Dumbbell Bulgarian Split Squat",
+        "sets": 5,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-leg-kettlebell-romanian-deadlift",
+        "name": "Single-Leg Kettlebell Romanian Deadlift",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "pistol-squat",
+        "name": "Pistol Squat",
+        "sets": 4,
+        "targetReps": 6,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "nordic-hamstring-curl",
+        "name": "Nordic Hamstring Curl",
+        "sets": 4,
+        "targetReps": 6,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "double-kettlebell-swing",
+        "name": "Double Kettlebell Swing",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-leg-calf-raise",
+        "name": "Single-Leg Calf Raise",
+        "sets": 4,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "arms-gym-beginner",
+    "name": "Arm Day — Beginner",
+    "blurb": "Biceps and triceps on machines and dumbbells, for elbows still learning the movements.",
+    "level": "Beginner",
+    "focus": "arms",
+    "venue": "gym",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "arm-circles",
+        "name": "Arm Circles",
+        "sets": 2,
+        "targetReps": 15,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "assisted-dip-machine",
+        "name": "Assisted Dip Machine",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "machine-biceps-curl",
+        "name": "Machine Biceps Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-rope-pushdown",
+        "name": "Cable Rope Pushdown",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-hammer-curl",
+        "name": "Dumbbell Hammer Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "two-hand-dumbbell-overhead-triceps-extension",
+        "name": "Two-Hand Dumbbell Overhead Triceps Extension",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-reverse-curl",
+        "name": "Dumbbell Reverse Curl",
+        "sets": 2,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:bike",
+        "name": "Indoor Ride",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "indoor",
+        "targetMi": 2
+      }
+    ]
+  },
+  {
+    "id": "arms-gym-intermediate",
+    "name": "Arm Day — Intermediate",
+    "blurb": "Close-grip press and chin-ups lead; the cables and the curls come after.",
+    "level": "Intermediate",
+    "focus": "arms",
+    "venue": "gym",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "barbell-close-grip-bench-press",
+        "name": "Barbell Close-Grip Bench Press",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "chin-up",
+        "name": "Chin-Up",
+        "sets": 3,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-biceps-curl",
+        "name": "Barbell Biceps Curl",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-overhead-triceps-extension",
+        "name": "Cable Overhead Triceps Extension",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-triceps-pushdown",
+        "name": "Cable Triceps Pushdown",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-incline-curl",
+        "name": "Dumbbell Incline Curl",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-reverse-curl",
+        "name": "Barbell Reverse Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:row",
+        "name": "Row",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "indoor",
+        "targetMi": 1.5
+      }
+    ]
+  },
+  {
+    "id": "arms-gym-advanced",
+    "name": "Arm Day — Advanced",
+    "blurb": "Eight movements, biceps matched to triceps set for set — volume for arms that have stalled.",
+    "level": "Advanced",
+    "focus": "arms",
+    "venue": "gym",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "parallel-bar-dip",
+        "name": "Parallel Bar Dip",
+        "sets": 5,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-preacher-curl",
+        "name": "Barbell Preacher Curl",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-skull-crusher",
+        "name": "Barbell Skull Crusher",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-spider-curl",
+        "name": "Dumbbell Spider Curl",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-arm-cable-overhead-triceps-extension",
+        "name": "Single-Arm Cable Overhead Triceps Extension",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-arm-cable-pushdown",
+        "name": "Single-Arm Cable Pushdown",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-rope-hammer-curl",
+        "name": "Cable Rope Hammer Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-zottman-curl",
+        "name": "Dumbbell Zottman Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "arms-home-beginner",
+    "name": "Arm Day at Home — Beginner",
+    "blurb": "Bench dips, dumbbells and a band — arms built in a spare room with nothing bolted down.",
+    "level": "Beginner",
+    "focus": "arms",
+    "venue": "home",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "band-shoulder-dislocate",
+        "name": "Band Shoulder Dislocate",
+        "sets": 2,
+        "targetReps": 12,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "bench-dip",
+        "name": "Bench Dip",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-biceps-curl",
+        "name": "Dumbbell Biceps Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-triceps-pushdown",
+        "name": "Band Triceps Pushdown",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-hammer-curl",
+        "name": "Band Hammer Curl",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-arm-dumbbell-overhead-triceps-extension",
+        "name": "Single-Arm Dumbbell Overhead Triceps Extension",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-reverse-curl",
+        "name": "Band Reverse Curl",
+        "sets": 2,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "arms-home-intermediate",
+    "name": "Arm Day at Home — Intermediate",
+    "blurb": "Chin-ups and close-grip push-ups first, then the dumbbells finish the elbows.",
+    "level": "Intermediate",
+    "focus": "arms",
+    "venue": "home",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "chin-up",
+        "name": "Chin-Up",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "close-grip-push-up",
+        "name": "Close-Grip Push-Up",
+        "sets": 4,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-skull-crusher",
+        "name": "Dumbbell Skull Crusher",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "alternating-dumbbell-curl",
+        "name": "Alternating Dumbbell Curl",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "two-hand-dumbbell-overhead-triceps-extension",
+        "name": "Two-Hand Dumbbell Overhead Triceps Extension",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cross-body-hammer-curl",
+        "name": "Cross-Body Hammer Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-triceps-kickback",
+        "name": "Dumbbell Triceps Kickback",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:run",
+        "name": "Outdoor Run",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "outdoor",
+        "targetMi": 1.5
+      }
+    ]
+  },
+  {
+    "id": "arms-home-advanced",
+    "name": "Arm Day at Home — Advanced",
+    "blurb": "Straight-bar dips and commando pull-ups — the hardest arm work a doorway bar allows.",
+    "level": "Advanced",
+    "focus": "arms",
+    "venue": "home",
+    "audience": "men",
+    "exercises": [
+      {
+        "catalogKey": "straight-bar-dip",
+        "name": "Straight-Bar Dip",
+        "sets": 5,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "commando-pull-up",
+        "name": "Commando Pull-Up",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-jm-press",
+        "name": "Dumbbell JM Press",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-preacher-curl",
+        "name": "Dumbbell Preacher Curl",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-overhead-triceps-extension",
+        "name": "Band Overhead Triceps Extension",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-drag-curl",
+        "name": "Dumbbell Drag Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-reverse-curl",
+        "name": "Dumbbell Reverse Curl",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "w-push-gym-beginner",
+    "name": "Women’s Push Day — Beginner",
+    "blurb": "Fixed-path pressing for chest and shoulders, with the raises and the arms behind it.",
+    "level": "Beginner",
+    "focus": "push",
+    "venue": "gym",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "arm-circles",
+        "name": "Arm Circles",
+        "sets": 1,
+        "targetReps": 20,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "machine-incline-chest-press",
+        "name": "Machine Incline Chest Press",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "machine-shoulder-press",
+        "name": "Machine Shoulder Press",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "machine-chest-fly",
+        "name": "Machine Chest Fly",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "machine-lateral-raise",
+        "name": "Machine Lateral Raise",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "two-hand-dumbbell-overhead-triceps-extension",
+        "name": "Two-Hand Dumbbell Overhead Triceps Extension",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-triceps-pushdown",
+        "name": "Cable Triceps Pushdown",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:walk",
+        "name": "Treadmill Walk",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "indoor",
+        "targetMi": 1
+      }
+    ]
+  },
+  {
+    "id": "w-push-gym-intermediate",
+    "name": "Women’s Push Day — Intermediate",
+    "blurb": "The overhead press leads. Delts from three angles, then the hips to close it out.",
+    "level": "Intermediate",
+    "focus": "push",
+    "venue": "gym",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "band-pull-apart",
+        "name": "Band Pull-Apart",
+        "sets": 2,
+        "targetReps": 20,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-overhead-press",
+        "name": "Barbell Overhead Press",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-incline-bench-press",
+        "name": "Dumbbell Incline Bench Press",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "high-to-low-cable-fly",
+        "name": "High-to-Low Cable Fly",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-lateral-raise",
+        "name": "Cable Lateral Raise",
+        "sets": 4,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-face-pull",
+        "name": "Cable Face Pull",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-overhead-triceps-extension",
+        "name": "Cable Overhead Triceps Extension",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-hip-thrust",
+        "name": "Barbell Hip Thrust",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "w-push-gym-advanced",
+    "name": "Women’s Push Day — Advanced",
+    "blurb": "Heavy incline, a push press, and enough delt volume to change the outline.",
+    "level": "Advanced",
+    "focus": "push",
+    "venue": "gym",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "barbell-incline-bench-press",
+        "name": "Barbell Incline Bench Press",
+        "sets": 5,
+        "targetReps": 5,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-push-press",
+        "name": "Barbell Push Press",
+        "sets": 4,
+        "targetReps": 6,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-arm-cable-fly",
+        "name": "Single-Arm Cable Fly",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "leaning-dumbbell-lateral-raise",
+        "name": "Leaning Dumbbell Lateral Raise",
+        "sets": 4,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "reverse-pec-deck",
+        "name": "Reverse Pec Deck",
+        "sets": 4,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-skull-crusher",
+        "name": "Barbell Skull Crusher",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-arm-cable-pushdown",
+        "name": "Single-Arm Cable Pushdown",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "hanging-leg-raise",
+        "name": "Hanging Leg Raise",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "w-push-home-beginner",
+    "name": "Women’s Push Day at Home — Beginner",
+    "blurb": "Dumbbells, a band and a wall. The pressing pattern learned before it is loaded.",
+    "level": "Beginner",
+    "focus": "push",
+    "venue": "home",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "shoulder-rolls",
+        "name": "Shoulder Rolls",
+        "sets": 1,
+        "targetReps": 15,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "incline-push-up",
+        "name": "Incline Push-Up",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "seated-dumbbell-shoulder-press",
+        "name": "Seated Dumbbell Shoulder Press",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-lateral-raise",
+        "name": "Dumbbell Lateral Raise",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-pull-apart",
+        "name": "Band Pull-Apart",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "two-hand-dumbbell-overhead-triceps-extension",
+        "name": "Two-Hand Dumbbell Overhead Triceps Extension",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-triceps-kickback",
+        "name": "Band Triceps Kickback",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:walk",
+        "name": "Outdoor Walk",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "outdoor",
+        "targetMi": 1
+      }
+    ]
+  },
+  {
+    "id": "w-push-home-intermediate",
+    "name": "Women’s Push Day at Home — Intermediate",
+    "blurb": "Standing press first, then one arm at a time, then everything the shoulder owes.",
+    "level": "Intermediate",
+    "focus": "push",
+    "venue": "home",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "dumbbell-overhead-press",
+        "name": "Dumbbell Overhead Press",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-arm-dumbbell-incline-press",
+        "name": "Single-Arm Dumbbell Incline Press",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-incline-chest-fly",
+        "name": "Dumbbell Incline Chest Fly",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-lateral-raise",
+        "name": "Dumbbell Lateral Raise",
+        "sets": 4,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-face-pull",
+        "name": "Band Face Pull",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "two-hand-dumbbell-overhead-triceps-extension",
+        "name": "Two-Hand Dumbbell Overhead Triceps Extension",
+        "sets": 4,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-triceps-pushdown",
+        "name": "Band Triceps Pushdown",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-glute-kickback",
+        "name": "Band Glute Kickback",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "w-push-home-advanced",
+    "name": "Women’s Push Day at Home — Advanced",
+    "blurb": "Dips lead, Arnolds follow, and the shoulders keep working after the chest is done.",
+    "level": "Advanced",
+    "focus": "push",
+    "venue": "home",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "parallel-bar-dip",
+        "name": "Parallel Bar Dip",
+        "sets": 5,
+        "targetReps": 6,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-arnold-press",
+        "name": "Dumbbell Arnold Press",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "archer-push-up",
+        "name": "Archer Push-Up",
+        "sets": 3,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "leaning-dumbbell-lateral-raise",
+        "name": "Leaning Dumbbell Lateral Raise",
+        "sets": 4,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "incline-dumbbell-rear-delt-fly",
+        "name": "Incline Dumbbell Rear Delt Fly",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-arm-dumbbell-overhead-triceps-extension",
+        "name": "Single-Arm Dumbbell Overhead Triceps Extension",
+        "sets": 4,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "suspension-trainer-triceps-extension",
+        "name": "Suspension Trainer Triceps Extension",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-hip-thrust",
+        "name": "Band Hip Thrust",
+        "sets": 4,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "w-chest-tri-gym-beginner",
+    "name": "Women’s Chest & Triceps — Beginner",
+    "blurb": "Two chest angles on machines, then the triceps twice. Nothing that needs a spotter.",
+    "level": "Beginner",
+    "focus": "chest-triceps",
+    "venue": "gym",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "wall-angel",
+        "name": "Wall Angel",
+        "sets": 1,
+        "targetReps": 15,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "machine-chest-press",
+        "name": "Machine Chest Press",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "smith-machine-incline-bench-press",
+        "name": "Smith Machine Incline Bench Press",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "pec-deck-fly",
+        "name": "Pec Deck Fly",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-lateral-raise",
+        "name": "Dumbbell Lateral Raise",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-overhead-triceps-extension",
+        "name": "Cable Overhead Triceps Extension",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-rope-pushdown",
+        "name": "Cable Rope Pushdown",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:row",
+        "name": "Row",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "indoor",
+        "targetMi": 1
+      }
+    ]
+  },
+  {
+    "id": "w-chest-tri-gym-intermediate",
+    "name": "Women’s Chest & Triceps — Intermediate",
+    "blurb": "Incline dumbbells into a close grip, then the arms, then the hips before you leave.",
+    "level": "Intermediate",
+    "focus": "chest-triceps",
+    "venue": "gym",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "dumbbell-incline-bench-press",
+        "name": "Dumbbell Incline Bench Press",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-close-grip-bench-press",
+        "name": "Barbell Close-Grip Bench Press",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-crossover",
+        "name": "Cable Crossover",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "behind-the-back-cable-lateral-raise",
+        "name": "Behind-the-Back Cable Lateral Raise",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-skull-crusher",
+        "name": "Cable Skull Crusher",
+        "sets": 4,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-triceps-kickback",
+        "name": "Dumbbell Triceps Kickback",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "glute-drive-machine",
+        "name": "Glute Drive Machine",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "w-chest-tri-gym-advanced",
+    "name": "Women’s Chest & Triceps — Advanced",
+    "blurb": "Flat bench heavy, incline heavy, dips, and three ways at the back of the arm.",
+    "level": "Advanced",
+    "focus": "chest-triceps",
+    "venue": "gym",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "barbell-bench-press",
+        "name": "Barbell Bench Press",
+        "sets": 5,
+        "targetReps": 5,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "plate-loaded-incline-chest-press",
+        "name": "Plate-Loaded Incline Chest Press",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "parallel-bar-dip",
+        "name": "Parallel Bar Dip",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "low-to-high-cable-fly",
+        "name": "Low-to-High Cable Fly",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-arm-dumbbell-lateral-raise",
+        "name": "Single-Arm Dumbbell Lateral Raise",
+        "sets": 4,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-skull-crusher",
+        "name": "Barbell Skull Crusher",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-cross-body-triceps-extension",
+        "name": "Cable Cross-Body Triceps Extension",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-crunch",
+        "name": "Cable Crunch",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "w-chest-tri-home-beginner",
+    "name": "Women’s Chest & Triceps at Home — Beginner",
+    "blurb": "Push-ups scaled to your strength, dumbbells for the chest, a band for the triceps.",
+    "level": "Beginner",
+    "focus": "chest-triceps",
+    "venue": "home",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "scapular-push-up",
+        "name": "Scapular Push-Up",
+        "sets": 2,
+        "targetReps": 10,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "knee-push-up",
+        "name": "Knee Push-Up",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-incline-bench-press",
+        "name": "Dumbbell Incline Bench Press",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-chest-fly",
+        "name": "Band Chest Fly",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "two-hand-dumbbell-overhead-triceps-extension",
+        "name": "Two-Hand Dumbbell Overhead Triceps Extension",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-triceps-pushdown",
+        "name": "Band Triceps Pushdown",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:walk",
+        "name": "Outdoor Walk",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "outdoor",
+        "targetMi": 1.5
+      }
+    ]
+  },
+  {
+    "id": "w-chest-tri-home-intermediate",
+    "name": "Women’s Chest & Triceps at Home — Intermediate",
+    "blurb": "Two dumbbell presses and a fly, the arms after, and a run to finish on.",
+    "level": "Intermediate",
+    "focus": "chest-triceps",
+    "venue": "home",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "dumbbell-neutral-grip-bench-press",
+        "name": "Dumbbell Neutral-Grip Bench Press",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-incline-bench-press",
+        "name": "Dumbbell Incline Bench Press",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-incline-chest-fly",
+        "name": "Dumbbell Incline Chest Fly",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-lateral-raise",
+        "name": "Dumbbell Lateral Raise",
+        "sets": 4,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-skull-crusher",
+        "name": "Dumbbell Skull Crusher",
+        "sets": 4,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-triceps-kickback",
+        "name": "Dumbbell Triceps Kickback",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-glute-bridge",
+        "name": "Dumbbell Glute Bridge",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:run",
+        "name": "Outdoor Run",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "outdoor",
+        "targetMi": 1.5
+      }
+    ]
+  },
+  {
+    "id": "w-chest-tri-home-advanced",
+    "name": "Women’s Chest & Triceps at Home — Advanced",
+    "blurb": "A heavy dumbbell press, a deficit push-up, and the long head worked three ways.",
+    "level": "Advanced",
+    "focus": "chest-triceps",
+    "venue": "home",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "dumbbell-bench-press",
+        "name": "Dumbbell Bench Press",
+        "sets": 5,
+        "targetReps": 6,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "deficit-push-up",
+        "name": "Deficit Push-Up",
+        "sets": 4,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-incline-chest-fly",
+        "name": "Dumbbell Incline Chest Fly",
+        "sets": 4,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-jm-press",
+        "name": "Dumbbell JM Press",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "two-hand-dumbbell-overhead-triceps-extension",
+        "name": "Two-Hand Dumbbell Overhead Triceps Extension",
+        "sets": 4,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-triceps-kickback",
+        "name": "Band Triceps Kickback",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-lateral-raise",
+        "name": "Band Lateral Raise",
+        "sets": 4,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-leg-glute-bridge",
+        "name": "Single-Leg Glute Bridge",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "w-pull-gym-beginner",
+    "name": "Women’s Pull Day — Beginner",
+    "blurb": "Lats, upper back and arms on fixed machines — the first pull day, learned in a safe groove.",
+    "level": "Beginner",
+    "focus": "pull",
+    "venue": "gym",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "scapular-wall-slide",
+        "name": "Scapular Wall Slide",
+        "sets": 2,
+        "targetReps": 12,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "machine-lat-pulldown",
+        "name": "Machine Lat Pulldown",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "chest-supported-row-machine",
+        "name": "Chest-Supported Row Machine",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "machine-rear-delt-fly",
+        "name": "Machine Rear Delt Fly",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-face-pull",
+        "name": "Cable Face Pull",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-biceps-curl",
+        "name": "Dumbbell Biceps Curl",
+        "sets": 2,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:walk",
+        "name": "Treadmill Walk",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "indoor",
+        "targetMi": 1
+      }
+    ]
+  },
+  {
+    "id": "w-pull-gym-intermediate",
+    "name": "Women’s Pull Day — Intermediate",
+    "blurb": "Assisted pull-ups and barbell rows, then a hinge and the rear delts that hold your posture up.",
+    "level": "Intermediate",
+    "focus": "pull",
+    "venue": "gym",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "scapular-pull-up",
+        "name": "Scapular Pull-Up",
+        "sets": 2,
+        "targetReps": 10,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "assisted-pull-up",
+        "name": "Assisted Pull-Up",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-bent-over-row",
+        "name": "Barbell Bent-Over Row",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-romanian-deadlift",
+        "name": "Barbell Romanian Deadlift",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "reverse-pec-deck",
+        "name": "Reverse Pec Deck",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-y-raise",
+        "name": "Cable Y-Raise",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-hammer-curl",
+        "name": "Dumbbell Hammer Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "w-pull-gym-advanced",
+    "name": "Women’s Pull Day — Advanced",
+    "blurb": "Chest-to-bar pull-ups, Pendlay rows and heavy hips. This one assumes years, not months.",
+    "level": "Advanced",
+    "focus": "pull",
+    "venue": "gym",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "band-shoulder-dislocate",
+        "name": "Band Shoulder Dislocate",
+        "sets": 2,
+        "targetReps": 12,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "chest-to-bar-pull-up",
+        "name": "Chest-to-Bar Pull-Up",
+        "sets": 5,
+        "targetReps": 4,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-pendlay-row",
+        "name": "Barbell Pendlay Row",
+        "sets": 4,
+        "targetReps": 6,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-hip-thrust",
+        "name": "Barbell Hip Thrust",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "incline-dumbbell-rear-delt-fly",
+        "name": "Incline Dumbbell Rear Delt Fly",
+        "sets": 4,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "suspension-trainer-face-pull",
+        "name": "Suspension Trainer Face Pull",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "bayesian-cable-curl",
+        "name": "Bayesian Cable Curl",
+        "sets": 4,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "w-pull-home-beginner",
+    "name": "Women’s Pull Day at Home — Beginner",
+    "blurb": "Two bands and a mat. Real pulling for the athlete who does not own a pull-up yet.",
+    "level": "Beginner",
+    "focus": "pull",
+    "venue": "home",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "cat-cow",
+        "name": "Cat-Cow",
+        "sets": 2,
+        "targetReps": 10,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-lat-pulldown",
+        "name": "Band Lat Pulldown",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-seated-row",
+        "name": "Band Seated Row",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-face-pull",
+        "name": "Band Face Pull",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-rear-delt-fly",
+        "name": "Dumbbell Rear Delt Fly",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-biceps-curl",
+        "name": "Band Biceps Curl",
+        "sets": 2,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:walk",
+        "name": "Outdoor Walk",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "outdoor",
+        "targetMi": 1.5
+      }
+    ]
+  },
+  {
+    "id": "w-pull-home-intermediate",
+    "name": "Women’s Pull Day at Home — Intermediate",
+    "blurb": "Negatives on the bar, heavy single-arm rows, a hinge, and a mile to finish.",
+    "level": "Intermediate",
+    "focus": "pull",
+    "venue": "home",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "wall-angel",
+        "name": "Wall Angel",
+        "sets": 2,
+        "targetReps": 12,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "negative-pull-up",
+        "name": "Negative Pull-Up",
+        "sets": 4,
+        "targetReps": 5,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-arm-dumbbell-row",
+        "name": "Single-Arm Dumbbell Row",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-romanian-deadlift",
+        "name": "Dumbbell Romanian Deadlift",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "suspension-trainer-t-raise",
+        "name": "Suspension Trainer T-Raise",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-pull-apart",
+        "name": "Band Pull-Apart",
+        "sets": 3,
+        "targetReps": 20,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-incline-curl",
+        "name": "Dumbbell Incline Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:run",
+        "name": "Outdoor Run",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "outdoor",
+        "targetMi": 1.5
+      }
+    ]
+  },
+  {
+    "id": "w-pull-home-advanced",
+    "name": "Women’s Pull Day at Home — Advanced",
+    "blurb": "Full pull-ups, elevated rows and single-leg hinging — the hardest session on the home shelf.",
+    "level": "Advanced",
+    "focus": "pull",
+    "venue": "home",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "inchworm",
+        "name": "Inchworm",
+        "sets": 2,
+        "targetReps": 10,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "pull-up",
+        "name": "Pull-Up",
+        "sets": 5,
+        "targetReps": 6,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "feet-elevated-inverted-row",
+        "name": "Feet-Elevated Inverted Row",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-leg-kettlebell-romanian-deadlift",
+        "name": "Single-Leg Kettlebell Romanian Deadlift",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "suspension-trainer-y-raise",
+        "name": "Suspension Trainer Y-Raise",
+        "sets": 4,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-rear-delt-fly",
+        "name": "Band Rear Delt Fly",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "suspension-trainer-biceps-curl",
+        "name": "Suspension Trainer Biceps Curl",
+        "sets": 4,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "w-back-bi-gym-beginner",
+    "name": "Women’s Back & Biceps — Beginner",
+    "blurb": "Cables and machines for the back, two curls to finish. A first back day, guided throughout.",
+    "level": "Beginner",
+    "focus": "back-biceps",
+    "venue": "gym",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "arm-circles",
+        "name": "Arm Circles",
+        "sets": 2,
+        "targetReps": 15,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "close-grip-cable-lat-pulldown",
+        "name": "Close-Grip Cable Lat Pulldown",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "machine-seated-row",
+        "name": "Machine Seated Row",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "high-cable-row",
+        "name": "High Cable Row",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-rear-delt-fly",
+        "name": "Cable Rear Delt Fly",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "machine-preacher-curl",
+        "name": "Machine Preacher Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-rope-hammer-curl",
+        "name": "Cable Rope Hammer Curl",
+        "sets": 2,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:row",
+        "name": "Row",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "indoor",
+        "targetMi": 1
+      }
+    ]
+  },
+  {
+    "id": "w-back-bi-gym-intermediate",
+    "name": "Women’s Back & Biceps — Intermediate",
+    "blurb": "A heavy row leads, a pull-through builds the hips, and the arms get their own two lifts.",
+    "level": "Intermediate",
+    "focus": "back-biceps",
+    "venue": "gym",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "scapular-push-up",
+        "name": "Scapular Push-Up",
+        "sets": 2,
+        "targetReps": 12,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "machine-t-bar-row",
+        "name": "Machine T-Bar Row",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "neutral-grip-cable-lat-pulldown",
+        "name": "Neutral-Grip Cable Lat Pulldown",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-pull-through",
+        "name": "Cable Pull-Through",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-face-pull",
+        "name": "Cable Face Pull",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-rear-delt-fly",
+        "name": "Dumbbell Rear Delt Fly",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-preacher-curl",
+        "name": "Dumbbell Preacher Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-straight-bar-curl",
+        "name": "Cable Straight-Bar Curl",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "w-back-bi-gym-advanced",
+    "name": "Women’s Back & Biceps — Advanced",
+    "blurb": "Deadlift, wide pull-ups and strict seal rows, then curls. A back day with a training age.",
+    "level": "Advanced",
+    "focus": "back-biceps",
+    "venue": "gym",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "thoracic-extension-on-foam-roller",
+        "name": "Thoracic Extension on Foam Roller",
+        "sets": 2,
+        "targetReps": 10,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-deadlift",
+        "name": "Barbell Deadlift",
+        "sets": 4,
+        "targetReps": 5,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "wide-grip-pull-up",
+        "name": "Wide-Grip Pull-Up",
+        "sets": 4,
+        "targetReps": 6,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-seal-row",
+        "name": "Barbell Seal Row",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "reverse-pec-deck",
+        "name": "Reverse Pec Deck",
+        "sets": 4,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-pull-apart",
+        "name": "Band Pull-Apart",
+        "sets": 3,
+        "targetReps": 25,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-biceps-curl",
+        "name": "Barbell Biceps Curl",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-spider-curl",
+        "name": "Dumbbell Spider Curl",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "w-back-bi-home-beginner",
+    "name": "Women’s Back & Biceps at Home — Beginner",
+    "blurb": "Bands, dumbbells and a doorway — back, rear delts and glutes without leaving the room.",
+    "level": "Beginner",
+    "focus": "back-biceps",
+    "venue": "home",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "shoulder-rolls",
+        "name": "Shoulder Rolls",
+        "sets": 2,
+        "targetReps": 15,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-assisted-pull-up",
+        "name": "Band Assisted Pull-Up",
+        "sets": 3,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-chest-supported-row",
+        "name": "Dumbbell Chest-Supported Row",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-face-pull",
+        "name": "Band Face Pull",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-pull-apart",
+        "name": "Band Pull-Apart",
+        "sets": 3,
+        "targetReps": 20,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "glute-bridge",
+        "name": "Glute Bridge",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "alternating-dumbbell-curl",
+        "name": "Alternating Dumbbell Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "w-back-bi-home-intermediate",
+    "name": "Women’s Back & Biceps at Home — Intermediate",
+    "blurb": "Chin-ups lead, a kettlebell hinge follows, the arms finish. No barbell anywhere in it.",
+    "level": "Intermediate",
+    "focus": "back-biceps",
+    "venue": "home",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "band-shoulder-external-rotation",
+        "name": "Band Shoulder External Rotation",
+        "sets": 2,
+        "targetReps": 15,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "chin-up",
+        "name": "Chin-Up",
+        "sets": 4,
+        "targetReps": 6,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-bent-over-row",
+        "name": "Dumbbell Bent-Over Row",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "kettlebell-romanian-deadlift",
+        "name": "Kettlebell Romanian Deadlift",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-rear-delt-fly",
+        "name": "Dumbbell Rear Delt Fly",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "suspension-trainer-face-pull",
+        "name": "Suspension Trainer Face Pull",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cross-body-hammer-curl",
+        "name": "Cross-Body Hammer Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-concentration-curl",
+        "name": "Dumbbell Concentration Curl",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "w-back-bi-home-advanced",
+    "name": "Women’s Back & Biceps at Home — Advanced",
+    "blurb": "Bodyweight pull-ups, gorilla rows and single-leg hinging. Advanced work without a rack.",
+    "level": "Advanced",
+    "focus": "back-biceps",
+    "venue": "home",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "shoulder-car",
+        "name": "Shoulder CAR",
+        "sets": 2,
+        "targetReps": 8,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "neutral-grip-pull-up",
+        "name": "Neutral-Grip Pull-Up",
+        "sets": 5,
+        "targetReps": 6,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-gorilla-row",
+        "name": "Dumbbell Gorilla Row",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-leg-dumbbell-romanian-deadlift",
+        "name": "Single-Leg Dumbbell Romanian Deadlift",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "incline-dumbbell-rear-delt-fly",
+        "name": "Incline Dumbbell Rear Delt Fly",
+        "sets": 4,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-face-pull",
+        "name": "Band Face Pull",
+        "sets": 3,
+        "targetReps": 20,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-bayesian-curl",
+        "name": "Dumbbell Bayesian Curl",
+        "sets": 4,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-hammer-curl",
+        "name": "Band Hammer Curl",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "w-legs-gym-beginner",
+    "name": "Women’s Leg Day — Beginner",
+    "blurb": "Leg press, hip thrust and curls — the machine route into a complete lower body.",
+    "level": "Beginner",
+    "focus": "legs",
+    "venue": "gym",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "glute-bridge",
+        "name": "Glute Bridge",
+        "sets": 2,
+        "targetReps": 15,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "machine-leg-press",
+        "name": "Machine Leg Press",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "hip-thrust-machine",
+        "name": "Hip Thrust Machine",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-step-up",
+        "name": "Dumbbell Step-Up",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "seated-leg-curl-machine",
+        "name": "Seated Leg Curl Machine",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "hip-abductor-machine",
+        "name": "Hip Abductor Machine",
+        "sets": 2,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "standing-calf-raise-machine",
+        "name": "Standing Calf Raise Machine",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:walk",
+        "name": "Treadmill Walk",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "indoor",
+        "targetMi": 1
+      }
+    ]
+  },
+  {
+    "id": "w-legs-gym-intermediate",
+    "name": "Women’s Leg Day — Intermediate",
+    "blurb": "Barbell squat and Romanian deadlift lead; the split squat and abductors clean up behind them.",
+    "level": "Intermediate",
+    "focus": "legs",
+    "venue": "gym",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "band-lateral-walk",
+        "name": "Band Lateral Walk",
+        "sets": 2,
+        "targetReps": 20,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-back-squat",
+        "name": "Barbell Back Squat",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-romanian-deadlift",
+        "name": "Barbell Romanian Deadlift",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-bulgarian-split-squat",
+        "name": "Dumbbell Bulgarian Split Squat",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "lying-leg-curl-machine",
+        "name": "Lying Leg Curl Machine",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-hip-abduction",
+        "name": "Cable Hip Abduction",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "seated-calf-raise-machine",
+        "name": "Seated Calf Raise Machine",
+        "sets": 4,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "w-legs-gym-advanced",
+    "name": "Women’s Leg Day — Advanced",
+    "blurb": "Front squats at four reps, then stiff-leg pulls, loaded split squats and a hamstring raise.",
+    "level": "Advanced",
+    "focus": "legs",
+    "venue": "gym",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "barbell-front-squat",
+        "name": "Barbell Front Squat",
+        "sets": 5,
+        "targetReps": 4,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-stiff-leg-deadlift",
+        "name": "Barbell Stiff-Leg Deadlift",
+        "sets": 4,
+        "targetReps": 6,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-bulgarian-split-squat",
+        "name": "Barbell Bulgarian Split Squat",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-hip-thrust",
+        "name": "Barbell Hip Thrust",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "glute-ham-developer-raise",
+        "name": "Glute Ham Developer Raise",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "multi-hip-abduction-machine",
+        "name": "Multi-Hip Abduction Machine",
+        "sets": 3,
+        "targetReps": 20,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-leg-dumbbell-calf-raise",
+        "name": "Single-Leg Dumbbell Calf Raise",
+        "sets": 4,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "w-legs-home-beginner",
+    "name": "Women’s Leg Day at Home — Beginner",
+    "blurb": "Goblet squats and hinges off one pair of dumbbells — the whole leg without a rack.",
+    "level": "Beginner",
+    "focus": "legs",
+    "venue": "home",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "world-s-greatest-stretch",
+        "name": "World's Greatest Stretch",
+        "sets": 2,
+        "targetReps": 8,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-goblet-squat",
+        "name": "Dumbbell Goblet Squat",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-romanian-deadlift",
+        "name": "Dumbbell Romanian Deadlift",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-glute-bridge",
+        "name": "Dumbbell Glute Bridge",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "step-up",
+        "name": "Step-Up",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-clamshell",
+        "name": "Band Clamshell",
+        "sets": 2,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "calf-raise",
+        "name": "Calf Raise",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:walk",
+        "name": "Outdoor Walk",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "outdoor",
+        "targetMi": 1
+      }
+    ]
+  },
+  {
+    "id": "w-legs-home-intermediate",
+    "name": "Women’s Leg Day at Home — Intermediate",
+    "blurb": "Single-leg work throughout: goblet squat, one-leg hinge, Bulgarian split squat, calves.",
+    "level": "Intermediate",
+    "focus": "legs",
+    "venue": "home",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "band-monster-walk",
+        "name": "Band Monster Walk",
+        "sets": 2,
+        "targetReps": 15,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "kettlebell-goblet-squat",
+        "name": "Kettlebell Goblet Squat",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-leg-dumbbell-romanian-deadlift",
+        "name": "Single-Leg Dumbbell Romanian Deadlift",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-bulgarian-split-squat",
+        "name": "Dumbbell Bulgarian Split Squat",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-hip-thrust",
+        "name": "Dumbbell Hip Thrust",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-hip-abduction",
+        "name": "Band Hip Abduction",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-leg-calf-raise",
+        "name": "Single-Leg Calf Raise",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "w-legs-home-advanced",
+    "name": "Women’s Leg Day at Home — Advanced",
+    "blurb": "Double kettlebell front squats and Nordic curls — a hard lower body with no machine in sight.",
+    "level": "Advanced",
+    "focus": "legs",
+    "venue": "home",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "double-kettlebell-front-squat",
+        "name": "Double Kettlebell Front Squat",
+        "sets": 5,
+        "targetReps": 6,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-leg-kettlebell-romanian-deadlift",
+        "name": "Single-Leg Kettlebell Romanian Deadlift",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "kettlebell-bulgarian-split-squat",
+        "name": "Kettlebell Bulgarian Split Squat",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-hip-thrust",
+        "name": "Band Hip Thrust",
+        "sets": 4,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "nordic-hamstring-curl",
+        "name": "Nordic Hamstring Curl",
+        "sets": 3,
+        "targetReps": 6,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-lateral-walk",
+        "name": "Band Lateral Walk",
+        "sets": 3,
+        "targetReps": 20,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-leg-dumbbell-calf-raise",
+        "name": "Single-Leg Dumbbell Calf Raise",
+        "sets": 4,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "w-glutes-gym-beginner",
+    "name": "Women’s Glute Day — Beginner",
+    "blurb": "Machine hip thrust, a cable hinge and dedicated abduction work — the whole glute, nothing to balance.",
+    "level": "Beginner",
+    "focus": "glutes",
+    "venue": "gym",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "band-monster-walk",
+        "name": "Band Monster Walk",
+        "sets": 2,
+        "targetReps": 15,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "hip-thrust-machine",
+        "name": "Hip Thrust Machine",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-pull-through",
+        "name": "Cable Pull-Through",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-step-up",
+        "name": "Dumbbell Step-Up",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "hip-abductor-machine",
+        "name": "Hip Abductor Machine",
+        "sets": 3,
+        "targetReps": 20,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "glute-kickback-machine",
+        "name": "Glute Kickback Machine",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "w-glutes-gym-intermediate",
+    "name": "Women’s Glute Day — Intermediate",
+    "blurb": "Barbell hip thrust first, then the single-leg work the glute medius cannot hide from.",
+    "level": "Intermediate",
+    "focus": "glutes",
+    "venue": "gym",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "band-clamshell",
+        "name": "Band Clamshell",
+        "sets": 2,
+        "targetReps": 20,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-hip-thrust",
+        "name": "Barbell Hip Thrust",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-leg-dumbbell-romanian-deadlift",
+        "name": "Single-Leg Dumbbell Romanian Deadlift",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-curtsy-lunge",
+        "name": "Dumbbell Curtsy Lunge",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "roman-chair-back-extension",
+        "name": "Roman Chair Back Extension",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-hip-abduction",
+        "name": "Cable Hip Abduction",
+        "sets": 3,
+        "targetReps": 20,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "w-glutes-gym-advanced",
+    "name": "Women’s Glute Day — Advanced",
+    "blurb": "Heavy hip thrusts, good mornings and barbell split squats, finished with high-rep abduction.",
+    "level": "Advanced",
+    "focus": "glutes",
+    "venue": "gym",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "glute-bridge",
+        "name": "Glute Bridge",
+        "sets": 2,
+        "targetReps": 20,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-hip-thrust",
+        "name": "Barbell Hip Thrust",
+        "sets": 5,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-good-morning",
+        "name": "Barbell Good Morning",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-bulgarian-split-squat",
+        "name": "Barbell Bulgarian Split Squat",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-glute-kickback",
+        "name": "Cable Glute Kickback",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-lateral-walk",
+        "name": "Band Lateral Walk",
+        "sets": 4,
+        "targetReps": 25,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "frog-pump",
+        "name": "Frog Pump",
+        "sets": 2,
+        "targetReps": 25,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "w-glutes-home-beginner",
+    "name": "Women’s Glute Day at Home — Beginner",
+    "blurb": "A band, dumbbells and a step: bridge, hinge and abduct, then a mile on the road.",
+    "level": "Beginner",
+    "focus": "glutes",
+    "venue": "home",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "band-clamshell",
+        "name": "Band Clamshell",
+        "sets": 2,
+        "targetReps": 15,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "glute-bridge",
+        "name": "Glute Bridge",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-romanian-deadlift",
+        "name": "Band Romanian Deadlift",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-reverse-lunge",
+        "name": "Dumbbell Reverse Lunge",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-lateral-walk",
+        "name": "Band Lateral Walk",
+        "sets": 3,
+        "targetReps": 20,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-glute-kickback",
+        "name": "Band Glute Kickback",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:walk",
+        "name": "Outdoor Walk",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "outdoor",
+        "targetMi": 1
+      }
+    ]
+  },
+  {
+    "id": "w-glutes-home-intermediate",
+    "name": "Women’s Glute Day at Home — Intermediate",
+    "blurb": "Loaded bridges, a stiff-leg hinge and split squats — no barbell, no shortage of work.",
+    "level": "Intermediate",
+    "focus": "glutes",
+    "venue": "home",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "band-monster-walk",
+        "name": "Band Monster Walk",
+        "sets": 2,
+        "targetReps": 20,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-glute-bridge",
+        "name": "Dumbbell Glute Bridge",
+        "sets": 4,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-stiff-leg-deadlift",
+        "name": "Dumbbell Stiff-Leg Deadlift",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-bulgarian-split-squat",
+        "name": "Dumbbell Bulgarian Split Squat",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "back-extension",
+        "name": "Back Extension",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-hip-abduction",
+        "name": "Band Hip Abduction",
+        "sets": 3,
+        "targetReps": 20,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:run",
+        "name": "Outdoor Run",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "outdoor",
+        "targetMi": 1.5
+      }
+    ]
+  },
+  {
+    "id": "w-glutes-home-advanced",
+    "name": "Women’s Glute Day at Home — Advanced",
+    "blurb": "Dumbbell hip thrusts and single-leg hinges, then swings and high-rep pumps to finish.",
+    "level": "Advanced",
+    "focus": "glutes",
+    "venue": "home",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "band-lateral-walk",
+        "name": "Band Lateral Walk",
+        "sets": 2,
+        "targetReps": 20,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-hip-thrust",
+        "name": "Dumbbell Hip Thrust",
+        "sets": 5,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-leg-kettlebell-romanian-deadlift",
+        "name": "Single-Leg Kettlebell Romanian Deadlift",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-box-step-down",
+        "name": "Dumbbell Box Step-Down",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "kettlebell-swing",
+        "name": "Kettlebell Swing",
+        "sets": 3,
+        "targetReps": 20,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "frog-pump",
+        "name": "Frog Pump",
+        "sets": 3,
+        "targetReps": 25,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-monster-walk",
+        "name": "Band Monster Walk",
+        "sets": 4,
+        "targetReps": 25,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "w-arms-gym-beginner",
+    "name": "Women’s Arm Day — Beginner",
+    "blurb": "Biceps and triceps on the machines and cables, closing with lateral raises and a ride.",
+    "level": "Beginner",
+    "focus": "arms",
+    "venue": "gym",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "band-pull-apart",
+        "name": "Band Pull-Apart",
+        "sets": 2,
+        "targetReps": 15,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "assisted-dip-machine",
+        "name": "Assisted Dip Machine",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "machine-biceps-curl",
+        "name": "Machine Biceps Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-overhead-triceps-extension",
+        "name": "Cable Overhead Triceps Extension",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-hammer-curl",
+        "name": "Dumbbell Hammer Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-triceps-pushdown",
+        "name": "Cable Triceps Pushdown",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-lateral-raise",
+        "name": "Dumbbell Lateral Raise",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:bike",
+        "name": "Indoor Ride",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "indoor",
+        "targetMi": 2
+      }
+    ]
+  },
+  {
+    "id": "w-arms-gym-intermediate",
+    "name": "Women’s Arm Day — Intermediate",
+    "blurb": "Close-grip bench and barbell curls first, then the ropes, the cuffs and a face pull.",
+    "level": "Intermediate",
+    "focus": "arms",
+    "venue": "gym",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "barbell-close-grip-bench-press",
+        "name": "Barbell Close-Grip Bench Press",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-biceps-curl",
+        "name": "Barbell Biceps Curl",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-rope-pushdown",
+        "name": "Cable Rope Pushdown",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-incline-curl",
+        "name": "Dumbbell Incline Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-arm-dumbbell-overhead-triceps-extension",
+        "name": "Single-Arm Dumbbell Overhead Triceps Extension",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-rope-hammer-curl",
+        "name": "Cable Rope Hammer Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-face-pull",
+        "name": "Cable Face Pull",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:row",
+        "name": "Row",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "indoor",
+        "targetMi": 1.5
+      }
+    ]
+  },
+  {
+    "id": "w-arms-gym-advanced",
+    "name": "Women’s Arm Day — Advanced",
+    "blurb": "Dips and chin-ups before any cable touches your hands, then skull crushers and preacher curls.",
+    "level": "Advanced",
+    "focus": "arms",
+    "venue": "gym",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "parallel-bar-dip",
+        "name": "Parallel Bar Dip",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "chin-up",
+        "name": "Chin-Up",
+        "sets": 4,
+        "targetReps": 6,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-skull-crusher",
+        "name": "Barbell Skull Crusher",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-preacher-curl",
+        "name": "Barbell Preacher Curl",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "single-arm-cable-pushdown",
+        "name": "Single-Arm Cable Pushdown",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cross-body-hammer-curl",
+        "name": "Cross-Body Hammer Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-lateral-raise",
+        "name": "Cable Lateral Raise",
+        "sets": 4,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "hanging-leg-raise",
+        "name": "Hanging Leg Raise",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "w-arms-home-beginner",
+    "name": "Women’s Arm Day at Home — Beginner",
+    "blurb": "Push-ups, bench dips and light dumbbells — arms learned in an afternoon at home.",
+    "level": "Beginner",
+    "focus": "arms",
+    "venue": "home",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "arm-circles",
+        "name": "Arm Circles",
+        "sets": 2,
+        "targetReps": 15,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "knee-push-up",
+        "name": "Knee Push-Up",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "bench-dip",
+        "name": "Bench Dip",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-biceps-curl",
+        "name": "Dumbbell Biceps Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "two-hand-dumbbell-overhead-triceps-extension",
+        "name": "Two-Hand Dumbbell Overhead Triceps Extension",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-hammer-curl",
+        "name": "Band Hammer Curl",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-lateral-raise",
+        "name": "Band Lateral Raise",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cardio:walk",
+        "name": "Outdoor Walk",
+        "sets": 1,
+        "targetReps": 1,
+        "section": "cooldown",
+        "kind": "cardio",
+        "modality": "outdoor",
+        "targetMi": 1.5
+      }
+    ]
+  },
+  {
+    "id": "w-arms-home-intermediate",
+    "name": "Women’s Arm Day at Home — Intermediate",
+    "blurb": "Close-grip push-ups lead, then dumbbells and straps through both heads of the arm.",
+    "level": "Intermediate",
+    "focus": "arms",
+    "venue": "home",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "close-grip-push-up",
+        "name": "Close-Grip Push-Up",
+        "sets": 4,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "alternating-dumbbell-curl",
+        "name": "Alternating Dumbbell Curl",
+        "sets": 4,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-skull-crusher",
+        "name": "Dumbbell Skull Crusher",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "suspension-trainer-biceps-curl",
+        "name": "Suspension Trainer Biceps Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-triceps-kickback",
+        "name": "Dumbbell Triceps Kickback",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-hammer-curl",
+        "name": "Dumbbell Hammer Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-rear-delt-fly",
+        "name": "Dumbbell Rear Delt Fly",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "w-arms-home-advanced",
+    "name": "Women’s Arm Day at Home — Advanced",
+    "blurb": "Chin-ups and diamond push-ups open it; bands and dumbbells take whatever is left.",
+    "level": "Advanced",
+    "focus": "arms",
+    "venue": "home",
+    "audience": "women",
+    "exercises": [
+      {
+        "catalogKey": "chin-up",
+        "name": "Chin-Up",
+        "sets": 4,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "diamond-push-up",
+        "name": "Diamond Push-Up",
+        "sets": 4,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "suspension-trainer-triceps-extension",
+        "name": "Suspension Trainer Triceps Extension",
+        "sets": 4,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-incline-curl",
+        "name": "Dumbbell Incline Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "band-triceps-pushdown",
+        "name": "Band Triceps Pushdown",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cross-body-hammer-curl",
+        "name": "Cross-Body Hammer Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "leaning-dumbbell-lateral-raise",
+        "name": "Leaning Dumbbell Lateral Raise",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "upper-body",
+    "name": "Upper Body",
+    "blurb": "Push and pull in the same session — the upper half of an upper/lower week.",
+    "level": "Beginner",
+    "focus": "upper",
+    "venue": "gym",
+    "audience": "all",
+    "exercises": [
+      {
+        "catalogKey": "barbell-bench-press",
+        "name": "Barbell Bench Press",
+        "sets": 4,
+        "targetReps": 6,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-bent-over-row",
+        "name": "Barbell Bent-Over Row",
+        "sets": 4,
+        "targetReps": 6,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "seated-dumbbell-shoulder-press",
+        "name": "Seated Dumbbell Shoulder Press",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-lat-pulldown",
+        "name": "Cable Lat Pulldown",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "dumbbell-hammer-curl",
+        "name": "Dumbbell Hammer Curl",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "cable-triceps-pushdown",
+        "name": "Cable Triceps Pushdown",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "lower-body",
+    "name": "Lower Body",
+    "blurb": "Quads, hamstrings, glutes and calves — the other half of the week.",
+    "level": "Beginner",
+    "focus": "lower",
+    "venue": "gym",
+    "audience": "all",
+    "exercises": [
+      {
+        "catalogKey": "barbell-back-squat",
+        "name": "Barbell Back Squat",
+        "sets": 4,
+        "targetReps": 6,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-hip-thrust",
+        "name": "Barbell Hip Thrust",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "bulgarian-split-squat",
+        "name": "Bulgarian Split Squat",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "seated-leg-curl-machine",
+        "name": "Seated Leg Curl Machine",
+        "sets": 3,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "leg-extension-machine",
+        "name": "Leg Extension Machine",
+        "sets": 3,
+        "targetReps": 15,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "standing-calf-raise-machine",
+        "name": "Standing Calf Raise Machine",
+        "sets": 4,
+        "targetReps": 12,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  },
+  {
+    "id": "full-body-express",
+    "name": "Full Body Express",
+    "blurb": "Four compound lifts, whole body. For the day you have forty minutes.",
+    "level": "Beginner",
+    "focus": "full-body",
+    "venue": "gym",
+    "audience": "all",
+    "exercises": [
+      {
+        "catalogKey": "push-up",
+        "name": "Push-Up",
+        "sets": 2,
+        "targetReps": 12,
+        "section": "warmup",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-back-squat",
+        "name": "Barbell Back Squat",
+        "sets": 3,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-bench-press",
+        "name": "Barbell Bench Press",
+        "sets": 3,
+        "targetReps": 8,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-bent-over-row",
+        "name": "Barbell Bent-Over Row",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      },
+      {
+        "catalogKey": "barbell-overhead-press",
+        "name": "Barbell Overhead Press",
+        "sets": 3,
+        "targetReps": 10,
+        "section": "main",
+        "kind": "strength"
+      }
+    ]
+  }
+]

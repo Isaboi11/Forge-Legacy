@@ -108,6 +108,17 @@ export async function fetchActivityHistory(limit = 200): Promise<ActivityRecord[
  * The ordinal ("Workout #12") is counted from the athlete's own history — strength sessions numbered
  * apart from everything else, matching the design. It's two HEAD counts rather than pulling the whole
  * log back just to find a position.
+ *
+ * ── AND SOMEBODY ELSE'S, WHEN THEY POSTED IT ─────────────────────────────────────────────────────
+ *
+ * The owner read below is `athlete_id = auth.uid()`, so for years it resolved for exactly one person.
+ * `Social-Architecture-Amendment-002` §3 nevertheless says a workout-recap card taps through to *"the
+ * session on Activity Detail"* — and the Friends feed did route here, which means every athlete who
+ * tapped a friend's recap got "Couldn't load this session". A dead link on the card that promises most.
+ *
+ * When the owner read finds nothing, `fetchSharedActivityDetail` asks whether a post entitles this
+ * viewer to it (migration 0117). The owner path is tried FIRST and unchanged: your own session must
+ * never depend on having posted about it, and the fast path stays the common one.
  */
 export async function fetchActivityDetail(id: string): Promise<ActivityDetail | null> {
   const {
@@ -124,7 +135,7 @@ export async function fetchActivityDetail(id: string): Promise<ActivityDetail | 
     .eq('athlete_id', user.id)
     .maybeSingle();
   if (error) throw error;
-  if (!data) return null;
+  if (!data) return fetchSharedActivityDetail(id);
 
   const w = data as unknown as DetailRow;
   const type = asModality(w.activity_type);
@@ -205,6 +216,95 @@ export async function fetchActivityDetail(id: string): Promise<ActivityDetail | 
     playlist,
     milestones: mine,
     ordinal,
+    viewer: 'own',
+    authorName: null,
+  };
+}
+
+/** What migration 0117's `shared_workout_detail` returns. */
+interface SharedRow {
+  id: string;
+  author_id: string;
+  author_name: string | null;
+  workout_name: string | null;
+  activity_type: string | null;
+  started_at: string;
+  duration_sec: number | null;
+  distance: number | null;
+  distance_unit: string | null;
+  program_name: string | null;
+  playlist_url: string | null;
+  playlist_service: string | null;
+  playlist_name: string | null;
+  exercises: {
+    name: string;
+    section: string;
+    position: number;
+    catalog_key: string | null;
+    sets: { set_index: number; weight: number | null; weight_unit: string | null; reps: number | null }[] | null;
+  }[];
+  milestones: string[];
+}
+
+/**
+ * A session somebody else posted, resolved through the post that shared it (migration 0117).
+ *
+ * Returns null for every id that no visible post carries — including one that simply does not exist —
+ * which is the right answer either way: the screen's "Couldn't load this session" already covers both,
+ * and distinguishing "not shared with you" from "deleted" would tell an athlete that a workout they
+ * cannot see exists.
+ *
+ * A DATABASE WITHOUT 0117 APPLIED degrades to the same null rather than throwing. PostgREST answers an
+ * unknown function with `PGRST202`, and the honest consequence is that shared recaps do not open yet —
+ * not that Activity Detail is broken for the athlete's own sessions, which is what a thrown error here
+ * would look like on a screen reached from four other places.
+ */
+async function fetchSharedActivityDetail(id: string): Promise<ActivityDetail | null> {
+  const { data, error } = await supabase.rpc('shared_workout_detail', { p_workout_id: id });
+  if (error || !data) return null;
+
+  const r = data as unknown as SharedRow;
+  const type = asModality(r.activity_type);
+  const exercises = [...(r.exercises ?? [])]
+    .sort((a, b) => a.position - b.position)
+    .map((ex) => ({
+      name: ex.name,
+      section: (['warmup', 'main', 'cooldown'].includes(ex.section) ? ex.section : 'main') as 'warmup' | 'main' | 'cooldown',
+      catalogKey: ex.catalog_key,
+      equip: ex.catalog_key ? equipmentForCatalogKey(ex.catalog_key) : null,
+      sets: [...(ex.sets ?? [])]
+        .sort((a, b) => a.set_index - b.set_index)
+        .map((s) => ({ setIndex: s.set_index, weight: s.weight, weightUnit: s.weight_unit, reps: s.reps })),
+    }));
+
+  // Same narrowing the owner path does: a record set elsewhere on the same day belongs to that session.
+  const names = new Set(exercises.map((e) => e.name));
+  const mine = (r.milestones ?? []).filter((m) => [...names].some((n) => m.includes(n)));
+
+  return {
+    id: r.id,
+    type,
+    title: r.workout_name?.trim() || 'Workout',
+    startedAt: r.started_at,
+    durationSec: r.duration_sec,
+    distance: r.distance,
+    distanceUnit: r.distance_unit,
+    exercises,
+    // Withheld by the RPC, and rendered as absent rather than as an empty-looking fact — see the
+    // migration header for why each one is not the viewer's to see.
+    chapterName: null,
+    programId: null,
+    programName: r.program_name,
+    partners: [],
+    playlist: playlistFromRow({
+      playlist_url: r.playlist_url,
+      playlist_service: r.playlist_service,
+      playlist_name: r.playlist_name,
+    } as Parameters<typeof playlistFromRow>[0]),
+    milestones: mine,
+    ordinal: null,
+    viewer: 'shared',
+    authorName: r.author_name?.trim() || 'Athlete',
   };
 }
 

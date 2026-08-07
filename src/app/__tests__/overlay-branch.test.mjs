@@ -55,12 +55,49 @@ test('the sheet is built once and shared, not copied per branch', () => {
   assert.equal(inlineSheets.length, 1, 'the naming BottomSheet should exist only inside templateNameSheet');
 });
 
-test('every branch that can open the sheet also mounts it', () => {
-  // The general form of the rule, so adding the offer to another step cannot reintroduce the bug.
-  for (const step of ['seal', 'record', 'reflect']) {
-    const span = branchSpan(step);
-    if (!span.includes('openTemplateName')) continue;
-    assert.ok(span.includes('{templateNameSheet}'), `the '${step}' branch opens the naming sheet without mounting it`);
+/*
+ * ══ THE RULE, NOT THE INSTANCE ══
+ *
+ * Everything above names `templateNameSheet` specifically, which guards the bug that happened and
+ * nothing else. A second sheet arrived on this screen — `renameSheet`, for naming the session itself —
+ * and would have been just as free to be declared in the wrong branch.
+ *
+ * So the pairs are DATA now. Adding a sheet to this screen means adding one line here, and forgetting
+ * to is itself caught: `every sheet on this screen is guarded` fails on any `const …Sheet =` that no
+ * row covers.
+ */
+const SHEETS = [
+  { sheet: 'templateNameSheet', trigger: 'openTemplateName', openState: 'nameOpen' },
+  { sheet: 'renameSheet', trigger: 'openRename', openState: 'renameOpen' },
+];
+
+test('every branch that can open a sheet also mounts it', () => {
+  // The general form of the rule, so adding an offer to another step cannot reintroduce the bug.
+  for (const { sheet, trigger } of SHEETS) {
+    // 'share' is the fallthrough, not an `if (step === …)` branch, so it has no span to slice.
+    for (const step of ['seal', 'record', 'reflect']) {
+      const span = branchSpan(step);
+      if (!span.includes(trigger)) continue;
+      assert.ok(span.includes(`{${sheet}}`), `the '${step}' branch opens ${sheet} without mounting it`);
+    }
+  }
+});
+
+test('each sheet is built once and shared, not copied per branch', () => {
+  for (const { sheet, openState } of SHEETS) {
+    const declarations = SRC.match(new RegExp(`const ${sheet} =`, 'g')) ?? [];
+    assert.equal(declarations.length, 1, `${sheet} should be declared exactly once`);
+    const inline = SRC.match(new RegExp(`<BottomSheet open=\{${openState}\}`, 'g')) ?? [];
+    assert.equal(inline.length, 1, `the ${openState} BottomSheet should exist only inside ${sheet}`);
+  }
+});
+
+test('every sheet on this screen is guarded', () => {
+  // Catches the failure this table introduces: a new sheet nobody added a row for.
+  const declared = [...SRC.matchAll(/const (\w*Sheet) =/g)].map((m) => m[1]);
+  const covered = new Set(SHEETS.map((s) => s.sheet));
+  for (const name of declared) {
+    assert.ok(covered.has(name), `${name} is declared on this screen but has no row in SHEETS — add one`);
   }
 });
 

@@ -14,13 +14,14 @@ import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/fou
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { getPrograms } from '@/domain/training/active-program';
 import { fetchMyPrograms, type SavedProgram } from '@/data/programs-live';
-import { fetchProgramCompletedCount } from '@/data/programs-live';
+import { fetchProgramSessions } from '@/data/programs-live';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
-import { dayLabel, nextSession, sessionsPerWeek, shelvePrograms, viewForState } from '@/domain/program/progress-core';
+import { dayLabel, nextOpenSlot, sessionsPerWeek, shelvePrograms, viewForState } from '@/domain/program/progress-core';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { StartStrengthSheet } from '@/components/forge/compositions/StartStrengthSheet';
 import { useQuery } from '@/lib/useQuery';
 import { fetchTemplates, templateSummary } from '@/data/templates-live';
+import { STARTER_TEMPLATES } from '@/domain/workout/starter-templates';
 import type { Program } from '@/domain/training/schema';
 import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
@@ -164,8 +165,11 @@ export default function WorkoutsScreen() {
   const startToday = async () => {
     setStartOpen(false);
     if (myActive) {
-      const next = nextSession(myActive.structure, await fetchProgramCompletedCount(myActive.id));
-      if (!next) return;
+      const next = nextOpenSlot(myActive.structure, await fetchProgramSessions(myActive.id));
+      // `nextOpenSlot` already skips unbuilt slots, but its `day` is typed nullable for the fallback
+      // shape a still-being-authored program can have. Nothing to train is not an error — it is a
+      // finished program, or one with no schedule yet.
+      if (!next?.day) return;
       await writeWorkoutLaunch({ programId: myActive.id });
       startWorkout(dayLabel(next.day, next.dayIndex));
       router.push('/workout');
@@ -391,6 +395,28 @@ export default function WorkoutsScreen() {
               <View style={styles.rowBody}>
                 <Text style={styles.rowTitle}>Build Your Own</Text>
                 <Text style={styles.rowSub}>Design a program around your lifts.</Text>
+              </View>
+              <ChevronRightIcon size={18} color={flColor.bronze400} />
+            </Pressable>
+
+            {/* ── SINGLE SESSIONS ───────────────────────────────────────────────────────────────
+                Discover was programs only, which made the 81 Forge sessions reachable from exactly
+                one place: the Templates hub, behind "Browse all". But a ready-made day is DISCOVERY
+                content in the same sense a program is — the difference is commitment, not kind, and
+                somebody who wants a leg day on Thursday is not shopping for a six-week block. One
+                row rather than a second card list: this tab's subject is programs, and the browse
+                screen is already built to be filtered. ── */}
+            <Pressable
+              onPress={() => router.push('/forge-templates')}
+              accessibilityRole="button"
+              accessibilityLabel={`Browse ${STARTER_TEMPLATES.length} single sessions built by Forge`}
+              style={styles.libRow}
+            >
+              <View style={styles.rowBody}>
+                <Text style={styles.rowTitle}>Single Sessions</Text>
+                <Text style={styles.rowSub}>
+                  {STARTER_TEMPLATES.length} ready-made workouts — push, pull, legs and more, for the gym or at home.
+                </Text>
               </View>
               <ChevronRightIcon size={18} color={flColor.bronze400} />
             </Pressable>

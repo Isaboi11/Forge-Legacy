@@ -18,8 +18,10 @@ import {
   deleteProgram,
   endProgram,
   fetchProgram,
+  fetchProgramSessions,
   fetchProgramWorkouts,
   runProgramAgain,
+  skipProgramSession,
   startProgram,
   type SavedProgram,
 } from '@/data/programs-live';
@@ -30,12 +32,14 @@ import {
   computeStats,
   equipmentOf,
   fmtVolume,
-  nextSession,
+  nextOpenSlot,
   totalSessions,
   viewForState,
   type LogWeek,
   type LoggedWorkout,
   type ProgramState,
+  type SessionMark,
+  type SessionState,
 } from '@/domain/program/progress-core';
 import { getProgramDefinition } from '@/domain/training/programs';
 import { structureFromDefinition } from '@/domain/program/adopt-core';
@@ -104,6 +108,8 @@ export default function ProgramDetailScreen() {
 
   const [program, setProgram] = useState<SavedProgram | null>(null);
   const [workouts, setWorkouts] = useState<LoggedWorkout[]>([]);
+  /** Which sessions have been trained or skipped (0119) — the schedule's state, not the workout log. */
+  const [marks, setMarks] = useState<SessionMark[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -177,10 +183,11 @@ export default function ProgramDetailScreen() {
           return;
         }
         try {
-          const [p, w] = await Promise.all([fetchProgram(id), fetchProgramWorkouts(id)]);
+          const [p, w, m] = await Promise.all([fetchProgram(id), fetchProgramWorkouts(id), fetchProgramSessions(id)]);
           if (!active) return;
           setProgram(p);
           setWorkouts(w);
+          setMarks(m);
         } catch (e) {
           if (active) setError(errorMessage(e));
         } finally {
@@ -307,10 +314,42 @@ export default function ProgramDetailScreen() {
   const isForgeProgram = program != null && program.sourceDefinitionId != null;
   const showProgress = state === 'active' || terminal;
 
+  /*
+   * WHICH sessions are done, skipped, or still owed (0119). Fetched alongside the workouts because the
+   * two answer different questions: `workouts` is what was logged, `marks` is what the schedule has been
+   * told about — and a skipped session appears in the second and never the first.
+   */
+  const stateByWeek: Record<number, Record<number, SessionState>> = {};
+  for (const m of marks) (stateByWeek[m.weekIndex] ??= {})[m.dayIndex] = m.state;
+
   const goTrain = async () => {
-    if (!nextSession(structure, workouts.length)) return; // program finished — nothing left to train
+    if (!nextOpenSlot(structure, marks)) return; // program finished — nothing left to train
     await writeWorkoutLaunch({ programId: program!.id });
     router.push('/workout');
+  };
+
+  /** Train ONE named session, rather than whichever is next — the swap. */
+  const trainDay = async (weekIndex: number, dayIndex: number) => {
+    if (!program) return;
+    await writeWorkoutLaunch({ programId: program.id, programWeek: weekIndex, programDay: dayIndex });
+    router.push('/workout');
+  };
+
+  /**
+   * Pass over a session. It counts toward finishing the program and can therefore be the thing that
+   * completes it, which is what the product decision means — the record keeps saying it was a skip.
+   */
+  const skipDay = async (weekIndex: number, dayIndex: number) => {
+    if (!program || busy) return;
+    setBusy(true);
+    try {
+      await skipProgramSession(program.id, weekIndex, dayIndex);
+      setMarks(await fetchProgramSessions(program.id));
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
   };
 
   /**
@@ -696,6 +735,11 @@ export default function ProgramDetailScreen() {
                 setOpenDay(null);
               }}
               onToggleDay={(k) => setOpenDay(openDay === k ? null : k)}
+              states={stateByWeek[wi]}
+              /* Only an ACTIVE program can be trained or skipped. A sealed record is history
+                 (Amendment-001 §1) and a preview has no row to write against yet. */
+              onTrainDay={state === 'active' ? (di) => void trainDay(wi, di) : undefined}
+              onSkipDay={state === 'active' ? (di) => void skipDay(wi, di) : undefined}
             />
           ))}
           </View>
@@ -895,6 +939,9 @@ function WeekCard({
   openDay,
   onToggle,
   onToggleDay,
+  states,
+  onTrainDay,
+  onSkipDay,
 }: {
   week: LogWeek;
   current: boolean;
@@ -902,6 +949,11 @@ function WeekCard({
   openDay: string | null;
   onToggle: () => void;
   onToggleDay: (key: string) => void;
+  /** What has happened to each day of THIS week, by day index. Empty on a program not being trained. */
+  states?: Record<number, SessionState | undefined>;
+  /** Train or skip this specific session. Absent on a sealed or not-yet-started program. */
+  onTrainDay?: (dayIndex: number) => void;
+  onSkipDay?: (dayIndex: number) => void;
 }) {
   const meta = week.complete
     ? 'Complete'
@@ -955,8 +1007,36 @@ function WeekCard({
                       {d.completed && d.date ? `${d.date} • ${d.meta}` : d.meta}
                     </Text>
                   </View>
+                  {/* SKIPPED is its own mark, never a tick. A skipped session carries you to the end of
+                      the program (PO decision) and the record still says you did not train it — the
+                      whole reason `state` exists rather than a boolean. */}
+                  {states?.[di] === 'skipped' ? <Text style={styles.skippedChip}>Skipped</Text> : null}
                   <Glyph d={CHEVRON} color={flColor.gray600} flip={dayOpen} />
                 </Pressable>
+
+                {/* Any OUTSTANDING session can be trained or passed over, not just the next one in line
+                    — that is the swap. Offered only where there is something to act on: a day already
+                    trained or skipped shows its state above instead. */}
+                {onTrainDay && onSkipDay && states?.[di] === undefined && d.exercises.length > 0 ? (
+                  <View style={styles.dayActions}>
+                    <Pressable
+                      onPress={() => onTrainDay(di)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Train ${d.name}`}
+                      style={styles.dayAction}
+                    >
+                      <Text style={styles.dayActionText}>Train this</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => onSkipDay(di)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Skip ${d.name}`}
+                      style={styles.dayAction}
+                    >
+                      <Text style={styles.dayActionSkip}>Skip</Text>
+                    </Pressable>
+                  </View>
+                ) : null}
 
                 {dayOpen ? (
                   <View style={styles.exList}>
@@ -1110,5 +1190,29 @@ const styles = StyleSheet.create({
 
   sheetBody: { gap: 16 },
   sheetText: { fontSize: 13.5, lineHeight: 21, color: flColor.gray400 },
+  skippedChip: {
+    fontFamily: flFont.sans,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.7,
+    textTransform: 'uppercase',
+    color: flColor.gray400,
+    borderWidth: 1,
+    borderColor: flColor.charcoal500,
+    borderRadius: flRadius.pill,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginRight: 8,
+  },
+  dayActions: { flexDirection: 'row', gap: 8, paddingLeft: 44, paddingBottom: 10 },
+  dayAction: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: flRadius.pill,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+  },
+  dayActionText: { fontSize: 12, fontWeight: '600', color: flColor.bronze300 },
+  dayActionSkip: { fontSize: 12, fontWeight: '600', color: flColor.gray400 },
   sheetActions: { flexDirection: 'row', gap: 10 },
 });

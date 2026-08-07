@@ -173,6 +173,15 @@ export interface SquadFeedPost {
   iReacted: boolean;
   media: SquadMedia[];
   workoutSummary: WorkoutSummary | null;
+  /**
+   * The session a `recap` post shared — the tap target onto Activity Detail (0117).
+   *
+   * `squad_feed()` stored this from 0043 and never returned it, so the Squad card had nowhere to send
+   * you and fell back to the post page: the same post type reached two different destinations depending
+   * on which feed you found it in. Null on a database that hasn't applied 0117, which reads correctly
+   * as "no session to open" and leaves the card behaving exactly as it did.
+   */
+  workoutId: string | null;
   layout: TransformationLayoutData | null;
   /** 'weekly' only — the generated summary. Null on every other type. */
   recap: WeeklyRecap | null;
@@ -211,6 +220,8 @@ interface FeedRow {
   i_reacted: boolean;
   media: SquadMedia[] | null;
   workout_summary: WorkoutSummary | null;
+  /** Added to both squad RPCs in 0117; absent (undefined) on a database without it. */
+  workout_id?: string | null;
   layout: TransformationLayoutData | null;
   recap: WeeklyRecapRow | null;
 }
@@ -232,6 +243,7 @@ const toPost = (r: FeedRow): SquadFeedPost => ({
   iReacted: !!r.i_reacted,
   media: Array.isArray(r.media) ? r.media : [],
   workoutSummary: r.workout_summary ?? null,
+  workoutId: r.workout_id ?? null,
   layout: r.layout ?? null,
   recap: toRecap(r.recap ?? null),
 });
@@ -486,7 +498,9 @@ export function timeAgo(iso: string): string {
   if (d < 7) return `${d}d`;
   const w = Math.floor(d / 7);
   if (w < 5) return `${w}w`;
-  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  // Pinned to en-US like every other date in the app — the device locale would print "6 Aug" on a phone
+  // set to anything but the US, in a feed where every neighbouring date reads "Aug 6".
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 /** The one-line "who + verb" lead for a feed card (discussion has none — the body IS the line). */

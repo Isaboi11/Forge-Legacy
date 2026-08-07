@@ -696,7 +696,17 @@ export default function SquadDetailRoute() {
                   post={p}
                   reacted={reactMap[p.id]?.on ?? p.iReacted}
                   respect={reactMap[p.id]?.n ?? p.respectCount}
-                  onOpen={() => (p.type === 'weekly' ? router.push({ pathname: '/squad-recap/[id]', params: { id: p.id } }) : openPost(p.id))}
+                  /* A shared workout opens THE SESSION, not a post about it — the destination
+                     `Social-Architecture-Amendment-002` §3 names, and the one the Friends feed has
+                     always used. Falls back to the post page when the row carries no workout id, which
+                     is every recap on a database without 0117 and every other post type. */
+                  onOpen={() =>
+                    p.type === 'weekly'
+                      ? router.push({ pathname: '/squad-recap/[id]', params: { id: p.id } })
+                      : p.type === 'recap' && p.workoutId
+                        ? router.push({ pathname: '/activity/[id]', params: { id: p.workoutId } })
+                        : openPost(p.id)
+                  }
                   onReact={() => onReactCard(p)}
                 />
               ))}

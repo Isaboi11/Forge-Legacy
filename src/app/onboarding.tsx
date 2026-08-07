@@ -131,8 +131,8 @@ export default function Onboarding() {
               </Group>
               <Group label="Units" hint="Weights, distance and pace across the app — change anytime in Settings.">
                 <View style={styles.tileRow}>
-                  <SelectTile fill title="Imperial" selected={data.units === 'imperial'} onPress={() => patch({ units: 'imperial' })} />
-                  <SelectTile fill title="Metric" selected={data.units === 'metric'} onPress={() => patch({ units: 'metric' })} />
+                  <SelectTile fill title="Lbs" selected={data.units === 'imperial'} onPress={() => patch({ units: 'imperial' })} />
+                  <SelectTile fill title="Kgs" selected={data.units === 'metric'} onPress={() => patch({ units: 'metric' })} />
                 </View>
               </Group>
               <Continue disabled={!(data.name.trim() && data.sex)} onPress={next} />

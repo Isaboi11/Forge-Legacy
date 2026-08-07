@@ -1,17 +1,20 @@
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
+import { Button } from '@/components/forge/composites/Button';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { adoptStarterTemplate, schemeText } from '@/data/templates-live';
-import { getStarterTemplate } from '@/domain/workout/starter-templates';
+import { getStarterTemplate, starterMeta } from '@/domain/workout/starter-templates';
+import { activityFromKey, deriveEquip } from '@/domain/workout/conditioning';
 import { itemByKey } from '@/domain/exercise-picker/data';
 import { useToast } from '@/hooks/useCeremony';
 import { errorMessage } from '@/lib/useQuery';
+import { writeWorkoutLaunch } from '@/lib/workout-launch';
 
 /**
  * Preview a Forge starter template, and take it.
@@ -23,9 +26,22 @@ import { errorMessage } from '@/lib/useQuery';
  * job is those actions, and would implicate W-27's "not a sharing or publishing surface" clause in a
  * question it was never asked.
  *
- * So: read-only, one action, and the moment it is taken the athlete lands on the real W-27 for their
- * own copy. `router.replace`, not `push` — going "back" from your new template should reach the hub,
- * not a preview of the thing you now own.
+ * So: read-only, and the moment a template is taken the athlete lands on the real W-27 for their own
+ * copy. `router.replace`, not `push` — going "back" from your new template should reach the hub, not a
+ * preview of the thing you now own.
+ *
+ * ── TWO ACTIONS, AND THE ORDER MATTERS ───────────────────────────────────────────────────────────
+ *
+ * This screen shipped with ONE: Add to My Templates. So the only route from "here is a push day" to
+ * doing it ran through filing a copy in your library first — the wrong order for the commonest case,
+ * which is that you are standing in a gym and want to train the thing you are looking at. Reported by
+ * the PO: *"with templates, you should be able to start a workout from looking at the template."*
+ *
+ * **Start Workout** is now the primary and trains it directly, owning nothing (`starterId` on the
+ * launch context — see `workout-launch.ts` for why it is not `templateId` or `exercises`). **Add to My
+ * Templates** stays beneath it as the secondary, for when you want to keep and edit it. Adopting is
+ * still the only path that gives the session a template to be attributed to, and the note at the foot
+ * of the page says what that buys.
  */
 export default function StarterTemplateScreen() {
   const router = useRouter();
@@ -65,7 +81,24 @@ export default function StarterTemplateScreen() {
     }
   };
 
+  /* Trains it as it ships, without writing anything. `push`, not `replace` — backing out of the logger
+     should land where you were, on the session you were reading about. */
+  const start = async () => {
+    await writeWorkoutLaunch({ starterId: def.id, workoutName: def.name });
+    router.push('/workout');
+  };
+
   const sets = def.exercises.reduce((n, e) => n + e.sets, 0);
+  /* What a home session assumes you own. Bodyweight is not kit, and a cardio finisher needs no
+     equipment worth listing — "Road" is not something to fetch from a cupboard. */
+  const kit = [
+    ...new Set(
+      def.exercises
+        .filter((e) => e.kind !== 'cardio' && e.catalogKey)
+        .map((e) => itemByKey(e.catalogKey!)?.equip)
+        .filter((n): n is string => !!n && n !== 'Bodyweight'),
+    ),
+  ];
   const sections: { key: 'warmup' | 'main' | 'cooldown'; label: string }[] = [
     { key: 'warmup', label: 'Warm-up' },
     { key: 'main', label: 'Main' },
@@ -84,9 +117,15 @@ export default function StarterTemplateScreen() {
           </View>
           <Text style={styles.heroName}>{def.name}</Text>
           <Text style={styles.heroStats}>
-            {def.exercises.length} {def.exercises.length === 1 ? 'lift' : 'lifts'} · {sets} sets · {def.level}
+            {def.exercises.length} {def.exercises.length === 1 ? 'lift' : 'lifts'} · {sets} sets · {starterMeta(def)}
           </Text>
           <Text style={styles.heroBlurb}>{def.blurb}</Text>
+          {/* The one question a home session raises that its name doesn't answer. Derived from the
+              rows rather than authored, so it cannot fall out of step with what the session asks for.
+              Gym templates don't get it — "you'll need a gym" is what `venue` already said. */}
+          {def.venue === 'home' && kit.length > 0 ? (
+            <Text style={styles.heroKit}>You’ll need: {kit.join(' · ')}</Text>
+          ) : null}
         </View>
 
         {sections.map(({ key, label }) => {
@@ -96,7 +135,13 @@ export default function StarterTemplateScreen() {
             <View key={key} style={styles.section}>
               <Text style={styles.sectionLabel}>{label}</Text>
               {rows.map((ex, i) => {
-                const rec = ex.catalogKey ? itemByKey(ex.catalogKey) : undefined;
+                /* A cardio finisher has no catalogue entry — `itemByKey` returns nothing for
+                   `cardio:run`, and the old fallbacks rendered a mile of running as "Bodyweight" and
+                   "1 × 1". It states its own ground and its own distance instead, and opens nothing:
+                   there is no exercise page for a run. */
+                const activity = activityFromKey(ex.catalogKey);
+                const isCardio = ex.kind === 'cardio' && !!activity;
+                const rec = !isCardio && ex.catalogKey ? itemByKey(ex.catalogKey) : undefined;
                 return (
                   <Pressable
                     key={`${key}-${i}`}
@@ -111,10 +156,12 @@ export default function StarterTemplateScreen() {
                         {ex.name}
                       </Text>
                       <Text style={styles.exEquip} numberOfLines={1}>
-                        {rec?.equip ?? 'Bodyweight'}
+                        {isCardio ? deriveEquip(activity, ex.modality ?? 'outdoor') : (rec?.equip ?? 'Bodyweight')}
                       </Text>
                     </View>
-                    <Text style={styles.exScheme}>{schemeText(ex)}</Text>
+                    <Text style={styles.exScheme}>
+                      {isCardio ? (ex.targetMi != null ? `${ex.targetMi} mi` : 'Open') : schemeText(ex)}
+                    </Text>
                     {rec ? <Chevron /> : null}
                   </Pressable>
                 );
@@ -124,17 +171,41 @@ export default function StarterTemplateScreen() {
         })}
 
         {/* Says what taking it MEANS, because "add" is ambiguous about ownership and this is the whole
-            model: you get a copy, and the copy is yours to change. */}
+            model: you get a copy, and the copy is yours to change. Now also states the one thing that
+            separates the two buttons below — training it as-is leaves no trace of the template, and
+            "times used" is a fact about a template you own. */}
         <Text style={styles.note}>
-          Adding this makes your own copy. Change the lifts, the sets, the name — Forge’s version stays where it is,
-          and yours keeps the history of every session you train from it.
+          Start it and you train it exactly as it is, and nothing is added to your library. Adding it makes your own
+          copy — change the lifts, the sets, the name. Forge’s version stays where it is, and yours keeps the history
+          of every session you train from it.
         </Text>
       </ScrollView>
 
+      {/* The SHARED primary, not a hand-rolled one. This screen had its own Pressable filled with a flat
+          `bronze400` and dark `base` text, which is not what a primary button looks like anywhere else in
+          Forge — the real one is the bronze METAL treatment (gradient fill, top rim, cream label) that
+          `Button` owns. Reported by the PO as the wrong colour, and it was: the only bronze-400 primary in
+          the app. Using the composite means it cannot drift again. */}
       <View style={styles.footer}>
-        <Pressable onPress={() => void adopt()} disabled={adopting} accessibilityRole="button" accessibilityLabel={`Add ${def.name} to my templates`} style={({ pressed }) => [styles.primaryBtn, pressed ? styles.pressed : null]}>
-          {adopting ? <ActivityIndicator size="small" color={flColor.base} /> : <Text style={styles.primaryBtnLabel}>Add to My Templates</Text>}
-        </Pressable>
+        <Button
+          variant="primary"
+          fullWidth
+          onPress={() => void start()}
+          accessibilityLabel={`Start ${def.name} now`}
+        >
+          Start Workout
+        </Button>
+        <View style={styles.footerSecondary}>
+          <Button
+            variant="secondary"
+            fullWidth
+            disabled={adopting}
+            onPress={() => void adopt()}
+            accessibilityLabel={`Add ${def.name} to my templates`}
+          >
+            {adopting ? 'Adding…' : 'Add to My Templates'}
+          </Button>
+        </View>
       </View>
     </View>
   );
@@ -166,6 +237,7 @@ const styles = StyleSheet.create({
   heroName: { marginTop: 10, fontFamily: flFont.display, fontSize: 26, fontWeight: '600', color: flColor.cream100 },
   heroStats: { marginTop: 5, fontSize: 12.5, color: flColor.bronze400 },
   heroBlurb: { marginTop: 9, fontSize: 13.5, lineHeight: 20, color: flColor.gray400 },
+  heroKit: { marginTop: 8, fontSize: 12, lineHeight: 17.5, color: flColor.gray600 },
 
   section: { marginBottom: 20 },
   sectionLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 9 },
@@ -178,6 +250,5 @@ const styles = StyleSheet.create({
   note: { marginTop: 4, fontSize: 12, lineHeight: 18, color: flColor.gray600 },
 
   footer: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 22, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: flColor.charcoal900 },
-  primaryBtn: { alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: flRadius.md, backgroundColor: flColor.bronze400 },
-  primaryBtnLabel: { fontSize: 14.5, fontWeight: '700', letterSpacing: 0.3, color: flColor.base },
+  footerSecondary: { marginTop: 9 },
 });

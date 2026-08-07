@@ -12,7 +12,8 @@ import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { deleteTemplate, fetchTemplates, templateSummary, type WorkoutTemplate } from '@/data/templates-live';
-import { getStarterTemplates, starterSummary } from '@/domain/workout/starter-templates';
+import { STARTER_TEMPLATES, starterMeta, starterSummary, suggestedStarters } from '@/domain/workout/starter-templates';
+import { useProfile } from '@/lib/profile';
 import { useToast } from '@/hooks/useCeremony';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
@@ -48,6 +49,7 @@ import { writeWorkoutLaunch } from '@/lib/workout-launch';
 export default function TemplatesScreen() {
   const router = useRouter();
   const { showToast } = useToast();
+  const { profile } = useProfile();
   const { data, loading, error, refetch } = useQuery(fetchTemplates, []);
   const [confirmDelete, setConfirmDelete] = useState<WorkoutTemplate | null>(null);
   const tourScroller = useTourScroller();
@@ -86,8 +88,13 @@ export default function TemplatesScreen() {
   /* The shelf shows what you HAVEN'T taken. An adopted starter is an ordinary template of yours and
      belongs in your list, not on the shelf offering it again — filtered here rather than by a second
      query, because the answer is already in hand. */
-  const adopted = new Set(list.map((t) => t.sourceDefinitionId).filter(Boolean));
-  const starters = getStarterTemplates().filter((s) => !adopted.has(s.id));
+  const adopted = new Set(list.map((t) => t.sourceDefinitionId).filter((v): v is string => !!v));
+  /* A SAMPLE, not the library. This shelf sits above the athlete's own templates, so at 81 definitions
+     rendering all of them would bury the list they came here for under eighty cards of the list they
+     didn't. Four, one per focus, matched to their profile — the rest are one tap away on
+     `/forge-templates`, which is built to be filtered and this screen is not. */
+  const starters = suggestedStarters(profile?.sex, adopted, 4);
+  const remaining = STARTER_TEMPLATES.length - adopted.size;
 
   return (
     <View style={styles.root}>
@@ -166,7 +173,7 @@ export default function TemplatesScreen() {
                       {s.name}
                     </Text>
                     <Text style={styles.starterStructure}>
-                      {starterSummary(s)} · {s.level}
+                      {starterSummary(s)} · {starterMeta(s)}
                     </Text>
                     <Text style={styles.starterBlurb} numberOfLines={2}>
                       {s.blurb}
@@ -177,6 +184,20 @@ export default function TemplatesScreen() {
                   </View>
                 </Pressable>
               ))}
+
+              {/* The other seventy-odd. Counts what's LEFT rather than the catalogue total, so it stops
+                  advertising sessions the athlete has already taken. */}
+              {remaining > starters.length ? (
+                <Pressable
+                  onPress={() => router.push('/forge-templates')}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Browse all ${remaining} Forge sessions`}
+                  style={({ pressed }) => [styles.browseRow, pressed ? styles.pressed : null]}
+                >
+                  <Text style={styles.browseText}>Browse all {remaining}</Text>
+                  <Chevron />
+                </Pressable>
+              ) : null}
             </View>
           ) : null}
 
@@ -308,6 +329,13 @@ function PlayGlyph({ size = 13, color = flColor.bronze300 }: { size?: number; co
     </Svg>
   );
 }
+function Chevron({ size = 15 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M9 5l7 7-7 7" />
+    </Svg>
+  );
+}
 function LinesGlyph({ size = 26, color = flColor.bronze400 }: { size?: number; color?: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.6} strokeLinecap="round">
@@ -352,6 +380,8 @@ const styles = StyleSheet.create({
   starterBlurb: { marginTop: 5, fontSize: 12, lineHeight: 17, color: flColor.gray600 },
   starterCta: { flexShrink: 0, paddingHorizontal: 12, paddingVertical: 7, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   starterCtaLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.bronze300 },
+  browseRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 11, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600 },
+  browseText: { fontSize: 12.5, fontWeight: '600', letterSpacing: 0.2, color: flColor.bronze300 },
 
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 },
   pill: { maxWidth: '48%', paddingHorizontal: 9, paddingVertical: 4, borderRadius: flRadius.xs, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },

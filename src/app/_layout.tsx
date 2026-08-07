@@ -167,6 +167,7 @@ function RootNavigator() {
         <Stack.Screen name="chapter/reflect" />
         <Stack.Screen name="template/[id]" />
         <Stack.Screen name="starter-template/[id]" />
+        <Stack.Screen name="forge-templates" />
         <Stack.Screen name="home-gym" />
         <Stack.Screen name="account-settings" />
         <Stack.Screen name="edit-profile" />

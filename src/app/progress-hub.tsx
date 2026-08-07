@@ -17,6 +17,7 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { resolveRankBadge } from '@/domain/rank-artwork/badge-art';
 import type { RankFamily, RankLevel } from '@/domain/rank-artwork/resolver';
 import { fetchProgressHub, type MetricSeries } from '@/data/progress-hub-live';
+import { currentLabel } from '@/domain/progress/lift-series';
 import { useMetricSelection } from '@/lib/metric-selection';
 import { useProfile } from '@/lib/profile';
 import { useQuery } from '@/lib/useQuery';
@@ -169,18 +170,27 @@ export default function ProgressHubScreen() {
             </Pressable>
           </View>
           {shown.length ? (
-            <View style={styles.strengthGrid}>
-              {shown.map((m) => (
-                <StrengthTile key={m.id} metric={m} onPress={() => setOpenId(m.id)} />
-              ))}
-            </View>
+            <>
+              <View style={styles.strengthGrid}>
+                {shown.map((m) => (
+                  <StrengthTile key={m.id} metric={m} onPress={() => setOpenId(m.id)} />
+                ))}
+              </View>
+              {/* Says what the four cards are drawn from, and — when there are more than four lifts in
+                  the log — that Edit is where the rest of them are. The old screen offered no clue that
+                  a fifth lift existed. */}
+              <Text style={styles.strengthCaption}>
+                Every session you&apos;ve logged, at its top set.
+                {metrics.length > shown.length ? ` ${metrics.length - shown.length} more ${metrics.length - shown.length === 1 ? 'lift' : 'lifts'} in Edit.` : ''}
+              </Text>
+            </>
           ) : metrics.length ? (
             <Pressable onPress={() => setEditOpen(true)} accessibilityRole="button" accessibilityLabel="Choose lifts" style={styles.strengthEmpty}>
               <Text style={styles.strengthEmptyText}>Choose the lifts that matter to you</Text>
             </Pressable>
           ) : (
             <View style={styles.strengthEmpty}>
-              <Text style={styles.strengthEmptyText}>Log a lift and your PRs appear here</Text>
+              <Text style={styles.strengthEmptyText}>Log a set and the lift starts charting here</Text>
             </View>
           )}
         </View>
@@ -319,13 +329,19 @@ function Rung({ def, state, subTier, sex }: { def: { key: RankFamily; name: stri
 function StrengthTile({ metric, onPress }: { metric: MetricSeries; onPress: () => void }) {
   const s = spark(metric.points.map((p) => p.value));
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={metric.name} style={styles.strengthTile}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${metric.name} — ${currentLabel(metric)}, ${metric.sessions} sessions`}
+      style={styles.strengthTile}
+    >
       <Text style={styles.tileCat}>{metric.category}</Text>
       <Text style={styles.tileName} numberOfLines={1}>
         {metric.name}
       </Text>
       <View style={styles.tileValueRow}>
-        <Text style={styles.tileValue}>{metric.current} lb</Text>
+        {/* Was hardcoded "lb", which was wrong the moment a bodyweight lift could be charted. */}
+        <Text style={styles.tileValue}>{currentLabel(metric)}</Text>
         {metric.improving ? <Glyph d={PATHS.trendUp} size={13} color={flColor.bronze300} width={2} /> : <Text style={styles.tileFlat}>—</Text>}
       </View>
       {s ? (
@@ -335,7 +351,9 @@ function StrengthTile({ metric, onPress }: { metric: MetricSeries; onPress: () =
           <Circle cx={s.lastX} cy={s.lastY} r={2.2} fill={flColor.bronze300} />
         </Svg>
       ) : (
-        <View style={{ height: 26 }} />
+        /* One session is not a trend, and a flat stub would read as one. Say what it is instead — the
+           tile still opens, and the detail chart explains that the line starts next time. */
+        <Text style={styles.tileSingle}>First session logged</Text>
       )}
     </Pressable>
   );
@@ -430,6 +448,8 @@ const styles = StyleSheet.create({
   tileValueRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   tileValue: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', letterSpacing: -0.4, color: flColor.cream100 },
   tileFlat: { fontSize: 14, color: flColor.gray600 },
+  tileSingle: { height: 26, paddingTop: 7, fontFamily: flFont.sans, fontSize: 10.5, color: flColor.gray600 },
+  strengthCaption: { marginTop: 11, fontFamily: flFont.sans, fontSize: 11.5, lineHeight: 16.5, color: flColor.gray600 },
   spark: { marginTop: 2 },
   strengthEmpty: { alignItems: 'center', justifyContent: 'center', padding: 22, borderRadius: flRadius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   strengthEmptyText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.bronze400 },
