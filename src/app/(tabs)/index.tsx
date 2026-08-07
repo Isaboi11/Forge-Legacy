@@ -39,6 +39,8 @@ import { useTour } from '@/hooks/useTour';
 import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { TourAnchor } from '@/components/tour/TourAnchor';
 import { adoptCatalogProgram, fetchMyPrograms, fetchProgramCompletedCount, startProgram } from '@/data/programs-live';
+import type { ProgramDay } from '@/data/programs-live';
+import { WorkoutPreviewSheet } from '@/components/forge/WorkoutPreviewSheet';
 import { structureFromDefinition } from '@/domain/program/adopt-core';
 import { itemByName } from '@/domain/exercise-picker/data';
 import { getProgramDefinitions } from '@/domain/training/programs';
@@ -361,13 +363,21 @@ export default function HomeScreen() {
   //   built program (myPrograms[0]) → the fresh athlete's chosen suggestion → the demo active program.
   // Progress is 0/total (no athlete-progress backend); a built program has no catalog artwork, so the
   // resolver reads its exercises' composition (program=null) and degrades to the split/neutral art.
-  const { home } = useMemo(() => {
+  const { home, plannedDay } = useMemo(() => {
     // The tile names and counts the anchor (planned included); only an ACTIVE one yields a session.
     const built = anchorProgram;
     const offersSession = activeProgram != null;
 
     let program: Program | null = null;
     let workout: Workout | null = null;
+    /**
+     * The planned day as AUTHORED — full prescriptions, not the resolver's flattened shape.
+     *
+     * `workout.exercises` below keeps only `catalogKey` + `workingSets`, because that is all the artwork
+     * resolver needs. The preview needs what the athlete is actually being asked for — reps, ranges,
+     * per-side, ladders, circuit membership — so it reads the day itself rather than the summary.
+     */
+    let day2: ProgramDay | null = null;
     let name = '';
     let completed = 0;
     let total = 0;
@@ -380,6 +390,7 @@ export default function HomeScreen() {
       const day = next?.day ?? built.structure.days.find((d) => d.main.length > 0) ?? built.structure.days[0] ?? null;
       // A planned program contributes its NAME and its 0-of-N, never a session — `hasProgramSession`
       // is what promotes the hero to a program day, and it must stay false until Start is pressed.
+      day2 = offersSession ? day : null;
       workout = offersSession && day
         ? {
             name: day.name.trim() || `Day ${day.letter}`,
@@ -426,7 +437,7 @@ export default function HomeScreen() {
       exercises: workout ? enrichSessionExercises(workout.exercises ?? []) : [],
     });
 
-    return { home: { workout, resolved, name, completed, total } };
+    return { home: { workout, resolved, name, completed, total }, plannedDay: day2 };
   }, [anchorProgram, activeProgram, builtDone, awaiting, homeLevel, homeIntake, liveProfile?.sex]);
 
   // The Mission tile shows the REAL chapter goal now (0025), not the HOME_DATA placeholder. Primary
@@ -587,6 +598,16 @@ export default function HomeScreen() {
    * logger shows its plain "Resume where you left off?" card, which also still offers to discard.
    */
   const continueWorkout = () => router.push('/workout');
+
+  /**
+   * Looking at the day is not committing to it.
+   *
+   * The preview deliberately does NOT call `writeWorkoutLaunch` or touch the session — opening it leaves
+   * no trace, and Start from inside it runs the identical `startHomeWorkout` the card's own button does.
+   * One start path, so the preview can never become a second way to begin a workout that behaves subtly
+   * differently from the first.
+   */
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const startHomeWorkout = async () => {
     const w = home.workout;
@@ -817,8 +838,10 @@ export default function HomeScreen() {
                 exerciseCount={hero.exerciseCount}
                 onStart={hero.onStart}
                 resumeSets={hero.resumeSets}
-                /* No `onPreview`: W-3 is unbuilt, and the card now renders as content rather than as a
-                   button to nowhere when none is given. */
+                /* Preview is offered ONLY when there is an authored day to show. The `resume` face has a
+                   session in progress (the logger itself is the view of it) and the `open` face has
+                   nothing planned at all — a preview of neither would be a button onto an empty list. */
+                onPreview={composition.hero === 'program' && plannedDay ? () => setPreviewOpen(true) : undefined}
                 onFreestyle={composition.heroOffersFreestyle ? startFreestyleFromHome : undefined}
               />
             </TourAnchor>
@@ -1044,6 +1067,24 @@ export default function HomeScreen() {
           router.push('/train-invite');
         }}
       />
+
+      {/* The planned session, readable before it is started. Mounted unconditionally rather than inside
+          the hero branch — a sheet declared in a branch that has already returned is the defect
+          `overlay-branch.test.mjs` exists to catch. */}
+      {plannedDay ? (
+        <WorkoutPreviewSheet
+          open={previewOpen}
+          onClose={() => setPreviewOpen(false)}
+          title={home.workout?.name ?? plannedDay.name}
+          focus={home.workout?.focus}
+          warmup={plannedDay.warmup}
+          main={plannedDay.main}
+          onStart={() => {
+            setPreviewOpen(false);
+            void startHomeWorkout();
+          }}
+        />
+      ) : null}
     </View>
   );
 }

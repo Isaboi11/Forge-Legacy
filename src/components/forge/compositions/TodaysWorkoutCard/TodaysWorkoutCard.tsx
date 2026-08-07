@@ -86,8 +86,9 @@ export function TodaysWorkoutCard({ resolved, title, focus, eyebrow, exerciseCou
       ) : null}
 
       <View style={styles.content}>
-        {/* Pressable only when there is somewhere to go. W-3 is unbuilt, so Home passes no handler and
-            this is plain content rather than a button that does nothing. */}
+        {/* Pressable only when there is somewhere to go. Home passes a handler for the PROGRAM face —
+            which opens the session preview — and none for `resume` (the logger is already the view of
+            that session) or `open` (nothing is planned to preview). */}
         <Pressable
           onPress={onPreview}
           disabled={!onPreview}
