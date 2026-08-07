@@ -12,6 +12,9 @@
  */
 
 import type { ProgramExercise, RepTarget } from '@/data/programs-live';
+// Relative and extensioned, like every other cross-module domain import: `node --test` loads this file
+// directly and cannot resolve the `@/` alias, and the type-only import above is stripped before it tries.
+import { MINUTES_PER_SET } from '../workout/template-format.ts';
 
 /** The default when an item prescribes no set count at all. Matches the builder's own default. */
 const DEFAULT_SETS = 3;
@@ -215,4 +218,158 @@ export function plannedSetCount(items: readonly ProgramExercise[]): number {
     const rounds = b.groupId ? Math.max(1, b.rounds ?? 1) : 1;
     return total + rounds * b.items.reduce((n, ex) => n + setCount(ex), 0);
   }, 0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HOW BIG IS THIS SESSION — the one line read before committing to it
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * ══ WHY A SESSION IS NOT SUMMARISED BY `main.length` AND `plannedSetCount` ══
+ *
+ * The preview stated "6 exercises · 19 sets" over a day that DREW eight movement names and four things:
+ * three exercise rows and one bordered circuit card. Both numbers were arithmetically correct and both
+ * described a session the athlete could not see.
+ *
+ *   6 exercises   counted the three circuit STATIONS as peers of the three lifts, while the screen
+ *                 correctly drew them inside one block — and it excluded the two warm-up rows, so the
+ *                 number matched neither the rows above it nor the rows below it.
+ *   19 sets       counted the circuit's 3 rounds × 3 stations as nine sets. Nobody calls a round of
+ *                 sled-swing-burpee "three sets", and no set count appears anywhere on that card.
+ *
+ * So the summary counts what the sheet DRAWS: loose exercises are exercises, their sets are sets, and a
+ * grouped block is described in its own words ("3-round finisher") rather than dissolved into both
+ * totals. A day of three lifts and a finisher reads "3 exercises · 10 sets · 3-round finisher", and
+ * every number in that line is a thing you can point at on screen.
+ */
+export interface SessionSize {
+  /** Exercises drawn as their own row. A grouped block is ONE thing and is not in here. */
+  exercises: number;
+  /** Sets those rows prescribe. A block's rounds are not sets and are not in here either. */
+  sets: number;
+  /** Each grouped block in its own words — "3-round finisher", "8m amrap". Ordered as authored. */
+  blockLabels: string[];
+  /** Whole-session estimate, warm-up included. Always rendered behind a "~". */
+  minutes: number;
+}
+
+/** One station of a circuit, performed once per round. A rep-based station is a guess; a timed one isn't. */
+const SEC_PER_CIRCUIT_STATION = 45;
+/** Between rounds of a block, and after an AMRAP's clock stops. */
+const SEC_BETWEEN_ROUNDS = 60;
+/** After a loose timed effort — a 30s sled push is not followed by another one immediately. */
+const SEC_AFTER_TIMED_SET = 60;
+/**
+ * A warm-up movement, flat.
+ *
+ * NOT `setCount` × the per-set constant: `adopt-core` gives a warm-up parsed as "10 reps" `sets: 1`, and
+ * charging it three minutes would price ten bodyweight squats like a working set of squats. Ninety
+ * seconds is the whole item — reps and the walk to the next one.
+ */
+const SEC_PER_WARMUP_ITEM = 90;
+/** A prescribed mile, for a cardio bout that states distance instead of time. */
+const SEC_PER_MILE = 9 * 60;
+
+/** How long a loose (ungrouped) item takes, rest included. */
+function looseSeconds(ex: ProgramExercise): number {
+  if (ex.kind === 'cardio') {
+    if (ex.targetSec != null && ex.targetSec > 0) return ex.targetSec;
+    if (ex.targetMi != null && ex.targetMi > 0) return ex.targetMi * SEC_PER_MILE;
+    // An open bout prescribes no length. Claiming one would invent the very thing the author left open.
+    return 0;
+  }
+  if (isTimed(ex)) return setCount(ex) * ((ex.durationSec ?? 0) + SEC_AFTER_TIMED_SET);
+  return setCount(ex) * MINUTES_PER_SET * 60;
+}
+
+/** How long ONE pass through a circuit station takes. Its rest belongs to the round, not to the station. */
+function stationSeconds(ex: ProgramExercise): number {
+  return isTimed(ex) ? ex.durationSec ?? 0 : SEC_PER_CIRCUIT_STATION;
+}
+
+/**
+ * "Can I fit this in right now?" — the question a Home-screen preview is actually asked.
+ *
+ * Rounded to 5 and floored at 5, the same shape `estimatedMinutes` uses on the template side, and for the
+ * same reason: this is an expectation, not a measurement.
+ */
+export function estimatedSessionMinutes(
+  warmup: readonly ProgramExercise[] | undefined,
+  main: readonly ProgramExercise[],
+): number {
+  let sec = (warmup?.length ?? 0) * SEC_PER_WARMUP_ITEM;
+
+  for (const b of deriveBlocks(main)) {
+    if (!b.groupId) {
+      for (const ex of b.items) sec += looseSeconds(ex);
+      continue;
+    }
+    // An AMRAP's cap IS its duration — the one block in the model that states its own length.
+    if (isAmrap(b)) {
+      sec += (b.capSec ?? 0) + SEC_BETWEEN_ROUNDS;
+      continue;
+    }
+    const rounds = Math.max(1, b.rounds ?? 1);
+    const round = b.items.reduce((n, ex) => n + stationSeconds(ex), 0);
+    sec += rounds * round + (rounds - 1) * SEC_BETWEEN_ROUNDS;
+  }
+
+  return Math.max(5, Math.round(sec / 60 / 5) * 5);
+}
+
+/**
+ * A grouped block in the words the athlete would use for it.
+ *
+ * `last` earns the word "finisher": a circuit that ENDS the day is a finisher, and one sitting in the
+ * middle of it is not — calling both a finisher would describe the session's shape wrongly to make one
+ * sentence shorter. Everything else falls back to what the block actually is.
+ */
+function blockSizeText(b: PrescriptionBlock, last: boolean): string {
+  // AMRAP already names the shape; "8m amrap finisher" adds a word and no information.
+  if (isAmrap(b)) return `${durText(b.capSec)} amrap`;
+  const noun = last ? 'finisher' : b.kind === 'superset' ? 'superset' : 'circuit';
+  return b.rounds && b.rounds > 1 ? `${b.rounds}-round ${noun}` : noun;
+}
+
+/** The session measured the way it is drawn. See `SessionSize` for why this is not two `reduce`s. */
+export function sessionSize(
+  warmup: readonly ProgramExercise[] | undefined,
+  main: readonly ProgramExercise[],
+): SessionSize {
+  const blocks = deriveBlocks(main);
+  const loose = blocks.filter((b) => !b.groupId).flatMap((b) => b.items);
+  return {
+    exercises: loose.length,
+    sets: plannedSetCount(loose),
+    blockLabels: blocks
+      .map((b, i) => ({ b, last: i === blocks.length - 1 }))
+      .filter(({ b }) => b.groupId)
+      .map(({ b, last }) => blockSizeText(b, last)),
+    minutes: estimatedSessionMinutes(warmup, main),
+  };
+}
+
+/**
+ * "~40 min · 3 exercises · 10 sets · 3-round finisher" — the session's size, stated once.
+ *
+ * Lower-case at the source; the surfaces that want it shouting apply `textTransform` themselves.
+ *
+ * Duration leads because it is the thing being decided. An athlete standing in the kitchen at 6:40 is
+ * not weighing nineteen sets against eleven — they are asking whether this fits before work, and the set
+ * count cannot answer that.
+ *
+ * Empty segments are dropped rather than zeroed: a MOBILITY day with no set counts authored says
+ * "~20 min · 6 exercises" and not "· 0 sets", which is a confident claim of emptiness rather than the
+ * absence of a claim.
+ */
+export function sessionSummary(
+  warmup: readonly ProgramExercise[] | undefined,
+  main: readonly ProgramExercise[],
+): string {
+  const s = sessionSize(warmup, main);
+  const parts = [`~${s.minutes} min`];
+  if (s.exercises > 0) parts.push(`${s.exercises} ${s.exercises === 1 ? 'exercise' : 'exercises'}`);
+  if (s.sets > 0) parts.push(`${s.sets} ${s.sets === 1 ? 'set' : 'sets'}`);
+  parts.push(...s.blockLabels);
+  return parts.join(' · ');
 }

@@ -1161,9 +1161,13 @@ export default function HomeScreen() {
             void startHomeWorkout();
           }}
           /*
-            The one deviation the preview offers. It lands on the program's schedule, where every
-            outstanding session can be trained OR skipped — so backing out of today's session is one
-            deliberate step away rather than a button beside Start.
+            The one deviation the preview offers — Start is the other, and there is deliberately no third.
+
+            ⚠ SKIP IS NOT REACHABLE FROM HERE. It was removed from the preview's footer on the reasoning
+            that this button landed on Program Detail, which carries Train and Skip per session. It no
+            longer does; the picker below stays on Home and only swaps. Skipping is still reachable by
+            opening the program itself, but the preview flow no longer offers it and that is an open gap,
+            not a decision.
           */
           /*
             Stays on Home. It used to push Program Detail, which answers "show me the whole program" when

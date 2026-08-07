@@ -55,6 +55,34 @@ test('the preview reads a prescription the same way the logger does', () => {
   assert.doesNotMatch(code, /`\$\{[^}]*\}\s*×/, 'a hand-built "N × M" string bypasses schemeText');
 });
 
+test('the summary describes what the sheet draws, and the sheet does not compute it', () => {
+  /*
+   * "6 EXERCISES · 19 SETS" over a day showing eight movement names. `main.length` counted the three
+   * stations of the Engine circuit as peers of the three lifts and excluded the two warm-up rows, so it
+   * matched neither the rows above it nor the rows below it; the 19 folded the circuit's 3 × 3 into a
+   * set count that appears nowhere on the card. The rules moved to `sessionSummary`, where they are
+   * unit-tested against the real Squat & Sled day — and they stay there.
+   */
+  assert.match(code, /\bsessionSummary\(/, 'sessionSummary must be CALLED, not just imported');
+  assert.doesNotMatch(code, /main\.length/, 'the array length is not the number of exercises the athlete sees');
+  assert.doesNotMatch(code, /plannedSetCount/, 'volume is not a description — it counts a circuit twice over');
+});
+
+test('Start Workout is the only action with a button around it', () => {
+  /*
+   * Three peer buttons asked an inspection sheet for a scheduling decision. Skipping WRITES to the
+   * program's schedule and now lives in Program Detail, which "Choose another workout" opens.
+   */
+  assert.doesNotMatch(code, /onSkip/, 'skip is not offered a tap away from "I just wanted to look"');
+  assert.equal((code.match(/<Button\b/g) ?? []).length, 1, 'exactly one Button — the primary');
+  assert.doesNotMatch(
+    /* The secondary must not be a second bordered pill; borders are what made the three read as peers. */
+    /altBtn:\s*\{[^}]*\}/.exec(sheet)?.[0] ?? '',
+    /borderWidth/,
+    'the secondary action is borderless, or it is a second button',
+  );
+});
+
 test('a circuit is drawn as one block, not as loose neighbours', () => {
   // `deriveBlocks` groups by ADJACENCY; rendering its output flat would show a four-round finisher as
   // three unrelated exercises and lose the round count entirely.

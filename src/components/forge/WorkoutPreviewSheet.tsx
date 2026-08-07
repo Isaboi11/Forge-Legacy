@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
-import { blockRoundsText, deriveBlocks, isAmrap, plannedSetCount, schemeText } from '@/domain/program/prescription';
+import { blockRoundsText, deriveBlocks, isAmrap, schemeText, sessionSummary } from '@/domain/program/prescription';
 import type { ProgramExercise } from '@/data/programs-live';
 
 /**
@@ -26,6 +26,25 @@ import type { ProgramExercise } from '@/data/programs-live';
  * is the whole reason it is not a hand-rolled list: "4 × 8" here and "4 × 8-12" in the logger would be
  * two answers to one question. It is also why a per-side prescription reads "3 × 10 per leg" here from
  * the day this shipped — the same fix that put it in the logger put it here for free.
+ *
+ * ══ IT HAS EXACTLY ONE OPINION ══
+ *
+ * This is decision support before starting, not Workout Detail. It answers three questions and stops:
+ * what am I doing, how big is it, do I want to start. So there are no thumbnails, no muscle diagrams,
+ * no coaching notes — and, below, ONE primary action.
+ *
+ * The footer carried three peers: Start Workout, "Choose another", "Skip this one". Their consequences
+ * are not peers. Start is the expected path; choosing another is a deviation from today's programming;
+ * skipping WRITES to the program's schedule and carries the athlete a session further along it. Drawn as
+ * three sibling buttons, an inspection sheet was asking for a scheduling decision. Start is now the
+ * overwhelming action and deviating is one subdued line under it.
+ *
+ * ⚠ SKIP CURRENTLY HAS NOWHERE TO LIVE. It was dropped from here on the reasoning that `onChooseAnother`
+ * landed on Program Detail, which lists every outstanding session with its own Train and Skip — so the
+ * capability would be intact, one deliberate step away. Home has since repointed `onChooseAnother` at a
+ * same-week swap picker that stays on Home and does not skip. The capability is not lost (the program
+ * screen still has it) but the preview flow no longer reaches it, and this comment is here so the gap is
+ * a recorded one rather than a thing somebody rediscovers.
  */
 export function WorkoutPreviewSheet({
   open,
@@ -35,27 +54,30 @@ export function WorkoutPreviewSheet({
   warmup,
   main,
   onStart,
-  onSkip,
   onChooseAnother,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
+  /**
+   * A SUBTITLE, and only when it says something the title does not.
+   *
+   * Home fed this the program day's own name, so the sheet opened "Squat & Sled" over "Squat & Sled"
+   * over the meta line. Fixed at the source; the guard below stays because this component cannot know
+   * what a future caller will hand it, and a title printed twice is worse than no subtitle at all.
+   */
   focus?: string;
   /** Freeform prep, as authored. Empty for a MOBILITY program, which is MAIN-only by PAS-D9. */
   warmup?: readonly ProgramExercise[];
   main: readonly ProgramExercise[];
   onStart: () => void;
   /**
-   * Pass over this session. Absent when there is nothing to skip — a freestyle or resumed session
-   * belongs to no schedule, so skipping it would be skipping nothing.
+   * Open the program's full schedule, where any outstanding session can be trained or skipped instead.
+   * Absent when there is no schedule to open — a freestyle or resumed session belongs to none.
    */
-  onSkip?: () => void;
-  /** Open the program's full schedule, where any outstanding session can be picked instead. */
   onChooseAnother?: () => void;
 }) {
   const blocks = deriveBlocks(main);
-  const setTotal = plannedSetCount(main);
 
   return (
     <BottomSheet
@@ -64,47 +86,31 @@ export function WorkoutPreviewSheet({
       title={title}
       scroll
       footer={
-        /*
-          Deciding NOT to do this one belongs here, beside deciding to do it. The preview is where the
-          athlete finds out the day is a squat day and their legs are wrecked — making them back out,
-          find the program, and hunt the same session down a list is asking them to navigate to a
-          decision they have already made.
-        */
         <>
           <Button variant="primary" fullWidth onPress={onStart} accessibilityLabel={`Start ${title}`}>
             Start Workout
           </Button>
-          {onSkip || onChooseAnother ? (
-            <View style={styles.altRow}>
-              {onChooseAnother ? (
-                <Pressable
-                  onPress={onChooseAnother}
-                  accessibilityRole="button"
-                  accessibilityLabel="Choose a different workout from this program"
-                  style={styles.altBtn}
-                >
-                  <Text style={styles.altText}>Choose another</Text>
-                </Pressable>
-              ) : null}
-              {onSkip ? (
-                <Pressable onPress={onSkip} accessibilityRole="button" accessibilityLabel={`Skip ${title}`} style={styles.altBtn}>
-                  <Text style={styles.altSkip}>Skip this one</Text>
-                </Pressable>
-              ) : null}
-            </View>
+          {/* Borderless and full width, deliberately: a second bordered pill beside the primary is a
+              second button, and the whole point is that there is one. */}
+          {onChooseAnother ? (
+            <Pressable
+              onPress={onChooseAnother}
+              accessibilityRole="button"
+              accessibilityLabel="Choose a different workout from this program"
+              style={styles.altBtn}
+            >
+              <Text style={styles.altText}>Choose another workout</Text>
+            </Pressable>
           ) : null}
         </>
       }
     >
       <View style={styles.body}>
-        {focus ? <Text style={styles.focus}>{focus}</Text> : null}
+        {focus && focus !== title ? <Text style={styles.focus}>{focus}</Text> : null}
 
-        {/* The session's size, stated once. `plannedSetCount` counts a circuit's ROUNDS, so a finisher
-            run four times reads as the twelve sets it is rather than the three rows it looks like. */}
-        <Text style={styles.meta}>
-          {main.length} {main.length === 1 ? 'exercise' : 'exercises'}
-          {setTotal > 0 ? ` · ${setTotal} sets` : ''}
-        </Text>
+        {/* The session's size, stated once — and stated as the sheet DRAWS it. See `SessionSize`: a
+            circuit is one finisher here, not three exercises and nine sets scattered across two totals. */}
+        <Text style={styles.meta}>{sessionSummary(warmup, main)}</Text>
 
         {warmup && warmup.length > 0 ? (
           <View style={styles.section}>
@@ -163,17 +169,8 @@ export function WorkoutPreviewSheet({
 }
 
 const styles = StyleSheet.create({
-  altRow: { flexDirection: 'row', gap: 10, marginTop: 2 },
-  altBtn: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 11,
-    borderRadius: flRadius.pill,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
-  },
-  altText: { fontSize: 13, fontWeight: '600', color: flColor.bronze300 },
-  altSkip: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
+  altBtn: { alignSelf: 'stretch', alignItems: 'center', paddingVertical: 10 },
+  altText: { fontSize: 13.5, fontWeight: '600', color: flColor.gray400 },
   body: { gap: 4, paddingBottom: 4 },
   focus: { fontSize: 13, color: flColor.gray400, marginBottom: 2 },
   meta: {
@@ -181,6 +178,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     letterSpacing: 0.6,
+    lineHeight: 16,
     textTransform: 'uppercase',
     color: flColor.bronze400,
     marginBottom: 10,

@@ -23,16 +23,24 @@ interface ExerciseShape {
 }
 
 /**
+ * A working set plus its rest — the only thing in a session long enough to matter.
+ *
+ * Exported because the PROGRAM side estimates the same way (`estimatedSessionMinutes` in
+ * `domain/program/prescription`), and a template claiming "~45 min" beside a program day claiming
+ * "~30 min" for the identical ten sets would be two answers to one question. One constant, two readers.
+ */
+export const MINUTES_PER_SET = 3;
+
+/**
  * SETS × 3 minutes, rounded to 5, floored at 5.
  *
- * Three minutes is a working set plus its rest — the only thing here long enough to matter. Warm-up and
- * cool-down sets count the same, because pretending to know the difference would be false precision on a
- * number the screen already prefixes with "~". Rounding to 5 says the same thing out loud: this is an
- * expectation, not a measurement.
+ * Warm-up and cool-down sets count the same, because pretending to know the difference would be false
+ * precision on a number the screen already prefixes with "~". Rounding to 5 says the same thing out
+ * loud: this is an expectation, not a measurement.
  */
 export function estimatedMinutes(exercises: readonly ExerciseShape[]): number {
   const sets = exercises.reduce((n, e) => n + Math.max(0, e.sets), 0);
-  return Math.max(5, Math.round((sets * 3) / 5) * 5);
+  return Math.max(5, Math.round((sets * MINUTES_PER_SET) / 5) * 5);
 }
 
 /**
