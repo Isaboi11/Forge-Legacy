@@ -120,16 +120,28 @@ export function TodaysWorkoutCard({ resolved, title, focus, eyebrow, exerciseCou
         {countLabel != null ? (
           <View style={styles.metaBlock}>
             <View style={styles.metaDivider} />
-            <View style={styles.metaRow}>
+            {/*
+              ⚠ THE ROW IS THE BUTTON, not just the chevron's neighbour.
+              This was a plain `View`, so the chevron — the one thing on the card that LOOKS like it
+              opens something — did nothing at all. The only tappable area was the title above it, which
+              carries no affordance. Reported as "the arrow isn't currently working", and it never was:
+              it was drawn as a control and mounted as decoration.
+            */}
+            <Pressable
+              onPress={onPreview}
+              disabled={!onPreview}
+              accessibilityRole={onPreview ? 'button' : undefined}
+              accessibilityLabel={onPreview ? `${countLabel}. Double-tap to preview the workout.` : undefined}
+              style={styles.metaRow}
+            >
               <BarbellIcon size={16} color={flColor.bronze400} />
               <Text style={styles.metaText}>{countLabel}</Text>
-              {/* The chevron went with the dead preview — it pointed at a row that was never a row. */}
               {onPreview ? (
                 <View style={styles.metaChevron}>
                   <ChevronRightIcon size={15} color={flColor.gray600} />
                 </View>
               ) : null}
-            </View>
+            </Pressable>
           </View>
         ) : null}
 

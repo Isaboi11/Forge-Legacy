@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
@@ -35,6 +35,8 @@ export function WorkoutPreviewSheet({
   warmup,
   main,
   onStart,
+  onSkip,
+  onChooseAnother,
 }: {
   open: boolean;
   onClose: () => void;
@@ -44,6 +46,13 @@ export function WorkoutPreviewSheet({
   warmup?: readonly ProgramExercise[];
   main: readonly ProgramExercise[];
   onStart: () => void;
+  /**
+   * Pass over this session. Absent when there is nothing to skip — a freestyle or resumed session
+   * belongs to no schedule, so skipping it would be skipping nothing.
+   */
+  onSkip?: () => void;
+  /** Open the program's full schedule, where any outstanding session can be picked instead. */
+  onChooseAnother?: () => void;
 }) {
   const blocks = deriveBlocks(main);
   const setTotal = plannedSetCount(main);
@@ -55,9 +64,36 @@ export function WorkoutPreviewSheet({
       title={title}
       scroll
       footer={
-        <Button variant="primary" fullWidth onPress={onStart} accessibilityLabel={`Start ${title}`}>
-          Start Workout
-        </Button>
+        /*
+          Deciding NOT to do this one belongs here, beside deciding to do it. The preview is where the
+          athlete finds out the day is a squat day and their legs are wrecked — making them back out,
+          find the program, and hunt the same session down a list is asking them to navigate to a
+          decision they have already made.
+        */
+        <>
+          <Button variant="primary" fullWidth onPress={onStart} accessibilityLabel={`Start ${title}`}>
+            Start Workout
+          </Button>
+          {onSkip || onChooseAnother ? (
+            <View style={styles.altRow}>
+              {onChooseAnother ? (
+                <Pressable
+                  onPress={onChooseAnother}
+                  accessibilityRole="button"
+                  accessibilityLabel="Choose a different workout from this program"
+                  style={styles.altBtn}
+                >
+                  <Text style={styles.altText}>Choose another</Text>
+                </Pressable>
+              ) : null}
+              {onSkip ? (
+                <Pressable onPress={onSkip} accessibilityRole="button" accessibilityLabel={`Skip ${title}`} style={styles.altBtn}>
+                  <Text style={styles.altSkip}>Skip this one</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
+        </>
       }
     >
       <View style={styles.body}>
@@ -127,6 +163,17 @@ export function WorkoutPreviewSheet({
 }
 
 const styles = StyleSheet.create({
+  altRow: { flexDirection: 'row', gap: 10, marginTop: 2 },
+  altBtn: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 11,
+    borderRadius: flRadius.pill,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+  },
+  altText: { fontSize: 13, fontWeight: '600', color: flColor.bronze300 },
+  altSkip: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
   body: { gap: 4, paddingBottom: 4 },
   focus: { fontSize: 13, color: flColor.gray400, marginBottom: 2 },
   meta: {

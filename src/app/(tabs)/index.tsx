@@ -38,7 +38,7 @@ import { claimInitiativeHonor } from '@/data/honors-live';
 import { useTour } from '@/hooks/useTour';
 import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { TourAnchor } from '@/components/tour/TourAnchor';
-import { adoptCatalogProgram, fetchMyPrograms, fetchProgramSessions, startProgram } from '@/data/programs-live';
+import { adoptCatalogProgram, fetchMyPrograms, fetchProgramSessions, skipProgramSession, startProgram } from '@/data/programs-live';
 import type { ProgramDay } from '@/data/programs-live';
 import type { SessionMark } from '@/domain/program/progress-core';
 import { WorkoutPreviewSheet } from '@/components/forge/WorkoutPreviewSheet';
@@ -616,6 +616,22 @@ export default function HomeScreen() {
    */
   const [previewOpen, setPreviewOpen] = useState(false);
 
+  /** The session Home is currently offering — what Skip in the preview acts on. */
+  const nextSlot = useMemo(
+    () => (anchorProgram && activeProgram ? nextOpenSlot(anchorProgram.structure, builtMarks ?? []) : null),
+    [anchorProgram, activeProgram, builtMarks],
+  );
+
+  /** Pass over the offered session; Home then offers the next one still outstanding. */
+  const skipFromHome = async (programId: string, weekIndex: number, dayIndex: number) => {
+    try {
+      await skipProgramSession(programId, weekIndex, dayIndex);
+      await refetchBuiltDone();
+    } catch (e) {
+      showToast(errorMessage(e));
+    }
+  };
+
   const startHomeWorkout = async () => {
     const w = home.workout;
     if (!w) return;
@@ -1090,6 +1106,28 @@ export default function HomeScreen() {
             setPreviewOpen(false);
             void startHomeWorkout();
           }}
+          /*
+            Deciding NOT to do this one belongs beside deciding to do it. The preview is where the
+            athlete learns the day is a squat day and their legs are wrecked; making them back out and
+            hunt the same session down the program's list is navigation toward a decision already made.
+            Both act on the session Home is OFFERING, which is the first one still outstanding.
+          */
+          onSkip={
+            activeProgram && nextSlot
+              ? () => {
+                  setPreviewOpen(false);
+                  void skipFromHome(activeProgram.id, nextSlot.weekIndex, nextSlot.dayIndex);
+                }
+              : undefined
+          }
+          onChooseAnother={
+            activeProgram
+              ? () => {
+                  setPreviewOpen(false);
+                  router.push({ pathname: '/program/[id]', params: { id: activeProgram.id } });
+                }
+              : undefined
+          }
         />
       ) : null}
     </View>

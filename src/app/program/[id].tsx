@@ -59,6 +59,7 @@ import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { useUnits } from '@/lib/settings';
 import { useProfile } from '@/lib/profile';
 import { useShareSheet } from '@/hooks/useShareSheet';
+import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { errorMessage } from '@/lib/useQuery';
 
 /**
@@ -104,6 +105,7 @@ export default function ProgramDetailScreen() {
   const { openShare } = useShareSheet();
   const { profile } = useProfile();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { startWorkout } = useWorkoutSession();
   const { load, units } = useUnits(); // "Heaviest" set, in the athlete's system
 
   const [program, setProgram] = useState<SavedProgram | null>(null);
@@ -328,10 +330,18 @@ export default function ProgramDetailScreen() {
     router.push('/workout');
   };
 
-  /** Train ONE named session, rather than whichever is next — the swap. */
-  const trainDay = async (weekIndex: number, dayIndex: number) => {
+  /**
+   * Train ONE named session, rather than whichever is next — the swap.
+   *
+   * `startWorkout` is not optional here even though the logger builds its own session from the launch:
+   * it is what sets LIVE PRESENCE, so a squad sees "training now" and the name they see is this one.
+   * Home and Workouts both call it, and leaving it out of this path would have made a swapped session
+   * the only kind of workout nobody could see you doing.
+   */
+  const trainDay = async (weekIndex: number, dayIndex: number, name: string) => {
     if (!program) return;
     await writeWorkoutLaunch({ programId: program.id, programWeek: weekIndex, programDay: dayIndex });
+    startWorkout(name);
     router.push('/workout');
   };
 
@@ -738,7 +748,7 @@ export default function ProgramDetailScreen() {
               states={stateByWeek[wi]}
               /* Only an ACTIVE program can be trained or skipped. A sealed record is history
                  (Amendment-001 §1) and a preview has no row to write against yet. */
-              onTrainDay={state === 'active' ? (di) => void trainDay(wi, di) : undefined}
+              onTrainDay={state === 'active' ? (di, name) => void trainDay(wi, di, name) : undefined}
               onSkipDay={state === 'active' ? (di) => void skipDay(wi, di) : undefined}
             />
           ))}
@@ -952,7 +962,7 @@ function WeekCard({
   /** What has happened to each day of THIS week, by day index. Empty on a program not being trained. */
   states?: Record<number, SessionState | undefined>;
   /** Train or skip this specific session. Absent on a sealed or not-yet-started program. */
-  onTrainDay?: (dayIndex: number) => void;
+  onTrainDay?: (dayIndex: number, name: string) => void;
   onSkipDay?: (dayIndex: number) => void;
 }) {
   const meta = week.complete
@@ -1020,7 +1030,7 @@ function WeekCard({
                 {onTrainDay && onSkipDay && states?.[di] === undefined && d.exercises.length > 0 ? (
                   <View style={styles.dayActions}>
                     <Pressable
-                      onPress={() => onTrainDay(di)}
+                      onPress={() => onTrainDay(di, d.name)}
                       accessibilityRole="button"
                       accessibilityLabel={`Train ${d.name}`}
                       style={styles.dayAction}
