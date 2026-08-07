@@ -477,3 +477,83 @@ export function equipmentOf(structure: ProgramStructure): string[] {
   for (const w of structure.weekPlans ?? []) scan(w.days);
   return [...seen].sort();
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WHICH SESSIONS HAVE BEEN TOUCHED — swapping and skipping (0119)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** What an athlete has done with one prescribed session. */
+export type SessionState = 'completed' | 'skipped';
+
+/** One row of `program_sessions`, as far as the schedule cares. */
+export interface SessionMark {
+  weekIndex: number;
+  dayIndex: number;
+  state: SessionState;
+}
+
+/** A slot plus what has happened to it. `state` is null when the session is still outstanding. */
+export interface SlotState extends ScheduleSlot {
+  ordinal: number;
+  state: SessionState | null;
+}
+
+const slotKey = (weekIndex: number, dayIndex: number) => `${weekIndex}:${dayIndex}`;
+
+/**
+ * The whole schedule, with each session's state attached.
+ *
+ * ══ WHY THIS REPLACED A COUNT ══
+ *
+ * Progress used to be `count(workouts with this program_id)`, and "next up" was `slots[count]`. That
+ * arithmetic can only describe a program done strictly in order, which is why swapping was impossible:
+ * training Day D instead of Day C moved the count to 3, so the app served D again and never offered C,
+ * while believing it had watched both happen. Nothing was lying — there was simply nowhere to record
+ * which session a workout satisfied.
+ *
+ * ⚠ A SKIPPED SESSION IS TOUCHED, NOT TRAINED. It counts toward finishing the program (PO decision,
+ * 2026-08-07: "if they skip a day it's okay and it will still count towards completing the program") and
+ * `state` keeps saying which it was, so nothing downstream can present a skip as a workout. Counting it
+ * and claiming it are different things.
+ */
+export function slotStates(structure: ProgramStructure, marks: readonly SessionMark[]): SlotState[] {
+  const byKey = new Map(marks.map((m) => [slotKey(m.weekIndex, m.dayIndex), m.state]));
+  return scheduleSlots(structure).map((slot, ordinal) => ({
+    ...slot,
+    ordinal,
+    state: byKey.get(slotKey(slot.weekIndex, slot.dayIndex)) ?? null,
+  }));
+}
+
+/**
+ * The session "Continue Training" should open — the first one NOT yet touched.
+ *
+ * The SQL twin lives in `save_workout` (0119), which resolves the same slot server-side when the client
+ * sends none. They agree by construction: both take the first slot in `scheduleSlots` order with no row
+ * against it.
+ */
+export function nextOpenSlot(structure: ProgramStructure, marks: readonly SessionMark[]): SlotState | null {
+  return slotStates(structure, marks).find((s) => s.state === null && s.day != null) ?? null;
+}
+
+/** How many sessions are accounted for — trained OR skipped. This is what progress and graduation count. */
+export function touchedCount(marks: readonly SessionMark[]): number {
+  return marks.length;
+}
+
+/**
+ * The honest split behind a finished program: what was trained, and what was passed over.
+ *
+ * Kept separate from `touchedCount` on purpose. A graduation may be reached with skips in it, and the
+ * copy that announces it is entitled to say so — "28 trained, 4 skipped" rather than "32 workouts",
+ * which would be a claim about work nobody did.
+ */
+export function sessionTally(marks: readonly SessionMark[]): { trained: number; skipped: number; touched: number } {
+  const trained = marks.filter((m) => m.state === 'completed').length;
+  return { trained, skipped: marks.length - trained, touched: marks.length };
+}
+
+/** Every session accounted for — the graduation condition, skips included. */
+export function isProgramFinished(structure: ProgramStructure, marks: readonly SessionMark[]): boolean {
+  return marks.length >= totalSessions(structure);
+}
