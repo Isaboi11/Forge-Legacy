@@ -38,14 +38,15 @@ import { claimInitiativeHonor } from '@/data/honors-live';
 import { useTour } from '@/hooks/useTour';
 import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { TourAnchor } from '@/components/tour/TourAnchor';
-import { adoptCatalogProgram, fetchMyPrograms, fetchProgramSessions, skipProgramSession, startProgram } from '@/data/programs-live';
+import { adoptCatalogProgram, fetchMyPrograms, fetchProgramSessions, startProgram, updateProgram } from '@/data/programs-live';
 import type { ProgramDay } from '@/data/programs-live';
 import type { SessionMark } from '@/domain/program/progress-core';
 import { WorkoutPreviewSheet } from '@/components/forge/WorkoutPreviewSheet';
+import { SwapWorkoutSheet, type SwapOption } from '@/components/forge/SwapWorkoutSheet';
 import { structureFromDefinition } from '@/domain/program/adopt-core';
 import { itemByName } from '@/domain/exercise-picker/data';
 import { getProgramDefinitions } from '@/domain/training/programs';
-import { nextOpenSlot, totalSessions } from '@/domain/program/progress-core';
+import { dayLabel, nextOpenSlot, plannedDays, swapSessionOrder, totalSessions, trainingDays } from '@/domain/program/progress-core';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { StartStrengthSheet } from '@/components/forge/compositions/StartStrengthSheet';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
@@ -401,7 +402,18 @@ export default function HomeScreen() {
       workout = offersSession && day
         ? {
             name: day.name.trim() || `Day ${day.letter}`,
-            focus: day.name.trim() || undefined,
+            /*
+              NO `focus`. It was `day.name` — the same string as `name` — so the hero drew "Squat & Sled"
+              and then "Squat & Sled" again beneath it, and the preview sheet inherited the duplicate
+              under its own title. `focus` is a SUBTITLE: it earns its line by saying something the title
+              does not ("Nothing planned. Build it as you go." on the open face does). A program day has
+              nothing else to say here — the day's shape is what the meta line below is for.
+
+              The definition's own `split` ("legs") and `modality` ("strength") would be a real subtitle,
+              but `ProgramDay` carries neither: `adopt-core` drops them at `workoutToDay`, and every
+              already-adopted program's stored `structure` is missing them too. That is a plumbing change
+              of its own, not a rename here.
+            */
             exerciseCount: day.main.length,
             exercises: day.main.map((ex) => ({ catalogKey: ex.catalogKey ?? '', workingSets: ex.sets ?? 3, section: 'main' as const })),
           }
@@ -615,22 +627,64 @@ export default function HomeScreen() {
    * differently from the first.
    */
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [swapOpen, setSwapOpen] = useState(false);
+  const [swapBusy, setSwapBusy] = useState(false);
 
-  /** The session Home is currently offering — what Skip in the preview acts on. */
+  /** The session Home is offering — the one a swap moves. */
   const nextSlot = useMemo(
     () => (anchorProgram && activeProgram ? nextOpenSlot(anchorProgram.structure, builtMarks ?? []) : null),
     [anchorProgram, activeProgram, builtMarks],
   );
 
-  /** Pass over the offered session; Home then offers the next one still outstanding. */
-  const skipFromHome = async (programId: string, weekIndex: number, dayIndex: number) => {
+  /**
+   * What the offered workout can trade places with: the OUTSTANDING workouts in its OWN week.
+   *
+   * The week is the unit an athlete reorders within — the rack is busy today, so do the pull day now and
+   * squat later this week. Reaching across weeks would be rescheduling the program, which is a different
+   * question and nobody asked it.
+   *
+   * ⚠ Outstanding only. A trained or skipped session has a `program_sessions` row keyed by its POSITION,
+   * so moving it would leave that record pointing at a different workout and the app would claim a
+   * session nobody did. Its own position is excluded too — swapping a thing with itself is not a choice.
+   */
+  const swapOptions = useMemo<SwapOption[]>(() => {
+    if (!anchorProgram || !activeProgram || !nextSlot) return [];
+    const touched = new Set(
+      (builtMarks ?? []).filter((m) => m.weekIndex === nextSlot.weekIndex).map((m) => m.dayIndex),
+    );
+    return trainingDays(plannedDays(anchorProgram.structure, nextSlot.weekIndex))
+      .map((d, di) => ({ d, di }))
+      .filter(({ di }) => di !== nextSlot.dayIndex && !touched.has(di))
+      .map(({ d, di }) => ({ dayIndex: di, name: dayLabel(d, di), position: di + 1 }));
+  }, [anchorProgram, activeProgram, nextSlot, builtMarks]);
+
+  /** Trade the offered workout with the chosen one; the hero then re-resolves from the saved order. */
+  const swapFromHome = async (dayIndex: number) => {
+    if (!anchorProgram || !nextSlot || swapBusy) return;
+    setSwapBusy(true);
     try {
-      await skipProgramSession(programId, weekIndex, dayIndex);
-      await refetchBuiltDone();
+      const next = swapSessionOrder(anchorProgram.structure, nextSlot.weekIndex, nextSlot.dayIndex, dayIndex);
+      await updateProgram(anchorProgram.id, next);
+      setSwapOpen(false);
+      // Re-read rather than patch a local copy: the hero, the preview and the progress tile all rebuild
+      // from what was actually saved, so none of them can drift from the plan on the server.
+      await refetchPrograms();
     } catch (e) {
       showToast(errorMessage(e));
+    } finally {
+      setSwapBusy(false);
     }
   };
+
+  /*
+    SKIPPING A SESSION IS NO LONGER OFFERED FROM HOME.
+
+    The preview sheet used to carry "Skip this one" beside Start, and Home carried the `nextSlot` memo and
+    a `skipFromHome` helper to serve it. Skipping WRITES to the program's schedule — it marks the session
+    passed and carries the athlete a session further along the program — which is not a decision an
+    inspection sheet should offer as a peer of "Start Workout". It moved to Program Detail, which lists
+    every outstanding session with its own Train and Skip and is where "Choose another workout" now lands.
+  */
 
   const startHomeWorkout = async () => {
     const w = home.workout;
@@ -1107,27 +1161,36 @@ export default function HomeScreen() {
             void startHomeWorkout();
           }}
           /*
-            Deciding NOT to do this one belongs beside deciding to do it. The preview is where the
-            athlete learns the day is a squat day and their legs are wrecked; making them back out and
-            hunt the same session down the program's list is navigation toward a decision already made.
-            Both act on the session Home is OFFERING, which is the first one still outstanding.
+            The one deviation the preview offers. It lands on the program's schedule, where every
+            outstanding session can be trained OR skipped — so backing out of today's session is one
+            deliberate step away rather than a button beside Start.
           */
-          onSkip={
-            activeProgram && nextSlot
-              ? () => {
-                  setPreviewOpen(false);
-                  void skipFromHome(activeProgram.id, nextSlot.weekIndex, nextSlot.dayIndex);
-                }
-              : undefined
-          }
+          /*
+            Stays on Home. It used to push Program Detail, which answers "show me the whole program" when
+            the question was "not this one — what else is there this week". The picker is the smaller
+            answer, and the athlete never leaves the card they were looking at. Absent when the week has
+            nothing left to trade with, rather than opening onto an empty list.
+          */
           onChooseAnother={
-            activeProgram
+            swapOptions.length > 0
               ? () => {
                   setPreviewOpen(false);
-                  router.push({ pathname: '/program/[id]', params: { id: activeProgram.id } });
+                  setSwapOpen(true);
                 }
               : undefined
           }
+        />
+      ) : null}
+
+      {activeProgram && nextSlot ? (
+        <SwapWorkoutSheet
+          open={swapOpen}
+          onClose={() => setSwapOpen(false)}
+          weekNumber={nextSlot.weekIndex + 1}
+          currentName={home.workout?.name ?? 'this workout'}
+          options={swapOptions}
+          busy={swapBusy}
+          onSwap={(dayIndex) => void swapFromHome(dayIndex)}
         />
       ) : null}
     </View>
