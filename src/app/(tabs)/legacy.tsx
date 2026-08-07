@@ -25,6 +25,7 @@ import { fetchAccomplishments } from '@/data/accomplishments-live';
 import { fetchLegacyArchive } from '@/data/legacy-archive-live';
 import { LegacyArchiveBand } from '@/components/forge/LegacyArchiveBand';
 import { formatAccDate } from '@/domain/legacy/accomplishments';
+import { pinDestination } from '@/domain/legacy/pins';
 import { MediaThumb } from '@/components/forge/MediaThumb';
 import { useQuery } from '@/lib/useQuery';
 import type { Pin, PinKind } from '@/types/legacy';
@@ -135,13 +136,37 @@ export default function LegacyScreen() {
    * drops itself.
    */
   const collectionsAnchor = liveAccomplishments.length > 0 ? 'accomplishments' : (data?.honors.length ?? 0) > 0 ? 'honors' : null;
-  // Open a pinned museum item at its real home: a video plays; a chapter/honor/accomplishment opens its
-  // screen; a bare record/photo/memory pin has no destination yet (media viewer not built).
+  /**
+   * Open a pinned museum item at its real home.
+   *
+   * ⚠ THE ENTITY WINS OVER ITS MEDIA, and that ordering is the fix. The video branch used to run first,
+   * so a pinned accomplishment that happened to carry a clip opened a bare fullscreen player — no title,
+   * no date, no note, and no way to reach the thing the pin actually points at. An accomplishment pin
+   * now opens the ACCOMPLISHMENT, which shows the clip in place and can still play it.
+   *
+   * The player stays for pins that are only media — `record` / `photo` / `memory`, which reference no
+   * entity — so it keeps the one job it was right for.
+   *
+   * Each entity destination is passed its `refId`, so tapping a specific keepsake opens THAT keepsake
+   * rather than the list it lives in. That was the whole report: "it opens up all accomplishments".
+   */
   const openPin = (pin: Pin) => {
-    if (pin.isVideo && pin.mediaUrl) return router.push({ pathname: '/pin-video', params: { url: pin.mediaUrl } });
-    if (pin.kind === 'chapter' && pin.refId) return router.push({ pathname: '/chapter/[id]', params: { id: pin.refId } });
-    if (pin.kind === 'honor') return router.push('/honors');
-    if (pin.kind === 'accomplishment') return router.push('/accomplishments');
+    // WHICH destination is `pinDestination`'s call, in the domain with a test around it. This maps its
+    // answer to a route and does nothing else.
+    const dest = pinDestination(pin);
+    if (!dest) return;
+    switch (dest.screen) {
+      case 'chapter':
+        return router.push({ pathname: '/chapter/[id]', params: { id: dest.id } });
+      case 'accomplishment':
+        return router.push({ pathname: '/accomplishments', params: { id: dest.id } });
+      case 'accomplishments':
+        return router.push('/accomplishments');
+      case 'honors':
+        return router.push('/honors');
+      case 'video':
+        return router.push({ pathname: '/pin-video', params: { url: dest.url } });
+    }
   };
   const openChapter = (chapterId: string) => router.push({ pathname: '/chapter/[id]', params: { id: chapterId } });
   // Scroll-driven hero choreography (the .dc "premium scroll choreography"): the background scrim
@@ -409,8 +434,15 @@ export default function LegacyScreen() {
             </View>
             {liveAccomplishments.length > 0 ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stripPad}>
+                {/* A card opens ITS OWN accomplishment. It used to push the bare route, which landed on
+                    the full list and left the athlete to find again the thing they had just tapped.
+                    "View all" above is the door to the list, and it keeps that job. */}
                 {liveAccomplishments.map((a) => (
-                  <AccomplishmentCard key={a.id} item={a} onPress={() => router.push('/accomplishments')} />
+                  <AccomplishmentCard
+                    key={a.id}
+                    item={a}
+                    onPress={() => router.push({ pathname: '/accomplishments', params: { id: a.id } })}
+                  />
                 ))}
               </ScrollView>
             ) : (

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Image } from 'expo-image';
+import { useVideoPlayer, VideoView } from 'expo-video';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -21,7 +23,11 @@ import {
   removeAccomplishment,
   saveAccomplishment,
   setAccomplishmentFeatured,
+  uploadAccomplishmentMedia,
 } from '@/data/accomplishments-live';
+import { CalendarField } from '@/components/forge/composites/CalendarField';
+import { useMediaPicker } from '@/lib/useMediaPicker';
+import { useToast } from '@/hooks/useCeremony';
 import {
   accSubline,
   canToggleFeatured,
@@ -34,7 +40,7 @@ import {
   validateForm,
   type Accomplishment,
 } from '@/domain/legacy/accomplishments';
-import { useQuery } from '@/lib/useQuery';
+import { errorMessage, useQuery } from '@/lib/useQuery';
 
 /**
  * Accomplishments (L-12 list · L-13 detail · L-14 add/edit) — `Forge Accomplishments.dc.html`.
@@ -43,15 +49,30 @@ import { useQuery } from '@/lib/useQuery';
  * the design has them. The "Featured on Profile" star is capped at the design's top 3; the Legacy
  * accomplishments section shows featured ones with a star.
  *
- * DEFERRED vs the `.dc`: the optional photo (its file-drop slot needs an image-picker + storage-bucket
- * pass) and the native date wheel (a plain YYYY-MM-DD field stands in). Neither blocks a real
- * accomplishment — the design allows both to be empty.
+ * ── THE MEDIA SLOT, BUILT (migration 0118) ───────────────────────────────────────────────────────
+ *
+ * This header used to say the optional photo was DEFERRED because "its file-drop slot needs an
+ * image-picker + storage-bucket pass". Both of those had existed for months by the time the PO went to
+ * add an accomplishment and found nowhere to put the picture — `useMediaPicker` is the app's single
+ * camera-or-library path, and 0006's `media` bucket is already owner-scoped exactly the way an
+ * athlete-owned keepsake wants. The deferral had outlived its reason, which is the failure mode this
+ * project keeps rediscovering in a different costume.
+ *
+ * VIDEO TOO, which the `.dc` never drew: the PO asked for "the video or the picture", and a marathon
+ * finish or a 500 lb pull is more often a clip than a frame. One URL and one kind, never a `photoUrl`
+ * beside a `videoUrl` — see the `Accomplishment` model for why.
+ *
+ * THE DATE FIELD is `CalendarField`, not the native wheel the `.dc` draws — the native picker does not
+ * render on the web, which is the surface being tested (the reasoning is written out in that component).
+ * It replaced a plain text field that asked for `YYYY-MM-DD`, the one place in the app where an athlete
+ * met a date that wasn't month-day-year. It stays optional; the design allows an undated accomplishment.
  */
 
 const STAR = 'M12 3l2.6 5.6 6 .5-4.6 4 1.4 6-5.4-3.2-5.4 3.2 1.4-6-4.6-4 6-.5z';
 const CHEVRON = 'M9 6l6 6-6 6';
 const TRASH = 'M5 7h14M9 7V5h6v2M8 7l1 13h6l1-13';
 const PLUS = 'M12 5v14M5 12h14';
+const CAMERA = 'M4 8h3l1.5-2h7L17 8h3v11H4zM12 16.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6z';
 
 type ChapterOpt = { id: string; label: string; active: boolean };
 type ViewState = { mode: 'list' } | { mode: 'detail'; id: string } | { mode: 'form'; id?: string };
@@ -66,7 +87,20 @@ export default function AccomplishmentsScreen() {
   const chapterOpts = chapters ?? [];
   const chapterLabel = (id: string) => chapterOpts.find((c) => c.id === id)?.label ?? null;
 
-  const [view, setView] = useState<ViewState>({ mode: 'list' });
+  /**
+   * Opening ONE accomplishment, from wherever it was tapped.
+   *
+   * Legacy's pinned museum and its accomplishment strip both used to `router.push('/accomplishments')`,
+   * so tapping a specific keepsake landed the athlete on the full list and left them to find it again.
+   * The detail view they wanted already existed — it was simply unreachable from outside this screen,
+   * because `view` starts at `list` and nothing could seed it.
+   *
+   * The id arrives as a param and is applied ONCE, as the initial state. It is deliberately not an
+   * effect that syncs on every change: the athlete can navigate list → detail → back inside this screen,
+   * and a param that kept re-asserting itself would drag them back to where they entered every time.
+   */
+  const { id: focusId } = useLocalSearchParams<{ id?: string }>();
+  const [view, setView] = useState<ViewState>(focusId ? { mode: 'detail', id: focusId } : { mode: 'list' });
   const tourScroller = useTourScroller();
   const onTourScroll = useTourScrollTracker();
   const addRef = useTourAnchor('accomplishments-add');
@@ -250,6 +284,18 @@ function AccomplishmentDetail({
         <Text style={styles.detailName}>{item.name}</Text>
         {formatAccDate(item.date) ? <Text style={styles.detailDate}>{formatAccDate(item.date)}</Text> : null}
 
+        {/* The keepsake, above the reflection and below the name — it is evidence of the thing named,
+            and the note is what the athlete made of it. */}
+        {item.mediaUrl ? (
+          <View style={styles.detailMedia}>
+            {item.mediaKind === 'video' ? (
+              <AccomplishmentVideo url={item.mediaUrl} />
+            ) : (
+              <Image source={{ uri: item.mediaUrl }} style={styles.mediaPreview} contentFit="cover" />
+            )}
+          </View>
+        ) : null}
+
         {chapter ? (
           <View style={styles.detailChapter}>
             <Text style={styles.detailChapterLabel}>Chapter</Text>
@@ -342,13 +388,55 @@ function AccomplishmentForm({
   onCancel: () => void;
   onSaved: (saved: Accomplishment) => void;
 }) {
+  const { showToast } = useToast();
+  const { pick, mediaPickerSheet } = useMediaPicker();
   const [name, setName] = useState(existing?.name ?? '');
   const [date, setDate] = useState(existing?.date ?? '');
   const [note, setNote] = useState(existing?.note ?? '');
   const [chapterId, setChapterId] = useState<string | null>(existing?.chapterId ?? null);
   const [saving, setSaving] = useState(false);
 
+  /**
+   * THE MEDIA SLOT — the `.dc`'s file drop, which had been DEFERRED since this screen was built.
+   *
+   * Local until Save, deliberately. The upload happens on the tap that chooses the file (so the athlete
+   * sees the real thing, not a spinner promise), but the ROW is only written when they save — so
+   * cancelling out of the form leaves the accomplishment exactly as it was. The cost is an orphaned
+   * object in the bucket on a cancelled edit, which is the same standing gap every media surface in this
+   * app has and is recorded in 0118 rather than papered over.
+   *
+   * `draftId` keys the object path. An existing accomplishment uses its own id, so re-uploading
+   * overwrites in place instead of accumulating a file per edit; a new one gets a fresh id, because the
+   * row it will belong to does not exist yet.
+   */
+  const [draftId] = useState(() => existing?.id ?? `acc-${Date.now().toString(36)}`);
+  const [mediaUrl, setMediaUrl] = useState<string | null>(existing?.mediaUrl ?? null);
+  const [mediaKind, setMediaKind] = useState<'image' | 'video' | null>(existing?.mediaKind ?? null);
+  const [uploading, setUploading] = useState(false);
+
   const valid = validateForm({ name, note });
+
+  const attach = async () => {
+    if (uploading) return;
+    const asset = await pick({
+      kind: 'both',
+      title: 'Add a photo or video',
+      hint: 'One keepsake — the medal, the finish line, the lift. Choosing another replaces it.',
+      quality: 0.85,
+    });
+    if (!asset) return;
+    const kind: 'image' | 'video' = asset.type === 'video' ? 'video' : 'image';
+    setUploading(true);
+    try {
+      const url = await uploadAccomplishmentMedia(draftId, asset.uri, kind);
+      setMediaUrl(url);
+      setMediaKind(kind);
+    } catch (e) {
+      showToast(errorMessage(e));
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const save = () => {
     if (!valid.ok) return;
@@ -359,7 +447,12 @@ function AccomplishmentForm({
       date: date.trim() || null,
       chapterId,
       note: note.trim() || null,
-    }).then(onSaved, () => setSaving(false));
+      mediaUrl,
+      mediaKind,
+    }).then(onSaved, (e: unknown) => {
+      setSaving(false);
+      showToast(errorMessage(e));
+    });
   };
 
   return (
@@ -373,7 +466,61 @@ function AccomplishmentForm({
         </Field>
 
         <Field label="Date · optional">
-          <TextInput style={styles.input} value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" placeholderTextColor={flColor.gray600} autoCapitalize="none" />
+          <CalendarField label="Date" hideLabel value={date || null} onChange={(v) => setDate(v ?? '')} placeholder="Choose a date" clearable />
+        </Field>
+
+        {/* The design draws this as a dashed drop zone; on a phone the equivalent is a tappable frame
+            that becomes the thing you chose. */}
+        <Field label="Photo or video · optional">
+          {mediaUrl ? (
+            <View style={styles.mediaWrap}>
+              {mediaKind === 'video' ? (
+                <AccomplishmentVideo url={mediaUrl} />
+              ) : (
+                <Image source={{ uri: mediaUrl }} style={styles.mediaPreview} contentFit="cover" />
+              )}
+              <View style={styles.mediaActions}>
+                <Pressable
+                  onPress={() => void attach()}
+                  disabled={uploading}
+                  accessibilityRole="button"
+                  accessibilityLabel="Replace this media"
+                  style={styles.mediaBtn}
+                >
+                  <Text style={styles.mediaBtnText}>{uploading ? 'Uploading…' : 'Replace'}</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    setMediaUrl(null);
+                    setMediaKind(null);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Remove this media"
+                  style={styles.mediaBtn}
+                >
+                  <Text style={styles.mediaBtnRemove}>Remove</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : (
+            <Pressable
+              onPress={() => void attach()}
+              disabled={uploading}
+              accessibilityRole="button"
+              accessibilityLabel="Add a photo or video"
+              style={({ pressed }) => [styles.mediaDrop, pressed ? styles.mediaDropPressed : null]}
+            >
+              {uploading ? (
+                <ActivityIndicator color={flColor.bronze400} />
+              ) : (
+                <>
+                  <Glyph d={CAMERA} size={22} color={flColor.bronze400} width={1.7} />
+                  <Text style={styles.mediaDropText}>Add a photo or video</Text>
+                  <Text style={styles.mediaDropSub}>The medal, the finish line, the lift</Text>
+                </>
+              )}
+            </Pressable>
+          )}
         </Field>
 
         <Field label="Why it mattered · optional" counter={`${note.length}/${NOTE_MAX}`}>
@@ -390,13 +537,25 @@ function AccomplishmentForm({
         </Field>
 
         <View style={styles.saveWrap}>
-          <Button variant="primary" fullWidth disabled={!valid.ok || saving} onPress={save} accessibilityLabel="Save accomplishment">
+          <Button variant="primary" fullWidth disabled={!valid.ok || saving || uploading} onPress={save} accessibilityLabel="Save accomplishment">
             {existing ? 'Save Changes' : 'Add Accomplishment'}
           </Button>
         </View>
       </ScrollView>
+
+      {/* Mounted in the branch that opens it — see `overlay-branch.test.mjs` for the session that rule
+          cost, on this exact mistake in the workout screen. */}
+      {mediaPickerSheet}
     </View>
   );
+}
+
+/** One attached clip, paused. The keepsake is the moment, not an autoplaying loop over a form. */
+function AccomplishmentVideo({ url }: { url: string }) {
+  const player = useVideoPlayer(url, (p) => {
+    p.loop = false;
+  });
+  return <VideoView player={player} style={styles.mediaPreview} nativeControls contentFit="cover" />;
 }
 
 function Field({ label, counter, children }: { label: string; counter?: string; children: React.ReactNode }) {
@@ -504,6 +663,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   noteInput: { minHeight: 84, textAlignVertical: 'top' },
+
+  // the photo / video slot (0118)
+  mediaDrop: { alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 128, paddingVertical: 24, paddingHorizontal: 18, borderRadius: flRadius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  mediaDropPressed: { opacity: 0.85 },
+  mediaDropText: { marginTop: 4, fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },
+  mediaDropSub: { fontSize: 11.5, color: flColor.gray600 },
+  mediaWrap: { gap: 9 },
+  mediaPreview: { width: '100%', height: 220, borderRadius: flRadius.lg, backgroundColor: flColor.charcoal900 },
+  mediaActions: { flexDirection: 'row', gap: 8 },
+  mediaBtn: { flex: 1, alignItems: 'center', paddingVertical: 11, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
+  mediaBtnText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
+  mediaBtnRemove: { fontSize: 12.5, fontWeight: '600', color: flColor.emberFlame },
+  detailMedia: { marginTop: 18 },
 
   chapterList: { gap: 8 },
   chapterChip: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 13, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },

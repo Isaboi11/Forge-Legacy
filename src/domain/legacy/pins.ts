@@ -107,3 +107,57 @@ export function candidatesFromContent(content: ContentForPins): PinCandidate[] {
 
   return [...acc, ...honors, ...chapters];
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WHERE A PIN OPENS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** What tapping a pin should open. `null` when the pin references nothing openable. */
+export type PinDestination =
+  | { screen: 'chapter'; id: string }
+  | { screen: 'accomplishment'; id: string }
+  | { screen: 'accomplishments' }
+  | { screen: 'honors' }
+  | { screen: 'video'; url: string }
+  | null;
+
+/** The fields of a pin that decide where it goes. */
+export interface PinTarget {
+  kind: PinKind;
+  /** `null` on a pin whose entity was deleted; `undefined` in the view model, which omits it. */
+  refId?: string | null;
+  isVideo?: boolean;
+  mediaUrl?: string | null;
+}
+
+/**
+ * Resolve a pin to its destination.
+ *
+ * ══ TWO DEFECTS THIS ORDERING FIXES ══
+ *
+ * **1. A pin opened the LIST it belonged to, not itself.** Tapping "Deadlift Max 485" in the museum
+ * pushed the bare accomplishments route, landing the athlete on every accomplishment they own and
+ * leaving them to find again the one they had just tapped. The `refId` needed to open it directly had
+ * been stored on the row since 0005.
+ *
+ * **2. The MEDIA outranked the ENTITY.** The video check ran first, so a pinned accomplishment that
+ * happened to carry a clip opened a bare fullscreen player — no title, no date, no note, no way back to
+ * the thing the pin points at. An entity now wins: the accomplishment opens, and it shows the clip in
+ * place. The player is kept for pins that are ONLY media (`record` / `photo` / `memory`), which
+ * reference no entity and for which it was always the right answer.
+ *
+ * Pure so the ordering is a rule with a test around it, rather than the order of four `if`s inside a
+ * screen where nothing can reach it.
+ */
+export function pinDestination(pin: PinTarget): PinDestination {
+  if (pin.kind === 'chapter' && pin.refId) return { screen: 'chapter', id: pin.refId };
+  if (pin.kind === 'accomplishment' && pin.refId) return { screen: 'accomplishment', id: pin.refId };
+  if (pin.kind === 'honor') return { screen: 'honors' };
+  if (pin.isVideo && pin.mediaUrl) return { screen: 'video', url: pin.mediaUrl };
+  /*
+   * A pin whose entity was deleted keeps its denormalized title and loses its `refId`. The list is the
+   * honest destination — it is where the thing used to be — rather than a tap that does nothing.
+   */
+  if (pin.kind === 'accomplishment') return { screen: 'accomplishments' };
+  return null;
+}
