@@ -622,3 +622,317 @@ test('but a TABLE still merges the rows of one day, because its Day column repea
   assert.equal(r.weeks[0].days.length, 2);
   assert.deepEqual(r.weeks[0].days.map((d) => [d.name, d.items.length]), [['Push', 3], ['Pull', 1]]);
 });
+
+/*
+ * ── A REAL COACH'S SHEET ─────────────────────────────────────────────────────
+ *
+ * Everything below is the shape of an actual training spreadsheet, and every one of these failed
+ * before. The sheet does not open with its header row: it opens with a week title, a phase banner and
+ * a running prescription block, and only then names its columns. It lays its days out as banner rows
+ * rather than in a Day column, and it interleaves those with SECTION labels that look almost exactly
+ * the same.
+ */
+
+test('the header row is found even when it is not the first line', () => {
+  /*
+   * Assuming line one meant the Exercise column was never found, the whole sheet fell through to the
+   * freeform reader — which does not split cells — and every tab-joined row became ONE exercise named
+   * after the entire row, coaching notes and logged weights included.
+   */
+  const r = ok(parseProgramTable(tsv([
+    ['WEEK 1', '', '', '', '', 'Phase 1 — Hypertrophy & Movement Foundation'],
+    ['  Phase 1  •  Weeks 1–3  •  4 training days + 3 run sessions'],
+    ['RUNNING PRESCRIPTION'],
+    ['Mon — Zone 2', '20–25 min Z2', 'Thu — Intervals', '', '', '15 min @80–85% HRmax'],
+    ['Section', 'Exercise', 'Sets × Reps', 'Intensity', 'Coaching Note', '✓ Done', 'Weight Used'],
+    ['STRENGTH — BARBELL'],
+    ['', 'Barbell bench press', '4×8–10', 'RPE 6–7', '3-1-2 tempo. Control the eccentric', '☐*', 'Last set 160 x 8'],
+  ])));
+
+  const items = r.weeks[0].days[0].items;
+  assert.equal(items.length, 1, 'the preamble must not import as exercises');
+  assert.equal(items[0].name, 'Barbell bench press', 'the name must be the Exercise cell, not the whole row');
+  assert.deepEqual([items[0].sets, items[0].reps], [4, 8], 'a rep range reads as its floor');
+  assert.ok(r.ignoredColumns.includes('Coaching Note'), 'the columns nobody promised are ignored, not read');
+});
+
+test('DAY BANNER ROWS split the days, and SECTION labels do not', () => {
+  /*
+   * The load-bearing distinction. Both sit alone in the same column with every other cell blank, and
+   * both are short and shouted — but "MONDAY — Upper" is a day and "WARM-UP" is a heading INSIDE one.
+   * Reading neither welded four training days into one; reading both turned them into twenty-three.
+   */
+  const r = ok(parseProgramTable(tsv([
+    ['Section', 'Exercise', 'Sets × Reps'],
+    ['MONDAY — Upper Strength + Zone 2'],
+    ['WARM-UP'],
+    ['', 'Band pull-aparts', '2×20'],
+    ['STRENGTH — BARBELL'],
+    ['', 'Barbell bench press', '4×8–10'],
+    ['ACCESSORIES'],
+    ['', 'Cable curls', '3×12'],
+    ['TUESDAY — Lower Strength — Squat Focus'],
+    ['WARM-UP'],
+    ['', 'Glute bridges', '2×15'],
+    ['STRENGTH — BARBELL'],
+    ['', 'Back squat', '4×8–10'],
+  ])));
+
+  assert.equal(r.weeks[0].days.length, 2, 'section labels must not become days');
+  assert.deepEqual(
+    r.weeks[0].days.map((d) => [d.name, d.items.length]),
+    [['Upper Strength + Zone 2', 3], ['Lower Strength — Squat Focus', 2]],
+  );
+});
+
+test('a day that never gets an exercise is not invented', () => {
+  // "TUESDAY — see next section ▼" is a pointer, and Wednesday is a rest day written as prose.
+  const r = ok(parseProgramTable(tsv([
+    ['Section', 'Exercise', 'Sets × Reps'],
+    ['MONDAY — Upper'],
+    ['', 'Barbell bench press', '4×8'],
+    ['TUESDAY — see next section  ▼'],
+    ['TUESDAY — Lower Strength'],
+    ['', 'Back squat', '4×8'],
+    ['WEDNESDAY — Active Recovery: 20–30 min walk + foam rolling'],
+    ['SUNDAY — Full Rest. Sleep. Eat well. Do not train.'],
+  ])));
+
+  assert.deepEqual(r.weeks[0].days.map((d) => d.name), ['Upper', 'Lower Strength']);
+});
+
+test('a number in a lift\'s NAME is not a scheme when the columns already said', () => {
+  /*
+   * "Hip-90/90 mobility" read as ninety sets of ninety, and the name came back as "Hip- mobility" —
+   * the scheme reader cannot tell a prescription from a number that is part of what a lift is CALLED.
+   * A sheet that keeps sets and reps in a column does not need a second opinion on either.
+   */
+  const r = ok(parseProgramTable(tsv([
+    ['Exercise', 'Sets × Reps'],
+    ['Hip-90/90 mobility', '2×5/side'],
+    ['Copenhagen plank', '3×8/side'],
+  ])));
+
+  assert.deepEqual(
+    r.weeks[0].days[0].items.map((i) => [i.name, i.sets, i.reps]),
+    [['Hip-90/90 mobility', 2, 5], ['Copenhagen plank', 3, 8]],
+  );
+});
+
+test('a WEEK banner row inside the body starts a new week', () => {
+  // Weeks are bannered exactly like days in these sheets, not kept in a column.
+  const r = ok(parseProgramTable(tsv([
+    ['Section', 'Exercise', 'Sets × Reps'],
+    ['MONDAY — Upper'],
+    ['', 'Barbell bench press', '4×8'],
+    ['WEEK 2'],
+    ['MONDAY — Upper'],
+    ['', 'Barbell bench press', '4×10'],
+  ])));
+
+  assert.deepEqual(r.weeks.map((w) => w.index), [1, 2]);
+  assert.equal(r.weeks[1].days[0].items[0].reps, 10);
+});
+
+test('a lone "Name" line does not hijack a typed-out workout as a header', () => {
+  /*
+   * The guard on the header search. Matching ONE column is not enough to call a line a header — doing
+   * so would discard everything above it, which for a typed-out workout is most of the workout.
+   */
+  const r = ok(parseProgramTable(['Bench Press 3x8', 'Name', 'Squat 5x5'].join('\n')));
+  const names = r.weeks[0].days.flatMap((d) => d.items.map((i) => i.name));
+  assert.ok(names.includes('Bench Press'), 'the lines above must survive');
+  assert.ok(names.includes('Squat'));
+});
+
+/*
+ * ── THE SAME SHEET, THREE WEEKS AT A TIME ────────────────────────────────────
+ *
+ * A multi-week sheet is not three sheets glued together. Only week ONE's preamble sits above the header
+ * row; every later week's lands in the middle of the body, header row and all.
+ */
+
+test('a week banner INDENTED into the Exercise column still starts a new week', () => {
+  /*
+   * These sheets are laid out by eye. Week 1's banner sat in column A and week 2's one cell further in —
+   * so "WEEK 2" arrived AS the exercise name, the week never advanced, and three weeks imported as two
+   * with week 2's work folded silently into week 1.
+   */
+  const r = ok(parseProgramTable(tsv([
+    ['WEEK 1', '', 'Phase 1'],
+    ['Section', 'Exercise', 'Sets × Reps'],
+    ['MONDAY — Upper'],
+    ['', 'Barbell bench press', '4×8'],
+    ['', 'WEEK 2', ''], // indented one column — lands under Exercise
+    ['Section', 'Exercise', 'Sets × Reps'],
+    ['MONDAY — Upper'],
+    ['', 'Barbell bench press', '4×10'],
+    ['', '', 'WEEK 3'], // and further still
+    ['Section', 'Exercise', 'Sets × Reps'],
+    ['MONDAY — Upper'],
+    ['', 'Barbell bench press', '4×12'],
+  ])));
+
+  assert.deepEqual(r.weeks.map((w) => w.index), [1, 2, 3]);
+  assert.deepEqual(r.weeks.map((w) => w.days[0].items[0].reps), [8, 10, 12]);
+  for (const w of r.weeks) assert.equal(w.days.length, 1, `week ${w.index} grew days it does not have`);
+});
+
+test('a header row repeated for each week is not a lift called "Exercise"', () => {
+  const r = ok(parseProgramTable(tsv([
+    ['Section', 'Exercise', 'Sets × Reps'],
+    ['', 'Barbell bench press', '4×8'],
+    ['WEEK 2'],
+    ['Section', 'Exercise', 'Sets × Reps'],
+    ['', 'Back squat', '4×8'],
+  ])));
+
+  const names = r.weeks.flatMap((w) => w.days.flatMap((d) => d.items.map((i) => i.name)));
+  assert.deepEqual(names, ['Barbell bench press', 'Back squat']);
+});
+
+test('a repeated preamble is furniture, but an unprescribed item is still work', () => {
+  /*
+   * Both sides of the same rule. The running block's second cell falls under Exercise and prescribes
+   * nothing — furniture. A Zone 2 run inside a day is the identical SHAPE, and is real: the sheet simply
+   * gave it minutes instead of sets. What separates them is whether a week banner has opened a preamble
+   * that no header row or day banner has closed yet.
+   */
+  const r = ok(parseProgramTable(tsv([
+    ['Section', 'Exercise', 'Sets × Reps'],
+    ['MONDAY — Upper'],
+    ['', 'Barbell bench press', '4×8'],
+    ['CONDITIONING'],
+    ['', 'Zone 2 run — conversational pace', '20–25 min'],
+    ['WEEK 2'],
+    ['RUNNING PRESCRIPTION'],
+    ['Mon — Zone 2', '20–25 min Z2', 'Thu — Intervals'], // furniture: no prescription, inside a preamble
+    ['Section', 'Exercise', 'Sets × Reps'],
+    ['MONDAY — Upper'],
+    ['', 'Back squat', '4×8'],
+  ])));
+
+  assert.deepEqual(r.weeks.map((w) => w.index), [1, 2]);
+  assert.deepEqual(
+    r.weeks[0].days[0].items.map((i) => i.name),
+    ['Barbell bench press', 'Zone 2 run — conversational pace'],
+    'a run with minutes instead of sets is still work',
+  );
+  assert.deepEqual(r.weeks[1].days[0].items.map((i) => i.name), ['Back squat'], 'the running block is not a lift');
+});
+
+test('a header repeated per BLOCK, with no week banner, is still not a lift', () => {
+  /*
+   * The case the preamble rule cannot reach: nothing has opened a preamble here, so the repeated header
+   * is judged on its own. Its Exercise cell literally reads "Exercise", and it imported as a lift called
+   * that, once per block.
+   */
+  const r = ok(parseProgramTable(tsv([
+    ['Section', 'Exercise', 'Sets × Reps'],
+    ['MONDAY — Upper'],
+    ['', 'Barbell bench press', '4×8'],
+    ['Section', 'Exercise', 'Sets × Reps'],
+    ['TUESDAY — Lower'],
+    ['', 'Back squat', '4×8'],
+  ])));
+
+  const names = r.weeks.flatMap((w) => w.days.flatMap((d) => d.items.map((i) => i.name)));
+  assert.deepEqual(names, ['Barbell bench press', 'Back squat']);
+});
+
+/*
+ * ── A PROGRAM LIFTED OUT OF A PDF ────────────────────────────────────────────
+ *
+ * No columns, no sets, no reps, and no "Week 2" anywhere. Two weeks printed one after the other, told
+ * apart only by the weekdays starting over.
+ */
+
+test('THE WEEKDAYS COMING ROUND AGAIN START A NEW WEEK', () => {
+  const r = ok(parseProgramTable([
+    'MONDAY', 'Kneeling Push-Ups', 'Reverse Lunges',
+    'TUESDAY', 'Glute Bridges',
+    'WEDNESDAY — REST DAY',
+    'SATURDAY', 'Chair Dips',
+    'SUNDAY — REST DAY',
+    'MONDAY', 'Deficit Push-Ups', // ← the boundary, and the only thing marking it
+    'TUESDAY', 'Goblet Squats',
+    'SATURDAY', 'Bench Press',
+  ].join('\n')));
+
+  assert.deepEqual(r.weeks.map((w) => w.index), [1, 2], 'two weeks, not one week of eight days');
+  assert.deepEqual(r.weeks[0].days.map((d) => d.name), ['MONDAY', 'TUESDAY', 'SATURDAY']);
+  assert.deepEqual(r.weeks[1].days.map((d) => d.name), ['MONDAY', 'TUESDAY', 'SATURDAY']);
+  assert.deepEqual(r.weeks[1].days[0].items.map((i) => i.name), ['Deficit Push-Ups']);
+});
+
+test('a week whose days are printed OUT OF ORDER is not cut in half', () => {
+  /*
+   * Why repetition is the signal and order is not. A PDF's columns interleave, and this week really does
+   * list Sunday between Tuesday and Wednesday — a rule watching for the days going backwards would open
+   * a third week at Wednesday.
+   */
+  const r = ok(parseProgramTable([
+    'MONDAY', 'Push-Ups',
+    'TUESDAY', 'Goblet Squats',
+    'SUNDAY — REST DAY',
+    'WEDNESDAY — REST DAY',
+    'THURSDAY', 'Pull-Ups',
+    'FRIDAY', 'Front Rack Squats',
+  ].join('\n')));
+
+  assert.equal(r.weeks.length, 1, 'one week, however its days were laid out');
+  assert.deepEqual(r.weeks[0].days.map((d) => d.name), ['MONDAY', 'TUESDAY', 'THURSDAY', 'FRIDAY']);
+});
+
+test('a FOCUS label does not split the day it describes', () => {
+  /*
+   * The label sits AMONG the exercises, not above them. Read as a day it took four of the day's five
+   * lifts with it — and where the PDF wrapped "TARGET: ARMS, CHEST, AND" onto a second line, the day
+   * that stole them was called "BACK".
+   */
+  const r = ok(parseProgramTable([
+    'MONDAY',
+    'Arms/Chest: Kneeling Push-Ups (reduce load, build form)',
+    'FOCUS: ARMS/CHEST',
+    'Legs: Reverse Lunges (bodyweight)',
+    'THURSDAY',
+    'TARGET: ARMS, CHEST, AND',
+    'BACK',
+    'Deficit Push-Ups',
+    'Pull-Ups',
+  ].join('\n')));
+
+  assert.equal(r.weeks[0].days.length, 2, 'a label is not a day');
+  assert.deepEqual(r.weeks[0].days.map((d) => [d.name, d.items.length]), [['MONDAY', 2], ['THURSDAY', 2]]);
+  const names = r.weeks[0].days.flatMap((d) => d.items.map((i) => i.name));
+  assert.ok(!names.some((n) => /^(focus|target)/i.test(n)), 'and it is not an exercise either');
+});
+
+test('"Focus set:" is an exercise — naming a SET is not naming the day', () => {
+  const r = ok(parseProgramTable(['MONDAY', 'Focus set: Chair Dips', 'Reverse Lunges'].join('\n')));
+  assert.equal(r.weeks[0].days[0].items.length, 2, 'the focus set must survive as work');
+});
+
+test('a weekday with the first exercise on the same line keeps both', () => {
+  const r = ok(parseProgramTable([
+    'SATURDAY Arms/Chest: Chair Dips (use sturdy chair, feet closer = easier)',
+    'Legs: Reverse Lunges (bodyweight)',
+  ].join('\n')));
+
+  assert.equal(r.weeks[0].days[0].name, 'SATURDAY');
+  assert.equal(r.weeks[0].days[0].items.length, 2, "the day name swallowed the day's first exercise");
+});
+
+test('but "WEDNESDAY — REST DAY" is a day called Rest Day, not a rest-day exercise', () => {
+  // The guard on the split above: a dash introduces the rest of the NAME, not the day's first lift.
+  const r = ok(parseProgramTable(['WEDNESDAY — REST DAY', 'MONDAY', 'Push-Ups'].join('\n')));
+  const names = r.weeks[0].days.flatMap((d) => d.items.map((i) => i.name));
+  assert.deepEqual(names, ['Push-Ups'], 'REST DAY must not import as work');
+});
+
+test('a PDF page footer is not an exercise', () => {
+  const r = ok(parseProgramTable([
+    'MONDAY', 'Push-Ups', 'DailyRepsGuy — 20 min. Workout PDF Page 10', 'Pull-Ups',
+  ].join('\n')));
+  assert.deepEqual(r.weeks[0].days[0].items.map((i) => i.name), ['Push-Ups', 'Pull-Ups']);
+});

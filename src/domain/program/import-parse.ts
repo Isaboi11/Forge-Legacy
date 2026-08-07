@@ -24,10 +24,16 @@ import {
   loadedSetReps,
   cleanDayName,
   cleanExerciseName,
+  dayHeadingRow,
   extractScheme,
   firstNumber,
+  isAnnotation,
+  isLabelContinuation,
+  isPageFooter,
   looksLikeDayHeading,
+  splitDayHeading,
   weekHeading,
+  weekdayKey,
 } from './import-scheme.ts';
 
 export interface ParsedItem {
@@ -191,6 +197,20 @@ function parseFreeform(lines: string[]): ParseResult {
   let day: string | null = null;
   /** Bumped on every heading, so two days called the same thing stay two days. */
   let dayOrdinal = 0;
+  /*
+   * THE WEEKDAYS THAT HAVE GONE BY IN THIS WEEK.
+   *
+   * A program printed as two weeks back to back does not always announce the second one. It runs Monday
+   * to Sunday, and then simply starts at Monday again — and read straight through that is one week of
+   * sixteen days, with the two Mondays sitting side by side as if they were different sessions.
+   *
+   * A weekday coming round AGAIN is the boundary. Repetition is the signal rather than order, because
+   * these are lifted out of PDFs whose columns interleave: the second week here lists Sunday between
+   * Tuesday and Wednesday, and a rule that watched for the days going backwards would cut it in half.
+   */
+  const seenDays = new Set<string>();
+  /** True directly after a "FOCUS:" label, while a line wrapped off the end of it may still arrive. */
+  let afterLabel = false;
 
   /*
    * Read every line's scheme up front, because deciding what a line IS needs its neighbours.
@@ -214,10 +234,26 @@ function parseFreeform(lines: string[]): ParseResult {
 
   rows.forEach((row, i) => {
     if (consumed.has(row)) return;
+
+    // Document furniture from a PDF paste. Nobody trained a page number.
+    if (isPageFooter(row.line)) return;
+
+    // A label naming what the day is for, and whatever wrapped off the end of it.
+    if (isAnnotation(row.line)) {
+      afterLabel = true;
+      return;
+    }
+    if (afterLabel && !row.hasScheme && isLabelContinuation(row.line)) {
+      afterLabel = false;
+      return;
+    }
+    afterLabel = false;
+
     if (row.wk != null) {
       week = row.wk;
       day = null; // a new week starts its own days
       dayOrdinal = 0;
+      seenDays.clear();
       /*
        * "Week 1: Squat 5x5" carries work on the heading line. Consuming the whole line discarded it —
        * and for a program written one week per line, discarded every exercise in the program and then
@@ -272,8 +308,28 @@ function parseFreeform(lines: string[]): ParseResult {
 
       const atBoundary = next?.hasScheme === true && (prev == null || prev.hasScheme);
       if (looksLikeDayHeading(row.line) || atBoundary) {
-        day = cleanDayName(row.line);
+        // "SATURDAY Arms/Chest: Chair Dips" — the day, and the day's first exercise, on one line.
+        const split = splitDayHeading(row.line);
+
+        // A weekday already spent in this week means the program has come round to its next one.
+        const key = weekdayKey(split.name);
+        if (key) {
+          if (seenDays.has(key)) {
+            week++;
+            seenDays.clear();
+            dayOrdinal = 0;
+          }
+          seenDays.add(key);
+        }
+
+        day = cleanDayName(split.name);
         dayOrdinal++;
+
+        if (split.rest) {
+          const { scheme, rest } = extractScheme(split.rest);
+          const name = cleanExerciseName(rest || split.rest);
+          if (name) b.add(week, `${dayOrdinal}`, day, item(name, scheme.sets, scheme.reps));
+        }
         return;
       }
     }
@@ -338,6 +394,54 @@ function parseColumnPerDay(lines: string[], delimiter: '\t' | ';' | ','): ParseR
   return b.rowsRead ? { ok: true, weeks: b.done(), ignoredColumns: [], rowsRead: b.rowsRead } : null;
 }
 
+/** Read one row as a header: which known column sits where, first match wins, no column claimed twice. */
+function matchColumns(headerCells: string[]) {
+  const header = headerCells.map((h) => h.toLowerCase().replace(/[^a-z]/g, ''));
+  const at: Partial<Record<ColumnKey, number>> = {};
+  const used = new Set<number>();
+  for (const key of Object.keys(COLUMNS) as ColumnKey[]) {
+    const i = header.findIndex((h, idx) => !used.has(idx) && (COLUMNS[key] as readonly string[]).includes(h));
+    if (i >= 0) {
+      at[key] = i;
+      used.add(i);
+    }
+  }
+  return { header, at, used };
+}
+
+/**
+ * WHERE THE HEADER ROW ACTUALLY IS.
+ *
+ * It was assumed to be the first line, and a real training sheet almost never puts it there. A coach's
+ * week opens with a title ("WEEK 1"), a phase banner, a running prescription block — and only then the
+ * Section / Exercise / Sets × Reps row that names the columns.
+ *
+ * Assuming line one meant the Exercise column was never found, so the whole sheet fell through to the
+ * freeform reader — which does not split cells. Every tab-joined row became ONE exercise whose name was
+ * the entire row: "Barbell bench press –10 RPE 6–7 3-1-2 tempo. Control the eccentric… ☐* Last 160 x 8".
+ * Nothing matched the catalogue, and nothing could.
+ *
+ * So the header is SEARCHED for instead. Two guards keep the search from inventing one:
+ *
+ *   - it must have an Exercise column, because that is the column the table reader is built around;
+ *   - it must match at least TWO known columns, so a typed-out workout with a line reading "Name" or
+ *     "Lift" is not mistaken for a header and everything above it silently discarded.
+ *
+ * Earliest wins a tie: a sheet repeating its header per block should key off the first one.
+ */
+const HEADER_SCAN_LIMIT = 25;
+
+function findHeaderRow(lines: string[], delimiter: '\t' | ';' | ',') {
+  let best: { index: number; cells: string[]; columns: ReturnType<typeof matchColumns> } | null = null;
+  for (let i = 0; i < Math.min(lines.length, HEADER_SCAN_LIMIT); i++) {
+    const cells = splitLine(lines[i], delimiter);
+    const columns = matchColumns(cells);
+    if (columns.at.exercise === undefined || columns.used.size < 2) continue;
+    if (!best || columns.used.size > best.columns.used.size) best = { index: i, cells, columns };
+  }
+  return best;
+}
+
 export function parseProgramTable(raw: string): ParseResult {
   let lines = raw
     .split(/\r?\n/)
@@ -349,18 +453,12 @@ export function parseProgramTable(raw: string): ParseResult {
   if (lines.length === 0) return { ok: false, error: 'Nothing to read — paste some rows first.' };
 
   const delimiter = detectDelimiter(lines);
-  const headerCells = splitLine(lines[0], delimiter);
-  const header = headerCells.map((h) => h.toLowerCase().replace(/[^a-z]/g, ''));
 
-  const at: Partial<Record<ColumnKey, number>> = {};
-  const used = new Set<number>();
-  for (const key of Object.keys(COLUMNS) as ColumnKey[]) {
-    const i = header.findIndex((h, idx) => !used.has(idx) && (COLUMNS[key] as readonly string[]).includes(h));
-    if (i >= 0) {
-      at[key] = i;
-      used.add(i);
-    }
-  }
+  // The header is searched for, not assumed — a real sheet buries it under a title and a phase banner.
+  const found = findHeaderRow(lines, delimiter);
+  const headerAt = found?.index ?? 0;
+  const headerCells = found?.cells ?? splitLine(lines[0], delimiter);
+  const { header, at, used } = found?.columns ?? matchColumns(headerCells);
 
   /*
    * No Exercise column means this is not a table — it is a workout somebody typed out. Falling through
@@ -389,7 +487,7 @@ export function parseProgramTable(raw: string): ParseResult {
     return parseFreeform(lines);
   }
 
-  if (lines.length === 1) {
+  if (lines.length === headerAt + 1) {
     return { ok: false, error: 'That looks like a header row on its own. Include the exercise rows beneath it.' };
   }
 
@@ -404,12 +502,80 @@ export function parseProgramTable(raw: string): ParseResult {
    */
   let week = 1;
   let day = 'Day 1';
+  /*
+   * MULTI-WEEK SHEETS REPEAT THEIR WHOLE PREAMBLE.
+   *
+   * Week 2 does not begin at its exercises — it begins at a "WEEK 2" banner, a phase line, a running
+   * prescription block and its own copy of the header row, exactly as week 1 did. Only week 1's preamble
+   * sits above the header and is skipped by starting there; every later week's lands in the BODY, where
+   * the running block's second cell ("20–25 min Z2") falls under Exercise and imported as a lift.
+   *
+   * So a week banner opens a preamble, and the header row or the first day banner closes it. Rows inside
+   * one are dropped ONLY when they carry no prescription, so a week whose sheet dispenses with the
+   * repeated header and goes straight to work still keeps that work.
+   */
+  let inPreamble = false;
 
-  for (const line of lines.slice(1)) {
+  /** "Exercise" / "Movement" / "Lift" in the Exercise column — a repeat of the header, not a lift. */
+  const isHeaderWord = (s: string) =>
+    (COLUMNS.exercise as readonly string[]).includes(s.toLowerCase().replace(/[^a-z]/g, ''));
+
+  for (const line of lines.slice(headerAt + 1)) {
     const cells = splitLine(line, delimiter);
 
     const rawName = (cells[at.exercise] ?? '').trim();
-    if (!rawName) continue; // a spacer or a notes row, which every real sheet has
+    if (!rawName) {
+      /*
+       * A row with no exercise on it is not always a spacer. A sheet banners its STRUCTURE across whole
+       * rows — "WEEK 2", "MONDAY — Upper Strength + Zone 2" — with every other cell blank, and reading
+       * those as spacers welded four training days into one day of fifty lifts.
+       *
+       * Section labels ride the same column and must NOT become days; `dayHeadingRow` is strict about
+       * that. Anything else here really is a spacer or a notes row, which every real sheet has.
+       */
+      for (const cell of cells) {
+        const wk = weekHeading(cell.trim());
+        if (wk != null) {
+          week = wk;
+          inPreamble = true;
+          break;
+        }
+      }
+      const heading = dayHeadingRow(cells);
+      if (heading) {
+        day = cleanDayName(heading);
+        inPreamble = false;
+      }
+      continue;
+    }
+
+    /*
+     * A banner does not always miss the Exercise column. These sheets are laid out by eye, and week 2's
+     * banner was indented one cell further than week 1's — so "WEEK 2" arrived AS the exercise name, the
+     * week never advanced, and three weeks imported as two with week 2's work folded into week 1.
+     *
+     * Only `rawName` is examined here, never the whole row: a coaching note reading "Monday and Thursday
+     * only" would otherwise turn a real lift into a heading and silently drop it.
+     */
+    const bannerWeek = weekHeading(rawName);
+    const bannerDay = dayHeadingRow([rawName]);
+    if (bannerWeek != null || bannerDay) {
+      if (bannerWeek != null) {
+        week = bannerWeek;
+        inPreamble = true;
+      }
+      if (bannerDay) {
+        day = cleanDayName(bannerDay);
+        inPreamble = false;
+      }
+      continue;
+    }
+
+    // The header, come round again for the next week.
+    if (isHeaderWord(rawName)) {
+      inPreamble = false;
+      continue;
+    }
 
     const wkCell = at.week !== undefined ? firstNumber(cells[at.week]) : undefined;
     if (wkCell != null) week = wkCell;
@@ -427,12 +593,31 @@ export function parseProgramTable(raw: string): ParseResult {
       reps = reps ?? fromScheme.reps;
     }
 
-    // And last: "Bench Press 3x8" typed into the exercise cell itself.
-    const { scheme: inName, rest } = extractScheme(rawName);
-    if (sets == null) sets = inName.sets;
-    if (reps == null) reps = inName.reps;
+    /*
+     * And last: "Bench Press 3x8" typed into the exercise cell itself.
+     *
+     * ONLY when a column has not already answered. The scheme reader cannot tell a prescription from a
+     * number that is part of a lift's NAME — it read "Hip-90/90 mobility" as ninety sets of ninety and
+     * handed back "Hip- mobility" — so a sheet that keeps its sets and reps in a proper column must not
+     * have its names rewritten on the strength of a second opinion nobody asked for. And the name is
+     * only ever trimmed when a scheme genuinely came out of it.
+     */
+    let named = rawName;
+    if (sets == null || reps == null) {
+      const { scheme: inName, rest } = extractScheme(rawName);
+      if (sets == null) sets = inName.sets;
+      if (reps == null) reps = inName.reps;
+      if (inName.sets != null || inName.reps != null) named = rest || rawName;
+    }
 
-    const name = cleanExerciseName(rest || rawName);
+    /*
+     * Furniture inside a repeated preamble: the running prescription block, a phase note. It has text in
+     * the Exercise column but prescribes nothing, and outside a preamble the very same shape is a real
+     * item the sheet simply did not put numbers on — a Zone 2 run — which must still import.
+     */
+    if (inPreamble && sets == null && reps == null) continue;
+
+    const name = cleanExerciseName(named);
     if (!name) continue;
     b.add(week, day, day, item(name, sets, reps));
   }

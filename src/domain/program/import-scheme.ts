@@ -217,6 +217,94 @@ export function looksLikeDayHeading(line: string): boolean {
   return false;
 }
 
+/**
+ * "FOCUS: ARMS/CHEST", "TARGET: LEGS AND CORE" — a label naming what a day is FOR, printed among its
+ * exercises rather than above them.
+ *
+ * It is neither a day nor work, and it was read as a day: every training day in a real PDF split in
+ * half at the label, and the second half — four of the day's five exercises — ended up in a day called
+ * "FOCUS: ARMS/CHEST". Where the PDF wrapped the label, days came out named "BACK".
+ *
+ * The colon must follow the label word directly. "Focus set: Chair Dips" is an exercise, and naming a
+ * set is not the same as naming the day.
+ */
+const ANNOTATION = /^(?:focus|target|goal|aim|emphasis)\s*:/i;
+
+export function isAnnotation(line: string): boolean {
+  return ANNOTATION.test(line.trim());
+}
+
+/**
+ * The second line of a label a PDF wrapped — "TARGET: ARMS, CHEST, AND" / "BACK".
+ *
+ * Only ever asked of the line directly beneath an annotation. A weekday is excluded: a day heading that
+ * happens to follow a label is still a day heading.
+ */
+export function isLabelContinuation(line: string): boolean {
+  const t = line.trim();
+  if (!t || WEEKDAYS.test(t) || DAY_WORD.test(t)) return false;
+  return t.length <= 28 && t === t.toUpperCase() && /[A-Z]/.test(t) && !/\d/.test(t);
+}
+
+/** A page footer carried in from a PDF — "DailyRepsGuy — 20 min. Workout PDF Page 10". Not training. */
+export function isPageFooter(line: string): boolean {
+  return /\bpage\s+\d+\s*$/i.test(line.trim());
+}
+
+/** Monday → "mon". The identity of a weekday, so a week can notice one coming round again. */
+export function weekdayKey(line: string): string | null {
+  const m = line.trim().match(WEEKDAYS);
+  return m ? m[1].slice(0, 3).toLowerCase() : null;
+}
+
+/**
+ * A weekday heading with the day's FIRST EXERCISE on the same line — "SATURDAY Arms/Chest: Chair Dips".
+ *
+ * A PDF loses the line break often enough to matter, and the whole line became the day's NAME, taking
+ * the exercise with it. Split, the weekday names the day and the remainder is work.
+ *
+ * Two guards keep a day's own name from being torn off it. A remainder introduced by a DASH or a COLON
+ * is part of the name — "WEDNESDAY — REST DAY" is a day called Rest Day, not a rest-day exercise — and
+ * a remainder is only work when it is shaped like an entry, which here means a "Category: Movement"
+ * prefix. Anything less certain is left alone, because a heading wrongly split loses an exercise into a
+ * day name that is visible, while a heading wrongly kept whole is a day nobody can find.
+ */
+const DAY_WITH_WORK = /^((?:mon|tues?|wednes|thurs?|fri|satur|sun)day)\s+(?![-–—:])(.*)$/i;
+const ENTRY_PREFIX = /^[\w/&' -]{2,30}:\s*\S/;
+
+export function splitDayHeading(line: string): { name: string; rest: string } {
+  const t = line.trim();
+  const m = t.match(DAY_WITH_WORK);
+  if (!m) return { name: t, rest: '' };
+  const rest = m[2].trim();
+  if (!ENTRY_PREFIX.test(rest)) return { name: t, rest: '' };
+  return { name: m[1], rest };
+}
+
+/**
+ * A day heading sitting on a row of its OWN, with no exercise on it.
+ *
+ * This is how a real training sheet lays a week out: banner rows — "MONDAY — Upper Strength + Zone 2" —
+ * between the blocks of lifts, rather than a Day column repeating the label on every line. Those rows have
+ * an empty Exercise cell, were skipped as spacers, and a four-day week imported as ONE day holding fifty
+ * exercises.
+ *
+ * Deliberately STRICTER than `looksLikeDayHeading`, which also accepts anything short and shouted. The
+ * very same column holds "WARM-UP", "ACCESSORIES", "CORE" and "STRENGTH — BARBELL" — section labels, not
+ * days — and every one of them is short, shouted and digit-free. Promoting those turned the same sheet's
+ * four training days into twenty-three. So here a day must SAY it is one: a weekday, or Day/Session N.
+ */
+const DAY_ROW = /^(?:(?:mon|tues?|wednes|thurs?|fri|satur|sun)day\b|(?:day|session|workout)\s*\d+\b)/i;
+
+/** The heading text when a cell on this row names a day, or null when none does. */
+export function dayHeadingRow(cells: readonly string[]): string | null {
+  for (const c of cells) {
+    const t = c.trim();
+    if (t && DAY_ROW.test(t)) return t;
+  }
+  return null;
+}
+
 /** The day's name, with any "Day 1:" / "Monday -" scaffolding trimmed off the front. */
 export function cleanDayName(line: string): string {
   return (
