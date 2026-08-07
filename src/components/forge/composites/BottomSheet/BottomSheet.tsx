@@ -30,13 +30,25 @@ export interface BottomSheetProps {
    */
   scroll?: boolean
   footer?: React.ReactNode
+  /**
+   * Fired once the sheet is really GONE, not merely asked to close — RN forwards this from the native
+   * modal, so on iOS it lands after the dismissal animation finishes.
+   *
+   * ⚠ It exists because iOS refuses to present a second view controller while one is still on screen.
+   * A sheet that offers "Choose from library" cannot call the photo picker in the same tick it closes
+   * itself: the presentation is silently dropped and the athlete taps a row that does nothing. See
+   * `useMediaPicker`, which awaits this before launching.
+   *
+   * NOT fired on Android or web (RN only implements it for iOS), so every caller needs a fallback.
+   */
+  onDismiss?: () => void
 }
 
-export function BottomSheet({ open, onClose, dismissible = true, title, showHandle = true, scroll = false, children, footer }: BottomSheetProps) {
+export function BottomSheet({ open, onClose, dismissible = true, title, showHandle = true, scroll = false, children, footer, onDismiss }: BottomSheetProps) {
   const insets = useSafeAreaInsets()
 
   return (
-    <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={open} transparent animationType="slide" onRequestClose={onClose} onDismiss={onDismiss}>
       {/* Backdrop = tap-to-dismiss surface only. It must NOT be an accessibilityRole="button" — on web that
           makes it keyboard-activatable, so a SPACEBAR press inside a text field bubbles up and "clicks" the
           backdrop, dismissing the sheet mid-typing. `focusable={false}` keeps it out of the keyboard path. */}

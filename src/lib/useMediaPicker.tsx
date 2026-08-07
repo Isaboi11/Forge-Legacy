@@ -11,10 +11,18 @@ import { DOWNSCALE_COMPRESS, downscaleTarget } from '@/lib/image-downscale-core'
 
 /**
  * useMediaPicker — one consistent "camera or library" chooser for every place the app captures a photo or a
- * video. On a phone, tapping a capture control opens a BottomSheet: **Take a photo / Record a video** (opens
- * the device camera, permission requested first) or **Choose from library**. On web — where the picker can't
- * capture from the camera — it skips the chooser and goes straight to the library. `pick()` resolves with the
- * chosen asset (or `null` if cancelled/denied); render `mediaPickerSheet` once in the screen.
+ * video. Tapping a capture control opens a BottomSheet: **Take a photo / Record a video** (opens the device
+ * camera, permission requested first) or **Choose from library**. `pick()` resolves with the chosen asset
+ * (or `null` if cancelled/denied); render `mediaPickerSheet` once in the screen.
+ *
+ * THE WEB USED TO GET NO CHOICE. This file said web "can't capture from the camera" and sent every web
+ * request straight to the library — so on the deployed preview, which is the surface the athletes actually
+ * test on, "add a photo or video" only ever meant "open your camera roll". That was wrong: expo-image-picker's
+ * web `launchCameraAsync` sets the `capture` attribute on its file input, and a mobile browser honours it by
+ * opening the camera. So a phone browser now gets the same two-way chooser a native build does.
+ *
+ * Desktop web still skips it — `capture` is ignored there, so a "Take a photo" row would open the same file
+ * dialog as "Choose from library" and mean nothing. `(pointer: coarse)` is what separates the two.
  */
 export type MediaKind = 'images' | 'videos' | 'both';
 
@@ -29,6 +37,16 @@ export type MediaKind = 'images' | 'videos' | 'both';
  */
 export const MAX_VIDEO_SECONDS = 30;
 
+/**
+ * How long to wait for the chooser sheet to be gone before presenting a system picker, when the
+ * platform gives no dismissal signal.
+ *
+ * `Modal`'s `onDismiss` is iOS-only, and iOS is the platform that actually needs this — so on iOS the
+ * timeout is a backstop that normally never fires, and on Android it IS the wait. Comfortably longer
+ * than the `animationType="slide"` dismissal (~300ms) and short enough to read as part of the tap.
+ */
+const SHEET_DISMISS_FALLBACK_MS = 400;
+
 export interface MediaPickConfig {
   kind: MediaKind;
   title?: string;
@@ -42,6 +60,19 @@ export interface MediaPickConfig {
 }
 
 type Resolver = (asset: ImagePicker.ImagePickerAsset | null) => void;
+
+/**
+ * Whether this platform can actually reach a camera. Native always can. On the web it comes down to
+ * whether the browser honours the `capture` attribute, which in practice means a touch device — a desktop
+ * browser ignores it and falls back to the file dialog, and offering "Take a photo" there would be a lie.
+ *
+ * Read from an event handler, never during render (the react-compiler rules forbid the impure read).
+ */
+function canUseCamera(): boolean {
+  if (Platform.OS !== 'web') return true;
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
+  return window.matchMedia('(pointer: coarse)').matches;
+}
 
 const cameraLabel = (kind: MediaKind): string => (kind === 'images' ? 'Take a photo' : kind === 'videos' ? 'Record a video' : 'Take a photo or video');
 
@@ -82,9 +113,53 @@ export function useMediaPicker() {
     if (r) r(asset);
   }, []);
 
+  /**
+   * Resolves once the chooser sheet is really gone.
+   *
+   * ══ THE BUG THIS CLOSES ══
+   *
+   * Reported from the tester build: *"I click add photo and then the camera works but I click on
+   * 'Choose from library' but it doesn't take me to my library."*
+   *
+   * **iOS refuses to present a view controller while another is still on screen.** The chooser is a
+   * `BottomSheet`, which is an RN `Modal`; `setOpen(false)` only SCHEDULES its dismissal, so calling
+   * `launchImageLibraryAsync` in the same tick presented the photo picker into a modal that was still
+   * there. iOS dropped it silently — no throw, no rejection, nothing for the `catch` below to report.
+   * The row simply did nothing.
+   *
+   * ⚠ **The camera worked only by accident**, and that is the whole reason this took a tester to find.
+   * Its branch `await`s `requestCameraPermissionsAsync()` first — a native round-trip — which happened
+   * to give the modal enough time to finish dismissing. One path had an incidental delay and the other
+   * did not, so the two rows of the same sheet behaved differently.
+   *
+   * `onDismiss` is the deterministic signal and RN only implements it on iOS, so the timeout is the
+   * fallback for everywhere else rather than the mechanism. Web skips the wait entirely — its "modal"
+   * is a div and its picker is a file input, so there is nothing to collide with.
+   */
+  const dismissRef = useRef<(() => void) | null>(null);
+  const sheetGone = useCallback(
+    () =>
+      new Promise<void>((resolve) => {
+        if (Platform.OS === 'web') return resolve();
+        let settled = false;
+        const finish = () => {
+          if (settled) return;
+          settled = true;
+          dismissRef.current = null;
+          resolve();
+        };
+        dismissRef.current = finish;
+        setTimeout(finish, SHEET_DISMISS_FALLBACK_MS);
+      }),
+    [],
+  );
+
   const launch = useCallback(
-    async (config: MediaPickConfig, source: 'camera' | 'library') => {
+    async (config: MediaPickConfig, source: 'camera' | 'library', fromSheet: boolean) => {
       setOpen(false);
+      // Only when the chooser was actually on screen. The direct paths below (desktop web, and
+      // `directCamera`) never opened it, so there is nothing to wait for and no delay to pay.
+      if (fromSheet) await sheetGone();
       const mediaTypes: ('images' | 'videos')[] = config.kind === 'both' ? ['images', 'videos'] : [config.kind];
       const opts: ImagePicker.ImagePickerOptions = {
         mediaTypes,
@@ -113,7 +188,7 @@ export function useMediaPicker() {
         settle(null);
       }
     },
-    [settle, showToast],
+    [settle, showToast, sheetGone],
   );
 
   const pick = useCallback(
@@ -121,13 +196,14 @@ export function useMediaPicker() {
       new Promise<ImagePicker.ImagePickerAsset | null>((resolve) => {
         settle(null); // resolve any abandoned request as cancelled so the resolver has a single owner
         resolverRef.current = resolve;
-        // Web can't capture from the camera, so it always falls back to the library — even for directCamera.
-        if (Platform.OS === 'web') {
-          void launch(config, 'library');
+        // No camera to offer (desktop web) — the library IS the whole choice, so don't draw a chooser
+        // with one usable row on it.
+        if (!canUseCamera()) {
+          void launch(config, 'library', false);
           return;
         }
         if (config.directCamera) {
-          void launch(config, 'camera'); // straight to the camera, no chooser
+          void launch(config, 'camera', false); // straight to the camera, no chooser
           return;
         }
         setCfg(config);
@@ -142,13 +218,13 @@ export function useMediaPicker() {
   }, [settle]);
 
   const mediaPickerSheet = (
-    <BottomSheet open={open} onClose={close} title={cfg?.title ?? 'Add media'}>
+    <BottomSheet open={open} onClose={close} title={cfg?.title ?? 'Add media'} onDismiss={() => dismissRef.current?.()}>
       <View style={styles.list}>
         <SourceRow
           icon={<CameraGlyph />}
           label={cfg ? cameraLabel(cfg.kind) : 'Camera'}
           onPress={() => {
-            if (cfg) void launch(cfg, 'camera');
+            if (cfg) void launch(cfg, 'camera', true);
           }}
         />
         <SourceRow
@@ -156,7 +232,7 @@ export function useMediaPicker() {
           label="Choose from library"
           divided
           onPress={() => {
-            if (cfg) void launch(cfg, 'library');
+            if (cfg) void launch(cfg, 'library', true);
           }}
         />
       </View>
