@@ -557,3 +557,42 @@ export function sessionTally(marks: readonly SessionMark[]): { trained: number; 
 export function isProgramFinished(structure: ProgramStructure, marks: readonly SessionMark[]): boolean {
   return marks.length >= totalSessions(structure);
 }
+
+/**
+ * Swap two sessions' positions within one week — a real reorder of the plan, not a one-off.
+ *
+ * ══ WHY IT MATERIALISES PER-WEEK PLANS ══
+ *
+ * A non-varying program stores ONE `days` array that every week repeats. Reordering that array would
+ * change the order of every remaining week — so swapping Tuesday and Thursday in week 3 because the rack
+ * was busy would silently rewrite weeks 4 through 8 as well. Almost never what anyone means.
+ *
+ * So the first swap converts the program to per-week plans (`vary: true`, every week materialised as its
+ * own copy) and edits only the week asked for. That is the same "Customize" shape the builder already
+ * writes, so nothing downstream learns a new structure — `plannedDays` has always preferred `weekPlans`.
+ *
+ * ⚠ BOTH DAYS MUST BE UNTOUCHED, and the caller is responsible for only offering those.
+ * `program_sessions` rows are keyed by (week, dayIndex), so moving a day that has been trained or
+ * skipped would silently re-point that record at a different workout — the app would then claim you did
+ * a session you never did. Untouched days carry no rows, so swapping them moves nothing but the plan.
+ * Days at other positions keep their index and are unaffected.
+ */
+export function swapSessionOrder(
+  structure: ProgramStructure,
+  weekIndex: number,
+  a: number,
+  b: number,
+): ProgramStructure {
+  if (a === b) return structure;
+  const weeks = weekCount(structure);
+  if (weekIndex < 0 || weekIndex >= weeks) return structure;
+
+  // Materialise every week from whatever it resolves to today, so the untouched weeks keep the plan they
+  // already had rather than inheriting the edit.
+  const plans = Array.from({ length: weeks }, (_, wi) => ({ days: [...plannedDays(structure, wi)] }));
+  const days = plans[weekIndex]?.days;
+  if (!days || a < 0 || b < 0 || a >= days.length || b >= days.length) return structure;
+
+  [days[a], days[b]] = [days[b], days[a]];
+  return { ...structure, vary: true, weekPlans: plans };
+}

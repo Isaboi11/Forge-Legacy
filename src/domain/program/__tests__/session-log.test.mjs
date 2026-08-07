@@ -28,7 +28,9 @@ import {
   isProgramFinished,
   nextOpenSlot,
   sessionTally,
+  plannedDays,
   slotStates,
+  swapSessionOrder,
   totalSessions,
   touchedCount,
 } from '../progress-core.ts';
@@ -132,4 +134,73 @@ test('a ragged program still resolves the next session', () => {
   const next = nextOpenSlot(ragged, marks);
   assert.deepEqual([next.weekIndex, next.dayIndex], [1, 1], 'the last session of a short week must still be reachable');
   assert.ok(isProgramFinished(ragged, [...marks, mark(1, 1)]));
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SWAPPING TWO SESSIONS — a real reorder of the plan
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('swapping two sessions changes their order in that week', () => {
+  const out = swapSessionOrder(STRUCTURE, 0, 0, 2);
+  assert.deepEqual(
+    plannedDays(out, 0).map((d) => d.letter),
+    ['C', 'B', 'A'],
+    'week 1 must show the new order',
+  );
+});
+
+/**
+ * ⚠ THE REASON THIS IS NOT A ONE-LINE ARRAY SWAP. A non-varying program stores ONE `days` array that
+ * every week repeats, so reordering it in place would rewrite every remaining week — swapping two days
+ * in week 1 because the rack was busy would silently change weeks 2 through 8 too.
+ */
+test('the other weeks keep the order they had', () => {
+  const out = swapSessionOrder(STRUCTURE, 0, 0, 2);
+  assert.deepEqual(plannedDays(out, 1).map((d) => d.letter), ['A', 'B', 'C'], 'week 2 must be untouched');
+  assert.ok(out.vary, 'the program becomes per-week so one week can differ from another');
+  assert.equal(out.weekPlans.length, 2);
+});
+
+test('a swap does not change how long the program is', () => {
+  const out = swapSessionOrder(STRUCTURE, 0, 0, 2);
+  assert.equal(totalSessions(out), totalSessions(STRUCTURE), 'reordering is not adding or removing work');
+});
+
+/**
+ * The record is keyed by (week, dayIndex), so a swap must never move a session that already has one —
+ * it would re-point that row at a different workout and the app would claim a session nobody trained.
+ * The screen only offers untouched days; this pins what "untouched" buys.
+ */
+test('a session at another position keeps its index, so its record still means what it said', () => {
+  // Week 1: A done at index 0. Swapping B and C (1 and 2) must leave index 0 alone.
+  const marks = [mark(0, 0)];
+  const out = swapSessionOrder(STRUCTURE, 0, 1, 2);
+  assert.equal(plannedDays(out, 0)[0].letter, 'A', 'the completed session must not move');
+  assert.equal(slotStates(out, marks)[0].state, 'completed');
+  assert.equal(slotStates(out, marks)[1].state, null);
+});
+
+test('the next session follows the new order', () => {
+  // Nothing done yet; after swapping positions 0 and 2, the first session up is what was Day C.
+  const out = swapSessionOrder(STRUCTURE, 0, 0, 2);
+  const next = nextOpenSlot(out, []);
+  assert.deepEqual([next.weekIndex, next.dayIndex], [0, 0]);
+  assert.equal(next.day.letter, 'C', 'Home must offer whatever now sits first');
+});
+
+test('a swap that cannot mean anything is a no-op', () => {
+  assert.equal(swapSessionOrder(STRUCTURE, 0, 1, 1), STRUCTURE, 'a day with itself');
+  assert.equal(swapSessionOrder(STRUCTURE, 9, 0, 1), STRUCTURE, 'a week that does not exist');
+  assert.equal(swapSessionOrder(STRUCTURE, 0, 0, 9), STRUCTURE, 'a day that does not exist');
+});
+
+test('swapping inside an already-varying program edits only that week', () => {
+  const varied = {
+    ...STRUCTURE,
+    vary: true,
+    weekPlans: [{ days: [day('A'), day('B'), day('C')] }, { days: [day('X'), day('Y'), day('Z')] }],
+  };
+  const out = swapSessionOrder(varied, 1, 0, 1);
+  assert.deepEqual(plannedDays(out, 1).map((d) => d.letter), ['Y', 'X', 'Z']);
+  assert.deepEqual(plannedDays(out, 0).map((d) => d.letter), ['A', 'B', 'C'], 'week 1 must not move');
 });

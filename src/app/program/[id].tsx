@@ -22,6 +22,7 @@ import {
   fetchProgramWorkouts,
   runProgramAgain,
   skipProgramSession,
+  updateProgram,
   startProgram,
   type SavedProgram,
 } from '@/data/programs-live';
@@ -29,11 +30,15 @@ import { fmtLongDate, spanLabel, workoutsLabel } from '@/domain/program/graduati
 import {
   buildLog,
   computeProgress,
+  dayLabel,
   computeStats,
   equipmentOf,
   fmtVolume,
   nextOpenSlot,
+  plannedDays,
+  swapSessionOrder,
   totalSessions,
+  trainingDays,
   viewForState,
   type LogWeek,
   type LoggedWorkout,
@@ -112,6 +117,8 @@ export default function ProgramDetailScreen() {
   const [workouts, setWorkouts] = useState<LoggedWorkout[]>([]);
   /** Which sessions have been trained or skipped (0119) — the schedule's state, not the workout log. */
   const [marks, setMarks] = useState<SessionMark[]>([]);
+  /** The session an athlete asked to move, while they pick what to move it with. Null when closed. */
+  const [swapping, setSwapping] = useState<{ weekIndex: number; dayIndex: number; name: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -323,6 +330,29 @@ export default function ProgramDetailScreen() {
    */
   const stateByWeek: Record<number, Record<number, SessionState>> = {};
   for (const m of marks) (stateByWeek[m.weekIndex] ??= {})[m.dayIndex] = m.state;
+
+  /**
+   * Reorder two sessions inside a week, and persist it.
+   *
+   * ⚠ ONLY UNTOUCHED SESSIONS ARE OFFERED, and that is a correctness rule rather than a courtesy.
+   * `program_sessions` rows are keyed by (week, dayIndex), so moving a session that has been trained or
+   * skipped would leave its record pointing at a different workout — the app would then claim a session
+   * nobody did. Untouched days carry no rows, so swapping them moves the plan and nothing else.
+   */
+  const doSwap = async (weekIndex: number, a: number, b: number) => {
+    if (!program || busy) return;
+    setBusy(true);
+    try {
+      const next = swapSessionOrder(program.structure, weekIndex, a, b);
+      await updateProgram(program.id, next);
+      setProgram({ ...program, structure: next });
+      setSwapping(null);
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const goTrain = async () => {
     if (!nextOpenSlot(structure, marks)) return; // program finished — nothing left to train
@@ -750,6 +780,7 @@ export default function ProgramDetailScreen() {
                  (Amendment-001 §1) and a preview has no row to write against yet. */
               onTrainDay={state === 'active' ? (di, name) => void trainDay(wi, di, name) : undefined}
               onSkipDay={state === 'active' ? (di) => void skipDay(wi, di) : undefined}
+              onSwapDay={state === 'active' ? (di, name) => setSwapping({ weekIndex: wi, dayIndex: di, name }) : undefined}
             />
           ))}
           </View>
@@ -875,6 +906,56 @@ export default function ProgramDetailScreen() {
 
       <ScreenTour screenKey="program-detail" />
 
+      {/*
+        THE SWAP PICKER — the week, and what this session can trade places with.
+
+        Only OUTSTANDING sessions are listed. A trained or skipped one has a `program_sessions` row keyed
+        by its position, so moving it would leave that record pointing at a different workout; the app
+        would then claim a session nobody did. Showing them greyed out would invite the tap that cannot
+        be honoured, so they are simply not offered.
+      */}
+      <BottomSheet
+        open={swapping != null}
+        onClose={() => setSwapping(null)}
+        title={swapping ? `Swap ${swapping.name} with…` : 'Swap'}
+      >
+        <View style={styles.swapList}>
+          {(() => {
+            if (!swapping) return null;
+            const days = trainingDays(plannedDays(structure, swapping.weekIndex));
+            const options = days
+              .map((d, di) => ({ d, di }))
+              .filter(({ di }) => di !== swapping.dayIndex && stateByWeek[swapping.weekIndex]?.[di] === undefined);
+            if (options.length === 0) {
+              return (
+                <Text style={styles.sheetText}>
+                  Nothing else in week {swapping.weekIndex + 1} is still outstanding — the other sessions are
+                  already trained or skipped, and moving those would rewrite what you did.
+                </Text>
+              );
+            }
+            return options.map(({ d, di }) => (
+              <Pressable
+                key={di}
+                onPress={() => void doSwap(swapping.weekIndex, swapping.dayIndex, di)}
+                disabled={busy}
+                accessibilityRole="button"
+                accessibilityLabel={`Swap ${swapping.name} with ${dayLabel(d, di)}`}
+                style={styles.swapRow}
+              >
+                <View style={styles.swapNum}>
+                  <Text style={styles.swapNumText}>{di + 1}</Text>
+                </View>
+                <Text style={styles.swapName} numberOfLines={1}>
+                  {dayLabel(d, di)}
+                </Text>
+                <Glyph d={CHEVRON} color={flColor.gray600} />
+              </Pressable>
+            ));
+          })()}
+        </View>
+      </BottomSheet>
+
       <BottomSheet open={sheet != null} onClose={() => setSheet(null)} title={sheetCopy.title}>
         <View style={styles.sheetBody}>
           <Text style={styles.sheetText}>{sheetCopy.body}</Text>
@@ -952,6 +1033,7 @@ function WeekCard({
   states,
   onTrainDay,
   onSkipDay,
+  onSwapDay,
 }: {
   week: LogWeek;
   current: boolean;
@@ -964,6 +1046,7 @@ function WeekCard({
   /** Train or skip this specific session. Absent on a sealed or not-yet-started program. */
   onTrainDay?: (dayIndex: number, name: string) => void;
   onSkipDay?: (dayIndex: number) => void;
+  onSwapDay?: (dayIndex: number, name: string) => void;
 }) {
   const meta = week.complete
     ? 'Complete'
@@ -1037,6 +1120,16 @@ function WeekCard({
                     >
                       <Text style={styles.dayActionText}>Train this</Text>
                     </Pressable>
+                    {onSwapDay ? (
+                      <Pressable
+                        onPress={() => onSwapDay(di, d.name)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Swap ${d.name} with another workout this week`}
+                        style={styles.dayAction}
+                      >
+                        <Text style={styles.dayActionText}>Swap</Text>
+                      </Pressable>
+                    ) : null}
                     <Pressable
                       onPress={() => onSkipDay(di)}
                       accessibilityRole="button"
@@ -1198,6 +1291,29 @@ const styles = StyleSheet.create({
   emptyTitle: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', color: flColor.cream100 },
   emptyBody: { fontSize: 13, lineHeight: 19, color: flColor.gray400, textAlign: 'center' },
 
+  swapList: { gap: 8 },
+  swapRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: flRadius.md,
+    borderWidth: 1,
+    borderColor: flColor.charcoal500,
+    backgroundColor: flColor.charcoal800,
+  },
+  swapNum: {
+    width: 26,
+    height: 26,
+    borderRadius: flRadius.round,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+  },
+  swapNumText: { fontFamily: flFont.display, fontSize: 13, fontWeight: '600', color: flColor.bronze300 },
+  swapName: { flex: 1, fontSize: 15, color: flColor.cream100 },
   sheetBody: { gap: 16 },
   sheetText: { fontSize: 13.5, lineHeight: 21, color: flColor.gray400 },
   skippedChip: {
