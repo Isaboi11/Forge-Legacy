@@ -58,7 +58,7 @@
 **Sprint:** PO feedback, **batch 4** (2026-08-07) — ten items, of which one was already built, one was
 a decision rather than a build, and one turned out to be worse than reported
 
-**Status: code complete; migrations 0119–0122 APPLIED 2026-08-08 and verified.**
+**Status: SHIPPED 2026-08-08.** Migrations 0119–0122 applied and verified · committed `514d7e7` on `feat/home-onramp` and pushed · web deployed to forgelegacy.expo.app (live bundle `entry-516f9e32192b3d308678fa3fc73a5201.js`, confirmed by fetching the alias, not by trusting the deploy output) · **OTA published at runtime version `791bacda3a99ae050f5ce879b32fe57ba2e4a4a2`, which is build 3's exactly** — the runbook's test for whether an update can reach anyone. Push notifications still need a NEW iOS BUILD; everything else in this batch is live.
 `npx tsc --noEmit` clean · **1347 tests green** · lint at baseline (1 pre-existing error, 13 warnings).
 Full write-up in **Recently Completed #1**.
 
