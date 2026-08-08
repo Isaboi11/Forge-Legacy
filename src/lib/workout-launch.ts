@@ -65,6 +65,18 @@ export interface WorkoutLaunch {
    * devices would then have to keep in step.
    */
   partnerId?: string;
+  /**
+   * WHICH exercise of the snapshotted shape to open on (0121) — how "join where you are" arrives.
+   *
+   * Zero for an ordinary invitation, which is what omitting it means. A JOIN REQUEST the host accepted
+   * mid-workout carries the index the host had actually reached, read off their live session at accept
+   * time, so the guest walks into the gym and starts on the movement their partner is doing rather than
+   * at the top of a workout that is two-thirds done.
+   *
+   * Clamped against the shape when the session is built — the snapshot and the index are written
+   * together, but nothing stops a shorter shape arriving from an older client.
+   */
+  startIndex?: number;
 }
 
 const KEY = 'forge_workout_launch_context_v1';

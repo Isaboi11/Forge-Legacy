@@ -1,4 +1,5 @@
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,9 +16,12 @@ import { TourAnchor } from '@/components/tour/TourAnchor';
 import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
-import { fetchChapterDetail } from '@/data/chapter-detail-live';
+import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { fetchChapterDetail, renameChapter } from '@/data/chapter-detail-live';
+import { CHAPTER_TITLE_MAX, DEFAULT_CHAPTER_I_TITLE, isValidChapterTitle } from '@/domain/legacy/chapter-name';
 import { goalSections, isAchieved, isQuantifiable, progressLabel, progressPct, type Goal } from '@/domain/goals/goals';
-import { useQuery } from '@/lib/useQuery';
+import { useToast } from '@/hooks/useCeremony';
+import { errorMessage, useQuery } from '@/lib/useQuery';
 
 /**
  * L-3/L-4 Chapter Detail — the chapter overview reached by tapping the chapter on Legacy.
@@ -55,7 +59,44 @@ export default function ChapterDetailScreen() {
   const onTourScroll = useTourScrollTracker();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data, loading } = useQuery(() => fetchChapterDetail(String(id)), [id]);
+  const { data, loading, refetch } = useQuery(() => fetchChapterDetail(String(id)), [id]);
+  const { showToast } = useToast();
+
+  /**
+   * Renaming, which until now was impossible for any chapter (see `renameChapter`).
+   *
+   * Only the TITLE is editable — the `Chapter N — ` prefix is preserved by the writer, because the
+   * ordinal is a client convention with no column behind it and re-typing it would let a chapter
+   * renumber itself.
+   */
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameDraft, setRenameDraft] = useState('');
+  const [savingName, setSavingName] = useState(false);
+  const [renameError, setRenameError] = useState<string | null>(null);
+
+  const openRename = () => {
+    setRenameDraft(data?.title ?? '');
+    setRenameError(null);
+    setRenameOpen(true);
+  };
+  const commitRename = async () => {
+    if (savingName || !data) return;
+    if (!isValidChapterTitle(renameDraft)) {
+      setRenameError('Give the chapter a name — at least a couple of characters.');
+      return;
+    }
+    setSavingName(true);
+    try {
+      await renameChapter(data.id, renameDraft);
+      setRenameOpen(false);
+      refetch();
+      showToast('Chapter renamed');
+    } catch (e) {
+      setRenameError(errorMessage(e));
+    } finally {
+      setSavingName(false);
+    }
+  };
   /**
    * The archive's one door, shared with Workout Complete. `/add-photo` collects the label, the line and
    * the date as well as the image — without them the gallery's pull-quote, pose pill and starred cover
@@ -95,9 +136,14 @@ export default function ChapterDetailScreen() {
         contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* hero */}
+        {/* hero — the title is the rename affordance; a chapter's name is the athlete's to change */}
         <Text style={styles.eyebrow}>{data.number}</Text>
-        <Text style={styles.title}>{data.title}</Text>
+        <Pressable onPress={openRename} accessibilityRole="button" accessibilityLabel={`${data.title}. Tap to rename this chapter.`}>
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>{data.title}</Text>
+            <Glyph d={PENCIL} size={15} color={flColor.bronze400} width={1.7} />
+          </View>
+        </Pressable>
         <View style={styles.statusRow}>
           {data.isActive ? <View style={styles.dot} /> : <Glyph d={FLAME} size={14} color={flColor.bronze300} width={1.7} />}
           <Text style={styles.status}>{data.isActive ? 'ACTIVE' : 'SEALED'}</Text>
@@ -322,10 +368,41 @@ export default function ChapterDetailScreen() {
         ) : null}
       </ScrollView>
 
+      {/* Mounted beside the hero that opens it, never at the bottom of the file — see
+          `overlay-branch.test.mjs` for the session that rule cost. */}
+      <BottomSheet open={renameOpen} onClose={() => setRenameOpen(false)} title="Name this chapter">
+        <TextInput
+          value={renameDraft}
+          onChangeText={setRenameDraft}
+          placeholder={DEFAULT_CHAPTER_I_TITLE}
+          placeholderTextColor={flColor.gray600}
+          style={styles.nameInput}
+          accessibilityLabel="Chapter name"
+          maxLength={CHAPTER_TITLE_MAX}
+          autoFocus
+          selectTextOnFocus
+          returnKeyType="done"
+          onSubmitEditing={() => void commitRename()}
+        />
+        <Text style={renameError ? styles.nameError : styles.nameHint}>
+          {renameError ?? `Shown as “${data.number} — ${renameDraft.trim() || DEFAULT_CHAPTER_I_TITLE}”. The chapter number stays as it is.`}
+        </Text>
+        <View style={styles.nameActions}>
+          <Button variant="secondary" fullWidth onPress={() => setRenameOpen(false)} accessibilityLabel="Cancel">
+            Cancel
+          </Button>
+          <Button variant="primary" fullWidth onPress={() => void commitRename()} accessibilityLabel="Save chapter name">
+            {savingName ? 'Saving…' : 'Save Name'}
+          </Button>
+        </View>
+      </BottomSheet>
+
       <ScreenTour screenKey="chapter-detail" ready={!!data} />
     </View>
   );
 }
+
+const PENCIL = 'M4 20h4L19 9a2 2 0 0 0-3-3L5 17v3z';
 
 function CameraGlyph({ size = 17, color = flColor.bronze300 }: { size?: number; color?: string }) {
   return (
@@ -378,6 +455,11 @@ const styles = StyleSheet.create({
 
   eyebrow: { fontSize: 11, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.bronze400 },
   title: { fontFamily: flFont.display, fontSize: 34, fontWeight: '600', color: flColor.cream100, marginTop: 6 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  nameInput: { fontFamily: flFont.sans, fontSize: 16, color: flColor.cream100, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.surfaceRecessed, borderRadius: flRadius.md, paddingHorizontal: 14, paddingVertical: 12 },
+  nameHint: { fontSize: 12.5, lineHeight: 18, color: flColor.gray600, marginTop: 8 },
+  nameError: { fontSize: 12.5, lineHeight: 18, color: flColor.redMuted, marginTop: 8 },
+  nameActions: { flexDirection: 'row', gap: 10, marginTop: 16 },
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 },
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#5FA271' },
   status: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, color: flColor.bronze300 },

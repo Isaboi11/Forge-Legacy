@@ -1034,7 +1034,11 @@ export default function HomeScreen() {
               friendActivity={circleActivity}
               hasCircle={hasCircle}
               onAddFriends={() => router.push('/add-friend')}
-              onJoinLive={(userId) => router.push({ pathname: '/athlete/[id]', params: { id: userId } })}
+              /* Two handlers, not one (0121). The BUTTON asks to join the session they are in; the ROW
+                 still opens their profile. Sharing a handler would have meant tapping someone's name
+                 fired a request to join their workout. */
+              onAskToJoin={(a) => router.push({ pathname: '/workout-join', params: { athlete: a.userId } })}
+              onViewAthlete={(userId) => router.push({ pathname: '/athlete/[id]', params: { id: userId } })}
               onFriendActivity={() => router.push('/friends')}
               onSeeCircle={() => router.push('/friends')}
             />
@@ -1042,8 +1046,8 @@ export default function HomeScreen() {
 
           {/* Two actions, both real. "Train Together" was "Challenge", which opened a sheet whose every
               row was inert — FRIENDS-context competitions are deferred, so it duplicated Competitions and
-              then dead-ended. It now shows who is training, which is the honest form of working out with
-              your people while S-10 is unbuilt. Competitions is unchanged: you start one from the hub. */}
+              then dead-ended. It shows who is training, and since 0121 each of those rows can be JOINED:
+              you ask, they accept, and you open on the exercise they are on. Competitions is unchanged. */}
           <QuickActionsRow
             competitionsCount={challengeHub?.active.length ?? 0}
             trainingCount={live.length}
@@ -1134,6 +1138,10 @@ export default function HomeScreen() {
         onAthlete={(userId) => {
           setFriendSheetOpen(false);
           router.push({ pathname: '/athlete/[id]', params: { id: userId } });
+        }}
+        onAskToJoin={(a) => {
+          setFriendSheetOpen(false);
+          router.push({ pathname: '/workout-join', params: { athlete: a.userId } });
         }}
         onFindPeople={() => {
           setFriendSheetOpen(false);

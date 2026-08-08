@@ -9,6 +9,7 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { Field, Heading, ProgressHeader, SelectTile } from '@/components/onboarding/kit';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { completeOnboarding, isHandleAvailable } from '@/domain/onboarding/service';
+import { CHAPTER_SUGGESTIONS, CHAPTER_TITLE_MAX, chapterNameFrom, DEFAULT_CHAPTER_I_TITLE } from '@/domain/legacy/chapter-name';
 import { useProfile } from '@/lib/profile';
 import { errorMessage } from '@/lib/useQuery';
 
@@ -21,8 +22,8 @@ import { errorMessage } from '@/lib/useQuery';
  * environment = null (unknown until a program-recommendation flow captures equipment). On success
  * `onboarded_at` flips and the boot router swaps to the app. Welcome/Create/Sign-In are the auth route.
  */
-const SETUP: Step[] = ['account', 'username'];
-type Step = 'account' | 'username' | 'transition';
+const SETUP: Step[] = ['account', 'username', 'chapter'];
+type Step = 'account' | 'username' | 'chapter' | 'transition';
 type UStatus = 'idle' | 'short' | 'checking' | 'available' | 'taken';
 
 interface Data {
@@ -30,12 +31,14 @@ interface Data {
   sex: 'male' | 'female' | null;
   units: 'imperial' | 'metric';
   username: string;
+  /** The TITLE half of Chapter I. Blank means "skipped", which writes the default. */
+  chapterTitle: string;
 }
 
 export default function Onboarding() {
   const [step, setStep] = useState<Step>('account');
   const [data, setData] = useState<Data>({
-    name: '', sex: null, units: 'imperial', username: '',
+    name: '', sex: null, units: 'imperial', username: '', chapterTitle: '',
   });
   const [uStatus, setUStatus] = useState<UStatus>('idle');
   const [finishing, setFinishing] = useState(false);
@@ -44,12 +47,15 @@ export default function Onboarding() {
   const patch = (p: Partial<Data>) => setData((d) => ({ ...d, ...p }));
 
   const idx = SETUP.indexOf(step);
-  const next = () => setStep(step === 'username' ? 'transition' : SETUP[idx + 1]);
+  const next = () => setStep(step === 'chapter' ? 'transition' : SETUP[idx + 1]);
   const back = () => {
     setError(null);
-    if (step === 'transition') setStep('username');
+    if (step === 'transition') setStep('chapter');
     else if (idx > 0) setStep(SETUP[idx - 1]);
   };
+
+  /** What Chapter I will be called — one derivation, used by the step, the transition and the finish. */
+  const chapterName = chapterNameFrom(data.chapterTitle);
 
   // ── username availability (debounced live query) ──
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -79,6 +85,7 @@ export default function Onboarding() {
         handle: data.username.length >= 3 ? data.username : null,
         sex: data.sex ?? 'male',
         photoUri: null, // optional photo picker is a fast-follow
+        chapterTitle: data.chapterTitle,
         // athlete_type defaults to Hybrid (type isn't asked) and environment is null (unknown) — both are
         // deferred to opt-in, post-Home surfaces per ONB-Amendment-002 (ONB-A2-D1).
       });
@@ -103,8 +110,10 @@ export default function Onboarding() {
           <ForgeBrandMark glow={150} mark={74} />
           <Text style={styles.tEyebrow}>Your forge is ready</Text>
           <Text style={styles.tTitle}>Your next chapter{'\n'}begins now.</Text>
+          {/* The athlete's own name for it — this line used to hard-code the string a second time,
+              which is how the constant and the copy could ever have disagreed. */}
           <Text style={styles.tBody}>
-            We&apos;ve opened <Text style={styles.tAccent}>Chapter I — Building Your Foundation</Text>. Every legacy begins with a single workout.
+            We&apos;ve opened <Text style={styles.tAccent}>{chapterName}</Text>. Every legacy begins with a single workout.
           </Text>
           {error ? <Text style={styles.err}>Couldn&apos;t finish — {error}. Try again.</Text> : null}
           <View style={styles.tAction}>
@@ -160,6 +169,49 @@ export default function Onboarding() {
               </Pressable>
             </>
           ) : null}
+
+          {step === 'chapter' ? (
+            <>
+              <Heading
+                eyebrow="Your first chapter"
+                title="Name this season"
+                body="A chapter is a stretch of training you'll one day seal and look back on — a few months, a comeback, a year. Everything you log lands inside the one that's open. Give this one a name that means something to you."
+              />
+              <Field
+                label="Chapter I"
+                placeholder={DEFAULT_CHAPTER_I_TITLE}
+                maxLength={CHAPTER_TITLE_MAX}
+                showCount
+                value={data.chapterTitle}
+                onChangeText={(t) => patch({ chapterTitle: t.replace(/^\s+/, '') })}
+              />
+              <Group label="Or start from one of these">
+                <View style={styles.suggestRow}>
+                  {CHAPTER_SUGGESTIONS.map((s) => (
+                    <Pressable
+                      key={s}
+                      onPress={() => patch({ chapterTitle: s })}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Use "${s}"`}
+                      style={({ pressed }) => [styles.suggestChip, data.chapterTitle === s ? styles.suggestChipOn : null, pressed ? styles.suggestChipPressed : null]}
+                    >
+                      <Text style={[styles.suggestText, data.chapterTitle === s ? styles.suggestTextOn : null]}>{s}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </Group>
+              {/* Shown assembled, because "Chapter I — " is prepended for them and they should see it
+                  before committing rather than discover it on the Home hero. */}
+              <View style={styles.chapterPreview}>
+                <Text style={styles.chapterPreviewLabel}>Your record will open with</Text>
+                <Text style={styles.chapterPreviewName}>{chapterName}</Text>
+              </View>
+              <Continue onPress={next} />
+              <Pressable onPress={() => { patch({ chapterTitle: '' }); next(); }} accessibilityRole="button" accessibilityLabel="Skip and use the default name" style={styles.skip}>
+                <Text style={styles.skipText}>Skip — you can rename it any time</Text>
+              </Pressable>
+            </>
+          ) : null}
         </ScrollView>
       )}
     </View>
@@ -204,6 +256,16 @@ const styles = StyleSheet.create({
 
   avatarRow: { alignItems: 'center', gap: 10, paddingVertical: 6 },
   optional: { fontFamily: flFont.sans, fontSize: 12, color: flColor.gray600 },
+
+  suggestRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  suggestChip: { paddingVertical: 8, paddingHorizontal: 13, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.surfaceRecessed },
+  suggestChipOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
+  suggestChipPressed: { opacity: 0.7 },
+  suggestText: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray400 },
+  suggestTextOn: { color: flColor.bronze300, fontWeight: '600' },
+  chapterPreview: { gap: 6, padding: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
+  chapterPreviewLabel: { fontFamily: flFont.sans, fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray600 },
+  chapterPreviewName: { fontFamily: flFont.display, fontSize: 18, lineHeight: 24, color: flColor.cream100 },
 
   group: { gap: 8 },
   groupLabel: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray400 },

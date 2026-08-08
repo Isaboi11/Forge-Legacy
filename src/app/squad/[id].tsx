@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -19,6 +19,7 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
 import { SquadCrest } from '@/components/forge/SquadCrest';
+import { UploadError } from '@/lib/storage-upload';
 import { fetchSquadInvite, GOAL_UNITS, fetchSquad, fetchSquadCheckins, uploadCheckinVideo, postCheckin, markCheckinViewed, setSquadGoal, clearSquadGoal, deleteSquad, removeSquadMember, type SquadCheckin, type SquadMemberView, type SquadGoalMetric } from '@/data/squad-live';
 import { CHALLENGE_TYPES, daysLeft, fetchSquadActiveChallenge, fetchSquadHall, formatScore, placeLabel } from '@/data/challenges-live';
 import { detailFor, ensureWeeklyRecap, fetchSquadFeed, leadFor, recapSummaryLine, timeAgo, toggleSquadReaction, type SquadFeedPost, type SquadPostType } from '@/data/squad-feed-live';
@@ -122,6 +123,8 @@ export default function SquadDetailRoute() {
 
   const [checkinViewer, setCheckinViewer] = useState<SquadCheckin | null>(null);
   const [uploadingCheckin, setUploadingCheckin] = useState(false);
+  const [checkinPct, setCheckinPct] = useState(0);
+  const checkinAbortRef = useRef<AbortController | null>(null);
   const [watchedIds, setWatchedIds] = useState<Set<string>>(new Set());
 
   const [view, setView] = useState<'detail' | 'members'>('detail');
@@ -349,8 +352,19 @@ export default function SquadDetailRoute() {
       () => setSavingGoal(false),
     );
   };
+  /**
+   * Record and post a check-in.
+   *
+   * The upload reports real bytes now (see `storage-upload.ts`), so the CTA shows a percentage and a
+   * second tap cancels. Before this it was a bare spinner over a heap-blob upload with no timeout —
+   * which is to say "uploading", "stalled" and "the app is about to die" were the same picture, and the
+   * athlete's only move was to wait.
+   */
   const startCheckin = async () => {
-    if (uploadingCheckin) return;
+    if (uploadingCheckin) {
+      checkinAbortRef.current?.abort();
+      return;
+    }
     const asset = await pick({
       kind: 'videos',
       directCamera: true, // a check-in is a record-now moment — straight to the front camera, no library
@@ -363,17 +377,28 @@ export default function SquadDetailRoute() {
       showToast('Keep your check-in to 30 seconds or less.');
       return;
     }
+    const controller = new AbortController();
+    checkinAbortRef.current = controller;
+    setCheckinPct(0);
     setUploadingCheckin(true);
     try {
-      const url = await uploadCheckinVideo(squad.id, asset.uri);
+      const url = await uploadCheckinVideo(squad.id, asset.uri, {
+        contentType: asset.mimeType,
+        onProgress: setCheckinPct,
+        signal: controller.signal,
+      });
       await postCheckin(squad.id, url);
       refetchCheckins();
       refetch();
       showToast('Checked in');
     } catch (e: unknown) {
-      showToast(e instanceof Error ? e.message : 'Couldn’t post your check-in.');
+      // `UploadError.message` is already a sentence with the real numbers in it — don't paraphrase it.
+      if (e instanceof UploadError && e.kind === 'cancelled') showToast('Check-in cancelled.');
+      else showToast(e instanceof Error ? e.message : 'Couldn’t post your check-in.');
     } finally {
+      checkinAbortRef.current = null;
       setUploadingCheckin(false);
+      setCheckinPct(0);
     }
   };
   const openCheckin = (c: SquadCheckin) => {
@@ -666,7 +691,7 @@ export default function SquadDetailRoute() {
             <Text style={styles.checkinDate}>Video · disappears in 24h</Text>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.checkinStrip}>
-            {iHaveActive ? null : <CheckinCta onPress={() => void startCheckin()} uploading={uploadingCheckin} />}
+            {iHaveActive ? null : <CheckinCta onPress={() => void startCheckin()} uploading={uploadingCheckin} pct={checkinPct} />}
             {checkinPeople.map((m) => (
               <CheckinDisc key={m.id} member={m} watched={m.watched || watchedIds.has(m.id)} onPress={() => openCheckin(m)} />
             ))}
@@ -902,12 +927,35 @@ function CheckinDisc({ member, watched, onPress }: { member: SquadCheckin; watch
   );
 }
 
-function CheckinCta({ onPress, uploading }: { onPress: () => void; uploading: boolean }) {
+/**
+ * The check-in tile — and, while a clip is going up, the progress readout and the cancel.
+ *
+ * It stays enabled during the upload on purpose: a stuck upload used to leave the athlete with a
+ * disabled spinner and no way out short of killing the app. Tapping now aborts.
+ */
+function CheckinCta({ onPress, uploading, pct }: { onPress: () => void; uploading: boolean; pct: number }) {
+  const percent = Math.round(pct * 100);
   return (
-    <Pressable onPress={onPress} disabled={uploading} accessibilityRole="button" accessibilityLabel="Post a video check-in" style={styles.ciItem}>
-      <View style={styles.ciCtaDisc}>{uploading ? <ActivityIndicator color={flColor.bronze300} /> : <VideoPlusGlyph />}</View>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={uploading ? `Cancel check-in upload, ${percent} percent done` : 'Post a video check-in'}
+      style={styles.ciItem}
+    >
+      <View style={styles.ciCtaDisc}>
+        {uploading ? (
+          <>
+            {/* Fills bottom-up as bytes land — readable across the room, where a spinner is not. */}
+            <View style={[styles.ciProgressFill, { height: `${Math.max(6, percent)}%` }]} pointerEvents="none" />
+            <ActivityIndicator color={flColor.bronze300} />
+          </>
+        ) : (
+          <VideoPlusGlyph />
+        )}
+      </View>
+      {/* The tile is 72pt wide, so the label is the number; "tap to cancel" lives in the a11y label. */}
       <Text style={[styles.ciFirst, styles.ciCtaText]} numberOfLines={1}>
-        {uploading ? 'Posting…' : 'Check in'}
+        {uploading ? `${percent}%` : 'Check in'}
       </Text>
     </Pressable>
   );
@@ -1477,8 +1525,9 @@ const styles = StyleSheet.create({
   ciInitialsText: { fontSize: 15, fontWeight: '700', color: flColor.bronze300 },
   ciPlayBadge: { position: 'absolute', bottom: -1, right: -1, width: 19, height: 19, borderRadius: 9.5, backgroundColor: flColor.bronze400, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: flColor.charcoal900, paddingLeft: 1 },
   ciFirst: { maxWidth: 72, fontSize: 12.5, color: flColor.gray400 },
-  ciCtaDisc: { width: 58, height: 58, borderRadius: flRadius.round, borderWidth: 1, borderColor: flColor.bronzeBorder, borderStyle: 'dashed', backgroundColor: flColor.bronzeTint, alignItems: 'center', justifyContent: 'center' },
+  ciCtaDisc: { width: 58, height: 58, borderRadius: flRadius.round, borderWidth: 1, borderColor: flColor.bronzeBorder, borderStyle: 'dashed', backgroundColor: flColor.bronzeTint, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   ciCtaText: { color: flColor.bronze300, fontWeight: '600' },
+  ciProgressFill: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: flColor.bronzeBorder },
 
   // check-in video viewer (full-screen)
   viewerRoot: { flex: 1, backgroundColor: 'rgba(0,0,0,0.94)' },

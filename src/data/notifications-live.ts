@@ -23,7 +23,12 @@ export type NotificationKind =
   | 'friend_accepted'
   | 'challenge_invite'
   | 'workout_invite'
-  | 'program_shared';
+  /** Someone asking to join a session already under way (0121) — `workout_invite` with the arrow reversed. */
+  | 'workout_join_request'
+  | 'program_shared'
+  /** The first FAN-OUT kinds (0122): one squad row becomes one event per member, windowed at 14 days. */
+  | 'squad_post'
+  | 'squad_checkin';
 
 export interface ForgeNotification {
   kind: NotificationKind;
@@ -37,7 +42,7 @@ export interface ForgeNotification {
   /** Set only on `challenge_invite`. */
   challengeId: string | null;
   challengeName: string | null;
-  /** Set only on `workout_invite`. */
+  /** Set on `workout_invite` and `workout_join_request` — the same table, the arrow reversed (0121). */
   inviteId: string | null;
   inviteName: string | null;
   /** Set only on `program_shared` (0110). */
@@ -61,7 +66,10 @@ const KINDS: NotificationKind[] = [
   'friend_accepted',
   'challenge_invite',
   'workout_invite',
+  'workout_join_request',
   'program_shared',
+  'squad_post',
+  'squad_checkin',
 ];
 const asKind = (v: string): NotificationKind | null => (KINDS as string[]).includes(v) ? (v as NotificationKind) : null;
 

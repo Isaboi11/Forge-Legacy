@@ -1,4 +1,5 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
@@ -12,9 +13,18 @@ import type { MetricSeries } from '@/data/progress-hub-live';
  * P-2 Edit Metrics sheet (`Forge Progress Hub.dc.html` §11) — choose up to four lifts to feature on the
  * Progress Hub, and reorder them. Selected rows first (in order) with ▲/▼, then the rest.
  *
- * Deviations from the .dc (deliberate): the pool is the athlete's REAL tracked lifts (from personal
- * records), not the .dc's fixed mock catalog; the 4-cap surfaces a toast instead of silently refusing
- * (user §15); and the reorder arrows are disabled at the ends rather than firing a no-op.
+ * Deviations from the .dc (deliberate): the pool is the athlete's REAL lifts, not the .dc's fixed mock
+ * catalog; the 4-cap surfaces a toast instead of silently refusing (user §15); and the reorder arrows
+ * are disabled at the ends rather than firing a no-op.
+ *
+ * ── THE POOL USED TO BE SMALLER THAN THE ATHLETE'S TRAINING ──────────────────────────────────────
+ *
+ * It listed only lifts with a row in `personal_records` — so a lift trained twice a week for a year
+ * without a PR could not be selected here at all, and the sheet's own empty state ("log a lift and it'll
+ * show up") was untrue for anyone who had. The pool is now every exercise in the log, which is what
+ * makes "choose the lifts that matter to you" a real choice. A SEARCH comes with that: the list is no
+ * longer four or five rows, and an athlete with sixty exercises in their history cannot scroll to the
+ * one they want.
  */
 export function EditMetricsSheet({
   open,
@@ -31,9 +41,13 @@ export function EditMetricsSheet({
   onPersist: (list: string[]) => void;
   onCap: () => void;
 }) {
+  const [q, setQ] = useState('');
   const byId = new Map(metrics.map((m) => [m.id, m]));
   const selectedRows = selectedIds.map((id) => byId.get(id)).filter((m): m is MetricSeries => m != null);
-  const unselectedRows = metrics.filter((m) => !selectedIds.includes(m.id));
+  const needle = q.trim().toLowerCase();
+  // The chosen four are never filtered out — they carry the reorder arrows, and hiding a selected row
+  // mid-search would make its position unreachable.
+  const unselectedRows = metrics.filter((m) => !selectedIds.includes(m.id) && (!needle || m.name.toLowerCase().includes(needle)));
   const atCap = selectedIds.length >= METRIC_CAP;
 
   const toggle = (id: string) => {
@@ -57,9 +71,20 @@ export function EditMetricsSheet({
         <Text style={styles.help}>Choose the lifts that matter to you — up to four appear on your Progress. Reorder with the arrows.</Text>
 
         {metrics.length === 0 ? (
-          <Text style={styles.empty}>Log a lift and it’ll show up here to choose.</Text>
+          <Text style={styles.empty}>Log a set and the lift shows up here to choose.</Text>
         ) : (
-          <ScrollView style={styles.list} contentContainerStyle={styles.listPad} showsVerticalScrollIndicator={false}>
+          <>
+            {metrics.length > 8 ? (
+              <TextInput
+                value={q}
+                onChangeText={setQ}
+                placeholder={`Search ${metrics.length} lifts`}
+                placeholderTextColor={flColor.gray600}
+                accessibilityLabel="Search your lifts"
+                style={styles.search}
+              />
+            ) : null}
+          <ScrollView style={styles.list} contentContainerStyle={styles.listPad} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             {selectedRows.map((m, idx) => (
               <View key={m.id} style={styles.row}>
                 <View style={styles.arrows}>
@@ -83,7 +108,11 @@ export function EditMetricsSheet({
                 </View>
               </View>
             ))}
+            {needle && unselectedRows.length === 0 ? (
+              <Text style={styles.empty}>Nothing else matches “{q.trim()}”.</Text>
+            ) : null}
           </ScrollView>
+          </>
         )}
       </View>
     </BottomSheet>
@@ -115,6 +144,7 @@ const styles = StyleSheet.create({
   help: { fontFamily: flFont.sans, fontSize: 13, lineHeight: 20, color: flColor.gray400, marginTop: 6, marginBottom: 10 },
   empty: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray600, textAlign: 'center', paddingVertical: 24 },
 
+  search: { marginBottom: 10, paddingHorizontal: 13, paddingVertical: 11, minHeight: 44, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, fontFamily: flFont.sans, fontSize: 14, color: flColor.cream100 },
   list: { maxHeight: 400 },
   listPad: { gap: 8, paddingBottom: 4 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 12, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.charcoal900 },

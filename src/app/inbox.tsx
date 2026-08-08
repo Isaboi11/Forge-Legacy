@@ -10,6 +10,7 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { SquadCrest } from '@/components/forge/SquadCrest';
 import { fetchNotifications, markNotificationsSeen, type ForgeNotification } from '@/data/notifications-live';
+import { destinationFor } from '@/domain/notifications/destination';
 import { useQuery } from '@/lib/useQuery';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 
@@ -76,21 +77,9 @@ export default function InboxScreen() {
     return BUCKETS.map((label) => ({ label, items: items.filter((n) => bucketOf(n.at) === label) })).filter((g) => g.items.length > 0);
   }, [data]);
 
-  const open = (n: ForgeNotification) => {
-    // A challenge invite is the only kind whose destination is the thing itself: the competition, where
-    // opting in is one tap. Everything else routes to the squad or the person.
-    if (n.kind === 'workout_invite' && n.inviteId) router.push({ pathname: '/workout-invite', params: { id: n.inviteId } });
-    // A shared program opens the program itself, where it can be read before it's taken.
-    else if (n.kind === 'program_shared' && n.shareId) router.push({ pathname: '/program-share/[id]', params: { id: n.shareId } });
-    else if (n.kind === 'challenge_invite' && n.challengeId) router.push({ pathname: '/challenge/[id]', params: { id: n.challengeId } });
-    else if (n.kind === 'join_request') router.push({ pathname: '/squad-requests', params: { id: n.squadId } });
-    // Friend requests are answered on the asker's profile — one place holds the whole relationship.
-    else if ((n.kind === 'friend_request' || n.kind === 'friend_accepted') && n.actorId) {
-      router.push({ pathname: '/athlete/[id]', params: { id: n.actorId } });
-    }
-    else if (n.kind === 'request_declined') router.push('/discover-squads');
-    else router.push({ pathname: '/squad/[id]', params: { id: n.squadId } });
-  };
+  // Shared with push tap-through (0120) so a notification and the feed row that mirrors it cannot land
+  // in different places. The per-kind reasoning moved with it into `destinationFor`.
+  const open = (n: ForgeNotification) => router.push(destinationFor(n));
 
   return (
     <View style={styles.root}>
@@ -115,7 +104,9 @@ export default function InboxScreen() {
             <BellGlyph size={30} color={flColor.bronze300} />
           </View>
           <Text style={styles.emptyTitle}>Nothing New</Text>
-          <Text style={styles.emptyText}>When someone asks to join a squad you lead, or a squad answers your request, it lands here.</Text>
+          {/* Kept general rather than enumerated — it named squad join requests alone while the union
+              grew to eleven kinds, and a list that has to be maintained will not be. */}
+          <Text style={styles.emptyText}>Requests, invitations and what your squads are doing all land here.</Text>
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -155,6 +146,9 @@ function NotificationRow({ notification: n, divided, onPress }: { notification: 
     n.kind === 'friend_accepted' ||
     n.kind === 'challenge_invite' ||
     n.kind === 'workout_invite' ||
+    n.kind === 'workout_join_request' ||
+    n.kind === 'squad_post' ||
+    n.kind === 'squad_checkin' ||
     n.kind === 'program_shared';
 
   return (
@@ -242,10 +236,28 @@ function bodyFor(n: ForgeNotification, actor: string) {
           <Text style={styles.strong}>{actor}</Text> wants to train <Text style={styles.strong}>{n.inviteName ?? 'together'}</Text> with you
         </>
       );
+    case 'workout_join_request':
+      return (
+        <>
+          <Text style={styles.strong}>{actor}</Text> wants to join your workout
+        </>
+      );
     case 'program_shared':
       return (
         <>
           <Text style={styles.strong}>{actor}</Text> sent you <Text style={styles.strong}>{n.shareName ?? 'a program'}</Text>
+        </>
+      );
+    case 'squad_post':
+      return (
+        <>
+          <Text style={styles.strong}>{actor}</Text> posted in <Text style={styles.strong}>{n.squadName}</Text>
+        </>
+      );
+    case 'squad_checkin':
+      return (
+        <>
+          <Text style={styles.strong}>{actor}</Text> checked in to <Text style={styles.strong}>{n.squadName}</Text>
         </>
       );
   }
@@ -269,8 +281,15 @@ function subFor(n: ForgeNotification): string {
       return 'Opt in to compete';
     case 'workout_invite':
       return 'Accept and start';
+    case 'workout_join_request':
+      return 'They’re training now — answer while they are';
     case 'program_shared':
       return 'Read it before you take it';
+    case 'squad_post':
+      return 'Open the squad';
+    case 'squad_checkin':
+      // Check-ins expire after 24 hours (`checkinCutoff`), so the call to action is the deadline.
+      return 'Watch it before it’s gone';
   }
 }
 
@@ -293,8 +312,14 @@ function accessibilityLabelFor(n: ForgeNotification, actor: string): string {
       return `${actor} challenged you to ${n.challengeName ?? 'a competition'}, ${when} ago. Opt in to compete.`;
     case 'workout_invite':
       return `${actor} wants to train ${n.inviteName ?? 'together'} with you, ${when} ago. Accept and start.`;
+    case 'workout_join_request':
+      return `${actor} wants to join your workout, ${when} ago. They are training now.`;
     case 'program_shared':
       return `${actor} sent you the program ${n.shareName ?? 'a program'}, ${when} ago. Read it before you take it.`;
+    case 'squad_post':
+      return `${actor} posted in ${n.squadName}, ${when} ago. Open the squad.`;
+    case 'squad_checkin':
+      return `${actor} checked in to ${n.squadName}, ${when} ago. Watch it before it expires.`;
   }
 }
 
@@ -316,8 +341,14 @@ function glyphFor(kind: ForgeNotification['kind']) {
       return <SwordsGlyph size={11} color={flColor.bronze300} />;
     case 'workout_invite':
       return <PeopleGlyph size={11} color={flColor.bronze300} />;
+    case 'workout_join_request':
+      return <PlusGlyph size={11} color={flColor.bronze300} />;
     case 'program_shared':
       return <ProgramGlyph size={11} color={flColor.bronze300} />;
+    case 'squad_post':
+      return <PeopleGlyph size={11} color={flColor.bronze300} />;
+    case 'squad_checkin':
+      return <PlayGlyph size={11} color={flColor.bronze300} />;
   }
 }
 
@@ -377,6 +408,14 @@ function PeopleGlyph({ size = 11, color = flColor.bronze300 }: { size?: number; 
       <Path d="M3.4 19a5.6 5.6 0 0 1 11.2 0" />
       <Path d="M16 5.3a3.2 3.2 0 0 1 0 5.4" />
       <Path d="M18.2 19a5.6 5.6 0 0 0-3-4.9" />
+    </Svg>
+  );
+}
+/** A check-in is a clip; the disc says so before the sentence does. */
+function PlayGlyph({ size = 11, color = flColor.bronze300 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color} stroke="none">
+      <Path d="M8 5.5v13l11-6.5z" />
     </Svg>
   );
 }

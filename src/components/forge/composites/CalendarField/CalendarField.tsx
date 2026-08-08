@@ -49,9 +49,15 @@ export interface CalendarFieldProps {
   placeholder?: string;
   /** Offers a "Clear" action inside the grid. For genuinely optional dates. */
   clearable?: boolean;
+  /**
+   * Suppress the drawn label when the surrounding form already draws its own (the accomplishment editor
+   * has a `Field` wrapper with a different label treatment). `label` is still required — it names the
+   * control for a screen reader either way.
+   */
+  hideLabel?: boolean;
 }
 
-export function CalendarField({ label, value, onChange, placeholder = 'Choose a date', clearable = false }: CalendarFieldProps) {
+export function CalendarField({ label, value, onChange, placeholder = 'Choose a date', clearable = false, hideLabel = false }: CalendarFieldProps) {
   const [open, setOpen] = useState(false);
   // The month on screen. Set when the grid opens, so nothing impure runs during render.
   const [view, setView] = useState<{ y: number; m: number } | null>(null);
@@ -86,7 +92,7 @@ export function CalendarField({ label, value, onChange, placeholder = 'Choose a 
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.label}>{label}</Text>
+      {hideLabel ? null : <Text style={styles.label}>{label}</Text>}
 
       <Pressable
         onPress={toggle}

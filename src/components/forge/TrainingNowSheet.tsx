@@ -12,10 +12,14 @@ import { minutesTraining, type TrainingAthlete } from '@/data/presence-live';
  * either: S-10 is unbuilt and FRIENDS-context competitions are deferred, so it was a two-step path to a
  * dead end that also duplicated the Competitions button beside it.
  *
- * This is the honest version of working out with your people while a shared session doesn't exist: it
- * says who is lifting right now and lets you go see them. Squad-mates lead — `training_now()` returns
- * them first (0086) — and each row carries the squad, so "who is this" is answered on the row rather
- * than after a tap.
+ * It said who is lifting right now and let you go LOOK at them, which was as far as it could go while
+ * joining a session did not exist. Since 0121 it does: each row carries a Join that asks the athlete to
+ * let you in, and on yes your logger opens on the exercise they are on. Squad-mates lead —
+ * `training_now()` returns them first (0086) — and each row carries the squad, so "who is this" is
+ * answered on the row rather than after a tap.
+ *
+ * The row body still opens their profile. Only the pill asks — looking at someone and asking to train
+ * with them are different intentions and must not share a tap target.
  *
  * An empty sheet is the ordinary case, not a failure, and it says so without implying anyone let you
  * down. The way out is the same either way: your circle.
@@ -26,11 +30,13 @@ export interface TrainingNowSheetProps {
   onClose: () => void;
   athletes: TrainingAthlete[];
   onAthlete: (userId: string) => void;
+  /** Ask to join the session this athlete is in right now (0121). */
+  onAskToJoin: (athlete: TrainingAthlete) => void;
   onFindPeople: () => void;
   onInvite: () => void;
 }
 
-export function TrainingNowSheet({ open, onClose, athletes, onAthlete, onFindPeople, onInvite }: TrainingNowSheetProps) {
+export function TrainingNowSheet({ open, onClose, athletes, onAthlete, onAskToJoin, onFindPeople, onInvite }: TrainingNowSheetProps) {
   return (
     <BottomSheet open={open} onClose={onClose} title="Training Now">
       {athletes.length === 0 ? (
@@ -62,7 +68,15 @@ export function TrainingNowSheet({ open, onClose, athletes, onAthlete, onFindPeo
                   {[a.label, `${minutesTraining(a.startedAt)} min`, a.squadName].filter(Boolean).join(' · ')}
                 </Text>
               </View>
-              <View style={styles.dot} />
+              <Pressable
+                onPress={() => onAskToJoin(a)}
+                accessibilityRole="button"
+                accessibilityLabel={`Ask to join ${a.name}'s workout`}
+                hitSlop={6}
+                style={({ pressed }) => [styles.joinPill, pressed ? styles.pressed : null]}
+              >
+                <Text style={styles.joinPillText}>Join</Text>
+              </Pressable>
             </Pressable>
           ))}
         </ScrollView>
@@ -88,6 +102,9 @@ const styles = StyleSheet.create({
   name: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   meta: { marginTop: 2, fontSize: 11.5, color: flColor.gray600 },
   dot: { width: 7, height: 7, borderRadius: flRadius.round, backgroundColor: flColor.greenMuted, boxShadow: '0 0 6px rgba(90, 158, 104, 0.6)' },
+  /* Matches the Live Now pill on Home's `YourCircleCard`, because it is the same action in both places. */
+  joinPill: { paddingVertical: 7, paddingHorizontal: 14, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  joinPillText: { fontSize: 12, fontWeight: '700', letterSpacing: 0.6, color: flColor.bronze300 },
 
   empty: { alignItems: 'center', paddingVertical: 10, gap: 16 },
   emptyText: { fontFamily: flFont.display, fontSize: 15, lineHeight: 21, textAlign: 'center', color: flColor.gray400 },

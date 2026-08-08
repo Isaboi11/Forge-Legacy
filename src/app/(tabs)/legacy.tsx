@@ -292,7 +292,10 @@ export default function LegacyScreen() {
             <RankLabel label={data.rankName} sub={data.rankSubTier} />
             <Text style={styles.identitySub}>Forging a permanent record, one chapter at a time.</Text>
           </View>
-          <TourAnchor id="legacy-rank">
+          {/* `flexShrink: 0` — this wrapper is the actual flex child of the row, and without it the
+              badge is what gives way when the name column (flex: 1) and the 90pt portrait have taken
+              their share on a narrow phone. See the note inside `ProgressBadge`. */}
+          <TourAnchor id="legacy-rank" style={styles.badgeAnchor}>
             <ProgressBadge
               rankFamily={data.rankFamily}
               rankLevel={data.rankLevel}
@@ -668,9 +671,21 @@ function ProgressBadge({ rankFamily, rankLevel, sex, onPress }: { rankFamily?: R
         )}
       </View>
       <View style={styles.progressPill}>
-        {/* Belt and braces with the `minWidth` above: a larger accessibility text size can still outgrow
-            the room, and a pill that ellipsises reads better than one that breaks a single word. */}
-        <Text style={styles.progressPillText} numberOfLines={1}>
+        {/*
+          THIRD ATTEMPT AT THE SAME WORD, so here is the whole story.
+          1. It was a hard `width: 76`, and "PROGRESS" at 8.5pt with 1.1 letter-spacing needs ~51pt of
+             the 46 that left. The final S wrapped onto its own line.
+          2. `minWidth` + `numberOfLines={1}` stopped the wrap — but the pill's intrinsic width is
+             ~81pt, already past the 76 minimum, so the minimum was protecting nothing. At a large
+             accessibility text size the label just ellipsised to "PROGRES…" instead, which is what the
+             PO then saw on a narrow phone.
+          What was missed both times: the flex child of `identityRow` is the `TourAnchor` wrapper, not
+          this pill, and the name column beside it is `flex: 1` — so the squeeze arrives from outside
+          anything either fix could reach. `flexShrink: 0` on the anchor is the half that stops the
+          squeeze; `adjustsFontSizeToFit` is the half that handles a text size no fixed width survives.
+          Same pair `LegacyArchiveBand` uses for "TRANSFORMATION", which has held.
+        */}
+        <Text style={styles.progressPillText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
           Progress
         </Text>
         <ChevronRightIcon size={9} color={flColor.bronze300} />
@@ -754,6 +769,8 @@ const styles = StyleSheet.create({
    * with the portrait for athletes whose rank art is narrower.
    */
   progressBadge: { minWidth: 76, alignItems: 'center', gap: 6 },
+  /* The row's real flex child. See the note at the `TourAnchor` and the one inside `ProgressBadge`. */
+  badgeAnchor: { flexShrink: 0 },
   badgeShield: { width: 66, height: 92, alignItems: 'center', justifyContent: 'center' },
   badgeArt: { width: 66, height: 92 },
   progressPill: {

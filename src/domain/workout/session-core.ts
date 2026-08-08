@@ -86,6 +86,38 @@ export function sessionSetsFor(ex: ProgramExercise, load?: LoadContext): Session
 }
 
 /** Circuit membership, carried onto every exercise so the logger can rebuild the program's own blocks. */
+/**
+ * The four fields an invite snapshots, taken from a session that is already under way (0121).
+ *
+ * The inverse of the logger's `templateToSessionExercises`, and the shape 0093 defined: an invite
+ * carries the WORKOUT, not a pointer to it, because the person you asked may not own the program it
+ * came from and "next session" resolves differently for each of you.
+ *
+ * ══ WHAT IT DELIBERATELY DROPS ══
+ *
+ * Everything the guest should not inherit. LOGGED WEIGHT and completed reps, because those are yours and
+ * they are not a prescription — sending them would put your working sets on somebody else's bar. And
+ * CARDIO BLOCKS, because a leg is a distance and a clock, not a list of sets, and squeezing one into
+ * this shape would mean inventing a rep count for a run. A session that is only cardio therefore
+ * snapshots to nothing, which reads downstream as a freestyle session under a shared name — the honest
+ * answer, and one `workout.tsx` already handles.
+ *
+ * `targetReps` falls back to the FIRST set's target rather than an average: a 6-6-4-4 wave has no single
+ * rep target, and the opening set is the one the guest starts on.
+ */
+export function sessionToTemplateExercises(
+  exercises: readonly SessionExercise[],
+): { catalogKey: string | null; name: string; sets: number; targetReps: number }[] {
+  return exercises
+    .filter((e) => e.kind !== 'cardio' && e.sets.length > 0)
+    .map((e) => ({
+      catalogKey: e.catalogKey ?? null,
+      name: e.name,
+      sets: e.sets.length,
+      targetReps: e.sets[0]?.targetReps ?? 8,
+    }));
+}
+
 export function groupFieldsOf(ex: ProgramExercise) {
   return {
     groupId: ex.groupId,

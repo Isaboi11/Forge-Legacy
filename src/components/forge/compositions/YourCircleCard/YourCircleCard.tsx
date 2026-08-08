@@ -50,8 +50,17 @@ export interface YourCircleCardProps {
   /** Whether they have anyone at all. False turns the empty state from an observation into a step. */
   hasCircle?: boolean
   onAddFriends?: () => void
-  /** Opens the athlete. S-10 Train Together (joining their session) is unbuilt; their profile is real. */
-  onJoinLive: (userId: string) => void
+  /**
+   * Ask to join the session they are in RIGHT NOW (0121).
+   *
+   * ⚠ SEPARATE FROM `onViewAthlete`, and it has to be. Both were one prop, wired to the profile, and
+   * pointing the same handler at the new behaviour would mean tapping someone's NAME fires a request to
+   * join their workout — a destructive surprise from a control that has always meant "look at them".
+   * The button asks; the row still looks.
+   */
+  onAskToJoin: (athlete: TrainingAthlete) => void
+  /** Opens their profile — what the whole row used to do, kept for the row. */
+  onViewAthlete: (userId: string) => void
   onFriendActivity: () => void
   onSeeCircle: () => void
 }
@@ -76,7 +85,7 @@ function ProgressGlyph() {
   )
 }
 
-export function YourCircleCard({ liveUsers, friendActivity, hasCircle = true, onAddFriends, onJoinLive, onFriendActivity, onSeeCircle }: YourCircleCardProps) {
+export function YourCircleCard({ liveUsers, friendActivity, hasCircle = true, onAddFriends, onAskToJoin, onViewAthlete, onFriendActivity, onSeeCircle }: YourCircleCardProps) {
   const sorted = useMemo(() => mostRelevantFirst(liveUsers), [liveUsers])
   const live = sorted[0]
   const others = othersLine(sorted.slice(1))
@@ -102,7 +111,7 @@ export function YourCircleCard({ liveUsers, friendActivity, hasCircle = true, on
             </View>
             <View style={styles.liveRow}>
               <Pressable
-                onPress={() => onJoinLive(live.userId)}
+                onPress={() => onViewAthlete(live.userId)}
                 accessibilityRole="button"
                 accessibilityLabel={`${live.name} is training${live.label ? ` ${live.label}` : ''}, started ${minutesTraining(live.startedAt)} minutes ago`}
                 style={styles.livePerson}
@@ -117,8 +126,11 @@ export function YourCircleCard({ liveUsers, friendActivity, hasCircle = true, on
                   </Text>
                 </View>
               </Pressable>
-              <Pressable onPress={() => onJoinLive(live.userId)} accessibilityRole="button" accessibilityLabel={`View ${live.name}`} style={styles.joinBtn}>
-                <Text style={styles.joinText}>View</Text>
+              {/* "Join", which is what `Forge Home.dc.html:230` always said — `aria-label="Join workout"`.
+                  The RN build shipped "View" only because there was nothing to join, and the PO's note is
+                  exactly that: *"right now it says view and it doesn't really benefit anything"*. */}
+              <Pressable onPress={() => onAskToJoin(live)} accessibilityRole="button" accessibilityLabel={`Ask to join ${live.name}'s workout`} style={styles.joinBtn}>
+                <Text style={styles.joinText}>Join</Text>
               </Pressable>
             </View>
           </View>

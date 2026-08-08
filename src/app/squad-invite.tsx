@@ -3,7 +3,7 @@ import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, Share, Sty
 import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
@@ -12,6 +12,7 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { SquadCrest } from '@/components/forge/SquadCrest';
 import { fetchSquadInvite, regenerateSquadCode } from '@/data/squad-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
+import { encodeQr, type QrMatrix } from '@/lib/qr';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 
@@ -28,11 +29,38 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 
 const MONO = Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' });
 
+/**
+ * Drawn size of the code, inside the plate's 16pt quiet zone.
+ *
+ * A version-3 code is 29 modules, so this is about 7.5pt per module — comfortably above the ~4pt a
+ * phone camera needs at arm's length, and the plate's own padding provides the light margin the
+ * standard requires around every code (without it, scanners struggle to find the edges).
+ */
+const QR_PLATE = 220;
+
+/**
+ * ⚠ ALWAYS THE CANONICAL ORIGIN. NEVER `window.location.origin`.
+ *
+ * This used to prefer whatever origin the web app happened to be served from, which sounds like the
+ * accommodating choice and was the cause of *"the link doesn't produce anything"*. Every `eas deploy`
+ * publishes to a throwaway `…--<hash>.expo.app` URL as well as to the alias; generate an invite while
+ * sitting on one of those and the link you hand someone points at a deployment that stops existing.
+ * The alias is the only address with a future, so it is the only one that goes in an invite.
+ */
 const APP_ORIGIN = 'https://forgelegacy.expo.app';
-const joinLink = (code: string): string => {
-  const base = Platform.OS === 'web' && typeof window !== 'undefined' && window.location?.origin ? window.location.origin : APP_ORIGIN;
-  return `${base}/join-squad?code=${encodeURIComponent(code)}`;
-};
+const joinLink = (code: string): string => `${APP_ORIGIN}/join-squad?code=${encodeURIComponent(code)}`;
+
+/**
+ * The same invite as a custom-scheme URL.
+ *
+ * `forgelegacy://` is registered by `app.json`'s `scheme` and works in the build people are running
+ * today, so a tap in Messages opens the app straight on the join screen. The https link cannot do that
+ * yet — universal links need `ios.associatedDomains` plus a hosted `apple-app-site-association`, which
+ * is native configuration and therefore a new build, not an over-the-air change. Until then the share
+ * text carries both: the https one for anyone on a laptop or without the app, the scheme one for a
+ * phone that has it.
+ */
+const appLink = (code: string): string => `forgelegacy://join-squad?code=${encodeURIComponent(code)}`;
 
 export default function SquadInviteRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -54,8 +82,19 @@ export default function SquadInviteRoute() {
 
   const code = squad?.inviteCode ?? '';
   const link = code ? joinLink(code) : '';
-  const inviteText = squad && code ? `Join ${squad.name} on Forge Legacy.\nCode: ${code}\n${link}` : '';
-  const qrCells = useMemo(() => (code ? buildQr(21, code) : []), [code]);
+  const inviteText = squad && code ? `Join ${squad.name} on Forge Legacy.\nCode: ${code}\n${link}\n\nAlready have the app? ${appLink(code)}` : '';
+  /*
+   * The QR encodes the LINK, not the code. The old pseudo-QR was seeded with the bare code, so even if
+   * it had been decodable a scanner would have got four characters and no idea what to do with them.
+   */
+  const qr = useMemo(() => {
+    if (!link) return null;
+    try {
+      return encodeQr(link);
+    } catch {
+      return null; // only reachable if a link somehow exceeded 213 bytes; the sheet falls back to the code
+    }
+  }, [link]);
 
   const copy = async (text: string, toast: string) => {
     try {
@@ -248,16 +287,16 @@ export default function SquadInviteRoute() {
       {/* QR SHEET */}
       <BottomSheet open={qrOpen} onClose={() => setQrOpen(false)} title="Scan to Join">
         <View style={styles.qrBody}>
-          <View style={styles.qrPlate}>
-            <View style={styles.qrGrid}>
-              {qrCells.map((on, i) => (
-                <View key={i} style={[styles.qrCell, on ? styles.qrCellOn : null]} />
-              ))}
-            </View>
-          </View>
+          <View style={styles.qrPlate}>{qr ? <QrImage matrix={qr} size={QR_PLATE} /> : null}</View>
           <View style={styles.qrCaption}>
             <Text style={styles.qrCode}>{code}</Text>
-            <Text style={styles.qrHint}>Point a camera at the code, or share it, to join {squad.name}.</Text>
+            {/*
+              Honest about where a scan lands. Until universal links ship in a native build, a phone
+              camera opens the web app rather than this one — which still works: the join screen there
+              resolves the code and joins. Saying so is better than the previous caption, which promised
+              a scan against a pattern that could never be decoded at all.
+            */}
+            <Text style={styles.qrHint}>Scan to open Forge Legacy with {squad.name}’s code filled in — or just share the code.</Text>
           </View>
         </View>
       </BottomSheet>
@@ -284,40 +323,41 @@ function ShareTile({ label, icon, onPress, primary = false, disabled = false }: 
   );
 }
 
-/** Deterministic pseudo-QR (visual only) with three finder patterns — ported from the design's `_qr`. */
-function buildQr(dim: number, seed: string): boolean[] {
-  let s = 0;
-  for (let i = 0; i < seed.length; i++) s = (s * 31 + seed.charCodeAt(i)) >>> 0;
-  const rnd = () => {
-    s = (s * 1103515245 + 12345) & 0x7fffffff;
-    return s / 0x7fffffff;
-  };
-  const inFinder = (r: number, c: number): { hit: boolean; on: boolean } => {
-    const corners = [
-      [0, 0],
-      [0, dim - 7],
-      [dim - 7, 0],
-    ];
-    for (const [fr, fc] of corners) {
-      const dr = r - fr;
-      const dc = c - fc;
-      if (dr >= 0 && dr < 7 && dc >= 0 && dc < 7) {
-        const edge = dr === 0 || dr === 6 || dc === 0 || dc === 6;
-        const core = dr >= 2 && dr <= 4 && dc >= 2 && dc <= 4;
-        return { hit: true, on: edge || core };
-      }
-      if (dr >= -1 && dr < 8 && dc >= -1 && dc < 8) return { hit: true, on: false };
-    }
-    return { hit: false, on: false };
-  };
-  const cells: boolean[] = [];
+/**
+ * Draw an encoded matrix.
+ *
+ * SVG rects, one per dark module, rather than the 441 `<View>`s the pseudo-QR used — the real code is
+ * up to 57 modules a side (3,249 cells), and a flex-wrap grid of that many views is not something to
+ * mount inside a bottom sheet. Light modules are the plate showing through, so only the dark ones cost
+ * anything.
+ *
+ * The drawn size is snapped DOWN to a whole number of pixels per module. At an arbitrary size every
+ * module boundary lands on a fraction and gets anti-aliased, and a soft edge is precisely the
+ * ambiguity a decoder's binarisation step has to resolve — so the code is drawn slightly smaller than
+ * the plate allows, in exchange for edges that are exactly where they claim to be.
+ */
+function QrImage({ matrix, size: maxSize }: { matrix: QrMatrix; size: number }) {
+  const { size: dim, modules } = matrix;
+  const size = Math.max(1, Math.floor(maxSize / dim)) * dim;
+  const rects: React.ReactNode[] = [];
   for (let r = 0; r < dim; r++) {
-    for (let c = 0; c < dim; c++) {
-      const f = inFinder(r, c);
-      cells.push(f.hit ? f.on : rnd() > 0.5);
+    // Run-length the dark modules along each row: one rect per run instead of one per module, which
+    // roughly halves the node count on a dense code for no change in what is drawn.
+    let start = -1;
+    for (let c = 0; c <= dim; c++) {
+      const on = c < dim && modules[r * dim + c];
+      if (on && start < 0) start = c;
+      else if (!on && start >= 0) {
+        rects.push(<Rect key={`${r}-${start}`} x={start} y={r} width={c - start} height={1} fill="#141210" />);
+        start = -1;
+      }
     }
   }
-  return cells;
+  return (
+    <Svg width={size} height={size} viewBox={`0 0 ${dim} ${dim}`}>
+      {rects}
+    </Svg>
+  );
 }
 
 // ── glyphs ──
@@ -490,9 +530,6 @@ const styles = StyleSheet.create({
   // qr sheet
   qrBody: { alignItems: 'center', gap: 16, paddingBottom: 6 },
   qrPlate: { padding: 16, borderRadius: flRadius.lg, backgroundColor: '#EDE4D2', boxShadow: `${flShadow.shadowImage}, 0 0 20px rgba(186, 134, 84,0.25)` },
-  qrGrid: { width: 210, height: 210, flexDirection: 'row', flexWrap: 'wrap' },
-  qrCell: { width: 10, height: 10, backgroundColor: 'transparent' },
-  qrCellOn: { backgroundColor: '#141210' },
   qrCaption: { alignItems: 'center', gap: 6 },
   qrCode: { fontFamily: MONO, fontSize: 18, fontWeight: '700', letterSpacing: 4, color: flColor.bronze300 },
   qrHint: { fontSize: 12.5, lineHeight: 18, color: flColor.gray600, textAlign: 'center', maxWidth: 260 },

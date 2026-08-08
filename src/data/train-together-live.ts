@@ -22,22 +22,50 @@ export interface TrainingPartner {
   squadName: string | null;
 }
 
+/**
+ * Which way the ask points (0121).
+ *
+ * `INVITE` — I am asking you to train. `JOIN_REQUEST` — I am asking to join the session you are ALREADY
+ * in. Same row, same policies, because both already say "the recipient decides"; on a JOIN_REQUEST the
+ * `from_*` fields are the ASKER and the `to_*` fields are the HOST.
+ */
+export type WorkoutInviteKind = 'INVITE' | 'JOIN_REQUEST';
+
 export interface WorkoutInvite {
   id: string;
+  kind: WorkoutInviteKind;
   fromId: string;
   fromName: string;
   fromAvatarUrl: string | null;
+  /** The recipient — the HOST on a join request, which is who the asker is waiting on. */
+  toId: string;
+  toName: string;
+  toAvatarUrl: string | null;
   workoutName: string;
   /** Provenance only — the guest reads `exercises`, which is the snapshot (0093). */
   templateId: string | null;
   exercises: TemplateExercise[];
+  /** Where the guest opens: 0 for an invitation, the host's live position for an accepted join. */
+  startIndex: number;
   templateSummary: { lifts: number; sets: number } | null;
   note: string | null;
   status: 'PENDING' | 'ACCEPTED';
   createdAt: string;
+  acceptedAt: string | null;
+}
+
+/** A join request waiting on the host, as the in-workout banner needs it. */
+export interface PendingJoinRequest {
+  id: string;
+  fromId: string;
+  fromName: string;
+  fromAvatarUrl: string | null;
+  note: string | null;
+  createdAt: string;
 }
 
 const MISSING = 'Training together isn’t available yet — migration 0092 hasn’t been applied.';
+const JOIN_MISSING = 'Joining a workout in progress isn’t available yet — migration 0121 hasn’t been applied.';
 
 /** Accepted friends and squad-mates. What the logger's partner tagger should always have read. */
 export async function fetchTrainingPartners(): Promise<TrainingPartner[]> {
@@ -65,9 +93,14 @@ export async function fetchWorkoutInvite(inviteId: string): Promise<WorkoutInvit
   const t = d.template_summary as Record<string, unknown> | null;
   return {
     id: String(d.id),
+    // Pre-0121 rows have no `kind` and are all invitations, which is what the column defaults to.
+    kind: d.kind === 'JOIN_REQUEST' ? 'JOIN_REQUEST' : 'INVITE',
     fromId: String(d.from_id),
     fromName: String(d.from_name ?? 'Athlete'),
     fromAvatarUrl: (d.from_avatar_url as string) ?? null,
+    toId: String(d.to_id ?? ''),
+    toName: String(d.to_name ?? 'Athlete'),
+    toAvatarUrl: (d.to_avatar_url as string) ?? null,
     workoutName: String(d.workout_name),
     templateId: (d.template_id as string) ?? null,
     exercises: ((d.exercises ?? []) as Record<string, unknown>[]).map((e) => ({
@@ -76,10 +109,12 @@ export async function fetchWorkoutInvite(inviteId: string): Promise<WorkoutInvit
       sets: Number(e.sets ?? 0),
       targetReps: Number(e.targetReps ?? 0),
     })),
+    startIndex: Number(d.start_index ?? 0),
     templateSummary: t ? { lifts: Number(t.lifts ?? 0), sets: Number(t.sets ?? 0) } : null,
     note: (d.note as string) ?? null,
     status: d.status === 'ACCEPTED' ? 'ACCEPTED' : 'PENDING',
     createdAt: String(d.created_at),
+    acceptedAt: (d.accepted_at as string) ?? null,
   };
 }
 
@@ -105,6 +140,12 @@ export async function sendWorkoutInvite(input: SendInviteInput): Promise<string>
       from_id: user.id,
       to_id: input.toId,
       workout_name: input.workoutName.trim(),
+      /*
+       * `kind` is deliberately NOT sent, even though every row here is an INVITE. The column defaults to
+       * it, and naming it would make this insert fail with 42703 on any database where 0121 has not been
+       * applied yet — breaking a feature that works today, for a label that the default already supplies.
+       * The client ships over the air; migrations are applied by hand. The two are not simultaneous.
+       */
       template_id: input.templateId ?? null,
       exercises: input.exercises ?? [],
       note: input.note?.trim() || null,
@@ -124,6 +165,138 @@ export async function acceptWorkoutInvite(inviteId: string): Promise<void> {
     .update({ status: 'ACCEPTED', accepted_at: new Date().toISOString() })
     .eq('id', inviteId);
   if (error) throw error;
+}
+
+// ── Joining a session already under way (0121) ───────────────────────────────
+
+/** How long a workout name may be — the column's own check constraint, mirrored so it fails here first. */
+const WORKOUT_NAME_MAX = 60;
+
+/**
+ * Ask to join a session someone is already in.
+ *
+ * The asker inserts, which the existing `workout_invites_insert` policy already permits and already
+ * restricts to friends and squad-mates. NO SHAPE IS CARRIED: the asker cannot know what the host is
+ * doing, and inventing one would produce an invitation to a workout nobody is running. The host writes
+ * the shape when they accept.
+ *
+ * `workoutName` is seeded from the host's presence label ("Pull Day B"), which is all the app knows
+ * about their session from outside it — and enough for the ask to name the thing.
+ */
+export async function requestToJoinWorkout(input: { hostId: string; workoutName: string; note?: string | null }): Promise<string> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not signed in');
+
+  const name = (input.workoutName.trim() || 'their workout').slice(0, WORKOUT_NAME_MAX);
+  const { data, error } = await supabase
+    .from('workout_invites')
+    .insert({
+      from_id: user.id,
+      to_id: input.hostId,
+      kind: 'JOIN_REQUEST',
+      workout_name: name,
+      exercises: [],
+      note: input.note?.trim() || null,
+    })
+    .select('id')
+    .single();
+  if (error) {
+    if ((error as { code?: string }).code === '42P01') throw new Error(MISSING);
+    // 42703 = the `kind` column is missing, i.e. 0121 has not been applied on this database.
+    if ((error as { code?: string }).code === '42703') throw new Error(JOIN_MISSING);
+    throw error;
+  }
+  return (data as { id: string }).id;
+}
+
+/**
+ * The host answers yes — and THE SNAPSHOT IS TAKEN HERE.
+ *
+ * Not at request time, because the asker could not know the shape; and this is also the moment
+ * `startIndex` means anything, since it is read off the host's live session. Together they are the whole
+ * difference between "do this workout too" and "join me": the guest opens the same shape, on the
+ * movement the host is actually on.
+ *
+ * The `workout_invites_update` policy is `using (to_id = auth.uid())`, so the host writing the snapshot
+ * is already permitted — the accept and the snapshot are one statement.
+ */
+export async function acceptJoinRequest(
+  requestId: string,
+  session: { workoutName: string; exercises: TemplateExercise[]; startIndex: number },
+): Promise<void> {
+  const { error } = await supabase
+    .from('workout_invites')
+    .update({
+      status: 'ACCEPTED',
+      accepted_at: new Date().toISOString(),
+      workout_name: (session.workoutName.trim() || 'Shared Workout').slice(0, WORKOUT_NAME_MAX),
+      exercises: session.exercises,
+      start_index: Math.max(0, Math.min(session.startIndex, Math.max(0, session.exercises.length - 1))),
+    })
+    .eq('id', requestId);
+  if (error) throw error;
+}
+
+/**
+ * Invite someone INTO the session you are already in — the "⋯ Options" row.
+ *
+ * An ordinary `INVITE`, except that it carries `start_index`, so the person you asked walks in where you
+ * are rather than at the top of a workout you are two-thirds through. That is the only difference, which
+ * is why it is this table and not another one.
+ */
+export async function inviteToLiveSession(input: {
+  toId: string;
+  workoutName: string;
+  exercises: TemplateExercise[];
+  startIndex: number;
+  note?: string | null;
+}): Promise<string> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not signed in');
+
+  const { data, error } = await supabase
+    .from('workout_invites')
+    .insert({
+      from_id: user.id,
+      to_id: input.toId,
+      kind: 'INVITE',
+      workout_name: (input.workoutName.trim() || 'Shared Workout').slice(0, WORKOUT_NAME_MAX),
+      exercises: input.exercises,
+      start_index: Math.max(0, Math.min(input.startIndex, Math.max(0, input.exercises.length - 1))),
+      note: input.note?.trim() || null,
+    })
+    .select('id')
+    .single();
+  if (error) {
+    if ((error as { code?: string }).code === '42P01') throw new Error(MISSING);
+    if ((error as { code?: string }).code === '42703') throw new Error(JOIN_MISSING);
+    throw error;
+  }
+  return (data as { id: string }).id;
+}
+
+/**
+ * Join requests waiting on me right now, for the in-workout banner.
+ *
+ * Polled while a session is active, so it fails QUIETLY: an unapplied 0121 reads as "nobody is asking",
+ * which is the safe direction. A banner that cannot appear is a missing feature; an error toast every
+ * twenty seconds during a workout is a broken app.
+ */
+export async function fetchPendingJoinRequests(): Promise<PendingJoinRequest[]> {
+  const { data, error } = await supabase.rpc('pending_join_requests');
+  if (error) return [];
+  return ((data ?? []) as Record<string, unknown>[]).map((r) => ({
+    id: String(r.id),
+    fromId: String(r.from_id),
+    fromName: String(r.from_name ?? 'Athlete'),
+    fromAvatarUrl: (r.from_avatar_url as string) ?? null,
+    note: (r.note as string) ?? null,
+    createdAt: String(r.created_at),
+  }));
 }
 
 /**

@@ -3,7 +3,14 @@ import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet,
 import { useFocusEffect, useRouter } from 'expo-router';
 
 import { fetchTodaysChapterPhotos } from '@/data/photos-live';
-import { fetchTrainingPartners } from '@/data/train-together-live';
+import {
+  acceptJoinRequest,
+  declineWorkoutInvite,
+  fetchPendingJoinRequests,
+  fetchTrainingPartners,
+  inviteToLiveSession,
+  type PendingJoinRequest,
+} from '@/data/train-together-live';
 import { fetchTemplates, type TemplateExercise } from '@/data/templates-live';
 import { getStarterTemplate } from '@/domain/workout/starter-templates';
 import { Avatar } from '@/components/forge/composites/Avatar';
@@ -45,10 +52,11 @@ import { durText } from '@/domain/program/prescription';
 import { clearWorkoutLaunch, readWorkoutLaunch } from '@/lib/workout-launch';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { clearSession, hasLoggedWork, loadSession, persistSession } from '@/domain/workout/autosave';
-import { blockAt, breakBlock, endsSupersetRound, makeSuperset, nextInSuperset, supersetRounds } from '@/domain/workout/session-core';
+import { blockAt, breakBlock, endsSupersetRound, makeSuperset, nextInSuperset, sessionToTemplateExercises, supersetRounds } from '@/domain/workout/session-core';
 import { doneSetCount, hasLoggedSet, PR_MAX_REPS } from '@/domain/workout/metrics';
 import { fetchPriorRecords, saveWorkout } from '@/domain/workout/save';
 import { PlaylistSheet } from '@/components/forge/composites/Playlist';
+import { JoinRequestBanner } from '@/components/forge/JoinRequestBanner';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
 import { playlistLabel } from '@/domain/workout/playlist';
 import { equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
@@ -210,7 +218,6 @@ export default function WorkoutScreen() {
   const [pendingLaunch, setPendingLaunch] = useState<Awaited<ReturnType<typeof readWorkoutLaunch>> | null>(null);
   /** Bumped to re-run the mount flow after discarding, so one code path builds every session. */
   const [reloadKey, setReloadKey] = useState(0);
-  const [exIdx, setExIdx] = useState(0);
   // A conditioning leg shows distance in the athlete's own system; the record stays in miles.
   const { units } = useUnits();
   const soundOn = useSoundEnabled();
@@ -284,10 +291,21 @@ export default function WorkoutScreen() {
   const tourScroller = useTourScroller();
   const onTourScroll = useTourScrollTracker();
   const sessionRef = useRef(session);
-  // partner tagging — persists onto the saved workout; Finish opens the 4-stage seal (W-17) on real data
-  const [taggedPartners, setTaggedPartners] = useState<string[]>([]);
+  /*
+   * Partner tagging — persists onto the saved workout; Finish opens the 4-stage seal (W-17) on real data.
+   *
+   * READ OFF THE SESSION, not held in screen state. It was `useState` and that lost every tag on a
+   * crash, because nothing outside this component could see them — and it made tagging a person who
+   * joins you mid-workout impossible, since that accept happens on another screen with only AsyncStorage
+   * between the two.
+   */
+  const taggedPartners = session?.partnerIds ?? [];
   const [playlistSheetOpen, setPlaylistSheetOpen] = useState(false);
   const [partnerSheetOpen, setPartnerSheetOpen] = useState(false);
+  const [invitePickerOpen, setInvitePickerOpen] = useState(false);
+  /* Join requests waiting on me (0121) — the banner, and the answer to it. */
+  const [joinRequests, setJoinRequests] = useState<PendingJoinRequest[]>([]);
+  const [joinBusy, setJoinBusy] = useState(false);
 
   const showToast = useCallback((msg: string) => {
     const token = Date.now();
@@ -328,9 +346,24 @@ export default function WorkoutScreen() {
 
       /* Invited (0092): whoever asked is pre-tagged, so accepting credits both athletes through the
          partner mechanism that already exists rather than a shared-session object two devices would have
-         to keep in step. Applied before the branches below, because an invite can carry a template, a
-         freestyle session, or neither. */
-      if (launch?.partnerId) setTaggedPartners([launch.partnerId]);
+         to keep in step. Written INTO each session built below rather than into screen state, so it
+         rides autosave like everything else on the session. */
+      const launchPartners = launch?.partnerId ? [launch.partnerId] : undefined;
+      /* Where the guest opens (0121). An ordinary invite is 0; a JOIN accepted mid-workout is wherever
+         the host had reached, snapshotted by them at accept time. Clamped when it is read. */
+      const launchStart = launch?.startIndex ?? 0;
+      /*
+       * Every branch below builds a session and starts it through HERE, so the two launch-derived facts
+       * are applied in one place. They used to be applied by branch — which is why `partnerId` reached
+       * only the snapshot path and an invite carrying a TEMPLATE credited nobody.
+       */
+      const startSession = (s: ActiveSession) => {
+        setSession({
+          ...s,
+          partnerIds: launchPartners ?? s.partnerIds,
+          exerciseIndex: Math.min(Math.max(0, launchStart), Math.max(0, s.exercises.length - 1)),
+        });
+      };
 
       /* An explicit shape (0093) — what an invite carries. Checked before templateId because an invite
          snapshots its workout rather than pointing at one. */
@@ -338,7 +371,7 @@ export default function WorkoutScreen() {
         const shape = launch.exercises;
         const nm = launch.workoutName ?? 'Shared Workout';
         await clearWorkoutLaunch();
-        setSession({
+        startSession({
           workoutName: nm,
           activityType: 'strength',
           startedAt: new Date().toISOString(),
@@ -367,7 +400,7 @@ export default function WorkoutScreen() {
         const activity = (launch.conditioning.activity ?? 'run') as CardioActivity;
         const modality = launch.conditioning.modality ?? 'outdoor';
         const block = cardioExercise(activity, 0, { modality, targetMi: null, targetPaceSec: null, targetSpdMph: null });
-        setSession({
+        startSession({
           workoutName: launch.workoutName ?? block.name,
           activityType: 'strength',
           startedAt: new Date().toISOString(),
@@ -382,7 +415,7 @@ export default function WorkoutScreen() {
         try {
           const t = (await fetchTemplates()).find((x) => x.id === launch.templateId);
           if (t) {
-            setSession({
+            startSession({
               workoutName: launch.workoutName ?? t.name,
               activityType: 'strength',
               startedAt: new Date().toISOString(),
@@ -397,7 +430,7 @@ export default function WorkoutScreen() {
         } catch {
           // a missing template must not block training — fall through to a freestyle session
         }
-        setSession({ workoutName: launch.workoutName ?? 'Shared Workout', activityType: 'strength', startedAt: new Date().toISOString(), exercises: [] });
+        startSession({ workoutName: launch.workoutName ?? 'Shared Workout', activityType: 'strength', startedAt: new Date().toISOString(), exercises: [] });
         setPhase('active');
         return;
       }
@@ -417,7 +450,7 @@ export default function WorkoutScreen() {
       if (launch?.starterId) {
         await clearWorkoutLaunch();
         const def = getStarterTemplate(launch.starterId);
-        setSession({
+        startSession({
           workoutName: launch.workoutName ?? def?.name ?? 'Workout',
           activityType: 'strength',
           startedAt: new Date().toISOString(),
@@ -430,7 +463,7 @@ export default function WorkoutScreen() {
       if (launch?.freestyle) {
         // A one-off: no program, no prescription. Starts empty and is filled from the Picker as they go.
         await clearWorkoutLaunch();
-        setSession({ workoutName: launch.workoutName ?? 'Freestyle Workout', activityType: 'strength', startedAt: new Date().toISOString(), exercises: [] });
+        startSession({ workoutName: launch.workoutName ?? 'Freestyle Workout', activityType: 'strength', startedAt: new Date().toISOString(), exercises: [] });
         setPhase('active');
         return;
       }
@@ -481,7 +514,7 @@ export default function WorkoutScreen() {
        * fallback. It is what an athlete actually landed in whenever anything upstream went wrong, and it
        * looked convincingly like a real workout they had never chosen.
        */
-      setSession(fresh ?? { workoutName: 'Freestyle Workout', activityType: 'strength', startedAt: new Date().toISOString(), exercises: [] });
+      startSession(fresh ?? { workoutName: 'Freestyle Workout', activityType: 'strength', startedAt: new Date().toISOString(), exercises: [] });
       setPhase('active');
     })();
     /*
@@ -579,12 +612,13 @@ export default function WorkoutScreen() {
              `blockAt`'s adjacency walk requires. */
           const asSuperset = inbox.group === 'superset' && inbox.items.length >= 2;
           const gid = `ss${Date.now()}`;
+          // Appending and jumping to what was appended are ONE update now that the index lives on the
+          // session — two calls would still queue correctly, but a later edit could reorder them.
           setSession((s) => {
             if (!s) return s;
             const appended = [...s.exercises, ...inbox.items.map((p, i) => pickedToExercise(p, base + i))];
-            return { ...s, exercises: asSuperset ? makeSuperset(appended, base, inbox.items.length, gid) : appended };
+            return { ...s, exercises: asSuperset ? makeSuperset(appended, base, inbox.items.length, gid) : appended, exerciseIndex: base };
           });
-          setExIdx(base);
           showToast(
             asSuperset
               ? `Added ${inbox.items.length} exercises as a superset`
@@ -593,8 +627,7 @@ export default function WorkoutScreen() {
         } else {
           const idx = inbox.targetIdx;
           if (idx < 0 || idx >= cur.exercises.length) return;
-          setSession((s) => (s ? { ...s, exercises: s.exercises.map((e, i) => (i === idx ? swapExercise(e, inbox.item) : e)) } : s));
-          setExIdx(idx);
+          setSession((s) => (s ? { ...s, exercises: s.exercises.map((e, i) => (i === idx ? swapExercise(e, inbox.item) : e)), exerciseIndex: idx } : s));
           showToast(`Swapped to ${inbox.item.name}`);
         }
       });
@@ -913,10 +946,114 @@ export default function WorkoutScreen() {
     abandonWorkout();
     router.replace('/(tabs)');
   };
+  /**
+   * Watch for someone asking to join, while a session is actually running.
+   *
+   * ══ WHY POLLING, AND WHY TWENTY SECONDS ══
+   *
+   * There is no realtime transport anywhere in this app, and building one for a banner would be a
+   * subsystem to serve an event that happens rarely. Twenty seconds fits inside a rest interval, so the
+   * ask lands within one break of being made, and it costs a single indexed row read
+   * (`workout_invites_to_kind`) per poll.
+   *
+   * ⚠ ONLY WHILE `phase === 'active'`. Not on the resume prompt, not on the empty state, and not after
+   * finishing — a request to join a workout that has ended is not answerable, which is the same rule the
+   * union's own presence ceiling enforces server-side.
+   *
+   * Failure is silent by design: `fetchPendingJoinRequests` returns `[]` rather than throwing, because a
+   * banner that cannot appear is a missing feature and an error toast every twenty seconds during a
+   * workout is a broken app.
+   */
+  useEffect(() => {
+    if (phase !== 'active') return;
+    let live = true;
+    const tick = () => {
+      fetchPendingJoinRequests().then((rows) => {
+        if (live) setJoinRequests(rows);
+      });
+    };
+    const timer = setInterval(tick, 20_000);
+    tick();
+    return () => {
+      live = false;
+      clearInterval(timer);
+    };
+  }, [phase]);
+
+  /**
+   * Yes or no, from inside the session.
+   *
+   * Accepting snapshots the live shape and the live position onto the row — the same thing
+   * `/workout-invite` does for a host who answers from the inbox, and deliberately the same code path
+   * shape, so the two cannot drift about what "where I am" means.
+   */
+  const answerJoin = async (req: PendingJoinRequest, yes: boolean) => {
+    if (joinBusy || !session) return;
+    setJoinBusy(true);
+    try {
+      if (!yes) {
+        // Deleting, not flagging — nothing anywhere records that someone said no (0092).
+        await declineWorkoutInvite(req.id);
+        showToast('Not this time');
+      } else {
+        const shape = sessionToTemplateExercises(session.exercises);
+        if (shape.length === 0) {
+          showToast('Add an exercise first — there’s nothing to share yet.');
+          return;
+        }
+        const at = Math.min(Math.max(0, session.exerciseIndex ?? 0), session.exercises.length - 1);
+        // Counted over the SNAPSHOT, which drops cardio blocks — see the same note in `/workout-invite`.
+        const startIndex = Math.min(sessionToTemplateExercises(session.exercises.slice(0, at)).length, shape.length - 1);
+        await acceptJoinRequest(req.id, { workoutName: session.workoutName, exercises: shape, startIndex });
+        if (!taggedPartners.includes(req.fromId) && taggedPartners.length < 3) {
+          mutate((s) => ({ ...s, partnerIds: [...(s.partnerIds ?? []), req.fromId] }));
+        }
+        showToast(`${req.fromName} is joining at ${shape[startIndex]?.name ?? 'your workout'}`);
+      }
+      setJoinRequests((cur) => cur.filter((r) => r.id !== req.id));
+    } catch (e) {
+      showToast(errorMessage(e));
+    } finally {
+      setJoinBusy(false);
+    }
+  };
+
+  /**
+   * Ask someone to come and join this session.
+   *
+   * Carries the live shape AND `startIndex`, so what they receive is "join me here", not "do this
+   * workout too" — the distinction the ⋯ row used to claim without delivering. They are pre-tagged as a
+   * partner on the way out, exactly as accepting a join request tags the asker: the credit is symmetric
+   * whichever direction the ask went.
+   */
+  const inviteToJoin = async (toId: string, toName: string) => {
+    if (joinBusy || !session) return;
+    setJoinBusy(true);
+    try {
+      const shape = sessionToTemplateExercises(session.exercises);
+      if (shape.length === 0) {
+        showToast('Add an exercise first — there’s nothing to share yet.');
+        return;
+      }
+      const at = Math.min(Math.max(0, session.exerciseIndex ?? 0), session.exercises.length - 1);
+      const startIndex = Math.min(sessionToTemplateExercises(session.exercises.slice(0, at)).length, shape.length - 1);
+      await inviteToLiveSession({ toId, workoutName: session.workoutName, exercises: shape, startIndex });
+      if (!taggedPartners.includes(toId) && taggedPartners.length < 3) {
+        mutate((s) => ({ ...s, partnerIds: [...(s.partnerIds ?? []), toId] }));
+      }
+      setInvitePickerOpen(false);
+      showToast(`Asked ${toName} to join`);
+    } catch (e) {
+      showToast(errorMessage(e));
+    } finally {
+      setJoinBusy(false);
+    }
+  };
+
   const togglePartner = (id: string) => {
-    if (taggedPartners.includes(id)) setTaggedPartners((cur) => cur.filter((x) => x !== id));
+    if (taggedPartners.includes(id)) mutate((s) => ({ ...s, partnerIds: (s.partnerIds ?? []).filter((x) => x !== id) }));
     else if (taggedPartners.length >= 3) showToast('Up to 3 partners'); // hard cap of 3
-    else setTaggedPartners((cur) => [...cur, id]);
+    else mutate((s) => ({ ...s, partnerIds: [...(s.partnerIds ?? []), id] }));
   };
 
   // ── resume prompt ──
@@ -1020,6 +1157,19 @@ export default function WorkoutScreen() {
   }
 
   // ── active ──
+  /*
+   * WHERE THEY ARE, read off the session rather than held here.
+   *
+   * ⚠ CLAMPED, and the clamp is load-bearing, not defensive noise. The index is restored from
+   * AsyncStorage — possibly written before an exercise was removed, or by a build that had one more in
+   * the list — and the very next line indexes `exercises[exIdx]`. It is also clamped for the honest
+   * case: finishing the last exercise, then deleting it.
+   *
+   * Declared here, after the two guards above, because both of them return before there is an
+   * `exercises` array worth indexing into.
+   */
+  const exIdx = Math.min(Math.max(0, session.exerciseIndex ?? 0), session.exercises.length - 1);
+  const setExIdx = (i: number) => mutate((s) => ({ ...s, exerciseIndex: i }));
   const ex = session.exercises[exIdx];
   const totalSets = session.exercises.reduce((n, e) => n + e.sets.length, 0);
   const setsDone = doneSetCount(session);
@@ -2155,18 +2305,40 @@ export default function WorkoutScreen() {
                 />
               ) : null}
               <OptionRow onPress={skipExercise} title="Skip this exercise" sub="Move on to the next one" icon={<Path d="M5 5l9 7-9 7zM18 5v14" />} />
+              {/*
+                ⚠ THIS WAS ONE ROW CALLED "Invite training partner", SUB-TITLED "They'll do this workout
+                too" — AND IT SENT NOTHING. It opened the tagging sheet, which credits somebody already
+                standing next to you. The sub-line was a straightforward false claim, and it is the
+                closest thing the app had to the feature the PO asked for.
+                Split in two: crediting who is here, and actually asking someone to come.
+              */}
               <OptionRow
                 onPress={() => {
                   setOptionsOpen(false);
                   setPartnerSheetOpen(true);
                 }}
-                title="Invite training partner"
-                sub="They’ll do this workout too"
+                title="Trained with"
+                sub={taggedPartners.length ? `${taggedPartners.length} tagged` : 'Credit whoever is here with you'}
                 icon={
                   <>
                     <Path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                     <Circle cx={9} cy={7} r={4} />
                     <Path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                  </>
+                }
+              />
+              <OptionRow
+                onPress={() => {
+                  setOptionsOpen(false);
+                  setInvitePickerOpen(true);
+                }}
+                title="Invite someone to join"
+                sub={`They’ll start where you are — ${ex.name}`}
+                icon={
+                  <>
+                    <Path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <Circle cx={9} cy={7} r={4} />
+                    <Path d="M19 8v6M22 11h-6" />
                   </>
                 }
               />
@@ -2213,6 +2385,49 @@ export default function WorkoutScreen() {
         />
       ) : null}
 
+      {/*
+        Invite someone INTO this session (0121) — the other half of the row that used to lie.
+        Same roster as the tagging sheet, because it is the same question ("who do you train with") asked
+        for a different reason; the difference is that this one sends something.
+      */}
+      {invitePickerOpen ? (
+        <View style={styles.pickerWrap}>
+          <Pressable style={styles.pickerBackdrop} onPress={() => setInvitePickerOpen(false)} accessibilityLabel="Close" />
+          <View style={[styles.picker, styles.partnerSheet]}>
+            <View style={styles.grabHandle} />
+            <View style={styles.partnerHeader}>
+              <Text style={styles.partnerHeaderTitle}>Invite to join</Text>
+              <Text style={styles.partnerCount}>{ex.name}</Text>
+            </View>
+            <ScrollView style={styles.partnerScroll} showsVerticalScrollIndicator={false}>
+              {(partners ?? []).length === 0 ? (
+                <Text style={styles.partnerEmpty}>Add a friend or join a squad, and the people you train alongside show up here.</Text>
+              ) : (
+                (partners ?? []).map((p) => (
+                  <Pressable
+                    key={p.id}
+                    disabled={joinBusy}
+                    onPress={() => void inviteToJoin(p.id, p.name)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Invite ${p.name} to join this workout`}
+                    style={styles.prow}
+                  >
+                    <Avatar name={p.name} src={p.avatarUrl ?? undefined} size={38} />
+                    <View style={styles.pText}>
+                      <Text style={styles.pName}>{p.name}</Text>
+                      <Text style={styles.pSub}>{p.squadName ?? (p.handle ? `@${p.handle}` : 'Friend')}</Text>
+                    </View>
+                  </Pressable>
+                ))
+              )}
+            </ScrollView>
+            <Button variant="secondary" fullWidth onPress={() => setInvitePickerOpen(false)} accessibilityLabel="Done">
+              Done
+            </Button>
+          </View>
+        </View>
+      ) : null}
+
       {/* partner selection sheet (W-20) — opened from ⋮ Invite; tags persist onto the saved workout */}
       {partnerSheetOpen ? (
         <View style={styles.pickerWrap}>
@@ -2254,6 +2469,22 @@ export default function WorkoutScreen() {
               {taggedPartners.length ? `Done · ${taggedPartners.length} tagged` : 'Done'}
             </Button>
           </View>
+        </View>
+      ) : null}
+
+      {/*
+        The ask, where the host is already looking (0121).
+        Mounted beside the toast rather than at the bottom of the file, and above the bottom bar so it
+        cannot cover the set they are logging. Only the oldest is shown — see `JoinRequestBanner`.
+      */}
+      {phase === 'active' && joinRequests.length > 0 ? (
+        <View style={styles.joinBannerWrap}>
+          <JoinRequestBanner
+            request={joinRequests[0]}
+            busy={joinBusy}
+            onAccept={() => void answerJoin(joinRequests[0], true)}
+            onDecline={() => void answerJoin(joinRequests[0], false)}
+          />
         </View>
       ) : null}
 
@@ -2900,6 +3131,8 @@ const styles = StyleSheet.create({
 
   // toast
   toastWrap: { position: 'absolute', left: 0, right: 0, bottom: 100, alignItems: 'center', zIndex: 55 },
+  /* Above the bottom bar, below the toast's z-index — it must never cover the set being logged. */
+  joinBannerWrap: { position: 'absolute', left: 16, right: 16, bottom: 108, zIndex: 54 },
   toast: { paddingVertical: 9, paddingHorizontal: 16, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.charcoal600, boxShadow: flShadow.elevated },
   toastText: { fontSize: 12.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.cream100 },
 

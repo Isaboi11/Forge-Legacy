@@ -165,4 +165,30 @@ export interface ActiveSession {
    * At most one (§3). Attaching a new one replaces it; there is no list and no history.
    */
   playlist?: WorkoutPlaylistLink | null;
+  /**
+   * WHICH exercise the athlete is on.
+   *
+   * Screen-local `useState` in `workout.tsx` until now, which cost two things. Nothing outside the
+   * logger could know where a live session had reached — including the logger's own resume, which
+   * always dropped you back at exercise one however far in you were. And it is the fact a training
+   * partner needs in order to join you where you are, which is what this pass is for.
+   *
+   * OPTIONAL, AND IT MUST STAY OPTIONAL. Every session already sitting in an athlete's AsyncStorage was
+   * written without it and `loadSession` JSON-parses blind; absent reads as 0, which is the value those
+   * sessions effectively had. (The same reason the autosave key is NOT bumped: a version bump would
+   * discard every in-flight session the moment the update landed.)
+   *
+   * ⚠ CLAMP ON READ. Exercises can be added, swapped and removed after this was written, so a restored
+   * index can point past the end of the list — and the active render indexes `exercises[exIdx]`
+   * directly.
+   */
+  exerciseIndex?: number;
+  /**
+   * Who is being credited for this session — `training_partners()` ids, resolved to names at save.
+   *
+   * Also screen state until now, and that cost two things as well: a crash mid-session silently dropped
+   * every tag, and the host of a shared workout could not tag the person joining them, because the
+   * accept happens on a different screen and the session lives in AsyncStorage.
+   */
+  partnerIds?: string[];
 }

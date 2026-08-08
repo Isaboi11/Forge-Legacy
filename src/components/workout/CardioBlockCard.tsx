@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { Button } from '@/components/forge/composites/Button';
@@ -18,7 +18,10 @@ import {
   fmtClock,
   fmtPace,
   isLogged,
+  parseClock,
   parseDistance,
+  parsePace,
+  parseWithin,
   usesSpeed,
   VERB,
   type CardioActivity,
@@ -298,6 +301,25 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
       return { ...d, inclinePct: Math.max(0, Math.min(15, Math.round((d.inclinePct + delta) * 2) / 2)) };
     });
 
+  /**
+   * A typed value replaces outright — no stepping, no rounding to a step boundary. Someone who typed
+   * 42:30 meant 42:30, and snapping it to the nearest fifteen seconds would undo the whole point.
+   *
+   * `distanceText` is kept in step here for the same reason `adj` does it: the save reads it as the
+   * authoritative distance when it parses, and letting the two drift is how a typed distance would be
+   * discarded at the last moment.
+   */
+  const setTyped = (field: 'distanceMi' | 'timeSec' | 'inclinePct', value: number) =>
+    setDraft((d) => {
+      if (!d) return d;
+      if (field === 'distanceMi') {
+        setDistanceText(toDistance(value, units).toFixed(2));
+        return { ...d, distanceMi: value };
+      }
+      if (field === 'timeSec') return { ...d, timeSec: value };
+      return { ...d, inclinePct: value };
+    });
+
   const draftPace = draft ? avgPaceSec(draft.distanceMi, draft.timeSec) : null;
 
   /**
@@ -355,6 +377,10 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
         onInc={() => setOwnTarget((t) => (t ? { ...t, mi: bumpDistance(t.mi, 1, FIRST_TARGET[activity].mi) } : t))}
         decLabel="Less distance"
         incLabel="More distance"
+        parse={parseDistance}
+        onCommit={(n) => setOwnTarget((t) => (t ? { ...t, mi: units === 'metric' ? n / 1.609344 : n } : t))}
+        placeholder={dU}
+        keyboard="decimal-pad"
       />
       {speed ? (
         <Field
@@ -365,6 +391,10 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
           onInc={() => setOwnTarget((t) => (t ? { ...t, spdMph: bumpSpeed(t.spdMph, 1, FIRST_TARGET[activity].spdMph) } : t))}
           decLabel="Slower target"
           incLabel="Faster target"
+          parse={(raw) => parseWithin(raw, 0.5, 30)}
+          onCommit={(n) => setOwnTarget((t) => (t ? { ...t, spdMph: units === 'metric' ? n / 1.609344 : n } : t))}
+          placeholder={units === 'metric' ? 'km/h' : 'mph'}
+          keyboard="decimal-pad"
         />
       ) : (
         <Field
@@ -376,6 +406,10 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
           onInc={() => setOwnTarget((t) => (t ? { ...t, paceSec: bumpPace(t.paceSec, 1, FIRST_TARGET[activity].paceSec) } : t))}
           decLabel="Faster target"
           incLabel="Slower target"
+          parse={parsePace}
+          /* Typed per display unit; a metric pace is per kilometre, so it converts back to per-mile. */
+          onCommit={(n) => setOwnTarget((t) => (t ? { ...t, paceSec: units === 'metric' ? n * 1.609344 : n } : t))}
+          placeholder="mm:ss"
         />
       )}
     </View>
@@ -610,6 +644,11 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
               onInc={() => adj('distanceMi', 0.1)}
               decLabel="Less distance"
               incLabel="More distance"
+              parse={parseDistance}
+              /* Typed in the athlete's display units; stored in miles, like every other write here. */
+              onCommit={(n) => setTyped('distanceMi', units === 'metric' ? n / 1.609344 : n)}
+              placeholder={dU}
+              keyboard="decimal-pad"
             />
             <Field
               label="TIME"
@@ -619,6 +658,9 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
               onInc={() => adj('timeSec', 15)}
               decLabel="Less time"
               incLabel="More time"
+              parse={parseClock}
+              onCommit={(n) => setTyped('timeSec', n)}
+              placeholder="mm:ss"
             />
             {draft.hasIncline ? (
               <Field
@@ -629,6 +671,10 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
                 onInc={() => adj('inclinePct', 0.5)}
                 decLabel="Lower incline"
                 incLabel="Higher incline"
+                parse={(raw) => parseWithin(raw, 0, 15)}
+                onCommit={(n) => setTyped('inclinePct', n)}
+                placeholder="%"
+                keyboard="decimal-pad"
               />
             ) : null}
             <View style={styles.computed}>
@@ -817,7 +863,63 @@ function ResultCell({ value, label, accent, first }: { value: string; label: str
   );
 }
 
-function Field({ label, hint, value, onDec, onInc, decLabel, incLabel }: { label: string; hint: string; value: string; onDec: () => void; onInc: () => void; decLabel: string; incLabel: string }) {
+/**
+ * One value with its two steppers — and, since the PO asked for it, a value you can just type.
+ *
+ * ══ WHY ══
+ *
+ * *"When adjusting things across the app (like time for a race) would be nice to have the option to
+ * click and enter the time."* TIME stepped in fixed fifteen-second jumps, so reaching 42:30 from a
+ * seeded 0:00 was a hundred and seventy taps. The value was a `<Text>`; there was no `TextInput`
+ * anywhere in this file.
+ *
+ * Typing is opt-in per call site: pass `parse` and `onCommit` and the value becomes pressable. Without
+ * them the field behaves exactly as it did, so a call site that has no sensible typed form (a target
+ * that can read "Open" or "Any") is not forced into one.
+ *
+ * The steppers stay. They are still the right control for a nudge, and they are the only one that
+ * works with a bar in your other hand.
+ *
+ * A rejected parse leaves the previous value standing rather than clamping to a guess: this field's
+ * whole job is to replace a number, and replacing it with something invented would be worse than
+ * refusing.
+ */
+function Field({
+  label,
+  hint,
+  value,
+  onDec,
+  onInc,
+  decLabel,
+  incLabel,
+  parse,
+  onCommit,
+  placeholder,
+  keyboard = 'numbers-and-punctuation',
+}: {
+  label: string;
+  hint: string;
+  value: string;
+  onDec: () => void;
+  onInc: () => void;
+  decLabel: string;
+  incLabel: string;
+  /** Text → value, or null to reject. Supplying this (with `onCommit`) is what enables typing. */
+  parse?: (raw: string) => number | null;
+  onCommit?: (n: number) => void;
+  placeholder?: string;
+  keyboard?: 'numbers-and-punctuation' | 'decimal-pad';
+}) {
+  const typeable = !!parse && !!onCommit;
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState('');
+
+  const commit = () => {
+    setEditing(false);
+    const n = parse?.(text);
+    if (n != null) onCommit?.(n);
+  };
+
   return (
     <View style={styles.field}>
       <View style={styles.fieldText}>
@@ -825,7 +927,38 @@ function Field({ label, hint, value, onDec, onInc, decLabel, incLabel }: { label
           <Text style={styles.fieldLabel}>{label}</Text>
           {hint ? <Text style={styles.fieldHint}>{hint}</Text> : null}
         </View>
-        <Text style={styles.fieldValue}>{value}</Text>
+        {editing ? (
+          <TextInput
+            value={text}
+            onChangeText={setText}
+            onBlur={commit}
+            onSubmitEditing={commit}
+            autoFocus
+            selectTextOnFocus
+            keyboardType={keyboard}
+            returnKeyType="done"
+            placeholder={placeholder}
+            placeholderTextColor={flColor.gray600}
+            accessibilityLabel={`${label}, type a value`}
+            style={[styles.fieldValue, styles.fieldInput]}
+          />
+        ) : typeable ? (
+          <Pressable
+            onPress={() => {
+              // Seeded empty, not with the current value: `selectTextOnFocus` is unreliable across
+              // platforms, and having to clear a pre-filled field before typing is most of the tedium
+              // this is meant to remove.
+              setText('');
+              setEditing(true);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={`${label} is ${value}. Tap to type a new value.`}
+          >
+            <Text style={[styles.fieldValue, styles.fieldValueTypeable]}>{value}</Text>
+          </Pressable>
+        ) : (
+          <Text style={styles.fieldValue}>{value}</Text>
+        )}
       </View>
       <View style={styles.fieldBtns}>
         <Pressable onPress={onDec} accessibilityRole="button" accessibilityLabel={decLabel} style={({ pressed }) => [styles.stepBtn, pressed ? styles.pressed : null]}>
@@ -951,6 +1084,10 @@ const styles = StyleSheet.create({
   fieldLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.2, color: flColor.gray600 },
   fieldHint: { fontSize: 9, fontWeight: '600', letterSpacing: 0.6, color: flColor.bronze400 },
   fieldValue: { fontFamily: flFont.display, fontSize: 22, lineHeight: 24, fontWeight: '600', color: flColor.cream100 },
+  /* A dotted rule under a typeable value — enough to read as an editable field, quiet enough that the
+     value is still the thing you see. Same weight the set table uses for its editable cells. */
+  fieldValueTypeable: { borderBottomWidth: 1, borderBottomColor: flColor.bronzeBorder, borderStyle: 'dotted', alignSelf: 'flex-start', paddingRight: 6 },
+  fieldInput: { minWidth: 110, padding: 0, borderBottomWidth: 1, borderBottomColor: flColor.bronze400 },
   fieldBtns: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   stepBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal900, alignItems: 'center', justifyContent: 'center' },
   stepGlyph: { fontSize: 22, lineHeight: 26, color: flColor.bronze300 },

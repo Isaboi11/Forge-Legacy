@@ -239,7 +239,17 @@ export default function AthleteProfileScreen() {
             busy={busy}
             onPress={onFriendAction}
             onChallenge={() => router.push({ pathname: '/create-challenge', params: { athlete: athleteId } })}
-            onTrainWith={() => router.push({ pathname: '/train-invite', params: { athlete: athleteId } })}
+            /* Same button, honest verb (0121). Someone who is training right now cannot usefully be
+               invited to start a workout — they are in one. Asking to JOIN it is the thing that was
+               missing, and `training` is exactly the condition that says which of the two applies. */
+            live={!!training}
+            onTrainWith={() =>
+              router.push(
+                training
+                  ? { pathname: '/workout-join', params: { athlete: athleteId } }
+                  : { pathname: '/train-invite', params: { athlete: athleteId } },
+              )
+            }
           />
         ) : null}
 
@@ -449,12 +459,15 @@ function Actions({
   onPress,
   onChallenge,
   onTrainWith,
+  live,
 }: {
   state: FriendState;
   busy: boolean;
   onPress: () => void;
   onChallenge: () => void;
   onTrainWith: () => void;
+  /** They are training RIGHT NOW, so the action is to join rather than to invite. */
+  live?: boolean;
 }) {
   const action = friendAction(state);
   const isPending = action.kind === 'pending';
@@ -486,7 +499,7 @@ function Actions({
         {isFriends ? (
           <>
             <LiveAction glyph={<SwordsGlyph />} label="Challenge" onPress={onChallenge} />
-            <LiveAction glyph={<PeopleGlyph />} label="Train With" onPress={onTrainWith} />
+            <LiveAction glyph={<PeopleGlyph />} label={live ? 'Join Workout' : 'Train With'} onPress={onTrainWith} />
           </>
         ) : (
           <InertAction glyph={<SwordsGlyph />} label="Challenge" />

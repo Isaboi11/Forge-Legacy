@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { chapterNameFrom, sanitizeChapterTitle, splitChapterName } from '@/domain/legacy/chapter-name';
 import { fetchLegacyData } from './legacy-live';
 import { fetchChapterGoals } from './goals-live';
 import { fetchMyPrograms, fetchProgramCompletedCount } from './programs-live';
@@ -138,6 +139,46 @@ export async function sealChapter(chapterId: string, reflection?: string): Promi
   if (trimmed) patch.reflection = trimmed;
   const { error } = await supabase.from('chapters').update(patch).eq('id', chapterId).eq('athlete_id', user.id);
   if (error) throw error;
+}
+
+/**
+ * Rename a chapter.
+ *
+ * ══ THERE WAS NO WAY TO DO THIS ══
+ *
+ * Not for the first chapter, not for any of them. The only `insert into chapters` in the repo is the
+ * onboarding RPC, and the only two writers on this table set `is_active`, `sealed_at` and `reflection`.
+ * So the name an athlete was given in their first minute — or now, chooses in it — was permanent.
+ * That is the other half of the PO's ask: naming it up front is only personal if it can also be
+ * reconsidered.
+ *
+ * `title` is the TITLE HALF only; the `Chapter N — ` prefix is preserved from the existing name, never
+ * retyped. See `@/domain/legacy/chapter-name` for why that boundary exists (two parsers, two different
+ * delimiter rules, no database constraint behind either).
+ *
+ * A SEALED chapter can still be renamed, deliberately. Sealing closes what happened, and the reflection
+ * is the part that is meant to be permanent; a title is how the athlete refers to that time, and people
+ * name a season properly only after living it.
+ */
+export async function renameChapter(chapterId: string, title: string): Promise<string> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not signed in');
+
+  const clean = sanitizeChapterTitle(title);
+  if (clean.length < 2) throw new Error('Give the chapter a name.');
+
+  // Read the current name for its prefix rather than recomputing an ordinal: the ordinal is a client
+  // convention with no column behind it, and guessing it would renumber a chapter on rename.
+  const { data: row, error: readErr } = await supabase.from('chapters').select('name').eq('id', chapterId).eq('athlete_id', user.id).single();
+  if (readErr) throw readErr;
+
+  const { prefix } = splitChapterName(String((row as { name?: string } | null)?.name ?? ''));
+  const name = chapterNameFrom(clean, prefix);
+  const { error } = await supabase.from('chapters').update({ name }).eq('id', chapterId).eq('athlete_id', user.id);
+  if (error) throw error;
+  return name;
 }
 
 /**

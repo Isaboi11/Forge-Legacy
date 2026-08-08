@@ -1,9 +1,18 @@
 import { supabase } from '@/lib/supabase';
 import { uploadAvatar } from '@/lib/avatar';
+import { chapterNameFrom, DEFAULT_CHAPTER_I_TITLE } from '@/domain/legacy/chapter-name';
 import { firstNameOf, initialsOf } from './derive';
 
-/** Canonical Chapter I title (ONB-D14; PO-ruled over the design's "Building your Legacy"). */
-export const CHAPTER_I_NAME = 'Chapter I — Building Your Foundation';
+/**
+ * Chapter I's title when the athlete does not choose one (ONB-D14; PO-ruled over the design's
+ * "Building your Legacy").
+ *
+ * It is a DEFAULT now, not the canonical name — onboarding asks. Derived from
+ * `@/domain/legacy/chapter-name` rather than written out again, because the second hard-coded copy of
+ * this string (in `onboarding.tsx`'s transition copy) is exactly how the two got to say different
+ * things once already.
+ */
+export const CHAPTER_I_NAME = chapterNameFrom(DEFAULT_CHAPTER_I_TITLE);
 
 /** Live username uniqueness (profiles.handle is citext → case-insensitive). ≥3 chars, [a-z0-9_]. */
 export async function isHandleAvailable(handle: string): Promise<boolean> {
@@ -19,6 +28,11 @@ export interface OnboardingInput {
   handle: string | null; // null when "Skip for now"
   sex: 'male' | 'female';
   photoUri: string | null;
+  /**
+   * The TITLE half only — `Chapter I — ` is prepended here, never typed. Omitted or blank falls back to
+   * the default, which is what "Skip" writes.
+   */
+  chapterTitle?: string | null;
 }
 
 /**
@@ -45,7 +59,9 @@ export async function completeOnboarding(input: OnboardingInput): Promise<void> 
     p_avatar_url: avatarUrl,
     p_athlete_type: 'Hybrid', // default — athlete type isn't asked in onboarding (ONB-Amendment-002)
     p_environment: null, // unknown until a program-recommendation flow captures equipment (ONB-A2-D3)
-    p_chapter_name: CHAPTER_I_NAME,
+    // The athlete's own words, prefixed here. `chapterNameFrom` falls back to the default on a blank,
+    // so "Skip" and "never asked" produce the same row they always did.
+    p_chapter_name: chapterNameFrom(input.chapterTitle ?? ''),
   });
   if (error) throw error;
 }

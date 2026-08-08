@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { extensionFor, MAX_CHECKIN_BYTES, MAX_IMAGE_BYTES, uploadToBucket, type UploadOpts } from '@/lib/storage-upload';
 import { fetchCompletion } from '@/data/workout-complete-live';
 // Type only: the snapshot arrives already validated by `fetchCompletion`, and `RecapBlock` re-validates
 // it on the way back out of the post's jsonb.
@@ -443,19 +444,25 @@ export function fmtDuration(sec: number): string {
  * Media is uploaded at compose time (before the post row exists), so the object path is keyed by uploader +
  * timestamp, not post id. `uri` is a local file/blob/data URI from expo-image-picker.
  */
-export async function uploadPostMedia(squadId: string, uri: string, kind: SquadMediaKind): Promise<string> {
+export async function uploadPostMedia(squadId: string, uri: string, kind: SquadMediaKind, opts?: UploadOpts): Promise<string> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error('Not signed in');
-  const res = await fetch(uri);
-  const blob = await res.blob();
-  const ext = kind === 'video' ? (blob.type.includes('quicktime') ? 'mov' : 'mp4') : blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg';
+  const fallbackType = kind === 'video' ? 'video/mp4' : 'image/jpeg';
+  const contentType = opts?.contentType ?? fallbackType;
+  const ext = extensionFor(contentType, kind === 'video' ? 'mp4' : 'jpg');
   const path = `${squadId}/${user.id}-${Date.now()}.${ext}`;
-  const { error } = await supabase.storage.from('squad-media').upload(path, blob, { contentType: blob.type || (kind === 'video' ? 'video/mp4' : 'image/jpeg'), upsert: true });
-  if (error) throw error;
-  const { data } = supabase.storage.from('squad-media').getPublicUrl(path);
-  return data.publicUrl;
+  /*
+   * Same streamed path the check-in takes — this was the second copy of the heap-blob upload, and two
+   * copies of one decision is how the first one went unfixed. A photo gets the smaller ceiling because
+   * `useMediaPicker` has already downscaled it; anything over 10 MB here is an original that escaped.
+   */
+  return uploadToBucket('squad-media', path, uri, {
+    maxBytes: kind === 'video' ? MAX_CHECKIN_BYTES : MAX_IMAGE_BYTES,
+    ...opts,
+    contentType,
+  });
 }
 
 /** Add a comment to a post. */

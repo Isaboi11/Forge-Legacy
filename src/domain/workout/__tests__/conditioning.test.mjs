@@ -25,7 +25,10 @@ import {
   isCardioKey,
   isLogged,
   newCardioBlock,
+  parseClock,
   parseDistance,
+  parsePace,
+  parseWithin,
   sessionActivityType,
   setModality,
   usesSpeed,
@@ -297,6 +300,62 @@ test('parseDistance accepts plain, decimal and comma-decimal input', () => {
 test('parseDistance rejects anything that would store a distance nobody ran', () => {
   for (const bad of ['', 'abc', '-3', '0', '3.1.4', '1e3', '9999']) {
     assert.equal(parseDistance(bad), null, `${bad} should be rejected`);
+  }
+});
+
+// ── typed clock, pace and plain numbers ──────────────────────────────────────
+//
+// From the PO: *"would be nice to have the option to click and enter the time. Mainly a factor when
+// making big adjustments and having to click the plus or minus button several times."* TIME stepped in
+// fifteen-second jumps, so a 42:30 race was 170 taps from a seeded zero. These are the parsers that
+// make the field typeable, and the rejections matter more than the acceptances: a field whose job is
+// to REPLACE a number must refuse rather than guess, or a fat-fingered entry silently rewrites a race.
+
+test('parseClock reads the colon forms a runner would type', () => {
+  assert.equal(parseClock('42:30'), 2550);
+  assert.equal(parseClock('0:45'), 45);
+  assert.equal(parseClock('1:05:20'), 3920);
+});
+
+test('a bare number in a time field is MINUTES — it is what people mean by "I did forty-five"', () => {
+  // Reading 45 as 45 seconds would be arithmetically defensible and would file a marathon as a warm-up.
+  assert.equal(parseClock('45'), 45 * 60);
+  assert.equal(parseClock('1'), 60);
+});
+
+test('parseClock refuses a typo rather than reinterpreting it', () => {
+  assert.equal(parseClock('42:75'), null); // not 43:15 — that is a decision the athlete did not make
+  assert.equal(parseClock('1:05:99'), null);
+  for (const bad of ['', 'abc', '-5', '42:', ':30', '1:2:3:4', '0', '13:00:00']) {
+    assert.equal(parseClock(bad), null, `${bad} should be rejected`);
+  }
+});
+
+test('parsePace accepts mm:ss and a bare minutes-per-unit', () => {
+  assert.equal(parsePace('8:30'), 510);
+  assert.equal(parsePace('8'), 480);
+});
+
+test('parsePace holds the same window the steppers walk — typing cannot reach what stepping cannot', () => {
+  assert.equal(parsePace('1:30'), null); // faster than the 2:00 floor
+  assert.equal(parsePace('45'), null); // slower than the 40:00 ceiling
+  assert.equal(parsePace('8:75'), null);
+});
+
+test('parseWithin bounds a plain decimal, and tolerates a comma keypad and a stray percent sign', () => {
+  assert.equal(parseWithin('7.5', 0, 15), 7.5);
+  assert.equal(parseWithin('7,5', 0, 15), 7.5);
+  assert.equal(parseWithin('3%', 0, 15), 3);
+  assert.equal(parseWithin('0', 0, 15), 0); // zero incline is a real answer, unlike zero distance
+  assert.equal(parseWithin('20', 0, 15), null);
+  assert.equal(parseWithin('-1', 0, 15), null);
+});
+
+test('a rejected parse is null, never NaN — the caller leaves the old value standing', () => {
+  for (const fn of [parseClock, parsePace, parseDistance]) {
+    const out = fn('nonsense');
+    assert.equal(out, null);
+    assert.ok(!Number.isNaN(out));
   }
 });
 

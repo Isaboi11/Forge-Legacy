@@ -69,19 +69,31 @@ test('a stored visibility map merges over defaults and drops junk', () => {
 
 // ── notifications ──────────────────────────────────────────────────────────────
 
-test('nine toggles across three sections, personal on / squad off / requests on', () => {
+test('nine toggles across three sections, squad off / requests on / challenges off', () => {
   assert.equal(NOTIF_SECTIONS.flatMap((s) => s.toggles).length, 9);
-  assert.equal(NOTIF_DEFAULTS.honor_earned, true);
   assert.equal(NOTIF_DEFAULTS.squad_feed, false);
   assert.equal(NOTIF_DEFAULTS.squad_invites, true);
+  assert.equal(NOTIF_DEFAULTS.friend_requests, true, 'a direct request stays on (P-5 §3.2b)');
+  assert.equal(NOTIF_DEFAULTS.challenge_updates, false, 'ambient competition stays off (P-5 §3.2a)');
+});
+
+// P-5 Architecture §1 (LOCKED): M-1/M-2/M-4 each list "fire as a push notification" under their own
+// Non-Behaviors, so the four ceremony toggles the design shipped were audited out in the 0120 pass.
+// They had no event source and no sender branch — switching one on could never produce a notification.
+test('no ceremony has a push toggle', () => {
+  for (const key of ['goal_completed', 'honor_earned', 'chapter_sealed', 'rank_up']) {
+    assert.ok(!(key in NOTIF_DEFAULTS), `${key} must not be offerable as a push preference`);
+  }
 });
 
 test('a stored notification map merges over defaults and ignores junk', () => {
-  const m = sanitizeNotif({ squad_feed: true, honor_earned: 'yes', ghost: true });
+  const m = sanitizeNotif({ squad_feed: true, friend_requests: 'yes', ghost: true });
   assert.equal(m.squad_feed, true, 'a real change survives');
-  assert.equal(m.honor_earned, true, 'a non-boolean falls back to the default');
+  assert.equal(m.friend_requests, true, 'a non-boolean falls back to the default');
   assert.ok(!('ghost' in m));
   assert.deepEqual(sanitizeNotif(undefined), NOTIF_DEFAULTS);
+  // A map saved before 0120 still carries the retired ceremony keys; they must not survive the merge.
+  assert.ok(!('honor_earned' in sanitizeNotif({ honor_earned: true })), 'a retired key is dropped on read');
 });
 
 // ── preferences ────────────────────────────────────────────────────────────────

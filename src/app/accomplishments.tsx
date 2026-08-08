@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
@@ -550,12 +550,40 @@ function AccomplishmentForm({
   );
 }
 
-/** One attached clip, paused. The keepsake is the moment, not an autoplaying loop over a form. */
+/**
+ * One attached clip, paused. The keepsake is the moment, not an autoplaying loop over a form.
+ *
+ * ══ IT USED TO PLAY INSIDE A 220pt LETTERBOX ══
+ *
+ * Reported by the PO: *"when you play the video it doesn't open the whole video, just plays in the
+ * small box."* Three things were wrong at once and each on its own would have caused it.
+ *
+ * 1. **No `fullscreenOptions`.** `nativeControls` draws an expand button only when fullscreen is
+ *    enabled, and it defaults off — so the control bar shipped without the one control this needed.
+ *    `pin-video.tsx` was already setting the flag; this screen was the only video surface that wasn't.
+ * 2. **`contentFit="cover"` at a fixed `height: 220`.** A portrait phone clip was being centre-cropped
+ *    to a landscape strip, so even the inline view was showing a fraction of the frame. `contain`
+ *    shows the clip, letterboxed, which is what a keepsake wants.
+ * 3. **Nothing escalated on play.** The ask was that it expand *automatically*, so pressing play now
+ *    calls `enterFullscreen()` — the athlete's intent was already unambiguous at that point.
+ */
 function AccomplishmentVideo({ url }: { url: string }) {
   const player = useVideoPlayer(url, (p) => {
     p.loop = false;
   });
-  return <VideoView player={player} style={styles.mediaPreview} nativeControls contentFit="cover" />;
+  const viewRef = useRef<VideoView>(null);
+
+  useEffect(() => {
+    // `playingChange` rather than a press handler: the play control is inside the native control bar,
+    // which the JS side cannot attach to. Guarded on `isPlaying` so returning from fullscreen (which
+    // fires the event again on resume) does not immediately shove it back in.
+    const sub = player.addListener('playingChange', ({ isPlaying }) => {
+      if (isPlaying) void viewRef.current?.enterFullscreen().catch(() => {});
+    });
+    return () => sub.remove();
+  }, [player]);
+
+  return <VideoView ref={viewRef} player={player} style={styles.mediaPreview} nativeControls contentFit="contain" fullscreenOptions={{ enable: true }} />;
 }
 
 function Field({ label, counter, children }: { label: string; counter?: string; children: React.ReactNode }) {

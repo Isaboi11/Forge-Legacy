@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.qest4.forgelegacy",
-      "buildNumber": "2",
+      "buildNumber": "3",
       "config": {
         "usesNonExemptEncryption": false
       }
@@ -25,6 +25,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
+        "android.permission.POST_NOTIFICATIONS",
         "android.permission.RECORD_AUDIO",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
@@ -64,6 +65,7 @@
           "locationWhenInUsePermission": "Forge Legacy uses your location while you're running, walking, or riding to measure the distance and pace of that session. It is only read during a session you started, and the route is never shared."
         }
       ],
+      "expo-notifications",
       "expo-audio",
       "expo-asset",
       "expo-image",

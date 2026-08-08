@@ -367,6 +367,63 @@ export function parseDistance(raw: string): number | null {
   return n;
 }
 
+/**
+ * Parse a typed clock into seconds. Accepts `"42:30"`, `"1:05:20"` and a bare `"42"`.
+ *
+ * ⚠ A BARE NUMBER IS MINUTES, NOT SECONDS, and that is a real decision rather than a convenience.
+ * Every field this feeds is a run, ride, row or walk, where the number a person says out loud is
+ * minutes — "I did forty-five". Reading `45` as three-quarters of a minute would be arithmetically
+ * defensible and would file a marathon as a warm-up. The placeholder says `mm:ss` so the colon form is
+ * the one being invited; the bare form is the forgiving fallback, pointed the way people mean it.
+ *
+ * Rejects rather than clamps: a `null` leaves the previous value standing, which is the safe failure
+ * for a field whose whole job is to replace a value.
+ */
+export function parseClock(raw: string): number | null {
+  const s = raw.trim();
+  if (!s) return null;
+  if (!/^\d{1,2}(:\d{1,2}){0,2}$/.test(s)) return null;
+  const parts = s.split(':').map(Number);
+  if (parts.some((p) => !Number.isFinite(p))) return null;
+
+  let total: number;
+  if (parts.length === 1) total = parts[0] * 60;
+  else if (parts.length === 2) {
+    if (parts[1] > 59) return null; // "42:75" is a typo, not 43:15
+    total = parts[0] * 60 + parts[1];
+  } else {
+    if (parts[1] > 59 || parts[2] > 59) return null;
+    total = parts[0] * 3600 + parts[1] * 60 + parts[2];
+  }
+  // Twelve hours is past any bout this card logs; beyond it a typo is likelier than a fact.
+  if (total <= 0 || total > 12 * 3600) return null;
+  return total;
+}
+
+/**
+ * Parse a typed pace ("8:30" per unit) into seconds. Minutes-and-seconds only — a bare number in a
+ * pace field means minutes per mile, so `8` is 8:00.
+ */
+export function parsePace(raw: string): number | null {
+  const s = raw.trim();
+  if (!/^\d{1,2}(:\d{1,2})?$/.test(s)) return null;
+  const [m, sec = 0] = s.split(':').map(Number);
+  if (sec > 59) return null;
+  const total = m * 60 + sec;
+  // The same window the steppers walk, so typing cannot reach a pace stepping could not.
+  if (total < 120 || total > 40 * 60) return null;
+  return total;
+}
+
+/** Parse a plain positive decimal within a range — speed, incline, anything with no colon in it. */
+export function parseWithin(raw: string, min: number, max: number): number | null {
+  const cleaned = raw.trim().replace(',', '.').replace('%', '');
+  if (!/^\d*\.?\d+$/.test(cleaned)) return null;
+  const n = Number(cleaned);
+  if (!Number.isFinite(n) || n < min || n > max) return null;
+  return n;
+}
+
 // ── what a session IS ───────────────────────────────────────────────────────
 
 /**

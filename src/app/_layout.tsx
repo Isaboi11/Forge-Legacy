@@ -10,6 +10,7 @@ import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { flColor } from '@/constants/foundation';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { ProfileProvider, useProfile } from '@/lib/profile';
+import { PushProvider } from '@/lib/push';
 import { SettingsProvider } from '@/lib/settings';
 import { routeFor } from '@/lib/route-for';
 import { WorkoutSessionProvider } from '@/hooks/useWorkoutSession';
@@ -43,6 +44,9 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AuthProvider>
+        {/* Inside AuthProvider because registration waits for a session, and outside the navigator so a
+            tap that launched the app cold is answered as soon as the route tree exists (0120). */}
+        <PushProvider>
         <ProfileProvider>
           <SettingsProvider>
           <WorkoutSessionProvider>
@@ -59,6 +63,7 @@ export default function RootLayout() {
           </WorkoutSessionProvider>
           </SettingsProvider>
         </ProfileProvider>
+        </PushProvider>
       </AuthProvider>
     </ThemeProvider>
   );
@@ -112,6 +117,8 @@ function RootNavigator() {
         <Stack.Screen name="squad-composer" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="workout-invite" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="train-invite" options={{ presentation: 'fullScreenModal' }} />
+        {/* The other direction (0121): asking to join a session already under way. */}
+        <Stack.Screen name="workout-join" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="legacy-timeline" />
         <Stack.Screen name="photos" />
         <Stack.Screen name="add-photo" options={{ presentation: 'fullScreenModal' }} />

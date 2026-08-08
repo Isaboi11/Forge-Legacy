@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -38,6 +38,7 @@ import {
   useTransformationPick,
 } from '@/components/forge/compositions/TransformationPicker';
 import { errorMessage } from '@/lib/useQuery';
+import { UploadError } from '@/lib/storage-upload';
 import { useMediaPicker } from '@/lib/useMediaPicker';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
@@ -78,6 +79,8 @@ export default function SquadComposerRoute() {
   const postRef = useTourAnchor('composer-post');
   const [media, setMedia] = useState<SquadMedia | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [mediaPct, setMediaPct] = useState(0);
+  const mediaAbortRef = useRef<AbortController | null>(null);
   const [posting, setPosting] = useState(false);
   const [recap, setRecap] = useState<{ workoutId: string; workoutName: string; summary: WorkoutSummary } | null>(null);
   const [recentWorkouts, setRecentWorkouts] = useState<RecentWorkout[] | null>(null);
@@ -175,18 +178,40 @@ export default function SquadComposerRoute() {
   };
   const selectPR = (pr: RecentPR) => setForm((f) => ({ ...f, prExercise: pr.exercise, prValue: pr.value, prLabel: f.prLabel || 'Squad PR' }));
 
+  /**
+   * Attach a photo or clip. The upload runs here, at pick time, so the Post button is only ever
+   * pressed against media that already exists.
+   *
+   * Progress and cancel arrived with `storage-upload.ts` — the Post button is blocked while this runs,
+   * so a stalled attachment used to block the whole composer behind an "Uploading…" that could not be
+   * dismissed. Tapping the box now aborts.
+   */
   const pickMedia = async (videoOnly: boolean) => {
+    if (uploading) {
+      mediaAbortRef.current?.abort();
+      return;
+    }
     const asset = await pickMediaSource({ kind: videoOnly ? 'videos' : 'both', title: videoOnly ? 'Add a video' : 'Add a photo or video', quality: 0.7 });
     if (!asset?.uri) return;
     const kind: SquadMediaKind = asset.type === 'video' ? 'video' : 'image';
+    const controller = new AbortController();
+    mediaAbortRef.current = controller;
+    setMediaPct(0);
     setUploading(true);
     try {
-      const url = await uploadPostMedia(squadId, asset.uri, kind);
+      const url = await uploadPostMedia(squadId, asset.uri, kind, {
+        contentType: asset.mimeType,
+        onProgress: setMediaPct,
+        signal: controller.signal,
+      });
       setMedia({ url, kind });
     } catch (e) {
-      showToast(errorMessage(e));
+      if (e instanceof UploadError && e.kind === 'cancelled') showToast('Upload cancelled.');
+      else showToast(errorMessage(e));
     } finally {
+      mediaAbortRef.current = null;
       setUploading(false);
+      setMediaPct(0);
     }
   };
 
@@ -315,7 +340,7 @@ export default function SquadComposerRoute() {
           )
         ) : type === 'formcheck' ? (
           <>
-            <MediaAttach media={media} uploading={uploading} videoOnly onPick={() => pickMedia(true)} onRemove={() => setMedia(null)} />
+            <MediaAttach media={media} uploading={uploading} pct={mediaPct} videoOnly onPick={() => pickMedia(true)} onRemove={() => setMedia(null)} />
             <Area label="What should the squad look at? (optional)" value={form.body} onChange={(v) => set('body', v)} placeholder="e.g. Does my hip rise look early?" rows={3} />
           </>
         ) : type === 'recap' ? (
@@ -395,22 +420,22 @@ export default function SquadComposerRoute() {
                 <Text style={styles.previewTag}>{(form.prLabel.trim() || 'Squad PR').toUpperCase()}</Text>
               </View>
             </View>
-            <MediaAttach media={media} uploading={uploading} onPick={() => pickMedia(false)} onRemove={() => setMedia(null)} />
+            <MediaAttach media={media} uploading={uploading} pct={mediaPct} onPick={() => pickMedia(false)} onRemove={() => setMedia(null)} />
           </>
         ) : type === 'checkin' ? (
           <>
             <Area label="Note (optional)" value={form.body} onChange={(v) => set('body', v)} placeholder="How did today go?…" rows={3} />
-            <MediaAttach media={media} uploading={uploading} onPick={() => pickMedia(false)} onRemove={() => setMedia(null)} />
+            <MediaAttach media={media} uploading={uploading} pct={mediaPct} onPick={() => pickMedia(false)} onRemove={() => setMedia(null)} />
           </>
         ) : type === 'discussion' ? (
           <>
             <Area label="Note to the squad" value={form.body} onChange={(v) => set('body', v)} placeholder="Keep it short…" rows={4} />
-            <MediaAttach media={media} uploading={uploading} onPick={() => pickMedia(false)} onRemove={() => setMedia(null)} />
+            <MediaAttach media={media} uploading={uploading} pct={mediaPct} onPick={() => pickMedia(false)} onRemove={() => setMedia(null)} />
           </>
         ) : (
           <>
             <Area label="Announcement" value={form.body} onChange={(v) => set('body', v)} placeholder="Pins to the top of the squad feed…" rows={4} />
-            <MediaAttach media={media} uploading={uploading} onPick={() => pickMedia(false)} onRemove={() => setMedia(null)} />
+            <MediaAttach media={media} uploading={uploading} pct={mediaPct} onPick={() => pickMedia(false)} onRemove={() => setMedia(null)} />
             <View style={styles.gateNote}>
               <ShieldIcon />
               <Text style={styles.gateNoteText}>You’re posting a squad announcement as the owner — every member sees it at the top of the feed.</Text>
@@ -477,13 +502,20 @@ function PlusInCircle() {
   );
 }
 
-function MediaAttach({ media, uploading, onPick, onRemove, videoOnly = false }: { media: SquadMedia | null; uploading: boolean; onPick: () => void; onRemove: () => void; videoOnly?: boolean }) {
+function MediaAttach({ media, uploading, pct, onPick, onRemove, videoOnly = false }: { media: SquadMedia | null; uploading: boolean; pct: number; onPick: () => void; onRemove: () => void; videoOnly?: boolean }) {
   if (uploading) {
+    const percent = Math.round(pct * 100);
     return (
-      <View style={styles.mediaBox}>
+      // Pressable, not a dead box: `onPick` aborts while an upload is running, which is the only way
+      // out of a stalled attachment now that it blocks the Post button.
+      <Pressable onPress={onPick} accessibilityRole="button" accessibilityLabel={`Cancel upload, ${percent} percent done`} style={styles.mediaBox}>
         <ActivityIndicator color={flColor.bronze400} />
-        <Text style={styles.mediaHint}>Uploading…</Text>
-      </View>
+        <Text style={styles.mediaHint}>Uploading… {percent}%</Text>
+        <View style={styles.mediaProgressTrack}>
+          <View style={[styles.mediaProgressFill, { width: `${percent}%` }]} />
+        </View>
+        <Text style={styles.mediaHint}>Tap to cancel</Text>
+      </Pressable>
     );
   }
   if (media) {
@@ -780,6 +812,8 @@ const styles = StyleSheet.create({
   },
   mediaAddText: { fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },
   mediaBox: { height: 120, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.surfaceRecessed, alignItems: 'center', justifyContent: 'center', gap: 10 },
+  mediaProgressTrack: { width: '60%', height: 3, borderRadius: 2, backgroundColor: flColor.charcoal700, overflow: 'hidden' },
+  mediaProgressFill: { height: '100%', backgroundColor: flColor.bronze400 },
   mediaHint: { fontSize: 12.5, color: flColor.gray400 },
   mediaPreviewWrap: { position: 'relative', borderRadius: flRadius.md, overflow: 'hidden', borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
   mediaPreview: { width: '100%', height: 200, backgroundColor: flColor.charcoal900 },

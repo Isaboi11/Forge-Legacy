@@ -52,6 +52,14 @@ OTA undeliverable to the only build anyone is running.
 Pass them to `eas submit` directly, or re-add the block **in the same commit as the next build** — a
 new build re-baselines the fingerprint, so at that moment the edit costs nothing.
 
+> **Re-added 2026-08-07, with the push-notifications pass.** `expo-notifications` and its config plugin
+> are a native change, so that pass already required a new build and could never have shipped over the
+> air. That made it the free moment described above: the block is back in `eas.json`, `buildNumber` is
+> `3`, and the fingerprint is re-baselined by the build itself. **The fingerprint of build 2
+> (`d2cdb7b5…`) is now permanently unreachable** — that is expected and correct, not the trap. Every OTA
+> from here compares against build 3's fingerprint, which must be read from `eas build:list` once the
+> build completes; do not assume it.
+
 ---
 
 ## Before publishing an OTA, always
@@ -76,8 +84,19 @@ to the build's.
 
 | Build | Fingerprint | Commit |
 |---|---|---|
-| **2** (8/5 20:26) | `d2cdb7b5…` | `8ac7a8c` ← **the tester build** |
+| **3** (8/7) | `791bacda3a99ae050f5ce879b32fe57ba2e4a4a2` | `a0bc2b8` **+ uncommitted push work** ← **the tester build** |
+| 2 (8/5 20:26) | `d2cdb7b5…` | `8ac7a8c` |
 | 1 (8/5 16:36) | `75e9448e…` | `35e33b9` |
+
+> **⚠ Build 3's commit field is misleading, and the reason matters.** EAS reports `a0bc2b8`, which predates
+> the entire push-notifications pass — that work was still uncommitted when the build ran. **EAS archives
+> the WORKING TREE, not the HEAD commit**, so the push code is in the binary even though the commit says
+> otherwise. Confirmed, not assumed: `eas fingerprint:compare 791bacda… --environment production` reported
+> *"matches fingerprint … from local directory"*.
+>
+> The lesson generalises: **the `Commit:` line in the build list does not tell you what is in the build.**
+> The fingerprint does. Commit before building anyway — a build whose source exists only in one machine's
+> working tree cannot be reproduced, and `a0bc2b8` will never rebuild into `791bacda…`.
 
 ⚠ The update published on 2026-08-05 (*"Fix SVG gradient stops rendering opaque on device"*) went to
 runtime **`75e9448e` — build 1**. Build 2 already existed. **That fix may never have reached the

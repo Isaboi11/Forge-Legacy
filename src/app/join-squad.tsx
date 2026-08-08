@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -40,9 +40,9 @@ export default function JoinSquadRoute() {
 
   const canContinue = code.trim().length >= 4 && !busy;
 
-  const join = (accept: boolean) => {
+  const join = (accept: boolean, forCode: string = code) => {
     setBusy(true);
-    joinSquadByCode(code.trim(), accept).then(
+    joinSquadByCode(forCode.trim(), accept).then(
       (res) => {
         setBusy(false);
         if (res.ok) {
@@ -62,26 +62,53 @@ export default function JoinSquadRoute() {
   };
 
   /** Resolve first. A squad that states values gets its own stage; one that doesn't joins outright. */
+  const resolve = useCallback(
+    (forCode: string) => {
+      setBusy(true);
+      fetchSquadByCode(forCode.trim()).then(
+        (found) => {
+          setBusy(false);
+          if (found?.commitment && !found.already) {
+            setAccepted(false);
+            setSquad(found);
+            return;
+          }
+          join(false, forCode);
+        },
+        // Pre-0055 (or an unreachable peek) — fall through to the ungated join rather than dead-end.
+        () => {
+          setBusy(false);
+          join(false, forCode);
+        },
+      );
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `join` is stable in practice and closes over router/toast only
+    [],
+  );
+
   const onContinue = () => {
     if (!canContinue) return;
-    setBusy(true);
-    fetchSquadByCode(code.trim()).then(
-      (found) => {
-        setBusy(false);
-        if (found?.commitment && !found.already) {
-          setAccepted(false);
-          setSquad(found);
-          return;
-        }
-        join(false);
-      },
-      // Pre-0055 (or an unreachable peek) — fall through to the ungated join rather than dead-end.
-      () => {
-        setBusy(false);
-        join(false);
-      },
-    );
+    resolve(code);
   };
+
+  /**
+   * An invite link resolves itself.
+   *
+   * Arriving at `/join-squad?code=IRON-4F2A` used to fill the field in and then wait for a Continue
+   * tap — which reads as "the link didn't work" when the whole point of following a link is that you
+   * already said yes. The code still has to pass through the same resolve/commitment path, so a squad
+   * that asks something of its members still asks it; the only thing removed is the redundant tap.
+   *
+   * Guarded by a ref rather than by state so a re-render cannot fire it twice, and so returning to a
+   * dismissed commitment panel does not immediately re-resolve it.
+   */
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    const incoming = normalizeCode(String(params.code ?? ''));
+    if (autoStarted.current || incoming.length < 4) return;
+    autoStarted.current = true;
+    resolve(incoming);
+  }, [params.code, resolve]);
 
   if (squad?.commitment) {
     return (

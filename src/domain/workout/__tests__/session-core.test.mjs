@@ -9,6 +9,7 @@ import {
   makeSuperset,
   nextInSuperset,
   sessionSetsFor,
+  sessionToTemplateExercises,
   supersetRounds,
 } from '../session-core.ts';
 
@@ -260,4 +261,84 @@ test('a circuit member repeats its bar across the rounds a round-per-set expansi
   const sets = sessionSetsFor(ex, LOAD);
   assert.equal(sets.length, 4, 'four rounds are four rows to tick off');
   assert.deepEqual(sets.map((s) => s.targetWeight), [285, 285, 285, 285]);
+});
+
+// ── snapshotting a live session for someone joining it (0121) ────────────────
+//
+// From the PO: *"in the middle of a workout you should be able to invite someone and have them join
+// where you're at in that workout."* The invite carries the WORKOUT, not a pointer to it (0093) — the
+// guest may not own the program it came from — so the live session has to be reduced to the four fields
+// 0093 defined, and the host's position has to be expressed in terms of THAT list.
+
+const lift = (name, sets, targetReps = 8, catalogKey = null) => ({
+  name,
+  catalogKey,
+  section: 'main',
+  position: 0,
+  sets: Array.from({ length: sets }, (_, i) => ({ setIndex: i, targetReps, weight: 185, actualReps: 8, done: true })),
+});
+const run = () => ({ name: 'Run', kind: 'cardio', activity: 'run', section: 'main', position: 0, sets: [{ setIndex: 0, targetReps: 0, weight: null, actualReps: null, done: false }] });
+
+test('a live session reduces to the four fields an invite carries', () => {
+  const out = sessionToTemplateExercises([lift('Back Squat', 4, 5, 'back-squat'), lift('Leg Press', 3, 12)]);
+  assert.deepEqual(out, [
+    { catalogKey: 'back-squat', name: 'Back Squat', sets: 4, targetReps: 5 },
+    { catalogKey: null, name: 'Leg Press', sets: 3, targetReps: 12 },
+  ]);
+});
+
+test('logged weight never travels — those are your working sets, not their prescription', () => {
+  const out = sessionToTemplateExercises([lift('Bench Press', 3)]);
+  assert.equal('weight' in out[0], false);
+  assert.equal('actualReps' in out[0], false);
+});
+
+test('a rep wave keeps its FIRST target, which is the set the guest starts on', () => {
+  const wave = {
+    name: 'Deadlift',
+    catalogKey: 'deadlift',
+    section: 'main',
+    position: 0,
+    sets: [6, 6, 4, 4].map((r, i) => ({ setIndex: i, targetReps: r, weight: null, actualReps: null, done: false })),
+  };
+  assert.equal(sessionToTemplateExercises([wave])[0].targetReps, 6);
+});
+
+test('cardio is dropped — a leg is a distance and a clock, not a list of sets', () => {
+  const out = sessionToTemplateExercises([lift('Row', 3), run(), lift('Pull-up', 4)]);
+  assert.deepEqual(out.map((e) => e.name), ['Row', 'Pull-up']);
+});
+
+test('a session that is only a run snapshots to nothing, which reads as a freestyle share', () => {
+  assert.deepEqual(sessionToTemplateExercises([run()]), []);
+});
+
+/**
+ * ⚠ THE POSITION IS INTO THE SNAPSHOT, NOT INTO THE SESSION.
+ *
+ * Because cardio is dropped, the two lists are different lengths the moment a session contains a run.
+ * Handing the guest the session's own index would land them on the wrong lift — silently, and by exactly
+ * the number of runs above the host's position. Both call sites compute it by snapshotting everything
+ * BEFORE the current exercise and taking the length; this is that arithmetic.
+ */
+test('the joining position counts the snapshot, not the session', () => {
+  const session = [lift('Squat', 3), run(), lift('Bench', 3), lift('Row', 3)];
+  // Host is on 'Bench', which is index 2 of the session but index 1 of the snapshot.
+  const at = 2;
+  const startIndex = sessionToTemplateExercises(session.slice(0, at)).length;
+  assert.equal(startIndex, 1);
+  assert.equal(sessionToTemplateExercises(session)[startIndex].name, 'Bench');
+});
+
+test('a host standing on a cardio leg lands the guest on the next real lift, not past the end', () => {
+  const session = [lift('Squat', 3), run()];
+  const shape = sessionToTemplateExercises(session);
+  const startIndex = Math.min(sessionToTemplateExercises(session.slice(0, 1)).length, Math.max(0, shape.length - 1));
+  assert.equal(startIndex, 0);
+  assert.equal(shape[startIndex].name, 'Squat');
+});
+
+test('an exercise with no sets is not a thing to join at', () => {
+  const empty = { name: 'Placeholder', catalogKey: null, section: 'main', position: 0, sets: [] };
+  assert.deepEqual(sessionToTemplateExercises([empty, lift('Curl', 3)]).map((e) => e.name), ['Curl']);
 });

@@ -6,4 +6,30 @@
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
   --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
   --font-serif: Georgia, 'Times New Roman', serif;
+
+  /* Mirrors `flColor.bronze400` in src/constants/foundation.ts. Duplicated as a literal because this
+     stylesheet is emitted into the document before any JS token module is evaluated. */
+  --fl-focus-ring: #ba8654;
+}
+
+/*
+ * THE FOCUS RING IS BRONZE, AND ONLY FOR THE KEYBOARD.
+ *
+ * Nothing in this app ever set a focus colour — grep finds no `outline*`, no `underlineColorAndroid`,
+ * no `caretColor`. The blue line an athlete sees while typing a weight is the BROWSER's default ring,
+ * and it survives because react-native-web's TextInput reset covers appearance, border, font, margin
+ * and padding, and does not touch `outline`.
+ *
+ * Deleting the ring outright would be the easy fix and the wrong one — it is how a keyboard user
+ * knows where they are. `:focus-visible` is the distinction that matters: a pointer or touch focus
+ * gets nothing (the app's own bronze borders already say which field is live), a keyboard focus gets
+ * a ring, and the ring is the app's colour instead of the operating system's.
+ */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--fl-focus-ring);
+  outline-offset: 2px;
 }

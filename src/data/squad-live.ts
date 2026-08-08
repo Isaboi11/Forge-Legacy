@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/lib/supabase';
+import { extensionFor, MAX_CHECKIN_BYTES, uploadToBucket, type UploadOpts } from '@/lib/storage-upload';
 
 /**
  * Squad Core data (Social · Part 1) — real `squads` + `squad_members` (migrations 0029/0030). Create is
@@ -431,20 +432,30 @@ export async function fetchSquadCheckins(squadId: string): Promise<SquadCheckins
   return { members, iHaveActive: latest.has(uid) };
 }
 
-/** Upload a check-in clip to the public `squad-media` bucket, returning its URL. */
-export async function uploadCheckinVideo(squadId: string, uri: string): Promise<string> {
+/**
+ * Upload a check-in clip to the public `squad-media` bucket, returning its URL.
+ *
+ * The body of this used to live here: `fetch(uri)` → `.blob()` → one shot at `storage.upload`. That is
+ * the whole clip in the JS heap before a byte moves, with no progress, timeout, retry or size check —
+ * the reason check-ins were reported as "taking long to post or not even posting". `uploadToBucket`
+ * streams from disk and reports real bytes; see the header of `storage-upload.ts` for what it does and
+ * does not fix.
+ */
+export async function uploadCheckinVideo(squadId: string, uri: string, opts?: UploadOpts): Promise<string> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error('Not signed in');
-  const res = await fetch(uri);
-  const blob = await res.blob();
-  const ext = blob.type.includes('quicktime') ? 'mov' : 'mp4';
+  const ext = extensionFor(opts?.contentType, 'mp4');
   const path = `${squadId}/checkin-${user.id}-${Date.now()}.${ext}`;
-  const { error } = await supabase.storage.from('squad-media').upload(path, blob, { contentType: blob.type || 'video/mp4', upsert: true });
-  if (error) throw error;
-  const { data } = supabase.storage.from('squad-media').getPublicUrl(path);
-  return `${data.publicUrl}?v=${Date.now()}`;
+  const url = await uploadToBucket('squad-media', path, uri, {
+    maxBytes: MAX_CHECKIN_BYTES,
+    contentType: opts?.contentType ?? 'video/mp4',
+    ...opts,
+  });
+  // The cache-buster stays: the path is `upsert: true`, so a re-record at the same second would
+  // otherwise be served from the CDN's copy of the previous clip.
+  return `${url}?v=${Date.now()}`;
 }
 
 /** Post a video check-in (supersedes your previous one once it's the latest). */

@@ -9,7 +9,9 @@ import { Button } from '@/components/forge/composites/Button';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { acceptWorkoutInvite, declineWorkoutInvite, fetchWorkoutInvite, inviteSubtitle } from '@/data/train-together-live';
+import { acceptJoinRequest, acceptWorkoutInvite, declineWorkoutInvite, fetchWorkoutInvite, inviteSubtitle } from '@/data/train-together-live';
+import { loadSession, persistSession } from '@/domain/workout/autosave';
+import { sessionToTemplateExercises } from '@/domain/workout/session-core';
 import { useToast } from '@/hooks/useCeremony';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
@@ -54,8 +56,69 @@ export default function WorkoutInviteScreen() {
 
   const close = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
+  /*
+   * The same screen, both directions (0121). A JOIN_REQUEST reuses this route rather than getting one of
+   * its own: it holds both parties, both statuses and the accept already, and a second route would have
+   * needed a new arm in `destinationFor`, a new member on `NotificationDestination` and a new id field
+   * in `push.tsx`'s `targetFrom` — to reach a screen ninety per cent identical to this one.
+   */
+  const isJoin = invite?.kind === 'JOIN_REQUEST';
+
+  /**
+   * The host answers a request to JOIN the session they are already in (0121).
+   *
+   * Two things separate this from accepting an invitation, and both matter.
+   *
+   * THE SNAPSHOT IS TAKEN HERE, from the host's own live session — the asker could not know the shape,
+   * and `exerciseIndex` is what makes the guest open on the movement the host is actually doing rather
+   * than at the top of a workout that is two-thirds done.
+   *
+   * AND THE HOST IS NOT RE-LAUNCHED. `router.back()`, never `/workout`: they are already training, and
+   * navigating them into the logger from here would be at best redundant and at worst a second session
+   * on top of the one they are in.
+   */
+  const acceptJoin = async () => {
+    if (!invite || busy) return;
+    setBusy(true);
+    try {
+      const live = await loadSession();
+      if (!live || live.exercises.length === 0) {
+        showToast('You’re not in a workout right now.');
+        setBusy(false);
+        return;
+      }
+      const shape = sessionToTemplateExercises(live.exercises);
+      const at = Math.min(Math.max(0, live.exerciseIndex ?? 0), live.exercises.length - 1);
+      /*
+       * ⚠ THE INDEX IS INTO THE SNAPSHOT, NOT INTO THE SESSION.
+       *
+       * `sessionToTemplateExercises` drops cardio blocks — a run is a distance and a clock, not a list of
+       * sets — so the two lists are different lengths whenever a session has one. Passing the session's
+       * own index would point the guest at the wrong lift, silently and by exactly the number of runs
+       * above it. Counting the snapshot of everything BEFORE the current position gives the position
+       * within what actually ships.
+       */
+      const startIndex = Math.min(sessionToTemplateExercises(live.exercises.slice(0, at)).length, Math.max(0, shape.length - 1));
+      await acceptJoinRequest(invite.id, { workoutName: live.workoutName, exercises: shape, startIndex });
+
+      // Credit them from this screen — only possible because `partnerIds` lives on the session rather
+      // than in the logger's own state (see `ActiveSession`). The logger picks it up on next focus.
+      const already = live.partnerIds ?? [];
+      if (!already.includes(invite.fromId) && already.length < 3) {
+        await persistSession({ ...live, partnerIds: [...already, invite.fromId] });
+      }
+      const landing = shape[startIndex]?.name;
+      showToast(landing ? `${invite.fromName} is joining at ${landing}` : `${invite.fromName} is joining you`);
+      close();
+    } catch (e) {
+      showToast(errorMessage(e));
+      setBusy(false);
+    }
+  };
+
   const accept = async () => {
     if (!invite || busy) return;
+    if (invite.kind === 'JOIN_REQUEST') return acceptJoin();
     setBusy(true);
     try {
       await acceptWorkoutInvite(invite.id);
@@ -69,6 +132,9 @@ export default function WorkoutInviteScreen() {
         exercises: invite.exercises.length > 0 ? invite.exercises : undefined,
         workoutName: invite.workoutName,
         partnerId: invite.fromId,
+        // Where they open. Zero for an ordinary invitation; the sender's live position when they asked
+        // you into a session already under way (0121).
+        startIndex: invite.startIndex,
       });
       router.replace('/workout');
     } catch (e) {
@@ -111,7 +177,11 @@ export default function WorkoutInviteScreen() {
       ) : invite.status === 'ACCEPTED' ? (
         <View style={styles.center}>
           <Text style={styles.missingTitle}>Already accepted</Text>
-          <Text style={styles.missingBody}>You took this one. Start whenever you’re ready.</Text>
+          <Text style={styles.missingBody}>
+            {isJoin ? `${invite.fromName} is training with you.` : 'You took this one. Start whenever you’re ready.'}
+          </Text>
+          {/* A host who already said yes is mid-session; sending them to the logger is right for them and
+              wrong for nobody. The asker never lands here — `/workout-join` launches them straight in. */}
           <Pressable onPress={() => router.replace('/workout')} accessibilityRole="button" accessibilityLabel="Go to your workout" style={styles.outlineBtn}>
             <Text style={styles.outlineBtnLabel}>Open Workout</Text>
           </Pressable>
@@ -124,8 +194,10 @@ export default function WorkoutInviteScreen() {
               <Avatar name={invite.fromName} src={invite.fromAvatarUrl ?? undefined} size={88} ring />
             </View>
 
-            <Text style={styles.eyebrow}>Shared Workout</Text>
-            <Text style={styles.headline}>{invite.fromName} wants to train with you</Text>
+            <Text style={styles.eyebrow}>{isJoin ? 'Join Request' : 'Shared Workout'}</Text>
+            <Text style={styles.headline}>
+              {isJoin ? `${invite.fromName} wants to join your workout` : `${invite.fromName} wants to train with you`}
+            </Text>
 
             <View style={styles.card}>
               <View style={styles.cardRow}>
@@ -134,9 +206,11 @@ export default function WorkoutInviteScreen() {
                 </View>
                 <View style={styles.cardBody}>
                   <Text style={styles.cardName} numberOfLines={2}>
-                    {invite.workoutName}
+                    {isJoin ? 'Your session' : invite.workoutName}
                   </Text>
-                  <Text style={styles.cardSub}>{inviteSubtitle(invite)}</Text>
+                  {/* On a join request the card describes what THEY would be walking into, and the app
+                      does not know that from here — the shape is read off the live session at accept. */}
+                  <Text style={styles.cardSub}>{isJoin ? 'They’ll start where you are right now' : inviteSubtitle(invite)}</Text>
                 </View>
               </View>
 
@@ -151,14 +225,16 @@ export default function WorkoutInviteScreen() {
             <View style={styles.how}>
               <PeopleGlyph />
               <Text style={styles.howText}>
-                You’ll each do your own copy — log your own sets on your own screen. At the end you’ll both be credited for training together.
+                {isJoin
+                  ? 'They’ll get your workout starting at the exercise you’re on. You’ll each log your own sets, and you’ll both be credited for training together.'
+                  : 'You’ll each do your own copy — log your own sets on your own screen. At the end you’ll both be credited for training together.'}
               </Text>
             </View>
           </ScrollView>
 
           <View style={styles.actions}>
-            <Button variant="primary" fullWidth onPress={accept} disabled={busy} accessibilityLabel="Accept and start">
-              {busy ? 'Starting…' : 'Accept & Start'}
+            <Button variant="primary" fullWidth onPress={accept} disabled={busy} accessibilityLabel={isJoin ? 'Let them join' : 'Accept and start'}>
+              {busy ? (isJoin ? 'Adding them…' : 'Starting…') : isJoin ? 'Let Them Join' : 'Accept & Start'}
             </Button>
             <Button variant="text" fullWidth onPress={decline} disabled={busy} accessibilityLabel="Decline">
               Decline

@@ -36,9 +36,26 @@
 --
 -- ══ THE FIX ══
 --
--- The two branches, restored verbatim from 0073 and padded to the current six-column shape. The return
--- type is unchanged, so this is a plain `create or replace` — `notification_feed` and
--- `notification_unread_count` call it by name and pick up the new body untouched.
+-- The two branches, restored verbatim from 0073 and padded to the current six-column shape.
+--
+-- ⚠ AMENDED 2026-08-05 — DROP FIRST, ALWAYS. This migration originally read `create or replace` on the
+-- reasoning that the return type matched 0092's. Applied against the real database it failed with
+--
+--     42P13: cannot change return type of existing function
+--     DETAIL: Row type defined by OUT parameters is different.
+--
+-- so the live function is NOT the shape this file was written against. That is the same class of fact
+-- this migration exists to fix: the ledger says one thing and the database holds another, and nothing
+-- reported the difference until something refused to run.
+--
+-- The lesson generalises past this one function. `create or replace` on a `returns table` function is
+-- only safe if you KNOW the live row type, and for a function that five migrations have rewritten,
+-- nobody knows it — they know what the files say. Dropping first costs nothing and cannot fail this
+-- way, so this migration now does what 0110 already did.
+--
+-- Dropping `notification_events()` alone is safe. `notification_feed` and `notification_unread_count`
+-- call it BY NAME; a SQL function body records no hard dependency, so they survive the drop and bind
+-- to the new body on their next call. Their own definitions are untouched here.
 --
 -- Both branches are still DERIVED. There is no notifications table and this does not add one: the
 -- request row IS the notification. Withdraw the request and it disappears from the feed, because the
@@ -47,7 +64,11 @@
 -- Still no `friend_declined`, deliberately (0073): accepting notifies, declining is silent, because a
 -- notification whose entire content is a small rejection is worse than none.
 
-create or replace function public.notification_events()
+-- No-arg form on purpose: OUT parameters are not part of a function's identity, so this matches and
+-- removes whatever shape is actually there — which is the entire point.
+drop function if exists public.notification_events();
+
+create function public.notification_events()
 returns table (kind text, at timestamptz, squad_id uuid, actor_id uuid, challenge_id uuid, invite_id uuid)
 language sql
 security definer
