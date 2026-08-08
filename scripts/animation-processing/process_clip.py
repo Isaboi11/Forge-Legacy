@@ -105,15 +105,80 @@ def recolor(rgb):
     return np.asarray(Image.fromarray(hsv2, "HSV").convert("RGB"))
 
 
-def matte(rgb):
+def clip_threshold(frames):
+    """
+    ONE white threshold for the whole clip.
+
+    ══ WHY THIS IS NOT PER-FRAME ══
+
+    It was, and that alone made the background shimmer. `thr` is derived from the median of the
+    corner pixels, and on a compressed source those corners drift by a level or two between frames.
+    Each drift moves the threshold, which moves the white mask, which moves the alpha — so a band of
+    background pixels near the cutoff switched between opaque and transparent from frame to frame.
+
+    A clip has ONE background. Deciding what it is once, from every frame at once, removes an entire
+    class of flicker before any of the blob heuristics below even run.
+    """
+    mins = []
+    for fp in frames:
+        rgb = np.asarray(Image.open(fp).convert("RGB"))
+        corners = np.concatenate([rgb[:8, :8].reshape(-1, 3), rgb[:8, -8:].reshape(-1, 3),
+                                  rgb[-8:, :8].reshape(-1, 3), rgb[-8:, -8:].reshape(-1, 3)])
+        mins.append(corners.min(axis=1))
+    bg_min = int(np.median(np.concatenate(mins)))
+    return min(WHITE_THR, bg_min - 5)
+
+
+def static_background(frames, thr):
+    """
+    Pixels that are white in EVERY frame of the clip. Background, with certainty.
+
+    ══ THE MACHINE FLICKER, AND WHY THIS FIXES IT ══
+
+    `matte()` judges each enclosed white blob on its own, one frame at a time, against thresholds
+    with hard edges (`darkfrac >= 0.15`; area `>= big_flat`). A dumbbell clip has few enclosed white
+    regions and sits nowhere near those edges. A MACHINE is mostly enclosed white regions — the gap
+    inside the uprights, the window under the seat, the space around the stack — and their measured
+    ring darkness and area wobble as the model moves through them. A blob that hovers at the cutoff
+    is removed on one frame and kept on the next, so the athlete watches the source's white
+    background blink through the machine.
+
+    A pixel that is white in ALL frames cannot be part of the subject. Not the athlete, who moves
+    through their own silhouette; not a muscle highlight, which is bronze after `recolor()` and never
+    flat white; not equipment, which is rendered grey. It is either outer background or a see-through
+    gap, and either way it must be transparent — in every frame, not most of them.
+
+    Small regions are left to `matte()`'s existing judgement (`AREA_MIN` exists to protect them), so
+    this only overrules the decision where the decision was unstable in the first place.
+    """
+    acc = None
+    for fp in frames:
+        rgb = np.asarray(Image.open(fp).convert("RGB"))
+        w = (rgb[..., 0] > thr) & (rgb[..., 1] > thr) & (rgb[..., 2] > thr)
+        acc = w if acc is None else (acc & w)
+    H, W = acc.shape
+    area_min = AREA_MIN * (H / 720.0) ** 2
+    lbl, n = ndimage.label(acc)
+    if not n:
+        return acc
+    keep = np.bincount(lbl.ravel()) >= area_min
+    keep[0] = False
+    return keep[lbl]
+
+
+def matte(rgb, thr, static_bg):
     """
     Alpha for a white-background 3D render. Removes the outer background AND enclosed
     see-through gaps between limbs, while protecting bright muscle highlights (which
     are pixel-identical to a gap locally). A white blob is background if EITHER:
+      - it is white in every frame of the clip (see `static_background`), OR
       - a large fraction of its ring is near-black (equipment / silhouette edge), OR
       - it is big AND almost perfectly flat 255 (a see-through gap bordered by light
         body). Highlights are smaller and not perfectly flat, so the area gate spares them.
     Runs at native res: the exact-255 signal is destroyed by downscaling.
+
+    `thr` and `static_bg` are computed ONCE per clip and passed in. Both used to be derived
+    per frame, and both flickered for it.
     """
     H, W = rgb.shape[:2]
     rs = H / 720.0
@@ -125,13 +190,6 @@ def matte(rgb):
     feather = FEATHER * rs
     big_flat = BIG_FLAT_FRAC * H * W
 
-    # Adaptive white threshold: most sources are pure-255 white, but some have a slightly
-    # off-white background (~250, occasionally a dimmer channel) that a fixed >250 test misses,
-    # leaving the whole background opaque. Sample the corners and key just under it.
-    corners = np.concatenate([rgb[:8, :8].reshape(-1, 3), rgb[:8, -8:].reshape(-1, 3),
-                              rgb[-8:, :8].reshape(-1, 3), rgb[-8:, -8:].reshape(-1, 3)])
-    bg_min = int(np.median(corners.min(axis=1)))
-    thr = min(WHITE_THR, bg_min - 5)
     white = (rgb[..., 0] > thr) & (rgb[..., 1] > thr) & (rgb[..., 2] > thr)
     exact = (rgb[..., 0] == 255) & (rgb[..., 1] == 255) & (rgb[..., 2] == 255)
     gray = rgb.min(axis=2)
@@ -157,7 +215,10 @@ def matte(rgb):
         if darkfrac >= DARK_FRAC or (e255 >= E255_FRAC and counts[i] >= big_flat):
             is_bg[i] = True
     is_bg[0] = False
-    fg = ~is_bg[lbl]
+    # Anything white for the whole clip is background regardless of what this frame's ring and area
+    # measurements happened to say. This is the one rule here that cannot disagree with itself
+    # between frames, which is exactly why it is applied last and overrules the rest.
+    fg = ~is_bg[lbl] & ~static_bg
     if erode:
         fg = ndimage.binary_erosion(fg, iterations=erode)
     if min_fg:
@@ -193,11 +254,18 @@ def main(src, out, work):
         raise RuntimeError("no frames decoded")
 
     t = time.time()
+    # Two clip-wide passes BEFORE any per-frame work. Both quantities used to be re-derived from
+    # each frame in isolation, and a matte that re-decides the same question every frame answers it
+    # differently near its thresholds — which the athlete sees as the background blinking through a
+    # machine. Costs two extra reads of frames already on disk.
+    thr = clip_threshold(frames)
+    static_bg = static_background(frames, thr)
+
     rgba = []
     ax0 = ay0 = 10 ** 9; ax1 = ay1 = -1
     for fp in frames:
         rgb = np.asarray(Image.open(fp).convert("RGB"))
-        a = matte(rgb)
+        a = matte(rgb, thr, static_bg)
         rc = warm_grade(recolor(rgb))
         im = Image.fromarray(np.dstack([rc, a]), "RGBA")
         if im.height != WORK_H:

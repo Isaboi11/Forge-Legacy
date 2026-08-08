@@ -1,5 +1,5 @@
 {
-  "_comment": "Missing exercise animations the PO flags during workouts, queued for a bulk process+upload pass. Each entry: as_sent (what the user called it), catalog_id (resolved slug), male_file / female_file (matched raw filenames under D:/Forge Legacy Animations/MP4/{MALE,FEMALE}, or null), status (queued|no-source|uploaded), note.",
+  "_comment": "Missing exercise animations the PO flags during workouts, queued for a bulk process+upload pass. Each entry: as_sent (what the user called it), catalog_id (resolved slug), male_file / female_file (matched raw filenames under D:/Forge Legacy Animations/MP4/{MALE,FEMALE}, or null), status (queued|no-source|uploaded), note. || 2026-08-06: entries tagged PROGRAM-COVERAGE SWEEP come from auditing all 8 catalog programs against a real listing of the exercise-media bucket (male=417, female=297). They are QUEUED WITH NULL SOURCES on purpose — the clips are believed to exist on the Seagate but it was not connected. process_pending.py SKIPS a queued entry whose srcs are null, so match_catalog.py must run first.",
   "pending": [
     {
       "as_sent": "Alternating dumbbell curl",
@@ -7,7 +7,7 @@
       "name": "Alternating Dumbbell Curl",
       "male_src": "D:/Forge Legacy Animations/MP4/MALE/Gym_Workout_/Dumbbell-Alternate-Biceps-Curl_Upper-Arms-FIX_.mp4",
       "female_src": "D:/Forge Legacy Animations/MP4/FEMALE/Gym_Workout_/Dumbbell-Alternate-Biceps-Curl-(female)_Upper-Arms.mp4",
-      "status": "queued",
+      "status": "uploaded",
       "note": "Standing dumbbell alternating biceps curl. High confidence; excluded seated/incline/hammer/reverse variants. Male uses the -FIX- cleaned version."
     },
     {
@@ -16,7 +16,7 @@
       "name": "Dumbbell Chest Fly",
       "male_src": "D:/Forge Legacy Animations/MP4/MALE/Gym_Workout_/Dumbbell-Alternative-Fly-(male)_Chest_.mp4",
       "female_src": "D:/Forge Legacy Animations/MP4/FEMALE/Gym_Workout_/Dumbbell-Fly-(female)_Chest.mp4",
-      "status": "queued",
+      "status": "uploaded",
       "note": "Flat-bench dumbbell fly, VISUALLY VERIFIED both genders (frame extract). Male's plain flat-bench clip is labelled 'Alternative-Fly' in the library; excluded incline/decline/floor/low/one-arm."
     },
     {
@@ -25,7 +25,7 @@
       "name": "Single Arm Dumbbell Lateral Raise",
       "male_src": "D:/Forge Legacy Animations/MP4/MALE/Gym_Workout_/Dumbbell-One-Arm-Lateral-Raise_Shoulder.mp4",
       "female_src": null,
-      "status": "queued",
+      "status": "uploaded",
       "note": "MALE ONLY — female already mapped/uploaded (Dumbbell-Single-arm-Leaning-Lateral-Raise-(female)). Standing one-arm dumbbell lateral raise; excluded incline/lying-rear/bodyweight. Do NOT re-upload female."
     },
     {
@@ -43,7 +43,7 @@
       "name": "Alternating Dumbbell Bench Press",
       "male_src": "D:/Forge Legacy Animations/MP4/MALE/Gym_Workout_/Dumbbell-Alternate-Bench-Press-(high-start)_Chest_.mp4",
       "female_src": null,
-      "status": "queued",
+      "status": "uploaded",
       "note": "MALE ONLY — flat-bench alternating dumbbell press. Female library has only a FLOOR press (different movement), not substituting it; female stays on the glyph fallback."
     },
     {
@@ -52,7 +52,7 @@
       "name": "Assisted Dip Machine",
       "male_src": "D:/Forge Legacy Animations/MP4/MALE/Gym_Workout_/Assisted-Triceps-Dip-(kneeling)_Upper-Arms.mp4",
       "female_src": "D:/Forge Legacy Animations/MP4/FEMALE/Gym_Workout_/Assisted-Triceps-Dip-(kneeling)-(female)_Upper-Arms.mp4",
-      "status": "queued",
+      "status": "uploaded",
       "note": "VISUALLY VERIFIED (male frame) — counterweight/kneeling assisted dip machine. Distinct from band-assisted-dip and lever-seated-dip."
     },
     {
@@ -61,7 +61,7 @@
       "name": "Band Rear Delt Fly",
       "male_src": "D:/Forge Legacy Animations/MP4/MALE/Gym_Workout_/Band-Reverse-Fly_Shoulders_.mp4",
       "female_src": "D:/Forge Legacy Animations/MP4/FEMALE/Home_Workout_/Resistance-Band-Bent-Over-Reverse-Fly-(female)_Sho.mp4",
-      "status": "queued",
+      "status": "uploaded",
       "note": "Name-match (band reverse fly = rear delt, Shoulders-tagged). Male frame consistent with bent-over reverse fly. Confirm at processing QA."
     },
     {
@@ -70,7 +70,7 @@
       "name": "Barbell Behind-the-Neck Press",
       "male_src": "D:/Forge Legacy Animations/MP4/MALE/Home_Workout_/Standing-Behind-Neck-Press_Shoulders.mp4",
       "female_src": null,
-      "status": "queued",
+      "status": "uploaded",
       "note": "MALE ONLY — VISUALLY VERIFIED barbell standing behind-neck press. No female behind-neck press clip in the library."
     },
     {
@@ -81,6 +81,321 @@
       "female_src": null,
       "status": "no-source",
       "note": "No Bradford / front-to-back overhead press clip anywhere in the 9,333 raw library."
+    },
+    {
+      "as_sent": "Assisted Pull-Up Machine",
+      "catalog_id": "assisted-pull-up-machine",
+      "name": "Assisted Pull-Up Machine",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: body-recomposition-foundation. Missing variant(s): male+female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Barbell Spoto Press",
+      "catalog_id": "barbell-spoto-press",
+      "name": "Barbell Spoto Press",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: bench-approach-intermediate. Missing variant(s): male+female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Barbell Tempo Squat",
+      "catalog_id": "barbell-tempo-squat",
+      "name": "Barbell Tempo Squat",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: squat-ascent-intermediate. Missing variant(s): male+female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Battle Rope Slams",
+      "catalog_id": "battle-rope-slams",
+      "name": "Battle Rope Slams",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: iron-and-engine. Missing variant(s): male+female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Chest-Supported Row Machine",
+      "catalog_id": "chest-supported-row-machine",
+      "name": "Chest-Supported Row Machine",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: body-recomposition-foundation, full-frame-5day. Missing variant(s): male+female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Dumbbell Chest-Supported Row",
+      "catalog_id": "dumbbell-chest-supported-row",
+      "name": "Dumbbell Chest-Supported Row",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: strength-foundation-i-3day, strength-foundation-ii-4day. Missing variant(s): male+female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Dumbbell Farmer Carry",
+      "catalog_id": "dumbbell-farmer-carry",
+      "name": "Dumbbell Farmer Carry",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: iron-and-engine. Missing variant(s): male+female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Forward Sled Drag",
+      "catalog_id": "forward-sled-drag",
+      "name": "Forward Sled Drag",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: iron-and-engine. Missing variant(s): male+female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Hip Thrust Machine",
+      "catalog_id": "hip-thrust-machine",
+      "name": "Hip Thrust Machine",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: body-recomposition-foundation. Missing variant(s): male+female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Leg Extension Machine",
+      "catalog_id": "leg-extension-machine",
+      "name": "Leg Extension Machine",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: body-recomposition-foundation. Missing variant(s): male+female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Machine Back Extension",
+      "catalog_id": "machine-back-extension",
+      "name": "Machine Back Extension",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: body-recomposition-foundation. Missing variant(s): male+female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Machine Chest Press",
+      "catalog_id": "machine-chest-press",
+      "name": "Machine Chest Press",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: body-recomposition-foundation. Missing variant(s): male+female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Machine Incline Chest Press",
+      "catalog_id": "machine-incline-chest-press",
+      "name": "Machine Incline Chest Press",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: body-recomposition-foundation. Missing variant(s): male+female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Machine Lateral Raise",
+      "catalog_id": "machine-lateral-raise",
+      "name": "Machine Lateral Raise",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: body-recomposition-foundation. Missing variant(s): male+female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Machine Rear Delt Fly",
+      "catalog_id": "machine-rear-delt-fly",
+      "name": "Machine Rear Delt Fly",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: body-recomposition-foundation. Missing variant(s): male+female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Machine Seated Row",
+      "catalog_id": "machine-seated-row",
+      "name": "Machine Seated Row",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: body-recomposition-foundation. Missing variant(s): male+female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Seated Leg Curl Machine",
+      "catalog_id": "seated-leg-curl-machine",
+      "name": "Seated Leg Curl Machine",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: body-recomposition-foundation, full-frame-5day. Missing variant(s): male+female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Ski Erg",
+      "catalog_id": "ski-erg",
+      "name": "Ski Erg",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: iron-and-engine. Missing variant(s): male+female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Standing Calf Raise Machine",
+      "catalog_id": "standing-calf-raise-machine",
+      "name": "Standing Calf Raise Machine",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: full-frame-5day. Missing variant(s): male+female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Barbell Back Squat",
+      "catalog_id": "barbell-back-squat",
+      "name": "Barbell Back Squat",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: bench-approach-intermediate, deadlift-measure-intermediate, full-frame-5day, iron-and-engine, squat-ascent-intermediate, strength-foundation-i-3day, strength-foundation-ii-4day. Missing variant(s): female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Barbell Deficit Deadlift",
+      "catalog_id": "barbell-deficit-deadlift",
+      "name": "Barbell Deficit Deadlift",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: deadlift-measure-intermediate. Missing variant(s): female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Barbell Larsen Press",
+      "catalog_id": "barbell-larsen-press",
+      "name": "Barbell Larsen Press",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: bench-approach-intermediate. Missing variant(s): female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Barbell Pause Deadlift",
+      "catalog_id": "barbell-pause-deadlift",
+      "name": "Barbell Pause Deadlift",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: deadlift-measure-intermediate. Missing variant(s): female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Barbell Pendlay Row",
+      "catalog_id": "barbell-pendlay-row",
+      "name": "Barbell Pendlay Row",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: bench-approach-intermediate, deadlift-measure-intermediate. Missing variant(s): female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Barbell Pin Press",
+      "catalog_id": "barbell-pin-press",
+      "name": "Barbell Pin Press",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: bench-approach-intermediate. Missing variant(s): female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Barbell Skull Crusher",
+      "catalog_id": "barbell-skull-crusher",
+      "name": "Barbell Skull Crusher",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: deadlift-measure-intermediate, squat-ascent-intermediate. Missing variant(s): female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Barbell Snatch-Grip Deadlift",
+      "catalog_id": "barbell-snatch-grip-deadlift",
+      "name": "Barbell Snatch-Grip Deadlift",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: deadlift-measure-intermediate. Missing variant(s): female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Barbell Walking Lunge",
+      "catalog_id": "barbell-walking-lunge",
+      "name": "Barbell Walking Lunge",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: squat-ascent-intermediate. Missing variant(s): female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Cable Rope Hammer Curl",
+      "catalog_id": "cable-rope-hammer-curl",
+      "name": "Cable Rope Hammer Curl",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: full-frame-5day. Missing variant(s): female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Dumbbell Rear Delt Fly",
+      "catalog_id": "dumbbell-rear-delt-fly",
+      "name": "Dumbbell Rear Delt Fly",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: bench-approach-intermediate, deadlift-measure-intermediate, squat-ascent-intermediate, strength-foundation-i-3day, strength-foundation-ii-4day. Missing variant(s): male. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Hack Squat Machine",
+      "catalog_id": "hack-squat-machine",
+      "name": "Hack Squat Machine",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: full-frame-5day. Missing variant(s): male. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Lying Leg Curl Machine",
+      "catalog_id": "lying-leg-curl-machine",
+      "name": "Lying Leg Curl Machine",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: full-frame-5day. Missing variant(s): female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Medicine Ball Side Slam",
+      "catalog_id": "medicine-ball-side-slam",
+      "name": "Medicine Ball Side Slam",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: iron-and-engine. Missing variant(s): female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Parallel Bar Dip",
+      "catalog_id": "parallel-bar-dip",
+      "name": "Parallel Bar Dip",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: bench-approach-intermediate, full-frame-5day. Missing variant(s): female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
+    },
+    {
+      "as_sent": "Suitcase Carry",
+      "catalog_id": "suitcase-carry",
+      "name": "Suitcase Carry",
+      "male_src": null,
+      "female_src": null,
+      "status": "queued",
+      "note": "PROGRAM-COVERAGE SWEEP 2026-08-06 — needed by: strength-foundation-i-3day, strength-foundation-ii-4day. Missing variant(s): female. SOURCE NOT MATCHED YET: run match_catalog.py once the Seagate is mounted and fill male_src/female_src before process_pending.py — a queued entry with null srcs is skipped silently."
     }
   ]
 }
