@@ -188,7 +188,7 @@ export async function fetchProgressHub(): Promise<ProgressHubData> {
   const active = myPrograms.filter((p) => p.state === 'active')[0];
   let next: NextProgram | null = null;
   if (active) {
-    const completed = await fetchProgramCompletedCount(active.id);
+    const completed = await fetchProgramCompletedCount(active.id, active.structure);
     const ns = nextSession(active.structure, completed);
     const sub = ns ? `Week ${ns.weekIndex + 1} of ${active.structure.weeks} · Next: ${dayLabel(ns.day, ns.dayIndex)}` : 'Program complete';
     next = { id: active.id, title: active.name, sub };

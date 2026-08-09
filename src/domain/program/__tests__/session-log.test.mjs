@@ -62,7 +62,7 @@ test('training a session out of order does not re-serve it', () => {
   const marks = [mark(0, 0), mark(0, 2)]; // did A and C; B untouched
   const next = nextOpenSlot(STRUCTURE, marks);
   assert.deepEqual([next.weekIndex, next.dayIndex], [0, 1], 'next up must be the untouched B, not C again');
-  assert.equal(touchedCount(marks), 2);
+  assert.equal(touchedCount(STRUCTURE, marks), 2);
 });
 
 test('next up is the first untouched session, whatever order they were done in', () => {
@@ -85,7 +85,7 @@ test('a skip is passed over, exactly like a completion', () => {
 
 test('a skip counts toward finishing the program', () => {
   const marks = [mark(0, 0), mark(0, 1, 'skipped'), mark(0, 2), mark(1, 0, 'skipped'), mark(1, 1), mark(1, 2)];
-  assert.equal(touchedCount(marks), 6);
+  assert.equal(touchedCount(STRUCTURE, marks), 6);
   assert.ok(isProgramFinished(STRUCTURE, marks), 'six accounted-for sessions finish a six-session program');
   assert.equal(nextOpenSlot(STRUCTURE, marks), null, 'a finished program has nothing left to open');
 });
@@ -96,8 +96,54 @@ test('a skip counts toward finishing the program', () => {
  */
 test('a finished program still says how much of it was actually trained', () => {
   const marks = [mark(0, 0), mark(0, 1, 'skipped'), mark(0, 2), mark(1, 0, 'skipped'), mark(1, 1), mark(1, 2)];
-  assert.deepEqual(sessionTally(marks), { trained: 4, skipped: 2, touched: 6 });
-  assert.notEqual(sessionTally(marks).trained, 6, 'a skip must never be countable as a session trained');
+  assert.deepEqual(sessionTally(STRUCTURE, marks), { trained: 4, skipped: 2, touched: 6 });
+  assert.notEqual(sessionTally(STRUCTURE, marks).trained, 6, 'a skip must never be countable as a session trained');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ORPHANED MARKS — a row that outlived the session it was written against
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * ⚠ THE GRADUATION BUG THESE GUARD. Rows in `program_sessions` are keyed by (week_index, day_index) and
+ * nothing deletes them when a structure shrinks. Graduation is `touched >= totalSessions(structure)` with
+ * the total recomputed from the CURRENT structure — so counting rows that no longer name a session let a
+ * shortened program read as finished, writing a PROGRAM_GRADUATED timeline event and five honors that
+ * cannot be revoked (Amendment-001 §1).
+ *
+ * The structural edit that produces orphans is now blocked at both ends — Edit is future-state only
+ * (W-5 Decision 1) and the server rejects a structure write on a started program. These tests hold the
+ * arithmetic line behind both, because a UI rule is not a proof and the coach's edit layer will write to
+ * live programs by design.
+ */
+test('a mark with no live slot is not counted', () => {
+  // Six rows written against a six-session program, which then shrank to one week.
+  const marks = [mark(0, 0), mark(0, 1), mark(0, 2), mark(1, 0), mark(1, 1), mark(1, 2)];
+  const shrunk = { ...STRUCTURE, weeks: 1 };
+  assert.equal(totalSessions(shrunk), 3);
+  assert.equal(touchedCount(shrunk, marks), 3, 'only the three marks that still name a session may count');
+});
+
+test('orphaned marks cannot graduate a program', () => {
+  const marks = [mark(0, 0), mark(0, 1), mark(0, 2), mark(1, 0), mark(1, 1)];
+  // Against the real two-week program: five of six done, not finished.
+  assert.ok(!isProgramFinished(STRUCTURE, marks));
+  // Shrink it to one week. A raw count says 5 >= 3 and graduates. The slot-validated count says 3 >= 3.
+  const shrunk = { ...STRUCTURE, weeks: 1 };
+  assert.equal(touchedCount(shrunk, marks), 3, 'the two week-2 rows no longer name a session');
+  assert.equal(marks.length, 5, 'the rows themselves are untouched — nothing is deleted, only uncounted');
+});
+
+test('the tally never reports work against sessions that no longer exist', () => {
+  const marks = [mark(0, 0), mark(0, 1, 'skipped'), mark(1, 0), mark(1, 1, 'skipped'), mark(1, 2)];
+  const shrunk = { ...STRUCTURE, weeks: 1 };
+  assert.deepEqual(sessionTally(shrunk, marks), { trained: 1, skipped: 1, touched: 2 });
+});
+
+test('a mark on a day the structure never had is not counted', () => {
+  // Not only shrinking: a mark can also name a day index past the width of its week.
+  assert.equal(touchedCount(STRUCTURE, [mark(0, 0), mark(0, 7)]), 1);
+  assert.equal(touchedCount(STRUCTURE, [mark(9, 0)]), 0);
 });
 
 test('an unfinished program is not finished, however the sessions are spread', () => {

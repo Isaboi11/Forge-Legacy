@@ -72,6 +72,34 @@ test('a cardio finisher crosses as a cardio block, not as sets of a run', () => 
   assert.equal(ex.sets, undefined, 'a mile is not three sets of a mile');
 });
 
+/**
+ * ⚠ THE DURATION USED TO BE DROPPED IN TRANSIT.
+ *
+ * A template carries BOTH `targetMi` and `targetDurationSec`, and only the distance crossed into the
+ * program day. So a session prescribing "run for twenty minutes" was written on save, stored, read back,
+ * and then silently discarded one step before anyone could see it — the athlete got a run of no stated
+ * length. Nothing errored, because an open target is a legitimate state; it just was not the one
+ * authored.
+ */
+test('a timed cardio block keeps its duration', () => {
+  const [ex] = templateRowsToDayWith(
+    [{ catalogKey: 'cardio:run', name: 'Easy Run', kind: 'cardio', modality: 'outdoor', sets: 1, targetReps: 0, targetMi: null, targetDurationSec: 1200, section: 'cooldown' }],
+    lookup,
+  ).cooldown;
+  assert.equal(ex.targetSec, 1200, 'twenty minutes was authored and must survive the crossing');
+  assert.equal(ex.targetMi, null, 'and an absent distance stays absent rather than becoming 0');
+});
+
+test('a cardio block with neither target crosses as fully open', () => {
+  // `null` is meaningful here: it prescribes an open bout. A 0 would prescribe a run of no distance.
+  const [ex] = templateRowsToDayWith(
+    [{ catalogKey: 'cardio:run', name: 'Run', kind: 'cardio', modality: 'outdoor', sets: 1, targetReps: 0 }],
+    lookup,
+  ).main;
+  assert.equal(ex.targetMi, null);
+  assert.equal(ex.targetSec, null);
+});
+
 test('a cardio block names itself from activity + modality rather than copying the stored name', () => {
   const indoor = templateRowsToDayWith([{ catalogKey: 'cardio:run', name: 'stale name', kind: 'cardio', modality: 'indoor', sets: 1, targetReps: 0, targetMi: 1 }], lookup).main[0];
   const outdoor = templateRowsToDayWith([{ catalogKey: 'cardio:run', name: 'stale name', kind: 'cardio', modality: 'outdoor', sets: 1, targetReps: 0, targetMi: 1 }], lookup).main[0];

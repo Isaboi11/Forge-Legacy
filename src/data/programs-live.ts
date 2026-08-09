@@ -1,5 +1,6 @@
 import type { CardioActivity } from '@/domain/workout/conditioning';
 import { supabase } from '@/lib/supabase';
+import { touchedCount } from '@/domain/program/progress-core';
 import type { LoggedWorkout, ProgramState, SessionMark, SessionState } from '@/domain/program/progress-core';
 import type { LiftMaxes } from '@/domain/program/percent-max';
 
@@ -482,13 +483,23 @@ export async function deleteProgram(id: string): Promise<void> {
  * rows. A skip counts here — that is the product decision — while `state` on the row keeps saying which
  * it was, so nothing downstream can present a skip as a workout.
  */
-export async function fetchProgramCompletedCount(programId: string): Promise<number> {
-  const { count, error } = await supabase
-    .from('program_sessions')
-    .select('id', { count: 'exact', head: true })
-    .eq('program_id', programId);
-  if (error) return 0;
-  return count ?? 0;
+/**
+ * How many of this program's sessions are accounted for — trained or skipped.
+ *
+ * ⚠ TAKES THE STRUCTURE, and that is the whole change. This was a raw `count(*)` over `program_sessions`,
+ * which over-reports the moment a program's shape no longer matches the rows written against it: nothing
+ * deletes a (week_index, day_index) row when a structure shrinks. Every caller feeds the result straight
+ * into `nextSession(structure, done)`, so an over-count served a slot past the end of the program — and
+ * the same arithmetic in SQL is what decides graduation.
+ *
+ * `touchedCount` drops any mark with no live slot. The read is a row fetch rather than a `head: true`
+ * count because the filter needs the coordinates; a program is at most 52 × 6 rows.
+ */
+export async function fetchProgramCompletedCount(
+  programId: string,
+  structure: ProgramStructure,
+): Promise<number> {
+  return touchedCount(structure, await fetchProgramSessions(programId));
 }
 
 /** Which sessions of a program have been touched, and how. Empty on any read failure. */

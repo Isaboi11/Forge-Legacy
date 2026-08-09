@@ -536,9 +536,32 @@ export function nextOpenSlot(structure: ProgramStructure, marks: readonly Sessio
   return slotStates(structure, marks).find((s) => s.state === null && s.day != null) ?? null;
 }
 
+/**
+ * The marks that still land on a real session — the ONLY ones any count may use.
+ *
+ * ⚠ A MARK CAN OUTLIVE ITS SLOT. Rows are keyed by (week_index, day_index) and nothing deletes them
+ * when the structure shrinks, so a program edited from 8 weeks down to 4 keeps every row it ever wrote.
+ * Counting those orphans is not a rounding error — graduation is `touched >= totalSessions(structure)`
+ * and the total is recomputed from the CURRENT structure, so 21 rows against a 12-session structure
+ * reads as finished. That fires a PROGRAM_GRADUATED timeline event and five honors nothing can revoke
+ * (Amendment-001 §1: a graduated program cannot be reactivated).
+ *
+ * The structural edit that creates orphans is now blocked at both ends (W-5 future-state only, plus the
+ * server guard), so this is the second line rather than the first. It stays because the first line is a
+ * UI rule and this one is arithmetic: any future path that reshapes a live program — the coach's edit
+ * layer included — gets a count that cannot over-report, without having to remember to.
+ *
+ * SQL twin: the `v_done` counts in `save_workout` and `skip_program_session` join `program_slots` for
+ * exactly this reason. Change the rule here and change it there.
+ */
+function liveMarks(structure: ProgramStructure, marks: readonly SessionMark[]): SessionMark[] {
+  const live = new Set(scheduleSlots(structure).map((s) => slotKey(s.weekIndex, s.dayIndex)));
+  return marks.filter((m) => live.has(slotKey(m.weekIndex, m.dayIndex)));
+}
+
 /** How many sessions are accounted for — trained OR skipped. This is what progress and graduation count. */
-export function touchedCount(marks: readonly SessionMark[]): number {
-  return marks.length;
+export function touchedCount(structure: ProgramStructure, marks: readonly SessionMark[]): number {
+  return liveMarks(structure, marks).length;
 }
 
 /**
@@ -548,14 +571,18 @@ export function touchedCount(marks: readonly SessionMark[]): number {
  * copy that announces it is entitled to say so — "28 trained, 4 skipped" rather than "32 workouts",
  * which would be a claim about work nobody did.
  */
-export function sessionTally(marks: readonly SessionMark[]): { trained: number; skipped: number; touched: number } {
-  const trained = marks.filter((m) => m.state === 'completed').length;
-  return { trained, skipped: marks.length - trained, touched: marks.length };
+export function sessionTally(
+  structure: ProgramStructure,
+  marks: readonly SessionMark[],
+): { trained: number; skipped: number; touched: number } {
+  const live = liveMarks(structure, marks);
+  const trained = live.filter((m) => m.state === 'completed').length;
+  return { trained, skipped: live.length - trained, touched: live.length };
 }
 
 /** Every session accounted for — the graduation condition, skips included. */
 export function isProgramFinished(structure: ProgramStructure, marks: readonly SessionMark[]): boolean {
-  return marks.length >= totalSessions(structure);
+  return touchedCount(structure, marks) >= totalSessions(structure);
 }
 
 /**

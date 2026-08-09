@@ -12,6 +12,22 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { fetchTemplateDetail, saveTemplate, type TemplateExercise } from '@/data/templates-live';
 import type { ProgramExercise } from '@/data/programs-live';
+import {
+  CARDIO_ACTIVITIES,
+  bumpDistance,
+  bumpPace,
+  bumpSpeed,
+  distanceLabel,
+  effortLabel,
+  hasRateTarget,
+  newCardioBlock,
+  activitySymbol,
+  activityFromKey,
+  cardioKey,
+  usesSpeed,
+  type CardioActivity,
+} from '@/domain/workout/conditioning';
+import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useToast } from '@/hooks/useCeremony';
 import { clearBuilderInbox, readBuilderInbox, type BuilderSection } from '@/lib/builder-inbox';
 import {
@@ -77,6 +93,7 @@ export default function WorkoutBuilderScreen() {
   const [draft, setDraft] = useState<WorkoutDraft | null>(null);
   const [saving, setSaving] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
+  const [cardioSheet, setCardioSheet] = useState<BuilderSection | null>(null);
 
   /*
    * Boot and the picker round-trip in one pass, on every focus — read the stored draft, absorb anything
@@ -139,6 +156,21 @@ export default function WorkoutBuilderScreen() {
 
   const patch = (section: BuilderSection, fn: (list: ProgramExercise[]) => ProgramExercise[]) =>
     mutate((d) => ({ ...d, [section]: fn(d[section]) }));
+
+  /**
+   * Add a cardio block.
+   *
+   * W-25 had no cardio path at all — a one-off workout could not contain a run, while a program day
+   * could, so "build it first" and "build a program" disagreed about what a workout is. Same sheet
+   * and same `newCardioBlock` seed as the Program Builder, so a run means one thing in both.
+   */
+  const addCardio = (section: BuilderSection, activity: CardioActivity) => {
+    setCardioSheet(null);
+    patch(section, (l) => [
+      ...l,
+      { id: newExerciseId(), kind: 'cardio' as const, ...newCardioBlock(activity) },
+    ]);
+  };
 
   const addExercise = (section: BuilderSection) => {
     router.push({ pathname: '/exercise-picker', params: { mode: 'builder', dest: 'workout', vary: '0', week: '0', day: '0', section } });
@@ -237,8 +269,30 @@ export default function WorkoutBuilderScreen() {
                   onUp={() => patch(sec.key, (l) => swap(l, i, i - 1))}
                   onDown={() => patch(sec.key, (l) => swap(l, i, i + 1))}
                   onRemove={() => patch(sec.key, (l) => l.filter((_, k) => k !== i))}
-                  onSets={(dir) => patch(sec.key, (l) => l.map((x, k) => (k === i ? { ...x, sets: clampSets((x.sets ?? 1) + dir) } : x)))}
-                  onReps={(dir) => patch(sec.key, (l) => l.map((x, k) => (k === i ? { ...x, reps: clampReps((x.reps ?? 1) + dir) } : x)))}
+                  onSets={(dir) =>
+                    patch(sec.key, (l) =>
+                      l.map((x, k) =>
+                        k !== i
+                          ? x
+                          : x.kind === 'cardio'
+                            ? { ...x, targetMi: bumpDistance(x.targetMi ?? null, dir) }
+                            : { ...x, sets: clampSets((x.sets ?? 1) + dir) },
+                      ),
+                    )
+                  }
+                  onReps={(dir) =>
+                    patch(sec.key, (l) =>
+                      l.map((x, k) => {
+                        if (k !== i) return x;
+                        if (x.kind !== 'cardio') return { ...x, reps: clampReps((x.reps ?? 1) + dir) };
+                        // Row B counts pace for a run and speed for a bike. The machines offer neither,
+                        // and the stepper is hidden for them rather than stepping a value nothing renders.
+                        return usesSpeed((x.activity ?? 'run') as CardioActivity)
+                          ? { ...x, targetSpdMph: bumpSpeed(x.targetSpdMph ?? null, dir) }
+                          : { ...x, targetPaceSec: bumpPace(x.targetPaceSec ?? null, dir) };
+                      }),
+                    )
+                  }
                   onPair={() => patch(sec.key, (l) => pairWithNext(l, i))}
                   onUnpair={() => patch(sec.key, (l) => unpairAt(l, i))}
                 />
@@ -249,6 +303,18 @@ export default function WorkoutBuilderScreen() {
                   <Path d="M12 5v14M5 12h14" />
                 </Svg>
                 <Text style={styles.addText}>Add {sec.addLabel}</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => setCardioSheet(sec.key)}
+                accessibilityRole="button"
+                accessibilityLabel={`Add a cardio block to ${sec.label.toLowerCase()}`}
+                style={styles.addBtn}
+              >
+                <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="round">
+                  <Path d="M12 5v14M5 12h14" />
+                </Svg>
+                <Text style={styles.addText}>Add a cardio block</Text>
               </Pressable>
             </View>
           );
@@ -270,6 +336,32 @@ export default function WorkoutBuilderScreen() {
         </Pressable>
         {!canSave ? <Text style={styles.gate}>Add at least one Main exercise to save.</Text> : null}
       </LinearGradient>
+
+      {/* Same rows and the same `newCardioBlock` seed as the Program Builder, so a run authored here and
+          a run authored there are the same thing. Targets are set on the card afterwards, because either
+          one can legitimately be left open. */}
+      <BottomSheet open={cardioSheet != null} onClose={() => setCardioSheet(null)} title="Add a cardio block">
+        <Text style={styles.cardioIntro}>
+          Set the distance and pace on the card. Leave either one open and you decide on the day.
+        </Text>
+        <View style={styles.cardioList}>
+          {CARDIO_ACTIVITIES.map((a) => (
+            <Pressable
+              key={a.key}
+              onPress={() => cardioSheet && addCardio(cardioSheet, a.key)}
+              accessibilityRole="button"
+              accessibilityLabel={`Add a ${a.name.toLowerCase()}`}
+              style={styles.cardioRow}
+            >
+              <Text style={styles.cardioSymbol}>{activitySymbol(a.key)}</Text>
+              <View style={styles.cardioRowText}>
+                <Text style={styles.cardioRowName}>{a.name}</Text>
+                <Text style={styles.cardioRowSub}>{a.sub}</Text>
+              </View>
+            </Pressable>
+          ))}
+        </View>
+      </BottomSheet>
 
       <ConfirmSheet
         open={confirmLeave}
@@ -314,6 +406,11 @@ function Row({
   onPair: () => void;
   onUnpair: () => void;
 }) {
+  const cardio = item.kind === 'cardio';
+  const activity = (item.activity ?? 'run') as CardioActivity;
+  const speed = cardio && usesSpeed(activity);
+  const hasRate = cardio && hasRateTarget(activity);
+
   return (
     <View style={[styles.card, pairing ? styles.cardPaired : null]}>
       {pairing && pairing.pos === 1 ? (
@@ -350,9 +447,50 @@ function Row({
         </View>
       </View>
 
+      {/*
+       * The SAME card for a lift and a run — only the two steppers count different units. A bespoke
+       * cardio card would break the list apart, and the Program Builder made the same call for the same
+       * reason.
+       *
+       * ⚠ ROW B DISAPPEARS FOR A ROWER OR A STAIR CLIMBER. `RATE_KIND` gives them no honest rate — a
+       * rower's metric is a 500m split and this app computes none — so the slot is absent rather than
+       * stepping a number nothing will ever render.
+       */}
       <View style={styles.steppers}>
-        <Stepper label="sets" value={String(item.sets ?? 1)} onDown={() => onSets(-1)} onUp={() => onSets(1)} name={item.name} />
-        <Stepper label="reps" value={String(item.reps ?? 1)} onDown={() => onReps(-1)} onUp={() => onReps(1)} name={item.name} />
+        {cardio ? (
+          <Stepper
+            label={item.targetMi == null ? '' : 'mi'}
+            value={distanceLabel(item.targetMi ?? null, (m) => m)}
+            onDown={() => onSets(-1)}
+            onUp={() => onSets(1)}
+            name={item.name}
+          />
+        ) : (
+          <Stepper label="sets" value={String(item.sets ?? 1)} onDown={() => onSets(-1)} onUp={() => onSets(1)} name={item.name} />
+        )}
+        {!cardio ? (
+          <Stepper label="reps" value={String(item.reps ?? 1)} onDown={() => onReps(-1)} onUp={() => onReps(1)} name={item.name} />
+        ) : hasRate ? (
+          <Stepper
+            label={speed ? (item.targetSpdMph == null ? 'speed' : 'mph') : item.targetPaceSec == null ? 'pace' : '/mi'}
+            value={effortLabel(
+              {
+                activity,
+                name: item.name,
+                equip: item.equip ?? '',
+                modality: item.modality ?? 'outdoor',
+                targetMi: item.targetMi ?? null,
+                targetPaceSec: item.targetPaceSec ?? null,
+                targetSpdMph: item.targetSpdMph ?? null,
+              },
+              (n) => n,
+              (n) => n,
+            )}
+            onDown={() => onReps(-1)}
+            onUp={() => onReps(1)}
+            name={item.name}
+          />
+        ) : null}
       </View>
 
       {!last ? (
@@ -403,18 +541,28 @@ const swap = (l: ProgramExercise[], i: number, j: number): ProgramExercise[] => 
 function toTemplateExercises(d: WorkoutDraft): TemplateExercise[] {
   const of = (list: ProgramExercise[], section: TemplateExercise['section']): TemplateExercise[] =>
     list.map((x) => ({
-      catalogKey: x.catalogKey ?? null,
+      // ⚠ THE ACTIVITY RIDES IN `catalogKey`. `TemplateExercise` has no activity field and adding one
+      // would mean a migration — but `conditioning.ts` already defines this exact round-trip for the
+      // purpose: `cardioKey('run')` is `'cardio:run'` and `activityFromKey` reads it back. Using the
+      // convention that exists beats inventing a column.
+      catalogKey:
+        x.kind === 'cardio'
+          ? cardioKey((x.activity ?? 'run') as CardioActivity)
+          : (x.catalogKey ?? null),
       name: x.name,
       sets: x.sets ?? 1,
       targetReps: x.reps ?? 0,
       section,
-      kind: 'strength' as const,
+      // ⚠ WAS HARDCODED `'strength'`, WITH BOTH TARGETS NULLED. Every cardio block an athlete authored
+      // was silently saved as a strength row with no distance — the exact write-only-field failure the
+      // schema's own comments warn about, and the reason W-25 could not hold a run at all.
+      kind: x.kind === 'cardio' ? ('cardio' as const) : ('strength' as const),
       groupId: x.groupId ?? null,
       groupName: x.groupName ?? null,
       groupKind: x.groupKind ?? null,
       groupRounds: x.groupRounds ?? null,
-      targetMi: null,
-      targetDurationSec: null,
+      targetMi: x.targetMi ?? null,
+      targetDurationSec: x.targetSec ?? null,
     }));
   return [...of(d.warmup, 'warmup'), ...of(d.main, 'main'), ...of(d.cooldown, 'cooldown')];
 }
@@ -425,12 +573,26 @@ function hydrate(name: string, exercises: TemplateExercise[], editId: string): W
   d.name = name;
   d.editId = editId;
   for (const e of exercises) {
+    // A cardio row read back has to come back as a cardio row. The activity comes from the `cardio:<x>`
+    // catalogKey written on save; anything unreadable falls back to a run, the only honest default for a
+    // distance-and-pace block. Modality is not stored on a template, so it resets to the outdoor default
+    // and the athlete flips it on the card — the same place they set it in the first place.
+    const isCardio = e.kind === 'cardio';
     const row: ProgramExercise = {
       id: newExerciseId(),
       catalogKey: e.catalogKey ?? undefined,
       name: e.name,
       sets: e.sets,
       reps: e.targetReps || undefined,
+      ...(isCardio
+        ? {
+            kind: 'cardio' as const,
+            activity: activityFromKey(e.catalogKey) ?? 'run',
+            modality: 'outdoor' as const,
+            targetMi: e.targetMi ?? null,
+            targetSec: e.targetDurationSec ?? null,
+          }
+        : null),
       ...(e.groupId
         ? { groupId: e.groupId, groupName: e.groupName ?? undefined, groupKind: e.groupKind ?? 'circuit', groupRounds: e.groupRounds ?? undefined }
         : null),
@@ -459,6 +621,24 @@ const styles = StyleSheet.create({
   headMeta: { fontSize: 12, color: flColor.gray400 },
 
   section: { paddingVertical: 14, gap: 10 },
+
+  cardioIntro: { fontSize: 13, lineHeight: 19, color: flColor.gray400, marginBottom: 12 },
+  cardioList: { gap: 8 },
+  cardioRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.surfaceRecessed,
+  },
+  cardioSymbol: { fontSize: 18, color: flColor.bronze400, width: 22, textAlign: 'center' },
+  cardioRowText: { flex: 1, gap: 2 },
+  cardioRowName: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
+  cardioRowSub: { fontSize: 12, color: flColor.gray600 },
   sectionRuled: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   sectionLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.gray400 },

@@ -5,8 +5,11 @@ import {
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { useFonts } from 'expo-font';
 import { ActivityIndicator, StyleSheet, useColorScheme, View } from 'react-native';
+import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { CoachBubble } from '@/components/forge/CoachBubble';
+import { OverlayBoundary } from '@/components/overlay-boundary';
 import { flColor } from '@/constants/foundation';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { ProfileProvider, useProfile } from '@/lib/profile';
@@ -42,6 +45,24 @@ export default function RootLayout() {
   }
 
   return (
+    /*
+     * ⚠ THE ROOT SAFE-AREA PROVIDER, AND IT IS LOAD-BEARING — added after shipping an OTA that would not
+     * launch on device.
+     *
+     * `useSafeAreaInsets()` THROWS without a provider above it ("No safe area value available"), and until
+     * now nothing needed one at this level: every screen gets a provider from react-navigation's own
+     * `SafeAreaProviderCompat` INSIDE the navigator, and the only other thing rendered beside the navigator
+     * — the splash overlay — uses no context at all. `CoachBubble` is the first component to live out here
+     * AND ask for insets, so it threw on first render and took the whole app with it.
+     *
+     * It never showed on web: `react-native-safe-area-context` has a DOM implementation that reads real
+     * metrics instead of throwing, so the web build was fine and the device build was blank. Anything
+     * rendered outside the navigator needs this — that is the general rule, not a one-off patch.
+     *
+     * `initialWindowMetrics` supplies the values synchronously so the first frame is not laid out at zero
+     * and then jumped.
+     */
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AuthProvider>
         {/* Inside AuthProvider because registration waits for a session, and outside the navigator so a
@@ -56,6 +77,17 @@ export default function RootLayout() {
                   <TourProvider>
                     <AnimatedSplashOverlay />
                     <RootNavigator />
+                    {/* Outside the Stack, like the splash above it, so it floats over every route rather
+                        than being re-mounted per screen. It gates its own visibility — a live workout, a
+                        ceremony, the tour and the signed-out routes all hide it (see CoachBubble).
+
+                        ⚠ INSIDE A BOUNDARY, and that is not belt-and-braces — it is the lesson from the
+                        launch crash above. A decoration rendered on every screen must never be able to
+                        take the app down: if the bubble throws, the bubble disappears and everything else
+                        still works. The safe-area fix removes today's cause; this removes the category. */}
+                    <OverlayBoundary>
+                      <CoachBubble />
+                    </OverlayBoundary>
                   </TourProvider>
                 </TourAnchorProvider>
               </CeremonyProvider>
@@ -66,6 +98,7 @@ export default function RootLayout() {
         </PushProvider>
       </AuthProvider>
     </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
 
@@ -141,6 +174,10 @@ function RootNavigator() {
         <Stack.Screen name="log-activity" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="exercise-picker" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="program-builder" options={{ presentation: 'fullScreenModal' }} />
+        {/* The coach. Declared here because a route is gated by being DECLARED, not by existing — see the
+            note below. It presents over the tabs: the bubble is reachable from every screen, so the thing
+            it opens must not push a card onto whichever stack happened to be underneath. */}
+        <Stack.Screen name="coach" options={{ presentation: 'fullScreenModal' }} />
         {/* Sending a program, and receiving one (0110). DECLARED, not merely present — the auth guard
             gates by declaration, and an undeclared route is an ungated one (the 2026-08-01 audit). */}
         <Stack.Screen name="send-program" options={{ presentation: 'fullScreenModal' }} />

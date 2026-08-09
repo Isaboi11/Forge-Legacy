@@ -1,0 +1,384 @@
+/**
+ * One workout, for today.
+ *
+ * ══ A DIFFERENT QUESTION FROM A PROGRAM, ASKED A DIFFERENT WAY ══
+ *
+ * A program starts from a goal and works down to today. A single workout starts from today: *"what are
+ * you training?"* — and the answer is usually a split ("push day") or a body part ("chest and triceps"),
+ * never "hypertrophy over eight weeks". So the intake is one question, not four, and the fill strategy
+ * changes with the answer.
+ *
+ * ══ TWO FILL STRATEGIES, BECAUSE THE TWO ANSWERS ARE NOT THE SAME SHAPE ══
+ *
+ *  · **A split** is already a pattern list — `PUSH`, `PULL`, `LEGS` — so it reuses the program engine's
+ *    skeletons unchanged. A push day is a push day whether it sits in a block or stands alone.
+ *
+ *  · **Body parts** are not. "Chest and triceps" names muscles, and the movements that train them span
+ *    patterns unevenly — nearly every chest exercise is a Horizontal Push, while triceps work is spread
+ *    across three patterns. Filling that from a pattern skeleton would either miss the muscle or prescribe
+ *    five bench variants. So it selects by muscle and then *spreads* across patterns (see `roundRobin`),
+ *    which is what stops a chest day being the same press four times.
+ *
+ * The output is a `ProgramDay` — the shape the Program Builder, the workout templates and `template-day-core`
+ * all already speak. Nothing new to teach the app.
+ */
+
+import type { ProgramDay, ProgramExercise } from '@/data/programs-live';
+
+import {
+  equipmentForEnvironment,
+  type Environment,
+  type Experience,
+  type Limitation,
+  type SessionMinutes,
+} from './constraints.ts';
+import {
+  contextFrom,
+  isCompound,
+  type CatalogExercise,
+  type EquipmentGate,
+} from './candidates.ts';
+import { exerciseBudget, prescribeReps, roleFor } from './prescribe.ts';
+import { equipmentAfterLimitations, limitationPatterns } from './rulebook/limitations.ts';
+import { skeletonFor } from './rulebook/skeletons.ts';
+import { preferenceRank } from './rulebook/preferences.ts';
+import { bandFor, type PasCategory } from './rulebook/volume.ts';
+import { fillSlot } from './candidates.ts';
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// WHAT ARE YOU TRAINING?
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+export type SplitName = 'push' | 'pull' | 'legs' | 'upper' | 'lower' | 'full_body';
+
+export const SPLITS: readonly SplitName[] = ['push', 'pull', 'legs', 'upper', 'lower', 'full_body'];
+
+export const SPLIT_LABEL: Record<SplitName, string> = {
+  push: 'Push',
+  pull: 'Pull',
+  legs: 'Legs',
+  upper: 'Upper body',
+  lower: 'Lower body',
+  full_body: 'Full body',
+};
+
+/**
+ * The body parts an athlete actually names, mapped onto the dataset's 29 muscle ids.
+ *
+ * Nobody walks into a gym thinking "today I train my transverse abdominis". They say chest, back, arms.
+ * These groupings are the translation, and they are deliberately generous — "back" includes traps because
+ * someone saying "back day" means shrugs are fair game, and excluding them would feel like the app
+ * disagreeing with them about their own body.
+ */
+export type BodyPart =
+  | 'chest'
+  | 'back'
+  | 'shoulders'
+  | 'biceps'
+  | 'triceps'
+  | 'legs'
+  | 'glutes'
+  | 'core';
+
+export const BODY_PARTS: readonly BodyPart[] = [
+  'chest',
+  'back',
+  'shoulders',
+  'biceps',
+  'triceps',
+  'legs',
+  'glutes',
+  'core',
+];
+
+/**
+ * ⚠ BICEPS AND TRICEPS ARE SEPARATE, not one "Arms" chip.
+ *
+ * Nobody trains "arms" — they train back and biceps, or chest and triceps. Collapsing the two meant an
+ * athlete who wanted a chest-and-triceps day either got curls they did not ask for or had to leave arms
+ * off entirely. Forearms ride with biceps because that is what a curl actually loads.
+ */
+export const BODY_PART_MUSCLES: Record<BodyPart, readonly string[]> = {
+  chest: ['chest'],
+  back: ['lats', 'upper_back', 'traps'],
+  shoulders: ['front_deltoids', 'lateral_deltoids', 'rear_deltoids', 'rotator_cuff'],
+  biceps: ['biceps', 'forearms'],
+  triceps: ['triceps'],
+  legs: ['quadriceps', 'hamstrings', 'calves', 'adductors', 'abductors'],
+  glutes: ['glutes'],
+  core: ['rectus_abdominis', 'obliques', 'transverse_abdominis', 'erector_spinae'],
+};
+
+export const BODY_PART_LABEL: Record<BodyPart, string> = {
+  chest: 'Chest',
+  back: 'Back',
+  shoulders: 'Shoulders',
+  biceps: 'Biceps',
+  triceps: 'Triceps',
+  legs: 'Legs',
+  glutes: 'Glutes',
+  core: 'Core',
+};
+
+/** What today's workout is for. */
+export type DayFocus =
+  | { kind: 'split'; split: SplitName }
+  | { kind: 'body_parts'; parts: readonly BodyPart[] };
+
+export interface DayRequest {
+  focus: DayFocus;
+  sessionMinutes: SessionMinutes;
+  experience: Experience;
+  environment: Environment;
+  ownedEquipment: readonly string[];
+  limitations: readonly Limitation[];
+  excludeExercises?: readonly string[];
+  /**
+   * Which PAS category to prescribe against. A one-off workout has no stated goal, so HYPERTROPHY is the
+   * default — moderate reps, moderate sets, the range most people mean by "a workout". An athlete inside
+   * a strength block who wants one extra session can say so.
+   */
+  category?: PasCategory;
+}
+
+export interface DayResult {
+  day: ProgramDay;
+  /** Patterns or body parts nothing could be found for, so the wizard can say it rather than hide it. */
+  missing: string[];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// SPREADING ACROSS PATTERNS
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Take the best from each pattern in turn, then go round again.
+ *
+ * ⚠ THIS IS WHAT STOPS A CHEST DAY BEING FOUR BENCH PRESSES. Ranked purely by quality, the top five
+ * chest exercises are all Horizontal Push — bench, incline bench, dumbbell bench, close-grip bench, fly —
+ * because that is genuinely what trains a chest. Taking the top five gives a day that is one movement
+ * repeated with a different angle, which is not a workout, it is a warm-up for an argument.
+ *
+ * Round-robin gives breadth first and depth second: the best press, then the best triceps movement, then
+ * the second-best press. When a pattern runs out the rotation simply skips it, so a focus that really
+ * does live in one pattern still fills its day rather than coming up short.
+ */
+function roundRobin(queues: CatalogExercise[][], budget: number, out: CatalogExercise[]): void {
+  let progress = true;
+  while (out.length < budget && progress) {
+    progress = false;
+    for (const q of queues) {
+      if (out.length >= budget) break;
+      const next = q.shift();
+      if (next) {
+        out.push(next);
+        progress = true;
+      }
+    }
+  }
+}
+
+/**
+ * Breadth across the patterns that matter, then depth into them — and only then the marginal ones.
+ *
+ * ⚠ A SECOND PASS MUST GO DEEPER, NOT WIDER. Rotating through every matching pattern until the day is
+ * full sounds fair and produces nonsense: "back day" came out as row, pull-up, shrug, then *Barbell Front
+ * Rack Carry*, *Barbell Clean* and *Medicine Ball Squat to Throw*, because those patterns technically list
+ * `upper_back` as a primary mover and the rotation had run out of good ones to visit.
+ *
+ * The rule that fixes it: a pattern only joins the rotation if it holds a movement the rulebook names for
+ * it — a canonical answer, not merely a matching muscle. Those patterns are cycled until the day is full,
+ * going deeper (bench, then incline, then dumbbell press) rather than reaching sideways. Everything else
+ * is a last resort, used only when the preferred patterns cannot fill the day at all, which is what keeps
+ * a bodyweight athlete's options open without letting a clean into someone's back day.
+ */
+function selectForFocus(
+  byPattern: Map<string, CatalogExercise[]>,
+  budget: number,
+): CatalogExercise[] {
+  const preferred: CatalogExercise[][] = [];
+  const marginal: CatalogExercise[][] = [];
+  for (const [pattern, list] of byPattern) {
+    if (list.length === 0) continue;
+    const leadIsCanonical = Number.isFinite(preferenceRank(pattern, list[0].key));
+    (leadIsCanonical ? preferred : marginal).push(list);
+  }
+
+  const out: CatalogExercise[] = [];
+  roundRobin(preferred, budget, out);
+  if (out.length < budget) roundRobin(marginal, budget, out);
+  return out;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// BUILDING
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Build today's workout.
+ *
+ * Compounds are ordered first regardless of how the exercises were chosen — the one ordering rule that
+ * holds for every session in the app, and the reason `roleFor` can decide a prescription from position
+ * alone.
+ */
+export function buildDayWorkout(
+  req: DayRequest,
+  pool: readonly CatalogExercise[],
+  canDo: EquipmentGate,
+): DayResult {
+  const category: PasCategory = req.category ?? 'HYPERTROPHY';
+  const band = bandFor(category, false);
+  const budget = Math.min(exerciseBudget(req.sessionMinutes), band.maxExercises);
+
+  // ⚠ THROUGH `equipmentForEnvironment`, exactly as the program assembler does — not `req.ownedEquipment`
+  // directly. A full-gym athlete's owned list is usually EMPTY (they own nothing; the gym does), so
+  // reading it raw handed the day builder a bare floor: a full-gym chest day came back as four push-up
+  // variants and "back day" came back empty, because with no bar there is no back movement to find.
+  const owned = equipmentAfterLimitations(
+    equipmentForEnvironment(req.environment, req.ownedEquipment),
+    req.limitations,
+  );
+
+  const ctx = contextFrom({
+    owned,
+    canDo,
+    experience: req.experience,
+    limitations: req.limitations,
+    limitationPatterns,
+    excludeExercises: req.excludeExercises ?? [],
+  });
+
+  const missing: string[] = [];
+  const chosen: { ex: CatalogExercise; pattern: string }[] = [];
+
+  if (req.focus.kind === 'split') {
+    // A split IS a pattern list, so this is the program engine's own fill path, unchanged.
+    const skeleton = skeletonFor(splitGoalFor(req.focus.split), splitDaysFor(req.focus.split));
+    const slots = skeleton ? skeletonSlotsFor(req.focus.split, skeleton) : [];
+    const used = new Set<string>();
+    for (const pattern of slots) {
+      if (chosen.length >= budget) break;
+      const found = fillSlot(pattern, pool, { ...ctx, used });
+      if (!found) {
+        missing.push(pattern);
+        continue;
+      }
+      used.add(found.exercise.key);
+      chosen.push({ ex: found.exercise, pattern: found.pattern });
+    }
+  } else {
+    const targets = new Set(req.focus.parts.flatMap((p) => BODY_PART_MUSCLES[p]));
+
+    // Primary movers only. An exercise that hits the chest as a SECONDARY is not a chest exercise, and a
+    // "chest day" made of movements that merely involve the chest is the commonest way this goes wrong.
+    const byPattern = new Map<string, CatalogExercise[]>();
+    for (const ex of pool) {
+      if (!ex.primaryMuscleIds.some((m) => targets.has(m))) continue;
+      if (ctx.excludePatterns.has(ex.pattern) || ctx.excludeKeys.has(ex.key)) continue;
+      if (!canDo(ex, owned)) continue;
+      if (!difficultyAllows(ex, req.experience)) continue;
+      const list = byPattern.get(ex.pattern) ?? [];
+      list.push(ex);
+      byPattern.set(ex.pattern, list);
+    }
+
+    for (const [pattern, list] of byPattern) {
+      list.sort(
+        (a, b) =>
+          (preferenceRank(pattern, a.key) === preferenceRank(pattern, b.key)
+            ? 0
+            : preferenceRank(pattern, a.key) - preferenceRank(pattern, b.key)) ||
+          b.muscleIds.length - a.muscleIds.length ||
+          a.key.localeCompare(b.key),
+      );
+    }
+
+    /*
+     * ⚠ THE ROTATION IS ORDERED BY EACH PATTERN'S BEST ANSWER, NOT BY WHETHER IT IS A COMPOUND.
+     *
+     * Compound-first is right for a SPLIT day, where the pattern list is the coaching. It is wrong here.
+     * "Chest and arms" opened with a *Barbell Front Rack Carry* and "back" with a *Barbell Clean* — both
+     * are compounds, both genuinely list those muscles as primary movers, and neither is what anybody
+     * means. `Carry` simply sorted before `Horizontal Push`.
+     *
+     * A pattern earns the lead by containing the canonical movement for it: Horizontal Push holds the
+     * bench press (preference rank 0), so it goes first; Carry holds nothing preferred, so it goes last
+     * and only appears at all if the day still has room. Compound-ness survives as the tiebreak among
+     * patterns that are equally un-preferred.
+     */
+    const bestRank = (pattern: string, list: CatalogExercise[]) =>
+      list.length > 0 ? preferenceRank(pattern, list[0].key) : Number.POSITIVE_INFINITY;
+
+    const ordered = new Map(
+      [...byPattern.entries()].sort((a, b) => {
+        const ra = bestRank(a[0], a[1]);
+        const rb = bestRank(b[0], b[1]);
+        return (
+          (ra === rb ? 0 : ra - rb) ||
+          Number(isCompound(b[0])) - Number(isCompound(a[0])) ||
+          a[0].localeCompare(b[0])
+        );
+      }),
+    );
+
+    for (const ex of selectForFocus(ordered, budget)) chosen.push({ ex, pattern: ex.pattern });
+
+    for (const p of req.focus.parts) {
+      const muscles = new Set(BODY_PART_MUSCLES[p]);
+      if (!chosen.some((c) => c.ex.primaryMuscleIds.some((m) => muscles.has(m)))) missing.push(p);
+    }
+  }
+
+  chosen.sort((a, b) => Number(isCompound(b.pattern)) - Number(isCompound(a.pattern)));
+
+  const main: ProgramExercise[] = chosen.map(({ ex, pattern }, i) => {
+    const rx = prescribeReps(roleFor(i, isCompound(pattern)), {
+      category,
+      experience: req.experience,
+      // A one-off workout has no week to be in. Index 0 puts every rep target at the bottom of its range,
+      // which is the honest starting point for a session with no history behind it.
+      weekIndex: 0,
+      isDeload: false,
+    });
+    return {
+      catalogKey: ex.key,
+      name: ex.name,
+      sets: rx.sets,
+      reps: rx.reps,
+      repsMax: rx.repsMax,
+    };
+  });
+
+  return { day: { letter: 'A', name: titleFor(req.focus), warmup: [], main, cooldown: [] }, missing };
+}
+
+function difficultyAllows(ex: CatalogExercise, experience: Experience): boolean {
+  const order = { Beginner: 0, Intermediate: 1, Advanced: 2 } as const;
+  const ceiling = { beginner: 0, intermediate: 1, advanced: 2 } as const;
+  return order[ex.difficulty] <= ceiling[experience];
+}
+
+/** A split maps onto the goal whose skeletons already express it. */
+const splitGoalFor = (s: SplitName) => (s === 'push' || s === 'pull' || s === 'legs' ? 'muscle' : 'strength');
+const splitDaysFor = (s: SplitName) => (s === 'push' || s === 'pull' || s === 'legs' ? 3 : s === 'full_body' ? 2 : 4);
+
+/** Pull the one day out of the week's skeleton that matches the split the athlete asked for. */
+function skeletonSlotsFor(split: SplitName, week: { name: string; slots: readonly string[] }[]): readonly string[] {
+  const want: Record<SplitName, string> = {
+    push: 'Push',
+    pull: 'Pull',
+    legs: 'Legs',
+    upper: 'Upper',
+    lower: 'Lower',
+    full_body: 'Full Body A',
+  };
+  return week.find((d) => d.name === want[split])?.slots ?? week[0]?.slots ?? [];
+}
+
+function titleFor(focus: DayFocus): string {
+  if (focus.kind === 'split') return SPLIT_LABEL[focus.split];
+  const parts = focus.parts.map((p) => BODY_PART_LABEL[p]);
+  if (parts.length === 0) return 'Workout';
+  if (parts.length === 1) return parts[0];
+  return `${parts.slice(0, -1).join(', ')} & ${parts[parts.length - 1]}`;
+}

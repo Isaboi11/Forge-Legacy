@@ -76,7 +76,7 @@ export async function fetchChapterDetail(chapterId: string): Promise<ChapterDeta
     const savedPrograms = (await fetchMyPrograms()).filter((p) => p.state === 'active');
     programs = await Promise.all(
       savedPrograms.map(async (p): Promise<ChapterProgramView> => {
-        const completed = await fetchProgramCompletedCount(p.id);
+        const completed = await fetchProgramCompletedCount(p.id, p.structure);
         const next = nextSession(p.structure, completed);
         return {
           id: p.id,

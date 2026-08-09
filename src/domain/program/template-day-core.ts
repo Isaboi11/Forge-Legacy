@@ -58,9 +58,13 @@ export type CatalogLookup = (key: string) => CatalogFacts | undefined;
  * modality toggle keeps them in step — a row that says "Treadmill Run" and then gets switched outdoors
  * must stop saying treadmill.
  *
- * `targetMi` is the only cardio target a template carries (`templates-live` stores no pace or speed), so
- * the other two arrive `null` — an OPEN target, which is the honest reading: the template prescribed no
- * pace, and a 0 would read as a target permanently and absurdly met.
+ * A template carries `targetMi` AND `targetDurationSec`; it stores no pace or speed, so those two arrive
+ * `null` — an OPEN target, which is the honest reading: the template prescribed no pace, and a 0 would
+ * read as a target permanently and absurdly met.
+ *
+ * ⚠ THE DURATION USED TO BE DROPPED HERE. Only `targetMi` crossed, so a template prescribing "run for 20
+ * minutes" became a run of no stated length the moment it was used as a program day — the field was
+ * written on save, stored, read back, and then silently discarded one step before anyone could see it.
  */
 function toProgramExercise(e: TemplateExercise, lookup: CatalogLookup): ProgramExercise {
   const group = e.groupId
@@ -83,6 +87,7 @@ function toProgramExercise(e: TemplateExercise, lookup: CatalogLookup): ProgramE
       activity,
       modality,
       targetMi: e.targetMi ?? null,
+      targetSec: e.targetDurationSec ?? null,
       targetPaceSec: null,
       targetSpdMph: null,
       ...group,

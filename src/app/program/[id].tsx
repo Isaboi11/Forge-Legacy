@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 
+import { AskHoltSheet } from '@/components/forge/AskHoltSheet';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
@@ -24,6 +25,7 @@ import {
   skipProgramSession,
   updateProgram,
   startProgram,
+  type ProgramStructure,
   type SavedProgram,
 } from '@/data/programs-live';
 import { fmtLongDate, spanLabel, workoutsLabel } from '@/domain/program/graduation';
@@ -119,6 +121,7 @@ export default function ProgramDetailScreen() {
   const [marks, setMarks] = useState<SessionMark[]>([]);
   /** The session an athlete asked to move, while they pick what to move it with. Null when closed. */
   const [swapping, setSwapping] = useState<{ weekIndex: number; dayIndex: number; name: string } | null>(null);
+  const [asking, setAsking] = useState<{ weekIndex: number; dayIndex: number; name: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -347,6 +350,28 @@ export default function ProgramDetailScreen() {
       await updateProgram(program.id, next);
       setProgram({ ...program, structure: next });
       setSwapping(null);
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /**
+   * Persist an edit Holt made to a live program.
+   *
+   * Deliberately the same shape as `doSwap` above — same write, same optimistic update. The safety is
+   * not here: `edit-ops` will not return a structure that changes the session count or touches a slot
+   * already trained, and the 0123 trigger refuses one at the database if it ever did. This saves what
+   * came back.
+   */
+  const applyHoltEdit = async (next: ProgramStructure) => {
+    if (!program || busy) return;
+    setBusy(true);
+    try {
+      await updateProgram(program.id, next);
+      setProgram({ ...program, structure: next });
+      setAsking(null);
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -781,6 +806,7 @@ export default function ProgramDetailScreen() {
               onTrainDay={state === 'active' ? (di, name) => void trainDay(wi, di, name) : undefined}
               onSkipDay={state === 'active' ? (di) => void skipDay(wi, di) : undefined}
               onSwapDay={state === 'active' ? (di, name) => setSwapping({ weekIndex: wi, dayIndex: di, name }) : undefined}
+              onAskHolt={state === 'active' ? (di, name) => setAsking({ weekIndex: wi, dayIndex: di, name }) : undefined}
             />
           ))}
           </View>
@@ -817,33 +843,61 @@ export default function ProgramDetailScreen() {
             Add to Planned
           </Button>
         ) : null}
-        <View style={styles.ctaRow}>
-          {/* Edit is gone once the record is sealed — W-3 §7 calls it read-only, and editing the plan
-              behind a finished program would rewrite what the athlete actually did. Duplicate stays in
-              every state: it creates a new row and never touches the original. */}
-          {terminal ? null : (
+        {/* ── EDIT IS FUTURE-STATE ONLY (W-5 Decision 1) ─────────────────────────────────────────────
+                This was gated on `terminal`, which let Edit through on an ACTIVE program — directly
+                against the locked spec, whose permission matrix reads NO for Active on every row.
+
+                The reason is not tidiness. `program_sessions` rows are keyed by (week_index, day_index)
+                and graduation is `completed >= program_total_sessions(structure)`, recomputed live from
+                the structure. So a structural edit mid-run re-points records the athlete already earned
+                AND moves the finish line: shrinking a live program makes the next save fire the
+                graduation branch, which writes a PROGRAM_GRADUATED timeline event and five honors that
+                can never be revoked. There is no un-graduate path (Amendment-001 §1).
+
+                Merely opening the builder is enough to do damage — `hydrateDraft` normalises through
+                `clampDays`/`makeDays`, which TRUNCATE, so a ragged program loses days on a round trip
+                it never asked for.
+
+                Mid-flight changes belong to the coach's safe edit path instead: untouched slots only,
+                session count invariant. Until that lands, Duplicate is the honest route and W-5 §Decision
+                4 already names it — copy it, change the copy, start that.
+
+                Both buttons also require a real row. A catalogue preview has `program === null` (state
+                falls back to 'future' at the top of this component), and both handlers read `program!.id`
+                — so without this guard a preview pushed the builder with `id: undefined`. ── */}
+        {program ? (
+          <View style={styles.ctaRow}>
+            {state === 'future' ? (
+              <View style={styles.ctaHalf}>
+                <Button
+                  variant="secondary"
+                  fullWidth
+                  onPress={() => router.push({ pathname: '/program-builder', params: { o: 'edit', id: program.id } })}
+                  accessibilityLabel="Edit program"
+                >
+                  Edit
+                </Button>
+              </View>
+            ) : null}
             <View style={styles.ctaHalf}>
               <Button
                 variant="secondary"
                 fullWidth
-                onPress={() => router.push({ pathname: '/program-builder', params: { o: 'edit', id: program!.id } })}
-                accessibilityLabel="Edit program"
+                onPress={() => router.push({ pathname: '/program-builder', params: { o: 'dup', id: program.id } })}
+                accessibilityLabel="Duplicate program"
               >
-                Edit
+                Duplicate
               </Button>
             </View>
-          )}
-          <View style={styles.ctaHalf}>
-            <Button
-              variant="secondary"
-              fullWidth
-              onPress={() => router.push({ pathname: '/program-builder', params: { o: 'dup', id: program!.id } })}
-              accessibilityLabel="Duplicate program"
-            >
-              Duplicate
-            </Button>
           </View>
-        </View>
+        ) : null}
+        {/* Said, not silently omitted: an athlete who could edit this yesterday deserves the reason. */}
+        {state === 'active' ? (
+          <Text style={styles.editNote}>
+            A program you&apos;ve started can&apos;t be restructured — the sessions you&apos;ve trained are
+            recorded against it. Duplicate it to change the plan and start fresh.
+          </Text>
+        ) : null}
         {/* ── THE TWO KINDS OF SHARING, NAMED APART ──────────────────────────────────────────────────
                 "Share Program" posts a card about the training. "Send to a Friend" hands over the plan
                 itself. Sitting side by side with different verbs is deliberate: they are one word in
@@ -956,6 +1010,22 @@ export default function ProgramDetailScreen() {
         </View>
       </BottomSheet>
 
+      {/* Only mounted while a session is actually being edited. `program` is non-null here because the
+          action that opens it is gated on `state === 'active'`, which requires a real row. */}
+      {asking && program ? (
+        <AskHoltSheet
+          open
+          onClose={() => setAsking(null)}
+          structure={program.structure}
+          marks={marks}
+          weekIndex={asking.weekIndex}
+          dayIndex={asking.dayIndex}
+          dayName={asking.name}
+          busy={busy}
+          onApply={(next) => void applyHoltEdit(next)}
+        />
+      ) : null}
+
       <BottomSheet open={sheet != null} onClose={() => setSheet(null)} title={sheetCopy.title}>
         <View style={styles.sheetBody}>
           <Text style={styles.sheetText}>{sheetCopy.body}</Text>
@@ -1034,6 +1104,7 @@ function WeekCard({
   onTrainDay,
   onSkipDay,
   onSwapDay,
+  onAskHolt,
 }: {
   week: LogWeek;
   current: boolean;
@@ -1047,6 +1118,7 @@ function WeekCard({
   onTrainDay?: (dayIndex: number, name: string) => void;
   onSkipDay?: (dayIndex: number) => void;
   onSwapDay?: (dayIndex: number, name: string) => void;
+  onAskHolt?: (dayIndex: number, name: string) => void;
 }) {
   const meta = week.complete
     ? 'Complete'
@@ -1128,6 +1200,16 @@ function WeekCard({
                         style={styles.dayAction}
                       >
                         <Text style={styles.dayActionText}>Swap</Text>
+                      </Pressable>
+                    ) : null}
+                    {onAskHolt ? (
+                      <Pressable
+                        onPress={() => onAskHolt(di, d.name)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Ask Holt to change ${d.name}`}
+                        style={styles.dayAction}
+                      >
+                        <Text style={styles.dayActionHolt}>Ask Holt</Text>
                       </Pressable>
                     ) : null}
                     <Pressable
@@ -1281,6 +1363,8 @@ const styles = StyleSheet.create({
   cta: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 20, borderTopWidth: 1, borderTopColor: flColor.charcoal600, backgroundColor: flColor.charcoal900, gap: 8 },
   // Bronze, not red: needing to swap two movements is information, not an error.
   gearGap: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
+  // Why Edit is absent on an active program. Same quiet register as gearGap — an explanation, not a warning.
+  editNote: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
   ctaRow: { flexDirection: 'row', gap: 8 },
   ctaHalf: { flex: 1 },
   secondaryRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginTop: 2 },
@@ -1339,6 +1423,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.bronzeBorder,
   },
   dayActionText: { fontSize: 12, fontWeight: '600', color: flColor.bronze300 },
+  dayActionHolt: { fontSize: 12, fontWeight: '700', letterSpacing: 0.2, color: flColor.bronze300 },
   dayActionSkip: { fontSize: 12, fontWeight: '600', color: flColor.gray400 },
   sheetActions: { flexDirection: 'row', gap: 10 },
 });

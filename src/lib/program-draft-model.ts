@@ -426,6 +426,51 @@ function copyExercises(list: ProgramExercise[], reId: boolean): ProgramExercise[
   return (list ?? []).map((x) => ({ ...x, id: reId || !x.id ? newExerciseId() : x.id }));
 }
 
+/**
+ * A draft from a structure the coach just built — the handoff that makes the Builder its review screen.
+ *
+ * ══ WHY NOT `hydrateDraft` ══
+ *
+ * That one takes `'edit' | 'dup'`, and neither is true here: there is no source row to write back to and
+ * nothing to copy. Passing `'dup'` would work by accident and then name the program "(Copy)".
+ *
+ * ⚠ AND IT MUST NOT GO THROUGH `makeDays`. That helper pads or TRUNCATES to `daysPerWeek`, which is the
+ * mechanism behind the silent day-deletion documented in migration 0123 — a ragged week loses its tail
+ * just by being opened. A coach structure already has exactly `daysPerWeek` days in every week (the
+ * assembler builds it from a skeleton of that length and the matrix test asserts the counts agree), so
+ * there is nothing to normalise and everything to lose by trying.
+ *
+ * Every exercise gets a fresh id because these rows have never existed anywhere before.
+ */
+export function draftFromStructure(structure: ProgramStructure): ProgramDraft {
+  const copyDays = (days: ProgramDay[]): ProgramDay[] =>
+    (days ?? []).map((d) => ({
+      letter: d.letter,
+      name: d.name,
+      warmup: copyExercises(d.warmup ?? [], true),
+      main: copyExercises(d.main ?? [], true),
+      cooldown: copyExercises(d.cooldown ?? [], true),
+    }));
+
+  return {
+    name: structure.name,
+    weeks: clampWeeks(structure.weeks),
+    daysPerWeek: clampDays(structure.daysPerWeek),
+    vary: !!structure.vary,
+    openWeek: null,
+    // Opens on the first day of week one. The athlete arrives to see a workout, not a settings form —
+    // the whole point of the handoff is that they read what was built before they accept it.
+    openDay: 0,
+    days: copyDays(structure.days ?? []),
+    weekPlans: structure.weekPlans ? structure.weekPlans.map((w) => ({ days: copyDays(w.days) })) : null,
+    // NEW, with no `editId`: saving creates a program. It is the athlete's from the moment they accept it,
+    // which is also what makes it `ATHLETE_CREATED` rather than needing a source enum it has no claim to.
+    mode: 'new',
+    editId: null,
+    srcId: null,
+  };
+}
+
 /** Repair a draft read back from storage (older shapes, missing letters, legacy "Day A" names). */
 export function normalizeDraft(d: ProgramDraft): ProgramDraft {
   const fix = (days: ProgramDay[]): ProgramDay[] =>

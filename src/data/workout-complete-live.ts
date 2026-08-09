@@ -3,8 +3,8 @@ import { playlistFromRow, playlistToRow, type WorkoutPlaylistLink } from '@/doma
 import { personalBests, type ActivityKind, type PersonalBest, type UnitSystem } from '@/domain/run/run-core';
 import { fetchPriorSessions } from '@/data/runs-live';
 import { completionHeroKind, completionSetCount, e1rm } from '@/domain/workout/metrics';
-import { fetchProgram, fetchProgramCompletedCount } from '@/data/programs-live';
-import { dayLabel, nextSession } from '@/domain/program/progress-core';
+import { fetchProgram, fetchProgramSessions } from '@/data/programs-live';
+import { dayLabel, nextSession, touchedCount } from '@/domain/program/progress-core';
 
 /** This session's top set vs the same lift's previous session → +weight / +reps / Held (or null if new). */
 function deltaOf(now: { w: number; r: number } | null, last: { w: number; r: number } | null): ExerciseDelta | null {
@@ -190,11 +190,14 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
   let graduation: Completion['graduation'] = null;
   if (workout.program_id) {
     try {
-      const [program, done] = await Promise.all([
+      /* The marks are fetched, not a pre-counted total: a count only means anything against a structure,
+         and the structure arrives with the program. Still one round trip — they resolve together. */
+      const [program, marks] = await Promise.all([
         fetchProgram(workout.program_id),
-        fetchProgramCompletedCount(workout.program_id),
+        fetchProgramSessions(workout.program_id),
       ]);
       if (program) {
+        const done = touchedCount(program.structure, marks);
         const next = nextSession(program.structure, done);
         if (next) nextWorkoutName = dayLabel(next.day, next.dayIndex);
 

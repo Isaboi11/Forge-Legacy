@@ -125,7 +125,7 @@ export async function fetchPlannedSession(): Promise<{ name: string; exercises: 
   try {
     const program = await fetchActiveProgram();
     if (!program) return null;
-    const done = await fetchProgramCompletedCount(program.id);
+    const done = await fetchProgramCompletedCount(program.id, program.structure);
     const next = nextSession(program.structure, done);
     const day = next?.day ?? program.structure.days.find((d) => d.main.length > 0) ?? program.structure.days[0] ?? null;
     if (!day || day.main.length === 0) return null;

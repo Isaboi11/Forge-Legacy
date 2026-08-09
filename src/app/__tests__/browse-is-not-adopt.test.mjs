@@ -121,8 +121,34 @@ test('a preview is never handed to a screen that needs a real program id', () =>
     if (i < 0) continue;
     const window = src.slice(Math.max(0, i - 1200), i);
     assert.ok(
-      /owned/.test(window) || /program!\./.test(src.slice(i, i + 200)),
+      // A conditional render is the STRONGEST of the three and was not originally listed: `program!.`
+      // is a type assertion that compiles away, so it proves the author's intent and nothing about
+      // runtime. `{program ? …}` means the handler cannot be constructed without a row at all. Edit and
+      // Duplicate moved to this form in 0123, when Edit was gated to future-state programs.
+      /\{program \?/.test(window) || /owned/.test(window) || /program!\./.test(src.slice(i, i + 200)),
       `${marker} is reachable without an owned program`,
     );
   }
+});
+
+/**
+ * W-5 Decision 1: Edit is a FUTURE-state action. Its permission matrix reads NO for Active on every row,
+ * because an active program's structure has begun writing history — `program_sessions` rows are keyed by
+ * (week_index, day_index) and graduation compares against a denominator recomputed from the structure.
+ *
+ * This screen gated Edit on `terminal` (graduated / ended_early) instead, so it rendered on a live
+ * program. Asserted here rather than left to review: the two spellings look almost identical in a diff,
+ * and the one that shipped could irrevocably graduate someone (see migration 0123).
+ */
+test('Edit is offered on a future program and on no other', () => {
+  const src = read('program/[id].tsx');
+  const i = src.indexOf("o: 'edit'");
+  assert.ok(i > 0, 'the Edit action must still exist');
+
+  const window = src.slice(Math.max(0, i - 1200), i);
+  assert.match(window, /state === 'future'/, 'Edit must be gated on future state');
+  assert.ok(
+    !/\{terminal \? null :/.test(window),
+    'gating Edit on `terminal` lets it through on an ACTIVE program — the W-5 Decision 1 violation',
+  );
 });
