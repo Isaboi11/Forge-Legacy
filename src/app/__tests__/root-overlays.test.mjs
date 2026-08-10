@@ -72,3 +72,39 @@ test('the boundary renders nothing rather than something, when it catches', () =
     'a failed overlay is absent — a fallback UI for a decoration is noise about something nobody asked for',
   );
 });
+
+/**
+ * Where the coach is allowed to be.
+ *
+ * Reported twice by the PO — once as "not on all the screens", then as "sometimes it blocks things and it
+ * just doesn't need to be there". Both were true at once, and the second is the one that mattered: it was
+ * over every pushed screen in the app AND over `/sign-in`, while the component's own header claimed it
+ * hid on the signed-out routes. The header was wrong and nothing checked.
+ */
+test('the coach bubble is an allow-list, not a block-list', () => {
+  const src = readFileSync(path.join(here, '../../components/forge/CoachBubble.tsx'), 'utf8');
+  assert.match(src, /HOME_SURFACES/, 'the surfaces it belongs on must be named');
+  assert.match(
+    src,
+    /if \(!HOME_SURFACES\.has\(pathname\)\) return null;/,
+    'anything not on the list must be excluded by default — a block-list will always miss one',
+  );
+  for (const surface of ["'/'", "'/workouts'", "'/legacy'", "'/squads'"]) {
+    assert.ok(src.includes(surface), `${surface} should be a coach surface`);
+  }
+});
+
+test('the coach never appears signed out, or over a workout, ceremony or tour', () => {
+  const src = readFileSync(path.join(here, '../../components/forge/CoachBubble.tsx'), 'utf8');
+  /* Read the ALLOW-LIST ITSELF, not the file. `'/coach'` appears elsewhere in the source as the bubble's
+     push target, which is exactly right and would fail a naive whole-file search — the first version of
+     this test did, and it would have been a false alarm about correct code. */
+  const at = src.indexOf('const HOME_SURFACES');
+  const list = src.slice(at, src.indexOf(';', at));
+  for (const route of ['/sign-in', '/onboarding', '/coach']) {
+    assert.ok(!list.includes(`'${route}'`), `${route} must not be a coach surface`);
+  }
+  assert.match(src, /if \(session\) return null;/);
+  assert.match(src, /if \(ceremony\) return null;/);
+  assert.match(src, /if \(tourStatus === 'running'\) return null;/);
+});

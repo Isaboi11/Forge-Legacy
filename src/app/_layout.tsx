@@ -65,10 +65,18 @@ export default function RootLayout() {
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AuthProvider>
-        {/* Inside AuthProvider because registration waits for a session, and outside the navigator so a
-            tap that launched the app cold is answered as soon as the route tree exists (0120). */}
-        <PushProvider>
         <ProfileProvider>
+        {/*
+          ⚠ MOVED INSIDE `ProfileProvider` — it used to sit outside it, and that was the bug behind
+          "notifications get sent but clicking them breaks" (PO, 2026-08-09).
+
+          The old comment said the tap is answered "as soon as the route tree exists". It fired as soon as
+          a SESSION existed, which is earlier: `RootNavigator` renders `BootLoading` and declares NO
+          screens at all until `routeFor` resolves to 'app', and that waits on the profile. So a cold-start
+          tap pushed `/squad/xyz` at a moment when `/squad/[id]` was not in the tree — the same
+          "a screen is gated by being DECLARED" rule `route-guard.test.mjs` exists for, hit from the other
+          side. Push now reads the same decision the navigator does and holds the target until it matches. */}
+        <PushProvider>
           <SettingsProvider>
           <WorkoutSessionProvider>
             <ShareProvider>
@@ -94,8 +102,8 @@ export default function RootLayout() {
             </ShareProvider>
           </WorkoutSessionProvider>
           </SettingsProvider>
-        </ProfileProvider>
         </PushProvider>
+        </ProfileProvider>
       </AuthProvider>
     </ThemeProvider>
     </SafeAreaProvider>
