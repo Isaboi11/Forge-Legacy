@@ -83,6 +83,8 @@ export type CompletionHero =
   | { kind: 'honor' | 'pr'; eyebrow: string; title: string; note: string; featured: true }
   | { kind: 'milestone' | 'consistency'; eyebrow: string; title: string; note: string; featured: false };
 export interface Completion {
+  /** The session's training note. Distinct from `reflection` — see `saveWorkoutNote`. */
+  note: string | null;
   /** What this run beat, when it was a run. Empty for a strength session and for a first-ever run. */
   runBests: PersonalBest[];
   workoutId: string;
@@ -140,6 +142,8 @@ interface WorkoutRow {
   duration_sec: number | null;
   chapter_id: string | null;
   reflection: string | null;
+  /** The training note. Separate column, separate purpose — see `saveWorkoutNote`. */
+  notes?: string | null;
   /** Derived from the session's content at save time — 'running' when the session WAS a run. */
   activity_type?: string | null;
   /** Miles, rolled up from the bout's sets by 0096 when the caller passes none. */
@@ -175,7 +179,7 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
 
   const { data: wk, error: we } = await supabase
     .from('workouts')
-    .select('workout_name, duration_sec, chapter_id, reflection, saved_at, program_id, activity_type, distance')
+    .select('workout_name, duration_sec, chapter_id, reflection, notes, saved_at, program_id, activity_type, distance')
     .eq('id', workoutId)
     .single();
   if (we) throw we;
@@ -562,6 +566,7 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
 
   return {
     workoutId,
+    note: workout.notes ?? null,
     runBests,
     workoutName: workout.workout_name ?? 'Workout',
     chapterName,
@@ -582,6 +587,32 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
     nextWorkoutName,
     graduation,
   };
+}
+
+/**
+ * Persist the session's TRAINING note — how it went, in the athlete's words.
+ *
+ * ══ NOT THE SAME THING AS THE REFLECTION, AND THE COLUMNS ARE NOT INTERCHANGEABLE ══
+ *
+ * `workouts.reflection` (0011) is the keepsake: one line, permanent, deliberately unedited later, shown
+ * back to you months on. `workouts.notes` (0001) is the training log — "felt flat, slept badly, shoulder
+ * twinged on the third set". One is for the person you become; the other is for the next session.
+ *
+ * The distinction matters because the columns have coexisted since the very first migration and only one
+ * of them was ever wired. Writing training detail into `reflection` would put "slept badly" in the place
+ * the app treats as a legacy artifact.
+ *
+ * Post-commit, owner-scoped, no RPC — `workouts_own` is `for all`, and this is the same shape
+ * `saveReflection` has used since 0011.
+ */
+export async function saveWorkoutNote(workoutId: string, text: string): Promise<void> {
+  const { error } = await supabase
+    .from('workouts')
+    // Trimmed to null, so clearing a note really clears it rather than storing an empty string that
+    // renders as an empty quote block in history.
+    .update({ notes: text.trim() || null })
+    .eq('id', workoutId);
+  if (error) throw error;
 }
 
 /** Persist the Reflect note — a post-commit single-row owner-scoped update (no RPC). */

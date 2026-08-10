@@ -35,6 +35,8 @@ export function buildSaveExercises(session: ActiveSession) {
   return recorded.map((ex) => ({
     name: ex.name,
     catalog_key: ex.catalogKey ?? null,
+    // Trimmed to null: an empty string is not a note, and it renders as an empty quote in history.
+    notes: ex.note?.trim() || null,
     section: ex.section,
     position: ex.position,
     /* The block, if this lift is in one (0106). A superset is created IN the session — pairing two

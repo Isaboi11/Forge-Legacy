@@ -129,7 +129,7 @@ export async function fetchActivityDetail(id: string): Promise<ActivityDetail | 
   const { data, error } = await supabase
     .from('workouts')
     .select(
-      'id, workout_name, activity_type, started_at, duration_sec, distance, distance_unit, chapter_id, program_id, workout_exercises(name, section, position, catalog_key, workout_sets(set_index, weight, weight_unit, reps))',
+      'id, workout_name, activity_type, started_at, duration_sec, distance, distance_unit, chapter_id, program_id, notes, workout_exercises(name, section, position, catalog_key, notes, workout_sets(set_index, weight, weight_unit, reps))',
     )
     .eq('id', id)
     .eq('athlete_id', user.id)
@@ -189,6 +189,7 @@ export async function fetchActivityDetail(id: string): Promise<ActivityDetail | 
         | 'main'
         | 'cooldown',
       catalogKey: ex.catalog_key,
+      note: ex.notes ?? null,
       equip: ex.catalog_key ? equipmentForCatalogKey(ex.catalog_key) : null,
       sets: [...(ex.workout_sets ?? [])]
         .sort((a, b) => a.set_index - b.set_index)
@@ -209,6 +210,7 @@ export async function fetchActivityDetail(id: string): Promise<ActivityDetail | 
     distance: w.distance,
     distanceUnit: w.distance_unit,
     exercises,
+    note: w.notes ?? null,
     chapterName,
     programId: w.program_id,
     programName,
@@ -236,11 +238,13 @@ interface SharedRow {
   playlist_url: string | null;
   playlist_service: string | null;
   playlist_name: string | null;
+  note: string | null;
   exercises: {
     name: string;
     section: string;
     position: number;
     catalog_key: string | null;
+    note: string | null;
     sets: { set_index: number; weight: number | null; weight_unit: string | null; reps: number | null }[] | null;
   }[];
   milestones: string[];
@@ -271,6 +275,9 @@ async function fetchSharedActivityDetail(id: string): Promise<ActivityDetail | n
       name: ex.name,
       section: (['warmup', 'main', 'cooldown'].includes(ex.section) ? ex.section : 'main') as 'warmup' | 'main' | 'cooldown',
       catalogKey: ex.catalog_key,
+      // Withheld on a shared session, same as the session note — a remark about your own shoulder is not
+      // part of what you posted. The RPC does not return it either, so this is belt and braces.
+      note: null,
       equip: ex.catalog_key ? equipmentForCatalogKey(ex.catalog_key) : null,
       sets: [...(ex.sets ?? [])]
         .sort((a, b) => a.set_index - b.set_index)
@@ -290,6 +297,10 @@ async function fetchSharedActivityDetail(id: string): Promise<ActivityDetail | n
     distance: r.distance,
     distanceUnit: r.distance_unit,
     exercises,
+    /* ⚠ WITHHELD ON A SHARED SESSION, deliberately, and for the same reason the chapter is. A note is
+       what the athlete told THEMSELVES — "slept badly", "shoulder felt off" — not part of the recap they
+       chose to post. Sharing a workout is not consenting to publish your private remarks about it. */
+    note: null,
     // Withheld by the RPC, and rendered as absent rather than as an empty-looking fact — see the
     // migration header for why each one is not the viewer's to see.
     chapterName: null,
@@ -331,12 +342,14 @@ type DetailRow = {
   distance_unit: string | null;
   chapter_id: string | null;
   program_id: string | null;
+  notes: string | null;
   workout_exercises:
     | {
         name: string;
         section: string;
         position: number;
         catalog_key: string | null;
+        notes: string | null;
         workout_sets: { set_index: number; weight: number | null; weight_unit: string | null; reps: number | null }[] | null;
       }[]
     | null;

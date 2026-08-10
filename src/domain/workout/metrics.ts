@@ -1,4 +1,5 @@
 import type { ActiveSession, SessionSet } from './types';
+import { sidesFor } from './per-side-core.ts';
 
 /**
  * Pure active-workout metrics (W-9). Volume + PR detection are computed domain-side (unit-tested), not
@@ -16,12 +17,19 @@ export function effectiveReps(s: SessionSet): number {
   return s.actualReps ?? s.targetReps;
 }
 
-/** Session volume = Σ weight × effectiveReps over done, weighted sets (rounded). */
+/**
+ * Session volume = Σ weight × effectiveReps × sides, over done, weighted sets (rounded).
+ *
+ * ⚠ `sides` IS THE PART THAT WAS MISSING, and it is applied HERE and nowhere else. Eight reps per arm at
+ * 30 lb is 480 lb moved; this counted 240 (PO, 2026-08-09). The rep count itself stays untouched — see
+ * `sidesFor` for why doubling it instead would corrupt every e1RM and personal record in the app.
+ */
 export function sessionVolume(session: ActiveSession): number {
   let v = 0;
   for (const ex of session.exercises) {
+    const sides = sidesFor(ex.per);
     for (const s of ex.sets) {
-      if (s.done && s.weight != null) v += s.weight * effectiveReps(s);
+      if (s.done && s.weight != null) v += s.weight * effectiveReps(s) * sides;
     }
   }
   return Math.round(v);

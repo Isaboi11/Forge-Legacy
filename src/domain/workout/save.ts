@@ -92,7 +92,9 @@ export async function saveWorkout(session: ActiveSession, partners: string[] = [
     p_activity_type: sessionActivityType(session.exercises, session.activityType),
     p_started_at: session.startedAt,
     p_duration_sec: durationSec,
-    p_notes: null,
+    // ⚠ WAS HARDCODED `null` SINCE 0010. The argument has been there the whole time and every caller
+    // passed nothing, so `workouts.notes` has been empty for every session this app has ever saved.
+    p_notes: session.note?.trim() || null,
     p_exercises: exercises,
     p_prs: prs,
     p_program_id: session.programId ?? null,
@@ -189,6 +191,74 @@ export async function saveActivity(input: ActivityInput): Promise<{ workoutId: s
   });
   if (error) throw error;
   return { workoutId: data.workout_id };
+}
+
+/**
+ * The last thing you said about each of these lifts, and when.
+ *
+ * ══ THIS IS THE DIFFERENCE BETWEEN A DIARY AND A COACH ══
+ *
+ * A note you can only find by digging through history is a diary entry. The same note surfaced the moment
+ * you are about to deadlift again — "grip failed before legs did" — is coaching. It is the same data; the
+ * timing is the entire product.
+ *
+ * Matched the way every other lift-identity read in this codebase matches (`lift_best_lb` in 0078,
+ * `fetchPriorRecords` above): by `catalog_key` when there is one, falling back to the exact name for rows
+ * written before 0078 added the column. Two different answers to "which lift is this" is how two surfaces
+ * drift apart, and here it would surface somebody else's note under your bar.
+ *
+ * ⚠ AN ABSENT KEY MEANS "NOTHING SAID", NOT "NOTHING KNOWN". The caller must render nothing for it rather
+ * than an empty quote.
+ */
+export interface LastNote {
+  text: string;
+  savedAt: string;
+}
+
+export async function fetchLastNotes(
+  lifts: readonly { catalogKey?: string; name: string }[],
+): Promise<Record<string, LastNote>> {
+  if (!lifts.length) return {};
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return {};
+
+  const keys = lifts.map((l) => l.catalogKey).filter((k): k is string => !!k);
+  const names = lifts.map((l) => l.name);
+
+  /* `workouts!inner` scopes to this athlete's own sessions — `workout_exercises` has no athlete column,
+     so without the join every note in the table would be in scope and RLS would be the only thing
+     between them. Ordering by the session's save time, newest first, then taking the first hit per lift. */
+  const { data, error } = await supabase
+    .from('workout_exercises')
+    .select('catalog_key, name, notes, workouts!inner(athlete_id, saved_at)')
+    .eq('workouts.athlete_id', user.id)
+    .not('notes', 'is', null)
+    .or(keys.length ? `catalog_key.in.(${keys.join(',')}),name.in.(${names.map((n) => `"${n.replace(/"/g, '')}"`).join(',')})` : `name.in.(${names.map((n) => `"${n.replace(/"/g, '')}"`).join(',')})`)
+    .order('saved_at', { referencedTable: 'workouts', ascending: false })
+    .limit(200);
+  // A history we cannot read is not an error worth surfacing mid-session — it stays silent, exactly as
+  // `fetchPriorRecords` does, because the alternative is an error toast between two sets.
+  if (error) return {};
+
+  type Row = { catalog_key: string | null; name: string; notes: string | null; workouts: { saved_at: string | null } | null };
+  const rows = (data ?? []) as unknown as Row[];
+  // Sort here rather than trusting the embedded order: PostgREST orders the EMBEDDED resource, which is
+  // one row per parent, so it does not order the parents themselves.
+  rows.sort((a, b) => (b.workouts?.saved_at ?? '').localeCompare(a.workouts?.saved_at ?? ''));
+
+  const out: Record<string, LastNote> = {};
+  for (const lift of lifts) {
+    const id = lift.catalogKey ?? lift.name;
+    if (out[id]) continue;
+    const hit = rows.find((r) =>
+      lift.catalogKey ? r.catalog_key === lift.catalogKey || (r.catalog_key == null && r.name === lift.name) : r.name === lift.name,
+    );
+    const text = hit?.notes?.trim();
+    if (text && hit?.workouts?.saved_at) out[id] = { text, savedAt: hit.workouts.saved_at };
+  }
+  return out;
 }
 
 /**

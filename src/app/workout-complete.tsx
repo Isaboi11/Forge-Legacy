@@ -15,7 +15,7 @@ import { saveWorkoutAsTemplate } from '@/data/templates-live';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useUnits } from '@/lib/settings';
 import { displayWeight } from '@/domain/settings/units';
-import { WORKOUT_NAME_MAX, fetchCompletion, renameWorkout, savePlaylist, saveReflection, type CompletionCardio, type CompletionHero, type ExerciseDelta } from '@/data/workout-complete-live';
+import { WORKOUT_NAME_MAX, fetchCompletion, renameWorkout, savePlaylist, saveReflection, saveWorkoutNote, type CompletionCardio, type CompletionHero, type ExerciseDelta } from '@/data/workout-complete-live';
 import { openPlaylist, PlaylistChip, PlaylistSheet } from '@/components/forge/composites/Playlist';
 import type { WorkoutPlaylistLink } from '@/domain/workout/playlist';
 import { distanceLabel, fmtClock, fmtPace, toDistance, toPace, type UnitSystem } from '@/domain/run/run-core';
@@ -88,6 +88,21 @@ export default function WorkoutComplete() {
   // Volume is stored in lb; show it in the athlete's system. `fmt` re-expresses per-set strings.
   const { units, fmt } = useUnits();
   const { data, loading, error } = useQuery(() => fetchCompletion(String(id), units), [id, units]);
+
+  /*
+   * The session's TRAINING note — how it went. Deliberately on The Record and not beside the Reflect
+   * step: the reflection is the keepsake ("you'll read it again someday") and this is the training log
+   * ("felt flat, slept badly"). Two boxes asking the same question on one screen would be a worse
+   * product than either; two boxes asking different ones, a page apart, is the honest split.
+   *
+   * ⚠ DERIVED, NOT SYNCED. The obvious version holds a draft string and hydrates it from `data.note` in
+   * an effect — which the react-compiler lint rejects outright (sync setState in an effect body), and
+   * rightly: it is a second copy of a value that already exists, kept in step by hand. `null` here means
+   * "not typed in yet", so what renders falls back to what is stored, and no effect is needed at all.
+   */
+  const [noteDraft, setNoteDraft] = useState<string | null>(null);
+  const sessNote = noteDraft ?? data?.note ?? '';
+  const [sessNoteSaved, setSessNoteSaved] = useState(false);
 
   /**
    * M-4 PROGRAM GRADUATED — fired here because W-17's load IS the consumption point (M-4 §6.2), and
@@ -739,6 +754,35 @@ export default function WorkoutComplete() {
               {savedTemplate ? 'Saved to your templates' : savingTemplate ? 'Saving…' : 'Save this day as a template'}
             </Text>
           </Pressable>
+
+          {/* Training note. Best-effort like every other annotation on this screen — the session is
+              already durably committed, so a failed write costs a note and never the workout. */}
+          <View style={styles.sessNoteWrap}>
+            <Text style={styles.sessNoteLabel}>HOW DID IT GO?</Text>
+            <TextInput
+              style={styles.sessNoteInput}
+              placeholder="Felt flat. Slept badly. Left two in the tank."
+              placeholderTextColor={flColor.gray600}
+              multiline
+              maxLength={280}
+              value={sessNote}
+              onChangeText={(t) => {
+                setNoteDraft(t);
+                setSessNoteSaved(false);
+              }}
+              onBlur={() => {
+                void saveWorkoutNote(data.workoutId, sessNote)
+                  .then(() => setSessNoteSaved(true))
+                  .catch(() => {
+                    /* ignore — the workout is saved; a lost note is not worth an error on this screen */
+                  });
+              }}
+              accessibilityLabel="A note about this session"
+            />
+            <Text style={styles.sessNoteHint}>
+              {sessNoteSaved ? 'Saved — you’ll see this in your history.' : 'For the next time you train this.'}
+            </Text>
+          </View>
 
           <View style={styles.longGameWrap}>
             <Text style={styles.longGameLabel}>The Long Game</Text>
@@ -1410,6 +1454,23 @@ const styles = StyleSheet.create({
   recTable: { borderWidth: 1, borderColor: flColor.charcoal600, borderRadius: flRadius.lg, overflow: 'hidden', backgroundColor: flColor.charcoal900 },
   recNameLine: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   recDelta: { fontSize: 12.5, fontWeight: '600' },
+  sessNoteWrap: { gap: 8, marginTop: 22 },
+  sessNoteLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.4, color: flColor.gray600 },
+  sessNoteInput: {
+    fontFamily: flFont.sans,
+    fontSize: 15.5,
+    lineHeight: 23,
+    color: flColor.cream100,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    borderRadius: flRadius.md,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    minHeight: 84,
+    textAlignVertical: 'top',
+    outlineWidth: 0,
+  },
+  sessNoteHint: { fontSize: 12, color: flColor.gray600 },
   longGameWrap: { marginTop: 32, paddingTop: 26, borderTopWidth: 1, borderTopColor: flColor.bronzeBorderSubtle },
   longGameLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 8 },
   chapterCard: { flexDirection: 'row', alignItems: 'center', gap: 13, marginTop: 4, padding: 15, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },

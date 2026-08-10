@@ -240,6 +240,15 @@ function Body({
 
       <View style={styles.divider} />
 
+      {/* What they said about the session. Placed BEFORE the numbers: "felt flat" is the context the
+          sets are read in, and underneath them it would read as a footnote to data rather than the
+          reason the data looks like it does. */}
+      {detail.note ? (
+        <View style={styles.sessNote}>
+          <Text style={styles.sessNoteText}>{detail.note}</Text>
+        </View>
+      ) : null}
+
       {/* body — strength breakdown, or stat tiles */}
       {isStrength ? (
         sections.length ? (
@@ -279,6 +288,11 @@ function Body({
                     ) : (
                       <Text style={styles.noSets}>No sets logged</Text>
                     )}
+                    {ex.note ? (
+                      <View style={styles.exNote}>
+                        <Text style={styles.exNoteText}>{ex.note}</Text>
+                      </View>
+                    ) : null}
                   </View>
                 ))}
               </View>
@@ -479,6 +493,21 @@ const styles = StyleSheet.create({
     color: flColor.gray600,
     marginBottom: 10,
   },
+  sessNote: {
+    marginBottom: 18,
+    paddingLeft: 12,
+    // A left rule rather than a box: it is the athlete's voice, and quoting it reads better than
+    // framing it as another datum on a screen that is mostly data.
+    borderLeftWidth: 2,
+    borderLeftColor: flColor.bronze400,
+  },
+  sessNoteText: { fontSize: 14.5, lineHeight: 22, color: flColor.cream100, fontStyle: 'italic' },
+  exNote: {
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: flColor.charcoal600,
+  },
+  exNoteText: { fontSize: 13, lineHeight: 20, color: flColor.gray400, fontStyle: 'italic' },
   exCard: {
     marginBottom: 8,
     borderRadius: flRadius.lg,

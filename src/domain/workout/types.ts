@@ -2,6 +2,7 @@
  *  session; nothing reaches the cloud until the atomic Finish commit (save_workout). */
 import type { CardioActivity, CardioResult, ExerciseKind, Modality } from './conditioning';
 import type { WorkoutPlaylistLink } from './playlist';
+import type { PerSide } from './per-side-core';
 
 export type WorkoutSectionKind = 'warmup' | 'main' | 'cooldown';
 /** What a grouped block IS. See `SessionExercise.groupKind`; absent reads as 'circuit'. */
@@ -81,6 +82,18 @@ export interface SessionExercise {
    * every session written before this reads correctly without migration.
    */
   kind?: ExerciseKind;
+  /**
+   * What the athlete said about this lift, this session — "shoulder felt off", "belt on from set 3".
+   *
+   * ⚠ THE COLUMN HAS EXISTED SINCE 0001 AND NOTHING EVER WROTE IT. `workout_exercises.notes` was in the
+   * very first migration; no client path has ever sent a value and no surface has ever read one back.
+   * This is a field being FINISHED, not added — which is why it costs one `create or replace` and no
+   * new column.
+   *
+   * Trimmed to null on save: an empty string is not a note, and storing one puts an empty quote block
+   * on every history row that opened the sheet and thought better of it.
+   */
+  note?: string | null;
   /** Cardio only. `activity` is authored; `modality` is the athlete's live choice on the day. */
   activity?: CardioActivity;
   modality?: Modality;
@@ -124,7 +137,8 @@ export interface SessionExercise {
    * of a split squat is per leg, and repeating it per set would be the same fact written five times.
    * Nothing counts it — `targetReps` stays what the athlete logs, exactly as with a rep range.
    */
-  per?: 'leg' | 'side';
+  /** Which side a rep count refers to. `'arm'` added 2026-08-09 — see `per-side-core.ts`. */
+  per?: PerSide;
   section: WorkoutSectionKind;
   position: number;
   sets: SessionSet[];
@@ -132,6 +146,11 @@ export interface SessionExercise {
 
 export interface ActiveSession {
   workoutName: string;
+  /**
+   * How the session went, in the athlete's words. Lands in `workouts.notes` — a column that has taken a
+   * value through `save_workout`'s `p_notes` since 0010, which every client path has passed as `null`.
+   */
+  note?: string | null;
   activityType: string; // 'strength' for W-9
   startedAt: string; // ISO
   exercises: SessionExercise[];

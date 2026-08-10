@@ -54,7 +54,8 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
 import { clearSession, hasLoggedWork, loadSession, persistSession } from '@/domain/workout/autosave';
 import { blockAt, breakBlock, endsSupersetRound, makeSuperset, nextInSuperset, sessionToTemplateExercises, supersetRounds } from '@/domain/workout/session-core';
 import { doneSetCount, hasLoggedSet, PR_MAX_REPS } from '@/domain/workout/metrics';
-import { fetchPriorRecords, saveWorkout } from '@/domain/workout/save';
+import { perSideFor } from '@/domain/workout/per-side-core';
+import { fetchLastNotes, fetchPriorRecords, saveWorkout, type LastNote } from '@/domain/workout/save';
 import { PlaylistSheet } from '@/components/forge/composites/Playlist';
 import { JoinRequestBanner } from '@/components/forge/JoinRequestBanner';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
@@ -251,6 +252,9 @@ export default function WorkoutScreen() {
    * they have never done — which is exactly the case that must stay silent.
    */
   const [priorRecord, setPriorRecord] = useState<Record<string, number> | null>(null);
+  /* The last thing they said about each of these lifts. Keyed by catalogKey ?? name, the same identity
+     every other lift-history read in this app uses. */
+  const [lastNotes, setLastNotes] = useState<Record<string, LastNote>>({});
   const [seal, setSeal] = useState<{ name: string; sets: number; volume: number; next: string | null; token: number } | null>(null);
   const [restEnabled, setRestEnabled] = useState(false); // default OFF; the saved pref loads on mount
   const [restSec, setRestSec] = useState(90);
@@ -277,6 +281,10 @@ export default function WorkoutScreen() {
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [wNameOpen, setWNameOpen] = useState(false);
   const [wNameDraft, setWNameDraft] = useState('');
+  /* A note on the lift in front of you. Scoped to the exercise the ⋯ menu was opened from, so it cannot
+     drift onto a different movement if the index moves while the sheet is up. */
+  const [noteOpen, setNoteOpen] = useState<number | null>(null);
+  const [noteDraft, setNoteDraft] = useState('');
   /**
    * The exercise index whose cardio bout is OPEN — started and not yet logged. Null when none is.
    *
@@ -559,6 +567,20 @@ export default function WorkoutScreen() {
       alive = false;
     };
   }, [exerciseNames]);
+
+  /* The same read, for what they last SAID about these lifts. Separate effect rather than folded into
+     the one above: a note is decoration on the card and a record gates the PR banner, so a slow or
+     failed note read must never hold up the thing that decides whether a set is a record. */
+  useEffect(() => {
+    if (!session?.exercises.length) return;
+    let alive = true;
+    void fetchLastNotes(session.exercises.map((e) => ({ catalogKey: e.catalogKey, name: e.name }))).then((r) => {
+      if (alive) setLastNotes(r);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [exerciseNames, session?.exercises]);
 
   // rest ticker — repaints twice a second while running; clears itself when the deadline passes (setState in
   // the interval callback is the async-callback form the strict react-hooks rules allow, like a query result)
@@ -1176,6 +1198,7 @@ export default function WorkoutScreen() {
   const workoutComplete = hasLoggedSet(session) && session.exercises.every((e) => e.sets.every((s) => s.done));
   const currentSetIdx = ex.sets.findIndex((s) => !s.done); // -1 = all done
   const goalText = goalTextFor(ex.sets);
+  const lastNote = lastNotes[ex.catalogKey ?? ex.name] ?? null;
   const sheetCable = sheet != null && equipmentForCatalogKey(session.exercises[sheet.exIdx]?.catalogKey) === 'cable';
   const sheetWeightOpts = sheetCable ? WEIGHT_OPTS_CABLE : WEIGHT_OPTS;
   /* Everything the sheet needs to describe itself: which lift, which set of how many, and whether this
@@ -1375,6 +1398,25 @@ export default function WorkoutScreen() {
     // session exists and Activity History has an activity type to fall back to.
     if (next) mutate((sess) => ({ ...sess, workoutName: next }));
     setWNameOpen(false);
+  };
+
+  const openNote = () => {
+    setOptionsOpen(false);
+    setNoteDraft(session?.exercises[exIdx]?.note ?? '');
+    setNoteOpen(exIdx);
+  };
+  const commitNote = () => {
+    const at = noteOpen;
+    if (at == null) return;
+    const next = noteDraft.trim().slice(0, 280);
+    /* ⚠ BLANK CLEARS, unlike the workout name above — and the difference is deliberate. A name has no
+       empty state this screen can render, so clearing it there would leave a hole in the header. A note
+       has one: no note. Deleting what you wrote has to be possible, or the first typo is permanent. */
+    mutate((sess) => ({
+      ...sess,
+      exercises: sess.exercises.map((e, i) => (i === at ? { ...e, note: next || null } : e)),
+    }));
+    setNoteOpen(null);
   };
 
   const openAdd = () => {
@@ -1720,6 +1762,20 @@ export default function WorkoutScreen() {
                 </Pressable>
               </View>
             </View>
+            {/*
+              ══ WHAT YOU SAID LAST TIME ══
+
+              The whole reason notes are worth building. A note you can only find by digging through
+              history is a diary; the same note in front of you as you set up for the lift is coaching.
+              Shown only for a DIFFERENT session — repeating back a note you wrote ninety seconds ago
+              would be the app talking to itself.
+            */}
+            {lastNote && !ex.note ? (
+              <View style={styles.lastNote}>
+                <Text style={styles.lastNoteLabel}>LAST TIME</Text>
+                <Text style={styles.lastNoteText}>{lastNote.text}</Text>
+              </View>
+            ) : null}
             {/* insight row: Last · Goal · Best */}
             <View style={styles.insightRow}>
               <View style={styles.insightCol}>
@@ -2141,6 +2197,39 @@ export default function WorkoutScreen() {
         </View>
       ) : null}
 
+      {/* Same rule again — mounted in the branch that can open it. `overlay-branch.test.mjs` exists
+          because a sheet was once rendered in a branch that could never be reached, so the button set
+          state that nothing drew. */}
+      {noteOpen != null ? (
+        <View style={[styles.pickerWrap, keyboardInset > 0 && { paddingBottom: keyboardInset }]}>
+          <Pressable style={styles.pickerBackdrop} onPress={() => setNoteOpen(null)} accessibilityLabel="Close" />
+          <View style={styles.picker}>
+            <Text style={styles.pickerTitle}>{session.exercises[noteOpen]?.name ?? 'Note'}</Text>
+            <TextInput
+              value={noteDraft}
+              onChangeText={setNoteDraft}
+              placeholder="Shoulder felt off. Belt on from set 3."
+              placeholderTextColor={flColor.gray600}
+              style={styles.noteInput}
+              accessibilityLabel="Note on this exercise"
+              maxLength={280}
+              multiline
+              autoFocus
+              selectionColor={flColor.bronze300}
+              underlineColorAndroid="transparent"
+            />
+            <View style={styles.pickerBtns}>
+              <Button variant="primary" fullWidth onPress={commitNote} accessibilityLabel="Save note">
+                Save Note
+              </Button>
+              <Button variant="text" fullWidth onPress={() => setNoteOpen(null)} accessibilityLabel="Cancel">
+                Cancel
+              </Button>
+            </View>
+          </View>
+        </View>
+      ) : null}
+
       {/* Same rule as the End Workout sheet below: mounted in the branch that can open it. The row
           lives in ⋯ Options, which closes first, so this is a sibling of it rather than a child. */}
       {wNameOpen ? (
@@ -2282,6 +2371,15 @@ export default function WorkoutScreen() {
                 title="Name this workout"
                 sub={session.workoutName}
                 icon={<><Path d="M12 20h9" /><Path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></>}
+              />
+              {/* The note belongs to the LIFT, not the session — "shoulder felt off" is about this
+                  movement and is worth reading the next time you meet it, which is what carry-forward
+                  below does with it. The session-level note lives on the finish screen instead. */}
+              <OptionRow
+                onPress={openNote}
+                title={ex.note ? 'Edit your note' : 'Add a note'}
+                sub={ex.note ? ex.note : `How ${ex.name} is feeling today`}
+                icon={<><Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><Path d="M14 2v6h6M8 13h8M8 17h5" /></>}
               />
               <OptionRow onPress={openAdd} tint title="Add an exercise" sub="Pick another movement for this session" icon={<Path d="M12 5v14M5 12h14" />} />
                       <OptionRow onPress={openSwap} title="Swap this exercise" sub="Pick a different movement" icon={<Path d="M4 7h13l-3-3M20 17H7l3 3" />} />
@@ -2598,11 +2696,16 @@ function pickedToExercise(p: PickedExercise, position: number): SessionExercise 
   // target: nothing prescribed it.
   const picked = activityFromKey(p.catalogKey);
   if (picked) return cardioExercise(picked, position, { targetMi: null, targetPaceSec: null, targetSpdMph: null });
+  /* Which side it is counted on, derived from the name. This is the add-as-you-go path — nothing
+     prescribed this lift, so if it is not worked out here the athlete gets "3 × 8" on a single-arm row
+     and does half the work the number implies. */
+  const per = perSideFor(p.name);
   return {
     catalogKey: p.catalogKey,
     name: p.name,
     section: 'main',
     position,
+    ...(per ? { per } : {}),
     sets: Array.from({ length: 3 }, (_, s) => ({ setIndex: s, weight: null, targetReps: 8, actualReps: null, done: false })),
   };
 }
@@ -2614,10 +2717,16 @@ function swapExercise(ex: SessionExercise, p: PickedExercise): SessionExercise {
   if (isCardioKey(p.catalogKey) !== (ex.kind === 'cardio')) {
     return pickedToExercise(p, ex.position);
   }
+  /* ⚠ RE-DERIVED, not carried over. Swapping a Bulgarian Split Squat for a Back Squat keeps the set
+     structure but is emphatically NOT still per-leg, and inheriting the old label would double the
+     volume of every set that followed. `null` clears it, which is why this is an explicit assignment
+     rather than a spread that only adds. */
+  const per = perSideFor(p.name);
   return {
     ...ex,
     catalogKey: p.catalogKey,
     name: p.name,
+    per: per ?? undefined,
     sets: ex.sets.map((st) => ({ ...st, weight: null, actualReps: null, done: false })),
   };
 }
@@ -3026,6 +3135,31 @@ const styles = StyleSheet.create({
     borderRadius: flRadius.md,
     paddingHorizontal: 14,
     paddingVertical: 13,
+    outlineWidth: 0,
+  },
+
+  lastNote: {
+    marginTop: 14,
+    paddingLeft: 11,
+    borderLeftWidth: 2,
+    borderLeftColor: flColor.bronze400,
+    gap: 3,
+  },
+  lastNoteLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.3, color: flColor.bronze400 },
+  lastNoteText: { fontSize: 13.5, lineHeight: 20, color: flColor.cream100, fontStyle: 'italic' },
+  noteInput: {
+    fontFamily: flFont.sans,
+    fontSize: 16,
+    lineHeight: 23,
+    color: flColor.cream100,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    borderRadius: flRadius.md,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    // Tall enough for the two or three lines a real note runs to, without becoming a document editor.
+    minHeight: 96,
+    textAlignVertical: 'top',
     outlineWidth: 0,
   },
 

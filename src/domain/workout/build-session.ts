@@ -1,6 +1,7 @@
 import { getProgramDefinitions } from '@/domain/training/programs';
 import { DEMO_ACTIVE_ID } from '@/domain/training/active-program-core';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
+import { perSideFor } from './per-side-core.ts';
 import { dayLabel, plannedDays, trainingDays } from '@/domain/program/progress-core';
 import { groupFieldsOf, sessionSetsFor } from './session-core';
 import type { ProgramStructure } from '@/data/programs-live';
@@ -115,7 +116,10 @@ export function buildSessionFromProgram(
         catalogKey: ex.catalogKey,
         name: ex.name,
         ...group,
-        ...(ex.per ? { per: ex.per } : {}),
+        /* The program's answer wins; otherwise derive it from the name. Only a program could set this
+           before, so every freestyle session — and every add-as-you-go exercise — had no side label at
+           all, however obviously single-sided the movement was. */
+        ...((ex.per ?? perSideFor(ex.name)) ? { per: ex.per ?? perSideFor(ex.name)! } : {}),
         section: sec.key,
         position: exercises.length,
         sets: sessionSetsFor(ex, load),

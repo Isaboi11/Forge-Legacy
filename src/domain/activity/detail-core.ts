@@ -21,6 +21,8 @@ export interface DetailExercise {
   catalogKey: string | null;
   equip: string | null;
   sets: DetailSet[];
+  /** What they said about this lift that day. `workout_exercises.notes` — written since 0124. */
+  note: string | null;
 }
 export interface ActivityDetail {
   id: string;
@@ -31,6 +33,8 @@ export interface ActivityDetail {
   distance: number | null;
   distanceUnit: string | null;
   exercises: DetailExercise[];
+  /** How the session went, in the athlete's words. Distinct from the chapter-facing reflection. */
+  note: string | null;
   chapterName: string | null;
   programId: string | null;
   programName: string | null;
