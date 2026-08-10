@@ -49,15 +49,29 @@ export function BottomSheet({ open, onClose, dismissible = true, title, showHand
 
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose} onDismiss={onDismiss}>
-      {/* Backdrop = tap-to-dismiss surface only. It must NOT be an accessibilityRole="button" — on web that
-          makes it keyboard-activatable, so a SPACEBAR press inside a text field bubbles up and "clicks" the
-          backdrop, dismissing the sheet mid-typing. `focusable={false}` keeps it out of the keyboard path. */}
-      <Pressable style={styles.backdrop} onPress={dismissible ? onClose : undefined} focusable={false}>
+      {/*
+        ══ THE BACKDROP IS A SIBLING, NOT A PARENT — AND THAT IS WHAT MAKES THE BODY SCROLL ══
+
+        It used to WRAP the sheet: a `Pressable` backdrop containing a second `Pressable` that swallowed
+        the tap so it would not dismiss. Two nested pressables in the ancestry of the ScrollView, which is
+        fine with a mouse and fatal on a touch screen — RN Web's Pressable claims the touch through the
+        responder system, so the drag that should scroll the body was consumed as a press gesture on the
+        way down. A long preview (an imported 15-week plan) could be seen and not moved.
+
+        As siblings, nothing is above the ScrollView but plain Views, and the backdrop still catches every
+        tap outside the sheet because it fills the screen behind it.
+
+        It must NOT be accessibilityRole="button" — on web that makes it keyboard-activatable, so a
+        SPACEBAR press inside a text field bubbles up and "clicks" it, dismissing the sheet mid-typing.
+        `focusable={false}` keeps it out of the keyboard path.
+      */}
+      <View style={styles.root}>
         <Pressable
-          onPress={(e) => e.stopPropagation()}
+          style={StyleSheet.absoluteFill}
+          onPress={dismissible ? onClose : undefined}
           focusable={false}
-          style={[styles.sheet, { paddingBottom: 22 + insets.bottom }]}
-        >
+        />
+        <View style={[styles.sheet, { paddingBottom: 22 + insets.bottom }]}>
           {showHandle ? (
             <View style={styles.handleRow}>
               <View style={styles.handle} />
@@ -80,14 +94,15 @@ export function BottomSheet({ open, onClose, dismissible = true, title, showHand
           )}
 
           {footer ? <View style={styles.footer}>{footer}</View> : null}
-        </Pressable>
-      </Pressable>
+        </View>
+      </View>
     </Modal>
   )
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
+  /** Holds the dim and the layout; the tap target is the absolute-fill Pressable behind the sheet. */
+  root: {
     flex: 1,
     justifyContent: 'flex-end',
     backgroundColor: flColor.overlayDark,

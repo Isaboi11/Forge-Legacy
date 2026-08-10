@@ -19,6 +19,10 @@
  * anything unmatched stays a plain name rather than becoming the nearest-looking lift.
  */
 
+// Relative and extensioned: `node --test` loads this file directly and cannot resolve the `@/` alias.
+// (`import-session-text` gets away with `@/` because it imports a TYPE, which is stripped before then.)
+import { deriveName, type CardioActivity } from '../workout/conditioning.ts';
+import { looksLikeSessionText, parseSessionCell, type SessionItem } from './import-session-text.ts';
 import {
   afterWeekHeading,
   loadedSetReps,
@@ -44,6 +48,27 @@ export interface ParsedItem {
   /** True when the sheet did not say, so the preview can show the athlete what it filled in. */
   setsAssumed: boolean;
   repsAssumed: boolean;
+  /**
+   * ══ THE CARDIO FIELDS ══
+   *
+   * Set only by the SESSION reader (`parseSessionTable`), for a sheet written one row per DAY with the
+   * work as prose — which is how every endurance plan is kept and none of which the sets-and-reps
+   * reader above can hold. Absent for an ordinary exercise table, which reads exactly as it did.
+   */
+  kind?: 'strength' | 'cardio';
+  activity?: CardioActivity;
+  /** Seconds. `null` is meaningful — the sentence prescribed no clock. */
+  targetSec?: number | null;
+  /** Canonical miles; yards are converted on the way in. */
+  targetMi?: number | null;
+  /**
+   * The source phrase, whole — "75min bike Z2 w/ 3x8min Z3".
+   *
+   * Becomes the exercise's coaching note. This is what makes a heuristic reader honest: whatever
+   * structure was recognised is laid ON TOP of text that is never discarded, so an interval, a zone or a
+   * "calf check" that no field can hold still reaches the athlete in the words the coach wrote.
+   */
+  note?: string;
 }
 
 export interface ParsedDay {
@@ -363,6 +388,227 @@ function unwrapMarkdown(lines: string[]): string[] | null {
     .map((l) => l.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim()).join('\t'));
 }
 
+// ── ONE ROW PER DAY, WITH THE WORK AS PROSE ─────────────────────────────────
+//
+// ══ WHY A SECOND TABLE READER ══
+//
+// The reader above assumes one row per EXERCISE, with Sets and Reps in their own columns. That is how a
+// lifting program is kept. An endurance plan is kept the other way round — one row per DAY, with the
+// whole session written as a sentence in one cell:
+//
+//   Week / Phase | Date       | Day    | Workout (swim / bike / run)                | Strength & Mobility
+//   Week 1 — Base|            |        |                                            |
+//   FALSE        | Mon, Jun 1 | Monday | 75min bike Z2 w/ 3x8min Z3 + 30min upper…   | UPPER: push-ups 3x10 • …
+//
+// There is no Exercise column and there never will be, because the cell holds three things. Read by the
+// table reader this fell through to the freeform reader and produced ninety "exercises" with names like
+// "75min bike Z2 w/ 3x8min Z3" at a fabricated 3 × 10.
+
+/**
+ * A DATE CELL — "Mon, Jun 1", "Jun 1", "6/1", "2026-06-01".
+ *
+ * Used with the weekday to decide where a row STARTS, which is what lets a cell containing a newline be
+ * rejoined to the row it belongs to instead of becoming an exercise of its own.
+ */
+const DATE_CELL = /^(?:(?:mon|tue|tues|wed|weds|thu|thur|thurs|fri|sat|sun)[a-z]*,?\s*)?(?:\d{1,4}[/-]\d{1,2}[/-]?\d{0,4}|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s*\d{1,2})\b/i;
+
+/** Columns that describe the row rather than prescribing work. Never read as content. */
+const METADATA_HEADERS = /^(date|day|week|wk|phase|weekphase|esthrs|hrs|hours|esthours|time|completed|done|notes?)$/;
+
+/** A content column whose work is lifting whatever words are in it — see `parseSessionCell`'s `strengthOnly`. */
+const STRENGTH_HEADERS = /strength|mobility|lift|gym|accessor/;
+
+/**
+ * Find the header of a one-row-per-day sheet.
+ *
+ * ⚠ `findHeaderRow` CANNOT BE REUSED HERE: it rejects any row without an Exercise column, which is
+ * exactly the row this shape of sheet has. Reusing it meant the session reader never ran at all and the
+ * whole plan fell through to the freeform reader, which read each tab-joined row as one lift with a
+ * fifty-word name.
+ *
+ * Deliberately demanding, so an exercise table with a mistyped header still gets the error that helps it
+ * rather than being silently read a completely different way. It needs BOTH:
+ *   · a Day or Date column, which is what makes it one-row-per-day; and
+ *   · a cell somewhere below that genuinely reads as a session (`looksLikeSessionText`).
+ */
+function findSessionHeader(
+  lines: readonly string[],
+  delimiter: '\t' | ';' | ',',
+): { index: number; cells: string[]; dayAt: number | undefined; columns: { index: number; strengthOnly: boolean }[] } | null {
+  for (let i = 0; i < Math.min(lines.length, HEADER_SCAN_LIMIT); i++) {
+    const cells = splitLine(lines[i], delimiter);
+    const norm = cells.map((h) => h.toLowerCase().replace(/[^a-z]/g, ''));
+
+    const dayAt = norm.findIndex((h) => h === 'day');
+    const dateAt = norm.findIndex((h) => h === 'date');
+    if (dayAt < 0 && dateAt < 0) continue;
+
+    const columns = norm
+      .map((h, idx) => ({ h, idx }))
+      .filter(({ h }) => h && !METADATA_HEADERS.test(h))
+      .map(({ h, idx }) => ({ index: idx, strengthOnly: STRENGTH_HEADERS.test(h) }));
+    if (!columns.length) continue;
+
+    /*
+     * ⚠ THE "SPEAKS" CHECK SCANS EVERY CELL, NOT THE CANDIDATE COLUMNS.
+     *
+     * It used to look only under the columns the header named, which assumes the body lines up with the
+     * header — and a real paste does not. The checkbox column in front of a Google Sheets plan does not
+     * come across, so every data row sits one cell to the LEFT of its own header, and a cell-by-column
+     * check found nothing but empties and declined the whole sheet.
+     */
+    const body = lines.slice(i + 1);
+    const speaks = body.some((line) => splitLine(line, delimiter).some((c) => looksLikeSessionText(c)));
+    if (speaks) return { index: i, cells, dayAt: dayAt >= 0 ? dayAt : dateAt >= 0 ? dateAt : undefined, columns };
+  }
+  return null;
+}
+
+function sessionItem(it: SessionItem): ParsedItem {
+  /*
+   * ⚠ A CARDIO BLOCK'S NAME IS DERIVED, NOT TAKEN FROM THE SHEET — and for consistency, not tidiness.
+   * `build-session` renames every cardio block to `deriveName(activity, modality)` on its way into the
+   * logger, and has since cardio existed. Keeping the prose would show "Z2 endurance (~38-42mi), rolling
+   * terrain" in the builder and "Outdoor Ride" in the session, for one block. Derived HERE rather than at
+   * `toProgramStructure` so the preview shows the name that will actually be created.
+   *
+   * The sentence is not lost. It is the coaching note, which every one of those surfaces draws.
+   */
+  const activity = it.activity as CardioActivity | undefined;
+  const name =
+    it.kind === 'cardio' && activity
+      ? deriveName(activity, activity === 'swim' ? 'indoor' : 'outdoor')
+      : it.name;
+
+  return {
+    name,
+    // A cardio bout has no sets or reps. It carries one bout, and the targets say what it asks for.
+    sets: it.kind === 'cardio' ? 1 : (it.sets ?? DEFAULT_SETS),
+    reps: it.kind === 'cardio' ? 0 : (it.reps ?? DEFAULT_REPS),
+    setsAssumed: it.kind !== 'cardio' && it.sets == null,
+    repsAssumed: it.kind !== 'cardio' && it.reps == null,
+    kind: it.kind,
+    ...(it.activity ? { activity: it.activity } : {}),
+    ...(it.kind === 'cardio' ? { targetSec: it.targetSec ?? null, targetMi: it.targetMi ?? null } : {}),
+    note: it.note,
+  };
+}
+
+/**
+ * Read a one-row-per-day sheet.
+ *
+ * A day that parses to NOTHING is not added. That is how a rest day is meant to read — "Full Rest Day"
+ * is the absence of a session, not a session with nothing in it — and it is what keeps a Monday-to-Sunday
+ * plan inside the builder's six-day ceiling instead of losing a real training day to the slice.
+ */
+function parseSessionTable(
+  lines: readonly string[],
+  delimiter: '\t' | ';' | ',',
+  headerAt: number,
+  headerCells: readonly string[],
+  columns: { index: number; strengthOnly: boolean }[],
+  dayAt: number | undefined,
+): ParseResult {
+  const b = new Builder();
+  let week = 1;
+  let dayOrdinal = 0;
+  const ignoredColumns = headerCells.filter(
+    (h, i) => h && !columns.some((c) => c.index === i) && i !== dayAt,
+  );
+
+  /*
+   * ══ REJOIN THE ROWS THE CLIPBOARD TORE APART ══
+   *
+   * ⚠ A SPREADSHEET CELL CAN CONTAIN A NEWLINE, and a plan's strength cell nearly always does. Copied
+   * out, that newline is indistinguishable from a row break, so ONE row arrives as three or four
+   * physical lines:
+   *
+   *   Mon, Jun 1⇥Monday⇥75min bike Z2 w/ 3x8min Z3 + 30min upper-body strength⇥
+   *   UPPER: push-ups or DB bench 3x10 • 1-arm DB row 3x10/side • …
+   *   1.8⇥
+   *
+   * Read literally, that is a day, a lift called "UPPER: …", and a lift called "1.8". A row STARTS at a
+   * date or a weekday, so anything else is a continuation of the row above it — and a line whose
+   * predecessor already ends in a delimiter simply extends into the next cell.
+   */
+  const rows: string[] = [];
+  for (const line of lines.slice(headerAt + 1)) {
+    const startsRow =
+      weekHeading(line.trim()) != null ||
+      splitLine(line, delimiter).slice(0, 2).some((c) => weekdayKey(c) != null || DATE_CELL.test(c.trim()));
+    if (!rows.length || startsRow) {
+      rows.push(line);
+      continue;
+    }
+    const prev = rows[rows.length - 1];
+    rows[rows.length - 1] = prev.endsWith(delimiter) ? prev + line : prev + delimiter + line;
+  }
+
+  /*
+   * ══ AND LINE THE BODY UP WITH ITS OWN HEADER ══
+   *
+   * ⚠ THE HEADER AND THE DATA DO NOT AGREE ON WHICH COLUMN IS WHICH. A plan with a checkbox column in
+   * front of it copies WITHOUT that column — the boxes are a control, not a value — so every data row
+   * sits one cell to the LEFT of the header that names it. Reading `Workout` at the header's index gave
+   * the Day cell for the whole sheet.
+   *
+   * The WEEKDAY is the anchor, because every data row has one and only one: wherever "Monday" actually
+   * sits tells us how far the body has shifted. Measured once, from the first row that has one, and
+   * applied to every header index after that — so the header keeps deciding which column MEANS what
+   * (including which one is strength) and only the arithmetic is corrected.
+   */
+  let offset: number | null = null;
+  for (const line of rows) {
+    const at = splitLine(line, delimiter).findIndex((c) => weekdayKey(c) != null);
+    if (at >= 0 && dayAt !== undefined) {
+      offset = at - dayAt;
+      break;
+    }
+  }
+  const shift = offset ?? 0;
+  const dataAt = (headerIndex: number) => headerIndex + shift;
+
+  for (const line of rows) {
+    const cells = splitLine(line, delimiter);
+
+    /*
+     * A WEEK BANNER, anywhere on the row. These sheets put it in the first column beside the checkbox,
+     * so there is no Week column to read — "Week 3 — Base Peak + Rehab" simply appears where "FALSE" is
+     * on every other row. Its phase note ("No running • building bike volume") is a description of the
+     * week and not work, so the whole row is skipped rather than read.
+     */
+    let banner = false;
+    for (const cell of cells) {
+      const wk = weekHeading(cell.trim());
+      if (wk != null) {
+        week = wk;
+        // A new week starts its own days, so the fallback "Day 1" naming restarts with it.
+        dayOrdinal = 0;
+        banner = true;
+        break;
+      }
+    }
+    if (banner) continue;
+
+    const items = columns.flatMap(({ index, strengthOnly }) =>
+      parseSessionCell(cells[dataAt(index)] ?? '', { strengthOnly }).map(sessionItem),
+    );
+    if (!items.length) continue;
+
+    const rawDay = dayAt !== undefined ? (cells[dataAt(dayAt)] ?? '') : '';
+    const dayName = cleanDayName(rawDay.trim() || `Day ${dayOrdinal + 1}`);
+    dayOrdinal += 1;
+    // Keyed by ORDINAL, not by name: a plan runs Monday to Saturday every week, and keying by name would
+    // fuse week 2's Monday into week 1's.
+    for (const it of items) b.add(week, `${week}:${dayOrdinal}`, dayName, it);
+  }
+
+  if (b.rowsRead === 0) {
+    return { ok: false, error: 'No sessions found. Check that the workout column has text in it.' };
+  }
+  return { ok: true, weeks: b.done(), ignoredColumns, rowsRead: b.rowsRead };
+}
+
 /** "Day 1", "Push", "Upper A" — the labels a column-per-day sheet puts in its header row. */
 const DAYISH = /^(?:day|d|workout|session|w)\s*\d+|^(push|pull|legs?|upper|lower|chest|back|arms?|shoulders?|full\s*body|rest)\b/i;
 
@@ -469,6 +715,17 @@ export function parseProgramTable(raw: string): ParseResult {
     // Every column is exercises — no Exercise column because there is no room for one.
     const transposed = parseColumnPerDay(lines, delimiter);
     if (transposed) return transposed;
+
+    /*
+     * ONE ROW PER DAY, WITH THE SESSION AS PROSE. Tried before the "name your Exercise column" error,
+     * because for this shape of sheet that advice is wrong: there is no column to name — the cell holds
+     * a whole session. `findSessionHeader` does its own search and is strict about what qualifies, so a
+     * nearly-right exercise table still gets the error that helps it.
+     */
+    const session = findSessionHeader(lines, delimiter);
+    if (session) {
+      return parseSessionTable(lines, delimiter, session.index, session.cells, session.columns, session.dayAt);
+    }
 
     /*
      * Two very different things arrive here, and telling them apart is the whole job.
@@ -654,6 +911,13 @@ export interface ImportedExercise {
   catalogKey?: string;
   sets: number;
   reps: number;
+  /** Set only for a session-table import — see `ParsedItem`. Absent means an ordinary lift. */
+  kind?: 'strength' | 'cardio';
+  activity?: CardioActivity;
+  targetSec?: number | null;
+  targetMi?: number | null;
+  /** The coach's own sentence, carried onto the exercise so nothing the parser could not hold is lost. */
+  coachNote?: string | null;
 }
 export interface ImportedDay {
   letter: string;
@@ -699,8 +963,28 @@ export function toProgramStructure(
     name: d.name,
     warmup: [],
     main: d.items.map((i) => {
+      /*
+       * A CARDIO BOUT IS NOT LOOKED UP IN THE CATALOGUE. Its `catalogKey` is the `cardio:<activity>`
+       * convention the rest of the app already round-trips through, and searching "bike Z2" among 794
+       * lifts could only ever produce a wrong answer or none.
+       */
+      if (i.kind === 'cardio' && i.activity) {
+        // `i.name` is already the derived block name — see `sessionItem`.
+        return {
+          name: i.name,
+          catalogKey: `cardio:${i.activity}`,
+          sets: 1,
+          reps: 0,
+          kind: 'cardio' as const,
+          activity: i.activity,
+          targetSec: i.targetSec ?? null,
+          targetMi: i.targetMi ?? null,
+          coachNote: i.note ?? null,
+        };
+      }
       const key = resolveKey(i.name);
-      return key ? { name: i.name, catalogKey: key, sets: i.sets, reps: i.reps } : { name: i.name, sets: i.sets, reps: i.reps };
+      const base = { name: i.name, sets: i.sets, reps: i.reps, ...(i.note ? { coachNote: i.note } : {}) };
+      return key ? { ...base, catalogKey: key } : base;
     }),
     cooldown: [],
   });

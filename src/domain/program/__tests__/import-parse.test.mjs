@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import { parseProgramTable, summarize, toProgramStructure, unmatchedNames, weeksAreIdentical } from '../import-parse.ts';
 
@@ -935,4 +936,221 @@ test('a PDF page footer is not an exercise', () => {
     'MONDAY', 'Push-Ups', 'DailyRepsGuy — 20 min. Workout PDF Page 10', 'Pull-Ups',
   ].join('\n')));
   assert.deepEqual(r.weeks[0].days[0].items.map((i) => i.name), ['Push-Ups', 'Pull-Ups']);
+});
+
+// ══ ONE ROW PER DAY, WITH THE SESSION AS PROSE ═══════════════════════════════
+//
+// ⚠ THE SHEET BELOW IS REAL — a 15-week Brineman 70.3 plan a PO was handed, columns and all. Before the
+// session reader it fell all the way through to the freeform reader and produced one "exercise" per ROW,
+// named with the entire tab-joined line, at a fabricated 3 × 10.
+
+const TRI_SHEET = tsv([
+  ['Week / Phase', 'Date', 'Day', 'Workout (swim / bike / run)', 'Strength & Mobility', 'Est. Hrs'],
+  ['Week 1 — Base + Calf Rehab', '', '', '', '', '10.8 h'],
+  ['FALSE', 'Mon, Jun 1', 'Monday', '75min bike Z2 w/ 3x8min Z3 + 30min upper-body strength', 'UPPER: push-ups 3x10 • 1-arm DB row 3x10/side • plank 3x45s', '1.8'],
+  ['FALSE', 'Tue, Jun 2', 'Tuesday', '60min easy bike Z2 + 45min brisk incline walk', '', '1.8'],
+  ['FALSE', 'Fri, Jun 5', 'Friday', 'SWIM 1200yd: technique focus, 8x100 Z2 + 4x50 drills + 20min easy row', '', '1.3'],
+  ['FALSE', 'Sat, Jun 6', 'Saturday', 'LONG RIDE 2.5h Z2 endurance (~38-42mi), rolling terrain', '', '2.5'],
+  ['', 'Sun, Jun 7', 'Sunday', 'Full Rest Day', '', ''],
+  ['Week 2 — Base + Calf Rehab', '', '', '', '', '9.4 h'],
+  ['FALSE', 'Mon, Jun 8', 'Monday', '90min bike w/ 6x4min big-gear low-cadence strength + 15min walk', 'Bike-based strength today — no gym work needed', '1.9'],
+  ['', 'Sun, Jun 14', 'Sunday', 'Full Rest Day', '', ''],
+]);
+
+test('a one-row-per-day endurance sheet is read as sessions, not as one lift per row', () => {
+  const r = ok(parseProgramTable(TRI_SHEET));
+  assert.equal(r.weeks.length, 2, 'the week banners split it, though there is no Week column to read');
+  assert.deepEqual(r.weeks.map((w) => w.index), [1, 2]);
+  assert.deepEqual(r.weeks[0].days.map((d) => d.name), ['Monday', 'Tuesday', 'Friday', 'Saturday']);
+});
+
+test('a rest day is no session at all, so it never occupies a day', () => {
+  const r = ok(parseProgramTable(TRI_SHEET));
+  for (const w of r.weeks) {
+    assert.equal(w.days.some((d) => /sunday/i.test(d.name)), false, 'Sunday is rest and must not be a day');
+  }
+  // Which is also what keeps a Mon–Sun plan inside the builder's six-day ceiling.
+  assert.ok(Math.max(...r.weeks.map((w) => w.days.length)) <= 6);
+});
+
+test('the ride, the swim and the row come through with real targets', () => {
+  const r = ok(parseProgramTable(TRI_SHEET));
+  const [mon, , fri, sat] = r.weeks[0].days;
+
+  const ride = mon.items[0];
+  assert.equal(ride.kind, 'cardio');
+  assert.equal(ride.activity, 'bike');
+  assert.equal(ride.targetSec, 75 * 60, 'the 75 is the ride; the 3x8min inside it is not');
+
+  const swim = fri.items[0];
+  assert.equal(swim.activity, 'swim');
+  assert.equal(Math.round(swim.targetMi * 1760), 1200, '1200 yd, in canonical miles');
+
+  const row = fri.items[1];
+  assert.equal(row.activity, 'row');
+  assert.equal(row.targetSec, 20 * 60);
+
+  const long = sat.items[0];
+  assert.equal(long.targetSec, 150 * 60, '2.5h');
+  assert.equal(long.targetMi, 38, 'the floor of the ~38-42mi range');
+});
+
+test('the strength column keeps its written sets and reps and is never read as cardio', () => {
+  const r = ok(parseProgramTable(TRI_SHEET));
+  const mon = r.weeks[0].days[0];
+  const lifts = mon.items.filter((i) => i.kind === 'strength');
+  const dbRow = lifts.find((i) => i.name === '1-arm DB row');
+  assert.ok(dbRow, 'the DB row survived');
+  assert.equal(dbRow.sets, 3);
+  assert.equal(dbRow.reps, 10);
+  assert.equal(dbRow.kind, 'strength', 'a DB row is a lift, not an erg');
+
+  const wk2 = r.weeks[1].days[0].items;
+  assert.ok(
+    wk2.some((i) => i.kind === 'strength' && /Bike-based strength/.test(i.note)),
+    '"Bike-based strength today" is a strength cell and is not a ride',
+  );
+});
+
+test('⚠ every item keeps the sentence it came from — the parser is a heuristic and must show its work', () => {
+  const r = ok(parseProgramTable(TRI_SHEET));
+  for (const w of r.weeks) for (const d of w.days) for (const i of d.items) {
+    assert.ok(i.note && i.note.trim().length, `${i.name} lost its source sentence`);
+  }
+  const ride = r.weeks[0].days[0].items[0];
+  assert.equal(ride.note, '75min bike Z2 w/ 3x8min Z3', 'the interval the model cannot hold is still readable');
+});
+
+test('the metadata columns are reported as ignored rather than read as work', () => {
+  const r = ok(parseProgramTable(TRI_SHEET));
+  assert.deepEqual(r.ignoredColumns, ['Week / Phase', 'Date', 'Est. Hrs']);
+});
+
+test('it becomes a program whose bouts are cardio blocks with coaching notes', () => {
+  const r = ok(parseProgramTable(TRI_SHEET));
+  const s = toProgramStructure(r.weeks, 'Brineman 70.3', () => undefined);
+  assert.equal(s.weeks, 2);
+  assert.equal(s.vary, true, 'no two weeks of a real plan are the same');
+
+  const ride = s.weekPlans[0].days[0].main[0];
+  assert.equal(ride.catalogKey, 'cardio:bike');
+  assert.equal(ride.kind, 'cardio');
+  assert.equal(ride.targetSec, 75 * 60);
+  assert.equal(ride.coachNote, '75min bike Z2 w/ 3x8min Z3');
+  // Named the way the LOGGER will name it — `build-session` derives a cardio block's name, so a prose
+  // name here would have the builder and the session disagreeing about one block.
+  assert.equal(ride.name, 'Outdoor Ride');
+});
+
+test('an ordinary exercise table is untouched by any of this', () => {
+  const r = ok(parseProgramTable(tsv([
+    ['Week', 'Day', 'Exercise', 'Sets', 'Reps'],
+    ['1', 'Push A', 'Bench Press', '3', '8'],
+    ['1', 'Push A', 'Incline DB Press', '3', '10'],
+  ])));
+  const items = r.weeks[0].days[0].items;
+  assert.equal(items.length, 2);
+  assert.equal(items[0].name, 'Bench Press');
+  assert.equal(items[0].kind, undefined, 'no cardio fields on an ordinary import');
+  assert.equal(items[0].note, undefined);
+});
+
+test('a nearly-right exercise table still gets the error that helps it, not a session reading', () => {
+  const r = parseProgramTable(tsv([
+    ['Week', 'Day', 'Movements', 'Sets', 'Reps'],
+    ['1', 'Push A', 'Bench Press', '3', '8'],
+  ]));
+  assert.equal(r.ok, false);
+  assert.match(r.error, /Exercise/, 'it should say to name the column, not silently read it another way');
+});
+
+// ══ THE SAME PLAN, AS AN iPHONE ACTUALLY PASTES IT ═══════════════════════════
+//
+// ⚠ THE FIXTURE IS A REAL CLIPBOARD, not a tidied one. The synthetic sheet above imported perfectly and
+// the same plan copied out of Google Sheets on a phone still produced ninety junk rows, because a real
+// paste is deformed in three ways at once and the tests did not know:
+//
+//   1. A CELL CONTAINING A NEWLINE breaks its row across several physical lines. The strength cell nearly
+//      always contains one, so one row arrives as three or four.
+//   2. THE CHECKBOX COLUMN DOES NOT COME ACROSS — boxes are a control, not a value — so every data row
+//      sits one cell to the LEFT of the header that names it.
+//   3. Some rows carry a seventh, unheaded column of loose notes.
+//
+// Read `fixtures/tri-sheet-ios-paste.txt` before changing any of this.
+const IOS_PASTE = readFileSync(new URL('./fixtures/tri-sheet-ios-paste.txt', import.meta.url), 'utf8');
+
+test('a real phone paste of the plan is read as sessions, not as junk rows', () => {
+  const r = ok(parseProgramTable(IOS_PASTE));
+  assert.deepEqual(r.weeks.map((w) => w.index), [1, 2, 4, 15]);
+  assert.deepEqual(r.weeks[0].days.map((d) => d.name), ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']);
+});
+
+test('⚠ a row torn apart by a newline inside a cell is put back together', () => {
+  const r = ok(parseProgramTable(IOS_PASTE));
+  const monday = r.weeks[0].days[0];
+
+  // The ride, the strength phrase, and every bullet of the strength cell — all ONE day.
+  assert.equal(monday.items[0].activity, 'bike');
+  assert.equal(monday.items[0].targetSec, 75 * 60);
+  assert.ok(monday.items.some((i) => i.name === 'overhead press' && i.sets === 3 && i.reps === 8));
+  assert.ok(monday.items.some((i) => i.name === 'plank'));
+
+  // And the Est. Hrs cell, which arrived on its own line, is NOT an exercise called "1.8".
+  for (const w of r.weeks) for (const d of w.days) for (const i of d.items) {
+    assert.equal(/^\d+(\.\d+)?( h)?$/.test(i.name.trim()), false, `"${i.name}" is a duration, not a movement`);
+  }
+});
+
+test('⚠ the body is realigned when the checkbox column fails to copy', () => {
+  // Header: Week/Phase, Date, Day, Workout, Strength, Est.Hrs. Data starts at Date — shifted by one.
+  // Read at the header's own indices, every Workout cell came back as the Day cell instead.
+  const r = ok(parseProgramTable(IOS_PASTE));
+  const tuesday = r.weeks[0].days[1];
+  assert.equal(tuesday.name, 'Tuesday', 'the day is still the day');
+  assert.equal(tuesday.items[0].activity, 'bike', 'and the workout column really is the workout');
+  assert.equal(tuesday.items[0].targetSec, 60 * 60);
+});
+
+test('a week banner that wraps onto a second line is still one banner', () => {
+  const r = ok(parseProgramTable(IOS_PASTE));
+  const wk4 = r.weeks.find((w) => w.index === 4);
+  assert.ok(wk4, 'Week 4 — Recovery / Last No-Run Week');
+  assert.equal(wk4.days[0].name, 'Monday');
+  // Its phase note is a description of the week, not work, and must not become an exercise.
+  for (const d of wk4.days) for (const i of d.items) {
+    assert.equal(/intensity down, prep calf/.test(i.name), false);
+  }
+});
+
+test('rest days and the loose notes column produce nothing', () => {
+  const r = ok(parseProgramTable(IOS_PASTE));
+  for (const w of r.weeks) {
+    assert.equal(w.days.some((d) => /sunday/i.test(d.name)), false, 'Sunday is rest');
+    for (const d of w.days) for (const i of d.items) {
+      assert.equal(/Foot strain/.test(i.name), false, 'the unheaded notes column is not training');
+    }
+  }
+});
+
+test('the swim, the row and the long ride survive the deformed paste with real targets', () => {
+  const r = ok(parseProgramTable(IOS_PASTE));
+  const [, , , , friday, saturday] = r.weeks[0].days;
+
+  assert.equal(friday.items[0].activity, 'swim');
+  assert.equal(Math.round(friday.items[0].targetMi * 1760), 1200);
+  assert.equal(friday.items[1].activity, 'row');
+  assert.equal(friday.items[1].targetSec, 20 * 60);
+
+  assert.equal(saturday.items[0].activity, 'bike');
+  assert.equal(saturday.items[0].targetSec, 150 * 60);
+  assert.equal(saturday.items[0].targetMi, 38);
+});
+
+test('it becomes a runnable program with cardio blocks and the coach’s own words', () => {
+  const r = ok(parseProgramTable(IOS_PASTE));
+  const s = toProgramStructure(r.weeks, 'Brineman 70.3', () => undefined);
+  const ride = s.weekPlans[0].days[0].main[0];
+  assert.equal(ride.catalogKey, 'cardio:bike');
+  assert.equal(ride.targetSec, 75 * 60);
+  assert.equal(ride.coachNote, '75min bike Z2 w/ 3x8min Z3');
 });

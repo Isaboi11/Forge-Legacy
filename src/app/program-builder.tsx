@@ -150,6 +150,22 @@ function inferLabel(items: ProgramExercise[]): string {
 const dayName = (day: ProgramDay) => (day.name.trim() ? day.name : `Day ${day.letter || '?'}`);
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
+/**
+ * What a previewed cardio bout asks for — "75 min", "1200 yd", "3.0 mi · 45 min".
+ *
+ * Says only what was actually read. A bout the sentence gave no target for reads "Open", which is a real
+ * prescription and not a gap: the sheet said go ride, and it did not say how far.
+ */
+function cardioTargetText(it: { activity?: string; targetSec?: number | null; targetMi?: number | null }): string {
+  const parts: string[] = [];
+  if (it.targetMi != null) {
+    const unit = distanceUnitFor((it.activity ?? 'run') as CardioActivity, false);
+    parts.push(`${fmtDistanceIn(it.targetMi, unit)} ${unit}`);
+  }
+  if (it.targetSec != null) parts.push(fmtDuration(it.targetSec));
+  return parts.length ? parts.join(' · ') : 'Open';
+}
+
 function Glyph({ d, size = 13, color, width = 2.2 }: { d: string; size?: number; color: string; width?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round">
@@ -1057,6 +1073,10 @@ function ProgramBuilderScreen() {
               We look for <Text style={styles.impHintStrong}>Week</Text>, <Text style={styles.impHintStrong}>Day</Text>,{' '}
               <Text style={styles.impHintStrong}>Exercise</Text>, <Text style={styles.impHintStrong}>Sets</Text>,{' '}
               <Text style={styles.impHintStrong}>Reps</Text>. One week or the whole program — either works.
+              {'\n\n'}
+              Keep it one row per <Text style={styles.impHintStrong}>day</Text> instead? That works too —
+              write the session out (&ldquo;75min bike Z2 + 30min upper strength&rdquo;) and we&rsquo;ll read the
+              rides, runs and swims out of it. Check what we read before you create it.
             </Text>
             <TextInput
               value={pasteText}
@@ -1091,8 +1111,9 @@ function ProgramBuilderScreen() {
               <Text style={styles.impSummaryText}>{summarize(preview)}</Text>
             </View>
             <Text style={styles.impNote}>
-              Tap − / + to fix any sets × reps now. You can also rename, reorder, and add exercises after you
-              create the program.
+              Tap − / + to fix any sets × reps now. Grey text is the sentence we read it from — it is kept
+              as a coaching note, so anything we couldn&rsquo;t turn into a number still reaches you. You can
+              rename, reorder and add exercises after you create the program.
             </Text>
 
             {preview.map((w, wi) => (
@@ -1113,11 +1134,27 @@ function ProgramBuilderScreen() {
                             <Text style={styles.impItemName} numberOfLines={1}>
                               {it.name}
                             </Text>
+                            {/*
+                              ══ THE SENTENCE IT CAME FROM ══
+
+                              Shown because this reader is a HEURISTIC and the preview is what makes that
+                              honest. The athlete can see that "75min bike Z2 w/ 3x8min Z3" was read as a
+                              75-minute ride, and that the interval detail it could not structure has been
+                              kept as a coaching note rather than dropped. Without this line, a confident
+                              wrong reading looks exactly like a right one.
+                            */}
+                            {it.note && it.note !== it.name ? (
+                              <Text style={styles.impItemSource} numberOfLines={2}>
+                                {it.note}
+                              </Text>
+                            ) : null}
                             {/* WHAT THE NAME RESOLVED TO, before anything is created.
                                 A match found by the equipment convention rather than by the words is a
                                 judgement, not a fact — showing it is what makes the convention honest,
                                 and the athlete can swap the exercise in the builder afterwards. */}
                             {(() => {
+                              // A bout is not looked up: its key is the `cardio:<activity>` convention.
+                              if (it.kind === 'cardio') return null;
                               const hit = resolveName(it.name);
                               if (!hit) return <Text style={styles.impItemUnmatched}>not in the library · kept as written</Text>;
                               if (hit.name.toLowerCase() === it.name.trim().toLowerCase()) return null;
@@ -1129,6 +1166,11 @@ function ProgramBuilderScreen() {
                               );
                             })()}
                           </View>
+                          {/* A bout states its TARGET. Sets × reps is not a thing a 75-minute ride has,
+                              and steppers for them would invite editing a number that does not exist. */}
+                          {it.kind === 'cardio' ? (
+                            <Text style={styles.impTarget}>{cardioTargetText(it)}</Text>
+                          ) : (
                           <View style={styles.impSteppers}>
                             <ImpStep label={`Fewer sets of ${it.name}`} glyph="−" onPress={() => bumpPreview(wi, di, ii, 'sets', -1)} />
                             <Text style={[styles.impNum, it.setsAssumed ? styles.impNumAssumed : null]}>{it.sets}</Text>
@@ -1138,6 +1180,7 @@ function ProgramBuilderScreen() {
                             <Text style={[styles.impNum, styles.impNumWide, it.repsAssumed ? styles.impNumAssumed : null]}>{it.reps}</Text>
                             <ImpStep label={`More reps of ${it.name}`} glyph="+" onPress={() => bumpPreview(wi, di, ii, 'reps', 1)} />
                           </View>
+                          )}
                         </View>
                       ))}
                     </View>
@@ -2558,6 +2601,9 @@ const styles = StyleSheet.create({
   exBottom: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
   /* The cue sits under the meters as its own full-width row: it is a sentence, not a number, and
      squeezing it beside a stepper would truncate the one field whose whole value is the words in it. */
+  /* The source sentence, under the name it produced. Small and quiet — it is evidence, not content. */
+  impItemSource: { fontSize: 11, lineHeight: 15, color: flColor.gray600, fontStyle: 'italic', marginTop: 2 },
+  impTarget: { fontFamily: flFont.display, fontSize: 13, color: flColor.bronze300, paddingLeft: 8 },
   exNoteRow: {
     flexDirection: 'row',
     alignItems: 'center',
