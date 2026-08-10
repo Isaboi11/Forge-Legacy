@@ -20,6 +20,7 @@ import {
   deriveEquip,
   deriveName,
   distanceLabel,
+  distanceStepIn,
   distanceUnitFor,
   effortLabel,
   fmtClock,
@@ -33,6 +34,7 @@ import {
   newCardioBlock,
   parseClock,
   parseDistance,
+  parseDistanceIn,
   parsePace,
   parseWithin,
   sessionActivityType,
@@ -503,4 +505,27 @@ test('a duration reads the way it is spoken', () => {
   assert.equal(fmtDuration(150 * 60), '2h 30m');
   assert.equal(fmtDuration(null), '', 'no target states nothing');
   assert.equal(fmtDuration(0), '');
+});
+
+test('a typed pool distance is bounded by its own unit, not by the mile bound', () => {
+  // ⚠ THE REGRESSION THIS EXISTS FOR: `parseDistance` rejects anything over 500, so a swimmer typing
+  // the 1200 they just swam had it silently discarded and the previous value left standing.
+  assert.equal(parseDistance('1200'), null, 'the mile parser still refuses it, and should');
+  const mi = parseDistanceIn('1200', 'yd');
+  assert.ok(mi != null);
+  assert.equal(Math.round(toDistanceIn(mi, 'yd')), 1200);
+
+  assert.equal(Math.round(toDistanceIn(parseDistanceIn('3200', 'yd'), 'yd')), 3200);
+  assert.equal(parseDistanceIn('10001', 'yd'), null, 'past any pool session, so a typo is likelier');
+  assert.equal(parseDistanceIn('501', 'mi'), null, 'the road bound is unchanged');
+  assert.equal(parseDistanceIn('3.1', 'mi'), 3.1);
+  assert.equal(parseDistanceIn('0', 'yd'), null);
+  assert.equal(parseDistanceIn('abc', 'yd'), null, 'a rejected parse is null, never NaN');
+});
+
+test('the log form steps a pool by a length and a road by a tenth', () => {
+  assert.equal(distanceStepIn('yd'), 25);
+  assert.equal(distanceStepIn('m'), 25);
+  assert.equal(distanceStepIn('mi'), 0.1);
+  assert.equal(distanceStepIn('km'), 0.1);
 });

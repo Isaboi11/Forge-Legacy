@@ -357,6 +357,29 @@ export function fmtDistanceIn(mi: number, unit: DistanceUnit): string {
 const POOL = { step: 100, min: 100, max: 10_000 };
 
 /**
+ * A TYPED distance, in its own unit, back to canonical miles.
+ *
+ * ⚠ `parseDistance` REJECTS ANYTHING OVER 500, which is right for miles and silently fatal for yards:
+ * a swimmer typing the 1200 they just swam would have had it thrown away and the previous value left
+ * standing. The bound belongs to the unit, not to the number.
+ *
+ * Rejects rather than clamps, exactly as `parseDistance` does — a null leaves the old value in place,
+ * which is the safe failure for a field whose whole job is to replace one.
+ */
+export function parseDistanceIn(raw: string, unit: DistanceUnit): number | null {
+  const cleaned = raw.trim().replace(',', '.');
+  if (!/^\d*\.?\d+$/.test(cleaned)) return null;
+  const n = Number(cleaned);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  const max = unit === 'yd' || unit === 'm' ? POOL.max : 500;
+  if (n > max) return null;
+  return fromDistanceIn(n, unit);
+}
+
+/** How far one tap moves the LOG form's distance, in display units: a pool length vs a tenth of a mile. */
+export const distanceStepIn = (unit: DistanceUnit): number => (unit === 'yd' || unit === 'm' ? 25 : 0.1);
+
+/**
  * Step a distance IN ITS OWN UNIT, then convert back.
  *
  * Stepping the canonical mile figure would put the rounding in the wrong place: 1200 yd is 0.6818… mi,

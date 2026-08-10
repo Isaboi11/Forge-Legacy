@@ -11,17 +11,23 @@ import { useReduceMotion } from '@/lib/settings';
 import {
   activitySymbol,
   avgPaceSec,
-  bumpDistance,
+  bumpDistanceUnit,
   bumpPace,
   bumpSpeed,
+  distanceStepIn,
+  distanceUnitFor,
   FIRST_TARGET,
   fmtClock,
+  fmtDistanceIn,
   fmtPace,
+  fromDistanceIn,
+  hasRateTarget,
   isLogged,
   parseClock,
-  parseDistance,
+  parseDistanceIn,
   parsePace,
   parseWithin,
+  toDistanceIn,
   usesSpeed,
   VERB,
   type CardioActivity,
@@ -32,7 +38,6 @@ import {
 import {
   currentPaceSec,
   cueLabel,
-  distanceLabel as unitLabel,
   goalMet,
   goalProgress,
   routePath,
@@ -199,9 +204,31 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
   /** Nothing will be measured. The clock still runs; the distance gets typed at the end. */
   const noGps = tracker.noGps;
 
-  const dU = unitLabel(units);
-  const d1 = (mi: number | null | undefined) => toDistance(mi ?? 0, units).toFixed(1);
+  /**
+   * ══ THE UNIT THIS ACTIVITY IS MEASURED IN ══
+   *
+   * Miles or kilometres for a road bout; YARDS OR METRES for a swim, because a pool session is written
+   * "1200 yd" and nobody converts it in their head. Storage stays canonical miles throughout — this
+   * chooses the scale that is read, typed and stepped, and nothing else.
+   */
+  const dU = distanceUnitFor(activity, units === 'metric');
+  const pool = dU === 'yd' || dU === 'm';
+  /** A display figure back to canonical miles — the one conversion, replacing four inline `/ 1.609344`. */
+  const dMi = (v: number) => fromDistanceIn(v, dU);
+  const d1 = (mi: number | null | undefined) => fmtDistanceIn(mi ?? 0, dU);
+  /** What the typed field holds: whole lengths in a pool, two decimals on the road. */
+  const dText = (mi: number) => (pool ? String(Math.round(toDistanceIn(mi, dU))) : toDistance(mi, units).toFixed(2));
+  /**
+   * The figure that gets STORED, rounded in the unit it was entered in.
+   *
+   * ⚠ `+mi.toFixed(2)` is two decimals OF A MILE — 35 yards. Applied to a pool distance it would file
+   * a 1200 yd swim as 0.68 mi, which reads back as 1197, and every length the athlete actually swam
+   * between those two numbers would be rounded away at the moment of saving it.
+   */
+  const dRound = (mi: number) => (pool ? fromDistanceIn(Math.round(toDistanceIn(mi, dU)), dU) : +mi.toFixed(2));
   const speed = usesSpeed(activity);
+  /** A rower, an elliptical and a swimmer hold no pace (EPS-D12) — so they are offered none. */
+  const rated = hasRateTarget(activity);
 
   /**
    * The target in force — the program's if it prescribed one, otherwise whatever the athlete chose
@@ -286,15 +313,18 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
       modality: formTreadmill ? 'indoor' : 'outdoor',
       source: gpsMeasured ? 'tracked' : (result?.source ?? 'manual'),
     });
-    setDistanceText(toDistance(distanceMi, units).toFixed(2));
+    setDistanceText(dText(distanceMi));
   };
 
   const adj = (field: 'distanceMi' | 'timeSec' | 'inclinePct', delta: number) =>
     setDraft((d) => {
       if (!d) return d;
       if (field === 'distanceMi') {
-        const next = Math.max(0, Math.round((d.distanceMi + delta) * 10) / 10);
-        setDistanceText(toDistance(next, units).toFixed(2));
+        /* Stepped IN THE DISPLAY UNIT. Rounding the mile figure to a tenth would move a pool session by
+           176 yards a tap and land it somewhere no lane ever ends. `delta` is ±1 tap; the size of a tap
+           belongs to the unit. */
+        const next = Math.max(0, dMi(Math.round((toDistanceIn(d.distanceMi, dU) + delta * distanceStepIn(dU)) * 100) / 100));
+        setDistanceText(dText(next));
         return { ...d, distanceMi: next };
       }
       if (field === 'timeSec') return { ...d, timeSec: Math.max(0, d.timeSec + delta) };
@@ -313,7 +343,7 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
     setDraft((d) => {
       if (!d) return d;
       if (field === 'distanceMi') {
-        setDistanceText(toDistance(value, units).toFixed(2));
+        setDistanceText(dText(value));
         return { ...d, distanceMi: value };
       }
       if (field === 'timeSec') return { ...d, timeSec: value };
@@ -372,17 +402,17 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
       <Field
         label="DISTANCE"
         hint=""
-        value={ownTarget.mi == null ? 'Open' : `${toDistance(ownTarget.mi, units).toFixed(1)} ${dU}`}
-        onDec={() => setOwnTarget((t) => (t ? { ...t, mi: bumpDistance(t.mi, -1, FIRST_TARGET[activity].mi) } : t))}
-        onInc={() => setOwnTarget((t) => (t ? { ...t, mi: bumpDistance(t.mi, 1, FIRST_TARGET[activity].mi) } : t))}
+        value={ownTarget.mi == null ? 'Open' : `${d1(ownTarget.mi)} ${dU}`}
+        onDec={() => setOwnTarget((t) => (t ? { ...t, mi: bumpDistanceUnit(t.mi, -1, dU, FIRST_TARGET[activity].mi) } : t))}
+        onInc={() => setOwnTarget((t) => (t ? { ...t, mi: bumpDistanceUnit(t.mi, 1, dU, FIRST_TARGET[activity].mi) } : t))}
         decLabel="Less distance"
         incLabel="More distance"
-        parse={parseDistance}
-        onCommit={(n) => setOwnTarget((t) => (t ? { ...t, mi: units === 'metric' ? n / 1.609344 : n } : t))}
+        parse={(raw) => parseDistanceIn(raw, dU)}
+        onCommit={(n) => setOwnTarget((t) => (t ? { ...t, mi: n } : t))}
         placeholder={dU}
         keyboard="decimal-pad"
       />
-      {speed ? (
+      {!rated ? null : speed ? (
         <Field
           label="SPEED"
           hint=""
@@ -512,7 +542,7 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
                     as a broken app, and it would be the largest thing on screen. */}
                 {measured ? (
                   <>
-                    <Text style={styles.liveDistance}>{toDistance(liveMi, units).toFixed(2)}</Text>
+                    <Text style={styles.liveDistance}>{dText(liveMi)}</Text>
                     <Text style={styles.liveUnit}>{dU.toUpperCase()}</Text>
                     <View style={styles.liveMetaRow}>
                       <Text style={styles.liveMeta}>{fmtClock(tracker.elapsedSec)}</Text>
@@ -639,14 +669,16 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
             <Field
               label="DISTANCE"
               hint={draft.hasIncline ? 'Read it off the console' : ''}
-              value={`${toDistance(draft.distanceMi, units).toFixed(1)} ${dU}`}
-              onDec={() => adj('distanceMi', -0.1)}
-              onInc={() => adj('distanceMi', 0.1)}
+              value={`${d1(draft.distanceMi)} ${dU}`}
+              onDec={() => adj('distanceMi', -1)}
+              onInc={() => adj('distanceMi', 1)}
               decLabel="Less distance"
               incLabel="More distance"
-              parse={parseDistance}
+              /* Bounded by the UNIT: the mile parser refuses anything over 500 and would throw away a
+                 typed 1200 yards without saying so. */
+              parse={(raw) => parseDistanceIn(raw, dU)}
               /* Typed in the athlete's display units; stored in miles, like every other write here. */
-              onCommit={(n) => setTyped('distanceMi', units === 'metric' ? n / 1.609344 : n)}
+              onCommit={(n) => setTyped('distanceMi', n)}
               placeholder={dU}
               keyboard="decimal-pad"
             />
@@ -695,9 +727,9 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
                   fullWidth
                   accessibilityLabel="Save run"
                   onPress={() => {
-                  const typed = parseDistance(distanceText);
-                  const mi = typed == null ? draft.distanceMi : units === 'metric' ? typed / 1.609344 : typed;
-                  onSave({ distanceMi: +mi.toFixed(2), timeSec: draft.timeSec, inclinePct: draft.hasIncline ? draft.inclinePct : null, modality: draft.modality, source: draft.source });
+                  const typed = parseDistanceIn(distanceText, dU);
+                  const mi = typed ?? draft.distanceMi;
+                  onSave({ distanceMi: dRound(mi), timeSec: draft.timeSec, inclinePct: draft.hasIncline ? draft.inclinePct : null, modality: draft.modality, source: draft.source });
                     setDraft(null);
                     timer.reset();
                   }}

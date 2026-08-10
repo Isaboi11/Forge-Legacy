@@ -1815,6 +1815,23 @@ export default function WorkoutScreen() {
               Shown only for a DIFFERENT session — repeating back a note you wrote ninety seconds ago
               would be the app talking to itself.
             */}
+            {/*
+              ══ WHAT THE PLAN SAYS ══
+
+              The AUTHOR's cue — "4 seconds down, then push up" — carried from the program or template
+              this session came from. It sits ABOVE "LAST TIME" because it is an instruction and that is
+              a recollection: if only one of them is read before the first rep, it should be this one.
+
+              Unconditional, unlike the note below it. The athlete's own note suppresses "LAST TIME"
+              (repeating back what you wrote ninety seconds ago is the app talking to itself), but a
+              coaching cue is not a conversation — it is the prescription, and it holds all session.
+            */}
+            {ex.coachNote ? (
+              <View style={[styles.lastNote, styles.coachNote]}>
+                <Text style={styles.coachNoteLabel}>THE PLAN SAYS</Text>
+                <Text style={styles.lastNoteText}>{ex.coachNote}</Text>
+              </View>
+            ) : null}
             {lastNote && !ex.note ? (
               <View style={styles.lastNote}>
                 <Text style={styles.lastNoteLabel}>LAST TIME</Text>
@@ -2417,6 +2434,22 @@ export default function WorkoutScreen() {
                 sub={session.workoutName}
                 icon={<><Path d="M12 20h9" /><Path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></>}
               />
+              {/* THE AUTHOR'S CUE, restated where the athlete goes looking for instructions. Not a
+                  row you can press: it belongs to the plan, and the athlete edits their own note
+                  directly beneath it rather than overwriting what they were told to do. */}
+              {ex.coachNote ? (
+                <View style={styles.optRow}>
+                  <View style={styles.optIcon}>
+                    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                      <Path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8v5M12 16h.01" />
+                    </Svg>
+                  </View>
+                  <View style={styles.optText}>
+                    <Text style={styles.optTitle}>The plan says</Text>
+                    <Text style={styles.coachNoteSub}>{ex.coachNote}</Text>
+                  </View>
+                </View>
+              ) : null}
               {/* The note belongs to the LIFT, not the session — "shoulder felt off" is about this
                   movement and is worth reading the next time you meet it, which is what carry-forward
                   below does with it. The session-level note lives on the finish screen instead. */}
@@ -3229,6 +3262,11 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   lastNoteLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.3, color: flColor.bronze400 },
+  /* The cue reads as the plan's voice, not the athlete's: a bronze left edge marks it as authored. */
+  coachNote: { borderLeftWidth: 2, borderLeftColor: flColor.bronze400 },
+  coachNoteLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.3, color: flColor.bronze400 },
+  /* Not clamped to one line like `optSub` — a cue is the content of its row, not a caption on it. */
+  coachNoteSub: { fontSize: 12, lineHeight: 18, color: flColor.cream100, fontStyle: 'italic', marginTop: 2 },
   lastNoteText: { fontSize: 13.5, lineHeight: 20, color: flColor.cream100, fontStyle: 'italic' },
   noteInput: {
     fontFamily: flFont.sans,

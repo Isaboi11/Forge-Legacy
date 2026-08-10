@@ -21,6 +21,7 @@ import {
 import { pickTextFile } from '@/lib/pick-text-file';
 import { resolveExerciseName } from '@/domain/exercise-picker/data';
 import { useToast } from '@/hooks/useCeremony';
+import { useUnits } from '@/lib/settings';
 import { EquipIcon } from '@/components/forge/EquipIcon';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
@@ -30,14 +31,19 @@ import { createProgram, fetchProgram, updateProgram, type ProgramDay, type Progr
 import { clearBuilderInbox, readBuilderInbox, type BuilderSection } from '@/lib/builder-inbox';
 import {
   CARDIO_ACTIVITIES,
+  TRACKS_DISTANCE,
   activitySymbol,
-  bumpDistance,
+  bumpDistanceUnit,
+  bumpDuration,
   bumpPace,
   bumpSpeed,
   deriveEquip,
   deriveName,
-  distanceLabel,
+  distanceUnitFor,
   effortLabel,
+  fmtDistanceIn,
+  fmtDuration,
+  hasRateTarget,
   newCardioBlock,
   FIRST_TARGET,
   usesSpeed,
@@ -204,6 +210,10 @@ function ProgramBuilderScreen() {
   const { showToast } = useToast();
   const router = useRouter();
   const { profile } = useProfile();
+  /* A pool is 25 yd or 25 m depending on where you swim, and a road distance is miles or kilometres.
+     Storage stays in miles either way — this only chooses the scale the steppers walk and the card reads. */
+  const { units } = useUnits();
+  const metric = units === 'metric';
   const { o: entryMode, id: entryId } = useLocalSearchParams<{ o?: string; id?: string }>();
   const [draft, setDraft] = useState<ProgramDraft | null>(null);
   const [saving, setSaving] = useState(false);
@@ -358,6 +368,14 @@ function ProgramBuilderScreen() {
   const [dayMenu, setDayMenu] = useState<number | null>(null);
   /** The section the cardio sheet was opened from; null = closed. */
   const [cardioSheet, setCardioSheet] = useState<BuilderSection | null>(null);
+  /**
+   * The exercise whose coaching cue is being written; null = closed.
+   *
+   * The cue is the AUTHOR's — "4 seconds down, then push up" — and is shown to whoever trains this day.
+   * It is not the athlete's log note, which is written during the session and lives on the workout.
+   */
+  const [noteSheet, setNoteSheet] = useState<{ section: BuilderSection; index: number } | null>(null);
+  const [noteDraft, setNoteDraft] = useState('');
   /** "Use a template" for the open day — the chooser, and the replace/add question it can raise. */
   const [templateSheet, setTemplateSheet] = useState(false);
   const [templatePending, setTemplatePending] = useState<{ name: string; rows: DaySections } | null>(null);
@@ -611,15 +629,34 @@ function ProgramBuilderScreen() {
           }
           onSlotA={(section, i, dir) =>
             patchSection(draft.openDay!, section, (list) =>
-              list.map((x, k) =>
-                k !== i
-                  ? x
-                  : x.kind === 'cardio'
-                    ? { ...x, targetMi: bumpDistance(x.targetMi ?? null, dir, FIRST_TARGET[x.activity ?? 'run'].mi) }
-                    : { ...x, sets: clampSets((x.sets ?? 1) + dir) },
-              ),
+              list.map((x, k) => {
+                if (k !== i) return x;
+                if (x.kind !== 'cardio') return { ...x, sets: clampSets((x.sets ?? 1) + dir) };
+                /* Stepped IN THE UNIT THE ATHLETE IS READING. A swim walks hundreds of yards; everything
+                   else walks half-miles. Stepping the canonical mile figure and converting afterwards
+                   would land 1200 yd on 1197. */
+                const act = x.activity ?? 'run';
+                return {
+                  ...x,
+                  targetMi: bumpDistanceUnit(x.targetMi ?? null, dir, distanceUnitFor(act, metric), FIRST_TARGET[act].mi),
+                };
+              }),
             )
           }
+          /* THE CLOCK. Every endurance plan ever written is written in minutes, and until now this was
+             the one cardio target the builder could not state — see `bumpDuration`. */
+          onSlotTime={(section, i, dir) =>
+            patchSection(draft.openDay!, section, (list) =>
+              list.map((x, k) => (k !== i ? x : { ...x, targetSec: bumpDuration(x.targetSec ?? null, dir) })),
+            )
+          }
+          onEditNote={(section, i) => {
+            /* Seeded from what is already there, so opening an existing cue EDITS it. Without this the
+               sheet opens blank and saving silently replaces the note with nothing. */
+            setNoteDraft(days[draft.openDay!]?.[section]?.[i]?.coachNote ?? '');
+            setNoteSheet({ section, index: i });
+          }}
+          metric={metric}
           onSlotB={(section, i, dir) =>
             patchSection(draft.openDay!, section, (list) =>
               list.map((x, k) =>
@@ -714,6 +751,63 @@ function ProgramBuilderScreen() {
               <Glyph d="M9 6l6 6-6 6" size={15} color={flColor.gray600} width={2} />
             </Pressable>
           ))}
+        </View>
+      </BottomSheet>
+
+      {/* ── THE AUTHOR'S COACHING CUE ───────────────────────────────────────────────────────────────
+          "4 seconds down, then push up." "Calf check — stop if pain climbs." "Hold Z2."
+
+          The one thing a program could not say until now. `ExercisePrescription` carried a comment
+          explaining that a notes field was deliberately absent because nothing rendered one — true, and
+          the reason it stayed absent. This is the other half: the cue is drawn on the exercise card in
+          the active workout and in its ⋯ menu, so the field is read as well as written.
+
+          Cleared by emptying it. A cue you cannot delete makes the first typo permanent. */}
+      <BottomSheet
+        open={noteSheet != null}
+        onClose={() => setNoteSheet(null)}
+        title={
+          noteSheet && draft.openDay != null
+            ? days[draft.openDay]?.[noteSheet.section]?.[noteSheet.index]?.name ?? 'Coaching note'
+            : 'Coaching note'
+        }
+      >
+        <View style={styles.sectionBody}>
+          <Text style={styles.cardioIntro}>
+            What should they know while they’re doing it? Tempo, effort, a form cue, when to back off.
+            Whoever trains this day sees it on the exercise.
+          </Text>
+          {/* A raw multiline field rather than `InputField`, which is specified single-line for names
+              and short capped fields. A cue runs to a sentence or three. */}
+          <TextInput
+            value={noteDraft}
+            onChangeText={setNoteDraft}
+            multiline
+            maxLength={280}
+            placeholder="4 seconds down, then push up"
+            placeholderTextColor={flColor.gray600}
+            accessibilityLabel="Coaching note for this exercise"
+            style={styles.noteInput}
+          />
+          <Button
+            variant="primary"
+            fullWidth
+            onPress={() => {
+              const at = noteSheet;
+              if (!at || draft.openDay == null) return setNoteSheet(null);
+              const next = noteDraft.trim().slice(0, 280);
+              patchSection(draft.openDay, at.section, (list) =>
+                list.map((x, k) => (k === at.index ? { ...x, coachNote: next || null } : x)),
+              );
+              setNoteSheet(null);
+            }}
+            accessibilityLabel="Save the coaching note"
+          >
+            Save Note
+          </Button>
+          <Button variant="text" fullWidth onPress={() => setNoteSheet(null)} accessibilityLabel="Cancel">
+            Cancel
+          </Button>
         </View>
       </BottomSheet>
 
@@ -1684,6 +1778,9 @@ function DayBuilder({
   onModality,
   onSlotA,
   onSlotB,
+  onSlotTime,
+  onEditNote,
+  metric,
   onPair,
   onUnpair,
 }: {
@@ -1705,6 +1802,12 @@ function DayBuilder({
   onSlotA: (section: BuilderSection, i: number, dir: 1 | -1) => void;
   /** Reps for a lift, pace or speed for a block. */
   onSlotB: (section: BuilderSection, i: number, dir: 1 | -1) => void;
+  /** Minutes on the clock — cardio only. */
+  onSlotTime: (section: BuilderSection, i: number, dir: 1 | -1) => void;
+  /** Write the author's coaching cue for this row. */
+  onEditNote: (section: BuilderSection, i: number) => void;
+  /** Chooses the distance scale: yards/metres for a swim, miles/kilometres for everything else. */
+  metric: boolean;
   /** Pair a row with the one below it — a superset, authored (see `pairWithNext`). */
   onPair: (section: BuilderSection, i: number) => void;
   onUnpair: (section: BuilderSection, i: number) => void;
@@ -1773,6 +1876,9 @@ function DayBuilder({
                     onModality={(m) => onModality(sec.key, i, m)}
                     onSlotA={(dir) => onSlotA(sec.key, i, dir)}
                     onSlotB={(dir) => onSlotB(sec.key, i, dir)}
+                    onSlotTime={(dir) => onSlotTime(sec.key, i, dir)}
+                    onEditNote={() => onEditNote(sec.key, i)}
+                    metric={metric}
                     onPair={() => onPair(sec.key, i)}
                     onUnpair={() => onUnpair(sec.key, i)}
                   />
@@ -1859,6 +1965,9 @@ function ExerciseCard({
   onModality,
   onSlotA,
   onSlotB,
+  onSlotTime,
+  onEditNote,
+  metric,
   onPair,
   onUnpair,
 }: {
@@ -1875,13 +1984,29 @@ function ExerciseCard({
   onModality: (m: Modality) => void;
   onSlotA: (dir: 1 | -1) => void;
   onSlotB: (dir: 1 | -1) => void;
+  /** The clock — a cardio bout prescribed in minutes. Never shown for a lift. */
+  onSlotTime: (dir: 1 | -1) => void;
+  /** Open the sheet for this row's coaching cue. */
+  onEditNote: () => void;
+  metric: boolean;
   onPair: () => void;
   onUnpair: () => void;
 }) {
   /**
-   * The SAME card for a lift and a run — same shell, header and reorder cluster. Only two things differ:
-   * a modality row is inserted, and the two footer steppers count different units. The visual continuity
-   * between a lift and a run in one list is the point; a bespoke cardio card would break the day apart.
+   * The SAME card for a lift and a run — same shell, header and reorder cluster. What differs is the
+   * modality row and WHICH TARGETS the footer offers. The visual continuity between a lift and a run in
+   * one list is the point; a bespoke cardio card would break the day apart.
+   *
+   * ══ A LIFT HAS TWO NUMBERS; A BOUT HAS UP TO THREE ══
+   *
+   * Sets × reps fits one row of two meters. A cardio bout is distance, time AND a rate, which does not —
+   * three meters on one row leaves each about 110 px, and the value between its two steppers is already
+   * 58 px of that. So cardio stacks: distance and time on the first row, the rate on the second.
+   *
+   * Which meters appear is a property of the ACTIVITY, and the model already states it. A stair climber
+   * counts floors, so it has no distance (`TRACKS_DISTANCE`). A swim, a row and an elliptical hold no
+   * pace (`RATE_KIND`) — ⚠ this card used to show a pace stepper for all three anyway, contradicting the
+   * rulebook's own EPS-D12, and a swimmer could author a per-MILE pace for a set measured in yards.
    */
   const cardio = item.kind === 'cardio';
   const activity = (item.activity ?? 'run') as CardioActivity;
@@ -1889,11 +2014,18 @@ function ExerciseCard({
   const indoor = item.modality === 'indoor';
   const id = (n: number) => n;
 
-  // Slot A: sets for a lift, distance for a block. Slot B: reps, or pace/speed.
-  const aVal = cardio ? distanceLabel(item.targetMi ?? null, id) : String(item.sets ?? 1);
-  const aUnit = cardio ? (item.targetMi == null ? '' : 'mi') : 'sets';
+  /** Yards (or metres) for a swim, miles (or kilometres) for everything else. Storage is miles regardless. */
+  const distUnit = distanceUnitFor(activity, metric);
+  const showDistance = !cardio || TRACKS_DISTANCE[activity];
+  const showRate = cardio && hasRateTarget(activity);
+
+  // Slot A: sets for a lift, distance for a block. Slot B: reps, or pace/speed. Time is cardio-only.
+  const aVal = cardio ? (item.targetMi == null ? 'Open' : fmtDistanceIn(item.targetMi, distUnit)) : String(item.sets ?? 1);
+  const aUnit = cardio ? (item.targetMi == null ? '' : distUnit) : 'sets';
   const bVal = cardio ? effortLabel({ ...item, activity, name: item.name, equip: item.equip ?? '', modality: item.modality ?? 'outdoor', targetMi: item.targetMi ?? null }, id, id) : String(item.reps ?? 1);
   const bUnit = cardio ? (speed ? (item.targetSpdMph == null ? 'speed' : 'mph') : item.targetPaceSec == null ? 'pace' : '/mi') : 'reps';
+  const tVal = item.targetSec == null ? 'Open' : fmtDuration(item.targetSec);
+  const tOpen = item.targetSec == null;
   // Bronze on an open target is what makes "no target" read as a deliberate authored state rather than
   // a value someone forgot to fill in.
   const aOpen = cardio && item.targetMi == null;
@@ -1983,30 +2115,83 @@ function ExerciseCard({
       ) : null}
 
       <View style={styles.exBottom}>
-        <View style={[styles.exMeter, styles.exMeterDivider]}>
-          <RoundStep label={cardio ? `Shorter distance for ${item.name}` : `Fewer sets for ${item.name}`} sign="−" onPress={() => onSlotA(-1)} />
-          <Text style={styles.exMeterText}>
-            <Text style={[styles.exMeterValue, aOpen ? styles.exMeterOpen : null]}>{aVal}</Text>
-            {aUnit ? ` ${aUnit}` : ''}
-          </Text>
-          <RoundStep label={cardio ? `Longer distance for ${item.name}` : `More sets for ${item.name}`} sign="+" onPress={() => onSlotA(1)} />
-        </View>
-        <View style={styles.exMeter}>
-          <RoundStep
-            label={cardio ? (speed ? `Lower target speed for ${item.name}` : `Faster target pace for ${item.name}`) : `Fewer reps for ${item.name}`}
-            sign="−"
-            onPress={() => onSlotB(-1)}
-          />
-          <Text style={styles.exMeterText}>
-            <Text style={[styles.exMeterValue, bOpen ? styles.exMeterOpen : null]}>{bVal}</Text> {bUnit}
-          </Text>
-          <RoundStep
-            label={cardio ? (speed ? `Higher target speed for ${item.name}` : `Slower target pace for ${item.name}`) : `More reps for ${item.name}`}
-            sign="+"
-            onPress={() => onSlotB(1)}
-          />
-        </View>
+        {showDistance ? (
+          <View style={[styles.exMeter, styles.exMeterDivider]}>
+            <RoundStep label={cardio ? `Shorter distance for ${item.name}` : `Fewer sets for ${item.name}`} sign="−" onPress={() => onSlotA(-1)} />
+            <Text style={styles.exMeterText}>
+              <Text style={[styles.exMeterValue, aOpen ? styles.exMeterOpen : null]}>{aVal}</Text>
+              {aUnit ? ` ${aUnit}` : ''}
+            </Text>
+            <RoundStep label={cardio ? `Longer distance for ${item.name}` : `More sets for ${item.name}`} sign="+" onPress={() => onSlotA(1)} />
+          </View>
+        ) : null}
+        {/* THE CLOCK, for a bout — and reps, for a lift. Same slot, and they never both appear. */}
+        {cardio ? (
+          <View style={styles.exMeter}>
+            <RoundStep label={`Shorter time for ${item.name}`} sign="−" onPress={() => onSlotTime(-1)} />
+            <Text style={styles.exMeterText}>
+              <Text style={[styles.exMeterValue, tOpen ? styles.exMeterOpen : null]}>{tVal}</Text>
+            </Text>
+            <RoundStep label={`Longer time for ${item.name}`} sign="+" onPress={() => onSlotTime(1)} />
+          </View>
+        ) : (
+          <View style={styles.exMeter}>
+            <RoundStep label={`Fewer reps for ${item.name}`} sign="−" onPress={() => onSlotB(-1)} />
+            <Text style={styles.exMeterText}>
+              <Text style={[styles.exMeterValue, bOpen ? styles.exMeterOpen : null]}>{bVal}</Text> {bUnit}
+            </Text>
+            <RoundStep label={`More reps for ${item.name}`} sign="+" onPress={() => onSlotB(1)} />
+          </View>
+        )}
       </View>
+
+      {/* The rate gets its own row rather than a third of the one above — see the layout note up top.
+          Absent entirely for the machines, which hold no pace (`RATE_KIND`). */}
+      {showRate ? (
+        <View style={styles.exBottom}>
+          <View style={styles.exMeter}>
+            <RoundStep
+              label={speed ? `Lower target speed for ${item.name}` : `Faster target pace for ${item.name}`}
+              sign="−"
+              onPress={() => onSlotB(-1)}
+            />
+            <Text style={styles.exMeterText}>
+              <Text style={[styles.exMeterValue, bOpen ? styles.exMeterOpen : null]}>{bVal}</Text> {bUnit}
+            </Text>
+            <RoundStep
+              label={speed ? `Higher target speed for ${item.name}` : `Slower target pace for ${item.name}`}
+              sign="+"
+              onPress={() => onSlotB(1)}
+            />
+          </View>
+        </View>
+      ) : null}
+
+      {/*
+        ══ THE AUTHOR'S CUE ══
+
+        "4 seconds down, then push up." Written here and shown to whoever trains the day — on the
+        exercise card in the active workout and in its ⋯ menu. It is NOT the athlete's log note; that one
+        is written during the session and says how the lift felt.
+
+        A row with a cue shows it, so the day reads as authored rather than hiding its own instructions
+        behind a tap.
+      */}
+      <Pressable
+        onPress={onEditNote}
+        accessibilityRole="button"
+        accessibilityLabel={item.coachNote ? `Edit the coaching note on ${item.name}` : `Add a coaching note to ${item.name}`}
+        style={({ pressed }) => [styles.exNoteRow, pressed ? styles.exNotePressed : null]}
+      >
+        <Glyph
+          d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h5"
+          size={13}
+          color={item.coachNote ? flColor.bronze400 : flColor.gray600}
+        />
+        <Text style={[styles.exNoteText, item.coachNote ? styles.exNoteTextSet : null]} numberOfLines={2}>
+          {item.coachNote ? item.coachNote : 'Add a coaching note'}
+        </Text>
+      </Pressable>
     </TourAnchor>
   );
 }
@@ -2371,6 +2556,33 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   exBottom: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  /* The cue sits under the meters as its own full-width row: it is a sentence, not a number, and
+     squeezing it beside a stepper would truncate the one field whose whole value is the words in it. */
+  exNoteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    borderTopWidth: 1,
+    borderTopColor: flColor.charcoal700,
+  },
+  exNotePressed: { backgroundColor: flColor.charcoal700 },
+  exNoteText: { flex: 1, fontSize: 12, color: flColor.gray600 },
+  /* An authored cue reads as prose — cream and italic, the same voice the logger shows it back in. */
+  exNoteTextSet: { color: flColor.cream100, fontStyle: 'italic' },
+  noteInput: {
+    minHeight: 92,
+    borderWidth: 1,
+    borderColor: flColor.charcoal500,
+    borderRadius: flRadius.md,
+    backgroundColor: flColor.surfaceRecessed,
+    color: flColor.cream100,
+    fontSize: 14,
+    lineHeight: 20,
+    padding: 12,
+    textAlignVertical: 'top',
+  },
   exMeter: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 9 },
   exMeterDivider: { borderRightWidth: 1, borderRightColor: flColor.charcoal700 },
   exMeterText: { minWidth: 58, textAlign: 'center', fontSize: 12.5, color: flColor.gray400 },
