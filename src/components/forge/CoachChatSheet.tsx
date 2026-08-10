@@ -119,36 +119,50 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
   const keyboardInset = useKeyboardInset();
   const scroller = useRef<ScrollView | null>(null);
 
-  /* §6.5 — the introduction is three paragraphs and lands as three beats, ~450ms apart. Dropping all
-     three at once is a wall of text pretending to be a greeting. */
-  const [thread, setThread] = useState<Turn[]>([{ kind: 'holt', text: INTRO[0], live: true }]);
+  /* §6.5 — the introduction is three paragraphs and lands as three beats. Dropping all three at once is
+     a wall of text pretending to be a greeting. */
+  const [thread, setThread] = useState<Turn[]>([{ kind: 'holt', text: INTRO[0] }]);
   const [introStep, setIntroStep] = useState(1);
+  const [draft, setDraft] = useState('');
+  /* Declared ABOVE the intro effect, which sets it: a hook cannot close over a const declared below it,
+     and react-compiler catches the attempt rather than letting it become a stale closure. */
+  const [busy, setBusy] = useState<'thinking' | 'building' | null>(null);
+  const [mode, setMode] = useState<'program' | 'day' | null>(null);
+  const [constraints, setConstraints] = useState<Partial<CoachConstraints>>({});
+  /** Which builder the card's button opens. The draft itself is already on disk by then. */
+  const [built, setBuilt] = useState<{ kind: 'program' | 'day' } | null>(null);
+  /** The whole plan, read-only, before the Builder. Holds the last card so it can be redrawn in full. */
+  const [preview, setPreview] = useState(false);
+  const [lastCard, setLastCard] = useState<{ program?: ProgramCard; day?: DayCard } | null>(null);
 
   useEffect(() => {
     if (introStep >= INTRO.length + 1) return undefined;
     const beat = INTRO[introStep];
-    const id = setTimeout(
-      () => {
-        setThread((t) => [
-          ...t,
-          beat != null
-            ? { kind: 'holt' as const, text: beat, live: true }
-            : { kind: 'chips' as const, chips: OPENERS.map((label) => ({ label, patch: {} })) },
-        ]);
-        setIntroStep((n) => n + 1);
-      },
-      // A paragraph's beat is its own typing time plus the pause; the openers follow the last line.
-      (beat ? beat.length * 42 : INTRO[INTRO.length - 1].length * 42) + 450,
-    );
+
+    /* Each beat is a typing bubble, then the line lands whole. The pause used to be the paragraph's
+       TYPING time plus 450ms, which was right when the words appeared one at a time and is far too long
+       now — a long paragraph would have left him silently "typing" for four seconds. It is a flat beat
+       scaled gently by length, so a short line does not sit as long as a long one. */
+    const gap = beat ? Math.min(1400, 500 + beat.length * 4) : 500;
+
+    const id = setTimeout(() => {
+      setThread((t) => [
+        ...t,
+        beat != null
+          ? { kind: 'holt' as const, text: beat }
+          : { kind: 'chips' as const, chips: OPENERS.map((label) => ({ label, patch: {} })) },
+      ]);
+      setIntroStep((n) => n + 1);
+    }, gap);
+
     return () => clearTimeout(id);
   }, [introStep]);
-  const [draft, setDraft] = useState('');
-  const [busy, setBusy] = useState<'thinking' | 'building' | null>(null);
-  const [mode, setMode] = useState<'program' | 'day' | null>(null);
-  const [constraints, setConstraints] = useState<Partial<CoachConstraints>>({});
-  /** What is on the table, so the card knows which builder to open and what shape to draw. */
-  /** Which builder the card's button opens. The draft itself is already on disk by then. */
-  const [built, setBuilt] = useState<{ kind: 'program' | 'day' } | null>(null);
+
+  /* DERIVED, not a second piece of state. A beat is pending for exactly as long as the intro effect is
+     mid-flight, and that is already what `introStep` says — setting a `busy` flag from the effect body
+     would be a synchronous setState in an effect AND a duplicate of a fact we already hold. */
+  const introTyping = INTRO[introStep] != null;
+  const waiting = busy ?? (introTyping ? ('thinking' as const) : null);
 
   const say = useCallback((...turns: Turn[]) => setThread((t) => [...t, ...turns]), []);
 
@@ -217,7 +231,9 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
            inventing a third route to either. */
         await saveWorkoutDraft({ name: r.day.name, warmup: r.day.warmup, main: r.day.main, cooldown: r.day.cooldown, editId: null });
         setBuilt({ kind: 'day' });
-        say({ kind: 'holt', text: DAY_PREAMBLE }, { kind: 'day', card: dayCardFor(merged, r.day) });
+        const dayCard = dayCardFor(merged, r.day);
+        setLastCard({ day: dayCard });
+        say({ kind: 'holt', text: DAY_PREAMBLE }, { kind: 'day', card: dayCard });
         return;
       }
 
@@ -248,10 +264,9 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
         deloadWeeks: res.assembly.deloadWeeks,
         restructuredBecause: res.assembly.restructured?.because,
       });
-      say(
-        { kind: 'holt', text: preamble(c, structure.weeks) },
-        { kind: 'program', card: programCardFor(c, structure, volume, reason) },
-      );
+      const programCard = programCardFor(c, structure, volume, reason);
+      setLastCard({ program: programCard });
+      say({ kind: 'holt', text: preamble(c, structure.weeks) }, { kind: 'program', card: programCard });
     },
     [say],
   );
@@ -398,7 +413,7 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
           <View style={styles.grab} />
         </View>
         <View style={styles.header}>
-          <HoltMark size={36} state={busy ?? 'idle'} />
+          <HoltMark size={36} state={waiting ?? 'idle'} />
           <View style={styles.headerText}>
             <Text style={styles.headerName}>COACH HOLT</Text>
             <Text style={styles.headerStatus}>
@@ -413,25 +428,52 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
           </Pressable>
         </View>
 
+        {preview && lastCard ? (
+          <PlanPreview
+            program={lastCard.program}
+            day={lastCard.day}
+            onBack={() => setPreview(false)}
+            onOpenBuilder={() => {
+              setPreview(false);
+              onClose();
+              router.push(built?.kind === 'day' ? '/workout-builder' : '/program-builder');
+            }}
+          />
+        ) : (
         <ScrollView ref={scroller} style={styles.thread} contentContainerStyle={styles.threadInner} keyboardShouldPersistTaps="handled">
           {thread.map((t, i) => (
             <TurnEnter key={i}>
             <TurnView
               turn={t}
               onChip={tapChip}
+              onPreview={() => setPreview(true)}
               onOpenBuilder={() => {
                 onClose();
-                router.replace(built?.kind === 'day' ? '/workout-builder' : '/program-builder');
+                /*
+                 * ⚠ PUSH, NOT REPLACE — and this was a dead back button (PO, 2026-08-09).
+                 *
+                 * The wizard at `/coach` uses `replace` correctly: it IS a route, so the builder takes
+                 * its place and dismissing returns you where you were. This sheet is NOT a route — it
+                 * is an overlay on a tab — so `replace` swapped out the TAB underneath it. Save, press
+                 * back, and there was nothing beneath to go back to.
+                 *
+                 * Push leaves the tab in the stack: tab → builder → (builder replaces itself with the
+                 * saved program) → back returns to Workouts, which is what the athlete expects.
+                 */
+                router.push(built?.kind === 'day' ? '/workout-builder' : '/program-builder');
               }}
             />
             </TurnEnter>
           ))}
-          {busy ? <Waiting kind={busy} /> : null}
+          {waiting ? <Waiting kind={waiting} /> : null}
         </ScrollView>
+        )}
 
         {/* §12.3 — four states, and each says something different: ready is quiet, typing lights the
             field bronze and forges the send button, busy dims the whole bar and renames the placeholder
-            so it is obvious nothing was lost. */}
+            so it is obvious nothing was lost. Hidden while previewing: that screen is for reading, and a
+            composer under it would invite a reply to something that is not a question. */}
+        {preview ? null : (
         <View style={[styles.composer, busy ? styles.composerBusy : null]}>
           <TextInput
             value={draft}
@@ -469,6 +511,7 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
             )}
           </Pressable>
         </View>
+        )}
       </LinearGradient>
       </Animated.View>
     </View>
@@ -583,17 +626,8 @@ function completeFor(c: Partial<CoachConstraints>, mode: 'program' | 'day'): Coa
 
 /** The two waits. Building names its steps, because a spinner would waste the moment. */
 function Waiting({ kind }: { kind: 'thinking' | 'building' }) {
-  if (kind === 'thinking') {
-    // Three dots where his next line will land — staggered 0.18s so they read as a sequence rather
-    // than a throb (§9.1–9.2).
-    return (
-      <View style={styles.dots}>
-        {[0, 1, 2].map((i) => (
-          <ThinkingDot key={i} delay={i * 180} />
-        ))}
-      </View>
-    );
-  }
+  // Where his next line will land, in the shape it will land in (§9.1–9.2).
+  if (kind === 'thinking') return <View style={styles.dotsWrap}><TypingBubble /></View>;
   return <BuildingCard />;
 }
 
@@ -660,6 +694,30 @@ function BuildingCard() {
   );
 }
 
+/**
+ * The typing bubble — three dots in a container, then the line arrives whole.
+ *
+ * ⚠ THIS REPLACES THE TYPEWRITER, by PO decision (2026-08-09). `PROMPT.md` §6.3–6.4 specifies text
+ * arriving character by character at 42ms with a bronze block caret, and it was built that way. In use
+ * it read as the app being slow rather than as somebody talking: you cannot skim a sentence that is
+ * still being spelled, and every line made you wait for information you could already half-see.
+ *
+ * A typing bubble says the same thing — "he is composing" — without holding the sentence hostage. It is
+ * also the convention every messaging app has settled on, which matters more here than novelty.
+ *
+ * The dots are the same component the `thinking` state uses. That is deliberate: both mean Holt is
+ * working, and giving them two different animations would be inventing a distinction nobody asked for.
+ */
+function TypingBubble() {
+  return (
+    <View style={styles.typingBubble} accessibilityLabel="Holt is typing">
+      {[0, 1, 2].map((i) => (
+        <ThinkingDot key={i} delay={i * 180} />
+      ))}
+    </View>
+  );
+}
+
 function ThinkingDot({ delay }: { delay: number }) {
   const v = useAnimatedValue(0.25);
   const still = useReducedMotion();
@@ -680,7 +738,17 @@ function ThinkingDot({ delay }: { delay: number }) {
   return <Animated.View style={[styles.dot, { opacity: v }]} />;
 }
 
-function TurnView({ turn, onChip, onOpenBuilder }: { turn: Turn; onChip: (c: Chip) => void; onOpenBuilder: () => void }) {
+function TurnView({
+  turn,
+  onChip,
+  onOpenBuilder,
+  onPreview,
+}: {
+  turn: Turn;
+  onChip: (c: Chip) => void;
+  onOpenBuilder: () => void;
+  onPreview: () => void;
+}) {
   switch (turn.kind) {
     case 'me':
       return (
@@ -690,7 +758,7 @@ function TurnView({ turn, onChip, onOpenBuilder }: { turn: Turn; onChip: (c: Chi
       );
 
     case 'holt':
-      return <HoltLine text={turn.text} live={turn.live} />;
+      return <HoltLine text={turn.text} />;
 
     case 'chips':
       return (
@@ -709,10 +777,10 @@ function TurnView({ turn, onChip, onOpenBuilder }: { turn: Turn; onChip: (c: Chi
       );
 
     case 'program':
-      return <ProgramCardView card={turn.card} onOpenBuilder={onOpenBuilder} />;
+      return <ProgramCardView card={turn.card} onPreview={onPreview} />;
 
     case 'day':
-      return <DayCardView card={turn.card} onOpenBuilder={onOpenBuilder} />;
+      return <DayCardView card={turn.card} onOpenBuilder={onOpenBuilder} onPreview={onPreview} />;
 
     case 'edit':
       return <EditCardView card={turn.card} />;
@@ -783,53 +851,8 @@ function TurnView({ turn, onChip, onOpenBuilder }: { turn: Turn; onChip: (c: Chi
  * §6.7 — the container is NOT a live region. Streaming characters to a screen reader would read the
  * sentence out one letter at a time. The finished line is announced once, when it is finished.
  */
-function HoltLine({ text, live }: { text: string; live?: boolean }) {
-  /* §6.6 — a tap anywhere on the line completes it instantly. Somebody who reads faster than 42ms a
-     character should not be made to wait for a flourish. */
-  const [skipped, setSkipped] = useState(false);
-  // §6.8 — with reduced motion the line is simply there. The 280ms turn fade still carries it in.
-  const still = useReducedMotion();
-  /* DERIVED, not synced. Holding a 'shown' count and setting it from the effect body is a synchronous
-     setState in an effect, which react-compiler rejects — and it is a second copy of something the tick
-     count already tells us. The interval callback is fine: that is the async form the rule allows. */
-  const [ticks, setTicks] = useState(0);
-  const shown = live && !skipped && !still ? Math.min(ticks, text.length) : text.length;
-
-  useEffect(() => {
-    if (!live || still) return undefined;
-    const id = setInterval(() => setTicks((n) => n + 1), 42);
-    return () => clearInterval(id);
-  }, [text, live, still]);
-
-  const done = shown >= text.length;
-  return (
-    <Pressable onPress={() => setSkipped(true)} accessibilityRole="none" style={styles.holtLine}>
-      <Text
-        style={styles.holtText}
-        accessibilityLiveRegion={done ? 'polite' : 'none'}
-        accessibilityLabel={done ? text : ''}
-      >
-        {text.slice(0, shown)}
-      </Text>
-      {!done ? <Caret /> : null}
-    </Pressable>
-  );
-}
-
-/** 8 × 17 solid bronze, blinking on a 900ms step — a struck block, not a thin line. */
-function Caret() {
-  const blink = useAnimatedValue(1);
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(blink, { toValue: 0, duration: 0, delay: 450, useNativeDriver: true }),
-        Animated.timing(blink, { toValue: 1, duration: 0, delay: 450, useNativeDriver: true }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [blink]);
-  return <Animated.View style={[styles.caret, { opacity: blink }]} />;
+function HoltLine({ text }: { text: string; live?: boolean }) {
+  return <Text style={styles.holtText}>{text}</Text>;
 }
 
 /**
@@ -858,6 +881,91 @@ function CardSurface({ children, hero = false }: { children: React.ReactNode; he
 }
 
 /**
+ * The whole plan, read-only, before anything can be changed.
+ *
+ * ⚠ WHY THIS SITS BETWEEN THE CARD AND THE BUILDER (PO, 2026-08-09).
+ *
+ * The card is a summary and the Builder is an editor, and the athlete asked for the step in between:
+ * *"so I can see the whole thing to know if I need adjustments."* Sending them from a summary straight
+ * into the editing tool makes the review step and the editing step the same step — and you cannot judge
+ * a block from inside the thing for altering it, because everything is a control and nothing is a
+ * statement.
+ *
+ * So: every week, every day, every movement, with nothing tappable. Then `Final touches`.
+ */
+function PlanPreview({
+  program,
+  day,
+  onBack,
+  onOpenBuilder,
+}: {
+  program?: ProgramCard;
+  day?: DayCard;
+  onBack: () => void;
+  onOpenBuilder: () => void;
+}) {
+  return (
+    <View style={styles.previewWrap}>
+      <View style={styles.previewBar}>
+        <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel="Back to the conversation" style={styles.previewBack}>
+          <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.cream100} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <Path d="M15 18l-6-6 6-6" />
+          </Svg>
+        </Pressable>
+        <Text style={styles.previewTitle} numberOfLines={1}>
+          {program?.title ?? day?.title ?? 'Your plan'}
+        </Text>
+      </View>
+
+      <ScrollView style={styles.previewScroll} contentContainerStyle={styles.previewInner}>
+        <View style={styles.draftBanner}>
+          <Text style={styles.draftBannerText}>DRAFT — NOT SAVED YET</Text>
+        </View>
+
+        {program ? (
+          <>
+            <View style={styles.statGrid}>
+              {program.stats.map((st) => (
+                <View key={st.label} style={styles.stat}>
+                  <Text style={styles.statValue}>{st.value}</Text>
+                  <Text style={styles.statLabel}>{st.label}</Text>
+                </View>
+              ))}
+            </View>
+            <Text style={styles.reasoning}>{program.reasoning}</Text>
+            <View style={styles.weekList}>
+              {program.weeks.map((w) => (
+                <View key={w.label} style={styles.weekRow}>
+                  <Text style={styles.weekLabel}>{w.label}</Text>
+                  <Text style={styles.weekDetail}>{w.detail}</Text>
+                </View>
+              ))}
+            </View>
+          </>
+        ) : null}
+
+        {day ? (
+          <View style={styles.dayList}>
+            {day.rows.map((r, i) => (
+              <View key={r.name + i} style={styles.dayRow}>
+                <Text style={styles.dayName}>{r.name}</Text>
+                <Text style={styles.dayPrescription}>{r.prescription}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+      </ScrollView>
+
+      <View style={styles.previewActions}>
+        <Button variant="primary" fullWidth onPress={onOpenBuilder} accessibilityLabel="Final touches">
+          Final touches
+        </Button>
+      </View>
+    </View>
+  );
+}
+
+/**
  * The banner. Rule 03, and not decoration — a card that looked saved and was not would be the single
  * worst thing this surface could do.
  */
@@ -874,7 +982,7 @@ function DraftBanner() {
 }
 
 /** The most important object on the surface. Every figure on it came out of the engine. */
-function ProgramCardView({ card, onOpenBuilder }: { card: ProgramCard; onOpenBuilder: () => void }) {
+function ProgramCardView({ card, onPreview }: { card: ProgramCard; onPreview: () => void }) {
   /* §11.1.12 — tapping the CARD BODY walks the weeks; tapping an action does not. The actions sit
      outside this Pressable for exactly that reason, rather than relying on event ordering. */
   const [open, setOpen] = useState(false);
@@ -932,9 +1040,13 @@ function ProgramCardView({ card, onOpenBuilder }: { card: ProgramCard; onOpenBui
         {/* The design imports the design system's own Button for every action — primary and text. Rolling
             my own Pressable is what lost the forged-bronze fill, the machined rim and the glow. */}
         <View style={styles.cardActions}>
+          {/* ⚠ PREVIEW FIRST, BUILDER SECOND (PO, 2026-08-09). The card is a summary — weeks, peak,
+              longest run — and the athlete asked to see the WHOLE thing before deciding whether it needs
+              changing. Sending them straight to the Builder made the review step the editing step, which
+              is the wrong order: you cannot judge a block from inside the tool for altering it. */}
           <View style={styles.ctaGrow}>
-            <Button variant="primary" fullWidth onPress={onOpenBuilder} accessibilityLabel="Final touches">
-              Final touches
+            <Button variant="primary" fullWidth onPress={onPreview} accessibilityLabel="See the whole plan">
+              See the whole plan
             </Button>
           </View>
           <Button variant="text" accessibilityLabel="Not this">
@@ -946,7 +1058,7 @@ function ProgramCardView({ card, onOpenBuilder }: { card: ProgramCard; onOpenBui
   );
 }
 
-function DayCardView({ card, onOpenBuilder }: { card: DayCard; onOpenBuilder: () => void }) {
+function DayCardView({ card, onOpenBuilder, onPreview }: { card: DayCard; onOpenBuilder: () => void; onPreview: () => void }) {
   return (
     <CardSurface>
       <DraftBanner />
@@ -967,8 +1079,8 @@ function DayCardView({ card, onOpenBuilder }: { card: DayCard; onOpenBuilder: ()
         </View>
         <View style={styles.cardActions}>
           <View style={styles.ctaGrow}>
-            <Button variant="primary" fullWidth onPress={onOpenBuilder} accessibilityLabel="Start it">
-              Start it
+            <Button variant="primary" fullWidth onPress={onPreview} accessibilityLabel="See the whole session">
+              See the whole session
             </Button>
           </View>
           <Button variant="text" onPress={onOpenBuilder} accessibilityLabel="Send to the builder">
@@ -1163,8 +1275,7 @@ const styles = StyleSheet.create({
     boxShadow: 'inset 0 1px 0 rgba(198,156,100,0.14)',
   },
   meText: { fontSize: 15, lineHeight: 22, color: flColor.cream100 },
-  holtLine: { flexDirection: 'row', alignItems: 'flex-end', gap: 2, maxWidth: '86%' },
-  caret: { width: 8, height: 17, backgroundColor: flColor.bronze400, marginBottom: 3 },
+
   holtText: { fontSize: 15.5, lineHeight: 24, color: flColor.cream100, maxWidth: '86%' },
 
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
@@ -1182,7 +1293,22 @@ const styles = StyleSheet.create({
   chipOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   chipText: { fontSize: 13.5, fontWeight: '500', color: flColor.cream100 },
 
-  dots: { flexDirection: 'row', gap: 5, paddingHorizontal: 18, paddingBottom: 14 },
+  dotsWrap: { paddingHorizontal: 18, paddingBottom: 14, alignItems: 'flex-start' },
+  /* Left-aligned and small — it sits where the line will, so nothing jumps when the line replaces it. */
+  typingBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    borderBottomRightRadius: 16,
+    borderBottomLeftRadius: 4,
+    backgroundColor: flColor.charcoal700,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+  },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: flColor.bronze400, opacity: 0.5 },
   buildCard: {
     marginHorizontal: 18,
@@ -1221,6 +1347,21 @@ const styles = StyleSheet.create({
   cardActions: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 2 },
   reasoning: { fontSize: 13.5, lineHeight: 21, color: flColor.gray400 },
   cardTap: { gap: 14 },
+  previewWrap: { flex: 1 },
+  previewBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: flColor.charcoal600,
+  },
+  previewBack: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  previewTitle: { flex: 1, fontFamily: flFont.display, fontSize: 18, color: flColor.cream100 },
+  previewScroll: { flex: 1 },
+  previewInner: { padding: 18, gap: 16 },
+  previewActions: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 22, borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
   weekList: { borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
   weekRow: {
     flexDirection: 'row',
