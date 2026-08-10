@@ -131,6 +131,7 @@ test('the openers are the four real reasons to open him', () => {
   const kinds = OPENERS.map((l) => fromOpener(l).kind);
   assert.ok(kinds.includes('build'), 'build a program');
   assert.ok(kinds.includes('import'), 'bring one you already have');
+  assert.ok(kinds.includes('edit'), 'change the one you are already running');
   assert.ok(kinds.includes('help'), 'ask how the app works');
 });
 

@@ -48,6 +48,20 @@ import { PICKER_DB } from '@/domain/exercise-picker/data';
 import { canDoExercise } from '@/domain/home-gym/equipment';
 import { fetchActiveProgram } from '@/data/programs-live';
 import { hasMetHolt, loadThread, rememberMetHolt, saveThread } from '@/lib/coach-thread';
+import { fetchProgramSessions, updateProgram, type ProgramDay, type SavedProgram } from '@/data/programs-live';
+import type { SessionMark } from '@/domain/program/progress-core';
+import { contextFrom } from '@/domain/coach/candidates';
+import { setCardioTarget, setPrescription, swapExercise, type EditScope } from '@/domain/coach/edit-ops';
+import { limitationPatterns } from '@/domain/coach/rulebook/limitations';
+import {
+  changesFor,
+  editableSessions,
+  replacementsFor,
+  rowsFor,
+  valuesFor,
+  SCOPE_CHOICES,
+  type EditChangeId,
+} from '@/domain/coach/edit-chat';
 import { useKeyboardInset } from '@/lib/useKeyboardInset';
 import { useReducedMotion } from '@/lib/useReducedMotion';
 import { draftFromStructure, saveProgramDraft } from '@/lib/program-draft';
@@ -140,6 +154,24 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
   const [built, setBuilt] = useState<{ kind: 'program' | 'day' } | null>(null);
   /** The whole plan, read-only, before the Builder. Holds the last card so it can be redrawn in full. */
   const [preview, setPreview] = useState(false);
+
+  /**
+   * Where we are in changing a live program.
+   *
+   * ⚠ HELD IN THE SHEET, NOT THE THREAD. The thread is persisted and a program can change underneath a
+   * stored conversation — a session trained on another device, the block ended. Resuming a half-finished
+   * edit against a stale structure is how you edit the wrong day, so the flow starts again on each visit
+   * and the chips from last time simply do nothing.
+   */
+  const [edit, setEdit] = useState<{
+    program: SavedProgram;
+    marks: SessionMark[];
+    at?: { weekIndex: number; dayIndex: number };
+    day?: ProgramDay;
+    change?: EditChangeId;
+    rowIndex?: number;
+    value?: { sets?: number; targetMi?: number; targetSec?: number; replacementKey?: string; replacementName?: string };
+  } | null>(null);
   const [lastCard, setLastCard] = useState<{ program?: ProgramCard; day?: DayCard } | null>(null);
 
   useEffect(() => {
@@ -383,6 +415,188 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
 
   const helpChips = (): Chip[] => HELP_TOPICS.map((t) => ({ label: t.q, patch: {}, helpTopic: t.q }));
 
+  /* ── changing a plan already running ─────────────────────────────────────────────────────────────
+   *
+   * Five taps at most: which session, what about it, which movement, what to, how far it reaches.
+   *
+   * ⚠ EVERY LIST BELOW COMES OUT OF `edit-chat.ts`, WHICH ONLY OFFERS WHAT `edit-ops` WOULD ALLOW. The
+   * sheet does no filtering of its own — duplicating the safety rules in a component is how the two
+   * copies drift and the app starts offering something it then refuses.
+   */
+
+  const beginEdit = async () => {
+    setBusy('thinking');
+    const active = await Promise.race([
+      fetchActiveProgram().catch(() => null),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), ACTIVE_LOOKUP_TIMEOUT_MS)),
+    ]);
+    if (!active) {
+      setBusy(null);
+      say(
+        { kind: 'holt', text: pick('no_active_program') },
+        { kind: 'chips', chips: [{ label: 'Build me a program', patch: {} }] },
+      );
+      return;
+    }
+    const marks = await fetchProgramSessions(active.id).catch(() => [] as SessionMark[]);
+    setBusy(null);
+
+    const sessions = editableSessions(active.structure, marks, 6);
+    if (sessions.length === 0) {
+      /* Everything left is already trained. Not a failure — the block is essentially done. */
+      say({ kind: 'holt', text: "There's nothing left in that block I'd change — you've trained all of it." });
+      return;
+    }
+    setEdit({ program: active, marks });
+    say(
+      { kind: 'holt', text: pick('ask_edit_session') },
+      { kind: 'chips', chips: sessions.map((sn) => ({ label: sn.label, patch: {}, edit: { step: 'session', ...sn.at } })) },
+    );
+  };
+
+  /** One tap inside the flow. Each step narrows and asks the next question. */
+  const stepEdit = (pickStep: NonNullable<Chip['edit']>) => {
+    if (!edit) return;
+
+    if (pickStep.step === 'session') {
+      const at = { weekIndex: pickStep.weekIndex, dayIndex: pickStep.dayIndex };
+      const found = editableSessions(edit.program.structure, edit.marks, 60).find(
+        (sn) => sn.at.weekIndex === at.weekIndex && sn.at.dayIndex === at.dayIndex,
+      );
+      if (!found) return;
+      setEdit({ ...edit, at, day: found.day, change: undefined, rowIndex: undefined, value: undefined });
+      say(
+        { kind: 'holt', text: pick('ask_edit_change') },
+        { kind: 'chips', chips: changesFor(found.day).map((c) => ({ label: c.label, patch: {}, edit: { step: 'change', change: c.id } })) },
+      );
+      return;
+    }
+
+    if (pickStep.step === 'change') {
+      const change = pickStep.change as EditChangeId;
+      const day = edit.day;
+      if (!day) return;
+      if (change === 'rebuild') {
+        /* ⚠ REBUILD IS DELIBERATELY NOT WIRED YET. `rebuildDay` exists and is tested, but it needs the
+           athlete to name what to work around, and a limitation picker is its own conversation. Saying so
+           is better than a chip that quietly does the wrong thing. */
+        say({
+          kind: 'holt',
+          text: "I can rebuild a day around an injury, but I haven't finished teaching myself to ask about it properly yet. Change the exercise or the sets for now.",
+        });
+        return;
+      }
+      const rows = rowsFor(day, change);
+      setEdit({ ...edit, change, rowIndex: undefined, value: undefined });
+      say(
+        { kind: 'holt', text: pick('ask_edit_row') },
+        { kind: 'chips', chips: rows.map((r) => ({ label: r.label, patch: {}, edit: { step: 'row', index: r.index } })) },
+      );
+      return;
+    }
+
+    if (pickStep.step === 'row') {
+      const { day, change } = edit;
+      if (!day || !change) return;
+      const options =
+        change === 'swap'
+          ? replacementsFor(day.main[pickStep.index], PICKER_DB, editCtx())
+          : valuesFor(day, change, pickStep.index);
+      setEdit({ ...edit, rowIndex: pickStep.index, value: undefined });
+      say(
+        { kind: 'holt', text: pick('ask_edit_value') },
+        {
+          kind: 'chips',
+          chips: options.map((v) => ({
+            label: v.label,
+            patch: {},
+            edit: {
+              step: 'value',
+              sets: v.sets,
+              targetMi: v.targetMi,
+              targetSec: v.targetSec,
+              replacementKey: v.replacement?.key,
+              replacementName: v.replacement?.name,
+            },
+          })),
+        },
+      );
+      return;
+    }
+
+    if (pickStep.step === 'value') {
+      setEdit({ ...edit, value: pickStep });
+      say(
+        { kind: 'holt', text: pick('ask_edit_scope') },
+        { kind: 'chips', chips: SCOPE_CHOICES.map((c) => ({ label: c.label, patch: {}, edit: { step: 'scope', scope: c.scope } })) },
+      );
+      return;
+    }
+
+    if (pickStep.step === 'scope') void applyEdit(pickStep.scope);
+  };
+
+  /** The athlete's own constraints, as the candidate ranker needs them. */
+  const editCtx = () =>
+    contextFrom({
+      owned: constraints.ownedEquipment ?? [],
+      canDo: canDoExercise,
+      experience: constraints.experience?.lifting ?? 'intermediate',
+      limitations: constraints.limitations ?? [],
+      limitationPatterns,
+      excludeExercises: [],
+    });
+
+  const applyEdit = async (scope: EditScope) => {
+    if (!edit?.at || !edit.change || edit.rowIndex == null || !edit.value) return;
+    const at = { ...edit.at, exerciseIndex: edit.rowIndex };
+    const v = edit.value;
+
+    /* ⚠ THE REPLACEMENT IS LOOKED UP, NOT RECONSTRUCTED. A chip carries only a key and a name, because
+       the thread is persisted and must stay JSON. Handing `swapExercise` a two-field object shaped like
+       a CatalogExercise would compile today and quietly pass `undefined` for anything it starts reading
+       tomorrow — so the real record comes back out of the catalogue. */
+    const replacement = edit.change === 'swap' ? PICKER_DB.find((e) => e.key === v.replacementKey) : null;
+    if (edit.change === 'swap' && !replacement) {
+      say({ kind: 'holt', text: "I can't find that movement any more. Pick another one." });
+      return;
+    }
+
+    setBusy('thinking');
+    try {
+      const res =
+        edit.change === 'swap'
+          ? swapExercise(edit.program.structure, edit.marks, at, replacement!, scope)
+          : edit.change === 'sets'
+            ? setPrescription(edit.program.structure, edit.marks, at, { sets: v.sets }, scope)
+            : setCardioTarget(edit.program.structure, edit.marks, at, { targetMi: v.targetMi, targetSec: v.targetSec }, scope);
+
+      if (!res.ok) {
+        /* The guard should be unreachable from here — everything offered was checked before it was shown.
+           It fires on a race: a session trained on another device since the list was drawn. */
+        say({ kind: 'holt', text: res.refusal.message });
+        setEdit(null);
+        return;
+      }
+
+      await updateProgram(edit.program.id, res.structure);
+      setEdit({ ...edit, program: { ...edit.program, structure: res.structure }, at: undefined, change: undefined, rowIndex: undefined, value: undefined });
+      say(
+        { kind: 'holt', text: pick('edit_done') },
+        { kind: 'chips', chips: [{ label: 'Change something else', patch: {} }, { label: 'Show me the program', patch: {}, goTo: '/(tabs)' }] },
+      );
+    } catch (e) {
+      say({
+        kind: 'error',
+        text: "That did not save.",
+        sub: e instanceof Error ? e.message : String(e),
+        action: 'Your program is unchanged. Try again in a moment.',
+      });
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const tapChip = (chip: Chip) => {
     if (chip.label === 'Change the one I have') {
       say({ kind: 'me', text: chip.label });
@@ -401,6 +615,18 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
      * on the athlete's behalf — defaulting to a 5k — would have the engine build for a distance nobody
      * chose. So it sets a chat-only flag and `nextQuestion` asks which.
      */
+    if (chip.edit) {
+      say({ kind: 'me', text: chip.label });
+      stepEdit(chip.edit);
+      return;
+    }
+
+    if (chip.label === 'Change something else') {
+      say({ kind: 'me', text: chip.label });
+      void beginEdit();
+      return;
+    }
+
     if (chip.picksRace) {
       say({ kind: 'me', text: chip.label });
       void advance({ ...constraints, pickingRace: true }, mode ?? 'program');
@@ -440,6 +666,11 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
           { kind: 'holt', text: pick('import_open') },
           { kind: 'chips', chips: [{ label: 'Paste it in', patch: {}, goTo: '/program-builder?o=import' }] },
         );
+        return;
+      }
+
+      if (opener.kind === 'edit') {
+        void beginEdit();
         return;
       }
 

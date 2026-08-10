@@ -93,6 +93,19 @@ export interface RefusalCard {
   secondary: string;
 }
 
+/**
+ * A single tap in the edit flow.
+ *
+ * ⚠ SERIALISABLE ON PURPOSE. Chips live in the thread and the thread is written to storage between
+ * visits, so nothing here may be a function, a class or a live object graph.
+ */
+export type EditPick =
+  | { step: 'session'; weekIndex: number; dayIndex: number }
+  | { step: 'change'; change: string }
+  | { step: 'row'; index: number }
+  | { step: 'value'; sets?: number; targetMi?: number; targetSec?: number; replacementKey?: string; replacementName?: string }
+  | { step: 'scope'; scope: 'this_week' | 'rest_of_block' };
+
 export interface Chip {
   /** Narrows the goal question to the distances instead of answering it. Only "Run a race" carries it. */
   picksRace?: boolean;
@@ -100,6 +113,8 @@ export interface Chip {
   helpTopic?: string;
   /** A route this chip leaves for. The only chips that close the sheet. */
   goTo?: string;
+  /** One step of changing a live program. Must stay JSON-serialisable — the thread is persisted. */
+  edit?: EditPick;
   label: string;
   /** What tapping it fills in. The typed path resolves to the same thing — see `interpret`. */
   patch: Partial<CoachConstraints>;
@@ -348,6 +363,7 @@ export const INTRO: string[] = [
 export const OPENERS: string[] = [
   'Build me a program',
   'What should I train today?',
+  'Change my program',
   "I've got a program already",
   'How do I…?',
 ];
@@ -356,6 +372,7 @@ export const OPENERS: string[] = [
 export type OpenerAction =
   | { kind: 'build'; mode: 'program' | 'day'; patch: Partial<CoachConstraints> }
   | { kind: 'import' }
+  | { kind: 'edit' }
   | { kind: 'help' };
 
 export function fromOpener(label: string): OpenerAction | null {
@@ -364,6 +381,12 @@ export function fromOpener(label: string): OpenerAction | null {
       return { kind: 'build', mode: 'program', patch: {} };
     case 'What should I train today?':
       return { kind: 'build', mode: 'day', patch: {} };
+    /* ⚠ OFFERED WHETHER OR NOT A PROGRAM IS RUNNING, deliberately. Hiding it would mean fetching the
+       athlete's program before he can say hello, and a greeting that waits on the network is the silent
+       stall this sheet has already been fixed for once. "You haven't got one running, want me to build
+       you one?" is a better answer than a chip that quietly is not there. */
+    case 'Change my program':
+      return { kind: 'edit' };
     case "I've got a program already":
       return { kind: 'import' };
     case 'How do I…?':

@@ -53,7 +53,14 @@ export type VoiceKey =
   | 'not_understood'
   | 'help_open'
   | 'import_open'
-  | 'nothing_to_build';
+  | 'nothing_to_build'
+  | 'no_active_program'
+  | 'ask_edit_session'
+  | 'ask_edit_change'
+  | 'ask_edit_row'
+  | 'ask_edit_value'
+  | 'ask_edit_scope'
+  | 'edit_done';
 
 /**
  * ⚠ `{name}` is the ONLY token, and it is optional in every line that uses it — a profile without a first
@@ -203,6 +210,37 @@ export const VOICE: Record<VoiceKey, readonly string[]> = {
     "Paste it in and I'll read it. A table, a sheet, a plan someone wrote out — whatever you've got.",
     "Bring it over. Paste the plan in and I'll turn it into something you can train.",
     "Hand it here. Paste the whole thing and I'll read the weeks out of it.",
+  ],
+  // ── changing a plan already running ───────────────────────────────────────────────────────────────
+  no_active_program: [
+    "You haven't got a program running, so there's nothing for me to change. Want me to build you one?",
+    "Nothing's running at the moment — there's no block to adjust. I can write you one.",
+    "You're not on a program right now. Start one and I'll happily change it whenever you need.",
+  ],
+  ask_edit_session: [
+    'Which session?',
+    'Which one do you want different?',
+    "Which session are we changing? Anything you've already done stays as it happened.",
+    'Pick the session.',
+  ],
+  ask_edit_change: [
+    'What do you want different about it?',
+    "What's the problem with it?",
+    'What are we changing?',
+    'What needs to move?',
+  ],
+  ask_edit_row: ['Which one?', 'Which movement?', 'Which of these?', 'Point at it.'],
+  ask_edit_value: ['What should it be?', 'Make it what?', 'What are we changing it to?', 'Give me the number.'],
+  ask_edit_scope: [
+    'Just this week, or every week from here?',
+    'Is this a one-off, or should the rest of the block follow?',
+    'This week only, or the whole way through?',
+  ],
+  edit_done: [
+    "Done. That's changed.",
+    'Changed. The rest of the block is where you left it.',
+    "That's in. Nothing else moved.",
+    'Sorted.',
   ],
   nothing_to_build: [
     "There isn't enough here for me to build you a session. Tell me what you've got and I'll work with it.",

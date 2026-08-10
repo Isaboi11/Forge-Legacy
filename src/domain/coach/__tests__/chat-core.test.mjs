@@ -186,7 +186,7 @@ test('every opener is a real thing Holt can do', () => {
   for (const label of OPENERS) {
     const r = fromOpener(label);
     assert.ok(r, `"${label}" is offered but leads nowhere`);
-    assert.ok(['build', 'import', 'help'].includes(r.kind), `"${label}" has no action`);
+    assert.ok(['build', 'import', 'edit', 'help'].includes(r.kind), `"${label}" has no action`);
     if (r.kind === 'build') assert.ok(r.mode === 'program' || r.mode === 'day');
   }
 });
