@@ -36,6 +36,7 @@ import {
 import { AUTHORED_GOALS } from './rulebook/skeletons.ts';
 import { RACE_SPEC, weeklyVolumePlan } from './rulebook/endurance.ts';
 import { pick, pickNamed } from './rulebook/voice.ts';
+import { BODY_PART_LABEL, SPLIT_LABEL, type DayFocus } from './day.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // THE THREAD
@@ -117,7 +118,10 @@ export interface Chip {
   edit?: EditPick;
   label: string;
   /** What tapping it fills in. The typed path resolves to the same thing — see `interpret`. */
-  patch: Partial<CoachConstraints>;
+  /* Widened to ChatState so a chip can carry `dayFocus`, which describes one WORKOUT rather than the
+     athlete. `interpret()` still returns `Partial<CoachConstraints>` — the AI seam stays exactly as
+     narrow as it was, and a model still cannot reach anything a tap could not. */
+  patch: Partial<ChatState>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -133,10 +137,20 @@ export interface Chip {
  * would have the engine build a plan for a distance nobody chose. It lives here, out of
  * `CoachConstraints`, so it cannot reach `assemble()` even by accident.
  */
-export type ChatState = Partial<CoachConstraints> & { pickingRace?: boolean };
+export type ChatState = Partial<CoachConstraints> & {
+  pickingRace?: boolean;
+  /**
+   * What today's session is FOR — the question the day flow never asked.
+   *
+   * ⚠ NOT A CONSTRAINT. A `CoachConstraints` describes an ATHLETE; this describes one workout, and only
+   * in day mode. Keeping it out of the constraint shape is what stops it leaking into a program build.
+   */
+  dayFocus?: DayFocus;
+};
 
 export type QuestionId =
   | 'goal'
+  | 'day_focus'
   | 'race_distance'
   | 'race_when'
   | 'race_base'
@@ -164,7 +178,20 @@ const chip = (label: string, patch: Partial<CoachConstraints>): Chip => ({ label
  * for a date and a starting mileage, a strength block asks for a split and a room, and asking a marathon
  * runner what equipment they own would be the coach not listening.
  */
-export function nextQuestion(c: ChatState): Question | null {
+/**
+ * ⚠ **A SINGLE DAY IS NOT A ONE-WEEK PROGRAM, AND ASKING IT PROGRAM QUESTIONS IS THE BUG THE PO HIT.**
+ *
+ * "What should I train today?" was walking the whole block questionnaire: what are you training FOR, how
+ * many days a week can you train — neither of which has anything to do with one session — and then never
+ * asking the only question that mattered, which is what they wanted to train. It handed back a full-body
+ * workout to somebody who came in wanting back and biceps.
+ *
+ * So the mode decides which questions exist. A day asks: what, how long, where, how experienced, anything
+ * to avoid. Nothing else.
+ */
+export function nextQuestion(c: ChatState, mode: 'program' | 'day' = 'program'): Question | null {
+  if (mode === 'day') return nextDayQuestion(c);
+
   if (c.goal == null && !c.pickingRace) {
     /*
      * ⚠ **THE FIVE RACES ARE ONE CHIP.** Listing 5k, 10k, half, marathon and triathlon alongside "get
@@ -267,6 +294,73 @@ export function nextQuestion(c: ChatState): Question | null {
     };
   }
 
+  return null;
+}
+
+/**
+ * The day's own questionnaire.
+ *
+ * ⚠ THE FOCUS CHIPS OFFER SPLITS *AND* MUSCLE PAIRS, and the pairs are not redundant. "Pull" and "Back &
+ * biceps" build differently — one is a movement-pattern split, the other names the muscles — and an
+ * athlete who came in thinking "back and biceps day" should not have to work out that we call it Pull.
+ * `day.ts` already supported both; nothing here was asking.
+ */
+const FOCUS_CHIPS: [string, DayFocus][] = [
+  [SPLIT_LABEL.full_body, { kind: 'split', split: 'full_body' }],
+  [SPLIT_LABEL.push, { kind: 'split', split: 'push' }],
+  [SPLIT_LABEL.pull, { kind: 'split', split: 'pull' }],
+  [SPLIT_LABEL.legs, { kind: 'split', split: 'legs' }],
+  [SPLIT_LABEL.upper, { kind: 'split', split: 'upper' }],
+  [SPLIT_LABEL.lower, { kind: 'split', split: 'lower' }],
+  [`${BODY_PART_LABEL.chest} & ${BODY_PART_LABEL.triceps}`, { kind: 'body_parts', parts: ['chest', 'triceps'] }],
+  [`${BODY_PART_LABEL.back} & ${BODY_PART_LABEL.biceps}`, { kind: 'body_parts', parts: ['back', 'biceps'] }],
+  [`${BODY_PART_LABEL.shoulders} & arms`, { kind: 'body_parts', parts: ['shoulders', 'biceps', 'triceps'] }],
+  [BODY_PART_LABEL.core, { kind: 'body_parts', parts: ['core'] }],
+];
+
+function nextDayQuestion(c: ChatState): Question | null {
+  if (c.dayFocus == null) {
+    return {
+      id: 'day_focus',
+      ask: pick('ask_day_focus'),
+      chips: FOCUS_CHIPS.map(([label, dayFocus]) => ({ label, patch: { dayFocus } })),
+    };
+  }
+  if (c.sessionMinutes == null) {
+    return {
+      id: 'time',
+      ask: pick('ask_time'),
+      chips: ([30, 45, 60, 75] as const).map((m) => chip(m === 75 ? '75+ minutes' : `${m} minutes`, { sessionMinutes: m })),
+    };
+  }
+  if (c.environment == null) {
+    return {
+      id: 'where',
+      ask: pick('ask_where'),
+      chips: [
+        chip('Full gym', { environment: 'full_gym' }),
+        chip('My home gym', { environment: 'home' }),
+        chip('Bodyweight only', { environment: 'bodyweight' }),
+      ],
+    };
+  }
+  if (c.experience == null) {
+    return {
+      id: 'experience',
+      ask: pick('ask_experience'),
+      chips: (['beginner', 'intermediate', 'advanced'] as Experience[]).map((e) =>
+        chip(EXPERIENCE_LABEL[e], { experience: { lifting: e, running: e } }),
+      ),
+    };
+  }
+  if (c.limitations == null) {
+    return {
+      id: 'limits',
+      ask: pick('ask_limits'),
+      skippable: true,
+      chips: [chip('Nothing — build it', { limitations: [] }), ...LIMIT_CHIPS.map(([label, l]) => chip(label, { limitations: [l] }))],
+    };
+  }
   return null;
 }
 
@@ -551,7 +645,7 @@ export const dayPreamble = (): string => pick('preamble_day');
  * asks for — a long run is as long as it is, so a stated session budget would be a question whose answer
  * changes nothing.
  */
-export const readyToBuild = (c: Partial<CoachConstraints>): boolean => nextQuestion(c) == null;
+export const readyToBuild = (c: ChatState, mode: 'program' | 'day' = 'program'): boolean => nextQuestion(c, mode) == null;
 
 /** The goal keys the chat can actually offer, so a chip can never name a dead end. */
 export const OFFERABLE_GOALS: readonly Goal[] = AUTHORED_GOALS;

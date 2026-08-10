@@ -62,14 +62,15 @@ const POOL = buildPickerDb({
  * `node --test` — so if the sheet's order of operations changes, this must change with it.
  */
 function runBuildPath(partial, mode) {
-  if (!readyToBuild(partial)) return { outcome: 'asked', question: nextQuestion(partial) };
+  // The mode decides which questions exist at all — a day never asks a program's questions.
+  if (!readyToBuild(partial, mode)) return { outcome: 'asked', question: nextQuestion(partial, mode) };
 
   const c = completeFor(partial, mode);
 
   if (mode === 'day') {
     const r = buildDayWorkout(
       {
-        focus: { kind: 'split', split: 'full_body' },
+        focus: partial.dayFocus ?? { kind: 'split', split: 'full_body' },
         sessionMinutes: c.sessionMinutes,
         experience: c.experience.lifting,
         environment: c.environment,

@@ -47,7 +47,8 @@ import { buildDayWorkout } from '@/domain/coach/day';
 import { PICKER_DB } from '@/domain/exercise-picker/data';
 import { canDoExercise } from '@/domain/home-gym/equipment';
 import { fetchActiveProgram } from '@/data/programs-live';
-import { hasMetHolt, loadThread, rememberMetHolt, saveThread } from '@/lib/coach-thread';
+import { clearThread, hasMetHolt, loadThread, rememberMetHolt, saveThread } from '@/lib/coach-thread';
+import { loadExperience, rememberExperience } from '@/lib/coach-memory';
 import { fetchProgramSessions, updateProgram, type ProgramDay, type SavedProgram } from '@/data/programs-live';
 import type { SessionMark } from '@/domain/program/progress-core';
 import { contextFrom } from '@/domain/coach/candidates';
@@ -235,8 +236,13 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
     if (profileLoading || greeted.current) return undefined;
     greeted.current = true;
     void (async () => {
-      const [met, stored] = await Promise.all([hasMetHolt(), loadThread()]);
+      const [met, stored, remembered] = await Promise.all([hasMetHolt(), loadThread(), loadExperience()]);
       if (!alive) return;
+      /* ⚠ ASKED ONCE, EVER. How long somebody has been training does not change between Tuesday and
+         Thursday, and asking again every session is the app visibly not remembering a conversation it
+         just had. Everything else — the time they have, the room they are in, what hurts — genuinely
+         varies week to week and is still asked. */
+      if (remembered) setConstraints((c) => ({ experience: remembered, ...c }));
       if (!met) {
         void rememberMetHolt();
         return; // the intro effect is already running; leave it alone
@@ -262,15 +268,16 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
     async (next: ChatState, mode_: 'program' | 'day') => {
       const merged = { ...next };
       setConstraints(merged);
+      if (merged.experience) void rememberExperience(merged.experience);
 
       try {
-        if (!readyToBuild(merged)) {
+        if (!readyToBuild(merged, mode_)) {
           // Thinking is a real state and short. It exists so the next question does not appear the instant
           // you tap — a coach who answers before you have finished is not listening, he is waiting.
           setBusy('thinking');
           await pause(420);
           setBusy(null);
-          const q = nextQuestion(merged);
+          const q = nextQuestion(merged, mode_);
           /* The short beat before the question — "Good." / "Right." / "Noted." It is what the original
            hardcoded line did ("Good. What are you training for?"), now varied so it does not become the
              tic that makes him sound like a script. */
@@ -284,7 +291,17 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
 
         if (mode_ === 'day') {
           const r = buildDayWorkout(
-            { focus: { kind: 'split', split: 'full_body' }, sessionMinutes: c.sessionMinutes, experience: c.experience.lifting, environment: c.environment, ownedEquipment: c.ownedEquipment, limitations: c.limitations },
+            {
+              /* ⚠ WAS HARDCODED `full_body`, WHICH IS WHY A BACK-AND-BICEPS ASK CAME BACK AS A FULL BODY
+                 SESSION. The day builder has supported muscle groups since it was written; the chat was
+                 handing it the same focus every time and never asking. */
+              focus: merged.dayFocus ?? { kind: 'split', split: 'full_body' },
+              sessionMinutes: c.sessionMinutes,
+              experience: c.experience.lifting,
+              environment: c.environment,
+              ownedEquipment: c.ownedEquipment,
+              limitations: c.limitations,
+            },
             PICKER_DB,
             canDoExercise,
           );
@@ -414,6 +431,29 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
   }, [say]);
 
   const helpChips = (): Chip[] => HELP_TOPICS.map((t) => ({ label: t.q, patch: {}, helpTopic: t.q }));
+
+  /**
+   * Wipe the conversation and open a fresh one.
+   *
+   * ⚠ IT CLEARS THE CONVERSATION, NOT THE ATHLETE. The remembered skill level survives — that is a fact
+   * about them, not part of this chat, and making them re-answer it would defeat the point of having
+   * remembered it. Same for having met him: a new conversation does not make him a stranger again, so he
+   * greets rather than re-introducing himself.
+   */
+  const newChat = () => {
+    void clearThread();
+    setEdit(null);
+    setMode(null);
+    setBuilt(null);
+    setLastCard(null);
+    setPreview(false);
+    setDraft('');
+    askedAboutReplacing.current = false;
+    /* The remembered experience is deliberately kept, and everything situational is deliberately not. */
+    setConstraints((c) => (c.experience ? { experience: c.experience } : {}));
+    setIntroStep(INTRO.length + 1);
+    setThread(greetReturning(firstName));
+  };
 
   /* ── changing a plan already running ─────────────────────────────────────────────────────────────
    *
@@ -727,7 +767,7 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
       return;
     }
 
-    const q = nextQuestion(constraints);
+    const q = nextQuestion(constraints, mode ?? 'program');
     const patch = q ? interpret(text, q) : null;
     if (!patch) {
       /* He asks again rather than guessing. A coach who mishears and proceeds is worse than one who
@@ -786,6 +826,17 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
               {busy === 'building' ? 'Building your block' : busy === 'thinking' ? 'Thinking' : 'Ready'}
             </Text>
           </View>
+          {/*
+            ⚠ **STARTING AGAIN USED TO MEAN SCROLLING.** Come back after finishing a conversation and the
+            openers were down at the bottom of everything you had already said — the PO had to hunt for
+            the way in. §15 is right that the thread persists, and a rolling thread with no way to clear
+            it is a filing cabinet you have to read to get a new sheet of paper.
+          */}
+          <Pressable onPress={newChat} accessibilityRole="button" accessibilityLabel="Start a new conversation" hitSlop={8} style={styles.close}>
+            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M12 5v14M5 12h14" />
+            </Svg>
+          </Pressable>
           {/* §4.9 — it collapses to the bubble; it does not clear the conversation. */}
           <Pressable onPress={collapse} accessibilityRole="button" accessibilityLabel="Close" hitSlop={8} style={styles.close}>
             <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round">
