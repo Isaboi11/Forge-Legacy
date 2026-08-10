@@ -283,6 +283,15 @@ export default function WorkoutScreen() {
   const [wNameDraft, setWNameDraft] = useState('');
   /* A note on the lift in front of you. Scoped to the exercise the ⋯ menu was opened from, so it cannot
      drift onto a different movement if the index moves while the sheet is up. */
+  /*
+   * Which superset member is open as a full card, if any.
+   *
+   * ⚠ THE CARD'S OWN COMMENT ALREADY CLAIMED THIS WORKED — "Tapping a member's name in the card opens it
+   * on its own." It did not: the tap moved `exerciseIndex`, but `isSuperset` is derived from the block
+   * the index sits in, so the fused card simply re-rendered around the new member and nothing visible
+   * happened. Intended behaviour, described in a comment, never wired.
+   */
+  const [ssOpen, setSsOpen] = useState<number | null>(null);
   const [noteOpen, setNoteOpen] = useState<number | null>(null);
   const [noteDraft, setNoteDraft] = useState('');
   /**
@@ -1225,6 +1234,10 @@ export default function WorkoutScreen() {
   const block = blockAt(session.exercises, exIdx);
   const blockPos = block ? exIdx - block.start + 1 : 0;
   const isSuperset = block?.kind === 'superset';
+  /* FUSED is the display question; `isSuperset` stays the structural one. The options menu still needs
+     to know this is a superset while a member is open — "Break the superset" must not vanish because you
+     tapped one of its lifts. */
+  const ssFused = isSuperset && ssOpen !== exIdx;
   /* Where the athlete is inside the pairing, scanned ROUND-MAJOR (A1 → B1 → A2 → B2). Null once the
      whole block is logged. `ssRounds` is the LONGEST member's set count, so a 4-set row paired with a
      3-set press still shows four rounds rather than hiding the fourth. */
@@ -1360,6 +1373,10 @@ export default function WorkoutScreen() {
   const isLastEx = exIdx >= session.exercises.length - 1;
   const primaryLabel = isLastEx ? 'Finish Workout' : 'Next Exercise';
   const goExercise = (idx: number) => {
+    /* Moving OUT of the block closes the expansion. Without this, walking away and coming back would
+       land you on a member's own card instead of the pairing, which is not where you left off. */
+    const target = blockAt(session?.exercises ?? [], idx);
+    if (!target || target.kind !== 'superset' || target.start !== block?.start) setSsOpen(null);
     // Guards the dot strip too, which jumps straight here without passing through onPrimary.
     if (idx !== exIdx && blockedByBout()) return;
     setExIdx(Math.max(0, Math.min(session.exercises.length - 1, idx)));
@@ -1581,6 +1598,22 @@ export default function WorkoutScreen() {
       >
         {/* The block this exercise belongs to, named above it — an AMRAP announces its clock, a circuit
             its round count, and both say which of their members you are standing on. */}
+        {/* The way back. An expanded member is still part of a pairing, and without this the athlete is
+            looking at a single lift with no sign that the other half exists. */}
+        {isSuperset && !ssFused ? (
+          <Pressable
+            onPress={() => setSsOpen(null)}
+            accessibilityRole="button"
+            accessibilityLabel="Back to the superset"
+            style={styles.ssBackBar}
+          >
+            <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M15 18l-6-6 6-6" />
+            </Svg>
+            <Text style={styles.ssBackText}>Back to the superset</Text>
+          </Pressable>
+        ) : null}
+
         {block && !isSuperset ? (
           <View style={[styles.blockBanner, block.capSec ? styles.blockBannerAmrap : null]}>
             <View style={styles.blockBannerHead}>
@@ -1631,7 +1664,7 @@ export default function WorkoutScreen() {
           * The whole card is driven by `nextInSuperset`, which scans round-major — so "what do I do now"
           * is answered by the domain, with tests, rather than by the render.
           */}
-        {block && isSuperset ? (
+        {block && ssFused ? (
           <View style={styles.supersetCard}>
             <View style={styles.supersetHead}>
               <Text style={styles.blockKicker}>Superset</Text>
@@ -1651,7 +1684,14 @@ export default function WorkoutScreen() {
                     <Text style={[styles.ssTagText, isNext && styles.ssTagTextNext]}>{String.fromCharCode(65 + m)}</Text>
                   </View>
                   <View style={styles.ssBody}>
-                    <Pressable onPress={() => goExercise(mi)} accessibilityRole="button" accessibilityLabel={`Open ${mex.name}`}>
+                    <Pressable
+                      onPress={() => {
+                        goExercise(mi);
+                        setSsOpen(mi);
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Open ${mex.name} on its own`}
+                    >
                       <Text style={styles.ssName} numberOfLines={1}>{mex.name}</Text>
                     </Pressable>
                     {mset ? (
@@ -1706,7 +1746,7 @@ export default function WorkoutScreen() {
         {/* In a superset the merged card above IS the surface — the hero names one member and the
             table logs one member, and both would be arguing with a card whose whole point is that the
             pairing is a single thing you do. Tapping a member's name in the card opens it on its own. */}
-        {isCardio || isSuperset ? null : heroExpanded ? (
+        {isCardio || ssFused ? null : heroExpanded ? (
           <TourAnchor id="workout-hero" style={styles.hero}>
             <View style={styles.heroRow}>
               {/* media slot — the exercise's looping demonstration, falling back to the engraved
@@ -3047,6 +3087,20 @@ const styles = StyleSheet.create({
   blockBannerAmrap: { borderColor: flColor.bronzeBorderSubtle },
   blockBannerHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   blockKicker: { fontSize: 9, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronze400 },
+  ssBackBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    alignSelf: 'flex-start',
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    marginBottom: 10,
+    borderRadius: flRadius.pill,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    backgroundColor: flColor.bronzeTint,
+  },
+  ssBackText: { fontSize: 13, fontWeight: '600', color: flColor.bronze300 },
   blockRounds: { fontSize: 11, fontWeight: '700', letterSpacing: 0.3, color: flColor.bronze300, fontVariant: ['tabular-nums'] },
   blockName: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
   blockMeta: { fontSize: 11, fontWeight: '600', color: flColor.gray400 },
