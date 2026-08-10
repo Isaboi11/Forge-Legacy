@@ -140,3 +140,40 @@ test('daySectionsSummary names only the sections that have something in them', (
   assert.equal(daySectionsSummary(full), '3 lifts · 1 warm-up · 1 cool-down');
   assert.equal(daySectionsSummary({ warmup: [], main: [1], cooldown: [] }), '1 lift');
 });
+
+// ── the author's coaching cue, and the clock ────────────────────────────────
+//
+// Both cross here on the way from a saved template into a program day. A cue dropped at this step is
+// the exact write-only failure `ExercisePrescription`'s comment warns about: authored, stored, read
+// back, and then discarded one step before anyone could see it.
+test('a coaching cue survives the template → program-day crossing', () => {
+  const [ex] = templateRowsToDayWith([row({ coachNote: '4 seconds down, then push up' })], lookup).main;
+  assert.equal(ex.coachNote, '4 seconds down, then push up');
+});
+
+test('a cardio bout carries its cue AND its clock across', () => {
+  const [ride] = templateRowsToDayWith(
+    [
+      row({
+        catalogKey: 'cardio:bike',
+        name: 'Ride',
+        sets: 1,
+        targetReps: 0,
+        kind: 'cardio',
+        targetMi: null,
+        targetDurationSec: 75 * 60,
+        coachNote: 'Hold Z2 — this is not a workout',
+      }),
+    ],
+    lookup,
+  ).main;
+  assert.equal(ride.kind, 'cardio');
+  assert.equal(ride.targetSec, 75 * 60, '75 minutes is the prescription; a distance is not');
+  assert.equal(ride.targetMi, null, 'an open distance stays open rather than being invented');
+  assert.equal(ride.coachNote, 'Hold Z2 — this is not a workout');
+});
+
+test('a row with no cue does not gain an empty one', () => {
+  const [ex] = templateRowsToDayWith([row()], lookup).main;
+  assert.equal('coachNote' in ex, false, 'absent, not null — every program authored before this reads unchanged');
+});

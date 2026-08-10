@@ -229,3 +229,31 @@ test('adoption carries percentage loading across (0111)', () => {
   assert.deepEqual(front.percentScheme, [65, 75, 80, 87, 92]);
   assert.equal(front.percentOf, 'back-squat', 'a percentage pointed at another lift must keep pointing there');
 });
+
+// ── the author's coaching cue, catalog → athlete ────────────────────────────
+//
+// `ExercisePrescription` refused a notes field for years on the grounds that nothing rendered one. Now
+// something does, and this is the crossing that would silently undo it: `prescriptionToExercise` is a
+// whitelist, and `repsMax` and `per` were both dropped here before — 105 and 142 prescriptions
+// respectively, authored and never seen by an athlete.
+test('a catalog cue reaches the adopted program', () => {
+  const def = {
+    ...singleBlock,
+    blocks: [
+      block('Weeks 1–6', 1, 6, [
+        workout('A', 'Push', [{ ...rx('Push-Up', 3, 10), coachNote: '4 seconds down, then push up' }]),
+      ]),
+    ],
+  };
+  const s = structureFromDefinition(def);
+  assert.equal(s.days[0].main[0].coachNote, '4 seconds down, then push up');
+});
+
+test('an empty or whitespace cue is not carried as one', () => {
+  const def = {
+    ...singleBlock,
+    blocks: [block('Weeks 1–6', 1, 6, [workout('A', 'Push', [{ ...rx('Push-Up', 3, 10), coachNote: '   ' }])])],
+  };
+  const s = structureFromDefinition(def);
+  assert.equal('coachNote' in s.days[0].main[0], false, 'whitespace is not an instruction');
+});

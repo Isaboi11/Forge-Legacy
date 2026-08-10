@@ -555,23 +555,26 @@ export function composeTriWeek(daysPerWeek: number): SessionRole[] {
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
 /**
- * ⚠ **THE CUE LIVES IN THE NAME, BECAUSE THERE IS NOWHERE ELSE TO PUT IT.**
+ * ⚠ **THE CUE GOES IN `coachNote`, AND I HAD IT IN THE NAME.**
  *
- * `ProgramExercise` has **no `notes` field**, and its absence is deliberate — the schema's own comment
- * cites it as the warning against write-only fields, the failure this repo has shipped more than once
- * (a value authored, persisted, and rendered by nothing). `Program-Authoring-Standard-v1.0.md` §11.4
- * nonetheless says running pace guidance "lives in `notes`", which is the PAS describing a field that
- * was never built — see `project_pas_governs_an_unbuilt_product`.
+ * The first version folded every coaching cue into the exercise's NAME — "Easy Run · easy means easy,
+ * this is where the base is built" — on the belief that the model had nowhere else to put it. That was
+ * true of `ProgramExercise` once and is not true now: **`coachNote` exists**, it is the author's
+ * instruction on a prescription, and the active workout already renders it under **THE PLAN SAYS**.
  *
- * So the coaching cue goes in the row's NAME, which every surface already renders. It makes for longer
- * labels than a lifting row, and that is the right trade: "easy means easy" is the single most important
- * instruction in endurance training, and dropping it to keep names tidy would be prescribing the
- * distance while withholding the point of it.
+ * The distinction matters beyond tidiness. A name is an identity — it is what the lift IS, what history
+ * groups by, what a picker matches. A cue is an instruction about how to perform it: "4 second
+ * negatives", "hold Z2, this is not a workout". Putting the second inside the first makes every session
+ * of the same movement look like a different exercise, and makes the instruction impossible to change
+ * without renaming the thing it describes.
+ *
+ * So: names are names, and `cue` lands in `coachNote`.
  */
 const cardio = (
   activity: ProgramExercise['activity'],
   fields: Partial<ProgramExercise>,
   name: string,
+  cue?: string,
 ): ProgramExercise =>
   ({
     catalogKey: `cardio:${activity}`,
@@ -580,6 +583,7 @@ const cardio = (
     activity,
     modality: activity === 'swim' ? 'indoor' : 'outdoor',
     sets: 1,
+    ...(cue ? { coachNote: cue } : {}),
     ...fields,
   }) as ProgramExercise;
 
@@ -595,7 +599,7 @@ const cardio = (
  * content, media and relationships for each new movement — reported, not done quietly.
  */
 function runWarmup(): ProgramExercise[] {
-  return [cardio('run', { targetSec: 600 }, 'Easy Jog · leg swings and high knees first')];
+  return [cardio('run', { targetSec: 600 }, 'Easy Warm-Up', 'Ten minutes easy to open up. Leg swings and a few high knees before you go.')];
 }
 
 function runCooldown(stretchKeys: readonly string[]): ProgramExercise[] {
@@ -665,7 +669,8 @@ export function buildRunDay(input: RunDayInput, letter: string): ProgramDay {
           cardio(
             'run',
             { targetMi: longRunMi, ...pace(paces?.easySec) },
-            'Long Run · conversational the whole way',
+            'Long Run',
+            'Conversational the whole way. If you cannot talk, you are running it too fast.',
           ),
         ],
         cooldown: runCooldown(input.stretchKeys),
@@ -680,7 +685,8 @@ export function buildRunDay(input: RunDayInput, letter: string): ProgramDay {
           cardio(
             'run',
             { targetSec: tempoSec, ...pace(paces?.thresholdSec) },
-            `Tempo · ${Math.round(tempoSec / 60)} min comfortably hard, a sentence not a conversation`,
+            'Tempo',
+            'Comfortably hard — you could speak a sentence, not hold a conversation.',
           ),
         ],
         cooldown: runCooldown(input.stretchKeys),
@@ -695,7 +701,8 @@ export function buildRunDay(input: RunDayInput, letter: string): ProgramDay {
           cardio(
             'run',
             { sets: intervalReps, targetSec: 3 * 60, ...pace(paces?.intervalSec) },
-            `Intervals · ${intervalReps} × 3 min hard, 3 min jog between`,
+            'Intervals',
+            `${intervalReps} × 3 minutes hard, 3 minutes easy jog between. The jog is part of the session.`,
           ),
         ],
         cooldown: runCooldown(input.stretchKeys),
@@ -710,7 +717,8 @@ export function buildRunDay(input: RunDayInput, letter: string): ProgramDay {
           cardio(
             'run',
             { sets: rwReps, targetSec: rwRunSec },
-            `Run ${rwRunSec}s / walk ${RUN_WALK_START.walkSec}s × ${rwReps} · the walk is the session`,
+            'Run / Walk',
+            `Run ${rwRunSec}s, walk ${RUN_WALK_START.walkSec}s, ${rwReps} times through. The walk is part of the session, not a failure of it.`,
           ),
         ],
         cooldown: [cardio('walk', { targetSec: 300 }, 'Cool-Down Walk')],
@@ -723,7 +731,7 @@ export function buildRunDay(input: RunDayInput, letter: string): ProgramDay {
         warmup: [],
         // EPS-D12 — distance only. A swimmer's honest metric is a per-100 split and the app computes none,
         // so prescribing a pace here would be inventing a number nobody can read back.
-        main: [cardio('swim', { targetMi: swimMi }, `Swim · ${swimMi} mi steady, technique before volume`)],
+        main: [cardio('swim', { targetMi: swimMi }, 'Swim', `${swimMi} mi steady. Technique before volume — this is the discipline I cannot coach for you.`)],
         cooldown: [],
       };
 
@@ -732,7 +740,7 @@ export function buildRunDay(input: RunDayInput, letter: string): ProgramDay {
         letter,
         name: 'Ride',
         warmup: [],
-        main: [cardio('bike', { targetSec: rideSec }, `Ride · ${Math.round(rideSec / 60)} min steady aerobic`)],
+        main: [cardio('bike', { targetSec: rideSec }, 'Ride', 'Steady aerobic effort. You should be able to hold this all day.')],
         cooldown: [],
       };
 
@@ -742,8 +750,8 @@ export function buildRunDay(input: RunDayInput, letter: string): ProgramDay {
         name: 'Brick',
         warmup: [],
         main: [
-          cardio('bike', { targetSec: brickRideSec }, `Ride · ${Math.round(brickRideSec / 60)} min steady`),
-          cardio('run', { targetSec: brickRunSec }, `Run · ${Math.round(brickRunSec / 60)} min straight off the bike`),
+          cardio('bike', { targetSec: brickRideSec }, 'Ride', 'Steady. Save something for what follows it.'),
+          cardio('run', { targetSec: brickRunSec }, 'Run', 'Straight off the bike, no sitting down. Your legs will feel odd for the first mile — that is the session.'),
         ],
         cooldown: [cardio('walk', { targetSec: 300 }, 'Cool-Down Walk')],
       };
@@ -757,7 +765,8 @@ export function buildRunDay(input: RunDayInput, letter: string): ProgramDay {
           cardio(
             'run',
             { targetSec: 15 * 60, ...pace(paces?.easySec) },
-            'Shakeout · 15 min easy, just to open the legs',
+            'Shakeout',
+            'Fifteen minutes easy, just to open the legs. Nothing to prove today.',
           ),
         ],
         cooldown: [],
@@ -770,7 +779,7 @@ export function buildRunDay(input: RunDayInput, letter: string): ProgramDay {
         warmup: runWarmup(),
         // The race is prescribed as the distance it is, with no pace: the plan has no business telling
         // someone how fast to run the thing it spent seventeen weeks preparing them for.
-        main: [cardio('run', { targetMi: input.raceMi ?? undefined }, 'Race Day · this is the one')],
+        main: [cardio('run', { targetMi: input.raceMi ?? undefined }, 'Race Day', 'This is the one. Everything before it was for this.')],
         cooldown: [cardio('walk', { targetSec: 600 }, 'Cool-Down Walk')],
       };
 
@@ -784,7 +793,8 @@ export function buildRunDay(input: RunDayInput, letter: string): ProgramDay {
           cardio(
             'run',
             { targetMi: easyMi, ...pace(paces?.easySec) },
-            'Easy Run · easy means easy, this is where the base is built',
+            'Easy Run',
+            'Easy means easy. This is where the base is built, and running it hard costs you the session that matters.',
           ),
         ],
         cooldown: runCooldown(input.stretchKeys),

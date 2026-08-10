@@ -718,7 +718,7 @@ function ProgramBuilderScreen() {
           targets are steppers rather than fields because either one can be left open. */}
       <BottomSheet open={cardioSheet != null} onClose={() => setCardioSheet(null)} title="Add a cardio block">
         <Text style={styles.cardioIntro}>
-          Set the distance and pace on the card. Leave either one open and the athlete decides.
+          Set the distance, time and pace on the card. Leave any of them open and the athlete decides.
         </Text>
         <View style={styles.sectionBody}>
           {CARDIO_ACTIVITIES.map((a) => (

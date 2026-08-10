@@ -388,6 +388,30 @@ test('the plan lands on the race date', () => {
   assert.equal(r.structure.weekPlans.length, 17);
 });
 
+test('a coaching cue is a cue, not part of the exercise name', () => {
+  /*
+   * ⚠ THE REGRESSION THIS EXISTS FOR. Every cue was folded into the NAME — "Easy Run · easy means easy,
+   * this is where the base is built" — because I believed the model had nowhere to put it. It does:
+   * `coachNote`, which the active workout already renders under THE PLAN SAYS.
+   *
+   * A name is an IDENTITY: what history groups by, what a picker matches, what the athlete recognises. A
+   * cue is an instruction about how to perform it. Putting the second inside the first makes every
+   * session of one movement look like a different exercise.
+   */
+  const r = build({ raceDate: '2026-12-06', currentWeeklyMi: 20 });
+  const rows = r.structure.weekPlans.flatMap((w) => w.days).flatMap((d) => [...d.warmup, ...d.main, ...d.cooldown]);
+
+  assert.ok(rows.some((e) => e.coachNote), 'the plan must actually carry its coaching');
+
+  for (const row of rows.filter((e) => e.name)) {
+    assert.ok(!row.name.includes(' · '), row.name + ' has a cue in its name');
+    assert.ok(row.name.length <= 24, row.name + ' is a sentence, not a name');
+  }
+
+  const easy = rows.filter((e) => e.coachNote && e.coachNote.startsWith('Easy means easy'));
+  assert.equal(new Set(easy.map((e) => e.name)).size, 1, 'one movement, one name');
+});
+
 test('the same answers produce the same plan, every time', () => {
   const a = build({ raceDate: '2026-12-06', currentWeeklyMi: 20 });
   const b = build({ raceDate: '2026-12-06', currentWeeklyMi: 20 });

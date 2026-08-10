@@ -490,7 +490,7 @@ export const SCREEN_TOURS: Record<ScreenTourKey, readonly ScreenTourStep[]> = {
     {
       key: 'db-cardio',
       title: 'Cardio works differently',
-      body: 'A cardio block is measured in distance and pace rather than sets and reps. Outdoor and indoor change what’s tracked — a stair climber has no distance to report.',
+      body: 'A cardio block is measured in distance, time and pace rather than sets and reps — set any of them, leave the rest open. What appears depends on the activity: a stair climber has no distance to report, a swim has no pace, and a swim is measured in yards.',
       anchor: 'day-cardio',
       pad: 8,
       radius: 14,
