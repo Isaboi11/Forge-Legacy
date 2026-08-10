@@ -28,12 +28,27 @@ import path from 'node:path';
 
 import { buildPickerDb } from '../../exercise-picker/catalog-core.ts';
 import { canDoExercise } from '../../home-gym/equipment.ts';
+import { STRENGTH_GOALS } from '../constraints.ts';
 import { assemble } from '../assemble.ts';
 import { validateProgram } from '../validate-program.ts';
 import { AUTHORED_GOALS, defaultWeeksFor, stylesForDays } from '../rulebook/skeletons.ts';
+
 import { GOAL_CATEGORY } from '../rulebook/volume.ts';
 import { PATTERN_PREFERENCES } from '../rulebook/preferences.ts';
 import { buildDayWorkout, BODY_PARTS, SPLITS } from '../day.ts';
+
+/*
+ * ⚠ THIS MATRIX COVERS THE STRENGTH MACHINE ONLY, AND THAT IS NOT A GAP.
+ *
+ * `AUTHORED_GOALS` now includes the five endurance goals, which do not have a weekly split, a room, or a
+ * limitation set — they have a race date, a starting mileage, and a volume curve. Running them through
+ * `constraintsFor` produces a constraint set with no race date, which is correctly refused, and the
+ * refusal then reads here as a failure of the strength rulebook.
+ *
+ * Their matrix is `endurance.test.mjs`, which asserts the properties that actually matter for a race
+ * plan — the caps, the taper, the long run reaching a distance that could finish the race.
+ */
+const SPLIT_GOALS = AUTHORED_GOALS.filter((g) => STRENGTH_GOALS.includes(g));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THE REAL CATALOGUE
@@ -262,7 +277,7 @@ test('every authored goal × experience × schedule × room × limitation builds
   const broken = [];
   let built = 0;
 
-  for (const goal of AUTHORED_GOALS) {
+  for (const goal of SPLIT_GOALS) {
     for (const experience of EXPERIENCES) {
       for (const daysPerWeek of DAYS) {
         for (const room of Object.keys(ROOMS)) {
@@ -309,7 +324,7 @@ test('every authored goal × experience × schedule × room × limitation builds
 
 test('a refusal only ever happens in a room that genuinely cannot support the plan', () => {
   const refused = [];
-  for (const goal of AUTHORED_GOALS) {
+  for (const goal of SPLIT_GOALS) {
     for (const daysPerWeek of DAYS) {
       for (const room of Object.keys(ROOMS)) {
         const res = build(constraintsFor(goal, 'intermediate', daysPerWeek, room, 'none'));
@@ -325,7 +340,7 @@ test('a refusal only ever happens in a room that genuinely cannot support the pl
 
 test('every session length produces something trainable', () => {
   for (const sessionMinutes of SESSIONS) {
-    for (const goal of AUTHORED_GOALS) {
+    for (const goal of SPLIT_GOALS) {
       const res = build(constraintsFor(goal, 'intermediate', 4, 'full_gym', 'none', sessionMinutes));
       assert.ok(res.ok, `${goal} at ${sessionMinutes} minutes refused`);
       const v = validate(res.assembly.structure, goal);
@@ -360,11 +375,30 @@ test('the same answers produce the same program, every time', () => {
 // THE THINGS THAT MUST BE REFUSED
 // ─────────────────────────────────────────────────────────────────────────────
 
-test('a running goal is refused, in terms, until its rulebook is written', () => {
-  const res = build({ ...constraintsFor('strength', 'intermediate', 4, 'full_gym', 'none'), goal: 'run_marathon' });
-  assert.equal(res.ok, false);
-  assert.equal(res.refusal.reason, 'goal_not_authored');
-  assert.match(res.refusal.message, /running/i, 'the athlete must be told what is missing, not just refused');
+test('a running goal now BUILDS, and refuses only when it should', () => {
+  /*
+   * This test used to assert the opposite — that every running goal was refused because its rulebook was
+   * unwritten. It is kept, inverted, rather than deleted: the refusal was a real product decision for as
+   * long as it stood (better a plain no than a marathon plan written from memory), and the thing worth
+   * guarding now is that the no became a yes for the right reason.
+   *
+   * The rulebook is `rulebook/endurance.ts`; the plans it produces are asserted in `endurance.test.mjs`.
+   */
+  const withRace = {
+    ...constraintsFor('strength', 'intermediate', 5, 'full_gym', 'none'),
+    goal: 'run_marathon',
+    raceDate: '2027-06-05',
+    currentWeeklyMi: 20,
+    canRunContinuously: true,
+  };
+  const res = build(withRace);
+  assert.ok(res.ok, res.ok ? '' : `a marathon with time and a base must build: ${res.refusal.message}`);
+  assert.match(res.assembly.structure.name, /Marathon/i);
+
+  // And the refusal that remains is about time and base, not about the rulebook being missing.
+  const rushed = build({ ...withRace, raceDate: '2026-09-06' });
+  assert.equal(rushed.ok, false);
+  assert.match(rushed.refusal.message, /half marathon/i, 'a refusal still has to offer the alternative');
 });
 
 test('a running goal for someone who cannot run is a contradiction, not a puzzle', () => {

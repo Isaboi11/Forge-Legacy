@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -27,6 +27,7 @@ import {
   type Environment,
   type Experience,
   type Goal,
+  isEnduranceGoal,
   type Limitation,
   type SessionMinutes,
 } from '@/domain/coach/constraints';
@@ -77,8 +78,61 @@ const INTRO_SEEN_KEY = 'forge_coach_intro_seen_v1';
 const ACK_MS = 620;
 
 type Mode = 'program' | 'day';
+/** Weeks from today as an ISO date, which is what the engine counts back from. */
+function isoInWeeks(weeks: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + weeks * 7);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * "22:30" or "1:45:20" → seconds. Anything unparseable is `null`, and `null` means Holt writes no pace.
+ *
+ * ⚠ IT MUST FAIL TO NULL RATHER THAN TO A NUMBER. A half-typed time that resolved to some default would
+ * derive a whole set of training paces from a result the athlete never ran, and on the screen a wrong
+ * pace is indistinguishable from a right one.
+ */
+function parseTime(text: string): number | null {
+  const parts = text.trim().split(':').map((p) => p.trim());
+  if (parts.length < 2 || parts.length > 3) return null;
+  if (parts.some((p) => p === '' || !/^\d+$/.test(p))) return null;
+  const n = parts.map(Number);
+  const sec = parts.length === 3 ? n[0] * 3600 + n[1] * 60 + n[2] : n[0] * 60 + n[1];
+  return sec > 0 ? sec : null;
+}
+
+/** Weekly mileage bands. The stored value is the band's midpoint — nobody knows their mileage exactly. */
+const MILEAGE_BANDS: { label: string; value: number }[] = [
+  { label: "I don't run at the moment", value: 0 },
+  { label: 'Under 5 miles a week', value: 3 },
+  { label: '5 to 10 miles', value: 8 },
+  { label: '10 to 20 miles', value: 15 },
+  { label: '20 to 30 miles', value: 25 },
+  { label: 'More than 30 miles', value: 35 },
+];
+
+const RACE_WHEN: { label: string; weeks: number }[] = [
+  { label: 'About 6 weeks', weeks: 6 },
+  { label: 'About 8 weeks', weeks: 8 },
+  { label: 'About 12 weeks', weeks: 12 },
+  { label: 'About 16 weeks', weeks: 16 },
+  { label: 'About 20 weeks', weeks: 20 },
+  { label: 'Six months or more', weeks: 26 },
+];
+
+const RESULT_DISTANCES: { label: string; mi: number }[] = [
+  { label: '5K', mi: 3.1 },
+  { label: '10K', mi: 6.2 },
+  { label: 'Half', mi: 13.1 },
+  { label: 'Marathon', mi: 26.2 },
+];
+
 type StepId =
   | 'goal'
+  | 'race_when'
+  | 'race_base'
+  | 'race_can_run'
+  | 'race_result'
   | 'days'
   | 'style'
   | 'focus'
@@ -129,6 +183,20 @@ export default function CoachScreen() {
   const [experience, setExperience] = useState<Experience | null>(null);
   const [limitations, setLimitations] = useState<Limitation[]>([]);
 
+  /* ── Endurance only ─────────────────────────────────────────────────────────────────────────────
+     Weeks-until-race rather than a calendar date: it is the number the plan is actually built from, it
+     is the one the athlete can answer without opening another app, and it removes a date picker from a
+     flow whose whole premise is one question per card. The engine still takes a date — computed below. */
+  const [raceWeeks, setRaceWeeks] = useState<number | null>(null);
+  const [weeklyMi, setWeeklyMi] = useState<number | null>(null);
+  /** `null` = not asked. Only asked of someone whose mileage does not already answer it. */
+  const [canRun, setCanRun] = useState<boolean | null>(null);
+  /** A recent all-out result. Absent means Holt describes effort and writes no pace at all (EPS-D10). */
+  const [resultMi, setResultMi] = useState<number | null>(null);
+  const [resultTime, setResultTime] = useState('');
+
+  const endurance = goal != null && isEnduranceGoal(goal);
+
   const [built, setBuilt] = useState<Built | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -139,8 +207,27 @@ export default function CoachScreen() {
   // straight after `where` means answering that question walks onto it, and changing the answer walks
   // back off — no index bookkeeping either way.
   const gearStep: StepId[] = pickedGear != null ? ['gear'] : [];
+  /* A race plan asks a different set of questions, and skips three the strength flow needs: there is no
+     split to choose, the room is wherever they run, and session length is decided by the volume curve
+     rather than by a budget. `race_can_run` only appears for someone whose mileage has not already
+     answered it — asking a 30-mile-a-week runner whether they can run for twenty minutes is the wizard
+     not listening. */
+  const canRunStep: StepId[] = (weeklyMi ?? 99) <= 3 ? ['race_can_run'] : [];
+  const enduranceSteps: StepId[] = [
+    'goal',
+    'race_when',
+    'race_base',
+    ...canRunStep,
+    'race_result',
+    'days',
+    'experience',
+    'limits',
+  ];
+
   const steps: StepId[] =
-    mode === 'program'
+    mode === 'program' && endurance
+      ? enduranceSteps
+      : mode === 'program'
       ? ['goal', 'days', 'style', 'where', ...gearStep, 'time', 'experience', 'limits']
       : focusKind === 'body_parts'
         ? ['focus', 'muscles', 'where', ...gearStep, 'time', 'experience', 'limits']
@@ -195,12 +282,21 @@ export default function CoachScreen() {
             goal: goal!,
             experience: { lifting: experience!, running: experience! },
             daysPerWeek: daysPerWeek!,
-            sessionMinutes: sessionMinutes!,
+            // Not asked on a race plan: a long run is as long as it is, so a stated session budget would
+            // be a question whose answer changes nothing. 60 keeps the field honest for the validator.
+            sessionMinutes: sessionMinutes ?? 60,
             environment,
             ownedEquipment: owned,
             limitations,
             excludeExercises: [],
             splitStyle: style,
+            // Weeks → the ISO date the engine counts back from. Local midnight, so "in 12 weeks" is the
+            // same day of the week they answered on rather than drifting by one in a western timezone.
+            raceDate: raceWeeks != null ? isoInWeeks(raceWeeks) : null,
+            currentWeeklyMi: weeklyMi,
+            canRunContinuously: canRun,
+            recentRaceMi: resultMi,
+            recentRaceSec: parseTime(resultTime),
           },
           PICKER_DB,
           canDoExercise,
@@ -394,6 +490,11 @@ export default function CoachScreen() {
               parts,
               environment,
               pickedGear,
+              raceWeeks,
+              weeklyMi,
+              canRun,
+              resultMi,
+              resultTime,
               sessionMinutes,
               experience,
               limitations,
@@ -411,6 +512,11 @@ export default function CoachScreen() {
               setParts,
               setEnvironment,
               setPickedGear,
+              setRaceWeeks,
+              setWeeklyMi,
+              setCanRun,
+              setResultMi,
+              setResultTime,
               setSessionMinutes,
               setExperience,
               setLimitations,
@@ -487,6 +593,11 @@ interface StepState {
   parts: BodyPart[];
   environment: Environment;
   pickedGear: string[] | null;
+  raceWeeks: number | null;
+  weeklyMi: number | null;
+  canRun: boolean | null;
+  resultMi: number | null;
+  resultTime: string;
   sessionMinutes: SessionMinutes | null;
   experience: Experience | null;
   limitations: Limitation[];
@@ -502,6 +613,11 @@ interface StepSetters {
   setParts: React.Dispatch<React.SetStateAction<BodyPart[]>>;
   setEnvironment: (e: Environment) => void;
   setPickedGear: React.Dispatch<React.SetStateAction<string[] | null>>;
+  setRaceWeeks: (n: number) => void;
+  setWeeklyMi: (n: number) => void;
+  setCanRun: (b: boolean) => void;
+  setResultMi: (n: number | null) => void;
+  setResultTime: (t: string) => void;
   setSessionMinutes: (m: SessionMinutes) => void;
   setExperience: (e: Experience) => void;
   setLimitations: React.Dispatch<React.SetStateAction<Limitation[]>>;
@@ -554,6 +670,93 @@ function Step({
               onPress={() => answer(() => set.setGoal(g))}
             />
           ))}
+        </Question>
+      );
+
+    case 'race_when':
+      return (
+        <Question
+          ask="When's the race?"
+          hint="Roughly is fine. I build the block backwards from it, so this decides everything else."
+        >
+          {RACE_WHEN.map((r) => (
+            <Row
+              key={r.weeks}
+              label={r.label}
+              on={state.raceWeeks === r.weeks}
+              onPress={() => answer(() => set.setRaceWeeks(r.weeks))}
+            />
+          ))}
+        </Question>
+      );
+
+    case 'race_base':
+      return (
+        <Question
+          ask="What are you running in a normal week right now?"
+          hint="Be honest. I'd rather start you lower and get you there than start you where you'd like to be."
+        >
+          {MILEAGE_BANDS.map((b) => (
+            <Row
+              key={b.label}
+              label={b.label}
+              on={state.weeklyMi === b.value}
+              onPress={() => answer(() => set.setWeeklyMi(b.value))}
+            />
+          ))}
+        </Question>
+      );
+
+    case 'race_can_run':
+      return (
+        <Question
+          ask="Can you run for twenty minutes without stopping?"
+          hint="No is a perfectly good answer — it just changes where we start."
+        >
+          <BigOption
+            title="Yes"
+            sub="I can hold a steady twenty minutes."
+            on={state.canRun === true}
+            onPress={() => answer(() => set.setCanRun(true))}
+          />
+          <BigOption
+            title="Not yet"
+            sub="We'll build it with run/walk intervals. It works, and it's how most people start."
+            on={state.canRun === false}
+            onPress={() => answer(() => set.setCanRun(false))}
+          />
+        </Question>
+      );
+
+    case 'race_result':
+      return (
+        <Question
+          ask="Raced recently?"
+          hint="Give me a time from the last month or two and I'll write your actual paces. Skip it and I'll describe the effort instead — I won't guess a number."
+        >
+          <Chips
+            options={RESULT_DISTANCES.map((d) => ({ value: String(d.mi), label: d.label }))}
+            selected={state.resultMi != null ? [String(state.resultMi)] : []}
+            onPress={(v) => set.setResultMi(state.resultMi === Number(v) ? null : Number(v))}
+          />
+          {state.resultMi != null ? (
+            <TextInput
+              value={state.resultTime}
+              onChangeText={set.setResultTime}
+              placeholder="Time — 22:30, or 3:45:00"
+              placeholderTextColor={flColor.gray600}
+              keyboardType="numbers-and-punctuation"
+              style={styles.timeInput}
+              accessibilityLabel="Your time for that race"
+            />
+          ) : null}
+          <View style={styles.cta}>
+            <Button variant="primary" fullWidth onPress={() => answer(() => {})}>
+              {state.resultMi != null && parseTime(state.resultTime) != null
+                ? "That's my time"
+                : 'Skip — describe the effort'}
+            </Button>
+          </View>
         </Question>
       );
 
@@ -1082,6 +1285,16 @@ const styles = StyleSheet.create({
 
   cta: { marginTop: 18 },
 
+  timeInput: {
+    marginTop: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    color: flColor.cream100,
+    fontSize: 16,
+  },
   gearGroup: { gap: 8, marginTop: 6 },
   gearGroupLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.4, color: flColor.gray600 },
 

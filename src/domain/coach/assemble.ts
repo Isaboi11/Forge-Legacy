@@ -61,6 +61,7 @@ import {
   type DaySkeleton,
 } from './rulebook/skeletons.ts';
 import { bandFor, deloadWeeks, GOAL_CATEGORY, type PasCategory } from './rulebook/volume.ts';
+import { assembleEndurance } from './rulebook/endurance.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // RESULT
@@ -319,6 +320,17 @@ export function assemble(
   const refusal = refusalFor(c);
   if (refusal) return { ok: false, refusal };
 
+  /*
+   * ══ THE ONE FAMILY BRANCH ══
+   *
+   * A race plan is built BACKWARDS FROM A DATE and measured in weekly miles; everything below this line
+   * fills a fixed weekly split with exercises. They are two different products, not two settings of one,
+   * and pretending otherwise would mean a skeleton table with a "long run" slot that no movement pattern
+   * can fill. All five endurance goals still run through a single machine of their own — the per-GOAL
+   * differences live in `RACE_SPEC`, which is the promise this engine was built on.
+   */
+  if (isEnduranceGoal(c.goal)) return assembleEnduranceGoal(c, pool);
+
   const requested = skeletonFor(c.goal, c.daysPerWeek, c.splitStyle ?? null);
   if (!requested) {
     return {
@@ -443,6 +455,54 @@ export function assemble(
   };
 
   return { ok: true, assembly: { structure, notes, category, deloadWeeks: deloads, restructured } };
+}
+
+
+/**
+ * Adapt the endurance rulebook to the assembler's result shape.
+ *
+ * Two things happen here that the rulebook cannot do for itself: the static stretches for the cool-down
+ * are pulled from the real catalogue (so the keys are guaranteed to resolve — a cool-down naming an
+ * exercise nobody can open is worse than no cool-down), and "today" is passed in from the clock rather
+ * than read inside a pure module, so the whole thing stays testable against a fixed date.
+ */
+function assembleEnduranceGoal(c: CoachConstraints, pool: readonly CatalogExercise[]): AssembleResult {
+  // Lower-body static stretches, which is what a runner's cool-down wants. Sorted so the same athlete
+  // gets the same plan twice — the determinism the matrix test asserts for every other goal.
+  const stretchKeys = pool
+    .filter((e) => e.modality === 'Mobility' && /stretch/i.test(e.name))
+    .map((e) => e.key)
+    .sort()
+    .slice(0, 6);
+
+  const result = assembleEndurance(c, {
+    todayISO: new Date().toISOString().slice(0, 10),
+    stretchKeys,
+    canRunContinuously: c.canRunContinuously ?? undefined,
+    recentRaceMi: c.recentRaceMi,
+    recentRaceSec: c.recentRaceSec,
+  });
+
+  if (result.refusal) {
+    return {
+      ok: false,
+      // The rulebook's refusals are about time and base rather than equipment, but they arrive through
+      // the same channel so the wizard needs no second code path to show one.
+      refusal: { reason: 'limitation_conflicts_with_goal', message: result.refusal.message },
+    };
+  }
+
+  return {
+    ok: true,
+    assembly: {
+      structure: result.structure,
+      notes: [],
+      category: GOAL_CATEGORY[c.goal as keyof typeof GOAL_CATEGORY] as PasCategory,
+      // Endurance recovery is the step-down week inside the volume curve, not a separate deload table —
+      // PAS-D8 generalised to mileage: keep the frequency, cut the distance.
+      deloadWeeks: result.volume.filter((v) => v.isDeload).map((v) => v.weekIndex),
+    },
+  };
 }
 
 /**

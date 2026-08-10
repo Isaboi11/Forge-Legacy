@@ -239,6 +239,23 @@ export interface CoachConstraints {
   currentWeeklyMi?: number | null;
   /** Explicit weeks, when there is no race to count back from. Ignored when `raceDate` is set. */
   weeks?: number | null;
+  /**
+   * A recent all-out result — distance in miles and time in seconds — used to derive training paces.
+   *
+   * ⚠ **OPTIONAL, AND ITS ABSENCE MUST STAY VISIBLE.** With a result, Holt writes real paces (EPS-D10).
+   * Without one he describes effort and writes NO number, because a guessed pace is indistinguishable
+   * from a derived one on the screen and the athlete would train to it either way.
+   */
+  recentRaceMi?: number | null;
+  recentRaceSec?: number | null;
+  /**
+   * Whether they can currently run for twenty minutes without stopping.
+   *
+   * The one question that decides whether a beginner gets a running plan or a run/walk plan (EPS-D8), and
+   * it cannot be inferred from mileage: 0 miles a week is both "I have never run" and "I used to race and
+   * I have taken three months off", and those two people need completely different first weeks.
+   */
+  canRunContinuously?: boolean | null;
 
   /**
    * How the athlete wants the week carved up. `null` takes the goal's default.

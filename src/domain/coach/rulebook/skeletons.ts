@@ -28,7 +28,7 @@
  * what a longer chest day is.
  */
 
-import type { Goal } from '../constraints.ts';
+import { ENDURANCE_GOALS, type Goal } from '../constraints.ts';
 
 /** A day's plan: what to call it, and which movement patterns it wants, in priority order. */
 export interface DaySkeleton {
@@ -444,8 +444,15 @@ export function firstUnviableDay(
 export const fullBodyFallback = (daysPerWeek: number): DaySkeleton[] | null =>
   STYLE_SPLITS.full_body[daysPerWeek] ?? null;
 
-/** Which goals the coach can currently build. Used by the wizard so it never offers a dead end. */
-export const AUTHORED_GOALS: readonly Goal[] = Object.keys(SPLITS) as Goal[];
+/**
+ * Which goals the coach can currently build. Used by the wizard so it never offers a dead end.
+ *
+ * ⚠ TWO SOURCES, DELIBERATELY. The strength goals are the keys of `SPLITS`, because a goal with no split
+ * table genuinely cannot be built. The endurance goals are NOT in `SPLITS` and never will be — they have
+ * no weekly split at all, they have a volume curve — so they are authored by having a row in `RACE_SPEC`
+ * instead. Reading only `SPLITS` here is what made the assembler refuse every race goal.
+ */
+export const AUTHORED_GOALS: readonly Goal[] = [...(Object.keys(SPLITS) as Goal[]), ...ENDURANCE_GOALS];
 
 export const isAuthored = (goal: Goal): boolean => AUTHORED_GOALS.includes(goal);
 
