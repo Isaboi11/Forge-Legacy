@@ -2,9 +2,9 @@
 
 ## v1.0 | August 2026
 
-**Status:** **DECISIONS TAKEN 2026-08-09** (PO approved all thirteen recommendations) and **ENCODED** in
-`src/domain/coach/rulebook/endurance.ts`. Lock candidate — see §6 for what the build itself turned up,
-including two items that need the PO's eye before this goes LOCKED.
+**Status:** 🔒 **LOCKED 2026-08-09.** All thirteen decisions taken (§1), both build findings confirmed
+(§6.1, §6.2), and every number encoded in `src/domain/coach/rulebook/endurance.ts` with a test behind it.
+**Changes from here are AMENDMENTS, not edits.** See §6 for what the build itself turned up.
 **Purpose:** the rulebook Coach Holt needs to build endurance programs — 5k, 10k, half marathon,
 marathon, and triathlon. Holt used to **refuse** every one of these goals, in terms, because this
 document did not exist. He now builds all five.
@@ -200,7 +200,7 @@ The wizard's current constraint set is missing four inputs. None is hard; all ar
 Six things surfaced while encoding this that no amount of reading would have found. Two of them need the
 PO before this document goes LOCKED.
 
-### 6.1 ⚠ Two locked rules contradict each other, and this is the reading taken
+### 6.1 ✅ CONFIRMED 2026-08-09 — the 10%/week cap governs NEW territory
 
 PAS §11.4 caps weekly mileage growth at **10% week-over-week**. PAS §7.1 mandates **Block
 Periodization**, which "alternates easy and intensity weeks" — a down week, then back to the ramp. Read
@@ -210,10 +210,14 @@ is a +33% week.
 Taken literally, every deload would permanently cost a quarter of the ramp, and a sixteen-week plan with
 three deloads would **end lower than it started**.
 
-**The reading taken:** the cap governs **new territory** — no week may exceed 110% of the highest week
-the athlete has already trained. Returning to a load you have already carried is a return, not an
-increase. `endurance.test.mjs` asserts exactly this, and names itself as the place the decision changes
-if the PO reads it the other way. **This is an interpretation of a locked rule and wants a nod.**
+**The reading, now the decision:** the cap governs **new territory** — no week may exceed 110% of the
+highest week the athlete has already trained. Returning to a load you have already carried is a return,
+not an increase.
+
+**✅ PO confirmed 2026-08-09.** This is an interpretation of a LOCKED rule (PAS §11.4) and is recorded as
+one — **PAS itself is not amended.** A future reader who finds the two rules in conflict is pointed here
+rather than left to pick between them. `endurance.test.mjs` asserts it and names itself as the place it
+changes if the reading is ever revisited.
 
 ### 6.2 ✅ CONFIRMED 2026-08-09 — the marathon entry threshold is 15 mi/week
 
@@ -287,7 +291,7 @@ telling someone how fast to run the thing it spent seventeen weeks preparing the
    plan lands on the race date, every refusal carries an alternative, and **no pace is ever invented**.
 5. ✅ Plans read as a coach would read them, across all five goals and a range of starting bases. Two
    defects were found that way and only that way — §6.2 and §6.5.
-6. ✅ **§6.2 confirmed 2026-08-09** (marathon entry 15 mi/week). ⏳ **§6.1 still open** — the reading that resolves PAS §11.4’s 10%/week cap against PAS §7.1’s deload weeks. Then DRAFT → LOCKED.
+6. ✅ **§6.1 and §6.2 both confirmed 2026-08-09.** 🔒 **This standard is LOCKED.**
 
 **Still open, deliberately:** cycling as a standalone goal · heart-rate zones (the app reads no heart
 rate, and a zone nobody can measure is a description rather than a prescription) · strength work
