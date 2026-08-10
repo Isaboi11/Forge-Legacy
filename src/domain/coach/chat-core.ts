@@ -32,7 +32,7 @@ import {
   type Limitation,
 } from './constraints.ts';
 import { AUTHORED_GOALS } from './rulebook/skeletons.ts';
-import { RACE_SPEC } from './rulebook/endurance.ts';
+import { RACE_SPEC, weeklyVolumePlan } from './rulebook/endurance.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // THE THREAD
@@ -537,3 +537,57 @@ const shortDate = (iso: string): string => {
   return Number.isNaN(d.getTime()) ? '' : `${d.toLocaleString('en-US', { month: 'short' })} ${d.getDate()}`;
 };
 const capitalise = (t: string) => t.replace(/^./, (ch) => ch.toUpperCase());
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// THE BUILD PATH
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/*
+ * ⚠ **THESE THREE LIVED INSIDE `CoachChatSheet.tsx` AND SO WERE NEVER TESTED.**
+ *
+ * They are pure functions doing real work — filling constraint gaps, computing a volume curve, counting
+ * weeks to a race — and every one of them sits on the path between "athlete taps a chip" and "a program
+ * appears". Being defined in a component file meant no test could reach them, and a throw in any of them
+ * froze the sheet outright rather than surfacing.
+ *
+ * A component may render the build path. It should not BE the build path.
+ */
+
+/** The weekly mileage curve behind an endurance card. Empty for everything else, which is not a failure. */
+export function volumeFor(c: CoachConstraints, weeks: number): { mileage: number; longRunMi: number }[] {
+  if (!isEnduranceGoal(c.goal)) return [];
+  return weeklyVolumePlan({ goal: c.goal, weeks, startMi: c.currentWeeklyMi ?? 0 }).map((v) => ({
+    mileage: v.mileage,
+    longRunMi: v.longRunMi,
+  }));
+}
+
+/**
+ * Whole weeks between `now` and the race, for the counter-offer's meta line.
+ *
+ * `now` is injected rather than read, so a test can assert the arithmetic instead of asserting against
+ * whatever today happens to be.
+ */
+export function weeksBetween(raceDate?: string | null, now: number = Date.now()): number {
+  if (!raceDate) return 0;
+  const ms = Date.parse(raceDate) - now;
+  return Number.isNaN(ms) ? 0 : Math.max(0, Math.floor(ms / (7 * 24 * 3600 * 1000)));
+}
+
+/** Fill the fields the chat never asks, so `assemble` gets the shape it expects. */
+export function completeFor(c: Partial<CoachConstraints>, mode: 'program' | 'day'): CoachConstraints {
+  return {
+    goal: c.goal ?? 'strength',
+    experience: c.experience ?? { lifting: 'intermediate', running: 'intermediate' },
+    daysPerWeek: c.daysPerWeek ?? 4,
+    // A race never asks this — a long run is as long as it is. 60 keeps the validator honest.
+    sessionMinutes: c.sessionMinutes ?? 60,
+    environment: c.environment ?? (mode === 'program' && c.goal && isEnduranceGoal(c.goal) ? 'outdoor' : 'full_gym'),
+    ownedEquipment: c.ownedEquipment ?? [],
+    limitations: c.limitations ?? [],
+    excludeExercises: [],
+    raceDate: c.raceDate ?? null,
+    currentWeeklyMi: c.currentWeeklyMi ?? null,
+    canRunContinuously: c.canRunContinuously ?? null,
+  };
+}

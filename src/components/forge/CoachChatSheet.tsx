@@ -18,6 +18,7 @@ import {
   STOP_KICKER,
   WALL,
   dayCardFor,
+  completeFor,
   fromOpener,
   interpret,
   isMedical,
@@ -26,6 +27,8 @@ import {
   programCardFor,
   readyToBuild,
   refusalCardFor,
+  volumeFor,
+  weeksBetween,
   type Chip,
   type DayCard,
   type EditCard,
@@ -33,8 +36,7 @@ import {
   type RefusalCard,
   type Turn,
 } from '@/domain/coach/chat-core';
-import { isEnduranceGoal, type CoachConstraints } from '@/domain/coach/constraints';
-import { weeklyVolumePlan } from '@/domain/coach/rulebook/endurance';
+import { type CoachConstraints } from '@/domain/coach/constraints';
 import { rationaleFor } from '@/domain/coach/rulebook/rationale';
 import { buildDayWorkout } from '@/domain/coach/day';
 import { PICKER_DB } from '@/domain/exercise-picker/data';
@@ -197,76 +199,103 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
       const merged = { ...next };
       setConstraints(merged);
 
-      if (!readyToBuild(merged)) {
-        // Thinking is a real state and short. It exists so the next question does not appear the instant
-        // you tap — a coach who answers before you have finished is not listening, he is waiting.
-        setBusy('thinking');
-        await pause(420);
-        setBusy(null);
-        const q = nextQuestion(merged);
-        if (q) say({ kind: 'holt', text: q.ask }, { kind: 'chips', chips: q.chips });
-        return;
-      }
-
-      setBusy('building');
-      await pause(650);
-      const c = completeFor(merged, mode_);
-
-      if (mode_ === 'day') {
-        const r = buildDayWorkout(
-          { focus: { kind: 'split', split: 'full_body' }, sessionMinutes: c.sessionMinutes, experience: c.experience.lifting, environment: c.environment, ownedEquipment: c.ownedEquipment, limitations: c.limitations },
-          PICKER_DB,
-          canDoExercise,
-        );
-        setBusy(null);
-        if (r.day.main.length === 0) {
-          say({
-            kind: 'holt',
-            text: "There isn't enough here for me to build you a session. Tell me what you've got and I'll work with it.",
-          });
+      try {
+        if (!readyToBuild(merged)) {
+          // Thinking is a real state and short. It exists so the next question does not appear the instant
+          // you tap — a coach who answers before you have finished is not listening, he is waiting.
+          setBusy('thinking');
+          await pause(420);
+          setBusy(null);
+          const q = nextQuestion(merged);
+          if (q) say({ kind: 'holt', text: q.ask }, { kind: 'chips', chips: q.chips });
           return;
         }
-        /* The wizard's own handoff, not a second one. A single day goes to the WORKOUT builder and a
-           block goes to the PROGRAM builder — two different review screens, and the chat has no business
-           inventing a third route to either. */
-        await saveWorkoutDraft({ name: r.day.name, warmup: r.day.warmup, main: r.day.main, cooldown: r.day.cooldown, editId: null });
-        setBuilt({ kind: 'day' });
-        const dayCard = dayCardFor(merged, r.day);
-        setLastCard({ day: dayCard });
-        say({ kind: 'holt', text: DAY_PREAMBLE }, { kind: 'day', card: dayCard });
-        return;
+
+        setBusy('building');
+        await pause(650);
+        const c = completeFor(merged, mode_);
+
+        if (mode_ === 'day') {
+          const r = buildDayWorkout(
+            { focus: { kind: 'split', split: 'full_body' }, sessionMinutes: c.sessionMinutes, experience: c.experience.lifting, environment: c.environment, ownedEquipment: c.ownedEquipment, limitations: c.limitations },
+            PICKER_DB,
+            canDoExercise,
+          );
+          setBusy(null);
+          if (r.day.main.length === 0) {
+            say({
+              kind: 'holt',
+              text: "There isn't enough here for me to build you a session. Tell me what you've got and I'll work with it.",
+            });
+            return;
+          }
+          /* The wizard's own handoff, not a second one. A single day goes to the WORKOUT builder and a
+             block goes to the PROGRAM builder — two different review screens, and the chat has no business
+             inventing a third route to either. */
+          await saveWorkoutDraft({ name: r.day.name, warmup: r.day.warmup, main: r.day.main, cooldown: r.day.cooldown, editId: null });
+          setBuilt({ kind: 'day' });
+          const dayCard = dayCardFor(merged, r.day);
+          setLastCard({ day: dayCard });
+          say({ kind: 'holt', text: DAY_PREAMBLE }, { kind: 'day', card: dayCard });
+          return;
+        }
+
+        const res = assemble(c, PICKER_DB, canDoExercise);
+        setBusy(null);
+
+        if (!res.ok) {
+          /* ⚠ A REFUSAL IS NOT AN ERROR AND MUST NOT LOOK LIKE ONE. Holt says the no in his own voice, and
+             the counter-offer follows as a CARD — the alternative becomes a thing with a button rather
+             than a sentence the athlete has to act on themselves. */
+          const weeks = weeksBetween(c.raceDate);
+          const card = refusalCardFor(c.goal, weeks, c.daysPerWeek, res.refusal.message);
+          say({ kind: 'holt', text: res.refusal.message });
+          if (card) say({ kind: 'refusal', card });
+          return;
+        }
+
+        const structure = res.assembly.structure;
+        await saveProgramDraft(draftFromStructure(structure));
+        setBuilt({ kind: 'program' });
+        const volume = volumeFor(c, structure.weeks);
+        const reason = rationaleFor({
+          goal: c.goal,
+          daysPerWeek: c.daysPerWeek,
+          sessionMinutes: c.sessionMinutes,
+          weeks: structure.weeks,
+          splitStyle: c.splitStyle ?? null,
+          deloadWeeks: res.assembly.deloadWeeks,
+          restructuredBecause: res.assembly.restructured?.because,
+        });
+        const programCard = programCardFor(c, structure, volume, reason);
+        setLastCard({ program: programCard });
+        say({ kind: 'holt', text: preamble(c, structure.weeks) }, { kind: 'program', card: programCard });
+      } catch (e) {
+        /*
+         * ⚠ **THE SHEET FREEZING WAS THIS, AND THE FAILURE CARD BELOW HAD NO CALLER.**
+         *
+         * `busy` disables the composer — that is the point of it, you cannot answer a question Holt
+         * has not finished asking. But it was cleared only on the happy paths, so ONE throw anywhere
+         * in assembly left it set forever: the typing bubble pulsing, the input dead, no error, no
+         * way out but to kill the app. A stall with no explanation, which is exactly what was
+         * reported.
+         *
+         * The `error` turn has existed since the first version of this sheet and was rendered by
+         * nothing — the failure state was designed, styled, and unreachable. Same write-only shape
+         * this repo has shipped before, in the direction that hurts more: the UI was there and the
+         * path to it was not.
+         */
+        say({
+          kind: 'error',
+          text: 'That one broke on my end.',
+          sub: e instanceof Error ? e.message : String(e),
+          action: 'Tell me again and I’ll have another go.',
+        });
+      } finally {
+        /* ⚠ THE ONLY PLACE `busy` IS GUARANTEED TO CLEAR. Every early return above passes through
+           here, so a path added later cannot reintroduce the freeze by forgetting to reset it. */
+        setBusy(null);
       }
-
-      const res = assemble(c, PICKER_DB, canDoExercise);
-      setBusy(null);
-
-      if (!res.ok) {
-        /* ⚠ A REFUSAL IS NOT AN ERROR AND MUST NOT LOOK LIKE ONE. Holt says the no in his own voice, and
-           the counter-offer follows as a CARD — the alternative becomes a thing with a button rather
-           than a sentence the athlete has to act on themselves. */
-        const weeks = weeksBetween(c.raceDate);
-        const card = refusalCardFor(c.goal, weeks, c.daysPerWeek, res.refusal.message);
-        say({ kind: 'holt', text: res.refusal.message });
-        if (card) say({ kind: 'refusal', card });
-        return;
-      }
-
-      const structure = res.assembly.structure;
-      await saveProgramDraft(draftFromStructure(structure));
-      setBuilt({ kind: 'program' });
-      const volume = volumeFor(c, structure.weeks);
-      const reason = rationaleFor({
-        goal: c.goal,
-        daysPerWeek: c.daysPerWeek,
-        sessionMinutes: c.sessionMinutes,
-        weeks: structure.weeks,
-        splitStyle: c.splitStyle ?? null,
-        deloadWeeks: res.assembly.deloadWeeks,
-        restructuredBecause: res.assembly.restructured?.because,
-      });
-      const programCard = programCardFor(c, structure, volume, reason);
-      setLastCard({ program: programCard });
-      say({ kind: 'holt', text: preamble(c, structure.weeks) }, { kind: 'program', card: programCard });
     },
     [say],
   );
@@ -281,9 +310,30 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
    */
   const askedAboutReplacing = useRef(false);
 
+  /** Long enough for a slow connection, short enough that it never reads as a hang. */
+  const ACTIVE_LOOKUP_TIMEOUT_MS = 4000;
+
   const guardActiveProgram = useCallback(async (): Promise<boolean> => {
     if (askedAboutReplacing.current) return true;
-    const active = await fetchActiveProgram().catch(() => null);
+    /*
+     * ⚠ **A SILENT AWAIT IS A STALL, WHICH IS WHAT THIS LOOKED LIKE.** The athlete taps "Build me a
+     * program", their own line appears, and then nothing happens at all while this round-trip runs —
+     * no bubble, no dimmed composer, no sign anybody heard them. On a phone with one bar that is
+     * indistinguishable from a frozen app, so the wait is SHOWN.
+     */
+    setBusy('thinking');
+    /*
+     * And it is BOUNDED. `fetchActiveProgram` already fell back to "no active program" when it threw;
+     * a socket that hangs open is the same unknown arriving more slowly, and waiting forever on it is
+     * strictly worse than assuming. Safe to assume, because nothing is created here — `advance` writes
+     * a DRAFT and hands off to the Program Builder, where starting a block is a deliberate act and the
+     * one-active-program invariant is enforced for real.
+     */
+    const active = await Promise.race([
+      fetchActiveProgram().catch(() => null),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), ACTIVE_LOOKUP_TIMEOUT_MS)),
+    ]);
+    setBusy(null);
     if (!active) return true;
     askedAboutReplacing.current = true;
     say(
@@ -473,28 +523,42 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
             field bronze and forges the send button, busy dims the whole bar and renames the placeholder
             so it is obvious nothing was lost. Hidden while previewing: that screen is for reading, and a
             composer under it would invite a reply to something that is not a question. */}
+        {/*
+          * ⚠ **DIMMED, NOT DISABLED — AND IT WAS DISABLED.** §12.7 is explicit that a message sent while
+          * Holt is working is HELD rather than refused, and the comment on `queued` above quotes it. The
+          * input said otherwise: `editable={!busy}` with the send button disabled alongside it.
+          *
+          * Two consequences, and the second is the one the PO felt. It made `queued` DEAD CODE — nothing
+          * can ever be typed while busy, so nothing can ever be queued, so the hold-and-drain machinery
+          * ran zero times. And it made a working app indistinguishable from a broken one: while Holt
+          * thinks, tapping the box raised no keyboard and the send arrow did nothing. There is no way to
+          * tell that apart from frozen, because from the athlete's side it IS frozen — the app has
+          * stopped accepting input and has not said why.
+          *
+          * So the composer stays live. `send()` queues when busy and the drain effect plays it back the
+          * moment he finishes.
+          */}
         {preview ? null : (
         <View style={[styles.composer, busy ? styles.composerBusy : null]}>
           <TextInput
             value={draft}
             onChangeText={setDraft}
-            placeholder={busy ? 'Holt is working' : 'Tap an answer, or type it'}
+            placeholder={busy ? 'Holt is working — go ahead, he’ll get it' : 'Tap an answer, or type it'}
             placeholderTextColor={flColor.gray600}
             style={[styles.input, draft.trim() ? styles.inputTyping : null]}
             multiline
             maxLength={280}
-            editable={!busy}
             onSubmitEditing={send}
             accessibilityLabel="Message Holt"
           />
           <Pressable
             onPress={send}
-            disabled={!draft.trim() || !!busy}
+            disabled={!draft.trim()}
             accessibilityRole="button"
             accessibilityLabel="Send"
             style={styles.sendWrap}
           >
-            {draft.trim() && !busy ? (
+            {draft.trim() ? (
               <LinearGradient
                 colors={flGradient.bronzeFill.colors}
                 locations={flGradient.bronzeFill.locations}
@@ -580,14 +644,6 @@ function SendGlyph({ color }: { color: string }) {
  * A strength block gets an empty array on purpose: its weekly shape is flat by design, and drawing a
  * ribbon of identical bars would be inventing a curve to look like the running one.
  */
-function volumeFor(c: CoachConstraints, weeks: number): { mileage: number; longRunMi: number }[] {
-  if (!isEnduranceGoal(c.goal)) return [];
-  return weeklyVolumePlan({ goal: c.goal, weeks, startMi: c.currentWeeklyMi ?? 0 }).map((v) => ({
-    mileage: v.mileage,
-    longRunMi: v.longRunMi,
-  }));
-}
-
 /*
  * ⚠ THE REASON PARAGRAPH IS NOT WRITTEN HERE. §11.1.10: "Sourced from the rulebook's recorded reasons —
  * the engine knows why it did what it did. Never write this string by hand."
@@ -597,31 +653,6 @@ function volumeFor(c: CoachConstraints, weeks: number): { mileage: number; longR
  * emphasis and the real deload weeks. Two sources for the same sentence is how the card ends up
  * explaining a plan the engine did not build.
  */
-
-/** Whole weeks between now and the race, for the counter-offer's meta line. */
-function weeksBetween(raceDate?: string | null): number {
-  if (!raceDate) return 0;
-  const ms = Date.parse(raceDate) - Date.now();
-  return Number.isNaN(ms) ? 0 : Math.max(0, Math.floor(ms / (7 * 24 * 3600 * 1000)));
-}
-
-/** Fill the fields the chat never asks, so `assemble` gets the shape it expects. */
-function completeFor(c: Partial<CoachConstraints>, mode: 'program' | 'day'): CoachConstraints {
-  return {
-    goal: c.goal ?? 'strength',
-    experience: c.experience ?? { lifting: 'intermediate', running: 'intermediate' },
-    daysPerWeek: c.daysPerWeek ?? 4,
-    // A race never asks this — a long run is as long as it is. 60 keeps the validator honest.
-    sessionMinutes: c.sessionMinutes ?? 60,
-    environment: c.environment ?? (mode === 'program' && c.goal && isEnduranceGoal(c.goal) ? 'outdoor' : 'full_gym'),
-    ownedEquipment: c.ownedEquipment ?? [],
-    limitations: c.limitations ?? [],
-    excludeExercises: [],
-    raceDate: c.raceDate ?? null,
-    currentWeeklyMi: c.currentWeeklyMi ?? null,
-    canRunContinuously: c.canRunContinuously ?? null,
-  };
-}
 
 
 /** The two waits. Building names its steps, because a spinner would waste the moment. */
