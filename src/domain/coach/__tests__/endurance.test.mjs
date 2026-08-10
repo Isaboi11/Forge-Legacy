@@ -309,6 +309,29 @@ test('every refusal names something the athlete can do instead', () => {
   }
 });
 
+test('the marathon door is 15 miles a week, and that is a decision', () => {
+  /*
+   * §6.2, PO-confirmed 2026-08-09. It was 10, and a 12 mi/week athlete passed the gate and got a block
+   * peaking at a 12.4-mile long run — safe, well-formed, and not marathon preparation. The spike cap was
+   * right; the door was too wide.
+   *
+   * This asserts the DECISION, not the arithmetic. Lowering it again means coming back to the standard
+   * and saying what changed about the spike cap that made a lower door safe.
+   */
+  assert.equal(RACE_SPEC.run_marathon.minBaseMi, 15);
+  assert.equal(RACE_SPEC.run_half.minBaseMi, 8);
+
+  const under = enduranceRefusalFor('run_marathon', { weeksAvailable: 16, currentWeeklyMi: 12, canRunContinuously: true });
+  assert.ok(under, '12 mi/week must not open a marathon block');
+  assert.match(under.message, /half marathon/i, 'and it must offer the race they can actually train for');
+
+  assert.equal(
+    enduranceRefusalFor('run_marathon', { weeksAvailable: 16, currentWeeklyMi: 15, canRunContinuously: true }),
+    null,
+    '15 is the door, not the floor above it',
+  );
+});
+
 test('a plan that has the time and the base is not refused', () => {
   assert.equal(enduranceRefusalFor('run_marathon', { weeksAvailable: 16, currentWeeklyMi: 20, canRunContinuously: true }), null);
   assert.equal(enduranceRefusalFor('run_5k', { weeksAvailable: 8, currentWeeklyMi: 0, canRunContinuously: false }), null);

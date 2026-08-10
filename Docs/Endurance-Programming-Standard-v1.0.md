@@ -146,7 +146,7 @@ Locked constraints that apply to every one of them:
 | **5k** | 8 weeks | none — run/walk entry (EPS-D8) | < 6 weeks out |
 | **10k** | 8 weeks | can run ~20 min continuously | < 6 weeks, or cannot yet run continuously *(offer the 5k build first)* |
 | **Half marathon** | 12 weeks | ~10 mi/week, consistent | < 10 weeks, or base < 6 mi/week |
-| **Marathon** | 16 weeks | 15–20 mi/week, consistent and uninjured | < 12 weeks, or base < 10 mi/week |
+| **Marathon** | 16 weeks | 15–20 mi/week, consistent and uninjured | < 12 weeks, or base **< 15 mi/week** (§6.2, PO-confirmed) |
 | **Sprint triathlon** | 12 weeks | swim ~800 m with rests · ride 30 min · run 15 min | any discipline unreachable *(no pool, no bike)* |
 | **Olympic triathlon** | 16 weeks | swim 800 m continuous · ride 60 min · run 30 min | as above, or < 12 weeks |
 | **Ironman / full** | 24 weeks | a completed Olympic-distance race, or equivalent base | < 20 weeks, or no long-course base |
@@ -215,7 +215,7 @@ the athlete has already trained. Returning to a load you have already carried is
 increase. `endurance.test.mjs` asserts exactly this, and names itself as the place the decision changes
 if the PO reads it the other way. **This is an interpretation of a locked rule and wants a nod.**
 
-### 6.2 ⚠ The marathon entry threshold had to be raised, after reading the plans
+### 6.2 ✅ CONFIRMED 2026-08-09 — the marathon entry threshold is 15 mi/week
 
 I set the marathon's minimum base at 10 mi/week. A 12 mi/week athlete with 16 weeks passed that gate and
 got a block whose **longest run reached 12.4 miles** — because the spike cap (correctly) will not take a
@@ -224,7 +224,12 @@ preparation**.
 
 The cap was right; the door was too wide. **Raised to 15 mi/week** (half marathon: 6 → 8), which is what
 the research assumes a 12–16 week marathon block starts from. Someone below it is now offered the half —
-which is their real race. **This changes §2.3 from what was approved and should be confirmed.**
+which is their real race.
+
+**✅ PO confirmed 2026-08-09.** This supersedes the 10 mi/week figure in §2.3, which was mine rather than
+a decision, and it is now the decision. Encoded as `RACE_SPEC.run_marathon.minBaseMi` with the reasoning
+beside it, and asserted by a test — so raising or lowering it again means coming back here and saying
+what changed about the spike cap that made a lower door safe.
 
 ### 6.3 The `notes` field the PAS specifies does not exist
 
@@ -282,7 +287,7 @@ telling someone how fast to run the thing it spent seventeen weeks preparing the
    plan lands on the race date, every refusal carries an alternative, and **no pace is ever invented**.
 5. ✅ Plans read as a coach would read them, across all five goals and a range of starting bases. Two
    defects were found that way and only that way — §6.2 and §6.5.
-6. ⏳ **Confirm §6.1 and §6.2**, then this goes DRAFT → LOCKED.
+6. ✅ **§6.2 confirmed 2026-08-09** (marathon entry 15 mi/week). ⏳ **§6.1 still open** — the reading that resolves PAS §11.4’s 10%/week cap against PAS §7.1’s deload weeks. Then DRAFT → LOCKED.
 
 **Still open, deliberately:** cycling as a standalone goal · heart-rate zones (the app reads no heart
 rate, and a zone nobody can measure is a description rather than a prescription) · strength work
