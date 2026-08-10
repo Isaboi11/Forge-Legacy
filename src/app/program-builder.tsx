@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { ScreenBoundary } from '@/components/screen-boundary';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path } from 'react-native-svg';
 
@@ -179,7 +180,27 @@ function useEntryRise(duration: number) {
   };
 }
 
-export default function ProgramBuilderScreen() {
+/**
+ * ⚠ WRAPPED, BECAUSE A CRASH HERE TOOK THE ERROR MESSAGE WITH IT.
+ *
+ * Reported 2026-08-09: "clicking edit on a program crashes the app." Every Forge program and a
+ * coach-built plan were run through this screen's exact hydrate path and all of them come through clean,
+ * so the failure is in rendering — which cannot be reproduced off the device. A crash that kills the app
+ * also destroys the one thing that would identify it.
+ *
+ * The boundary does not hide the failure; it prints it, on screen, selectable. Next time it happens there
+ * is something to read.
+ */
+export default function ProgramBuilder() {
+  const router = useRouter();
+  return (
+    <ScreenBoundary name="The program builder" onBack={() => router.back()}>
+      <ProgramBuilderScreen />
+    </ScreenBoundary>
+  );
+}
+
+function ProgramBuilderScreen() {
   const { showToast } = useToast();
   const router = useRouter();
   const { profile } = useProfile();

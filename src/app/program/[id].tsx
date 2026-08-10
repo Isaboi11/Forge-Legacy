@@ -867,7 +867,22 @@ export default function ProgramDetailScreen() {
                 — so without this guard a preview pushed the builder with `id: undefined`. ── */}
         {program ? (
           <View style={styles.ctaRow}>
-            {state === 'future' ? (
+            {/*
+              ── YOU CANNOT EDIT A FORGE PROGRAM, FOR THE SAME REASON YOU CANNOT DELETE ONE ──
+
+              What the athlete holds is a COPY of something Forge authored, and it keeps Forge's name at
+              the top of the screen. Editing it in place would let it drift — a session swapped here, a
+              week shortened there — while still presenting itself as the program we wrote and stand
+              behind. That is the provenance problem `project_third_party_program_provenance` describes
+              in the other direction: a plan must not carry an author's name over content they did not
+              author. "Tweak it a little" is not a category here either.
+
+              Duplicate is the honest route and it is already right there. The copy has no
+              `sourceDefinitionId`, so it is the athlete's, and they can change every session in it.
+
+              W-5 Decision 1 still governs the other axis: Edit is FUTURE-state only, never active.
+            */}
+            {state === 'future' && !isForgeProgram ? (
               <View style={styles.ctaHalf}>
                 <Button
                   variant="secondary"
@@ -890,6 +905,13 @@ export default function ProgramDetailScreen() {
               </Button>
             </View>
           </View>
+        ) : null}
+        {/* Said, not silently omitted — same courtesy the active case gets below. */}
+        {state === 'future' && isForgeProgram ? (
+          <Text style={styles.editNote}>
+            This is a Forge program, so it stays as we wrote it. Duplicate it and the copy is yours to
+            change however you like.
+          </Text>
         ) : null}
         {/* Said, not silently omitted: an athlete who could edit this yesterday deserves the reason. */}
         {state === 'active' ? (

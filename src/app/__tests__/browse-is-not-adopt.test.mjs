@@ -119,7 +119,12 @@ test('a preview is never handed to a screen that needs a real program id', () =>
   for (const marker of ["o: 'edit'", "o: 'dup'", "'/send-program'", 'programId={']) {
     const i = src.indexOf(marker);
     if (i < 0) continue;
-    const window = src.slice(Math.max(0, i - 1200), i);
+    /* ⚠ A PROXIMITY HEURISTIC, and it needs saying. This looks BACKWARDS from the marker for the guard
+       that encloses it, so the window has to be wide enough to clear whatever commentary sits between
+       them. It was 1200 and broke on a comment — Edit gained a paragraph explaining why a Forge program
+       cannot be edited, and the guard slid out of range while still being right there in the source.
+       Widened rather than made exact: parsing JSX to prove enclosure would be a worse test than this. */
+    const window = src.slice(Math.max(0, i - 3000), i);
     assert.ok(
       // A conditional render is the STRONGEST of the three and was not originally listed: `program!.`
       // is a type assertion that compiles away, so it proves the author's intent and nothing about

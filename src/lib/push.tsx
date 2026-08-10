@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef} from 'react';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
@@ -8,6 +8,8 @@ import { useRouter } from 'expo-router';
 import { registerPushToken } from '@/data/push-live';
 import { destinationFor, type NotificationTarget } from '@/domain/notifications/destination';
 import { useAuth } from '@/lib/auth';
+import { useProfile } from '@/lib/profile';
+import { routeFor } from '@/lib/route-for';
 
 /**
  * Push registration and tap-through (migration 0120).
@@ -103,9 +105,35 @@ function targetFrom(data: unknown): NotificationTarget | null {
  * rather than refusing it. A shared phone must never deliver one athlete's notifications to another.
  */
 export function PushProvider({ children }: { children: React.ReactNode }) {
-  const { session } = useAuth();
+  const { session, loading: authLoading } = useAuth();
+  const { profile, loading: profileLoading } = useProfile();
   const router = useRouter();
   const userId = session?.user?.id ?? null;
+
+  /*
+   * ══ WHERE THE TAP-THROUGH USED TO BREAK ══
+   *
+   * The same decision the navigator makes. `RootNavigator` returns `BootLoading` — declaring NO screens —
+   * until this resolves to 'app', and a screen in this app is reachable only by being DECLARED
+   * (`route-guard.test.mjs`). Navigating before then targets a route that is not in the tree.
+   *
+   * The old code fired the moment a SESSION existed, which is strictly earlier: the profile read is still
+   * in flight. On a cold start from a notification that is exactly the window you land in, so tapping a
+   * push reliably failed while tapping the same row in the inbox — by which time the app had long since
+   * booted — worked perfectly. That asymmetry is why it read as "push is broken" rather than "navigation
+   * is early".
+   */
+  const route = routeFor({
+    authLoading,
+    hasSession: !!session,
+    profileLoading,
+    onboardedAt: profile?.onboardedAt,
+  });
+  const ready = route === 'app';
+
+  /* A tap that arrived before the tree did. Held, not dropped — the athlete tapped it deliberately, and
+     silently landing them on Home instead is the app deciding their tap did not count. */
+  const pending = useRef<NotificationTarget | null>(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -127,7 +155,12 @@ export function PushProvider({ children }: { children: React.ReactNode }) {
 
     const go = (response: Notifications.NotificationResponse | null) => {
       const target = targetFrom(response?.notification.request.content.data);
-      if (target) router.push(destinationFor(target));
+      if (!target) return;
+      if (!ready) {
+        pending.current = target;
+        return;
+      }
+      router.push(destinationFor(target));
     };
 
     // A tap that launched the app cold is not delivered to the listener — it is waiting here instead.
@@ -141,7 +174,17 @@ export function PushProvider({ children }: { children: React.ReactNode }) {
       cancelled = true;
       sub.remove();
     };
-  }, [router, userId]);
+  }, [router, userId, ready]);
+
+  /* And the held tap, once the tree is real. Cleared before navigating so a re-render cannot fire it
+     twice and stack the same screen on itself. */
+  useEffect(() => {
+    if (!ready) return;
+    const target = pending.current;
+    if (!target) return;
+    pending.current = null;
+    router.push(destinationFor(target));
+  }, [ready, router]);
 
   return <>{children}</>;
 }

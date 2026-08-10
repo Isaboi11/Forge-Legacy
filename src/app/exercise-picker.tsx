@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
 
@@ -175,6 +175,21 @@ export default function ExercisePickerScreen() {
   });
   const hasFilters = filtersActive(applied);
 
+/**
+ * Choosing an exercise puts the keyboard away.
+ *
+ * ⚠ TYPING AND CHOOSING ARE TWO DIFFERENT MOVES and the keyboard used to survive both. You search, the
+ * list narrows, you tap what you were looking for — and half the screen is still keyboard, hiding the
+ * list you are now trying to read and the Confirm button you are trying to reach. The search field is
+ * right there to bring it back, which is what makes dismissing it safe rather than presumptuous.
+ *
+ * On the tap, not on Confirm: by Confirm the screen is already closing and it would have made no
+ * difference to anything.
+ */
+  const choose = (fn: () => void) => {
+    Keyboard.dismiss();
+    fn();
+  };
   const togglePicked = (key: string) => setPicked((p) => (p.includes(key) ? p.filter((k) => k !== key) : [...p, key]));
   const toggleDraft = <K extends keyof PickerFilters>(group: K, v: string) =>
     setDraft((d) => {
@@ -268,7 +283,7 @@ export default function ExercisePickerScreen() {
     return (
       <Pressable
         key={x.key}
-        onPress={() => (isReplace ? setSelected(x.key) : togglePicked(x.key))}
+        onPress={() => choose(() => (isReplace ? setSelected(x.key) : togglePicked(x.key)))}
         onLongPress={() => toggleFavorite(x.key)}
         delayLongPress={350}
         accessibilityRole="button"
