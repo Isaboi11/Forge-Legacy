@@ -39,6 +39,7 @@ export type VoiceKey =
   | 'ack'
   | 'ask_goal'
   | 'ask_day_focus'
+  | 'ask_day_goal'
   | 'ask_race_distance'
   | 'ask_race_when'
   | 'ask_race_base'
@@ -117,6 +118,13 @@ export const VOICE: Record<VoiceKey, readonly string[]> = {
     'What do you want to hit?',
     "What are we working today?",
     'Pick what today is for.',
+  ],
+  ask_day_goal: [
+    "And what's this one for?",
+    'What are you after out of it?',
+    "What's the point of the session — heavy, or volume?",
+    'What are we chasing today?',
+    'What do you want out of it?',
   ],
   ask_race_distance: [
     'Which one?',

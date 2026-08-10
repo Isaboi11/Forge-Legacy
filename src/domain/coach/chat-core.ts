@@ -326,6 +326,21 @@ function nextDayQuestion(c: ChatState): Question | null {
       chips: FOCUS_CHIPS.map(([label, dayFocus]) => ({ label, patch: { dayFocus } })),
     };
   }
+  /*
+   * ⚠ **ASKED FOR A SINGLE DAY TOO, AND IT WAS NOT.** The same back-and-biceps session is 5 × 5 heavy
+   * under a strength goal and 3 × 12 under a hypertrophy one — a different workout, not a variation of
+   * one. It also decides the coaching cue, which is why a one-off session used to carry none.
+   *
+   * ⚠ NO RACES HERE. A marathon is a block, not a Tuesday, and the focus chips above are all lifting —
+   * offering "run a race" as the purpose of one back-and-biceps session would be nonsense.
+   */
+  if (c.goal == null) {
+    return {
+      id: 'goal',
+      ask: pick('ask_day_goal'),
+      chips: STRENGTH_GOALS.filter((g) => AUTHORED_GOALS.includes(g)).map((g) => chip(GOAL_LABEL[g], { goal: g })),
+    };
+  }
   if (c.sessionMinutes == null) {
     return {
       id: 'time',

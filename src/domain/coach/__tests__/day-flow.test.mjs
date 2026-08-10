@@ -25,6 +25,7 @@ import { buildPickerDb } from '../../exercise-picker/catalog-core.ts';
 import { canDoExercise } from '../../home-gym/equipment.ts';
 import { buildDayWorkout, BODY_PART_MUSCLES } from '../day.ts';
 import { nextQuestion, readyToBuild } from '../chat-core.ts';
+import { ENDURANCE_GOALS } from '../constraints.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const src = (f) => JSON.parse(readFileSync(path.join(here, '../../exercise-relationships/source', f), 'utf8'));
@@ -58,16 +59,34 @@ test('⚠ the first thing it asks is what the session is for', () => {
   assert.equal(q.id, 'day_focus');
 });
 
-test('⚠ a single day never asks program questions', () => {
+test('⚠ a single day never asks BLOCK questions', () => {
+  /*
+   * ⚠ `goal` USED TO BE ON THIS LIST AND THE PO WAS RIGHT THAT IT SHOULD NOT BE. I had treated it as a
+   * program-shaped question; it is not. A session has a purpose — heavy, or volume — and the same
+   * back-and-biceps day is a different workout depending on the answer.
+   *
+   * What stays forbidden is anything that only means something across WEEKS: how many days a week you
+   * train, when your race is, what you currently run. Those describe a block, and a Tuesday is not one.
+   */
   const { asked } = walkDay();
-  for (const irrelevant of ['goal', 'days', 'race_distance', 'race_when', 'race_base']) {
+  for (const irrelevant of ['days', 'race_distance', 'race_when', 'race_base']) {
     assert.ok(!asked.includes(irrelevant), `a one-off session asked "${irrelevant}" — ${asked.join(', ')}`);
   }
 });
 
+test('the day goal offers purposes, never races', () => {
+  // A marathon is a block, not a Tuesday, and the focus chips are all lifting.
+  const q = nextQuestion({ dayFocus: { kind: 'split', split: 'push' } }, 'day');
+  assert.equal(q.id, 'goal');
+  for (const c of q.chips) {
+    assert.ok(!ENDURANCE_GOALS.includes(c.patch.goal), `"${c.label}" is a block, not a session`);
+  }
+  assert.ok(q.chips.length >= 4, 'too few ways to describe what a session is for');
+});
+
 test('it asks the things a session genuinely needs, and then stops', () => {
   const { asked, state } = walkDay();
-  assert.deepEqual(asked, ['day_focus', 'time', 'where', 'experience', 'limits']);
+  assert.deepEqual(asked, ['day_focus', 'goal', 'time', 'where', 'experience', 'limits']);
   assert.ok(readyToBuild(state, 'day'), 'answering every question must be enough to build');
 });
 
@@ -121,6 +140,59 @@ test('⚠ "Back & Biceps" builds a back and biceps session, not a full body one'
       `${row.name} trains ${(ex.muscles ?? []).join(', ')} — none of it is back or biceps`,
     );
   }
+});
+
+const build = (over = {}) =>
+  buildDayWorkout(
+    {
+      focus: { kind: 'body_parts', parts: ['back', 'biceps'] },
+      sessionMinutes: 60,
+      experience: 'intermediate',
+      environment: 'full_gym',
+      ownedEquipment: [],
+      limitations: [],
+      ...over,
+    },
+    POOL,
+    canDoExercise,
+  ).day;
+
+test('⚠ the goal changes the workout, or asking for it is theatre', () => {
+  /*
+   * The whole justification for the extra question. The same session under a strength goal and a
+   * hypertrophy goal must not come back identical — 5 × 5 heavy and 3 × 12 are different workouts, not
+   * two labels for one.
+   */
+  const strength = build({ goal: 'strength' });
+  const muscle = build({ goal: 'muscle' });
+  const rx = (d) => d.main.map((e) => `${e.sets}x${e.reps}`).join(' ');
+  assert.notEqual(rx(strength), rx(muscle), 'the goal made no difference to a single rep or set');
+
+  const reps = (d) => d.main.reduce((n, e) => n + (e.reps ?? 0), 0) / d.main.length;
+  assert.ok(reps(strength) < reps(muscle), 'strength should sit in lower reps than hypertrophy');
+});
+
+test('⚠ a single day carries coaching cues, which it used to get none of', () => {
+  // Every program session had them; a one-off workout never went through the code that attaches them.
+  const muscle = build({ goal: 'muscle', experience: 'beginner' });
+  assert.ok(muscle.main.some((e) => e.coachNote), 'no cue on any row');
+  assert.ok(
+    muscle.main.some((e) => /seconds down/i.test(e.coachNote ?? '')),
+    'a hypertrophy session should prescribe the eccentric',
+  );
+
+  // And the same limit the program side holds: tempo is for muscle, never for strength.
+  for (const e of build({ goal: 'strength', experience: 'beginner' }).main) {
+    assert.doesNotMatch(e.coachNote ?? '', /seconds down/i, 'a strength set must not be slowed down');
+  }
+});
+
+test('a caller with no goal still gets a workout, just no cue', () => {
+  // Templates and quick-starts have no goal to hand. A moderate range is the least wrong guess, and
+  // saying nothing is better than inventing a purpose the athlete never stated.
+  const d = build({});
+  assert.ok(d.main.length > 0);
+  assert.ok(d.main.every((e) => !e.coachNote), 'it invented a cue for a goal nobody gave');
 });
 
 test('every focus chip builds something real', () => {

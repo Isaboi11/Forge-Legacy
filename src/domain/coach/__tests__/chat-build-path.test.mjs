@@ -71,6 +71,8 @@ function runBuildPath(partial, mode) {
     const r = buildDayWorkout(
       {
         focus: partial.dayFocus ?? { kind: 'split', split: 'full_body' },
+        /* The goal decides the prescription AND the cue — 5 × 5 heavy or 3 × 12, and what he says about it. */
+        goal: c.goal,
         sessionMinutes: c.sessionMinutes,
         experience: c.experience.lifting,
         environment: c.environment,

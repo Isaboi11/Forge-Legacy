@@ -29,6 +29,7 @@ import {
   equipmentForEnvironment,
   type Environment,
   type Experience,
+  type Goal,
   type Limitation,
   type SessionMinutes,
 } from './constraints.ts';
@@ -39,6 +40,8 @@ import {
   type EquipmentGate,
 } from './candidates.ts';
 import { exerciseBudget, prescribeReps, roleFor } from './prescribe.ts';
+import { cueFor } from './rulebook/cues.ts';
+import { GOAL_CATEGORY } from './rulebook/volume.ts';
 import { equipmentAfterLimitations, limitationPatterns } from './rulebook/limitations.ts';
 import { skeletonFor } from './rulebook/skeletons.ts';
 import { preferenceRank } from './rulebook/preferences.ts';
@@ -134,10 +137,19 @@ export interface DayRequest {
   limitations: readonly Limitation[];
   excludeExercises?: readonly string[];
   /**
-   * Which PAS category to prescribe against. A one-off workout has no stated goal, so HYPERTROPHY is the
-   * default — moderate reps, moderate sets, the range most people mean by "a workout". An athlete inside
-   * a strength block who wants one extra session can say so.
+   * ⚠ **A ONE-OFF WORKOUT DOES HAVE A GOAL, AND ASSUMING ONE WAS THE BUG.**
+   *
+   * This used to default to HYPERTROPHY with a comment claiming a single session has no stated goal. It
+   * does — the athlete simply was never asked. And the difference is not cosmetic: the same back-and-
+   * biceps session is 5 × 5 heavy under STRENGTH and 3 × 12 under HYPERTROPHY. Prescribing one when they
+   * wanted the other is not a near-miss, it is a different workout.
+   *
+   * HYPERTROPHY remains the fallback for callers that genuinely have no goal to hand (a template, a
+   * quick-start), because a moderate range is the least wrong guess. It is now a fallback rather than an
+   * assumption dressed as a decision.
    */
+  goal?: Goal;
+  /** Overrides the category derived from `goal`. Rarely needed; `goal` is the honest input. */
   category?: PasCategory;
 }
 
@@ -226,7 +238,7 @@ export function buildDayWorkout(
   pool: readonly CatalogExercise[],
   canDo: EquipmentGate,
 ): DayResult {
-  const category: PasCategory = req.category ?? 'HYPERTROPHY';
+  const category: PasCategory = req.category ?? (req.goal ? (GOAL_CATEGORY[req.goal] as PasCategory) : ('HYPERTROPHY' as PasCategory));
   const band = bandFor(category, false);
   const budget = Math.min(exerciseBudget(req.sessionMinutes), band.maxExercises);
 
@@ -340,12 +352,20 @@ export function buildDayWorkout(
       weekIndex: 0,
       isDeload: false,
     });
+    /*
+     * ⚠ **A SINGLE DAY GOT NO COACHING CUE AT ALL**, while every program session did. Same tempo, same
+     * technique, same field already rendered under THE PLAN SAYS — a one-off workout simply never went
+     * through the code that attaches it. The cue needs the goal, which is the other thing this session
+     * was never asked, so both gaps closed on the same question.
+     */
+    const cue = req.goal ? cueFor({ pattern, goal: req.goal, experience: req.experience, isPrimary: i === 0 }) : null;
     return {
       catalogKey: ex.key,
       name: ex.name,
       sets: rx.sets,
       reps: rx.reps,
       repsMax: rx.repsMax,
+      ...(cue ? { coachNote: cue } : {}),
     };
   });
 
