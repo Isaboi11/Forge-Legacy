@@ -113,6 +113,24 @@ test('a full gym reaches for the barbell, not whatever sorts first', () => {
   assert.ok(keys.has('barbell-deadlift'), 'a hinge at a full gym is a deadlift');
 });
 
+test('a built program tells you how to lift it, not just how much', () => {
+  /*
+   * The wiring, not the table — `cues.test.mjs` owns the rules. This asserts the cue actually survives
+   * onto a real prescription, because a rulebook nothing reads is the failure this repo keeps shipping.
+   */
+  const res = build(constraintsFor('muscle', 'intermediate', 4, 'full_gym', 'none'));
+  assert.ok(res.ok);
+  const day = res.assembly.structure.weekPlans[0].days[0];
+
+  assert.ok(day.main[0].coachNote, 'the opening lift must carry the intent of the block');
+  assert.match(day.main[0].coachNote, /three seconds down/i, 'a muscle block prescribes the eccentric');
+
+  // ⚠ And a strength block must NOT. Slowing a heavy set down makes it a worse set, confidently.
+  const strong = build(constraintsFor('strength', 'intermediate', 4, 'full_gym', 'none'));
+  assert.ok(strong.ok);
+  assert.doesNotMatch(strong.assembly.structure.weekPlans[0].days[0].main[0].coachNote ?? '', /seconds down/i);
+});
+
 test('a dumbbell room reaches for the dumbbell version of the same movement', () => {
   const keysFor = (owned) => {
     const res = build({

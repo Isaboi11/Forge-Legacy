@@ -62,6 +62,7 @@ import {
 } from './rulebook/skeletons.ts';
 import { bandFor, deloadWeeks, GOAL_CATEGORY, type PasCategory } from './rulebook/volume.ts';
 import { assembleEndurance } from './rulebook/endurance.ts';
+import { cueFor } from './rulebook/cues.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // RESULT
@@ -218,6 +219,8 @@ function buildDay(
   baseCtx: CandidateContext,
   opts: {
     category: PasCategory;
+    /** The block's goal, so the coaching cue can say what the set is FOR — see `rulebook/cues.ts`. */
+    goal: CoachConstraints['goal'];
     experience: CoachConstraints['experience'];
     weekIndex: number;
     isDeload: boolean;
@@ -254,6 +257,16 @@ function buildDay(
       isDeload: opts.isDeload,
     };
 
+    /* HOW to do it, not just how much — the line the athlete reads under THE PLAN SAYS. Keyed on the
+       movement pattern and the goal, so it is a rulebook decision like every other number here rather
+       than 721 hand-written strings. `null` for an advanced lifter on an accessory, deliberately. */
+    const cue = cueFor({
+      pattern: found.exercise.pattern,
+      goal: opts.goal,
+      experience: opts.experience.lifting,
+      isPrimary: main.length === 0,
+    });
+
     if (opts.category === 'MOBILITY') {
       const hold = prescribeHold(pctx);
       main.push({
@@ -261,6 +274,7 @@ function buildDay(
         name: found.exercise.name,
         sets: hold.sets,
         durationSec: hold.durationSec,
+        ...(cue ? { coachNote: cue } : {}),
       });
     } else {
       const rx = prescribeReps(role, pctx);
@@ -270,6 +284,7 @@ function buildDay(
         sets: rx.sets,
         reps: rx.reps,
         repsMax: rx.repsMax,
+        ...(cue ? { coachNote: cue } : {}),
       });
     }
   }
@@ -420,6 +435,7 @@ export function assemble(
       days: variants.map((d, i) =>
         buildDay(d, String.fromCharCode(65 + i), pool, baseCtx, {
           category,
+          goal: c.goal,
           experience: c.experience,
           weekIndex,
           isDeload,
