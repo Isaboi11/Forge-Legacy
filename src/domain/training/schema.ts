@@ -347,11 +347,22 @@ export interface ExercisePrescription {
   substitution?: ExerciseSubstitution | null;
 
   /**
-   * NO per-exercise coaching note field, deliberately. The Production Standard asks programs to carry
-   * Coaching Notes, and `ProgramExercise` has nowhere to put one — so a `notes` here would be dropped
-   * on the way across and rendered by nothing. The program's coaching voice lives in `description` and
-   * its Design Record until there is a surface that shows a per-exercise note.
+   * ══ THE PER-EXERCISE COACHING NOTE — "4 seconds down, then push up" ══
+   *
+   * ⚠ **THIS FIELD WAS DELIBERATELY ABSENT, AND THE REASON IT IS NOW HERE IS NOT THAT THE REASON WAS
+   * WRONG.** What stood here said: the Production Standard asks programs to carry Coaching Notes,
+   * `ProgramExercise` has nowhere to put one, so a `notes` here would be dropped on the way across and
+   * rendered by nothing. Every clause of that was true, and it is the write-only-field failure this repo
+   * has shipped more than once.
+   *
+   * All three clauses have been answered rather than overruled: `ProgramExercise.coachNote` holds it,
+   * `build-session.ts` carries it across, and the active workout draws it on the exercise card and in
+   * the ⋯ menu. The rule was never "no notes" — it was "nothing write-only", and it still stands.
+   *
+   * Distinct from the ATHLETE's note (`SessionExercise.note`), which is a log entry and not a
+   * prescription. See the comment there.
    */
+  coachNote?: string | null;
 
   /** A per-set ladder: "6-6-4-4" is `[6, 6, 4, 4]`. When present its LENGTH is the set count. */
   repScheme?: PrescriptionRepTarget[];

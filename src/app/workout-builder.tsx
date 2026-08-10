@@ -563,6 +563,7 @@ function toTemplateExercises(d: WorkoutDraft): TemplateExercise[] {
       groupRounds: x.groupRounds ?? null,
       targetMi: x.targetMi ?? null,
       targetDurationSec: x.targetSec ?? null,
+      coachNote: x.coachNote ?? null,
     }));
   return [...of(d.warmup, 'warmup'), ...of(d.main, 'main'), ...of(d.cooldown, 'cooldown')];
 }
@@ -593,6 +594,7 @@ function hydrate(name: string, exercises: TemplateExercise[], editId: string): W
             targetSec: e.targetDurationSec ?? null,
           }
         : null),
+      ...(e.coachNote ? { coachNote: e.coachNote } : null),
       ...(e.groupId
         ? { groupId: e.groupId, groupName: e.groupName ?? undefined, groupKind: e.groupKind ?? 'circuit', groupRounds: e.groupRounds ?? undefined }
         : null),

@@ -60,6 +60,12 @@ function prescriptionToExercise(equipFor?: (catalogKey: string) => string | unde
     if (ex.per) out.per = ex.per;
     if (ex.durationSec != null) out.durationSec = ex.durationSec;
     if (ex.optional) out.optional = true;
+    /*
+     * The author's coaching cue. The same crossing every field above had to be taught, and the same
+     * failure if it isn't: a catalog program could state "4 seconds down" and the athlete adopting it
+     * would get the movement with the instruction quietly removed.
+     */
+    if (ex.coachNote?.trim()) out.coachNote = ex.coachNote.trim();
 
     // Percentage loading (0111). Same crossing, same rule — a percentage dropped here would turn a
     // peaking block into the same session with the intensity removed, and nothing would report it.
@@ -84,6 +90,12 @@ function prescriptionToExercise(equipFor?: (catalogKey: string) => string | unde
       // Null survives uncoerced: it prescribes an open bout, and a 0 would read as a target already met.
       if (ex.targetSec !== undefined) out.targetSec = ex.targetSec;
       if (ex.targetMi !== undefined) out.targetMi = ex.targetMi;
+      /*
+       * NO PACE OR SPEED HERE, and that is the source's limit rather than a drop: `ExercisePrescription`
+       * has no `targetPaceSec` / `targetSpdMph` to copy. A catalog program can prescribe a distance and
+       * a duration; it cannot yet prescribe "3 mi at 8:15", which `ProgramExercise` downstream can hold
+       * perfectly well. Widening the catalog side is a separate decision, not a line missing from here.
+       */
     }
 
     return out;

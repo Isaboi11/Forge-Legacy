@@ -92,6 +92,29 @@ export type ProgramExercise = {
   /** "(Optional) Stairmaster" — prescribed, but the athlete owes nothing by skipping it. */
   optional?: boolean;
   /**
+   * ══ WHAT THE AUTHOR WANTS DONE WITH THIS MOVEMENT ══
+   *
+   * "4 seconds down, then push up." "Calf check — stop if pain climbs." "Hold Z2, this is not a workout."
+   *
+   * ⚠ **THIS IS NOT `SessionExercise.note`, AND CONFLATING THEM WOULD LOSE BOTH.** That one is the
+   * ATHLETE's, written during a session and read back the next time they meet the lift ("shoulder felt
+   * off"). This one is the AUTHOR's, written into the plan and shown to whoever trains it, every time.
+   * One is a diary; the other is the prescription. They appear together on the exercise and neither
+   * overwrites the other.
+   *
+   * ══ WHY THE MODEL REFUSED A NOTES FIELD UNTIL NOW ══
+   *
+   * `ExercisePrescription` carries a comment saying it deliberately has NO note field, because the PAS
+   * asked for one, nothing rendered it, and a value authored-persisted-and-shown-by-nothing is a defect
+   * this repo has shipped more than once. That reasoning was right and it is what kept this out. What
+   * changed is the render surface: the cue is drawn on the active workout's exercise card and in its ⋯
+   * menu before the field exists to hold it. The rule was never "no notes" — it was "nothing write-only".
+   *
+   * Free text, capped at the length a cue actually runs to. `programs.structure` is jsonb, so no
+   * migration; a program authored before this simply has none.
+   */
+  coachNote?: string | null;
+  /**
    * ══ LOAD AS A PERCENTAGE OF A TESTED MAX ══
    *
    * "Back Squat 5 × 5 @ 75%". The percentage IS the prescription in a peaking block — strip it and you

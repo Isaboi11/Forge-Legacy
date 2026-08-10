@@ -51,6 +51,13 @@ export interface TemplateExercise {
   modality?: 'outdoor' | 'indoor';
   targetMi?: number | null;
   targetDurationSec?: number | null;
+  /**
+   * The author's coaching cue — "4 seconds down, then push up". Mirrors `ProgramExercise.coachNote`.
+   *
+   * Distinct from the athlete's per-session note, which is a log entry and lives on the workout row.
+   * Absent on every template saved before this, which read as having no cue — which they didn't.
+   */
+  coachNote?: string | null;
 }
 
 export interface WorkoutTemplate {
@@ -99,6 +106,9 @@ const toExercise = (e: Record<string, unknown>): TemplateExercise => ({
   modality: e.modality === 'indoor' ? 'indoor' : e.modality === 'outdoor' ? 'outdoor' : undefined,
   targetMi: e.targetMi == null ? null : Number(e.targetMi),
   targetDurationSec: e.targetDurationSec == null ? null : Number(e.targetDurationSec),
+  // ⚠ THIS IS A WHITELIST. A field absent from here is silently dropped on every read, however faithfully
+  // the writer stored it — which is why the cue has to be named explicitly rather than spread through.
+  coachNote: typeof e.coachNote === 'string' && e.coachNote.trim() ? e.coachNote.trim() : null,
 });
 
 const toTemplate = (r: Record<string, unknown>): WorkoutTemplate => ({

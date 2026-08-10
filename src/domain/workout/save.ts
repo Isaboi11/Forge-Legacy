@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { sessionActivityType } from './conditioning';
-import { detectPRs, doneSetCount, PR_MAX_REPS, sessionVolume } from './metrics';
-import { buildSaveExercises } from './save-core';
+import { detectPRs, doneSetCount, PR_MAX_REPS, sessionVolume, type DetectedPR } from './metrics';
+import { buildAppendExercises, buildSaveExercises } from './save-core';
 import { playlistToRow } from './playlist';
 import type { ActiveSession } from './types';
 
@@ -259,6 +259,84 @@ export async function fetchLastNotes(
     if (text && hit?.workouts?.saved_at) out[id] = { text, savedAt: hit.workouts.saved_at };
   }
   return out;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// CONTINUING A WORKOUT YOU ENDED BY ACCIDENT (0125)
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/* The window lives in `save-core` — pure, so `node --test` can reach it. Re-exported here so
+   callers have one import site for the whole finish/continue path. */
+export { CONTINUE_WINDOW_MIN, withinContinueWindow } from './save-core';
+
+/**
+ * Commit the work added since a finished workout was reopened.
+ *
+ * ══ WHY THIS IS NOT `saveWorkout` ══
+ *
+ * Finishing writes a workout, its sets, records, a timeline event each, the chapter counter, the program
+ * session and an honor pass. Running that again for the same session would double every one of them —
+ * two entries in history and a chapter count that overstates how often the athlete actually showed up.
+ * `continue_workout` appends instead, and deliberately leaves the counter and the program slot alone.
+ *
+ * ⚠ ONLY THE UNSAVED SETS TRAVEL. `buildAppendExercises` drops everything already committed, so the half
+ * of the session that was saved an hour ago is not written a second time.
+ *
+ * ⚠ AND PRs ARE DETECTED AGAINST THE SAME PRIOR BESTS the first save used. A lift that set a record
+ * before the accidental finish must not announce it again on the way back out.
+ */
+export async function continueWorkout(
+  workoutId: string,
+  session: ActiveSession,
+): Promise<{ setsAdded: number; prs: DetectedPR[] }> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('not signed in');
+
+  const exercises = buildAppendExercises(session);
+  if (exercises.length === 0) return { setsAdded: 0, prs: [] };
+
+  /* The same identity rule every other lift-history read uses: catalogue key when there is one, the
+     exact name for rows written before 0078 added the column. Two answers to "which lift is this" is how
+     a record gets announced twice. */
+  const names = session.exercises.map((e) => e.name);
+  const { data: prRows } = await supabase
+    .from('personal_records')
+    .select('exercise, catalog_key, load_value')
+    .eq('athlete_id', user.id)
+    .eq('measure_kind', 'load')
+    .lte('load_reps', PR_MAX_REPS)
+    .in('exercise', names);
+
+  const priorBest: Record<string, number | undefined> = {};
+  for (const ex of session.exercises) {
+    const id = ex.catalogKey ?? ex.name;
+    for (const r of prRows ?? []) {
+      const row = r as { exercise: string; catalog_key: string | null; load_value: number | null };
+      if (row.load_value == null) continue;
+      const sameLift = ex.catalogKey
+        ? row.catalog_key === ex.catalogKey || (row.catalog_key == null && row.exercise === ex.name)
+        : row.exercise === ex.name;
+      if (sameLift && (priorBest[id] == null || row.load_value > priorBest[id]!)) priorBest[id] = row.load_value;
+    }
+  }
+
+  /* Detected over a session whose already-saved sets are marked done — so a record set BEFORE the
+     accidental finish is already in `priorBest` above and cannot be claimed twice. */
+  const prs = detectPRs(session, priorBest);
+  const durationSec = Math.max(0, Math.round((Date.now() - Date.parse(session.startedAt)) / 1000));
+
+  const { data, error } = await supabase.rpc('continue_workout', {
+    p_workout_id: workoutId,
+    p_exercises: exercises,
+    p_prs: prs,
+    p_duration_sec: durationSec,
+  });
+  if (error) throw error;
+
+  return { setsAdded: (data as { sets_added?: number } | null)?.sets_added ?? 0, prs };
 }
 
 /**

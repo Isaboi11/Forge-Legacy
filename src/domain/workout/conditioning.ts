@@ -273,6 +273,17 @@ const DIST = { step: 0.5, min: 0.5, max: 26.2, seed: 0.5 };
 const PACE = { step: 5, min: 300, max: 1200, seed: 495 };
 const SPEED = { step: 0.5, min: 6, max: 30, seed: 17 };
 
+/*
+ * ⚠ DECLARED HERE, ABOVE THEIR SECTION, BECAUSE `FIRST_TARGET.swim` IS WRITTEN IN YARDS.
+ *
+ * `const` is not hoisted. Leaving these beside the pool-unit helpers below put `YD_PER_MI` in the
+ * temporal dead zone at the moment `FIRST_TARGET` initialises, which is a module-load crash and not a
+ * type error — nothing would have caught it but running the app.
+ */
+export const YD_PER_MI = 1760;
+export const M_PER_MI = 1609.344;
+const KM_PER_MI = 1.609344;
+
 /** Where each stepper lands on the first tap up from Open — an ordinary session, per activity. */
 export const FIRST_TARGET: Record<CardioActivity, { mi: number; paceSec: number; spdMph: number }> = {
   run: { mi: 3, paceSec: 495, spdMph: 17 },
@@ -282,9 +293,133 @@ export const FIRST_TARGET: Record<CardioActivity, { mi: number; paceSec: number;
   // steppers never appear for them and these figures are never reached.
   row: { mi: 1.5, paceSec: 495, spdMph: 17 },
   elliptical: { mi: 2, paceSec: 495, spdMph: 17 },
-  swim: { mi: 0.5, paceSec: 495, spdMph: 17 },
+  /* A POOL SESSION, IN THE UNIT A POOL SESSION IS WRITTEN IN — 1000 yd, which is 0.568 mi. The seed
+     used to be half a mile because the scale was miles; see `POOL` below for why it no longer is. */
+  swim: { mi: 1000 / YD_PER_MI, paceSec: 495, spdMph: 17 },
   stair: { mi: 0, paceSec: 495, spdMph: 17 },
 };
+
+// ── DISTANCE IS NOT ALWAYS MEASURED IN MILES ────────────────────────────────
+//
+// ══ WHY A SWIM NEEDED ITS OWN SCALE ══
+//
+// `targetMi` is canonical and stays canonical — miles, everywhere, exactly as weight stays pounds. What
+// changed is the DISPLAY scale, and for swimming it had to: the mile stepper moves in half-mile steps,
+// so the only pool sessions it could express were 880 yd, 1760 yd, 2640 yd. A real swim set is written
+// "1200 yd", "2600 yd", "3200 yd" — none of which are reachable, and none of which any swimmer would
+// think to convert. The distance was authorable in principle and unauthorable in practice.
+//
+// So the pool gets yards (or metres, because a metric pool is 25 m and not 27.3 yd), stepped in hundreds.
+// Everything else keeps miles/kilometres. Storage never moves.
+//
+// `YD_PER_MI` / `M_PER_MI` / `KM_PER_MI` are declared up beside the stepper scales — see the note there.
+
+/** The unit a distance is SHOWN in. Swimming is the one activity measured in pool lengths. */
+export type DistanceUnit = 'mi' | 'km' | 'yd' | 'm';
+
+/** True for the activities written in pool lengths rather than in road distance. */
+export const USES_POOL_UNITS: Record<CardioActivity, boolean> = {
+  run: false,
+  walk: false,
+  bike: false,
+  row: false,
+  elliptical: false,
+  swim: true,
+  stair: false,
+};
+
+/** Which unit this activity's distance is displayed and stepped in, for this athlete's system. */
+export function distanceUnitFor(activity: CardioActivity, metric: boolean): DistanceUnit {
+  if (USES_POOL_UNITS[activity]) return metric ? 'm' : 'yd';
+  return metric ? 'km' : 'mi';
+}
+
+const PER_MILE: Record<DistanceUnit, number> = { mi: 1, km: KM_PER_MI, yd: YD_PER_MI, m: M_PER_MI };
+
+/** Canonical miles → the display unit. */
+export const toDistanceIn = (mi: number, unit: DistanceUnit): number => mi * PER_MILE[unit];
+
+/** A display figure → canonical miles. The inverse of `toDistanceIn`, and it must stay exact. */
+export const fromDistanceIn = (value: number, unit: DistanceUnit): number => value / PER_MILE[unit];
+
+/**
+ * How a distance READS in its own unit — "1200 yd", "3.0 mi".
+ *
+ * A pool distance is a whole number of lengths and never carries a decimal; a road distance always does,
+ * because "3 mi" and "3.0 mi" are the same claim but only one of them looks measured.
+ */
+export function fmtDistanceIn(mi: number, unit: DistanceUnit): string {
+  const v = toDistanceIn(mi, unit);
+  return unit === 'yd' || unit === 'm' ? String(Math.round(v)) : v.toFixed(1);
+}
+
+/** The pool stepper: hundreds, because that is the grain every swim set in every plan is written on. */
+const POOL = { step: 100, min: 100, max: 10_000 };
+
+/**
+ * Step a distance IN ITS OWN UNIT, then convert back.
+ *
+ * Stepping the canonical mile figure would put the rounding in the wrong place: 1200 yd is 0.6818… mi,
+ * and a stepper that rounded that to a tenth of a mile would hand back 1197 yd. So the arithmetic happens
+ * in the unit the athlete is reading, and only the result is converted.
+ *
+ * Below the minimum the target CLEARS, which is the same "Open is the bottom of the scale" rule the mile
+ * stepper has always followed — there is no separate "no target" control anywhere in this model.
+ */
+export function bumpDistanceUnit(
+  currentMi: number | null,
+  dir: 1 | -1,
+  unit: DistanceUnit,
+  seedMi: number,
+): number | null {
+  if (unit !== 'yd' && unit !== 'm') return bumpDistance(currentMi, dir, seedMi);
+  if (currentMi == null) return dir > 0 ? fromDistanceIn(Math.round(toDistanceIn(seedMi, unit)), unit) : null;
+  const next = Math.round(toDistanceIn(currentMi, unit)) + dir * POOL.step;
+  if (next < POOL.min) return null;
+  return fromDistanceIn(Math.min(POOL.max, next), unit);
+}
+
+// ── A BOUT PRESCRIBED BY THE CLOCK ──────────────────────────────────────────
+//
+// ══ WHY THIS STEPPER DID NOT EXIST, AND HAD TO ══
+//
+// `targetSec` has been on the model since cardio blocks were built, and Coach Holt writes it on nearly
+// every session he generates — "Ride · 75 min steady aerobic". The Program Builder had no control for
+// it, so an athlete authoring their own plan could prescribe a ride only as a DISTANCE. Every endurance
+// plan in the world is written in minutes, which made the builder unable to express the ordinary case
+// while the engine beside it wrote that case all day. This is the missing control, not a new field.
+
+/** Five-minute grain: the unit training plans are actually written on ("45min", "1h45", "2.5h"). */
+const DUR = { step: 5 * 60, min: 5 * 60, max: 8 * 3600, seed: 30 * 60 };
+
+/** Where the clock lands on the first tap up from Open — half an hour, an ordinary session. */
+export const FIRST_DURATION_SEC = DUR.seed;
+
+/**
+ * Step a prescribed duration. Open is the bottom of the scale, exactly as it is for distance and pace:
+ * stepping below five minutes CLEARS the target rather than pinning it to a floor nobody chose.
+ */
+export function bumpDuration(current: number | null, dir: 1 | -1, seed: number = DUR.seed): number | null {
+  if (current == null) return dir > 0 ? seed : null;
+  const next = current + dir * DUR.step;
+  if (next < DUR.min) return null;
+  return Math.min(DUR.max, next);
+}
+
+/**
+ * A prescribed duration as it is spoken — "45 min", "1h 45m", "3h".
+ *
+ * Hours appear once the bout passes one, because "195 min" is a number nobody says out loud about a ride
+ * and "3h 15m" is what is written on the plan it came from.
+ */
+export function fmtDuration(sec: number | null | undefined): string {
+  if (sec == null || sec <= 0) return '';
+  const total = Math.round(sec / 60);
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  if (!h) return `${m} min`;
+  return m ? `${h}h ${m}m` : `${h}h`;
+}
 
 /** Rounded to one decimal each step, or 3 + 0.5 eventually reads 3.5000000000000004. */
 export function bumpDistance(current: number | null, dir: 1 | -1, seed: number = DIST.seed): number | null {

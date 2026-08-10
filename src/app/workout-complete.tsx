@@ -16,6 +16,9 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useUnits } from '@/lib/settings';
 import { displayWeight } from '@/domain/settings/units';
 import { WORKOUT_NAME_MAX, fetchCompletion, renameWorkout, savePlaylist, saveReflection, saveWorkoutNote, type CompletionCardio, type CompletionHero, type ExerciseDelta } from '@/data/workout-complete-live';
+import { fetchWorkoutAsSession } from '@/data/continue-workout-live';
+import { persistSession } from '@/domain/workout/autosave';
+import { withinContinueWindow } from '@/domain/workout/save';
 import { openPlaylist, PlaylistChip, PlaylistSheet } from '@/components/forge/composites/Playlist';
 import type { WorkoutPlaylistLink } from '@/domain/workout/playlist';
 import { distanceLabel, fmtClock, fmtPace, toDistance, toPace, type UnitSystem } from '@/domain/run/run-core';
@@ -755,6 +758,32 @@ export default function WorkoutComplete() {
             </Text>
           </Pressable>
 
+          {/*
+            ⚠ THE ACCIDENT THIS EXISTS FOR: you tapped End, the screen appeared, and you realised you
+            were not finished. Offered for an hour and then gone — past that it stops being one workout,
+            and a session reopened at night would let a single entry claim the whole day.
+
+            It reopens rather than starting something new: the sets you already logged come back marked
+            done, and Finish appends to this same workout instead of writing a second one.
+          */}
+          {data.savedAt && withinContinueWindow(data.savedAt) ? (
+            <Pressable
+              onPress={() => {
+                void (async () => {
+                  const s = await fetchWorkoutAsSession(data.workoutId);
+                  if (!s) return;
+                  await persistSession(s);
+                  router.replace('/workout');
+                })();
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Continue this workout"
+              style={({ pressed }) => [styles.continueRow, pressed ? styles.continuePressed : null]}
+            >
+              <Text style={styles.continueText}>Not finished? Continue this workout</Text>
+            </Pressable>
+          ) : null}
+
           {/* Training note. Best-effort like every other annotation on this screen — the session is
               already durably committed, so a failed write costs a note and never the workout. */}
           <View style={styles.sessNoteWrap}>
@@ -1454,6 +1483,18 @@ const styles = StyleSheet.create({
   recTable: { borderWidth: 1, borderColor: flColor.charcoal600, borderRadius: flRadius.lg, overflow: 'hidden', backgroundColor: flColor.charcoal900 },
   recNameLine: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   recDelta: { fontSize: 12.5, fontWeight: '600' },
+  continueRow: {
+    marginTop: 20,
+    paddingVertical: 13,
+    paddingHorizontal: 16,
+    borderRadius: flRadius.md,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    backgroundColor: flColor.bronzeTint,
+    alignItems: 'center',
+  },
+  continuePressed: { opacity: 0.85 },
+  continueText: { fontSize: 14.5, fontWeight: '600', color: flColor.bronze300 },
   sessNoteWrap: { gap: 8, marginTop: 22 },
   sessNoteLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.4, color: flColor.gray600 },
   sessNoteInput: {

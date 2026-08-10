@@ -85,6 +85,8 @@ export type CompletionHero =
 export interface Completion {
   /** The session's training note. Distinct from `reflection` — see `saveWorkoutNote`. */
   note: string | null;
+  /** When it was committed. Decides whether "continue this workout" is still offered (0125). */
+  savedAt: string | null;
   /** What this run beat, when it was a run. Empty for a strength session and for a first-ever run. */
   runBests: PersonalBest[];
   workoutId: string;
@@ -567,6 +569,7 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
   return {
     workoutId,
     note: workout.notes ?? null,
+    savedAt: savedAt ?? null,
     runBests,
     workoutName: workout.workout_name ?? 'Workout',
     chapterName,

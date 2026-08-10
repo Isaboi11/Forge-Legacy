@@ -11,6 +11,14 @@ export type GroupKind = 'superset' | 'circuit';
 export type { CardioActivity, CardioResult, ExerciseKind, Modality };
 
 export interface SessionSet {
+  /**
+   * Already committed to the database.
+   *
+   * ⚠ ONLY SET WHEN A FINISHED WORKOUT IS REOPENED (`continue_workout`, 0125). It is what stops a
+   * continue from writing the first half of the session a second time — the reopened sets are shown so
+   * the athlete can see what they did, and skipped on the way back out. A normal session never sets it.
+   */
+  saved?: boolean;
   setIndex: number;
   /** lb; null = not entered / bodyweight. */
   weight: number | null;
@@ -94,6 +102,22 @@ export interface SessionExercise {
    * on every history row that opened the sheet and thought better of it.
    */
   note?: string | null;
+  /**
+   * What the AUTHOR of the plan wants done with this movement — "4 seconds down, then push up",
+   * "calf check, stop if pain climbs", "hold Z2, this is not a workout".
+   *
+   * ⚠ **NOT `note` ABOVE, AND THE TWO MUST NOT BE MERGED.** `note` is the athlete's, written during the
+   * session and read back the next time they meet the lift. This is the prescription, written into the
+   * program or template and shown to whoever trains it, every time. Merging them would let a log entry
+   * overwrite a coaching cue, and would carry "shoulder felt off" forward as if the plan had said it.
+   *
+   * Carried from `ProgramExercise.coachNote` / `TemplateExercise.coachNote`. Read-only in the session:
+   * the athlete edits their own note, never the author's.
+   *
+   * Not written to `workout_exercises` at save — the cue belongs to the PLAN, which already stores it,
+   * and copying it onto every workout row would duplicate one sentence across a season of history.
+   */
+  coachNote?: string | null;
   /** Cardio only. `activity` is authored; `modality` is the athlete's live choice on the day. */
   activity?: CardioActivity;
   modality?: Modality;
@@ -145,6 +169,14 @@ export interface SessionExercise {
 }
 
 export interface ActiveSession {
+  /**
+   * Set when a FINISHED workout was reopened to be continued (0125).
+   *
+   * Its presence is what makes Finish append to that workout instead of creating a second one — without
+   * it, continuing a session would leave two entries in history, count the chapter twice, and claim a
+   * second program slot.
+   */
+  continuingWorkoutId?: string;
   workoutName: string;
   /**
    * How the session went, in the athlete's words. Lands in `workouts.notes` — a column that has taken a

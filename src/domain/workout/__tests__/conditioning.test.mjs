@@ -4,24 +4,30 @@ import assert from 'node:assert/strict';
 import {
   CARDIO_ACTIVITIES,
   CARDIO_DEFAULTS,
+  FIRST_TARGET,
   OUTDOOR_CAPABLE,
   STORED_TYPE,
   TRACKS_DISTANCE,
-  hasRateTarget,
-  FIRST_TARGET,
   activityFromKey,
   activitySymbol,
   avgPaceSec,
   bumpDistance,
+  bumpDistanceUnit,
+  bumpDuration,
   bumpPace,
   bumpSpeed,
   cardioKey,
   deriveEquip,
   deriveName,
   distanceLabel,
+  distanceUnitFor,
   effortLabel,
   fmtClock,
+  fmtDistanceIn,
+  fmtDuration,
   fmtPace,
+  fromDistanceIn,
+  hasRateTarget,
   isCardioKey,
   isLogged,
   newCardioBlock,
@@ -31,6 +37,7 @@ import {
   parseWithin,
   sessionActivityType,
   setModality,
+  toDistanceIn,
   usesSpeed,
 } from '../conditioning.ts';
 
@@ -395,4 +402,105 @@ test('several bouts of the SAME activity still count as that activity', () => {
 
 test('an empty session keeps its fallback rather than inventing a type', () => {
   assert.equal(sessionActivityType([], 'strength'), 'strength');
+});
+
+// ── the pool has its own scale ───────────────────────────────────────────────
+//
+// The mile stepper moves in half-mile steps, so before this the only pool sessions the builder could
+// express were 880 / 1760 / 2640 yd. Every swim set in every real plan is written in hundreds of yards.
+test('a swim is measured in yards, everything else in miles', () => {
+  assert.equal(distanceUnitFor('swim', false), 'yd');
+  assert.equal(distanceUnitFor('swim', true), 'm', 'a metric pool is 25 m, not 27.3 yd');
+  assert.equal(distanceUnitFor('run', false), 'mi');
+  assert.equal(distanceUnitFor('bike', true), 'km');
+  assert.equal(distanceUnitFor('row', false), 'mi', 'an erg reads metres but the model stores a distance in miles');
+});
+
+test('yards round-trip through canonical miles without drifting', () => {
+  for (const yd of [100, 1200, 2100, 2600, 3200, 10_000]) {
+    const mi = fromDistanceIn(yd, 'yd');
+    assert.equal(Math.round(toDistanceIn(mi, 'yd')), yd, `${yd} yd must come back as ${yd} yd`);
+  }
+});
+
+test('1.2 miles of open water is 2112 yards', () => {
+  assert.equal(Math.round(toDistanceIn(1.2, 'yd')), 2112);
+  assert.equal(fmtDistanceIn(1.2, 'mi'), '1.2');
+});
+
+test('a pool distance never renders a decimal and a road distance always does', () => {
+  assert.equal(fmtDistanceIn(fromDistanceIn(1200, 'yd'), 'yd'), '1200');
+  assert.equal(fmtDistanceIn(3, 'mi'), '3.0', '"3 mi" reads typed; "3.0 mi" reads measured');
+});
+
+test('the pool stepper walks in hundreds and clears below one', () => {
+  const seed = FIRST_TARGET.swim.mi;
+  const first = bumpDistanceUnit(null, 1, 'yd', seed);
+  assert.equal(Math.round(toDistanceIn(first, 'yd')), 1000, 'first tap up lands on an ordinary pool session');
+
+  let mi = first;
+  for (let i = 0; i < 2; i += 1) mi = bumpDistanceUnit(mi, 1, 'yd', seed);
+  assert.equal(Math.round(toDistanceIn(mi, 'yd')), 1200, 'two more taps reach 1200 yd exactly');
+
+  const oneHundred = fromDistanceIn(100, 'yd');
+  assert.equal(bumpDistanceUnit(oneHundred, -1, 'yd', seed), null, 'stepping below the minimum clears the target');
+  assert.equal(bumpDistanceUnit(null, -1, 'yd', seed), null, 'and Open stays Open');
+});
+
+test('the pool stepper reaches the distances a real plan is written in', () => {
+  const seed = FIRST_TARGET.swim.mi;
+  let mi = bumpDistanceUnit(null, 1, 'yd', seed);
+  const reached = new Set();
+  for (let i = 0; i < 40; i += 1) {
+    reached.add(Math.round(toDistanceIn(mi, 'yd')));
+    mi = bumpDistanceUnit(mi, 1, 'yd', seed);
+  }
+  // Straight off a 70.3 plan: these are the swims that were unreachable on the half-mile scale.
+  for (const yd of [1200, 1600, 2000, 2400, 2600, 2700, 2800, 2900, 3000, 3200]) {
+    assert.ok(reached.has(yd), `${yd} yd must be reachable`);
+  }
+});
+
+test('a non-pool unit still uses the mile stepper', () => {
+  assert.equal(bumpDistanceUnit(null, 1, 'mi', 3), 3);
+  assert.equal(bumpDistanceUnit(3, 1, 'mi', 3), 3.5);
+  assert.equal(bumpDistanceUnit(0.5, -1, 'mi', 3), null);
+});
+
+// ── a bout prescribed by the clock ───────────────────────────────────────────
+//
+// `targetSec` was on the model and written by Coach Holt from the start; the builder had no control for
+// it, so an athlete could only ever prescribe a ride as a distance.
+test('the duration stepper walks in five-minute steps from Open', () => {
+  assert.equal(bumpDuration(null, 1), 30 * 60, 'first tap up is half an hour');
+  assert.equal(bumpDuration(30 * 60, 1), 35 * 60);
+  assert.equal(bumpDuration(30 * 60, -1), 25 * 60);
+  assert.equal(bumpDuration(null, -1), null, 'Open is the bottom of the scale');
+  assert.equal(bumpDuration(5 * 60, -1), null, 'stepping below five minutes clears it');
+});
+
+test('the duration stepper reaches a four-hour race rehearsal and stops at eight', () => {
+  let sec = 30 * 60;
+  for (let i = 0; i < 200; i += 1) sec = bumpDuration(sec, 1);
+  assert.equal(sec, 8 * 3600, 'capped rather than unbounded');
+
+  // Every ride length on a real 70.3 plan, none of which the builder could express before.
+  const reachable = new Set();
+  let s = bumpDuration(null, 1);
+  for (let i = 0; i < 100; i += 1) {
+    reachable.add(s / 60);
+    s = bumpDuration(s, 1);
+  }
+  for (const min of [45, 75, 90, 105, 110, 150, 180, 195, 210, 240]) {
+    assert.ok(reachable.has(min), `${min} min must be reachable`);
+  }
+});
+
+test('a duration reads the way it is spoken', () => {
+  assert.equal(fmtDuration(45 * 60), '45 min');
+  assert.equal(fmtDuration(60 * 60), '1h');
+  assert.equal(fmtDuration(105 * 60), '1h 45m');
+  assert.equal(fmtDuration(150 * 60), '2h 30m');
+  assert.equal(fmtDuration(null), '', 'no target states nothing');
+  assert.equal(fmtDuration(0), '');
 });

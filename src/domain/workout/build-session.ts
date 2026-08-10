@@ -101,6 +101,7 @@ export function buildSessionFromProgram(
           targetSpdMph: ex.targetSpdMph ?? null,
           targetSec: ex.targetSec ?? null,
           cardio: { ...EMPTY_RESULT },
+          ...(ex.coachNote ? { coachNote: ex.coachNote } : {}),
           ...group,
           section: sec.key,
           position: exercises.length,
@@ -115,6 +116,9 @@ export function buildSessionFromProgram(
       exercises.push({
         catalogKey: ex.catalogKey,
         name: ex.name,
+        /* The author's cue — "4 seconds down, then push up". Omitted rather than nulled when absent, so
+           a session written before this reads identically. */
+        ...(ex.coachNote ? { coachNote: ex.coachNote } : {}),
         ...group,
         /* The program's answer wins; otherwise derive it from the name. Only a program could set this
            before, so every freestyle session — and every add-as-you-go exercise — had no side label at

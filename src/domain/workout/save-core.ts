@@ -29,6 +29,48 @@ import type { ActiveSession } from './types.ts';
  * Extracted rather than mocked: the rule is arithmetic over a session, and belongs somewhere
  * `node --test` can reach it.
  */
+
+/**
+ * How long a finished workout stays reopenable, and whether this one still is.
+ *
+ * ⚠ LIVES IN THE PURE LAYER ON PURPOSE. `save.ts` imports the Supabase client, so nothing in it can be
+ * reached by `node --test` — and this is exactly the kind of boundary arithmetic that wants unit tests
+ * (an hour ago, an hour and a minute ago, a timestamp from the future because a clock drifted).
+ *
+ * The server enforces the same window in `continue_workout` and is the one that decides. This only
+ * governs whether the button is drawn: a device clock is an input, not a fact.
+ */
+export const CONTINUE_WINDOW_MIN = 60;
+
+export function withinContinueWindow(savedAtISO: string | null | undefined, now = Date.now()): boolean {
+  if (!savedAtISO) return false;
+  const t = Date.parse(savedAtISO);
+  if (Number.isNaN(t)) return false;
+  const mins = (now - t) / 60000;
+  // `>= 0` refuses a future timestamp rather than reading clock skew as "zero minutes ago".
+  return mins >= 0 && mins < CONTINUE_WINDOW_MIN;
+}
+
+/**
+ * The work added since a finished workout was reopened — everything `saved` leaves out.
+ *
+ * An exercise whose every logged set is already committed contributes nothing and is dropped entirely,
+ * or continuing a session and doing nothing would append a row of empty exercises to it.
+ */
+export function buildAppendExercises(session: ActiveSession) {
+  return buildSaveExercises(session)
+    .map((row, i) => {
+      const ex = session.exercises[i];
+      const fresh = ex.sets.filter((s) => s.done && !s.saved);
+      return { row, fresh };
+    })
+    .filter(({ fresh }) => fresh.length > 0)
+    .map(({ row, fresh }) => ({
+      ...row,
+      sets: row.sets.filter((s) => fresh.some((f) => f.setIndex === s.set_index)),
+    }));
+}
+
 export function buildSaveExercises(session: ActiveSession) {
   const recorded = session.exercises.filter((ex) => ex.kind !== 'cardio' || ex.sets.some((s) => s.done));
 

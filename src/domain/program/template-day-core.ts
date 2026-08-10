@@ -90,6 +90,7 @@ function toProgramExercise(e: TemplateExercise, lookup: CatalogLookup): ProgramE
       targetSec: e.targetDurationSec ?? null,
       targetPaceSec: null,
       targetSpdMph: null,
+      ...(e.coachNote ? { coachNote: e.coachNote } : null),
       ...group,
     };
   }
@@ -103,6 +104,7 @@ function toProgramExercise(e: TemplateExercise, lookup: CatalogLookup): ProgramE
     ...(rec?.cat ? { type: rec.cat } : null),
     sets: Math.max(1, e.sets),
     reps: Math.max(1, e.targetReps),
+    ...(e.coachNote ? { coachNote: e.coachNote } : null),
     ...group,
   };
 }

@@ -55,7 +55,7 @@ import { clearSession, hasLoggedWork, loadSession, persistSession } from '@/doma
 import { blockAt, breakBlock, endsSupersetRound, makeSuperset, nextInSuperset, sessionToTemplateExercises, supersetRounds } from '@/domain/workout/session-core';
 import { doneSetCount, hasLoggedSet, PR_MAX_REPS } from '@/domain/workout/metrics';
 import { perSideFor } from '@/domain/workout/per-side-core';
-import { fetchLastNotes, fetchPriorRecords, saveWorkout, type LastNote } from '@/domain/workout/save';
+import { continueWorkout, fetchLastNotes, fetchPriorRecords, saveWorkout, type LastNote } from '@/domain/workout/save';
 import { PlaylistSheet } from '@/components/forge/composites/Playlist';
 import { JoinRequestBanner } from '@/components/forge/JoinRequestBanner';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
@@ -951,10 +951,15 @@ export default function WorkoutScreen() {
     setError(null);
     try {
       const partnerNames = taggedPartners.map((id) => (partners ?? []).find((p) => p.id === id)?.name).filter((n): n is string => Boolean(n));
-      const r = await saveWorkout(session, partnerNames);
+      /* A reopened workout is APPENDED to, never saved again. `saveWorkout` writes the chapter
+         counter, the program slot and an honor pass — running it twice for one session would count a
+         single workout as two on the Legacy screen and claim a second slot in the program. */
+      const workoutId = session.continuingWorkoutId
+        ? (await continueWorkout(session.continuingWorkoutId, session), session.continuingWorkoutId)
+        : (await saveWorkout(session, partnerNames)).workoutId;
       await clearSession();
       finishWorkout();
-      router.replace({ pathname: '/workout-complete', params: { id: r.workoutId } });
+      router.replace({ pathname: '/workout-complete', params: { id: workoutId } });
     } catch (e) {
       setError(errorMessage(e));
       setPhase('active');
@@ -2656,7 +2661,25 @@ function replaceExercise(s: ActiveSession, ei: number, ex: ActiveSession['exerci
 function cardioExercise(
   activity: CardioActivity,
   position: number,
-  opts: { section?: SessionExercise['section']; targetMi?: number | null; targetPaceSec?: number | null; targetSpdMph?: number | null; modality?: 'outdoor' | 'indoor'; name?: string } = {},
+  opts: {
+    section?: SessionExercise['section'];
+    targetMi?: number | null;
+    targetPaceSec?: number | null;
+    targetSpdMph?: number | null;
+    /**
+     * ⚠ THIS OPTION DID NOT EXIST, AND ITS ABSENCE SILENTLY UNTIMED EVERY TEMPLATE BOUT.
+     *
+     * `TemplateExercise.targetDurationSec` has been stored and read back faithfully since cardio blocks
+     * were built, and this — the ONE crossing into session shape — had no key to put it in. So "Row for
+     * 20 minutes", saved as a template and started again, arrived as an open row with no target at all.
+     * The program-day crossing (`template-day-core.ts`) carried it the whole time, which is how the two
+     * consumers of one type came to disagree about what it meant.
+     */
+    targetSec?: number | null;
+    modality?: 'outdoor' | 'indoor';
+    name?: string;
+    coachNote?: string | null;
+  } = {},
 ): SessionExercise {
   const modality = opts.modality ?? 'outdoor';
   const base = newCardioBlock(activity);
@@ -2670,7 +2693,9 @@ function cardioExercise(
     targetMi: opts.targetMi === undefined ? base.targetMi : opts.targetMi,
     targetPaceSec: opts.targetPaceSec === undefined ? base.targetPaceSec ?? null : opts.targetPaceSec,
     targetSpdMph: opts.targetSpdMph === undefined ? base.targetSpdMph ?? null : opts.targetSpdMph,
+    targetSec: opts.targetSec ?? null,
     cardio: { ...EMPTY_RESULT },
+    ...(opts.coachNote ? { coachNote: opts.coachNote } : {}),
     section: opts.section ?? 'main',
     position,
     // The single synthetic set: one run is one unit of progress, and no progress math learns about cardio.
@@ -2698,13 +2723,17 @@ function templateToSessionExercises(rows: readonly TemplateExercise[]): SessionE
         section: e.section ?? 'main',
         modality: e.modality ?? 'outdoor',
         targetMi: e.targetMi ?? null,
+        // The clock the template was saved with. Dropped here until now — see `cardioExercise`'s opts.
+        targetSec: e.targetDurationSec ?? null,
         targetPaceSec: null,
         targetSpdMph: null,
+        coachNote: e.coachNote ?? null,
       });
     }
     return {
       name: e.name,
       catalogKey: e.catalogKey ?? undefined,
+      ...(e.coachNote ? { coachNote: e.coachNote } : {}),
       // The template's own section, not a flat 'main' — warm-up and cool-down survived the round trip
       // as of 0095, and the logger is where that has to show up.
       section: e.section ?? 'main',
