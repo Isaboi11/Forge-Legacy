@@ -1286,7 +1286,11 @@ const styles = StyleSheet.create({
   headerStatus: { fontSize: 12.5, color: flColor.gray400 },
   close: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
 
-  thread: { flexGrow: 0 },
+  /* ⚠ **`flexGrow: 0` PUT THE COMPOSER AT THE TOP OF THE SCREEN.** The list sized itself to its
+     content, so one short line of introduction made it one line tall and the input rode up directly
+     underneath it with the whole sheet empty below. It has to FILL, so the thread grows downward from
+     the header and the composer stays pinned to the bottom edge where it is reachable with a thumb. */
+  thread: { flex: 1 },
   threadInner: { paddingHorizontal: 18, paddingTop: 20, paddingBottom: 8, gap: 18 },
 
   meRow: {

@@ -22,12 +22,33 @@ import type { Turn } from '@/domain/coach/chat-core';
 const KEY = 'forge_coach_thread_v1';
 const MAX_TURNS = 100;
 
+/**
+ * ⚠ **A STORED INTRODUCTION IS NOT A CONVERSATION, AND TREATING IT AS ONE BRICKED THE SHEET.**
+ *
+ * The thread saves on every change, so it saved the introduction as it was still arriving. Close Holt
+ * within about two seconds of opening him — which is exactly what a first look at a new screen is — and
+ * what persisted was a single line: *"I'm Holt."*
+ *
+ * On the next open that thread was restored AND the intro was switched off, because a restored
+ * conversation should not replay an introduction over the top of it. So beats two and three never
+ * arrived, the opener chips they end with never arrived, and the athlete was left with one sentence, no
+ * pills, and nothing to tap. **Permanently** — every subsequent open re-saved the same single line, so
+ * the sheet could not recover on its own and reinstalling would not have cleared it either.
+ *
+ * The rule that fixes it and also RESCUES a device already stuck: a thread is worth restoring only once
+ * the athlete has put something in it. Every real interaction produces a `me` turn — tapping a chip
+ * echoes one exactly like typing does — so until one exists there is nothing to remember, and the
+ * introduction should simply run again.
+ */
+export const isConversation = (turns: Turn[]): boolean => turns.some((t) => t.kind === 'me');
+
 export async function loadThread(): Promise<Turn[] | null> {
   try {
     const raw = await AsyncStorage.getItem(KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Turn[];
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
+    if (!Array.isArray(parsed) || parsed.length === 0) return null;
+    return isConversation(parsed) ? parsed : null;
   } catch {
     // A thread we cannot read is a thread we start again — never an error in the athlete's face.
     return null;
@@ -36,6 +57,10 @@ export async function loadThread(): Promise<Turn[] | null> {
 
 export async function saveThread(turns: Turn[]): Promise<void> {
   try {
+    /* Nothing to keep until the athlete has said something — and writing a half-arrived introduction is
+       what caused the bug above. `loadThread` would ignore it now anyway; not writing it keeps the
+       stored thread honest rather than relying on the reader to disbelieve it. */
+    if (!isConversation(turns)) return;
     /* `live` is a transient — it means "this line is typing itself right now". Persisting it would make
        every restored line replay its typewriter, so the conversation would appear to be written afresh
        each time the sheet opens. */
