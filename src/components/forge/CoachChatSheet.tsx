@@ -10,7 +10,7 @@ import { Button } from '@/components/forge/composites/Button';
 import { HoltMark } from '@/components/forge/HoltMark';
 import { assemble } from '@/domain/coach/assemble';
 import {
-  DAY_PREAMBLE,
+  dayPreamble,
   INTRO,
   MEDICAL_STOP,
   NOT_UNDERSTOOD,
@@ -20,15 +20,19 @@ import {
   dayCardFor,
   completeFor,
   fromOpener,
+  HELP_TOPICS,
+  TYPING_ENABLED,
   interpret,
   isMedical,
   nextQuestion,
   preamble,
   programCardFor,
   readyToBuild,
+  greetReturning,
   refusalCardFor,
   volumeFor,
   weeksBetween,
+  type ChatState,
   type Chip,
   type DayCard,
   type EditCard,
@@ -36,13 +40,14 @@ import {
   type RefusalCard,
   type Turn,
 } from '@/domain/coach/chat-core';
-import { type CoachConstraints } from '@/domain/coach/constraints';
+import { pick } from '@/domain/coach/rulebook/voice';
+import { useProfile } from '@/lib/profile';
 import { rationaleFor } from '@/domain/coach/rulebook/rationale';
 import { buildDayWorkout } from '@/domain/coach/day';
 import { PICKER_DB } from '@/domain/exercise-picker/data';
 import { canDoExercise } from '@/domain/home-gym/equipment';
 import { fetchActiveProgram } from '@/data/programs-live';
-import { loadThread, saveThread } from '@/lib/coach-thread';
+import { hasMetHolt, loadThread, rememberMetHolt, saveThread } from '@/lib/coach-thread';
 import { useKeyboardInset } from '@/lib/useKeyboardInset';
 import { useReducedMotion } from '@/lib/useReducedMotion';
 import { draftFromStructure, saveProgramDraft } from '@/lib/program-draft';
@@ -130,7 +135,7 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
      and react-compiler catches the attempt rather than letting it become a stale closure. */
   const [busy, setBusy] = useState<'thinking' | 'building' | null>(null);
   const [mode, setMode] = useState<'program' | 'day' | null>(null);
-  const [constraints, setConstraints] = useState<Partial<CoachConstraints>>({});
+  const [constraints, setConstraints] = useState<ChatState>({});
   /** Which builder the card's button opens. The draft itself is already on disk by then. */
   const [built, setBuilt] = useState<{ kind: 'program' | 'day' } | null>(null);
   /** The whole plan, read-only, before the Builder. Holds the last card so it can be redrawn in full. */
@@ -166,6 +171,11 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
   const introTyping = INTRO[introStep] != null;
   const waiting = busy ?? (introTyping ? ('thinking' as const) : null);
 
+  /* Guards the greeting against running twice. Read and written INSIDE the effect only — react-compiler
+     errors on `ref.current` touched during render, and it is right to: that is a render whose output
+     depends on something React cannot see. */
+  const greeted = useRef(false);
+
   const say = useCallback((...turns: Turn[]) => setThread((t) => [...t, ...turns]), []);
 
   useEffect(() => {
@@ -175,18 +185,40 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
 
   /* §15.2/15.3 — one rolling thread that survives leaving the app, and leaving for the Builder. Loaded
      once; if there is anything stored, it replaces the introduction and the intro beats stop. */
+  const { profile, loading: profileLoading } = useProfile();
+  const firstName = profile?.firstName ?? null;
+
+  /*
+   * ⚠ **THE INTRODUCTION RUNS ONCE, EVER.** Replaying "I'm Holt. I don't pick a program off a shelf…" at
+   * somebody who has already heard it is the clearest possible signal that nobody is home. From the
+   * second visit he opens like a person: your name, then the actual question.
+   *
+   * `hasMetHolt` is a separate flag rather than "is a thread stored", because those are different facts —
+   * you can read the introduction, close the sheet and never say a word, and you have still met him.
+   */
   useEffect(() => {
     let alive = true;
-    void loadThread().then((stored) => {
-      if (alive && stored) {
-        setThread(stored);
-        setIntroStep(INTRO.length + 1);
+    /* ⚠ WAITS FOR THE PROFILE. Greeting before it resolves would say "Hey." to somebody who has a name,
+       once, unrepeatably — the one impression that is supposed to prove he knows who you are. */
+    if (profileLoading || greeted.current) return undefined;
+    greeted.current = true;
+    void (async () => {
+      const [met, stored] = await Promise.all([hasMetHolt(), loadThread()]);
+      if (!alive) return;
+      if (!met) {
+        void rememberMetHolt();
+        return; // the intro effect is already running; leave it alone
       }
-    });
+      setIntroStep(INTRO.length + 1);
+      /* He greets you on arrival — unless he is already stood at the door with the openers up, which is
+         what a stored thread ending in chips means. Otherwise every glance would stack another hello. */
+      const endsWaiting = stored != null && stored[stored.length - 1]?.kind === 'chips';
+      setThread([...(stored ?? []), ...(endsWaiting ? [] : greetReturning(firstName))]);
+    })();
     return () => {
       alive = false;
     };
-  }, []);
+  }, [profileLoading, firstName]);
 
   useEffect(() => {
     void saveThread(thread);
@@ -195,7 +227,7 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
   /* ── the turn cycle ────────────────────────────────────────────────────────────────────────────── */
 
   const advance = useCallback(
-    async (next: Partial<CoachConstraints>, mode_: 'program' | 'day') => {
+    async (next: ChatState, mode_: 'program' | 'day') => {
       const merged = { ...next };
       setConstraints(merged);
 
@@ -207,7 +239,10 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
           await pause(420);
           setBusy(null);
           const q = nextQuestion(merged);
-          if (q) say({ kind: 'holt', text: q.ask }, { kind: 'chips', chips: q.chips });
+          /* The short beat before the question — "Good." / "Right." / "Noted." It is what the original
+           hardcoded line did ("Good. What are you training for?"), now varied so it does not become the
+             tic that makes him sound like a script. */
+          if (q) say({ kind: 'holt', text: `${pick('ack')} ${q.ask}` }, { kind: 'chips', chips: q.chips });
           return;
         }
 
@@ -223,10 +258,7 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
           );
           setBusy(null);
           if (r.day.main.length === 0) {
-            say({
-              kind: 'holt',
-              text: "There isn't enough here for me to build you a session. Tell me what you've got and I'll work with it.",
-            });
+            say({ kind: 'holt', text: pick('nothing_to_build') });
             return;
           }
           /* The wizard's own handoff, not a second one. A single day goes to the WORKOUT builder and a
@@ -236,7 +268,7 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
           setBuilt({ kind: 'day' });
           const dayCard = dayCardFor(merged, r.day);
           setLastCard({ day: dayCard });
-          say({ kind: 'holt', text: DAY_PREAMBLE }, { kind: 'day', card: dayCard });
+          say({ kind: 'holt', text: dayPreamble() }, { kind: 'day', card: dayCard });
           return;
         }
 
@@ -349,6 +381,8 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
     return false;
   }, [say]);
 
+  const helpChips = (): Chip[] => HELP_TOPICS.map((t) => ({ label: t.q, patch: {}, helpTopic: t.q }));
+
   const tapChip = (chip: Chip) => {
     if (chip.label === 'Change the one I have') {
       say({ kind: 'me', text: chip.label });
@@ -362,10 +396,59 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
       return;
     }
 
+    /*
+     * "Run a race" NARROWS the question rather than answering it. There is no such goal, and picking one
+     * on the athlete's behalf — defaulting to a 5k — would have the engine build for a distance nobody
+     * chose. So it sets a chat-only flag and `nextQuestion` asks which.
+     */
+    if (chip.picksRace) {
+      say({ kind: 'me', text: chip.label });
+      void advance({ ...constraints, pickingRace: true }, mode ?? 'program');
+      return;
+    }
+
+    /* A help answer is a written paragraph and a real destination. He takes you; he does not point. */
+    if (chip.helpTopic) {
+      const topic = HELP_TOPICS.find((t) => t.q === chip.helpTopic);
+      say({ kind: 'me', text: chip.label });
+      if (topic) {
+        say(
+          { kind: 'holt', text: topic.a },
+          { kind: 'chips', chips: [{ label: topic.cta, patch: {}, goTo: topic.route }, ...helpChips()] },
+        );
+      }
+      return;
+    }
+
+    /* The only chips that leave. `goTo` is a route string the sheet pushes — nothing about training. */
+    if (chip.goTo) {
+      say({ kind: 'me', text: chip.label });
+      onClose();
+      router.push(chip.goTo as Parameters<typeof router.push>[0]);
+      return;
+    }
+
     const opener = fromOpener(chip.label);
     if (opener) {
-      setMode(opener.mode);
       say({ kind: 'me', text: chip.label });
+
+      if (opener.kind === 'import') {
+        /* ⚠ THE IMPORTER ALREADY EXISTS AND HE HANDS OVER TO IT rather than growing a second one. The
+           Program Builder reads a pasted plan, shows what it found, and saves nothing until it is read —
+           which is the same promise Holt makes about the blocks he writes himself. */
+        say(
+          { kind: 'holt', text: pick('import_open') },
+          { kind: 'chips', chips: [{ label: 'Paste it in', patch: {}, goTo: '/program-builder?o=import' }] },
+        );
+        return;
+      }
+
+      if (opener.kind === 'help') {
+        say({ kind: 'holt', text: pick('help_open') }, { kind: 'chips', chips: helpChips() });
+        return;
+      }
+
+      setMode(opener.mode);
       void (async () => {
         if (opener.mode === 'program' && !(await guardActiveProgram())) return;
         await advance({ ...constraints, ...opener.patch }, opener.mode);
@@ -405,7 +488,9 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
     }
 
     const opener = fromOpener(text);
-    if (opener) {
+    /* The typed path only understands the two openers that START something. Typing "how do I…" is a
+       question for the model, not for a string match — see TYPING_ENABLED. */
+    if (opener?.kind === 'build') {
       setMode(opener.mode);
       void advance({ ...constraints, ...opener.patch }, opener.mode);
       return;
@@ -538,7 +623,7 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
           * So the composer stays live. `send()` queues when busy and the drain effect plays it back the
           * moment he finishes.
           */}
-        {preview ? null : (
+        {preview || !TYPING_ENABLED ? null : (
         <View style={[styles.composer, busy ? styles.composerBusy : null]}>
           <TextInput
             value={draft}

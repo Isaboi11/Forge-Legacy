@@ -24,6 +24,8 @@
  */
 
 import {
+  ENDURANCE_GOALS,
+  STRENGTH_GOALS,
   isEnduranceGoal,
   GOAL_LABEL,
   type CoachConstraints,
@@ -33,6 +35,7 @@ import {
 } from './constraints.ts';
 import { AUTHORED_GOALS } from './rulebook/skeletons.ts';
 import { RACE_SPEC, weeklyVolumePlan } from './rulebook/endurance.ts';
+import { pick, pickNamed } from './rulebook/voice.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // THE THREAD
@@ -91,6 +94,12 @@ export interface RefusalCard {
 }
 
 export interface Chip {
+  /** Narrows the goal question to the distances instead of answering it. Only "Run a race" carries it. */
+  picksRace?: boolean;
+  /** A help question, answered from HELP_TOPICS. Never touches training. */
+  helpTopic?: string;
+  /** A route this chip leaves for. The only chips that close the sheet. */
+  goTo?: string;
   label: string;
   /** What tapping it fills in. The typed path resolves to the same thing — see `interpret`. */
   patch: Partial<CoachConstraints>;
@@ -100,8 +109,20 @@ export interface Chip {
 // THE QUESTIONS
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
+/**
+ * What the CHAT knows, which is the athlete's constraints plus the one thing only the conversation cares
+ * about.
+ *
+ * ⚠ `pickingRace` IS NOT A CONSTRAINT AND MUST NEVER BECOME ONE. "Run a race" is a tap that narrows the
+ * question without answering it — there is no such goal, and inventing one (defaulting to a 5k, say)
+ * would have the engine build a plan for a distance nobody chose. It lives here, out of
+ * `CoachConstraints`, so it cannot reach `assemble()` even by accident.
+ */
+export type ChatState = Partial<CoachConstraints> & { pickingRace?: boolean };
+
 export type QuestionId =
   | 'goal'
+  | 'race_distance'
   | 'race_when'
   | 'race_base'
   | 'days'
@@ -128,12 +149,29 @@ const chip = (label: string, patch: Partial<CoachConstraints>): Chip => ({ label
  * for a date and a starting mileage, a strength block asks for a split and a room, and asking a marathon
  * runner what equipment they own would be the coach not listening.
  */
-export function nextQuestion(c: Partial<CoachConstraints>): Question | null {
-  if (c.goal == null) {
+export function nextQuestion(c: ChatState): Question | null {
+  if (c.goal == null && !c.pickingRace) {
+    /*
+     * ⚠ **THE FIVE RACES ARE ONE CHIP.** Listing 5k, 10k, half, marathon and triathlon alongside "get
+     * stronger" made the endurance half of the catalogue shout over the other half, and the PO read the
+     * screen the way an athlete would: too many doors for one question. "Run a race" is the decision
+     * most people are actually making; the distance is a second, easier tap once they have made it.
+     */
     return {
       id: 'goal',
-      ask: "Good. What are you training for?",
-      chips: AUTHORED_GOALS.map((g) => chip(GOAL_LABEL[g], { goal: g })),
+      ask: pick('ask_goal'),
+      chips: [
+        ...STRENGTH_GOALS.filter((g) => AUTHORED_GOALS.includes(g)).map((g) => chip(GOAL_LABEL[g], { goal: g })),
+        { label: 'Run a race', patch: {}, picksRace: true },
+      ],
+    };
+  }
+
+  if (c.goal == null) {
+    return {
+      id: 'race_distance',
+      ask: pick('ask_race_distance'),
+      chips: ENDURANCE_GOALS.filter((g) => AUTHORED_GOALS.includes(g)).map((g) => chip(GOAL_LABEL[g], { goal: g })),
     };
   }
 
@@ -142,7 +180,7 @@ export function nextQuestion(c: Partial<CoachConstraints>): Question | null {
   if (endurance && c.raceDate == null) {
     return {
       id: 'race_when',
-      ask: "When's the race? Roughly is fine — I build the block backwards from it.",
+      ask: pick('ask_race_when'),
       chips: [6, 8, 12, 16, 20, 26].map((w) => chip(w === 26 ? 'Six months or more' : `About ${w} weeks`, { raceDate: isoInWeeks(w) })),
     };
   }
@@ -150,7 +188,7 @@ export function nextQuestion(c: Partial<CoachConstraints>): Question | null {
   if (endurance && c.currentWeeklyMi == null) {
     return {
       id: 'race_base',
-      ask: "What are you running in a normal week right now? Be honest — I'd rather start you lower and get you there.",
+      ask: pick('ask_race_base'),
       chips: [
         chip("I don't run at the moment", { currentWeeklyMi: 0, canRunContinuously: false }),
         chip('Under 5 miles', { currentWeeklyMi: 3 }),
@@ -166,9 +204,7 @@ export function nextQuestion(c: Partial<CoachConstraints>): Question | null {
     return {
       id: 'days',
       // The PO's own words, kept verbatim — this line already ships in the wizard.
-      ask: endurance
-        ? "How many days a week can you run? Be honest — I'd rather build three you'll hit than five you won't."
-        : "How many days a week can you train? Be honest — I'd rather build three you'll hit than five you won't.",
+      ask: endurance ? pick('ask_days_run') : pick('ask_days'),
       chips: [2, 3, 4, 5, 6].map((n) => chip(`${n} days`, { daysPerWeek: n })),
     };
   }
@@ -177,7 +213,7 @@ export function nextQuestion(c: Partial<CoachConstraints>): Question | null {
   if (!endurance && c.environment == null) {
     return {
       id: 'where',
-      ask: 'Where are you training?',
+      ask: pick('ask_where'),
       chips: [
         chip('Full gym', { environment: 'full_gym' }),
         chip('My home gym', { environment: 'home' }),
@@ -189,7 +225,7 @@ export function nextQuestion(c: Partial<CoachConstraints>): Question | null {
   if (!endurance && c.sessionMinutes == null) {
     return {
       id: 'time',
-      ask: 'How long have you got in there?',
+      ask: pick('ask_time'),
       chips: ([30, 45, 60, 75] as const).map((m) => chip(m === 75 ? '75+ minutes' : `${m} minutes`, { sessionMinutes: m })),
     };
   }
@@ -197,7 +233,7 @@ export function nextQuestion(c: Partial<CoachConstraints>): Question | null {
   if (c.experience == null) {
     return {
       id: 'experience',
-      ask: 'How experienced are you?',
+      ask: pick('ask_experience'),
       chips: (['beginner', 'intermediate', 'advanced'] as Experience[]).map((e) =>
         chip(EXPERIENCE_LABEL[e], { experience: { lifting: e, running: e } }),
       ),
@@ -207,7 +243,7 @@ export function nextQuestion(c: Partial<CoachConstraints>): Question | null {
   if (c.limitations == null) {
     return {
       id: 'limits',
-      ask: "Anything I should work around?",
+      ask: pick('ask_limits'),
       skippable: true,
       chips: [
         chip('Nothing — build it', { limitations: [] }),
@@ -298,24 +334,167 @@ export const INTRO: string[] = [
   "Nothing gets saved until you've seen every week of it. Start wherever you like.",
 ];
 
-export const OPENERS: string[] = ['Build me a program', 'What should I train today?', '45 minutes and dumbbells'];
-
 /**
- * What an opener means. The three the design ships are the three real entry points, so each maps to a
- * starting constraint set rather than being parsed.
+ * The front door.
+ *
+ * ⚠ **"45 MINUTES AND DUMBBELLS" IS GONE, AND IT DESERVED TO BE.** It was a demonstration of what typing
+ * could do, dressed as an option — it read to the PO as a sentence with no obvious meaning, which is
+ * exactly what it was: an example prompt, not a thing anybody wants. An opener has to name something the
+ * athlete already wants to do.
+ *
+ * The four that replace it are the four real reasons to open Holt: build one, train today, bring a plan
+ * you already have, or ask how the app works.
  */
-export function fromOpener(label: string): { mode: 'program' | 'day'; patch: Partial<CoachConstraints> } | null {
+export const OPENERS: string[] = [
+  'Build me a program',
+  'What should I train today?',
+  "I've got a program already",
+  'How do I…?',
+];
+
+/** An opener either starts the questionnaire or leaves the conversation entirely. */
+export type OpenerAction =
+  | { kind: 'build'; mode: 'program' | 'day'; patch: Partial<CoachConstraints> }
+  | { kind: 'import' }
+  | { kind: 'help' };
+
+export function fromOpener(label: string): OpenerAction | null {
   switch (label) {
     case 'Build me a program':
-      return { mode: 'program', patch: {} };
+      return { kind: 'build', mode: 'program', patch: {} };
     case 'What should I train today?':
-      return { mode: 'day', patch: {} };
-    case '45 minutes and dumbbells':
-      return { mode: 'day', patch: { sessionMinutes: 45, environment: 'home', ownedEquipment: ['dumbbells'] } };
+      return { kind: 'build', mode: 'day', patch: {} };
+    case "I've got a program already":
+      return { kind: 'import' };
+    case 'How do I…?':
+      return { kind: 'help' };
     default:
       return null;
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// HELP, WITHOUT A MODEL
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * ⚠ **HOLT ANSWERS "HOW DO I…" FROM A WRITTEN LIST, NOT BY UNDERSTANDING THE QUESTION.**
+ *
+ * This is the honest version of the PO's ask, and the distinction is the whole point. Answering an
+ * arbitrary question in the athlete's own words needs a model — that is the paid tier's real pitch, and
+ * §12 of the plan says so. What does NOT need a model is the twenty things people actually ask, each
+ * written once, properly, by a human. Decision Queue #21 already landed on "static help centre first".
+ *
+ * So help is a MENU, not a search box. Every answer is a sentence and a destination, and Holt takes you
+ * there rather than describing a route and leaving you to find it.
+ *
+ * ⚠ EVERY `route` BELOW IS A REAL SCREEN. A help topic that lands nowhere is worse than no help topic —
+ * `help.test.mjs` walks the app directory and fails if one of these stops existing.
+ */
+export interface HelpTopic {
+  q: string;
+  a: string;
+  /** Where the answer lives. Holt offers to take them; he does not just point. */
+  route: string;
+  cta: string;
+}
+
+export const HELP_TOPICS: readonly HelpTopic[] = [
+  {
+    q: 'Start a workout',
+    a: "Workouts tab. Pick one off your program, choose any session from the week, or build one from scratch. If a program's running, the next session is already waiting at the top.",
+    route: '/(tabs)/workouts',
+    cta: 'Take me there',
+  },
+  {
+    q: 'Swap an exercise',
+    a: "Tap the exercise while you're training and choose Replace. I'll offer movements that train the same thing with the kit you've got — your sets, reps and weight carry across.",
+    route: '/(tabs)/workouts',
+    cta: 'Open Workouts',
+  },
+  {
+    q: 'Change a program',
+    a: "Open the program and pick the session. You can swap two days around, train one early, or skip it — anything you've already trained stays exactly as it happened.",
+    route: '/(tabs)',
+    cta: 'Open Home',
+  },
+  {
+    q: 'Import a program',
+    a: "Paste it into the Program Builder — a table, a spreadsheet, a plan somebody wrote out. I'll read the weeks out of it and show you what I found before anything is saved.",
+    route: '/program-builder?o=import',
+    cta: 'Import one',
+  },
+  {
+    q: 'See my history',
+    a: 'Activity History has every session you have logged, oldest to newest. Nothing in there can be edited or deleted — that is deliberate.',
+    route: '/activity-history',
+    cta: 'Show me',
+  },
+  {
+    q: 'Set a goal',
+    a: 'Goals live on your chapter. One primary goal at a time, and lifts you log update it on their own — you do not have to come back and tick anything off.',
+    route: '/goals',
+    cta: 'Open Goals',
+  },
+  {
+    q: 'Add a friend',
+    a: 'Search their handle and send a request. Friendship is mutual here — nobody follows anybody.',
+    route: '/add-friend',
+    cta: 'Add someone',
+  },
+  {
+    q: 'Join a squad',
+    a: 'Discover Squads to find one, or take an invite from someone in it. Most squads approve requests rather than opening the door to everyone.',
+    route: '/discover-squads',
+    cta: 'Find a squad',
+  },
+  {
+    q: 'Tell you my equipment',
+    a: "Home Gym. Tick what you actually own and I'll stop prescribing things you can't do — it changes what I build from then on.",
+    route: '/home-gym',
+    cta: 'Set it up',
+  },
+  {
+    q: 'Understand my rank',
+    a: 'Rank comes off what you have actually done — sessions logged, honors earned, chapters closed. It moves slowly on purpose.',
+    route: '/honors',
+    cta: 'Show me',
+  },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// COMING BACK
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * What he says on every visit after the first.
+ *
+ * ⚠ **THE INTRODUCTION IS FOR STRANGERS.** Replaying "I'm Holt. I don't pick a program off a shelf…" to
+ * somebody who has already had that conversation is the single most obvious way for a character to
+ * announce that nobody is home. He knows your name by the second visit, and he opens the way a person
+ * does — greeting, then the actual question.
+ */
+export function greetReturning(firstName: string | null | undefined): Turn[] {
+  return [
+    { kind: 'holt', text: firstName?.trim() ? pickNamed('greet_return', firstName) : pick('greet_return_anon') },
+    { kind: 'holt', text: pick('greet_return_second') },
+    { kind: 'chips', chips: OPENERS.map((label) => ({ label, patch: {} })) },
+  ];
+}
+
+/**
+ * ⚠ **TYPING IS OFF UNTIL THE MODEL LANDS, BY PO DECISION, AND THAT IS THE HONEST CALL.**
+ *
+ * `interpret()` matches a typed line against the chips for the question on the table. That is a real
+ * capability and it is a narrow one — anything phrased differently comes back "I didn't catch that". A
+ * text box that mostly fails is worse than no text box: it advertises an understanding the app does not
+ * have, and every failure is the athlete being told they were unclear when the app was.
+ *
+ * So the composer is hidden and Holt is fully tappable. Nothing underneath it is removed — `send`,
+ * `interpret`, the hold-and-drain queue and their tests all stay live, because this flips back to `true`
+ * the day the Edge Function answers, and that should be one line rather than a rebuild.
+ */
+export const TYPING_ENABLED = false;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // WHAT HOLT SAYS ABOUT WHAT HE BUILT
@@ -332,14 +511,15 @@ export function preamble(c: CoachConstraints, weeks: number): string {
     const spec = RACE_SPEC[c.goal];
     const base = c.currentWeeklyMi ?? 0;
     return base > 0
-      ? `Here's the block. ${weeks} weeks, ${c.daysPerWeek} days, and it's built around the ${base} miles you already run.`
-      : `Here's the block. ${weeks} weeks to the ${spec.label}, starting from where you actually are rather than where you'd like to be.`;
+      ? `${pick('lead_block')} ${weeks} weeks, ${c.daysPerWeek} days, and it's built around the ${base} miles you already run.`
+      : `${pick('lead_block')} ${weeks} weeks to the ${spec.label}, starting from where you actually are rather than where you'd like to be.`;
   }
-  return `Here's the block. ${weeks} weeks, ${c.daysPerWeek} days a week, built for what you've got.`;
+  return `${pick('lead_block')} ${weeks} weeks, ${c.daysPerWeek} days a week, built for what you've got.`;
 }
 
 /** The line above a single day. */
-export const DAY_PREAMBLE = 'Here it is. Everything in it is something you can do with what you told me.';
+/** The line above a single day, one of several. */
+export const dayPreamble = (): string => pick('preamble_day');
 
 /**
  * Whether the constraints are complete enough to build.

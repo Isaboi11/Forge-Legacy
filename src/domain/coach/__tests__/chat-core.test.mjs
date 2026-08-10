@@ -88,11 +88,25 @@ test('one question at a time, and never the same one twice', () => {
 });
 
 test('the goal question only offers goals the engine can build', () => {
+  /*
+   * ⚠ THE GOAL QUESTION NOW HAS TWO KINDS OF CHIP, and the distinction is the point: one ANSWERS the
+   * question, the other NARROWS it. "Run a race" deliberately sets no goal — there is no such goal, and
+   * defaulting it to a distance would have the engine build for a race nobody entered.
+   */
   const q = nextQuestion({});
   assert.equal(q.id, 'goal');
   assert.ok(q.chips.length > 0);
   for (const chip of q.chips) {
+    if (chip.picksRace) {
+      assert.deepEqual(chip.patch, {}, 'the narrowing chip must not answer anything');
+      continue;
+    }
     assert.ok(chip.patch.goal, 'a goal chip must set a goal');
+    assert.ok(isAuthored(chip.patch.goal), `${chip.patch.goal} is offered but cannot be built`);
+  }
+
+  // And behind it, every distance is one the engine can actually build.
+  for (const chip of nextQuestion({ pickingRace: true }).chips) {
     assert.ok(isAuthored(chip.patch.goal), `${chip.patch.goal} is offered but cannot be built`);
   }
 });
@@ -172,14 +186,25 @@ test('every opener is a real thing Holt can do', () => {
   for (const label of OPENERS) {
     const r = fromOpener(label);
     assert.ok(r, `"${label}" is offered but leads nowhere`);
-    assert.ok(r.mode === 'program' || r.mode === 'day');
+    assert.ok(['build', 'import', 'help'].includes(r.kind), `"${label}" has no action`);
+    if (r.kind === 'build') assert.ok(r.mode === 'program' || r.mode === 'day');
   }
 });
 
-test('an opener that already answers something does not ask it again', () => {
-  // "45 minutes and dumbbells" states the room and the time; re-asking would be the app not listening.
-  const r = fromOpener('45 minutes and dumbbells');
-  const { asked } = walk({ goal: 'strength', ...r.patch });
+test('an opener that pre-answers something does not ask it again', () => {
+  /*
+   * ⚠ THE OPENER THIS ORIGINALLY TESTED IS GONE. "45 minutes and dumbbells" stated a room and a time,
+   * and the assertion was that Holt would not then ask for either. The PO could not tell what the chip
+   * MEANT — it was an example of what typing could do, wearing the clothes of an option — so it was
+   * retired.
+   *
+   * The property it protected is still real and still worth holding: any patch an opener carries must
+   * remove the question it answers. So it is asserted directly against the mechanism rather than
+   * against a label that no longer exists.
+   */
+  assert.equal(fromOpener('45 minutes and dumbbells'), null, 'the retired opener must not still resolve');
+
+  const { asked } = walk({ goal: 'strength', sessionMinutes: 45, environment: 'home', ownedEquipment: ['dumbbells'] });
   assert.ok(!asked.includes('time'), 'it asked for a session length that was already given');
   assert.ok(!asked.includes('where'), 'it asked where they train after being told');
 });

@@ -20,6 +20,14 @@ import type { Turn } from '@/domain/coach/chat-core';
  * and the introduction is not worth carrying forever.
  */
 const KEY = 'forge_coach_thread_v1';
+/*
+ * ⚠ SEPARATE FROM THE THREAD, BECAUSE THE THREAD CANNOT ANSWER THIS.
+ *
+ * "Have we met" is not "is there a conversation stored": somebody can open Holt, read the introduction,
+ * close him, and never say a word. The thread is correctly empty and they have still met him — replaying
+ * the introduction at them would be the app forgetting a conversation they remember having.
+ */
+const MET_KEY = 'forge_coach_met_v1';
 const MAX_TURNS = 100;
 
 /**
@@ -76,5 +84,23 @@ export async function clearThread(): Promise<void> {
     await AsyncStorage.removeItem(KEY);
   } catch {
     // ignore
+  }
+}
+
+/** True once Holt has introduced himself on this device. */
+export async function hasMetHolt(): Promise<boolean> {
+  try {
+    return (await AsyncStorage.getItem(MET_KEY)) === '1';
+  } catch {
+    // Unreadable means treat them as new: a second introduction is a small cost, a missing one is not.
+    return false;
+  }
+}
+
+export async function rememberMetHolt(): Promise<void> {
+  try {
+    await AsyncStorage.setItem(MET_KEY, '1');
+  } catch {
+    // Best-effort. Worst case he introduces himself twice.
   }
 }

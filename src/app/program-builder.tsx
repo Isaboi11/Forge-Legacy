@@ -44,6 +44,7 @@ import {
   fmtDistanceIn,
   fmtDuration,
   hasRateTarget,
+  parseDistanceIn,
   newCardioBlock,
   FIRST_TARGET,
   usesSpeed,
@@ -392,6 +393,19 @@ function ProgramBuilderScreen() {
    */
   const [noteSheet, setNoteSheet] = useState<{ section: BuilderSection; index: number } | null>(null);
   const [noteDraft, setNoteDraft] = useState('');
+  /** Typing a cardio target instead of stepping to it — which target, and the text so far. */
+  const [targetSheet, setTargetSheet] = useState<{ section: BuilderSection; index: number; field: 'time' | 'distance' } | null>(null);
+  const [targetDraft, setTargetDraft] = useState('');
+  /** The unit the target sheet talks in — yards for a pool, miles for the road. */
+  const targetUnitLabel =
+    targetSheet && draft?.openDay != null
+      ? distanceUnitFor(
+          ((draft.vary && draft.weekPlans ? draft.weekPlans[draft.openWeek ?? 0]?.days : draft.days)?.[draft.openDay]?.[
+            targetSheet.section
+          ]?.[targetSheet.index]?.activity ?? 'run') as CardioActivity,
+          metric,
+        )
+      : 'mi';
   /** "Use a template" for the open day — the chooser, and the replace/add question it can raise. */
   const [templateSheet, setTemplateSheet] = useState(false);
   const [templatePending, setTemplatePending] = useState<{ name: string; rows: DaySections } | null>(null);
@@ -430,6 +444,11 @@ function ProgramBuilderScreen() {
         }
         await saveProgramDraft(d);
         if (active) setDraft(d);
+        /* ⚠ `o=import` OPENS THE PASTE SHEET ON ARRIVAL. Coach Holt sends people here when they say they
+           already have a plan, and "we take you to the Builder, now find the import button yourself" is
+           not taking them anywhere. Only on a fresh entry — landing back here from the Picker mid-edit
+           must not throw a paste sheet over the work. */
+        if (active && entryMode === 'import' && !inbox) openImport();
       })();
       return () => {
         active = false;
@@ -666,6 +685,17 @@ function ProgramBuilderScreen() {
               list.map((x, k) => (k !== i ? x : { ...x, targetSec: bumpDuration(x.targetSec ?? null, dir) })),
             )
           }
+          onTypeTime={(section, i) => {
+            const cur = days[draft.openDay!]?.[section]?.[i]?.targetSec;
+            setTargetDraft(cur == null ? '' : String(Math.round(cur / 60)));
+            setTargetSheet({ section, index: i, field: 'time' });
+          }}
+          onTypeDistance={(section, i) => {
+            const row = days[draft.openDay!]?.[section]?.[i];
+            const unit = distanceUnitFor((row?.activity ?? 'run') as CardioActivity, metric);
+            setTargetDraft(row?.targetMi == null ? '' : fmtDistanceIn(row.targetMi, unit));
+            setTargetSheet({ section, index: i, field: 'distance' });
+          }}
           onEditNote={(section, i) => {
             /* Seeded from what is already there, so opening an existing cue EDITS it. Without this the
                sheet opens blank and saving silently replaces the note with nothing. */
@@ -767,6 +797,68 @@ function ProgramBuilderScreen() {
               <Glyph d="M9 6l6 6-6 6" size={15} color={flColor.gray600} width={2} />
             </Pressable>
           ))}
+        </View>
+      </BottomSheet>
+
+      {/* ── TYPE A TARGET ───────────────────────────────────────────────────────────────────────────
+          A number pad and nothing else. Stepping is a nudge; this is how a target gets SET, because
+          twelve taps to reach 1200 yd and a five-minute grain that cannot state a 12-minute brick are
+          both the stepper being asked to do a job it is bad at.
+
+          Clearing the field and saving sets the target back to Open, which is a real prescription. */}
+      <BottomSheet
+        open={targetSheet != null}
+        onClose={() => setTargetSheet(null)}
+        title={targetSheet?.field === 'time' ? 'Time' : 'Distance'}
+      >
+        <View style={styles.sectionBody}>
+          <Text style={styles.cardioIntro}>
+            {targetSheet?.field === 'time'
+              ? 'How many MINUTES? A 90-minute ride is 90; two and a half hours is 150. Leave it empty for no target.'
+              : `How far, in ${targetUnitLabel}? Leave it empty for no target.`}
+          </Text>
+          <TextInput
+            value={targetDraft}
+            onChangeText={setTargetDraft}
+            keyboardType="decimal-pad"
+            inputMode="decimal"
+            autoFocus
+            selectTextOnFocus
+            maxLength={7}
+            placeholder={targetSheet?.field === 'time' ? 'minutes' : targetUnitLabel}
+            placeholderTextColor={flColor.gray600}
+            accessibilityLabel={targetSheet?.field === 'time' ? 'Minutes' : `Distance in ${targetUnitLabel}`}
+            style={styles.targetInput}
+          />
+          <Button
+            variant="primary"
+            fullWidth
+            onPress={() => {
+              const at = targetSheet;
+              if (!at || draft.openDay == null) return setTargetSheet(null);
+              const raw = targetDraft.trim();
+              patchSection(draft.openDay, at.section, (list) =>
+                list.map((x, k) => {
+                  if (k !== at.index) return x;
+                  if (at.field === 'time') {
+                    const mins = Number(raw.replace(',', '.'));
+                    // An empty or unreadable entry clears the target rather than inventing one.
+                    const sec = raw && Number.isFinite(mins) && mins > 0 ? Math.round(mins * 60) : null;
+                    return { ...x, targetSec: sec };
+                  }
+                  const unit = distanceUnitFor((x.activity ?? 'run') as CardioActivity, metric);
+                  return { ...x, targetMi: raw ? parseDistanceIn(raw, unit) : null };
+                }),
+              );
+              setTargetSheet(null);
+            }}
+            accessibilityLabel="Save this target"
+          >
+            Save
+          </Button>
+          <Button variant="text" fullWidth onPress={() => setTargetSheet(null)} accessibilityLabel="Cancel">
+            Cancel
+          </Button>
         </View>
       </BottomSheet>
 
@@ -1822,6 +1914,8 @@ function DayBuilder({
   onSlotA,
   onSlotB,
   onSlotTime,
+  onTypeTime,
+  onTypeDistance,
   onEditNote,
   metric,
   onPair,
@@ -1847,6 +1941,9 @@ function DayBuilder({
   onSlotB: (section: BuilderSection, i: number, dir: 1 | -1) => void;
   /** Minutes on the clock — cardio only. */
   onSlotTime: (section: BuilderSection, i: number, dir: 1 | -1) => void;
+  /** Type a target instead of stepping to it — cardio only. */
+  onTypeTime: (section: BuilderSection, i: number) => void;
+  onTypeDistance: (section: BuilderSection, i: number) => void;
   /** Write the author's coaching cue for this row. */
   onEditNote: (section: BuilderSection, i: number) => void;
   /** Chooses the distance scale: yards/metres for a swim, miles/kilometres for everything else. */
@@ -1920,6 +2017,8 @@ function DayBuilder({
                     onSlotA={(dir) => onSlotA(sec.key, i, dir)}
                     onSlotB={(dir) => onSlotB(sec.key, i, dir)}
                     onSlotTime={(dir) => onSlotTime(sec.key, i, dir)}
+                    onTypeTime={() => onTypeTime(sec.key, i)}
+                    onTypeDistance={() => onTypeDistance(sec.key, i)}
                     onEditNote={() => onEditNote(sec.key, i)}
                     metric={metric}
                     onPair={() => onPair(sec.key, i)}
@@ -2009,6 +2108,8 @@ function ExerciseCard({
   onSlotA,
   onSlotB,
   onSlotTime,
+  onTypeTime,
+  onTypeDistance,
   onEditNote,
   metric,
   onPair,
@@ -2029,6 +2130,9 @@ function ExerciseCard({
   onSlotB: (dir: 1 | -1) => void;
   /** The clock — a cardio bout prescribed in minutes. Never shown for a lift. */
   onSlotTime: (dir: 1 | -1) => void;
+  /** Type the target rather than step to it. Cardio only. */
+  onTypeTime: () => void;
+  onTypeDistance: () => void;
   /** Open the sheet for this row's coaching cue. */
   onEditNote: () => void;
   metric: boolean;
@@ -2161,10 +2265,27 @@ function ExerciseCard({
         {showDistance ? (
           <View style={[styles.exMeter, styles.exMeterDivider]}>
             <RoundStep label={cardio ? `Shorter distance for ${item.name}` : `Fewer sets for ${item.name}`} sign="−" onPress={() => onSlotA(-1)} />
-            <Text style={styles.exMeterText}>
-              <Text style={[styles.exMeterValue, aOpen ? styles.exMeterOpen : null]}>{aVal}</Text>
-              {aUnit ? ` ${aUnit}` : ''}
-            </Text>
+            {/*
+              ══ THE VALUE IS A BUTTON, AND TYPING IS THE POINT ══
+
+              Stepping is fine for a nudge and miserable as the only way in: a 1200 yd swim is twelve taps
+              from the seed and a 3200 yd one is twenty-two, and the clock steps in five-minute jumps that
+              cannot state a 12-minute brick at all. Tapping the number types it.
+
+              The steppers stay for the nudge, which is what they are good at.
+            */}
+            <Pressable
+              onPress={cardio ? onTypeDistance : undefined}
+              disabled={!cardio}
+              accessibilityRole={cardio ? 'button' : undefined}
+              accessibilityLabel={cardio ? `Type a distance for ${item.name}` : undefined}
+              hitSlop={6}
+            >
+              <Text style={styles.exMeterText}>
+                <Text style={[styles.exMeterValue, aOpen ? styles.exMeterOpen : null, cardio ? styles.exMeterTypeable : null]}>{aVal}</Text>
+                {aUnit ? ` ${aUnit}` : ''}
+              </Text>
+            </Pressable>
             <RoundStep label={cardio ? `Longer distance for ${item.name}` : `More sets for ${item.name}`} sign="+" onPress={() => onSlotA(1)} />
           </View>
         ) : null}
@@ -2172,9 +2293,16 @@ function ExerciseCard({
         {cardio ? (
           <View style={styles.exMeter}>
             <RoundStep label={`Shorter time for ${item.name}`} sign="−" onPress={() => onSlotTime(-1)} />
-            <Text style={styles.exMeterText}>
-              <Text style={[styles.exMeterValue, tOpen ? styles.exMeterOpen : null]}>{tVal}</Text>
-            </Text>
+            <Pressable
+              onPress={onTypeTime}
+              accessibilityRole="button"
+              accessibilityLabel={`Type a time for ${item.name}`}
+              hitSlop={6}
+            >
+              <Text style={styles.exMeterText}>
+                <Text style={[styles.exMeterValue, tOpen ? styles.exMeterOpen : null, styles.exMeterTypeable]}>{tVal}</Text>
+              </Text>
+            </Pressable>
             <RoundStep label={`Longer time for ${item.name}`} sign="+" onPress={() => onSlotTime(1)} />
           </View>
         ) : (
@@ -2617,6 +2745,17 @@ const styles = StyleSheet.create({
   exNoteText: { flex: 1, fontSize: 12, color: flColor.gray600 },
   /* An authored cue reads as prose — cream and italic, the same voice the logger shows it back in. */
   exNoteTextSet: { color: flColor.cream100, fontStyle: 'italic' },
+  targetInput: {
+    borderWidth: 1,
+    borderColor: flColor.charcoal500,
+    borderRadius: flRadius.md,
+    backgroundColor: flColor.surfaceRecessed,
+    color: flColor.cream100,
+    fontFamily: flFont.display,
+    fontSize: 26,
+    textAlign: 'center',
+    paddingVertical: 14,
+  },
   noteInput: {
     minHeight: 92,
     borderWidth: 1,
@@ -2632,6 +2771,8 @@ const styles = StyleSheet.create({
   exMeter: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 9 },
   exMeterDivider: { borderRightWidth: 1, borderRightColor: flColor.charcoal700 },
   exMeterText: { minWidth: 58, textAlign: 'center', fontSize: 12.5, color: flColor.gray400 },
+  /* A dotted underline is what tells the athlete the number can be typed rather than only stepped. */
+  exMeterTypeable: { textDecorationLine: 'underline', textDecorationStyle: 'dotted', textDecorationColor: flColor.charcoal500 },
   exMeterValue: { fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   roundStep: {
     width: 26,
