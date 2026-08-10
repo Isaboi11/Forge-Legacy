@@ -215,7 +215,7 @@ $fn$;
 -- Both must be TRUE. The first proves the installed body writes the note; the second proves the grant
 -- survived, since that is the thing a careless DROP would have taken with it.
 select
-  (select pg_get_functiondef(p.oid) like '%nullif(v_ex->>''notes'', )%'
+  (select pg_get_functiondef(p.oid) like '%nullif(v_ex->>''notes''%'
      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and p.proname = 'save_workout'
     limit 1)                                                        as writes_exercise_notes,
