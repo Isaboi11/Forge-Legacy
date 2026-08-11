@@ -691,6 +691,40 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
+### 0. RELEASE STATE — 2026-08-11 (read this before shipping anything else)
+
+| | |
+|---|---|
+| **Commit** | `d199c45` on `feat/home-onramp` (not pushed, not merged) |
+| **Web preview** | **LIVE** — forgelegacy.expo.app, root 200, serving `entry-2c1c4b7114ef12fe562279af61e7f01a.js`, hash verified against the local build |
+| **iOS build** | `0d07a777-5829-43d6-8a23-63de2cdf7455`, production, **in progress** — commit `d199c45`, runtime `3508eed9…`, build number 3 |
+| **Migrations** | 0126 · 0127 · 0128 **APPLIED** by the PO |
+| **OTA** | **NOT PUBLISHED — and must not be until 0d07a777 is installed.** See below. |
+
+**⚠ WHY THIS RELEASE COULD NOT BE AN OTA, AND WHY THAT WAS CHECKED RATHER THAN ASSUMED.**
+
+`runtimeVersion` is `{ policy: "fingerprint" }`. Adding `react-native-compressor` +
+`react-native-nitro-modules` for video compression changed the native fingerprint, so
+`fingerprint:compare` against the live build was decisive:
+
+```
+live iOS build (2511c478, Aug 7) : 791bacda…
+local project                    : 3508eed9…
+sole difference                  : the two compressor packages
+```
+
+An `eas update` published in that state would have uploaded fine, reported success, and been
+**delivered to nobody** — the standing trap in this project's history. Forcing a matching
+`runtimeVersion` would have been worse: JS calling a native module the installed binary does not
+contain is a crash on any screen with a camera.
+
+PO decision, 2026-08-11: **new build, ship everything together** — rather than stripping the compressor
+to make the OTA deliverable. So nothing reached existing phones this pass; the web preview is the
+surface to test on, minus video compression, which is native-only by nature.
+
+**ONCE 0d07a777 IS INSTALLED**, runtime `3508eed9…` becomes the OTA target and ordinary
+`eas update` resumes for JS-only work. Re-run `fingerprint:compare` before the next one anyway.
+
 ### 1. The four open decisions from the PO review, all built (2026-08-10, CODE + migration 0128 + a native dependency)
 
 **A. EZ BAR — 12 movements, and a checkbox that stopped lying.** Not one of the 797 records named an EZ
