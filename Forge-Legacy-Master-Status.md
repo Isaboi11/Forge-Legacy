@@ -721,7 +721,7 @@ phone the moment build 4 was installed. This update is the first one build 4 can
 | | |
 |---|---|
 | **Commit** | `d199c45` on `feat/home-onramp` (not pushed, not merged) — superseded; HEAD is now `2a5dcce` |
-| **Web preview** | **LIVE** — forgelegacy.expo.app, root 200, serving `entry-2c1c4b7114ef12fe562279af61e7f01a.js`, hash verified against the local build |
+| **Web preview** | **LIVE, redeployed 2026-08-11 with the Creator Dashboard** — forgelegacy.expo.app, root 200, `/admin` 200, serving `entry-85de57119c4bf9c35ae4ab6ad8398618.js`, hash verified against the local build. (Superseded `entry-2c1c4b71…`) |
 | **iOS build** | `0d07a777-5829-43d6-8a23-63de2cdf7455`, production, **in progress** — commit `d199c45`, runtime `3508eed9…`, build number 3 |
 | **Migrations** | 0126 · 0127 · 0128 **APPLIED** by the PO. **0129 + 0130 authored 2026-08-11, NOT applied** — paste `supabase/apply/pending-0129-0130.sql`, then run its STEP 2 to grant yourself admin |
 | **OTA** | **NOT PUBLISHED — and must not be until 0d07a777 is installed.** See below. |
