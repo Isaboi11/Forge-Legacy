@@ -19,8 +19,18 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 
 const SRC = new URL('../Docs/Legal/Privacy-Policy.md', import.meta.url);
+
+/**
+ * ⚠ WRITTEN TWICE, AND BOTH ARE NEEDED.
+ *
+ * EAS Hosting serves `/privacy` from `privacy.html` and `/privacy/` from `privacy/index.html`. Shipping
+ * only the directory form returns **404 on `/privacy`** — verified, not assumed — and that bare form is
+ * exactly what goes into App Store Connect and what a person types. A privacy URL that 404s is an App
+ * Store rejection and a broken promise at the same time.
+ */
+const OUT_FLAT = new URL('../public/privacy.html', import.meta.url);
 const OUT_DIR = new URL('../public/privacy/', import.meta.url);
-const OUT = new URL('index.html', OUT_DIR);
+const OUT_INDEX = new URL('index.html', OUT_DIR);
 
 const raw = readFileSync(SRC, 'utf8');
 
@@ -190,5 +200,7 @@ ${body}
 `;
 
 mkdirSync(OUT_DIR, { recursive: true });
-writeFileSync(OUT, html, 'utf8');
-console.log(`Wrote ${OUT.pathname} (${html.length} bytes) from ${md.length} chars of policy.`);
+writeFileSync(OUT_FLAT, html, 'utf8');
+writeFileSync(OUT_INDEX, html, 'utf8');
+console.log(`Wrote public/privacy.html and public/privacy/index.html (${html.length} bytes each) from ${md.length} chars of policy.`);
+console.log('Serves /privacy and /privacy/ — verify BOTH return 200 after deploying.');
