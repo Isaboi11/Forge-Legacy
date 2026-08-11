@@ -748,7 +748,7 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 | | |
 |---|---|
-| **OTA** | ✅ **PUBLISHED** — branch `production`, iOS runtime `74a9a86b…`, group `e0a11f70-9351-411e-8891-58db55781312`, commit `2a5dcce`. `fingerprint:compare` against build `5de44367` matched **exactly** before publishing, so it is deliverable to the installed build 4 |
+| **OTA** | ✅ **PUBLISHED — Phase 1 + Phase 2, at commit `eb95051`.** Branch `production`, iOS runtime `74a9a86b…`, latest group `f52dfb73-ac3a-4195-a979-20723a3ed03d` ("clean republish"). `fingerprint:compare` matched build `5de44367` exactly before each publish. ⚠ **The phone and the web preview are at `eb95051`, NOT at HEAD** — see the note below |
 | **iOS build in the field** | `5de44367`, production, **1.0.0 (build 4)**, commit `651fd80`, runtime `74a9a86b…` — this supersedes `0d07a777` (build 3) and is what the OTA targets |
 | **Android** | An Android update group was published (`961ff3c8…`, runtime `ca025e7e…`) but **there are no Android builds at all**, so it reaches nobody. Harmless; noted so nobody reads it as coverage |
 | **Migrations** | **0129 + 0130 APPLIED by the PO 2026-08-11**, and the `app_admins` grant ran |
@@ -764,10 +764,32 @@ phone the moment build 4 was installed. This update is the first one build 4 can
 | | |
 |---|---|
 | **Commit** | `d199c45` on `feat/home-onramp` (not pushed, not merged) — superseded; HEAD is now `2a5dcce` |
-| **Web preview** | **LIVE, redeployed 2026-08-11 with the Creator Dashboard** — forgelegacy.expo.app, root 200, `/admin` 200, serving `entry-85de57119c4bf9c35ae4ab6ad8398618.js`, hash verified against the local build. (Superseded `entry-2c1c4b71…`) |
+| **Web preview** | **LIVE at commit `eb95051` (Phase 1 + Phase 2)** — forgelegacy.expo.app, root 200, `/admin` 200, serving `entry-d9c52505d8b342f7b31cecec2b1ff0ac.js`, hash verified against the clean-worktree build. ⚠ Also NOT at HEAD — see the note below |
 | **iOS build** | `0d07a777-5829-43d6-8a23-63de2cdf7455`, production, **in progress** — commit `d199c45`, runtime `3508eed9…`, build number 3 |
 | **Migrations** | 0126 · 0127 · 0128 **APPLIED** by the PO. **0129 + 0130 authored 2026-08-11, NOT applied** — paste `supabase/apply/pending-0129-0130.sql`, then run its STEP 2 to grant yourself admin |
 | **OTA** | **NOT PUBLISHED — and must not be until 0d07a777 is installed.** See below. |
+
+**⚠ WHAT IS ON THE PHONE IS `eb95051`, NOT HEAD — AND ONE OTA WENT OUT THAT SHOULD NOT HAVE.**
+
+`eas update` and `expo export` bundle the **working directory, not the commit**. An OTA published at
+16:xx bundled a concurrent session's uncommitted notification work (`post_comment` / `post_reaction`,
+migrations 0134/0135) — code that had never been through a gate, since the test run predated the files.
+It degraded rather than broke (the client reads the new fields with `?? null`, and the un-migrated
+`notification_feed` never emits those kinds), but the net effect was a notification toggle that did
+nothing.
+
+Corrected by republishing from a **clean `git worktree`** at `eb95051` — group `f52dfb73` — and
+redeploying web from the same tree. The concurrent session's files were never touched; it has since
+committed that work itself as `efd42d0`.
+
+**So `efd42d0` (the Home on-ramp + the notification feature) is NOT on any device or on the web
+preview.** Whoever ships next should `fingerprint:compare`, confirm `git status` is clean, and publish
+from HEAD.
+
+Two traps found while doing it, both recorded in `feedback_publishing_from_a_dirty_tree`:
+a `node_modules` **junction** changes every hashed path and silently breaks the fingerprint (use a real
+copy), and a fresh checkout rewrites `.easignore` / `eas.json` with **CRLF** where the main working copy
+has LF — identical to read, different bytes, different fingerprint.
 
 **⚠ WHY THIS RELEASE COULD NOT BE AN OTA, AND WHY THAT WAS CHECKED RATHER THAN ASSUMED.**
 
