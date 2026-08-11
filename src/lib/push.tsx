@@ -94,6 +94,9 @@ function targetFrom(data: unknown): NotificationTarget | null {
     challengeId: str(d.challengeId),
     inviteId: str(d.inviteId),
     shareId: str(d.shareId),
+    // 0135. Both are needed together: the id says WHICH post, the audience says which feed holds it.
+    postId: str(d.postId),
+    postAudience: str(d.postAudience),
   };
 }
 

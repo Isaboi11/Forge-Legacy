@@ -20,6 +20,10 @@ export interface NotificationTarget {
   challengeId?: string | null;
   inviteId?: string | null;
   shareId?: string | null;
+  /** Set on `post_comment` and `post_reaction` (0135) — the post that was answered. */
+  postId?: string | null;
+  /** That post's audience, which is what decides WHICH feed holds it. See the arm below. */
+  postAudience?: string | null;
 }
 
 /** Literal pathnames, so `typedRoutes` checks these against the real route tree. */
@@ -30,6 +34,8 @@ export type NotificationDestination =
   | { pathname: '/squad-requests'; params: { id: string } }
   | { pathname: '/athlete/[id]'; params: { id: string } }
   | { pathname: '/squad/[id]'; params: { id: string } }
+  | { pathname: '/squad-post/[id]'; params: { id: string } }
+  | '/friends'
   | '/discover-squads'
   | '/inbox';
 
@@ -60,6 +66,18 @@ export function destinationFor(n: NotificationTarget): NotificationDestination {
       return n.actorId ? { pathname: '/athlete/[id]', params: { id: n.actorId } } : '/inbox';
     case 'request_declined':
       return '/discover-squads';
+    /*
+     * Somebody answered your post (0135), so the destination is the post — not the squad it sits in.
+     *
+     * ⚠ THE AUDIENCE DECIDES, NOT `squadId`. A `BOTH` post carries a squad id AND appears in the
+     * Friends feed, so branching on the id's presence would be right by accident for a SQUAD post and
+     * wrong for a friend's. And a FRIENDS post has no detail screen at all — `post-detail` is still
+     * deferred — so the honest destination is the feed that holds it, which is where its comments open.
+     */
+    case 'post_comment':
+    case 'post_reaction':
+      if (n.postAudience === 'FRIENDS') return '/friends';
+      return n.postId ? { pathname: '/squad-post/[id]', params: { id: n.postId } } : '/inbox';
     default:
       return n.squadId ? { pathname: '/squad/[id]', params: { id: n.squadId } } : '/inbox';
   }

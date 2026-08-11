@@ -11,6 +11,7 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { fetchTemplateDetail, saveTemplate, type TemplateExercise } from '@/data/templates-live';
+import { savePlannedWorkout } from '@/data/planned-workout-live';
 import type { ProgramExercise } from '@/data/programs-live';
 import {
   CARDIO_ACTIVITIES,
@@ -89,8 +90,14 @@ const SECTIONS: { key: BuilderSection; label: string; req: string; empty: string
 export default function WorkoutBuilderScreen() {
   const router = useRouter();
   const { showToast } = useToast();
-  const params = useLocalSearchParams<{ id?: string }>();
+  const params = useLocalSearchParams<{ id?: string; for?: string }>();
   const entryId = params.id ?? null;
+  /**
+   * Home's "Build for later" (0136). The same builder, but what comes out of it is a ONE-OFF waiting on
+   * the Home hero rather than a row in the template library — see `planned-workout-live`. Every other
+   * entrance to this screen is unchanged and still authors templates.
+   */
+  const forLater = params.for === 'later';
 
   const [draft, setDraft] = useState<WorkoutDraft | null>(null);
   const [saving, setSaving] = useState(false);
@@ -194,6 +201,24 @@ export default function WorkoutBuilderScreen() {
     setSaving(true);
     try {
       const name = draft.name.trim() || 'Saved Workout';
+
+      /* Built for later: nothing enters the template library. "Save for later" parks it on the hero, and
+         "Save & Start" just opens it — a session you are about to train has no reason to be saved twice.
+         Keeping it is offered at the END of the workout, once it has been done. */
+      if (forLater) {
+        const exercises = toTemplateExercises(draft);
+        await clearWorkoutDraft();
+        if (thenStart) {
+          await writeWorkoutLaunch({ exercises, workoutName: name });
+          router.replace('/workout');
+        } else {
+          await savePlannedWorkout(name, exercises);
+          showToast(`“${name}” is waiting on your home screen.`);
+          router.replace('/(tabs)');
+        }
+        return;
+      }
+
       const id = await saveTemplate(name, toTemplateExercises(draft), draft.editId);
       await clearWorkoutDraft();
       if (thenStart) {

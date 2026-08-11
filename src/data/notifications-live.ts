@@ -37,7 +37,16 @@ export type NotificationKind =
    * and `user_id <> author_id` in the push trigger. Both comparisons are null-safe now, and this kind
    * exists so the sentence can name the squad instead of inventing a person who posted it.
    */
-  | 'squad_recap';
+  | 'squad_recap'
+  /**
+   * Somebody answered your post (0135) — the half of a conversation that was missing.
+   *
+   * NOT fan-out, unlike the three above: SOC-D11 locks these to the post AUTHOR alone. A comment on a
+   * thread you also commented on notifies nobody, deliberately — thread participation is its own
+   * feature with its own volume problem.
+   */
+  | 'post_comment'
+  | 'post_reaction';
 
 export interface ForgeNotification {
   kind: NotificationKind;
@@ -57,6 +66,10 @@ export interface ForgeNotification {
   /** Set only on `program_shared` (0110). */
   shareId: string | null;
   shareName: string | null;
+  /** Set on `post_comment` and `post_reaction` (0135) — the post that was answered. */
+  postId: string | null;
+  /** `'SQUAD' | 'FRIENDS' | 'BOTH'`. Decides which feed holds the post, so it decides where the row goes. */
+  postAudience: string | null;
   /** The athlete the event is about — null for the kinds whose subject is the squad itself. */
   actorId: string | null;
   actorName: string | null;
@@ -80,6 +93,8 @@ const KINDS: NotificationKind[] = [
   'squad_post',
   'squad_checkin',
   'squad_recap',
+  'post_comment',
+  'post_reaction',
 ];
 const asKind = (v: string): NotificationKind | null => (KINDS as string[]).includes(v) ? (v as NotificationKind) : null;
 
@@ -98,6 +113,8 @@ interface FeedRow {
   invite_name: string | null;
   share_id: string | null;
   share_name: string | null;
+  post_id: string | null;
+  post_audience: string | null;
   actor_id: string | null;
   actor_name: string | null;
   actor_avatar_url: string | null;
@@ -131,6 +148,8 @@ export async function fetchNotifications(limit = 50): Promise<ForgeNotification[
       inviteName: r.invite_name ?? null,
       shareId: r.share_id ?? null,
       shareName: r.share_name ?? null,
+      postId: r.post_id ?? null,
+      postAudience: r.post_audience ?? null,
     });
   }
   return out;

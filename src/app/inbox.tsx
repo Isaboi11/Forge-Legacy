@@ -149,7 +149,10 @@ function NotificationRow({ notification: n, divided, onPress }: { notification: 
     n.kind === 'workout_join_request' ||
     n.kind === 'squad_post' ||
     n.kind === 'squad_checkin' ||
-    n.kind === 'program_shared';
+    n.kind === 'program_shared' ||
+    // A person commented or reacted, even when the post they answered lives in a squad (0135).
+    n.kind === 'post_comment' ||
+    n.kind === 'post_reaction';
 
   return (
     <Animated.View style={{ opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }] }}>
@@ -268,6 +271,20 @@ function bodyFor(n: ForgeNotification, actor: string) {
           The weekly review for <Text style={styles.strong}>{n.squadName}</Text> is in
         </>
       );
+    /* "your post", not the post's name — a post has no title, and quoting its opening words would put
+       somebody else's half-sentence in a row that is supposed to be about what THEY did. */
+    case 'post_comment':
+      return (
+        <>
+          <Text style={styles.strong}>{actor}</Text> commented on your post
+        </>
+      );
+    case 'post_reaction':
+      return (
+        <>
+          <Text style={styles.strong}>{actor}</Text> reacted to your post
+        </>
+      );
   }
 }
 
@@ -300,6 +317,10 @@ function subFor(n: ForgeNotification): string {
       return 'Watch it before it’s gone';
     case 'squad_recap':
       return 'See how the squad’s week went';
+    case 'post_comment':
+      return 'Read it and reply';
+    case 'post_reaction':
+      return 'Open your post';
   }
 }
 
@@ -332,6 +353,10 @@ function accessibilityLabelFor(n: ForgeNotification, actor: string): string {
       return `${actor} checked in to ${n.squadName}, ${when} ago. Watch it before it expires.`;
     case 'squad_recap':
       return `The weekly review for ${n.squadName} is in, ${when} ago. See how the squad's week went.`;
+    case 'post_comment':
+      return `${actor} commented on your post, ${when} ago. Read it and reply.`;
+    case 'post_reaction':
+      return `${actor} reacted to your post, ${when} ago. Open your post.`;
   }
 }
 
@@ -365,6 +390,10 @@ function glyphFor(kind: ForgeNotification['kind']) {
        people glyph is what `squad_post` uses for a person posting in it. */
     case 'squad_recap':
       return <ProgramGlyph size={11} color={flColor.bronze300} />;
+    case 'post_comment':
+      return <SpeechGlyph size={11} color={flColor.bronze300} />;
+    case 'post_reaction':
+      return <HeartGlyph size={11} color={flColor.bronze300} />;
   }
 }
 
@@ -432,6 +461,22 @@ function PlayGlyph({ size = 11, color = flColor.bronze300 }: { size?: number; co
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill={color} stroke="none">
       <Path d="M8 5.5v13l11-6.5z" />
+    </Svg>
+  );
+}
+/** Somebody wrote something back (0135). */
+function SpeechGlyph({ size = 11, color = flColor.bronze300 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H9l-5 4V6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5z" />
+    </Svg>
+  );
+}
+/** Filled, not outlined: a reaction is given, not pending. */
+function HeartGlyph({ size = 11, color = flColor.bronze300 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color} stroke="none">
+      <Path d="M12 20.5l-1.5-1.35C5.2 14.4 2 11.5 2 7.95 2 5.06 4.24 2.9 7 2.9c1.56 0 3.06.72 4 1.86.94-1.14 2.44-1.86 4-1.86 2.76 0 5 2.16 5 5.05 0 3.55-3.2 6.45-8.5 11.2z" />
     </Svg>
   );
 }

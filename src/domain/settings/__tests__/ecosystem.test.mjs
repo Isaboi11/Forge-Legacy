@@ -69,12 +69,26 @@ test('a stored visibility map merges over defaults and drops junk', () => {
 
 // ── notifications ──────────────────────────────────────────────────────────────
 
-test('nine toggles across three sections, squad off / requests on / challenges off', () => {
-  assert.equal(NOTIF_SECTIONS.flatMap((s) => s.toggles).length, 9);
+/**
+ * ⚠ TEN, NOT NINE, SINCE 0135 — and the tenth is an unapplied locked decision rather than an addition.
+ *
+ * `Social-System-Architecture-v1.0` SOC-D11 locks *"Comments generate notifications (to the post author;
+ * new P-5 row, §13)"*. The row was never built; 0135 built the emitter and this is that row. The count
+ * is asserted precisely so a tenth toggle cannot appear without somebody stating which locked decision
+ * it comes from — the ceremony toggles below are what happens when one appears without that.
+ *
+ * REACTIONS did NOT get a row, deliberately: they ride `squad_reactions`, which P-5 §3.1 locked and 0022
+ * shipped inert, and whose OFF default SOC-D11 also locks.
+ */
+test('ten toggles across four sections, squad off / requests on / challenges off / comments on', () => {
+  assert.equal(NOTIF_SECTIONS.flatMap((s) => s.toggles).length, 10);
+  assert.equal(NOTIF_SECTIONS.length, 4);
   assert.equal(NOTIF_DEFAULTS.squad_feed, false);
   assert.equal(NOTIF_DEFAULTS.squad_invites, true);
   assert.equal(NOTIF_DEFAULTS.friend_requests, true, 'a direct request stays on (P-5 §3.2b)');
   assert.equal(NOTIF_DEFAULTS.challenge_updates, false, 'ambient competition stays off (P-5 §3.2a)');
+  assert.equal(NOTIF_DEFAULTS.post_comments, true, 'a comment is aimed at you by name, so it stays on (SOC-D11, P-5 §3.2b)');
+  assert.equal(NOTIF_DEFAULTS.squad_reactions, false, 'SOC-D11 locks reaction pushes OFF — the inbox still shows them');
 });
 
 // P-5 Architecture §1 (LOCKED): M-1/M-2/M-4 each list "fire as a push notification" under their own

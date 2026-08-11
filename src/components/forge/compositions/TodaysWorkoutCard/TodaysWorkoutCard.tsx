@@ -55,9 +55,21 @@ export interface TodaysWorkoutCardProps {
    * is the only place the question "what if I don't want that" actually gets asked.
    */
   onFreestyle?: () => void
+  /**
+   * Overrides the primary button's label. The `open` face says "Start Freestyle Workout", because with
+   * nothing planned that is literally what the button does — "Start Workout" implied a workout existed.
+   */
+  startLabel?: string
+  /**
+   * "Build for later" — plan a one-off now and leave it on this card until you train it (0136).
+   *
+   * Sits under the primary as a quiet second door, the same shape as `onFreestyle`, because building in
+   * advance is the rarer intent and should not compete with the button that just starts.
+   */
+  onBuildLater?: () => void
 }
 
-export function TodaysWorkoutCard({ resolved, title, focus, eyebrow, exerciseCount, onStart, resumeSets, onPreview, onFreestyle }: TodaysWorkoutCardProps) {
+export function TodaysWorkoutCard({ resolved, title, focus, eyebrow, exerciseCount, onStart, resumeSets, onPreview, onFreestyle, startLabel, onBuildLater }: TodaysWorkoutCardProps) {
   const artSource = resolveArtworkSource(resolved.assetPath)
   const kicker = eyebrow ?? 'Today’s Workout'
   // "1 Exercises" was unreachable while this card only ever drew program days. A one-block cardio resume
@@ -150,9 +162,9 @@ export function TodaysWorkoutCard({ resolved, title, focus, eyebrow, exerciseCou
           fullWidth
           onPress={onStart}
           icon={<FlameIcon />}
-          accessibilityLabel={resumeSets ? `Continue workout — ${resumeSets} sets already logged` : 'Start workout'}
+          accessibilityLabel={resumeSets ? `Continue workout — ${resumeSets} sets already logged` : (startLabel ?? 'Start workout')}
         >
-          {resumeSets ? 'Continue Workout' : 'Start Workout'}
+          {resumeSets ? 'Continue Workout' : (startLabel ?? 'Start Workout')}
         </Button>
         {/* The count is the reassurance. "Continue" alone still leaves you wondering what survived. */}
         {resumeSets ? (
@@ -172,6 +184,19 @@ export function TodaysWorkoutCard({ resolved, title, focus, eyebrow, exerciseCou
             style={({ pressed }) => [styles.freestyleRow, pressed ? styles.freestylePressed : null]}
           >
             <Text style={styles.freestyleText}>Something else today?</Text>
+          </Pressable>
+        ) : null}
+
+        {/* Same quiet treatment, different intent: not "instead of today's", but "not right now". */}
+        {onBuildLater ? (
+          <Pressable
+            onPress={onBuildLater}
+            accessibilityRole="button"
+            accessibilityLabel="Build a workout for later"
+            hitSlop={8}
+            style={({ pressed }) => [styles.freestyleRow, pressed ? styles.freestylePressed : null]}
+          >
+            <Text style={styles.freestyleText}>Build for later</Text>
           </Pressable>
         ) : null}
       </View>

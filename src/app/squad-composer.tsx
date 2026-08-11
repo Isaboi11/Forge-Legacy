@@ -28,6 +28,9 @@ import {
   type SquadPostType,
   type WorkoutSummary,
 } from '@/data/squad-feed-live';
+import { createFriendPost, uploadFeedMedia, type PostAudience } from '@/data/friends-feed-live';
+import { friendsTypeFor, offeredToFriends } from '@/domain/squad/post-audience';
+import { fetchMySquads } from '@/data/squad-live';
 import { fetchTransformationEntries, type TransformationEntry } from '@/data/transformation-live';
 import {
   EntryStrip,
@@ -63,6 +66,33 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
  * renderer already knows how to beat. The same `TransformationLayoutData` the gallery's Share flow builds is
  * assembled here, so `squad-post/[id]` renders both identically. Fewer than two entries offers the gallery
  * rather than an empty picker.
+ *
+ * ══ IT COMPOSES FOR THE FRIENDS FEED TOO, AND THAT IS WHY IT IS A SCREEN ══
+ *
+ * The Friends feed had its OWN composer, a `BottomSheet` inside `friends.tsx`. Reported by the PO:
+ * *"I clicked on the text bar at the top and it won't let me add a video or a picture. And now I'm
+ * frozen on the friends feed page."*
+ *
+ * ⚠ A MEDIA PICKER CANNOT BE OPENED FROM INSIDE A SHEET. `useMediaPicker` presents its own
+ * `BottomSheet`, and beneath that a system picker — and its header already documents, from a tester
+ * report, that iOS silently refuses to present a view controller while another is on screen. That file
+ * waits for the chooser IT owns to dismiss; it knows nothing about a CALLER that is itself a modal. So
+ * the sheet stayed up, the picker was dropped, the button read as dead, and an invisible overlay kept
+ * swallowing taps. Every other capture surface in the app — profile photo, transformation capture,
+ * create squad, accomplishments, and this screen — is a pushed route with nothing above it. Friends was
+ * the only exception, and the only one broken.
+ *
+ * Moving it here rather than giving it a second screen of its own also deletes the duplicate: two
+ * composers writing the same table is how the recap stats strip drifted before `RecapStrip` was
+ * extracted.
+ *
+ * ⚠ THE AUDIENCE DECIDES WHICH WRITER RUNS, NOT WHICH SCREEN YOU CAME FROM.
+ * `Social-Architecture-Amendment-002` §4 is explicit: `BOTH` is ONE row and must be written through
+ * `createFriendPost`, because `addSquadPost` never sets `audience` and so can only ever produce a SQUAD
+ * row. Teaching it a third audience would give two functions the same job.
+ *
+ * The type list narrows with the audience rather than the screen changing shape: an Announcement is a
+ * squad instrument (owner-only, and RLS rejects it anyway) and is not offered to friends.
  */
 
 interface Form {
@@ -73,14 +103,39 @@ interface Form {
 }
 const EMPTY: Form = { body: '', prExercise: '', prValue: '', prLabel: 'Squad PR' };
 
+/**
+ * The three destinations, each with the sentence that says what it means. There is no public option and
+ * no fourth row to add one to — `squad_posts.audience` admits exactly these (CC-D2 / FR-D3, restated by
+ * SOC-A2-D4). Every note says who can see it, because that is the only question this control answers.
+ */
+const AUDIENCES: { key: PostAudience; label: string; note: string }[] = [
+  { key: 'FRIENDS', label: 'Friends', note: 'Only athletes you’ve accepted as friends. Never public.' },
+  { key: 'SQUAD', label: 'A Squad', note: 'Only the members of the squad you pick.' },
+  { key: 'BOTH', label: 'Friends & Squad', note: 'One post, both feeds — one thread, one set of acknowledgements.' },
+];
+
 export default function SquadComposerRoute() {
-  const { id, owner, name } = useLocalSearchParams<{ id: string; owner?: string; name?: string }>();
+  const { id, owner, name, audience: audienceParam } = useLocalSearchParams<{
+    id?: string;
+    owner?: string;
+    name?: string;
+    audience?: string;
+  }>();
   const router = useRouter();
   const { showToast } = useToast();
   const { pick: pickMediaSource, mediaPickerSheet } = useMediaPicker();
-  const squadId = String(id ?? '');
   const isOwner = owner === '1';
   const squadName = name ? String(name) : '';
+
+  /*
+   * Entered from a squad, the squad is fixed and the audience is SQUAD. Entered from the Friends feed,
+   * there is no squad yet and the athlete chooses — so the picker below loads their squads only when a
+   * choice actually needs one.
+   */
+  const [audience, setAudience] = useState<PostAudience>(audienceParam === 'FRIENDS' ? 'FRIENDS' : 'SQUAD');
+  const [squadId, setSquadId] = useState<string>(String(id ?? ''));
+  const [squads, setSquads] = useState<{ id: string; name: string }[] | null>(null);
+  const fromSquad = !!String(id ?? '');
 
   const [type, setType] = useState<SquadPostType | null>(null);
   const [form, setForm] = useState<Form>(EMPTY);
@@ -106,8 +161,26 @@ export default function SquadComposerRoute() {
   // Shared with the friends composer: one definition of what a comparison is.
   const xform = useTransformationPick(entries, thenId, nowId);
 
+  /*
+   * Loaded on the tap that needs them, not on mount: entering from a squad never needs this list, and
+   * an effect that fetched it anyway would pay for a choice most athletes never make.
+   */
+  const chooseAudience = (a: PostAudience) => {
+    setAudience(a);
+    if (a === 'FRIENDS') return;
+    if (squads) return;
+    fetchMySquads().then(
+      (rows) => setSquads(rows.map((r) => ({ id: r.id, name: r.name }))),
+      () => setSquads([]),
+    );
+  };
+
+  /** SOC-A2-D3: `BOTH` is one row and the check constraint is an equivalence, so it MUST carry a squad. */
+  const needsSquad = audience !== 'FRIENDS';
+
   const valid = useMemo(() => {
     if (!type || uploading || buildingRecap) return false;
+    if (needsSquad && !squadId) return false;
     const body = form.body.trim();
     switch (type) {
       case 'formcheck':
@@ -121,7 +194,7 @@ export default function SquadComposerRoute() {
       default:
         return !!body; // discussion / announcement
     }
-  }, [type, form, media, recap, uploading, buildingRecap, xform]);
+  }, [type, form, media, recap, uploading, buildingRecap, xform, needsSquad, squadId]);
 
   const pick = (t: SquadPostType) => {
     /*
@@ -216,11 +289,19 @@ export default function SquadComposerRoute() {
     setMediaPct(0);
     setUploading(true);
     try {
-      const url = await uploadPostMedia(squadId, asset.uri, kind, {
-        contentType: asset.mimeType,
-        onProgress: setMediaPct,
-        signal: controller.signal,
-      });
+      /*
+       * ⚠ TWO UPLOAD PATHS, because the object path encodes who may read it (0075). A squad post's media
+       * is keyed by squad; a friends post's is keyed by the uploader, since there is no squad to scope
+       * it to. `BOTH` takes the friends path — the row is written by `createFriendPost`, and media that
+       * lived under a squad prefix would be scoped to a squad the post is only half addressed to.
+       */
+      const url = needsSquad && audience === 'SQUAD'
+        ? await uploadPostMedia(squadId, asset.uri, kind, {
+            contentType: asset.mimeType,
+            onProgress: setMediaPct,
+            signal: controller.signal,
+          })
+        : await uploadFeedMedia(asset.uri, kind);
       setMedia({ url, kind });
     } catch (e) {
       if (e instanceof UploadError && e.kind === 'cancelled') showToast('Upload cancelled.');
@@ -241,28 +322,61 @@ export default function SquadComposerRoute() {
       : [];
 
     setPosting(true);
-    addSquadPost({
-      squadId,
-      type,
+
+    /*
+     * ⚠ THE AUDIENCE PICKS THE WRITER (Amendment 002 §4). `addSquadPost` never sets `audience`, so it can
+     * only produce a SQUAD row; `BOTH` is one row carrying one comment thread and one set of
+     * acknowledgements, and only `createFriendPost` can write it.
+     */
+    const done = () => {
+      setPosting(false);
+      showToast(audience === 'SQUAD' ? 'Posted to your squad' : audience === 'BOTH' ? 'Posted to your friends and squad' : 'Posted to your friends');
+      router.back();
+    };
+    const failed = (e: unknown) => {
+      setPosting(false);
+      showToast(errorMessage(e));
+    };
+
+    if (audience === 'SQUAD') {
+      addSquadPost({
+        squadId,
+        type,
+        body: form.body,
+        prValue: form.prValue,
+        prExercise: form.prExercise,
+        prLabel: form.prLabel,
+        media: type === 'transformation' ? xformMedia : media ? [media] : [],
+        workoutId: recap?.workoutId ?? null,
+        workoutSummary: recap?.summary ?? null,
+        layout,
+      }).then(done, failed);
+      return;
+    }
+
+    /*
+     * The friends card reads a before/after from media that carry `slot`, not from `layout` — see
+     * `FRIENDS_TYPE`. `mediaFromPick` returns them oldest-first, which is what makes index 0 the
+     * "before"; the same assignment the retired sheet made.
+     */
+    const friendsMedia = type === 'transformation'
+      ? mediaFromPick(xform).map((m, i) => ({ url: m.url, kind: 'image' as const, slot: i === 0 ? ('before' as const) : ('after' as const) }))
+      : media
+        ? [{ url: media.url, kind: media.kind }]
+        : [];
+
+    createFriendPost({
       body: form.body,
+      audience,
+      squadId: audience === 'BOTH' ? squadId : null,
+      media: friendsMedia,
+      type: friendsTypeFor(type),
+      workoutId: recap?.workoutId ?? null,
+      workoutSummary: recap?.summary ?? null,
       prValue: form.prValue,
       prExercise: form.prExercise,
       prLabel: form.prLabel,
-      media: type === 'transformation' ? xformMedia : media ? [media] : [],
-      workoutId: recap?.workoutId ?? null,
-      workoutSummary: recap?.summary ?? null,
-      layout,
-    }).then(
-      () => {
-        setPosting(false);
-        showToast('Posted to your squad');
-        router.back();
-      },
-      (e: unknown) => {
-        setPosting(false);
-        showToast(errorMessage(e));
-      },
-    );
+    }).then(done, failed);
   };
 
   // ── Step 1: pick a type ──
@@ -270,25 +384,108 @@ export default function SquadComposerRoute() {
     return (
       <View style={styles.root}>
         <ComposerBg />
-        <AppBar title={<BarTitle title="Post to Squad" sub="Training, recognition & coordination" />} onBack={() => router.back()} />
+        <AppBar
+          title={<BarTitle title={fromSquad ? 'Post to Squad' : 'New Post'} sub={fromSquad ? 'Training, recognition & coordination' : 'Share it where it belongs'} />}
+          onBack={() => router.back()}
+        />
         <ScrollView contentContainerStyle={styles.pickScroll} showsVerticalScrollIndicator={false}>
-          <Text style={styles.groupLabel}>Anyone in the squad</Text>
+          {/*
+            The destination, chosen before the type, and only when it IS a choice — entering from a
+            squad has already answered it.
+
+            SOC-A2-D3: unavailable destinations are SHOWN, disabled, with the reason. A hidden option
+            teaches nothing; a disabled one with a sentence teaches what a squad is for.
+          */}
+          {fromSquad ? null : (
+            <>
+              <Text style={styles.groupLabel}>Where does this go?</Text>
+              <View style={styles.audienceRow}>
+                {AUDIENCES.map((a) => {
+                  const blocked = a.key !== 'FRIENDS' && squads !== null && squads.length === 0;
+                  return (
+                    <Pressable
+                      key={a.key}
+                      onPress={() => (blocked ? showToast('You’re not in a squad yet.') : chooseAudience(a.key))}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: audience === a.key, disabled: blocked }}
+                      accessibilityLabel={`${a.label}. ${blocked ? 'You are not in a squad yet.' : a.note}`}
+                      style={({ pressed }) => [
+                        styles.audienceChip,
+                        audience === a.key && !blocked ? styles.audienceChipOn : null,
+                        blocked ? styles.audienceChipOff : null,
+                        pressed && !blocked ? styles.xformPressed : null,
+                      ]}
+                    >
+                      <Text style={[styles.audienceLabel, audience === a.key && !blocked ? styles.audienceLabelOn : null]}>{a.label}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <Text style={styles.audienceNote}>
+                {needsSquad && squads !== null && squads.length === 0
+                  ? 'You’re not in a squad yet, so Friends is the only place inside Forge to share this.'
+                  : (AUDIENCES.find((a) => a.key === audience)?.note ?? '')}
+              </Text>
+
+              {/* Which squad, once one is needed. */}
+              {needsSquad && (squads ?? []).length > 0 ? (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.squadStrip}>
+                  {(squads ?? []).map((s) => (
+                    <Pressable
+                      key={s.id}
+                      onPress={() => setSquadId(s.id)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: squadId === s.id }}
+                      accessibilityLabel={`Post to ${s.name}`}
+                      style={({ pressed }) => [styles.squadChip, squadId === s.id ? styles.squadChipOn : null, pressed ? styles.xformPressed : null]}
+                    >
+                      <Text style={[styles.squadChipText, squadId === s.id ? styles.squadChipTextOn : null]} numberOfLines={1}>
+                        {s.name}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              ) : null}
+            </>
+          )}
+
+          <Text style={[styles.groupLabel, fromSquad ? null : styles.groupLabelGap]}>
+            {audience === 'FRIENDS' ? 'What are you sharing?' : 'Anyone in the squad'}
+          </Text>
+          {/*
+            Only types the destination can actually take. `offeredToFriends` is the SAME map the write
+            uses, so the grid can never offer a type the writer would mistranslate.
+
+            ⚠ PROGRESS PHOTOS IS EXCLUDED FROM A FRIENDS-ONLY POST, and not because of that map.
+            Picking it leaves this screen for `/progress-photo-post`, which posts through `addSquadPost`
+            and refuses without a `squadId` — its primary button falls back to a system share. Offering
+            it here would hand the athlete a dead end. Transformation is the before/after that reaches
+            the friends feed, and it is offered.
+          */}
           <View style={styles.grid}>
-            {SQUAD_POST_TYPES.filter((t) => !t.ownerOnly).map((t) => (
-              <TypeCard key={t.id} label={t.label} icon={<TypeGlyph type={t.id} />} onPress={() => pick(t.id)} />
-            ))}
+            {SQUAD_POST_TYPES.filter((t) => !t.ownerOnly)
+              .filter((t) => audience !== 'FRIENDS' || offeredToFriends(t.id))
+              .map((t) => (
+                <TypeCard key={t.id} label={t.label} icon={<TypeGlyph type={t.id} />} onPress={() => pick(t.id)} />
+              ))}
           </View>
 
-          <Text style={[styles.groupLabel, styles.groupLabelGap]}>Owner only</Text>
-          <View style={styles.grid}>
-            {SQUAD_POST_TYPES.filter((t) => t.ownerOnly).map((t) =>
-              isOwner ? (
-                <TypeCard key={t.id} label={t.label} icon={<TypeGlyph type={t.id} />} onPress={() => pick(t.id)} />
-              ) : (
-                <TypeCard key={t.id} label={t.label} icon={<TypeGlyph type={t.id} locked />} locked subLabel="Owner only" onPress={() => showToast('Only the owner can post announcements')} />
-              ),
-            )}
-          </View>
+          {/* An announcement is a squad instrument — owner-only, and RLS rejects it regardless. On a
+              friends-only post there is nobody to announce to, so the section is absent, not locked. */}
+          {audience === 'FRIENDS' ? null : (
+            <>
+              <Text style={[styles.groupLabel, styles.groupLabelGap]}>Owner only</Text>
+              <View style={styles.grid}>
+                {SQUAD_POST_TYPES.filter((t) => t.ownerOnly).map((t) =>
+                  isOwner ? (
+                    <TypeCard key={t.id} label={t.label} icon={<TypeGlyph type={t.id} />} onPress={() => pick(t.id)} />
+                  ) : (
+                    <TypeCard key={t.id} label={t.label} icon={<TypeGlyph type={t.id} locked />} locked subLabel="Owner only" onPress={() => showToast('Only the owner can post announcements')} />
+                  ),
+                )}
+              </View>
+            </>
+          )}
         </ScrollView>
       </View>
     );
@@ -300,7 +497,9 @@ export default function SquadComposerRoute() {
     <View style={styles.root}>
       <ComposerBg />
       <AppBar
-        title={<BarTitle title={def.label} sub="Your squad" />}
+        /* The subtitle names the DESTINATION, not the screen. It read "Your squad" unconditionally,
+           which becomes a falsehood the moment this composer can post to friends. */
+        title={<BarTitle title={def.label} sub={audience === 'FRIENDS' ? 'Your friends' : audience === 'BOTH' ? 'Your friends & squad' : 'Your squad'} />}
         onBack={backToPick}
         actions={
           <Pressable ref={postRef} onPress={submit} disabled={!valid || posting} accessibilityRole="button" accessibilityLabel="Post" style={[styles.postBtn, valid ? styles.postBtnOn : styles.postBtnOff]}>
@@ -718,6 +917,41 @@ const styles = StyleSheet.create({
   pickScroll: { paddingHorizontal: 18, paddingTop: 8, paddingBottom: 32 },
   groupLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400, marginLeft: 2, marginBottom: 12 },
   groupLabelGap: { marginTop: 24 },
+
+  // ── audience (composer merge) ──
+  audienceRow: { flexDirection: 'row', gap: 8 },
+  audienceChip: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 11,
+    paddingHorizontal: 8,
+    borderRadius: flRadius.md,
+    borderWidth: 1,
+    borderColor: flColor.charcoal500,
+    backgroundColor: flColor.charcoal700,
+  },
+  audienceChipOn: { borderColor: flColor.bronze400, backgroundColor: flColor.charcoal600 },
+  /* Shown, not hidden — SOC-A2-D3. Dimmed enough to read as unavailable and still legible enough to
+     read at all, because the sentence under it is the whole point of leaving it on screen. */
+  audienceChipOff: { opacity: 0.45 },
+  audienceLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.gray600, textAlign: 'center' },
+  audienceLabelOn: { color: flColor.cream100 },
+  audienceNote: { fontSize: 12, lineHeight: 17, color: flColor.gray600, marginTop: 10, marginLeft: 2 },
+  squadStrip: { gap: 8, paddingTop: 12, paddingRight: 18 },
+  squadChip: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: flRadius.pill,
+    borderWidth: 1,
+    borderColor: flColor.charcoal500,
+    backgroundColor: flColor.charcoal700,
+    maxWidth: 190,
+  },
+  squadChipOn: { borderColor: flColor.bronze400, backgroundColor: flColor.charcoal600 },
+  squadChipText: { fontSize: 12.5, color: flColor.gray600 },
+  squadChipTextOn: { color: flColor.cream100 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   typeCard: {
     width: '48%',

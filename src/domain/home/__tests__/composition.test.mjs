@@ -9,6 +9,7 @@ const BASE = {
   startChosen: false,
   hasProgram: false,
   hasProgramSession: false,
+  hasPlannedWorkout: false,
   resumeSets: null,
   guidedOnRamp: false,
   hasSuggestion: false,
@@ -263,4 +264,35 @@ test('no programs at all is a real state, not a fallback', () => {
   assert.deepEqual(selectHomePrograms([]), { active: null, anchor: null });
   assert.deepEqual(selectHomePrograms(null), { active: null, anchor: null });
   assert.deepEqual(selectHomePrograms(undefined), { active: null, anchor: null });
+});
+
+/**
+ * THE ONE-OFF BUILT FOR LATER (0136) — where it sits in the pecking order, and why.
+ *
+ * Below a program day: a scheduled session is a commitment to a plan, this is a note left for a day with
+ * nothing on it. Above `open`: having planned one is a stronger answer to "how do you want to start?"
+ * than any tap on the chooser, so it must not be gated on `settled` the way `open` is.
+ */
+test('a workout built for later takes the hero when nothing is scheduled', () => {
+  const c = compose({ hasPlannedWorkout: true });
+  assert.equal(c.hero, 'planned');
+  assert.equal(c.heroOffersFreestyle, true, 'they may not want it today, and must be able to say so');
+});
+
+test('a program day outranks a workout built for later', () => {
+  const c = compose({ hasPlannedWorkout: true, hasProgramSession: true });
+  assert.equal(c.hero, 'program', 'the scheduled session keeps the card');
+});
+
+test('unfinished work outranks both', () => {
+  const c = compose({ hasPlannedWorkout: true, hasProgramSession: true, resumeSets: 4 });
+  assert.equal(c.hero, 'resume');
+});
+
+test('a planned workout answers the starting-point question on its own', () => {
+  // `awaiting` + no `startChosen` is the brand-new athlete, who would otherwise get `none` and the
+  // chooser. Having built one is the answer, and asking over the top of it is the defect `startChosen`
+  // was added to fix.
+  const c = compose({ awaiting: true, hasPlannedWorkout: true });
+  assert.equal(c.hero, 'planned');
 });

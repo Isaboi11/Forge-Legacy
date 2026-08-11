@@ -36,19 +36,30 @@ const SQL_BASE = readFileSync(resolve(ROOT, 'supabase/migrations/0120_push_notif
 const SQL_0121 = readFileSync(resolve(ROOT, 'supabase/migrations/0121_workout_join_requests.sql'), 'utf8');
 const SQL_0122 = readFileSync(resolve(ROOT, 'supabase/migrations/0122_squad_feed_notifications.sql'), 'utf8');
 const SQL_0127 = readFileSync(resolve(ROOT, 'supabase/migrations/0127_timed_set_readback.sql'), 'utf8');
-// 0126 is the newest definition of the union, `push_pref_key` and `push_enqueue_for` — repointed per the
-// warning above. 0122 stays readable as `SQL_0122` for the bundle check only.
-const SQL = readFileSync(resolve(ROOT, 'supabase/migrations/0126_squad_recap_notification.sql'), 'utf8');
+/*
+ * 0126 is still read for the ONE function it owns the newest copy of — `push_tg_squad_posts`, whose
+ * null-safe fan-out is asserted below. 0135 rebuilt the union, the two preference functions,
+ * `push_enqueue_for` and `push_drain`, and deliberately left the squad triggers alone.
+ */
+const SQL_0126 = readFileSync(resolve(ROOT, 'supabase/migrations/0126_squad_recap_notification.sql'), 'utf8');
+const SQL_0134 = readFileSync(resolve(ROOT, 'supabase/migrations/0134_goal_contribution_workout.sql'), 'utf8');
+// 0135 is the newest definition of the union, `push_pref_key`, `push_pref_default`, `push_enqueue_for`
+// and `push_drain` — repointed per the warning above, which is part of adding a branch.
+const SQL = readFileSync(resolve(ROOT, 'supabase/migrations/0135_post_reply_notifications.sql'), 'utf8');
 
 /** Every migration paired with the bundle that gets pasted into the dashboard. */
 const BUNDLES = [
   ['0120_push_notifications', 'pending-0120', SQL_BASE],
   ['0121_workout_join_requests', 'pending-0121', SQL_0121],
   ['0122_squad_feed_notifications', 'pending-0122', SQL_0122],
-  ['0126_squad_recap_notification', 'pending-0126', SQL],
+  ['0126_squad_recap_notification', 'pending-0126', SQL_0126],
   /* 0127 defines none of the functions parsed below, but it belongs to the same release and the
      run-twice guard at the bottom is a property every migration in this set has to hold. */
   ['0127_timed_set_readback', 'pending-0127', SQL_0127],
+  /* 0134 and 0135 ship together in one bundle: 0135 is the reason to open the SQL editor and 0134 is a
+     one-function fix that would otherwise wait for a paste of its own. */
+  ['0134_goal_contribution_workout', 'pending-0134-0135', SQL_0134],
+  ['0135_post_reply_notifications', 'pending-0134-0135', SQL],
 ];
 
 /**
@@ -118,7 +129,7 @@ test('every default in the SQL matches the toggle the athlete actually sees', ()
  * 0088 and 0092 dropped both friend branches, 0106 dropped program graduation. Each compiled cleanly and
  * each was found by a person, not a test. This is that test.
  */
-test('notification_events_for still has all twelve branches', () => {
+test('notification_events_for still has all fourteen branches', () => {
   const body = fnBody('notification_events_for');
   const kinds = [...body.matchAll(/select\s+'([a-z_]+)'::text/g)].map((m) => m[1]);
   // Branch 3 is built from the row's status rather than a literal, so it is matched separately.
@@ -140,6 +151,11 @@ test('notification_events_for still has all twelve branches', () => {
       // Branch 12, added 0126 — the weekly review, which has no author and was therefore invisible to
       // branch 10's `author_id <> p_user` for four migrations.
       'squad_recap',
+      /* Branches 13 and 14, added 0135. The first notifications in this union that are about a REPLY
+         rather than an arrival — for twelve branches the app announced that you posted and never that
+         anybody answered. Unlike 10/11/12 these do not fan out: one comment notifies one person. */
+      'post_comment',
+      'post_reaction',
     ],
     'a branch has been added or lost — if this is intentional, update the list and say so in the migration',
   );
@@ -167,8 +183,65 @@ test('an authored post and the weekly review cannot be confused for each other',
  * `push_enqueue_for` was never called and branch 12 would have had nothing to send.
  */
 test('the squad_posts trigger fans out an authorless insert', () => {
-  const body = SQL.slice(SQL.indexOf('function public.push_tg_squad_posts'));
+  // Read from 0126, which still owns the newest copy of this trigger — 0135 rebuilt the union and the
+  // preference functions and left the squad triggers exactly where they were.
+  const body = SQL_0126.slice(SQL_0126.indexOf('function public.push_tg_squad_posts'));
   assert.match(body, /m\.user_id is distinct from new\.author_id/, 'the trigger must use a null-safe comparison');
+});
+
+/**
+ * A reply notification goes to the POST AUTHOR, and never to the person who wrote it.
+ *
+ * SOC-D11 locks "to the post author". Two ways this could go wrong silently: drop `sp.author_id =
+ * p_user` and every comment on every post in the database notifies everybody; drop the self-exclusion
+ * and the athlete is notified about their own comment on their own post, every time they reply to
+ * somebody. Neither would throw, and both would look like "notifications are noisy" rather than a bug.
+ *
+ * `is distinct from` rather than `<>`, for the same null-safety reason branch 10 needed it.
+ */
+test('a reply notifies the post author, and never the replier', () => {
+  const body = fnBody('notification_events_for');
+  assert.match(body, /'post_comment'::text[\s\S]*?sp\.author_id = p_user[\s\S]*?c\.author_id is distinct from p_user/);
+  assert.match(body, /'post_reaction'::text[\s\S]*?sp\.author_id = p_user[\s\S]*?r\.user_id is distinct from p_user/);
+});
+
+/**
+ * Both reply branches are WINDOWED, like every fan-out branch before them.
+ *
+ * Comments and reactions are append-only and unbounded. Without the predicate `/inbox` slowly becomes a
+ * second copy of the feed, and `push_enqueue_for` re-scans an athlete's whole posting history on every
+ * trigger — getting slower the more they post, which is exactly backwards.
+ */
+test('the reply branches cannot grow without bound', () => {
+  const body = fnBody('notification_events_for');
+  assert.match(body, /'post_comment'::text[\s\S]*?c\.created_at > now\(\) - interval '14 days'/);
+  assert.match(body, /'post_reaction'::text[\s\S]*?r\.created_at > now\(\) - interval '14 days'/);
+});
+
+/**
+ * A reply on a FRIENDS post must not route into a squad.
+ *
+ * `squad_id` is non-null on a `BOTH` post as well as a `SQUAD` one, so branching on its presence would
+ * be right by accident half the time and would send a friend to a squad page they may not be a member
+ * of. The audience is the only thing that answers which feed holds the post — asserted on both sides,
+ * because the push and the inbox row have to land in the same place.
+ */
+test('a reply opens the feed that actually holds the post', () => {
+  assert.equal(destinationFor({ kind: 'post_comment', postId: 'p1', postAudience: 'FRIENDS', squadId: 's1' }), '/friends');
+  assert.equal(destinationFor({ kind: 'post_reaction', postId: 'p1', postAudience: 'BOTH', squadId: 's1' }).pathname, '/squad-post/[id]');
+  assert.deepEqual(destinationFor({ kind: 'post_comment', postId: 'p1', postAudience: 'SQUAD', squadId: 's1' }), {
+    pathname: '/squad-post/[id]',
+    params: { id: 'p1' },
+  });
+  // No post id and no audience is not a squad page — it is the inbox, per this module's standing rule
+  // that a missing id never becomes a route with an empty segment.
+  assert.equal(destinationFor({ kind: 'post_comment' }), '/inbox');
+
+  // And the SQL sender has to agree with all of the above.
+  const enqueue = SQL.slice(SQL.indexOf('function public.push_enqueue_for'));
+  assert.match(enqueue, /'post_comment'\s+then case when po\.audience = 'FRIENDS' then '\/friends'/);
+  assert.match(enqueue, /'post_reaction'\s+then case when po\.audience = 'FRIENDS' then '\/friends'/);
+  assert.match(SQL, /'postAudience', \(select sp\.audience from public\.squad_posts sp where sp\.id = r\.post_id\)/, 'push_drain must send the audience or a tapped push cannot route');
 });
 
 /**
@@ -272,28 +345,63 @@ test('the union is parameterised, so the sender and the viewer read one definiti
 });
 
 /**
- * ⚠ AND EVERY REBUILD AFTER 0120 MUST BE `create or replace`, NEVER a drop.
+ * ⚠ THE REVOKE MUST SURVIVE EVERY REBUILD.
  *
  * 0120 revokes EXECUTE on `notification_events_for` from PUBLIC because it is SECURITY DEFINER over any
- * user id. `CREATE OR REPLACE` preserves privileges; `DROP` + `CREATE` resets them, restoring the
- * default PUBLIC grant — so a drop here would silently re-open the exact escalation the revoke exists
- * to close, while every other test in this file still passed.
+ * user id — it answers for whatever uuid you hand it. `CREATE OR REPLACE` preserves privileges; `DROP` +
+ * `CREATE` resets them, restoring the default PUBLIC grant. A rebuild that dropped and forgot the revoke
+ * would silently re-open the exact escalation it exists to close, while every other test here passed.
+ *
+ * ⚠ THIS TEST USED TO SAY "NEVER DROP", WHICH WAS THE RIGHT RULE FOR THE WRONG REASON. It is not the
+ * drop that is dangerous, it is the drop WITHOUT the revoke — and 0135 had to drop, because adding
+ * `post_id` changes the OUT columns and 42P13 forbids `create or replace` from doing that. A blanket ban
+ * would have forced the column in through some other door (overloading `share_id` was the tempting one)
+ * to satisfy a test rather than a property. So the rule is now stated as what it actually protects.
  */
-test('later migrations replace the union in place rather than dropping it', () => {
-  /* The DROP half applies to EVERY migration in the set — a drop anywhere resets the revoke, whether or
-     not that file rebuilds the function. The "must rebuild in place" half applies only to the migrations
-     that touch the union at all: 0127 is in this set for the run-twice guard and deliberately does not
-     redefine it, and demanding a rebuild it has no reason to make would push a needless copy of a
-     twelve-branch body into an unrelated file — the exact pressure that produced 0088, 0092 and 0106. */
+test('a rebuild of the union never loses its revoke', () => {
+  /* Applies only to migrations that touch the union at all: 0127 and 0134 are in this set for the
+     run-twice guard and deliberately do not redefine it, and demanding a rebuild they have no reason to
+     make would push a needless copy of a fourteen-branch body into an unrelated file — the exact
+     pressure that produced 0088, 0092 and 0106. */
   for (const [name, , body] of BUNDLES.slice(1)) {
+    if (!body.includes('function public.notification_events_for(')) continue;
+
+    const drops = /drop function if exists public\.notification_events_for/.test(body);
+    if (drops) {
+      assert.match(
+        body,
+        /revoke execute on function public\.notification_events_for\(uuid\) from public;/,
+        name + " drops notification_events_for without re-issuing 0120's revoke from PUBLIC",
+      );
+      // Order matters as much as presence: revoking and THEN dropping leaves it open.
+      assert.ok(
+        body.indexOf('create function public.notification_events_for(') <
+          body.indexOf('revoke execute on function public.notification_events_for(uuid) from public;'),
+        name + ' re-revokes before it rebuilds, which leaves the new function granted to PUBLIC',
+      );
+    } else {
+      assert.match(body, /create or replace function public\.notification_events_for\(p_user uuid\)/, name + ' must rebuild in place');
+    }
+  }
+});
+
+/**
+ * The wrapper stays granted, and the union stays un-granted.
+ *
+ * `notification_events()` is what the client calls and takes no argument — it can only ever answer for
+ * `auth.uid()`. `notification_events_for(uuid)` answers for anyone, and is deliberately reachable only
+ * from the two SECURITY DEFINER functions that call it. A rebuild that granted the parameterised one to
+ * `authenticated` out of symmetry would hand every athlete everybody else's inbox.
+ */
+test('the parameterised union is never granted to authenticated', () => {
+  for (const [name, , body] of BUNDLES) {
     assert.doesNotMatch(
       body,
-      /drop function if exists public\.notification_events_for/,
-      name + " drops notification_events_for — that resets 0120's revoke from PUBLIC",
+      /grant execute on function public\.notification_events_for\(uuid\) to authenticated/,
+      name + ' grants the parameterised union to authenticated — it answers for ANY user id',
     );
-    if (!body.includes('function public.notification_events_for(')) continue;
-    assert.match(body, /create or replace function public\.notification_events_for\(p_user uuid\)/, name + ' must rebuild in place');
   }
+  assert.match(SQL, /grant execute on function public\.notification_events\(\) to authenticated;/, 'the wrapper must stay callable by the client');
 });
 
 // ── a rejection is never pushed ───────────────────────────────────────────────

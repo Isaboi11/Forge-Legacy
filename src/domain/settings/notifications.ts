@@ -44,7 +44,8 @@ export type NotifKey =
   | 'workout_tags'
   | 'program_shares'
   | 'squad_invites'
-  | 'challenge_updates';
+  | 'challenge_updates'
+  | 'post_comments';
 
 export interface NotifToggle {
   key: NotifKey;
@@ -83,6 +84,27 @@ export const NOTIF_SECTIONS: NotifSection[] = [
       { key: 'workout_tags', label: 'Workout Invitations', desc: 'When someone shares a workout with you', def: true, icon: 'dumbbell' },
       { key: 'program_shares', label: 'Shared Programs', desc: 'When someone sends you a program', def: true, icon: 'book' },
       { key: 'squad_invites', label: 'Squad Invitations', desc: 'When you’re invited to join a squad', def: true, icon: 'banner' },
+    ],
+  },
+  /*
+   * 0135. `SOC-D11` locks "Comments generate notifications (to the post author; **new P-5 row, §13**)"
+   * — so this row is an unapplied locked decision, not a tenth toggle invented here.
+   *
+   * It is its own section rather than a fourth row under Squad Activity because a comment on a FRIENDS
+   * post is not squad activity, and that section's blurb ("The pulse of your squads") would be a lie on
+   * half the events it governs.
+   *
+   * ⚠ REACTIONS ARE NOT HERE, and that is deliberate. They ride `squad_reactions` above, which P-5 §3.1
+   * locked and 0022 shipped — inert for thirteen migrations because nothing emitted an event for it.
+   * Its default (OFF) is locked by SOC-D11 and is left exactly as locked; moving the row would not
+   * change the key, but it would put a locked §3.1 control in a section §3.1 does not describe.
+   */
+  {
+    key: 'posts',
+    label: 'Your Posts',
+    blurb: 'When someone answers something you shared. A comment is written to you, so it starts on.',
+    toggles: [
+      { key: 'post_comments', label: 'Comments on Your Posts', desc: 'When someone comments on something you posted', def: true, icon: 'chat' },
     ],
   },
   {
@@ -139,6 +161,11 @@ export const PUSH_KIND_PREF: Record<string, NotifKey> = {
   /* The weekly review (0126) rides `squad_feed` rather than earning a fifth toggle: it IS squad
      activity, and an athlete who switched squad posts off has already said what they want. */
   squad_recap: 'squad_feed',
+  /* 0135. Two kinds, two locked defaults: a comment is aimed at you and defaults ON (SOC-D11, P-5
+     §3.2); a reaction rides the `squad_reactions` toggle P-5 §3.1 locked OFF and 0022 shipped inert.
+     Both still appear in `/inbox` regardless — these govern push only (P-5 §4). */
+  post_comment: 'post_comments',
+  post_reaction: 'squad_reactions',
 };
 
 /** Merge a stored map over the defaults, keeping only known keys with boolean values. */

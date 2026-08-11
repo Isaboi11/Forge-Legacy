@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Easing, PanResponder, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -15,34 +15,19 @@ import { TourAnchor } from '@/components/tour/TourAnchor';
 import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { BG_RADIAL } from '@/constants/backgrounds';
 import {
-  EntryStrip,
-  PickPreview,
-  canPostPick,
-  layoutFromPick,
-  mediaFromPick,
-  useTransformationPick,
-} from '@/components/forge/compositions/TransformationPicker';
-import {
   REACTIONS,
   acknowledgedLine,
   addPostComment,
-  createFriendPost,
   fetchFriendsFeed,
   fetchPostComments,
   setPostReaction,
   shapeOf,
-  uploadFeedMedia,
   type FeedPost,
-  type PostAudience,
   type PostComment,
-  type PostMedia,
   type Reaction,
 } from '@/data/friends-feed-live';
 import { fetchFriendLists } from '@/data/friends-live';
-import { fetchTransformationEntries, type TransformationEntry } from '@/data/transformation-live';
-import { fetchMySquads } from '@/data/squad-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
-import { useMediaPicker } from '@/lib/useMediaPicker';
 import { useToast } from '@/hooks/useCeremony';
 import { useProfile } from '@/lib/profile';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
@@ -68,13 +53,18 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
  * it. SOC-D11 calls these lightweight acknowledgements, so the summary names people ("Acknowledged by Priya
  * and Diego and 3 others") and no count is ever rendered as a score.
  *
- * ── PROGRESS POSTS COME FROM THE ARCHIVE ──────────────────────────────────────────────────────────────
+ * ── COMPOSING MOVED OUT, AND THE COMPOSER BAR IS NOW A DOOR ───────────────────────────────────────────
  *
- * The design picks two loose photos and offers a per-pose alignment tool built on a web custom element — it
- * sets `data-editable` and synthesizes `dblclick` events to enter and leave reframe mode, which has no RN
- * equivalent. This selects from your Transformation entries instead, which is better rather than merely
- * portable: the archive holds the captures and their pose structure, so a comparison is against the same
- * pose. Same rule as the squad composer, and both share one implementation (`TransformationPicker`).
+ * This file used to hold its own `Composer` in a `BottomSheet`. It was the only capture surface in the
+ * app that opened a media picker from INSIDE a modal, and it was the only one that did not work: the
+ * picker presents its own sheet and then a system picker, neither of which can be presented over a modal
+ * still on screen. The PO reported it as "it won't let me add a video or a picture, and now I'm frozen".
+ *
+ * `/squad-composer` is the one composer for both feeds now, and the audience decides where the post
+ * lands. Deleting the duplicate was the second reason: two composers writing one table is how the recap
+ * stats strip drifted before `RecapStrip` was extracted. What that screen kept from here — the
+ * Transformation-archive comparison, the audience control with a live privacy note and no public choice
+ * — is described in its own header.
  *
  * ── DELIBERATELY NOT BUILT ────────────────────────────────────────────────────────────────────────────
  *
@@ -87,15 +77,9 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
  *   Honor-earned or Program-completed event yet, so they would govern nothing.
  * · Post options / Share — toasts in the design, omitted rather than reproduced as toasts.
  *
- * Faithful: the audience control with a live privacy note per option and no public choice, the four post
- * shapes, the drag-or-tap progress divider, the overlapping reactor avatars, and the pill picker's pop-in.
+ * Faithful: the four post shapes, the drag-or-tap progress divider, the overlapping reactor avatars, and
+ * the pill picker's pop-in. (The audience control moved to the composer with the rest of composing.)
  */
-
-const AUDIENCES: { key: PostAudience; label: string; note: string }[] = [
-  { key: 'FRIENDS', label: 'Friends', note: 'Only your accepted friends will see this. Never public.' },
-  { key: 'SQUAD', label: 'Squad', note: 'Only members of the squad you choose. Never public.' },
-  { key: 'BOTH', label: 'Both', note: 'Your friends and that squad. Still never public.' },
-];
 
 export default function FriendsFeedScreen() {
   const router = useRouter();
@@ -104,7 +88,17 @@ export default function FriendsFeedScreen() {
   const { data: posts, loading, error, refetch } = useQuery(() => fetchFriendsFeed(40), []);
   const { data: lists } = useQuery(() => fetchFriendLists().catch(() => null), []);
 
-  const [composerOpen, setComposerOpen] = useState(false);
+  /*
+   * The composer is a SCREEN now, so posting happens off this one and the feed has to re-read when it
+   * comes back. The retired sheet called `refetch()` in its own `onPosted`; the same job, moved to the
+   * event that now stands for "you finished composing" — same convention as Squad Detail.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch]),
+  );
+
   const tourScroller = useTourScroller();
   const onTourScroll = useTourScrollTracker();
   const addRef = useTourAnchor('friends-add');
@@ -178,7 +172,24 @@ export default function FriendsFeedScreen() {
           onScrollBeginDrag={() => setPickerId(null)}
         >
           <TourAnchor id="friends-feed">
-          <Pressable onPress={() => setComposerOpen(true)} accessibilityRole="button" accessibilityLabel="Share a moment" style={styles.composerBar}>
+          {/*
+            ⚠ A SCREEN, NOT A SHEET, AND THAT IS THE WHOLE FIX.
+
+            This used to open an in-file `Composer` inside a `BottomSheet`. `useMediaPicker` presents its
+            own sheet and then a system picker, and a picker cannot be presented from inside a modal that
+            is still on screen — so "Photo" and "Video" did nothing and an invisible overlay went on
+            swallowing taps. Reported by the PO as "it won't let me add a video or a picture, and now I'm
+            frozen on the friends feed page".
+
+            The composer now lives at `/squad-composer` for BOTH feeds; the audience decides where the
+            post lands. See that file's header.
+          */}
+          <Pressable
+            onPress={() => router.push({ pathname: '/squad-composer', params: { audience: 'FRIENDS' } })}
+            accessibilityRole="button"
+            accessibilityLabel="Share a moment"
+            style={styles.composerBar}
+          >
             <Avatar name={profile?.name ?? ''} src={profile?.avatarUrl ?? undefined} size="listRow" />
             <Text style={styles.composerText}>What did you forge today?</Text>
           </Pressable>
@@ -208,16 +219,6 @@ export default function FriendsFeedScreen() {
       {/* Authored in the first tour pass and never mounted until now — the walkthrough existed, the
           line rendering it did not. */}
       <ScreenTour screenKey="friends" />
-
-      <Composer
-        open={composerOpen}
-        onClose={() => setComposerOpen(false)}
-        onPosted={() => {
-          setComposerOpen(false);
-          showToast('Shared');
-          refetch();
-        }}
-      />
 
       <CommentsSheet post={commentsFor} onClose={() => setCommentsFor(null)} onChanged={refetch} />
     </View>
@@ -449,233 +450,6 @@ function ProgressCompare({ post }: { post: FeedPost }) {
   );
 }
 
-function Composer({ open, onClose, onPosted }: { open: boolean; onClose: () => void; onPosted: () => void }) {
-  const { showToast } = useToast();
-  const { pick: pickSource, mediaPickerSheet } = useMediaPicker();
-  const [audience, setAudience] = useState<PostAudience>('FRIENDS');
-  const [body, setBody] = useState('');
-  const [media, setMedia] = useState<PostMedia | null>(null);
-  const [mode, setMode] = useState<'none' | 'progress'>('none');
-  const [entries, setEntries] = useState<TransformationEntry[] | null>(null);
-  const [thenId, setThenId] = useState<string | null>(null);
-  const [nowId, setNowId] = useState<string | null>(null);
-  const [squads, setSquads] = useState<{ id: string; name: string }[] | null>(null);
-  const [squadId, setSquadId] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [posting, setPosting] = useState(false);
-
-  const pick = useTransformationPick(entries, thenId, nowId);
-
-  // Squads only when the audience needs one.
-  useEffect(() => {
-    if (!open || audience === 'FRIENDS' || squads) return undefined;
-    let alive = true;
-    fetchMySquads().then(
-      (rows) => alive && setSquads(rows.map((r) => ({ id: r.id, name: r.name }))),
-      () => alive && setSquads([]),
-    );
-    return () => {
-      alive = false;
-    };
-  }, [open, audience, squads]);
-
-  const loadEntries = useCallback(() => {
-    if (entries) return;
-    fetchTransformationEntries().then(
-      (rows) => {
-        setEntries(rows);
-        // Widest span the athlete has: oldest as Then, newest as Now.
-        if (rows.length >= 2) {
-          setThenId(rows[rows.length - 1].id);
-          setNowId(rows[0].id);
-        }
-      },
-      () => setEntries([]),
-    );
-  }, [entries]);
-
-  const attach = async (want: 'images' | 'videos') => {
-    const asset = await pickSource({ kind: want, title: want === 'videos' ? 'Add a video' : 'Add a photo', quality: 0.7 });
-    if (!asset?.uri) return;
-    const kind = asset.type === 'video' ? 'video' : 'image';
-    setUploading(true);
-    try {
-      const url = await uploadFeedMedia(asset.uri, kind);
-      setMedia({ url, kind });
-      setMode('none');
-    } catch (e) {
-      showToast(errorMessage(e));
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const needsSquad = audience !== 'FRIENDS';
-  const progressReady = mode === 'progress' && canPostPick(pick);
-  const valid = !uploading && !posting && (!needsSquad || !!squadId) && (body.trim().length > 0 || !!media || progressReady);
-
-  const submit = () => {
-    if (!valid) return;
-    setPosting(true);
-    const layout = mode === 'progress' ? layoutFromPick(pick) : null;
-    const progressMedia: PostMedia[] = layout
-      ? mediaFromPick(pick).map((m, i) => ({ ...m, slot: i === 0 ? ('before' as const) : ('after' as const) }))
-      : [];
-    createFriendPost({
-      body,
-      audience,
-      squadId: needsSquad ? squadId : null,
-      media: layout ? progressMedia : media ? [media] : [],
-      type: layout ? 'progress' : 'discussion',
-    }).then(
-      () => {
-        setPosting(false);
-        setBody('');
-        setMedia(null);
-        setMode('none');
-        onPosted();
-      },
-      (e: unknown) => {
-        setPosting(false);
-        showToast(errorMessage(e));
-      },
-    );
-  };
-
-  const note = AUDIENCES.find((a) => a.key === audience)?.note ?? '';
-
-  return (
-    <>
-      <BottomSheet open={open} onClose={onClose} title="New Post">
-        <ScrollView contentContainerStyle={styles.composerBody} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-          {/* Audience, with a live note per option. There is no public choice, and each note says so. */}
-          <View style={styles.segments}>
-            {AUDIENCES.map((a) => (
-              <Pressable
-                key={a.key}
-                onPress={() => setAudience(a.key)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: audience === a.key }}
-                accessibilityLabel={`${a.label}. ${a.note}`}
-                style={({ pressed }) => [styles.segment, audience === a.key ? styles.segmentOn : null, pressed ? styles.pressed : null]}
-              >
-                <Text style={[styles.segmentLabel, audience === a.key ? styles.segmentLabelOn : null]}>{a.label}</Text>
-              </Pressable>
-            ))}
-          </View>
-          <Text style={styles.note}>{note}</Text>
-
-          {needsSquad ? (
-            (squads ?? []).length === 0 ? (
-              <Text style={styles.note}>You’re not in a squad yet, so only Friends is available.</Text>
-            ) : (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.squadStrip}>
-                {(squads ?? []).map((s) => (
-                  <Pressable
-                    key={s.id}
-                    onPress={() => setSquadId(s.id)}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: squadId === s.id }}
-                    accessibilityLabel={`Post to ${s.name}`}
-                    style={({ pressed }) => [styles.squadChip, squadId === s.id ? styles.squadChipOn : null, pressed ? styles.pressed : null]}
-                  >
-                    <Text style={[styles.squadChipText, squadId === s.id ? styles.squadChipTextOn : null]} numberOfLines={1}>
-                      {s.name}
-                    </Text>
-                  </Pressable>
-                ))}
-              </ScrollView>
-            )
-          ) : null}
-
-          {/* A real input. The design's is a static div that captures nothing. */}
-          <TextInput
-            value={body}
-            onChangeText={setBody}
-            placeholder="What did you forge today?"
-            placeholderTextColor={flColor.gray600}
-            style={styles.textArea}
-            accessibilityLabel="What did you forge today?"
-            multiline
-            textAlignVertical="top"
-          />
-
-          <View style={styles.mediaRow}>
-            <MediaBtn label="Photo" active={media?.kind === 'image'} onPress={() => void attach('images')} />
-            <MediaBtn label="Video" active={media?.kind === 'video'} onPress={() => void attach('videos')} />
-            <MediaBtn
-              label="Progress"
-              active={mode === 'progress'}
-              onPress={() => {
-                setMode((m) => (m === 'progress' ? 'none' : 'progress'));
-                setMedia(null);
-                loadEntries();
-              }}
-            />
-          </View>
-
-          {uploading ? (
-            <View style={styles.uploading}>
-              <ActivityIndicator size="small" color={flColor.bronze400} />
-              <Text style={styles.note}>Uploading…</Text>
-            </View>
-          ) : null}
-
-          {media ? (
-            <View style={styles.attached}>
-              <Image source={{ uri: media.url }} style={styles.attachedImg} contentFit="cover" />
-              <Pressable onPress={() => setMedia(null)} accessibilityRole="button" accessibilityLabel="Remove attachment" style={styles.attachedX}>
-                <Text style={styles.attachedXText}>Remove</Text>
-              </Pressable>
-            </View>
-          ) : null}
-
-          {mode === 'progress' ? (
-            entries === null ? (
-              <ActivityIndicator color={flColor.bronze400} style={styles.uploading} />
-            ) : entries.length < 2 ? (
-              <Text style={styles.note}>
-                A comparison needs two captures from your Transformation archive. Capture another and it’ll show up here.
-              </Text>
-            ) : (
-              <View style={styles.progressPick}>
-                <EntryStrip label="Then" entries={entries} selectedId={thenId} otherId={nowId} onSelect={setThenId} />
-                <EntryStrip label="Now" entries={entries} selectedId={nowId} otherId={thenId} onSelect={setNowId} />
-                <PickPreview pick={pick} />
-              </View>
-            )
-          ) : null}
-
-          <Pressable
-            onPress={submit}
-            disabled={!valid}
-            accessibilityRole="button"
-            accessibilityLabel="Post"
-            accessibilityState={{ disabled: !valid }}
-            style={({ pressed }) => [styles.postBtn, valid ? styles.postBtnOn : null, pressed && valid ? styles.pressed : null]}
-          >
-            {posting ? <ActivityIndicator size="small" color={flColor.bronze300} /> : <Text style={[styles.postBtnLabel, valid ? styles.postBtnLabelOn : null]}>Post</Text>}
-          </Pressable>
-        </ScrollView>
-      </BottomSheet>
-      {mediaPickerSheet}
-    </>
-  );
-}
-
-function MediaBtn({ label, active, onPress }: { label: string; active?: boolean; onPress: () => void }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityState={{ selected: !!active }}
-      accessibilityLabel={label}
-      style={({ pressed }) => [styles.mediaBtn, active ? styles.mediaBtnOn : null, pressed ? styles.pressed : null]}
-    >
-      <Text style={[styles.mediaBtnLabel, active ? styles.mediaBtnLabelOn : null]}>{label}</Text>
-    </Pressable>
-  );
-}
 
 /** Comments, with a real field that writes. The design's Send only toasts. */
 function CommentsSheet({ post, onClose, onChanged }: { post: FeedPost | null; onClose: () => void; onChanged: () => void }) {
@@ -877,36 +651,10 @@ const styles = StyleSheet.create({
   pickerLabel: { fontSize: 8.5, fontWeight: '600', color: flColor.gray600 },
   pickerLabelOn: { color: flColor.bronze300 },
 
-  composerBody: { gap: 12, paddingBottom: 10 },
-  segments: { flexDirection: 'row', gap: 6 },
-  segment: { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600 },
-  segmentOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
-  segmentLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
-  segmentLabelOn: { color: flColor.bronze300 },
   note: { fontSize: 11.5, lineHeight: 17, color: flColor.gray600 },
-  squadStrip: { gap: 7, paddingRight: 4 },
-  squadChip: { maxWidth: 150, paddingHorizontal: 12, paddingVertical: 7, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600 },
-  squadChipOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
-  squadChipText: { fontSize: 11.5, fontWeight: '600', color: flColor.gray600 },
-  squadChipTextOn: { color: flColor.bronze300 },
 
-  textArea: { minHeight: 84, padding: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, fontSize: 14, lineHeight: 20, color: flColor.cream100 },
-  mediaRow: { flexDirection: 'row', gap: 7 },
-  mediaBtn: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600 },
-  mediaBtnOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
-  mediaBtnLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
-  mediaBtnLabelOn: { color: flColor.bronze300 },
   uploading: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 8 },
-  attached: { gap: 8 },
-  attachedImg: { width: '100%', height: 170, borderRadius: flRadius.md, backgroundColor: flColor.charcoal800 },
-  attachedX: { alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 7, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600 },
-  attachedXText: { fontSize: 11.5, fontWeight: '600', color: flColor.gray600 },
-  progressPick: { gap: 12 },
 
-  postBtn: { marginTop: 4, alignItems: 'center', paddingVertical: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600 },
-  postBtnOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
-  postBtnLabel: { fontSize: 14.5, fontWeight: '700', color: flColor.gray600 },
-  postBtnLabelOn: { color: flColor.bronze300 },
 
   comments: { gap: 12, paddingBottom: 6 },
   comment: { flexDirection: 'row', gap: 10 },

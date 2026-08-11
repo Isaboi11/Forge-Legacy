@@ -20,7 +20,7 @@
  * Which face the hero card wears. `'none'` is not "empty" — it is "we do not yet know enough to say
  * anything", which is a different and much shorter-lived thing.
  */
-export type HomeHero = 'program' | 'resume' | 'open' | 'none';
+export type HomeHero = 'program' | 'resume' | 'planned' | 'open' | 'none';
 
 /** Which face the first-run starting-point slot wears. `'none'` = the slot is not on screen at all. */
 export type HomeStartingPoint = 'none' | 'chooser' | 'intake' | 'suggestion';
@@ -48,6 +48,14 @@ export interface HomeStateInput {
   hasProgram: boolean;
   /** The program actually yielded a session to show. A program with no next day is not a hero. */
   hasProgramSession: boolean;
+  /**
+   * A one-off built in the builder and not yet trained (0136), waiting to be started.
+   *
+   * Ranks BELOW a program day on purpose. A scheduled session is a commitment the athlete made to a
+   * plan; this is a note they left themselves for a day with nothing on it. When both exist the program
+   * keeps the card and the planned one stays reachable through "Something else today?".
+   */
+  hasPlannedWorkout: boolean;
   /** Logged sets sitting in the local autosave, or null when there is no unfinished work. */
   resumeSets: number | null;
   /** `catalogCanRecommend()` — whether the guided on-ramp is offered at all. */
@@ -116,18 +124,24 @@ export function composeHome(s: HomeStateInput): HomeComposition {
     ? 'resume'
     : s.hasProgramSession
       ? 'program'
-      : // Settled and program-less: the Tier 3 CTA the spec marks Always. Only an athlete who has neither
-        // trained nor chosen gets the chooser instead — the question is worth asking exactly once.
-        settled
-        ? 'open'
-        : 'none';
+      : /* A workout they built for a day with nothing on it. Deliberately NOT gated on `settled`: having
+           planned one is itself the answer to "how do you want to start?", and a stronger one than a tap
+           on a chooser — asking the question over the top of it would be the same mistake `startChosen`
+           was added to fix. */
+        s.hasPlannedWorkout
+        ? 'planned'
+        : // Settled and program-less: the Tier 3 CTA the spec marks Always. Only an athlete who has neither
+          // trained nor chosen gets the chooser instead — the question is worth asking exactly once.
+          settled
+          ? 'open'
+          : 'none';
 
   /*
    * The open hero's button IS the freestyle choice — it opens "What are you training?" (the spec's W-8
    * Activity Type Picker). A "Something else today?" link beneath it would be the same tap twice, which is
    * the rule the starting-point slot already encodes for its own freestyle card.
    */
-  const heroOffersFreestyle = hero === 'program' || hero === 'resume';
+  const heroOffersFreestyle = hero === 'program' || hero === 'resume' || hero === 'planned';
 
   /* "Help me find one" deliberately does NOT settle anything — it is a stepper that lives ON this slot and
    * ends in a program. Only the three doors that LEAVE the chooser (freestyle, build, browse) record a

@@ -48,6 +48,7 @@ import { itemByName } from '@/domain/exercise-picker/data';
 import { getProgramDefinitions } from '@/domain/training/programs';
 import { dayLabel, nextOpenSlot, plannedDays, swapSessionOrder, totalSessions, trainingDays } from '@/domain/program/progress-core';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
+import { clearPlannedWorkout, fetchPlannedWorkout } from '@/data/planned-workout-live';
 import { StartStrengthSheet } from '@/components/forge/compositions/StartStrengthSheet';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
@@ -348,6 +349,9 @@ export default function HomeScreen() {
   const live = useMemo(() => trainingNow ?? [], [trainingNow]);
   /* Whether they have anyone at all, which an empty feed cannot tell us — "nobody posted" and "nobody to
      post" look identical from the posts alone, and they want opposite advice. */
+  /* The one-off built in advance (0136). Its own read rather than part of `fetchHomeData` so an
+     unapplied migration costs the hero its planned face and nothing else. */
+  const { data: planned, refetch: refetchPlanned } = useQuery(fetchPlannedWorkout, []);
   const { data: friendLists } = useQuery(fetchFriendLists, []);
   const hasCircle = (friendLists?.friends.length ?? 0) > 0 || live.length > 0;
   const circleActivity = useMemo(() => {
@@ -368,7 +372,8 @@ export default function HomeScreen() {
       refetchPrograms();
       refetchIntake();
       refetchBuiltDone(); // a workout just finished → advance the card to the next session
-    }, [refetchAwaiting, refetchPrograms, refetchIntake, refetchBuiltDone]),
+      refetchPlanned(); // built one for later, or just trained the one that was waiting
+    }, [refetchAwaiting, refetchPrograms, refetchIntake, refetchBuiltDone, refetchPlanned]),
   );
 
   // The program that anchors Home's "Today's Workout" + "Current Program" slots. Precedence:
@@ -583,6 +588,26 @@ export default function HomeScreen() {
   };
 
   /** …and this is what the third option does once it has actually been chosen. */
+  /**
+   * Start the workout they built earlier, and consume it — it was an intention for ONE session.
+   *
+   * Cleared fire-and-forget: a delete that fails leaves a card offering a session already under way,
+   * which the resume face covers on the next read, while blocking the start on it would strand the
+   * athlete at the door of their own workout.
+   */
+  const startPlannedWorkout = async () => {
+    if (!planned) return;
+    await writeWorkoutLaunch({ exercises: planned.exercises, workoutName: planned.name });
+    void clearPlannedWorkout().then(refetchPlanned);
+    router.push('/workout');
+  };
+
+  /** Home's quiet second door — the builder, in one-off mode rather than authoring a template. */
+  const buildForLater = () => {
+    closeElse();
+    router.push({ pathname: '/workout-builder', params: { for: 'later' } });
+  };
+
   const buildAsYouGo = async () => {
     setStrengthOpen(false);
     await writeWorkoutLaunch({ freestyle: true });
@@ -775,6 +800,7 @@ export default function HomeScreen() {
     startChosen: startChoice != null,
     hasProgram,
     hasProgramSession: home.workout != null,
+    hasPlannedWorkout: planned != null,
     resumeSets,
     guidedOnRamp,
     hasSuggestion,
@@ -809,14 +835,23 @@ export default function HomeScreen() {
           onStart: continueWorkout,
           resumeSets,
         }
-      : composition.hero === 'open'
+      : composition.hero === 'planned'
         ? {
-            eyebrow: 'Today',
-            title: 'Train Today',
-            focus: 'Nothing planned. Build it as you go.',
-            onStart: startFreestyleFromHome,
+            eyebrow: 'Built for later',
+            title: planned?.name || 'Your workout',
+            focus: 'Waiting for you. Start when you are ready.',
+            exerciseCount: planned?.exercises.length ?? 0,
+            onStart: startPlannedWorkout,
             resumeSets: null,
           }
+        : composition.hero === 'open'
+          ? {
+              eyebrow: 'Today',
+              title: 'Train Today',
+              focus: 'Nothing planned. Build it as you go.',
+              onStart: startFreestyleFromHome,
+              resumeSets: null,
+            }
         : composition.hero === 'program' && home.workout
           ? {
               title: home.workout.name,
@@ -925,6 +960,11 @@ export default function HomeScreen() {
                    nothing planned at all — a preview of neither would be a button onto an empty list. */
                 onPreview={composition.hero === 'program' && plannedDay ? () => setPreviewOpen(true) : undefined}
                 onFreestyle={composition.heroOffersFreestyle ? startFreestyleFromHome : undefined}
+                /* Only the `open` face renames its button and offers the builder: with nothing planned,
+                   "Start Workout" claimed a workout that did not exist, and this is the one state where
+                   planning one in advance is the obvious second thing to want. */
+                startLabel={composition.hero === 'open' ? 'Start Freestyle Workout' : undefined}
+                onBuildLater={composition.hero === 'open' ? buildForLater : undefined}
               />
             </TourAnchor>
           ) : null}
@@ -1079,7 +1119,13 @@ export default function HomeScreen() {
       */}
       {/* The three ways into a lifting session (`Forge Strength Start.dc.html`), reached from every Home
           door that would otherwise have assumed build-as-you-go. */}
-      <StartStrengthSheet open={strengthOpen} onClose={() => setStrengthOpen(false)} onFreestyle={() => void buildAsYouGo()} />
+      <StartStrengthSheet
+        open={strengthOpen}
+        onClose={() => setStrengthOpen(false)}
+        onFreestyle={() => void buildAsYouGo()}
+        /* Promoted to the hero's own "Build for later", where it makes a one-off rather than a template. */
+        offerBuildFirst={false}
+      />
 
       <BottomSheet
         open={elseOpen}
@@ -1093,11 +1139,11 @@ export default function HomeScreen() {
               <Pressable
                 onPress={chooseStrengthFromHome}
                 accessibilityRole="button"
-                accessibilityLabel="Strength — from a template, planned first, or built as you go"
+                accessibilityLabel="Strength — from a template, or built as you go"
                 style={({ pressed }) => [styles.elseRow, pressed ? styles.pathPressed : null]}
               >
                 <Text style={styles.pathCardTitle}>Strength</Text>
-                <Text style={styles.pathCardSub}>From a template, planned first, or built as you go.</Text>
+                <Text style={styles.pathCardSub}>From a template, or built as you go.</Text>
               </Pressable>
               <Pressable
                 onPress={() => setElseView('cardio')}
@@ -1218,7 +1264,16 @@ const styles = StyleSheet.create({
   elseList: { gap: 10 },
   elseBack: { paddingVertical: 6, paddingHorizontal: 2, alignSelf: 'flex-start' },
   elseBackLabel: { fontSize: 14, fontWeight: '600', color: flColor.gray600 },
-  elseRow: { padding: 15, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
+  /* Bronze, matching the Start Strength rows this sheet leads INTO. They were charcoal, so the first
+     step of the flow looked like a list and the second like a decision. Same weight, same door. */
+  elseRow: {
+    padding: 15,
+    borderRadius: flRadius.xl,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    backgroundColor: flColor.charcoal900,
+    boxShadow: flShadow.trainTogetherCard,
+  },
   pathBlock: { gap: 12 },
   pathTitle: { marginBottom: 4, fontFamily: flFont.display, fontSize: 21, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
   pathCard: { paddingHorizontal: 18, paddingVertical: 18, borderRadius: flRadius.xl, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card },

@@ -28,7 +28,9 @@ export type SymbolName =
   | 'haptics'
   | 'sound'
   | 'motion'
-  | 'eye';
+  | 'eye'
+  /** Somebody wrote something back. Added 0135, when comments first needed a control of their own. */
+  | 'chat';
 
 const p = (d: string) => <Path key={d} d={d} />;
 
@@ -72,6 +74,7 @@ const SYMBOLS: Record<SymbolName, (color: string) => ReactNode> = {
   sound: () => [p('M5 9.5h3l4-3.5v12l-4-3.5H5z'), p('M16 9a4 4 0 0 1 0 6'), p('M18.5 6.5a7.5 7.5 0 0 1 0 11')],
   motion: () => [<Circle key="c" cx={12} cy={12} r={8.5} />, p('M12 7v5l3 2')],
   eye: () => [p('M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z'), <Circle key="p" cx={12} cy={12} r={3} />],
+  chat: () => [p('M20 14.5a2.5 2.5 0 0 1-2.5 2.5H9l-5 4V6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5z')],
 };
 
 export function ForgeSymbol({

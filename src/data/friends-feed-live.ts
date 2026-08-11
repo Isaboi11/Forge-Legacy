@@ -184,6 +184,14 @@ export interface NewPost {
   /** Recap only — the workout being shared and the stats snapshotted from it. */
   workoutId?: string | null;
   workoutSummary?: WorkoutSummary | null;
+  /**
+   * PR only. `friends_feed()` has returned these three since 0074 and the milestone card has always
+   * rendered them; nothing could WRITE them to this audience until the composer merge, because the only
+   * caller was a sheet that offered text and photos.
+   */
+  prValue?: string | null;
+  prExercise?: string | null;
+  prLabel?: string | null;
 }
 
 export async function createFriendPost(input: NewPost): Promise<string> {
@@ -193,6 +201,7 @@ export async function createFriendPost(input: NewPost): Promise<string> {
   if (!user) throw new Error('Not signed in');
 
   const isRecap = input.type === 'recap';
+  const isPr = input.type === 'pr';
   const { data, error } = await supabase
     .from('squad_posts')
     .insert({
@@ -207,6 +216,10 @@ export async function createFriendPost(input: NewPost): Promise<string> {
          a workout snapshot a caller left on the input by accident. */
       workout_id: isRecap ? (input.workoutId ?? null) : null,
       workout_summary: isRecap ? (input.workoutSummary ?? null) : null,
+      // Same gate, same reason: a discussion never carries a stray PR left on the input.
+      pr_value: isPr ? (input.prValue?.trim() || null) : null,
+      pr_exercise: isPr ? (input.prExercise?.trim() || null) : null,
+      pr_label: isPr ? (input.prLabel?.trim() || null) : null,
     })
     .select('id')
     .single();

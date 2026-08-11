@@ -29,9 +29,18 @@ export interface StartStrengthSheetProps {
    * rather than guessing which of those a given screen needs.
    */
   onFreestyle: () => void;
+  /**
+   * Whether "Build it first" is offered here.
+   *
+   * Home turns it OFF: planning a session in advance is promoted to its own "Build for later" door on the
+   * hero, where it produces a one-off waiting on the card rather than a template (0136). Leaving it here
+   * too would be the same intent behind two doors with two different outcomes. The Workouts tab and
+   * Templates keep it — that IS their library, and authoring a template is what they are for.
+   */
+  offerBuildFirst?: boolean;
 }
 
-export function StartStrengthSheet({ open, onClose, onFreestyle }: StartStrengthSheetProps) {
+export function StartStrengthSheet({ open, onClose, onFreestyle, offerBuildFirst = true }: StartStrengthSheetProps) {
   const router = useRouter();
 
   const go = (fn: () => void) => () => {
@@ -48,12 +57,14 @@ export function StartStrengthSheet({ open, onClose, onFreestyle }: StartStrength
           icon={<Path d="M4 4h16v16H4zM8 9h8M8 13h8M8 17h5" />}
           onPress={go(() => router.push('/templates'))}
         />
-        <Row
-          title="Build it first"
-          sub="Plan every exercise, then start the session."
-          icon={<Path d="M6.5 6.5h11M6.5 12h11M6.5 17.5h11M3 6.5h.01M3 12h.01M3 17.5h.01M20 4v5M22.5 6.5h-5" />}
-          onPress={go(() => router.push('/workout-builder'))}
-        />
+        {offerBuildFirst ? (
+          <Row
+            title="Build it first"
+            sub="Plan every exercise, then start the session."
+            icon={<Path d="M6.5 6.5h11M6.5 12h11M6.5 17.5h11M3 6.5h.01M3 12h.01M3 17.5h.01M20 4v5M22.5 6.5h-5" />}
+            onPress={go(() => router.push('/workout-builder'))}
+          />
+        ) : null}
         <Row
           title="Build as you go"
           sub="Pick your first move, then add more as you lift."
