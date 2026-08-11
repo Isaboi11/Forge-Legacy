@@ -57,14 +57,11 @@
 
 **Sprint:** **Creator Dashboard, Phase 1** (2026-08-11) — the operator can finally see the product being used
 
-**Status: code complete, MIGRATIONS NOT YET APPLIED.** tsc clean · **1,807 tests** (91 new) · lint at
-baseline (1 error + 13 warnings, none new) · **migrations 0129 + 0130 authored, awaiting the SQL editor**.
-Full write-up in **Recently Completed #1**.
+**Status: SHIPPED.** tsc clean · **1,807 tests** (91 new) · lint at baseline (1 error + 13 warnings, none
+new) · **migrations 0129 + 0130 APPLIED** · **OTA published** to `production` on runtime `74a9a86b…`,
+verified against build 4 with `fingerprint:compare` first. Full write-up in **Recently Completed #1**.
 
-**What the PO must do before it works:** paste `supabase/apply/pending-0129-0130.sql`, then run **STEP 2**
-in that file's header to insert your own uuid into `app_admins`. Until that row exists every RPC raises
-`42501` for everyone including you, and the Account Settings row does not appear. That is correct
-behaviour, not a bug.
+**To reach it:** app → Settings → **Creator Dashboard** (bottom of the list, operator accounts only).
 
 **Next:** Phase 2 — first-party event instrumentation (`app_events` + a client emitter + `last_active_at`
 on its own table + a nightly `pg_cron` rollup). ⚠ Phase 2 collects data Phase 1 does not, so
@@ -704,9 +701,26 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ### 0. RELEASE STATE — 2026-08-11 (read this before shipping anything else)
 
+**⚠ UPDATED 2026-08-11, later the same day — the OTA block below is CLEARED and an update has shipped.**
+
 | | |
 |---|---|
-| **Commit** | `d199c45` on `feat/home-onramp` (not pushed, not merged) |
+| **OTA** | ✅ **PUBLISHED** — branch `production`, iOS runtime `74a9a86b…`, group `e0a11f70-9351-411e-8891-58db55781312`, commit `2a5dcce`. `fingerprint:compare` against build `5de44367` matched **exactly** before publishing, so it is deliverable to the installed build 4 |
+| **iOS build in the field** | `5de44367`, production, **1.0.0 (build 4)**, commit `651fd80`, runtime `74a9a86b…` — this supersedes `0d07a777` (build 3) and is what the OTA targets |
+| **Android** | An Android update group was published (`961ff3c8…`, runtime `ca025e7e…`) but **there are no Android builds at all**, so it reaches nobody. Harmless; noted so nobody reads it as coverage |
+| **Migrations** | **0129 + 0130 APPLIED by the PO 2026-08-11**, and the `app_admins` grant ran |
+
+**Why the earlier block below is now stale:** it recorded the OTA as undeliverable because the live build
+was `2511c478` (runtime `791bacda…`) while local was `3508eed9…`. Build 3 then shipped, then build 4
+(`5de44367`, runtime `74a9a86b…`), and local now matches build 4. The previous OTA — "Squad settings:
+Edit Identity scrolls" — was stamped `3508eed9…`, i.e. **build 3's** runtime, so it stopped reaching the
+phone the moment build 4 was installed. This update is the first one build 4 can actually receive.
+
+---
+
+| | |
+|---|---|
+| **Commit** | `d199c45` on `feat/home-onramp` (not pushed, not merged) — superseded; HEAD is now `2a5dcce` |
 | **Web preview** | **LIVE** — forgelegacy.expo.app, root 200, serving `entry-2c1c4b7114ef12fe562279af61e7f01a.js`, hash verified against the local build |
 | **iOS build** | `0d07a777-5829-43d6-8a23-63de2cdf7455`, production, **in progress** — commit `d199c45`, runtime `3508eed9…`, build number 3 |
 | **Migrations** | 0126 · 0127 · 0128 **APPLIED** by the PO. **0129 + 0130 authored 2026-08-11, NOT applied** — paste `supabase/apply/pending-0129-0130.sql`, then run its STEP 2 to grant yourself admin |
