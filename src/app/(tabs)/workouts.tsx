@@ -26,6 +26,7 @@ import type { Program } from '@/domain/training/schema';
 import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
 import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
+import { useEarnedMoments } from '@/hooks/useEarnedMoments';
 
 /**
  * Workouts tab root (plural) — W-2 Program Browse / Programs Catalog.
@@ -61,6 +62,10 @@ function compactMeta(p: Program): string {
 }
 
 export default function WorkoutsScreen() {
+  /* Rank-ups and honours announce themselves on whichever main tab the athlete reaches first, so a
+     day that never touches Legacy is not a day the moment is lost. Throttled and idempotent — see
+     the hook. The active workout is a pushed route, so it can never be interrupted by one. */
+  useEarnedMoments();
   const router = useRouter();
   const { startWorkout } = useWorkoutSession();
   const [tab, setTab] = useState<'mine' | 'discover'>('mine');

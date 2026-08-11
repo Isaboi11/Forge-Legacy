@@ -61,6 +61,7 @@ import { doneSetCount } from '@/domain/workout/metrics';
 import type { Program, Workout } from '@/domain/training/schema';
 import { resolveHomeWorkoutArtwork } from '@/domain/home-artwork/resolver';
 import { enrichSessionExercises, equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
+import { useEarnedMoments } from '@/hooks/useEarnedMoments';
 
 /** AppBar wordmark — pillar mark + serif "Forge Legacy", left-aligned. */
 function HomeWordmark() {
@@ -225,6 +226,10 @@ function ProgramPathChooser({
 }
 
 export default function HomeScreen() {
+  /* Rank-ups and honours announce themselves on whichever main tab the athlete reaches first, so a
+     day that never touches Legacy is not a day the moment is lost. Throttled and idempotent — see
+     the hook. The active workout is a pushed route, so it can never be interrupted by one. */
+  useEarnedMoments();
   const [friendSheetOpen, setFriendSheetOpen] = useState(false);
   /**
    * Unfinished work sitting in local storage, re-read every time Home comes into focus.

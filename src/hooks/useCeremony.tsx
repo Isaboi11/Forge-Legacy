@@ -13,7 +13,9 @@
  * placeholder (honor art was never imported — never fabricated).
  */
 
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+
+import { markHonorsCelebrated } from '@/data/honors-live'
 
 import { Modal } from '@/components/forge/composites/Modal'
 import { Toast } from '@/components/forge/composites/Toast'
@@ -122,6 +124,34 @@ export function CeremonyProvider({ children }: { children: React.ReactNode }) {
   const hideToast = useCallback(() => setToast(null), [])
 
   const current = queue[0] ?? null
+
+  /*
+   * Mark an honor celebrated the moment its ceremony STOPS being the current one — the athlete dismissed
+   * it, or shared from it, which also advances the queue.
+   *
+   * ⚠ HERE, NOT ON LEGACY. This used to live in the Legacy tab, which was fine while Legacy was the only
+   * screen that could present one. Now that any of the four tabs can, a per-screen copy would be wrong in
+   * both directions: an honor dismissed on Home would never be marked and would replay for ever, and four
+   * mounted tabs each watching `current` would race to mark the same one. The provider is the single
+   * owner of `current`, so it is the only correct home for the acknowledgement.
+   *
+   * Deliberately not at fetch time. `uncelebrated_honors()` reads and marks nothing precisely so that a
+   * force-quit, a crash or a tab closed mid-ceremony leaves the honor still owed. One at a time, as each
+   * is dismissed, so walking away after the first of three keeps the other two owed rather than
+   * swallowing them together.
+   */
+  const shownHonorRef = useRef<string | null>(null)
+  useEffect(() => {
+    const previous = shownHonorRef.current
+    const showing = current?.kind === 'honorEarned' ? current.id : null
+    if (previous && previous !== showing) {
+      void markHonorsCelebrated([previous.slice('honor-'.length)]).catch(() => {
+        // Failing to mark replays the ceremony next time. That is the safe direction of this error.
+      })
+    }
+    shownHonorRef.current = showing
+  }, [current])
+
   const ceremonyValue = useMemo<CeremonyContextValue>(() => ({ enqueue, dismiss, current }), [enqueue, dismiss, current])
   const toastValue = useMemo<ToastContextValue>(() => ({ showToast }), [showToast])
 

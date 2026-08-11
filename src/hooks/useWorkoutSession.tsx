@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 
 import { setTrainingStatus } from '@/data/presence-live'
+import { invalidateEarnedMoments } from '@/hooks/useEarnedMoments'
 
 /** One planned lift carried into the session so the Finish log sheet knows what to record. */
 export type SessionLift = {
@@ -61,7 +62,12 @@ export function WorkoutSessionProvider({ children }: { children: React.ReactNode
     }
   }, [])
 
+  /* Finishing a session is the ONE event that can change a rank, and the earned-moments check is
+     throttled to once a minute — so without this, glancing at a tab shortly before training could
+     swallow the promotion that training just earned. Dropping the gate here means the next tab the
+     athlete lands on evaluates immediately. */
   const endSession = useCallback(() => {
+    invalidateEarnedMoments()
     clearStaleTimer()
     setSession(null)
     setLiveWorkoutPresence(false)

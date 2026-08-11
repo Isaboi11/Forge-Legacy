@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode, useMemo } from 'react';
+import { useCallback, useState, type ReactNode, useMemo } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,9 +18,7 @@ import { type RankFamily, type RankLevel } from '@/domain/rank-artwork/resolver'
 import { resolveRankBadge } from '@/domain/rank-artwork/badge-art';
 import { RankSeal } from '@/components/forge/RankSeal';
 import { fetchLegacyData } from '@/data/legacy-live';
-import { refreshRank } from '@/data/rank-live';
-import { useCeremony } from '@/hooks/useCeremony';
-import { fetchUncelebratedHonors, markHonorsCelebrated } from '@/data/honors-live';
+import { useEarnedMoments } from '@/hooks/useEarnedMoments';
 import { fetchAccomplishments } from '@/data/accomplishments-live';
 import { fetchLegacyArchive } from '@/data/legacy-archive-live';
 import { LegacyArchiveBand } from '@/components/forge/LegacyArchiveBand';
@@ -98,7 +96,6 @@ const PIN_GLYPH: Record<PinKind, SymbolName> = {
 export default function LegacyScreen() {
   const router = useRouter();
   const { profile } = useProfile();
-  const { enqueue, current } = useCeremony();
   const { data, error, refetch } = useQuery(fetchLegacyData, []);
   // Accomplishments are now LIVE (0023) — replacing the fixture. Newest first; the strip shows a few and
   // "View all" opens the full L-12 screen. `featured` drives the filled star.
@@ -182,71 +179,28 @@ export default function LegacyScreen() {
   // Rank evaluation is the "app foreground" trigger (RCM §19): each time Legacy gains focus, recompute the
   // earned rank from live activity and persist any promotion (never decreases). A newly-crossed FAMILY
   // boundary fires the M-1 rank-up ceremony; then refetch so the badge + label reflect the new rank.
+  /*
+   * The rank refresh and the honor sweep used to be inline here, which made the ceremony owed to a SCREEN
+   * rather than to the athlete: earn something on a day you never open Legacy and the moment waited.
+   * `useEarnedMoments` now runs on all four tabs — the record still lives here, only the announcement
+   * travels. Legacy keeps its own read below so the badge reflects a promotion the moment one lands.
+   */
+  useEarnedMoments({ onRankChanged: refetch });
+
   useFocusEffect(
     useCallback(() => {
-      let cancelled = false;
-      void refreshRank()
-        .then((res) => {
-          // A sub-tier counts. Standards §3 is "crosses a rank OR SUB-TIER threshold", and gating on the
-          // family alone meant Foundation I → II happened in the database and nowhere else.
-          if (cancelled || !res || (!res.promotedFamily && res.promotedSubTier == null)) return;
-          enqueue({ id: `rank-${res.rank.rankLevel}`, kind: 'rankUp', rank: { family: res.rank.family, level: res.rank.subTier as RankLevel } });
-        })
-        .finally(() => {
-          if (!cancelled) refetch();
-        });
-      /*
-       * M-2 HONOR EARNED — here, not at the end of the workout.
-       *
-       * The Seal screen used to headline a new honor, which is the wrong room for it: W-17 is about
-       * the session just trained, and an honor is a LEGACY fact — it belongs where the athlete's
-       * record lives, on the screen they land on next anyway (`workout-complete` replaces to this
-       * tab). It also earns the forged-medallion ceremony rather than a line of text, which has been
-       * built and unreachable since the component shipped.
-       *
-       * Same shape as the rank refresh directly above, and for the same reason: focus is the trigger,
-       * so an honor granted by a retroactive `claim_earned_honors` sweep — never near a workout —
-       * still gets its moment. `enqueue` dedupes on id, so a refocus mid-ceremony re-enqueues nothing.
-       */
-      void fetchUncelebratedHonors()
-        .then((honors) => {
-          if (cancelled || !honors.length) return;
-          enqueue(honors.map((h) => ({ id: `honor-${h.id}`, kind: 'honorEarned' as const, honorName: h.name })));
-        })
-        .catch(() => {
-          // An honor that fails to announce itself is still earned, still on the Hub, still on this
-          // screen. Never let it take the tab down with it.
-        });
+      // The displayed record, refreshed on every focus regardless of whether the (throttled) evaluation
+      // above ran — returning from a just-logged workout has to show it.
+      refetch();
       // The archive band too. It was fetched once at mount and never again, so adding a photo — or an
       // entry, or finishing a competition — and walking back to Legacy showed the band exactly as it was
       // when the tab first loaded: an empty Photos tile next to a gallery that now had photos in it.
       refetchArchive();
-      return () => {
-        cancelled = true;
-      };
-    }, [enqueue, refetch, refetchArchive]),
+    }, [refetch, refetchArchive]),
   );
 
-  /*
-   * Mark an honor celebrated the moment its ceremony STOPS being the current one — i.e. the athlete
-   * dismissed it (or shared from it, which also advances the queue).
-   *
-   * Deliberately not at fetch time. `uncelebrated_honors()` reads and marks nothing precisely so that
-   * a force-quit, a crash or a closed tab mid-ceremony leaves the honor still owed. One honor at a
-   * time, as each is dismissed, so walking away after the first of three keeps the other two owed
-   * rather than swallowing them together.
-   */
-  const shownHonorRef = useRef<string | null>(null);
-  useEffect(() => {
-    const previous = shownHonorRef.current;
-    const showing = current?.kind === 'honorEarned' ? current.id : null;
-    if (previous && previous !== showing) {
-      void markHonorsCelebrated([previous.slice('honor-'.length)]).catch(() => {
-        // Failing to mark replays the ceremony next time. That is the safe direction of this error.
-      });
-    }
-    shownHonorRef.current = showing;
-  }, [current]);
+  // (The honor-celebrated acknowledgement moved to CeremonyProvider — it has to sit with the single
+  // owner of `current` now that four tabs can present one. See the note there.)
 
   // First load only: wait for the live Legacy read + the shared profile, with a retryable error. Once
   // data is in hand it stays rendered through any background refetch.

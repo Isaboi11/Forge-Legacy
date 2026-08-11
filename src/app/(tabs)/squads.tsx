@@ -21,6 +21,7 @@ import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
 import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { useEarnedMoments } from '@/hooks/useEarnedMoments';
 
 /**
  * Squads tab root — S-1 Squads Hub. Built to `Squads Hub.dc.html`, wired to real data (`fetchMySquads`).
@@ -34,6 +35,10 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
  */
 
 export default function SquadsScreen() {
+  /* Rank-ups and honours announce themselves on whichever main tab the athlete reaches first, so a
+     day that never touches Legacy is not a day the moment is lost. Throttled and idempotent — see
+     the hook. The active workout is a pushed route, so it can never be interrupted by one. */
+  useEarnedMoments();
   const router = useRouter();
   const { data, loading, refetch } = useQuery(fetchMySquads, []);
   // Athletes waiting on you, per squad you own — the badge on the card tells you WHICH squad.
