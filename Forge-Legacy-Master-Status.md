@@ -115,18 +115,26 @@ baseline. Write-up in **Recently Completed #1a**.
 
 **⚠ WHAT THE PO MUST DO, AND IN THIS ORDER:**
 
-1. **Publish the privacy-policy edit first.** `Docs/Legal/Privacy-Policy.md` § 2 "Product usage" is
-   written and committed but the policy is not hosted anywhere yet. AA-D9 / P6-A1-D8 make the disclosure
-   a precondition of the collection, not a companion to it — a policy updated afterwards was wrong for
-   however long the gap lasted.
-2. **Then** paste `supabase/apply/pending-0131-0133.sql`.
+1. ~~Publish the privacy-policy edit first.~~ ✅ **DONE 2026-08-11** — live at
+   https://forgelegacy.expo.app/privacy. AA-D9 / P6-A1-D8 are satisfied: the disclosure is public
+   *before* any collection starts.
+2. **Paste `supabase/apply/pending-0131-0133.sql`.** ← the only remaining step.
 3. Verify `select jobname, schedule, active from cron.job order by jobname;` shows **three** jobs.
    `forge-events-prune` is the only thing making the policy's 90-day sentence true; if it is missing,
    that promise is false while the words stay on the page.
 
-**Decision Queue #22 (NEW, open):** the privacy policy has never been published to a URL. Apple requires
-one, and § 2 now describes collection that is about to start. `forgelegacy.expo.app/privacy` is the
-cheapest option and is already controlled.
+**Decision Queue #22 — CLOSED 2026-08-11.** The privacy policy is **LIVE at
+https://forgelegacy.expo.app/privacy** (and `/privacy/`; both verified 200 — the bare form 404'd on the
+first attempt because EAS Hosting serves it from `privacy.html`, not `privacy/index.html`). Generated
+from `Docs/Legal/Privacy-Policy.md` by `scripts/build-privacy-page.mjs`, which refuses to build if any
+`[[PLACEHOLDER]]` survives and hard-splits at "Before You Publish" so the internal drafting notes are
+never served. It lives in `public/`, not as a route: Apple requires a URL reachable **without an
+account**, and an expo-router route would sit behind `<Stack.Protected>`.
+
+Filled: **Isaiah Altamirano** as an individual, `isaiahaltamirano@gmail.com`, both dates, 13 / 30 days.
+⚠ **Still open:** no postal address is published (§ 12 offers it on request) — required by some regimes,
+and an argument for a registered agent before a wider release. EU/UK and California specifics remain
+unaddressed.
 
 A progress capture is now something you lay out rather than something the app decides for you: format,
 style, poses, entry, what's printed on the card, and where it goes. One renderer serves the composer
