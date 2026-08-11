@@ -118,6 +118,18 @@ export interface RankRefresh {
   rank: ResolvedRank;
   /** The family newly crossed INTO this run (fire the M-1 ceremony), else null. */
   promotedFamily: RankFamily | null;
+  /**
+   * The sub-tier newly reached WITHIN the family already held, else null. Fires the same M-1 ceremony.
+   *
+   * This used to be unreported, and the silence was the bug: `Featured-Legacy-Moment-Standards` §3 defines
+   * a Rank Up as the score crossing "a rank OR SUB-TIER threshold", but only the family boundary was ever
+   * handed back, so three of every four promotions were persisted and never announced. An athlete reached
+   * Foundation II by writing a row in a table and was told nothing.
+   *
+   * Never both: a family crossing re-resolves the sub-tier at the new family, so reporting that as a
+   * sub-tier promotion too would fire two ceremonies for one advancement.
+   */
+  promotedSubTier: number | null;
 }
 
 /**
@@ -167,7 +179,11 @@ export async function refreshRank(): Promise<RankRefresh | null> {
 
   // Nothing to do — the stored rank already meets or exceeds this step (and the row exists).
   if (storedRow != null && rank.rankLevel <= storedLevel) {
-    return { rank: { family: storedFamily, subTier: storedRow.sub_tier, rankLevel: storedLevel, display: rankDisplay(storedFamily, storedRow.sub_tier) }, promotedFamily: null };
+    return {
+      rank: { family: storedFamily, subTier: storedRow.sub_tier, rankLevel: storedLevel, display: rankDisplay(storedFamily, storedRow.sub_tier) },
+      promotedFamily: null,
+      promotedSubTier: null,
+    };
   }
 
   const familyChanged = cappedIdx > FAMILIES.indexOf(storedFamily);
@@ -186,5 +202,11 @@ export async function refreshRank(): Promise<RankRefresh | null> {
   );
   await supabase.from('profiles').update({ rank_family: rank.family, rank_level: rank.subTier }).eq('id', uid);
 
-  return { rank, promotedFamily: familyChanged ? rank.family : null };
+  // Past the early return above, `rank.rankLevel > storedLevel` is established — this IS a promotion.
+  // So the only question left is which kind, and the two are mutually exclusive.
+  return {
+    rank,
+    promotedFamily: familyChanged ? rank.family : null,
+    promotedSubTier: familyChanged ? null : rank.subTier,
+  };
 }

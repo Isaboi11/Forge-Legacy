@@ -112,7 +112,23 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
     }).start();
   }, [rise]);
 
+  /**
+   * Closing him ends the conversation. Opening him again starts a new one.
+   *
+   * §15.2's rolling thread meant every visit resumed mid-sentence — days later, still holding a question
+   * about a session already trained. A coach you walked away from should not pick up where you left off
+   * as though you never left; the athlete's own framing was that closing it should restart it.
+   *
+   * ⚠ ONLY ON A DELIBERATE CLOSE — the X and the drag, both of which land here. The `onClose()` calls on
+   * the Builder hand-off paths deliberately do NOT clear: §15.3 keeps the thread across leaving FOR the
+   * builder, because that is one errand inside a single conversation, not the end of it.
+   *
+   * Clears the conversation, not the athlete: `clearThread` drops only the thread's own key, so the
+   * remembered skill level and having met him both survive. He greets you next time; he does not
+   * re-introduce himself, and he does not ask how long you have been training all over again.
+   */
   const collapse = useCallback(() => {
+    void clearThread();
     Animated.timing(rise, {
       toValue: 0,
       duration: 200,

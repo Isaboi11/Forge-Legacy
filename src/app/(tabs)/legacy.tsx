@@ -187,7 +187,9 @@ export default function LegacyScreen() {
       let cancelled = false;
       void refreshRank()
         .then((res) => {
-          if (cancelled || !res?.promotedFamily) return;
+          // A sub-tier counts. Standards §3 is "crosses a rank OR SUB-TIER threshold", and gating on the
+          // family alone meant Foundation I → II happened in the database and nowhere else.
+          if (cancelled || !res || (!res.promotedFamily && res.promotedSubTier == null)) return;
           enqueue({ id: `rank-${res.rank.rankLevel}`, kind: 'rankUp', rank: { family: res.rank.family, level: res.rank.subTier as RankLevel } });
         })
         .finally(() => {
