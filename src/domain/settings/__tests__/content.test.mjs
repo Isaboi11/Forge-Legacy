@@ -68,6 +68,45 @@ test('the full menu carries all three settings screens in the design’s order',
   assert.deepEqual(full[1].rows.map((r) => r.key), ['gym', 'prefs']);
 });
 
+// ── the operator row (0129/0130) ────────────────────────────────────────────
+
+test('the Creator Dashboard row CANNOT appear for a normal athlete', () => {
+  // The flag arrives from an async `isAppAdmin()` that returns false while loading and on error. This
+  // asserts the two ways that value reaches the factory produce a menu byte-identical to today's — so
+  // a defaulting mistake cannot leak an operator row into every athlete's settings.
+  const base = { hasVisibility: true, hasNotifications: true, hasPreferences: true };
+  const omitted = settingsSections({ ...base });
+  const explicitlyFalse = settingsSections({ ...base, isAdmin: false });
+
+  assert.deepEqual(explicitlyFalse, omitted, 'isAdmin:false must be identical to isAdmin omitted');
+  for (const menu of [omitted, explicitlyFalse]) {
+    assert.ok(!menu.some((s) => s.key === 'operator'), 'no Operator section');
+    assert.ok(!menu.flatMap((s) => s.rows).some((r) => r.key === 'admin'), 'no admin row');
+    assert.ok(
+      !menu.flatMap((s) => s.rows).some((r) => r.action.type === 'route' && r.action.path === '/admin'),
+      'nothing routes to /admin',
+    );
+  }
+});
+
+test('an admin gets the row, last, in its own section', () => {
+  const menu = settingsSections({ hasVisibility: true, hasNotifications: true, hasPreferences: true, isAdmin: true });
+  assert.deepEqual(menu.map((s) => s.key), ['privacy', 'training', 'membership', 'about', 'operator']);
+
+  const operator = menu[menu.length - 1];
+  assert.equal(operator.label, 'Operator', 'it reads as an operator tool, not one of the athlete’s settings');
+  assert.deepEqual(operator.rows.map((r) => r.key), ['admin']);
+  assert.equal(operator.rows[0].label, 'Creator Dashboard');
+  assert.deepEqual(operator.rows[0].action, { type: 'route', path: '/admin' });
+});
+
+test('the operator row changes nothing else about the menu', () => {
+  const base = { hasVisibility: true, hasNotifications: true, hasPreferences: true };
+  const off = settingsSections({ ...base });
+  const on = settingsSections({ ...base, isAdmin: true });
+  assert.deepEqual(on.slice(0, off.length), off, 'the athlete’s own sections are untouched');
+});
+
 test('Membership stays its own group — billing is a different mental model', () => {
   const s = settingsSections({});
   const membership = s.find((x) => x.key === 'membership');

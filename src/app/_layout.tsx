@@ -236,6 +236,15 @@ function RootNavigator() {
             that screen stopped withholding the requirements. Reached as Legacy → rank badge → Progress
             Hub → here. */}
         <Stack.Screen name="rank-progression" />
+        {/* Operator dashboard (0129/0130). Declared for the same reason as everything above it — a route
+            is gated by being DECLARED, not by existing — but note what this declaration is and is not.
+            It keeps a SIGNED-OUT visitor off the URL. It does NOT keep a signed-in athlete off it, and
+            it was never meant to: expo-router compiles every route into the bundle and `web.output` is
+            "static", so /admin exists as a public file on forgelegacy.expo.app regardless. The real gate
+            is `admin_guard()` in Postgres, which raises 42501 for anyone not in `app_admins`; the screen
+            additionally redirects on a failed `isAppAdmin()` so a curious athlete gets Home rather than
+            seven error states. See Docs/Admin-Analytics-Architecture-v1.0.md §4. */}
+        <Stack.Screen name="admin" />
       </Stack.Protected>
       <Stack.Protected guard={route === 'onboarding'}>
         <Stack.Screen name="onboarding" />

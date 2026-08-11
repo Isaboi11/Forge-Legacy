@@ -12,6 +12,7 @@ import { SettingsToggle } from '@/components/forge/SettingsToggle';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { isAppAdmin } from '@/data/admin-live';
 import { fetchHomeGym } from '@/data/home-gym-live';
 import { fetchAccountIdentity } from '@/domain/profile/live';
 import {
@@ -77,6 +78,9 @@ export default function AccountSettingsScreen() {
 
   const { data: me, loading } = useQuery(fetchAccountIdentity, []);
   const { data: homeGym } = useQuery(fetchHomeGym, []);
+  /* The operator row (0129). `isAppAdmin()` fails closed and never throws, so `data` is true only for
+     a confirmed admin — while it loads, and on any error, the row simply is not there. */
+  const { data: isAdmin } = useQuery(isAppAdmin, []);
 
   const [sheet, setSheet] = useState<LegalKey | 'about' | null>(null);
 
@@ -89,6 +93,7 @@ export default function AccountSettingsScreen() {
     hasVisibility: true,
     hasNotifications: true,
     hasPreferences: true,
+    isAdmin: isAdmin === true,
   });
 
   const buildNo = Constants.expoConfig?.ios?.buildNumber ?? Constants.expoConfig?.android?.versionCode ?? null;

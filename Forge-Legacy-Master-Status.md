@@ -46,19 +46,30 @@
 | **Architecture** | 🟢 | All 21 Freeze rows ✅ Complete; **V1 Architecture Freeze FROZEN 2026-06-30** |
 | **Documentation** | 🟡 | 257 `Docs/*.md` (42 Amendments), ~208 mentioning LOCKED. Specs are strong; the lag is in THIS dashboard and in amendments authored but never merged into their parent docs — the recurring pattern |
 | **Content** | 🟠 | Mixed, and previously mis-scored as one number. **Coaching content 735 of 797 published (92%)**; honors ARE data (139 awardable rows). **Programs 7 of 24** and **exercise media 0** — those two are the real gap |
-| **Backend** | 🟢 | **Supabase, built & live** — 97 migrations (0001–0098, all applied), RLS on all 35 tables with ≥1 policy each, 52/52 `SECURITY DEFINER` functions pin `search_path`. Audit verified 53 RPC names, 61 call sites, 434 select columns and 119 write payloads all resolve |
+| **Backend** | 🟢 | **Supabase, built & live** — 129 migration files (0002 lives in `supabase/design/`); **0001–0128 applied, 0129 + 0130 authored and pending**. RLS on every table, and every `SECURITY DEFINER` function pins `search_path`. **One deliberate exception to "≥1 policy per table": `app_admins` (0129) has RLS ENABLED WITH ZERO POLICIES** — that is deny-by-default and is the point, since `profiles_read` is `using (true)` and the operator roster must not be enumerable. Do not "fix" it (AA-D6) |
 | **Code** | 🟢 | **72 screens, 71 of them on real Supabase data.** The one fixture-backed screen was deferred out of the routed tree 2026-08-01. ~150 components · 68 domain modules · 39 data modules |
-| **Testing** | 🟢 | **508 green** across 40 files (`node --test`) + live Supabase round-trip proofs; gates every unit. Coverage % still not instrumented → not measured |
+| **Testing** | 🟢 | **1,807 green** (`node --test`) + live Supabase round-trip proofs; gates every unit. Coverage % still not instrumented → not measured |
 | **OVERALL** | 🟢 | **A real, backend-wired app.** The social pillar — long carried here as the blocker — has been live for weeks. Critical path is now CONTENT (programs, exercise media), not plumbing |
 
 ---
 
 ## 🏃 Current Sprint
 
-**Sprint:** **Progress Photo Post** (2026-08-10) — the design handoff bundle, built
+**Sprint:** **Creator Dashboard, Phase 1** (2026-08-11) — the operator can finally see the product being used
 
-**Status: code complete.** tsc clean · **1,716 tests** (23 new, 7 mutants killed) · lint at baseline ·
-**no migration required**. Full write-up in **Recently Completed #1**.
+**Status: code complete, MIGRATIONS NOT YET APPLIED.** tsc clean · **1,807 tests** (91 new) · lint at
+baseline (1 error + 13 warnings, none new) · **migrations 0129 + 0130 authored, awaiting the SQL editor**.
+Full write-up in **Recently Completed #1**.
+
+**What the PO must do before it works:** paste `supabase/apply/pending-0129-0130.sql`, then run **STEP 2**
+in that file's header to insert your own uuid into `app_admins`. Until that row exists every RPC raises
+`42501` for everyone including you, and the Account Settings row does not appear. That is correct
+behaviour, not a bug.
+
+**Next:** Phase 2 — first-party event instrumentation (`app_events` + a client emitter + `last_active_at`
+on its own table + a nightly `pg_cron` rollup). ⚠ Phase 2 collects data Phase 1 does not, so
+`P-6-Amendment-001-Product-Analytics` and the `Docs/Legal/Privacy-Policy.md` edit **ship before the first
+event is written**, not after (AA-D9).
 
 A progress capture is now something you lay out rather than something the app decides for you: format,
 style, poses, entry, what's printed on the card, and where it goes. One renderer serves the composer
@@ -698,7 +709,7 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 | **Commit** | `d199c45` on `feat/home-onramp` (not pushed, not merged) |
 | **Web preview** | **LIVE** — forgelegacy.expo.app, root 200, serving `entry-2c1c4b7114ef12fe562279af61e7f01a.js`, hash verified against the local build |
 | **iOS build** | `0d07a777-5829-43d6-8a23-63de2cdf7455`, production, **in progress** — commit `d199c45`, runtime `3508eed9…`, build number 3 |
-| **Migrations** | 0126 · 0127 · 0128 **APPLIED** by the PO |
+| **Migrations** | 0126 · 0127 · 0128 **APPLIED** by the PO. **0129 + 0130 authored 2026-08-11, NOT applied** — paste `supabase/apply/pending-0129-0130.sql`, then run its STEP 2 to grant yourself admin |
 | **OTA** | **NOT PUBLISHED — and must not be until 0d07a777 is installed.** See below. |
 
 **⚠ WHY THIS RELEASE COULD NOT BE AN OTA, AND WHY THAT WAS CHECKED RATHER THAN ASSUMED.**
@@ -725,7 +736,61 @@ surface to test on, minus video compression, which is native-only by nature.
 **ONCE 0d07a777 IS INSTALLED**, runtime `3508eed9…` becomes the OTA target and ordinary
 `eas update` resumes for JS-only work. Re-run `fingerprint:compare` before the next one anyway.
 
-### 1. The four open decisions from the PO review, all built (2026-08-10, CODE + migration 0128 + a native dependency)
+### 1. Creator Dashboard — Phase 1 (2026-08-11, CODE + migrations 0129 + 0130, NOT YET APPLIED)
+
+PO: *"Is there a way I can make a dashboard to see what everyone is using and how often?"*
+
+There was not. 128 migrations of fully-timestamped, user-scoped state and **no telemetry of any kind** —
+no Sentry, no Amplitude, no PostHog, no event table, no `last_active` column, no admin concept, and
+deliberately no service-role key. Every number worth having existed only as raw rows nothing aggregated.
+
+**What shipped.** `/admin` — a standalone screen, reached from **one row in Account Settings that renders
+only for an operator**. Not a tab; the tab bar is still four for everybody including the PO. It reports
+growth, an onboarding funnel, weekly retention cohorts, DAU/WAU/MAU, a churn-risk histogram, adoption
+across 20 features, program adherence and drop-off week, most-trained exercises, session source, and
+squad/friend/challenge/push health — **all of it retroactive over every athlete already in the database**.
+
+**The gate is Postgres, not the URL.** expo-router compiles every route into the bundle and `web.output`
+is `"static"`, so `/admin` exists as a public file on forgelegacy.expo.app no matter what the client does.
+0129 creates `app_admins` (**RLS enabled with ZERO policies** — deny-by-default, so the roster is not
+enumerable through the world-readable `profiles` table) plus `is_app_admin()` and one shared
+`admin_guard()`, which is the first statement of all seven read models. A signed-in non-admin gets `42501`,
+never an empty result — an empty result is indistinguishable from "no data yet" and would hide a broken
+guard for months. `supabase/seed/admin-roundtrip.mjs` loops every function by name and asserts the refusal;
+**adding an eighth RPC means adding its name to that script in the same commit.**
+
+**Governance first, code second.** `Docs/Admin-Analytics-Architecture-v1.0.md` (LOCKED, AA-D1..D11) sets
+out why an operator surface is outside CS-D22.4 and SQ-D13 rather than in breach of them — both bind
+*athlete-facing* surfaces, which they enumerate by name — and pins the three constraints that keep that
+true: **no per-athlete drill-down, no admin metric may flow back into a product surface** (which would
+breach Social-Amendment-003's ban on popularity ranking in discovery), **no widened read path**.
+
+**Four ways this class of screen lies, all handled in the payload rather than the renderer.** A cohort
+cell beyond `max_k` is UNKNOWN, not 0% (bare surface, no number — a 0% cell prints its zero). The current
+week is partial and is labelled, because otherwise it always dips and reads as collapse on a Tuesday. The
+week-2 funnel stage carries its **own denominator**, or the last stage becomes a function of growth rate.
+And `active_def` is stated on screen: **"active" means saved a workout**, because there is no app-open
+signal until Phase 2.
+
+**Also caught:** a repo guard (`catalog-contract.test.mjs`) rejected the first draft of 0130 for binding
+alias `c` to both `cohorts` and `squad_checkins` — the scanner reads that as a dropped-column reference,
+and so would a person. Renamed rather than suppressed. `squad_checkins` genuinely has no `checkin_date`
+(0049 dropped and rebuilt it), `goals` has no state column, and `challenges.state` is UPPERCASE while
+`programs.state` is lowercase; all three are recorded in 0130's header.
+
+**Files.** `Docs/Admin-Analytics-Architecture-v1.0.md` · `supabase/migrations/0129_admin_gate.sql` ·
+`0130_admin_metrics.sql` · `supabase/apply/pending-0129-0130.sql` · `supabase/seed/admin-roundtrip.mjs` ·
+`src/domain/admin/{chart-core,series}.ts` + tests · `src/data/admin-live.ts` ·
+`src/components/forge/admin/charts.tsx` · `src/app/admin.tsx` · `_layout.tsx` · `domain/settings/content.ts`.
+
+**Gate:** tsc clean · **1,807 tests** (91 new: 28 chart/series, 3 settings, the rest existing) · lint at
+baseline · route-guard green with `admin` declared.
+
+**⚠ NOT DONE:** the migrations are authored, not applied. And Phase 1 measures *what people did*, never
+*what they liked* — screens visited, features tapped, session length and where people abandon a flow all
+wait for Phase 2, which cannot ship before its privacy disclosure does.
+
+### 2. The four open decisions from the PO review, all built (2026-08-10, CODE + migration 0128 + a native dependency)
 
 **A. EZ BAR — 12 movements, and a checkbox that stopped lying.** Not one of the 797 records named an EZ
 bar and no alias mentioned one, so "ez bar curl" returned nothing. Worse: Home Gym had always *offered*

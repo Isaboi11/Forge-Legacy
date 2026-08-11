@@ -114,6 +114,15 @@ export function settingsSections(opts: {
   hasVisibility?: boolean;
   hasNotifications?: boolean;
   hasPreferences?: boolean;
+  /**
+   * The operator dashboard row (0129/0130). Absent for everybody who is not in `app_admins`, and
+   * absent by DEFAULT — an undefined flag must produce exactly the section list every athlete has
+   * today, which is what `content.test.mjs` asserts.
+   *
+   * Hiding the row is a convenience, not a security boundary: `/admin` is compiled into the web
+   * bundle either way, and what actually refuses a non-admin is `admin_guard()` in Postgres.
+   */
+  isAdmin?: boolean;
 }): SettingsSection[] {
   const sections: SettingsSection[] = [];
 
@@ -146,6 +155,16 @@ export function settingsSections(opts: {
     label: 'About',
     rows: [{ key: 'about', label: 'About Forge Legacy', action: { type: 'sheet', key: 'about' } }],
   });
+
+  // Last, and in its own section, so it reads as what it is — an operator tool sitting beside the
+  // athlete's settings rather than one of them.
+  if (opts.isAdmin) {
+    sections.push({
+      key: 'operator',
+      label: 'Operator',
+      rows: [{ key: 'admin', label: 'Creator Dashboard', action: { type: 'route', path: '/admin' } }],
+    });
+  }
 
   return sections;
 }
