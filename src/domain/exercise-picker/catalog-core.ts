@@ -1,11 +1,11 @@
 /**
- * Exercise Picker catalog — the pure mapping from the authoritative 794-exercise dataset onto the
+ * Exercise Picker catalog — the pure mapping from the authoritative 809-exercise dataset onto the
  * browse/filter vocabulary the Picker renders. Kept free of JSON imports so it runs under `node --test`
  * (the JSON is wired in `data.ts`, following the `active-program-core` / `active-program` split).
  *
  * WHY A MAPPING EXISTS AT ALL: `Exercise-Library-Architecture-v1.0` (LOCKED, EL-D3) makes the 6-value
  * `ExerciseCategory` the browse taxonomy and says `MovementPattern` is "internal only" — but `category`
- * is an AUTHORED field and the 794 shipped records don't carry one (the repo's own relationships README
+ * is an AUTHORED field and the 809 shipped records don't carry one (the repo's own relationships README
  * calls bridging the two "an editorial follow-up"). So the category is derived here, from the locked
  * doc's own rules, and never written back into the dataset (which is append/annotate-only).
  *
@@ -20,7 +20,7 @@
  * ══ SEVEN, AND THE SEVENTH IS AN AMENDMENT ══
  *
  * `Exercise-Library-Wireframe-Spec-W21` §5 locks SIX browse categories, and this file previously refused
- * to add one — correctly, at the time: the six are a governed decision about how the 797-exercise
+ * to add one — correctly, at the time: the six are a governed decision about how the 809-exercise
  * catalogue is divided, and bending them to fit code would be amending an architecture from the wrong end.
  *
  * CARDIO does not divide that catalogue. It divides nothing: no exercise in `exercises.json` is ever
@@ -124,6 +124,22 @@ export const SYSTEM_MUSCLE_IDS = new Set(['full_body', 'cardiovascular', 'grip',
 /** Anatomical regions, in head-to-toe reading order, for grouping the muscle filter chips. */
 export const MUSCLE_REGIONS = ['Upper Body', 'Core', 'Lower Body'] as const;
 
+/**
+ * How this movement is COUNTED — and the field the catalogue did not have.
+ *
+ * ══ WHY IT HAD TO EXIST ══
+ *
+ * A prescription could say `durationSec` since the prescription model was extended, so a PROGRAM could
+ * ask for a 60-second plank. The catalogue could not: nothing on an exercise record said "this one is
+ * measured by the clock". So the moment an athlete added a Plank themselves — from the picker, in the
+ * builder, mid-workout — they were handed a reps box, because reps is all the app knew how to offer.
+ *
+ * `'reps'` is the ABSENT value, not a written one. 727 of 809 records are rep-based; writing the default
+ * onto all of them would be seven hundred lines of diff stating the obvious, and every reader would
+ * still have to handle a missing key for every row authored before this field.
+ */
+export type ExerciseUnit = 'reps' | 'time';
+
 export interface RawExercise {
   id: string;
   name: string;
@@ -133,6 +149,8 @@ export interface RawExercise {
   movementPattern: string;
   difficulty: string;
   modality: string;
+  /** Absent means `'reps'`. See {@link ExerciseUnit}. */
+  unit?: string;
 }
 export interface RawMuscleLink {
   exerciseId: string;
@@ -173,6 +191,8 @@ export interface PickerItem {
   aliases: string[];
   /** Environments this exercise can be trained in, via its equipment. */
   environments: string[];
+  /** `'reps'` unless the catalogue says otherwise — see {@link ExerciseUnit}. Never undefined here. */
+  unit: ExerciseUnit;
 }
 
 const asDifficulty = (v: string): Difficulty =>
@@ -180,6 +200,19 @@ const asDifficulty = (v: string): Difficulty =>
 
 const asEquipClass = (v: string): EquipClass =>
   (EQUIP_CLASS_ORDER as string[]).includes(v) ? (v as EquipClass) : 'Accessory';
+
+/**
+ * Absent, unknown or misspelt all read as REPS — the default, and the safe direction to fail.
+ *
+ * A rep-based movement wrongly shown as timed hands the athlete a stopwatch for a set of curls, which
+ * they cannot log at all. A timed movement wrongly shown as reps is the status quo this field exists to
+ * improve on, and it still records something. So a typo in the data degrades to the old behaviour
+ * rather than to a broken one.
+ */
+export const asUnit = (v: string | undefined): ExerciseUnit => (v === 'time' ? 'time' : 'reps');
+
+/** How long an athlete-added hold defaults to, when nothing prescribed one. */
+export const DEFAULT_HOLD_SEC = 30;
 
 /**
  * Exercises withheld from the app — hidden from browse, search, alternatives and detail.
@@ -402,6 +435,7 @@ export function buildPickerDb(src: {
         modality: e.modality,
         aliases: e.aliases ?? [],
         environments: eq?.environments ?? [],
+        unit: asUnit(e.unit),
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name));

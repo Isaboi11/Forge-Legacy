@@ -51,6 +51,33 @@ test('a timed item carries its work time as a target, separate from what gets re
   assert.equal(set.durationSec, undefined, 'the answer is not pre-filled with the question');
 });
 
+/**
+ * ⚠ THE 60-SECOND PLANK THAT WAS STORED AS TEN REPS.
+ *
+ * `repTargets` fills an item prescribing no reps out to `DEFAULT_REPS`, which is right when somebody is
+ * AUTHORING and wrong for a hold: a Plank prescribes `durationSec` and nothing else, so it arrived with
+ * `targetReps: 10`, completing back-filled the actual to 10, and the save wrote "Plank — 10 reps" into
+ * the athlete's history. Same fabrication a to-failure set was already protected from, same fix.
+ */
+test('a hold has no rep count, and never invents one', () => {
+  const [set] = sessionSetsFor({ name: 'Plank', durationSec: 60 });
+  assert.equal(set.targetReps, 0, 'a hold prescribes seconds, not repetitions');
+  assert.equal(set.targetSec, 60);
+  assert.equal(set.actualReps, null);
+});
+
+test('a timed item that ALSO names reps still reports zero — the clock is the whole ask', () => {
+  // `schemeText` renders such an item as its duration alone, so the set underneath must agree.
+  const [set] = sessionSetsFor({ name: 'Dead Hang', durationSec: 45, reps: 12 });
+  assert.equal(set.targetReps, 0);
+  assert.equal(set.targetSec, 45);
+});
+
+test('an ordinary set is untouched by the hold rule', () => {
+  const sets = sessionSetsFor({ name: 'Bench Press', sets: 3, reps: 8 });
+  assert.deepEqual(targets(sets), [8, 8, 8]);
+});
+
 test('a circuit member gets one set PER ROUND, because a round is what you tick off', () => {
   const sets = sessionSetsFor({ name: 'Burpees', reps: 10, groupId: 'hiit', groupRounds: 4 });
   assert.equal(sets.length, 4, 'four rounds of ten burpees is forty burpees and four rows');

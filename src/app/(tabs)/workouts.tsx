@@ -354,7 +354,12 @@ export default function WorkoutsScreen() {
                     title={t.name}
                     sub={templateSummary(t)}
                     icon={<TemplatesIcon />}
-                    onPress={() => router.push('/templates')}
+                    /* ⚠ THIS PUSHED `/templates` — the HUB — for every row. Tapping your own template
+                       landed you on a screen whose first section is the "From Forge" suggested shelf, so
+                       the app answered "open my template" with four sessions somebody else wrote. The
+                       hub is still one tap away on the section header's "View all"; a row opens the
+                       template it names. */
+                    onPress={() => router.push({ pathname: '/template/[id]', params: { id: t.id } })}
                   />
                 ))}
                 <CreateRow label="Build a Workout" onPress={chooseStrength} />

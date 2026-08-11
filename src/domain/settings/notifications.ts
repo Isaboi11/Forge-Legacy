@@ -136,6 +136,9 @@ export const PUSH_KIND_PREF: Record<string, NotifKey> = {
   // Live since 0122. `squad_feed` had been inert since 0022 — no branch, no trigger, no route.
   squad_post: 'squad_feed',
   squad_checkin: 'squad_feed',
+  /* The weekly review (0126) rides `squad_feed` rather than earning a fifth toggle: it IS squad
+     activity, and an athlete who switched squad posts off has already said what they want. */
+  squad_recap: 'squad_feed',
 };
 
 /** Merge a stored map over the defaults, keeping only known keys with boolean values. */

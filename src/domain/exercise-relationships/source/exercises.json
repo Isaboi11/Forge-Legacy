@@ -17,7 +17,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "90-90-hip-switch",
@@ -47,7 +48,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "adductor-rock-back",
@@ -287,7 +289,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Other",
     "difficulty": "Advanced",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "backward-sled-drag",
@@ -307,7 +310,8 @@
     "equipmentId": "resistance_band",
     "movementPattern": "Core",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "band-assisted-dip",
@@ -997,7 +1001,8 @@
     "equipmentId": "barbell",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "barbell-front-squat",
@@ -1147,7 +1152,8 @@
     "equipmentId": "barbell",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "barbell-overhead-press",
@@ -1627,7 +1633,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Cardio / Locomotion",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "behind-the-back-cable-lateral-raise",
@@ -1789,7 +1796,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "brisk-walk",
@@ -1849,7 +1857,8 @@
     "equipmentId": "cable",
     "movementPattern": "Core",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "cable-assisted-nordic-curl",
@@ -1869,7 +1878,8 @@
     "equipmentId": "cable",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "cable-belt-squat",
@@ -2449,7 +2459,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Calf / Ankle",
     "difficulty": "Beginner",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "cartwheel",
@@ -2499,7 +2510,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "chin-up",
@@ -2579,7 +2591,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Core",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "cossack-mobility-drill",
@@ -2609,7 +2622,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "countermovement-jump",
@@ -2629,7 +2643,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Cardio / Locomotion",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "crocodile-breathing",
@@ -2639,7 +2654,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "cross-body-carry",
@@ -2649,7 +2665,8 @@
     "equipmentId": "sled",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
-    "modality": "Strength / Conditioning"
+    "modality": "Strength / Conditioning",
+    "unit": "time"
   },
   {
     "id": "cross-body-hammer-curl",
@@ -2679,7 +2696,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "crunch",
@@ -2739,7 +2757,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "dead-hang-mobility",
@@ -2749,7 +2768,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "decline-push-up",
@@ -2769,7 +2789,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Squat / Knee Dominant",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "deficit-push-up",
@@ -2839,7 +2860,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "double-kettlebell-clean",
@@ -3109,7 +3131,8 @@
     "equipmentId": "dumbbell",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "dumbbell-floor-press",
@@ -3139,7 +3162,8 @@
     "equipmentId": "dumbbell",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "dumbbell-front-raise",
@@ -3319,7 +3343,8 @@
     "equipmentId": "dumbbell",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "dumbbell-overhead-press",
@@ -3529,7 +3554,8 @@
     "equipmentId": "dumbbell",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "dumbbell-sumo-deadlift",
@@ -3629,7 +3655,8 @@
     "equipmentId": "dumbbell",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "dumbbell-walking-lunge",
@@ -3719,7 +3746,8 @@
     "equipmentId": "sled",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
-    "modality": "Strength / Conditioning"
+    "modality": "Strength / Conditioning",
+    "unit": "time"
   },
   {
     "id": "fartlek-run",
@@ -3749,7 +3777,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "foam-roll-calves",
@@ -3759,7 +3788,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "foam-roll-glutes",
@@ -3769,7 +3799,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "foam-roll-hamstrings",
@@ -3779,7 +3810,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "foam-roll-lats",
@@ -3789,7 +3821,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "foam-roll-quadriceps",
@@ -3799,7 +3832,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "foam-roll-upper-back",
@@ -3809,7 +3843,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "forearm-plank",
@@ -3819,7 +3854,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Core",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "forward-hurdle-hop",
@@ -3869,7 +3905,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "front-lever-hold",
@@ -3879,7 +3916,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Other",
     "difficulty": "Advanced",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "front-lever-row",
@@ -3899,7 +3937,8 @@
     "equipmentId": "sled",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
-    "modality": "Strength / Conditioning"
+    "modality": "Strength / Conditioning",
+    "unit": "time"
   },
   {
     "id": "glute-bridge",
@@ -3919,7 +3958,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Hinge / Hip Dominant",
     "difficulty": "Beginner",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "glute-drive-machine",
@@ -3979,7 +4019,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "half-kneeling-pallof-press",
@@ -4009,7 +4050,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "hand-over-hand-rope-pull",
@@ -4029,7 +4071,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Other",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "handstand-push-up",
@@ -4049,7 +4092,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Cardio / Locomotion",
     "difficulty": "Advanced",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "hanging-knee-raise",
@@ -4239,7 +4283,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Core",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "hollow-rock",
@@ -4401,7 +4446,8 @@
     "equipmentId": "sled",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
-    "modality": "Strength / Conditioning"
+    "modality": "Strength / Conditioning",
+    "unit": "time"
   },
   {
     "id": "keg-load",
@@ -4441,7 +4487,8 @@
     "equipmentId": "kettlebell",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "kettlebell-bulgarian-split-squat",
@@ -4491,7 +4538,8 @@
     "equipmentId": "kettlebell",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "kettlebell-figure-eight",
@@ -4521,7 +4569,8 @@
     "equipmentId": "kettlebell",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "kettlebell-goblet-clean",
@@ -4591,7 +4640,8 @@
     "equipmentId": "kettlebell",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "kettlebell-press",
@@ -4701,7 +4751,8 @@
     "equipmentId": "kettlebell",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "kettlebell-sumo-deadlift",
@@ -4831,7 +4882,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Core",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "lacrosse-ball-glute-release",
@@ -4841,7 +4893,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "lacrosse-ball-pec-release",
@@ -4851,7 +4904,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "lat-stretch-on-bench",
@@ -4861,7 +4915,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "lateral-bound",
@@ -5451,7 +5506,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Core",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "mountain-biking",
@@ -5651,7 +5707,8 @@
     "equipmentId": "sled",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
-    "modality": "Strength / Conditioning"
+    "modality": "Strength / Conditioning",
+    "unit": "time"
   },
   {
     "id": "parallel-bar-dip",
@@ -5691,7 +5748,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "pike-push-up",
@@ -5721,7 +5779,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Other",
     "difficulty": "Advanced",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "planche-lean",
@@ -5731,7 +5790,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Other",
     "difficulty": "Advanced",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "plank",
@@ -5741,7 +5801,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Core",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "plank-shoulder-tap",
@@ -6001,7 +6062,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Core",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "ring-muscle-up",
@@ -6031,7 +6093,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Core",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "road-cycling",
@@ -6121,7 +6184,8 @@
     "equipmentId": "sled",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
-    "modality": "Strength / Conditioning"
+    "modality": "Strength / Conditioning",
+    "unit": "time"
   },
   {
     "id": "sandbag-clean",
@@ -6141,7 +6205,8 @@
     "equipmentId": "sled",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
-    "modality": "Strength / Conditioning"
+    "modality": "Strength / Conditioning",
+    "unit": "time"
   },
   {
     "id": "sandbag-ground-to-shoulder",
@@ -6191,7 +6256,8 @@
     "equipmentId": "sled",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
-    "modality": "Strength / Conditioning"
+    "modality": "Strength / Conditioning",
+    "unit": "time"
   },
   {
     "id": "sandbag-squat",
@@ -6271,7 +6337,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Beginner",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "seated-leg-curl-machine",
@@ -6331,7 +6398,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Core",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "single-arm-band-chest-press",
@@ -6761,7 +6829,8 @@
     "equipmentId": "medicine_ball",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
-    "modality": "Power"
+    "modality": "Power",
+    "unit": "time"
   },
   {
     "id": "slam-ball-ground-to-shoulder",
@@ -6841,7 +6910,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "sliding-hamstring-curl",
@@ -7101,7 +7171,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "standing-leg-curl-machine",
@@ -7131,7 +7202,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "stationary-bike",
@@ -7221,7 +7293,8 @@
     "equipmentId": "sled",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
-    "modality": "Strength / Conditioning"
+    "modality": "Strength / Conditioning",
+    "unit": "time"
   },
   {
     "id": "superman-hold",
@@ -7231,7 +7304,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Hinge / Hip Dominant",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "supine-diaphragmatic-breathing",
@@ -7241,7 +7315,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "suspension-trainer-atomic-push-up",
@@ -7421,7 +7496,8 @@
     "equipmentId": "suspension_trainer",
     "movementPattern": "Core",
     "difficulty": "Intermediate",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "suspension-trainer-single-arm-row",
@@ -7571,7 +7647,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "thoracic-extension-on-foam-roller",
@@ -7581,7 +7658,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "thread-the-needle",
@@ -7691,7 +7769,8 @@
     "equipmentId": "sled",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
-    "modality": "Strength / Conditioning"
+    "modality": "Strength / Conditioning",
+    "unit": "time"
   },
   {
     "id": "treadmill-incline-walk",
@@ -7733,7 +7812,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Elbow Extension",
     "difficulty": "Intermediate",
-    "modality": "Mobility"
+    "modality": "Mobility",
+    "unit": "time"
   },
   {
     "id": "triple-hop",
@@ -7873,7 +7953,8 @@
     "equipmentId": "bodyweight",
     "movementPattern": "Squat / Knee Dominant",
     "difficulty": "Beginner",
-    "modality": "Strength"
+    "modality": "Strength",
+    "unit": "time"
   },
   {
     "id": "wall-walk",
@@ -7973,6 +8054,127 @@
     "equipmentId": "sled",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
-    "modality": "Strength / Conditioning"
+    "modality": "Strength / Conditioning",
+    "unit": "time"
+  },
+  {
+    "id": "ez-bar-biceps-curl",
+    "name": "EZ-Bar Biceps Curl",
+    "aliases": [],
+    "family": "Biceps Curl",
+    "equipmentId": "ez_bar",
+    "movementPattern": "Elbow Flexion",
+    "difficulty": "Beginner",
+    "modality": "Strength"
+  },
+  {
+    "id": "ez-bar-preacher-curl",
+    "name": "EZ-Bar Preacher Curl",
+    "aliases": [],
+    "family": "Preacher Curl",
+    "equipmentId": "ez_bar",
+    "movementPattern": "Elbow Flexion",
+    "difficulty": "Intermediate",
+    "modality": "Strength"
+  },
+  {
+    "id": "ez-bar-reverse-curl",
+    "name": "EZ-Bar Reverse Curl",
+    "aliases": [],
+    "family": "Reverse Curl",
+    "equipmentId": "ez_bar",
+    "movementPattern": "Elbow Flexion",
+    "difficulty": "Intermediate",
+    "modality": "Strength"
+  },
+  {
+    "id": "ez-bar-drag-curl",
+    "name": "EZ-Bar Drag Curl",
+    "aliases": [],
+    "family": "Drag Curl",
+    "equipmentId": "ez_bar",
+    "movementPattern": "Elbow Flexion",
+    "difficulty": "Intermediate",
+    "modality": "Strength"
+  },
+  {
+    "id": "ez-bar-spider-curl",
+    "name": "EZ-Bar Spider Curl",
+    "aliases": [],
+    "family": "Spider Curl",
+    "equipmentId": "ez_bar",
+    "movementPattern": "Elbow Flexion",
+    "difficulty": "Intermediate",
+    "modality": "Strength"
+  },
+  {
+    "id": "ez-bar-skull-crusher",
+    "name": "EZ-Bar Skull Crusher",
+    "aliases": [],
+    "family": "Skull Crusher",
+    "equipmentId": "ez_bar",
+    "movementPattern": "Elbow Extension",
+    "difficulty": "Intermediate",
+    "modality": "Strength"
+  },
+  {
+    "id": "ez-bar-overhead-triceps-extension",
+    "name": "EZ-Bar Overhead Triceps Extension",
+    "aliases": [],
+    "family": "Overhead Triceps Extension",
+    "equipmentId": "ez_bar",
+    "movementPattern": "Elbow Extension",
+    "difficulty": "Intermediate",
+    "modality": "Strength"
+  },
+  {
+    "id": "ez-bar-jm-press",
+    "name": "EZ-Bar JM Press",
+    "aliases": [],
+    "family": "JM Press",
+    "equipmentId": "ez_bar",
+    "movementPattern": "Elbow Extension",
+    "difficulty": "Advanced",
+    "modality": "Strength"
+  },
+  {
+    "id": "ez-bar-upright-row",
+    "name": "EZ-Bar Upright Row",
+    "aliases": [],
+    "family": "Upright Row",
+    "equipmentId": "ez_bar",
+    "movementPattern": "Horizontal Pull",
+    "difficulty": "Intermediate",
+    "modality": "Strength"
+  },
+  {
+    "id": "ez-bar-pullover",
+    "name": "EZ-Bar Pullover",
+    "aliases": [],
+    "family": "Pullover",
+    "equipmentId": "ez_bar",
+    "movementPattern": "Vertical Pull",
+    "difficulty": "Intermediate",
+    "modality": "Strength"
+  },
+  {
+    "id": "ez-bar-wrist-curl",
+    "name": "EZ-Bar Wrist Curl",
+    "aliases": [],
+    "family": "Wrist Curl",
+    "equipmentId": "ez_bar",
+    "movementPattern": "Elbow Flexion",
+    "difficulty": "Beginner",
+    "modality": "Strength"
+  },
+  {
+    "id": "ez-bar-reverse-wrist-curl",
+    "name": "EZ-Bar Reverse Wrist Curl",
+    "aliases": [],
+    "family": "Reverse Wrist Curl",
+    "equipmentId": "ez_bar",
+    "movementPattern": "Elbow Flexion",
+    "difficulty": "Beginner",
+    "modality": "Strength"
   }
 ]

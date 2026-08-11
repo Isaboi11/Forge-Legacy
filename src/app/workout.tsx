@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 
@@ -35,6 +35,8 @@ import { loadContextFor } from '@/domain/program/percent-max';
 import { unitLabel, weightInExact } from '@/domain/settings/units';
 import { playRestDing, primeDing } from '@/lib/ding';
 import { CardioBlockCard } from '@/components/workout/CardioBlockCard';
+import { HoldTimer } from '@/components/workout/HoldTimer';
+import { SetGoalPanel } from '@/components/workout/SetGoalPanel';
 import {
   EMPTY_RESULT,
   activityFromKey,
@@ -55,7 +57,13 @@ import { clearSession, hasLoggedWork, loadSession, persistSession } from '@/doma
 import { blockAt, breakBlock, endsSupersetRound, makeSuperset, nextInSuperset, sessionToTemplateExercises, supersetRounds } from '@/domain/workout/session-core';
 import { doneSetCount, hasLoggedSet, PR_MAX_REPS } from '@/domain/workout/metrics';
 import { perSideFor } from '@/domain/workout/per-side-core';
-import { continueWorkout, fetchLastNotes, fetchPriorRecords, saveWorkout, type LastNote } from '@/domain/workout/save';
+import { continueWorkout, fetchLastNotes, saveWorkout, type LastNote } from '@/domain/workout/save';
+import { fetchLiftHistory, liftId, type LiftHistory } from '@/data/lift-history-live';
+import { backOffTo, incrementFor, progressionFor, sessionPerformance, type Progression } from '@/domain/coach/progression';
+import { DEFAULT_HOLD_SEC, itemByKey, itemByName } from '@/domain/exercise-picker/data';
+import { loadExperience } from '@/lib/coach-memory';
+import { BUBBLE_SIZE, BUBBLE_SHADOW, HoltMark } from '@/components/forge/HoltMark';
+import { SessionCoachSheet } from '@/components/forge/SessionCoachSheet';
 import { PlaylistSheet } from '@/components/forge/composites/Playlist';
 import { JoinRequestBanner } from '@/components/forge/JoinRequestBanner';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
@@ -130,6 +138,15 @@ function fmtMMSS(sec: number): string {
  * they just finished.
  */
 function actualText(set: SessionSet): string {
+  /* A TIMED SET ANSWERS IN SECONDS. It has no rep count to report — `targetReps` is 0 by construction —
+     so reading the rep fields for it printed "0" under a Target column that said "1m". The clock the
+     athlete actually held is `durationSec`; the ask beside it is `targetSec`.
+     `durationSec` is tested TOO, not just the ask: a RESUMED session rebuilds its sets from the saved
+     rows (`continue-workout-live`), which carry what was done and not what was prescribed — so a
+     half-finished plank comes back with a duration and no target, and would read "0" without it. */
+  if (set.targetSec != null || set.durationSec != null) {
+    return durText(set.durationSec ?? (set.done ? set.targetSec : null)) || '—';
+  }
   if (set.actualReps != null) return String(set.actualReps);
   return set.toFailure ? '—' : String(set.targetReps);
 }
@@ -242,16 +259,47 @@ export default function WorkoutScreen() {
   const [heroPref, setHeroPref] = useState<Record<number, 'expanded' | 'collapsed'>>({});
   const [autoCollapsed, setAutoCollapsed] = useState<Record<number, boolean>>({});
   const [favorite, setFavorite] = useState(false);
+  /**
+   * Which card has its goal editor open. One at a time, opened by tapping Goal on the card itself.
+   *
+   * ══ ⚠ IT USED TO OPEN ITSELF, AND THAT WAS THE PROBLEM ══
+   *
+   * A `goalQueue` held every freshly-added exercise and the panel appeared unbidden on each of their
+   * cards, wedged between the hero and the set table. PO: *"I don't like that right there... I want it
+   * to be after we click add exercise and THEN clicking the card."*
+   *
+   * They are right, and the reason is worth keeping: adding three exercises queued three panels, so
+   * paging through what you just added meant dismissing a form three times before you could train. The
+   * ask was pre-empting a decision most athletes make by just starting the set. Now the goal is offered
+   * where it already lived — the Goal figure on the card, beside Last and Best — and it opens when
+   * asked. Nothing is lost: the default is still three sets of eight (or a 30-second hold), which is
+   * what the athlete would have accepted from the panel anyway.
+   */
+  const [goalOpen, setGoalOpen] = useState<number | null>(null);
   // set-completion celebrations
   const [flash, setFlash] = useState<{ ei: number; si: number; token: number } | null>(null); // green fuse on a row
   const [prShown, setPrShown] = useState<Record<number, boolean>>({}); // one PR per exercise
   const [prPrompt, setPrPrompt] = useState<{ name: string; perf: string; key: string | null } | null>(null);
   /**
-   * The athlete's existing record on each lift in this session, so the live PR moment is measured
-   * against their history rather than against the set they did ten seconds ago. Undefined for a lift
-   * they have never done — which is exactly the case that must stay silent.
+   * WHAT THEY HAVE ALREADY DONE ON THESE LIFTS — the last two sessions and the standing mark.
+   *
+   * One read, four consumers: the Last column, the Best column, the coach's line under Goal, and the PR
+   * moment (which is measured against their history rather than against the set they did ten seconds
+   * ago). Keyed by `liftId` — catalogue key, name as fallback — the same identity `lastNotes` uses, so a
+   * card's Last, Best and note all describe the same movement.
+   *
+   * ⚠ AN ABSENT ENTRY MEANS "NEVER DONE IT", and every consumer must stay silent for it. Defaulting a
+   * missing mark to zero would make the first set an athlete ever logs a personal record.
    */
-  const [priorRecord, setPriorRecord] = useState<Record<string, number> | null>(null);
+  const [liftHistory, setLiftHistory] = useState<Map<string, LiftHistory> | null>(null);
+  /**
+   * How long they have been lifting, remembered from the coach's questionnaire.
+   *
+   * ⚠ DEFAULTS TO INTERMEDIATE WHEN UNKNOWN, NOT BEGINNER. `incrementFor` scales the jump by experience
+   * and beginner carries a 1.5× multiplier — so treating "never answered" as beginner would hand the
+   * biggest weight increase to precisely the athlete the app knows least about.
+   */
+  const [experience, setExperience] = useState<'beginner' | 'intermediate' | 'advanced'>('intermediate');
   /* The last thing they said about each of these lifts. Keyed by catalogKey ?? name, the same identity
      every other lift-history read in this app uses. */
   const [lastNotes, setLastNotes] = useState<Record<string, LastNote>>({});
@@ -320,6 +368,9 @@ export default function WorkoutScreen() {
   const [playlistSheetOpen, setPlaylistSheetOpen] = useState(false);
   const [partnerSheetOpen, setPartnerSheetOpen] = useState(false);
   const [invitePickerOpen, setInvitePickerOpen] = useState(false);
+  /* Holt, on this screen. Its own flag rather than a face of the ⋮ sheet — the two answer different
+     questions and neither should close the other (see `SessionCoachSheet`). */
+  const [coachOpen, setCoachOpen] = useState(false);
   /* Join requests waiting on me (0121) — the banner, and the answer to it. */
   const [joinRequests, setJoinRequests] = useState<PendingJoinRequest[]>([]);
   const [joinBusy, setJoinBusy] = useState(false);
@@ -560,22 +611,47 @@ export default function WorkoutScreen() {
   }, [session, phase]);
 
   /*
-   * Read the athlete's existing marks once the session's lifts are known.
+   * Read what they have already done on these lifts, once the session's lifts are known.
    *
-   * Keyed on the exercise NAMES rather than the session object, so adding a set or logging reps does not
-   * re-fetch — but swapping or adding an exercise does, which is when a new lift's mark is needed.
+   * Keyed on the exercise IDENTITIES rather than the session object, so adding a set or logging reps
+   * does not re-fetch — but swapping or adding an exercise does, which is when a new lift's history is
+   * needed. The key carries the catalogue key as well as the name: swapping to a differently-keyed lift
+   * that happens to share a display name is rare, and silently reusing the wrong history for it is not
+   * the kind of bug that announces itself.
+   *
+   * JSON rather than a delimiter-joined string: an exercise name is athlete-supplied text, and picking a
+   * separator it cannot contain is a guess. This one cannot be wrong.
    */
-  const exerciseNames = session?.exercises.map((e) => e.name).join('\u0000') ?? '';
+  const exerciseIds = JSON.stringify(
+    session?.exercises.map((e) => [e.catalogKey ?? null, e.name]) ?? [],
+  );
   useEffect(() => {
-    if (!exerciseNames) return;
+    const lifts = (JSON.parse(exerciseIds) as [string | null, string][]).map(([catalogKey, name]) => ({
+      catalogKey,
+      name,
+    }));
+    if (!lifts.length) return;
     let alive = true;
-    void fetchPriorRecords(exerciseNames.split('\u0000')).then((r) => {
-      if (alive) setPriorRecord(r);
+    void fetchLiftHistory(lifts).then((r) => {
+      if (alive) setLiftHistory(r);
     });
     return () => {
       alive = false;
     };
-  }, [exerciseNames]);
+  }, [exerciseIds]);
+
+  /* Remembered once, at the coach's questionnaire, and read here to size the weight jump. Its own effect
+     because it is device-local and instant: folding it into the history read above would make a coaching
+     line wait on a network round trip that has nothing to do with it. */
+  useEffect(() => {
+    let alive = true;
+    void loadExperience().then((e) => {
+      if (alive && e) setExperience(e.lifting);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   /* The same read, for what they last SAID about these lifts. Separate effect rather than folded into
      the one above: a note is decoration on the card and a record gates the PR banner, so a slow or
@@ -589,7 +665,7 @@ export default function WorkoutScreen() {
     return () => {
       alive = false;
     };
-  }, [exerciseNames, session?.exercises]);
+  }, [exerciseIds, session?.exercises]);
 
   // rest ticker — repaints twice a second while running; clears itself when the deadline passes (setState in
   // the interval callback is the async-callback form the strict react-hooks rules allow, like a query result)
@@ -650,6 +726,9 @@ export default function WorkoutScreen() {
             const appended = [...s.exercises, ...inbox.items.map((p, i) => pickedToExercise(p, base + i))];
             return { ...s, exercises: asSuperset ? makeSuperset(appended, base, inbox.items.length, gid) : appended, exerciseIndex: base };
           });
+          /* NOTHING IS ASKED HERE. This used to queue a goal panel per added lift — see `goalOpen` for
+             why that came out. The added exercise arrives ready to train, and its goal is one tap away
+             on its own card whenever the athlete wants it. */
           showToast(
             asSuperset
               ? `Added ${inbox.items.length} exercises as a superset`
@@ -749,11 +828,18 @@ export default function WorkoutScreen() {
      * target to back-fill from. Its `targetReps` is 0 by design, so the old back-fill would have written
      * a zero-rep set into the athlete's history and into the volume behind their records. A failure set
      * stays blank until they say what they got, which is the only number that set was ever about.
+     *
+     * ⚠ A TIMED SET BACK-FILLS THE CLOCK, NOT THE REP COUNT. "You did what was asked" is the right
+     * default for both shapes; for a 60s Plank what was asked is sixty seconds, and the rep column has
+     * nothing true to put in it (`session-core` now carries `targetReps: 0` for exactly this reason).
+     * Writing the duration is what makes the completed hold a record of the hold rather than a done
+     * checkbox with no data behind it.
      */
     const ns = patchSet(from, ei, si, (set) => ({
       ...set,
       done: true,
-      actualReps: set.actualReps ?? (set.toFailure ? null : set.targetReps),
+      actualReps: set.actualReps ?? (set.toFailure || set.targetSec != null ? null : set.targetReps),
+      durationSec: set.targetSec != null ? set.durationSec ?? set.targetSec : set.durationSec,
     }));
     setSession(ns);
     const ex = ns.exercises[ei];
@@ -778,11 +864,15 @@ export default function WorkoutScreen() {
      * measured nothing except that you go heavier as you go.
      *
      * A record is now what it is everywhere else: the heaviest weight moved for 1–5 reps, beating what
-     * they had already logged for 1–5 reps on this lift. `priorRecord` is undefined for a lift they have
-     * never done, and that stays silent — the first time is a baseline, not a record.
+     * they had already logged for 1–5 reps on this lift. The mark is ABSENT for a lift they have never
+     * done, and that stays silent — the first time is a baseline, not a record.
+     *
+     * ⚠ MATCHED BY CATALOGUE KEY FIRST (`liftId`), name only as the fallback. It used to match by name
+     * alone, while `continueWorkout` — deciding the same question about the same set — matched key-first.
+     * One file, two answers to "which lift is this", and this was the weaker one.
      */
     if (!prShown[ei] && done.weight != null && done.actualReps != null && done.actualReps <= PR_MAX_REPS) {
-      const prior = priorRecord?.[ex.name];
+      const prior = liftHistory?.get(liftId(ex))?.best?.weight;
       if (prior != null && done.weight > prior) {
         const w = done.weight;
         const r = done.actualReps;
@@ -816,11 +906,35 @@ export default function WorkoutScreen() {
     }
   };
   const uncompleteSet = (ei: number, si: number) => mutate((s) => patchSet(s, ei, si, (set) => ({ ...set, done: false })));
+
+  /**
+   * A hold finished — write what the clock watched, then complete the set through the normal path.
+   *
+   * Two steps, deliberately, and `completeSet(…, base)` is what makes it one update: the duration is
+   * patched FIRST so the completion sees a set that already carries its own answer, and `completeSet`'s
+   * `durationSec ?? targetSec` back-fill therefore leaves it alone. Everything that follows a logged set
+   * — the fuse flash, the seal, the superset-aware rest, the advance — is the same code the rep path
+   * runs, because a hold is a set and should not have a second, quietly divergent completion.
+   */
+  const logHold = (ei: number, si: number, heldSec: number) => {
+    if (!session) return;
+    completeSet(ei, si, patchSet(session, ei, si, (set) => ({ ...set, durationSec: heldSec })));
+  };
+
   const addSet = (ei: number) =>
     mutate((s) => {
       const ex = s.exercises[ei];
       const last = ex.sets[ex.sets.length - 1];
-      const next: SessionSet = { setIndex: ex.sets.length, weight: last?.weight ?? null, targetReps: last?.targetReps ?? 8, actualReps: null, done: false };
+      /* A fourth plank is another plank. Carrying `targetSec` forward is what stops "Add set" turning a
+         timed exercise into a rep-based one halfway down its own table. */
+      const next: SessionSet = {
+        setIndex: ex.sets.length,
+        weight: last?.weight ?? null,
+        targetReps: last?.targetReps ?? 8,
+        ...(last?.targetSec != null ? { targetSec: last.targetSec } : null),
+        actualReps: null,
+        done: false,
+      };
       return replaceExercise(s, ei, { ...ex, sets: [...ex.sets, next] });
     });
   const removeSet = (ei: number) =>
@@ -830,12 +944,100 @@ export default function WorkoutScreen() {
       return replaceExercise(s, ei, { ...ex, sets: ex.sets.slice(0, -1) });
     });
 
+  /**
+   * ══ THE COACH'S CALL ON EVERY LIFT IN THIS SESSION ══
+   *
+   * `progressionFor` reads the last two sessions and answers the one question a generator cannot: not
+   * what to train, but *how much*. Add weight, add a rep, hold, or come back down. It was built, tested,
+   * and wired only to the Coach wizard's preview — where the sentence was rendered once and then thrown
+   * away, because the draft it saved carried no field for it. This is the screen it was written for.
+   *
+   * ⚠ ONLY WHERE A REP PRESCRIPTION EXISTS. Skipped for cardio (endurance refuses rather than guesses),
+   * for timed sets, and for to-failure sets — a to-failure set carries `targetReps: 0`, which the engine
+   * would read as a rep target of nothing and satisfy trivially, producing "go for 1".
+   */
+  /**
+   * This lift's movement pattern — how much weight it should move by, and what it can be swapped for.
+   *
+   * ⚠ THE NAME FALLBACK IS NOT BELT-AND-BRACES, IT IS THE FIX FOR A REPORTED DEFECT. Keyed lookup alone
+   * returned nothing for any exercise carrying no `catalogKey` — everything added freestyle, everything
+   * imported, everything logged before the key existed. `incrementFor` then fell to its 5 lb default and
+   * halved it for an advanced lifter, and the PO got "2.5 lb" offered on a barbell back squat. The
+   * catalogue knows that lift perfectly well; nothing had asked it by name.
+   */
+  const patternOf = (e: { catalogKey?: string | null; name: string }): string =>
+    (e.catalogKey ? itemByKey(e.catalogKey)?.pattern : undefined) ?? itemByName(e.name)?.pattern ?? '';
+
+  const progressions = useMemo(() => {
+    const out = new Map<number, Progression>();
+    if (!session || !liftHistory) return out;
+    session.exercises.forEach((e, i) => {
+      const first = e.sets[0];
+      if (e.kind === 'cardio' || !first || first.toFailure || first.targetSec != null || first.targetReps < 1) return;
+      /* Absent means the read has not landed (or this lift was not asked about) — as opposed to an entry
+         with no sessions in it, which means "never done it" and is a real answer the engine handles. */
+      const hist = liftHistory.get(liftId(e));
+      if (!hist) return;
+      out.set(
+        i,
+        progressionFor({
+          exerciseName: e.name,
+          pattern: patternOf(e),
+          experience,
+          /* Read off the SETS, not off the original prescription — by now the athlete may have added or
+             removed some, and `goalTextFor` right beside it reads them for the same reason. */
+          prescription: { sets: e.sets.length, reps: first.targetReps, repsMax: first.targetRepsMax ?? null },
+          history: hist.sessions,
+          /* Without this the increment cannot know a dumbbell rack has nothing between 45 and 50, and a
+             cable stack does have a 2.5 lb pin. */
+          equipment: equipmentForCatalogKey(e.catalogKey),
+        }),
+      );
+    });
+    return out;
+  }, [session, liftHistory, experience]);
+
+  /**
+   * What the weight box opens showing, when the athlete has not put a number in this set yet.
+   *
+   * ⚠ THIS SEEDS THE INPUT, NOT THE SET. `set.weight` stays null until they log, and that distinction is
+   * load-bearing: a weight written onto an untouched set records a lift nobody made and can announce a
+   * personal record for it (see `session-core`). The row keeps reading "—"; only the box is pre-filled.
+   *
+   * The order is `Active-Workout-Flow-Spec-W9-W16` §6.3 with the coach inserted at 2 (W9-Amendment-005,
+   * D-1): §6.3 says "most recently logged weight", and the coach's answer *is* that number plus a
+   * decision. Last time's number is still there underneath, at 3, for every lift the coach has no call on.
+   *
+   * Every figure is used as stored, unconverted, for the reason set out on `wxr` below — the athlete
+   * reads back the number they typed.
+   */
+  const prefillWeight = (exI: number, setI: number): string => {
+    const e = session?.exercises[exI];
+    if (!e) return '';
+
+    // 1 · what they are already lifting today, which outranks anything history has to say
+    const earlier = e.sets.slice(0, setI).reverse().find((s) => s.weight != null);
+    if (earlier?.weight != null) return String(earlier.weight);
+
+    // 2 · the coach's number
+    const p = progressions.get(exI);
+    if (p?.suggestedWeight != null) return String(p.suggestedWeight);
+
+    // 3 · what they did at this position last time
+    const prev = liftHistory?.get(liftId(e))?.sessions[0]?.sets[setI];
+    if (prev?.weight != null) return String(prev.weight);
+
+    // 4 · the prescription, for percentage-of-max programs. Already in display units.
+    return e.sets[setI]?.targetWeight != null ? String(e.sets[setI].targetWeight) : '';
+  };
+
   const openSheet = (exI: number, setI: number, focus: 'weight' | 'reps') => {
     const set = session?.exercises[exI]?.sets[setI];
     if (!set) return;
-    /* Seeded from what is THERE, not from a blank. A set already carrying 135 lb opens showing 135, so
-       confirming without touching anything keeps 135 — the behaviour the wheel only appeared to have. */
-    setDraftW(set.weight != null ? String(set.weight) : '');
+    /* Seeded from what is THERE, and from what they did last time when there is nothing there. A set
+       already carrying 135 lb opens showing 135, so confirming without touching anything keeps 135 — the
+       behaviour the wheel only appeared to have. */
+    setDraftW(set.weight != null ? String(set.weight) : prefillWeight(exI, setI));
     setDraftR(set.actualReps != null ? String(set.actualReps) : set.toFailure ? '' : String(set.targetReps));
     /* Synchronously, INSIDE the tap — see `primerRef`. Must happen before the setState below, because
        React may process the update and return control to the browser first. */
@@ -1212,7 +1414,117 @@ export default function WorkoutScreen() {
   const workoutComplete = hasLoggedSet(session) && session.exercises.every((e) => e.sets.every((s) => s.done));
   const currentSetIdx = ex.sets.findIndex((s) => !s.done); // -1 = all done
   const goalText = goalTextFor(ex.sets);
+  /**
+   * ⚠ ONLY WHILE A SET IS STILL OPEN. A goal writes to sets that have not been logged (`applyRepGoal`
+   * leaves the rest alone, because a logged set was performed against the target it carried), so on a
+   * finished exercise every control in the editor would move a number and change nothing on screen. The
+   * pencil goes with it — "Add Set" is the honest way back to having a goal to set.
+   */
+  const goalEditable = ex.kind !== 'cardio' && ex.sets.some((s) => !s.done);
+  const goalPanelOpen = goalEditable && goalOpen === exIdx;
   const lastNote = lastNotes[ex.catalogKey ?? ex.name] ?? null;
+  /*
+   * ══ WHAT THEY HAVE ALREADY DONE ON THIS LIFT ══
+   *
+   * `—` for a lift with no history, never `0`. An absent mark means "never done it", and the whole card
+   * has to keep saying that honestly: the first time you meet a movement is a baseline, not a failure.
+   *
+   * ⚠ SHOWN AS STORED, NOT CONVERTED, AND THAT IS DELIBERATE. Every other weight on this screen does the
+   * same — `targetWeight` two hundred lines below renders its raw number beside `unitLabel(units)`. The
+   * reason is that the stored figure is NOT actually canonical: `save-core` writes whatever the athlete
+   * typed and stamps `weight_unit: 'lb'` on it unconditionally, with no conversion. So for an athlete on
+   * metric the number in the table is kilos wearing a pounds label, and running it through a lb→kg
+   * conversion on the way back out would halve their own logged lift in front of them. Reading it back
+   * exactly as it was typed round-trips correctly for everyone; the storage bug is real, pre-existing,
+   * and logged in W9-Amendment-005 §7 rather than papered over here.
+   *
+   * The unit is left off the figure, as the design has it: the column is a third of the card wide, and
+   * the table header just below already says which unit this screen is in.
+   */
+  const liftHist = liftHistory?.get(liftId(ex)) ?? null;
+  const wxr = (weight: number, reps: number): string => `${weight} × ${reps}`;
+  const lastPerf = liftHist?.sessions[0] ? sessionPerformance(liftHist.sessions[0]) : null;
+  const lastText = lastPerf ? wxr(lastPerf.weight, lastPerf.reps) : '—';
+  const bestText = liftHist?.best ? wxr(liftHist.best.weight, liftHist.best.reps) : '—';
+  const progression = progressions.get(exIdx) ?? null;
+  /* The collapsed strip's `Prev`, indexed to the SAME set position last time — set 3 against last week's
+     set 3, not against their best set of the day. `currentSetIdx` is -1 once every set is done, at which
+     point there is no next set to compare and the strip says nothing. */
+  const prevSet = currentSetIdx >= 0 ? liftHist?.sessions[0]?.sets[currentSetIdx] : undefined;
+  const prevText =
+    prevSet?.weight != null && prevSet.reps != null ? wxr(prevSet.weight, prevSet.reps) : null;
+  /**
+   * Every overlay this screen owns, and the bubble hides behind all of them.
+   *
+   * A floating control is only acceptable while it floats over NOTHING. The set-entry sheet is the one
+   * that matters most — a bubble over the number pad, mid-set, is the exact complaint that got the coach
+   * pulled off most of the app — but a countdown, a completion seal and a PR moment each own the screen
+   * for the same reason: they are the thing the athlete is looking at.
+   *
+   * ⚠ AN ALLOW-LIST WOULD BE WRONG HERE AND A BLOCK-LIST IS RIGHT, which is the opposite of the call in
+   * `CoachBubble`. There, the question is "which of ~40 routes should this appear on" and enumerating the
+   * exceptions was proven to miss some. Here it is one screen, the overlays are all declared within forty
+   * lines of each other, and a new one that forgets to hide the bubble is a visible bug on the next run —
+   * not a silent policy breach on a route nobody re-tested.
+   */
+  /*
+   * ══ THE TWO NUMBERS HOLT OFFERS FOR THIS LIFT ══
+   *
+   * Lighter is `backOffTo`: a weight from a recent session if there is a genuinely lighter one, else ~10%
+   * off rounded to what this equipment can actually load. NOT an increment in reverse — see `backOffTo`
+   * for why 5 lb off a 315 squat is not a back-off.
+   *
+   * Heavier stays the pattern increment, and that asymmetry is the point: going up is double progression,
+   * a small step you earn, and going down is a rescue whose size scales with the load.
+   */
+  /* The weight this lift is being worked at right now — what "heavier" and "lighter" are relative to.
+     The next undone set's number first, because that is the one they are about to do; otherwise the last
+     set they actually completed, because walking into set 2 the honest answer to "what am I lifting" is
+     whatever set 1 was; the prescription last. Null when nothing is known and there is nothing to move. */
+  const coachLoad = progression
+    ? (ex.sets.find((s) => !s.done && s.weight != null)?.weight ??
+       [...ex.sets].reverse().find((s) => s.done && s.weight != null)?.weight ??
+       ex.sets.find((s) => !s.done)?.targetWeight ??
+       null)
+    : null;
+  const coachEquip = equipmentForCatalogKey(ex.catalogKey);
+  const coachLighter =
+    coachLoad != null
+      ? backOffTo({
+          current: coachLoad,
+          /* Every working weight they have on record for this lift, newest first — `backOffTo` picks the
+             closest one that is a real step down and ignores the rest. */
+          recent: (liftHist?.sessions ?? []).map((s) => sessionPerformance(s)?.weight).filter((w): w is number => w != null),
+          equipment: coachEquip,
+        })
+      : null;
+  /* Null when the lift adds no pounds at all — a band, a bodyweight movement, mobility. Offering
+     "too easy" there would name a weight that cannot be put on anything. */
+  const coachStepUp = incrementFor(patternOf(ex), experience, coachEquip);
+  const coachHeavier = coachLoad != null && coachStepUp > 0 ? coachLoad + coachStepUp : null;
+
+  const holtHidden =
+    coachOpen ||
+    sheet != null ||
+    optionsOpen ||
+    overviewOpen ||
+    endConfirmOpen ||
+    wNameOpen ||
+    noteOpen != null ||
+    ssOpen != null ||
+    prPrompt != null ||
+    seal != null ||
+    restProminent ||
+    playlistSheetOpen ||
+    partnerSheetOpen ||
+    invitePickerOpen ||
+    /* A running bout owns the screen the way a rest countdown does — and every action behind the bubble
+       is refused mid-bout anyway (`blockedByBout`), so the bubble would open onto a sheet of things that
+       all decline. `liveBoutIdx` rather than `boutLive`, which is declared further down. */
+    liveBoutIdx != null ||
+    /* The join banner occupies this exact band (`joinBannerWrap`, full width at `bottom: 108`). Somebody
+       asking to train with you outranks a button that will still be there in ten seconds. */
+    joinRequests.length > 0;
   const sheetCable = sheet != null && equipmentForCatalogKey(session.exercises[sheet.exIdx]?.catalogKey) === 'cable';
   const sheetWeightOpts = sheetCable ? WEIGHT_OPTS_CABLE : WEIGHT_OPTS;
   /* Everything the sheet needs to describe itself: which lift, which set of how many, and whether this
@@ -1289,6 +1601,40 @@ export default function WorkoutScreen() {
     setOptionsOpen(false);
     mutate((s) => ({ ...s, exercises: breakBlock(s.exercises, exIdx) }));
     showToast('Superset broken.');
+  };
+
+  /**
+   * ══ CHANGE THE BAR FOR THE SETS THEY HAVE NOT DONE YET ══
+   *
+   * "That felt heavy" is the most common thing an athlete says mid-exercise and, until now, the app had
+   * no answer to it: you could edit each remaining set by hand, one sheet at a time, or carry on with a
+   * number you had already decided was wrong.
+   *
+   * ⚠ ONLY THE UNDONE SETS MOVE. A completed set is a record of something that happened — rewriting its
+   * weight would falsify the log, and it is exactly the set the athlete is reacting TO.
+   *
+   * ⚠ AND IT MOVES `weight`, NOT `targetWeight`. `targetWeight` is what the PROGRAM asked for; a program
+   * that prescribed 80% of a max did not stop asking for it because today felt heavy, and overwriting it
+   * would erase the prescription the athlete is deviating from. What changes is the number waiting in the
+   * box — a proposal, still confirmed set by set, which is the same status the prefill has.
+   *
+   * Floors at the empty bar rather than going negative: 45 is the lightest a barbell gets, and a
+   * suggestion of "-5 lb" is not a suggestion.
+   */
+  const setRemainingLoad = (to: number) => {
+    let touched = 0;
+    mutate((s) => {
+      const e = s.exercises[exIdx];
+      if (!e) return s;
+      const sets = e.sets.map((set) => {
+        if (set.done) return set;
+        touched += 1;
+        return { ...set, weight: to };
+      });
+      return replaceExercise(s, exIdx, { ...e, sets });
+    });
+    if (touched === 0) return;
+    showToast(`${to} ${unitLabel(units)} for your last ${touched} set${touched === 1 ? '' : 's'}.`);
   };
 
   /** Seconds left on the AMRAP clock, but only while we are still inside the block that started it. */
@@ -1384,6 +1730,10 @@ export default function WorkoutScreen() {
     if (!target || target.kind !== 'superset' || target.start !== block?.start) setSsOpen(null);
     // Guards the dot strip too, which jumps straight here without passing through onPrimary.
     if (idx !== exIdx && blockedByBout()) return;
+    /* A goal panel opened by hand belongs to the card it was opened on. Left set, it would spring back
+       open the next time the athlete walked past that lift, with no tap to explain it. (The QUEUED ask is
+       deliberately not cleared: that one is owed on every added lift, and travels with the card.) */
+    if (idx !== exIdx) setGoalOpen(null);
     setExIdx(Math.max(0, Math.min(session.exercises.length - 1, idx)));
     restSkip(); // leaving an exercise ends its rest
   };
@@ -1838,19 +2188,68 @@ export default function WorkoutScreen() {
                 <Text style={styles.lastNoteText}>{lastNote.text}</Text>
               </View>
             ) : null}
-            {/* insight row: Last · Goal · Best */}
+            {/*
+              ══ WHAT THE COACH MAKES OF IT ══
+
+              One sentence — "you hit 3 × 10 at 185, go to 190 and start back at 8" — from
+              `progressionFor`, which reads their last two sessions on this lift and decides between
+              adding weight, adding a rep, holding, and coming back down.
+
+              ⚠ THIS IS THE PART SPEC §6.2 USED TO FORBID, and the ban is lifted deliberately
+              (W9-Amendment-005, D-3). §6.2 was written against SCORING mid-workout — "down 5 lb from last
+              week" — and it is still right about that. This is the opposite: a scoreboard tells you how
+              you did, and a coach tells you what to do next. Nothing here grades a set.
+
+              It sits BELOW the plan's cue and the athlete's own note, because both of those are things a
+              person wrote and this is arithmetic — and above the numbers it was derived from, so the
+              instruction is read before its evidence.
+            */}
+            {progression ? (
+              <View style={[styles.lastNote, styles.holtNote]}>
+                <Text style={styles.holtNoteLabel}>HOLT SAYS</Text>
+                <Text style={styles.lastNoteText}>{progression.message}</Text>
+              </View>
+            ) : null}
+            {/*
+              insight row: Last · Goal · Best
+
+              Both outer figures were hard-coded em-dashes over data the app already had — Best in
+              particular was fetched on mount, held in state, and read three lines away to decide the PR
+              moment while the column beside it claimed there was nothing to show.
+
+              An em-dash still means NEVER DONE IT, and it must: a zero here would read as "you lifted
+              nothing", and a zero taken as a prior best would make an athlete's first ever set a record.
+            */}
             <View style={styles.insightRow}>
               <View style={styles.insightCol}>
                 <Text style={styles.insightLabel}>Last</Text>
-                <Text style={styles.insightVal}>—</Text>
+                <Text style={styles.insightVal}>{lastText}</Text>
               </View>
-              <View style={[styles.insightCol, styles.insightMid]}>
+              {/* THE ONE FIGURE HERE THAT IS A DECISION RATHER THAN A RECORD, so it is the one that
+                  opens. Last and Best are history and nothing can edit them; the goal is the athlete's
+                  own, and until now the only way to change it was to have caught the panel the moment the
+                  exercise was added. The pencil says so, in the same bronze the weight cells use. */}
+              <Pressable
+                onPress={() => setGoalOpen(goalPanelOpen ? null : exIdx)}
+                disabled={!goalEditable}
+                accessibilityRole={goalEditable ? 'button' : 'text'}
+                accessibilityState={{ expanded: goalPanelOpen }}
+                accessibilityLabel={goalEditable ? `Goal is ${goalText}. Change it.` : `Goal was ${goalText}`}
+                style={[styles.insightCol, styles.insightMid]}
+              >
                 <Text style={styles.insightGoalLabel}>Goal</Text>
-                <Text style={styles.insightGoal}>{goalText}</Text>
-              </View>
+                <View style={styles.insightGoalRow}>
+                  <Text style={styles.insightGoal}>{goalText}</Text>
+                  {goalEditable ? (
+                    <Svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" opacity={0.9}>
+                      <Path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+                    </Svg>
+                  ) : null}
+                </View>
+              </Pressable>
               <View style={styles.insightCol}>
                 <Text style={styles.insightLabel}>Best</Text>
-                <Text style={styles.insightVal}>—</Text>
+                <Text style={styles.insightVal}>{bestText}</Text>
               </View>
             </View>
           </TourAnchor>
@@ -1863,13 +2262,35 @@ export default function WorkoutScreen() {
             </View>
             <View style={styles.heroStripText}>
               <Text style={styles.heroStripName} numberOfLines={1}>{ex.name}</Text>
-              <Text style={styles.heroStripMeta}>Goal <Text style={styles.heroStripGoal}>{goalText}</Text></Text>
+              {/* Collapsed, the strip is all the athlete can see of the lift — so it carries what they
+                  did at THIS set position last time beside what is being asked now. Omitted rather than
+                  drawn as "Prev —": a placeholder in a one-line strip is noise, and the expanded card
+                  above already says the honest em-dash. */}
+              <Text style={styles.heroStripMeta}>
+                {prevText ? <>Prev <Text style={styles.heroStripPrev}>{prevText}</Text>{'   '}</> : null}
+                Goal <Text style={styles.heroStripGoal}>{goalText}</Text>
+              </Text>
             </View>
             <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
               <Path d="M6 9l6 6 6-6" />
             </Svg>
           </Pressable>
         )}
+
+        {/*
+          * THE GOAL EDITOR — opened from the Goal figure directly above, never on its own.
+          *
+          * Sits under the hero and over the table on purpose: it changes the Target column a couple of
+          * inches below, so the control and what it does are in one glance. Tapping Goal again closes
+          * it, which is why it carries no Done button of its own.
+          *
+          * Not drawn over a FUSED superset, where the merged card replaces the table entirely and "the
+          * current exercise" is one of two being alternated — an editor there would point at a column
+          * that is not on screen. Tapping a member's name opens that member on its own card.
+          */}
+        {goalPanelOpen && !ssFused ? (
+          <SetGoalPanel exercise={ex} onChange={(next) => mutate((s) => replaceExercise(s, exIdx, next))} />
+        ) : null}
 
         {/* The block stands where the hero AND the table would: same position in the session, entirely
             different measurement. Sets of reps have nothing to say about three miles. */}
@@ -1957,6 +2378,20 @@ export default function WorkoutScreen() {
                         </Pressable>
                       </>
                     ) : isCurrent ? (
+                      /* ══ A HOLD GETS A CLOCK, NOT A REPS BOX ══
+                         The pencil-and-tick pair asks "how many did you get". For a plank the question
+                         is "how long did you last", and until now the app had no way to ask it — the
+                         athlete timed themselves on their phone and pressed a check. The timer records
+                         what it actually watched, so stopping at forty of a prescribed sixty logs a
+                         forty-second set rather than a failure or a lie. */
+                      set.targetSec != null ? (
+                        <HoldTimer
+                          targetSec={set.targetSec}
+                          soundOn={soundOn}
+                          label={ex.name}
+                          onDone={(held) => logHold(exIdx, si, held)}
+                        />
+                      ) : (
                       <>
                         <Pressable style={[styles.actualBtn, styles.actualBtnCurrent]} onPress={() => openSheet(exIdx, si, 'reps')} accessibilityRole="button" accessibilityLabel={`Edit actual reps, set ${si + 1}`}>
                           {popCell(si, 'reps', <Text style={styles.actualCurrent}>{actualText(set)}</Text>)}
@@ -1970,6 +2405,7 @@ export default function WorkoutScreen() {
                           </Svg>
                         </Pressable>
                       </>
+                      )
                     ) : (
                       /* A pending row is tappable too — so you can put set 3's weight in before you get
                          there. It writes only: sets still resolve top-down (see `commitSheet`). */
@@ -2077,6 +2513,69 @@ export default function WorkoutScreen() {
           </View>
         </View>
       </View>
+
+      {/*
+        ══ COACH HOLT, BOTTOM RIGHT ══
+
+        The PO's call, and the reasoning was simply that there is real empty space there and a bubble in
+        it stands in front of nothing. The note in `CoachBubble` claiming a live workout "owns the whole
+        screen" was a guess about this screen and it was wrong.
+
+        ⚠ MOUNTED HERE, NOT BY ADDING `/workout` TO `CoachBubble`'S ALLOW-LIST — and that is the load-
+        bearing part. `CoachBubble` renders OUTSIDE the navigator (`_layout.tsx`), so it cannot see any of
+        this screen's local state: the rest overlay, the seal, the PR prompt, the ⋮ sheet, and above all
+        the set-entry sheet. Mounted a level up, the bubble would float over the number pad mid-set, which
+        is precisely the "it blocks things on screens" complaint that shrank the bubble's reach in the
+        first place. Owned by the screen, it can hide behind the screen's own overlays — see `holtHidden`.
+
+        `HOME_SURFACES` is deliberately left alone: it was rewritten INTO an allow-list so it could not
+        quietly acquire screens, and `/workout` should not be the exception that restarts that.
+
+        Sits just above the action bar. The toast (`bottom: 100`) shares the band but is CENTRED and
+        content-width, so a right-anchored bubble clears it; the join banner is full width and does not,
+        which is why it hides the bubble in `holtHidden` rather than being dodged by arithmetic.
+      */}
+      {!holtHidden ? (
+        <View pointerEvents="box-none" style={styles.holtWrap}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Ask Coach Holt about this exercise"
+            onPress={() => setCoachOpen(true)}
+            style={({ pressed }) => [styles.holtBubble, pressed && styles.holtPressed]}
+          >
+            <HoltMark size={BUBBLE_SIZE} />
+          </Pressable>
+        </View>
+      ) : null}
+      {coachOpen ? (
+        <SessionCoachSheet
+          onClose={() => setCoachOpen(false)}
+          exerciseName={ex.name}
+          message={progression?.message ?? null}
+          basis={
+            progression?.basis
+              ? `Last time: ${progression.basis.weight} ${unitLabel(units)} × ${progression.basis.reps.join(', ')}`
+              : null
+          }
+          unit={unitLabel(units)}
+          /* The two numbers the sheet offers, decided HERE where the lift, its equipment and its history
+             all are — the sheet just draws them. Null on either side means that option is not offered
+             rather than offered and useless: no load advice on a run, a plank or a to-failure set, and
+             nothing to take off a bar that is already empty. */
+          currentLoad={coachLoad}
+          lighterTo={coachLighter}
+          heavierTo={coachHeavier}
+          onSetLoad={setRemainingLoad}
+          canSuperset={!isLastEx}
+          isSuperset={isSuperset}
+          supersetWithName={!isLastEx ? session.exercises[exIdx + 1].name : null}
+          onSwap={openSwap}
+          onSuperset={supersetWithNext}
+          onBreakSuperset={breakSuperset}
+          onAdd={openAdd}
+          onSkip={skipExercise}
+        />
+      ) : null}
 
       {/* prominent rest overlay — floats near the top for ~3s, then demotes to the compact band chip */}
       {restProminent ? (
@@ -2802,13 +3301,35 @@ function pickedToExercise(p: PickedExercise, position: number): SessionExercise 
      prescribed this lift, so if it is not worked out here the athlete gets "3 × 8" on a single-arm row
      and does half the work the number implies. */
   const per = perSideFor(p.name);
+  /**
+   * ══ A PLANK ADDED MID-WORKOUT IS NOT THREE SETS OF EIGHT ══
+   *
+   * Every ad-hoc add got the same rep shape, because the catalogue had no way to say a movement is
+   * measured by the clock. It does now (`PickerItem.unit`), so a hold, a carry or a held stretch is
+   * built as a TIMED set — thirty seconds, three of them — and the logger draws it a countdown instead
+   * of a reps box.
+   *
+   * Read from `itemByKey` rather than carried on the inbox payload: the catalogue is the authority on
+   * what a movement IS, and threading a copy of it through AsyncStorage would give a stale pick the
+   * power to disagree with the catalogue it came from.
+   */
+  const timed = p.unit ? p.unit === 'time' : p.catalogKey ? itemByKey(p.catalogKey)?.unit === 'time' : false;
   return {
     catalogKey: p.catalogKey,
     name: p.name,
     section: 'main',
     position,
     ...(per ? { per } : {}),
-    sets: Array.from({ length: 3 }, (_, s) => ({ setIndex: s, weight: null, targetReps: 8, actualReps: null, done: false })),
+    sets: Array.from({ length: 3 }, (_, s) => ({
+      setIndex: s,
+      weight: null,
+      // Zero, never a plausible-looking rep count — the same rule `session-core` applies to a
+      // prescribed hold, and what keeps invented volume out of the record.
+      targetReps: timed ? 0 : 8,
+      ...(timed ? { targetSec: DEFAULT_HOLD_SEC } : null),
+      actualReps: null,
+      done: false,
+    })),
   };
 }
 /** A swap keeps the slot's set structure (count × target) but is a different movement — clear the logged work. */
@@ -3049,6 +3570,24 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 24, gap: 14 },
   barTitle: { fontFamily: flFont.display, fontSize: 17, fontWeight: '600', color: flColor.cream100, maxWidth: 240 },
   overflowBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  /* `box-none` so the empty space around the bubble stays tappable by the scroll view under it — a
+     full-width absolute container that swallowed touches is the classic way a floating button kills the
+     bottom of a screen it was only meant to sit on. */
+  /* 96 clears the action bar (14 + 48 + 14 ≈ 76) with room to spare. No safe-area inset added: this
+     screen takes none anywhere — the bar sits at the foot of a plain flex root — and introducing one
+     here alone would float the bubble at a different height than every other element it lines up with. */
+  holtWrap: { position: 'absolute', right: 18, bottom: 96, zIndex: 42, alignItems: 'flex-end' },
+  holtBubble: {
+    width: BUBBLE_SIZE,
+    height: BUBBLE_SIZE,
+    borderRadius: BUBBLE_SIZE / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    boxShadow: BUBBLE_SHADOW,
+  },
+  holtPressed: { opacity: 0.86 },
 
   // progress band
   band: { paddingHorizontal: 18, paddingTop: 12, paddingBottom: 14, gap: 12, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
@@ -3134,6 +3673,7 @@ const styles = StyleSheet.create({
   insightVal: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.cream100 },
   insightGoalLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronze400 },
   insightGoal: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', letterSpacing: -0.3, lineHeight: 24, color: flColor.bronze300 },
+  insightGoalRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   memoryBadge: { position: 'absolute', top: 6, right: 6, width: 7, height: 7, borderRadius: flRadius.round, backgroundColor: flColor.bronze400 },
 
   // hero collapsed strip
@@ -3143,6 +3683,9 @@ const styles = StyleSheet.create({
   heroStripName: { fontFamily: flFont.display, fontSize: 16.5, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
   heroStripMeta: { fontSize: 11, fontWeight: '600', color: flColor.gray400 },
   heroStripGoal: { color: flColor.bronze300, fontWeight: '700' },
+  /* Cream, not bronze: what you did is a fact and what you are being asked for is the instruction, and
+     only one of them should pull the eye in a strip this small. */
+  heroStripPrev: { color: flColor.cream100, fontWeight: '700' },
 
   // circuit / AMRAP banner — names the block the current exercise belongs to
   blockBanner: { gap: 3, paddingVertical: 10, paddingHorizontal: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
@@ -3265,6 +3808,10 @@ const styles = StyleSheet.create({
   /* The cue reads as the plan's voice, not the athlete's: a bronze left edge marks it as authored. */
   coachNote: { borderLeftWidth: 2, borderLeftColor: flColor.bronze400 },
   coachNoteLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.3, color: flColor.bronze400 },
+  /* The same block as the plan's cue and the athlete's own note, one shade quieter on the rule — three
+     stacked blocks is the worst case, and the coach's line is the one of the three that is derived. */
+  holtNote: { borderLeftWidth: 2, borderLeftColor: flColor.bronze600 },
+  holtNoteLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.3, color: flColor.bronze600 },
   /* Not clamped to one line like `optSub` — a cue is the content of its row, not a caption on it. */
   coachNoteSub: { fontSize: 12, lineHeight: 18, color: flColor.cream100, fontStyle: 'italic', marginTop: 2 },
   lastNoteText: { fontSize: 13.5, lineHeight: 20, color: flColor.cream100, fontStyle: 'italic' },

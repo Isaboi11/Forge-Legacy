@@ -340,37 +340,19 @@ export async function continueWorkout(
 }
 
 /**
- * The athlete's existing record on each of these lifts — heaviest weight logged for 1–5 reps.
+ * ⚠ RETIRED — `fetchPriorRecords` lived here. Use `fetchLiftHistory` in `@/data/lift-history-live`.
  *
- * The live logger needs this to tell a record from a warm-up ramp. It used to compare a set against
- * earlier sets in the SAME session, so working up 135 → 185 → 225 announced a personal record on the
- * third set, every session, forever.
+ * It answered "what is the most they have ever lifted on this", which the live logger needs to tell a
+ * record from a warm-up ramp. Two things were wrong with it, and both were invisible because the only
+ * consumer was a boolean:
  *
- * A NAME ABSENT FROM THE RESULT MEANS "NEVER DONE IT" — the caller must not default it to zero, or the
- * first session on any lift becomes a record again.
+ *   · It selected `load_value` alone, discarding `load_reps` and `achieved_on` — so the Best column on
+ *     the Active Workout could not be drawn from it, and rendered a hard-coded em-dash instead while the
+ *     number sat in state three lines away.
+ *   · It matched by NAME ONLY, while `continueWorkout` directly above matches by `catalog_key` first.
+ *     Two answers to "which lift is this" inside one file, and the PR path was reading the weaker one.
+ *
+ * `fetchLiftHistory` returns the mark WITH its reps and date, matched key-first, alongside the last two
+ * sessions — one read where there were three. The "absent means never done it, never zero" rule moved
+ * with it: default a missing mark to zero and every athlete's first set becomes a personal record.
  */
-export async function fetchPriorRecords(names: readonly string[]): Promise<Record<string, number>> {
-  if (!names.length) return {};
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return {};
-
-  const { data, error } = await supabase
-    .from('personal_records')
-    .select('exercise, load_value')
-    .eq('athlete_id', user.id)
-    .eq('measure_kind', 'load')
-    .lte('load_reps', PR_MAX_REPS)
-    .in('exercise', [...names]);
-  if (error) return {}; // no history readable = nothing to beat, which stays silent rather than claiming
-
-  const best: Record<string, number> = {};
-  for (const r of data ?? []) {
-    const v = Number((r as { load_value: number | null }).load_value);
-    const k = (r as { exercise: string }).exercise;
-    if (!Number.isFinite(v)) continue;
-    if (best[k] == null || v > best[k]) best[k] = v;
-  }
-  return best;
-}

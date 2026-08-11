@@ -260,6 +260,14 @@ function bodyFor(n: ForgeNotification, actor: string) {
           <Text style={styles.strong}>{actor}</Text> checked in to <Text style={styles.strong}>{n.squadName}</Text>
         </>
       );
+    /* No actor, so no name to lead with — this is the one kind the SQUAD is the author of. Naming an
+       athlete here would invent a person who wrote a summary nobody wrote. */
+    case 'squad_recap':
+      return (
+        <>
+          The weekly review for <Text style={styles.strong}>{n.squadName}</Text> is in
+        </>
+      );
   }
 }
 
@@ -290,6 +298,8 @@ function subFor(n: ForgeNotification): string {
     case 'squad_checkin':
       // Check-ins expire after 24 hours (`checkinCutoff`), so the call to action is the deadline.
       return 'Watch it before it’s gone';
+    case 'squad_recap':
+      return 'See how the squad’s week went';
   }
 }
 
@@ -320,6 +330,8 @@ function accessibilityLabelFor(n: ForgeNotification, actor: string): string {
       return `${actor} posted in ${n.squadName}, ${when} ago. Open the squad.`;
     case 'squad_checkin':
       return `${actor} checked in to ${n.squadName}, ${when} ago. Watch it before it expires.`;
+    case 'squad_recap':
+      return `The weekly review for ${n.squadName} is in, ${when} ago. See how the squad's week went.`;
   }
 }
 
@@ -349,6 +361,10 @@ function glyphFor(kind: ForgeNotification['kind']) {
       return <PeopleGlyph size={11} color={flColor.bronze300} />;
     case 'squad_checkin':
       return <PlayGlyph size={11} color={flColor.bronze300} />;
+    /* The page glyph, not the people one: a weekly review is a document about the squad, and the
+       people glyph is what `squad_post` uses for a person posting in it. */
+    case 'squad_recap':
+      return <ProgramGlyph size={11} color={flColor.bronze300} />;
   }
 }
 

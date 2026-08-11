@@ -13,7 +13,8 @@ import { Pill } from '@/components/forge/composites/Pill';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { FlameIcon } from '@/components/forge/primitives/icons/HomeIcons';
-import { addSquadComment, fetchSquadPost, fmtDuration, fmtVolume, squadPostTypeDef, timeAgo, toggleSquadReaction, type SquadPostComment, type WorkoutSummary } from '@/data/squad-feed-live';
+import { ProgressPostCard } from '@/components/forge/ProgressPostCard';
+import { addSquadComment, asTransformationLayout, fetchSquadPost, fmtDuration, fmtVolume, isProgressCard, squadPostTypeDef, timeAgo, toggleSquadReaction, type SquadPostComment, type WorkoutSummary } from '@/data/squad-feed-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
@@ -39,6 +40,8 @@ export default function SquadPostRoute() {
   const [reactOverride, setReactOverride] = useState<{ on: boolean; n: number } | null>(null);
   const [commentText, setCommentText] = useState('');
   const [sending, setSending] = useState(false);
+  /** Measured, so a progress card fills the column it is in rather than assuming the screen's width. */
+  const [cardW, setCardW] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
@@ -171,9 +174,14 @@ export default function SquadPostRoute() {
             </>
           ) : null}
 
-          {post.type === 'transformation' && post.layout ? (
+          {/* The same card the composer previewed and the feed showed — one renderer, three surfaces. */}
+          {isProgressCard(post.layout) ? (
+            <View style={styles.sliderWrap} onLayout={(e) => setCardW(e.nativeEvent.layout.width)}>
+              {cardW > 0 ? <ProgressPostCard card={post.layout} width={cardW} /> : null}
+            </View>
+          ) : post.type === 'transformation' && asTransformationLayout(post.layout) ? (
             <View style={styles.sliderWrap}>
-              <TransformationLayout data={post.layout} />
+              <TransformationLayout data={asTransformationLayout(post.layout)!} />
             </View>
           ) : post.type === 'transformation' && post.media.length >= 2 && post.media[0].kind === 'image' && post.media[1].kind === 'image' ? (
             <View style={styles.sliderWrap}>

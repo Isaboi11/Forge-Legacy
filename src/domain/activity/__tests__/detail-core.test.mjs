@@ -11,7 +11,9 @@ import {
   whenLine,
 } from '../detail-core.ts';
 
-const set = (i, weight, reps, unit = 'lbs') => ({ setIndex: i, weight, weightUnit: unit, reps });
+const set = (i, weight, reps, unit = 'lbs') => ({ setIndex: i, weight, weightUnit: unit, reps, durationSec: null });
+/** A set measured by the clock: no reps at all, seconds instead. `weight` for a loaded carry. */
+const held = (i, sec, weight = null, unit = 'lbs') => ({ setIndex: i, weight, weightUnit: unit, reps: null, durationSec: sec });
 const exercise = (name, section, sets) => ({ name, section, catalogKey: null, equip: null, sets });
 
 const detail = (over = {}) => ({
@@ -95,6 +97,21 @@ test('0 lb is BODYWEIGHT, and it is not the same fact as no weight at all', () =
   // a bodyweight set, and the app must not decide that it was.
   assert.equal(setLine(set(0, null, 12)), '12 reps');
   assert.equal(setLine(set(0, 0, null)), '', 'BW with no rep count says nothing, and says it honestly');
+});
+
+/**
+ * ⚠ A HOLD HAS NO REPS BY CONSTRUCTION, so every arm of `setLine` used to fall through to `''` and an
+ * athlete's forty-five second plank appeared in their history as a name with an empty line under it.
+ * (Before that it was worse: the set carried a fabricated `reps: 10` and read as "10 reps".)
+ */
+test('a hold is read in seconds, and reads first', () => {
+  assert.equal(setLine(held(0, 45)), '45s');
+  assert.equal(setLine(held(0, 90)), '1m 30s');
+  assert.equal(setLine(held(0, 40, 70)), '70 lbs × 40s', 'a loaded carry keeps both halves');
+  assert.equal(setLine(held(0, 60, 0)), 'BW × 1m', 'BW is still an answer when the set is timed');
+  // Zero is not a hold — a set that recorded nothing must not claim "0s".
+  assert.equal(setLine(held(0, 0)), '');
+  assert.equal(setLine(held(0, null)), '');
 });
 
 // ── non-strength body ───────────────────────────────────────────────────────

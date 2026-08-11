@@ -129,7 +129,10 @@ export async function fetchActivityDetail(id: string): Promise<ActivityDetail | 
   const { data, error } = await supabase
     .from('workouts')
     .select(
-      'id, workout_name, activity_type, started_at, duration_sec, distance, distance_unit, chapter_id, program_id, notes, workout_exercises(name, section, position, catalog_key, notes, workout_sets(set_index, weight, weight_unit, reps))',
+      // `workout_sets.duration_sec` — the column a HOLD is recorded in (Plank, Dead Hang, loaded carry).
+      // It has existed since 0096 and this select omitted it, so a timed set arrived with `reps: null`
+      // and nothing else and rendered as a blank line under its own name.
+      'id, workout_name, activity_type, started_at, duration_sec, distance, distance_unit, chapter_id, program_id, notes, workout_exercises(name, section, position, catalog_key, notes, workout_sets(set_index, weight, weight_unit, reps, duration_sec))',
     )
     .eq('id', id)
     .eq('athlete_id', user.id)
@@ -193,7 +196,7 @@ export async function fetchActivityDetail(id: string): Promise<ActivityDetail | 
       equip: ex.catalog_key ? equipmentForCatalogKey(ex.catalog_key) : null,
       sets: [...(ex.workout_sets ?? [])]
         .sort((a, b) => a.set_index - b.set_index)
-        .map((s) => ({ setIndex: s.set_index, weight: s.weight, weightUnit: s.weight_unit, reps: s.reps })),
+        .map((s) => ({ setIndex: s.set_index, weight: s.weight, weightUnit: s.weight_unit, reps: s.reps, durationSec: s.duration_sec })),
     }));
 
   // Only the PRs whose exercise is actually in this session — a record set elsewhere the same day
@@ -245,7 +248,10 @@ interface SharedRow {
     position: number;
     catalog_key: string | null;
     note: string | null;
-    sets: { set_index: number; weight: number | null; weight_unit: string | null; reps: number | null }[] | null;
+    /* `duration_sec` is OPTIONAL here, not merely nullable: 0117's `shared_workout_detail` predates
+       timed strength sets and 0127 adds the key. An unapplied 0127 leaves it absent, which reads as
+       null — a shared hold renders without its clock rather than taking the screen down. */
+    sets: { set_index: number; weight: number | null; weight_unit: string | null; reps: number | null; duration_sec?: number | null }[] | null;
   }[];
   milestones: string[];
 }
@@ -281,7 +287,7 @@ async function fetchSharedActivityDetail(id: string): Promise<ActivityDetail | n
       equip: ex.catalog_key ? equipmentForCatalogKey(ex.catalog_key) : null,
       sets: [...(ex.sets ?? [])]
         .sort((a, b) => a.set_index - b.set_index)
-        .map((s) => ({ setIndex: s.set_index, weight: s.weight, weightUnit: s.weight_unit, reps: s.reps })),
+        .map((s) => ({ setIndex: s.set_index, weight: s.weight, weightUnit: s.weight_unit, reps: s.reps, durationSec: s.duration_sec ?? null })),
     }));
 
   // Same narrowing the owner path does: a record set elsewhere on the same day belongs to that session.
@@ -350,7 +356,7 @@ type DetailRow = {
         position: number;
         catalog_key: string | null;
         notes: string | null;
-        workout_sets: { set_index: number; weight: number | null; weight_unit: string | null; reps: number | null }[] | null;
+        workout_sets: { set_index: number; weight: number | null; weight_unit: string | null; reps: number | null; duration_sec: number | null }[] | null;
       }[]
     | null;
 };

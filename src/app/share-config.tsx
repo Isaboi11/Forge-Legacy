@@ -1,17 +1,16 @@
 import { useState } from 'react';
 import { Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
-import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { TransformationLayout } from '@/components/forge/TransformationLayout';
-import { addSquadPost, type ComparePair, type ShareTemplate, type TransformationLayoutData } from '@/data/squad-feed-live';
+import { addSquadPost, type ComparePair, type EntryTemplate, type PoseShot, type ShareTemplate, type TransformationLayoutData } from '@/data/squad-feed-live';
 import { fetchFriendLists } from '@/data/friends-live';
 import { createFriendPost } from '@/data/friends-feed-live';
 import { saveShareCard } from '@/lib/share-image';
 import { fetchMySquads, type SquadSummary } from '@/data/squad-live';
-import { fetchTransformationEntries, type PoseKey, type TransformationEntry } from '@/data/transformation-live';
+import { fetchTransformationEntries, filledPoses, type PoseKey } from '@/data/transformation-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useProfile } from '@/lib/profile';
 import { useToast } from '@/hooks/useCeremony';
@@ -21,7 +20,13 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
  * Share Configuration (SH-1) — built to `Forge Share Configuration.dc.html`, scoped to the `transformation`
  * kind. Compare shares carry a JSON `payload` (labels · elapsed · chapter · reflection · pose pairs w/
  * alignment) and offer a template picker (slider / side-by-side / stacked / multi-pose grid) + a pose
- * selector; entry shares are a single photo.
+ * selector.
+ *
+ * AN ENTRY SHARE PICKS A FORMAT TOO — Single photo · All poses · Full width. It used to post exactly one
+ * photo, silently: a six-pose capture went out as whichever pose happened to be on screen, and the other
+ * five were simply dropped with nothing said. The archive's own unit is the CAPTURE, not the frame, so
+ * the default here is every pose it holds; Single photo is still a tap away for anyone who wants one.
+ * The same pose chips serve both — a chooser under Single photo, include/exclude toggles under the others.
  *
  * EVERY DESTINATION ON THIS SCREEN WORKS. That is the whole rule, and it cost three of them.
  *
@@ -57,6 +62,13 @@ const TEMPLATES: { id: ShareTemplate; label: string }[] = [
   { id: 'grid', label: 'Grid' },
 ];
 
+/** The formats a single capture can go out in. `gallery` is the default whenever there is more than one pose. */
+const ENTRY_FORMATS: { id: EntryTemplate; label: string }[] = [
+  { id: 'gallery', label: 'All poses' },
+  { id: 'column', label: 'Full width' },
+  { id: 'single', label: 'Single photo' },
+];
+
 export default function ShareConfigRoute() {
   const params = useLocalSearchParams<{ mode?: string; id?: string; pose?: string; payload?: string }>();
   const router = useRouter();
@@ -80,6 +92,11 @@ export default function ShareConfigRoute() {
   const [incl, setIncl] = useState<Partial<Record<ToggleKey, boolean>>>({});
   const [dest, setDest] = useState<'squad' | 'friends'>('squad');
   const [template, setTemplate] = useState<ShareTemplate>('slider');
+  /** Null until the athlete picks one — the default depends on entries that haven't loaded at first render. */
+  const [entryPick, setEntryPick] = useState<EntryTemplate | null>(null);
+  /** Which pose `single` shows. Seeded from the pose they were looking at when they tapped Share. */
+  const [posePick, setPosePick] = useState<PoseKey | null>(pose ?? null);
+  /** Indexes into whichever list this share is built from — compare pairs, or a capture's poses. */
   const [excluded, setExcluded] = useState<number[]>([]);
   const [mySquads, setMySquads] = useState<SquadSummary[] | null>(null);
   const [squadPickerOpen, setSquadPickerOpen] = useState(false);
@@ -89,12 +106,6 @@ export default function ShareConfigRoute() {
 
   const eff = (k: ToggleKey): boolean => incl[k] ?? true;
   const toggle = (k: ToggleKey) => setIncl((cur) => ({ ...cur, [k]: !(cur[k] ?? true) }));
-
-  const firstPhoto = (e: TransformationEntry | null): string | null => {
-    if (!e) return null;
-    if (pose && e.photos[pose]) return e.photos[pose]!;
-    return Object.values(e.photos)[0] ?? null;
-  };
 
   // ── Resolve payload (compare) or entry ──
   const entry = !isCompare ? entries.find((e) => e.id === String(params.id)) ?? null : null;
@@ -106,11 +117,18 @@ export default function ShareConfigRoute() {
   const reflection = isCompare ? payload?.reflection || null : entry?.caption ?? null;
   const dateLabel = isCompare ? nowLabel : entry?.label ?? '';
   const athlete = profile?.name ?? 'You';
-  const photo = isCompare ? allPairs[0]?.now.url ?? null : firstPhoto(entry);
 
   const selectedPairs = allPairs.filter((_, i) => !excluded.includes(i));
   const usePairs = template === 'grid' ? selectedPairs : selectedPairs.slice(0, 1);
   const layoutData: TransformationLayoutData = { template, thenLabel, nowLabel, elapsed: elapsed || undefined, pairs: usePairs };
+
+  // ── An entry share: this capture's poses, in the chosen format ──
+  const allPoses = entry ? filledPoses(entry) : [];
+  const entryTemplate: EntryTemplate = entryPick ?? (allPoses.length > 1 ? 'gallery' : 'single');
+  const singlePose = allPoses.find((p) => p.key === posePick) ?? allPoses[0] ?? null;
+  const usePoses = entryTemplate === 'single' ? (singlePose ? [singlePose] : []) : allPoses.filter((_, i) => !excluded.includes(i));
+  const shots: PoseShot[] = usePoses.map((p) => ({ label: p.label, photo: { url: entry!.photos[p.key]! } }));
+  const photo = isCompare ? allPairs[0]?.now.url ?? null : shots[0]?.photo.url ?? null;
 
   const missing = isCompare ? allPairs.length === 0 : !!data && !entry;
   if (missing) {
@@ -134,22 +152,33 @@ export default function ShareConfigRoute() {
 
   const detailRows: { key: ToggleKey; label: string }[] = [
     ...lines.map((l) => ({ key: l.key, label: l.key === 'chapter' ? 'Chapter' : l.key === 'reflection' ? 'Reflection' : 'Date' })),
-    ...(!isCompare && photo ? [{ key: 'photo' as ToggleKey, label: 'Photo' }] : []),
+    ...(!isCompare && photo ? [{ key: 'photo' as ToggleKey, label: shots.length > 1 ? 'Photos' : 'Photo' }] : []),
     { key: 'name', label: 'Name' },
   ];
   const showPhoto = !isCompare && !!photo && eff('photo');
+  /** Turning Photos off empties the card AND the post — the preview is the post, or it is decoration. */
+  const useShots = showPhoto ? shots : [];
+  const entryLayout: TransformationLayoutData = { template: entryTemplate, pairs: [], shots: useShots };
 
   const destVerb: Record<typeof dest, string> = { squad: 'Share to Squad', friends: 'Share with Friends' };
 
+  /** The list the pose chips address — comparison pairs, or this capture's poses. */
+  const poseCount = isCompare ? allPairs.length : allPoses.length;
   const togglePose = (i: number) =>
     setExcluded((cur) => {
       const has = cur.includes(i);
       const next = has ? cur.filter((x) => x !== i) : [...cur, i];
       // never exclude the last remaining pose
-      return next.length >= allPairs.length ? cur : next;
+      return next.length >= poseCount ? cur : next;
     });
 
-  /** The post this screen composes, whichever audience it goes to. Built once so the two paths cannot drift. */
+  /**
+   * The post this screen composes, whichever audience it goes to. Built once so the two paths cannot drift.
+   *
+   * An entry carries EVERY chosen pose in `media`, not just the one on the card — the media array is what a
+   * surface without a layout renderer falls back to, and dropping five of six photos there would make the
+   * feed disagree with the post it opens.
+   */
   const composePost = () => ({
     type: 'transformation' as const,
     body: reflection && eff('reflection') ? reflection : isCompare && elapsed ? `${elapsed} apart` : '',
@@ -157,10 +186,8 @@ export default function ShareConfigRoute() {
       ? usePairs[0]
         ? [{ url: usePairs[0].now.url, kind: 'image' as const }]
         : []
-      : photo
-        ? [{ url: photo, kind: 'image' as const }]
-        : [],
-    layout: isCompare ? layoutData : null,
+      : useShots.map((s) => ({ url: s.photo.url, kind: 'image' as const })),
+    layout: isCompare ? layoutData : useShots.length ? entryLayout : null,
   });
 
   const finishShare = (where: string) => {
@@ -267,15 +294,13 @@ export default function ShareConfigRoute() {
     try {
       const pairs = isCompare ? usePairs : [];
       const result = await saveShareCard({
-        photoUrls: pairs.length
-          ? pairs.flatMap((pr) => [pr.then.url, pr.now.url])
-          : showPhoto && photo
-            ? [photo]
-            : [],
+        photoUrls: pairs.length ? pairs.flatMap((pr) => [pr.then.url, pr.now.url]) : useShots.map((s) => s.photo.url),
         transforms: pairs.length ? pairs.flatMap((pr) => [pr.then.transform, pr.now.transform]) : [],
-        template: pairs.length ? layoutData.template : null,
+        template: pairs.length ? template : null,
+        entryTemplate: pairs.length ? undefined : entryTemplate,
         pairCount: pairs.length,
-        poseLabels: pairs.map((pr) => pr.label),
+        // One label per pair on a comparison, one per photo on a capture — the geometry says which it wants.
+        poseLabels: pairs.length ? pairs.map((pr) => pr.label) : useShots.map((s) => s.label),
         thenLabel: layoutData.thenLabel,
         nowLabel: layoutData.nowLabel,
         elapsed: isCompare && elapsed ? elapsed : undefined,
@@ -330,7 +355,7 @@ export default function ShareConfigRoute() {
         </View>
 
         <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} showsVerticalScrollIndicator={false}>
-          {/* ── LAYOUT (compare only) ── */}
+          {/* ── LAYOUT (compare) ── */}
           {isCompare ? (
             <>
               <Text style={styles.sectionLabelFirst}>Layout</Text>
@@ -357,6 +382,37 @@ export default function ShareConfigRoute() {
                 </>
               ) : null}
             </>
+          ) : allPoses.length > 1 ? (
+            /* ── FORMAT (a capture with more than one pose — one pose has nothing to choose between) ── */
+            <>
+              <Text style={styles.sectionLabelFirst}>Format</Text>
+              <View style={styles.templateRow}>
+                {ENTRY_FORMATS.map((t) => (
+                  <Pressable key={t.id} onPress={() => setEntryPick(t.id)} accessibilityRole="button" accessibilityState={{ selected: entryTemplate === t.id }} style={[styles.tplChip, entryTemplate === t.id ? styles.tplChipOn : styles.tplChipOff]}>
+                    <Text style={[styles.tplChipText, entryTemplate === t.id ? styles.tplChipTextOn : null]}>{t.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              <Text style={styles.poseSelectLabel}>{entryTemplate === 'single' ? 'Which pose' : 'Poses in this post'}</Text>
+              <View style={styles.poseSelectRow}>
+                {allPoses.map((p, i) => {
+                  // One row, two jobs: under Single photo the chips CHOOSE, otherwise they include/exclude.
+                  const on = entryTemplate === 'single' ? p.key === singlePose?.key : !excluded.includes(i);
+                  return (
+                    <Pressable
+                      key={p.key}
+                      onPress={() => (entryTemplate === 'single' ? setPosePick(p.key) : togglePose(i))}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: on }}
+                      accessibilityLabel={entryTemplate === 'single' ? `Show ${p.label}` : `${on ? 'Remove' : 'Include'} ${p.label}`}
+                      style={[styles.poseSelChip, on ? styles.poseSelOn : styles.poseSelOff]}
+                    >
+                      <Text style={[styles.poseSelText, on ? styles.poseSelTextOn : null]}>{p.label}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </>
           ) : null}
 
           {/* ── PREVIEW CARD ── */}
@@ -373,7 +429,10 @@ export default function ShareConfigRoute() {
                 <TransformationLayout data={layoutData} />
               </View>
             ) : showPhoto ? (
-              <Image source={{ uri: photo! }} style={styles.photoBand} contentFit="cover" />
+              /* The same renderer the post uses, so the card here IS the card they'll see in the feed. */
+              <View style={styles.compareWrap}>
+                <TransformationLayout data={entryLayout} />
+              </View>
             ) : (
               <View style={styles.kindGlyph}>
                 <CameraGlyph />
@@ -585,7 +644,6 @@ const styles = StyleSheet.create({
   brandText: { fontSize: 10, fontWeight: '700', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.gray400 },
 
   compareWrap: { alignSelf: 'stretch' },
-  photoBand: { alignSelf: 'stretch', height: 132, borderRadius: flRadius.md, backgroundColor: flColor.surfaceRecessed },
   kindGlyph: { width: 70, height: 70, borderRadius: 35, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800, boxShadow: flShadow.glowSubtle },
 
   cardTitleBlock: { alignItems: 'center', marginTop: 16 },

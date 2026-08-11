@@ -19,7 +19,7 @@ import { useProfile } from '@/lib/profile';
  * W-22 Exercise Detail (`Forge Exercise Detail.dc.html`) — the read-only reference page for one
  * exercise: what it is, what it trains, how to do it, and what to swap it for.
  *
- * Real sources: the 794-exercise catalog (identity, equipment, difficulty, pattern, muscles), the
+ * Real sources: the 809-exercise catalog (identity, equipment, difficulty, pattern, muscles), the
  * 5,698-edge relationship graph (alternatives), and the coaching system's sanctioned bridge.
  *
  * COACHING COPY IS GATED. `getExerciseDetailCoaching` serves Published records only; today none of the

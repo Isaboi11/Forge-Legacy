@@ -11668,5 +11668,149 @@
     "muscleId": "quadriceps",
     "role": "Secondary",
     "displayOrder": 1
+  },
+  {
+    "exerciseId": "ez-bar-biceps-curl",
+    "muscleId": "biceps",
+    "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "ez-bar-biceps-curl",
+    "muscleId": "forearms",
+    "role": "Secondary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "ez-bar-preacher-curl",
+    "muscleId": "biceps",
+    "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "ez-bar-preacher-curl",
+    "muscleId": "forearms",
+    "role": "Secondary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "ez-bar-reverse-curl",
+    "muscleId": "forearms",
+    "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "ez-bar-reverse-curl",
+    "muscleId": "biceps",
+    "role": "Secondary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "ez-bar-drag-curl",
+    "muscleId": "biceps",
+    "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "ez-bar-drag-curl",
+    "muscleId": "forearms",
+    "role": "Secondary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "ez-bar-spider-curl",
+    "muscleId": "biceps",
+    "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "ez-bar-spider-curl",
+    "muscleId": "forearms",
+    "role": "Secondary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "ez-bar-skull-crusher",
+    "muscleId": "triceps",
+    "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "ez-bar-overhead-triceps-extension",
+    "muscleId": "triceps",
+    "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "ez-bar-jm-press",
+    "muscleId": "triceps",
+    "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "ez-bar-jm-press",
+    "muscleId": "chest",
+    "role": "Secondary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "ez-bar-jm-press",
+    "muscleId": "front_deltoids",
+    "role": "Secondary",
+    "displayOrder": 2
+  },
+  {
+    "exerciseId": "ez-bar-upright-row",
+    "muscleId": "lateral_deltoids",
+    "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "ez-bar-upright-row",
+    "muscleId": "traps",
+    "role": "Primary",
+    "displayOrder": 2
+  },
+  {
+    "exerciseId": "ez-bar-upright-row",
+    "muscleId": "biceps",
+    "role": "Secondary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "ez-bar-pullover",
+    "muscleId": "lats",
+    "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "ez-bar-pullover",
+    "muscleId": "chest",
+    "role": "Secondary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "ez-bar-pullover",
+    "muscleId": "triceps",
+    "role": "Secondary",
+    "displayOrder": 2
+  },
+  {
+    "exerciseId": "ez-bar-wrist-curl",
+    "muscleId": "forearms",
+    "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "ez-bar-wrist-curl",
+    "muscleId": "grip",
+    "role": "Secondary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "ez-bar-reverse-wrist-curl",
+    "muscleId": "forearms",
+    "role": "Primary",
+    "displayOrder": 1
   }
 ]

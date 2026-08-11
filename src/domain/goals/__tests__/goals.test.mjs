@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  bodyTargetProblem,
+  bodyTargetSummary,
+  directionLabels,
   goalSections,
   historyDate,
   isQuantifiable,
@@ -10,6 +13,7 @@ import {
   progressEntryLine,
   progressLabel,
   progressPct,
+  resolveBodyTarget,
   UNIT_CHIPS,
   validateGoal,
 } from '../goals.ts';
@@ -104,6 +108,78 @@ test('a history row reads "from → to unit", trimming zeros, and dates compactl
   assert.equal(progressEntryLine({ fromValue: 0, toValue: 3 }, null), '0 → 3', 'no unit, no trailing space');
   assert.equal(historyDate('2026-06-14T10:00:00Z'), 'Jun 14');
   assert.equal(historyDate('nope'), '');
+});
+
+// ── body goals: direction is asked, and 15 can mean "add 15" ──────────────────
+//
+// The defect these guard: "weight" was a quantity with no direction, so the app inferred one by asking
+// whether the target sat below the latest weigh-in. That question has no answer before the first weigh-in
+// — it defaulted to 'up' — and it cannot express "add 15 lb" at all.
+
+const body = (over = {}) => ({ mode: 'target', dir: 'up', value: 180, baseline: 165, ...over });
+
+test('an amount to change resolves against the baseline, each way', () => {
+  // The PO's case, literally: 165 lb and the goal is to add 15.
+  assert.equal(resolveBodyTarget(body({ mode: 'change', dir: 'up', value: 15, baseline: 165 })), 180);
+  assert.equal(resolveBodyTarget(body({ mode: 'change', dir: 'down', value: 15, baseline: 200 })), 185);
+  assert.equal(resolveBodyTarget(body({ mode: 'target', value: 185 })), 185, 'an absolute target is itself');
+});
+
+test('the SAME number means opposite things — which is why the direction is asked', () => {
+  const gain = resolveBodyTarget(body({ mode: 'change', dir: 'up', value: 15, baseline: 185 }));
+  const lose = resolveBodyTarget(body({ mode: 'change', dir: 'down', value: 15, baseline: 185 }));
+  assert.equal(gain, 200);
+  assert.equal(lose, 170);
+  assert.notEqual(gain, lose, 'direction cannot be inferred from the number — it is the whole question');
+});
+
+test('a change that cannot resolve yields null rather than a wrong number', () => {
+  assert.equal(resolveBodyTarget(body({ mode: 'change', value: 15, baseline: null })), null, 'nothing to change from');
+  assert.equal(resolveBodyTarget(body({ mode: 'change', dir: 'down', value: 200, baseline: 165 })), null, 'would leave nothing');
+  assert.equal(resolveBodyTarget(body({ value: 0 })), null);
+  assert.equal(resolveBodyTarget(body({ value: null })), null);
+});
+
+test('a goal that contradicts itself is stopped, not silently rewritten', () => {
+  // The old inference took "Lose, goal 200" from a 185 lb athlete and saved it as a GAIN.
+  assert.match(bodyTargetProblem(body({ dir: 'down', value: 200, baseline: 185 }), 'lb'), /not below your current 185 lb/);
+  assert.match(bodyTargetProblem(body({ dir: 'up', value: 170, baseline: 185 }), 'lb'), /not above your current 185 lb/);
+  assert.match(bodyTargetProblem(body({ mode: 'change', dir: 'down', value: 300, baseline: 185 }), 'lb'), /can't lose 300 lb from 185 lb/);
+  assert.match(bodyTargetProblem(body({ mode: 'change', value: 15, baseline: null }), 'lb'), /needs somewhere to start/);
+});
+
+test('a sound body goal reports no problem — including before there is any reading', () => {
+  assert.equal(bodyTargetProblem(body({ dir: 'up', value: 200, baseline: 185 }), 'lb'), null);
+  assert.equal(bodyTargetProblem(body({ dir: 'down', value: 175, baseline: 185 }), 'lb'), null);
+  // No weigh-in yet: there is nothing to contradict, and the chosen direction stands on its own. This is
+  // exactly the case the inference could not answer.
+  assert.equal(bodyTargetProblem(body({ dir: 'down', value: 175, baseline: null }), 'lb'), null);
+  assert.equal(bodyTargetProblem(body({ value: 0 }), 'lb'), null, 'an empty field is the target validator’s job');
+});
+
+test('the summary states the journey the goal will actually track', () => {
+  assert.equal(bodyTargetSummary(body({ mode: 'change', dir: 'up', value: 15, baseline: 165 }), 'lb', 'body_weight'), '165 lb → 180 lb · gain 15 lb');
+  assert.equal(bodyTargetSummary(body({ dir: 'down', value: 185, baseline: 200 }), 'lb', 'body_weight'), '200 lb → 185 lb · lose 15 lb');
+  assert.equal(bodyTargetSummary(body({ dir: 'down', value: 32, baseline: 34 }), 'in', 'body_measure'), '34 in → 32 in · shrink 2 in');
+  assert.equal(bodyTargetSummary(body({ baseline: null }), 'lb', 'body_weight'), null, 'no baseline, no journey to state');
+});
+
+test('each metric calls its directions what an athlete would call them', () => {
+  assert.deepEqual(directionLabels('body_weight'), { down: 'Lose', up: 'Gain' });
+  assert.deepEqual(directionLabels('body_measure'), { down: 'Shrink', up: 'Grow' });
+});
+
+test('a gain goal reads its progress from the baseline, not from zero', () => {
+  // 165 → 180, currently 170: a third of the way. Without the baseline this was 170/180 = 94%.
+  const gain = { target: 180, current: 170, achievedAt: null, metricDir: 'up', metricStartValue: 165 };
+  assert.equal(progressPct(gain), 33);
+  assert.equal(meetsTarget({ ...gain, current: 180 }), true);
+  assert.equal(meetsTarget({ ...gain, current: 179 }), false);
+
+  const cut = { target: 185, current: 195, achievedAt: null, metricDir: 'down', metricStartValue: 200 };
+  assert.equal(progressPct(cut), 33);
+  assert.equal(meetsTarget({ ...cut, current: 184 }), true);
+  assert.equal(meetsTarget({ ...cut, current: 190 }), false);
 });
 
 test('unit chips smart-order by goal name and always offer the full set', () => {

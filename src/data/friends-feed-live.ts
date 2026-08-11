@@ -74,9 +74,17 @@ export interface FeedPost {
 }
 
 /** What the card renders, derived from the media rather than stored as a type — see 0074. */
-export type PostShape = 'note' | 'photo' | 'video' | 'progress' | 'milestone' | 'recap';
+export type PostShape = 'note' | 'photo' | 'gallery' | 'video' | 'progress' | 'milestone' | 'recap';
 
 export function shapeOf(p: FeedPost): PostShape {
+  /*
+   * ⚠ `progress` MEANS TWO THINGS IN ONE TABLE, and only the audience keeps them apart. Here it is a
+   * before/after pair whose media carry `slot`, rendered with a draggable divider. On the SQUAD side it
+   * is a Progress Photo Post card, described by a `kind: 'progress-card'` payload in `layout`. A squad
+   * post has audience 'SQUAD' and never reaches `friends_feed`, so the two cannot meet today — but
+   * anything that later posts a card with audience 'FRIENDS' or 'BOTH' must teach this function to look
+   * at `layout` first, or a laid-out card will render as a comparison with no "before".
+   */
   if (p.type === 'progress') return 'progress';
   /* A recap with its stats renders the Vol/Time/Lifts/PRs strip the Squad feed has always shown.
      A recap WITHOUT them still falls through to the bronze milestone card below — which is every
@@ -85,6 +93,11 @@ export function shapeOf(p: FeedPost): PostShape {
   if (p.type === 'recap' && p.workoutSummary) return 'recap';
   if (p.type === 'milestone' || p.type === 'pr' || p.type === 'weekly' || p.type === 'recap') return 'milestone';
   if (p.media.some((m) => m.kind === 'video')) return 'video';
+  /* Several photos are a SET, not a lead photo with spares. A transformation capture shared from the
+     archive arrives as every pose the athlete chose; showing the first and dropping the rest would post
+     something other than what they composed. `progress` is already gone by here, so slotted before/after
+     pairs never reach this. */
+  if (p.media.length > 1) return 'gallery';
   if (p.media.length > 0) return 'photo';
   return 'note';
 }

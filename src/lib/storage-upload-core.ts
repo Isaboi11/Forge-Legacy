@@ -16,6 +16,18 @@
 export type UploadErrorKind = 'too_large' | 'network' | 'stalled' | 'cancelled' | 'denied' | 'server';
 
 /**
+ * 50 MB. Matches the `squad-media` bucket's `file_size_limit`, set in 0122 so the two cannot drift.
+ *
+ * Here rather than in `storage-upload.ts` so that pure code can read it — `video-compress-core` asserts
+ * its compression threshold stays comfortably below this ceiling, and a rule nothing can test is a rule
+ * that drifts. `storage-upload.ts` re-exports it, so every existing import site is unchanged.
+ */
+export const MAX_CHECKIN_BYTES = 50 * 1024 * 1024;
+
+/** Photos are already downscaled by `useMediaPicker`; this is a backstop against a stray original. */
+export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+
+/**
  * Map an HTTP status onto a failure kind.
  *
  * ⚠ THIS EXISTS BECAUSE A FAILED UPLOAD USED TO LOOK LIKE A SUCCESSFUL ONE. `UploadTask.uploadAsync()`

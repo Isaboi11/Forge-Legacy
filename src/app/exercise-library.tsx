@@ -1,6 +1,6 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -15,6 +15,8 @@ import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/us
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { addFavorite, fetchFavoriteKeys, fetchRecentExerciseKeys, removeFavorite } from '@/data/exercise-prefs-live';
+import { fetchCustomExercises } from '@/data/custom-exercises-live';
+import { capMessage, CUSTOM_LIMIT } from '@/domain/exercise-picker/custom-core';
 import { fetchHomeGym } from '@/data/home-gym-live';
 import { ENVIRONMENTS } from '@/domain/exercise-picker/catalog-core';
 import { DIFFS, EQUIP_FILTER_GROUPS, EXERCISE_CATEGORIES, PICKER_DB } from '@/domain/exercise-picker/data';
@@ -37,14 +39,28 @@ import { useQuery } from '@/lib/useQuery';
  * catalog. Two modes off one state: a HUB of shortcuts (Favourites, Recently Used, category grid) and a
  * FLAT list entered by searching, filtering, or drilling in.
  *
- * Real throughout: the 772 offered exercises, the 6 locked browse categories, difficulty and equipment
+ * Real throughout: the 733 offered exercises, the 6 locked browse categories, difficulty and equipment
  * straight from the catalog, favourites from `exercise_favorites`, and recents from the athlete's own
  * logged workouts. Rows open Exercise Detail (W-22).
  *
+ * ══ MY EXERCISES IS NOW REAL ══
+ *
+ * This header used to read: *"DEFERRED — Custom Exercises section + Create — Exercise-001 is locked but
+ * has no table; there is nothing to list and nowhere to save."* Migration 0128 adds the table and W-28
+ * (`/custom-exercise`) is the form, so the section is built: the athlete's own exercises, newest first,
+ * with "+ New" beside the heading.
+ *
+ * It renders EVEN WHEN EMPTY, which is the one judgement call here. Every other hub section hides when
+ * it has nothing (Favorites, Recently Used), and by that rule this one would be invisible to exactly the
+ * athletes who most need to know it exists — the ones who have never made an exercise. A door nobody can
+ * see is the same as no door, which is the state this replaced.
+ *
+ * EX-001-D9 keeps custom exercises OUT of the six category browse tiles: browsing "Push" is browsing
+ * what Forge authored, and injecting one athlete's "Belt Squat Machine" into it blurs a line worth
+ * keeping. They are reachable here and by search, which is where somebody looks for their own work.
+ *
  * DEFERRED vs the `.dc` (omitted, not faked):
- *  · Custom Exercises section + Create — Exercise-001 is locked but has no table; there is nothing to
- *    list and nowhere to save.
- *  · Movement type (Compound/Isolation) — no such field on any of the 797 records, same as the Picker.
+ *  · Movement type (Compound/Isolation) — no such field on any of the 809 records, same as the Picker.
  *
  * "Where you train" → "Home Gym" resolves against the athlete's OWN equipment profile once they've built
  * one (`profiles.home_gym_equipment`, 0021); picking it without a profile routes to the editor first and
@@ -85,6 +101,18 @@ export default function ExerciseLibraryScreen() {
   const { data: favData, refetch: refetchFavorites } = useQuery(fetchFavoriteKeys, []);
   const { data: recentData } = useQuery(() => fetchRecentExerciseKeys(12), []);
   const [favOverride, setFavOverride] = useState<Record<string, boolean>>({});
+  /* The athlete's own exercises (0128). Refetched on focus so an exercise created in W-28 — or deleted
+     there — is reflected the moment they come back, without a pull-to-refresh nobody would think to do. */
+  const { data: customData, refetch: refetchCustoms } = useQuery(fetchCustomExercises, []);
+  const [customsExpanded, setCustomsExpanded] = useState(false);
+  useFocusEffect(
+    useCallback(() => {
+      refetchCustoms();
+    }, [refetchCustoms]),
+  );
+  const customs = customData ?? [];
+  const atCustomLimit = customs.length >= CUSTOM_LIMIT;
+  const customCapNote = capMessage(customs.length);
 
   const favorites = useMemo(() => {
     const base = favData ?? [];
@@ -265,6 +293,66 @@ export default function ExerciseLibraryScreen() {
           )
         ) : (
           <TourAnchor id="library-hub">
+            {/* ══ MY EXERCISES (EX-001-D16) ══
+                Above Favorites, because a section you AUTHORED is more yours than one you ticked, and
+                because "+ New Exercise" is the only way into W-28 from a browse surface. Shown even when
+                empty — this header carried a standing note for months saying the section was omitted
+                "because there is nothing to list and nowhere to save", and an athlete who cannot see the
+                door does not know the room exists. */}
+            <View style={styles.hubSection}>
+              <View style={styles.listHead}>
+                <Text style={styles.sectionTitle}>My Exercises</Text>
+                <Pressable
+                  onPress={() => (atCustomLimit ? undefined : router.push('/custom-exercise'))}
+                  disabled={atCustomLimit}
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: atCustomLimit }}
+                  accessibilityLabel={atCustomLimit ? `Exercise limit reached, ${CUSTOM_LIMIT}` : 'New exercise'}
+                  style={styles.viewAll}
+                >
+                  <Text style={[styles.viewAllText, atCustomLimit ? styles.viewAllOff : null]}>+ New</Text>
+                </Pressable>
+              </View>
+              {customs.length ? (
+                <View style={styles.rows}>
+                  {customs.slice(0, customsExpanded ? undefined : 3).map((c) => (
+                    <Pressable
+                      key={c.id}
+                      onPress={() => router.push({ pathname: '/custom-exercise', params: { id: c.id } })}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${c.name}, your exercise — edit`}
+                      style={({ pressed }) => [styles.customRow, pressed ? styles.customRowPressed : null]}
+                    >
+                      <View style={styles.customText}>
+                        <Text style={styles.customName} numberOfLines={1}>
+                          {c.name}
+                        </Text>
+                        <Text style={styles.customSub} numberOfLines={1}>
+                          {c.unit === 'time' ? 'Held / timed' : 'Reps'}
+                          {c.notes?.trim() ? ` · ${c.notes.trim()}` : ''}
+                        </Text>
+                      </View>
+                      <View style={styles.minePill}>
+                        <Text style={styles.minePillText}>YOURS</Text>
+                      </View>
+                    </Pressable>
+                  ))}
+                  {!customsExpanded && customs.length > 3 ? (
+                    <Pressable onPress={() => setCustomsExpanded(true)} accessibilityRole="button" accessibilityLabel="View all your exercises" style={styles.viewAllRow}>
+                      <Text style={styles.viewAllText}>View all {customs.length}</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              ) : (
+                <View style={styles.customEmpty}>
+                  <Text style={styles.customEmptyText}>
+                    Training something the catalogue doesn&apos;t have? Add it — a name is all it needs.
+                  </Text>
+                </View>
+              )}
+              {customCapNote ? <Text style={styles.capNote}>{customCapNote}</Text> : null}
+            </View>
+
             {favorites.length ? (
               <HubSection
                 title="Favorites"
@@ -519,6 +607,19 @@ const styles = StyleSheet.create({
 
   body: { paddingHorizontal: 18, paddingBottom: 32 },
   hubSection: { marginBottom: 26 },
+
+  customRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
+  customRowPressed: { borderColor: flColor.bronzeBorderSubtle, opacity: 0.9 },
+  customText: { flex: 1, minWidth: 0, gap: 3 },
+  customName: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
+  customSub: { fontSize: 11.5, color: flColor.gray600 },
+  minePill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
+  minePillText: { fontSize: 8.5, fontWeight: '700', letterSpacing: 1.1, color: flColor.bronze300 },
+  customEmpty: { padding: 18, borderRadius: flRadius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.charcoal600 },
+  customEmptyText: { fontSize: 12.5, lineHeight: 18, color: flColor.gray600, textAlign: 'center' },
+  viewAllRow: { paddingVertical: 11, alignItems: 'center' },
+  viewAllOff: { color: flColor.gray600 },
+  capNote: { marginTop: 9, fontSize: 11.5, lineHeight: 16, color: flColor.gray600 },
   listHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 },
   sectionTitle: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.cream100 },
   count: { fontSize: 11.5, color: flColor.gray600 },

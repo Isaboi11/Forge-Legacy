@@ -10,7 +10,7 @@
  */
 
 import React from 'react'
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { flColor, flRadius, flShadow } from '@/constants/foundation'
 
@@ -64,8 +64,18 @@ export function BottomSheet({ open, onClose, dismissible = true, title, showHand
         It must NOT be accessibilityRole="button" — on web that makes it keyboard-activatable, so a
         SPACEBAR press inside a text field bubbles up and "clicks" it, dismissing the sheet mid-typing.
         `focusable={false}` keeps it out of the keyboard path.
+
+        ══ AND THE KEYBOARD MUST NOT SIT ON TOP OF THE FIELD ══
+
+        A sheet is pinned to the BOTTOM of the screen, which is exactly where the keyboard opens — so the
+        input the athlete just tapped is the first thing covered. It was worst on the import sheet, whose
+        whole job is a big paste box: the keyboard came up over it and there was no way to see what had
+        been pasted.
+
+        `padding` on iOS lifts the sheet by the keyboard's height. Android is left alone because
+        `adjustResize` already does it at the window level, and doing both double-counts.
       */}
-      <View style={styles.root}>
+      <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={dismissible ? onClose : undefined}
@@ -95,7 +105,7 @@ export function BottomSheet({ open, onClose, dismissible = true, title, showHand
 
           {footer ? <View style={styles.footer}>{footer}</View> : null}
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   )
 }

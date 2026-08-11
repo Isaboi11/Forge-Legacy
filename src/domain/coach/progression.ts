@@ -85,35 +85,165 @@ export interface Progression {
  * raise does not, and telling someone to add 10 lb to a lateral raise is how they learn to ignore the
  * coach. Lower-body compounds move fastest, upper-body compounds next, isolation slowest.
  */
-const INCREMENT_BY_PATTERN: Record<string, number> = {
-  'Squat / Knee Dominant': 10,
-  'Hinge / Hip Dominant': 10,
-  'Horizontal Push': 5,
-  'Vertical Push': 5,
-  'Horizontal Pull': 5,
-  'Vertical Pull': 5,
-  Carry: 10,
-  'Power / Plyometric': 5,
-  'Elbow Flexion': 2.5,
-  'Elbow Extension': 2.5,
-  'Shoulder Isolation': 2.5,
-  'Hip Isolation': 5,
-  'Calf / Ankle': 5,
-  Core: 2.5,
-  Mobility: 0,
+/**
+ * `[typical, floor]` in pounds — what an intermediate adds, and the smallest jump that is ever worth
+ * making on this movement no matter who is lifting.
+ *
+ * ⚠ THE FLOOR IS THE HALF THE FIRST VERSION DID NOT HAVE, AND THE PO CAUGHT IT TWICE. There was one
+ * global minimum of 2.5 lb, so the advanced multiplier below dragged everything down to it: a lat
+ * pulldown at 140 was offered *"go to 142.5"*, and a back squat was offered 2.5 lb. Two and a half pounds
+ * is not a training stimulus on a pulldown — it is inside the noise of how you sat down.
+ *
+ * The PO's own spec, which this table now encodes: the big lifts (squat, hinge, deadlift, carry) take the
+ * biggest jumps; presses and pulls 5–10; curls 5; shoulder isolation 2.5–5 *depending on the equipment*.
+ * Nothing weighted may ever suggest less than 2.5, and almost nothing should suggest less than 5.
+ */
+const INCREMENT_BY_PATTERN: Record<string, [typical: number, floor: number]> = {
+  'Squat / Knee Dominant': [10, 10],
+  'Hinge / Hip Dominant': [10, 10],
+  Carry: [10, 10],
+  'Calf / Ankle': [10, 5],
+  'Horizontal Push': [5, 5],
+  'Vertical Push': [5, 5],
+  'Horizontal Pull': [5, 5],
+  'Vertical Pull': [5, 5],
+  'Power / Plyometric': [5, 5],
+  'Elbow Flexion': [5, 5],
+  'Elbow Extension': [5, 5],
+  'Hip Isolation': [5, 5],
+  Core: [5, 5],
+  'Shoulder Isolation': [2.5, 2.5],
+  'Neck Isolation': [2.5, 2.5],
+  Mobility: [0, 0],
 };
+
+/**
+ * The smallest change the equipment can physically make, in pounds. Zero = this lift takes no load.
+ *
+ * ⚠ THESE ARE THE CATALOGUE'S OWN `equipmentId` VALUES. The first version tested for `'machine'`, which
+ * is not one of them — the id is `selectorized_machine` — so every machine silently fell to the default
+ * branch. Ids, never labels.
+ *
+ * ⚠ A DUMBBELL RACK GOES UP IN FIVES and cannot be subdivided, which is the PO's point: a 2.5 lb
+ * suggestion on a dumbbell lift describes a weight that does not exist in the room.
+ */
+const EQUIPMENT_STEP: Record<string, number> = {
+  barbell: 5, //            a 2.5 lb plate on each side
+  dumbbell: 5, //           the rack: 5, 10, 15… and no way between them
+  kettlebell: 5,
+  cable: 2.5, //            stacks commonly carry 2.5 lb add-on pins
+  selectorized_machine: 5,
+  smith_machine: 5,
+  sled: 10, //              you load it with 10s and 25s
+  medicine_ball: 2,
+  bodyweight: 0,
+  resistance_band: 0, //    a band is a different band, not a heavier one
+  suspension_trainer: 0,
+  battle_rope: 0,
+  plyo_box: 0,
+  cardio: 0,
+};
+
+/** What this lift can physically move by. Unknown equipment gets 5 — the safe, common answer. */
+export function loadableStep(equipment: string | null | undefined): number {
+  if (equipment == null) return 5;
+  return EQUIPMENT_STEP[equipment] ?? 5;
+}
 
 /** Beginners add faster because they adapt faster — the one place experience changes the arithmetic. */
 const EXPERIENCE_MULTIPLIER = { beginner: 1.5, intermediate: 1, advanced: 0.5 } as const;
 
+/**
+ * How much weight to add to this lift, in pounds.
+ *
+ * Three things decide it, in this order, and the order is the fix:
+ *
+ *   1. **The movement.** A deadlift absorbs 10 lb without anyone noticing; a lateral raise does not.
+ *   2. **Experience**, which may make the jump bigger but may never take it under the movement's floor.
+ *      An advanced lifter progresses in smaller relative steps — that is real — but "smaller" on a squat
+ *      means 10 rather than 15, not 2.5.
+ *   3. **The equipment**, last, because it is a physical constraint rather than a coaching opinion: the
+ *      answer is rounded UP to something that exists in the room. On dumbbells that turns a 2.5 lb
+ *      shoulder jump into 5, which is the only honest answer when the rack has nothing in between.
+ */
 export function incrementFor(
   pattern: string,
   experience: 'beginner' | 'intermediate' | 'advanced',
+  equipment?: string | null,
 ): number {
-  const base = INCREMENT_BY_PATTERN[pattern] ?? 5;
-  const raw = base * EXPERIENCE_MULTIPLIER[experience];
-  // Round to the smallest plate pair that actually exists on a rack. 3.75 lb is not a thing you can load.
-  return Math.max(2.5, Math.round(raw / 2.5) * 2.5);
+  const [typical, floor] = INCREMENT_BY_PATTERN[pattern] ?? [5, 5];
+  if (typical === 0) return 0; // mobility — there is nothing to add
+
+  const step = loadableStep(equipment);
+  if (step === 0) return 0; // a band or bodyweight lift does not progress in pounds
+
+  const wanted = Math.max(floor, typical * EXPERIENCE_MULTIPLIER[experience]);
+  // UP to the next loadable notch, never down — rounding down is how a floor of 5 becomes 2.5 again.
+  return Math.max(step, Math.ceil(wanted / step) * step);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// CHANGING THE BAR MID-SET
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/** The empty bar. Nothing barbell goes below it, and a suggestion under it is not a suggestion. */
+const BAR_LB = 45;
+
+export interface BackOffInput {
+  /** What is on the bar right now. */
+  current: number;
+  /** Working weights from recent sessions of this lift, newest first. */
+  recent: readonly number[];
+  equipment: string | null;
+}
+
+/**
+ * ══ "THAT FELT HEAVY" — HOW FAR DOWN? ══
+ *
+ * ⚠ THE FIRST VERSION USED `incrementFor`, AND THE PO CAUGHT IT: *"taking 2.5 lb off a barbell back
+ * squat is not going to be good."* Two things were wrong with that, and only one of them was a bug.
+ *
+ * The bug: the pattern lookup was failing, so the increment fell to its 5 lb default and then halved for
+ * an advanced lifter. Fixed at the call site — but a correct lookup would have said 5 lb off a squat,
+ * which is barely better.
+ *
+ * The real error was using an increment at all. **Adding and backing off are not the same move in
+ * opposite directions.** Adding is double progression: a deliberately small, fixed step you earn by
+ * topping the rep range. Backing off is a rescue — the load is wrong *right now* — and how wrong it is
+ * scales with the load. Five pounds off a 315 squat is a rounding error; off a 65 lb overhead press it is
+ * a real cut. A single fixed number cannot serve both.
+ *
+ * So:
+ *   1. **Somewhere they have actually worked, if there is one.** A weight from a recent session that is
+ *      genuinely lighter beats any percentage — it is a real number this athlete has really moved for
+ *      real reps, which is the whole reason the app keeps a history.
+ *   2. **Otherwise ~10%**, rounded to something loadable and floored at the empty bar.
+ *
+ * Returns null when there is nothing sensible to suggest — bodyweight, or a load already at the bar.
+ * Null means say nothing, never zero.
+ */
+export function backOffTo(input: BackOffInput): number | null {
+  const { current, recent, equipment } = input;
+  if (!Number.isFinite(current) || current <= 0) return null;
+
+  const step = loadableStep(equipment);
+  const isBarbell = equipment === 'barbell';
+  const floor = isBarbell ? BAR_LB : step;
+  if (current <= floor) return null; // already as light as this lift goes
+
+  /* A real session beats a formula — but only one that is a MEANINGFUL step down. A weight 2 lb lighter
+     than today's is the same session, and offering it would be the app pretending to have an answer. */
+  const meaningful = current - Math.max(step, current * 0.04);
+  const fromHistory = recent.filter((w) => Number.isFinite(w) && w > 0 && w <= meaningful).sort((a, b) => b - a)[0];
+  if (fromHistory != null && fromHistory >= floor) return fromHistory;
+
+  const target = current * 0.9;
+  const rounded = Math.round(target / step) * step;
+  /* Never round back up to where we started: a 50 lb dumbbell press at 10% is 45, which rounds to 45 —
+     fine — but a 47.5 lb load would round to 45 too, and on a lift whose step is larger than the drop
+     the arithmetic can land exactly on `current`. One step down is the honest floor for a back-off. */
+  const next = Math.min(rounded, current - step);
+  return next >= floor ? next : floor;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -148,6 +278,25 @@ function workingWeight(sets: readonly { weight: number; reps: number }[]): numbe
   return best;
 }
 
+/**
+ * One past session reduced to the single figure the "Last" column shows — `{ weight: 185, reps: 10 }`.
+ *
+ * The WORKING weight (the mode, per above) paired with the BEST reps achieved at it. Both halves matter:
+ * the mode keeps a heavy single on the end of three back-off sets from being reported as the session, and
+ * the best reps at that weight is what the athlete is trying to beat. Averaging the reps instead would
+ * show a number they never actually did.
+ *
+ * Null when the session logged nothing loadable — a bodyweight-only or unlogged entry says nothing about
+ * what to do next, and the caller must render an em-dash rather than a zero.
+ */
+export function sessionPerformance(session: HistorySession): { weight: number; reps: number } | null {
+  const sets = workingSets(session);
+  if (sets.length === 0) return null;
+  const weight = workingWeight(sets)!;
+  const at = sets.filter((s) => s.weight === weight);
+  return { weight, reps: Math.max(...at.map((s) => s.reps)) };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // THE DECISION
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -159,6 +308,11 @@ export interface ProgressionInput {
   prescription: Prescription;
   /** Past sessions of THIS exercise, newest first. Only the two most recent are read. */
   history: readonly HistorySession[];
+  /**
+   * The catalogue's `equipmentId`. Optional, and its absence costs only precision — the increment falls
+   * back to the safe 5 lb notch rather than inventing a weight the rack does not have.
+   */
+  equipment?: string | null;
 }
 
 /**
@@ -188,7 +342,7 @@ export function progressionFor(input: ProgressionInput): Progression {
   const at = last.filter((s) => s.weight === weight);
   const when = input.history[0].startedAt;
   const basis = { weight, reps, when };
-  const step = incrementFor(pattern, experience);
+  const step = incrementFor(pattern, experience, input.equipment);
 
   // ── A drop worth noticing, but only across two sessions ────────────────────────────────────────────
   const prior = input.history[1] ? workingSets(input.history[1]) : [];
@@ -205,6 +359,32 @@ export function progressionFor(input: ProgressionInput): Progression {
 
   const everySetAtTop = at.length >= Math.min(rx.sets, at.length) && at.every((s) => s.reps >= top);
   const everySetAtBottom = at.every((s) => s.reps >= rx.reps);
+
+  /*
+   * ── A BODYWEIGHT LIFT PROGRESSES IN REPS, FULL STOP ──────────────────────────────────────────────
+   *
+   * `weight: 0` is a real logged answer in this app, not a missing one — it is how a pull-up, a push-up
+   * or a dip is recorded (`metrics.ts`: "a bodyweight set sets no weight record"). Run through the
+   * arithmetic below unguarded, three sets of twelve push-ups tops the range and the coach says *"go to
+   * 2.5 lb"*, which is not a thing anybody can do to a push-up and is the kind of line that teaches an
+   * athlete to stop reading the coach.
+   *
+   * So the weight branch is skipped entirely and the rep branch answers instead. Adding a weight belt is
+   * a real progression, but it is a change of exercise the athlete makes, not one the app assigns.
+   */
+  if (weight === 0) {
+    const best = Math.max(...at.map((s) => s.reps));
+    const target = everySetAtBottom ? Math.min(top, best + 1) : rx.reps;
+    return {
+      action: everySetAtBottom ? 'add_reps' : 'hold',
+      suggestedWeight: 0,
+      suggestedReps: target,
+      message: everySetAtBottom
+        ? `You got ${best} on ${input.exerciseName} — go for ${target} this time.`
+        : `${input.exerciseName} was short of ${rx.reps} last time — same again, get all ${rx.sets} sets.`,
+      basis,
+    };
+  }
 
   // ── Topped the range on every set: the weight goes up and the reps reset ───────────────────────────
   if (everySetAtTop && at.length >= rx.sets) {

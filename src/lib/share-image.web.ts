@@ -1,4 +1,4 @@
-import { CARD_PAD, CARD_W, drawRect, photoBlock, singlePhoto, type PlacedPhoto } from '@/domain/share/card-layout';
+import { CARD_PAD, CARD_W, drawRect, photoBlock, poseBlock, type PlacedPhoto } from '@/domain/share/card-layout';
 import type { SaveResult, ShareCardSpec } from './share-image';
 
 export type { SaveResult, ShareCardSpec, ShareCardLine } from './share-image';
@@ -113,10 +113,10 @@ export async function saveShareCard(spec: ShareCardSpec): Promise<SaveResult> {
   const BRAND_H = 96;
 
   // ── measure: lay the card out once to learn its height ──
-  const block = spec.template && spec.photoUrls.length >= 2
+  const block = spec.pairCount > 0 && spec.template && spec.photoUrls.length >= 2
     ? photoBlock(spec.template, spec.pairCount, CARD_PAD + BRAND_H)
     : spec.photoUrls.length
-      ? singlePhoto(CARD_PAD + BRAND_H)
+      ? poseBlock(spec.entryTemplate ?? 'single', spec.photoUrls.length, CARD_PAD + BRAND_H)
       : { photos: [] as PlacedPhoto[], height: 0, divider: false };
 
   let y = CARD_PAD + BRAND_H + block.height;
@@ -182,15 +182,15 @@ export async function saveShareCard(spec: ShareCardSpec): Promise<SaveResult> {
     ctx.fillStyle = BRONZE;
     ctx.fillRect(seam - 2, block.photos[0].y, 4, block.photos[0].h);
   }
-  // pose names above each grid row
-  if (spec.template === 'grid' && spec.poseLabels?.length) {
+  // pose names, wherever the geometry asked for one
+  if (spec.poseLabels?.length) {
     ctx.fillStyle = FAINT;
     ctx.font = `700 20px ${SANS}`;
     ctx.textAlign = 'left';
     ctx.letterSpacing = '2px';
     block.photos.forEach((p) => {
-      if (p.poseLabel === undefined) return;
-      const pose = spec.poseLabels?.[Math.floor(p.index / 2)];
+      if (p.labelIndex === undefined) return;
+      const pose = spec.poseLabels?.[p.labelIndex];
       if (pose) ctx.fillText(pose.toUpperCase(), p.x, p.y - 18);
     });
     ctx.letterSpacing = '0px';

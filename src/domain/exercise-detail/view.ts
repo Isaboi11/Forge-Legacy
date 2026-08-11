@@ -1,7 +1,7 @@
 /**
  * W-22 Exercise Detail — assembling one exercise's page from the three real sources.
  *
- *   identity + muscles  ← the 794-exercise catalog (`exercise-picker/data`)
+ *   identity + muscles  ← the 809-exercise catalog (`exercise-picker/data`)
  *   alternatives        ← the relationship graph (`exercise-relationships`, 5,698 edges)
  *   coaching copy       ← `exercise-coaching/integration`, the ONE sanctioned bridge
  *

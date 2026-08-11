@@ -341,3 +341,100 @@ test('a strength exercise with no completed sets is still part of the session', 
   };
   assert.deepEqual(buildSaveExercises(session).map((r) => r.name), ['Bench Press']);
 });
+
+// ── a hold is written down as a hold ─────────────────────────────────────────
+
+/**
+ * ⚠ WHAT A 60-SECOND PLANK USED TO LOOK LIKE IN THE DATABASE: `reps: 10`.
+ *
+ * `sessionSetsFor` gave a timed item the builder's default rep target, completing back-filled the actual
+ * from it, and this function wrote `s.actualReps ?? s.targetReps`. Nobody typed a ten and nobody did ten
+ * of anything. A timed set writes `duration_sec` — the column `workout_sets` has carried since 0096 —
+ * and sends `reps: null`, because "this set was never about reps" is a real answer and 10 is not.
+ */
+test('a timed strength set records seconds, not a fabricated rep count', async () => {
+  const { buildSaveExercises } = await import('../save-core.ts');
+  const session = {
+    workoutName: 'Test',
+    activityType: 'strength',
+    startedAt: new Date(0).toISOString(),
+    programId: null,
+    exercises: [
+      {
+        name: 'Plank',
+        catalogKey: 'plank',
+        section: 'main',
+        position: 0,
+        sets: [{ setIndex: 0, weight: null, targetReps: 0, targetSec: 60, durationSec: 60, actualReps: null, done: true }],
+      },
+    ],
+  };
+  const [row] = buildSaveExercises(session);
+  assert.equal(row.sets[0].reps, null, 'a hold has no rep count to store');
+  assert.equal(row.sets[0].duration_sec, 60);
+});
+
+test('a LOADED carry keeps its weight alongside its clock', async () => {
+  const { buildSaveExercises } = await import('../save-core.ts');
+  const session = {
+    workoutName: 'Test',
+    activityType: 'strength',
+    startedAt: new Date(0).toISOString(),
+    programId: null,
+    exercises: [
+      {
+        name: 'Dumbbell Farmer Carry',
+        catalogKey: 'dumbbell-farmer-carry',
+        section: 'main',
+        position: 0,
+        sets: [{ setIndex: 0, weight: 70, targetReps: 0, targetSec: 45, durationSec: 50, actualReps: null, done: true }],
+      },
+    ],
+  };
+  const [row] = buildSaveExercises(session);
+  assert.equal(row.sets[0].weight, 70, 'a carry has a real weight on it');
+  assert.equal(row.sets[0].weight_unit, 'lb');
+  assert.equal(row.sets[0].duration_sec, 50, 'what was held, not what was asked');
+  assert.equal(row.sets[0].reps, null);
+});
+
+test('an ordinary strength set is written exactly as it was', async () => {
+  const { buildSaveExercises } = await import('../save-core.ts');
+  const session = {
+    workoutName: 'Test',
+    activityType: 'strength',
+    startedAt: new Date(0).toISOString(),
+    programId: null,
+    exercises: [
+      { name: 'Bench Press', catalogKey: 'barbell-bench-press', section: 'main', position: 0, sets: [{ setIndex: 0, weight: 185, targetReps: 5, actualReps: 5, done: true }] },
+    ],
+  };
+  const [row] = buildSaveExercises(session);
+  assert.deepEqual(row.sets[0], { set_index: 0, weight: 185, weight_unit: 'lb', reps: 5 });
+});
+
+/**
+ * A hold contributes NO VOLUME and sets NO RECORD, and both fall out of `targetReps: 0` rather than
+ * needing a rule of their own — `effectiveReps` is 0, and `bestRecordWeight` already skips `reps < 1`.
+ * Asserted because the zero is doing two jobs quietly, and a later "helpful" default would break both.
+ */
+test('a weighted hold neither inflates volume nor announces a record', async () => {
+  const { sessionVolume, detectPRs } = await import('../metrics.ts');
+  const session = {
+    workoutName: 'Test',
+    activityType: 'strength',
+    startedAt: new Date(0).toISOString(),
+    programId: null,
+    exercises: [
+      {
+        name: 'Dumbbell Farmer Carry',
+        catalogKey: 'dumbbell-farmer-carry',
+        section: 'main',
+        position: 0,
+        sets: [{ setIndex: 0, weight: 70, targetReps: 0, targetSec: 45, durationSec: 45, actualReps: null, done: true }],
+      },
+    ],
+  };
+  assert.equal(sessionVolume(session), 0, 'seconds under load are not rep volume');
+  assert.deepEqual(detectPRs(session, {}), [], 'a carry is not a one-rep max');
+});

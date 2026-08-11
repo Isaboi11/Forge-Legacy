@@ -254,7 +254,22 @@ export function parseSessionCell(
       continue;
     }
 
-    const activity = strengthOnly ? null : activityIn(part);
+    /*
+     * ══ A STRENGTH COLUMN CAN STILL HOLD A RACE ══
+     *
+     * `strengthOnly` exists because "1-arm DB **row**" is a lift and "**Bike**-based strength today" is
+     * not a ride — a list of movements must not be classified by keyword. But a plan really does put
+     * "Utah Valley Marathon 26.2 miles" in that column, and filing a marathon as a lift at 3 × 10 is the
+     * same kind of wrong in the other direction.
+     *
+     * AN EXPLICIT TARGET IS THE DISCRIMINATOR. A phrase that names an activity AND states a distance or
+     * a clock is describing a bout; one that merely contains the word is describing a movement. Every
+     * lift in the sheet — "1-arm DB row 3x10/side", "walking lunge 2x10/side", "plank 3x45s" — carries
+     * sets and reps rather than miles or minutes, so none of them are caught by this.
+     */
+    const named = activityIn(part);
+    const hasTarget = durationIn(part) != null || distanceIn(part) != null;
+    const activity = !strengthOnly || hasTarget ? named : null;
     const name = nameFrom(part) || part;
 
     if (activity) {

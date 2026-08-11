@@ -7,6 +7,15 @@
  */
 
 import { ACTIVITY_LABEL, fmtDuration, type Modality } from './history-core.ts';
+/**
+ * ⚠ `durText`, NOT `fmtDuration`. They answer different questions and only one of them is right here.
+ *
+ * `fmtDuration` measures a SESSION — it floors at "< 1 min", because a workout that reads "45s" is a
+ * mis-timed workout. A SET of forty-five seconds is an ordinary plank, and "< 1 min" would erase the
+ * only number on the row. `durText` is the prescription's own vocabulary ("45s", "1m 30s"), which is
+ * also what the Active Workout draws in the Target column — so the ask and the answer read alike.
+ */
+import { durText } from '../program/prescription.ts';
 import type { WorkoutPlaylistLink } from '../workout/playlist.ts';
 
 export interface DetailSet {
@@ -14,6 +23,15 @@ export interface DetailSet {
   weight: number | null;
   weightUnit: string | null;
   reps: number | null;
+  /**
+   * Seconds held, for a set measured by the clock rather than by repetitions — a Plank, a Dead Hang,
+   * a loaded carry. Null on an ordinary strength set, which is most of them.
+   *
+   * `workout_sets.duration_sec` has existed since 0096 and only conditioning legs ever wrote it. A timed
+   * STRENGTH set now writes it too, because the alternative was the fabricated rep count that shipped
+   * before it: a 60s Plank was stored as "10 reps" and read back here as one.
+   */
+  durationSec: number | null;
 }
 export interface DetailExercise {
   name: string;
@@ -167,6 +185,17 @@ export function setLine(s: DetailSet): string {
   const unit = s.weightUnit ?? 'lbs';
   const hasW = s.weight != null && s.weight > 0;
   const isBw = s.weight === 0;
+  /*
+   * A HOLD IS READ IN SECONDS, and it is read FIRST.
+   *
+   * A timed set carries no reps by construction, so every arm below it would fall through to `''` and
+   * the athlete's forty-five second plank would appear in their history as an exercise name with an
+   * empty line under it. `40 lbs × 45s` is the loaded-carry shape; `45s` the unloaded one.
+   */
+  if (s.durationSec != null && s.durationSec > 0) {
+    const d = durText(s.durationSec);
+    return hasW ? `${s.weight} ${unit} × ${d}` : isBw ? `BW × ${d}` : d;
+  }
   if (hasW && s.reps != null) return `${s.weight} ${unit} × ${s.reps}`;
   if (hasW) return `${s.weight} ${unit} × —`;
   if (isBw && s.reps != null) return `BW × ${s.reps}`;

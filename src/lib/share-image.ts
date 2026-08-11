@@ -1,4 +1,4 @@
-import type { ShareTemplate } from '@/domain/share/card-layout';
+import type { EntryTemplate, ShareTemplate } from '@/domain/share/card-layout';
 
 /**
  * Save the share card as an image.
@@ -19,14 +19,16 @@ export interface ShareCardLine {
 }
 
 export interface ShareCardSpec {
-  /** Every photo, flattened [then, now, then, now, …] for a comparison, or one for a single share. */
+  /** Every photo — flattened [then, now, then, now, …] for a comparison, one per pose for a capture. */
   photoUrls: string[];
   /** Per-photo pan/zoom, index-aligned with `photoUrls`. */
   transforms?: ({ tx: number; ty: number; scale: number } | undefined)[];
-  /** Null for a single photo or a card with none. */
+  /** The comparison template. Null when this card is a single capture (see `entryTemplate`) or has no photos. */
   template: ShareTemplate | null;
+  /** How a single capture's poses are laid out. Ignored when `pairCount` > 0. */
+  entryTemplate?: EntryTemplate;
   pairCount: number;
-  /** Pose names, one per pair — drawn above each grid row. */
+  /** Pose names — one per pair on a comparison grid, one per photo on a capture. */
   poseLabels?: string[];
   thenLabel?: string;
   nowLabel?: string;

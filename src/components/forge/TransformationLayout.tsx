@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
+import { StyleSheet, Text, View, type LayoutChangeEvent, type StyleProp, type ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
 
 import { BeforeAfterSlider } from '@/components/forge/BeforeAfterSlider';
@@ -7,11 +7,39 @@ import type { AlignedPhoto, TransformationLayoutData } from '@/data/squad-feed-l
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 
 /**
- * Renders a shared transformation in the chosen template — slider (draggable), side-by-side, stacked, or a
- * multi-pose grid — from `TransformationLayoutData` pairs. Used in the Share preview and the squad post it
- * creates, so both look identical. Per-photo alignment (pan/zoom) is applied in every template.
+ * Renders a shared transformation in the chosen format, from `TransformationLayoutData`. Used in the Share
+ * preview and in the post it creates, so both look identical. Per-photo alignment (pan/zoom) is applied
+ * everywhere.
+ *
+ * TWO FAMILIES, ONE COMPONENT. A COMPARISON carries `pairs` and renders then/now — slider (draggable),
+ * side-by-side, stacked, or a multi-pose grid. A SINGLE CAPTURE carries `shots` and renders the poses
+ * themselves — one photo, a 2-up gallery, or a full-width column. `shots` is checked first because a
+ * capture has no then/now: it is not a comparison with a side missing, it is a different thing.
  */
 export function TransformationLayout({ data, compact = false }: { data: TransformationLayoutData; compact?: boolean }) {
+  const shots = data.shots ?? [];
+  if (shots.length) {
+    if (data.template === 'gallery') {
+      return (
+        <View style={styles.galleryGrid}>
+          {shots.map((s, i) => (
+            <Shot key={`${s.label}-${i}`} shot={s} style={styles.galleryCell} />
+          ))}
+        </View>
+      );
+    }
+    if (data.template === 'column') {
+      return (
+        <View style={styles.gridStack}>
+          {shots.map((s, i) => (
+            <Shot key={`${s.label}-${i}`} shot={s} />
+          ))}
+        </View>
+      );
+    }
+    return <Shot shot={shots[0]} />; // single
+  }
+
   const pairs = data.pairs ?? [];
   if (!pairs.length) return null;
   const first = pairs[0];
@@ -64,6 +92,21 @@ export function TransformationLayout({ data, compact = false }: { data: Transfor
   );
 }
 
+/**
+ * One pose from a single capture. The image is wrapped in a ROW so `AlignedImage`'s `flex: 1` resolves
+ * against the width — in a column it would resolve against a height nothing has set, and collapse.
+ */
+function Shot({ shot, style }: { shot: { label: string; photo: AlignedPhoto }; style?: StyleProp<ViewStyle> }) {
+  return (
+    <View style={[styles.gridRow, style]}>
+      {shot.label ? <Text style={styles.gridPose}>{shot.label}</Text> : null}
+      <View style={styles.pairRow}>
+        <AlignedImage photo={shot.photo} />
+      </View>
+    </View>
+  );
+}
+
 function Labeled({ label, sub, photo, now, stacked = true }: { label: string; sub?: string; photo: AlignedPhoto; now: boolean; stacked?: boolean }) {
   return (
     <View style={stacked ? undefined : styles.col}>
@@ -106,6 +149,9 @@ const styles = StyleSheet.create({
   stack: { gap: 10 },
   gridStack: { gap: 16 },
   gridRow: { gap: 7 },
+  galleryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  /* Two per row, computed off the gap so the pair always fits — `48%` leaves a stray column on narrow cards. */
+  galleryCell: { width: '48.5%', flexGrow: 1, flexBasis: '48.5%' },
   gridPose: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.gray600 },
   pairRow: { flexDirection: 'row', gap: 8 },
   col: { flex: 1, minWidth: 0, gap: 5 },

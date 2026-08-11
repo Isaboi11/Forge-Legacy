@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
+import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { EquipIcon } from '@/components/forge/EquipIcon';
 import { ExercisePoster } from '@/components/forge/ExercisePoster';
@@ -16,7 +17,10 @@ import { canDoExercise } from '@/domain/home-gym/equipment';
 import { dismissGearPrompt, getGearOnly, getGearPromptDismissed, setGearOnly } from '@/lib/gear-filter';
 import { writeBuilderInbox, type BuilderSection } from '@/lib/builder-inbox';
 import { addFavorite, fetchFavoriteKeys, fetchRecentExerciseKeys, removeFavorite } from '@/data/exercise-prefs-live';
-import { useQuery } from '@/lib/useQuery';
+import { createCustomExercise } from '@/data/custom-exercises-live';
+import { customKey, emptyDraft } from '@/domain/exercise-picker/custom-core';
+import { useToast } from '@/hooks/useCeremony';
+import { errorMessage, useQuery } from '@/lib/useQuery';
 import {
   CONDITIONING_ROWS,
   buildSections,
@@ -66,7 +70,7 @@ const resolveKey = (k: string): PickerItem | undefined =>
  * the builder-inbox (drained by the Program Builder), since the two round-trips must not consume each
  * other's payload.
  *
- * Data is the REAL 794-exercise catalog (see domain/exercise-picker/data + catalog-core for the mapping
+ * Data is the REAL 809-exercise catalog (see domain/exercise-picker/data + catalog-core for the mapping
  * onto the 6 locked browse categories). Deferred vs the `.dc`: the row ⓘ → Exercise Detail (W-22), the
  * "just this / this + future" scope writing differently (both commit the same today).
  *
@@ -102,6 +106,12 @@ export default function ExercisePickerScreen() {
   const [persistOpen, setPersistOpen] = useState(false);
   const [toast, setToast] = useState<{ to: string } | null>(null);
   const navTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /* Inline creation (W-28 §1.2 / §2.3): the name-only path, opened from the empty state with what the
+     athlete already typed. The full form is `/custom-exercise`, one tap further on. */
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createUnit, setCreateUnit] = useState<'reps' | 'time'>('reps');
+  const [creating, setCreating] = useState(false);
+  const { showToast } = useToast();
 
   // id → display label, so an applied-filter chip can name itself.
   const labelFor = useMemo(() => {
@@ -211,6 +221,44 @@ export default function ExercisePickerScreen() {
   const applyFilter = () => {
     setApplied(draft);
     setFilterOpen(false);
+  };
+
+  /**
+   * Create the exercise the athlete just failed to find, and hand it straight back to whatever asked.
+   *
+   * ⚠ IT IS SENT ON, NOT MERELY SAVED. Creating an exercise mid-workout and being returned to an empty
+   * search result would mean doing the search again to use the thing you just made — and this path is
+   * reached from the Active Workout, standing at a machine. So it writes the row, wraps it in the same
+   * `PickedExercise` shape any catalogue row uses, and puts it in the inbox: the workout appends it and
+   * the athlete logs a set. `unit` rides along on the row, so a custom HOLD gets its countdown.
+   */
+  const createInline = async () => {
+    const name = search.trim();
+    if (!name || creating) return;
+    setCreating(true);
+    try {
+      const id = await createCustomExercise({ ...emptyDraft(), name, unit: createUnit });
+      const item: PickedExercise = {
+        catalogKey: customKey(id),
+        name,
+        equip: 'Custom',
+        muscles: [],
+        type: 'Strength',
+        unit: createUnit,
+      };
+      setCreateOpen(false);
+      if (isReplace) {
+        if (targetIdx >= 0) await writeExerciseInbox({ kind: 'replace', targetIdx, item });
+      } else {
+        await writeExerciseInbox({ kind: 'add', items: [item] });
+      }
+      router.back();
+    } catch (e) {
+      setCreateOpen(false);
+      showToast(errorMessage(e));
+    } finally {
+      setCreating(false);
+    }
   };
 
   const commitReplace = () => {
@@ -477,7 +525,7 @@ export default function ExercisePickerScreen() {
                 <View style={styles.rows}>{sections.results.map(renderRow)}</View>
               </>
             )}
-            {/* BELOW the catalog, not above it. Pinning three runs over 794 lifts made every athlete
+            {/* BELOW the catalog, not above it. Pinning three runs over 809 lifts made every athlete
                 adding a bench press scroll past cardio first — paying on the common case to help the
                 rare one. Search is where finding them actually matters, and it still surfaces them
                 instantly. */}
@@ -505,6 +553,21 @@ export default function ExercisePickerScreen() {
             </View>
             <Text style={styles.emptyTitle}>No matches</Text>
             <Text style={styles.emptyBody}>Nothing fits that search and filter. Try clearing a filter or a different term.</Text>
+            {/* ══ THE DEAD END BECOMES A DOOR ══
+                "It isn't in the list" was previously the end of the road — and it is the exact moment
+                the athlete knows what is missing AND has already typed its name. Offering creation here
+                costs them one tap and no retyping. Name-only, per W-28 §1.2's "fastest creation path":
+                a form in the middle of a workout is a form that gets abandoned. */}
+            {search.trim() && !isBuilder ? (
+              <Pressable
+                onPress={() => setCreateOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel={`Add ${search.trim()} as your own exercise`}
+                style={({ pressed }) => [styles.createBtn, pressed ? styles.createBtnPressed : null]}
+              >
+                <Text style={styles.createBtnText}>Add “{search.trim()}” as your own</Text>
+              </Pressable>
+            ) : null}
           </View>
         )}
       </ScrollView>
@@ -540,6 +603,39 @@ export default function ExercisePickerScreen() {
           {confirmLabel}
         </Button>
       </View>
+
+      {/* ══ INLINE CREATION — NAME ONLY, AND THE NAME IS ALREADY TYPED ══
+          W-28 §1.2 keeps this distinct from the full form on purpose: this is the path taken mid-set,
+          and every field added to it is a reason to give up and log the exercise under the wrong name.
+          The one question it does ask is reps-or-hold, because getting that wrong is not cosmetic — it
+          decides whether the set draws a rep box or a countdown, and correcting it later means editing
+          an exercise you created to avoid an interruption. */}
+      <BottomSheet open={createOpen} onClose={() => setCreateOpen(false)} title="Add your own exercise">
+        <Text style={styles.createName} numberOfLines={2}>
+          {search.trim()}
+        </Text>
+        <Text style={styles.createHint}>Saved to your library. You can add muscles, equipment and notes later.</Text>
+        <View style={styles.createRow}>
+          {([
+            { key: 'reps' as const, label: 'Reps' },
+            { key: 'time' as const, label: 'Hold / time' },
+          ]).map((o) => (
+            <Pressable
+              key={o.key}
+              onPress={() => setCreateUnit(o.key)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: createUnit === o.key }}
+              accessibilityLabel={o.label}
+              style={[styles.createChip, createUnit === o.key ? styles.createChipOn : null]}
+            >
+              <Text style={[styles.createChipText, createUnit === o.key ? styles.createChipTextOn : null]}>{o.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+        <Button variant="primary" fullWidth disabled={creating} onPress={() => void createInline()} accessibilityLabel="Create and add">
+          {creating ? 'Adding…' : isReplace ? 'Create and swap in' : 'Create and add'}
+        </Button>
+      </BottomSheet>
 
       {/* filter sheet */}
       {filterOpen ? (
@@ -742,6 +838,17 @@ const styles = StyleSheet.create({
   emptyIcon: { width: 52, height: 52, borderRadius: 26, borderWidth: 1, borderColor: flColor.charcoal600, alignItems: 'center', justifyContent: 'center' },
   emptyTitle: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', color: flColor.cream100 },
   emptyBody: { fontSize: 13, lineHeight: 19, color: flColor.gray400, textAlign: 'center', maxWidth: 230 },
+
+  createBtn: { marginTop: 18, paddingHorizontal: 18, paddingVertical: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: 'rgba(176,124,68,0.12)' },
+  createBtnPressed: { opacity: 0.85 },
+  createBtnText: { fontSize: 13.5, fontWeight: '600', color: flColor.bronze300, textAlign: 'center' },
+  createName: { fontFamily: flFont.display, fontSize: 20, fontWeight: '700', color: flColor.cream100, textAlign: 'center' },
+  createHint: { marginTop: 8, fontSize: 12.5, lineHeight: 18, color: flColor.gray600, textAlign: 'center' },
+  createRow: { flexDirection: 'row', gap: 9, marginTop: 18, marginBottom: 16 },
+  createChip: { flex: 1, paddingVertical: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900, alignItems: 'center' },
+  createChipOn: { borderColor: flColor.bronze400, backgroundColor: 'rgba(176,124,68,0.16)' },
+  createChipText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
+  createChipTextOn: { color: flColor.cream100 },
 
   footer: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 18, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: flColor.charcoal900, gap: 12 },
 

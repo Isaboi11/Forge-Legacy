@@ -43,13 +43,18 @@ export { extensionFor } from '@/lib/storage-upload-core';
  * the platform's own URL session, which means constant memory, real byte counts to put in front of the
  * athlete, and a cancel that actually cancels.
  *
- * ══ WHAT IT DOES NOT DO ══
+ * ══ WHAT IT DOES NOT DO — AND WHAT NOW HAPPENS UPSTREAM INSTEAD ══
  *
- * It does not compress. Nothing in this stack transcodes video: `videoQuality` caps what iOS RECORDS
- * and a library clip arrives at whatever the phone saved. The libraries that would fix that are native
- * dependencies, and this pass ships over the air. So the levers are the 30-second cap
- * (`MAX_VIDEO_SECONDS`), the iOS record quality, the size guard below, and streaming — and that last
- * one is most of the win, because the heap blob is the part that was actually failing.
+ * This still does not compress, and it should not: an upload's job is to move bytes reliably and report
+ * honestly about it. But the paragraph that used to sit here — *"nothing in this stack transcodes video…
+ * the libraries that would fix that are native dependencies, and this pass ships over the air"* — has
+ * been overtaken. `useMediaPicker` transcodes to 720p before an athlete ever reaches this function, so
+ * the guard below now refuses a clip that is genuinely too large rather than one that merely came out
+ * of a 4K camera.
+ *
+ * ⚠ THE TRANSCODE IS NATIVE-ONLY AND NEEDS A NEW BUILD. On the web preview, and on any install running
+ * an older binary, the old behaviour is exactly what it was — which is why the size guard, its message
+ * and the streaming path all stay as they are. They are what catches the clips compression cannot.
  */
 
 export interface UploadOpts {
@@ -72,11 +77,15 @@ export class UploadError extends Error {
   }
 }
 
-/** 50 MB. Matches the `squad-media` bucket's `file_size_limit`, set in 0122 so the two cannot drift. */
-export const MAX_CHECKIN_BYTES = 50 * 1024 * 1024;
-
-/** Photos are already downscaled by `useMediaPicker`; this is a backstop against a stray original. */
-export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+/**
+ * Re-exported, not defined here — the numbers moved to `storage-upload-core` so a `node --test` file can
+ * assert against them. Nothing importing them has to know or change.
+ *
+ * The move had a reason beyond tidiness: `video-compress-core` has to guarantee its "worth compressing"
+ * threshold stays well below the ceiling it protects, and it could not read a constant that only exists
+ * in a file importing `expo-file-system`. A rule nothing can test is a rule that drifts.
+ */
+export { MAX_CHECKIN_BYTES, MAX_IMAGE_BYTES } from './storage-upload-core';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
 const ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';

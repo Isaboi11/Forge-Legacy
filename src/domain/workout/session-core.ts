@@ -66,8 +66,15 @@ export function sessionSetsFor(ex: ProgramExercise, load?: LoadContext): Session
        * `targetReps` is arithmetic input — it feeds volume, the e1RM behind PR detection, and the reps
        * column written at save. Inventing "8" for a set whose whole point is that nobody knows the number
        * would put a fabricated rep count into the athlete's history and, worse, into a personal record.
+       *
+       * ⚠ A TIMED SET CARRIES ZERO FOR THE SAME REASON, AND THIS IS A BUG FIX. `repTargets` fills an
+       * unspecified item out to `DEFAULT_REPS`, so a 60s Plank — which prescribes `durationSec` and no
+       * reps at all — arrived here as `targetReps: 10`. The Target column correctly drew "1m" while the
+       * set underneath it was a ten-rep set, completing back-filled the actual to 10, and the save wrote
+       * "Plank — 10 reps" into the athlete's history. A hold has no rep count; claiming one is the same
+       * fabrication as claiming eight for a set taken to failure. The ask lives in `targetSec` below.
        */
-      targetReps: t === 'F' ? 0 : t,
+      targetReps: t === 'F' || ex.durationSec != null ? 0 : t,
       /*
        * The top of the range, carried through so the athlete can see what they are working toward at
        * the set rather than only on the program screen. Never on a to-failure set (there is no ceiling)

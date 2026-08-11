@@ -259,7 +259,7 @@ function buildDay(
 
     /* HOW to do it, not just how much — the line the athlete reads under THE PLAN SAYS. Keyed on the
        movement pattern and the goal, so it is a rulebook decision like every other number here rather
-       than 721 hand-written strings. `null` for an advanced lifter on an accessory, deliberately. */
+       than 733 hand-written strings. `null` for an advanced lifter on an accessory, deliberately. */
     const cue = cueFor({
       pattern: found.exercise.pattern,
       goal: opts.goal,

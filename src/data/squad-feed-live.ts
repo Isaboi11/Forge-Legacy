@@ -15,7 +15,7 @@ import type { WorkoutPlaylistLink } from '@/domain/workout/playlist';
  * formcheck/challenge/traintogether need subsystems that don't exist yet and are intentionally omitted.
  */
 
-export type SquadPostType = 'checkin' | 'recap' | 'pr' | 'formcheck' | 'transformation' | 'discussion' | 'announcement' | 'weekly';
+export type SquadPostType = 'checkin' | 'progress' | 'recap' | 'pr' | 'formcheck' | 'transformation' | 'discussion' | 'announcement' | 'weekly';
 
 // ── Weekly Recap (SQ-D8, migration 0057) ──
 // Snapshotted at generation time, so a week's summary can't silently change because someone later
@@ -95,7 +95,16 @@ export interface SquadMedia {
 }
 
 // ── Transformation share layout (templates) ──
+/** How a COMPARISON (two captures) is laid out. */
 export type ShareTemplate = 'slider' | 'sidebyside' | 'stacked' | 'grid';
+/**
+ * How a SINGLE capture is laid out. Deliberately disjoint from `ShareTemplate` — one stored `template`
+ * value must never mean two things, and a capture posted as a gallery has no then/now to place.
+ */
+export type EntryTemplate = 'single' | 'gallery' | 'column';
+export const ENTRY_TEMPLATES: EntryTemplate[] = ['single', 'gallery', 'column'];
+export const isEntryTemplate = (t: string): t is EntryTemplate => (ENTRY_TEMPLATES as string[]).includes(t);
+
 export interface AlignedPhoto {
   url: string;
   transform?: { tx: number; ty: number; scale: number };
@@ -105,13 +114,67 @@ export interface ComparePair {
   then: AlignedPhoto;
   now: AlignedPhoto;
 }
+/** One pose from a single capture — the gallery equivalent of a `ComparePair`. */
+export interface PoseShot {
+  label: string;
+  photo: AlignedPhoto;
+}
 export interface TransformationLayoutData {
-  template: ShareTemplate;
+  template: ShareTemplate | EntryTemplate;
   thenLabel?: string;
   nowLabel?: string;
   elapsed?: string;
   pairs: ComparePair[];
+  /**
+   * A single capture's poses. Present INSTEAD of `pairs` — `shots` is what tells every reader this is one
+   * capture rather than a comparison, so nothing has to guess from an empty `pairs` array. Absent on every
+   * post written before this existed, which reads correctly as "a comparison, or a plain photo".
+   */
+  shots?: PoseShot[];
 }
+
+// ── Progress Photo Post card ──
+/**
+ * The card a `progress` post carries, exactly as its author composed it.
+ *
+ * SNAPSHOTTED, like the recap summary beside it. The entry it came from can be edited or deleted; a card
+ * squadmates have already seen and commented on must not silently rearrange itself, so the format, the
+ * style, the chosen poses IN ORDER, their URLs and the toggled lines are all stored on the post.
+ *
+ * IT RIDES IN `layout`, NOT A NEW COLUMN. `layout` is untyped jsonb (0045) and both feed RPCs already
+ * return it, so a progress card needs no migration and no RPC change. `kind` discriminates it from the
+ * transformation layout that shares the column — see `isProgressCard`. Every row written before this
+ * existed has no `kind`, which reads correctly as "a transformation layout".
+ */
+export interface ProgressCardPhoto {
+  url: string;
+  /** The pose's short name — 'Front', 'Arms Up'. Drawn only when the author left pose labels on. */
+  short: string;
+  /** The pose key, kept so a reader can say which pose this was without matching URLs. */
+  pose: string;
+}
+export interface ProgressPostCard {
+  kind: 'progress-card';
+  format: '1x1' | '4x5';
+  style: 'grid' | 'hero';
+  /** The Transformation entry this was composed from. */
+  entryId: string;
+  date: string;
+  meta: string | null;
+  chapter: string | null;
+  athlete: string;
+  photos: ProgressCardPhoto[];
+  incl: { date: boolean; meta: boolean; chapter: boolean; name: boolean; pose: boolean };
+}
+
+/** Either shape the `layout` column can hold. */
+export type PostLayout = TransformationLayoutData | ProgressPostCard;
+
+export const isProgressCard = (l: PostLayout | null | undefined): l is ProgressPostCard =>
+  !!l && (l as ProgressPostCard).kind === 'progress-card' && Array.isArray((l as ProgressPostCard).photos);
+
+/** The transformation half of the column, or null when this post carries the other shape. */
+export const asTransformationLayout = (l: PostLayout | null | undefined): TransformationLayoutData | null => (l && !isProgressCard(l) ? l : null);
 
 /** Snapshot of a completed workout captured at recap-post time (survives later edits to the workout). */
 export interface RecapExercise {
@@ -140,13 +203,18 @@ export interface SquadPostTypeDef {
 /**
  * The composer's palette, in display order. Announcement is owner-only.
  *
+ * `progress` REPLACED `checkin` AS THE FIRST MEMBER TYPE. A check-in was a sentence saying you trained;
+ * a progress post is the capture itself, laid out for a feed, and it is now the most common thing a
+ * member posts. Picking it does not open a text form — it opens Progress Photo Post, which composes the
+ * card. See `LEGACY_SQUAD_POST_TYPES` for what happened to the old one.
+ *
  * `transformation` posts a comparison built from the athlete's OWN Transformation entries (L-17) rather than
  * from loose photos — the gallery is where the captures and their pose alignment live, so picking two entries
  * yields the same aligned pair layout the gallery's own Share flow produces. Two entries with at least one
  * pose in common are required, which is why the composer offers the gallery instead when there aren't.
  */
 export const SQUAD_POST_TYPES: SquadPostTypeDef[] = [
-  { id: 'checkin', label: 'Check-in', ownerOnly: false, blurb: 'Log that you trained today.' },
+  { id: 'progress', label: 'Progress Photos', ownerOnly: false, blurb: 'Share your progress photos.' },
   { id: 'recap', label: 'Workout Recap', ownerOnly: false, blurb: 'Share how the session went.' },
   { id: 'pr', label: 'PR / Milestone', ownerOnly: false, blurb: 'Mark a personal record for the squad.' },
   { id: 'formcheck', label: 'Form Check', ownerOnly: false, blurb: 'Post a lift for the squad’s eyes.' },
@@ -155,7 +223,18 @@ export const SQUAD_POST_TYPES: SquadPostTypeDef[] = [
   { id: 'announcement', label: 'Squad Announcement', ownerOnly: true, blurb: 'Owner note pinned for the squad.' },
 ];
 
-export const squadPostTypeDef = (id: SquadPostType): SquadPostTypeDef => SQUAD_POST_TYPES.find((t) => t.id === id) ?? SQUAD_POST_TYPES[0];
+/**
+ * RETIRED TYPES THAT STILL HAVE POSTS.
+ *
+ * `checkin` can no longer be authored, but squads have years of them in their feeds and every one must
+ * keep rendering with its own name and its own glyph. Retiring a type is a change to what the composer
+ * OFFERS, never to what the feed can READ — dropping it from the registry would have made every historic
+ * check-in fall back to the first entry in the list and describe itself as a progress post.
+ */
+export const LEGACY_SQUAD_POST_TYPES: SquadPostTypeDef[] = [{ id: 'checkin', label: 'Check-in', ownerOnly: false, blurb: 'Log that you trained today.' }];
+
+export const squadPostTypeDef = (id: SquadPostType): SquadPostTypeDef =>
+  SQUAD_POST_TYPES.find((t) => t.id === id) ?? LEGACY_SQUAD_POST_TYPES.find((t) => t.id === id) ?? SQUAD_POST_TYPES[0];
 
 export interface SquadFeedPost {
   id: string;
@@ -183,7 +262,8 @@ export interface SquadFeedPost {
    * as "no session to open" and leaves the card behaving exactly as it did.
    */
   workoutId: string | null;
-  layout: TransformationLayoutData | null;
+  /** A transformation comparison, or a progress card — discriminate with `isProgressCard`. */
+  layout: PostLayout | null;
   /** 'weekly' only — the generated summary. Null on every other type. */
   recap: WeeklyRecap | null;
 }
@@ -223,7 +303,7 @@ interface FeedRow {
   workout_summary: WorkoutSummary | null;
   /** Added to both squad RPCs in 0117; absent (undefined) on a database without it. */
   workout_id?: string | null;
-  layout: TransformationLayoutData | null;
+  layout: PostLayout | null;
   recap: WeeklyRecapRow | null;
 }
 
@@ -308,8 +388,22 @@ export interface NewSquadPost {
   media?: SquadMedia[];
   workoutId?: string | null;
   workoutSummary?: WorkoutSummary | null;
-  layout?: TransformationLayoutData | null;
+  layout?: PostLayout | null;
 }
+
+/**
+ * What a post says when its author wrote nothing. Only the two types whose SUBJECT is not the text —
+ * a check-in is the act of training, a progress post is the card — get a line put in their mouth; every
+ * other type either requires a body or is allowed to have none.
+ *
+ * `detailFor` knows these strings and suppresses them, so a card never prints the same sentence twice.
+ */
+const AUTO_BODY: Partial<Record<SquadPostType, string>> = {
+  checkin: 'Checked in — trained today.',
+  progress: 'Progress photos.',
+};
+
+const fallbackBody = (type: SquadPostType, body: string): string | null => body || AUTO_BODY[type] || null;
 
 /** Compose a post. Returns the new post id. RLS rejects an announcement from a non-owner. */
 export async function addSquadPost(input: NewSquadPost): Promise<string> {
@@ -323,14 +417,15 @@ export async function addSquadPost(input: NewSquadPost): Promise<string> {
     squad_id: input.squadId,
     author_id: user.id,
     type: input.type,
-    body: input.type === 'checkin' && !body ? 'Checked in — trained today.' : body || null,
+    body: fallbackBody(input.type, body),
     pr_value: input.type === 'pr' ? (input.prValue ?? '').trim() || null : null,
     pr_exercise: input.type === 'pr' ? (input.prExercise ?? '').trim() || null : null,
     pr_label: input.type === 'pr' ? (input.prLabel ?? '').trim() || 'Squad PR' : null,
     media: input.media ?? [],
     workout_id: input.type === 'recap' ? input.workoutId ?? null : null,
     workout_summary: input.type === 'recap' ? input.workoutSummary ?? null : null,
-    layout: input.type === 'transformation' ? input.layout ?? null : null,
+    // Two shapes, one column (0045) — a comparison layout or a progress card, never both.
+    layout: input.type === 'transformation' || input.type === 'progress' ? input.layout ?? null : null,
   };
   const { data, error } = await supabase.from('squad_posts').insert(row).select('id').single();
   if (error) throw error;
@@ -513,6 +608,9 @@ export function timeAgo(iso: string): string {
 /** The one-line "who + verb" lead for a feed card (discussion has none — the body IS the line). */
 export function leadFor(p: Pick<SquadFeedPost, 'type' | 'prExercise'>): string {
   switch (p.type) {
+    case 'progress':
+      return 'posted progress photos.';
+    // Retired from the composer, never from the feed — see LEGACY_SQUAD_POST_TYPES.
     case 'checkin':
       return 'checked in — trained today.';
     case 'recap':
@@ -532,9 +630,16 @@ export function leadFor(p: Pick<SquadFeedPost, 'type' | 'prExercise'>): string {
   }
 }
 
-/** The secondary line under the lead. PR → "315 lb · Squad PR"; else a trimmed body excerpt. */
+/**
+ * The secondary line under the lead. PR → "315 lb · Squad PR"; else a trimmed body excerpt.
+ *
+ * A body this file WROTE is not an excerpt of anything — printing it here put "Checked in — trained
+ * today." directly beneath a lead reading "checked in — trained today.", and a progress post would have
+ * done the same. The author's own words always survive; only the stand-in is dropped.
+ */
 export function detailFor(p: Pick<SquadFeedPost, 'type' | 'body' | 'prValue' | 'prLabel'>): string {
   if (p.type === 'pr' && p.prValue) return `${p.prValue} · ${p.prLabel || 'Squad PR'}`;
   const b = (p.body ?? '').replace(/\s+/g, ' ').trim();
+  if (b === AUTO_BODY[p.type]) return '';
   return b.length > 90 ? `${b.slice(0, 90)}…` : b;
 }

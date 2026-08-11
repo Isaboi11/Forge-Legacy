@@ -15,7 +15,9 @@ import type { ProgramExercise } from '@/data/programs-live';
 import {
   CARDIO_ACTIVITIES,
   bumpDistance,
+  bumpDuration,
   bumpPace,
+  fmtDuration,
   bumpSpeed,
   distanceLabel,
   effortLabel,
@@ -293,6 +295,13 @@ export default function WorkoutBuilderScreen() {
                       }),
                     )
                   }
+                  /* THE CLOCK. Same gap the Program Builder had: `targetDurationSec` was saved and
+                     read back faithfully with no control anywhere to set it. */
+                  onTime={(dir) =>
+                    patch(sec.key, (l) =>
+                      l.map((x, k) => (k !== i ? x : { ...x, targetSec: bumpDuration(x.targetSec ?? null, dir) })),
+                    )
+                  }
                   onPair={() => patch(sec.key, (l) => pairWithNext(l, i))}
                   onUnpair={() => patch(sec.key, (l) => unpairAt(l, i))}
                 />
@@ -391,6 +400,7 @@ function Row({
   onRemove,
   onSets,
   onReps,
+  onTime,
   onPair,
   onUnpair,
 }: {
@@ -403,6 +413,8 @@ function Row({
   onRemove: () => void;
   onSets: (dir: 1 | -1) => void;
   onReps: (dir: 1 | -1) => void;
+  /** Minutes on the clock — cardio only. */
+  onTime: (dir: 1 | -1) => void;
   onPair: () => void;
   onUnpair: () => void;
 }) {
@@ -468,6 +480,17 @@ function Row({
         ) : (
           <Stepper label="sets" value={String(item.sets ?? 1)} onDown={() => onSets(-1)} onUp={() => onSets(1)} name={item.name} />
         )}
+        {/* A BOUT CAN BE PRESCRIBED BY THE CLOCK, BY THE DISTANCE, OR BY BOTH — the same three targets
+            the Program Builder offers, so a day built here and a day built there mean the same thing. */}
+        {cardio ? (
+          <Stepper
+            label={item.targetSec == null ? '' : 'time'}
+            value={item.targetSec == null ? 'Open' : fmtDuration(item.targetSec)}
+            onDown={() => onTime(-1)}
+            onUp={() => onTime(1)}
+            name={item.name}
+          />
+        ) : null}
         {!cardio ? (
           <Stepper label="reps" value={String(item.reps ?? 1)} onDown={() => onReps(-1)} onUp={() => onReps(1)} name={item.name} />
         ) : hasRate ? (

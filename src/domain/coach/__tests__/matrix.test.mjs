@@ -1,5 +1,5 @@
 /**
- * matrix.test.mjs — every athlete the coach claims to serve, against the real 721-exercise catalogue.
+ * matrix.test.mjs — every athlete the coach claims to serve, against the real 733-exercise catalogue.
  *
  * ══ WHY THIS IS THE TEST THAT MATTERS ══
  *

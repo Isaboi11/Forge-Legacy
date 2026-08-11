@@ -16,6 +16,18 @@ export interface PickedExercise {
   equip: string;
   muscles: string[];
   type: string;
+  /**
+   * `'time'` when this movement is measured by the clock — a plank, a carry, a hold.
+   *
+   * ⚠ CARRIED ONLY FOR A CUSTOM EXERCISE, and that asymmetry is deliberate. For a catalogue row the
+   * logger reads `unit` from `itemByKey`, because the catalogue is the authority on what a movement is
+   * and a copy travelling through AsyncStorage could disagree with it. A CUSTOM exercise is not in
+   * `PICKER_DB` — it is per-athlete and fetched async — so `itemByKey` cannot answer for it, and the
+   * pick is the only place that already knows.
+   *
+   * Optional, so an inbox written by an older build still drains.
+   */
+  unit?: 'reps' | 'time';
 }
 
 export type ExerciseInbox =

@@ -70,7 +70,7 @@ export function AskHoltSheet({
   }, [structure, weekIndex, dayIndex]);
 
   // Memoised because `?? []` is a fresh array every render, which would re-run the alternatives search
-  // on every keystroke-equivalent — and the search walks all 721 exercises.
+  // on every keystroke-equivalent — and the search walks all 733 exercises.
   const owned = useMemo(() => gym.data ?? [], [gym.data]);
 
   const close = () => {

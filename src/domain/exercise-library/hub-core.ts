@@ -68,7 +68,7 @@ export function passFilters(x: PickerItem, f: LibraryFilters, homeGym: HomeGymPr
 /**
  * Name, alias, vernacular, muscle or equipment — token-AND, exactly as the Picker matches.
  *
- * TWO SEARCH BOXES OVER THE SAME 794 ROWS MUST NOT DISAGREE. This had drifted twice from the Picker's
+ * TWO SEARCH BOXES OVER THE SAME 809 ROWS MUST NOT DISAGREE. This had drifted twice from the Picker's
  * rule: it matched one contiguous substring (so "press incline" found nothing), and it never consulted
  * `ALIASES_BY_ID` at all — so the vernacular names in `aliases.ts` worked in the Picker and silently did
  * not work here, on the screen literally called the Exercise Library.

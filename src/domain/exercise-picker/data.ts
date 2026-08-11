@@ -1,17 +1,17 @@
 /**
  * Exercise Picker data + selection logic (W-23, `Forge Exercise Picker.dc.html`).
  *
- * Reads the AUTHORITATIVE 794-exercise dataset (`exercise-relationships/source/*.json`) — the same
+ * Reads the AUTHORITATIVE 809-exercise dataset (`exercise-relationships/source/*.json`) — the same
  * source the rest of the app uses. It previously carried the design's hand-tagged 26-movement demo set,
  * which silently capped the Program Builder and the Active Workout's add/replace at 26 choices.
  *
  * Two deliberate divergences from the `.dc`, both to match the LOCKED W-23 spec, which the demo set
  * predated:
- *  1. NO "Movement type" (Compound / Isolation) filter — no such field exists on any of the 794 records
+ *  1. NO "Movement type" (Compound / Isolation) filter — no such field exists on any of the 809 records
  *     and no derivation rule exists in any doc, so it cannot be honestly populated. W-23 §14.2 defines
  *     exactly four filter groups and movement type is not one of them.
  *  2. Browse is category ROWS, not every exercise inlined. At 26 items the `.dc` could render every
- *     category expanded; at 794 that is an unusable scroll. W23-D7 already specifies the behaviour:
+ *     category expanded; at 809 that is an unusable scroll. W23-D7 already specifies the behaviour:
  *     "Tapping a category applies an implicit filter chip, showing filtered results inline."
  *
  * The mapping onto the 6 locked browse categories lives in `catalog-core` (pure + unit-tested).
@@ -39,10 +39,10 @@ import {
   type RawMuscleLink,
 } from './catalog-core';
 
-export { EXERCISE_CATEGORIES, DIFFS } from './catalog-core';
+export { EXERCISE_CATEGORIES, DIFFS, DEFAULT_HOLD_SEC, asUnit } from './catalog-core';
 // Re-exported so a screen has one import site for search, not two.
 export { matchesSearch, matchesTokens, rankFor, searchFields, searchTokens } from './search-core.ts';
-export type { Difficulty, ExerciseCategoryKey, PickerItem, EquipClass } from './catalog-core';
+export type { Difficulty, ExerciseCategoryKey, PickerItem, EquipClass, ExerciseUnit } from './catalog-core';
 
 export const PICKER_DB: PickerItem[] = buildPickerDb({
   exercises: exercisesData as RawExercise[],
@@ -299,6 +299,14 @@ export const CONDITIONING_ROWS: PickerItem[] = CARDIO_ACTIVITIES.map((c) => ({
   modality: 'cardio',
   aliases: [],
   environments: [],
+  /*
+   * REPS, and it is not a contradiction. A run is obviously measured by time and distance — but never
+   * through `unit`, which decides whether the SET TABLE draws a rep box or a hold timer. A conditioning
+   * row never reaches that table: `pickedToExercise` sends it to `cardioExercise`, and the card it gets
+   * asks for a distance, a pace and a clock of its own. Marking it 'time' here would offer a 30-second
+   * plank timer for a 5K.
+   */
+  unit: 'reps',
 })) as PickerItem[];
 
 export const catalogForMatching = (): { key: string; name: string; aliases?: string[] }[] =>

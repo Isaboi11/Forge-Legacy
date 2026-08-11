@@ -34,13 +34,21 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
  */
 const SQL_BASE = readFileSync(resolve(ROOT, 'supabase/migrations/0120_push_notifications.sql'), 'utf8');
 const SQL_0121 = readFileSync(resolve(ROOT, 'supabase/migrations/0121_workout_join_requests.sql'), 'utf8');
-const SQL = readFileSync(resolve(ROOT, 'supabase/migrations/0122_squad_feed_notifications.sql'), 'utf8');
+const SQL_0122 = readFileSync(resolve(ROOT, 'supabase/migrations/0122_squad_feed_notifications.sql'), 'utf8');
+const SQL_0127 = readFileSync(resolve(ROOT, 'supabase/migrations/0127_timed_set_readback.sql'), 'utf8');
+// 0126 is the newest definition of the union, `push_pref_key` and `push_enqueue_for` — repointed per the
+// warning above. 0122 stays readable as `SQL_0122` for the bundle check only.
+const SQL = readFileSync(resolve(ROOT, 'supabase/migrations/0126_squad_recap_notification.sql'), 'utf8');
 
 /** Every migration paired with the bundle that gets pasted into the dashboard. */
 const BUNDLES = [
   ['0120_push_notifications', 'pending-0120', SQL_BASE],
   ['0121_workout_join_requests', 'pending-0121', SQL_0121],
-  ['0122_squad_feed_notifications', 'pending-0122', SQL],
+  ['0122_squad_feed_notifications', 'pending-0122', SQL_0122],
+  ['0126_squad_recap_notification', 'pending-0126', SQL],
+  /* 0127 defines none of the functions parsed below, but it belongs to the same release and the
+     run-twice guard at the bottom is a property every migration in this set has to hold. */
+  ['0127_timed_set_readback', 'pending-0127', SQL_0127],
 ];
 
 /**
@@ -110,7 +118,7 @@ test('every default in the SQL matches the toggle the athlete actually sees', ()
  * 0088 and 0092 dropped both friend branches, 0106 dropped program graduation. Each compiled cleanly and
  * each was found by a person, not a test. This is that test.
  */
-test('notification_events_for still has all eleven branches', () => {
+test('notification_events_for still has all twelve branches', () => {
   const body = fnBody('notification_events_for');
   const kinds = [...body.matchAll(/select\s+'([a-z_]+)'::text/g)].map((m) => m[1]);
   // Branch 3 is built from the row's status rather than a literal, so it is matched separately.
@@ -129,10 +137,38 @@ test('notification_events_for still has all eleven branches', () => {
       'workout_join_request',
       'squad_post',
       'squad_checkin',
+      // Branch 12, added 0126 — the weekly review, which has no author and was therefore invisible to
+      // branch 10's `author_id <> p_user` for four migrations.
+      'squad_recap',
     ],
     'a branch has been added or lost — if this is intentional, update the list and say so in the migration',
   );
   assert.ok(hasRequestStatus, 'the request_approved/declined branch is gone');
+});
+
+/**
+ * ⚠ `squad_post` AND `squad_recap` PARTITION ONE TABLE, and the partition has to stay total and disjoint.
+ *
+ * Both read `squad_posts`. Branch 10 takes the authored rows, branch 12 the authorless weekly summary.
+ * Drop `author_id is not null` from branch 10 and nothing breaks visibly — `x <> NULL` is NULL, so the
+ * recap simply stays excluded and the bug this migration exists to fix comes back silently. Drop the
+ * `author_id is null` from branch 12 and every ordinary post fires twice, once worded as a review.
+ */
+test('an authored post and the weekly review cannot be confused for each other', () => {
+  const body = fnBody('notification_events_for');
+  assert.match(body, /'squad_post'::text[\s\S]*?sp\.author_id is not null/, 'branch 10 must exclude the authorless recap');
+  assert.match(body, /'squad_recap'::text[\s\S]*?sp\.type = 'weekly'[\s\S]*?sp\.author_id is null/, 'branch 12 must take only the authorless weekly row');
+});
+
+/**
+ * The push trigger has to be NULL-SAFE, which is the other half of the same bug.
+ *
+ * `m.user_id <> new.author_id` selected no members at all when the recap arrived with a null author, so
+ * `push_enqueue_for` was never called and branch 12 would have had nothing to send.
+ */
+test('the squad_posts trigger fans out an authorless insert', () => {
+  const body = SQL.slice(SQL.indexOf('function public.push_tg_squad_posts'));
+  assert.match(body, /m\.user_id is distinct from new\.author_id/, 'the trigger must use a null-safe comparison');
 });
 
 /**
@@ -171,7 +207,7 @@ test('a join request expires with the host presence it is about', () => {
  */
 test('both fan-out branches are bounded in time', () => {
   const body = fnBody('notification_events_for');
-  for (const kind of ['squad_post', 'squad_checkin']) {
+  for (const kind of ['squad_post', 'squad_checkin', 'squad_recap']) {
     const at = body.indexOf("'" + kind + "'::text");
     assert.notEqual(at, -1, kind + ' branch is missing');
     const branch = body.slice(at, at + 600);
@@ -244,12 +280,18 @@ test('the union is parameterised, so the sender and the viewer read one definiti
  * to close, while every other test in this file still passed.
  */
 test('later migrations replace the union in place rather than dropping it', () => {
+  /* The DROP half applies to EVERY migration in the set — a drop anywhere resets the revoke, whether or
+     not that file rebuilds the function. The "must rebuild in place" half applies only to the migrations
+     that touch the union at all: 0127 is in this set for the run-twice guard and deliberately does not
+     redefine it, and demanding a rebuild it has no reason to make would push a needless copy of a
+     twelve-branch body into an unrelated file — the exact pressure that produced 0088, 0092 and 0106. */
   for (const [name, , body] of BUNDLES.slice(1)) {
     assert.doesNotMatch(
       body,
       /drop function if exists public\.notification_events_for/,
       name + " drops notification_events_for — that resets 0120's revoke from PUBLIC",
     );
+    if (!body.includes('function public.notification_events_for(')) continue;
     assert.match(body, /create or replace function public\.notification_events_for\(p_user uuid\)/, name + ' must rebuild in place');
   }
 });

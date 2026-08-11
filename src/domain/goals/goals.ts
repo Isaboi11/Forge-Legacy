@@ -50,6 +50,78 @@ export const isCumulativeMetric = (kind: MetricKind): boolean =>
 /** Level metrics track a current reading against a baseline (not from zero) — body composition (later: times). */
 export const usesBaseline = (kind: MetricKind): boolean => kind === 'body_weight' || kind === 'body_measure';
 
+// ── body goals: direction is asked, not guessed ────────────────────────────────
+//
+// "Weight" is not a direction. Two athletes typing 15 into the same box mean opposite things — one is
+// cutting to 175, the other is adding 15 to build. Direction used to be INFERRED by comparing the target
+// to the latest weigh-in, which is a guess that is silently wrong in the two cases that matter most: an
+// athlete with no weigh-in yet (nothing to compare, so it defaulted to "up" — a cut recorded as a gain),
+// and one whose reading crosses the target early. It is a question now, and it is required.
+
+/**
+ * How a body goal's number was entered. The same goal is naturally said either way — "get to 180" or
+ * "add 15" — and only ONE of them can be stored, because a target that keeps re-deriving from a moving
+ * baseline would chase the athlete. A change is resolved against the baseline at save time and stored as
+ * the absolute reading it means.
+ */
+export type TargetMode = 'target' | 'change';
+
+/** What each direction is CALLED for this metric — 'Lose / Gain' for weight, 'Shrink / Grow' for a tape measure. */
+export const directionLabels = (kind: MetricKind): { down: string; up: string } =>
+  kind === 'body_measure' ? { down: 'Shrink', up: 'Grow' } : { down: 'Lose', up: 'Gain' };
+
+export interface BodyTargetInput {
+  mode: TargetMode;
+  dir: MetricDir;
+  /** The number typed: an absolute reading in 'target' mode, an amount to move by in 'change' mode. */
+  value: number | null;
+  /** The athlete's latest logged reading. null = none yet, so a change has nothing to start from. */
+  baseline: number | null;
+}
+
+/** The absolute reading this input means, or null when it cannot be resolved into one. */
+export function resolveBodyTarget(i: BodyTargetInput): number | null {
+  if (i.value == null || !Number.isFinite(i.value) || i.value <= 0) return null;
+  if (i.mode === 'target') return i.value;
+  if (i.baseline == null || i.baseline <= 0) return null;
+  const t = i.dir === 'down' ? i.baseline - i.value : i.baseline + i.value;
+  return t > 0 ? Number(t.toFixed(2)) : null;
+}
+
+/**
+ * What is wrong with a body goal, in the athlete's own terms — or null when it holds together.
+ *
+ * These are the contradictions the old inference swallowed by quietly rewriting the direction: "Lose,
+ * goal 200" from a 185 lb athlete used to save as a GAIN. A goal that disagrees with itself is worth
+ * stopping at the field, not resolving behind the athlete's back.
+ */
+export function bodyTargetProblem(i: BodyTargetInput, unit: string): string | null {
+  if (i.value == null || i.value <= 0) return null; // the generic target validator already says this
+  const u = unit ? ` ${unit}` : '';
+  const noun = i.dir === 'down' ? 'below' : 'above';
+
+  if (i.mode === 'change') {
+    if (i.baseline == null || i.baseline <= 0) return 'Add your current reading first — a change needs somewhere to start.';
+    if (i.dir === 'down' && i.value >= i.baseline) return `You can't lose ${trimNum(i.value)}${u} from ${trimNum(i.baseline)}${u}.`;
+    return null;
+  }
+
+  if (i.baseline == null || i.baseline <= 0) return null; // no reading to contradict — the direction stands as chosen
+  if (i.dir === 'down' && i.value >= i.baseline) return `${trimNum(i.value)}${u} is not ${noun} your current ${trimNum(i.baseline)}${u}.`;
+  if (i.dir === 'up' && i.value <= i.baseline) return `${trimNum(i.value)}${u} is not ${noun} your current ${trimNum(i.baseline)}${u}.`;
+  return null;
+}
+
+/** "185 lb → 200 lb · gain 15 lb" — the journey a body goal will actually track. Null until it resolves. */
+export function bodyTargetSummary(i: BodyTargetInput, unit: string, kind: MetricKind): string | null {
+  const target = resolveBodyTarget(i);
+  if (target == null || i.baseline == null || i.baseline <= 0) return null;
+  const u = unit ? ` ${unit}` : '';
+  const delta = Math.abs(Number((target - i.baseline).toFixed(2)));
+  const verb = directionLabels(kind)[i.dir].toLowerCase();
+  return `${trimNum(i.baseline)}${u} → ${trimNum(target)}${u} · ${verb} ${trimNum(delta)}${u}`;
+}
+
 export const GOAL_NAME_MAX = 60;
 export const UNIT_MAX = 12;
 export const UNIT_CHIPS = ['lb', 'kg', 'reps', 'mi', 'min', '× / week'] as const;

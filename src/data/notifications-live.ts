@@ -28,7 +28,16 @@ export type NotificationKind =
   | 'program_shared'
   /** The first FAN-OUT kinds (0122): one squad row becomes one event per member, windowed at 14 days. */
   | 'squad_post'
-  | 'squad_checkin';
+  | 'squad_checkin'
+  /**
+   * The weekly review (0126) — fan-out like the two above, and the one kind with NO actor.
+   *
+   * The squad wrote it, not a member: `ensure_weekly_recap` inserts an authorless `squad_posts` row, and
+   * for four migrations that null author was silently swallowed by `author_id <> p_user` in the union
+   * and `user_id <> author_id` in the push trigger. Both comparisons are null-safe now, and this kind
+   * exists so the sentence can name the squad instead of inventing a person who posted it.
+   */
+  | 'squad_recap';
 
 export interface ForgeNotification {
   kind: NotificationKind;
@@ -70,6 +79,7 @@ const KINDS: NotificationKind[] = [
   'program_shared',
   'squad_post',
   'squad_checkin',
+  'squad_recap',
 ];
 const asKind = (v: string): NotificationKind | null => (KINDS as string[]).includes(v) ? (v as NotificationKind) : null;
 

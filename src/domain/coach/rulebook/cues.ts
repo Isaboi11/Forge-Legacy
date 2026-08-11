@@ -8,7 +8,7 @@ import type { Experience, Goal } from '../constraints.ts';
  * "4 second negatives" is a training variable, not decoration. It changes what the set does. So it is
  * authored the same way every other prescription in this engine is: a table keyed by things the engine
  * actually knows — the movement pattern, the goal, and the athlete's experience — with no per-exercise
- * hand-writing, because 721 hand-written strings would drift the first time one was edited.
+ * hand-writing, because 733 hand-written strings would drift the first time one was edited.
  *
  * ══ THE LINE I AM NOT CROSSING ══
  *

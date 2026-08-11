@@ -106,7 +106,25 @@ export function buildSaveExercises(session: ActiveSession) {
               modality: s.modality ?? null,
               incline_pct: s.inclinePct ?? null,
             }
-          : { set_index: s.setIndex, weight: s.weight, weight_unit: 'lb', reps: s.actualReps ?? s.targetReps },
+          : /*
+             * A HOLD IS MEASURED BY THE CLOCK, and until now it was written down as ten repetitions.
+             *
+             * `targetSec` marks a set the program prescribed in seconds — a 60s Plank, a 45s Dead Hang,
+             * a loaded carry. It has no rep count: `session-core` gives it `targetReps: 0`, and
+             * `reps: 0` in the history is a claim the athlete did nothing. So a timed set writes its
+             * seconds into `duration_sec` — the same column a cardio bout uses, already on the table —
+             * and sends `reps: null`, which is what "this set was never about reps" looks like in the
+             * record. Load still travels: a weighted carry has a real weight on it.
+             */
+            s.targetSec != null
+            ? {
+                set_index: s.setIndex,
+                weight: s.weight,
+                weight_unit: s.weight != null ? 'lb' : null,
+                reps: null,
+                duration_sec: s.durationSec ?? s.targetSec,
+              }
+            : { set_index: s.setIndex, weight: s.weight, weight_unit: 'lb', reps: s.actualReps ?? s.targetReps },
       ),
   }));
 }

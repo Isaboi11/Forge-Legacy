@@ -291,6 +291,12 @@ function PostCard({
         <ProgressCompare post={post} />
       ) : shape === 'photo' ? (
         <Image source={{ uri: post.media[0].url }} style={styles.photo} contentFit="cover" />
+      ) : shape === 'gallery' ? (
+        <View style={styles.gallery}>
+          {post.media.map((m, i) => (
+            <Image key={`${m.url}-${i}`} source={{ uri: m.url }} style={styles.galleryCell} contentFit="cover" />
+          ))}
+        </View>
       ) : shape === 'video' ? (
         <View style={styles.videoWrap}>
           <Image source={{ uri: post.media[0].url }} style={styles.photo} contentFit="cover" />
@@ -833,6 +839,9 @@ const styles = StyleSheet.create({
   caption: { paddingHorizontal: 14, paddingTop: 10, fontSize: 13.5, lineHeight: 20, color: flColor.gray400 },
 
   photo: { width: '100%', height: 210, marginTop: 12, backgroundColor: flColor.charcoal800 },
+  /* Two up, and a lone odd one at the end fills the row rather than sitting beside a hole. */
+  gallery: { flexDirection: 'row', flexWrap: 'wrap', gap: 3, marginTop: 12 },
+  galleryCell: { flexGrow: 1, flexBasis: '48%', height: 190, backgroundColor: flColor.charcoal800 },
   videoWrap: { position: 'relative' },
   playBtn: { position: 'absolute', top: '50%', left: '50%', width: 46, height: 46, marginTop: -23, marginLeft: -23, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round, backgroundColor: 'rgba(0,0,0,0.55)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
 

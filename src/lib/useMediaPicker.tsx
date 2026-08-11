@@ -8,6 +8,7 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor } from '@/constants/foundation';
 import { DOWNSCALE_COMPRESS, downscaleTarget } from '@/lib/image-downscale-core';
+import { compressVideoForUpload } from '@/lib/video-compress';
 
 /**
  * useMediaPicker — one consistent "camera or library" chooser for every place the app captures a photo or a
@@ -30,10 +31,14 @@ export type MediaKind = 'images' | 'videos' | 'both';
  * Video ceiling, enforced here rather than at the call sites, for the same reason the photo resize is.
  *
  * A form check is fifteen seconds and a working set is twenty, so thirty is what the feature actually
- * needs — this is a cap, not a compromise. It is also the only video lever that works everywhere:
- * `videoQuality` caps the RESOLUTION of what the app RECORDS, and only on iOS. A video chosen from the
- * library arrives at whatever size the phone saved it, on both platforms. Genuinely bounding that would
- * need transcoding, which nothing in the stack does today.
+ * needs — this is a cap, not a compromise.
+ *
+ * ⚠ IT IS NO LONGER THE ONLY LEVER, and it never was the load-bearing one. This comment used to end
+ * "genuinely bounding that would need transcoding, which nothing in the stack does today" — and while
+ * that was true, duration was standing in for a size limit it could not enforce: a modern iPhone
+ * records 4K60 at roughly 7 MB/s, so even sixteen seconds is ~120 MB against a 50 MB ceiling. `shrinkVideo`
+ * now transcodes to 720p before anything is uploaded, and THAT is what bounds the bytes. This stays as
+ * what it always honestly was — a limit on how long a check-in should be, not on how big.
  */
 export const MAX_VIDEO_SECONDS = 30;
 
@@ -111,7 +116,7 @@ const cameraLabel = (kind: MediaKind): string => (kind === 'images' ? 'Take a ph
  * be a far worse outcome than storing one photo at full size.
  */
 async function downscalePhoto(asset: ImagePicker.ImagePickerAsset): Promise<ImagePicker.ImagePickerAsset> {
-  if (asset.type === 'video') return asset; // ImageManipulator cannot touch video; duration is its cap
+  if (asset.type === 'video') return asset; // ImageManipulator cannot touch video — see `shrinkVideo`
   const target = downscaleTarget(asset.width, asset.height);
   if (!target) return asset;
   try {
@@ -123,10 +128,44 @@ async function downscalePhoto(asset: ImagePicker.ImagePickerAsset): Promise<Imag
   }
 }
 
+/**
+ * Cap a picked VIDEO's size before anyone can upload it — the other half of the resize above, and the
+ * half that was missing entirely.
+ *
+ * ⚠ THE COMMENT ON `MAX_VIDEO_SECONDS` USED TO END: *"Genuinely bounding that would need transcoding,
+ * which nothing in the stack does today."* It does now. Duration was never the real bound — a modern
+ * iPhone records 4K60 at ~7 MB/s, so sixteen seconds is ~120 MB against a 50 MB ceiling, which is
+ * exactly the "it said it was too big but I only did a 16 second video" the PO reported.
+ *
+ * Here, in the one capture path, for the same reason the photo resize is: seven upload call sites would
+ * otherwise each have to remember, and the one that forgot would be the one athletes used.
+ *
+ * `fileSize` is CLEARED on a compressed result. It described the file that was chosen, not the file that
+ * now exists, and a stale size flowing into the upload guard would compare the wrong number against the
+ * cap — the pre-flight check would reject a clip that is now comfortably under it.
+ */
+async function shrinkVideo(
+  asset: ImagePicker.ImagePickerAsset,
+  onProgress: (p: number) => void,
+): Promise<ImagePicker.ImagePickerAsset> {
+  if (asset.type !== 'video') return asset;
+  const out = await compressVideoForUpload(asset, onProgress);
+  if (!out.compressed) return asset;
+  return { ...asset, uri: out.uri, fileSize: undefined };
+}
+
 export function useMediaPicker() {
   const { showToast } = useToast();
   const [open, setOpen] = useState(false);
   const [cfg, setCfg] = useState<MediaPickConfig | null>(null);
+  /**
+   * The compression overlay.
+   *
+   * A transcode takes seconds — long enough that a screen with no feedback reads as a frozen app, which
+   * is the failure mode this codebase has already shipped once. It is rendered from `mediaPickerSheet`,
+   * the thing every caller already mounts, so seven screens get the progress bar without seven edits.
+   */
+  const [busy, setBusy] = useState<{ label: string; progress: number } | null>(null);
   const resolverRef = useRef<Resolver | null>(null);
 
   const settle = useCallback((asset: ImagePicker.ImagePickerAsset | null) => {
@@ -228,6 +267,19 @@ export function useMediaPicker() {
         // Together, not one after the other: the resize is the only real work here, so on any photo big
         // enough to need resizing the dismissal wait costs nothing at all.
         const [asset] = await Promise.all([picked ? downscalePhoto(picked) : null, pickerGone()]);
+        /*
+         * VIDEO IS SHRUNK AFTER THE PICKER IS GONE, not alongside it — the opposite of the photo above,
+         * and deliberately so. A resize is milliseconds and hides inside the dismissal; a transcode is
+         * seconds, and running it while the picker is still sliding away would leave the athlete looking
+         * at a half-dismissed sheet with nothing happening. The overlay below needs the screen to itself.
+         */
+        if (asset?.type === 'video') {
+          setBusy({ label: 'Compressing video…', progress: 0 });
+          const out = await shrinkVideo(asset, (p) => setBusy({ label: 'Compressing video…', progress: p }));
+          setBusy(null);
+          settle(out);
+          return;
+        }
         settle(asset);
       } catch {
         showToast(source === 'camera' ? 'Couldn’t open your camera.' : 'Couldn’t open your library.');
@@ -264,29 +316,59 @@ export function useMediaPicker() {
   }, [settle]);
 
   const mediaPickerSheet = (
-    <BottomSheet open={open} onClose={close} title={cfg?.title ?? 'Add media'} onDismiss={() => dismissRef.current?.()}>
-      <View style={styles.list}>
-        <SourceRow
-          icon={<CameraGlyph />}
-          label={cfg ? cameraLabel(cfg.kind) : 'Camera'}
-          onPress={() => {
-            if (cfg) void launch(cfg, 'camera', true);
-          }}
-        />
-        <SourceRow
-          icon={<LibraryGlyph />}
-          label="Choose from library"
-          divided
-          onPress={() => {
-            if (cfg) void launch(cfg, 'library', true);
-          }}
-        />
-      </View>
-      {cfg?.hint ? <Text style={styles.hint}>{cfg.hint}</Text> : null}
-    </BottomSheet>
+    <>
+      <BottomSheet open={open} onClose={close} title={cfg?.title ?? 'Add media'} onDismiss={() => dismissRef.current?.()}>
+        <View style={styles.list}>
+          <SourceRow
+            icon={<CameraGlyph />}
+            label={cfg ? cameraLabel(cfg.kind) : 'Camera'}
+            onPress={() => {
+              if (cfg) void launch(cfg, 'camera', true);
+            }}
+          />
+          <SourceRow
+            icon={<LibraryGlyph />}
+            label="Choose from library"
+            divided
+            onPress={() => {
+              if (cfg) void launch(cfg, 'library', true);
+            }}
+          />
+        </View>
+        {cfg?.hint ? <Text style={styles.hint}>{cfg.hint}</Text> : null}
+      </BottomSheet>
+      {busy ? <CompressOverlay label={busy.label} progress={busy.progress} /> : null}
+    </>
   );
 
   return { pick, mediaPickerSheet };
+}
+
+/**
+ * What the athlete looks at while a clip is being transcoded.
+ *
+ * NOT dismissible, and it has no cancel — deliberately. The compression is already running natively and
+ * the picker's promise is waiting on it; a cancel that only hid the overlay would leave them on a screen
+ * that appears idle while the work continues, which is worse than the wait. It is bounded by
+ * `MAX_VIDEO_SECONDS` of source at 720p, which is seconds, not minutes.
+ *
+ * The bar is real progress from the encoder rather than an indeterminate spinner: "this is going to take
+ * a moment" is tolerable, "this may never end" is what makes people force-quit.
+ */
+function CompressOverlay({ label, progress }: { label: string; progress: number }) {
+  const pct = Math.round(Math.min(1, Math.max(0, progress)) * 100);
+  return (
+    <View style={styles.overlay} accessibilityRole="progressbar" accessibilityLabel={`${label} ${pct} percent`} pointerEvents="auto">
+      <View style={styles.overlayCard}>
+        <Text style={styles.overlayLabel}>{label}</Text>
+        <View style={styles.track}>
+          <View style={[styles.fill, { width: `${pct}%` }]} />
+        </View>
+        {/* Says WHY the wait is worth it. Without this the athlete reads it as the app being slow. */}
+        <Text style={styles.overlayHint}>Smaller clips post faster and play instantly for your squad.</Text>
+      </View>
+    </View>
+  );
 }
 
 function SourceRow({ icon, label, onPress, divided = false }: { icon: ReactNode; label: string; onPress: () => void; divided?: boolean }) {
@@ -317,6 +399,13 @@ function LibraryGlyph() {
 }
 
 const styles = StyleSheet.create({
+  overlay: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'rgba(6,7,8,0.86)', alignItems: 'center', justifyContent: 'center', padding: 32, zIndex: 100 },
+  overlayCard: { width: '100%', maxWidth: 340, gap: 14, padding: 22, borderRadius: 16, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
+  overlayLabel: { fontSize: 15, fontWeight: '600', color: flColor.cream100, textAlign: 'center' },
+  track: { height: 6, borderRadius: 3, backgroundColor: flColor.charcoal700, overflow: 'hidden' },
+  fill: { height: '100%', borderRadius: 3, backgroundColor: flColor.bronze400 },
+  overlayHint: { fontSize: 12, lineHeight: 17, color: flColor.gray600, textAlign: 'center' },
+
   list: { marginHorizontal: -6 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15, paddingHorizontal: 8 },
   rowDivided: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },

@@ -349,7 +349,7 @@ export default function AddPhotoScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* The real 794-exercise catalog — the same `PICKER_DB` the logger and Goals search. Choosing sets
+      {/* The real 809-exercise catalog — the same `PICKER_DB` the logger and Goals search. Choosing sets
           the label AND the attachment, which is the whole reason this replaced a chip reading "Lift". */}
       <BottomSheet open={liftOpen} onClose={() => setLiftOpen(false)} title="Which lift?">
         <View style={styles.liftSheet}>

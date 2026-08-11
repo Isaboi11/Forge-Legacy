@@ -460,6 +460,10 @@ export default function SquadSettingsScreen() {
         open={editOpen}
         onClose={() => setEditOpen(false)}
         title="Edit Identity"
+        /* The longest body in the app — photo, name, motto, description, commitment, category chips. It
+           runs past the sheet's 88% cap, and an unscrolled body cannot shrink, so the footer holding Save
+           was pushed off the bottom of the screen. The identity was editable and unsaveable. */
+        scroll
         footer={
           <View style={styles.sheetFooter}>
             <View style={styles.footerCancel}>

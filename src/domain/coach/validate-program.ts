@@ -93,8 +93,8 @@ const isCardio = (ex: ProgramExercise): boolean => ex.kind === 'cardio';
 /**
  * Every prescribed movement must be one the athlete can reach.
  *
- * ⚠ THE POOL IS THE VISIBLE CATALOGUE, NOT THE FILE. `exercises.json` holds 797 records; the app shows
- * 721. Validating against the file would pass a program containing movements that cannot be opened,
+ * ⚠ THE POOL IS THE VISIBLE CATALOGUE, NOT THE FILE. `exercises.json` holds 809 records; the app shows
+ * 733. Validating against the file would pass a program containing movements that cannot be opened,
  * searched for, or swapped — a dead row in a plan someone trusted, discovered mid-set.
  *
  * Cardio blocks are exempt: they carry an `activity`, not a `catalogKey`, and their vocabulary lives in

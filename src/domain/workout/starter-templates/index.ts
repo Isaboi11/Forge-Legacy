@@ -90,7 +90,7 @@ import {
  * Push Day · Pull Day · Leg Day · Full Body Express are the design's own, from
  * `design_reference/Forge Modal Library Design/forge-templates.js` `seeds()`, lift for lift and set
  * for set. Upper Body and Lower Body cover the other common split, built from the same movements. The
- * 75 added around them are authored in-repo against the 794-exercise catalogue.
+ * 75 added around them are authored in-repo against the 809-exercise catalogue.
  *
  * Every `catalogKey` is a real id in that catalogue and is checked by `__tests__/definitions.test.mjs`
  * — a typo here would reach an athlete as a lift with no detail page, and this is the only content in

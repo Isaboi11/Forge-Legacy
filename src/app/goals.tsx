@@ -27,6 +27,9 @@ import {
 import {
   GOAL_NAME_MAX,
   UNIT_MAX,
+  bodyTargetProblem,
+  bodyTargetSummary,
+  directionLabels,
   goalSections,
   historyDate,
   isAchieved,
@@ -38,10 +41,15 @@ import {
   progressEntryLine,
   progressLabel,
   progressPct,
+  resolveBodyTarget,
   validateGoal,
+  type BodyTargetInput,
   type Goal,
+  type MetricDir,
   type MetricKind,
+  type TargetMode,
 } from '@/domain/goals/goals';
+import { addBodyEntry, fetchBodyEntries, latestBodyReading, type BodyMeasureKey } from '@/data/body-metrics-live';
 import { PICKER_DB } from '@/domain/exercise-picker/data';
 import { useQuery } from '@/lib/useQuery';
 import { useCeremony, useToast } from '@/hooks/useCeremony';
@@ -512,6 +520,12 @@ function GoalForm({
   const [liftSearch, setLiftSearch] = useState('');
   const [saving, setSaving] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
+  /** null until answered — a body goal cannot be saved without it (see the direction block below). */
+  const [dirPick, setDirPick] = useState<MetricDir | null>(existing && usesBaseline(existing.metricKind) ? existing.metricDir : null);
+  const [modePick, setModePick] = useState<TargetMode>('target');
+  /** Typed here when there is no weigh-in yet — logged as one on save, because the goal needs a start. */
+  const [startInput, setStartInput] = useState('');
+  const { data: bodyEntries } = useQuery(fetchBodyEntries, []);
 
   const isPrimary = existing?.isPrimary ?? primary;
   const valid = validateGoal({ name, target });
@@ -522,6 +536,36 @@ function GoalForm({
   // Auto metrics fix their own unit; manual keeps the user's chosen unit.
   const effectiveUnit = metricKind === 'manual' ? unit : AUTO_UNIT[metricKind];
   const metricReady = (metricKind !== 'exercise_max' && metricKind !== 'body_measure') || !!metricKey; // a lift / measurement goal needs its subject chosen
+
+  /*
+   * ── Body goals: the direction is asked, and the number can be said either way ──
+   *
+   * "Weight" names a quantity, not a direction. The same 15 means opposite things to someone cutting and
+   * someone building, so the athlete answers Lose/Gain and the answer is stored — it is no longer guessed
+   * from whether the target happens to sit below the latest weigh-in, which is unanswerable before there
+   * IS one and defaulted every such goal to 'up'.
+   */
+  const isBody = usesBaseline(metricKind);
+  const dirLabels = directionLabels(metricKind);
+  const measureColumn: BodyMeasureKey = (metricKey as BodyMeasureKey) ?? 'waist_in';
+  const loggedReading = bodyEntries ? latestBodyReading(bodyEntries, metricKind === 'body_weight' ? 'weight' : measureColumn) : null;
+  /* An edit measures from the baseline the goal was SAVED with — re-anchoring it to today's reading would
+     silently move the finish line and rewrite the progress already shown. */
+  const storedBaseline = existing && usesBaseline(existing.metricKind) ? existing.metricStartValue : null;
+  /* A weigh-in is one number and it IS the thing this goal reads, so it can be captured here. A tape
+     measurement rides on a body entry that also requires a weight — that belongs in Progress Hub. */
+  const canCaptureStart = metricKind === 'body_weight' && storedBaseline == null && loggedReading == null;
+  const baseline = storedBaseline ?? loggedReading ?? (canCaptureStart ? parseTarget(startInput) : null);
+  /** "Amount to change" needs somewhere to change FROM; without a reading the absolute is the only honest form. */
+  const targetMode: TargetMode = baseline != null ? modePick : 'target';
+
+  const bodyInput: BodyTargetInput = { mode: targetMode, dir: dirPick ?? 'up', value: parseTarget(target), baseline };
+  const bodyTarget = isBody ? resolveBodyTarget(bodyInput) : null;
+  const bodyProblem = isBody && dirPick ? bodyTargetProblem(bodyInput, effectiveUnit) : null;
+  const bodySummary = isBody && dirPick ? bodyTargetSummary(bodyInput, effectiveUnit, metricKind) : null;
+  /** What the goal actually stores — a change is resolved to the reading it means before it is saved. */
+  const finalTarget = isBody ? bodyTarget : parseTarget(target);
+  const bodyReady = !isBody || (dirPick != null && finalTarget != null && bodyProblem == null);
   const liftResults = ((): string[] => {
     const q = liftSearch.trim().toLowerCase();
     const names = PICKER_DB.map((x) => x.name);
@@ -550,25 +594,38 @@ function GoalForm({
     target !== (existing?.target != null ? String(existing.target) : '') ||
     unit !== (existing?.unit ?? '') ||
     metricKind !== (existing?.metricKind ?? 'manual') ||
-    (metricKey ?? '') !== (existing?.metricKey ?? '');
+    (metricKey ?? '') !== (existing?.metricKey ?? '') ||
+    startInput !== '' ||
+    dirPick !== (existing && usesBaseline(existing.metricKind) ? existing.metricDir : null);
   const cancel = () => {
     if (!dirty) return onCancel();
     setDiscardOpen(true);
   };
 
   const save = () => {
-    if (!valid.ok || !metricReady || !chapterId) return;
+    if (!valid.ok || !metricReady || !bodyReady || !chapterId) return;
     setSaving(true);
-    saveGoal({
-      id: existing?.id,
-      chapterId,
-      name,
-      target: parseTarget(target),
-      unit: hasTarget ? effectiveUnit.trim() || null : null,
-      isPrimary,
-      metricKind: hasTarget ? metricKind : 'manual',
-      metricKey: metricKind === 'exercise_max' || metricKind === 'distance_total' ? metricKey : null,
-    }).then(onSaved, () => setSaving(false));
+    /* A starting weight typed here is logged as a real weigh-in first — it is one, and a body goal with
+       nothing to measure from tracks nothing at all. If that write fails the goal is not saved either,
+       rather than left anchored to a reading that does not exist. */
+    const captured = canCaptureStart && parseTarget(startInput) != null ? addBodyEntry({ weightLb: parseTarget(startInput)! }) : Promise.resolve();
+    captured
+      .then(() =>
+        saveGoal({
+          id: existing?.id,
+          chapterId,
+          name,
+          target: finalTarget,
+          unit: hasTarget ? effectiveUnit.trim() || null : null,
+          isPrimary,
+          metricKind: hasTarget ? metricKind : 'manual',
+          // `body_measure` was missing here, so a "shrink your waist" goal saved with no column to read.
+          metricKey: metricKind === 'exercise_max' || metricKind === 'distance_total' || metricKind === 'body_measure' ? metricKey : null,
+          metricDir: isBody && dirPick ? dirPick : undefined,
+          metricStartValue: isBody ? baseline : undefined,
+        }),
+      )
+      .then(onSaved, () => setSaving(false));
   };
 
   return (
@@ -580,13 +637,14 @@ function GoalForm({
           <TextInput style={styles.input} value={name} onChangeText={(t) => setName(t.slice(0, GOAL_NAME_MAX))} placeholder="e.g. Squat 405 lb" placeholderTextColor={flColor.gray600} maxLength={GOAL_NAME_MAX} />
         </Field>
 
-        <Field label="Target Value · optional">
+        {/* The label follows the chosen form: under "an amount to change" this box holds the 15, not the 200. */}
+        <Field label={isBody ? (targetMode === 'change' ? `Amount to ${dirLabels[dirPick ?? 'up'].toLowerCase()}` : metricKind === 'body_weight' ? 'Goal Weight' : 'Goal Measurement') : 'Target Value · optional'}>
           <TextInput
             style={styles.input}
             value={target}
             onChangeText={(t) => setTarget(t.replace(/[^0-9.]/g, ''))}
             keyboardType="decimal-pad"
-            placeholder="Leave blank for a narrative goal"
+            placeholder={isBody && targetMode === 'change' ? `e.g. 15 ${effectiveUnit}` : 'Leave blank for a narrative goal'}
             placeholderTextColor={flColor.gray600}
           />
         </Field>
@@ -626,10 +684,59 @@ function GoalForm({
                 ))}
               </View>
             ) : null}
-            {metricKind !== 'manual' ? (
-              <Text style={styles.metricNote}>
-                {usesBaseline(metricKind) ? 'Tracks your latest logged weigh-in (Progress Hub).' : `Updates automatically from your logged workouts, in ${effectiveUnit}.`}
-              </Text>
+            {isBody ? (
+              <View style={styles.dirBlock}>
+                {/* Required, and unanswered by default — "weight" is a quantity, not a direction. */}
+                <Text style={styles.dirLabel}>Which way?</Text>
+                <View style={[styles.chipRow, styles.subChips]}>
+                  {([['down', dirLabels.down], ['up', dirLabels.up]] as [MetricDir, string][]).map(([d, lbl]) => (
+                    <Pressable key={d} onPress={() => setDirPick(d)} accessibilityRole="button" accessibilityState={{ selected: dirPick === d }} style={[styles.chip, dirPick === d && styles.chipOn]}>
+                      <Text style={[styles.chipText, dirPick === d && styles.chipTextOn]}>{lbl}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+
+                {baseline != null ? (
+                  <>
+                    <Text style={styles.dirLabel}>Is that number…</Text>
+                    <View style={[styles.chipRow, styles.subChips]}>
+                      {([['target', metricKind === 'body_weight' ? 'A goal weight' : 'A goal measurement'], ['change', 'An amount to change']] as [TargetMode, string][]).map(([m, lbl]) => (
+                        <Pressable key={m} onPress={() => setModePick(m)} accessibilityRole="button" accessibilityState={{ selected: targetMode === m }} style={[styles.chip, targetMode === m && styles.chipOn]}>
+                          <Text style={[styles.chipText, targetMode === m && styles.chipTextOn]}>{lbl}</Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </>
+                ) : null}
+
+                {canCaptureStart ? (
+                  <View style={styles.startRow}>
+                    <Text style={styles.startLabel}>Current weight</Text>
+                    <TextInput
+                      style={[styles.input, styles.startInput]}
+                      value={startInput}
+                      onChangeText={(t) => setStartInput(t.replace(/[^0-9.]/g, ''))}
+                      keyboardType="decimal-pad"
+                      placeholder={`e.g. 185 ${effectiveUnit}`}
+                      placeholderTextColor={flColor.gray600}
+                      accessibilityLabel="Current weight"
+                    />
+                    <Text style={styles.startNote}>Saved as today’s weigh-in — this goal is measured from it.</Text>
+                  </View>
+                ) : null}
+
+                {bodyProblem ? (
+                  <Text style={styles.dirProblem}>{bodyProblem}</Text>
+                ) : bodySummary ? (
+                  <Text style={styles.dirSummary}>{bodySummary}</Text>
+                ) : dirPick == null ? (
+                  <Text style={styles.metricNote}>Pick a direction — it decides what counts as progress.</Text>
+                ) : baseline == null ? (
+                  <Text style={styles.metricNote}>Log a measurement in Progress Hub and this goal will start counting from it.</Text>
+                ) : null}
+              </View>
+            ) : metricKind !== 'manual' ? (
+              <Text style={styles.metricNote}>Updates automatically from your logged workouts, in {effectiveUnit}.</Text>
             ) : null}
           </Field>
         ) : null}
@@ -668,7 +775,11 @@ function GoalForm({
             {hasTarget
               ? metricKind === 'manual'
                 ? `You’ll log progress toward ${parseTarget(target)}${effectiveUnit ? ` ${effectiveUnit}` : ''} over time.`
-                : `Progress toward ${parseTarget(target)}${effectiveUnit ? ` ${effectiveUnit}` : ''} is read from your workouts — no manual updates.`
+                : isBody
+                  ? finalTarget != null
+                    ? `Progress toward ${finalTarget}${effectiveUnit ? ` ${effectiveUnit}` : ''} is read from your weigh-ins — no manual updates.`
+                    : 'Progress is read from your weigh-ins once this goal has a direction and a starting point.'
+                  : `Progress toward ${parseTarget(target)}${effectiveUnit ? ` ${effectiveUnit}` : ''} is read from your workouts — no manual updates.`
               : 'No number to hit — mark it achieved when the chapter has proven it.'}
           </Text>
         </View>
@@ -683,7 +794,17 @@ function GoalForm({
               </Text>
               {hasTarget ? (
                 <View style={styles.previewProgress}>
-                  <ProgressBar value={0} max={100} height={8} label={`0 / ${parseTarget(target)}${effectiveUnit ? ` ${effectiveUnit}` : ''} · 0%`} />
+                  {/* A level goal shows its journey, not "0 / 200" — it does not start from nothing. */}
+                  <ProgressBar
+                    value={0}
+                    max={100}
+                    height={8}
+                    label={
+                      isBody && baseline != null && finalTarget != null
+                        ? `${baseline}${effectiveUnit ? ` ${effectiveUnit}` : ''} → ${finalTarget}${effectiveUnit ? ` ${effectiveUnit}` : ''} · 0%`
+                        : `0 / ${finalTarget ?? parseTarget(target)}${effectiveUnit ? ` ${effectiveUnit}` : ''} · 0%`
+                    }
+                  />
                 </View>
               ) : (
                 <View style={styles.previewPill}>
@@ -695,7 +816,7 @@ function GoalForm({
         ) : null}
 
         <View style={styles.saveWrap}>
-          <Button variant="primary" fullWidth disabled={!valid.ok || !metricReady || saving} onPress={save} accessibilityLabel="Save goal">
+          <Button variant="primary" fullWidth disabled={!valid.ok || !metricReady || !bodyReady || saving} onPress={save} accessibilityLabel="Save goal">
             {existing ? 'Save Changes' : isPrimary ? 'Set Chapter Goal' : 'Add Goal'}
           </Button>
         </View>
@@ -866,6 +987,16 @@ const styles = StyleSheet.create({
   metricRowPlaceholder: { color: flColor.gray600 },
   metricRowAction: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze300 },
   metricNote: { marginTop: 10, fontSize: 12, lineHeight: 17, color: flColor.gray600 },
+
+  // body goals — direction, form, and the reading they start from
+  dirBlock: { marginTop: 4 },
+  dirLabel: { marginTop: 14, fontSize: 11, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronze400 },
+  dirSummary: { marginTop: 12, fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },
+  dirProblem: { marginTop: 12, fontSize: 12.5, lineHeight: 18, color: flColor.redMuted },
+  startRow: { marginTop: 14 },
+  startLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronze400 },
+  startInput: { marginTop: 8 },
+  startNote: { marginTop: 7, fontSize: 12, lineHeight: 17, color: flColor.gray600 },
   autoNote: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 12, paddingHorizontal: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint, marginTop: 4 },
   autoNoteText: { flex: 1, fontSize: 13, fontWeight: '600', color: flColor.bronze300 },
   liftSheet: { gap: 12 },

@@ -8,11 +8,11 @@
  * and a hotel room: the day's SHAPE is the coaching decision, and which exercise expresses it is a
  * lookup against what the athlete can actually reach.
  *
- * ══ THE POOL IS INJECTED, AND THAT IS THE 721/797 GUARD ══
+ * ══ THE POOL IS INJECTED, AND THAT IS THE 733/809 GUARD ══
  *
  * Nothing here reads `exercises.json`. The caller passes the pool, and the caller builds it from
- * `PICKER_DB` — the same source the Exercise Picker renders. The file holds 797 records; the app shows
- * 721. A generator that read the file would prescribe movements the athlete cannot open, search for, or
+ * `PICKER_DB` — the same source the Exercise Picker renders. The file holds 809 records; the app shows
+ * 733. A generator that read the file would prescribe movements the athlete cannot open, search for, or
  * swap, and every one of those is a dead row in a program they trusted. Structurally impossible here:
  * the coach can only choose from what it was handed.
  *

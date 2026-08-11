@@ -12,7 +12,7 @@ import type { PickerItem } from './catalog-core.ts';
  * did not answer to **"press incline"** (wrong order) or **"bench incline"** (right words, not
  * adjacent), and "Dumbbell Biceps Curl" did not answer to **"db curl"** — where "db" is a vernacular
  * alias and "curl" is in the name, so the answer sat in two fields that were never consulted together.
- * A catalogue of 794 exercises reads as empty when it will not answer to plain speech.
+ * A catalogue of 809 exercises reads as empty when it will not answer to plain speech.
  *
  * ══ WHY IT LIVES IN ITS OWN FILE ══
  *

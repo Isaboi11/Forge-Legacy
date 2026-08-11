@@ -18,7 +18,8 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
  * Transformation Entry Detail — built to `Forge Transformation Entry Detail.dc.html`, wired to real data.
  * Identity (date · capture type · chapter · context · tags), a media viewer (hero 3:4 + thumbnail strip of
  * the filled poses + video), the reflection, Earlier/Later sibling nav, Compare/Share actions, and an
- * overflow Edit/Delete with a confirm. Share routes to a Share flow we haven't built yet → honest toast.
+ * overflow Edit/Delete with a confirm. Share opens Progress Photo Post; Compare opens the comparison
+ * builder, which still ends at Share Configuration.
  */
 
 type Sel = PoseKey | 'video';
@@ -197,8 +198,17 @@ export default function TransformationEntryRoute() {
           </Svg>
           <Text style={styles.compareText}>Compare</Text>
         </Pressable>
+        {/*
+          SHARE OPENS THE PROGRESS PHOTO COMPOSER, not Share Configuration (handoff §19). A capture goes
+          out as a card the athlete laid out — format, style, which poses, what is printed on it — rather
+          than as one long vertical strip with no say in it.
+
+          COMPARE IS UNCHANGED and still reaches Share Configuration through `/transformation-compare`.
+          The two flows merge in a later pass; until then a then/now has a screen that understands it and
+          a single capture has one that understands the capture.
+        */}
         <Pressable
-          onPress={() => router.push({ pathname: '/share-config', params: { kind: 'transformation', mode: 'entry', id: entry.id, pose: active && active !== 'video' ? active : '' } })}
+          onPress={() => router.push({ pathname: '/progress-photo-post', params: { origin: 'transformation', entryId: entry.id } })}
           accessibilityRole="button"
           accessibilityLabel="Share"
           style={styles.shareBtn}

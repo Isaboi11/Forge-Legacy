@@ -12,6 +12,8 @@
  */
 
 export type ShareTemplate = 'slider' | 'sidebyside' | 'stacked' | 'grid';
+/** The single-capture formats — poses, not a then/now. Mirrors `EntryTemplate` in `squad-feed-live`. */
+export type EntryTemplate = 'single' | 'gallery' | 'column';
 
 export interface Rect {
   x: number;
@@ -26,8 +28,12 @@ export interface PlacedPhoto extends Rect {
   index: number;
   /** Chip drawn on the photo — 'Then' / 'Now', or nothing on later rows of a grid. */
   chip?: string;
-  /** The pose name, drawn above a grid row. Present on the first photo of each row only. */
-  poseLabel?: string;
+  /**
+   * Which pose name to draw above this photo, as an index into the caller's label list. Geometry can't
+   * know the names; it can say where one goes. Absent means no label — on a comparison grid that is every
+   * photo but the first of each row.
+   */
+  labelIndex?: number;
 }
 
 export interface PhotoBlock {
@@ -77,7 +83,7 @@ export function photoBlock(template: ShareTemplate, pairCount: number, top: numb
     let y = top;
     for (let i = 0; i < pairs; i++) {
       y += rowLabel;
-      photos.push({ index: i * 2, x: CARD_PAD, y, w: half, h, chip: i === 0 ? 'Then' : undefined, poseLabel: '' });
+      photos.push({ index: i * 2, x: CARD_PAD, y, w: half, h, chip: i === 0 ? 'Then' : undefined, labelIndex: i });
       photos.push({ index: i * 2 + 1, x: CARD_PAD + half + GAP, y, w: half, h, chip: i === 0 ? 'Now' : undefined });
       y += h + GAP;
     }
@@ -116,6 +122,47 @@ export function singlePhoto(top: number): PhotoBlock {
   const inner = CARD_W - CARD_PAD * 2;
   const h = Math.round(inner / ASPECT / 1.5);
   return { photos: [{ index: 0, x: CARD_PAD, y: top, w: inner, h }], height: h, divider: false };
+}
+
+/**
+ * Place the poses of ONE capture — the single-capture counterpart to `photoBlock`.
+ *
+ * The photo list here is flat (one photo per pose) rather than paired, and every photo carries its own
+ * `labelIndex`: a capture's poses are all equals, so unlike a comparison grid there is no first row that
+ * speaks for the rest. `single` keeps the wide band the card has always drawn — it is the same one photo,
+ * so it must land in the same place.
+ */
+export function poseBlock(template: EntryTemplate, count: number, top: number): PhotoBlock {
+  const inner = CARD_W - CARD_PAD * 2;
+  const n = Math.max(1, count);
+  const rowLabel = 34; // room for the pose name above each photo
+
+  if (template === 'single') return singlePhoto(top);
+
+  if (template === 'column') {
+    const h = Math.round(inner / ASPECT / 1.5);
+    const photos: PlacedPhoto[] = [];
+    let y = top;
+    for (let i = 0; i < n; i++) {
+      y += rowLabel;
+      photos.push({ index: i, x: CARD_PAD, y, w: inner, h, labelIndex: i });
+      y += h + GAP;
+    }
+    return { photos, height: y - GAP - top, divider: false };
+  }
+
+  // gallery — two per row, the odd last one left at half width rather than stretched out of aspect
+  const half = Math.round((inner - GAP) / 2);
+  const h = Math.round(half / ASPECT);
+  const photos: PlacedPhoto[] = [];
+  let y = top;
+  for (let i = 0; i < n; i++) {
+    const col = i % 2;
+    if (col === 0) y += rowLabel;
+    photos.push({ index: i, x: CARD_PAD + col * (half + GAP), y, w: half, h, labelIndex: i });
+    if (col === 1 || i === n - 1) y += h + GAP;
+  }
+  return { photos, height: y - GAP - top, divider: false };
 }
 
 /**

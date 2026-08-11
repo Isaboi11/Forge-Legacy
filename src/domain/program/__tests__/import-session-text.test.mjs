@@ -221,3 +221,21 @@ test('a strength column is never read as cardio, whatever words are in it', () =
   assert.ok(rehab.every((i) => i.kind === 'strength'));
   assert.equal(rehab[1].name, 'walking lunge', 'a walking lunge is a lift');
 });
+
+test('a race in the strength column is a run, but a lift that says "row" is not', () => {
+  // A plan really does put the race in whichever column has room. Filing a marathon as a lift at 3 × 10
+  // is as wrong as filing a dumbbell row as an erg — an explicit target is what tells them apart.
+  const [race] = parseSessionCell('Utah Valley Marathon 26.2 miles', { strengthOnly: true });
+  assert.equal(race.kind, 'cardio');
+  assert.equal(race.activity, 'run');
+  assert.equal(race.targetMi, 26.2);
+
+  const [ride] = parseSessionCell('LONG RIDE 90min Z2 — steady', { strengthOnly: true });
+  assert.equal(ride.kind, 'cardio', 'a stated clock makes it a bout');
+  assert.equal(ride.targetSec, 90 * 60);
+
+  // …and everything that is genuinely a lift still is, because none of them state a distance or a clock.
+  for (const lift of ['1-arm DB row 3x10/side', 'walking lunge 2x10/side', 'plank 3x45s', 'Bike-based strength today — no gym work needed']) {
+    assert.equal(parseSessionCell(lift, { strengthOnly: true })[0].kind, 'strength', lift);
+  }
+});

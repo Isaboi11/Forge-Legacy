@@ -10,6 +10,16 @@
     ]
   },
   {
+    "id": "ez_bar",
+    "name": "EZ-Curl Bar",
+    "category": "Free Weight",
+    "portable": true,
+    "environments": [
+      "Commercial Gym",
+      "Home Gym"
+    ]
+  },
+  {
     "id": "dumbbell",
     "name": "Dumbbell",
     "category": "Free Weight",

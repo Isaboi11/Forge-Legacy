@@ -4419,11 +4419,35 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "band-biceps-curl__ez-bar-biceps-curl",
+    "sourceExerciseId": "band-biceps-curl",
+    "targetExerciseId": "ez-bar-biceps-curl",
+    "type": "Regression",
+    "rank": 4,
+    "compatibilityScore": 85.5,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Different equipment",
+      "More stability",
+      "Skill regression"
+    ],
+    "reason": "An easier elbow flexion regression using ez-curl bar instead of resistance band.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "band-biceps-curl__machine-biceps-curl",
     "sourceExerciseId": "band-biceps-curl",
     "targetExerciseId": "machine-biceps-curl",
     "type": "Regression",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 85.5,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -4446,7 +4470,7 @@
     "sourceExerciseId": "band-biceps-curl",
     "targetExerciseId": "band-hammer-curl",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -4466,7 +4490,7 @@
     "sourceExerciseId": "band-biceps-curl",
     "targetExerciseId": "band-reverse-curl",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -4486,7 +4510,7 @@
     "sourceExerciseId": "band-biceps-curl",
     "targetExerciseId": "suspension-trainer-biceps-curl",
     "type": "Progression",
-    "rank": 7,
+    "rank": 8,
     "compatibilityScore": 76,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -4499,29 +4523,6 @@
       "Skill progression"
     ],
     "reason": "A more demanding elbow flexion progression using suspension trainer instead of resistance band.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "band-biceps-curl__alternating-dumbbell-curl",
-    "sourceExerciseId": "band-biceps-curl",
-    "targetExerciseId": "alternating-dumbbell-curl",
-    "type": "Substitute",
-    "rank": 8,
-    "compatibilityScore": 74,
-    "movementPattern": "Elbow Flexion",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "biceps"
-    ],
-    "equipmentChange": true,
-    "swapContexts": [
-      "Equipment unavailable",
-      "Home gym",
-      "Hotel gym",
-      "Different equipment"
-    ],
-    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
     "editorialStatus": "Auto-Generated"
   },
   {
@@ -8027,11 +8028,33 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "band-overhead-triceps-extension__ez-bar-overhead-triceps-extension",
+    "sourceExerciseId": "band-overhead-triceps-extension",
+    "targetExerciseId": "ez-bar-overhead-triceps-extension",
+    "type": "Equipment Alternative",
+    "rank": 3,
+    "compatibilityScore": 89,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension movement while using ez-curl bar instead of resistance band.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "band-overhead-triceps-extension__single-arm-cable-overhead-triceps-extension",
     "sourceExerciseId": "band-overhead-triceps-extension",
     "targetExerciseId": "single-arm-cable-overhead-triceps-extension",
     "type": "Equipment Alternative",
-    "rank": 3,
+    "rank": 4,
     "compatibilityScore": 89,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -8052,7 +8075,7 @@
     "sourceExerciseId": "band-overhead-triceps-extension",
     "targetExerciseId": "single-arm-dumbbell-overhead-triceps-extension",
     "type": "Progression",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 89,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -8072,7 +8095,7 @@
     "sourceExerciseId": "band-overhead-triceps-extension",
     "targetExerciseId": "band-triceps-kickback",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -8092,7 +8115,7 @@
     "sourceExerciseId": "band-overhead-triceps-extension",
     "targetExerciseId": "band-triceps-pushdown",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -8112,7 +8135,7 @@
     "sourceExerciseId": "band-overhead-triceps-extension",
     "targetExerciseId": "suspension-trainer-triceps-extension",
     "type": "Progression",
-    "rank": 7,
+    "rank": 8,
     "compatibilityScore": 76,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -8125,27 +8148,6 @@
       "Skill progression"
     ],
     "reason": "A more demanding elbow extension progression using suspension trainer instead of resistance band.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "band-overhead-triceps-extension__barbell-jm-press",
-    "sourceExerciseId": "band-overhead-triceps-extension",
-    "targetExerciseId": "barbell-jm-press",
-    "type": "Substitute",
-    "rank": 8,
-    "compatibilityScore": 74,
-    "movementPattern": "Elbow Extension",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "triceps"
-    ],
-    "equipmentChange": true,
-    "swapContexts": [
-      "Equipment unavailable",
-      "Different equipment"
-    ],
-    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
     "editorialStatus": "Auto-Generated"
   },
   {
@@ -10866,6 +10868,28 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "band-upright-row__ez-bar-upright-row",
+    "sourceExerciseId": "band-upright-row",
+    "targetExerciseId": "ez-bar-upright-row",
+    "type": "Equipment Alternative",
+    "rank": 5,
+    "compatibilityScore": 83.5,
+    "movementPattern": "Horizontal Pull",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "lateral_deltoids"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the horizontal pull movement while using ez-curl bar instead of resistance band.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "band-wood-chop__cable-wood-chop",
     "sourceExerciseId": "band-wood-chop",
     "targetExerciseId": "cable-wood-chop",
@@ -11768,11 +11792,35 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "barbell-biceps-curl__ez-bar-biceps-curl",
+    "sourceExerciseId": "barbell-biceps-curl",
+    "targetExerciseId": "ez-bar-biceps-curl",
+    "type": "Regression",
+    "rank": 4,
+    "compatibilityScore": 87.5,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Different equipment",
+      "More stability",
+      "Skill regression"
+    ],
+    "reason": "An easier elbow flexion regression using ez-curl bar instead of barbell.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "barbell-biceps-curl__machine-biceps-curl",
     "sourceExerciseId": "barbell-biceps-curl",
     "targetExerciseId": "machine-biceps-curl",
     "type": "Regression",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 85.5,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -11795,7 +11843,7 @@
     "sourceExerciseId": "barbell-biceps-curl",
     "targetExerciseId": "barbell-drag-curl",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -11815,7 +11863,7 @@
     "sourceExerciseId": "barbell-biceps-curl",
     "targetExerciseId": "barbell-preacher-curl",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -11835,7 +11883,7 @@
     "sourceExerciseId": "barbell-biceps-curl",
     "targetExerciseId": "barbell-reverse-curl",
     "type": "Substitute",
-    "rank": 7,
+    "rank": 8,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -11846,29 +11894,6 @@
     "equipmentChange": false,
     "swapContexts": [
       "General swap"
-    ],
-    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "barbell-biceps-curl__alternating-dumbbell-curl",
-    "sourceExerciseId": "barbell-biceps-curl",
-    "targetExerciseId": "alternating-dumbbell-curl",
-    "type": "Substitute",
-    "rank": 8,
-    "compatibilityScore": 76,
-    "movementPattern": "Elbow Flexion",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "biceps"
-    ],
-    "equipmentChange": true,
-    "swapContexts": [
-      "Equipment unavailable",
-      "Home gym",
-      "Hotel gym",
-      "Different equipment"
     ],
     "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
     "editorialStatus": "Auto-Generated"
@@ -14095,11 +14120,33 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "barbell-drag-curl__ez-bar-drag-curl",
+    "sourceExerciseId": "barbell-drag-curl",
+    "targetExerciseId": "ez-bar-drag-curl",
+    "type": "Equipment Alternative",
+    "rank": 2,
+    "compatibilityScore": 91,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow flexion movement while using ez-curl bar instead of barbell.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "barbell-drag-curl__barbell-biceps-curl",
     "sourceExerciseId": "barbell-drag-curl",
     "targetExerciseId": "barbell-biceps-curl",
     "type": "Substitute",
-    "rank": 2,
+    "rank": 3,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -14119,7 +14166,7 @@
     "sourceExerciseId": "barbell-drag-curl",
     "targetExerciseId": "barbell-preacher-curl",
     "type": "Substitute",
-    "rank": 3,
+    "rank": 4,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -14139,7 +14186,7 @@
     "sourceExerciseId": "barbell-drag-curl",
     "targetExerciseId": "barbell-reverse-curl",
     "type": "Substitute",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -14159,7 +14206,7 @@
     "sourceExerciseId": "barbell-drag-curl",
     "targetExerciseId": "alternating-dumbbell-curl",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 76,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -14182,7 +14229,7 @@
     "sourceExerciseId": "barbell-drag-curl",
     "targetExerciseId": "cross-body-hammer-curl",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 76,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -14204,29 +14251,6 @@
     "id": "barbell-drag-curl__dumbbell-bayesian-curl",
     "sourceExerciseId": "barbell-drag-curl",
     "targetExerciseId": "dumbbell-bayesian-curl",
-    "type": "Substitute",
-    "rank": 7,
-    "compatibilityScore": 76,
-    "movementPattern": "Elbow Flexion",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "biceps"
-    ],
-    "equipmentChange": true,
-    "swapContexts": [
-      "Equipment unavailable",
-      "Home gym",
-      "Hotel gym",
-      "Different equipment"
-    ],
-    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "barbell-drag-curl__dumbbell-biceps-curl",
-    "sourceExerciseId": "barbell-drag-curl",
-    "targetExerciseId": "dumbbell-biceps-curl",
     "type": "Substitute",
     "rank": 8,
     "compatibilityScore": 76,
@@ -16309,11 +16333,31 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "barbell-jm-press__ez-bar-jm-press",
+    "sourceExerciseId": "barbell-jm-press",
+    "targetExerciseId": "ez-bar-jm-press",
+    "type": "Progression",
+    "rank": 2,
+    "compatibilityScore": 87.5,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding elbow extension progression using ez-curl bar instead of barbell.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "barbell-jm-press__barbell-overhead-triceps-extension",
     "sourceExerciseId": "barbell-jm-press",
     "targetExerciseId": "barbell-overhead-triceps-extension",
     "type": "Substitute",
-    "rank": 2,
+    "rank": 3,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -16333,7 +16377,7 @@
     "sourceExerciseId": "barbell-jm-press",
     "targetExerciseId": "barbell-skull-crusher",
     "type": "Substitute",
-    "rank": 3,
+    "rank": 4,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -16353,7 +16397,7 @@
     "sourceExerciseId": "barbell-jm-press",
     "targetExerciseId": "dumbbell-skull-crusher",
     "type": "Substitute",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 76,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -16376,7 +16420,7 @@
     "sourceExerciseId": "barbell-jm-press",
     "targetExerciseId": "dumbbell-tate-press",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 76,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -16399,7 +16443,7 @@
     "sourceExerciseId": "barbell-jm-press",
     "targetExerciseId": "dumbbell-triceps-kickback",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 76,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -16418,29 +16462,9 @@
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "barbell-jm-press__single-arm-dumbbell-overhead-triceps-extension",
+    "id": "barbell-jm-press__ez-bar-overhead-triceps-extension",
     "sourceExerciseId": "barbell-jm-press",
-    "targetExerciseId": "single-arm-dumbbell-overhead-triceps-extension",
-    "type": "Progression",
-    "rank": 7,
-    "compatibilityScore": 76,
-    "movementPattern": "Elbow Extension",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "triceps"
-    ],
-    "equipmentChange": true,
-    "swapContexts": [
-      "Skill progression"
-    ],
-    "reason": "A more demanding elbow extension progression using dumbbell instead of barbell.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "barbell-jm-press__two-hand-dumbbell-overhead-triceps-extension",
-    "sourceExerciseId": "barbell-jm-press",
-    "targetExerciseId": "two-hand-dumbbell-overhead-triceps-extension",
+    "targetExerciseId": "ez-bar-overhead-triceps-extension",
     "type": "Substitute",
     "rank": 8,
     "compatibilityScore": 76,
@@ -16454,7 +16478,6 @@
     "swapContexts": [
       "Equipment unavailable",
       "Home gym",
-      "Hotel gym",
       "Different equipment"
     ],
     "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
@@ -17482,11 +17505,33 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "barbell-overhead-triceps-extension__ez-bar-overhead-triceps-extension",
+    "sourceExerciseId": "barbell-overhead-triceps-extension",
+    "targetExerciseId": "ez-bar-overhead-triceps-extension",
+    "type": "Equipment Alternative",
+    "rank": 1,
+    "compatibilityScore": 91,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension movement while using ez-curl bar instead of barbell.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "barbell-overhead-triceps-extension__single-arm-dumbbell-overhead-triceps-extension",
     "sourceExerciseId": "barbell-overhead-triceps-extension",
     "targetExerciseId": "single-arm-dumbbell-overhead-triceps-extension",
     "type": "Progression",
-    "rank": 1,
+    "rank": 2,
     "compatibilityScore": 91,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -17506,7 +17551,7 @@
     "sourceExerciseId": "barbell-overhead-triceps-extension",
     "targetExerciseId": "band-overhead-triceps-extension",
     "type": "Equipment Alternative",
-    "rank": 2,
+    "rank": 3,
     "compatibilityScore": 89,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -17529,7 +17574,7 @@
     "sourceExerciseId": "barbell-overhead-triceps-extension",
     "targetExerciseId": "cable-overhead-triceps-extension",
     "type": "Equipment Alternative",
-    "rank": 3,
+    "rank": 4,
     "compatibilityScore": 89,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -17550,7 +17595,7 @@
     "sourceExerciseId": "barbell-overhead-triceps-extension",
     "targetExerciseId": "single-arm-cable-overhead-triceps-extension",
     "type": "Equipment Alternative",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 89,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -17571,7 +17616,7 @@
     "sourceExerciseId": "barbell-overhead-triceps-extension",
     "targetExerciseId": "barbell-jm-press",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -17591,7 +17636,7 @@
     "sourceExerciseId": "barbell-overhead-triceps-extension",
     "targetExerciseId": "barbell-skull-crusher",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -17610,29 +17655,6 @@
     "id": "barbell-overhead-triceps-extension__dumbbell-jm-press",
     "sourceExerciseId": "barbell-overhead-triceps-extension",
     "targetExerciseId": "dumbbell-jm-press",
-    "type": "Substitute",
-    "rank": 7,
-    "compatibilityScore": 76,
-    "movementPattern": "Elbow Extension",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "triceps"
-    ],
-    "equipmentChange": true,
-    "swapContexts": [
-      "Equipment unavailable",
-      "Home gym",
-      "Hotel gym",
-      "Different equipment"
-    ],
-    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "barbell-overhead-triceps-extension__dumbbell-skull-crusher",
-    "sourceExerciseId": "barbell-overhead-triceps-extension",
-    "targetExerciseId": "dumbbell-skull-crusher",
     "type": "Substitute",
     "rank": 8,
     "compatibilityScore": 76,
@@ -18841,11 +18863,33 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "barbell-preacher-curl__ez-bar-preacher-curl",
+    "sourceExerciseId": "barbell-preacher-curl",
+    "targetExerciseId": "ez-bar-preacher-curl",
+    "type": "Equipment Alternative",
+    "rank": 2,
+    "compatibilityScore": 91,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow flexion movement while using ez-curl bar instead of barbell.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "barbell-preacher-curl__cable-preacher-curl",
     "sourceExerciseId": "barbell-preacher-curl",
     "targetExerciseId": "cable-preacher-curl",
     "type": "Equipment Alternative",
-    "rank": 2,
+    "rank": 3,
     "compatibilityScore": 89,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -18866,7 +18910,7 @@
     "sourceExerciseId": "barbell-preacher-curl",
     "targetExerciseId": "machine-preacher-curl",
     "type": "Regression",
-    "rank": 3,
+    "rank": 4,
     "compatibilityScore": 85.5,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -18889,7 +18933,7 @@
     "sourceExerciseId": "barbell-preacher-curl",
     "targetExerciseId": "barbell-biceps-curl",
     "type": "Substitute",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -18909,7 +18953,7 @@
     "sourceExerciseId": "barbell-preacher-curl",
     "targetExerciseId": "barbell-drag-curl",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -18929,7 +18973,7 @@
     "sourceExerciseId": "barbell-preacher-curl",
     "targetExerciseId": "barbell-reverse-curl",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -18948,29 +18992,6 @@
     "id": "barbell-preacher-curl__alternating-dumbbell-curl",
     "sourceExerciseId": "barbell-preacher-curl",
     "targetExerciseId": "alternating-dumbbell-curl",
-    "type": "Substitute",
-    "rank": 7,
-    "compatibilityScore": 76,
-    "movementPattern": "Elbow Flexion",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "biceps"
-    ],
-    "equipmentChange": true,
-    "swapContexts": [
-      "Equipment unavailable",
-      "Home gym",
-      "Hotel gym",
-      "Different equipment"
-    ],
-    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "barbell-preacher-curl__cross-body-hammer-curl",
-    "sourceExerciseId": "barbell-preacher-curl",
-    "targetExerciseId": "cross-body-hammer-curl",
     "type": "Substitute",
     "rank": 8,
     "compatibilityScore": 76,
@@ -19058,11 +19079,33 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "barbell-pullover__ez-bar-pullover",
+    "sourceExerciseId": "barbell-pullover",
+    "targetExerciseId": "ez-bar-pullover",
+    "type": "Equipment Alternative",
+    "rank": 4,
+    "compatibilityScore": 91,
+    "movementPattern": "Vertical Pull",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "lats"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the vertical pull movement while using ez-curl bar instead of barbell.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "barbell-pullover__kettlebell-pullover",
     "sourceExerciseId": "barbell-pullover",
     "targetExerciseId": "kettlebell-pullover",
     "type": "Substitute",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 82,
     "movementPattern": "Vertical Pull",
     "preservesPattern": true,
@@ -19084,7 +19127,7 @@
     "sourceExerciseId": "barbell-pullover",
     "targetExerciseId": "archer-pull-up",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 80,
     "movementPattern": "Vertical Pull",
     "preservesPattern": true,
@@ -19108,7 +19151,7 @@
     "sourceExerciseId": "barbell-pullover",
     "targetExerciseId": "band-lat-pulldown",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 80,
     "movementPattern": "Vertical Pull",
     "preservesPattern": true,
@@ -19131,7 +19174,7 @@
     "sourceExerciseId": "barbell-pullover",
     "targetExerciseId": "band-straight-arm-pulldown",
     "type": "Substitute",
-    "rank": 7,
+    "rank": 8,
     "compatibilityScore": 80,
     "movementPattern": "Vertical Pull",
     "preservesPattern": true,
@@ -19144,27 +19187,6 @@
       "Equipment unavailable",
       "Home gym",
       "Hotel gym",
-      "Different equipment"
-    ],
-    "reason": "Preserves the vertical pull pattern and trains the latissimus dorsi with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "barbell-pullover__cable-lat-pulldown",
-    "sourceExerciseId": "barbell-pullover",
-    "targetExerciseId": "cable-lat-pulldown",
-    "type": "Substitute",
-    "rank": 8,
-    "compatibilityScore": 80,
-    "movementPattern": "Vertical Pull",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "lats"
-    ],
-    "equipmentChange": true,
-    "swapContexts": [
-      "Equipment unavailable",
       "Different equipment"
     ],
     "reason": "Preserves the vertical pull pattern and trains the latissimus dorsi with a different exercise.",
@@ -21114,11 +21136,33 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "barbell-skull-crusher__ez-bar-skull-crusher",
+    "sourceExerciseId": "barbell-skull-crusher",
+    "targetExerciseId": "ez-bar-skull-crusher",
+    "type": "Equipment Alternative",
+    "rank": 2,
+    "compatibilityScore": 91,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension movement while using ez-curl bar instead of barbell.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "barbell-skull-crusher__cable-skull-crusher",
     "sourceExerciseId": "barbell-skull-crusher",
     "targetExerciseId": "cable-skull-crusher",
     "type": "Equipment Alternative",
-    "rank": 2,
+    "rank": 3,
     "compatibilityScore": 89,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -21139,7 +21183,7 @@
     "sourceExerciseId": "barbell-skull-crusher",
     "targetExerciseId": "barbell-jm-press",
     "type": "Substitute",
-    "rank": 3,
+    "rank": 4,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -21159,7 +21203,7 @@
     "sourceExerciseId": "barbell-skull-crusher",
     "targetExerciseId": "barbell-overhead-triceps-extension",
     "type": "Substitute",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -21179,7 +21223,7 @@
     "sourceExerciseId": "barbell-skull-crusher",
     "targetExerciseId": "dumbbell-jm-press",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 76,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -21202,7 +21246,7 @@
     "sourceExerciseId": "barbell-skull-crusher",
     "targetExerciseId": "dumbbell-tate-press",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 76,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -21225,7 +21269,7 @@
     "sourceExerciseId": "barbell-skull-crusher",
     "targetExerciseId": "dumbbell-triceps-kickback",
     "type": "Substitute",
-    "rank": 7,
+    "rank": 8,
     "compatibilityScore": 76,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -21241,26 +21285,6 @@
       "Different equipment"
     ],
     "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "barbell-skull-crusher__single-arm-dumbbell-overhead-triceps-extension",
-    "sourceExerciseId": "barbell-skull-crusher",
-    "targetExerciseId": "single-arm-dumbbell-overhead-triceps-extension",
-    "type": "Progression",
-    "rank": 8,
-    "compatibilityScore": 76,
-    "movementPattern": "Elbow Extension",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "triceps"
-    ],
-    "equipmentChange": true,
-    "swapContexts": [
-      "Skill progression"
-    ],
-    "reason": "A more demanding elbow extension progression using dumbbell instead of barbell.",
     "editorialStatus": "Auto-Generated"
   },
   {
@@ -23309,6 +23333,28 @@
       "Skill regression"
     ],
     "reason": "An easier horizontal pull regression using selectorized machine instead of barbell.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "barbell-upright-row__ez-bar-upright-row",
+    "sourceExerciseId": "barbell-upright-row",
+    "targetExerciseId": "ez-bar-upright-row",
+    "type": "Equipment Alternative",
+    "rank": 5,
+    "compatibilityScore": 85.5,
+    "movementPattern": "Horizontal Pull",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "lateral_deltoids"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the horizontal pull movement while using ez-curl bar instead of barbell.",
     "editorialStatus": "Auto-Generated"
   },
   {
@@ -28651,11 +28697,33 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "cable-biceps-curl__ez-bar-biceps-curl",
+    "sourceExerciseId": "cable-biceps-curl",
+    "targetExerciseId": "ez-bar-biceps-curl",
+    "type": "Equipment Alternative",
+    "rank": 5,
+    "compatibilityScore": 85.5,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow flexion movement while using ez-curl bar instead of cable machine.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "cable-biceps-curl__bayesian-cable-curl",
     "sourceExerciseId": "cable-biceps-curl",
     "targetExerciseId": "bayesian-cable-curl",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -28675,7 +28743,7 @@
     "sourceExerciseId": "cable-biceps-curl",
     "targetExerciseId": "cable-preacher-curl",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -28694,26 +28762,6 @@
     "id": "cable-biceps-curl__cable-reverse-curl",
     "sourceExerciseId": "cable-biceps-curl",
     "targetExerciseId": "cable-reverse-curl",
-    "type": "Substitute",
-    "rank": 7,
-    "compatibilityScore": 79,
-    "movementPattern": "Elbow Flexion",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "biceps"
-    ],
-    "equipmentChange": false,
-    "swapContexts": [
-      "General swap"
-    ],
-    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "cable-biceps-curl__cable-rope-hammer-curl",
-    "sourceExerciseId": "cable-biceps-curl",
-    "targetExerciseId": "cable-rope-hammer-curl",
     "type": "Substitute",
     "rank": 8,
     "compatibilityScore": 79,
@@ -32699,11 +32747,33 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "cable-overhead-triceps-extension__ez-bar-overhead-triceps-extension",
+    "sourceExerciseId": "cable-overhead-triceps-extension",
+    "targetExerciseId": "ez-bar-overhead-triceps-extension",
+    "type": "Equipment Alternative",
+    "rank": 4,
+    "compatibilityScore": 89,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension movement while using ez-curl bar instead of cable machine.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "cable-overhead-triceps-extension__single-arm-dumbbell-overhead-triceps-extension",
     "sourceExerciseId": "cable-overhead-triceps-extension",
     "targetExerciseId": "single-arm-dumbbell-overhead-triceps-extension",
     "type": "Progression",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 89,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -32723,7 +32793,7 @@
     "sourceExerciseId": "cable-overhead-triceps-extension",
     "targetExerciseId": "cable-cross-body-triceps-extension",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -32743,7 +32813,7 @@
     "sourceExerciseId": "cable-overhead-triceps-extension",
     "targetExerciseId": "cable-rope-pushdown",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -32762,26 +32832,6 @@
     "id": "cable-overhead-triceps-extension__cable-skull-crusher",
     "sourceExerciseId": "cable-overhead-triceps-extension",
     "targetExerciseId": "cable-skull-crusher",
-    "type": "Substitute",
-    "rank": 7,
-    "compatibilityScore": 79,
-    "movementPattern": "Elbow Extension",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "triceps"
-    ],
-    "equipmentChange": false,
-    "swapContexts": [
-      "General swap"
-    ],
-    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "cable-overhead-triceps-extension__cable-triceps-pushdown",
-    "sourceExerciseId": "cable-overhead-triceps-extension",
-    "targetExerciseId": "cable-triceps-pushdown",
     "type": "Substitute",
     "rank": 8,
     "compatibilityScore": 79,
@@ -33003,11 +33053,33 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "cable-preacher-curl__ez-bar-preacher-curl",
+    "sourceExerciseId": "cable-preacher-curl",
+    "targetExerciseId": "ez-bar-preacher-curl",
+    "type": "Equipment Alternative",
+    "rank": 3,
+    "compatibilityScore": 89,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow flexion movement while using ez-curl bar instead of cable machine.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "cable-preacher-curl__machine-preacher-curl",
     "sourceExerciseId": "cable-preacher-curl",
     "targetExerciseId": "machine-preacher-curl",
     "type": "Regression",
-    "rank": 3,
+    "rank": 4,
     "compatibilityScore": 87.5,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -33030,7 +33102,7 @@
     "sourceExerciseId": "cable-preacher-curl",
     "targetExerciseId": "bayesian-cable-curl",
     "type": "Substitute",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -33050,7 +33122,7 @@
     "sourceExerciseId": "cable-preacher-curl",
     "targetExerciseId": "cable-biceps-curl",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -33070,7 +33142,7 @@
     "sourceExerciseId": "cable-preacher-curl",
     "targetExerciseId": "cable-reverse-curl",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -33089,26 +33161,6 @@
     "id": "cable-preacher-curl__cable-rope-hammer-curl",
     "sourceExerciseId": "cable-preacher-curl",
     "targetExerciseId": "cable-rope-hammer-curl",
-    "type": "Substitute",
-    "rank": 7,
-    "compatibilityScore": 79,
-    "movementPattern": "Elbow Flexion",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "biceps"
-    ],
-    "equipmentChange": false,
-    "swapContexts": [
-      "General swap"
-    ],
-    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "cable-preacher-curl__cable-straight-bar-curl",
-    "sourceExerciseId": "cable-preacher-curl",
-    "targetExerciseId": "cable-straight-bar-curl",
     "type": "Substitute",
     "rank": 8,
     "compatibilityScore": 79,
@@ -33531,11 +33583,33 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "cable-pullover__ez-bar-pullover",
+    "sourceExerciseId": "cable-pullover",
+    "targetExerciseId": "ez-bar-pullover",
+    "type": "Equipment Alternative",
+    "rank": 4,
+    "compatibilityScore": 89,
+    "movementPattern": "Vertical Pull",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "lats"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the vertical pull movement while using ez-curl bar instead of cable machine.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "cable-pullover__cable-lat-pulldown",
     "sourceExerciseId": "cable-pullover",
     "targetExerciseId": "cable-lat-pulldown",
     "type": "Substitute",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 85,
     "movementPattern": "Vertical Pull",
     "preservesPattern": true,
@@ -33555,7 +33629,7 @@
     "sourceExerciseId": "cable-pullover",
     "targetExerciseId": "close-grip-cable-lat-pulldown",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 85,
     "movementPattern": "Vertical Pull",
     "preservesPattern": true,
@@ -33575,7 +33649,7 @@
     "sourceExerciseId": "cable-pullover",
     "targetExerciseId": "half-kneeling-single-arm-lat-pulldown",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 85,
     "movementPattern": "Vertical Pull",
     "preservesPattern": true,
@@ -33594,26 +33668,6 @@
     "id": "cable-pullover__neutral-grip-cable-lat-pulldown",
     "sourceExerciseId": "cable-pullover",
     "targetExerciseId": "neutral-grip-cable-lat-pulldown",
-    "type": "Substitute",
-    "rank": 7,
-    "compatibilityScore": 85,
-    "movementPattern": "Vertical Pull",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "lats"
-    ],
-    "equipmentChange": false,
-    "swapContexts": [
-      "General swap"
-    ],
-    "reason": "Preserves the vertical pull pattern and trains the latissimus dorsi with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "cable-pullover__single-arm-cable-lat-pulldown",
-    "sourceExerciseId": "cable-pullover",
-    "targetExerciseId": "single-arm-cable-lat-pulldown",
     "type": "Substitute",
     "rank": 8,
     "compatibilityScore": 85,
@@ -35456,11 +35510,33 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "cable-skull-crusher__ez-bar-skull-crusher",
+    "sourceExerciseId": "cable-skull-crusher",
+    "targetExerciseId": "ez-bar-skull-crusher",
+    "type": "Equipment Alternative",
+    "rank": 3,
+    "compatibilityScore": 89,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension movement while using ez-curl bar instead of cable machine.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "cable-skull-crusher__cable-cross-body-triceps-extension",
     "sourceExerciseId": "cable-skull-crusher",
     "targetExerciseId": "cable-cross-body-triceps-extension",
     "type": "Substitute",
-    "rank": 3,
+    "rank": 4,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -35480,7 +35556,7 @@
     "sourceExerciseId": "cable-skull-crusher",
     "targetExerciseId": "cable-overhead-triceps-extension",
     "type": "Substitute",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -35500,7 +35576,7 @@
     "sourceExerciseId": "cable-skull-crusher",
     "targetExerciseId": "cable-rope-pushdown",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -35520,7 +35596,7 @@
     "sourceExerciseId": "cable-skull-crusher",
     "targetExerciseId": "cable-triceps-pushdown",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -35539,26 +35615,6 @@
     "id": "cable-skull-crusher__single-arm-cable-overhead-triceps-extension",
     "sourceExerciseId": "cable-skull-crusher",
     "targetExerciseId": "single-arm-cable-overhead-triceps-extension",
-    "type": "Substitute",
-    "rank": 7,
-    "compatibilityScore": 79,
-    "movementPattern": "Elbow Extension",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "triceps"
-    ],
-    "equipmentChange": false,
-    "swapContexts": [
-      "General swap"
-    ],
-    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "cable-skull-crusher__single-arm-cable-pushdown",
-    "sourceExerciseId": "cable-skull-crusher",
-    "targetExerciseId": "single-arm-cable-pushdown",
     "type": "Substitute",
     "rank": 8,
     "compatibilityScore": 79,
@@ -36673,6 +36729,28 @@
       "Skill regression"
     ],
     "reason": "An easier horizontal pull regression using selectorized machine instead of cable machine.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "cable-upright-row__ez-bar-upright-row",
+    "sourceExerciseId": "cable-upright-row",
+    "targetExerciseId": "ez-bar-upright-row",
+    "type": "Equipment Alternative",
+    "rank": 5,
+    "compatibilityScore": 83.5,
+    "movementPattern": "Horizontal Pull",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "lateral_deltoids"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the horizontal pull movement while using ez-curl bar instead of cable machine.",
     "editorialStatus": "Auto-Generated"
   },
   {
@@ -45138,11 +45216,35 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "dumbbell-biceps-curl__ez-bar-biceps-curl",
+    "sourceExerciseId": "dumbbell-biceps-curl",
+    "targetExerciseId": "ez-bar-biceps-curl",
+    "type": "Regression",
+    "rank": 4,
+    "compatibilityScore": 87.5,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Different equipment",
+      "More stability",
+      "Skill regression"
+    ],
+    "reason": "An easier elbow flexion regression using ez-curl bar instead of dumbbell.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "dumbbell-biceps-curl__machine-biceps-curl",
     "sourceExerciseId": "dumbbell-biceps-curl",
     "targetExerciseId": "machine-biceps-curl",
     "type": "Regression",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 85.5,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -45165,7 +45267,7 @@
     "sourceExerciseId": "dumbbell-biceps-curl",
     "targetExerciseId": "alternating-dumbbell-curl",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -45185,7 +45287,7 @@
     "sourceExerciseId": "dumbbell-biceps-curl",
     "targetExerciseId": "cross-body-hammer-curl",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -45204,26 +45306,6 @@
     "id": "dumbbell-biceps-curl__dumbbell-bayesian-curl",
     "sourceExerciseId": "dumbbell-biceps-curl",
     "targetExerciseId": "dumbbell-bayesian-curl",
-    "type": "Substitute",
-    "rank": 7,
-    "compatibilityScore": 79,
-    "movementPattern": "Elbow Flexion",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "biceps"
-    ],
-    "equipmentChange": false,
-    "swapContexts": [
-      "General swap"
-    ],
-    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "dumbbell-biceps-curl__dumbbell-concentration-curl",
-    "sourceExerciseId": "dumbbell-biceps-curl",
-    "targetExerciseId": "dumbbell-concentration-curl",
     "type": "Substitute",
     "rank": 8,
     "compatibilityScore": 79,
@@ -47448,11 +47530,33 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "dumbbell-drag-curl__ez-bar-drag-curl",
+    "sourceExerciseId": "dumbbell-drag-curl",
+    "targetExerciseId": "ez-bar-drag-curl",
+    "type": "Equipment Alternative",
+    "rank": 2,
+    "compatibilityScore": 91,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow flexion movement while using ez-curl bar instead of dumbbell.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "dumbbell-drag-curl__alternating-dumbbell-curl",
     "sourceExerciseId": "dumbbell-drag-curl",
     "targetExerciseId": "alternating-dumbbell-curl",
     "type": "Substitute",
-    "rank": 2,
+    "rank": 3,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -47472,7 +47576,7 @@
     "sourceExerciseId": "dumbbell-drag-curl",
     "targetExerciseId": "cross-body-hammer-curl",
     "type": "Substitute",
-    "rank": 3,
+    "rank": 4,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -47492,7 +47596,7 @@
     "sourceExerciseId": "dumbbell-drag-curl",
     "targetExerciseId": "dumbbell-bayesian-curl",
     "type": "Substitute",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -47512,7 +47616,7 @@
     "sourceExerciseId": "dumbbell-drag-curl",
     "targetExerciseId": "dumbbell-biceps-curl",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -47532,7 +47636,7 @@
     "sourceExerciseId": "dumbbell-drag-curl",
     "targetExerciseId": "dumbbell-concentration-curl",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -47551,26 +47655,6 @@
     "id": "dumbbell-drag-curl__dumbbell-hammer-curl",
     "sourceExerciseId": "dumbbell-drag-curl",
     "targetExerciseId": "dumbbell-hammer-curl",
-    "type": "Substitute",
-    "rank": 7,
-    "compatibilityScore": 79,
-    "movementPattern": "Elbow Flexion",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "biceps"
-    ],
-    "equipmentChange": false,
-    "swapContexts": [
-      "General swap"
-    ],
-    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "dumbbell-drag-curl__dumbbell-incline-curl",
-    "sourceExerciseId": "dumbbell-drag-curl",
-    "targetExerciseId": "dumbbell-incline-curl",
     "type": "Substitute",
     "rank": 8,
     "compatibilityScore": 79,
@@ -50162,11 +50246,33 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "dumbbell-jm-press__ez-bar-jm-press",
+    "sourceExerciseId": "dumbbell-jm-press",
+    "targetExerciseId": "ez-bar-jm-press",
+    "type": "Equipment Alternative",
+    "rank": 2,
+    "compatibilityScore": 87.5,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension movement while using ez-curl bar instead of dumbbell.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "dumbbell-jm-press__dumbbell-skull-crusher",
     "sourceExerciseId": "dumbbell-jm-press",
     "targetExerciseId": "dumbbell-skull-crusher",
     "type": "Substitute",
-    "rank": 2,
+    "rank": 3,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -50186,7 +50292,7 @@
     "sourceExerciseId": "dumbbell-jm-press",
     "targetExerciseId": "dumbbell-tate-press",
     "type": "Substitute",
-    "rank": 3,
+    "rank": 4,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -50206,7 +50312,7 @@
     "sourceExerciseId": "dumbbell-jm-press",
     "targetExerciseId": "dumbbell-triceps-kickback",
     "type": "Substitute",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -50226,7 +50332,7 @@
     "sourceExerciseId": "dumbbell-jm-press",
     "targetExerciseId": "single-arm-dumbbell-overhead-triceps-extension",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -50246,7 +50352,7 @@
     "sourceExerciseId": "dumbbell-jm-press",
     "targetExerciseId": "two-hand-dumbbell-overhead-triceps-extension",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -50265,27 +50371,6 @@
     "id": "dumbbell-jm-press__barbell-overhead-triceps-extension",
     "sourceExerciseId": "dumbbell-jm-press",
     "targetExerciseId": "barbell-overhead-triceps-extension",
-    "type": "Substitute",
-    "rank": 7,
-    "compatibilityScore": 76,
-    "movementPattern": "Elbow Extension",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "triceps"
-    ],
-    "equipmentChange": true,
-    "swapContexts": [
-      "Equipment unavailable",
-      "Different equipment"
-    ],
-    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "dumbbell-jm-press__barbell-skull-crusher",
-    "sourceExerciseId": "dumbbell-jm-press",
-    "targetExerciseId": "barbell-skull-crusher",
     "type": "Substitute",
     "rank": 8,
     "compatibilityScore": 76,
@@ -51314,11 +51399,33 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "dumbbell-preacher-curl__ez-bar-preacher-curl",
+    "sourceExerciseId": "dumbbell-preacher-curl",
+    "targetExerciseId": "ez-bar-preacher-curl",
+    "type": "Equipment Alternative",
+    "rank": 2,
+    "compatibilityScore": 91,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow flexion movement while using ez-curl bar instead of dumbbell.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "dumbbell-preacher-curl__cable-preacher-curl",
     "sourceExerciseId": "dumbbell-preacher-curl",
     "targetExerciseId": "cable-preacher-curl",
     "type": "Regression",
-    "rank": 2,
+    "rank": 3,
     "compatibilityScore": 89,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -51341,7 +51448,7 @@
     "sourceExerciseId": "dumbbell-preacher-curl",
     "targetExerciseId": "machine-preacher-curl",
     "type": "Regression",
-    "rank": 3,
+    "rank": 4,
     "compatibilityScore": 85.5,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -51364,7 +51471,7 @@
     "sourceExerciseId": "dumbbell-preacher-curl",
     "targetExerciseId": "alternating-dumbbell-curl",
     "type": "Substitute",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -51384,7 +51491,7 @@
     "sourceExerciseId": "dumbbell-preacher-curl",
     "targetExerciseId": "cross-body-hammer-curl",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -51404,7 +51511,7 @@
     "sourceExerciseId": "dumbbell-preacher-curl",
     "targetExerciseId": "dumbbell-bayesian-curl",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -51423,26 +51530,6 @@
     "id": "dumbbell-preacher-curl__dumbbell-biceps-curl",
     "sourceExerciseId": "dumbbell-preacher-curl",
     "targetExerciseId": "dumbbell-biceps-curl",
-    "type": "Substitute",
-    "rank": 7,
-    "compatibilityScore": 79,
-    "movementPattern": "Elbow Flexion",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "biceps"
-    ],
-    "equipmentChange": false,
-    "swapContexts": [
-      "General swap"
-    ],
-    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "dumbbell-preacher-curl__dumbbell-concentration-curl",
-    "sourceExerciseId": "dumbbell-preacher-curl",
-    "targetExerciseId": "dumbbell-concentration-curl",
     "type": "Substitute",
     "rank": 8,
     "compatibilityScore": 79,
@@ -51527,11 +51614,33 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "dumbbell-pullover__ez-bar-pullover",
+    "sourceExerciseId": "dumbbell-pullover",
+    "targetExerciseId": "ez-bar-pullover",
+    "type": "Equipment Alternative",
+    "rank": 4,
+    "compatibilityScore": 91,
+    "movementPattern": "Vertical Pull",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "lats"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the vertical pull movement while using ez-curl bar instead of dumbbell.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "dumbbell-pullover__kettlebell-pullover",
     "sourceExerciseId": "dumbbell-pullover",
     "targetExerciseId": "kettlebell-pullover",
     "type": "Substitute",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 82,
     "movementPattern": "Vertical Pull",
     "preservesPattern": true,
@@ -51553,7 +51662,7 @@
     "sourceExerciseId": "dumbbell-pullover",
     "targetExerciseId": "archer-pull-up",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 80,
     "movementPattern": "Vertical Pull",
     "preservesPattern": true,
@@ -51577,7 +51686,7 @@
     "sourceExerciseId": "dumbbell-pullover",
     "targetExerciseId": "band-lat-pulldown",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 80,
     "movementPattern": "Vertical Pull",
     "preservesPattern": true,
@@ -51600,7 +51709,7 @@
     "sourceExerciseId": "dumbbell-pullover",
     "targetExerciseId": "band-straight-arm-pulldown",
     "type": "Substitute",
-    "rank": 7,
+    "rank": 8,
     "compatibilityScore": 80,
     "movementPattern": "Vertical Pull",
     "preservesPattern": true,
@@ -51616,29 +51725,6 @@
       "Different equipment"
     ],
     "reason": "Preserves the vertical pull pattern and trains the latissimus dorsi with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "dumbbell-pullover__cable-lat-pulldown",
-    "sourceExerciseId": "dumbbell-pullover",
-    "targetExerciseId": "cable-lat-pulldown",
-    "type": "Regression",
-    "rank": 8,
-    "compatibilityScore": 80,
-    "movementPattern": "Vertical Pull",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "lats"
-    ],
-    "equipmentChange": true,
-    "swapContexts": [
-      "Equipment unavailable",
-      "Different equipment",
-      "More stability",
-      "Skill regression"
-    ],
-    "reason": "An easier vertical pull regression using cable machine instead of dumbbell.",
     "editorialStatus": "Auto-Generated"
   },
   {
@@ -53220,11 +53306,33 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "dumbbell-skull-crusher__ez-bar-skull-crusher",
+    "sourceExerciseId": "dumbbell-skull-crusher",
+    "targetExerciseId": "ez-bar-skull-crusher",
+    "type": "Equipment Alternative",
+    "rank": 2,
+    "compatibilityScore": 91,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension movement while using ez-curl bar instead of dumbbell.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "dumbbell-skull-crusher__cable-skull-crusher",
     "sourceExerciseId": "dumbbell-skull-crusher",
     "targetExerciseId": "cable-skull-crusher",
     "type": "Regression",
-    "rank": 2,
+    "rank": 3,
     "compatibilityScore": 89,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -53247,7 +53355,7 @@
     "sourceExerciseId": "dumbbell-skull-crusher",
     "targetExerciseId": "dumbbell-jm-press",
     "type": "Substitute",
-    "rank": 3,
+    "rank": 4,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -53267,7 +53375,7 @@
     "sourceExerciseId": "dumbbell-skull-crusher",
     "targetExerciseId": "dumbbell-tate-press",
     "type": "Substitute",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -53287,7 +53395,7 @@
     "sourceExerciseId": "dumbbell-skull-crusher",
     "targetExerciseId": "dumbbell-triceps-kickback",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -53307,7 +53415,7 @@
     "sourceExerciseId": "dumbbell-skull-crusher",
     "targetExerciseId": "single-arm-dumbbell-overhead-triceps-extension",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -53327,7 +53435,7 @@
     "sourceExerciseId": "dumbbell-skull-crusher",
     "targetExerciseId": "two-hand-dumbbell-overhead-triceps-extension",
     "type": "Substitute",
-    "rank": 7,
+    "rank": 8,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -53343,24 +53451,25 @@
     "editorialStatus": "Auto-Generated"
   },
   {
-    "id": "dumbbell-skull-crusher__barbell-jm-press",
-    "sourceExerciseId": "dumbbell-skull-crusher",
-    "targetExerciseId": "barbell-jm-press",
-    "type": "Substitute",
-    "rank": 8,
-    "compatibilityScore": 76,
-    "movementPattern": "Elbow Extension",
+    "id": "dumbbell-spider-curl__ez-bar-spider-curl",
+    "sourceExerciseId": "dumbbell-spider-curl",
+    "targetExerciseId": "ez-bar-spider-curl",
+    "type": "Equipment Alternative",
+    "rank": 1,
+    "compatibilityScore": 91,
+    "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
     "samePrimaryMuscle": true,
     "sharedPrimaryMuscleIds": [
-      "triceps"
+      "biceps"
     ],
     "equipmentChange": true,
     "swapContexts": [
       "Equipment unavailable",
+      "Home gym",
       "Different equipment"
     ],
-    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "reason": "Preserves the elbow flexion movement while using ez-curl bar instead of dumbbell.",
     "editorialStatus": "Auto-Generated"
   },
   {
@@ -53368,7 +53477,7 @@
     "sourceExerciseId": "dumbbell-spider-curl",
     "targetExerciseId": "alternating-dumbbell-curl",
     "type": "Substitute",
-    "rank": 1,
+    "rank": 2,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -53388,7 +53497,7 @@
     "sourceExerciseId": "dumbbell-spider-curl",
     "targetExerciseId": "cross-body-hammer-curl",
     "type": "Substitute",
-    "rank": 2,
+    "rank": 3,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -53408,7 +53517,7 @@
     "sourceExerciseId": "dumbbell-spider-curl",
     "targetExerciseId": "dumbbell-bayesian-curl",
     "type": "Substitute",
-    "rank": 3,
+    "rank": 4,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -53428,7 +53537,7 @@
     "sourceExerciseId": "dumbbell-spider-curl",
     "targetExerciseId": "dumbbell-biceps-curl",
     "type": "Substitute",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -53448,7 +53557,7 @@
     "sourceExerciseId": "dumbbell-spider-curl",
     "targetExerciseId": "dumbbell-concentration-curl",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -53468,7 +53577,7 @@
     "sourceExerciseId": "dumbbell-spider-curl",
     "targetExerciseId": "dumbbell-drag-curl",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -53487,26 +53596,6 @@
     "id": "dumbbell-spider-curl__dumbbell-hammer-curl",
     "sourceExerciseId": "dumbbell-spider-curl",
     "targetExerciseId": "dumbbell-hammer-curl",
-    "type": "Substitute",
-    "rank": 7,
-    "compatibilityScore": 79,
-    "movementPattern": "Elbow Flexion",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "biceps"
-    ],
-    "equipmentChange": false,
-    "swapContexts": [
-      "General swap"
-    ],
-    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "dumbbell-spider-curl__dumbbell-incline-curl",
-    "sourceExerciseId": "dumbbell-spider-curl",
-    "targetExerciseId": "dumbbell-incline-curl",
     "type": "Substitute",
     "rank": 8,
     "compatibilityScore": 79,
@@ -55474,6 +55563,28 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "dumbbell-upright-row__ez-bar-upright-row",
+    "sourceExerciseId": "dumbbell-upright-row",
+    "targetExerciseId": "ez-bar-upright-row",
+    "type": "Equipment Alternative",
+    "rank": 5,
+    "compatibilityScore": 85.5,
+    "movementPattern": "Horizontal Pull",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "lateral_deltoids"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the horizontal pull movement while using ez-curl bar instead of dumbbell.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "dumbbell-waiter-carry__dumbbell-farmer-carry",
     "sourceExerciseId": "dumbbell-waiter-carry",
     "targetExerciseId": "dumbbell-farmer-carry",
@@ -56874,6 +56985,1696 @@
       "General swap"
     ],
     "reason": "Preserves the horizontal press pattern and trains the chest with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-biceps-curl__machine-biceps-curl",
+    "sourceExerciseId": "ez-bar-biceps-curl",
+    "targetExerciseId": "machine-biceps-curl",
+    "type": "Regression",
+    "rank": 1,
+    "compatibilityScore": 89,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment",
+      "More stability",
+      "Skill regression"
+    ],
+    "reason": "An easier elbow flexion regression using selectorized machine instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-biceps-curl__barbell-biceps-curl",
+    "sourceExerciseId": "ez-bar-biceps-curl",
+    "targetExerciseId": "barbell-biceps-curl",
+    "type": "Progression",
+    "rank": 2,
+    "compatibilityScore": 87.5,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding elbow flexion progression using barbell instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-biceps-curl__dumbbell-biceps-curl",
+    "sourceExerciseId": "ez-bar-biceps-curl",
+    "targetExerciseId": "dumbbell-biceps-curl",
+    "type": "Progression",
+    "rank": 3,
+    "compatibilityScore": 87.5,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding elbow flexion progression using dumbbell instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-biceps-curl__band-biceps-curl",
+    "sourceExerciseId": "ez-bar-biceps-curl",
+    "targetExerciseId": "band-biceps-curl",
+    "type": "Progression",
+    "rank": 4,
+    "compatibilityScore": 85.5,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding elbow flexion progression using resistance band instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-biceps-curl__cable-biceps-curl",
+    "sourceExerciseId": "ez-bar-biceps-curl",
+    "targetExerciseId": "cable-biceps-curl",
+    "type": "Equipment Alternative",
+    "rank": 5,
+    "compatibilityScore": 85.5,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow flexion movement while using cable machine instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-biceps-curl__ez-bar-drag-curl",
+    "sourceExerciseId": "ez-bar-biceps-curl",
+    "targetExerciseId": "ez-bar-drag-curl",
+    "type": "Progression",
+    "rank": 6,
+    "compatibilityScore": 81.5,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding elbow flexion progression with greater technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-biceps-curl__ez-bar-preacher-curl",
+    "sourceExerciseId": "ez-bar-biceps-curl",
+    "targetExerciseId": "ez-bar-preacher-curl",
+    "type": "Progression",
+    "rank": 7,
+    "compatibilityScore": 81.5,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding elbow flexion progression with greater technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-biceps-curl__ez-bar-spider-curl",
+    "sourceExerciseId": "ez-bar-biceps-curl",
+    "targetExerciseId": "ez-bar-spider-curl",
+    "type": "Progression",
+    "rank": 8,
+    "compatibilityScore": 81.5,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding elbow flexion progression with greater technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-drag-curl__barbell-drag-curl",
+    "sourceExerciseId": "ez-bar-drag-curl",
+    "targetExerciseId": "barbell-drag-curl",
+    "type": "Equipment Alternative",
+    "rank": 1,
+    "compatibilityScore": 91,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow flexion movement while using barbell instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-drag-curl__dumbbell-drag-curl",
+    "sourceExerciseId": "ez-bar-drag-curl",
+    "targetExerciseId": "dumbbell-drag-curl",
+    "type": "Equipment Alternative",
+    "rank": 2,
+    "compatibilityScore": 91,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Hotel gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow flexion movement while using dumbbell instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-drag-curl__ez-bar-preacher-curl",
+    "sourceExerciseId": "ez-bar-drag-curl",
+    "targetExerciseId": "ez-bar-preacher-curl",
+    "type": "Substitute",
+    "rank": 3,
+    "compatibilityScore": 85,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-drag-curl__ez-bar-spider-curl",
+    "sourceExerciseId": "ez-bar-drag-curl",
+    "targetExerciseId": "ez-bar-spider-curl",
+    "type": "Substitute",
+    "rank": 4,
+    "compatibilityScore": 85,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-drag-curl__ez-bar-biceps-curl",
+    "sourceExerciseId": "ez-bar-drag-curl",
+    "targetExerciseId": "ez-bar-biceps-curl",
+    "type": "Regression",
+    "rank": 5,
+    "compatibilityScore": 81.5,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "More stability",
+      "Skill regression"
+    ],
+    "reason": "An easier elbow flexion regression with lower technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-drag-curl__alternating-dumbbell-curl",
+    "sourceExerciseId": "ez-bar-drag-curl",
+    "targetExerciseId": "alternating-dumbbell-curl",
+    "type": "Substitute",
+    "rank": 6,
+    "compatibilityScore": 76,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Hotel gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-drag-curl__barbell-biceps-curl",
+    "sourceExerciseId": "ez-bar-drag-curl",
+    "targetExerciseId": "barbell-biceps-curl",
+    "type": "Substitute",
+    "rank": 7,
+    "compatibilityScore": 76,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-drag-curl__barbell-preacher-curl",
+    "sourceExerciseId": "ez-bar-drag-curl",
+    "targetExerciseId": "barbell-preacher-curl",
+    "type": "Substitute",
+    "rank": 8,
+    "compatibilityScore": 76,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-jm-press__barbell-jm-press",
+    "sourceExerciseId": "ez-bar-jm-press",
+    "targetExerciseId": "barbell-jm-press",
+    "type": "Regression",
+    "rank": 1,
+    "compatibilityScore": 87.5,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment",
+      "More stability",
+      "Skill regression"
+    ],
+    "reason": "An easier elbow extension regression using barbell instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-jm-press__dumbbell-jm-press",
+    "sourceExerciseId": "ez-bar-jm-press",
+    "targetExerciseId": "dumbbell-jm-press",
+    "type": "Equipment Alternative",
+    "rank": 2,
+    "compatibilityScore": 87.5,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Hotel gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension movement while using dumbbell instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-jm-press__ez-bar-overhead-triceps-extension",
+    "sourceExerciseId": "ez-bar-jm-press",
+    "targetExerciseId": "ez-bar-overhead-triceps-extension",
+    "type": "Regression",
+    "rank": 3,
+    "compatibilityScore": 75.5,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "More stability",
+      "Skill regression"
+    ],
+    "reason": "An easier elbow extension regression with lower technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-jm-press__ez-bar-skull-crusher",
+    "sourceExerciseId": "ez-bar-jm-press",
+    "targetExerciseId": "ez-bar-skull-crusher",
+    "type": "Regression",
+    "rank": 4,
+    "compatibilityScore": 75.5,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "More stability",
+      "Skill regression"
+    ],
+    "reason": "An easier elbow extension regression with lower technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-jm-press__barbell-overhead-triceps-extension",
+    "sourceExerciseId": "ez-bar-jm-press",
+    "targetExerciseId": "barbell-overhead-triceps-extension",
+    "type": "Regression",
+    "rank": 5,
+    "compatibilityScore": 72.5,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment",
+      "More stability",
+      "Skill regression"
+    ],
+    "reason": "An easier elbow extension regression using barbell instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-jm-press__barbell-skull-crusher",
+    "sourceExerciseId": "ez-bar-jm-press",
+    "targetExerciseId": "barbell-skull-crusher",
+    "type": "Regression",
+    "rank": 6,
+    "compatibilityScore": 72.5,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment",
+      "More stability",
+      "Skill regression"
+    ],
+    "reason": "An easier elbow extension regression using barbell instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-jm-press__dumbbell-skull-crusher",
+    "sourceExerciseId": "ez-bar-jm-press",
+    "targetExerciseId": "dumbbell-skull-crusher",
+    "type": "Substitute",
+    "rank": 7,
+    "compatibilityScore": 72.5,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Hotel gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-jm-press__dumbbell-tate-press",
+    "sourceExerciseId": "ez-bar-jm-press",
+    "targetExerciseId": "dumbbell-tate-press",
+    "type": "Substitute",
+    "rank": 8,
+    "compatibilityScore": 72.5,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Hotel gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-overhead-triceps-extension__barbell-overhead-triceps-extension",
+    "sourceExerciseId": "ez-bar-overhead-triceps-extension",
+    "targetExerciseId": "barbell-overhead-triceps-extension",
+    "type": "Equipment Alternative",
+    "rank": 1,
+    "compatibilityScore": 91,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension movement while using barbell instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-overhead-triceps-extension__single-arm-dumbbell-overhead-triceps-extension",
+    "sourceExerciseId": "ez-bar-overhead-triceps-extension",
+    "targetExerciseId": "single-arm-dumbbell-overhead-triceps-extension",
+    "type": "Progression",
+    "rank": 2,
+    "compatibilityScore": 91,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding elbow extension progression using dumbbell instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-overhead-triceps-extension__band-overhead-triceps-extension",
+    "sourceExerciseId": "ez-bar-overhead-triceps-extension",
+    "targetExerciseId": "band-overhead-triceps-extension",
+    "type": "Equipment Alternative",
+    "rank": 3,
+    "compatibilityScore": 89,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Hotel gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension movement while using resistance band instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-overhead-triceps-extension__cable-overhead-triceps-extension",
+    "sourceExerciseId": "ez-bar-overhead-triceps-extension",
+    "targetExerciseId": "cable-overhead-triceps-extension",
+    "type": "Equipment Alternative",
+    "rank": 4,
+    "compatibilityScore": 89,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension movement while using cable machine instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-overhead-triceps-extension__single-arm-cable-overhead-triceps-extension",
+    "sourceExerciseId": "ez-bar-overhead-triceps-extension",
+    "targetExerciseId": "single-arm-cable-overhead-triceps-extension",
+    "type": "Equipment Alternative",
+    "rank": 5,
+    "compatibilityScore": 89,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension movement while using cable machine instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-overhead-triceps-extension__ez-bar-skull-crusher",
+    "sourceExerciseId": "ez-bar-overhead-triceps-extension",
+    "targetExerciseId": "ez-bar-skull-crusher",
+    "type": "Substitute",
+    "rank": 6,
+    "compatibilityScore": 79,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-overhead-triceps-extension__barbell-jm-press",
+    "sourceExerciseId": "ez-bar-overhead-triceps-extension",
+    "targetExerciseId": "barbell-jm-press",
+    "type": "Substitute",
+    "rank": 7,
+    "compatibilityScore": 76,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-overhead-triceps-extension__barbell-skull-crusher",
+    "sourceExerciseId": "ez-bar-overhead-triceps-extension",
+    "targetExerciseId": "barbell-skull-crusher",
+    "type": "Substitute",
+    "rank": 8,
+    "compatibilityScore": 76,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-preacher-curl__barbell-preacher-curl",
+    "sourceExerciseId": "ez-bar-preacher-curl",
+    "targetExerciseId": "barbell-preacher-curl",
+    "type": "Equipment Alternative",
+    "rank": 1,
+    "compatibilityScore": 91,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow flexion movement while using barbell instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-preacher-curl__dumbbell-preacher-curl",
+    "sourceExerciseId": "ez-bar-preacher-curl",
+    "targetExerciseId": "dumbbell-preacher-curl",
+    "type": "Equipment Alternative",
+    "rank": 2,
+    "compatibilityScore": 91,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Hotel gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow flexion movement while using dumbbell instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-preacher-curl__cable-preacher-curl",
+    "sourceExerciseId": "ez-bar-preacher-curl",
+    "targetExerciseId": "cable-preacher-curl",
+    "type": "Equipment Alternative",
+    "rank": 3,
+    "compatibilityScore": 89,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow flexion movement while using cable machine instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-preacher-curl__machine-preacher-curl",
+    "sourceExerciseId": "ez-bar-preacher-curl",
+    "targetExerciseId": "machine-preacher-curl",
+    "type": "Regression",
+    "rank": 4,
+    "compatibilityScore": 85.5,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment",
+      "More stability",
+      "Skill regression"
+    ],
+    "reason": "An easier elbow flexion regression using selectorized machine instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-preacher-curl__ez-bar-drag-curl",
+    "sourceExerciseId": "ez-bar-preacher-curl",
+    "targetExerciseId": "ez-bar-drag-curl",
+    "type": "Substitute",
+    "rank": 5,
+    "compatibilityScore": 85,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-preacher-curl__ez-bar-spider-curl",
+    "sourceExerciseId": "ez-bar-preacher-curl",
+    "targetExerciseId": "ez-bar-spider-curl",
+    "type": "Substitute",
+    "rank": 6,
+    "compatibilityScore": 85,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-preacher-curl__ez-bar-biceps-curl",
+    "sourceExerciseId": "ez-bar-preacher-curl",
+    "targetExerciseId": "ez-bar-biceps-curl",
+    "type": "Regression",
+    "rank": 7,
+    "compatibilityScore": 81.5,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "More stability",
+      "Skill regression"
+    ],
+    "reason": "An easier elbow flexion regression with lower technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-preacher-curl__alternating-dumbbell-curl",
+    "sourceExerciseId": "ez-bar-preacher-curl",
+    "targetExerciseId": "alternating-dumbbell-curl",
+    "type": "Substitute",
+    "rank": 8,
+    "compatibilityScore": 76,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Hotel gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-pullover__barbell-pullover",
+    "sourceExerciseId": "ez-bar-pullover",
+    "targetExerciseId": "barbell-pullover",
+    "type": "Equipment Alternative",
+    "rank": 1,
+    "compatibilityScore": 91,
+    "movementPattern": "Vertical Pull",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "lats"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the vertical pull movement while using barbell instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-pullover__dumbbell-pullover",
+    "sourceExerciseId": "ez-bar-pullover",
+    "targetExerciseId": "dumbbell-pullover",
+    "type": "Equipment Alternative",
+    "rank": 2,
+    "compatibilityScore": 91,
+    "movementPattern": "Vertical Pull",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "lats"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Hotel gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the vertical pull movement while using dumbbell instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-pullover__cable-pullover",
+    "sourceExerciseId": "ez-bar-pullover",
+    "targetExerciseId": "cable-pullover",
+    "type": "Equipment Alternative",
+    "rank": 3,
+    "compatibilityScore": 89,
+    "movementPattern": "Vertical Pull",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "lats"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the vertical pull movement while using cable machine instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-pullover__machine-pullover",
+    "sourceExerciseId": "ez-bar-pullover",
+    "targetExerciseId": "machine-pullover",
+    "type": "Regression",
+    "rank": 4,
+    "compatibilityScore": 85.5,
+    "movementPattern": "Vertical Pull",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "lats"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment",
+      "More stability",
+      "Skill regression"
+    ],
+    "reason": "An easier vertical pull regression using selectorized machine instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-pullover__kettlebell-pullover",
+    "sourceExerciseId": "ez-bar-pullover",
+    "targetExerciseId": "kettlebell-pullover",
+    "type": "Substitute",
+    "rank": 5,
+    "compatibilityScore": 76,
+    "movementPattern": "Vertical Pull",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "lats"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the vertical pull pattern and trains the latissimus dorsi with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-pullover__archer-pull-up",
+    "sourceExerciseId": "ez-bar-pullover",
+    "targetExerciseId": "archer-pull-up",
+    "type": "Substitute",
+    "rank": 6,
+    "compatibilityScore": 74,
+    "movementPattern": "Vertical Pull",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "lats"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "No equipment",
+      "Home gym",
+      "Hotel gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the vertical pull pattern and trains the latissimus dorsi with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-pullover__band-lat-pulldown",
+    "sourceExerciseId": "ez-bar-pullover",
+    "targetExerciseId": "band-lat-pulldown",
+    "type": "Substitute",
+    "rank": 7,
+    "compatibilityScore": 74,
+    "movementPattern": "Vertical Pull",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "lats"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Hotel gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the vertical pull pattern and trains the latissimus dorsi with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-pullover__band-straight-arm-pulldown",
+    "sourceExerciseId": "ez-bar-pullover",
+    "targetExerciseId": "band-straight-arm-pulldown",
+    "type": "Substitute",
+    "rank": 8,
+    "compatibilityScore": 74,
+    "movementPattern": "Vertical Pull",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "lats"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Hotel gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the vertical pull pattern and trains the latissimus dorsi with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-reverse-curl__barbell-reverse-curl",
+    "sourceExerciseId": "ez-bar-reverse-curl",
+    "targetExerciseId": "barbell-reverse-curl",
+    "type": "Equipment Alternative",
+    "rank": 1,
+    "compatibilityScore": 76,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow flexion movement while using barbell instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-reverse-curl__dumbbell-reverse-curl",
+    "sourceExerciseId": "ez-bar-reverse-curl",
+    "targetExerciseId": "dumbbell-reverse-curl",
+    "type": "Equipment Alternative",
+    "rank": 2,
+    "compatibilityScore": 76,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Hotel gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow flexion movement while using dumbbell instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-reverse-curl__ez-bar-reverse-wrist-curl",
+    "sourceExerciseId": "ez-bar-reverse-curl",
+    "targetExerciseId": "ez-bar-reverse-wrist-curl",
+    "type": "Regression",
+    "rank": 3,
+    "compatibilityScore": 75.5,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "forearms"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "More stability",
+      "Skill regression"
+    ],
+    "reason": "An easier elbow flexion regression with lower technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-reverse-curl__ez-bar-wrist-curl",
+    "sourceExerciseId": "ez-bar-reverse-curl",
+    "targetExerciseId": "ez-bar-wrist-curl",
+    "type": "Regression",
+    "rank": 4,
+    "compatibilityScore": 75.5,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "forearms"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "More stability",
+      "Skill regression"
+    ],
+    "reason": "An easier elbow flexion regression with lower technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-reverse-curl__band-reverse-curl",
+    "sourceExerciseId": "ez-bar-reverse-curl",
+    "targetExerciseId": "band-reverse-curl",
+    "type": "Equipment Alternative",
+    "rank": 5,
+    "compatibilityScore": 74,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Hotel gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow flexion movement while using resistance band instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-reverse-curl__cable-reverse-curl",
+    "sourceExerciseId": "ez-bar-reverse-curl",
+    "targetExerciseId": "cable-reverse-curl",
+    "type": "Equipment Alternative",
+    "rank": 6,
+    "compatibilityScore": 74,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": false,
+    "sharedPrimaryMuscleIds": [],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow flexion movement while using cable machine instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-reverse-wrist-curl__ez-bar-wrist-curl",
+    "sourceExerciseId": "ez-bar-reverse-wrist-curl",
+    "targetExerciseId": "ez-bar-wrist-curl",
+    "type": "Substitute",
+    "rank": 1,
+    "compatibilityScore": 79,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "forearms"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the elbow flexion pattern and trains the forearms with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-reverse-wrist-curl__ez-bar-reverse-curl",
+    "sourceExerciseId": "ez-bar-reverse-wrist-curl",
+    "targetExerciseId": "ez-bar-reverse-curl",
+    "type": "Progression",
+    "rank": 2,
+    "compatibilityScore": 75.5,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "forearms"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding elbow flexion progression with greater technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-skull-crusher__barbell-skull-crusher",
+    "sourceExerciseId": "ez-bar-skull-crusher",
+    "targetExerciseId": "barbell-skull-crusher",
+    "type": "Equipment Alternative",
+    "rank": 1,
+    "compatibilityScore": 91,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension movement while using barbell instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-skull-crusher__dumbbell-skull-crusher",
+    "sourceExerciseId": "ez-bar-skull-crusher",
+    "targetExerciseId": "dumbbell-skull-crusher",
+    "type": "Equipment Alternative",
+    "rank": 2,
+    "compatibilityScore": 91,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Hotel gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension movement while using dumbbell instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-skull-crusher__cable-skull-crusher",
+    "sourceExerciseId": "ez-bar-skull-crusher",
+    "targetExerciseId": "cable-skull-crusher",
+    "type": "Equipment Alternative",
+    "rank": 3,
+    "compatibilityScore": 89,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension movement while using cable machine instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-skull-crusher__ez-bar-overhead-triceps-extension",
+    "sourceExerciseId": "ez-bar-skull-crusher",
+    "targetExerciseId": "ez-bar-overhead-triceps-extension",
+    "type": "Substitute",
+    "rank": 4,
+    "compatibilityScore": 79,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-skull-crusher__barbell-jm-press",
+    "sourceExerciseId": "ez-bar-skull-crusher",
+    "targetExerciseId": "barbell-jm-press",
+    "type": "Substitute",
+    "rank": 5,
+    "compatibilityScore": 76,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-skull-crusher__barbell-overhead-triceps-extension",
+    "sourceExerciseId": "ez-bar-skull-crusher",
+    "targetExerciseId": "barbell-overhead-triceps-extension",
+    "type": "Substitute",
+    "rank": 6,
+    "compatibilityScore": 76,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-skull-crusher__dumbbell-jm-press",
+    "sourceExerciseId": "ez-bar-skull-crusher",
+    "targetExerciseId": "dumbbell-jm-press",
+    "type": "Substitute",
+    "rank": 7,
+    "compatibilityScore": 76,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Hotel gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-skull-crusher__dumbbell-tate-press",
+    "sourceExerciseId": "ez-bar-skull-crusher",
+    "targetExerciseId": "dumbbell-tate-press",
+    "type": "Substitute",
+    "rank": 8,
+    "compatibilityScore": 76,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Hotel gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-spider-curl__dumbbell-spider-curl",
+    "sourceExerciseId": "ez-bar-spider-curl",
+    "targetExerciseId": "dumbbell-spider-curl",
+    "type": "Equipment Alternative",
+    "rank": 1,
+    "compatibilityScore": 91,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Hotel gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow flexion movement while using dumbbell instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-spider-curl__ez-bar-drag-curl",
+    "sourceExerciseId": "ez-bar-spider-curl",
+    "targetExerciseId": "ez-bar-drag-curl",
+    "type": "Substitute",
+    "rank": 2,
+    "compatibilityScore": 85,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-spider-curl__ez-bar-preacher-curl",
+    "sourceExerciseId": "ez-bar-spider-curl",
+    "targetExerciseId": "ez-bar-preacher-curl",
+    "type": "Substitute",
+    "rank": 3,
+    "compatibilityScore": 85,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-spider-curl__ez-bar-biceps-curl",
+    "sourceExerciseId": "ez-bar-spider-curl",
+    "targetExerciseId": "ez-bar-biceps-curl",
+    "type": "Regression",
+    "rank": 4,
+    "compatibilityScore": 81.5,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "More stability",
+      "Skill regression"
+    ],
+    "reason": "An easier elbow flexion regression with lower technical and stability demand.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-spider-curl__alternating-dumbbell-curl",
+    "sourceExerciseId": "ez-bar-spider-curl",
+    "targetExerciseId": "alternating-dumbbell-curl",
+    "type": "Substitute",
+    "rank": 5,
+    "compatibilityScore": 76,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Hotel gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-spider-curl__barbell-biceps-curl",
+    "sourceExerciseId": "ez-bar-spider-curl",
+    "targetExerciseId": "barbell-biceps-curl",
+    "type": "Substitute",
+    "rank": 6,
+    "compatibilityScore": 76,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-spider-curl__barbell-drag-curl",
+    "sourceExerciseId": "ez-bar-spider-curl",
+    "targetExerciseId": "barbell-drag-curl",
+    "type": "Substitute",
+    "rank": 7,
+    "compatibilityScore": 76,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-spider-curl__barbell-preacher-curl",
+    "sourceExerciseId": "ez-bar-spider-curl",
+    "targetExerciseId": "barbell-preacher-curl",
+    "type": "Substitute",
+    "rank": 8,
+    "compatibilityScore": 76,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow flexion pattern and trains the biceps with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-upright-row__barbell-upright-row",
+    "sourceExerciseId": "ez-bar-upright-row",
+    "targetExerciseId": "barbell-upright-row",
+    "type": "Equipment Alternative",
+    "rank": 1,
+    "compatibilityScore": 85.5,
+    "movementPattern": "Horizontal Pull",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "lateral_deltoids"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the horizontal pull movement while using barbell instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-upright-row__dumbbell-upright-row",
+    "sourceExerciseId": "ez-bar-upright-row",
+    "targetExerciseId": "dumbbell-upright-row",
+    "type": "Equipment Alternative",
+    "rank": 2,
+    "compatibilityScore": 85.5,
+    "movementPattern": "Horizontal Pull",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "lateral_deltoids"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Hotel gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the horizontal pull movement while using dumbbell instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-upright-row__band-upright-row",
+    "sourceExerciseId": "ez-bar-upright-row",
+    "targetExerciseId": "band-upright-row",
+    "type": "Equipment Alternative",
+    "rank": 3,
+    "compatibilityScore": 83.5,
+    "movementPattern": "Horizontal Pull",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "lateral_deltoids"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Hotel gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the horizontal pull movement while using resistance band instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-upright-row__cable-upright-row",
+    "sourceExerciseId": "ez-bar-upright-row",
+    "targetExerciseId": "cable-upright-row",
+    "type": "Equipment Alternative",
+    "rank": 4,
+    "compatibilityScore": 83.5,
+    "movementPattern": "Horizontal Pull",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "lateral_deltoids"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment"
+    ],
+    "reason": "Preserves the horizontal pull movement while using cable machine instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-upright-row__machine-upright-row",
+    "sourceExerciseId": "ez-bar-upright-row",
+    "targetExerciseId": "machine-upright-row",
+    "type": "Regression",
+    "rank": 5,
+    "compatibilityScore": 80,
+    "movementPattern": "Horizontal Pull",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "lateral_deltoids"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Different equipment",
+      "More stability",
+      "Skill regression"
+    ],
+    "reason": "An easier horizontal pull regression using selectorized machine instead of ez-curl bar.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-wrist-curl__ez-bar-reverse-wrist-curl",
+    "sourceExerciseId": "ez-bar-wrist-curl",
+    "targetExerciseId": "ez-bar-reverse-wrist-curl",
+    "type": "Substitute",
+    "rank": 1,
+    "compatibilityScore": 79,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "forearms"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "General swap"
+    ],
+    "reason": "Preserves the elbow flexion pattern and trains the forearms with a different exercise.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "ez-bar-wrist-curl__ez-bar-reverse-curl",
+    "sourceExerciseId": "ez-bar-wrist-curl",
+    "targetExerciseId": "ez-bar-reverse-curl",
+    "type": "Progression",
+    "rank": 2,
+    "compatibilityScore": 75.5,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "forearms"
+    ],
+    "equipmentChange": false,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding elbow flexion progression with greater technical and stability demand.",
     "editorialStatus": "Auto-Generated"
   },
   {
@@ -74746,11 +76547,31 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "machine-biceps-curl__ez-bar-biceps-curl",
+    "sourceExerciseId": "machine-biceps-curl",
+    "targetExerciseId": "ez-bar-biceps-curl",
+    "type": "Progression",
+    "rank": 1,
+    "compatibilityScore": 89,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding elbow flexion progression using ez-curl bar instead of selectorized machine.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "machine-biceps-curl__cable-biceps-curl",
     "sourceExerciseId": "machine-biceps-curl",
     "targetExerciseId": "cable-biceps-curl",
     "type": "Progression",
-    "rank": 1,
+    "rank": 2,
     "compatibilityScore": 87.5,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -74770,7 +76591,7 @@
     "sourceExerciseId": "machine-biceps-curl",
     "targetExerciseId": "band-biceps-curl",
     "type": "Progression",
-    "rank": 2,
+    "rank": 3,
     "compatibilityScore": 85.5,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -74790,7 +76611,7 @@
     "sourceExerciseId": "machine-biceps-curl",
     "targetExerciseId": "barbell-biceps-curl",
     "type": "Progression",
-    "rank": 3,
+    "rank": 4,
     "compatibilityScore": 85.5,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -74810,7 +76631,7 @@
     "sourceExerciseId": "machine-biceps-curl",
     "targetExerciseId": "dumbbell-biceps-curl",
     "type": "Progression",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 85.5,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -74830,7 +76651,7 @@
     "sourceExerciseId": "machine-biceps-curl",
     "targetExerciseId": "machine-preacher-curl",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -74850,7 +76671,7 @@
     "sourceExerciseId": "machine-biceps-curl",
     "targetExerciseId": "bayesian-cable-curl",
     "type": "Progression",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 72.5,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -74869,26 +76690,6 @@
     "id": "machine-biceps-curl__cable-preacher-curl",
     "sourceExerciseId": "machine-biceps-curl",
     "targetExerciseId": "cable-preacher-curl",
-    "type": "Progression",
-    "rank": 7,
-    "compatibilityScore": 72.5,
-    "movementPattern": "Elbow Flexion",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "biceps"
-    ],
-    "equipmentChange": true,
-    "swapContexts": [
-      "Skill progression"
-    ],
-    "reason": "A more demanding elbow flexion progression using cable machine instead of selectorized machine.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "machine-biceps-curl__cable-reverse-curl",
-    "sourceExerciseId": "machine-biceps-curl",
-    "targetExerciseId": "cable-reverse-curl",
     "type": "Progression",
     "rank": 8,
     "compatibilityScore": 72.5,
@@ -76411,11 +78212,31 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "machine-preacher-curl__ez-bar-preacher-curl",
+    "sourceExerciseId": "machine-preacher-curl",
+    "targetExerciseId": "ez-bar-preacher-curl",
+    "type": "Progression",
+    "rank": 4,
+    "compatibilityScore": 85.5,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding elbow flexion progression using ez-curl bar instead of selectorized machine.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "machine-preacher-curl__machine-biceps-curl",
     "sourceExerciseId": "machine-preacher-curl",
     "targetExerciseId": "machine-biceps-curl",
     "type": "Substitute",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -76431,11 +78252,31 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "machine-preacher-curl__ez-bar-biceps-curl",
+    "sourceExerciseId": "machine-preacher-curl",
+    "targetExerciseId": "ez-bar-biceps-curl",
+    "type": "Progression",
+    "rank": 6,
+    "compatibilityScore": 74,
+    "movementPattern": "Elbow Flexion",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "biceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding elbow flexion progression using ez-curl bar instead of selectorized machine.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "machine-preacher-curl__bayesian-cable-curl",
     "sourceExerciseId": "machine-preacher-curl",
     "targetExerciseId": "bayesian-cable-curl",
     "type": "Progression",
-    "rank": 5,
+    "rank": 7,
     "compatibilityScore": 72.5,
     "movementPattern": "Elbow Flexion",
     "preservesPattern": true,
@@ -76454,46 +78295,6 @@
     "id": "machine-preacher-curl__cable-biceps-curl",
     "sourceExerciseId": "machine-preacher-curl",
     "targetExerciseId": "cable-biceps-curl",
-    "type": "Progression",
-    "rank": 6,
-    "compatibilityScore": 72.5,
-    "movementPattern": "Elbow Flexion",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "biceps"
-    ],
-    "equipmentChange": true,
-    "swapContexts": [
-      "Skill progression"
-    ],
-    "reason": "A more demanding elbow flexion progression using cable machine instead of selectorized machine.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "machine-preacher-curl__cable-reverse-curl",
-    "sourceExerciseId": "machine-preacher-curl",
-    "targetExerciseId": "cable-reverse-curl",
-    "type": "Progression",
-    "rank": 7,
-    "compatibilityScore": 72.5,
-    "movementPattern": "Elbow Flexion",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "biceps"
-    ],
-    "equipmentChange": true,
-    "swapContexts": [
-      "Skill progression"
-    ],
-    "reason": "A more demanding elbow flexion progression using cable machine instead of selectorized machine.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "machine-preacher-curl__cable-rope-hammer-curl",
-    "sourceExerciseId": "machine-preacher-curl",
-    "targetExerciseId": "cable-rope-hammer-curl",
     "type": "Progression",
     "rank": 8,
     "compatibilityScore": 72.5,
@@ -76571,11 +78372,31 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "machine-pullover__ez-bar-pullover",
+    "sourceExerciseId": "machine-pullover",
+    "targetExerciseId": "ez-bar-pullover",
+    "type": "Progression",
+    "rank": 4,
+    "compatibilityScore": 85.5,
+    "movementPattern": "Vertical Pull",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "lats"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding vertical pull progression using ez-curl bar instead of selectorized machine.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "machine-pullover__assisted-pull-up-machine",
     "sourceExerciseId": "machine-pullover",
     "targetExerciseId": "assisted-pull-up-machine",
     "type": "Substitute",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 85,
     "movementPattern": "Vertical Pull",
     "preservesPattern": true,
@@ -76595,7 +78416,7 @@
     "sourceExerciseId": "machine-pullover",
     "targetExerciseId": "machine-lat-pulldown",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 85,
     "movementPattern": "Vertical Pull",
     "preservesPattern": true,
@@ -76615,7 +78436,7 @@
     "sourceExerciseId": "machine-pullover",
     "targetExerciseId": "iso-lateral-lat-pulldown",
     "type": "Progression",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 81.5,
     "movementPattern": "Vertical Pull",
     "preservesPattern": true,
@@ -76635,7 +78456,7 @@
     "sourceExerciseId": "machine-pullover",
     "targetExerciseId": "plate-loaded-lat-pulldown",
     "type": "Progression",
-    "rank": 7,
+    "rank": 8,
     "compatibilityScore": 81.5,
     "movementPattern": "Vertical Pull",
     "preservesPattern": true,
@@ -76648,26 +78469,6 @@
       "Skill progression"
     ],
     "reason": "A more demanding vertical pull progression with greater technical and stability demand.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "machine-pullover__assisted-pull-up",
-    "sourceExerciseId": "machine-pullover",
-    "targetExerciseId": "assisted-pull-up",
-    "type": "Progression",
-    "rank": 8,
-    "compatibilityScore": 80,
-    "movementPattern": "Vertical Pull",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "lats"
-    ],
-    "equipmentChange": true,
-    "swapContexts": [
-      "Skill progression"
-    ],
-    "reason": "A more demanding vertical pull progression using bodyweight instead of selectorized machine.",
     "editorialStatus": "Auto-Generated"
   },
   {
@@ -78053,6 +79854,26 @@
       "Skill progression"
     ],
     "reason": "A more demanding horizontal pull progression using dumbbell instead of selectorized machine.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
+    "id": "machine-upright-row__ez-bar-upright-row",
+    "sourceExerciseId": "machine-upright-row",
+    "targetExerciseId": "ez-bar-upright-row",
+    "type": "Progression",
+    "rank": 5,
+    "compatibilityScore": 80,
+    "movementPattern": "Horizontal Pull",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "lateral_deltoids"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Skill progression"
+    ],
+    "reason": "A more demanding horizontal pull progression using ez-curl bar instead of selectorized machine.",
     "editorialStatus": "Auto-Generated"
   },
   {
@@ -93850,11 +95671,33 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "single-arm-cable-overhead-triceps-extension__ez-bar-overhead-triceps-extension",
+    "sourceExerciseId": "single-arm-cable-overhead-triceps-extension",
+    "targetExerciseId": "ez-bar-overhead-triceps-extension",
+    "type": "Equipment Alternative",
+    "rank": 4,
+    "compatibilityScore": 89,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Different equipment"
+    ],
+    "reason": "Preserves the elbow extension movement while using ez-curl bar instead of cable machine.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "single-arm-cable-overhead-triceps-extension__single-arm-dumbbell-overhead-triceps-extension",
     "sourceExerciseId": "single-arm-cable-overhead-triceps-extension",
     "targetExerciseId": "single-arm-dumbbell-overhead-triceps-extension",
     "type": "Progression",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 89,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -93874,7 +95717,7 @@
     "sourceExerciseId": "single-arm-cable-overhead-triceps-extension",
     "targetExerciseId": "cable-cross-body-triceps-extension",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -93894,7 +95737,7 @@
     "sourceExerciseId": "single-arm-cable-overhead-triceps-extension",
     "targetExerciseId": "cable-rope-pushdown",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -93913,26 +95756,6 @@
     "id": "single-arm-cable-overhead-triceps-extension__cable-skull-crusher",
     "sourceExerciseId": "single-arm-cable-overhead-triceps-extension",
     "targetExerciseId": "cable-skull-crusher",
-    "type": "Substitute",
-    "rank": 7,
-    "compatibilityScore": 79,
-    "movementPattern": "Elbow Extension",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "triceps"
-    ],
-    "equipmentChange": false,
-    "swapContexts": [
-      "General swap"
-    ],
-    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "single-arm-cable-overhead-triceps-extension__cable-triceps-pushdown",
-    "sourceExerciseId": "single-arm-cable-overhead-triceps-extension",
-    "targetExerciseId": "cable-triceps-pushdown",
     "type": "Substitute",
     "rank": 8,
     "compatibilityScore": 79,
@@ -95118,11 +96941,35 @@
     "editorialStatus": "Auto-Generated"
   },
   {
+    "id": "single-arm-dumbbell-overhead-triceps-extension__ez-bar-overhead-triceps-extension",
+    "sourceExerciseId": "single-arm-dumbbell-overhead-triceps-extension",
+    "targetExerciseId": "ez-bar-overhead-triceps-extension",
+    "type": "Regression",
+    "rank": 2,
+    "compatibilityScore": 91,
+    "movementPattern": "Elbow Extension",
+    "preservesPattern": true,
+    "samePrimaryMuscle": true,
+    "sharedPrimaryMuscleIds": [
+      "triceps"
+    ],
+    "equipmentChange": true,
+    "swapContexts": [
+      "Equipment unavailable",
+      "Home gym",
+      "Different equipment",
+      "More stability",
+      "Skill regression"
+    ],
+    "reason": "An easier elbow extension regression using ez-curl bar instead of dumbbell.",
+    "editorialStatus": "Auto-Generated"
+  },
+  {
     "id": "single-arm-dumbbell-overhead-triceps-extension__band-overhead-triceps-extension",
     "sourceExerciseId": "single-arm-dumbbell-overhead-triceps-extension",
     "targetExerciseId": "band-overhead-triceps-extension",
     "type": "Regression",
-    "rank": 2,
+    "rank": 3,
     "compatibilityScore": 89,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -95147,7 +96994,7 @@
     "sourceExerciseId": "single-arm-dumbbell-overhead-triceps-extension",
     "targetExerciseId": "cable-overhead-triceps-extension",
     "type": "Regression",
-    "rank": 3,
+    "rank": 4,
     "compatibilityScore": 89,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -95170,7 +97017,7 @@
     "sourceExerciseId": "single-arm-dumbbell-overhead-triceps-extension",
     "targetExerciseId": "single-arm-cable-overhead-triceps-extension",
     "type": "Regression",
-    "rank": 4,
+    "rank": 5,
     "compatibilityScore": 89,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -95193,7 +97040,7 @@
     "sourceExerciseId": "single-arm-dumbbell-overhead-triceps-extension",
     "targetExerciseId": "dumbbell-jm-press",
     "type": "Substitute",
-    "rank": 5,
+    "rank": 6,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -95213,7 +97060,7 @@
     "sourceExerciseId": "single-arm-dumbbell-overhead-triceps-extension",
     "targetExerciseId": "dumbbell-skull-crusher",
     "type": "Substitute",
-    "rank": 6,
+    "rank": 7,
     "compatibilityScore": 79,
     "movementPattern": "Elbow Extension",
     "preservesPattern": true,
@@ -95232,26 +97079,6 @@
     "id": "single-arm-dumbbell-overhead-triceps-extension__dumbbell-tate-press",
     "sourceExerciseId": "single-arm-dumbbell-overhead-triceps-extension",
     "targetExerciseId": "dumbbell-tate-press",
-    "type": "Substitute",
-    "rank": 7,
-    "compatibilityScore": 79,
-    "movementPattern": "Elbow Extension",
-    "preservesPattern": true,
-    "samePrimaryMuscle": true,
-    "sharedPrimaryMuscleIds": [
-      "triceps"
-    ],
-    "equipmentChange": false,
-    "swapContexts": [
-      "General swap"
-    ],
-    "reason": "Preserves the elbow extension pattern and trains the triceps with a different exercise.",
-    "editorialStatus": "Auto-Generated"
-  },
-  {
-    "id": "single-arm-dumbbell-overhead-triceps-extension__dumbbell-triceps-kickback",
-    "sourceExerciseId": "single-arm-dumbbell-overhead-triceps-extension",
-    "targetExerciseId": "dumbbell-triceps-kickback",
     "type": "Substitute",
     "rank": 8,
     "compatibilityScore": 79,

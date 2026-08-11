@@ -5,7 +5,7 @@
  * Ported from the design's `forge-homegym.js`. The inventory (32 items / 6 groups), the grouping
  * order, the hints and the deliberate stand-ins (a functional trainer covers cable + light machine,
  * a Smith covers barbell + machine) are preserved exactly. Three things had to change to survive
- * contact with the real 797-exercise catalog:
+ * contact with the real 809-exercise catalog:
  *
  *  1. WE STORE IDS, NOT LABELS. The design persists labels to localStorage; we persist to a Postgres
  *     column, where renaming "Leg curl / extension" would silently empty every athlete's gym. Ids are
@@ -171,7 +171,27 @@ export function sanitize(ids: readonly string[] | null | undefined): string[] {
  * resolves per exercise below.
  */
 export const EQUIP_UNLOCK: Record<string, readonly string[]> = {
-  barbell: ['barbell', 'plates', 'rack', 'ezbar', 'trapbar', 'smith'],
+  /**
+   * ⚠ `ezbar` USED TO BE IN THIS LIST, AND IT WAS A LIE THE ATHLETE COULD TICK.
+   *
+   * The editor has offered "EZ-curl bar" since it was written, and mapping it onto `barbell` meant an
+   * athlete who owned nothing but a curl bar was told they could Back Squat, Deadlift and Bench Press.
+   * You cannot squat with an EZ bar. The reason the mapping existed at all is that the catalogue held
+   * NO EZ-bar movement to unlock — so the choice was between claiming too much and the checkbox meaning
+   * nothing, and it claimed too much.
+   *
+   * The catalogue now has twelve, under their own `ez_bar` equipment id, so the honest mapping exists:
+   * a curl bar unlocks curl-bar work and nothing else.
+   *
+   * `trapbar` STAYS, deliberately and unhappily. It has the same shape of problem — a trap bar deadlifts
+   * and shrugs and carries, it does not bench — but there is not one trap-bar movement in the catalogue
+   * to point it at, so removing it would take a trap-bar owner from "too much" to "nothing at all".
+   * That is a worse answer, and it is the argument for a trap-bar pass, not for a change here.
+   */
+  barbell: ['barbell', 'plates', 'rack', 'trapbar', 'smith'],
+  // The curl bar unlocks the curl bar. Nothing stands in for it: a straight bar changes the wrist angle
+  // the implement exists to change, which is why both rows are in the catalogue rather than one.
+  ez_bar: ['ezbar'],
   smith_machine: ['smith'],
   dumbbell: ['dumbbells'],
   kettlebell: ['kettlebells'],
@@ -268,6 +288,10 @@ export const NEEDS_BENCH: ReadonlySet<string> = new Set([
   'barbell-skull-crusher', 'dumbbell-skull-crusher',
   // Curls braced against a pad or an incline
   'dumbbell-incline-curl', 'dumbbell-spider-curl', 'barbell-preacher-curl', 'dumbbell-preacher-curl',
+  // The EZ-bar family (0127-era catalogue append). The same three shapes need the same pad: a preacher
+  // curl is defined by the bench it is done over, a spider curl hangs the arms off one, and a skull
+  // crusher is performed lying down. The other nine EZ movements are standing and need nothing.
+  'ez-bar-preacher-curl', 'ez-bar-spider-curl', 'ez-bar-skull-crusher',
   // Shoulders on the bench
   'barbell-hip-thrust', 'dumbbell-hip-thrust', 'band-hip-thrust',
   // Seated barbell work

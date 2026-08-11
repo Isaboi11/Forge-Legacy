@@ -44,9 +44,18 @@ import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 
 /**
- * Squad Composer — built to `Squad Composer.dc.html`, scoped to the 5 post types Squad Feed backs with real
- * data (checkin · recap · pr · discussion · announcement). Two steps: pick a type → compose. Announcement is
- * owner-only (locked card for members; the DB also rejects it via RLS).
+ * Squad Composer — built to `Squad Composer.dc.html`, scoped to the post types Squad Feed backs with real
+ * data. Two steps: pick a type → compose. Announcement is owner-only (locked card for members; the DB
+ * also rejects it via RLS).
+ *
+ * CHECK-IN IS RETIRED AND PROGRESS PHOTOS TOOK ITS PLACE at the head of the member section
+ * (`design_handoff_progress_photo_post` §16). Its compose form is gone from this file because the type
+ * can no longer be chosen — a branch nothing can reach is not a safety net, it is a second description
+ * of the product that will drift. What is NOT gone: `leadFor`, `squadPostTypeDef` and the feed's glyph
+ * map all still resolve `checkin`, so every historic check-in keeps rendering exactly as it did.
+ *
+ * Progress Photos does not compose here at all. It is a card to be laid out, not a paragraph to be
+ * typed, so picking it navigates to Progress Photo Post instead of opening step 2.
  *
  * TRANSFORMATION posts a comparison assembled from the athlete's own Transformation entries (L-17), not from
  * loose photos. That distinction is the point: the gallery holds the captures AND their per-pose alignment, so
@@ -65,12 +74,13 @@ interface Form {
 const EMPTY: Form = { body: '', prExercise: '', prValue: '', prLabel: 'Squad PR' };
 
 export default function SquadComposerRoute() {
-  const { id, owner } = useLocalSearchParams<{ id: string; owner?: string }>();
+  const { id, owner, name } = useLocalSearchParams<{ id: string; owner?: string; name?: string }>();
   const router = useRouter();
   const { showToast } = useToast();
   const { pick: pickMediaSource, mediaPickerSheet } = useMediaPicker();
   const squadId = String(id ?? '');
   const isOwner = owner === '1';
+  const squadName = name ? String(name) : '';
 
   const [type, setType] = useState<SquadPostType | null>(null);
   const [form, setForm] = useState<Form>(EMPTY);
@@ -100,8 +110,6 @@ export default function SquadComposerRoute() {
     if (!type || uploading || buildingRecap) return false;
     const body = form.body.trim();
     switch (type) {
-      case 'checkin':
-        return true;
       case 'formcheck':
         return !!media; // a form check needs a clip
       case 'recap':
@@ -116,6 +124,15 @@ export default function SquadComposerRoute() {
   }, [type, form, media, recap, uploading, buildingRecap, xform]);
 
   const pick = (t: SquadPostType) => {
+    /*
+     * PROGRESS PHOTOS LEAVES THIS SCREEN. It is a card to be laid out, not a paragraph to be typed, so
+     * it gets its own composer rather than a text form with photos bolted on. This is the only type
+     * that routes out — everything else composes here.
+     */
+    if (t === 'progress') {
+      router.push({ pathname: '/progress-photo-post', params: { origin: 'squad', squadId, squadName } });
+      return;
+    }
     setType(t);
     setForm(EMPTY);
     setMedia(null);
@@ -422,11 +439,6 @@ export default function SquadComposerRoute() {
             </View>
             <MediaAttach media={media} uploading={uploading} pct={mediaPct} onPick={() => pickMedia(false)} onRemove={() => setMedia(null)} />
           </>
-        ) : type === 'checkin' ? (
-          <>
-            <Area label="Note (optional)" value={form.body} onChange={(v) => set('body', v)} placeholder="How did today go?…" rows={3} />
-            <MediaAttach media={media} uploading={uploading} pct={mediaPct} onPick={() => pickMedia(false)} onRemove={() => setMedia(null)} />
-          </>
         ) : type === 'discussion' ? (
           <>
             <Area label="Note to the squad" value={form.body} onChange={(v) => set('body', v)} placeholder="Keep it short…" rows={4} />
@@ -591,6 +603,14 @@ function TypeGlyph({ type, locked = false }: { type: SquadPostType; locked?: boo
   const c = locked ? flColor.gray600 : flColor.bronze300;
   const props = { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: c, strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
   switch (type) {
+    case 'progress':
+      return (
+        <Svg {...props}>
+          <Path d="M4 8.5h3l1.5-2h7l1.5 2h3v10H4z" />
+          <Circle cx={12} cy={13} r={3.5} />
+        </Svg>
+      );
+    // Retired from the palette, kept so a legacy check-in still draws its own mark wherever one is asked for.
     case 'checkin':
       return (
         <Svg {...props}>

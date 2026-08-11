@@ -31,13 +31,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const prevUserId = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setLoading(false);
-      // Which clock this athlete lives by — the Hidden honors ask what the wall said, and a timestamptz
-      // cannot answer that. Fire-and-forget: it must never delay the splash or fail a launch.
-      if (data.session) void syncAthleteTimezone();
-    });
+    supabase.auth.getSession().then(
+      ({ data }) => {
+        setSession(data.session);
+        setLoading(false);
+        // Which clock this athlete lives by — the Hidden honors ask what the wall said, and a timestamptz
+        // cannot answer that. Fire-and-forget: it must never delay the splash or fail a launch.
+        if (data.session) void syncAthleteTimezone();
+      },
+      /*
+       * ⚠ THE REJECTION ARM IS LOAD-BEARING — this used to be a bare `.then(fn)`.
+       *
+       * `loading` starts true and `routeFor` maps it to 'splash', which renders `BootLoading` and
+       * DECLARES NO SCREENS. There is no back button, no retry and no timeout on that screen, so any
+       * path that fails to call `setLoading(false)` freezes the app permanently — which is what a
+       * rejected session read did, silently, with a bronze spinner as the only symptom.
+       *
+       * Landing on sign-in is the honest answer to "we could not determine who you are". It is also
+       * self-correcting: `onAuthStateChange` below is already subscribed, so if auth-js recovers a
+       * session afterwards it swaps the route without another launch.
+       */
+      (e: unknown) => {
+        console.warn('[auth] could not read the stored session on boot', e);
+        setSession(null);
+        setLoading(false);
+      },
+    );
     const { data } = supabase.auth.onAuthStateChange((_event, next) => {
       setSession(next);
       const nextId = next?.user?.id ?? null;

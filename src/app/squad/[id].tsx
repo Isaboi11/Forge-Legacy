@@ -22,7 +22,21 @@ import { SquadCrest } from '@/components/forge/SquadCrest';
 import { UploadError } from '@/lib/storage-upload';
 import { fetchSquadInvite, GOAL_UNITS, fetchSquad, fetchSquadCheckins, uploadCheckinVideo, postCheckin, markCheckinViewed, setSquadGoal, clearSquadGoal, deleteSquad, removeSquadMember, type SquadCheckin, type SquadMemberView, type SquadGoalMetric } from '@/data/squad-live';
 import { CHALLENGE_TYPES, daysLeft, fetchSquadActiveChallenge, fetchSquadHall, formatScore, placeLabel } from '@/data/challenges-live';
-import { detailFor, ensureWeeklyRecap, fetchSquadFeed, leadFor, recapSummaryLine, timeAgo, toggleSquadReaction, type SquadFeedPost, type SquadPostType } from '@/data/squad-feed-live';
+import {
+  detailFor,
+  ensureWeeklyRecap,
+  fetchSquadFeed,
+  isProgressCard,
+  leadFor,
+  recapSummaryLine,
+  timeAgo,
+  toggleSquadReaction,
+  type ProgressPostCard as ProgressCardData,
+  type SquadFeedPost,
+  type SquadMedia,
+  type SquadPostType,
+} from '@/data/squad-feed-live';
+import { ProgressPostCard } from '@/components/forge/ProgressPostCard';
 import { RecapStrip } from '@/components/forge/compositions/RecapStrip';
 import { FlameIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { useQuery } from '@/lib/useQuery';
@@ -409,7 +423,9 @@ export default function SquadDetailRoute() {
     }
   };
 
-  const goCompose = () => router.push({ pathname: '/squad-composer', params: { id: squad.id, owner: squad.isOwner ? '1' : '0' } });
+  // The name rides along so the composer — and Progress Photo Post beyond it — can say "Post to Iron
+  // Vigil" without a second round trip for a string this screen already has.
+  const goCompose = () => router.push({ pathname: '/squad-composer', params: { id: squad.id, owner: squad.isOwner ? '1' : '0', name: squad.name } });
   const openPost = (pid: string) => router.push({ pathname: '/squad-post/[id]', params: { id: pid } });
   const onReactCard = (p: SquadFeedPost) => {
     const reacted = reactMap[p.id]?.on ?? p.iReacted;
@@ -997,6 +1013,49 @@ function CheckinViewer({ checkin, onClose, onReplace }: { checkin: SquadCheckin;
   );
 }
 
+/**
+ * A post's photos in the feed. One fills the card as it always has; several become a thumbnail row with
+ * the remainder counted, because a card showing only the first photo of a six-pose capture reads as a
+ * post that HAS one photo. The full set is one tap away in the post itself.
+ */
+function FeedMedia({ media }: { media: SquadMedia[] }) {
+  const images = media.filter((m) => m.kind === 'image');
+  if (images.length <= 1) return <Image source={{ uri: images[0].url }} style={styles.feedMediaImage} contentFit="cover" />;
+
+  const shown = images.slice(0, 3);
+  const rest = images.length - shown.length;
+  return (
+    <View style={styles.feedMediaStrip}>
+      {shown.map((m, i) =>
+        rest > 0 && i === shown.length - 1 ? (
+          <View key={`${m.url}-${i}`} style={styles.feedMediaMoreWrap}>
+            <Image source={{ uri: m.url }} style={styles.feedMediaThumb} contentFit="cover" />
+            <View style={styles.feedMediaMore}>
+              <Text style={styles.feedMediaMoreText}>+{rest}</Text>
+            </View>
+          </View>
+        ) : (
+          <Image key={`${m.url}-${i}`} source={{ uri: m.url }} style={styles.feedMediaThumb} contentFit="cover" />
+        ),
+      )}
+    </View>
+  );
+}
+
+/**
+ * The progress card inside a feed row. Measured rather than computed from the ancestors' padding: the
+ * card scales to whatever width it is given, and a hardcoded `screenWidth - 116` would silently go
+ * wrong the first time one of the four paddings above it changes.
+ */
+function FeedProgressCard({ card }: { card: ProgressCardData }) {
+  const [w, setW] = useState(0);
+  return (
+    <View style={styles.feedProgressWrap} onLayout={(e) => setW(e.nativeEvent.layout.width)}>
+      {w > 0 ? <ProgressPostCard card={card} width={w} /> : null}
+    </View>
+  );
+}
+
 function FeedCard({ post, reacted, respect, onOpen, onReact }: { post: SquadFeedPost; reacted: boolean; respect: number; onOpen: () => void; onReact: () => void }) {
   const isDiscussion = post.type === 'discussion';
   const lead = isDiscussion ? post.body ?? '' : leadFor(post);
@@ -1045,9 +1104,16 @@ function FeedCard({ post, reacted, respect, onOpen, onReact }: { post: SquadFeed
               {detail}
             </Text>
           ) : null}
-          {post.media[0] ? (
+          {/*
+            A progress post renders the CARD, not a thumbnail strip of the photos that went into it.
+            The layout the author chose — the format, the grid, the swipe — is the post; showing three
+            cropped squares instead would be a different post that happens to use the same images.
+          */}
+          {isProgressCard(post.layout) ? (
+            <FeedProgressCard card={post.layout} />
+          ) : post.media[0] ? (
             post.media[0].kind === 'image' ? (
-              <Image source={{ uri: post.media[0].url }} style={styles.feedMediaImage} contentFit="cover" />
+              <FeedMedia media={post.media} />
             ) : (
               <View style={styles.feedVideoTile}>
                 <View style={styles.feedPlayDisc}>
@@ -1331,6 +1397,15 @@ function CloseX() {
 function FeedTypeGlyph({ type }: { type: SquadPostType }) {
   const p = { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: flColor.bronze300, strokeWidth: 1.7, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
   switch (type) {
+    case 'progress':
+      return (
+        <Svg {...p}>
+          <Path d="M4 8.5h3l1.5-2h7l1.5 2h3v10H4z" />
+          <Circle cx={12} cy={13} r={3.5} />
+        </Svg>
+      );
+    // Kept: a check-in can no longer be authored, but a feed full of them must not fall through to the
+    // discussion glyph and start describing itself as something it never was.
     case 'checkin':
       return (
         <Svg {...p}>
@@ -1596,6 +1671,12 @@ const styles = StyleSheet.create({
   // (the recap stats strip moved to `components/forge/compositions/RecapStrip` — the Friends feed
   //  renders the identical four numbers since 0113, and two copies would drift)
   feedMediaImage: { width: '100%', height: 180, borderRadius: flRadius.md, marginTop: 10, backgroundColor: flColor.charcoal900 },
+  feedProgressWrap: { marginTop: 10 },
+  feedMediaStrip: { flexDirection: 'row', gap: 4, marginTop: 10 },
+  feedMediaThumb: { flex: 1, minWidth: 0, height: 118, borderRadius: flRadius.md, backgroundColor: flColor.charcoal900 },
+  feedMediaMoreWrap: { flex: 1, minWidth: 0, position: 'relative' },
+  feedMediaMore: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: flRadius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(6,7,8,0.62)' },
+  feedMediaMoreText: { fontSize: 15, fontWeight: '700', color: flColor.cream100 },
   feedVideoTile: { height: 96, borderRadius: flRadius.md, marginTop: 10, backgroundColor: '#171009', borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, alignItems: 'center', justifyContent: 'center' },
   feedPlayDisc: { width: 40, height: 40, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.4)', borderWidth: 1, borderColor: flColor.bronzeBorder },
   feedActions: { flexDirection: 'row', alignItems: 'center', gap: 18, marginTop: 11 },

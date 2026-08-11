@@ -12,6 +12,7 @@ import {
   activitySymbol,
   avgPaceSec,
   bumpDistanceUnit,
+  bumpDuration,
   bumpPace,
   bumpSpeed,
   distanceStepIn,
@@ -19,6 +20,7 @@ import {
   FIRST_TARGET,
   fmtClock,
   fmtDistanceIn,
+  fmtDuration,
   fmtPace,
   fromDistanceIn,
   hasRateTarget,
@@ -161,7 +163,7 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
    *
    * `null` means "hasn't opened the chooser"; `{mi: null, paceSec: null}` means open on purpose.
    */
-  const [ownTarget, setOwnTarget] = useState<{ mi: number | null; paceSec: number | null; spdMph: number | null } | null>(null);
+  const [ownTarget, setOwnTarget] = useState<{ mi: number | null; paceSec: number | null; spdMph: number | null; sec: number | null } | null>(null);
   const reduceMotion = useReduceMotion();
 
   const timer = useWallClockTimer(logged ? null : `forge_cardio_timer_v1:${index}`);
@@ -237,11 +239,19 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
   const targetMi = exercise.targetMi ?? ownTarget?.mi ?? null;
   const targetPaceSec = exercise.targetPaceSec ?? ownTarget?.paceSec ?? null;
   const targetSpdMph = exercise.targetSpdMph ?? ownTarget?.spdMph ?? null;
+  /** A bout can be prescribed by the clock as well as by the distance — or by both, or by neither. */
+  const targetSec = exercise.targetSec ?? ownTarget?.sec ?? null;
   const hasTarget = targetMi != null;
   /** A pace cue needs something to compare against; without one there is nothing honest to say. */
   const effortTarget = speed ? targetSpdMph : targetPaceSec;
   /** The program prescribed it, so there is nothing here for the athlete to choose. */
-  const prescribed = exercise.targetMi != null || exercise.targetPaceSec != null || exercise.targetSpdMph != null;
+  /*
+   * ⚠ `targetSec` BELONGS IN THIS TEST. An imported endurance day prescribes "75 min ride" and NO
+   * distance, so without it the card decided nothing had been prescribed and offered the athlete a
+   * "Set a target" link over the top of a target the plan had already set.
+   */
+  const prescribed =
+    exercise.targetMi != null || exercise.targetSec != null || exercise.targetPaceSec != null || exercise.targetSpdMph != null;
 
   /**
    * One line under the name, saying what this block asks for.
@@ -390,7 +400,7 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
    */
   const targetChooser = prescribed ? null : ownTarget == null ? (
     <Pressable
-      onPress={() => setOwnTarget({ mi: null, paceSec: null, spdMph: null })}
+      onPress={() => setOwnTarget({ mi: null, paceSec: null, spdMph: null, sec: null })}
       accessibilityRole="button"
       accessibilityLabel="Set a target for this bout"
       style={styles.textBtn}
@@ -410,6 +420,26 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
         parse={(raw) => parseDistanceIn(raw, dU)}
         onCommit={(n) => setOwnTarget((t) => (t ? { ...t, mi: n } : t))}
         placeholder={dU}
+        keyboard="decimal-pad"
+      />
+      {/*
+        ⚠ THE CLOCK WAS MISSING FROM THIS CHOOSER ENTIRELY. The model has held `targetSec` since cardio
+        existed and the Program Builder now authors it, but an athlete setting their own target here
+        could only ever state a DISTANCE — so "go ride for forty minutes", the commonest intention there
+        is, was the one thing they could not say.
+      */}
+      <Field
+        label="TIME"
+        hint=""
+        value={ownTarget.sec == null ? 'Open' : fmtDuration(ownTarget.sec)}
+        onDec={() => setOwnTarget((t) => (t ? { ...t, sec: bumpDuration(t.sec, -1) } : t))}
+        onInc={() => setOwnTarget((t) => (t ? { ...t, sec: bumpDuration(t.sec, 1) } : t))}
+        decLabel="Less time"
+        incLabel="More time"
+        /* Typed in MINUTES — the unit the intention is spoken in ("go for forty"). */
+        parse={(raw) => parseWithin(raw, 1, 8 * 60)}
+        onCommit={(n) => setOwnTarget((t) => (t ? { ...t, sec: Math.round(n * 60) } : t))}
+        placeholder="minutes"
         keyboard="decimal-pad"
       />
       {!rated ? null : speed ? (
@@ -653,6 +683,10 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
         {hasTarget || effortTarget != null ? (
           <View style={styles.strip}>
             {hasTarget ? <StripCell label="TARGET" value={`${d1(targetMi)} ${dU}`} big accent first /> : null}
+            {/* A prescribed clock, spelled — "1h 45m", never "105:00". */}
+            {targetSec != null && targetSec > 0 ? (
+              <StripCell label="TARGET TIME" value={fmtDuration(targetSec)} first={!hasTarget} big={!hasTarget} accent={!hasTarget} />
+            ) : null}
             {speed
               ? targetSpdMph != null && (
                   <StripCell label="TARGET SPEED" value={`${toSpeed(targetSpdMph, units).toFixed(1)}`} first={!hasTarget} big={!hasTarget} accent={!hasTarget} />
@@ -684,7 +718,13 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
             />
             <Field
               label="TIME"
-              hint={draft.hasIncline && timer.elapsedSec > 0 ? 'From your timer' : ''}
+              /*
+               * ⚠ THE CLOCK DOES NOT SAY WHAT IT IS. "45:00" is forty-five minutes and "1:05:20" is an
+               * hour and five, and nothing on the card said which end was which — so the athlete typing
+               * a number had to guess whether it would be read as minutes or as seconds. It reads as
+               * MINUTES (see `parseClock`), and now the field says so.
+               */
+              hint={draft.hasIncline && timer.elapsedSec > 0 ? 'From your timer' : draft.timeSec >= 3600 ? 'h:mm:ss' : 'min:sec'}
               value={fmtClock(draft.timeSec)}
               onDec={() => adj('timeSec', -15)}
               onInc={() => adj('timeSec', 15)}
@@ -692,8 +732,11 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
               incLabel="More time"
               parse={parseClock}
               onCommit={(n) => setTyped('timeSec', n)}
-              placeholder="mm:ss"
+              placeholder="min:sec"
             />
+            {/* Said once more in words, because a colon is not a unit and this is the number that gets
+                filed as the athlete's training. */}
+            <Text style={styles.timeSpell}>{fmtDuration(draft.timeSec)}</Text>
             {draft.hasIncline ? (
               <Field
                 label="INCLINE"
@@ -744,7 +787,7 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
           <View style={styles.form}>
             <View style={styles.resultRow}>
               <ResultCell value={d1(result?.distanceMi)} label={dU.toUpperCase()} first />
-              <ResultCell value={fmtClock(result?.timeSec)} label="TIME" />
+              <ResultCell value={fmtClock(result?.timeSec)} label={(result?.timeSec ?? 0) >= 3600 ? 'TIME · H:MM:SS' : 'TIME · MIN:SEC'} />
               <ResultCell
                 value={(() => {
                   const p = avgPaceSec(result?.distanceMi, result?.timeSec);
@@ -1110,6 +1153,8 @@ const styles = StyleSheet.create({
   stripValueAccent: { color: flColor.bronze300 },
 
   form: { gap: 12 },
+  /** The clock in words, under the field — "1h 45m". A colon is not a unit. */
+  timeSpell: { fontSize: 11, color: flColor.gray600, textAlign: 'right', marginTop: -4, marginBottom: 2 },
   field: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 10, paddingHorizontal: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal500, backgroundColor: flColor.charcoal800 },
   fieldText: { gap: 2, minWidth: 0 },
   fieldLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },

@@ -119,6 +119,13 @@ export interface SaveGoalInput {
   /** 'manual' (default) or an auto-tracking metric. Auto metrics only apply to quantifiable goals. */
   metricKind?: MetricKind;
   metricKey?: string | null;
+  /**
+   * Body goals only: the direction the athlete CHOSE, and the reading they start from. Passing them is
+   * how a "gain 15 lb" goal survives — the inference below cannot tell a gain from a cut before there is
+   * a weigh-in to compare against, and guessed wrong in exactly that case.
+   */
+  metricDir?: MetricDir;
+  metricStartValue?: number | null;
 }
 
 /** Insert or update. When `isPrimary`, the chapter's previous primary is cleared first (GD-D1). */
@@ -150,12 +157,21 @@ export async function saveGoal(input: SaveGoalInput): Promise<Goal> {
     metricStartedAt = sameMetric && before?.metricStartedAt ? before.metricStartedAt : new Date().toISOString();
   }
 
-  // Level metrics (body) carry a baseline + inferred direction. Keep them when the metric is unchanged;
-  // otherwise read the current value now as the baseline (back-filled later if there's no reading yet).
+  /*
+   * Level metrics (body) carry a baseline + a direction.
+   *
+   * The CALLER'S direction wins whenever it is given, because it is the only one that can be right: the
+   * fallback below infers from `target < baseline`, which has nothing to work with before the first
+   * weigh-in and so defaulted every goal to 'up' — recording a cut as a gain. The editor now asks, so
+   * the inference survives only for callers that don't (and for an edit that leaves the metric alone).
+   */
   let metricDir: MetricDir = 'up';
   let metricStartValue: number | null = null;
   if (usesBaseline(metricKind)) {
-    if (sameMetric && before?.metricStartValue != null) {
+    if (input.metricDir) {
+      metricDir = input.metricDir;
+      metricStartValue = input.metricStartValue ?? (sameMetric ? before?.metricStartValue ?? null : null);
+    } else if (sameMetric && before?.metricStartValue != null) {
       metricStartValue = before.metricStartValue;
       metricDir = before.metricDir;
     } else {
@@ -257,10 +273,19 @@ export async function syncAutoGoals(goals: Goal[]): Promise<{ changed: boolean; 
     const value = Number(data ?? 0);
     if (!Number.isFinite(value)) continue;
 
-    // First real reading of a level goal → capture the baseline + infer direction (target vs baseline).
+    /*
+     * First real reading of a level goal → capture the baseline.
+     *
+     * ⚠ THE DIRECTION IS NOT TOUCHED HERE ANY MORE. It used to be re-inferred from `target < value` on
+     * this first reading, which would silently overturn the athlete's own answer: a "gain to 180" goal
+     * whose first weigh-in came in at 190 got rewritten to a CUT. The editor now asks and stores it, and
+     * a goal that disagrees with its own reading is a thing to show, not to quietly correct.
+     *
+     * Goals created before the question existed reach here with no baseline and a defaulted 'up'; they
+     * get their baseline and keep the direction they were saved with.
+     */
     if (id && usesBaseline(g.metricKind) && g.metricStartValue == null && value > 0) {
-      const dir: MetricDir = g.target != null && g.target < value ? 'down' : 'up';
-      await supabase.from('goals').update({ metric_start_value: value, metric_dir: dir }).eq('id', g.id).eq('athlete_id', id);
+      await supabase.from('goals').update({ metric_start_value: value }).eq('id', g.id).eq('athlete_id', id);
       changed = true;
     }
 

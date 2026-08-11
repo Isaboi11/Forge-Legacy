@@ -7,7 +7,7 @@ import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { fetchHomeGym } from '@/data/home-gym-live';
-import { fetchRecentSetsFor } from '@/data/coach-live';
+import { fetchLiftHistory, liftId } from '@/data/lift-history-live';
 import { assemble } from '@/domain/coach/assemble';
 import {
   BODY_PARTS,
@@ -70,7 +70,7 @@ import { useQuery } from '@/lib/useQuery';
  * ══ IT BUILDS, IT DOES NOT PICK ══
  *
  * Nothing here selects from the fourteen authored programs or the eighty-one starter templates. Every plan
- * is assembled slot by slot from the visible 721-exercise catalogue against this athlete's own equipment,
+ * is assembled slot by slot from the visible 733-exercise catalogue against this athlete's own equipment,
  * and the same answers produce the same plan every time.
  */
 
@@ -354,7 +354,9 @@ export default function CoachScreen() {
           );
           return;
         }
-        const history = await fetchRecentSetsFor(res.day.main.map((e) => e.name));
+        /* Asked by catalogue key where there is one, so the wizard and the logger read the same history
+           for the same lift — see `lift-history-live`. This used to ask by name alone. */
+        const history = await fetchLiftHistory(res.day.main.map((e) => ({ catalogKey: e.catalogKey, name: e.name })));
         setBuilt({
           kind: 'day',
           title: res.day.name,
@@ -372,7 +374,12 @@ export default function CoachScreen() {
                   pattern: (e.catalogKey ? itemByKey(e.catalogKey)?.pattern : undefined) ?? '',
                   experience: experience!,
                   prescription: { sets: e.sets ?? 3, reps: e.reps ?? 8, repsMax: e.repsMax ?? null },
-                  history: history.get(e.name) ?? [],
+                  history: history.get(liftId({ catalogKey: e.catalogKey, name: e.name }))?.sessions ?? [],
+                  /* The rack's own constraint — a dumbbell lift cannot advance by 2.5 lb because no such
+                     dumbbell exists. ⚠ `equipId`, NOT `equip`: `equip` is the display name ("Cable
+                     Machine") and `EQUIPMENT_STEP` is keyed by id, so the label would miss every row and
+                     fall silently to the default. */
+                  equipment: e.catalogKey ? itemByKey(e.catalogKey)?.equipId ?? null : null,
                 });
                 return {
                   name: e.name,

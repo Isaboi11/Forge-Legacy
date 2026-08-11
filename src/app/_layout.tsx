@@ -168,6 +168,8 @@ function RootNavigator() {
         <Stack.Screen name="transformation-add" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="transformation-compare" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="share-config" options={{ presentation: 'transparentModal', animation: 'fade' }} />
+        {/* Progress Photo Post — reached from the squad composer and from a Transformation entry's Share. */}
+        <Stack.Screen name="progress-photo-post" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="create-squad" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="join-squad" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="athlete/[id]" />
@@ -177,6 +179,8 @@ function RootNavigator() {
         <Stack.Screen name="activity/[id]" />
         <Stack.Screen name="exercise/[id]" />
         <Stack.Screen name="exercise-library" />
+        {/* W-28, both modes off one route: `?id` present is EDIT, absent is CREATE. */}
+        <Stack.Screen name="custom-exercise" />
         <Stack.Screen name="templates" />
         <Stack.Screen name="workout" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="log-activity" options={{ presentation: 'fullScreenModal' }} />
