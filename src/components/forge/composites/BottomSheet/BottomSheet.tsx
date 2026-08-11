@@ -10,7 +10,7 @@
  */
 
 import React from 'react'
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { flColor, flRadius, flShadow } from '@/constants/foundation'
 
@@ -46,6 +46,7 @@ export interface BottomSheetProps {
 
 export function BottomSheet({ open, onClose, dismissible = true, title, showHandle = true, scroll = false, children, footer, onDismiss }: BottomSheetProps) {
   const insets = useSafeAreaInsets()
+  const { height: windowHeight } = useWindowDimensions()
 
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose} onDismiss={onDismiss}>
@@ -74,8 +75,15 @@ export function BottomSheet({ open, onClose, dismissible = true, title, showHand
 
         `padding` on iOS lifts the sheet by the keyboard's height. Android is left alone because
         `adjustResize` already does it at the window level, and doing both double-counts.
+
+        ⚠ NOT WHEN THE BODY SCROLLS. A `Modal` is its own UIWindow, so KeyboardAvoidingView measures the
+        keyboard against the wrong frame and over-pads — it squeezes the sheet and carries the footer off
+        the bottom with it. That is invisible on a sheet with no text field (the keyboard never opens), so
+        it only ever bit the ONE scrolling sheet that takes typed input: Edit Identity, whose Save button
+        became unreachable. A scrolling sheet does not need it — `automaticallyAdjustKeyboardInsets` moves
+        the keyboard out of the way INSIDE the scroller, which is modal-safe.
       */}
-      <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={styles.root} behavior={!scroll && Platform.OS === 'ios' ? 'padding' : undefined}>
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={dismissible ? onClose : undefined}
@@ -92,10 +100,18 @@ export function BottomSheet({ open, onClose, dismissible = true, title, showHand
 
           {scroll ? (
             <ScrollView
-              style={styles.scrollBody}
+              /*
+               * The cap is EXPLICIT, not just `flexShrink: 1`. Shrinking a flex child relies on the
+               * parent resolving a definite height from `maxHeight: '88%'`, and when it doesn't the
+               * ScrollView simply grows to its content — so it never scrolls AND it pushes the footer
+               * past the bottom of the screen. A real number can't fail that way: 60% of the window
+               * always leaves room for the title, the footer and the safe-area inset beneath it.
+               */
+              style={[styles.scrollBody, { maxHeight: windowHeight * 0.6 }]}
               contentContainerStyle={styles.content}
               showsVerticalScrollIndicator
               keyboardShouldPersistTaps="handled"
+              automaticallyAdjustKeyboardInsets
             >
               {children}
             </ScrollView>
