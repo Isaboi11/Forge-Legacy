@@ -46,27 +46,39 @@
 | **Architecture** | 🟢 | All 21 Freeze rows ✅ Complete; **V1 Architecture Freeze FROZEN 2026-06-30** |
 | **Documentation** | 🟡 | 257 `Docs/*.md` (42 Amendments), ~208 mentioning LOCKED. Specs are strong; the lag is in THIS dashboard and in amendments authored but never merged into their parent docs — the recurring pattern |
 | **Content** | 🟠 | Mixed, and previously mis-scored as one number. **Coaching content 735 of 797 published (92%)**; honors ARE data (139 awardable rows). **Programs 7 of 24** and **exercise media 0** — those two are the real gap |
-| **Backend** | 🟢 | **Supabase, built & live** — 129 migration files (0002 lives in `supabase/design/`); **0001–0128 applied, 0129 + 0130 authored and pending**. RLS on every table, and every `SECURITY DEFINER` function pins `search_path`. **One deliberate exception to "≥1 policy per table": `app_admins` (0129) has RLS ENABLED WITH ZERO POLICIES** — that is deny-by-default and is the point, since `profiles_read` is `using (true)` and the operator roster must not be enumerable. Do not "fix" it (AA-D6) |
+| **Backend** | 🟢 | **Supabase, built & live** — 133 migration files (0002 lives in `supabase/design/`); **0001–0130 applied, 0131–0133 authored and pending**. RLS on every table, and every `SECURITY DEFINER` function pins `search_path`. **One deliberate exception to "≥1 policy per table": `app_admins` (0129) and `metrics_daily` (0133) have RLS ENABLED WITH ZERO POLICIES** — that is deny-by-default and is the point, since `profiles_read` is `using (true)` and the operator roster must not be enumerable. Do not "fix" it (AA-D6) |
 | **Code** | 🟢 | **72 screens, 71 of them on real Supabase data.** The one fixture-backed screen was deferred out of the routed tree 2026-08-01. ~150 components · 68 domain modules · 39 data modules |
-| **Testing** | 🟢 | **1,807 green** (`node --test`) + live Supabase round-trip proofs; gates every unit. Coverage % still not instrumented → not measured |
+| **Testing** | 🟢 | **1,822 green** (`node --test`) + live Supabase round-trip proofs; gates every unit. Coverage % still not instrumented → not measured |
 | **OVERALL** | 🟢 | **A real, backend-wired app.** The social pillar — long carried here as the blocker — has been live for weeks. Critical path is now CONTENT (programs, exercise media), not plumbing |
 
 ---
 
 ## 🏃 Current Sprint
 
-**Sprint:** **Creator Dashboard, Phase 1** (2026-08-11) — the operator can finally see the product being used
+**Sprint:** **Creator Dashboard, Phases 1 + 2** (2026-08-11) — the operator can see the product being used
 
-**Status: SHIPPED.** tsc clean · **1,807 tests** (91 new) · lint at baseline (1 error + 13 warnings, none
-new) · **migrations 0129 + 0130 APPLIED** · **OTA published** to `production` on runtime `74a9a86b…`,
-verified against build 4 with `fingerprint:compare` first. Full write-up in **Recently Completed #1**.
+**Phase 1: SHIPPED.** Migrations **0129 + 0130 APPLIED**, OTA published to `production` on runtime
+`74a9a86b…` after `fingerprint:compare` matched build 4. Write-up in **Recently Completed #1**.
+
+**Phase 2: code complete, MIGRATIONS 0131–0133 NOT YET APPLIED.** tsc clean · **1,822 tests** · lint at
+baseline. Write-up in **Recently Completed #1a**.
 
 **To reach it:** app → Settings → **Creator Dashboard** (bottom of the list, operator accounts only).
 
-**Next:** Phase 2 — first-party event instrumentation (`app_events` + a client emitter + `last_active_at`
-on its own table + a nightly `pg_cron` rollup). ⚠ Phase 2 collects data Phase 1 does not, so
-`P-6-Amendment-001-Product-Analytics` and the `Docs/Legal/Privacy-Policy.md` edit **ship before the first
-event is written**, not after (AA-D9).
+**⚠ WHAT THE PO MUST DO, AND IN THIS ORDER:**
+
+1. **Publish the privacy-policy edit first.** `Docs/Legal/Privacy-Policy.md` § 2 "Product usage" is
+   written and committed but the policy is not hosted anywhere yet. AA-D9 / P6-A1-D8 make the disclosure
+   a precondition of the collection, not a companion to it — a policy updated afterwards was wrong for
+   however long the gap lasted.
+2. **Then** paste `supabase/apply/pending-0131-0133.sql`.
+3. Verify `select jobname, schedule, active from cron.job order by jobname;` shows **three** jobs.
+   `forge-events-prune` is the only thing making the policy's 90-day sentence true; if it is missing,
+   that promise is false while the words stay on the page.
+
+**Decision Queue #22 (NEW, open):** the privacy policy has never been published to a URL. Apple requires
+one, and § 2 now describes collection that is about to start. `forgelegacy.expo.app/privacy` is the
+cheapest option and is already controlled.
 
 A progress capture is now something you lay out rather than something the app decides for you: format,
 style, poses, entry, what's printed on the card, and where it goes. One renderer serves the composer
@@ -803,6 +815,47 @@ baseline · route-guard green with `admin` declared.
 **⚠ NOT DONE:** the migrations are authored, not applied. And Phase 1 measures *what people did*, never
 *what they liked* — screens visited, features tapped, session length and where people abandon a flow all
 wait for Phase 2, which cannot ship before its privacy disclosure does.
+
+### 1a. Creator Dashboard — Phase 2: what people OPEN (2026-08-11, CODE + migrations 0131·0132·0133, NOT YET APPLIED)
+
+Phase 1 measured what athletes **did**. It could not distinguish somebody who opens Forge every day and
+logs nothing from somebody who left — screens opened, features used, session length and the point at
+which a flow is abandoned were not recorded anywhere in the product.
+
+**The disclosure ships first, and that ordering is the deliverable, not a formality.**
+`P-6-Amendment-001-Product-Analytics` closes **P-6 § 6 Open Question 3**, which had recorded in as many
+words that there was *"no existing authority either way"* on analytics disclosure. `Privacy-Policy.md`
+§ 2 now lists every stored field at granularity, what is never in one, the 90-day retention and the off
+switch. **The "no third-party analytics" claim STAYS** — it is still true and is the strongest sentence
+in the document. An event row in our own database follows nobody anywhere; an SDK does.
+
+**`domain/analytics/props-core.ts` is what turns that promise into a property of the code.** An
+allowlist, applied at the boundary, tested — because `track('workout_saved', { name: workout.name })` is
+the most natural line in the world to write and no amount of care prevents it. A second pass drops prose
+handed to an *allowlisted* key (`{ category: workout.name }`), which a key check alone cannot catch.
+Route paths reduce to their shape, so `/squad/[id]` is stored and *which* squad is not, and the query
+string is dropped because that is where a search term would ride in.
+
+**Three decisions that are load-bearing rather than stylistic:**
+
+- **`app_events` has no UPDATE and no DELETE policy.** An append-only log its subject can rewrite is not
+  a log. Deletion happens by FK cascade, which is the deletion the policy actually promises.
+- **Two clocks.** `occurred_at` is the device's and can be wrong by years; `received_at` is the server's
+  and **every metric computes from it**.
+- **Presence went on its own table, not `profiles`.** `profiles_read` is `using (true)`, so a
+  `last_active_at` there would publish every athlete's app-open time to anyone holding the anon key.
+  Also fixed on the way: the existing sync returned early when `Intl` yielded no timezone, which would
+  have silently skipped the stamp and reported those athletes as never opening the app.
+
+**The dashboard now carries two definitions of "active" at once and labels both** — Phase 1's sections
+count a saved workout, "What people open" counts an app open. Silently mixing them would make one word
+mean two things in a single scroll. The section also reports its own coverage (how many athletes opted
+out), so a partial sample cannot read as the population.
+
+**Gate:** tsc clean · **1,822 tests** (15 new) · lint at baseline · commit `2d0a5e3`.
+
+**⚠ NOT DONE:** migrations not applied, and **the privacy policy is still not published to any URL** —
+see the Current Sprint block and Decision Queue #22. The policy must be live before 0131 runs.
 
 ### 2. The four open decisions from the PO review, all built (2026-08-10, CODE + migration 0128 + a native dependency)
 
