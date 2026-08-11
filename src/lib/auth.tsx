@@ -2,7 +2,8 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 import { resetFirstRunFlags } from './first-run';
-import { syncAthleteTimezone } from '@/data/honors-live';
+import { syncAthletePresence } from '@/data/honors-live';
+import { stopAnalytics } from './analytics';
 
 /**
  * Auth session — the real identity the app runs on (Phase 1). `session.user.id` is `auth.uid()`,
@@ -37,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
         // Which clock this athlete lives by — the Hidden honors ask what the wall said, and a timestamptz
         // cannot answer that. Fire-and-forget: it must never delay the splash or fail a launch.
-        if (data.session) void syncAthleteTimezone();
+        if (data.session) void syncAthletePresence();
       },
       /*
        * ⚠ THE REJECTION ARM IS LOAD-BEARING — this used to be a bare `.then(fn)`.
@@ -63,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (prevUserId.current !== undefined && prevUserId.current !== nextId) {
         void resetFirstRunFlags();
       }
-      if (nextId && prevUserId.current !== nextId) void syncAthleteTimezone();
+      if (nextId && prevUserId.current !== nextId) void syncAthletePresence();
       prevUserId.current = nextId;
     });
     return () => data.subscription.unsubscribe();
@@ -86,6 +87,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: error?.message ?? null };
   };
   const signOut = async () => {
+    // Last chance to send what this session collected — the insert is `user_id = auth.uid()`, so once
+    // the session is gone the queued rows have nobody to belong to and are dropped. Awaited but
+    // best-effort: `stopAnalytics` cannot throw, so it can never block signing out.
+    await stopAnalytics();
     await supabase.auth.signOut();
   };
 

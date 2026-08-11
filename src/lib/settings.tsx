@@ -1,4 +1,5 @@
-import React, { createContext, useCallback, useContext } from 'react';
+import React, { createContext, useCallback, useContext, useEffect } from 'react';
+import { setAnalyticsEnabled } from './analytics';
 import { useAuth } from './auth';
 import { useQuery } from './useQuery';
 import { fetchAppPrefs } from '@/data/settings-live';
@@ -24,6 +25,23 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const { session } = useAuth();
   const uid = session?.user.id ?? null;
   const { data, refetch } = useQuery<AppPrefs>(async () => (uid ? fetchAppPrefs() : APP_PREFS_DEFAULTS), [uid]);
+
+  /**
+   * Reconcile the analytics opt-out from SERVER truth into the emitter's local mirror.
+   *
+   * The mirror is written on tap, which covers the device where the athlete flipped it — and nothing
+   * else. On a new device, a reinstall, or after AsyncStorage is cleared, the mirror is absent and the
+   * emitter falls back to the disclosed default of ON. For somebody who opted out on their phone and
+   * then signed in on the web, that would silently resume collecting from a person who had said no.
+   *
+   * `data` is the same fetch every unit preference already rides on, so this costs no extra request.
+   * The write is inside the effect's callback, never in its body — react-compiler treats a synchronous
+   * setState in an effect body as an error, and `setAnalyticsEnabled` is deliberately not React state.
+   */
+  useEffect(() => {
+    if (data) setAnalyticsEnabled(!data.analyticsOptOut);
+  }, [data]);
+
   return <SettingsContext.Provider value={{ prefs: data ?? APP_PREFS_DEFAULTS, refetch }}>{children}</SettingsContext.Provider>;
 }
 

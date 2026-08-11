@@ -203,6 +203,22 @@ export interface AdminContent {
   topHonors: { honorType: string; label: string; athletes: number; awards: number }[];
 }
 
+export interface AdminEvents {
+  days: number;
+  /** 'app_open' once 0132 is live — 0130's series still says 'saved_workout'. Rendered, not assumed. */
+  activeDef: string;
+  totalEvents: number;
+  reportingAthletes: number;
+  /** Coverage. These athletes contribute nothing, and the screen says so. */
+  optedOut: number;
+  athletesTotal: number;
+  screens: { screen: string; views: number; athletes: number }[];
+  actions: { kind: string; events: number; athletes: number }[];
+  sessions: { count: number; medianSec: number; p90Sec: number; medianScreensPerSession: number };
+  presence: { dau: number; wau: number; mau: number; byPlatform: KeyCount[] };
+  byPlatform: { key: string; events: number; athletes: number }[];
+}
+
 export interface AdminSocial {
   days: number;
   squads: {
@@ -393,6 +409,57 @@ export async function fetchAdminContent(days: number, limit = 20, tz = dashboard
       label: String(h.label ?? h.honor_type ?? ''),
       athletes: num(h.athletes),
       awards: num(h.awards),
+    })),
+  };
+}
+
+/**
+ * Phase 2 (0133). What people actually open and tap.
+ *
+ * Distinct from every other read model here in one way worth stating: it reports its own COVERAGE
+ * (`optedOut` / `athletesTotal`). Athletes who turned "Help improve Forge" off contribute nothing, so a
+ * screen-view count is a count of the athletes who left it on. A dashboard that hides that invites the
+ * reader to treat a partial sample as the population.
+ */
+export async function fetchAdminEvents(days: number, limit = 15, tz = dashboardTz()): Promise<AdminEvents> {
+  const raw = obj(await callRpc('admin_events', { p_days: days, p_limit: limit, p_tz: tz }));
+  const s = obj(raw.sessions);
+  const p = obj(raw.presence);
+  const counts = (v: unknown): KeyCount[] =>
+    arr<Record<string, unknown>>(v).map((x) => ({ key: String(x.key ?? ''), n: num(x.n) }));
+  return {
+    days: num(raw.days),
+    activeDef: String(raw.active_def ?? 'app_open'),
+    totalEvents: num(raw.total_events),
+    reportingAthletes: num(raw.reporting_athletes),
+    optedOut: num(raw.opted_out),
+    athletesTotal: num(raw.athletes_total),
+    screens: arr<Record<string, unknown>>(raw.screens).map((x) => ({
+      screen: String(x.screen ?? ''),
+      views: num(x.views),
+      athletes: num(x.athletes),
+    })),
+    actions: arr<Record<string, unknown>>(raw.actions).map((x) => ({
+      kind: String(x.kind ?? ''),
+      events: num(x.events),
+      athletes: num(x.athletes),
+    })),
+    sessions: {
+      count: num(s.count),
+      medianSec: num(s.median_sec),
+      p90Sec: num(s.p90_sec),
+      medianScreensPerSession: num(s.median_screens_per_session),
+    },
+    presence: {
+      dau: num(p.dau),
+      wau: num(p.wau),
+      mau: num(p.mau),
+      byPlatform: counts(p.by_platform),
+    },
+    byPlatform: arr<Record<string, unknown>>(raw.by_platform).map((x) => ({
+      key: String(x.key ?? ''),
+      events: num(x.events),
+      athletes: num(x.athletes),
     })),
   };
 }

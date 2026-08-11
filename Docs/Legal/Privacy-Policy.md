@@ -13,7 +13,11 @@ is published. See § Before You Publish at the end.
 Forge Legacy keeps a record of your training. That record is yours.
 
 - We do not sell your data. We do not share it with advertisers. There is no ad network in this app.
-- There are **no third-party analytics or tracking tools** of any kind. Nothing follows you.
+- There are **no third-party analytics or tracking tools** of any kind — no Google, no Facebook, no ad
+  networks. Nothing follows you from this app to another one.
+- We do keep a simple record of **which screens and features get used**, in our own database, so we can
+  see what is working and what is not. It never includes anything you wrote or anything you lifted, and
+  you can turn it off in Settings › Privacy.
 - Your workouts, photos and reflections are **private by default**. Things become visible to other people
   only when you put them somewhere shared — a squad, a friends feed, a competition.
 - Your location is used **only while you are recording a run, walk or ride**, and your route never leaves
@@ -68,6 +72,38 @@ resale, because none of those things exist in this product.
 - Basic information needed to deliver the service and diagnose failures, such as app version and the type
   of device. We do not build advertising profiles and we do not use device identifiers for tracking.
 
+### Product usage
+So we can tell which parts of Forge Legacy are worth building on and which are not being used, the app
+records a simple record of how it is used. This stays in our own database and is never sent anywhere else.
+
+What a usage record contains, in full:
+
+- the name of the action, such as “opened a screen” or “started a workout”
+- which screen it happened on
+- your account id
+- a random session id — a new one each time you open the app. It is not a device identifier and cannot be
+  linked to you outside your account
+- the date and time
+- your app version and whether you are on iOS, Android or the web
+
+What it never contains:
+
+- **anything you wrote** — no workout or exercise names, notes, reflections, goals, messages, comments, or
+  search terms
+- **anything you lifted** — no weights, reps, distances or times
+- no photos or video, and no links to them
+- no location of any kind
+- no advertising identifier, and nothing that could identify your device
+
+**How long we keep it.** Individual usage records are deleted after 90 days. What remains after that is
+anonymous daily totals — counts with no person attached.
+
+**You can turn it off.** Settings › Privacy › “Help improve Forge”. Turning it off stops collection from
+the next time you open the app.
+
+**You can see it.** These records are readable by your own account and by nobody else’s. Deleting your
+account deletes them along with everything else.
+
 ---
 
 ## 3. What we do not collect
@@ -76,6 +112,9 @@ Stated plainly, because these are the things people reasonably assume an app is 
 
 - **No third-party analytics.** No Google Analytics, no Firebase, no Amplitude, Mixpanel, Segment, or
   similar. None are present in the application.
+  *We do keep our own record of which screens and features get used — described under “Product usage”
+  above. It stays in our database, is never sold or shared, and is never joined to anything outside your
+  account.*
 - **No advertising SDKs**, no ad identifiers, no cross-app or cross-site tracking.
 - **No sale of personal information**, under any definition, to anyone.
 - **No contacts access.** We never read your address book.
@@ -210,14 +249,25 @@ that deserve one: **photographs of people’s bodies** and **health-adjacent dat
    cascade that clears the rows does not necessarily clear the files. Test it on a real account with real
    photos before this sentence is published, and fix the code if it is not true — a privacy policy is a
    promise, and this is the one most likely to be quietly false.
-2. **Decide on EU/UK.** If you ever distribute there, this needs GDPR-specific sections: legal basis for
+2. **Verify the 90-day usage-record claim.** § 2 "Product usage" promises individual records are deleted
+   after 90 days. That is enforced by a scheduled job (`forge-events-prune`, migration 0131) rather than by
+   anything automatic — if the job is unscheduled, or silently fails, the promise quietly becomes false
+   while the sentence stays on the page. Check `select jobname, active from cron.job;` before publishing,
+   and again whenever migrations are re-run. Same failure mode as item 1: a promise nothing enforces.
+3. **Decide on EU/UK.** If you ever distribute there, this needs GDPR-specific sections: legal basis for
    processing, data-transfer mechanism, and a controller contact. Related to the DSA trader question you
-   already answered.
-3. **Decide on California.** CCPA/CPRA adds required disclosures and a “Do Not Sell or Share” statement —
-   simpler than usual here, since the honest answer is that you do neither.
-4. **Match it to Apple’s privacy questionnaire.** App Store Connect asks you to declare data collection
+   already answered. **The usage records in § 2 are the processing that most needs a stated lawful
+   basis** — legitimate interests is the usual answer for first-party product analytics, but say so
+   explicitly rather than leaving it inferred.
+4. **Decide on California.** CCPA/CPRA adds required disclosures and a “Do Not Sell or Share” statement —
+   simpler than usual here, since the honest answer is that you do neither. `P-6-Amendment-001` § 6 records
+   the reasoning: nothing is sold or shared, and no ad identifier is read, so there is nothing to opt out
+   of — what is required is disclosure plus a control, which § 2 and the Settings toggle provide.
+5. **Match it to Apple’s privacy questionnaire.** App Store Connect asks you to declare data collection
    category by category. Those answers and this document must agree; a mismatch is a review rejection and,
-   worse, a public inconsistency.
+   worse, a public inconsistency. **“Product usage” in § 2 is a declarable category** — expect to answer
+   yes to Product Interaction / Usage Data, linked to identity, **not** used for tracking. Declaring “no
+   data collected” would now be false.
 
 ## Where it needs to live
 

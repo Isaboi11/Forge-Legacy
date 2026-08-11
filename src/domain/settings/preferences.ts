@@ -16,6 +16,21 @@ export interface AppPrefs {
   haptics: boolean;
   sound: boolean;
   reduceMotion: boolean;
+  /**
+   * "Help improve Forge" — first-party product-usage events (P6-A1-D5).
+   *
+   * ⚠ STORED AS AN OPT-**OUT**, NOT AN OPT-IN, and that is not cosmetic. `sanitizePrefs` fills every
+   *   missing field from the defaults, so a stored blob written before this field existed — which is
+   *   every athlete's today — must land on the DISCLOSED default. Modelled as `analyticsOptOut:false`
+   *   that is what absence means. Modelled as `analyticsEnabled`, a `false` default would have been
+   *   indistinguishable from a deliberate opt-out and a `true` default would silently re-enable anyone
+   *   who had opted out and then had their prefs rewritten by an unrelated screen.
+   *
+   * Lives on P-6 (privacy), not on P-4b Preferences, because it is a disclosure control rather than an
+   * experience setting. The value here is mirrored to AsyncStorage so the emitter can read consent
+   * synchronously — see `lib/analytics.ts`.
+   */
+  analyticsOptOut: boolean;
 }
 
 export const APP_PREFS_DEFAULTS: AppPrefs = {
@@ -23,6 +38,7 @@ export const APP_PREFS_DEFAULTS: AppPrefs = {
   haptics: true,
   sound: true,
   reduceMotion: false,
+  analyticsOptOut: false,
 };
 
 export type ExperienceKey = 'haptics' | 'sound' | 'reduceMotion';
@@ -51,6 +67,7 @@ export function sanitizePrefs(raw: unknown): AppPrefs {
     if (typeof r.haptics === 'boolean') out.haptics = r.haptics;
     if (typeof r.sound === 'boolean') out.sound = r.sound;
     if (typeof r.reduceMotion === 'boolean') out.reduceMotion = r.reduceMotion;
+    if (typeof r.analyticsOptOut === 'boolean') out.analyticsOptOut = r.analyticsOptOut;
   }
   return out;
 }

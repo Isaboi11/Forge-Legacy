@@ -23,6 +23,7 @@ import {
   fetchAdminCohorts,
   fetchAdminContent,
   fetchAdminEngagement,
+  fetchAdminEvents,
   fetchAdminGrowth,
   fetchAdminOverview,
   fetchAdminSocial,
@@ -33,7 +34,7 @@ import { pctOf } from '@/domain/admin/chart-core';
 import { useQuery } from '@/lib/useQuery';
 
 /**
- * The operator dashboard (migrations 0129 + 0130).
+ * The operator dashboard (migrations 0129–0133).
  *
  * Governed by `Docs/Admin-Analytics-Architecture-v1.0.md`. Everything on this screen is a POPULATION
  * AGGREGATE — AA-D2 forbids per-athlete drill-down, and that constraint is what keeps this surface
@@ -44,19 +45,27 @@ import { useQuery } from '@/lib/useQuery';
  * expo-router compiles every route into the bundle and `app.json` sets `web.output: "static"`, so
  * `/admin` exists as a public file on forgelegacy.expo.app no matter what this file does. The gate is
  * `admin_guard()` in Postgres: an athlete who reaches this URL gets 42501 on every query. The
- * `isAppAdmin()` check below is a courtesy that avoids rendering seven error states — it is not
+ * `isAppAdmin()` check below is a courtesy that avoids rendering eight error states — it is not
  * security, and it FAILS CLOSED (an error resolves to false and redirects).
  *
- * ══ SEVEN QUERIES, NOT ONE ══
+ * ══ EIGHT QUERIES, NOT ONE ══
  *
  * One `useQuery` per section, so the cohort grid — the slowest of them by far — never holds up the
  * headline tiles. Each refetches independently when the range changes.
  *
- * ══ WHAT THIS SCREEN CANNOT TELL YOU, AND SAYS SO ══
+ * ══ TWO DEFINITIONS OF "ACTIVE" LIVE ON THIS SCREEN AT ONCE ══
  *
- * There is no telemetry in this product yet, so "active" means SAVED A WORKOUT, not opened the app.
- * The footer states that rather than letting the reader assume otherwise. Screens visited, features
- * tapped, session length and where people abandon a flow all arrive with Phase 2.
+ * Phase 1's sections (0130) count an athlete active when they SAVED A WORKOUT — that is all the
+ * database could see before events existed, and every one of those payloads carries
+ * `active_def: 'saved_workout'`. "What people open" (0133) counts an APP OPEN, from `athlete_activity`.
+ * The two numbers are different on purpose and both are labelled, because silently mixing them would
+ * make the same word mean two things in one scroll.
+ *
+ * ══ AND WHAT IT STILL CANNOT TELL YOU ══
+ *
+ * Event data covers only athletes who left "Help improve Forge" on, and only from the release that
+ * introduced it — there is no history before that. The section states its own coverage rather than
+ * letting a partial sample read as the population.
  */
 
 export default function AdminScreen() {
@@ -74,6 +83,7 @@ export default function AdminScreen() {
   const adoption = useQuery(() => fetchAdminAdoption(days, tz), [days, tz]);
   const content = useQuery(() => fetchAdminContent(days, 12, tz), [days, tz]);
   const social = useQuery(() => fetchAdminSocial(days, tz), [days, tz]);
+  const events = useQuery(() => fetchAdminEvents(days, 15, tz), [days, tz]);
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/account-settings'));
 
@@ -93,6 +103,7 @@ export default function AdminScreen() {
   const a = adoption.data;
   const c = content.data;
   const s = social.data;
+  const ev = events.data;
 
   const series = o?.series ?? [];
   const growthDays = (g?.series ?? []).map((r) => r.d);
@@ -214,6 +225,77 @@ export default function AdminScreen() {
                 <Text style={styles.subhead}>Days since last workout</Text>
                 <BucketBars buckets={e.churnRisk} />
               </>
+            ) : null}
+          </Section>
+        </SectionCard>
+
+        {/* ── What people open and tap (Phase 2, 0131–0133) ────────────── */}
+        <SectionCard
+          title="What people open"
+          subtitle={
+            ev
+              ? `${ev.reportingAthletes} of ${ev.athletesTotal} athletes are reporting${ev.optedOut > 0 ? ` · ${ev.optedOut} opted out` : ''}. Counts below describe only those athletes.`
+              : undefined
+          }
+        >
+          <Section state={events}>
+            {ev ? (
+              ev.totalEvents === 0 ? (
+                // A real state worth naming rather than drawing as flat zero: the tables exist, the app
+                // just has not reported yet. "Nothing here" and "nobody uses this" are different claims.
+                <Text style={styles.empty}>
+                  No usage recorded yet in this window. Events start arriving once the update is installed and the
+                  app is opened — a fresh install reports from its first launch.
+                </Text>
+              ) : (
+                <>
+                  <View style={styles.tiles}>
+                    <AdminStatTile label="Opened today" value={ev.presence.dau} exact />
+                    <AdminStatTile label="Opened this week" value={ev.presence.wau} exact />
+                    <AdminStatTile label="Opened this month" value={ev.presence.mau} exact />
+                    <AdminStatTile label="Median session" value={ev.sessions.medianSec} suffix="s" exact />
+                  </View>
+
+                  <Text style={styles.subhead}>Screens, by how many athletes opened them</Text>
+                  <AdminBarChart
+                    rows={ev.screens.map((s) => ({
+                      label: s.screen,
+                      value: s.athletes,
+                      note: `· ${s.views} views`,
+                    }))}
+                  />
+
+                  {ev.actions.length ? (
+                    <>
+                      <Text style={styles.subhead}>Actions taken</Text>
+                      <AdminBarChart
+                        rows={ev.actions.map((a) => ({
+                          label: a.kind.replace(/_/g, ' '),
+                          value: a.athletes,
+                          note: `· ${a.events} times`,
+                        }))}
+                      />
+                    </>
+                  ) : null}
+
+                  <Text style={styles.subhead}>Sessions</Text>
+                  <StatLine label="Sessions recorded" value={ev.sessions.count} />
+                  <StatLine label="Median length" value={`${ev.sessions.medianSec}s`} />
+                  {/* The p90 is the load-bearing one: a median of 40s with a p90 of 12 minutes is a
+                      product with a short check-in AND a long session, which one number would hide. */}
+                  <StatLine label="90th percentile length" value={`${ev.sessions.p90Sec}s`} />
+                  <StatLine label="Median screens per session" value={ev.sessions.medianScreensPerSession} />
+
+                  {ev.byPlatform.length ? (
+                    <>
+                      <Text style={styles.subhead}>Where they are</Text>
+                      <AdminBarChart
+                        rows={ev.byPlatform.map((p) => ({ label: p.key, value: p.athletes, note: `· ${p.events} events` }))}
+                      />
+                    </>
+                  ) : null}
+                </>
+              )
             ) : null}
           </Section>
         </SectionCard>
@@ -347,12 +429,18 @@ export default function AdminScreen() {
           </Section>
         </SectionCard>
 
-        {/* The honesty footer. Without it a reader assumes "active" means opened the app. */}
+        {/* The honesty footer. Two definitions of "active" are on this screen at once and a reader who
+            does not know that will compare two numbers that were never comparable. */}
         <Text style={styles.disclaimer}>
-          “Active” here means <Text style={styles.disclaimerStrong}>saved a workout</Text> — there is no app-open
-          tracking in the product yet, so somebody who opens Forge daily and logs nothing counts as inactive. Screens
-          visited, features tapped, session length and where people abandon a flow are not measured. All figures are
-          bucketed in {tz}.
+          Everything above “What people open” counts an athlete as{' '}
+          <Text style={styles.disclaimerStrong}>active when they saved a workout</Text> — so somebody who opens Forge
+          daily and logs nothing reads as inactive there. “What people open” counts an{' '}
+          <Text style={styles.disclaimerStrong}>app open</Text> instead. The two are deliberately different.
+        </Text>
+        <Text style={styles.disclaimer}>
+          Usage data starts from the release that introduced it — there is no history before that — and covers only
+          athletes who left “Help improve Forge” on in Settings › Privacy. It never includes anything an athlete
+          wrote or lifted, no photos and no location. All figures are bucketed in {tz}.
         </Text>
         <Text style={styles.disclaimer}>
           Aggregates only, by design — no athlete is named on this screen, and nothing here may be shown inside the app
@@ -396,6 +484,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     marginTop: 8,
   },
+  empty: { color: flColor.gray600, fontSize: 12, lineHeight: 17, paddingVertical: 6 },
   sectionLoading: { paddingVertical: 22, alignItems: 'center' },
   sectionError: { color: flColor.redMuted, fontSize: 12, lineHeight: 17, paddingVertical: 8 },
   disclaimer: { color: flColor.gray600, fontSize: 10.5, lineHeight: 16, marginTop: 4 },

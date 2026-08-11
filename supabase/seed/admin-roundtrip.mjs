@@ -1,17 +1,17 @@
-// Operator dashboard gate check (migrations 0129 + 0130).
+// Operator dashboard gate check (migrations 0129 + 0130 + 0133).
 //
 // ══ WHAT THIS PROVES, AND WHY IT IS THE ONLY THING STANDING BETWEEN A TYPO AND TOTAL EXPOSURE ══
 //
 // Every `admin_*` function is SECURITY DEFINER: it runs as the table owner and RLS does not apply to
 // it. The ONLY thing keeping a normal athlete out is `perform public.admin_guard()` as the first
 // statement of each body. One function that forgets it hands the whole population's aggregates to
-// anybody with an account — and it would look completely fine in code review, because the other six
+// anybody with an account — and it would look completely fine in code review, because the other seven
 // have the line.
 //
 // So step 2 loops EVERY function by name and asserts 42501. It is a regression test for a mistake
 // nobody would otherwise catch.
 //
-// ⚠ ADDING AN EIGHTH FUNCTION TO 0130 MEANS ADDING ITS NAME TO `FUNCTIONS` BELOW IN THE SAME COMMIT.
+// ⚠ ADDING AN ADMIN FUNCTION ANYWHERE MEANS ADDING ITS NAME TO `FUNCTIONS` BELOW IN THE SAME COMMIT.
 //
 // ══ RUNNING IT ══
 //
@@ -37,7 +37,7 @@ const env = Object.fromEntries(
 
 const TZ = 'UTC';
 
-/** Every admin RPC, with the arguments the app sends. Keep in lockstep with 0130. */
+/** Every admin RPC, with the arguments the app sends. Keep in lockstep with 0130 and 0133. */
 const FUNCTIONS = [
   ['admin_overview', { p_days: 30, p_tz: TZ }],
   ['admin_growth', { p_days: 30, p_tz: TZ }],
@@ -46,7 +46,11 @@ const FUNCTIONS = [
   ['admin_feature_adoption', { p_days: 30, p_tz: TZ }],
   ['admin_content_popularity', { p_days: 30, p_limit: 10, p_tz: TZ }],
   ['admin_social_health', { p_days: 30, p_tz: TZ }],
+  ['admin_events', { p_days: 30, p_limit: 10, p_tz: TZ }], // 0133
 ];
+
+/** Tables a non-admin must not be able to read across. Checked alongside the RPCs. */
+const CLOSED_TABLES = ['app_admins', 'metrics_daily'];
 
 const client = () =>
   createClient(env.EXPO_PUBLIC_SUPABASE_URL, env.EXPO_PUBLIC_SUPABASE_ANON_KEY, {
@@ -74,8 +78,10 @@ console.log('\n── anon (no session) ──');
   const sb = client();
 
   // RLS on with ZERO policies. PostgREST reports this as an empty result, not an error.
-  const { count, error } = await sb.from('app_admins').select('*', { count: 'exact', head: true });
-  check(!error && count === 0, `app_admins is not enumerable by anon (count=${count ?? 'null'}${error ? ', ' + error.message : ''})`);
+  for (const t of CLOSED_TABLES) {
+    const { count, error } = await sb.from(t).select('*', { count: 'exact', head: true });
+    check(!error && count === 0, `${t} is not enumerable by anon (count=${count ?? 'null'}${error ? ', ' + error.message : ''})`);
+  }
 
   // `revoke execute from public` means anon cannot invoke these at all.
   for (const [fn, args] of FUNCTIONS) {
@@ -95,8 +101,20 @@ if (!process.env.SB_EMAIL || !process.env.SB_PASS) {
   const { data: isAdmin, error: adminErr } = await sb.rpc('is_app_admin');
   check(!adminErr && isAdmin === false, `is_app_admin() === false (got ${JSON.stringify(isAdmin)})`);
 
-  const { data: rows } = await sb.from('app_admins').select('user_id');
-  check((rows ?? []).length === 0, `app_admins reads back empty (${(rows ?? []).length} rows)`);
+  for (const t of CLOSED_TABLES) {
+    const { data: rows } = await sb.from(t).select('*').limit(5);
+    check((rows ?? []).length === 0, `${t} reads back empty for a signed-in athlete (${(rows ?? []).length} rows)`);
+  }
+
+  // 0131: an athlete may read THEIR OWN events and nobody else's (P6-A1-D10), and may not rewrite them.
+  const { error: evReadErr } = await sb.from('app_events').select('id').limit(1);
+  check(!evReadErr, `own app_events are readable${evReadErr ? ' — ' + evReadErr.message : ''}`);
+
+  const { error: evUpdErr } = await sb.from('app_events').update({ kind: 'tampered' }).eq('kind', 'screen_view');
+  check(!!evUpdErr, `app_events UPDATE is refused${evUpdErr ? '' : ' — IT WAS NOT. An append-only log its subject can rewrite is not a log.'}`);
+
+  const { error: evDelErr } = await sb.from('app_events').delete().eq('kind', 'screen_view');
+  check(!!evDelErr, `app_events DELETE is refused${evDelErr ? '' : ' — IT WAS NOT.'}`);
 
   for (const [fn, args] of FUNCTIONS) {
     const { data, error: e } = await sb.rpc(fn, args);
@@ -117,7 +135,7 @@ if (!process.env.SB_ADMIN_EMAIL || !process.env.SB_ADMIN_PASS) {
   const { sb } = await signIn(process.env.SB_ADMIN_EMAIL, process.env.SB_ADMIN_PASS);
 
   const { data: isAdmin } = await sb.rpc('is_app_admin');
-  check(isAdmin === true, `is_app_admin() === true (got ${JSON.stringify(isAdmin)}) — if false, run STEP 2 of pending-0129-0130.sql`);
+  check(isAdmin === true, `is_app_admin() === true (got ${JSON.stringify(isAdmin)}) — if false, run the grant block at the end of the paste bundle`);
 
   if (isAdmin === true) {
     for (const [fn, args] of FUNCTIONS) {

@@ -1,3 +1,6 @@
+import Constants from 'expo-constants';
+import { Platform } from 'react-native';
+
 import { supabase } from '@/lib/supabase';
 import { HONOR_CATEGORIES, categoryGlyph, categoryMeta, honorMeta, type HonorGlyphName } from '@/domain/honor/catalog';
 
@@ -482,15 +485,46 @@ export async function fetchHonorsHub(): Promise<HonorsHub> {
  *
  * Best-effort throughout: a profile write must never be able to stop somebody using the app.
  */
-export async function syncAthleteTimezone(): Promise<void> {
+export async function syncAthletePresence(): Promise<void> {
+  let user: { id: string } | null = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch {
+    return;
+  }
+  if (!user) return;
+
+  // ── the timezone, for the local-time honors ────────────────────────────────
   try {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (!tz) return;
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    await supabase.from('profiles').update({ tz }).eq('id', user.id);
+    if (tz) await supabase.from('profiles').update({ tz }).eq('id', user.id);
   } catch {
     // A missing `tz` column (0099 not yet applied) lands here, as does an offline launch. Both mean the
     // local-time honors stay unevaluated, which is the same as before this existed.
+  }
+
+  // ── presence, for DAU/WAU/MAU (0132) ───────────────────────────────────────
+  //
+  // ⚠ ITS OWN try/catch, AFTER the timezone rather than inside it. The previous shape returned early on
+  //   a falsy `tz`, so on any runtime where `Intl` yields nothing the presence stamp would have been
+  //   silently skipped — and the dashboard would have reported those athletes as never opening the app.
+  //   A metric that is quietly wrong for a subset of devices is worse than one that is missing.
+  //
+  // ⚠ NOT a column on `profiles`. `profiles_read` is `using (true)`, so a last-active timestamp there
+  //   would publish every athlete's presence to anyone holding the anon key (P6-A1-D7).
+  try {
+    await supabase.from('athlete_activity').upsert(
+      {
+        user_id: user.id,
+        last_active_at: new Date().toISOString(),
+        last_platform: Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'web',
+        last_version: Constants.expoConfig?.version ?? null,
+      },
+      { onConflict: 'user_id' },
+    );
+  } catch {
+    // 0132 not applied yet (PGRST205), or offline. "Active" falls back to the workout-based definition
+    // the dashboard already labels in its payload, so nothing reports a wrong number — only a coarser one.
   }
 }

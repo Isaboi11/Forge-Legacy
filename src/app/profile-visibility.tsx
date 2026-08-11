@@ -6,11 +6,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ForgeSymbol } from '@/components/forge/ForgeSymbol';
+import { SettingsToggle } from '@/components/forge/SettingsToggle';
 import { Toast } from '@/components/forge/composites/Toast';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flRadius } from '@/constants/foundation';
-import { fetchVisibility, saveVisibility } from '@/data/settings-live';
+import { fetchAppPrefs, fetchVisibility, saveAppPrefs, saveVisibility } from '@/data/settings-live';
+import { APP_PREFS_DEFAULTS } from '@/domain/settings/preferences';
+import { setAnalyticsEnabled } from '@/lib/analytics';
 import {
   AUDIENCES,
   VISIBILITY_DEFAULTS,
@@ -39,6 +42,20 @@ export default function ProfileVisibilityScreen() {
   const [override, setOverride] = useState<Partial<VisibilityMap>>({});
   const [toast, setToast] = useState(false);
   const value = (k: VisibilityKey): AudienceId => override[k] ?? data?.[k] ?? VISIBILITY_DEFAULTS[k];
+
+  /* The analytics opt-out (P6-A1-D5/D6). Server truth is `profiles.app_prefs`; `setAnalyticsEnabled`
+     mirrors it to AsyncStorage so the emitter can check consent SYNCHRONOUSLY on the next launch,
+     before anything can be queued. Both writes happen on tap — a toggle that only takes effect after a
+     round trip would keep collecting for the rest of the session the athlete just declined. */
+  const { data: prefs } = useQuery(fetchAppPrefs, []);
+  const [optOutOverride, setOptOutOverride] = useState<boolean | null>(null);
+  const analyticsOptOut = optOutOverride ?? prefs?.analyticsOptOut ?? APP_PREFS_DEFAULTS.analyticsOptOut;
+
+  const setAnalytics = (on: boolean) => {
+    setOptOutOverride(!on);
+    setAnalyticsEnabled(on);
+    void saveAppPrefs({ ...APP_PREFS_DEFAULTS, ...prefs, analyticsOptOut: !on });
+  };
 
   const persist = (map: VisibilityMap) => void saveVisibility(map);
 
@@ -120,6 +137,32 @@ export default function ProfileVisibilityScreen() {
           <Pressable onPress={reset} accessibilityRole="button" accessibilityLabel="Reset to defaults" style={styles.reset}>
             <Text style={styles.resetText}>Reset to defaults</Text>
           </Pressable>
+
+          {/* P-6's third toggle (P6-A1-D5). It governs nothing another athlete can see — which is why it
+              sits below the reset, outside "What others can see", rather than among the audience rows.
+              The copy states what is collected in the same breath as the control: a toggle whose effect
+              the athlete has to go and read a policy to understand is not really a control. */}
+          <Text style={styles.sectionLabel}>Helping Forge improve</Text>
+          <View style={styles.card}>
+            <View style={styles.secHead}>
+              <View style={styles.iconTile}>
+                <ForgeSymbol name="eye" size={18} color={flColor.bronze300} />
+              </View>
+              <View style={styles.rowText}>
+                <Text style={styles.rowLabel}>Help improve Forge</Text>
+                <Text style={styles.rowHint}>
+                  Records which screens and features you use, so we can see what’s working. Never what you wrote or
+                  what you lifted, never your photos, never your location. It stays in Forge and is never sold or
+                  shared.
+                </Text>
+              </View>
+              <SettingsToggle
+                value={!analyticsOptOut}
+                onChange={setAnalytics}
+                accessibilityLabel="Help improve Forge"
+              />
+            </View>
+          </View>
         </ScrollView>
       )}
 

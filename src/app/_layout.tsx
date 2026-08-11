@@ -8,6 +8,7 @@ import { ActivityIndicator, StyleSheet, useColorScheme, View } from 'react-nativ
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { AnalyticsTracker } from '@/components/analytics-tracker';
 import { CoachBubble } from '@/components/forge/CoachBubble';
 import { OverlayBoundary } from '@/components/overlay-boundary';
 import { flColor } from '@/constants/foundation';
@@ -95,6 +96,17 @@ export default function RootLayout() {
                         still works. The safe-area fix removes today's cause; this removes the category. */}
                     <OverlayBoundary>
                       <CoachBubble />
+                    </OverlayBoundary>
+                    {/* Product-usage events (0131, P-6-Amendment-001). Renders nothing; it is here
+                        rather than inside the Stack because inside it would remount on every
+                        navigation and lose its flush timer and queue each time. Same position as the
+                        bubble above, which is the spot already proven to have router context.
+
+                        ⚠ INSIDE A BOUNDARY for the same reason the bubble is: a thing mounted on every
+                        screen must never be able to take the app down. Measuring the product may not
+                        degrade using it. */}
+                    <OverlayBoundary>
+                      <AnalyticsTracker />
                     </OverlayBoundary>
                   </TourProvider>
                 </TourAnchorProvider>

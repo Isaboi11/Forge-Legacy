@@ -98,8 +98,17 @@ test('a stored notification map merges over defaults and ignores junk', () => {
 
 // ── preferences ────────────────────────────────────────────────────────────────
 
-test('app prefs default to imperial, haptics/sound on, reduce-motion off', () => {
-  assert.deepEqual(APP_PREFS_DEFAULTS, { units: 'imperial', haptics: true, sound: true, reduceMotion: false });
+test('app prefs default to imperial, haptics/sound on, reduce-motion off, analytics on', () => {
+  assert.deepEqual(APP_PREFS_DEFAULTS, {
+    units: 'imperial',
+    haptics: true,
+    sound: true,
+    reduceMotion: false,
+    // P6-A1-D5: "Help improve Forge" defaults ON, with disclosure. Stored as an opt-OUT so that
+    // absence — which is every athlete whose prefs were written before this field existed — lands on
+    // the disclosed default rather than on a value nobody chose.
+    analyticsOptOut: false,
+  });
 });
 
 test('exactly the toggles with a real consumer today are marked live', () => {
@@ -113,7 +122,19 @@ test('exactly the toggles with a real consumer today are marked live', () => {
 
 test('sanitizePrefs coerces each field and survives a malformed blob', () => {
   const p = sanitizePrefs({ units: 'metric', haptics: false, sound: 'loud', reduceMotion: true });
-  assert.deepEqual(p, { units: 'metric', haptics: false, sound: true, reduceMotion: true });
+  assert.deepEqual(p, { units: 'metric', haptics: false, sound: true, reduceMotion: true, analyticsOptOut: false });
   assert.deepEqual(sanitizePrefs('nope'), APP_PREFS_DEFAULTS);
   assert.equal(sanitizePrefs({ units: 'stones' }).units, 'imperial', 'an unknown system falls back');
+});
+
+test('an opt-out survives every shape sanitizePrefs is handed', () => {
+  // This is a consent decision, not a preference. Losing it silently re-enables collection for somebody
+  // who said no — the one failure in this file that would make the privacy policy untrue.
+  assert.equal(sanitizePrefs({ analyticsOptOut: true }).analyticsOptOut, true);
+  // An unrelated screen writing prefs must not clear it.
+  assert.equal(sanitizePrefs({ analyticsOptOut: true, units: 'metric' }).analyticsOptOut, true);
+  // Absence is the disclosed default, not an opt-out — every athlete's stored blob predates this field.
+  assert.equal(sanitizePrefs({ units: 'metric' }).analyticsOptOut, false);
+  // A non-boolean is junk and falls back rather than being coerced truthy.
+  assert.equal(sanitizePrefs({ analyticsOptOut: 'yes' }).analyticsOptOut, false);
 });
