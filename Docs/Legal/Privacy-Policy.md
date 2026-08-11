@@ -1,10 +1,12 @@
 # Forge Legacy — Privacy Policy
 
-**Status: FIRST DRAFT — not legally reviewed.** Every `[[BRACKETED]]` value must be filled in before this
-is published. See § Before You Publish at the end.
+**Status: PUBLISHED 2026-08-11 at https://forgelegacy.expo.app/privacy — not legally reviewed.**
+The blocking placeholders are filled. Two items remain open and are listed in § Before You Publish:
+a **postal address** (deliberately omitted — required by some regimes) and **EU/UK + California**
+specifics if distribution ever widens.
 
-**Effective date:** `[[DATE]]`
-**Last updated:** `[[DATE]]`
+**Effective date:** 11 August 2026
+**Last updated:** 11 August 2026
 
 ---
 
@@ -30,9 +32,10 @@ The rest of this document is the detail behind those statements.
 
 ## 1. Who we are
 
-Forge Legacy is operated by `[[LEGAL ENTITY NAME]]` (“we”, “us”).
+Forge Legacy is operated by **Isaiah Altamirano** (“we”, “us”), as an individual. If this becomes a
+registered company, this section and § 12 change together.
 
-Contact: `[[CONTACT EMAIL]]`
+Contact: **isaiahaltamirano@gmail.com**
 
 ---
 
@@ -196,14 +199,14 @@ someone’s safety.
 Depending on where you live, you may have the right to access, correct, export or delete your personal
 information, and to object to certain processing.
 
-Most of this is available directly in the app. For anything else, contact `[[CONTACT EMAIL]]` and we will
-respond within `[[30]]` days.
+Most of this is available directly in the app. For anything else, contact **isaiahaltamirano@gmail.com**
+and we will respond within **30 days**.
 
 ---
 
 ## 10. Children
 
-Forge Legacy is not intended for children under `[[13]]`, and we do not knowingly collect information from
+Forge Legacy is not intended for children under **13**, and we do not knowingly collect information from
 them. If you believe a child has created an account, contact us and we will remove it.
 
 ---
@@ -218,9 +221,11 @@ version.
 
 ## 12. Contact
 
-`[[LEGAL ENTITY NAME]]`
-`[[CONTACT EMAIL]]`
-`[[POSTAL ADDRESS — required for some jurisdictions; see below]]`
+**Isaiah Altamirano**
+**isaiahaltamirano@gmail.com**
+
+A postal address is not currently published. If you need one for a formal data request, ask by email and
+it will be provided.
 
 ---
 
@@ -236,11 +241,11 @@ that deserve one: **photographs of people’s bodies** and **health-adjacent dat
 
 | Placeholder | Notes |
 |---|---|
-| `[[LEGAL ENTITY NAME]]` | Your name, or the LLC once it exists. If you form the LLC, this changes and so does § 12 |
-| `[[CONTACT EMAIL]]` | Must be monitored — this is where deletion and access requests arrive |
-| `[[DATE]]` | Both fields |
-| `[[POSTAL ADDRESS]]` | Required by some privacy regimes. If you would rather not publish a home address, this is another argument for a registered agent |
-| `[[13]]` / `[[30]]` | Confirm against the age rating you choose in App Store Connect |
+| ~~`[[LEGAL ENTITY NAME]]`~~ | ✅ **Isaiah Altamirano**, as an individual (2026-08-11). Changes, along with § 12, if an LLC is formed |
+| ~~`[[CONTACT EMAIL]]`~~ | ✅ **isaiahaltamirano@gmail.com**. ⚠ It is now public and is where deletion and access requests arrive — it must be monitored |
+| ~~`[[DATE]]`~~ | ✅ 11 August 2026, both fields |
+| `[[POSTAL ADDRESS]]` | ⚠ **STILL OPEN — deliberately.** Omitted rather than publishing a home address; § 12 offers it on request instead. Required by some regimes, and an argument for a registered agent before a wider release |
+| ~~`[[13]]` / `[[30]]`~~ | ✅ 13 and 30 days. Confirm 13 against the age rating chosen in App Store Connect |
 
 ## Must be checked before you rely on it
 

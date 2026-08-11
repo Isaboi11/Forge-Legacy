@@ -57,11 +57,32 @@
 
 **Sprint:** **PO training-session feedback, batch 3** (2026-08-11) — three things found by using it
 
-**Status: code complete, deployed to the web preview** (`entry-18a2c2ead296c028102611448d51be56.js`,
-`forgelegacy.expo.app` verified 200). **MIGRATIONS 0134 + 0135 NOT YET APPLIED** —
-`supabase/apply/pending-0134-0135.sql`. Full write-up in **Recently Completed #1**.
+**Status: SHIPPED.** Migrations **0134 + 0135 APPLIED by the PO 2026-08-11** (with **0136**, the planned
+workout, in the same pass). **OTA published** to branch `production`, iOS runtime `74a9a86b…`, group
+`b39ed5c9-0a62-4799-a608-294b8ab17238`, commit `efd42d0` — `fingerprint:compare` matched build 4
+(`5de44367`) **exactly** before publishing. Web preview deployed at
+`entry-18a2c2ead296c028102611448d51be56.js`, `forgelegacy.expo.app` verified 200. Full write-up in
+**Recently Completed #1**.
 
-**Gates:** tsc **0** · **1,832 tests / all green** (10 new) · eslint **1 error + 13 warnings = the
+**⚠ WEB AND THE OTA ARE NOT THE SAME CODE.** The web export was taken BEFORE `efd42d0` landed, so
+`forgelegacy.expo.app` carries these three fixes only, while the OTA also carries the Home
+planned-workout feature that a parallel session committed mid-upload. Neither is wrong; they are just
+different, and the next web deploy closes the gap.
+
+**⚠ TWO COMMITS DESCRIBE OTHER WORK.** That same parallel session committed this batch under messages
+belonging to its own: **`a1c6b1a` ("chore(migrations): 0126-0128 applied and verified") carries 0134,
+0135 and their bundle**, and **`efd42d0` ("feat(home): build a workout for later…") carries every client
+change and this dashboard entry**. Nothing is lost and the tree is clean — recorded because
+`git log -- <file>` is the only way to find this work now, and a later reader looking for it by message
+will not.
+
+**Verification still owed:** applying proves only that the bodies parsed — PL/pgSQL binds column
+references at RUN time. **(1)** a second account comments on your post and the bell moves; **(2)** open a
+squad goal and tap a session somebody else logged and their sets appear. Until both are seen, treat this
+as applied-not-proven.
+
+**Gates:** tsc **0** · **1,836 tests / all green** (10 new here; the count includes the parallel session's
+work, which shipped in the same OTA and was gated after the fact) · eslint **1 error + 13 warnings = the
 pre-existing baseline, nothing added** · clean web export.
 
 1. **"It won't let me add a video or a picture. And now I'm frozen on the friends feed page."** The
@@ -80,11 +101,7 @@ pre-existing baseline, nothing added** · clean web export.
    and a goal contribution is not a post. **The listing and the gate had different answers**, which is the
    actual defect — a screen that names a session has already made the visibility decision.
 
-**⚠ WHAT THE PO MUST DO:** paste `supabase/apply/pending-0134-0135.sql` into the Supabase SQL editor.
-Until then the app degrades honestly rather than silently — no comment/reaction rows appear, and the goal
-link keeps its current message. Both proofs are behavioural, not structural: PL/pgSQL binds at RUN time,
-so applying only proves the bodies parsed. **(1)** have a second account comment on your post and watch
-the bell; **(2)** open a squad goal and tap a session somebody else logged.
+**Applied 2026-08-11** — `pending-0134-0135.sql` and `pending-0136.sql`, both by the PO in one pass.
 
 **Prior sprint:** **Creator Dashboard, Phases 1 + 2** (2026-08-11) — the operator can see the product being used
 
