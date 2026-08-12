@@ -109,7 +109,12 @@ export function useEarnedMoments({ onRankChanged, enabled = true }: EarnedMoment
       void fetchUncelebratedHonors()
         .then((honors) => {
           if (cancelled || !honors.length) return;
-          enqueue(honors.map((h) => ({ id: `honor-${h.id}`, kind: 'honorEarned' as const, honorName: h.name })));
+          /* `citation` says WHY — the honor's own rule, derived from the catalog. The ceremony's
+             `citation` field has existed since the type was written and only the dev harness ever
+             filled it, so every real honor announced itself with the same generic line. */
+          enqueue(
+            honors.map((h) => ({ id: `honor-${h.id}`, kind: 'honorEarned' as const, honorName: h.name, citation: h.citation })),
+          );
         })
         .catch(() => {
           // Same: still earned, still on the Hub.

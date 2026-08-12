@@ -501,14 +501,7 @@ export default function WorkoutComplete() {
       const scale = reveal.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1] });
       return (
         <Shell>
-          <Pressable style={styles.shareIcon} onPress={() => setStep('share')} accessibilityRole="button" accessibilityLabel="Share">
-            <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <Circle cx={6} cy={12} r={2.5} />
-            <Circle cx={17} cy={6} r={2.5} />
-            <Circle cx={17} cy={18} r={2.5} />
-            <Path d="M8.2 10.8l6.6-3.6M8.2 13.2l6.6 3.6" />
-            </Svg>
-          </Pressable>
+          <ShareChip onPress={() => setStep('share')} />
           <View style={styles.center}>
             <Text style={styles.firstEyebrow}>Your Chapter begins</Text>
             <Animated.View style={{ opacity: reveal, transform: [{ scale }] }}>
@@ -544,14 +537,7 @@ export default function WorkoutComplete() {
 
     return (
       <Shell>
-        <Pressable style={styles.shareIcon} onPress={() => setStep('share')} accessibilityRole="button" accessibilityLabel="Share">
-          <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <Circle cx={6} cy={12} r={2.5} />
-            <Circle cx={17} cy={6} r={2.5} />
-            <Circle cx={17} cy={18} r={2.5} />
-            <Path d="M8.2 10.8l6.6-3.6M8.2 13.2l6.6 3.6" />
-          </Svg>
-        </Pressable>
+        <ShareChip onPress={() => setStep('share')} />
         <View style={styles.center}>
           {data.chapterName ? <Text style={styles.eyebrow}>{data.chapterName}</Text> : null}
           <SealMedallion size={132} sealed={sealed || review} />
@@ -956,12 +942,19 @@ export default function WorkoutComplete() {
           <Text style={styles.shareWordmark}>FORGE LEGACY</Text>
           <Text style={styles.shareTagline}>Build your story.</Text>
         </Card>
+        {/*
+          ⚠ ONE SHARE BUTTON, NOT TWO. This was "Share" and "Share to Forge" side by side, which asked
+          the athlete to choose a MECHANISM before choosing an AUDIENCE — and the two words are close
+          enough that the difference was learned by tapping one and finding out. PO: *"just have a share
+          button, not a share and a share to Forge. Those can be combined in a nice way."*
+
+          The combination is that the destination sheet already existed and already listed audiences;
+          the operating system is now simply one more destination in it. One entry point, every place a
+          session can go behind it.
+        */}
         <View style={styles.shareActions}>
-          <Button variant="primary" fullWidth onPress={onShare} accessibilityLabel="Share">
-            Share
-          </Button>
-          <Button variant="secondary" fullWidth onPress={openShareTo} accessibilityLabel="Share inside Forge">
-            {sharing ? 'Sharing…' : 'Share to Forge'}
+          <Button variant="primary" fullWidth onPress={openShareTo} accessibilityLabel="Share this session">
+            {sharing ? 'Sharing…' : 'Share'}
           </Button>
           <Button variant="text" fullWidth onPress={() => setStep('seal')} accessibilityLabel="Back">
             Back
@@ -1025,8 +1018,20 @@ export default function WorkoutComplete() {
                     onPress={() => chooseDestination('BOTH')}
                     disabled={sharing || !hasSquad}
                   />
+                  {/* Outside Forge — the same sheet, so "where does this go" is asked once. Last
+                      because the rows above keep it inside the app, where a session is a post somebody
+                      can answer rather than an image in a camera roll. */}
+                  <DestRow
+                    label="Anywhere else"
+                    sub="Messages, Instagram, anywhere on your phone"
+                    onPress={() => {
+                      setShareOpen(false);
+                      onShare();
+                    }}
+                    disabled={sharing}
+                  />
                 </View>
-                {/* A squad is required for both of the lower rows — the audience constraint is an
+                {/* A squad is required for both of the middle rows — the audience constraint is an
                     equivalence, so "Both" cannot exist without one. Say that rather than hide them. */}
                 {!hasSquad ? <Text style={styles.destNote}>You’re not in a squad yet, so Friends is the only place inside Forge to share this.</Text> : null}
               </>
@@ -1146,6 +1151,32 @@ function SealMedallion({ size = 132, sealed = false }: { size?: number; sealed?:
     </View>
   );
 }
+/**
+ * THE SHARE AFFORDANCE ON THE SEALED CARD.
+ *
+ * ⚠ THIS WAS A BARE GLYPH IN THE CORNER, AND NOBODY FOUND IT. PO: *"Right now it's not obvious that
+ * you can share with people. Unless you know the top right button no one will share."* They are right —
+ * three dots and two lines in the top-right of a ceremony screen reads as decoration, or at best as an
+ * overflow menu, and the athlete has just finished a workout and is looking at the middle of the screen.
+ *
+ * A word fixes it. The constraint the PO set in the same breath was *"I don't want it to look
+ * crowded"*, so this stays in the corner and stays one control — it gains a label and an edge, not a
+ * row of its own competing with Hold to Seal.
+ */
+function ShareChip({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable style={styles.shareChip} onPress={onPress} accessibilityRole="button" accessibilityLabel="Share this session">
+      <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <Circle cx={6} cy={12} r={2.5} />
+        <Circle cx={17} cy={6} r={2.5} />
+        <Circle cx={17} cy={18} r={2.5} />
+        <Path d="M8.2 10.8l6.6-3.6M8.2 13.2l6.6 3.6" />
+      </Svg>
+      <Text style={styles.shareChipText}>Share</Text>
+    </Pressable>
+  );
+}
+
 function Stat({ n, label }: { n: string; label: string }) {
   return (
     <View style={styles.stat}>
@@ -1341,7 +1372,24 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40 },
   err: { color: flColor.gray400, fontFamily: flFont.sans, fontSize: 15 },
 
-  shareIcon: { position: 'absolute', top: 54, right: 22, zIndex: 2, padding: 6 },
+  /* ⚠ `shareIcon` was here and is gone with the bare glyph — see `ShareChip`. A label and a hairline
+     edge is the whole change; it stays in the corner so the ceremony is not crowded. */
+  shareChip: {
+    position: 'absolute',
+    top: 54,
+    right: 22,
+    zIndex: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: flRadius.pill,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    backgroundColor: flColor.bronzeTint,
+  },
+  shareChipText: { fontSize: 12.5, fontWeight: '600', letterSpacing: 0.2, color: flColor.bronze300 },
   eyebrow: { fontSize: 13, fontWeight: '600', letterSpacing: 2.6, textTransform: 'uppercase', color: flColor.gray400 },
 
   quoteRow: { flexDirection: 'row', gap: 12, maxWidth: 300, marginTop: 22, alignSelf: 'center' },

@@ -161,6 +161,18 @@ export interface UncelebratedHonor {
   slug: string;
   name: string;
   date: string;
+  /**
+   * WHY it was earned, in a sentence — "Log 100 workouts.", "Train in 26 separate weeks."
+   *
+   * ⚠ THE CEREMONY USED TO SAY THE SAME THING FOR EVERY HONOR. `copy.ts` returned a fixed body — *"A
+   * permanent part of your legacy."* — so the athlete was told they had earned something and never told
+   * what for. The PO: *"when earning an honor the card should tell me why I earned it."*
+   *
+   * Derived by `triggerText` from the catalog's own metric and threshold, which is the same pair the
+   * evaluator tests — so the sentence can only be wrong if the rule is. Optional because the catalog
+   * read is best-effort: an honor with no citation still gets its ceremony, just with the old line.
+   */
+  citation?: string;
 }
 
 /**
@@ -183,7 +195,30 @@ export async function fetchUncelebratedHonors(): Promise<UncelebratedHonor[]> {
     throw error;
   }
   const rows = (data ?? []) as { id: string; honorType: string; displayName: string; dateEarned: string }[];
-  return rows.map((r) => ({ id: r.id, slug: r.honorType, name: r.displayName, date: r.dateEarned }));
+  const earned = rows.map((r) => ({ id: r.id, slug: r.honorType, name: r.displayName, date: r.dateEarned }));
+  if (earned.length === 0) return earned;
+
+  /*
+   * ⚠ THE CITATION IS JOINED CLIENT-SIDE, NOT ADDED TO THE RPC.
+   *
+   * `uncelebrated_honors()` returns id/type/name/date and widening it means a migration applied by
+   * hand — and until that ran, the ceremony would be reading a column the database does not return.
+   * The catalog is one indexed read of ~176 rows and this only runs when there is actually an honor to
+   * celebrate, which is rare. A read costs less than a schema change nobody can deploy over the air.
+   *
+   * ⚠ AND IT IS BEST-EFFORT. An honor is earned whether or not we can explain it; a failed catalog read
+   * must never swallow somebody's ceremony. They get the old generic line instead.
+   */
+  try {
+    const catalog = await fetchHonorCatalog();
+    const bySlug = new Map(catalog.map((c) => [c.slug, c]));
+    return earned.map((h) => {
+      const c = bySlug.get(h.slug);
+      return c ? { ...h, citation: triggerText(c.metric, c.threshold, c.metricKey, c.displayAmount) } : h;
+    });
+  } catch {
+    return earned;
+  }
 }
 
 /** Mark honors shown. Called AFTER the ceremony is dismissed. Best-effort — never blocks the UI. */

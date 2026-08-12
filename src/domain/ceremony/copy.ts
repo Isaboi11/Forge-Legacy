@@ -55,7 +55,17 @@ export function ceremonyCopy(event: CeremonyEvent): CeremonyCopy {
       return {
         eyebrow: 'Honor Earned',
         title: event.honorName,
-        body: 'A permanent part of your legacy.',
+        /*
+         * ⚠ WHY THEY EARNED IT, WHEN WE KNOW IT. M-2 §4.1 locked the generic line, and it was the only
+         * thing every honor said: the athlete was told they had earned something and never what for.
+         * PO: *"when earning an honor the card should tell me why I earned it."*
+         *
+         * The citation is the honor's own rule (`triggerText`, derived from the catalog's metric and
+         * threshold), so it is more specific than the locked line rather than different in kind. The
+         * locked line remains the fallback for an honor whose catalog row could not be read — which is
+         * the state M-2 was actually written for.
+         */
+        body: event.citation?.trim() || 'A permanent part of your legacy.',
         primary: 'Continue',
         secondary: 'Share this honor',
       };
