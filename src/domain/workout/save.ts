@@ -5,6 +5,14 @@ import { buildAppendExercises, buildSaveExercises, buildSubstitutions } from './
 import { playlistToRow } from './playlist';
 import type { ActiveSession } from './types';
 
+/** One lift's verdict, as `record_intensity_signals` wants it. */
+export interface IntensitySignalRow {
+  position: number;
+  action: string;
+  catalog_key?: string | null;
+  pattern?: string | null;
+}
+
 export interface SaveResult {
   workoutId: string;
   /** Includes first-ever marks (`isFirst`), which are stored but are not records — see `detectPRs`. */
@@ -24,7 +32,12 @@ export interface SaveResult {
  * playlist link the athlete attached from "⋯ Options" rides the same post-commit write, for the same
  * reason.
  */
-export async function saveWorkout(session: ActiveSession, partners: string[] = []): Promise<SaveResult> {
+export async function saveWorkout(
+  session: ActiveSession,
+  partners: string[] = [],
+  /** What `progressionFor` decided about each lift this session — see the write at the foot of this function. */
+  intensitySignals: IntensitySignalRow[] = [],
+): Promise<SaveResult> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -161,6 +174,27 @@ export async function saveWorkout(session: ActiveSession, partners: string[] = [
       await supabase.rpc('record_substitutions', { p_workout: data.workout_id, p_subs: subs });
     } catch {
       // ignore — same rule as above. The session is committed; this costs a signal, never the workout.
+    }
+  }
+
+  /*
+   * WHAT HOLT DECIDED ABOUT EACH LIFT (0142) — the same post-commit path, the same reason.
+   *
+   * ⚠ SNAPSHOTTED BECAUSE IT CANNOT BE RECOMPUTED. `progressionFor`'s verdict depends on the
+   * PRESCRIPTION in force — sets, reps, and the top of the range — and a saved workout stores none of
+   * it. Eight reps is "topped the range" against 3×8 and "short of it" against 3×12, and the row on
+   * disk cannot tell those apart. Read it back later and you would be guessing.
+   *
+   * Passed in by the caller rather than derived here: `saveWorkout` has the session but not the lift
+   * history the classification was made against, and re-fetching it at save time to re-derive a
+   * decision the screen already made would be slower AND capable of disagreeing with what the athlete
+   * was actually shown.
+   */
+  if (intensitySignals?.length) {
+    try {
+      await supabase.rpc('record_intensity_signals', { p_workout: data.workout_id, p_rows: intensitySignals });
+    } catch {
+      // ignore — same rule. The session is committed; this costs a signal, never the workout.
     }
   }
 

@@ -4,6 +4,7 @@ import Svg, { Path } from 'react-native-svg';
 import { flColor, flRadius } from '@/constants/foundation';
 import { HoltMark } from '@/components/forge/HoltMark';
 import { INTENSITY_LEVELS, type IntensityLevel } from '@/domain/coach/rulebook/intensity';
+import type { IntensityProposal } from '@/domain/coach/intensity-learning';
 
 /**
  * Coach Holt, mid-set.
@@ -70,6 +71,9 @@ export function SessionCoachSheet({
   onSkip,
   intensity,
   onSetIntensity,
+  proposal,
+  onAcceptProposal,
+  onDismissProposal,
 }: {
   onClose: () => void;
   exerciseName: string;
@@ -90,6 +94,16 @@ export function SessionCoachSheet({
    */
   intensity: IntensityLevel;
   onSetIntensity: (level: IntensityLevel) => void;
+  /**
+   * What the recent record suggests, or null — which is the common answer.
+   *
+   * ⚠ SHOWN ONLY HERE, IN A SHEET THE ATHLETE TAPPED. This file's own rule is that Holt never speaks
+   * unprompted, and a question about coaching style arriving unbidden between sets is precisely the
+   * interruption the intensity dial exists to give people control over.
+   */
+  proposal: IntensityProposal | null;
+  onAcceptProposal: () => void;
+  onDismissProposal: () => void;
   canSuperset: boolean;
   isSuperset: boolean;
   supersetWithName: string | null;
@@ -176,6 +190,33 @@ export function SessionCoachSheet({
             is the right ending for those; this one is a correction to the thing the athlete is reading,
             and closing on it would hide whether it worked. Tapping again moves it again.
           */}
+          {/*
+            ⚠ THE ASYMMETRY IS THE DESIGN (CL-D3). An UP proposal is an OFFER — a coach that quietly
+            gets louder leaves the athlete experiencing a pushier app with no name for what changed. A
+            DOWN has already applied itself and this is the notice plus the undo, because easing off is
+            the direction `progression.ts` already prefers and asking permission to be gentler is its
+            own small unkindness.
+
+            Either way the SENTENCE IS SHOWN (CL-D2): an adaptation you cannot see the reason for is
+            indistinguishable from a bug.
+          */}
+          {proposal ? (
+            <View style={styles.group}>
+              <Text style={styles.groupLabel}>{proposal.direction === 'up' ? 'A THOUGHT' : 'EASING OFF'}</Text>
+              <Text style={styles.holtText}>{proposal.sentence}</Text>
+              <View style={styles.chipRow}>
+                {proposal.direction === 'up' ? (
+                  <>
+                    <Chip label="Push me harder" on onPress={onAcceptProposal} />
+                    <Chip label="I'm good" onPress={onDismissProposal} />
+                  </>
+                ) : (
+                  <Chip label="Keep pushing me" onPress={onDismissProposal} />
+                )}
+              </View>
+            </View>
+          ) : null}
+
           <View style={styles.group}>
             <Text style={styles.groupLabel}>HOW HARD I PUSH</Text>
             <View style={styles.chipRow}>

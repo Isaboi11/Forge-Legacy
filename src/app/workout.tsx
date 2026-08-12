@@ -62,6 +62,8 @@ import { durText, supersetLabels } from '@/domain/program/prescription';
 import { coachLine } from '@/domain/coach/coach-says';
 import { profileFor } from '@/domain/coach/rulebook/intensity';
 import { intraSetSuggestion } from '@/domain/coach/intra-set';
+import { proposeIntensity, type IntensityProposal } from '@/domain/coach/intensity-learning';
+import { fetchIntensitySignals } from '@/data/coach-signal-live';
 import { CoachSays } from '@/components/forge/CoachSays';
 import { clearWorkoutLaunch, readWorkoutLaunch } from '@/lib/workout-launch';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -244,6 +246,20 @@ function fmtNum(n: number): string {
  * time, nothing renders from it, and a ref read inside a handler the compiler believes is render-phase
  * would trade one lint error for another.
  */
+/**
+ * The window an accepted invite may reach back through to claim this session.
+ *
+ * ⚠ MODULE SCOPE BECAUSE `Date.now()` IS IMPURE. The react-compiler flags an impure call inside a
+ * function it believes runs during render, and it believes that of `finishToSeal` — the same way it
+ * flagged the animation tokens above. The reading is a fact about the clock rather than about this
+ * component, so it belongs out here regardless; the lint is what made that obvious.
+ */
+function creditWindowFor(startedAt: string): { fromMs: number; toMs: number } {
+  const now = Date.now();
+  const startedMs = Date.parse(startedAt);
+  return { fromMs: (Number.isFinite(startedMs) ? startedMs : now) - PARTNER_CREDIT_WINDOW_MS, toMs: now };
+}
+
 let animationToken = 0;
 const nextAnimationToken = (): number => (animationToken += 1);
 
@@ -288,6 +304,14 @@ export default function WorkoutScreen() {
    * when the athlete moves on, because a suggestion about bench press has nothing to say about squats.
    */
   const [intraLine, setIntraLine] = useState<{ ei: number; text: string } | null>(null);
+  /**
+   * What the recent record suggests about how hard to push — read ONLY when the coach sheet opens.
+   *
+   * ⚠ NOT ON MOUNT. A proposal is a conversation, and this one belongs in a sheet the athlete tapped;
+   * fetching it at session start would mean a request every workout for a line most sessions never
+   * show. Null is the common answer and stays null until something is actually proposed.
+   */
+  const [proposal, setProposal] = useState<IntensityProposal | null>(null);
   /* Drafts, as STRINGS — '' is a real state ("nothing entered"), and a number cannot hold it. The old
      picker collapsed the two: it seeded '' and rendered the wheel at `Number('') || 0`, so a wheel you
      opened and did not scroll showed 0, reported nothing, and wrote the weight back as null. */
@@ -1299,10 +1323,9 @@ export default function WorkoutScreen() {
        *
        * `partnerIdsDeclined` is what keeps the second pass honest — anyone taken off stays off.
        */
-      const startedMs = Date.parse(session.startedAt);
-      const since = (Number.isFinite(startedMs) ? startedMs : Date.now()) - PARTNER_CREDIT_WINDOW_MS;
+      const { fromMs: since, toMs } = creditWindowFor(session.startedAt);
       const accepted: AcceptedTraining[] = await fetchAcceptedTrainingCredits(new Date(since).toISOString());
-      const credits = creditsInWindow(accepted, { fromMs: since, toMs: Date.now() });
+      const credits = creditsInWindow(accepted, { fromMs: since, toMs });
       const creditedIds = mergePartnerCredits(taggedPartners, credits, session.partnerIdsDeclined ?? []);
       /* Names from the live roster first, the accepted invite as the fallback. It used to be the roster
          alone, and `training_partners()` returns `[]` on ANY failure by design — so one dropped read at
@@ -1311,9 +1334,27 @@ export default function WorkoutScreen() {
       /* A reopened workout is APPENDED to, never saved again. `saveWorkout` writes the chapter
          counter, the program slot and an honor pass — running it twice for one session would count a
          single workout as two on the Legacy screen and claim a second slot in the program. */
+      /*
+       * WHAT HOLT DECIDED ABOUT EACH LIFT — captured here because it cannot be recomputed later.
+       *
+       * `progressionFor`'s verdict depends on the PRESCRIPTION in force (sets, reps, top of range) and a
+       * saved workout stores none of it: eight reps is "topped the range" against 3×8 and "short of it"
+       * against 3×12. The map was built when the screen loaded, against the history the athlete was
+       * actually shown; re-deriving it at save time could disagree with what they read.
+       *
+       * ⚠ NOT SENT ON A CONTINUE. `continueWorkout` appends to a session already saved, and its
+       * decisions were recorded the first time round — writing them again would double the record of a
+       * single week's training.
+       */
+      const signals = [...progressions.entries()].map(([i, p]) => ({
+        position: session.exercises[i]?.position ?? i,
+        action: p.action,
+        catalog_key: session.exercises[i]?.catalogKey ?? null,
+        pattern: patternOf(session.exercises[i]),
+      }));
       const workoutId = session.continuingWorkoutId
         ? (await continueWorkout(session.continuingWorkoutId, session), session.continuingWorkoutId)
-        : (await saveWorkout(session, partnerNames)).workoutId;
+        : (await saveWorkout(session, partnerNames, signals)).workoutId;
       await clearSession();
       /* One more session in the book — the tutorial's phases are counted in workouts, and this is the
          only place a workout becomes one. A no-op until the count has been seeded from the server, so it
@@ -2731,7 +2772,25 @@ export default function WorkoutScreen() {
          */
         <CoachSays
           line={says?.text ?? null}
-          onPress={() => setCoachOpen(true)}
+          onPress={() => {
+            setCoachOpen(true);
+            /* Read on OPEN. See `proposal` above for why this is not a mount-time fetch. */
+            void fetchIntensitySignals().then((signals) => {
+              const next = proposeIntensity(signals, coachIntensity);
+              setProposal(next);
+              /*
+               * ⚠ A DOWN APPLIES ITSELF; AN UP WAITS TO BE ACCEPTED. That asymmetry is CL-D3 and it is
+               * the whole design: a coach that quietly gets LOUDER leaves the athlete experiencing a
+               * pushier app with no name for what changed, while easing off is the direction
+               * `progression.ts` already prefers ("the cheaper mistake to make") and asking permission
+               * to be gentler is its own small unkindness. The sheet shows the sentence and the undo in
+               * the same breath, so nothing here is silent.
+               */
+              if (next?.autoApply && prefsLoaded) {
+                void saveAppPrefs({ ...appPrefs, coachIntensity: next.to }).then(() => refetchPrefs());
+              }
+            });
+          }}
           openLabel="Ask Coach Holt about this exercise"
           /* Rides the bar's height so the coin keeps its distance from it on every phone — the single
              reason the inset was avoided here in the first place. */
@@ -2755,6 +2814,22 @@ export default function WorkoutScreen() {
              nothing to take off a bar that is already empty. */
           /* The dial, where it gets noticed. `saveAppPrefs` writes the same field `/preferences` writes,
              and `refetch` pushes it back through the provider so the coach's very next line uses it. */
+          proposal={proposal}
+          onAcceptProposal={() => {
+            if (!proposal || !prefsLoaded) return;
+            void saveAppPrefs({ ...appPrefs, coachIntensity: proposal.to }).then(() => refetchPrefs());
+            setProposal(null);
+            showToast(`Pushing harder from here.`);
+          }}
+          /* The undo. On an UP this just declines the offer (nothing was applied). On a DOWN it puts
+             the level back where it was — which is why `from` is carried on the proposal at all. */
+          onDismissProposal={() => {
+            if (proposal?.autoApply && prefsLoaded) {
+              void saveAppPrefs({ ...appPrefs, coachIntensity: proposal.from }).then(() => refetchPrefs());
+              showToast('Left it where it was.');
+            }
+            setProposal(null);
+          }}
           intensity={coachIntensity}
           onSetIntensity={(level) => {
             /*

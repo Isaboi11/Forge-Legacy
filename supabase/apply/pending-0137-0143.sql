@@ -1,51 +1,55 @@
 -- ═══════════════════════════════════════════════════════════════════════════════════════════════
--- Forge Legacy — PASTE-READY BUNDLE: migrations 0137 · 0138 · 0139 · 0140
+-- Forge Legacy — PASTE-READY BUNDLE: migrations 0137 · 0138 · 0139 · 0140 · 0143
 --
 -- HOW TO APPLY: Supabase Dashboard → SQL Editor → paste this whole file → Run.
 -- There is no Supabase CLI and no service key in this project; the dashboard is the only path.
 --
--- ⚠ RUN THEM IN THIS ORDER. They are concatenated in order below, so pasting the whole file is enough.
+-- ⚠ RUN 0141 AND 0142 BEFORE THIS FILE. They came from a parallel workstream (squad check-in video
+--   pruning) and live in `pending-0141.sql` / `pending-0142.sql`. The numbering IS the dependency
+--   order — nothing here keeps a migration history table, so the filename is the only thing that says
+--   what runs when.
 --
 -- WHAT EACH ONE DOES
 --
---   0137 · WHO SIGNED UP. A list on /admin (name, handle, when) and a push the moment somebody is first
---          NAMED — not on insert, because every profile is minted as "Athlete" until onboarding names
---          them, so an insert trigger would push "Athlete signed up" every single time. Self-contained:
---          it restates 0129's app_admins / is_app_admin() / admin_guard() verbatim, so it runs correctly
---          whether or not 0129 is in. The push half no-ops until 0120 is applied and says so.
+--   0137 · WHO SIGNED UP. A list on /admin and a push the moment somebody is first NAMED — not on
+--          insert, because every profile is minted as "Athlete" until onboarding names them, so an
+--          insert trigger would push "Athlete signed up" every single time. Self-contained: it restates
+--          0129's gate verbatim, so it runs whether or not 0129 is in.
 --
 --   0138 · WHAT THE ATHLETE TELLS YOU BY ACTING. `workout_exercises.prescribed_*` records what a
 --          substitution REPLACED — required by Exercise-002 §10 since substitution shipped and never
---          built, so every swap the app ever recorded threw away the half that says what was swapped
---          FROM. Plus `exercise_avoidance`, the negative counterpart `exercise_favorites` has lacked
---          since migration 0020. ⚠ The coach does not read either yet, deliberately (CL-D11).
+--          built. Plus `exercise_avoidance`, the negative counterpart favourites has lacked since 0020.
 --
---   0140 · YOUR WEEK, FROM HOLT. `athlete_weekly_reviews` plus a LAZY generator — no scheduler, no
---          cron, no edge function: the row is written the first time the athlete opens the app in a new
---          week. Silence beats zero, so a week with no workouts writes no row and shows no card. Bucketed
---          in `profiles.tz` rather than server time, which is the first athlete-facing use of that column.
---
---   0139 · EVERY ATHLETE ON POUNDS AND MILES. A one-time data correction. `units` is the single switch —
+--   0139 · EVERY ATHLETE ON POUNDS AND MILES. One-time data correction. `units` is the single switch —
 --          weights, distance, pace and speed all read it — so this fixes lb AND mi in one write.
 --          ⚠ It overwrites a genuine metric preference. Fine for a handful of known testers; do not
 --          re-run it once the app has real users.
 --
+--   0140 · YOUR WEEK, FROM HOLT. `athlete_weekly_reviews` plus a LAZY generator — no scheduler, no
+--          cron: the row is written the first time the athlete opens the app in a new week. Silence
+--          beats zero, so a week with no workouts writes no row and shows no card. Bucketed in
+--          `profiles.tz`, the first athlete-facing use of that column.
+--
+--   0143 · WHAT THE ATHLETE DOES WITH WHAT HOLT SAYS. One row per lift per session recording what
+--          `progressionFor` decided. ⚠ Snapshotted because it CANNOT be recomputed: the verdict depends
+--          on the prescription in force, and a saved workout does not store it — 8 reps is "topped the
+--          range" against 3x8 and "short of it" against 3x12.
+--
 -- SAFE TO RUN TWICE: every statement is guarded (`if not exists`, `create or replace`,
 -- `drop policy if exists`, and 0139's WHERE clause skips rows already correct).
 --
--- VERIFY AFTER RUNNING:
+-- VERIFY AFTER RUNNING — all of these are safe from the SQL editor:
 --   select count(*) from public.exercise_avoidance;                  -- 0 rows is the pass
+--   select count(*) from public.athlete_weekly_reviews;              -- 0 rows is the pass
+--   select count(*) from public.coach_intensity_signal;              -- 0 rows is the pass
 --   select count(*) from public.profiles
 --    where app_prefs->>'units' is distinct from 'imperial';          -- must be 0
 --   select to_regprocedure('public.admin_recent_signups(int)') is not null as signups_fn;   -- t
---   select count(*) from public.athlete_weekly_reviews;              -- 0 rows is the pass
 --
--- ⚠ DO NOT CALL `admin_recent_signups()` FROM THE SQL EDITOR. It will fail with
---   `42501: not authorized`, and that is the gate WORKING, not a broken migration. `admin_guard()`
---   tests `auth.uid()` against `app_admins`; the dashboard runs as `postgres`, where `auth.uid()` is
---   NULL, so no dashboard session can ever pass it. That is deliberate — AA-D5 puts the boundary in
---   Postgres rather than in the client, so it holds against anybody holding the anon key too. Check the
---   function EXISTS (above) and read the list from /admin in the app, signed in as yourself.
+-- ⚠ DO NOT CALL `admin_recent_signups()` FROM THE SQL EDITOR. It returns `42501: not authorized`, and
+--   that is the gate WORKING, not a broken migration. `admin_guard()` tests `auth.uid()` against
+--   `app_admins`; the dashboard runs as `postgres`, where `auth.uid()` is NULL, so no dashboard session
+--   can ever pass it. Read the list from /admin in the app, signed in as yourself.
 -- ═══════════════════════════════════════════════════════════════════════════════════════════════
 
 
@@ -748,5 +752,144 @@ begin
     raise exception '0140 self-check: ensure_weekly_review was not created';
   end if;
   raise notice '0140: weekly reviews ready. They generate on the first app open of a new week.';
+end;
+$$;
+
+
+-- ───────────────────────────────────────────────────────────────────────────────────────────────
+-- 0143_coach_intensity_signal.sql
+-- ───────────────────────────────────────────────────────────────────────────────────────────────
+
+-- Forge Legacy — 0143: what the athlete does with what Holt says
+--
+-- ══ WHAT THIS IS ══
+--
+-- PO: *"Coach Holt would need to learn from how the person is working out. If they're jumping up in
+-- weight. If they're staying put. If they're going down in weight. He can ask if they like the feedback
+-- every once in a while."*
+--
+-- Governed by `Coach-Adaptive-Learning-Amendment-001` (CL-D1…CL-D11) and `-002` (the intensity dial).
+--
+-- ══ ⚠ THE SIGNAL IS ALREADY COMPUTED — IT IS JUST NEVER KEPT ══
+--
+-- `progressionFor()` classifies every lift in every session as `add_weight | add_reps | hold |
+-- back_off | no_history`, which is exactly the PO's three states plus the two honest edges. The live
+-- logger builds that map on every session and throws it away when the screen unmounts.
+--
+-- ⚠ AND IT CANNOT BE RECOMPUTED LATER. The classification depends on the PRESCRIPTION in force at the
+-- time — sets, reps, and the top of the range — and none of that is stored on a saved workout. A set
+-- of 8 reps means "topped the range" against 3×8 and "short of it" against 3×12, and the saved row
+-- cannot tell the two apart. So the decision has to be snapshotted at the moment it is made, exactly
+-- like `partners` and the substitution record before it.
+--
+-- ══ WHY A TABLE AND NOT A COLUMN ══
+--
+-- One row per LIFT per session, not per session — the athlete who adds weight on squats and backs off
+-- on presses in the same hour is the interesting case, and a per-session summary would average them
+-- into "hold" and describe nobody.
+--
+-- ══ WHAT THIS DOES NOT DO ══
+--
+-- ⚠ NOTHING READS IT YET, AND THAT IS CL-D11. Capture ships before consumption, because nothing can
+-- learn from data that was never written and the table's value starts accruing the day it exists
+-- rather than the day the engine reads it. When it is read, CL-D3 binds: two occurrences before
+-- anything moves, a shown sentence, and a level RAISE must be accepted rather than applied.
+--
+-- ⚠ AND IT IS NOT ANALYTICS. This is the athlete's own training, readable only by them, and it never
+-- leaves their account — `P-6` and CL-D7 both. It is deliberately not in `app_events`, which is
+-- opt-out product telemetry with a different purpose, a different consent and a different retention.
+--
+-- Idempotent. Depends on 0001 (workouts). RUN AFTER 0142.
+--
+-- ⚠ THIS WAS 0142 AND WAS RENUMBERED. A parallel workstream committed its own 0142
+-- (`0142_checkin_orphan_ledger.sql`) while this was being written. Two files claiming one number apply
+-- in an undefined order, and the numbering IS the dependency graph here — there is no CLI keeping a
+-- history table, so the filename is the only thing saying what runs when.
+
+begin;
+
+create table if not exists public.coach_intensity_signal (
+  id          uuid primary key default gen_random_uuid(),
+  athlete_id  uuid not null references public.profiles (id) on delete cascade,
+  workout_id  uuid not null references public.workouts (id) on delete cascade,
+  -- Which lift in the session, by its position — the same key `record_substitutions` uses (0138).
+  position    int  not null,
+  observed_at timestamptz not null default now(),
+  -- `progressionFor().action`. Constrained so a client that invents a sixth state is rejected here
+  -- rather than quietly widening what the reader has to handle.
+  action      text not null check (action in ('add_weight', 'add_reps', 'hold', 'back_off', 'no_history')),
+  catalog_key text,
+  pattern     text,
+  unique (workout_id, position)
+);
+
+create index if not exists coach_intensity_signal_athlete
+  on public.coach_intensity_signal (athlete_id, observed_at desc);
+
+alter table public.coach_intensity_signal enable row level security;
+
+-- Yours and nobody else's. CL-D7: learned state is never readable by another athlete, never in a squad
+-- surface, never in /admin.
+drop policy if exists coach_intensity_signal_own on public.coach_intensity_signal;
+create policy coach_intensity_signal_own on public.coach_intensity_signal
+  for all using (athlete_id = auth.uid()) with check (athlete_id = auth.uid());
+
+comment on table public.coach_intensity_signal is
+  'CL-D1/CL-D11. One row per lift per session: what progressionFor decided at the time. Snapshotted because the decision depends on the prescription in force, which a saved workout does not store — 8 reps is "topped the range" against 3x8 and "short" against 3x12. Read by nothing yet, deliberately.';
+
+-- ── The writer ───────────────────────────────────────────────────────────────────────────────────
+--
+-- Post-commit, at the same call site as `record_substitutions`, and for the same stated reason: this is
+-- a mark ON a session rather than part of one, and it must never be able to fail a save that worked.
+create or replace function public.record_intensity_signals(p_workout uuid, p_rows jsonb)
+returns int
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_count int := 0;
+begin
+  if p_workout is null or p_rows is null or jsonb_typeof(p_rows) <> 'array' then
+    return 0;
+  end if;
+
+  -- ⚠ OWNERSHIP FROM THE WORKOUT. Same rule as `record_substitutions`: the child rows carry no athlete
+  -- of their own, so an unguarded definer function here would let anybody write against anybody.
+  if not exists (select 1 from public.workouts w where w.id = p_workout and w.athlete_id = auth.uid()) then
+    raise exception 'not your workout' using errcode = '42501';
+  end if;
+
+  insert into public.coach_intensity_signal (athlete_id, workout_id, position, action, catalog_key, pattern)
+  select auth.uid(),
+         p_workout,
+         (r->>'position')::int,
+         r->>'action',
+         nullif(r->>'catalog_key', ''),
+         nullif(r->>'pattern', '')
+    from jsonb_array_elements(p_rows) r
+   where r->>'action' in ('add_weight', 'add_reps', 'hold', 'back_off', 'no_history')
+  on conflict (workout_id, position) do nothing;
+
+  get diagnostics v_count = row_count;
+  return v_count;
+end;
+$$;
+
+revoke execute on function public.record_intensity_signals(uuid, jsonb) from public;
+grant  execute on function public.record_intensity_signals(uuid, jsonb) to authenticated;
+
+commit;
+
+-- ══ SELF-CHECK ══════════════════════════════════════════════════════════════════════════════════════
+do $$
+begin
+  if to_regclass('public.coach_intensity_signal') is null then
+    raise exception '0143 self-check: the table was not created';
+  end if;
+  if to_regprocedure('public.record_intensity_signals(uuid, jsonb)') is null then
+    raise exception '0143 self-check: record_intensity_signals was not created';
+  end if;
+  raise notice '0143: intensity capture ready. Nothing reads it yet — that is CL-D11.';
 end;
 $$;
