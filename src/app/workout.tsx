@@ -72,6 +72,7 @@ import { perSideFor } from '@/domain/workout/per-side-core';
 import { continueWorkout, fetchLastNotes, saveWorkout, type LastNote } from '@/domain/workout/save';
 import { saveAppPrefs } from '@/data/settings-live';
 import { bumpWorkoutsLogged } from '@/lib/tour-phase';
+import { SCREEN_GUTTER, useBarBottom } from '@/lib/screen-insets';
 import { fetchLiftHistory, liftId, type LiftHistory } from '@/data/lift-history-live';
 import { backOffTo, incrementFor, progressionFor, sessionPerformance, type Progression } from '@/domain/coach/progression';
 import { DEFAULT_HOLD_SEC, itemByKey, itemByName } from '@/domain/exercise-picker/data';
@@ -269,6 +270,13 @@ export default function WorkoutScreen() {
   /* `fmt` re-expresses an already-formatted pounds string in the athlete's system — the app-wide rule
      that keeps every weight display honest without threading a number through every layer. */
   const { units, fmt: inUnits } = useUnits();
+  /*
+   * ⚠ THE ACTION BAR USED TO SIT ON THE HOME INDICATOR. This screen's own note said it takes no
+   * safe-area inset anywhere "and introducing one here alone would float the bubble at a different
+   * height than every other element it lines up with" — which was a fair reason to leave it and is no
+   * longer one, because the coin below reads the same value. Both move together now.
+   */
+  const barBottom = useBarBottom();
   const soundOn = useSoundEnabled();
   const [phase, setPhase] = useState<Phase>('loading');
   const [sheet, setSheet] = useState<SetSheet | null>(null);
@@ -2679,7 +2687,7 @@ export default function WorkoutScreen() {
           * carries "End workout" (now with the §13.2 empty-session guard the footer button never had),
           * and ← Exit still offers Save & Exit.
           */}
-        <View style={styles.bottomRow}>
+        <View style={[styles.bottomRow, { paddingBottom: barBottom }]}>
           <View style={styles.endWrap}>
             <Button variant="secondary" fullWidth onPress={openAdd} accessibilityLabel="Add an exercise">
               Add Exercise
@@ -2725,7 +2733,9 @@ export default function WorkoutScreen() {
           line={says?.text ?? null}
           onPress={() => setCoachOpen(true)}
           openLabel="Ask Coach Holt about this exercise"
-          style={styles.holtWrap}
+          /* Rides the bar's height so the coin keeps its distance from it on every phone — the single
+             reason the inset was avoided here in the first place. */
+          style={[styles.holtWrap, { bottom: 82 + barBottom }]}
         />
       ) : null}
       {coachOpen ? (
@@ -3787,7 +3797,7 @@ const styles = StyleSheet.create({
   /* 96 clears the action bar (14 + 48 + 14 ≈ 76) with room to spare. No safe-area inset added: this
      screen takes none anywhere — the bar sits at the foot of a plain flex root — and introducing one
      here alone would float the bubble at a different height than every other element it lines up with. */
-  holtWrap: { position: 'absolute', right: 18, bottom: 96, zIndex: 42, alignItems: 'flex-end' },
+  holtWrap: { position: 'absolute', right: SCREEN_GUTTER, zIndex: 42, alignItems: 'flex-end' },
   /* ⚠ `holtBubble`/`holtPressed` were deleted with the local mark. `CoachSays` draws it now, so the
      two screens that show the coach cannot drift apart on what he looks like. Only the PLACEMENT stays
      here, because the height that clears this screen's action bar is this screen's business. */
@@ -3971,7 +3981,9 @@ const styles = StyleSheet.create({
   completeNote: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingTop: 10 },
   completeDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: flColor.greenMuted },
   completeNoteText: { fontSize: 10, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronze400 },
-  bottomRow: { flexDirection: 'row', gap: 12, paddingHorizontal: 18, paddingVertical: 14 },
+  /* `paddingBottom` is applied inline from `useBarBottom` — the floor plus whatever the hardware needs.
+     Top padding stays fixed: the gap to the content above is a design decision, not a hardware one. */
+  bottomRow: { flexDirection: 'row', gap: 12, paddingHorizontal: SCREEN_GUTTER, paddingTop: 14 },
   endWrap: { flex: 1 },
   primaryWrap: { flex: 1.15, borderRadius: flRadius.md },
   primaryGlow: { boxShadow: flShadow.glowSubtle },

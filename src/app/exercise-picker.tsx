@@ -9,6 +9,7 @@ import { Button } from '@/components/forge/composites/Button';
 import { EquipIcon } from '@/components/forge/EquipIcon';
 import { ExercisePoster } from '@/components/forge/ExercisePoster';
 import { ScreenBackground } from '@/components/screen-background';
+import { SCREEN_GUTTER, useBarBottom } from '@/lib/screen-insets';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { writeExerciseInbox, type PickedExercise } from '@/lib/exercise-inbox';
@@ -79,6 +80,7 @@ const resolveKey = (k: string): PickerItem | undefined =>
  * these personal signals are used instead of an invented "most common" ordering.
  */
 export default function ExercisePickerScreen() {
+  const barBottom = useBarBottom();
   const router = useRouter();
   const params = useLocalSearchParams<{
     mode?: string;
@@ -573,7 +575,7 @@ export default function ExercisePickerScreen() {
       </ScrollView>
 
       {/* footer confirm */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: barBottom }]}>
         {/* SAY IT WHILE YOU PICK THEM.
             Building as you go, the ⋮ menu's "Superset with next exercise" means adding three lifts
             and then pairing them one at a time — restating a decision already made. Ticking them
@@ -850,7 +852,8 @@ const styles = StyleSheet.create({
   createChipText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
   createChipTextOn: { color: flColor.cream100 },
 
-  footer: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 18, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: flColor.charcoal900, gap: 12 },
+  /* `paddingBottom` from `useBarBottom` — see `lib/screen-insets`. */
+  footer: { paddingHorizontal: SCREEN_GUTTER, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: flColor.charcoal900, gap: 12 },
 
   // "Add as a superset" — the pick-time pairing declaration
   ssRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, paddingHorizontal: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: 'transparent' },

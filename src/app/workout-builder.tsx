@@ -8,6 +8,7 @@ import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { ScreenBackground } from '@/components/screen-background';
+import { SCREEN_GUTTER, useBarBottom } from '@/lib/screen-insets';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { fetchTemplateDetail, saveTemplate, type TemplateExercise } from '@/data/templates-live';
@@ -99,6 +100,7 @@ export default function WorkoutBuilderScreen() {
    */
   const forLater = params.for === 'later';
 
+  const barBottom = useBarBottom();
   const [draft, setDraft] = useState<WorkoutDraft | null>(null);
   const [saving, setSaving] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
@@ -355,7 +357,7 @@ export default function WorkoutBuilderScreen() {
         })}
       </ScrollView>
 
-      <LinearGradient colors={['rgba(6,7,8,0.35)', 'rgba(6,7,8,0.82)']} style={styles.footer}>
+      <LinearGradient colors={['rgba(6,7,8,0.35)', 'rgba(6,7,8,0.82)']} style={[styles.footer, { paddingBottom: barBottom }]}>
         <Button variant="primary" fullWidth disabled={!canSave || saving} onPress={() => void save(true)} accessibilityLabel="Save and start this workout">
           {saving ? 'Saving…' : 'Save & Start'}
         </Button>
@@ -724,7 +726,9 @@ const styles = StyleSheet.create({
   addBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: flRadius.md, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronzeBorderSubtle },
   addText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze300 },
 
-  footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 18, paddingTop: 16, paddingBottom: 26, gap: 8 },
+  /* `paddingBottom` comes from `useBarBottom` — see `lib/screen-insets`. It was a hand-picked 26,
+     which was generous on a home-button phone and still under the home indicator on a modern one. */
+  footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: SCREEN_GUTTER, paddingTop: 16, gap: 8 },
   laterBtn: { alignItems: 'center', paddingVertical: 8 },
   laterText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze400 },
   laterTextOff: { color: flColor.gray600 },
