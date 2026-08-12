@@ -840,6 +840,26 @@ surface to test on, minus video compression, which is native-only by nature.
 **ONCE 0d07a777 IS INSTALLED**, runtime `3508eed9…` becomes the OTA target and ordinary
 `eas update` resumes for JS-only work. Re-run `fingerprint:compare` before the next one anyway.
 
+### 0. OTA PUBLISHED — the phone has it too (2026-08-11)
+
+**⚠ `eas deploy` IS WEB ONLY. It had shipped nothing to anybody's phone.** Every item in 0a/0b below was
+live on `forgelegacy.expo.app` and invisible on device until this step.
+
+| | |
+|---|---|
+| **OTA** | ✅ Branch `production`, commit `e42f4f9`. iOS group `c14c51e6-435c-4a9b-9f91-62d6f1bf1a9f`, runtime `74a9a86b…` |
+| **Deliverable?** | ✅ `fingerprint:compare` against build `5de44367` returned an EXACT match — `74a9a86b…` both sides. Everything this pass changed is JS-only |
+| **Android** | Group `b2e77975…`, runtime `ca025e7e…` — still reaches nobody, there are no Android builds |
+| **Web** | `forgelegacy.expo.app`, `entry-a316550d699c4f6b3aacad7cb664efbe.js`, verified 200 + grepped live |
+
+**Push registration IS in the field build** — `9fa0da7` ("push notifications, joining a live workout…")
+is an ancestor of `651fd80`, which build 4 was cut from. So 0137's signup alert needs only the migration
+and a registered device, not a new build.
+
+**Still server-side and outstanding: migrations 0137 then 0138.** Until they run, the signup list shows a
+"migration not applied" message and substitution capture is a silent no-op — which costs the signal,
+never a workout.
+
 ### 0aa. DEPLOYED — and a new deployment failure mode, recorded (2026-08-11)
 
 **Live:** `forgelegacy.expo.app` serving `entry-b6b2319ef4aa662e06642f2c158d17d1.js`, verified 200 on
