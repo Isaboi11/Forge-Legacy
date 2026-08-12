@@ -9,6 +9,10 @@
  */
 
 import { DEFAULT_UNITS, isUnitSystem, type UnitSystem } from './units.ts';
+/* ⚠ RELATIVE AND EXTENSIONED, NOT `@/`. `DEFAULT_INTENSITY` and `INTENSITY_LEVELS` are RUNTIME values
+   and `node --test` loads this file directly, where the alias does not resolve. The `SymbolName` import
+   below survives on `@/` only because it is type-only and stripped before anything tries. */
+import { DEFAULT_INTENSITY, INTENSITY_LEVELS, type IntensityLevel } from '../coach/rulebook/intensity.ts';
 import type { SymbolName } from '@/components/forge/ForgeSymbol';
 
 export interface AppPrefs {
@@ -31,6 +35,19 @@ export interface AppPrefs {
    * synchronously — see `lib/analytics.ts`.
    */
   analyticsOptOut: boolean;
+  /**
+   * How hard Coach Holt pushes — `reminders` | `steady` | `push` | `drive`.
+   *
+   * ⚠ NOT A BOOLEAN, SO IT IS NOT AN `EXPERIENCE_TOGGLE`. It is a four-way choice with a sentence
+   * against each option, and `ecosystem.test.mjs` asserts exactly which toggles are `live` — adding a
+   * non-boolean there would break the honest "no consumer yet" accounting that list exists for.
+   *
+   * Device-independent on purpose. `coach-memory.ts` holds EXPERIENCE device-locally because losing it
+   * costs one extra tap in a questionnaire; losing this would silently return an athlete who asked to be
+   * pushed to the middle setting on a new phone, and they would have no idea why the coach went quiet.
+   * See `domain/coach/rulebook/intensity.ts` for what each level actually changes.
+   */
+  coachIntensity: IntensityLevel;
 }
 
 export const APP_PREFS_DEFAULTS: AppPrefs = {
@@ -39,6 +56,7 @@ export const APP_PREFS_DEFAULTS: AppPrefs = {
   sound: true,
   reduceMotion: false,
   analyticsOptOut: false,
+  coachIntensity: DEFAULT_INTENSITY,
 };
 
 export type ExperienceKey = 'haptics' | 'sound' | 'reduceMotion';
@@ -68,6 +86,12 @@ export function sanitizePrefs(raw: unknown): AppPrefs {
     if (typeof r.sound === 'boolean') out.sound = r.sound;
     if (typeof r.reduceMotion === 'boolean') out.reduceMotion = r.reduceMotion;
     if (typeof r.analyticsOptOut === 'boolean') out.analyticsOptOut = r.analyticsOptOut;
+    /* Validated against the level list rather than trusted as a string: a stale or hand-edited value
+       reaches `profileFor` as a coaching threshold, and an unrecognised one there would silently fall
+       to the default anyway — better to drop it here, where the default is stated once. */
+    if (typeof r.coachIntensity === 'string' && (INTENSITY_LEVELS as readonly string[]).includes(r.coachIntensity)) {
+      out.coachIntensity = r.coachIntensity as IntensityLevel;
+    }
   }
   return out;
 }

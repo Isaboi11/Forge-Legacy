@@ -86,8 +86,8 @@ export interface Progression {
  * coach. Lower-body compounds move fastest, upper-body compounds next, isolation slowest.
  */
 /**
- * `[typical, floor]` in pounds — what an intermediate adds, and the smallest jump that is ever worth
- * making on this movement no matter who is lifting.
+ * `[typical, floor, ceiling]` in pounds — what an intermediate adds, the smallest jump ever worth making
+ * on this movement, and the largest that is ever safe to suggest on it.
  *
  * ⚠ THE FLOOR IS THE HALF THE FIRST VERSION DID NOT HAVE, AND THE PO CAUGHT IT TWICE. There was one
  * global minimum of 2.5 lb, so the advanced multiplier below dragged everything down to it: a lat
@@ -97,24 +97,30 @@ export interface Progression {
  * The PO's own spec, which this table now encodes: the big lifts (squat, hinge, deadlift, carry) take the
  * biggest jumps; presses and pulls 5–10; curls 5; shoulder isolation 2.5–5 *depending on the equipment*.
  * Nothing weighted may ever suggest less than 2.5, and almost nothing should suggest less than 5.
+ *
+ * ⚠ THE CEILING IS THE SAME BUG POINTING UPWARD, added with coach intensity. `stepScale` multiplies this
+ * jump, and unbounded a `×2` turns advanced shoulder isolation into **10 lb on a lateral raise** — which
+ * is not a training decision, it is the "teaches an athlete to stop reading the coach" failure the header
+ * above already names, arrived at from the other side. One table, three numbers, so the bound and the
+ * jump can never drift apart the way two tables would.
  */
-const INCREMENT_BY_PATTERN: Record<string, [typical: number, floor: number]> = {
-  'Squat / Knee Dominant': [10, 10],
-  'Hinge / Hip Dominant': [10, 10],
-  Carry: [10, 10],
-  'Calf / Ankle': [10, 5],
-  'Horizontal Push': [5, 5],
-  'Vertical Push': [5, 5],
-  'Horizontal Pull': [5, 5],
-  'Vertical Pull': [5, 5],
-  'Power / Plyometric': [5, 5],
-  'Elbow Flexion': [5, 5],
-  'Elbow Extension': [5, 5],
-  'Hip Isolation': [5, 5],
-  Core: [5, 5],
-  'Shoulder Isolation': [2.5, 2.5],
-  'Neck Isolation': [2.5, 2.5],
-  Mobility: [0, 0],
+const INCREMENT_BY_PATTERN: Record<string, [typical: number, floor: number, ceiling: number]> = {
+  'Squat / Knee Dominant': [10, 10, 20],
+  'Hinge / Hip Dominant': [10, 10, 20],
+  Carry: [10, 10, 20],
+  'Calf / Ankle': [10, 5, 15],
+  'Horizontal Push': [5, 5, 10],
+  'Vertical Push': [5, 5, 10],
+  'Horizontal Pull': [5, 5, 10],
+  'Vertical Pull': [5, 5, 10],
+  'Power / Plyometric': [5, 5, 10],
+  'Elbow Flexion': [5, 5, 10],
+  'Elbow Extension': [5, 5, 10],
+  'Hip Isolation': [5, 5, 10],
+  Core: [5, 5, 10],
+  'Shoulder Isolation': [2.5, 2.5, 5],
+  'Neck Isolation': [2.5, 2.5, 5],
+  Mobility: [0, 0, 0],
 };
 
 /**
@@ -165,19 +171,35 @@ const EXPERIENCE_MULTIPLIER = { beginner: 1.5, intermediate: 1, advanced: 0.5 } 
  *   3. **The equipment**, last, because it is a physical constraint rather than a coaching opinion: the
  *      answer is rounded UP to something that exists in the room. On dumbbells that turns a 2.5 lb
  *      shoulder jump into 5, which is the only honest answer when the rack has nothing in between.
+ *
+ * `stepScale` is coach intensity, and it is OPTIONAL so that every call site written before it existed
+ * behaves identically. ⚠ It is applied INSIDE the movement's ceiling, never outside: the whole point of
+ * the bound is that no setting can talk somebody into a jump the movement cannot take. See
+ * `rulebook/intensity.ts` for why it is 1 in every beginner cell.
  */
 export function incrementFor(
   pattern: string,
   experience: 'beginner' | 'intermediate' | 'advanced',
   equipment?: string | null,
+  stepScale: number = 1,
 ): number {
-  const [typical, floor] = INCREMENT_BY_PATTERN[pattern] ?? [5, 5];
+  const [typical, floor, ceiling] = INCREMENT_BY_PATTERN[pattern] ?? [5, 5, 10];
   if (typical === 0) return 0; // mobility — there is nothing to add
 
   const step = loadableStep(equipment);
   if (step === 0) return 0; // a band or bodyweight lift does not progress in pounds
 
-  const wanted = Math.max(floor, typical * EXPERIENCE_MULTIPLIER[experience]);
+  /*
+   * ⚠ THE ORDER IS FLOOR → SCALE → CEILING, AND IT IS NOT INTERCHANGEABLE.
+   *
+   * Scaling before the floor looks equivalent and is not: an advanced squat is `10 × 0.5 = 5`, which the
+   * floor lifts to 10 — so multiplying first gives `5 × 2 = 10`, the floor lifts it back to 10, and
+   * `drive` produces exactly the same jump as `steady`. The dial would appear to do nothing for the
+   * athletes most likely to reach for it. The floor is a real minimum for the MOVEMENT, so it settles
+   * first and intensity scales the honest number.
+   */
+  const base = Math.max(floor, typical * EXPERIENCE_MULTIPLIER[experience]);
+  const wanted = Math.min(ceiling, base * Math.max(1, stepScale));
   // UP to the next loadable notch, never down — rounding down is how a floor of 5 becomes 2.5 again.
   return Math.max(step, Math.ceil(wanted / step) * step);
 }

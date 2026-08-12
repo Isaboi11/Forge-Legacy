@@ -294,12 +294,24 @@ export function pick(key: VoiceKey, choose: Chooser = defaultChooser): string {
   return pickFrom(key, VOICE[key], choose);
 }
 
-function pickFrom(key: VoiceKey, options: readonly string[], choose: Chooser): string {
+/**
+ * ⚠ EXPORTED FOR `in-workout-voice.ts` AND NOTHING ELSE.
+ *
+ * The in-workout lines are a separate table keyed by register — they are said in a gym, between sets,
+ * not in a conversation — but they must inherit the one thing this module owns that matters: the
+ * no-repeat memory above. A second `lastSaid` map in a second file would let Holt say the same sentence
+ * twice in a row across the boundary, which is exactly what `voice.test.mjs` exists to prevent.
+ *
+ * `key` is typed loosely for that caller: its keys are not `VoiceKey`s, and widening `VoiceKey` to
+ * include them would put in-workout lines in `VOICE`, where the questionnaire tests would then walk
+ * them under rules written for a different surface.
+ */
+export function pickFrom(key: string, options: readonly string[], choose: Chooser): string {
   if (options.length === 0) return '';
-  const previous = lastSaid.get(key);
+  const previous = lastSaid.get(key as VoiceKey);
   const fresh = options.length > 1 && previous != null ? options.filter((o) => o !== previous) : options;
   const line = fresh[Math.max(0, Math.min(fresh.length - 1, choose(fresh.length)))] ?? options[0];
-  lastSaid.set(key, line);
+  lastSaid.set(key as VoiceKey, line);
   return line;
 }
 

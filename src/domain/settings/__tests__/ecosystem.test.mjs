@@ -122,6 +122,9 @@ test('app prefs default to imperial, haptics/sound on, reduce-motion off, analyt
     // absence — which is every athlete whose prefs were written before this field existed — lands on
     // the disclosed default rather than on a value nobody chose.
     analyticsOptOut: false,
+    // The coach's manner, not a capability. `steady` is what the app has always done — a stored blob
+    // written before this field existed lands here, so nobody's coach changes volume on an update.
+    coachIntensity: 'steady',
   });
 });
 
@@ -136,7 +139,7 @@ test('exactly the toggles with a real consumer today are marked live', () => {
 
 test('sanitizePrefs coerces each field and survives a malformed blob', () => {
   const p = sanitizePrefs({ units: 'metric', haptics: false, sound: 'loud', reduceMotion: true });
-  assert.deepEqual(p, { units: 'metric', haptics: false, sound: true, reduceMotion: true, analyticsOptOut: false });
+  assert.deepEqual(p, { units: 'metric', haptics: false, sound: true, reduceMotion: true, analyticsOptOut: false, coachIntensity: 'steady' });
   assert.deepEqual(sanitizePrefs('nope'), APP_PREFS_DEFAULTS);
   assert.equal(sanitizePrefs({ units: 'stones' }).units, 'imperial', 'an unknown system falls back');
 });
@@ -151,4 +154,14 @@ test('an opt-out survives every shape sanitizePrefs is handed', () => {
   assert.equal(sanitizePrefs({ units: 'metric' }).analyticsOptOut, false);
   // A non-boolean is junk and falls back rather than being coerced truthy.
   assert.equal(sanitizePrefs({ analyticsOptOut: 'yes' }).analyticsOptOut, false);
+});
+
+test('a coach intensity outside the four levels falls back rather than reaching profileFor', () => {
+  // It is a coaching THRESHOLD downstream, so a stale or hand-edited string must be dropped at the
+  // boundary where the default is stated once — not silently absorbed three modules later.
+  assert.equal(sanitizePrefs({ coachIntensity: 'drive' }).coachIntensity, 'drive');
+  assert.equal(sanitizePrefs({ coachIntensity: 'ludicrous' }).coachIntensity, 'steady');
+  assert.equal(sanitizePrefs({ coachIntensity: 4 }).coachIntensity, 'steady');
+  // An unrelated screen writing prefs must not reset somebody who asked to be pushed.
+  assert.equal(sanitizePrefs({ coachIntensity: 'drive', units: 'metric' }).coachIntensity, 'drive');
 });

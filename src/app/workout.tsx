@@ -31,7 +31,7 @@ import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/us
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
-import { useSoundEnabled, useUnits } from '@/lib/settings';
+import { useCoachIntensity, useSoundEnabled, useUnits } from '@/lib/settings';
 import { loadContextFor } from '@/domain/program/percent-max';
 import { unitLabel, weightInExact } from '@/domain/settings/units';
 import { playRestDing, primeDing } from '@/lib/ding';
@@ -60,6 +60,8 @@ import {
 } from '@/domain/workout/partner-credit';
 import { durText, supersetLabels } from '@/domain/program/prescription';
 import { coachLine } from '@/domain/coach/coach-says';
+import { profileFor } from '@/domain/coach/rulebook/intensity';
+import { intraSetSuggestion } from '@/domain/coach/intra-set';
 import { CoachSays } from '@/components/forge/CoachSays';
 import { clearWorkoutLaunch, readWorkoutLaunch } from '@/lib/workout-launch';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -226,6 +228,22 @@ function fmtNum(n: number): string {
  * wiring pending): exercise animation media (Phase-4 assets), Memories capture (photo system), Last/Best
  * insight (exercise-history query), the tab bar (active workout is a focused takeover per the nav pattern).
  */
+/**
+ * A monotonic id for the two transient animations that guard themselves against a stale timeout — the
+ * green fuse on a logged row and the value-pop on an edited cell.
+ *
+ * ⚠ IT WAS `Date.now()`, AND THAT WAS WRONG TWICE OVER. `Date.now()` can return the same value twice
+ * inside one millisecond, so two fast set logs produce equal tokens and the older timeout clears the
+ * NEWER flash — precisely the staleness the token exists to prevent. And it is an impure call that the
+ * react-compiler flags the moment it can see the handler, which is how this surfaced.
+ *
+ * Module scope rather than a ref because it is not component state: only one Active Workout exists at a
+ * time, nothing renders from it, and a ref read inside a handler the compiler believes is render-phase
+ * would trade one lint error for another.
+ */
+let animationToken = 0;
+const nextAnimationToken = (): number => (animationToken += 1);
+
 export default function WorkoutScreen() {
   const router = useRouter();
   /* The Memories strip, real. It refreshes on focus because the capture flow is a modal — returning from
@@ -250,6 +268,14 @@ export default function WorkoutScreen() {
   const soundOn = useSoundEnabled();
   const [phase, setPhase] = useState<Phase>('loading');
   const [sheet, setSheet] = useState<SetSheet | null>(null);
+  /**
+   * The mid-set nudge — "next set, 195" — keyed by exercise index.
+   *
+   * ⚠ HELD, NOT TOASTED. A toast is gone in three seconds and this is an instruction for the set they
+   * are about to do, so it rides the coin until the exercise changes or a later set answers it. Cleared
+   * when the athlete moves on, because a suggestion about bench press has nothing to say about squats.
+   */
+  const [intraLine, setIntraLine] = useState<{ ei: number; text: string } | null>(null);
   /* Drafts, as STRINGS — '' is a real state ("nothing entered"), and a number cannot hold it. The old
      picker collapsed the two: it seeded '' and rendered the wheel at `Number('') || 0`, so a wheel you
      opened and did not scroll showed 0, reported nothing, and wrote the weight back as null. */
@@ -309,6 +335,15 @@ export default function WorkoutScreen() {
    * biggest weight increase to precisely the athlete the app knows least about.
    */
   const [experience, setExperience] = useState<'beginner' | 'intermediate' | 'advanced'>('intermediate');
+  /*
+   * HOW HARD HE PUSHES, resolved from the chosen level AND the athlete's experience — see
+   * `rulebook/intensity.ts` for why both index the matrix rather than the level alone. `experience`
+   * is device-local and starts undefined, and `profileFor` deliberately falls to the SAFEST row for
+   * that rather than the middle one, so a new phone never quietly unlocks a harder coach.
+   */
+  const coachIntensity = useCoachIntensity();
+  const coachProfile = useMemo(() => profileFor(coachIntensity, experience), [coachIntensity, experience]);
+
   /* The last thing they said about each of these lifts. Keyed by catalogKey ?? name, the same identity
      every other lift-history read in this app uses. */
   const [lastNotes, setLastNotes] = useState<Record<string, LastNote>>({});
@@ -907,7 +942,7 @@ export default function WorkoutScreen() {
     const done = ex.sets[si];
 
     // green fuse flash on the row — the token guards a stale timeout from clearing a newer flash
-    const token = Date.now();
+    const token = nextAnimationToken();
     setFlash({ ei, si, token });
     setTimeout(() => setFlash((f) => (f && f.token === token ? null : f)), 1500);
 
@@ -941,6 +976,33 @@ export default function WorkoutScreen() {
         setPrPrompt({ name: ex.name, perf: `${w} lb × ${r}`, key: ex.catalogKey ?? null });
       }
     }
+
+    /*
+     * ══ "LET'S GO UP 10 LBS" ══
+     *
+     * The PO's ask, and the only coaching line in the app that reads the set that just happened rather
+     * than the last two sessions. It fires here because this is the one funnel every logged set and
+     * every finished hold passes through.
+     *
+     * ⚠ ALL FIVE GATES LIVE IN `intraSetSuggestion`, NOT HERE — the profile allowing it, a genuine
+     * overshoot, a later set to instruct, loadable equipment, and never downward. Keeping them in the
+     * pure module is what lets them be tested; a condition added to this call site instead would be a
+     * rule nobody can see.
+     */
+    const nudge = intraSetSuggestion({
+      exerciseName: ex.name,
+      pattern: patternOf(ex),
+      experience,
+      equipment: equipmentForCatalogKey(ex.catalogKey),
+      profile: coachProfile,
+      justLogged: { weight: done.weight, actualReps: done.actualReps },
+      topReps: done.targetRepsMax ?? done.targetReps,
+      /* Counted off the SESSION AFTER this set landed, so the last set of an exercise reports zero and
+         the module's "nothing left to instruct" gate closes on its own. */
+      setsRemaining: ex.sets.filter((s2) => !s2.done).length,
+      unit: unitLabel(units),
+    });
+    if (nudge) setIntraLine({ ei, text: nudge.message });
 
     // milestone tier: exercise done (others remain) → non-blocking seal; else more sets → rest (never the last set)
     const exDone = ex.sets.every((s2) => s2.done);
@@ -1185,7 +1247,7 @@ export default function WorkoutScreen() {
     const reps = readDraft(draftR, set.actualReps, REPS_MAX, true);
     const base = patchSet(session, ei, si, (s) => ({ ...s, weight, actualReps: reps }));
 
-    const token = Date.now();
+    const token = nextAnimationToken();
     setPop({ ei, si, field: sheet.focus, token }); // value-pop on the edited cell
     setTimeout(() => setPop((p) => (p && p.token === token ? null : p)), 340);
     setSheet(null);
@@ -1555,7 +1617,13 @@ export default function WorkoutScreen() {
    * `live` is null until Stage 4 lands the mid-set nudge — the slot exists now so the priority rule is
    * written once and tested, rather than being retrofitted around a shipped two-case version.
    */
-  const says = coachLine({ live: null, progression: progression?.message, planCue: ex.coachNote });
+  const says = coachLine({
+    /* Scoped to the exercise it was said about — a nudge about bench press has nothing to say once the
+       athlete is standing at a squat rack, and the coin would otherwise carry it there. */
+    live: intraLine?.ei === exIdx ? intraLine.text : null,
+    progression: progression?.message,
+    planCue: ex.coachNote,
+  });
   /* The collapsed strip's `Prev`, indexed to the SAME set position last time — set 3 against last week's
      set 3, not against their best set of the day. `currentSetIdx` is -1 once every set is done, at which
      point there is no next set to compare and the strip says nothing. */

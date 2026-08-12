@@ -4,6 +4,7 @@ import { useAuth } from './auth';
 import { useQuery } from './useQuery';
 import { fetchAppPrefs } from '@/data/settings-live';
 import { APP_PREFS_DEFAULTS, type AppPrefs } from '@/domain/settings/preferences';
+import type { IntensityLevel } from '@/domain/coach/rulebook/intensity';
 import { convertMeasure, formatLoad, type UnitSystem } from '@/domain/settings/units';
 
 /**
@@ -75,4 +76,16 @@ export function useReduceMotion(): boolean {
 /** Whether the app is allowed to make a sound. Real since the rest-timer ding — see `lib/ding`. */
 export function useSoundEnabled(): boolean {
   return useAppPrefs().prefs.sound;
+}
+
+/**
+ * How hard Holt pushes. Feeds `profileFor(level, experience)` — see `domain/coach/rulebook/intensity`.
+ *
+ * ⚠ THIS IS THE CHOSEN LEVEL, NOT THE PROFILE. Experience bounds it, and experience is device-local
+ * (`coach-memory.ts`), so the two are resolved together at the point of use rather than here — a hook
+ * that returned a finished profile would have to reach into the coach's memory from the settings layer
+ * and would go stale the moment the athlete answered the experience question.
+ */
+export function useCoachIntensity(): IntensityLevel {
+  return useAppPrefs().prefs.coachIntensity;
 }

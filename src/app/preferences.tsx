@@ -11,6 +11,7 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flRadius } from '@/constants/foundation';
 import { fetchAppPrefs, saveAppPrefs } from '@/data/settings-live';
 import { APP_PREFS_DEFAULTS, EXPERIENCE_TOGGLES, type AppPrefs, type ExperienceKey } from '@/domain/settings/preferences';
+import { INTENSITY_LEVELS, type IntensityLevel } from '@/domain/coach/rulebook/intensity';
 import { previewSquat, type UnitSystem } from '@/domain/settings/units';
 import { useAppPrefs } from '@/lib/settings';
 import { useQuery } from '@/lib/useQuery';
@@ -31,6 +32,25 @@ const UNIT_OPTIONS: { id: UnitSystem; label: string }[] = [
   { id: 'metric', label: 'Kgs' },
 ];
 
+/**
+ * ⚠ EACH LEVEL IS DESCRIBED BY WHAT IT DOES, NOT BY WHERE IT SITS ON A SCALE.
+ *
+ * "Low / Medium / High" would make the athlete guess, and guessing wrong here means a coach who either
+ * nags them or goes silent — neither of which they would connect back to this screen. Every line below
+ * is a promise the engine actually keeps; see `rulebook/intensity.ts`.
+ *
+ * ⚠ AND NOTHING IS DISABLED. What a level MEANS is bounded by experience — a beginner at `drive` is
+ * never given bigger jumps than an intermediate at `push` — but that bounding happens in the matrix, out
+ * of sight. A greyed-out option would say "you're not good enough", which is the anxiety posture the
+ * Active Workout spec forbids and a silent narrowing under CL-D3.
+ */
+const INTENSITY_COPY: Record<IntensityLevel, { label: string; hint: string }> = {
+  reminders: { label: 'Reminders', hint: 'Technique cues only. I won’t tell you to change the weight.' },
+  steady: { label: 'Steady', hint: 'I’ll tell you when you’ve earned more weight.' },
+  push: { label: 'Push', hint: 'I’ll say it sooner, and offer a bump mid-exercise.' },
+  drive: { label: 'Drive', hint: 'I’ll push on every lift and tell you straight.' },
+};
+
 export default function PreferencesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -47,6 +67,7 @@ export default function PreferencesScreen() {
 
   const setUnits = (units: UnitSystem) => commit({ ...prefs, units });
   const setToggle = (key: ExperienceKey, on: boolean) => commit({ ...prefs, [key]: on });
+  const setIntensity = (coachIntensity: IntensityLevel) => commit({ ...prefs, coachIntensity });
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/account-settings'));
 
@@ -95,6 +116,48 @@ export default function PreferencesScreen() {
               <Text style={styles.previewValue}>
                 Best squat <Text style={styles.previewMono}>{previewSquat(prefs.units)}</Text>
               </Text>
+            </View>
+          </View>
+
+          {/*
+            coaching — how hard Holt pushes.
+
+            Above Experience deliberately: this changes what a person says to you mid-workout, and the
+            toggles below it change how an animation behaves. It sits under Display only because Units
+            is the one setting on this screen that every other screen reads.
+          */}
+          <Text style={styles.sectionLabel}>Coaching</Text>
+          <View style={styles.card}>
+            <View style={styles.unitsHead}>
+              <View style={styles.iconTile}>
+                <ForgeSymbol name="spark" size={19} color={flColor.bronze300} />
+              </View>
+              <View style={styles.rowText}>
+                <Text style={styles.rowLabel}>How hard Holt pushes</Text>
+                <Text style={styles.rowHint}>Change it any time — it takes effect on his next line.</Text>
+              </View>
+            </View>
+            <View style={styles.levels}>
+              {INTENSITY_LEVELS.map((level, i) => {
+                const on = prefs.coachIntensity === level;
+                const copy = INTENSITY_COPY[level];
+                return (
+                  <Pressable
+                    key={level}
+                    onPress={() => setIntensity(level)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: on }}
+                    accessibilityLabel={`${copy.label} — ${copy.hint}`}
+                    style={[styles.level, i > 0 && styles.rowBorder, on && styles.levelOn]}
+                  >
+                    <View style={styles.rowText}>
+                      <Text style={[styles.rowLabel, on && styles.levelLabelOn]}>{copy.label}</Text>
+                      <Text style={styles.rowHint}>{copy.hint}</Text>
+                    </View>
+                    {on ? <ForgeSymbol name="seal" size={17} color={flColor.bronze400} /> : null}
+                  </Pressable>
+                );
+              })}
             </View>
           </View>
 
@@ -165,5 +228,13 @@ const styles = StyleSheet.create({
 
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 13 },
   rowBorder: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+
+  // coaching levels — a list of choices, not a slider: each one is a sentence, and a slider has none.
+  levels: { marginTop: 4 },
+  level: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13 },
+  /* The selected level is marked by a bronze tint and a check, never by dimming the others — every
+     level is available to everybody (see INTENSITY_COPY). */
+  levelOn: { backgroundColor: flColor.bronzeTint },
+  levelLabelOn: { color: flColor.bronze300 },
   rowText: { flex: 1 },
 });
