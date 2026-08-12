@@ -35,54 +35,109 @@ const ROOT = join(HERE, '..', '..', '..');
 
 const appJson = JSON.parse(readFileSync(join(ROOT, 'app.json'), 'utf8'));
 const overlaySrc = readFileSync(join(HERE, '..', 'animated-icon.tsx'), 'utf8');
+const splashSrc = readFileSync(join(HERE, '..', 'forge-splash.tsx'), 'utf8');
+const layoutSrc = readFileSync(join(ROOT, 'src', 'app', '_layout.tsx'), 'utf8');
+const homeSrc = readFileSync(join(ROOT, 'src', 'app', '(tabs)', 'index.tsx'), 'utf8');
 
-/** The `expo-splash-screen` plugin entry — the colour the OS paints before any JS runs. */
-function splashBackground() {
+/** The `expo-splash-screen` plugin entry — what the OS paints before any JS runs. */
+function splashPlugin() {
   const plugins = appJson.expo?.plugins ?? [];
   const entry = plugins.find((p) => Array.isArray(p) && p[0] === 'expo-splash-screen');
   assert.ok(entry, 'the expo-splash-screen plugin is no longer configured in app.json');
-  return entry[1]?.backgroundColor;
+  return entry[1] ?? {};
 }
 
-test('the JS splash overlay is painted in the native splash’s own colour', () => {
+const splashBackground = () => splashPlugin().backgroundColor;
+
+/**
+ * ⚠ EVERY SOURCE ASSERTION IN THIS FILE RUNS ON THIS, and the reason is worth stating once: the first
+ * draft of the test below went red on a CORRECT file, because the doc comment it was checking NAMES the
+ * bad value (`#208AEF`) in order to explain the bug. A guard that must say the pattern it forbids will
+ * always match itself unless it excludes its own prose.
+ */
+const stripComments = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+
+test('the JS splash is painted in the native splash’s own colour', () => {
   const native = splashBackground();
   assert.match(native ?? '', /^#[0-9a-fA-F]{6}$/, `splash backgroundColor is not a hex colour: ${native}`);
 
-  const declared = /SPLASH_BACKGROUND\s*=\s*'(#[0-9a-fA-F]{6})'/.exec(overlaySrc)?.[1];
-  assert.ok(declared, 'animated-icon.tsx no longer exports a SPLASH_BACKGROUND literal');
+  const declared = /SPLASH_BACKGROUND\s*=\s*'(#[0-9a-fA-F]{6})'/.exec(splashSrc)?.[1];
+  assert.ok(declared, 'forge-splash.tsx no longer exports a SPLASH_BACKGROUND literal');
 
   assert.equal(
     declared.toUpperCase(),
     native.toUpperCase(),
-    'The overlay covers the gap between the native splash and the first frame. In any colour but the ' +
+    'ForgeSplash covers the gap between the native splash and the first frame. In any colour but the ' +
       "splash's own it IS the gap — which is how #208AEF (Expo blue) shipped to TestFlight.",
   );
 });
 
-test('the overlay fill is the declared constant, not a second hard-coded literal', () => {
+test('the splash fill is the declared constant, not a second hard-coded literal', () => {
   // The failure this prevents: someone edits the style and leaves SPLASH_BACKGROUND behind, so the
   // test above keeps passing while the screen flashes again.
   assert.match(
-    overlaySrc,
+    splashSrc,
     /backgroundColor:\s*SPLASH_BACKGROUND/,
-    'the overlay style must use SPLASH_BACKGROUND so the assertion above is about the rendered colour',
+    'the splash style must use SPLASH_BACKGROUND so the assertion above is about the rendered colour',
   );
-  /*
-   * ⚠ COMMENTS ARE STRIPPED FIRST, and the first draft of this test did not do that — it went red on
-   * the correct file, because the doc comment above `SPLASH_BACKGROUND` NAMES the bad colour (`#208AEF`)
-   * in order to explain the bug. That is the identical shape `svg-gradient-stops.test.mjs` documents:
-   * a source guard that must SAY the pattern it forbids will match itself unless it excludes its own
-   * prose. Here the exclusion is per-file rather than per-path, because the explanation lives in the
-   * file being checked.
-   */
-  const code = overlaySrc.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
-  const hexes = code.match(/#[0-9a-fA-F]{6}/g) ?? [];
-  const unique = [...new Set(hexes.map((h) => h.toUpperCase()))];
-  assert.deepEqual(
-    unique,
-    [splashBackground().toUpperCase()],
-    `animated-icon.tsx carries a colour that is not the splash background: ${unique.join(', ')}`,
+  // Comments stripped first — see `stripComments`. The identical shape `svg-gradient-stops.test.mjs`
+  // documents, and here the explanation lives inside the very file being checked.
+  for (const [name, src] of [
+    ['forge-splash.tsx', splashSrc],
+    ['animated-icon.tsx', overlaySrc],
+  ]) {
+    const hexes = stripComments(src).match(/#[0-9a-fA-F]{6}/g) ?? [];
+    const unique = [...new Set(hexes.map((h) => h.toUpperCase()))].filter((h) => h !== splashBackground().toUpperCase());
+    assert.deepEqual(unique, [], `${name} carries a colour that is not the splash background: ${unique.join(', ')}`);
+  }
+});
+
+/**
+ * The artwork half of the same rule. The colour matched and the PICTURE did not: the OS drew the carved
+ * pillars, JS drew a flat rectangle, and the pillars vanished for 600ms on every launch. Both values
+ * have to agree with `app.json` or the hand-off is visible.
+ */
+test('the JS splash draws the same artwork, at the same width, as the native one', () => {
+  const { image, imageWidth } = splashPlugin();
+  assert.ok(image, 'the expo-splash-screen plugin no longer declares an image');
+
+  const asset = image.replace(/^\.\/assets\//, '');
+  assert.match(
+    splashSrc,
+    new RegExp(`require\\('@/assets/${asset.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}'\\)`),
+    `ForgeSplash must render the native splash's own image (${image}), or the hand-off swaps pictures`,
   );
+
+  const declaredWidth = Number(/LOGO_WIDTH\s*=\s*(\d+)/.exec(splashSrc)?.[1]);
+  assert.equal(
+    declaredWidth,
+    imageWidth,
+    'ForgeSplash draws the mark at a different width from the native splash, so it jumps size at hand-off',
+  );
+});
+
+/**
+ * ══ NO SPINNER SURVIVES ON THE LAUNCH PATH ══
+ *
+ * The boot hold was an `ActivityIndicator`, so a cold launch went pillars → flat dark → spinner → Home.
+ * Both holds now render the splash instead. This is a source assertion for the same reason everything
+ * else here is: the launch sequence is native-only, and the web preview — where this project is
+ * reviewed — never renders it.
+ */
+test('both launch holds render the splash, and neither spins', () => {
+  for (const [name, src] of [
+    ['_layout.tsx (boot hold)', layoutSrc],
+    ['(tabs)/index.tsx (Home first paint)', homeSrc],
+  ]) {
+    assert.match(src, /<ForgeSplash\s*\/>/, `${name} no longer holds on ForgeSplash`);
+    // ⚠ Comments stripped first, for the reason spelled out in the test above — both of these files
+    // NAME the spinner they replaced in order to explain why. Prose about a defect is not the defect.
+    assert.doesNotMatch(
+      stripComments(src),
+      /ActivityIndicator/,
+      `${name} is back to a spinner — the launch is the app opening, not a task the athlete started`,
+    );
+  }
 });
 
 /**

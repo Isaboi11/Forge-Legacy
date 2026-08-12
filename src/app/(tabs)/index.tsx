@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 
@@ -38,7 +39,7 @@ import { claimInitiativeHonor } from '@/data/honors-live';
 import { useTour } from '@/hooks/useTour';
 import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { TourAnchor } from '@/components/tour/TourAnchor';
-import { adoptCatalogProgram, fetchMyPrograms, fetchProgramSessions, startProgram, updateProgram } from '@/data/programs-live';
+import { adoptCatalogProgram, fetchAllProgramSessions, fetchMyPrograms, startProgram, updateProgram } from '@/data/programs-live';
 import type { ProgramDay } from '@/data/programs-live';
 import type { SessionMark } from '@/domain/program/progress-core';
 import { WorkoutPreviewSheet } from '@/components/forge/WorkoutPreviewSheet';
@@ -57,7 +58,8 @@ import { resolveRecommendationId } from '@/domain/onboarding/recommend-core';
 import { catalogCanRecommend } from '@/domain/onboarding/recommend';
 import { CARDIO_ACTIVITIES, CARDIO_DEFAULTS, deriveName, type CardioActivity } from '@/domain/workout/conditioning';
 import { loadSession, resumeSummary } from '@/domain/workout/autosave';
-import { composeHome, selectHomePrograms } from '@/domain/home/composition';
+import { composeHome, isHomeReady, selectHomePrograms, HOME_READY_CEILING_MS } from '@/domain/home/composition';
+import { ForgeSplash } from '@/components/forge-splash';
 import { doneSetCount } from '@/domain/workout/metrics';
 import type { Program, Workout } from '@/domain/training/schema';
 import { resolveHomeWorkoutArtwork } from '@/domain/home-artwork/resolver';
@@ -227,10 +229,6 @@ function ProgramPathChooser({
 }
 
 export default function HomeScreen() {
-  /* Rank-ups and honours announce themselves on whichever main tab the athlete reaches first, so a
-     day that never touches Legacy is not a day the moment is lost. Throttled and idempotent — see
-     the hook. The active workout is a pushed route, so it can never be interrupted by one. */
-  useEarnedMoments();
   const [friendSheetOpen, setFriendSheetOpen] = useState(false);
   /**
    * Unfinished work sitting in local storage, re-read every time Home comes into focus.
@@ -244,6 +242,17 @@ export default function HomeScreen() {
    * thing that knows what they were in the middle of.
    */
   const [resume, setResume] = useState<{ name: string; exerciseCount: number; sets: number } | null>(null);
+  /**
+   * The local autosave read counts toward the first paint like any other, so it needs the same latch
+   * `useQuery` grows for the network reads.
+   *
+   * Without it the hero is the one thing that could still pop AFTER the reveal: `resume` is null both
+   * while the read is in flight and when there is genuinely nothing to resume, so Home would open on
+   * "Train Today" and swap to "In Progress · 12 sets" a beat later — the loudest possible version of the
+   * stutter, on the card the athlete is actually looking at. Only ever set true, so returning to the tab
+   * cannot re-close the gate.
+   */
+  const [resumeSettled, setResumeSettled] = useState(false);
   useFocusEffect(
     useCallback(() => {
       let alive = true;
@@ -251,6 +260,7 @@ export default function HomeScreen() {
         if (!alive) return;
         const summary = resumeSummary(saved);
         setResume(summary ? { ...summary, sets: doneSetCount(saved!) } : null);
+        setResumeSettled(true);
       });
       return () => {
         alive = false;
@@ -283,10 +293,15 @@ export default function HomeScreen() {
   const { profile: liveProfile } = useProfile();
   // H-1 "awaiting first workout" (ONB-D17): a just-onboarded athlete (active chapter, 0 workouts) gets a
   // purpose-built hero instead of the static content, so a fresh user never lands on stale/blank Home.
-  const { data: awaiting, refetch: refetchAwaiting, loading: awaitingLoading } = useQuery(fetchAwaitingChapter, []);
-  const { data: homeChapter } = useQuery(fetchHomeChapter, []);
+  const {
+    data: awaiting,
+    refetch: refetchAwaiting,
+    loading: awaitingLoading,
+    settled: awaitingSettled,
+  } = useQuery(fetchAwaitingChapter, []);
+  const { data: homeChapter, settled: chapterSettled } = useQuery(fetchHomeChapter, []);
   // The athlete's saved programs — if any, Home reflects them instead of the empty first-program card.
-  const { data: myPrograms, refetch: refetchPrograms } = useQuery(fetchMyPrograms, []);
+  const { data: myPrograms, refetch: refetchPrograms, settled: programsSettled } = useQuery(fetchMyPrograms, []);
   // How far into the built program the athlete is, so Home previews the NEXT session rather than always
   // day 1 — and so the card matches the session the workout screen will actually open.
   /*
@@ -321,38 +336,48 @@ export default function HomeScreen() {
    * describe a program done strictly in order; with swapping and skipping it would offer the wrong
    * session the moment one was done out of turn.
    */
-  const { data: builtMarks, refetch: refetchBuiltDone } = useQuery(
-    () => (builtId ? fetchProgramSessions(builtId) : Promise.resolve([] as SessionMark[])),
-    [builtId],
-  );
+  /*
+   * ⚠ EVERY program's marks, in ONE read that depends on nothing — not `fetchProgramSessions(builtId)`.
+   *
+   * That call took the id out of `fetchMyPrograms`, so the two were strictly sequential: a round trip to
+   * learn which program, then a round trip to ask about it. Every other read on this screen starts at
+   * mount and runs alongside the rest; this one could not start until another had finished, and it now
+   * decides when the whole screen appears. It was also a lie to the gate below — with `builtId` still
+   * null it resolved INSTANTLY with `[]`, reporting itself settled before it had asked anything.
+   *
+   * `fetchAllProgramSessions` returns the same rows grouped by program (RLS already scoped them to this
+   * athlete), so the lookup is local and the fetch is parallel. See its own note.
+   */
+  const { data: allMarks, refetch: refetchBuiltDone, settled: marksSettled } = useQuery(fetchAllProgramSessions, []);
+  const builtMarks = useMemo<SessionMark[]>(() => (builtId ? (allMarks?.[builtId] ?? []) : []), [allMarks, builtId]);
   // Opt-in Home experience-level LENS (local only, ONB-Amendment-002) — undefined = loading, null = not
   // chosen (show the question), a level = show the suggested starting program. No DB write; re-askable.
-  const { data: homeLevel, refetch: refetchLevel } = useQuery(getHomeLevel, []);
+  const { data: homeLevel, refetch: refetchLevel, settled: levelSettled } = useQuery(getHomeLevel, []);
   // How they answered the starting-point question, if they have. Local; see `program-intent.ts`.
-  const { data: startChoice, refetch: refetchStartChoice } = useQuery(getStartChoice, []);
+  const { data: startChoice, refetch: refetchStartChoice, settled: startChoiceSettled } = useQuery(getStartChoice, []);
   // Goals + equipment intake (local only) — feeds the recommendation on the suggested face.
-  const { data: homeIntake, refetch: refetchIntake } = useQuery(getHomeIntake, []);
-  const { data: homeGymData, refetch: refetchHomeGym } = useQuery(fetchHomeGym, []);
+  const { data: homeIntake, refetch: refetchIntake, settled: intakeSettled } = useQuery(getHomeIntake, []);
+  const { data: homeGymData, refetch: refetchHomeGym, settled: homeGymSettled } = useQuery(fetchHomeGym, []);
   /* Your Circle's friend row, real since 0074 — the newest post from anyone the athlete is connected to.
      One post, not the feed: this is a doorway, and `/friends` is the room. Live presence is NOT read
      because there is nothing to read — an in-progress workout lives in a client-side session, not a
      table, so no athlete can observe another training. The fixture that claimed two squad-mates were
      mid-workout is retired rather than reproduced. */
-  const { data: circlePosts } = useQuery(() => fetchFriendsFeed(1), []);
+  const { data: circlePosts, settled: circleSettled } = useQuery(() => fetchFriendsFeed(1), []);
   /* The Competitions badge, real. It also advances any due challenge lifecycle transitions — there is no
      scheduler, so a season closes when someone opens a screen that reads it, and Home is the screen
      opened most. The badge is the cheap part; keeping every squad's competitions honest is the point. */
-  const { data: challengeHub } = useQuery(fetchChallengeHub, []);
+  const { data: challengeHub, settled: challengeSettled } = useQuery(fetchChallengeHub, []);
   /* Who from the circle is mid-workout (0086). Squad-mates outrank friends, and each athlete's own
      `visibility.training` audience decides whether they appear at all — "Only me" is the off switch. */
-  const { data: trainingNow } = useQuery(fetchTrainingNow, []);
+  const { data: trainingNow, settled: trainingNowSettled } = useQuery(fetchTrainingNow, []);
   const live = useMemo(() => trainingNow ?? [], [trainingNow]);
   /* Whether they have anyone at all, which an empty feed cannot tell us — "nobody posted" and "nobody to
      post" look identical from the posts alone, and they want opposite advice. */
   /* The one-off built in advance (0136). Its own read rather than part of `fetchHomeData` so an
      unapplied migration costs the hero its planned face and nothing else. */
-  const { data: planned, refetch: refetchPlanned } = useQuery(fetchPlannedWorkout, []);
-  const { data: friendLists } = useQuery(fetchFriendLists, []);
+  const { data: planned, refetch: refetchPlanned, settled: plannedSettled } = useQuery(fetchPlannedWorkout, []);
+  const { data: friendLists, settled: friendListsSettled } = useQuery(fetchFriendLists, []);
   const hasCircle = (friendLists?.friends.length ?? 0) > 0 || live.length > 0;
   const circleActivity = useMemo(() => {
     const p = (circlePosts ?? []).find((x) => !x.isMine && (x.body ?? '').trim().length > 0);
@@ -402,9 +427,8 @@ export default function HomeScreen() {
     if (built) {
       // The NEXT unfinished session, not always the first — otherwise Home would keep offering Day A
       // forever while the program's progress moved on beneath it.
-      const marks = builtMarks ?? [];
-      const done = marks.length;
-      const next = nextOpenSlot(built.structure, marks);
+      const done = builtMarks.length;
+      const next = nextOpenSlot(built.structure, builtMarks);
       const day = next?.day ?? built.structure.days.find((d) => d.main.length > 0) ?? built.structure.days[0] ?? null;
       // A planned program contributes its NAME and its 0-of-N, never a session — `hasProgramSession`
       // is what promotes the hero to a program day, and it must stay false until Start is pressed.
@@ -471,7 +495,7 @@ export default function HomeScreen() {
 
   // The Mission tile shows the REAL chapter goal now (0025), not the HOME_DATA placeholder. Primary
   // preferred, else the newest goal; count = goals still in progress. No goals → an invite to set one.
-  const { data: goalData } = useQuery(fetchActiveChapterGoals, []);
+  const { data: goalData, settled: goalsSettled } = useQuery(fetchActiveChapterGoals, []);
   const goalList = goalData?.goals ?? [];
   const { primary: primaryGoal, active: activeGoals } = goalSections(goalList);
   const missionTarget = (primaryGoal ?? activeGoals[0])?.name ?? 'Set a chapter goal';
@@ -662,7 +686,7 @@ export default function HomeScreen() {
 
   /** The session Home is offering — the one a swap moves. */
   const nextSlot = useMemo(
-    () => (anchorProgram && activeProgram ? nextOpenSlot(anchorProgram.structure, builtMarks ?? []) : null),
+    () => (anchorProgram && activeProgram ? nextOpenSlot(anchorProgram.structure, builtMarks) : null),
     [anchorProgram, activeProgram, builtMarks],
   );
 
@@ -679,9 +703,7 @@ export default function HomeScreen() {
    */
   const swapOptions = useMemo<SwapOption[]>(() => {
     if (!anchorProgram || !activeProgram || !nextSlot) return [];
-    const touched = new Set(
-      (builtMarks ?? []).filter((m) => m.weekIndex === nextSlot.weekIndex).map((m) => m.dayIndex),
-    );
+    const touched = new Set(builtMarks.filter((m) => m.weekIndex === nextSlot.weekIndex).map((m) => m.dayIndex));
     return trainingDays(plannedDays(anchorProgram.structure, nextSlot.weekIndex))
       .map((d, di) => ({ d, di }))
       .filter(({ di }) => di !== nextSlot.dayIndex && !touched.has(di))
@@ -869,6 +891,57 @@ export default function HomeScreen() {
   // suggestion, before they had picked anything. A program, and nothing less, is the first move.
   const hasProgramSignal = hasProgram;
 
+  /**
+   * ══ ONE OPEN, NOT FOURTEEN ══
+   *
+   * Home makes fourteen reads and every section used to draw the instant its OWN read landed — so the
+   * chapter block appeared, then the hero, then the mission tile, then Your Circle, then a badge on the
+   * quick actions, each shoving the next one down the screen. The PO's words for it: the home screen
+   * "doesn't all load at once… I see it all get pieced together."
+   *
+   * So the whole screen waits, and then arrives. Every first-paint read is listed here — there is no
+   * defensible subset, because any read left out is a section that appears after the rest, which is the
+   * defect itself. `HOME_READY_CEILING_MS` is what stops one slow read holding the rest hostage; the
+   * rule and its reasoning live in `domain/home/composition.ts` where they can be tested, and
+   * `app/__tests__/home-first-paint.test.mjs` fails if a fifteenth read is ever added without one.
+   *
+   * ⚠ NOTHING HERE IS ALLOWED TO GO BACKWARDS. Every flag is latched — `useQuery().settled` stays true
+   * through a refetch, `resumeSettled` is only ever set true, and the ceiling only ever fires. Home
+   * refetches five of these on every focus, so a gate that could re-close would black the screen out
+   * each time the athlete came back from another tab: a worse stutter than the one being fixed.
+   *
+   * ⚠ IT SITS ABOVE THE TOUR AND THE CEREMONY BECAUSE BOTH NOW READ IT. Everything below this point
+   * that can draw over Home has to know whether Home is visible yet — being focused stopped meaning
+   * being seen the moment the screen started holding its first paint.
+   */
+  const [ceilingReached, setCeilingReached] = useState(false);
+  useEffect(() => {
+    // setState from a timer callback, never from the effect body — the react-compiler lint errors on the
+    // latter, and a sync set here would cascade a render on every mount.
+    const t = setTimeout(() => setCeilingReached(true), HOME_READY_CEILING_MS);
+    return () => clearTimeout(t);
+  }, []);
+  const ready = isHomeReady(
+    [
+      awaitingSettled, // chapter block, Explore Forge, and which face the hero wears
+      chapterSettled, // the chapter's number, name and week/day
+      programsSettled, // hero + Current Program tile
+      marksSettled, // WHICH session of the program the hero offers
+      plannedSettled, // the one-off built for later (0136)
+      resumeSettled, // unfinished work in local storage — the loudest pop of the lot
+      levelSettled, // ┐
+      startChoiceSettled, // ├ the starting-point slot: chooser / intake / suggestion
+      intakeSettled, // │
+      homeGymSettled, // ┘
+      goalsSettled, // the Mission tile
+      circleSettled, // ┐
+      friendListsSettled, // ├ Your Circle
+      trainingNowSettled, // ┘ (also the Quick Actions "training now" count)
+      challengeSettled, // the Competitions badge — two round trips deep, so usually the last one in
+    ],
+    ceilingReached,
+  );
+
   /*
    * The two moments the guided tour hangs off, both reported from here because Home is the only screen that
    * knows which of its two faces is up (Onboarding-Amendment-003).
@@ -889,13 +962,53 @@ export default function HomeScreen() {
    * only ever needed cards to ring, and a settled Home now draws six of the seven it wants; the planner
    * already drops the seventh (Current Program) because its anchor isn't mounted.
    */
+  /*
+   * ⚠ GATED ON `ready`, NOT ON `awaitingLoading`, and the difference is the whole point now that Home
+   * holds its first paint. `awaitingLoading` goes false as soon as ONE read lands, which is well before
+   * the screen is visible — and `TourOverlay` is mounted by `AppTabs`, a sibling ABOVE the tab slot, so
+   * it draws over Home and over Home's cover alike. The tour would have spotlit real, measured,
+   * correctly-positioned cards that the athlete could not see, on a splash.
+   *
+   * Strictly stronger than the old guard: `ready` cannot be true unless the awaiting read has settled.
+   */
   useFocusEffect(
     useCallback(() => {
-      if (awaitingLoading) return;
+      if (!ready) return;
       requestTour(hasProgram || !awaiting ? 'settled' : 'first-run');
       if (hasProgramSignal) requestPrompt();
-    }, [awaitingLoading, awaiting, hasProgram, hasProgramSignal, requestPrompt, requestTour]),
+    }, [ready, awaiting, hasProgram, hasProgramSignal, requestPrompt, requestTour]),
   );
+
+  /**
+   * The reveal. The real screen is mounted and laid out the whole time UNDERNEATH this cover — so when
+   * it lifts there is nothing left to measure, position or reflow, which is the difference between a
+   * screen appearing and a screen assembling.
+   *
+   * It fades rather than cuts because the cover and the screen are different pictures; 240ms is long
+   * enough not to snap and short enough not to feel like waiting a second time.
+   *
+   * Kept mounted at opacity 0 rather than unmounted: the alternative needs a worklet callback to flip a
+   * state on the JS thread just to drop one `<Image>`, and it can only ever run once per launch anyway.
+   * `pointerEvents` is derived from `ready`, so the moment the screen is real it is also tappable.
+   */
+  const coverOpacity = useSharedValue(1);
+  useEffect(() => {
+    if (ready) coverOpacity.value = withTiming(0, { duration: 240, easing: Easing.out(Easing.ease) });
+  }, [ready, coverOpacity]);
+  const coverStyle = useAnimatedStyle(() => ({ opacity: coverOpacity.value }));
+
+  /*
+   * Rank-ups and honours announce themselves on whichever main tab the athlete reaches first, so a day
+   * that never touches Legacy is not a day the moment is lost. Throttled and idempotent — see the hook.
+   * The active workout is a pushed route, so it can never be interrupted by one.
+   *
+   * ⚠ HELD UNTIL HOME IS ACTUALLY VISIBLE, and it lives down here rather than at the top of the
+   * component for exactly that reason — `ready` is not known until every read above has reported in.
+   * A ceremony is rendered by `CeremonyProvider` at the ROOT, which is above Home and therefore above
+   * Home's own cover: unheld, a promotion earned on the last session would play its full-screen moment
+   * over the splash, on the one launch it most needed to be seen.
+   */
+  useEarnedMoments({ enabled: ready });
 
   return (
     <View style={styles.root}>
@@ -1109,6 +1222,20 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
+      {/* The splash, held over the whole screen — AppBar included — until every read above is in. Last
+          sibling so it covers the background, the bar and the scroll view alike; the sheets below it are
+          modals in their own window and cannot be open during a launch anyway. Same artwork, same
+          background and same position as the native splash and the boot hold, so the athlete sees one
+          continuous picture from the icon tap to the finished screen. */}
+      <Animated.View
+        style={[styles.cover, coverStyle]}
+        pointerEvents={ready ? 'none' : 'auto'}
+        accessibilityElementsHidden={ready}
+        importantForAccessibility={ready ? 'no-hide-descendants' : 'yes'}
+      >
+        <ForgeSplash />
+      </Animated.View>
+
       {/*
         TWO PAGES: the choice, then the cardio list.
 
@@ -1285,6 +1412,9 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
   },
+  /* Above every sibling in `root`, not merely after them: `ScreenBackground` is absolutely positioned
+     and the AppBar carries a shadow, so paint order alone is not something to rely on here. */
+  cover: { ...StyleSheet.absoluteFill, zIndex: 100 },
   menuBackdrop: {
     position: 'absolute',
     top: 0,

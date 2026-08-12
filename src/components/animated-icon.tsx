@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Dimensions, StyleSheet } from 'react-native';
-import Animated, { Easing, Keyframe } from 'react-native-reanimated';
+import { StyleSheet } from 'react-native';
+import Animated, { Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
+
+import { ForgeSplash } from '@/components/forge-splash';
 
 /**
  * The hand-off from the NATIVE splash to the first painted frame.
@@ -16,20 +18,23 @@ import { scheduleOnRN } from 'react-native-worklets';
  * never showed it. Every review of this app happens on the web preview. The one surface that renders it
  * is the one nobody can open on a Windows machine.
  *
- * The fill is now the splash background itself (`#0E0E12`, the `expo-splash-screen` plugin colour in
- * `app.json`), which is the only value that makes this component invisible — it exists to COVER the gap
- * while the first frame mounts, then scale and fade away. Any colour that is not the splash's is a flash
- * by construction, and `splash-continuity.test.mjs` now fails if the two ever drift apart.
+ * ══ AND THEN IT WAS THE RIGHT COLOUR WITH THE WRONG PICTURE ══
+ *
+ * Painting the splash's own `#0E0E12` fixed the flash of a different PRODUCT and left a flash of a
+ * different FRAME: a flat rectangle where the OS had just been showing the carved pillars. The pillars
+ * vanished for 600ms and came back. So the fill is now `ForgeSplash` — the splash reproduced in JS,
+ * artwork and all — and this component finally does what its name says, which is nothing visible.
+ *
+ * The colour lives in `ForgeSplash` now, and `splash-continuity.test.mjs` still holds it equal to
+ * `app.json`'s. Any colour that is not the splash's is a flash by construction.
+ *
+ * ⚠ NO SCALE. The keyframe used to blow the view up to `screenHeight / 90` and shrink it back — the
+ * Expo template's logo-zoom, harmless while the content was a flat colour and wrong the moment the
+ * content became artwork, because the pillars would have rushed in from nine times their size. A plain
+ * fade is all a cover needs: what is underneath it (the boot hold, then Home's own hold) is the same
+ * picture, so there is nothing for the athlete to see happen.
  */
-const INITIAL_SCALE_FACTOR = Dimensions.get('screen').height / 90;
 const DURATION = 600;
-
-/**
- * Must equal `expo.plugins['expo-splash-screen'].backgroundColor` in `app.json`.
- * Not imported from there: this runs in the render path and `app.json` is build config, so the guard
- * asserts the equality instead of the bundle carrying a JSON read to prove it.
- */
-export const SPLASH_BACKGROUND = '#0E0E12';
 
 export function AnimatedSplashOverlay() {
   const [visible, setVisible] = useState(true);
@@ -37,22 +42,9 @@ export function AnimatedSplashOverlay() {
   if (!visible) return null;
 
   const splashKeyframe = new Keyframe({
-    0: {
-      transform: [{ scale: INITIAL_SCALE_FACTOR }],
-      opacity: 1,
-    },
-    20: {
-      opacity: 1,
-    },
-    70: {
-      opacity: 0,
-      easing: Easing.elastic(0.7),
-    },
-    100: {
-      opacity: 0,
-      transform: [{ scale: 1 }],
-      easing: Easing.elastic(0.7),
-    },
+    0: { opacity: 1 },
+    70: { opacity: 1 },
+    100: { opacity: 0 },
   });
 
   return (
@@ -63,15 +55,16 @@ export function AnimatedSplashOverlay() {
           scheduleOnRN(setVisible, false);
         }
       })}
-      style={styles.backgroundSolidColor}
-    />
+      style={styles.cover}
+    >
+      <ForgeSplash />
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  backgroundSolidColor: {
+  cover: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: SPLASH_BACKGROUND,
     zIndex: 1000,
   },
 });

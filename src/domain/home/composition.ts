@@ -175,6 +175,43 @@ export function composeHome(s: HomeStateInput): HomeComposition {
   };
 }
 
+/**
+ * How long Home may hold the splash before it gives up waiting and draws what it has.
+ *
+ * A CEILING, NOT A DELAY — nothing waits for this timer; it only decides when waiting stops being worth
+ * it. Home makes roughly a dozen reads and the slowest one sets the hold, and one of them
+ * (`fetchChallengeHub`) is two round trips deep because it advances challenge lifecycles on the way past.
+ * A held splash reads as a launch for about two seconds and as a hang after that, so past this point a
+ * nearly-complete Home with one straggler still landing is the better of the two bad frames.
+ */
+export const HOME_READY_CEILING_MS = 2500;
+
+/**
+ * IS HOME ALLOWED TO APPEAR YET — every first-paint read is in, or the ceiling has run out.
+ *
+ * ══ WHY THE WHOLE SCREEN WAITS FOR ALL OF THEM ══
+ *
+ * Home's sections each had their own read, so each appeared the moment its own read landed: the chapter
+ * block, then the hero, then the mission tile, then Your Circle, then a badge on the quick actions.
+ * Twelve answers arriving separately is twelve reflows, and the athlete watches their home screen being
+ * assembled in front of them every single launch. Reported by the PO as the screen "getting pieced
+ * together" — which is exactly what it was doing.
+ *
+ * There is no cleverer rule available here. Any subset that draws early is a section that appears before
+ * the rest, and the pop-in is the defect. So the answer is all of them, and the ceiling below is what
+ * stops "all of them" from meaning "forever".
+ *
+ * ⚠ THE CALLER MUST PASS LATCHED FLAGS. `useQuery().settled` never returns to false once a read has
+ * answered, which is what keeps this monotonic: Home refetches on every focus, and a gate that could
+ * re-close would black out the screen each time the athlete came back from another tab.
+ *
+ * Reads that have FAILED count as settled on purpose — see `useQuery`. A dead read is not a reason to
+ * stare at a splash; it is a reason to draw the screen without whatever it was carrying.
+ */
+export function isHomeReady(reads: readonly boolean[], ceilingReached: boolean): boolean {
+  return ceilingReached || reads.every(Boolean);
+}
+
 /** The minimum a Home program row has to expose for the selection below. */
 export interface HomeProgramRow {
   id: string;

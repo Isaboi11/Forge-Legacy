@@ -4,6 +4,7 @@ interface QueryState<T> {
   data: T | null;
   loading: boolean;
   error: string | null;
+  settled: boolean;
 }
 
 /**
@@ -36,11 +37,29 @@ export function errorMessage(e: unknown): string {
   return String(e);
 }
 
+/**
+ * `settled` — this read has come back AT LEAST ONCE, by either door.
+ *
+ * ══ WHY IT IS NOT `!loading`, AND WHY IT LATCHES ══
+ *
+ * It exists for callers that hold a whole screen until every read is in (Home). Two properties make that
+ * possible, and `loading` has neither:
+ *
+ *   IT COUNTS A FAILURE AS AN ANSWER. A read that threw is never going to arrive, and a screen waiting
+ *   for `loading` to go false on a query that already rejected is waiting for a frame that has been and
+ *   gone. Error IS settled; what the caller draws about it is the caller's business.
+ *
+ *   IT NEVER GOES BACK. `refetch` deliberately sets `loading` true again — that is what makes a screen's
+ *   spinner reappear — so a first-paint gate reading `loading` would BLANK ITSELF every time the athlete
+ *   came back to the tab, which is a far worse stutter than the one it was added to fix. Home refetches
+ *   five queries on every focus. `settled` answers "has this ever resolved", so it is true from the first
+ *   answer to the end of the mount.
+ */
 export function useQuery<T>(
   fn: () => Promise<T>,
   deps: readonly unknown[] = [],
-): { data: T | null; loading: boolean; error: string | null; refetch: () => void } {
-  const [state, setState] = useState<QueryState<T>>({ data: null, loading: true, error: null });
+): { data: T | null; loading: boolean; error: string | null; settled: boolean; refetch: () => void } {
+  const [state, setState] = useState<QueryState<T>>({ data: null, loading: true, error: null, settled: false });
   const [tick, setTick] = useState(0);
 
   const refetch = useCallback(() => {
@@ -52,10 +71,10 @@ export function useQuery<T>(
     let alive = true;
     fn().then(
       (result) => {
-        if (alive) setState({ data: result, loading: false, error: null });
+        if (alive) setState({ data: result, loading: false, error: null, settled: true });
       },
       (e: unknown) => {
-        if (alive) setState({ data: null, loading: false, error: errorMessage(e) });
+        if (alive) setState({ data: null, loading: false, error: errorMessage(e), settled: true });
       },
     );
     return () => {
@@ -65,5 +84,5 @@ export function useQuery<T>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps, tick]);
 
-  return { data: state.data, loading: state.loading, error: state.error, refetch };
+  return { data: state.data, loading: state.loading, error: state.error, settled: state.settled, refetch };
 }

@@ -4,14 +4,14 @@ import {
 } from '@expo-google-fonts/playfair-display';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { useFonts } from 'expo-font';
-import { ActivityIndicator, StyleSheet, useColorScheme, View } from 'react-native';
+import { useColorScheme } from 'react-native';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { ForgeSplash } from '@/components/forge-splash';
 import { AnalyticsTracker } from '@/components/analytics-tracker';
 import { CoachBubble } from '@/components/forge/CoachBubble';
 import { OverlayBoundary } from '@/components/overlay-boundary';
-import { flColor } from '@/constants/foundation';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { ProfileProvider, useProfile } from '@/lib/profile';
 import { PushProvider } from '@/lib/push';
@@ -136,9 +136,11 @@ function RootNavigator() {
     profileLoading,
     onboardedAt: profile?.onboardedAt,
   });
-  // Hold a calm, on-brand loading state while auth/profile resolve — never a flash of the wrong destination.
-  // The animated splash overlay covers the first ~600ms on top of this; if the reads run longer, this dark
-  // fill (not a blank, and not the old onboarding flash) carries through until the real route is known.
+  // Hold the SPLASH while auth/profile resolve — never a flash of the wrong destination, and never a
+  // second picture either. This used to be a bronze `ActivityIndicator` on `flColor.base`, which meant
+  // the launch showed the carved pillars, then took them away, then showed a spinner on a slightly
+  // different dark. `ForgeSplash` is the native splash reproduced in JS, so a slow read now looks like
+  // the app still opening rather than like a different screen that arrived first.
   if (route === 'splash') return <BootLoading />;
   return (
     <Stack screenOptions={{ headerShown: false }}>
@@ -268,17 +270,14 @@ function RootNavigator() {
   );
 }
 
-/** Boot loading state — a dark, app-matching fill with a quiet bronze spinner, shown while the boot router
- *  resolves (session × onboarded). Replaces the old `null` so a slow read never reveals a blank or the wrong
- *  screen underneath the fading splash. */
+/**
+ * Boot hold — the splash, still up, while the boot router resolves (session × onboarded).
+ *
+ * It is the same picture the OS was already showing and the same one Home holds behind its own first
+ * paint, so the three phases of a cold launch are one unbroken frame. There is nothing to spin: the
+ * athlete is not waiting on a task they started, they are waiting on the app to open, and an app that is
+ * opening looks like its splash screen.
+ */
 function BootLoading() {
-  return (
-    <View style={styles.boot}>
-      <ActivityIndicator color={flColor.bronze400} />
-    </View>
-  );
+  return <ForgeSplash />;
 }
-
-const styles = StyleSheet.create({
-  boot: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.base },
-});

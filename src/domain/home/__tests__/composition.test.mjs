@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { composeHome, selectHomePrograms } from '../composition.ts';
+import { composeHome, isHomeReady, selectHomePrograms, HOME_READY_CEILING_MS } from '../composition.ts';
 
 /** A settled athlete with nothing going on — the base every case below varies one field from. */
 const BASE = {
@@ -295,4 +295,36 @@ test('a planned workout answers the starting-point question on its own', () => {
   // was added to fix.
   const c = compose({ awaiting: true, hasPlannedWorkout: true });
   assert.equal(c.hero, 'planned');
+});
+
+/*
+ * ══ isHomeReady — the gate that turned twelve arrivals into one ══
+ *
+ * Home's sections each drew when their own read landed, so the screen visibly assembled itself on every
+ * launch (PO: "I see it all get pieced together"). These hold the two properties that make holding the
+ * whole screen safe rather than a hang.
+ */
+
+test('Home waits for every read, and appears the moment the last one lands', () => {
+  assert.equal(isHomeReady([true, true, false], false), false, 'one outstanding read still holds it');
+  assert.equal(isHomeReady([true, true, true], false), true);
+});
+
+test('the ceiling releases the screen even with reads still outstanding', () => {
+  // The failure this prevents is the worst one available here: a splash that never lifts. One hung
+  // request must cost Home a section, not the launch.
+  assert.equal(isHomeReady([true, false, false], true), true);
+  assert.equal(isHomeReady([false], true), true);
+});
+
+test('a screen with nothing to wait for is ready immediately', () => {
+  // Not a curiosity — `[].every()` is true, so this is the behaviour that makes the gate degrade to
+  // "draw now" rather than "wait forever" if the caller's list is ever emptied.
+  assert.equal(isHomeReady([], false), true);
+});
+
+test('the ceiling is a launch-length wait, not a timeout', () => {
+  // Bounds, not a value: past ~2.5s a held splash stops reading as a launch and starts reading as a
+  // hang, and under a second it would fire before the reads it exists to wait for.
+  assert.ok(HOME_READY_CEILING_MS >= 1500 && HOME_READY_CEILING_MS <= 3000, `${HOME_READY_CEILING_MS}ms`);
 });

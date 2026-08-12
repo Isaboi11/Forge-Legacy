@@ -56,13 +56,30 @@ export function invalidateEarnedMoments(): void {
 export interface EarnedMomentsOptions {
   /** Fired only when a promotion was actually persisted, so the caller can re-read its own display. */
   onRankChanged?: () => void;
+  /**
+   * Whether the screen is actually in front of the athlete yet. Default true — being focused IS the
+   * answer for three of the four tabs.
+   *
+   * ⚠ HOME IS THE EXCEPTION, because Home holds its first paint behind the splash until every read is
+   * in. Focused and VISIBLE stopped being the same thing there, and a ceremony is a full-screen
+   * takeover rendered by `CeremonyProvider` at the root — above Home and therefore above its cover. A
+   * rank-up would have announced itself over the splash on the launch that earned it: the biggest
+   * moment the app has, played to a screen that had not opened yet.
+   *
+   * ⚠ AND IT MUST NOT BURN THE THROTTLE. The early return below sits ABOVE `lastRunAt`, so a
+   * not-yet-visible screen costs nothing and the real evaluation still happens the moment it appears.
+   * Setting the gate first would swallow the check for a full minute — exactly the missed moment this
+   * hook exists to prevent.
+   */
+  enabled?: boolean;
 }
 
-export function useEarnedMoments({ onRankChanged }: EarnedMomentsOptions = {}): void {
+export function useEarnedMoments({ onRankChanged, enabled = true }: EarnedMomentsOptions = {}): void {
   const { enqueue } = useCeremony();
 
   useFocusEffect(
     useCallback(() => {
+      if (!enabled) return;
       const now = Date.now();
       if (now - lastRunAt < MIN_GAP_MS) return;
       lastRunAt = now;
@@ -101,6 +118,6 @@ export function useEarnedMoments({ onRankChanged }: EarnedMomentsOptions = {}): 
       return () => {
         cancelled = true;
       };
-    }, [enqueue, onRankChanged]),
+    }, [enabled, enqueue, onRankChanged]),
   );
 }
