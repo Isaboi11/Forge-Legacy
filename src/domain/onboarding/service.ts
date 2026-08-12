@@ -1,4 +1,7 @@
 import { supabase } from '@/lib/supabase';
+import { saveAppPrefs } from '@/data/settings-live';
+import { APP_PREFS_DEFAULTS } from '@/domain/settings/preferences';
+import type { UnitSystem } from '@/domain/settings/units';
 import { uploadAvatar } from '@/lib/avatar';
 import { chapterNameFrom, DEFAULT_CHAPTER_I_TITLE } from '@/domain/legacy/chapter-name';
 import { firstNameOf, initialsOf } from './derive';
@@ -33,6 +36,15 @@ export interface OnboardingInput {
    * the default, which is what "Skip" writes.
    */
   chapterTitle?: string | null;
+  /**
+   * Lbs or Kgs, as answered on the Account step.
+   *
+   * ⚠ THIS WAS ASKED AND THROWN AWAY. The step has always shown the choice under the hint *"Weights,
+   * distance and pace across the app"*, and `complete_onboarding` never received it — so every athlete
+   * who chose Kgs landed on the imperial default and had no reason to suspect the app had not heard
+   * them. Reported as weights and distances in the wrong system by somebody certain they had set it.
+   */
+  units?: UnitSystem | null;
 }
 
 /**
@@ -64,4 +76,26 @@ export async function completeOnboarding(input: OnboardingInput): Promise<void> 
     p_chapter_name: chapterNameFrom(input.chapterTitle ?? ''),
   });
   if (error) throw error;
+
+  /*
+   * THE UNITS ANSWER, PERSISTED AT LAST.
+   *
+   * ⚠ WRITTEN AFTER THE RPC RATHER THAN THROUGH IT, deliberately. `complete_onboarding`'s signature is
+   * fixed in SQL and every client calls it; widening it means a migration applied by hand, and until
+   * that migration ran the app would be sending an argument the database does not have. Units live in
+   * `profiles.app_prefs` (0022) — the column the whole settings ecosystem already reads — so this is a
+   * write to the right place rather than a new one.
+   *
+   * ⚠ AND IT MUST NEVER FAIL ONBOARDING. The account, the handle and the first chapter are already
+   * committed by the line above; throwing here would strand somebody with a real account on a screen
+   * that says it did not work. A dropped preference costs one tap in Settings, which is exactly what
+   * the step's own hint promises.
+   */
+  if (input.units) {
+    try {
+      await saveAppPrefs({ ...APP_PREFS_DEFAULTS, units: input.units });
+    } catch {
+      // ignore — the athlete is onboarded; the default stands and Settings can change it.
+    }
+  }
 }

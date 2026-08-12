@@ -86,6 +86,8 @@ export default function Onboarding() {
         sex: data.sex ?? 'male',
         photoUri: null, // optional photo picker is a fast-follow
         chapterTitle: data.chapterTitle,
+        // Asked on the Account step since onboarding was built, and discarded until now.
+        units: data.units,
         // athlete_type defaults to Hybrid (type isn't asked) and environment is null (unknown) — both are
         // deferred to opt-in, post-Home surfaces per ONB-Amendment-002 (ONB-A2-D1).
       });

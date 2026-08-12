@@ -111,9 +111,20 @@ test('Membership stays its own group — billing is a different mental model', (
   const s = settingsSections({});
   const membership = s.find((x) => x.key === 'membership');
   assert.equal(membership.rows.length, 1);
-  assert.equal(membership.rows[0].value, 'Founder');
+  assert.equal(membership.rows[0].value, 'Free while testing');
   assert.deepEqual(membership.rows[0].action, { type: 'sheet', key: 'membership' });
   assert.ok(!s.some((x) => x.key === 'training' && x.rows.some((r) => r.key === 'sub')), 'never folded into Training');
+});
+
+test('the membership sheet claims no billing that does not exist', () => {
+  // Shipped design-comp copy told every tester they held a Founder plan that "renews yearly" and was
+  // "billed through your app store". There is no entitlement, no billing integration and no such tier —
+  // an inaccurate subscription disclosure (App Store 3.1.2) shown to the exact cohort we intend to charge.
+  const text = LEGAL.membership.body.join(' ') + ' ' + LEGAL.membership.updated;
+  for (const claim of [/renews? yearly/i, /billing is handled/i, /next charge/i, /\bcancel at any time\b/i, /\bFounder\b/]) {
+    assert.ok(!claim.test(text), `membership copy still asserts: ${claim}`);
+  }
+  assert.match(text, /free while we’re testing/i, 'says what is actually true');
 });
 
 test('the home gym row round-trips back to settings', () => {

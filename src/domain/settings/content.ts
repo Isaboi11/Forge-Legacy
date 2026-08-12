@@ -27,12 +27,12 @@ export const LEGAL: Record<LegalKey, LegalDocument> = {
   membership: {
     host: 'forgelegacy.app/membership',
     title: 'Membership',
-    updated: 'Forge Legacy · Founder',
+    updated: 'Forge Legacy · Free while testing',
     body: [
-      'You hold Founder access — every training, Legacy, and competition feature is unlocked, with no tier above it.',
+      'Forge is free while we’re testing. There is no subscription, no billing, and nothing to cancel.',
       'Forge is not pay-to-win. Ranks, records, and honors are earned in the work and can never be purchased. Membership keeps the forge lit; it never buys a place on the podium.',
-      'Your plan renews yearly. Billing is handled through your app store, where you can review the next charge or cancel at any time — your Legacy remains yours either way.',
-      'Questions about membership? Reach us at forgelegacy.app/membership.',
+      'Everything you log is yours and stays free — your history, your ranks, your records, your honors. That does not change when paid plans arrive.',
+      'When they do, we’ll say so in the app first, with the price and the terms, before anything changes.',
     ],
   },
   terms: {
@@ -90,7 +90,7 @@ export const SIGN_OUT_CONFIRM = {
 export interface SettingsRow {
   key: string;
   label: string;
-  /** Trailing value text, e.g. "Founder" or the home-gym item count. Empty renders just a chevron. */
+  /** Trailing value text, e.g. the membership state or the home-gym item count. Empty renders just a chevron. */
   value?: string;
   /** What tapping does: push a route, or open one of the in-app sheets. */
   action: { type: 'route'; path: string } | { type: 'sheet'; key: LegalKey | 'about' };
@@ -147,7 +147,7 @@ export function settingsSections(opts: {
   sections.push({
     key: 'membership',
     label: 'Membership',
-    rows: [{ key: 'sub', label: 'Subscription', value: 'Founder', action: { type: 'sheet', key: 'membership' } }],
+    rows: [{ key: 'sub', label: 'Subscription', value: 'Free while testing', action: { type: 'sheet', key: 'membership' } }],
   });
 
   sections.push({

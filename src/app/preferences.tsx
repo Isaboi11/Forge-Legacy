@@ -14,6 +14,7 @@ import { APP_PREFS_DEFAULTS, EXPERIENCE_TOGGLES, type AppPrefs, type ExperienceK
 import { INTENSITY_LEVELS, type IntensityLevel } from '@/domain/coach/rulebook/intensity';
 import { previewSquat, type UnitSystem } from '@/domain/settings/units';
 import { useAppPrefs } from '@/lib/settings';
+import { useToast } from '@/hooks/useCeremony';
 import { useQuery } from '@/lib/useQuery';
 
 /**
@@ -55,14 +56,32 @@ export default function PreferencesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { refetch } = useAppPrefs();
+  const { showToast } = useToast();
 
   const { data, loading } = useQuery(fetchAppPrefs, []);
   const [override, setOverride] = useState<Partial<AppPrefs>>({});
   const prefs: AppPrefs = { ...APP_PREFS_DEFAULTS, ...data, ...override };
 
+  /**
+   * ⚠ THE OPTIMISTIC OVERRIDE IS ROLLED BACK ON FAILURE, AND IT WAS NOT.
+   *
+   * `setOverride` moves the control the instant it is tapped, which is right — a settings toggle that
+   * waits on a round trip feels broken. But the write can reject (`writeColumn` throws), and there was
+   * no `catch`: the promise rejected unhandled, the override stayed, and **the screen went on showing a
+   * value the server had never accepted.** An athlete would set Lbs, see Lbs, and find the rest of the
+   * app still in kilograms with no way to tell why — which is exactly how this was reported.
+   *
+   * A settings screen that lies about what it saved is worse than one that fails loudly.
+   */
   const commit = (next: AppPrefs) => {
+    const before = prefs;
     setOverride((o) => ({ ...o, ...next }));
-    void saveAppPrefs(next).then(() => refetch()); // refetch so useUnits updates every other screen
+    void saveAppPrefs(next)
+      .then(() => refetch()) // refetch so useUnits updates every other screen
+      .catch(() => {
+        setOverride((o) => ({ ...o, ...before }));
+        showToast('Couldn’t save that — check your connection and try again.');
+      });
   };
 
   const setUnits = (units: UnitSystem) => commit({ ...prefs, units });
