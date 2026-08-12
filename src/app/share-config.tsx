@@ -8,6 +8,7 @@ import { TransformationLayout } from '@/components/forge/TransformationLayout';
 import { addSquadPost, type ComparePair, type EntryTemplate, type PoseShot, type ShareTemplate, type TransformationLayoutData } from '@/data/squad-feed-live';
 import { fetchFriendLists } from '@/data/friends-live';
 import { createFriendPost } from '@/data/friends-feed-live';
+import { ShareCardHost } from '@/lib/share-card-host';
 import { saveShareCard } from '@/lib/share-image';
 import { fetchMySquads, type SquadSummary } from '@/data/squad-live';
 import { fetchTransformationEntries, filledPoses, type PoseKey } from '@/data/transformation-live';
@@ -311,7 +312,10 @@ export default function ShareConfigRoute() {
         fileName: `forge-legacy-${(chapterName ?? 'transformation').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
       });
       setSavingImage(false);
-      showToast(result.ok ? 'Saved to your downloads' : result.reason);
+      // The verb has to match what actually happened. Native copies the card (writing to the camera roll
+      // needs a native module and therefore a new build); web downloads it. Saying "Saved" on a device
+      // that copied would send the athlete to a Photos app with nothing in it.
+      showToast(result.ok ? (result.via === 'clipboard' ? 'Card copied — paste it anywhere' : 'Saved to your downloads') : result.reason);
     } catch {
       setSavingImage(false);
       showToast('Couldn’t save the image.');
@@ -343,6 +347,9 @@ export default function ShareConfigRoute() {
   return (
     <View style={styles.root}>
       <Pressable style={styles.scrim} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Dismiss" />
+      {/* Off-screen rasteriser for Save image. react-native-svg can only snapshot a MOUNTED Svg, so the
+          card has to live in this tree before it can become a PNG — see share-card-host. */}
+      <ShareCardHost />
       <View style={styles.sheet}>
         <Handle />
         <View style={styles.header}>

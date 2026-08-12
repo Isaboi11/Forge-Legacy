@@ -265,5 +265,5 @@ export async function saveShareCard(spec: ShareCardSpec): Promise<SaveResult> {
   a.remove();
   // Revoked on the next tick: revoking synchronously can cancel the download in some browsers.
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
-  return { ok: true };
+  return { ok: true, via: 'download' };
 }
