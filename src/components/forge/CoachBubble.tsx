@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { flColor } from '@/constants/foundation';
+import { flColor, flFont } from '@/constants/foundation';
+import { hasMetHolt } from '@/lib/coach-thread';
 import { loadProgramDraft } from '@/lib/program-draft';
 import { useCeremony } from '@/hooks/useCeremony';
 import { useTour } from '@/hooks/useTour';
@@ -81,6 +82,26 @@ export function CoachBubble() {
    */
   const [teaser, setTeaser] = useState<string | null>(null);
 
+  /*
+   * ══ AN INTRODUCTION IS THE ONE GENERIC LINE THAT EARNS ITS PLACE ══
+   *
+   * Reported by the PO: **"we need to somehow let everyone know who Holt is. Some sort of prompt coming
+   * from the token in the bottom right letting them know he's there. And then after the first click he
+   * doesn't have that anymore."** They are right, and the gap was real: the whole coach was behind an
+   * unlabelled bronze medallion. An athlete who never guessed it was tappable never met him at all —
+   * `hasMetHolt` has been sitting there since the sheet was built, recording an introduction most people
+   * were never in a position to receive.
+   *
+   * ⚠ AND IT DOES NOT BREAK §3.5 ("never generic and never a nag"). That rule exists to stop the app
+   * talking to fill a silence — "Ready to train?", "Need a program?" — questions with no answer behind
+   * them. This is not a prompt; it is a label on an unlabelled control, it is true exactly once, and the
+   * tap it asks for is the thing that retires it forever. A nag is something you have to dismiss twice.
+   *
+   * `null` while unknown, so nothing flashes on screen before the answer arrives. An unreadable flag
+   * reads as "new" (see `hasMetHolt`) — a second introduction is a small cost, a missing one is not.
+   */
+  const [met, setMet] = useState<boolean | null>(null);
+
   useEffect(() => {
     let alive = true;
     void loadProgramDraft().then((d) => {
@@ -88,10 +109,33 @@ export function CoachBubble() {
       const hasContent = d.days?.some((day) => day.main.length > 0) ?? false;
       if (hasContent && d.name) setTeaser(`${d.name} is still sitting in the builder.`);
     });
+    void hasMetHolt().then((v) => {
+      if (alive) setMet(v);
+    });
     return () => {
       alive = false;
     };
   }, []);
+
+  /**
+   * Open him — and stop introducing him.
+   *
+   * The flag is PERSISTED BY THE SHEET, on the same read that decides whether to play the introduction,
+   * so the two can never disagree about whether it actually happened. This only closes the teaser for
+   * the rest of this session, which is what "after the first click he doesn't have that anymore" asks
+   * for and is all this side is entitled to claim.
+   */
+  const openCoach = () => {
+    setMet(true);
+    setOpen(true);
+  };
+
+  /*
+   * WHICH LINE, WHEN BOTH ARE TRUE. The introduction wins: a note FROM Holt about a draft you left in the
+   * builder only makes sense once you know there is a Holt. Everyone sees this exactly once.
+   */
+  const introducing = met === false;
+  const line = introducing ? 'I build the training. Tap me for a program or a session.' : teaser;
   const insets = useSafeAreaInsets();
   const { session } = useWorkoutSession();
   const { current: ceremony } = useCeremony();
@@ -116,14 +160,17 @@ export function CoachBubble() {
       // 18px above the tab bar, 20 from the right edge (PROMPT §3.1).
       style={[styles.wrap, { bottom: 96 + insets.bottom, right: 20 }]}
     >
-      {teaser ? (
+      {line ? (
         <Pressable
-          onPress={() => setOpen(true)}
+          onPress={openCoach}
           accessibilityRole="button"
-          accessibilityLabel={teaser}
-          style={styles.teaser}
+          accessibilityLabel={introducing ? `Coach Holt — ${line}` : line}
+          style={[styles.teaser, introducing && styles.teaserIntro]}
         >
-          <Text style={styles.teaserText}>{teaser}</Text>
+          {/* Named on the introduction and only there. The whole complaint was that nobody knows who the
+              medallion is, and a line in his voice with no name on it does not answer that. */}
+          {introducing ? <Text style={styles.teaserName}>Coach Holt</Text> : null}
+          <Text style={[styles.teaserText, introducing && styles.teaserTextIntro]}>{line}</Text>
         </Pressable>
       ) : null}
       {/* ⚠ THE MARK, NOT A LETTER. `coach-holt-mark.png` cover-filled, per PROMPT §3.2 — the struck
@@ -131,7 +178,7 @@ export function CoachBubble() {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Open Coach Holt"
-        onPress={() => setOpen(true)}
+        onPress={openCoach}
         style={({ pressed }) => [styles.bubble, pressed && styles.pressed]}
       >
         <HoltMark size={BUBBLE_SIZE} />
@@ -159,6 +206,12 @@ const styles = StyleSheet.create({
     borderColor: flColor.bronzeBorderSubtle,
   },
   teaserText: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
+  /* The introduction is the one teaser that has to be NOTICED — it is competing with an athlete's eye
+     going straight past a corner of the screen they have learned holds nothing. Bronze edge and tint,
+     the same language the mark itself wears, so it reads as coming FROM the medallion. */
+  teaserIntro: { maxWidth: 226, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800 },
+  teaserName: { fontFamily: flFont.display, fontSize: 13.5, fontWeight: '600', letterSpacing: 0.2, color: flColor.bronze400, marginBottom: 2 },
+  teaserTextIntro: { color: flColor.cream100 },
   bubble: {
     width: BUBBLE_SIZE,
     height: BUBBLE_SIZE,
