@@ -31,7 +31,7 @@ import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/us
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
-import { useCoachIntensity, useSoundEnabled, useUnits } from '@/lib/settings';
+import { useAppPrefs, useCoachIntensity, useSoundEnabled, useUnits } from '@/lib/settings';
 import { loadContextFor } from '@/domain/program/percent-max';
 import { unitLabel, weightInExact } from '@/domain/settings/units';
 import { playRestDing, primeDing } from '@/lib/ding';
@@ -70,6 +70,7 @@ import { blockAt, breakBlock, endsSupersetRound, makeSuperset, nextInSuperset, s
 import { doneSetCount, hasLoggedSet, PR_MAX_REPS } from '@/domain/workout/metrics';
 import { perSideFor } from '@/domain/workout/per-side-core';
 import { continueWorkout, fetchLastNotes, saveWorkout, type LastNote } from '@/domain/workout/save';
+import { saveAppPrefs } from '@/data/settings-live';
 import { fetchLiftHistory, liftId, type LiftHistory } from '@/data/lift-history-live';
 import { backOffTo, incrementFor, progressionFor, sessionPerformance, type Progression } from '@/domain/coach/progression';
 import { DEFAULT_HOLD_SEC, itemByKey, itemByName } from '@/domain/exercise-picker/data';
@@ -342,6 +343,9 @@ export default function WorkoutScreen() {
    * that rather than the middle one, so a new phone never quietly unlocks a harder coach.
    */
   const coachIntensity = useCoachIntensity();
+  /* The whole blob and its refetch, so the in-session dial writes the SAME field `/preferences` writes
+     rather than a second copy that could disagree with it. */
+  const { prefs: appPrefs, refetch: refetchPrefs } = useAppPrefs();
   const coachProfile = useMemo(() => profileFor(coachIntensity, experience), [coachIntensity, experience]);
 
   /* The last thing they said about each of these lifts. Keyed by catalogKey ?? name, the same identity
@@ -2719,6 +2723,12 @@ export default function WorkoutScreen() {
              all are — the sheet just draws them. Null on either side means that option is not offered
              rather than offered and useless: no load advice on a run, a plank or a to-failure set, and
              nothing to take off a bar that is already empty. */
+          /* The dial, where it gets noticed. `saveAppPrefs` writes the same field `/preferences` writes,
+             and `refetch` pushes it back through the provider so the coach's very next line uses it. */
+          intensity={coachIntensity}
+          onSetIntensity={(level) => {
+            void saveAppPrefs({ ...appPrefs, coachIntensity: level }).then(() => refetchPrefs());
+          }}
           currentLoad={coachLoad}
           lighterTo={coachLighter}
           heavierTo={coachHeavier}

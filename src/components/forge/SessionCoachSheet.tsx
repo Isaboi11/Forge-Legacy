@@ -3,6 +3,7 @@ import Svg, { Path } from 'react-native-svg';
 
 import { flColor, flRadius } from '@/constants/foundation';
 import { HoltMark } from '@/components/forge/HoltMark';
+import { INTENSITY_LEVELS, type IntensityLevel } from '@/domain/coach/rulebook/intensity';
 
 /**
  * Coach Holt, mid-set.
@@ -37,6 +38,17 @@ import { HoltMark } from '@/components/forge/HoltMark';
  *   how the last one went (W9-Amendment-005 D-3 lifted §6.2's ban for *coaching*, not for scoring).
  * · It offers no weight chip it cannot name a real number for — see `lighterTo` / `heavierTo`.
  */
+/**
+ * One word each, because this row is read between sets. The sentences live on `/preferences`, where
+ * there is room for them and where nobody is holding a bar.
+ */
+const INTENSITY_CHIP: Record<IntensityLevel, string> = {
+  reminders: 'Cues only',
+  steady: 'Steady',
+  push: 'Push me',
+  drive: 'Drive me',
+};
+
 export function SessionCoachSheet({
   onClose,
   exerciseName,
@@ -56,6 +68,8 @@ export function SessionCoachSheet({
   onBreakSuperset,
   onAdd,
   onSkip,
+  intensity,
+  onSetIntensity,
 }: {
   onClose: () => void;
   exerciseName: string;
@@ -66,6 +80,16 @@ export function SessionCoachSheet({
   lighterTo: number | null;
   heavierTo: number | null;
   onSetLoad: (to: number) => void;
+  /**
+   * How hard Holt is pushing right now, and how to change it.
+   *
+   * ⚠ THIS MATTERS MORE THAN THE SETTINGS SCREEN. The moment an athlete notices the dial is wrong is
+   * the moment he says something they did not want, and that moment is in a gym with one hand free —
+   * not in Account Settings two days later. Same value, same store; this is just the door that is
+   * actually near the problem.
+   */
+  intensity: IntensityLevel;
+  onSetIntensity: (level: IntensityLevel) => void;
   canSuperset: boolean;
   isSuperset: boolean;
   supersetWithName: string | null;
@@ -142,6 +166,27 @@ export function SessionCoachSheet({
               ) : null}
               <Chip label="Add a movement" onPress={run(onAdd)} />
               <Chip label="Move past this" onPress={run(onSkip)} />
+            </View>
+          </View>
+
+          {/*
+            HOW HARD HE PUSHES — the same dial as Preferences, put where it gets noticed.
+
+            ⚠ IT DOES NOT CLOSE THE SHEET. Every other chip here is an action on the workout and leaving
+            is the right ending for those; this one is a correction to the thing the athlete is reading,
+            and closing on it would hide whether it worked. Tapping again moves it again.
+          */}
+          <View style={styles.group}>
+            <Text style={styles.groupLabel}>HOW HARD I PUSH</Text>
+            <View style={styles.chipRow}>
+              {INTENSITY_LEVELS.map((level) => (
+                <Chip
+                  key={level}
+                  label={INTENSITY_CHIP[level]}
+                  on={intensity === level}
+                  onPress={() => onSetIntensity(level)}
+                />
+              ))}
             </View>
           </View>
         </ScrollView>
