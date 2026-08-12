@@ -14,6 +14,7 @@ import { CommitmentPanel, AcceptCommitment } from '@/components/forge/compositio
 import { fetchSquadByCode, joinSquadByCode, type SquadByCode } from '@/data/squad-live';
 import { errorMessage } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
+import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 
 /**
@@ -37,6 +38,7 @@ export default function JoinSquadRoute() {
   const [squad, setSquad] = useState<SquadByCode | null>(null);
   const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
+  const guard = usePremiumGate();
 
   const canContinue = code.trim().length >= 4 && !busy;
 
@@ -88,6 +90,10 @@ export default function JoinSquadRoute() {
 
   const onContinue = () => {
     if (!canContinue) return;
+    // Pre-action (M-7 §2). Joining and creating share one cap, so a squad you were invited to is refused
+    // at the same number as one you would have made — Amendment 001 §7: the invitation stays visible and
+    // simply cannot be accepted.
+    if (!guard('squads')) return;
     resolve(code);
   };
 

@@ -13,6 +13,7 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { deleteTemplate, fetchTemplates, templateSummary, type WorkoutTemplate } from '@/data/templates-live';
 import { STARTER_TEMPLATES, starterMeta, starterSummary, suggestedStarters } from '@/domain/workout/starter-templates';
+import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { useProfile } from '@/lib/profile';
 import { useToast } from '@/hooks/useCeremony';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -71,7 +72,14 @@ export default function TemplatesScreen() {
 
   /* "New" opens the builder (W-25). Capture — train, then keep the shape — is still offered on The
      Record; the two are complementary doors to the same table, not rivals. */
-  const newTemplate = () => router.push('/workout-builder');
+  /* Pre-action (M-7 §2). The 81 Forge starter templates are catalogue content and never count against
+     this — only athlete-authored rows in `workout_templates` do, which is why the count is a live read
+     of that table and not of anything on this screen. */
+  const guard = usePremiumGate();
+  const newTemplate = () => {
+    if (!guard('templates')) return;
+    router.push('/workout-builder');
+  };
 
   const remove = async (t: WorkoutTemplate) => {
     setConfirmDelete(null);

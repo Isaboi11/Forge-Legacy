@@ -48,6 +48,7 @@ import { canDoExercise, HOME_GYM_EQUIPMENT, HOME_GYM_GROUPS } from '@/domain/hom
 import { itemByKey, PICKER_DB } from '@/domain/exercise-picker/data';
 import { draftFromStructure, saveProgramDraft } from '@/lib/program-draft';
 import { saveWorkoutDraft } from '@/lib/workout-builder-draft';
+import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { useQuery } from '@/lib/useQuery';
 
 /**
@@ -158,6 +159,7 @@ export default function CoachScreen() {
       .catch(() => setIntro(false));
   }, []);
 
+  const guard = usePremiumGate();
   const [mode, setMode] = useState<Mode | null>(null);
   const [stepIndex, setStepIndex] = useState(0);
   const [ack, setAck] = useState<{ label: string; line: string } | null>(null);
@@ -475,7 +477,13 @@ export default function CoachScreen() {
             <BigOption
               title="Build me a program"
               sub="A full block, week by week, built around what you're after."
+              /* Pre-action (M-7 §2). The wall goes on the PROGRAM, not the day (MA3-D4): a program is a
+                 commitment and a day is a whim, so the free tier gets one program for life and two days
+                 a month, refilling. Checked here rather than at generation because the flow that follows
+                 asks six questions about goal, days, equipment and limitations — being refused at the
+                 end of that is the dead end the spec exists to prevent. */
               onPress={() => {
+                if (!guard('holt_programs')) return;
                 setMode('program');
                 setStepIndex(0);
               }}
@@ -483,7 +491,10 @@ export default function CoachScreen() {
             <BigOption
               title="Just today's workout"
               sub="One session. Tell me what you're training and I'll write it."
+              /* The refilling one — 2 per calendar month on Free. The refill is what keeps the free tier
+                 alive rather than dead-ended once the lifetime program is spent. */
               onPress={() => {
+                if (!guard('holt_days_per_month')) return;
                 setMode('day');
                 setStepIndex(0);
               }}

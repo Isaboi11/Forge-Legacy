@@ -29,6 +29,7 @@ import {
   type PhotoAlbum,
   type PhotoDay,
 } from '@/data/photos-live';
+import { useCapGate } from '@/lib/entitlement';
 import { useQuery } from '@/lib/useQuery';
 import { useReduceMotion } from '@/lib/settings';
 
@@ -59,11 +60,20 @@ import { useReduceMotion } from '@/lib/settings';
  * you may be browsing a chapter sealed years ago — but its empty state does, because there is always
  * exactly one active chapter for a first photo to land in.
  *
- * NOT CARRIED: the "X of 100 photos" counter. `Monetization-Amendment-001` sets a 100-photo free ceiling
- * (raised from 50 in the 2026-08-05 storage revision, once downscaling made a photo ~8× cheaper to keep)
- * and requires the counter here, but P-8 Subscription and the M-7 upsell are both unbuilt, so there is
- * no premium tier and no way to lift the cap. A limit nobody can pay to remove is a threat, not a
- * counter. Recorded in the amendment as owed-on-P-8 rather than shipped as a dead ultimatum.
+ * ── THE ALLOWANCE COUNTER, RESTORED 2026-08-12 ───────────────────────────────
+ *
+ * It used to say NOT CARRIED, and the reasoning was right at the time: `Monetization-Amendment-001`
+ * required an "X of N photos" line here, but P-8 and M-7 were both unbuilt, so there was no premium tier
+ * and **no way to lift the cap. A limit nobody can pay to remove is a threat, not a counter.**
+ *
+ * Amendment 003 and migration `0145` land the tier, so the condition that justified withholding it is
+ * gone. Three things about how it comes back:
+ *
+ *   · The cap is **75**, not 100 and not 50 (MA3-D8) — 6 poses × 12 monthly Gallery entries = 72, plus 3.
+ *   · **Transformation Gallery entries share this counter** (MA3-D8), which is the question the Gallery
+ *     architecture left open and Amendment 003 closes.
+ *   · It renders **only when a cap actually applies**. A Premium athlete's 1,000 is an abuse guard nobody
+ *     reaches (Amendment 001 §4A); showing it would turn the guard back into the threat above.
  *
  * ── DELTAS VS THE `.dc` ───────────────────────────────────────────────────────
  *
@@ -239,6 +249,9 @@ function AlbumsView({
   onAddFirst: () => void;
 }) {
   const list = albums?.albums ?? [];
+  // Here rather than in `PhotosScreen`: the counter renders in THIS component, and a prop threaded down
+  // one level for a value the hook can read directly is a second place for the two to disagree.
+  const photoGate = useCapGate('photos');
   const tourScroller = useTourScroller();
   const onTourScroll = useTourScrollTracker();
 
@@ -270,6 +283,21 @@ function AlbumsView({
         <Text style={styles.countSub}>
           photos · {list.length} {list.length === 1 ? 'chapter' : 'chapters'}
         </Text>
+        {/* The allowance line, restored.
+
+            It was withheld deliberately: `Monetization-Amendment-001` required a "X of N photos" counter
+            here, but P-8 and M-7 were both unbuilt, so there was no premium tier and no way to lift the
+            cap. **A limit nobody can pay to remove is a threat, not a counter**, and that reasoning was
+            right for as long as it held. Amendment 003 and migration 0145 land the tier, so it holds no
+            longer.
+
+            ⚠ The number is `photoGate.cap`, read from server config — never a literal (MA3-D16/M7-D14).
+            It renders only when a cap actually applies: a Premium athlete's ceiling is an abuse guard
+            nobody reaches (Amendment 001 §4A), and putting "38 of 1,000" in front of them would turn a
+            guard back into the threat this line was withheld to avoid. */}
+        {photoGate.cap != null && photoGate.cap >= 0 ? (
+          <Text style={styles.countAllowance}>{photoGate.label}</Text>
+        ) : null}
       </TourAnchor>
 
       <TourAnchor id="photos-albums" style={styles.albumStack}>
@@ -713,6 +741,7 @@ const styles = StyleSheet.create({
   countHead: { flexDirection: 'row', alignItems: 'baseline', gap: 8, paddingHorizontal: 2, paddingBottom: 20 },
   countValue: { fontFamily: flFont.display, fontSize: 30, fontWeight: '700', letterSpacing: -0.5, lineHeight: 31, color: flColor.cream100 },
   countSub: { fontSize: 12, fontWeight: '600', letterSpacing: 0.4, color: flColor.gray600 },
+  countAllowance: { marginTop: 6, fontSize: 11, fontWeight: '600', letterSpacing: 0.6, color: flColor.gray600 },
 
   albumStack: { gap: 26 },
   card: {

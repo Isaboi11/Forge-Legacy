@@ -74,6 +74,25 @@ const SHEET_DISMISS_FALLBACK_MS = 400;
  */
 const PICKER_DISMISS_MS = 600;
 
+/*
+ * ══ ⚠ THE VIDEO CAP IS DELIBERATELY NOT ENFORCED HERE ══
+ *
+ * The launch checklist named this file as the surface for the 5-persistent-video cap, and it is the
+ * obvious place — this is the one camera-or-library path in the app. It is also the wrong one, because
+ * a cap enforced here would count things the cap does not cover:
+ *
+ *   · **Squad check-ins are uncapped on every tier** (MA3-D14). Migration `0141` destroys their media at
+ *     24 hours, so they are not persistent storage at all. Gating them here would take a free athlete's
+ *     ability to check in with their squad away on the strength of five gallery clips.
+ *   · Profile avatars and squad photos are images the counter has never included.
+ *
+ * The counter in `athlete_live_counts()` (0145) reads exactly two places — `chapter_photos.is_video` and
+ * `transformation_entries.video_url` — so the gate lives at the two screens that write them:
+ * `add-photo.tsx` and `transformation-add.tsx`. Enforcement matches the count, which is the only way the
+ * number an athlete is shown can be the number that stops them.
+ */
+
+
 export interface MediaPickConfig {
   kind: MediaKind;
   title?: string;

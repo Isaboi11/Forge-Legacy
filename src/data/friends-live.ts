@@ -1,3 +1,4 @@
+import { trackInvite } from '@/lib/analytics';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -143,6 +144,7 @@ export async function requestFriend(athleteId: string): Promise<FriendState> {
 export async function acceptFriendRequest(athleteId: string): Promise<void> {
   const { error } = await supabase.rpc('accept_friend_request', { p_athlete: athleteId });
   if (error) rethrow(error);
+  trackInvite('accepted', { kind: 'friend', method: 'in_app' });
 }
 
 /**

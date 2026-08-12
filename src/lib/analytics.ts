@@ -3,6 +3,7 @@ import Constants from 'expo-constants';
 import { AppState, Platform } from 'react-native';
 
 import { sanitizeKind, sanitizeProps, sanitizeScreen, type Props } from '@/domain/analytics/props-core';
+import { inviteEvent, type InviteProps, type InviteStage } from '@/domain/analytics/invite-funnel';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -132,6 +133,25 @@ export function track(kind: string, props?: Record<string, unknown>): void {
     // feature's clothes, and the newest events are the ones still worth having.
     if (queue.length > QUEUE_MAX) queue = queue.slice(queue.length - QUEUE_MAX);
     if (queue.length >= FLUSH_AT) void flushAnalytics();
+  } catch {
+    /* never let a measurement break a screen */
+  }
+}
+
+/**
+ * One stage of the invite funnel (sent → accepted → installed → converted).
+ *
+ * A thin wrapper over `track()` rather than a second emitter: the whole point is that acquisition events
+ * obey exactly the same consent, allowlist and never-throw rules as everything else. The vocabulary lives
+ * in `domain/analytics/invite-funnel` so it is testable and so no call site can invent a channel name.
+ *
+ * ⚠ The 20 testers × 5 people each plan is unmeasurable without these four events, so they matter more
+ * than most — but not more than the athlete's workout. Same silent degradation as every other track call.
+ */
+export function trackInvite(stage: InviteStage, props: InviteProps): void {
+  try {
+    const e = inviteEvent(stage, props);
+    track(e.kind, e.props);
   } catch {
     /* never let a measurement break a screen */
   }

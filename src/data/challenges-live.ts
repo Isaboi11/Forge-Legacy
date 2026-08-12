@@ -1,3 +1,4 @@
+import { trackInvite } from '@/lib/analytics';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -374,6 +375,12 @@ export async function createChallenge(input: CreateChallengeInput): Promise<stri
   }
 
   const id = (data as { id: string }).id;
+
+  // Every challenge invite is an install opportunity — the plan calls creating one the cleanest shape in
+  // the product ("the organizer pays, the group doesn't"). A SQUAD challenge invites the squad implicitly
+  // and has no recipient list, so only the FRIENDS context can report a count.
+  if (friends.length > 0) trackInvite('sent', { kind: 'challenge', method: 'in_app', count: friends.length });
+
   const { error: joinError } = await supabase.from('challenge_participants').insert({ challenge_id: id, user_id: user.id });
   if (joinError) throw joinError;
   return id;
@@ -790,6 +797,9 @@ export async function joinChallenge(challengeId: string): Promise<void> {
   if (!user) throw new Error('Not signed in');
   const { error } = await supabase.from('challenge_participants').insert({ challenge_id: challengeId, user_id: user.id });
   if (error) throw error;
+  // Joining a challenge is free on every tier (Amendment 003 §5 — only CREATING one is Premium), so this
+  // is a pure funnel event with no gate behind it.
+  trackInvite('accepted', { kind: 'challenge', method: 'in_app' });
 }
 
 /** Withdraw. CS-D3: the row is deleted, not flagged — leaving leaves no trace. */

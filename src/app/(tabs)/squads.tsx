@@ -17,6 +17,7 @@ import { fetchOwnedPendingCounts } from '@/data/squad-discover-live';
 import { useQuery } from '@/lib/useQuery';
 import { getSquadFavorites, setSquadFavorites } from '@/lib/squad-favorites';
 import { useToast } from '@/hooks/useCeremony';
+import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
 import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
@@ -68,7 +69,15 @@ export default function SquadsScreen() {
     }, [refetch, refetchPending]),
   );
 
-  const goCreate = () => router.push('/create-squad');
+  /* Pre-action (M-7 §2): the cap is checked here, at the tap that OPENS the flow, not on Create inside
+     it. An athlete must never name a squad, choose a crest and pick a photo and only then be told they
+     have no slot. `create-squad` re-checks on submit as a backstop for deep links. */
+  const guard = usePremiumGate();
+
+  const goCreate = () => {
+    if (!guard('squads')) return;
+    router.push('/create-squad');
+  };
   const goJoin = () => router.push('/join-squad');
   const openSquad = (id: string) => router.push({ pathname: '/squad/[id]', params: { id } });
   const openDiscover = () => router.push('/discover-squads');

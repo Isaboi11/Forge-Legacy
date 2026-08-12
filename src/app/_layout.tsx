@@ -16,6 +16,7 @@ import { AuthProvider, useAuth } from '@/lib/auth';
 import { ProfileProvider, useProfile } from '@/lib/profile';
 import { PushProvider } from '@/lib/push';
 import { SettingsProvider } from '@/lib/settings';
+import { EntitlementProvider } from '@/lib/entitlement';
 import { routeFor } from '@/lib/route-for';
 import { WorkoutSessionProvider } from '@/hooks/useWorkoutSession';
 import { ShareProvider } from '@/hooks/useShareSheet';
@@ -79,6 +80,14 @@ export default function RootLayout() {
           side. Push now reads the same decision the navigator does and holds the target until it matches. */}
         <PushProvider>
           <SettingsProvider>
+          {/* Entitlement (0145). Inside `SettingsProvider` for no ordering reason — it depends only on
+              the session — but ABOVE `CeremonyProvider`, which is load-bearing: M-7 is a ceremony, and a
+              cap gate that fires it has to be able to read the tier from inside the queue.
+
+              ⚠ It never throws when absent (`useEntitlementState` returns `unknown` instead of raising),
+              so a surface rendered outside this tree degrades to "blocked, with a retry" rather than to a
+              launch crash. That is the lesson from the crash the CoachBubble boundary above records. */}
+          <EntitlementProvider>
           <WorkoutSessionProvider>
             <ShareProvider>
               <CeremonyProvider>
@@ -113,6 +122,7 @@ export default function RootLayout() {
               </CeremonyProvider>
             </ShareProvider>
           </WorkoutSessionProvider>
+          </EntitlementProvider>
           </SettingsProvider>
         </PushProvider>
         </ProfileProvider>

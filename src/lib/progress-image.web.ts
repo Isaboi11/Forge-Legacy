@@ -405,5 +405,8 @@ export async function saveProgressCard(spec: ProgressExportSpec): Promise<Progre
     setTimeout(() => download(b, name), i * 350);
   });
 
-  return { ok: true, count: blobs.length };
+  // `via: 'download'` is what lets the caller say "Saved" here and "Copied" on native without either
+  // path guessing which platform it is on. `slides` is the carousel's real length; the web genuinely
+  // delivers all of them, so it equals `count`.
+  return { ok: true, count: blobs.length, via: 'download', slides: card.style === 'hero' ? card.photos.length : 1 };
 }

@@ -13,6 +13,7 @@ import { equipmentOf } from '@/domain/program/progress-core';
 import { deriveBlocks, plannedSetCount, schemeText } from '@/domain/program/prescription';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
+import { usePremiumGate } from '@/hooks/usePremiumGate';
 
 /**
  * A program someone sent you (migration 0110) — read it before you take it.
@@ -45,10 +46,24 @@ export default function ProgramShareScreen() {
 
   const { data, loading, error } = useQuery(() => fetchProgramShare(String(id)), [id]);
 
+  const guard = usePremiumGate();
+
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/inbox'));
 
   const accept = async () => {
     if (busy || !data) return;
+    /*
+     * ⚠ THE GATE IS HERE, ON THE RECIPIENT'S DEVICE, AND NOWHERE ELSE (MA3-D10 · M7-D17).
+     *
+     * A received program consumes one of the recipient's three lifetime slots — it is a program, and the
+     * sender's generosity is not the recipient's exemption. **Sending stays free** (MA3-D13): gating the
+     * sender would tax the one acquisition surface that costs nothing to run.
+     *
+     * Pre-action means BEFORE the RPC, so a refusal leaves the offer intact and still visible — M-7's
+     * navigation map says the invitation remains, simply unacceptable, which is only true if nothing was
+     * consumed on the way to being refused.
+     */
+    if (!guard('programs')) return;
     setBusy(true);
     try {
       const newId = await acceptProgramShare(data.id);

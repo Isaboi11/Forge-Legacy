@@ -64,10 +64,19 @@ export interface HonorEarnedCeremony extends CeremonyBase {
   honorName: string;
   citation?: string;
 }
-/** M-7 Premium Upsell — limit-triggered, standalone. */
+/**
+ * M-7 Premium Upsell — limit-triggered, standalone.
+ *
+ * ⚠ `reason` and `benefits` are BUILT FROM SERVER-SIDE CAP CONFIG, never written as literals (M7-D14).
+ * `domain/entitlement/caps-core` renders both from the cap in force, so changing a cap is a SQL update
+ * rather than a release. A hardcoded "75-photo limit" here is the cap written down a second time, and the
+ * two drift the first time the config moves — which the plan says will happen after the metered run.
+ */
 export interface PremiumUpsellCeremony extends CeremonyBase {
   kind: 'premiumUpsell';
   reason?: string;
+  /** The four rows, triggered feature first (M-7 §6.2). Four exactly — §4 forbids scrolling content. */
+  benefits?: string[];
 }
 
 export type CeremonyEvent =

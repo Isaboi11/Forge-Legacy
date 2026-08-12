@@ -89,10 +89,40 @@ export function ceremonyCopy(event: CeremonyEvent): CeremonyCopy {
         secondary: 'Share this graduation',
       };
     case 'premiumUpsell':
-      // M-7 §5.1 — fixed heading + reassurance; trigger_reason injected per trigger.
+      /*
+       * M-7 §5.1 — fixed heading + reassurance; `trigger_reason` injected per trigger.
+       *
+       * ⚠ THE FALLBACK IS DELIBERATELY GENERIC NOW. It used to read "You've reached your 3-program
+       * limit." — a real cap number, hardcoded, in the one branch that runs when the caller did NOT say
+       * which cap fired. So a video gate with a missing reason would have told the athlete about programs,
+       * confidently and wrongly. M7-D14 bans cap numbers as literals for exactly this reason: the number
+       * belongs to `entitlement_config`, and the only honest thing to say without it is nothing specific.
+       */
       return {
         title: 'Build more. Keep everything.',
-        body: `${event.reason ?? 'You’ve reached your 3-program limit.'}\n\nEverything you’ve already built is yours — forever.`,
+        /*
+         * Reason · four benefit rows · reassurance line, in that order (M-7 §5).
+         *
+         * The rows are rendered as text with a ✓ prefix rather than through `ForgePremiumModal`, which was
+         * built for exactly this and has the check-circle treatment. That component is in the six
+         * libraries reclassified LEGACY/REFERENCE pending the visual rebuild, and putting a legacy
+         * component into the one path that asks an athlete for money is the wrong trade — the ceremony
+         * Modal beside it is already proven in production. Recorded so the choice reads as deliberate
+         * rather than as nobody having noticed the better-looking component.
+         *
+         * ⚠ The reassurance line is FIXED and always present (M7-D6). Never Charge For History is the
+         * foundational guarantee, and an upgrade prompt is precisely where the athlete must be told their
+         * legacy is not what is at stake.
+         */
+        body: [
+          event.reason ?? 'You’ve reached a free-tier limit.',
+          '',
+          ...(event.benefits ?? []).slice(0, 4).map((b) => `✓  ${b}`),
+          '',
+          'Everything you’ve already built is yours — forever.',
+        ]
+          .join('\n')
+          .trim(),
         primary: 'Upgrade',
         secondary: 'Not Now',
       };

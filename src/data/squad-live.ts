@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { trackInvite } from '@/lib/analytics';
 import { supabase } from '@/lib/supabase';
 import { extensionFor, MAX_CHECKIN_BYTES, uploadToBucket, type UploadOpts } from '@/lib/storage-upload';
 
@@ -694,7 +695,12 @@ export async function joinSquadByCode(code: string, acceptCommitment = false): P
   }
   if (res.error) throw res.error;
   const r = (res.data ?? {}) as { ok?: boolean; squad_id?: string; already?: boolean; reason?: string };
-  if (r.ok && r.squad_id) return { ok: true, squadId: r.squad_id, already: !!r.already };
+  if (r.ok && r.squad_id) {
+    // `already` is the idempotent re-entry of a code for a squad you're in — a tap, not an acquisition.
+    // Counting it would inflate the one number the whole 20 × 5 growth plan is measured against.
+    if (!r.already) trackInvite('accepted', { kind: 'squad', method: 'link' });
+    return { ok: true, squadId: r.squad_id, already: !!r.already };
+  }
   if (r.reason === 'commitment_required') return { ok: false, reason: 'commitment_required' };
   return { ok: false, reason: 'invalid' };
 }

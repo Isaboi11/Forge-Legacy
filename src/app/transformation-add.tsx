@@ -18,6 +18,7 @@ import {
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useMediaPicker } from '@/lib/useMediaPicker';
 import { useToast } from '@/hooks/useCeremony';
+import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 
 /**
@@ -32,6 +33,11 @@ export default function TransformationAddRoute() {
   const router = useRouter();
   const { showToast } = useToast();
   const { pick, mediaPickerSheet } = useMediaPicker();
+  /* ⚠ GALLERY ENTRIES SHARE THE ONE ACCOUNT-WIDE PHOTO COUNTER (MA3-D8) — six poses in an entry are
+     six photos, because six photos is what gets stored. That is the question
+     `Transformation-Gallery-Architecture` left open and Amendment 003 closes, and it is also what makes
+     75 the right number: 6 poses × 12 monthly entries = 72, plus 3 spare. Video is its own counter. */
+  const guard = usePremiumGate();
   const isEdit = !!editId;
 
   // Stable per-session draft id → the storage path prefix (the entry id in edit mode).
@@ -69,6 +75,8 @@ export default function TransformationAddRoute() {
 
   const pickPose = async (key: PoseKey) => {
     if (uploading) return;
+    // Pre-action (M-7 §2): before the picker, never after a photo has been chosen and uploaded.
+    if (!guard('photos')) return;
     const asset = await pick({ kind: 'images', title: 'Add a photo', quality: 0.8 });
     if (!asset?.uri) return;
     setUploading(key);
@@ -89,6 +97,7 @@ export default function TransformationAddRoute() {
     });
   const pickVideo = async () => {
     if (uploading) return;
+    if (!guard('videos')) return;
     const asset = await pick({ kind: 'videos', title: 'Add a video' });
     if (!asset?.uri) return;
     setUploading('video');

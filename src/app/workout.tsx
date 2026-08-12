@@ -64,6 +64,7 @@ import { profileFor } from '@/domain/coach/rulebook/intensity';
 import { intraSetSuggestion } from '@/domain/coach/intra-set';
 import { proposeIntensity, type IntensityProposal } from '@/domain/coach/intensity-learning';
 import { fetchIntensitySignals } from '@/data/coach-signal-live';
+import { useCapGate } from '@/lib/entitlement';
 import { CoachSays } from '@/components/forge/CoachSays';
 import { clearWorkoutLaunch, readWorkoutLaunch } from '@/lib/workout-launch';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -454,6 +455,7 @@ export default function WorkoutScreen() {
   /* Holt, on this screen. Its own flag rather than a face of the ⋮ sheet — the two answer different
      questions and neither should close the other (see `SessionCoachSheet`). */
   const [coachOpen, setCoachOpen] = useState(false);
+  const inWorkoutHolt = useCapGate('holt_in_workout');
   /* Join requests waiting on me (0121) — the banner, and the answer to it. */
   const [joinRequests, setJoinRequests] = useState<PendingJoinRequest[]>([]);
   const [joinBusy, setJoinBusy] = useState(false);
@@ -1754,6 +1756,26 @@ export default function WorkoutScreen() {
   const coachHeavier = coachLoad != null && coachStepUp > 0 ? coachLoad + coachStepUp : null;
 
   const holtHidden =
+    /*
+     * ⚠ FREE TIER: HOLT IS NOT RENDERED HERE AT ALL, AND THAT IS THE ENFORCEMENT (M7-D13, MA3-D4).
+     *
+     * In-workout Holt is Premium — the moment of highest value, recurring every session, and the felt
+     * weekly benefit of paying. But it is the ONE cap in Amendment 003 that cannot fire M-7: §12 has
+     * always forbidden M-7 during an active workout, that rule is older and locked, and an upsell
+     * interrupting a working set is the single worst place in this product to ask for money.
+     *
+     * So the cap is enforced by suppression rather than by a gate: there is no control, so there is no
+     * tap, so there is no modal. The athlete meets this benefit on P-8 and in the Premium comparison,
+     * not mid-set.
+     *
+     * ⚠ MANUAL SUBSTITUTION IS UNAFFECTED AND STAYS FREE (MA3-D5). Nobody is stranded mid-session —
+     * what Premium buys is the coach ANSWERING, never the ability to change an exercise.
+     *
+     * `.ok` and not `!showRetry`: an athlete whose entitlement cannot be read gets the bubble hidden
+     * rather than a retry toast, because a toast about subscriptions during a set is the same
+     * interruption in a smaller box.
+     */
+    !inWorkoutHolt.ok ||
     coachOpen ||
     sheet != null ||
     optionsOpen ||

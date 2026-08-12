@@ -11,6 +11,8 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { addChapterPhoto, fetchActivePhotoChapter, fetchPhotoChapter, uploadChapterPhoto } from '@/data/photos-live';
 import { useToast } from '@/hooks/useCeremony';
+import { usePremiumGate } from '@/hooks/usePremiumGate';
+import { useCapGate } from '@/lib/entitlement';
 import { useMediaPicker } from '@/lib/useMediaPicker';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { PICKER_DB } from '@/domain/exercise-picker/data';
@@ -94,6 +96,13 @@ export default function AddPhotoScreen() {
     [chapterId],
   );
 
+  // Photos and video are counted separately and capped separately (Amendment 001 §3, MA3-D8/D14): 75
+  // photos, 5 persistent videos. Both counters are account-wide and both include Transformation Gallery
+  // entries; neither includes squad check-ins, whose media 0141 destroys at 24 hours.
+  const photoGate = useCapGate('photos');
+  const videoGate = useCapGate('videos');
+  const guard = usePremiumGate();
+
   const [uri, setUri] = useState<string | null>(null);
   const [isVideo, setIsVideo] = useState(false);
   const [takenOn, setTakenOn] = useState(today());
@@ -117,8 +126,44 @@ export default function AddPhotoScreen() {
      this back into state on every keystroke is exactly what the react-compiler lint forbids. */
   const pickedKey = picked && label === picked.name ? picked.key : null;
 
+  /**
+   * ⚠ THE CAP IS CHECKED BEFORE THE PICKER OPENS, AND IT DECIDES WHAT THE PICKER OFFERS.
+   *
+   * M-7 §2 requires a pre-action check: the athlete must never choose a photo and only then be told they
+   * cannot keep it. But this screen takes either medium, and photos (75) and video (5) are counted
+   * separately — so "check the cap first" is not one question, it is two, and the honest answer is to
+   * narrow what the picker will accept rather than to refuse the whole screen:
+   *
+   *   both have room  → offer both
+   *   only photos     → offer images only
+   *   only video      → offer video only
+   *   neither         → M-7, on the photo cap, since this is the photo surface
+   *
+   * A picker that offered video to an athlete with no video slots left would be the dead end the spec
+   * forbids, one step later.
+   */
   const choose = async () => {
-    const asset = await pick({ kind: 'both', title: 'Add a photo', hint: 'It joins this chapter’s album.', quality: 0.85 });
+    const photoRoom = photoGate.ok;
+    const videoRoom = videoGate.ok;
+
+    // Unverifiable entitlement blocks and offers a retry — it never opens the picker and never upsells
+    // (M-7 §10). `guard` shows the retry toast for us.
+    if (photoGate.showRetry || videoGate.showRetry) {
+      guard('photos');
+      return;
+    }
+    if (!photoRoom && !videoRoom) {
+      guard('photos');
+      return;
+    }
+
+    const kind = photoRoom && videoRoom ? 'both' : photoRoom ? 'images' : 'videos';
+    const asset = await pick({
+      kind,
+      title: kind === 'videos' ? 'Add a video' : 'Add a photo',
+      hint: 'It joins this chapter’s album.',
+      quality: 0.85,
+    });
     if (!asset) return;
     setUri(asset.uri);
     setIsVideo(asset.type === 'video');

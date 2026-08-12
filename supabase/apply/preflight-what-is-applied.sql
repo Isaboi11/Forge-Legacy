@@ -50,8 +50,56 @@ with checks as (
             where table_schema = 'public' and table_name = 'squad_checkins'
               and column_name = 'video_object_path'
          )
+  union all
+  select '0143 · coach_intensity_signal',
+         to_regclass('public.coach_intensity_signal') is not null
+  union all
+  -- ⚠ 0144 IS COACH AI AND MUST READ MISSING. PO decision 2026-08-12: no AI spend before full release
+  --   and no AI for testers. It is authored and deliberately unapplied. APPLIED here is a mistake to undo.
+  select '0144 · coach_ai_config — ⚠ SHOULD BE MISSING',
+         to_regclass('public.coach_ai_config') is not null
+  union all
+  select '0145 · entitlement_config',
+         to_regclass('public.entitlement_config') is not null
+  union all
+  select '0145 · athlete_entitlement',
+         to_regclass('public.athlete_entitlement') is not null
+  union all
+  select '0145 · athlete_usage (lifetime counters)',
+         to_regclass('public.athlete_usage') is not null
+  union all
+  select '0145 · referral_credits (ledger)',
+         to_regclass('public.referral_credits') is not null
+  union all
+  -- The trigger is the enforcement. The tables can exist with it missing if a paste was truncated, and
+  -- then the program cap silently never fires — which is exactly the failure this file exists to catch.
+  select '0145 · programs_cap_guard_trg on programs',
+         exists (
+           select 1 from pg_trigger
+            where tgname = 'programs_cap_guard_trg' and not tgisinternal
+         )
 )
 select grp as "migration",
        case when ok then 'APPLIED' else '❌ MISSING' end as "state"
   from checks
  order by grp;
+
+-- ══ ⚠ EVERY CHECK ABOVE IS `to_regclass` / catalogue LOOKUPS, AND THAT IS NOT A STYLE CHOICE ══
+--
+-- A check may never SELECT FROM the table it is checking for. Postgres resolves relation names at PARSE
+-- time, so `coalesce((select … from public.entitlement_config), false)` raises 42P01 and takes the WHOLE
+-- report down when the table is absent — which is precisely the case this file exists to report on. A
+-- pre-flight that only runs once the migration is already applied answers a question nobody has.
+--
+-- That bug shipped here on 2026-08-12 and is recorded rather than quietly deleted: the safety check below
+-- is what it was trying to do, moved to where it is legal.
+
+-- ── RUN THIS SECOND, ONLY ONCE 0145 READS `APPLIED` ABOVE ────────────────────
+--
+-- ⚠ NOT A MIGRATION CHECK — A SAFETY CHECK. `PREMIUM` means nothing gates and every athlete is entitled,
+--   which is the correct state through Phases B–E. `FREE` means monetization has switched on. Phase F is
+--   the only time it should read FREE, and only AFTER the 20 OG testers hold explicit grants (MA3-D25) —
+--   between those two statements the testers would be Free.
+--
+--   select default_tier as "⚠ must read PREMIUM until Phase F"
+--     from public.entitlement_config;

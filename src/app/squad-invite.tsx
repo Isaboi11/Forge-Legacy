@@ -11,6 +11,7 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { SquadCrest } from '@/components/forge/SquadCrest';
 import { fetchSquadInvite, regenerateSquadCode } from '@/data/squad-live';
+import { trackInvite } from '@/lib/analytics';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { encodeQr, type QrMatrix } from '@/lib/qr';
 import { useToast } from '@/hooks/useCeremony';
@@ -105,8 +106,22 @@ export default function SquadInviteRoute() {
     }
   };
 
+  /**
+   * The funnel's `sent`, for every path that puts the invite somewhere the recipient can reach it.
+   *
+   * ⚠ INTENT, NOT DELIVERY — and unlike `shareProgram`, that is the honest best available here. A native
+   * share sheet does not tell us whether the athlete picked a contact or backed out, and the clipboard
+   * tells us nothing at all. So this over-counts sends by however many people copy a code and never use
+   * it. Recorded rather than smoothed over, because the accept:sent ratio is read off these two numbers
+   * and a reader who thinks `sent` means delivered will conclude the wrong thing about the squad channel.
+   */
+  const markShared = (method: 'link' | 'in_app') => {
+    trackInvite('sent', { kind: 'squad', method, count: 1 });
+  };
+
   const onShare = async () => {
     if (!inviteText) return;
+    markShared('link');
     if (Platform.OS === 'web') {
       const nav = typeof navigator !== 'undefined' ? (navigator as { share?: (d: { title?: string; text?: string }) => Promise<void> }) : undefined;
       if (nav && typeof nav.share === 'function') {
@@ -129,6 +144,7 @@ export default function SquadInviteRoute() {
 
   const onMessage = async () => {
     if (!inviteText) return;
+    markShared('in_app');
     if (Platform.OS !== 'web') {
       try {
         await Linking.openURL(`sms:?&body=${encodeURIComponent(inviteText)}`);

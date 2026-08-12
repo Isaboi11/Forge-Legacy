@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -28,6 +28,7 @@ import { saveProgressCard } from '@/lib/progress-image';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useProfile } from '@/lib/profile';
 import { useToast } from '@/hooks/useCeremony';
+import { ProgressCardHost } from '@/lib/progress-card-host';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 
 /**
@@ -106,6 +107,11 @@ export default function ProgressPhotoPostRoute() {
   const [caption, setCaption] = useState<string | null>(null);
   const [incl, setIncl] = useState<ProgressIncl>(DEFAULT_INCL);
   const [busy, setBusy] = useState<SendTarget | 'post' | null>(null);
+  /* ⚠ ABOVE THE EARLY RETURNS. This screen returns a loading state and an empty state before its main
+     render, so a hook declared beside `renderCard` further down would be called conditionally — the
+     rules-of-hooks error, and a real one: the ref would be re-created whenever an entry finished
+     loading, taking the last export's delivery method with it. */
+  const lastVia = useRef<'clipboard' | 'download'>('download');
 
   const entries = data ?? [];
   const entry: TransformationEntry | null = entries.find((e) => e.id === entryId) ?? entries[0] ?? null;
@@ -187,13 +193,36 @@ export default function ProgressPhotoPostRoute() {
    * announced here and reported upward, so a caller never goes on to open an app that has nothing to
    * paste. `announce` is off when the caller has its own closing line to say.
    */
+  /**
+   * ⚠ THE VERB COMES FROM THE RESULT, NOT FROM THE PLATFORM OR THE HOPE.
+   *
+   * The web downloads files; the device copies ONE image to the clipboard, because writing to the
+   * camera roll needs `expo-media-library` and that changes the native fingerprint (see
+   * `lib/progress-image.ts`). This used to say "Saved to your photos" either way, which on device
+   * would have sent somebody to Instagram to attach a file that was never written — the confident
+   * false claim this screen's own header calls unshippable.
+   *
+   * `slides > count` is the hero carousel on device: one slide is on the clipboard and the rest are
+   * not, and saying so is better than letting the athlete discover it in the Instagram composer.
+   */
   const renderCard = async (announce: boolean): Promise<boolean> => {
     const result = await saveProgressCard({ card, fileName });
     if (!result.ok) {
       showToast(result.reason);
       return false;
     }
-    if (announce) showToast(result.count > 1 ? `Saved ${result.count} images` : 'Saved to your photos');
+    lastVia.current = result.via;
+    if (announce) {
+      if (result.via === 'clipboard') {
+        showToast(
+          result.slides > result.count
+            ? `Copied slide 1 of ${result.slides} — paste it anywhere`
+            : 'Copied — paste it anywhere',
+        );
+      } else {
+        showToast(result.count > 1 ? `Saved ${result.count} images` : 'Saved to your photos');
+      }
+    }
     return true;
   };
 
@@ -213,8 +242,12 @@ export default function ProgressPhotoPostRoute() {
         () => true,
         () => false,
       );
-      // The image is real either way; only the hand-off can fail, and then it says exactly that.
-      showToast(opened ? `Saved — attach it in ${app.label}` : `Saved — couldn’t open ${app.label}`);
+      /* The image is real either way; only the hand-off can fail, and then it says exactly that.
+         The verb tracks how the image was actually delivered — "Saved — attach it" would be a lie on
+         device, where the card is on the clipboard and nothing was written to the camera roll. */
+      const verb = lastVia.current === 'clipboard' ? 'Copied' : 'Saved';
+      const how = lastVia.current === 'clipboard' ? 'paste it in' : 'attach it in';
+      showToast(opened ? `${verb} — ${how} ${app.label}` : `${verb} — couldn’t open ${app.label}`);
     } catch (e) {
       showToast(errorMessage(e));
     } finally {
@@ -274,6 +307,10 @@ export default function ProgressPhotoPostRoute() {
   return (
     <View style={styles.root}>
       <PostBg />
+      {/* Off-screen rasteriser. `react-native-svg` can only snapshot a MOUNTED `Svg`, so the card has to
+          live in this tree before it can become a PNG — same arrangement as `ShareCardHost` on
+          `/share-config`. It renders nothing until an export is in flight. */}
+      <ProgressCardHost />
       <AppBar title={<BarTitle sub={`${entry.label}${entry.chapterName ? ` · ${entry.chapterName}` : ''}`} />} onBack={() => (router.canGoBack() ? router.back() : router.replace('/transformation'))} />
 
       <ScrollView style={styles.flex} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">

@@ -1,3 +1,4 @@
+import { trackInvite } from '@/lib/analytics';
 import { supabase } from '@/lib/supabase';
 import type { ProgramStructure } from '@/data/programs-live';
 
@@ -50,7 +51,11 @@ export async function shareProgram(
     p_source: sourceDefinitionId ?? null,
   });
   if (error) throw new Error(isMissing(error) ? NOT_MIGRATED : error.message);
-  return Number(data ?? 0);
+  const sent = Number(data ?? 0);
+  // The funnel counts what LANDED, not what was asked for — see the note above about the server dropping
+  // recipients. An invite that never reached anybody is not an invite.
+  if (sent > 0) trackInvite('sent', { kind: 'program', method: 'in_app', count: sent });
+  return sent;
 }
 
 /** One share, for the accept screen. Null when it has been withdrawn or declined out of existence. */
@@ -73,10 +78,17 @@ export async function fetchProgramShare(id: string): Promise<ProgramShare | null
   };
 }
 
-/** Take the copy. Returns the new program's id — idempotent, so a double tap never forks two copies. */
+/**
+ * Take the copy. Returns the new program's id — idempotent, so a double tap never forks two copies.
+ *
+ * ⚠ THIS CONSUMES ONE OF THE RECIPIENT'S THREE PROGRAM SLOTS (MA3-D10). The cap is checked BEFORE this
+ * call, on the accept screen, so M-7 fires instead of the RPC — `programs_cap_guard()` in migration 0145
+ * is the backstop, not the experience. **Sending stays free** (MA3-D13); only receiving costs a slot.
+ */
 export async function acceptProgramShare(id: string): Promise<string> {
   const { data, error } = await supabase.rpc('accept_program_share', { p_share: id });
   if (error) throw new Error(isMissing(error) ? NOT_MIGRATED : error.message);
+  trackInvite('accepted', { kind: 'program', method: 'in_app' });
   return String(data);
 }
 

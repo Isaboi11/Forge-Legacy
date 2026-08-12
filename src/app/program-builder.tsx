@@ -21,6 +21,7 @@ import {
 import { pickTextFile } from '@/lib/pick-text-file';
 import { resolveExerciseName } from '@/domain/exercise-picker/data';
 import { useToast } from '@/hooks/useCeremony';
+import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { useUnits } from '@/lib/settings';
 import { EquipIcon } from '@/components/forge/EquipIcon';
 import { ScreenBackground } from '@/components/screen-background';
@@ -245,6 +246,7 @@ function ProgramBuilderScreen() {
    * it with a sheet inside the builder, which is also where an imported program is going to be edited
    * anyway. PD-7 — the design governs.
    */
+  const guard = usePremiumGate();
   const [importOpen, setImportOpen] = useState(false);
   const [pasteText, setPasteText] = useState('');
   const [importError, setImportError] = useState<string | null>(null);
@@ -257,7 +259,20 @@ function ProgramBuilderScreen() {
    */
   const resolveName = (n: string) => resolveExerciseName(n);
 
+  /**
+   * ⚠ TWO CAPS GUARD THIS ONE BUTTON, AND BOTH HAVE TO PASS.
+   *
+   * An import creates a PROGRAM, so it spends a program slot as well as the one lifetime import
+   * (Amendment 001 §6: *"a free user who has used their one free import and has 3 programs cannot
+   * import another program"*). Checking only `imports` would open the sheet, let somebody paste and
+   * correct a 12-week spreadsheet, and refuse it at the end — the dead end M-7 §2 forbids, arrived at
+   * by the longest possible route.
+   *
+   * `imports` is checked first so the athlete is told the truer thing when both are exhausted.
+   */
   const openImport = () => {
+    if (!guard('imports')) return;
+    if (!guard('programs')) return;
     setPasteText('');
     setImportError(null);
     setPreview(null);
@@ -453,6 +468,11 @@ function ProgramBuilderScreen() {
       return () => {
         active = false;
       };
+      /* eslint-disable-next-line react-hooks/exhaustive-deps -- `openImport` is deliberately out.
+         It became an unstable reference when it started calling the cap gate (`guard` re-creates on
+         every entitlement refetch), and adding it here would re-run this effect on refetch — which
+         means throwing the paste sheet back over work in progress. The effect is keyed to ARRIVAL,
+         and arrival has not changed. */
     }, [entryMode, entryId]),
   );
 
@@ -575,6 +595,12 @@ function ProgramBuilderScreen() {
 
   const onSave = async () => {
     if (!draft || !isDraftValid(draft) || saving) return;
+    /* Backstop only, and only on the paths that CREATE. An edit writes back over a program that
+       already exists and spends no slot — gating it would mean a Free athlete at the cap could never
+       fix a typo in a program they already own, which is Never Charge For History pointed at the one
+       thing it most obviously protects. The real pre-action check is at the tap that opens the
+       builder; `programs_cap_guard()` in 0145 is the server's own last word. */
+    if (draft.mode !== 'edit' && !guard('programs')) return;
     setSaving(true);
     setError(null);
     try {

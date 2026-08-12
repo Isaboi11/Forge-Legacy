@@ -15,6 +15,7 @@ import { SQUAD_CATEGORIES, type SquadCategory } from '@/data/squad-discover-live
 import { errorMessage } from '@/lib/useQuery';
 import { useMediaPicker } from '@/lib/useMediaPicker';
 import { useToast } from '@/hooks/useCeremony';
+import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 
 /**
@@ -52,6 +53,7 @@ export default function CreateSquadScreen() {
   const [category, setCategory] = useState<SquadCategory | null>(null);
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
+  const guard = usePremiumGate();
 
   const pickPhoto = async () => {
     const asset = await pick({ kind: 'images', title: 'Squad photo', allowsEditing: true, aspect: [1, 1], quality: 0.7 });
@@ -78,6 +80,10 @@ export default function CreateSquadScreen() {
 
   const onCreate = () => {
     if (!nameOk || busy) return;
+    /* Backstop, not the gate. The real pre-action check is on the Squads hub, at the tap that opens
+       this screen; this catches a deep link or a back-navigation that skipped it. `programs_cap_guard`
+       has no squad equivalent server-side yet, so this is the last client-side stop. */
+    if (!guard('squads')) return;
     setBusy(true);
     createSquad({ name, motto, description, privacy, crest, category }).then(
       async (newId) => {

@@ -14,6 +14,7 @@
  */
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter } from 'expo-router'
 
 import { markHonorsCelebrated } from '@/data/honors-live'
 
@@ -31,6 +32,15 @@ import { RankSeal } from '@/components/forge/RankSeal'
 import { useShareSheet } from '@/hooks/useShareSheet'
 import { useProfile } from '@/lib/profile'
 import type { ShareKind } from '@/domain/share/content'
+
+/**
+ * ⚠ FLIP THIS WHEN `src/app/subscription.tsx` EXISTS (Launch Checklist 4.1, P-8).
+ *
+ * A constant rather than a route-existence probe: expo-router has no reliable "does this route resolve"
+ * question from inside a component, and this repo has already shipped a dynamic route that 404s on direct
+ * load. One greppable boolean is honest about the state and cannot be wrong at runtime.
+ */
+const SUBSCRIPTION_ROUTE_BUILT = false
 
 export type CeremonyContextValue = {
   enqueue: (events: CeremonyEvent | CeremonyEvent[]) => void
@@ -106,6 +116,7 @@ function ceremonyShareType(event: CeremonyEvent): ShareKind | null {
 }
 
 export function CeremonyProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
   const { openShare } = useShareSheet()
   // CeremonyProvider sits inside ProfileProvider (_layout), so the real athlete is always readable here.
   const { profile } = useProfile()
@@ -159,10 +170,33 @@ export function CeremonyProvider({ children }: { children: React.ReactNode }) {
 
   // Shared footer: primary Continue + optional "Share …" (SH-1 pre-scoped to this ceremony; advances the
   // queue like Continue — SH-1 §6.2; M-7's "Not Now" has no share type and just dismisses).
+  /*
+   * M-7's "Upgrade" is the one ceremony primary that is not just "Continue" (M-7 §7.1): it dismisses and
+   * routes to the subscription surface. **P-8 is not built yet** — it is Launch Checklist item 4.1, and
+   * this pass covers 0–3 — so until it exists the athlete gets an honest sentence rather than a dead tap
+   * or a 404 on a route that does not resolve.
+   *
+   * ⚠ NOBODY SEES THIS TODAY. `entitlement_config.default_tier` is 'PREMIUM', so every athlete is
+   * entitled and no gate fires; M-7 is reachable only by forcing yourself to FREE in the SQL editor.
+   * Flip the constant when `src/app/subscription.tsx` lands and the tap becomes navigation.
+   */
+  const onUpgrade = () => {
+    dismiss()
+    // The cast is the proof the route does not exist: expo-router's generated union has no
+    // '/subscription' member yet, so tsc rejects the literal. When 4.1 lands the route joins the union
+    // and the cast can be deleted — which is a better reminder than a comment.
+    if (SUBSCRIPTION_ROUTE_BUILT) router.push('/subscription' as never)
+    else showToast('Subscriptions open with the next release.')
+  }
+
   const ceremonyFooter =
     current && copy ? (
       <>
-        <Button variant="primary" fullWidth onPress={dismiss}>
+        <Button
+          variant="primary"
+          fullWidth
+          onPress={current.kind === 'premiumUpsell' ? onUpgrade : dismiss}
+        >
           {copy.primary}
         </Button>
         {copy.secondary ? (

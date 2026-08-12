@@ -19,7 +19,9 @@
 
 **Downstream Dependents:** None. P-8 has no child screens.
 
-**Amendment Log:** Initial. v1.0 LOCKED.
+**Amendment Log:** v1.0 LOCKED (June 2026). **v1.1 — 2026-08-12: Open Issue #2 resolved.** Section 11 added (plan picker: annual pre-selected, monthly, Founder while seats remain, lifetime; the *"Coach AI is a separate subscription"* disclosure above the buy button; RevenueCat). §8's single-SKU non-behaviour superseded by P8W-D1. Free-tier numbers reconciled to **Monetization Architecture Amendment 003**: photos 50 → **75**, squads 2 → **1**, Premium squads → **5**, Coach Holt rows added. All figures now read from server-side cap configuration (MA3-D16).
+
+**Additional authority (v1.1):** `Monetization-Architecture-Amendment-003-Add-On-Tier-And-Launch-Limits.md` (LOCKED 2026-08-12) — governs every number on this screen; supersedes Critical-Decisions-Amendment-001 Decision 4.
 
 ---
 
@@ -97,9 +99,11 @@ No plan comparison, usage, or action rows render until the entitlement check res
 │  │       Free          │      Premium        │    │
 │  ├────────────────────┼────────────────────┤    │
 │  │ 3 programs          │ Unlimited programs  │    │
-│  │ 50 photos            │ Unlimited photos    │    │
-│  │ 2 squads             │ Unlimited squads    │    │
+│  │ 75 photos            │ Unlimited photos    │    │
+│  │ 1 squad              │ 5 squads            │    │
 │  │ 1 lifetime import    │ Unlimited imports   │    │
+│  │ 1 Holt program       │ Unlimited Holt      │    │
+│  │ 2 Holt days / month  │ Holt in your workout│    │
 │  └────────────────────┴────────────────────┘    │
 │                                                   │
 │  Everything you've already built is yours        │
@@ -109,20 +113,30 @@ No plan comparison, usage, or action rows render until the entitlement check res
 │                                                   │
 │  Your Usage                                      │
 │  Programs                          2 of 3        │
-│  Photos                           38 of 50       │
-│  Squads                            2 of 2        │
+│  Photos                           38 of 75       │
+│  Squads                            1 of 1        │
 │  Import                              Used        │
+│  Coach Holt programs                 Used        │
+│  Coach Holt days                   1 of 2        │
 │                                                   │
 │  ─────────────────────────────────────────────   │
 │                                                   │
+│         [ PLAN PICKER — see Section 11 ]         │
+│                                                   │
+│  The app and your legacy, forever.               │
+│  Coach AI is a separate subscription.            │
+│                                                   │
 │  ┌─────────────────────────────────────────┐    │
-│  │  Upgrade — [price from platform]          │    │
+│  │  Continue                                 │    │
 │  └─────────────────────────────────────────┘    │
 │                                                   │
 │  Restore Purchases                                │
 │                                                   │
 └─────────────────────────────────────────────────┘
 ```
+
+> **Every number in the comparison table and the usage rows is read from the server-side cap configuration**
+> (MA3-D16). None of them may be a literal in `src/`. The figures shown here are the launch values.
 
 ### 3.3 Premium State
 
@@ -141,8 +155,10 @@ No plan comparison, usage, or action rows render until the entitlement check res
 │                                                   │
 │  ✓ Unlimited programs                            │
 │  ✓ Unlimited photos                              │
-│  ✓ Unlimited squads                              │
+│  ✓ 5 squads                                      │
 │  ✓ Unlimited imports                             │
+│  ✓ Coach Holt, unlimited — including in your     │
+│    workout                                       │
 │                                                   │
 │  Everything you've already built is yours        │
 │  — forever.                                      │
@@ -269,7 +285,7 @@ P-8 has no child screens at any point in either entry context.
 - P-8 has **no child screens**, in either entry context.
 - P-8 builds **no custom checkout UI** — purchases happen exclusively in the native platform purchase sheet.
 - P-8 builds **no custom cancel-flow or plan-change UI** — Manage Subscription deep-links to native OS settings; nothing is built in-app for this.
-- P-8 invents **no monthly/annual plan choice** — a single SKU/cadence is assumed at MVP; this screen does not present a plan picker.
+- ~~P-8 invents **no monthly/annual plan choice** — a single SKU/cadence is assumed at MVP; this screen does not present a plan picker.~~ **⛔ SUPERSEDED 2026-08-12 by P8W-D1 — see Section 11.** P-8 now presents a four-option plan picker (annual pre-selected, monthly, Founder while seats remain, lifetime). The other non-behaviours in this list are untouched: there is still no custom checkout, and the platform still owns the transaction.
 - P-8 contains **no hardcoded pricing** anywhere — every price shown is read live from the platform's product catalog.
 - P-8 displays **no not-yet-built Premium benefits** (AI, advanced analytics, premium legacy tools) in either state.
 - P-8 never gates, hides, or conditions access to any historical content (workouts, chapters, goals, honors, ranks, timeline, imported content) on subscription state — Never Charge For History is absolute and applies regardless of what P-8 displays.
@@ -294,7 +310,7 @@ P-8 has no child screens at any point in either entry context.
 
 ### Free State
 - [ ] Current Plan displays "Free"
-- [ ] Plan comparison table shows exact locked limits: 3 programs, 50 photos, 2 squads, 1 lifetime import (Free) vs. unlimited equivalents (Premium)
+- [ ] Plan comparison table shows exact locked limits **read from server config**: 3 programs, **75 photos**, **1 squad**, 1 lifetime import, 1 Holt program, 2 Holt days/month (Free) vs. **unlimited programs/photos/imports/Holt and 5 squads** (Premium)
 - [ ] Reassurance line present verbatim: "Everything you've already built is yours — forever."
 - [ ] Usage review shows current counts for programs, photos, squads, and import status
 - [ ] Upgrade button present, displays platform-sourced price (never hardcoded)
@@ -343,13 +359,144 @@ P-8 has no child screens at any point in either entry context.
 
 ## Section 10 — Open Issues
 
-**None blocking.** All decisions required to fully specify P-8 are resolved by P-8-Subscription-Architecture.md (LOCKED) and this document.
+**None blocking.** All decisions required to fully specify P-8 are resolved by P-8-Subscription-Architecture.md (LOCKED), this document, and **Monetization Architecture Amendment 003 (LOCKED 2026-08-12)**.
 
 Carried forward, not blocking P-8:
-- **Native billing integration approach** (direct StoreKit/Play Billing vs. third-party SDK) — engineering choice, outside this screen's scope.
-- **Single SKU/cadence vs. monthly+annual** — no authorization exists for multi-cadence; this screen assumes a single SKU. A future business pricing decision could require a minor amendment if multi-cadence is ever authorized.
-- **Exact pricing copy** — remains platform-sourced and dynamic; no literal price text exists in this spec.
-- **Final naming/storage of the subscription entitlement state** — explicitly owned by backend/data architecture, not this screen.
+- **Native billing integration approach** — ✅ **RESOLVED 2026-08-12: RevenueCat.** See §11.4.
+- ~~**Single SKU/cadence vs. monthly+annual**~~ — ✅ **RESOLVED 2026-08-12.** See **Section 11**.
+- **Exact pricing copy** — remains platform-sourced and dynamic; no literal price text exists in this spec. **Reinforced, not relaxed, by Section 11** — six SKUs make a hardcoded price six times as likely to be wrong.
+- **Final naming/storage of the subscription entitlement state** — owned by backend/data architecture. Migration `0145` lands the schema; `src/lib/entitlement.ts` remains the single client-side answer to "is this athlete entitled?"
+
+---
+
+## Section 11 — Plan Selection *(new 2026-08-12 — resolves Open Issue #2)*
+
+### 11.1 The decision
+
+**P8W-D1 — P-8 presents a plan picker. The single-SKU assumption in §8 is superseded.**
+
+Section 8 previously stated that P-8 *"invents no monthly/annual plan choice — a single SKU/cadence is
+assumed at MVP; this screen does not present a plan picker."* That was the correct call **when no pricing
+decision existed**. One does now: the Pricing Structure & Monetization Build Plan (locked 2026-08-12) and
+Amendment 003 authorize **six SKUs**, of which **four can be presented on P-8 at launch** and two belong to
+a product that is not shipping yet.
+
+| SKU | Presented on P-8 at launch? |
+|---|---|
+| `premium_annual_9999` | ✅ **Pre-selected and visually dominant** |
+| `premium_monthly_1299` | ✅ Secondary, beneath annual |
+| `premium_lifetime_299` | ✅ Third |
+| `founder_lifetime_149` | ✅ **Only while seats remain** (< 100 sold), then the row disappears with the SKU |
+| `coach_ai_monthly_999` | ❌ Not at launch — Coach AI is excluded from this release |
+| `coach_ai_annual_8999` | ❌ Not at launch — may be configured in App Store Connect and left unreleased |
+
+### 11.2 Layout — Free state, revised
+
+The plan picker sits between the reassurance line and the usage review. Everything else in §3.2 is unchanged.
+
+```
+│  ─────────────────────────────────────────────   │
+│                                                   │
+│  ┌───────────────────────────────────────────┐   │
+│  │ ●  Annual          [price from platform]  │   │  ← PRE-SELECTED, dominant
+│  │    Save [saving from platform]            │   │  ← computed, never typed
+│  └───────────────────────────────────────────┘   │
+│  ┌───────────────────────────────────────────┐   │
+│  │ ○  Monthly         [price from platform]  │   │
+│  └───────────────────────────────────────────┘   │
+│  ┌───────────────────────────────────────────┐   │
+│  │ ○  Founder         [price from platform]  │   │  ← only while seats remain
+│  │    68 of 100 left                         │   │  ← live count, never a guess
+│  └───────────────────────────────────────────┘   │
+│  ┌───────────────────────────────────────────┐   │
+│  │ ○  Lifetime        [price from platform]  │   │
+│  └───────────────────────────────────────────┘   │
+│                                                   │
+│  The app and your legacy, forever.               │  ← ⚠ REQUIRED, above the button
+│  Coach AI is a separate subscription.            │
+│                                                   │
+│  ┌─────────────────────────────────────────┐    │
+│  │  Continue                                 │    │
+│  └─────────────────────────────────────────┘    │
+│                                                   │
+│  Restore Purchases                                │
+```
+
+### 11.3 Rules
+
+**P8W-D2 — Annual is pre-selected.** It is the plan the product is built to sell: the best value for the
+athlete and the only cadence whose economics are stated in the plan as healthy at every level of use.
+
+**P8W-D3 — The saving is computed from platform prices, never typed.** "Save 36%" written as a literal is a
+price string in disguise, and it goes stale the moment a currency or a tier moves. Derive it from the two
+localized prices the SDK returns, and render nothing if either is missing.
+
+**P8W-D4 — The disclosure line is REQUIRED, and it sits above the buy button.**
+
+> **"The app and your legacy, forever. Coach AI is a separate subscription."**
+
+**This is a legal requirement, not copy.** A buyer who pays $299 for "lifetime" and later discovers a
+feature needs another subscription is the classic deceptive-practices fact pattern. Placing the disclosure
+in the terms instead of above the button is exactly the failure the requirement exists to prevent. It renders
+in **every** Free state, not only when Lifetime is selected — the athlete comparing plans is the one who
+needs it.
+
+**P8W-D5 — The Founder row renders only while seats remain, and the counter must be live.** *"68 of 100
+left"* read from the server. When the count reaches 100 the row disappears and the SKU delists. **Selling
+the 101st seat is a deceptive practice** (MA3-D24), and a stale or optimistic counter is how that happens.
+If the count cannot be read, **the row does not render** — an unverifiable scarcity claim is worse than no
+claim.
+
+**P8W-D6 — The 20 OG testers occupy no Founder seats** (MA3-D25). Their grant is separate and must not
+decrement the counter.
+
+**P8W-D7 — Still no custom checkout.** §8's other non-behaviours are untouched: tapping **Continue** hands
+the selected SKU to the native platform purchase sheet. P-8 chooses *what* to buy; the platform handles
+*buying it*.
+
+**P8W-D8 — Lifetime is presented last and never pre-selected.** It is the largest single commitment on the
+screen, and a pre-selected $299 charge is a dark pattern. It is offered, not steered toward.
+
+**P8W-D9 — When Coach AI ships, it is a separate concurrent purchase, never a plan-picker row.** Adding it
+to this list would present it as an alternative to Premium when it *requires* Premium (MA3-D3). It gets its
+own surface and its own purchase, and the athlete may hold both.
+
+### 11.4 Billing integration — RevenueCat
+
+**P8W-D10 — RevenueCat**, resolving P-8-Subscription-Architecture open question #1.
+
+- **Multiple concurrent entitlements** (Premium + Coach AI) is exactly the case it handles well, and it is
+  the case direct StoreKit makes most awkward.
+- Entitlement, **Restore Purchases** (§5.3) and receipt validation arrive in one dependency. No billing
+  dependency exists in `package.json` today.
+- Free under $2.5k monthly tracked revenue — the entire Founder round clears it.
+
+> ⚠ **A new native dependency changes the fingerprint.** This is a **new iOS build, not an OTA**. Run
+> `fingerprint:compare` against the live build before publishing.
+
+### 11.5 Accessibility additions to §7
+
+| Element | accessibilityLabel | Notes |
+|---|---|---|
+| Plan option (each) | "[Plan name], [price], [selected / not selected]" | Announced as a radio group; exactly one selected at all times |
+| Annual saving line | "Save [computed saving] compared to monthly" | Announced with its plan row, not separately |
+| Founder seat counter | "[n] of 100 seats remaining" | Announced with the Founder row |
+| Disclosure line | "The app and your legacy, forever. Coach AI is a separate subscription." | **Must be in the reading order before the Continue button**, matching its visual position |
+| Continue button | "Continue" | `accessibilityHint`: "Opens the purchase sheet for the selected plan" |
+
+### 11.6 Validation additions to §9
+
+- [ ] Four plan options render in the Free state: Annual, Monthly, Founder *(while seats remain)*, Lifetime
+- [ ] **Annual is pre-selected on every mount** (P8W-D2)
+- [ ] Lifetime is never pre-selected (P8W-D8)
+- [ ] The annual saving is **computed** from platform prices, and renders nothing if either is unavailable (P8W-D3)
+- [ ] **The disclosure line renders above the Continue button in every Free state** (P8W-D4)
+- [ ] The Founder row renders only while seats remain, with a **live** count, and **not at all** if the count cannot be read (P8W-D5)
+- [ ] The Founder counter stops at 100 and the SKU delists (MA3-D24)
+- [ ] OG tester grants do not decrement the seat counter (P8W-D6)
+- [ ] **No price string is hardcoded anywhere in `src/`** — grep for every launch price and expect zero hits
+- [ ] Restore Purchases returns **both** entitlements when both are held
+- [ ] Coach AI never appears as a plan-picker row (P8W-D9)
 
 ---
 
