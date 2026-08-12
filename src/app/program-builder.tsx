@@ -2121,7 +2121,8 @@ function ExerciseCard({
   /** Walkthrough target — set on the first main-section card so the sets/reps step has something to ring. */
   anchor?: TourAnchorId;
   /** Which superset this row is in, if any — its letter position and the block's size. */
-  pairing: { pos: number; count: number } | null;
+  /** Position in the block, its size, and what this row is CALLED — "A1", "A2" (see `pairingAt`). */
+  pairing: { pos: number; count: number; label: string; letter: string } | null;
   onUp: () => void;
   onDown: () => void;
   onRemove: () => void;
@@ -2184,7 +2185,7 @@ function ExerciseCard({
           letter is what the logger will show, so the athoring surface and the doing surface agree. */}
       {pairing && pairing.pos === 1 ? (
         <View style={styles.pairHead}>
-          <Text style={styles.pairHeadText}>Superset · {pairing.count} exercises, alternated</Text>
+          <Text style={styles.pairHeadText}>Superset {pairing.letter} · {pairing.count} exercises, alternated</Text>
           <Pressable onPress={onUnpair} accessibilityRole="button" accessibilityLabel="Break this superset" hitSlop={8}>
             <Text style={styles.pairBreak}>Break</Text>
           </Pressable>
@@ -2196,7 +2197,7 @@ function ExerciseCard({
         </View>
         <View style={styles.exText}>
           <Text style={styles.exName} numberOfLines={1}>
-            {pairing ? `${String.fromCharCode(64 + pairing.pos)}  ` : ''}{item.name}
+            {pairing ? `${pairing.label}  ` : ''}{item.name}
           </Text>
           {item.equip ? (
             <Text style={styles.exEquip} numberOfLines={1}>

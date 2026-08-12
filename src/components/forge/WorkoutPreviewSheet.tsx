@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
-import { blockRoundsText, deriveBlocks, isAmrap, schemeText, sessionSummary } from '@/domain/program/prescription';
+import { blockRoundsText, deriveBlocks, isAmrap, schemeText, sessionSummary, supersetBlockLetters } from '@/domain/program/prescription';
 import type { ProgramExercise } from '@/data/programs-live';
 
 /**
@@ -78,6 +78,9 @@ export function WorkoutPreviewSheet({
   onChooseAnother?: () => void;
 }) {
   const blocks = deriveBlocks(main);
+  /* "A", then "B" — the letter belongs to the BLOCK, so it is resolved across the whole session rather
+     than inside one block's own map. Same rule as the logger and both builders (`supersetLabels`). */
+  const ssLetters = supersetBlockLetters(blocks);
 
   return (
     <BottomSheet
@@ -137,7 +140,11 @@ export function WorkoutPreviewSheet({
                  count — the same shape the logger draws, derived by the same adjacency rule. */
               <View key={`b${bi}`} style={styles.block}>
                 <View style={styles.blockHead}>
-                  <Text style={styles.blockName}>{b.name ?? (b.kind === 'superset' ? 'Superset' : 'Circuit')}</Text>
+                  {/* Lettered so two supersets in one session are told apart, and only on the DEFAULT
+                      name — a block the author called "Chest Finisher" already is. */}
+                  <Text style={styles.blockName}>
+                    {b.name ?? (b.kind === 'superset' ? `Superset${ssLetters[bi] ? ` ${ssLetters[bi]}` : ''}` : 'Circuit')}
+                  </Text>
                   <Text style={styles.blockRounds}>
                     {isAmrap(b) ? `AMRAP ${blockRoundsText(b)}` : blockRoundsText(b) ? `⟳ ${blockRoundsText(b)}` : ''}
                   </Text>
@@ -145,6 +152,7 @@ export function WorkoutPreviewSheet({
                 {b.items.map((ex, i) => (
                   <View key={`b${bi}i${i}`} style={styles.row}>
                     <Text style={styles.rowName} numberOfLines={2}>
+                      {ssLetters[bi] ? `${ssLetters[bi]}${i + 1}  ` : ''}
                       {ex.name}
                     </Text>
                     <Text style={styles.rowScheme}>{schemeText(ex)}</Text>

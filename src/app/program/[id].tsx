@@ -1255,7 +1255,12 @@ function WeekCard({
                           {/* Named once, above the block it opens — so a superset reads as one thing
                               you do rather than two lifts that happen to be listed together. */}
                           {ex.blockLabel ? <Text style={styles.blockLabel}>{ex.blockLabel}</Text> : null}
-                          <Text style={styles.exName}>{ex.name}</Text>
+                          {/* "A1" / "A2" ahead of the lift, the same tag the logger and both builders
+                              draw — the log has to name a superset's members the way the session will. */}
+                          <Text style={styles.exName}>
+                            {ex.memberLabel ? `${ex.memberLabel}  ` : ''}
+                            {ex.name}
+                          </Text>
                           {ex.sets.length ? (
                             <View style={styles.setList}>
                               {ex.sets.map((s) => (

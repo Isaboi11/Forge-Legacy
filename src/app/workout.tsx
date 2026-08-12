@@ -58,7 +58,7 @@ import {
   PARTNER_CREDIT_WINDOW_MS,
   type AcceptedTraining,
 } from '@/domain/workout/partner-credit';
-import { durText } from '@/domain/program/prescription';
+import { durText, supersetLabels } from '@/domain/program/prescription';
 import { clearWorkoutLaunch, readWorkoutLaunch } from '@/lib/workout-launch';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { clearSession, hasLoggedWork, loadSession, persistSession } from '@/domain/workout/autosave';
@@ -1656,6 +1656,10 @@ export default function WorkoutScreen() {
      3-set press still shows four rounds rather than hiding the fourth. */
   const ssNext = block && isSuperset ? nextInSuperset(session.exercises, block) : null;
   const ssRounds = block && isSuperset ? supersetRounds(session.exercises, block) : 0;
+  /* What each member is CALLED — "A1", "A2", and "B1"/"B2" for a second superset in the same session.
+     Computed for the whole list rather than per row: the letter identifies the BLOCK, which is a fact
+     about the session and not about the member. See `supersetLabels`. */
+  const ssLabels = supersetLabels(session.exercises);
 
   /** One more time through — adds a set to every member, so a round is a round on all of them. */
   const addSupersetRound = () => {
@@ -2118,7 +2122,7 @@ export default function WorkoutScreen() {
         {block && ssFused ? (
           <View style={styles.supersetCard}>
             <View style={styles.supersetHead}>
-              <Text style={styles.blockKicker}>Superset</Text>
+              <Text style={styles.blockKicker}>Superset {ssLabels[block.start]?.replace(/\d+$/, '') ?? ''}</Text>
               <Text style={styles.blockRounds}>
                 {ssNext ? `Round ${ssNext.round + 1} of ${ssRounds}` : `${ssRounds} rounds · complete`}
               </Text>
@@ -2132,7 +2136,7 @@ export default function WorkoutScreen() {
               return (
                 <View key={mi} style={[styles.ssRow, isNext && styles.ssRowNext]}>
                   <View style={[styles.ssTag, isNext && styles.ssTagNext]}>
-                    <Text style={[styles.ssTagText, isNext && styles.ssTagTextNext]}>{String.fromCharCode(65 + m)}</Text>
+                    <Text style={[styles.ssTagText, isNext && styles.ssTagTextNext]}>{ssLabels[mi] ?? `A${m + 1}`}</Text>
                   </View>
                   <View style={styles.ssBody}>
                     <Pressable

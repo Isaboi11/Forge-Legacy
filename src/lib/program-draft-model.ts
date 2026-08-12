@@ -1,5 +1,9 @@
 import type { ProgramDay, ProgramExercise, ProgramStructure, ProgramWeekPlan } from '@/data/programs-live';
 import type { BuilderInbox, BuilderSection } from '@/lib/builder-inbox';
+// ⚠ RELATIVE AND EXTENSIONED, NOT `@/`. This is a RUNTIME import and `node --test` loads this file
+// directly, where the alias does not resolve — the type-only imports above survive only because they are
+// stripped before anything tries. The same rule `domain/program/prescription` states about its own.
+import { supersetLabelAt } from '../domain/program/prescription.ts';
 
 /**
  * The Program Builder's in-progress draft — the device-local editing state (the RN analogue of the
@@ -361,8 +365,20 @@ export function unpairAt(list: ProgramExercise[], index: number): ProgramExercis
   });
 }
 
-/** Which superset a row belongs to within its section: its position and the block's size. */
-export function pairingAt(list: ProgramExercise[], index: number): { pos: number; count: number } | null {
+/**
+ * Which superset a row belongs to within its section: its position, the block's size, and what the row
+ * is CALLED.
+ *
+ * `label` is "A1" / "A2", and the letter identifies the BLOCK — a second superset in the same day is
+ * B1/B2. Both builders drew `String.fromCharCode(64 + pos)` before, which restarted at A for every
+ * block, so a day with two supersets had two exercises called A and two called B and "do A next" named
+ * four different lifts. The rule lives in `domain/program/prescription` because the live logger needs
+ * the identical answer; see `supersetLabels`.
+ */
+export function pairingAt(
+  list: ProgramExercise[],
+  index: number,
+): { pos: number; count: number; label: string; letter: string } | null {
   const gid = list[index]?.groupId;
   if (!gid || list[index].groupKind !== 'superset') return null;
   let a = index;
@@ -370,7 +386,10 @@ export function pairingAt(list: ProgramExercise[], index: number): { pos: number
   let b = index;
   while (b < list.length - 1 && list[b + 1].groupId === gid) b += 1;
   if (b - a + 1 < 2) return null;
-  return { pos: index - a + 1, count: b - a + 1 };
+  const label = supersetLabelAt(list, index);
+  // `supersetLabels` uses the same adjacency rule as the walk above, so this cannot be null here — the
+  // fallback exists so a future divergence degrades to the old numbering rather than rendering "null1".
+  return { pos: index - a + 1, count: b - a + 1, label: label ?? `A${index - a + 1}`, letter: (label ?? 'A').replace(/\d+$/, '') };
 }
 
 /** The persisted shape — the draft minus its editing-session bookkeeping. */

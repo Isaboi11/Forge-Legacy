@@ -166,6 +166,118 @@ export interface PrescriptionBlock {
 /** True when this block is bounded by a clock rather than by a round count. */
 export const isAmrap = (b: PrescriptionBlock): boolean => b.capSec != null && b.capSec > 0;
 
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// SUPERSET LABELS — A1 / A2, then B1 / B2
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * HOW A SUPERSET'S MEMBERS ARE NAMED, in one place, because three surfaces were each inventing it.
+ *
+ * ══ WHAT CHANGED AND WHY ══
+ *
+ * PO: *"On building a superset or adding a superset I don't want them named 'A and B', I want them
+ * named 'A1 and A2'. And then if there is a second superset it would go 'B1 and B2' and so on."*
+ *
+ * They are right, and the old scheme was ambiguous rather than merely different: every superset in a day
+ * started again at A, so a day with two of them had two exercises called A and two called B, and "do A
+ * next" named four different lifts. The letter now identifies the BLOCK and the number the position
+ * inside it, which is how a written program has always done it.
+ *
+ * ⚠ IT WAS ALSO WRITTEN THREE TIMES — `String.fromCharCode(65 + m)` in the logger,
+ * `String.fromCharCode(64 + pairing.pos)` in the Program Builder and again in the Workout Builder, each
+ * with its own off-by-one base. One rule, one implementation, and every surface reads it.
+ *
+ * ══ THE RULES ══
+ *
+ * · A block is a maximal run of ADJACENT items sharing a `groupId` — the same definition `deriveBlocks`
+ *   uses, so the two can never disagree about where a block ends.
+ * · Only `groupKind === 'superset'` is lettered. A circuit runs under its own banner and a block that
+ *   never declared a kind is a circuit (0106), so neither takes a letter — and the letters therefore
+ *   count supersets only, which is what "if there is a SECOND superset it would go B" asks for.
+ * · A run of one is not a superset, matching `pairingAt`. A pair broken down to a single member must not
+ *   keep drawing a label that says it has a partner.
+ *
+ * Generic over anything carrying the two group fields, because the same rule has to serve a
+ * `ProgramExercise` in a builder and a `SessionExercise` in the live logger.
+ */
+export interface GroupableItem {
+  groupId?: string | null;
+  groupKind?: string | null;
+}
+
+/** 0 → 'A' … 25 → 'Z', then 'AA'. Nobody builds 27 supersets in a day; running out silently is still worse. */
+export function blockLetter(ordinal: number): string {
+  let n = Math.max(0, Math.floor(ordinal));
+  let out = '';
+  do {
+    out = String.fromCharCode(65 + (n % 26)) + out;
+    n = Math.floor(n / 26) - 1;
+  } while (n >= 0);
+  return out;
+}
+
+/**
+ * A label per item, index-aligned with the list — `'A1'`, `'A2'`, null, null, `'B1'`, `'B2'`.
+ *
+ * Null means "not a member of a superset", which is most rows. Callers render nothing for those rather
+ * than an empty tag.
+ */
+export function supersetLabels(items: readonly GroupableItem[]): (string | null)[] {
+  const out: (string | null)[] = new Array(items.length).fill(null);
+  const gidOf = (i: number): string | null => items[i]?.groupId?.trim() || null;
+
+  let ordinal = 0;
+  let i = 0;
+  while (i < items.length) {
+    const gid = gidOf(i);
+    if (!gid) {
+      i += 1;
+      continue;
+    }
+    // The end of this run of adjacent same-group items.
+    let end = i;
+    while (end + 1 < items.length && gidOf(end + 1) === gid) end += 1;
+
+    if (items[i].groupKind === 'superset' && end - i + 1 >= 2) {
+      const letter = blockLetter(ordinal);
+      ordinal += 1;
+      for (let k = i; k <= end; k += 1) out[k] = `${letter}${k - i + 1}`;
+    }
+    i = end + 1;
+  }
+  return out;
+}
+
+/** One row's label. The array form is cheaper when a whole list is being drawn — prefer it in a render. */
+export function supersetLabelAt(items: readonly GroupableItem[], index: number): string | null {
+  return supersetLabels(items)[index] ?? null;
+}
+
+/**
+ * The same letters, for callers that already hold `deriveBlocks` output rather than the flat list.
+ *
+ * Index-aligned with `blocks`; null for anything that is not a superset. It must stay in step with
+ * `supersetLabels` — both count supersets only, both require two members — which is why it is here
+ * beside it rather than re-derived at each call site.
+ */
+export function supersetBlockLetters(blocks: readonly PrescriptionBlock[]): (string | null)[] {
+  let ordinal = 0;
+  return blocks.map((b) =>
+    b.kind === 'superset' && b.groupId && b.items.length > 1 ? blockLetter(ordinal++) : null,
+  );
+}
+
+/**
+ * The letter alone, for the heading that sits above a block — "Superset A · 2 exercises, alternated".
+ *
+ * Without it the heading says "Superset" twice on a day with two of them, directly above tags that have
+ * gone to the trouble of distinguishing them.
+ */
+export function supersetLetterAt(items: readonly GroupableItem[], index: number): string | null {
+  const label = supersetLabelAt(items, index);
+  return label ? label.replace(/\d+$/, '') : null;
+}
+
 /**
  * Turn a flat prescription list into blocks.
  *

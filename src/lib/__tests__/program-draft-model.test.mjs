@@ -358,13 +358,24 @@ test('joining an existing superset EXTENDS it rather than forking a rival block 
   const three = pairWithNext(two, 1); // from the second member, add the third
   assert.equal(three[0].groupId, three[1].groupId);
   assert.equal(three[1].groupId, three[2].groupId, 'all three are one block');
-  assert.deepEqual(pairingAt(three, 2), { pos: 3, count: 3 });
+  assert.deepEqual(pairingAt(three, 2), { pos: 3, count: 3, label: 'A3', letter: 'A' });
 });
 
-test('pairingAt reports the letter position the logger will show', () => {
+test('pairingAt reports the label the logger will show', () => {
   const out = pairWithNext([row('Press', 3), row('Row', 3)], 0);
-  assert.deepEqual(pairingAt(out, 0), { pos: 1, count: 2 }, 'A');
-  assert.deepEqual(pairingAt(out, 1), { pos: 2, count: 2 }, 'B');
+  assert.deepEqual(pairingAt(out, 0), { pos: 1, count: 2, label: 'A1', letter: 'A' });
+  assert.deepEqual(pairingAt(out, 1), { pos: 2, count: 2, label: 'A2', letter: 'A' });
+});
+
+test('⚠ a SECOND superset is B, not another A — the whole point of the rename', () => {
+  // It was String.fromCharCode(64 + pos) per block, so both supersets in a day had an A and a B and
+  // "do A next" named four different lifts.
+  let list = pairWithNext([row('Press', 3), row('Row', 3), row('Squat', 3), row('Curl', 3)], 0);
+  list = pairWithNext(list, 2);
+  assert.equal(pairingAt(list, 0).label, 'A1');
+  assert.equal(pairingAt(list, 1).label, 'A2');
+  assert.equal(pairingAt(list, 2).label, 'B1');
+  assert.equal(pairingAt(list, 3).label, 'B2');
 });
 
 test('a circuit is not reported as a pairing — the builder only authors supersets', () => {

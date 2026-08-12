@@ -432,7 +432,8 @@ function Row({
   item: ProgramExercise;
   first: boolean;
   last: boolean;
-  pairing: { pos: number; count: number } | null;
+  /** Position in the block, its size, and what this row is CALLED — "A1", "A2" (see `pairingAt`). */
+  pairing: { pos: number; count: number; label: string; letter: string } | null;
   onUp: () => void;
   onDown: () => void;
   onRemove: () => void;
@@ -452,7 +453,7 @@ function Row({
     <View style={[styles.card, pairing ? styles.cardPaired : null]}>
       {pairing && pairing.pos === 1 ? (
         <View style={styles.pairHead}>
-          <Text style={styles.pairHeadText}>Superset · {pairing.count} exercises, alternated</Text>
+          <Text style={styles.pairHeadText}>Superset {pairing.letter} · {pairing.count} exercises, alternated</Text>
           <Pressable onPress={onUnpair} accessibilityRole="button" accessibilityLabel="Break this superset" hitSlop={8}>
             <Text style={styles.pairBreak}>Break</Text>
           </Pressable>
@@ -462,7 +463,7 @@ function Row({
       <View style={styles.cardTop}>
         <View style={styles.cardText}>
           <Text style={styles.exName} numberOfLines={1}>
-            {pairing ? `${String.fromCharCode(64 + pairing.pos)}  ` : ''}
+            {pairing ? `${pairing.label}  ` : ''}
             {item.name}
           </Text>
           {item.equip ? (

@@ -9,7 +9,7 @@
  */
 
 import type { ProgramDay, ProgramExercise, ProgramStructure } from '@/data/programs-live';
-import { blockRoundsText, deriveBlocks, isAmrap, schemeText, type PrescriptionBlock } from './prescription.ts';
+import { blockRoundsText, deriveBlocks, isAmrap, schemeText, supersetBlockLetters, type PrescriptionBlock } from './prescription.ts';
 import { contextMaxFor, loadText, type LoadContext } from './percent-max.ts';
 
 export type { LoadContext };
@@ -204,6 +204,14 @@ export interface LogExercise {
   /** Prescription shown when the session hasn't been trained yet. */
   planned: string;
   /**
+   * "A1" / "A2" — which member of which superset this row is. Absent on everything else.
+   *
+   * The letter identifies the BLOCK and the number the position inside it, so a day with two supersets
+   * reads A1/A2 then B1/B2 rather than two rows called A and two called B. Same rule as the logger and
+   * both builders; see `supersetLabels`.
+   */
+  memberLabel?: string;
+  /**
    * The block this row belongs to, stated on its FIRST member only — "Superset · 2 exercises,
    * alternated", "HIIT Finisher · 4 rounds". Empty on a loose exercise and on every later member.
    *
@@ -236,12 +244,18 @@ function plannedLine(d: ProgramDay, load?: LoadContext): LogExercise[] {
   // Blocks are derived with `deriveBlocks` rather than read off each row, because the block a row
   // belongs to is a property of its NEIGHBOURS — grouping by id alone fuses two circuits that happen
   // to share one. The label sits on the first member so it reads as a heading, not a repeated tag.
-  return deriveBlocks([...d.warmup, ...d.main, ...d.cooldown]).flatMap((b) =>
+  const blocks = deriveBlocks([...d.warmup, ...d.main, ...d.cooldown]);
+  /* Which superset each block is — "A", then "B". The letter is a fact about the DAY, so it has to be
+     resolved over the whole list rather than inside one block's own map. */
+  const letters = supersetBlockLetters(blocks);
+  return blocks.flatMap((b, bi) =>
     b.items.map((ex, i) => ({
       name: ex.name,
       sets: [],
       planned: [schemeText(ex), plannedLoad(ex, load)].filter(Boolean).join(' '),
-      ...(i === 0 && b.groupId && b.items.length > 1 ? { blockLabel: blockLabelOf(b) } : null),
+      // "A1" / "A2" beside the lift, so the log reads the way the logger and the builder do.
+      ...(letters[bi] ? { memberLabel: `${letters[bi]}${i + 1}` } : null),
+      ...(i === 0 && b.groupId && b.items.length > 1 ? { blockLabel: blockLabelOf(b, letters[bi]) } : null),
     })),
   );
 }
@@ -256,9 +270,11 @@ function plannedLoad(ex: ProgramExercise, load?: LoadContext): string {
   return loadText(ex, contextMaxFor(load, ex), load?.unit ?? '', load?.rules);
 }
 
-/** "Superset · 2 exercises, alternated" · "HIIT Finisher · 4 rounds" · "AMRAP · 8:00 cap". */
-function blockLabelOf(b: PrescriptionBlock): string {
-  const name = b.name || (b.kind === 'superset' ? 'Superset' : 'Circuit');
+/** "Superset A · 2 exercises, alternated" · "HIIT Finisher · 4 rounds" · "AMRAP · 8:00 cap". */
+function blockLabelOf(b: PrescriptionBlock, letter?: string | null): string {
+  /* The letter goes on the DEFAULT name only. A block the author named "Chest Finisher" is already
+     distinguishable, and "Chest Finisher A" would be lettering something that has a name. */
+  const name = b.name || (b.kind === 'superset' ? `Superset${letter ? ` ${letter}` : ''}` : 'Circuit');
   if (isAmrap(b)) return `${name} · ${blockRoundsText(b)} cap`;
   if (b.kind === 'superset') return `${name} · ${b.items.length} exercises, alternated`;
   const r = blockRoundsText(b);
