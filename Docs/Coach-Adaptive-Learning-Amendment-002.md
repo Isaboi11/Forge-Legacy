@@ -96,11 +96,46 @@ is handed to the athlete as a conditional, never asserted. ✅ *"If that moved w
 moment Holt says something they did not want, and that is in a gym, not in Account Settings two days
 later. Same field, two doors.
 
+## 2b. Learned preference — what he picks, not what he refuses
+
+**CP-D1 — A swap teaches PREFERENCE, not avoidance.** PO: *"it's more just to help Holt learn of what
+people like and help him build better programs for them."* The two readings of the same data are not
+equally safe. Avoidance is a blocklist: swap away from squats twice and the pattern quietly disappears,
+the athlete never learns what they stopped training, and the program degrades toward whatever was
+easiest. Preference re-ranks WITHIN a movement pattern and can never remove one, so a knee-dominant slot
+is still filled by a knee-dominant exercise — just the row this athlete actually does.
+
+**CP-D2 — Which is why it needs no visible list before it may be read.** CL-D3 makes a visible,
+reversible surface a PRECONDITION of `assemble()` reading an avoidance, because an avoidance the athlete
+cannot see silently narrows their training. Preference cannot narrow anything, so the precondition does
+not attach. `exercise_avoidance` (0138) therefore remains captured and unread, exactly as CL-D11 left it.
+
+**CP-D3 — Only a substitution counts.** `workout_exercises.prescribed_catalog_key` is non-null only where
+the athlete was offered one movement and did another — a stated comparison. Counting what was merely
+logged would measure what the PROGRAM chose and file it as what the athlete prefers, which is the
+opposite of the point. A swap to the same lift (a renamed movement) is not a choice.
+
+**CP-D4 — Two occurrences, per CL-D3.** One swap is a busy rack, an unfamiliar machine, or an occupied
+station. Two is a preference.
+
+**CP-D5 — The engine never fetches it.** `domain/coach/**` reads no database. The caller resolves the
+swaps into a plain map and passes it into `CoachConstraints.learned` / `DayRequest.learned`, so
+`assemble()` stays a pure function of its arguments. An unapplied migration, a dropped request, or an
+athlete who has never swapped all resolve to `{}` — and `{}` builds exactly what was built before this
+existed.
+
+**CP-D6 — He says it, and only when it is true.** CL-D2 requires every adaptation be explicable and the
+sentence shown. `appliedSentence()` reads the catalogue keys the assembler CHOSE, not the ones it was
+told to favour, so a preference the equipment could not honour is never claimed. At most two are named;
+a longer list is a changelog, not an explanation.
+
 ## 3. What did not change
 
 | Document | Status |
 | --- | --- |
-| `Coach-Adaptive-Learning-Amendment-001` CL-D1…CL-D11 | Unchanged. Intensity is a CHOSEN preference; CL-D3's "propose, never silently apply" governs the learning layer, which is not in this pass. |
+| `Coach-Adaptive-Learning-Amendment-001` CL-D1…CL-D11 | Unchanged. Intensity is a CHOSEN preference; CL-D3's "propose, never silently apply" governs the learning layer. CL-D3's visible-list precondition still binds `exercise_avoidance`, which stays unread (CP-D2). |
+| `exercise_avoidance` (0138) | Still captured, still unread by the engine. CP-D1 routes the same question through preference instead. |
+| Movement patterns, sets, reps, prescription, program structure | Untouched by learned preference — it re-ranks candidates within a pattern and nothing else (CP-D1). |
 | PAS §10 volume bands | Unchanged, and CI-D3 exists to keep them that way. |
 | `progression.ts`'s back-off and never-push-through-a-miss branches | Unchanged (CI-D4). |
 | `voice.ts`'s 28 conversation keys | Untouched. In-workout lines are a separate table. |

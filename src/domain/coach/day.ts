@@ -45,6 +45,7 @@ import { GOAL_CATEGORY } from './rulebook/volume.ts';
 import { equipmentAfterLimitations, limitationPatterns } from './rulebook/limitations.ts';
 import { skeletonFor } from './rulebook/skeletons.ts';
 import { preferenceRank } from './rulebook/preferences.ts';
+import type { LearnedPreferences } from './learned-preference.ts';
 import { bandFor, type PasCategory } from './rulebook/volume.ts';
 import { fillSlot } from './candidates.ts';
 
@@ -151,6 +152,8 @@ export interface DayRequest {
   goal?: Goal;
   /** Overrides the category derived from `goal`. Rarely needed; `goal` is the honest input. */
   category?: PasCategory;
+  /** What this athlete keeps choosing — resolved by the caller. See `learned-preference.ts`. */
+  learned?: LearnedPreferences;
 }
 
 export interface DayResult {
@@ -258,6 +261,9 @@ export function buildDayWorkout(
     limitations: req.limitations,
     limitationPatterns,
     excludeExercises: req.excludeExercises ?? [],
+    // Same map the program assembler gets — a single day and a twelve-week block should not disagree
+    // about which row of a movement pattern this athlete actually does.
+    learned: req.learned,
   });
 
   const missing: string[] = [];

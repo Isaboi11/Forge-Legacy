@@ -23,6 +23,8 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
 /** Goals served by a strength/conditioning skeleton — no race, no mileage, no date. */
+import type { LearnedPreferences } from './learned-preference.ts';
+
 export type StrengthGoal = 'strength' | 'muscle' | 'weight_loss' | 'conditioning' | 'mobility';
 
 /**
@@ -264,6 +266,19 @@ export interface CoachConstraints {
    * whether they finish the block, and a program abandoned in week 2 trains nobody.
    */
   splitStyle?: import('./rulebook/skeletons.ts').SplitStyle | null;
+  /**
+   * What this athlete keeps choosing instead of what was prescribed — `learnPreferences()` output.
+   *
+   * ⚠ AN INPUT, NOT A LOOKUP. `domain/coach/**` reads no database, and this does not change that: the
+   * caller resolves it and hands it down, so `assemble()` stays a pure function of its arguments.
+   *
+   * ⚠ AND IT ONLY RE-RANKS WITHIN A MOVEMENT PATTERN — it can never remove one. That is why preference
+   * needs no visible-and-reversible surface before it is safe to act on, where an avoidance list would
+   * (CL-D3). See `learned-preference.ts`.
+   *
+   * Absent means "no opinion", and the engine then behaves exactly as it did before this existed.
+   */
+  learned?: LearnedPreferences;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────

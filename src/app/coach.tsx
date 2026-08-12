@@ -40,6 +40,10 @@ import {
   stylesForDays,
   type SplitStyle,
 } from '@/domain/coach/rulebook/skeletons';
+import { fetchLearnedPreferences } from '@/data/learned-preference-live';
+import { appliedSentence, type LearnedPreferences } from '@/domain/coach/learned-preference';
+import { scheduleSlots } from '@/domain/program/progress-core';
+import type { ProgramStructure } from '@/data/programs-live';
 import { canDoExercise, HOME_GYM_EQUIPMENT, HOME_GYM_GROUPS } from '@/domain/home-gym/equipment';
 import { itemByKey, PICKER_DB } from '@/domain/exercise-picker/data';
 import { draftFromStructure, saveProgramDraft } from '@/lib/program-draft';
@@ -276,6 +280,12 @@ export default function CoachScreen() {
     setBusy(true);
     setError(null);
     try {
+      /* ⚠ FETCHED HERE AND PASSED DOWN, NEVER READ INSIDE THE ENGINE. `domain/coach/**` touches no
+         database, and this is what keeps that true: the swaps this athlete has actually made become a
+         plain map at the boundary, and `assemble()` stays a pure function of its arguments. Resolves to
+         `{}` for anybody who has never swapped, which is most people, and `{}` builds what it built
+         before any of this existed. */
+      const learned = await fetchLearnedPreferences();
       if (mode === 'program') {
         const res = assemble(
           {
@@ -297,6 +307,7 @@ export default function CoachScreen() {
             canRunContinuously: canRun,
             recentRaceMi: resultMi,
             recentRaceSec: parseTime(resultTime),
+            learned,
           },
           PICKER_DB,
           canDoExercise,
@@ -327,7 +338,9 @@ export default function CoachScreen() {
             meta: `${d.main.length} exercises`,
             items: d.main.map((e) => ({ name: e.name, detail: '' })),
           })),
-          notes: droppedLine(notes),
+          /* Two kinds of honesty in one list: what he COULDN'T build, and what he built because of
+             something this athlete taught him. Both are the coach showing his working. */
+          notes: [...droppedLine(notes), ...learnedLine(learned, structure)],
           apply: async () => {
             await saveProgramDraft(draftFromStructure(structure));
             router.replace('/program-builder');
@@ -344,6 +357,7 @@ export default function CoachScreen() {
             environment,
             ownedEquipment: owned,
             limitations,
+            learned,
           },
           PICKER_DB,
           canDoExercise,
@@ -1208,6 +1222,21 @@ function Reveal({
       </View>
     </>
   );
+}
+
+/**
+ * The learned-preference line, if one actually landed in the built plan (CL-D2).
+ *
+ * Reads the catalogue keys the assembler CHOSE rather than the ones it was told to favour, so the
+ * sentence can only ever name a movement that is genuinely in the program.
+ */
+function learnedLine(learned: LearnedPreferences, structure: ProgramStructure): string[] {
+  const keys: string[] = [];
+  for (const slot of scheduleSlots(structure)) {
+    for (const ex of slot.day?.main ?? []) if (ex.catalogKey) keys.push(ex.catalogKey);
+  }
+  const said = appliedSentence(learned, keys, (k) => itemByKey(k)?.name ?? k);
+  return said ? [said] : [];
 }
 
 function droppedLine(notes: readonly { kind: string; wanted: string }[]): string[] {

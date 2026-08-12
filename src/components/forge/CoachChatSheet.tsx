@@ -44,7 +44,9 @@ import { pick } from '@/domain/coach/rulebook/voice';
 import { useProfile } from '@/lib/profile';
 import { rationaleFor } from '@/domain/coach/rulebook/rationale';
 import { buildDayWorkout } from '@/domain/coach/day';
-import { PICKER_DB } from '@/domain/exercise-picker/data';
+import { itemByKey, PICKER_DB } from '@/domain/exercise-picker/data';
+import { fetchLearnedPreferences } from '@/data/learned-preference-live';
+import { appliedSentence } from '@/domain/coach/learned-preference';
 import { canDoExercise } from '@/domain/home-gym/equipment';
 import { fetchActiveProgram } from '@/data/programs-live';
 import { clearThread, hasMetHolt, loadThread, rememberMetHolt, saveThread } from '@/lib/coach-thread';
@@ -304,6 +306,9 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
         setBusy('building');
         await pause(650);
         const c = completeFor(merged, mode_);
+        /* Resolved at the boundary and handed down — see the note on the same call in `coach.tsx`. The
+           chat and the wizard must build the same program from the same answers, so both paths get it. */
+        const learned = await fetchLearnedPreferences();
 
         if (mode_ === 'day') {
           const r = buildDayWorkout(
@@ -319,6 +324,7 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
               environment: c.environment,
               ownedEquipment: c.ownedEquipment,
               limitations: c.limitations,
+              learned,
             },
             PICKER_DB,
             canDoExercise,
@@ -335,11 +341,19 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
           setBuilt({ kind: 'day' });
           const dayCard = dayCardFor(merged, r.day);
           setLastCard({ day: dayCard });
-          say({ kind: 'holt', text: dayPreamble() }, { kind: 'day', card: dayCard });
+          /* CL-D2 — if a learned preference actually landed in this session, he says so in his own
+             turn rather than burying it in the card. `appliedSentence` reads the keys the assembler
+             CHOSE, so he can never claim a movement the day does not contain. */
+          const learnedSaid = appliedSentence(
+            learned,
+            r.day.main.map((e) => e.catalogKey ?? ''),
+            (k) => itemByKey(k)?.name ?? k,
+          );
+          say({ kind: 'holt', text: learnedSaid ? `${dayPreamble()} ${learnedSaid}` : dayPreamble() }, { kind: 'day', card: dayCard });
           return;
         }
 
-        const res = assemble(c, PICKER_DB, canDoExercise);
+        const res = assemble({ ...c, learned }, PICKER_DB, canDoExercise);
         setBusy(null);
 
         if (!res.ok) {

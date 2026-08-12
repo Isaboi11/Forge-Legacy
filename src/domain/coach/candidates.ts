@@ -31,6 +31,7 @@
 import type { Experience, Limitation } from './constraints.ts';
 import { isCoherent } from './rulebook/coherence.ts';
 import { preferenceRank } from './rulebook/preferences.ts';
+import { learnedRank, type LearnedPreferences } from './learned-preference.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // THE POOL
@@ -129,6 +130,21 @@ export interface CandidateContext {
   excludeKeys: ReadonlySet<string>;
   /** Already used in this day (or block), so a day never prescribes the same movement twice. */
   used: ReadonlySet<string>;
+  /**
+   * What this athlete has repeatedly chosen INSTEAD of what was prescribed — see `learned-preference`.
+   *
+   * ⚠ PASSED IN, NEVER FETCHED. `domain/coach/**` reads no database and this does not change that: the
+   * caller resolves the swaps and hands the finished map down, so `assemble()` stays a pure function of
+   * its inputs and the whole engine stays testable without a network.
+   *
+   * ⚠ AND IT ONLY RE-RANKS WITHIN A PATTERN. It can never remove one — a knee-dominant slot is still
+   * filled by a knee-dominant exercise, just the one they actually do. That is what makes preference
+   * safe where a blocklist would not be; see the header of `learned-preference.ts`.
+   *
+   * Optional, and absent means "no opinion" — the ranking is then exactly what it was before this
+   * existed, which is the behaviour every athlete who has never swapped anything should get.
+   */
+  learned?: LearnedPreferences;
 }
 
 const DIFFICULTY_ORDER = { Beginner: 0, Intermediate: 1, Advanced: 2 } as const;
@@ -168,7 +184,11 @@ export function candidatesFor(pattern: string, pool: readonly CatalogExercise[],
     if (!ctx.canDo(ex, ctx.owned)) continue;
     const fit = difficultyRank(ex, ctx.experience);
     if (fit == null) continue;
-    scored.push({ ex, pref: preferenceRank(pattern, ex.key), fit, breadth: ex.muscleIds.length });
+    /* The athlete's own ranking wins when they have one, and it is negative by construction so it
+       sorts ahead of the rulebook's canonical order without a second sort key. Nobody with no swaps on
+       record is affected in any way. */
+    const own = ctx.learned ? learnedRank(ctx.learned, pattern, ex.key) : null;
+    scored.push({ ex, pref: own ?? preferenceRank(pattern, ex.key), fit, breadth: ex.muscleIds.length });
   }
 
   return scored
@@ -244,6 +264,8 @@ export function contextFrom(opts: {
   limitationKeys?: (l: Limitation) => readonly string[];
   excludeExercises?: readonly string[];
   used?: ReadonlySet<string>;
+  /** What this athlete keeps choosing instead — resolved by the CALLER, never fetched here. */
+  learned?: LearnedPreferences;
 }): CandidateContext {
   const excludePatterns = new Set<string>();
   const excludeKeys = new Set<string>(opts.excludeExercises ?? []);
@@ -252,6 +274,7 @@ export function contextFrom(opts: {
     for (const k of opts.limitationKeys?.(l) ?? []) excludeKeys.add(k);
   }
   return {
+    learned: opts.learned,
     owned: opts.owned,
     canDo: opts.canDo,
     experience: opts.experience,

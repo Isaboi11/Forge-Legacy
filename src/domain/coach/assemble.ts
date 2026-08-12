@@ -373,6 +373,10 @@ export function assemble(
     limitations: c.limitations,
     limitationPatterns,
     excludeExercises: c.excludeExercises,
+    /* What this athlete keeps swapping TO. ⚠ It re-ranks within a pattern and can never remove one, so
+       a program built with it is the same shape as one built without — just filled with the movements
+       they actually do. Absent for anybody who has never swapped, which is most people. */
+    learned: c.learned,
   });
 
   /*
