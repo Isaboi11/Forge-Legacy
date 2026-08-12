@@ -122,3 +122,51 @@ const rand: Chooser = (n) => Math.floor(Math.random() * n);
 
 /** Every table, for the tests that walk them. */
 export const REVIEW_LINES = { OPENER, CLOSE, HONOR_LINE, PR_ONE, PR_MANY, TOP_LINE };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WHICH WEEK IT WAS
+// ─────────────────────────────────────────────────────────────────────────────
+
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+/**
+ * ⚠ PARSED BY HAND, NEVER `new Date(iso)`.
+ *
+ * `new Date('2026-08-03')` is specified to parse as UTC midnight, so west of Greenwich every
+ * `getDate()` off it returns the day BEFORE. 0140 buckets these dates in the athlete's own timezone
+ * precisely so the week is theirs — running them back through a UTC parse would undo that at the last
+ * step and label the review with the wrong days.
+ */
+function parts(iso: string): { y: number; m: number; d: number } | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!m) return null;
+  const month = Number(m[2]) - 1;
+  if (month < 0 || month > 11) return null;
+  return { y: Number(m[1]), m: month, d: Number(m[3]) };
+}
+
+/**
+ * "3 – 9 August 2026" · "27 July – 2 August 2026" · "29 December 2025 – 4 January 2026".
+ *
+ * The month is named once when both ends share it, which is the common case — a week that reads as one
+ * span rather than two dates. Pass `year: false` where the surface is already anchored in time (the Home
+ * card is about last week by definition; the screen it opens is not).
+ *
+ * Falls back to the raw ISO pair rather than throwing: a malformed date should look wrong, not crash a
+ * screen the athlete opened to read about their training.
+ */
+export function formatWeekRange(startISO: string, endISO: string, opts?: { year?: boolean }): string {
+  const a = parts(startISO);
+  const b = parts(endISO);
+  if (!a || !b) return `${startISO} — ${endISO}`;
+
+  const year = opts?.year !== false;
+  if (a.y !== b.y) return `${a.d} ${MONTHS[a.m]} ${a.y} – ${b.d} ${MONTHS[b.m]} ${b.y}`;
+
+  const tail = year ? ` ${b.y}` : '';
+  if (a.m !== b.m) return `${a.d} ${MONTHS[a.m]} – ${b.d} ${MONTHS[b.m]}${tail}`;
+  return `${a.d} – ${b.d} ${MONTHS[b.m]}${tail}`;
+}

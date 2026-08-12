@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { REVIEW_LINES, reviewNote, shapeOf } from '../rulebook/review.ts';
+import { REVIEW_LINES, formatWeekRange, reviewNote, shapeOf } from '../rulebook/review.ts';
 import { resetVoice } from '../rulebook/voice.ts';
 
 const first = () => 0;
@@ -106,4 +106,37 @@ test('every shape produces a complete sentence with no stray tokens', () => {
     assert.ok(!note.includes('{'), `${n}: ${note}`);
     assert.ok(note.trim().length > 0, String(n));
   }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WHICH WEEK IT WAS
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('a week inside one month names the month once', () => {
+  assert.equal(formatWeekRange('2026-08-03', '2026-08-09'), '3 – 9 August 2026');
+});
+
+test('a week that crosses a month names both', () => {
+  assert.equal(formatWeekRange('2026-07-27', '2026-08-02'), '27 July – 2 August 2026');
+});
+
+test('a week that crosses a year carries both years', () => {
+  assert.equal(formatWeekRange('2025-12-29', '2026-01-04'), '29 December 2025 – 4 January 2026');
+});
+
+test('the year can be dropped where the surface already says "last week"', () => {
+  assert.equal(formatWeekRange('2026-08-03', '2026-08-09', { year: false }), '3 – 9 August');
+});
+
+test('⚠ the date is NOT parsed as UTC — the first of a month stays the first', () => {
+  /* `new Date('2026-08-01')` is UTC midnight, which is 31 July for every athlete west of Greenwich.
+     0140 buckets the week in `profiles.tz` so it is THEIR week; a UTC parse here would undo that at the
+     very last step. This fails loudly if anyone "simplifies" the parser back to a Date constructor. */
+  assert.equal(formatWeekRange('2026-08-01', '2026-08-07'), '1 – 7 August 2026');
+  assert.equal(formatWeekRange('2026-03-01', '2026-03-07'), '1 – 7 March 2026');
+});
+
+test('a malformed date degrades to the raw pair instead of throwing', () => {
+  assert.equal(formatWeekRange('not-a-date', '2026-08-09'), 'not-a-date — 2026-08-09');
+  assert.equal(formatWeekRange('2026-13-01', '2026-13-07'), '2026-13-01 — 2026-13-07');
 });
