@@ -1,5 +1,11 @@
 -- Forge Legacy — 0141: squad check-in videos actually expire
 --
+-- ⛔ SUPERSEDED BY 0142 — DO NOT RE-PASTE THIS FILE. Its `storage.objects` delete is not merely
+--    ungranted, it is categorically impossible: Supabase's `storage.protect_delete()` trigger raises
+--    42501 on any direct delete from a storage table. Worse, nulling `video_url` without recording the
+--    object path minted untraceable orphans. 0142 drops and replaces `squad_checkin_prune` with a version
+--    that writes the path down. Re-running this file would reinstate the broken body.
+--
 -- ⚠ THE BUG. 0049 re-modelled check-ins as ephemeral 24h "stories", and every read path honours that:
 --   `fetchSquadCheckins` filters `.gte(created_at, now-24h)`, and 0050 / 0051 / 0053 / 0055 / 0108 all
 --   carry `created_at >= now() - interval '24 hours'`. But that is a READ FILTER, not a lifetime. Nothing
@@ -45,7 +51,18 @@ create index if not exists squad_checkins_prunable
 -- ── The prune ──────────────────────────────────────────────────────────────────
 -- Returns (videos_cleared, objects_deleted). A gap between them means the storage delete was denied and
 -- those bytes are orphaned — reachable by nobody, but still billed until a dashboard pass removes them.
-create or replace function public.squad_checkin_prune(p_limit int default 500)
+--
+-- ⚠ DROPPED FIRST, AND IT MUST BE. `create or replace` CANNOT change a function's return type — Postgres
+-- raises `42P13: cannot change return type of existing function`. 0142 replaces this same function with
+-- one returning `int`, so the moment 0142 has run, re-running this file (or running the two out of
+-- order) fails on that error and stops the whole chain. Migrations here are pasted by hand and re-runs
+-- are the normal recovery, so a file that can only ever be run once is a file that will strand somebody.
+--
+-- Dropping resets the EXECUTE grant to PUBLIC; the `revoke` further down restores it in the same pass,
+-- which is the same reasoning 0120 records for `notification_events_for`.
+drop function if exists public.squad_checkin_prune(int);
+
+create function public.squad_checkin_prune(p_limit int default 500)
 returns table (videos_cleared int, objects_deleted int)
 language plpgsql
 security definer
