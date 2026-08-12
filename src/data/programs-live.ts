@@ -2,6 +2,7 @@ import type { CardioActivity } from '@/domain/workout/conditioning';
 import { supabase } from '@/lib/supabase';
 import { touchedCount } from '@/domain/program/progress-core';
 import type { LoggedWorkout, ProgramState, SessionMark, SessionState } from '@/domain/program/progress-core';
+import { matchSharedShapeToSlot, type SharedShapeExercise } from '@/domain/program/shared-session';
 import type { LiftMaxes } from '@/domain/program/percent-max';
 
 /**
@@ -537,6 +538,82 @@ export async function fetchProgramSessions(programId: string): Promise<SessionMa
     dayIndex: r.day_index,
     state: r.state,
   }));
+}
+
+/** A shared workout placed in the athlete's OWN program — what `save_workout` needs to mark it done. */
+export interface SharedSessionSlot {
+  programId: string;
+  weekIndex: number;
+  dayIndex: number;
+}
+
+/**
+ * WHICH OF MY OWN PROGRAM SESSIONS DID I JUST DO WITH SOMEONE ELSE?
+ *
+ * An invite carries a SHAPE, never a pointer (0093) — the sender's program is theirs and "next session"
+ * resolves per athlete. That is correct, and it is also why a shared workout used to save with no
+ * program attached at all: nothing ever asked the GUEST's schedule whether the shape they had just
+ * trained was one of the sessions they owed. It always could have. See `shared-session.ts`.
+ *
+ * Never throws and never blocks training. Every failure — no active program, an unreadable one, no slot
+ * the shape covers — returns null, which is precisely the behaviour every shared workout had before
+ * this existed: saved, logged, counted toward the chapter and rank, attributed to no program.
+ */
+export async function resolveSharedSessionSlot(
+  shape: readonly SharedShapeExercise[],
+): Promise<SharedSessionSlot | null> {
+  if (!shape.length) return null;
+  try {
+    const program = await fetchActiveProgram();
+    if (!program) return null;
+    const marks = await fetchProgramSessions(program.id);
+    const slot = matchSharedShapeToSlot(program.structure, marks, shape);
+    return slot ? { programId: program.id, ...slot } : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Every session mark the athlete owns, grouped by program id.
+ *
+ * ══ THIS EXISTS TO BREAK A WATERFALL, NOT TO SAVE A QUERY ══
+ *
+ * Home needs marks to know WHICH session to offer, and it used to get them from
+ * `fetchProgramSessions(builtId)` — where `builtId` comes out of `fetchMyPrograms`. So the two reads were
+ * strictly sequential: fetch the programs, wait, then fetch the sessions of one of them. Every other read
+ * on Home runs in parallel; this one pair was a round trip deep behind another round trip, and once Home
+ * started holding its first paint until every read was in, that chain WAS the hold.
+ *
+ * Dropping the `program_id` filter removes the dependency, and it costs nothing to do so: the athlete
+ * only ever had their own rows to begin with. `program_sessions` carries `athlete_id` and its RLS policy
+ * is `athlete_id = auth.uid()` (0119), so the unfiltered read returns precisely the same set the
+ * per-program reads would have, in one trip that starts at the same instant as everything else. The
+ * `eq` is still passed so the intent is legible in the query rather than implied by a policy.
+ *
+ * Grouped rather than flat because the caller asks by program: `marks[programId] ?? []`. A program with
+ * no touched sessions has no key, and an absent key and an empty list mean the same thing here — nothing
+ * in that program has been trained or skipped yet.
+ */
+export async function fetchAllProgramSessions(): Promise<Record<string, SessionMark[]>> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return {};
+  const { data, error } = await supabase
+    .from('program_sessions')
+    .select('program_id, week_index, day_index, state')
+    .eq('athlete_id', user.id);
+  // Swallowed, exactly as `fetchProgramSessions` does: no marks means Home offers the program's first
+  // open slot, which is what it offered before 0119 existed. A thrown error here would take down a
+  // screen over a progress detail.
+  if (error || !data) return {};
+  const rows = data as { program_id: string; week_index: number; day_index: number; state: SessionState }[];
+  const byProgram: Record<string, SessionMark[]> = {};
+  for (const r of rows) {
+    (byProgram[r.program_id] ??= []).push({ weekIndex: r.week_index, dayIndex: r.day_index, state: r.state });
+  }
+  return byProgram;
 }
 
 /**

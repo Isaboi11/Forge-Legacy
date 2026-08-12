@@ -6,6 +6,7 @@ import { fetchTodaysChapterPhotos } from '@/data/photos-live';
 import {
   acceptJoinRequest,
   declineWorkoutInvite,
+  fetchAcceptedTrainingCredits,
   fetchPendingJoinRequests,
   fetchTrainingPartners,
   inviteToLiveSession,
@@ -48,8 +49,15 @@ import {
   type CardioActivity,
 } from '@/domain/workout/conditioning';
 import { buildSessionFromProgram } from '@/domain/workout/build-session';
-import { fetchProgram, fetchProgramSessions } from '@/data/programs-live';
+import { fetchProgram, fetchProgramSessions, resolveSharedSessionSlot } from '@/data/programs-live';
 import { nextOpenSlot } from '@/domain/program/progress-core';
+import {
+  creditsInWindow,
+  mergePartnerCredits,
+  resolvePartnerNames,
+  PARTNER_CREDIT_WINDOW_MS,
+  type AcceptedTraining,
+} from '@/domain/workout/partner-credit';
 import { durText } from '@/domain/program/prescription';
 import { clearWorkoutLaunch, readWorkoutLaunch } from '@/lib/workout-launch';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -417,6 +425,37 @@ export default function WorkoutScreen() {
          to keep in step. Written INTO each session built below rather than into screen state, so it
          rides autosave like everything else on the session. */
       const launchPartners = launch?.partnerId ? [launch.partnerId] : undefined;
+
+      /*
+       * …AND ANYONE WHO ACCEPTED AN ASK OF YOURS, which is the half that was missing.
+       *
+       * `launch.partnerId` only ever reaches the device that RECEIVED something. Send an invite from
+       * `/train-invite`, pocket the phone, then go and train, and nothing tagged anybody — the sender was
+       * not in a session at the moment they asked. Deriving it from the accepted invite instead makes
+       * both athletes run the same rule over the same row, so the credit is symmetric however the ask
+       * went. See `domain/workout/partner-credit.ts`.
+       *
+       * ⚠ DELIBERATELY NOT AWAITED. Everything below this line builds the session the athlete is standing
+       * there waiting for, and a name on a chip is not worth a network round trip in front of it. It
+       * lands a moment later and merges into whatever the session has by then — including a session that
+       * came back through the resume prompt, which this effect returns before ever reaching.
+       *
+       * Finish re-derives the whole set anyway, so a read that never lands costs the chip, not the credit.
+       */
+      const creditWindowStart = Date.now() - PARTNER_CREDIT_WINDOW_MS;
+      /* Held in the closure so BOTH orders work. The branches below take anywhere from no awaits (a
+         freestyle start) to two network reads (a program day), so this answer can arrive on either side
+         of the session existing: `startSession` reads whatever has landed by then, and the handler
+         catches the session if it had not been built yet. */
+      let credits: AcceptedTraining[] = [];
+      const applyCredits = (s: ActiveSession): ActiveSession => {
+        const merged = mergePartnerCredits(s.partnerIds ?? [], credits, s.partnerIdsDeclined ?? []);
+        return merged.length === (s.partnerIds ?? []).length ? s : { ...s, partnerIds: merged };
+      };
+      void fetchAcceptedTrainingCredits(new Date(creditWindowStart).toISOString()).then((accepted) => {
+        credits = creditsInWindow(accepted, { fromMs: creditWindowStart, toMs: Date.now() });
+        if (credits.length) setSession((s) => (s ? applyCredits(s) : s));
+      });
       /* Where the guest opens (0121). An ordinary invite is 0; a JOIN accepted mid-workout is wherever
          the host had reached, snapshotted by them at accept time. Clamped when it is read. */
       const launchStart = launch?.startIndex ?? 0;
@@ -426,11 +465,13 @@ export default function WorkoutScreen() {
        * only the snapshot path and an invite carrying a TEMPLATE credited nobody.
        */
       const startSession = (s: ActiveSession) => {
-        setSession({
-          ...s,
-          partnerIds: launchPartners ?? s.partnerIds,
-          exerciseIndex: Math.min(Math.max(0, launchStart), Math.max(0, s.exercises.length - 1)),
-        });
+        setSession(
+          applyCredits({
+            ...s,
+            partnerIds: launchPartners ?? s.partnerIds,
+            exerciseIndex: Math.min(Math.max(0, launchStart), Math.max(0, s.exercises.length - 1)),
+          }),
+        );
       };
 
       /* An explicit shape (0093) — what an invite carries. Checked before templateId because an invite
@@ -439,10 +480,29 @@ export default function WorkoutScreen() {
         const shape = launch.exercises;
         const nm = launch.workoutName ?? 'Shared Workout';
         await clearWorkoutLaunch();
+        /*
+         * ⚠ A SHARED WORKOUT IS STILL YOUR OWN PROGRAM'S SESSION, and until now it was not.
+         *
+         * The invite carries a SHAPE rather than a pointer, because the sender's program is theirs and
+         * "next session" resolves per athlete (0093). Right — but it also meant this branch built a
+         * session with no `programId`, so `save_workout` wrote no `program_sessions` row and Home went on
+         * offering a day the athlete had already trained. Two athletes finished Week 2 · Day 1 together
+         * and Home still said "Legs — Start Workout" afterwards; one of them re-logged the whole session
+         * by hand because the app told him it had not happened.
+         *
+         * So ask the GUEST's own schedule whether this shape is one of the sessions they owe. Null — no
+         * program, or no slot it covers — leaves the session exactly as it saved before. See
+         * `domain/program/shared-session.ts`.
+         */
+        const slot = await resolveSharedSessionSlot(shape);
         startSession({
           workoutName: nm,
           activityType: 'strength',
           startedAt: new Date().toISOString(),
+          /* Both coordinates travel, which is the exception `workout-launch.ts` names: the server picks
+             the first OPEN slot when it is sent none, and the slot this shape covers is not always that
+             one. A resolution made from live marks two seconds ago cannot go stale the way a card can. */
+          ...(slot ? { programId: slot.programId, programWeek: slot.weekIndex, programDay: slot.dayIndex } : null),
           exercises: shape.map((e, i) => ({
             name: e.name,
             catalogKey: e.catalogKey ?? undefined,
@@ -1152,7 +1212,25 @@ export default function WorkoutScreen() {
     setPhase('saving');
     setError(null);
     try {
-      const partnerNames = taggedPartners.map((id) => (partners ?? []).find((p) => p.id === id)?.name).filter((n): n is string => Boolean(n));
+      /*
+       * WHO WAS THERE — re-derived at the last possible moment, for two reasons.
+       *
+       * An accept can land WHILE you are training: the start-time pass could not have seen it, and the
+       * athlete never saw it either, so there is nothing of theirs to overwrite. And a session RESUMED
+       * from autosave never ran that pass at all. Both are covered by asking again here, over a window
+       * that reaches back from when this session actually started.
+       *
+       * `partnerIdsDeclined` is what keeps the second pass honest — anyone taken off stays off.
+       */
+      const startedMs = Date.parse(session.startedAt);
+      const since = (Number.isFinite(startedMs) ? startedMs : Date.now()) - PARTNER_CREDIT_WINDOW_MS;
+      const accepted: AcceptedTraining[] = await fetchAcceptedTrainingCredits(new Date(since).toISOString());
+      const credits = creditsInWindow(accepted, { fromMs: since, toMs: Date.now() });
+      const creditedIds = mergePartnerCredits(taggedPartners, credits, session.partnerIdsDeclined ?? []);
+      /* Names from the live roster first, the accepted invite as the fallback. It used to be the roster
+         alone, and `training_partners()` returns `[]` on ANY failure by design — so one dropped read at
+         Finish silently cost the tag on a workout that saved perfectly. */
+      const partnerNames = resolvePartnerNames(creditedIds, partners ?? [], credits);
       /* A reopened workout is APPENDED to, never saved again. `saveWorkout` writes the chapter
          counter, the program slot and an honor pass — running it twice for one session would count a
          single workout as two on the Legacy screen and claim a second slot in the program. */
@@ -1288,10 +1366,28 @@ export default function WorkoutScreen() {
     }
   };
 
+  /*
+   * ⚠ REMOVING A TAG HAS TO BE REMEMBERED, not just applied.
+   *
+   * Finish re-derives credits from the same accepted invites the session start used (an accept can
+   * arrive mid-workout), so a plain removal would be undone on the way out — the app writing a name the
+   * athlete had explicitly taken off. Re-adding clears the refusal, so the list only ever holds a "no"
+   * that is still current.
+   */
   const togglePartner = (id: string) => {
-    if (taggedPartners.includes(id)) mutate((s) => ({ ...s, partnerIds: (s.partnerIds ?? []).filter((x) => x !== id) }));
+    if (taggedPartners.includes(id))
+      mutate((s) => ({
+        ...s,
+        partnerIds: (s.partnerIds ?? []).filter((x) => x !== id),
+        partnerIdsDeclined: [...(s.partnerIdsDeclined ?? []).filter((x) => x !== id), id],
+      }));
     else if (taggedPartners.length >= 3) showToast('Up to 3 partners'); // hard cap of 3
-    else mutate((s) => ({ ...s, partnerIds: [...(s.partnerIds ?? []), id] }));
+    else
+      mutate((s) => ({
+        ...s,
+        partnerIds: [...(s.partnerIds ?? []), id],
+        partnerIdsDeclined: (s.partnerIdsDeclined ?? []).filter((x) => x !== id),
+      }));
   };
 
   // ── resume prompt ──
@@ -3350,6 +3446,18 @@ function swapExercise(ex: SessionExercise, p: PickedExercise): SessionExercise {
     catalogKey: p.catalogKey,
     name: p.name,
     per: per ?? undefined,
+    /*
+     * ⚠ WHAT IT REPLACED, KEPT — required by a LOCKED spec since substitution shipped, and discarded
+     * until now. `Exercise-002` §10.2: "both the substitute and the original name are captured at write
+     * time and are permanent". There is no `prescribed_*` column in 137 migrations, so the app has been
+     * throwing away the most informative thing an athlete does in a session — telling you, by acting,
+     * that the movement you gave them was the wrong one. See `Coach-Adaptive-Learning-Amendment-001`.
+     *
+     * THE FIRST ONE WINS. Swap A→B→C and the athlete was given A; recording B would say the program
+     * prescribed something it never did. `??=` in effect, written out because the field is on `ex`.
+     */
+    prescribedName: ex.prescribedName ?? ex.name,
+    prescribedCatalogKey: ex.prescribedName ? ex.prescribedCatalogKey : (ex.catalogKey ?? null),
     sets: ex.sets.map((st) => ({ ...st, weight: null, actualReps: null, done: false })),
   };
 }

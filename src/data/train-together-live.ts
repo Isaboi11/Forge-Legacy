@@ -299,6 +299,85 @@ export async function fetchPendingJoinRequests(): Promise<PendingJoinRequest[]> 
   }));
 }
 
+// ── Being credited for it, on BOTH sides (0092's other half) ────────────────
+
+/**
+ * Everyone who agreed to train with you recently — whichever end of the ask you were on.
+ *
+ * ══ WHY THIS READ HAD TO EXIST ══
+ *
+ * Every path that wrote a partner name ran on the device that RECEIVED something: the guest accepting an
+ * invite, the host accepting a join request, the host inviting from inside a live session. The ordinary
+ * case — send an invite from `/train-invite`, put the phone away, go and train — wrote nothing at all,
+ * because the sender was not in a session at the moment they asked and had no way to remember they had.
+ * So one athlete's history said "with Selene" and Selene's said nothing, for the same hour in the same
+ * gym. See `domain/workout/partner-credit.ts` for the whole shape of the fix.
+ *
+ * Both directions in one query, because both athletes must derive the SAME answer from the SAME row —
+ * that is the only thing either of them agreed to, and RLS (rightly) forbids each writing the other's
+ * workout. The `or` mirrors `workout_invites_select` exactly.
+ *
+ * ⚠ FAILS QUIETLY, and that is the safe direction: no credits reads as "nobody", which is the behaviour
+ * that shipped. An error here must never cost the athlete the workout they are trying to save.
+ *
+ * Names come from `profiles` in a second read rather than an embed — `profiles_read` is
+ * `using (true)` (0001), so this is a plain lookup, and it does not depend on guessing the auto-generated
+ * name of a foreign key.
+ */
+export interface AcceptedTrainingCredit {
+  athleteId: string;
+  athleteName: string;
+  acceptedAt: string;
+}
+
+export async function fetchAcceptedTrainingCredits(sinceISO: string): Promise<AcceptedTrainingCredit[]> {
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const { data, error } = await supabase
+      .from('workout_invites')
+      .select('from_id, to_id, accepted_at')
+      .eq('status', 'ACCEPTED')
+      .gte('accepted_at', sinceISO)
+      .or(`from_id.eq.${user.id},to_id.eq.${user.id}`)
+      .order('accepted_at', { ascending: false })
+      .limit(20);
+    if (error || !data) return [];
+
+    const rows = data as { from_id: string; to_id: string; accepted_at: string | null }[];
+    /* The other end of each ask. Deduplicated on the way through, keeping the MOST RECENT accept per
+       athlete — the rows are ordered newest first, and asking the same person twice in a day must not
+       produce the same name twice on one workout. */
+    const seen = new Set<string>();
+    const others: { id: string; acceptedAt: string }[] = [];
+    for (const r of rows) {
+      if (!r.accepted_at) continue;
+      const other = r.from_id === user.id ? r.to_id : r.from_id;
+      if (other === user.id || seen.has(other)) continue;
+      seen.add(other);
+      others.push({ id: other, acceptedAt: r.accepted_at });
+    }
+    if (!others.length) return [];
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, name')
+      .in('id', others.map((o) => o.id));
+    const nameById = new Map(((profiles ?? []) as { id: string; name: string | null }[]).map((p) => [p.id, p.name ?? '']));
+
+    return others.map((o) => ({
+      athleteId: o.id,
+      athleteName: nameById.get(o.id)?.trim() || 'Athlete',
+      acceptedAt: o.acceptedAt,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Declining DELETES the row, exactly as a declined friend request does (0073). There is no DECLINED
  * state to find, so nothing records that someone said no — and a second ask later is a fresh invitation

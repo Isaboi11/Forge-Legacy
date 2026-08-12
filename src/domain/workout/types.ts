@@ -86,6 +86,24 @@ export interface SessionExercise {
   catalogKey?: string;
   name: string;
   /**
+   * WHAT THIS ROW REPLACED — set only when the athlete substituted, and set ONCE.
+   *
+   * ⚠ REQUIRED BY A LOCKED SPEC SINCE SUBSTITUTION SHIPPED, AND DISCARDED UNTIL NOW.
+   * `Exercise-002-Exercise-Substitution-Architecture` §10.1–10.2: *"both the substitute and the original
+   * name are captured at write time and are permanent."* There has never been a `prescribed_*` column —
+   * `save_workout` writes `catalog_key, name, section, position, group_*` and nothing else — so the app
+   * threw away the most informative thing an athlete does in a session: telling you, by acting, that the
+   * movement you gave them was the wrong one. `Coach-Adaptive-Learning-Amendment-001` CL-D9 implements it.
+   *
+   * ⚠ THE FIRST SUBSTITUTION WINS. Swap A→B→C and what the plan actually prescribed was A; overwriting
+   * with B would record a prescription that never existed.
+   *
+   * ⚠ THE NAME IS THE AUTHORITY, not the key (§10.2) — a custom or since-deleted exercise may have no
+   * catalogue key at all, and the snapshot has to survive either being renamed afterwards.
+   */
+  prescribedName?: string | null;
+  prescribedCatalogKey?: string | null;
+  /**
    * 'cardio' marks a run, walk or ride sitting anywhere in the session. Absent means 'strength', so
    * every session written before this reads correctly without migration.
    */
@@ -242,4 +260,14 @@ export interface ActiveSession {
    * accept happens on a different screen and the session lives in AsyncStorage.
    */
   partnerIds?: string[];
+  /**
+   * Anyone the athlete took OFF this session's tags — a record of a "no", not of a person.
+   *
+   * ⚠ WITHOUT IT THE AUTOMATIC CREDIT CANNOT BE UNDONE. An accepted invite now credits a partner at
+   * session start AND again at Finish (see `partner-credit.ts`), because an accept can land while you
+   * are mid-workout. Both passes read the same invite, so un-tagging someone would silently put them
+   * back on the way out — the app writing a name the athlete had explicitly removed. Re-tagging them
+   * clears the entry, so this only ever holds a refusal that is still current.
+   */
+  partnerIdsDeclined?: string[];
 }
