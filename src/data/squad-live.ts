@@ -395,6 +395,10 @@ export async function fetchSquadCheckins(squadId: string): Promise<SquadCheckins
     .select('id, user_id, video_url, created_at, profiles(name, avatar_url)')
     .eq('squad_id', squadId)
     .gte('created_at', checkinCutoff())
+    // 0141 destroys the video past 24h and leaves `video_url` NULL. The cutoff above already excludes
+    // those — but it is computed from the DEVICE clock, so a phone running slow would ask for rows older
+    // than the window and hand a null into `videoUrl: string`. The server's own state is the tiebreaker.
+    .not('video_url', 'is', null)
     .order('created_at', { ascending: false });
   if (error) return { members: [], iHaveActive: false };
   const rows = (data ?? []) as unknown as { id: string; user_id: string; video_url: string; created_at: string; profiles: { name: string; avatar_url: string | null } | null }[];
