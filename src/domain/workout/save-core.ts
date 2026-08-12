@@ -71,6 +71,45 @@ export function buildAppendExercises(session: ActiveSession) {
     }));
 }
 
+/**
+ * The substitutions in this session, as `record_substitutions` wants them — one entry per exercise the
+ * athlete swapped away from, and nothing at all for the ordinary session that swapped nothing.
+ *
+ * ══ WHY IT IS SEPARATE FROM `buildSaveExercises` ══
+ *
+ * `save_workout`'s eleven arguments have been frozen since 0095 and every client path in the app calls
+ * it. Widening the signature — or rebuilding its 200-line body to read two more jsonb keys — would put
+ * every save at risk to record an annotation. So this rides the post-commit path `partners` (0016) and
+ * the playlist link (0105) already take, for the reason `save.ts` states: a substitution is a mark ON a
+ * session rather than a part OF one, and it must never be able to fail a save that otherwise worked.
+ *
+ * ⚠ POSITION IS THE JOIN, and it must be read off the SAME list `buildSaveExercises` sends — a cardio
+ * block with no logged sets is dropped there, so walking `session.exercises` instead would key the
+ * update to a row that was never inserted.
+ *
+ * Governed by `Coach-Adaptive-Learning-Amendment-001` CL-D9 / `Exercise-002` §10.
+ */
+export function buildSubstitutions(session: ActiveSession): {
+  position: number;
+  prescribed_catalog_key: string | null;
+  prescribed_name: string;
+}[] {
+  return session.exercises
+    .filter((ex) => ex.kind !== 'cardio' || ex.sets.some((s) => s.done))
+    .filter((ex) => {
+      const was = ex.prescribedName?.trim();
+      // Null means nothing was replaced. A swap back to the same movement replaced nothing either —
+      // recording it would tell the coach an athlete rejected a lift they in fact chose to keep.
+      return !!was && was.toLowerCase() !== ex.name.trim().toLowerCase();
+    })
+    .map((ex) => ({
+      position: ex.position,
+      prescribed_catalog_key: ex.prescribedCatalogKey ?? null,
+      // Non-null by the filter above; §10.2 makes the NAME the display authority, not the key.
+      prescribed_name: ex.prescribedName!.trim(),
+    }));
+}
+
 export function buildSaveExercises(session: ActiveSession) {
   const recorded = session.exercises.filter((ex) => ex.kind !== 'cardio' || ex.sets.some((s) => s.done));
 

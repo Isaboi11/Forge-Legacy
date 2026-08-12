@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { sessionActivityType } from './conditioning';
 import { detectPRs, doneSetCount, PR_MAX_REPS, sessionVolume, type DetectedPR } from './metrics';
-import { buildAppendExercises, buildSaveExercises } from './save-core';
+import { buildAppendExercises, buildSaveExercises, buildSubstitutions } from './save-core';
 import { playlistToRow } from './playlist';
 import type { ActiveSession } from './types';
 
@@ -139,6 +139,28 @@ export async function saveWorkout(session: ActiveSession, partners: string[] = [
       await supabase.from('workouts').update(annotations).eq('id', data.workout_id);
     } catch {
       // ignore — the workout is already saved
+    }
+  }
+
+  /*
+   * WHAT THE ATHLETE SWAPPED AWAY FROM (0138) — the same post-commit path, for the same reason.
+   *
+   * ⚠ THIS IS A LOCKED SPEC BEING FINISHED, NOT A FEATURE BEING ADDED. `Exercise-002` §10.2 has
+   * required both names to be snapshotted since substitution shipped, and no `prescribed_*` column
+   * existed until 0138 — so every substitution this app has ever recorded threw away the half that
+   * says what was replaced. That is the clearest signal an athlete ever gives about their training,
+   * and Holt could not read it because nothing wrote it (`Coach-Adaptive-Learning-Amendment-001`).
+   *
+   * Its own statement rather than part of the annotations update above: that one writes `workouts`,
+   * this writes `workout_exercises`, and a session with no substitutions — the overwhelming majority —
+   * sends nothing at all.
+   */
+  const subs = buildSubstitutions(session);
+  if (subs.length) {
+    try {
+      await supabase.rpc('record_substitutions', { p_workout: data.workout_id, p_subs: subs });
+    } catch {
+      // ignore — same rule as above. The session is committed; this costs a signal, never the workout.
     }
   }
 
