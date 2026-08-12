@@ -64,8 +64,6 @@ export interface IntraSetInput {
   topReps: number;
   /** Sets after this one that are not yet done. Zero means there is nothing left to instruct. */
   setsRemaining: number;
-  /** For the display string — the athlete's own unit label. */
-  unit?: string;
 }
 
 export interface IntraSetSuggestion {
@@ -101,10 +99,23 @@ export function intraSetSuggestion(input: IntraSetInput, choose?: Chooser): Intr
   if (step <= 0) return null;
 
   const suggestedWeight = weight + step;
+  /*
+   * ⚠ ALWAYS POUNDS, NEVER THE ATHLETE'S UNIT — and getting this wrong is what shipped a coach saying
+   * "kg" to somebody set to lb.
+   *
+   * The whole app holds one rule: the domain formats in pounds ("190 lb") and the UI re-expresses the
+   * finished string through `convertMeasure` / `useUnits().fmt`, which is a no-op for imperial and does
+   * the arithmetic for metric. The first version of this took a `unit` label and stamped it onto the
+   * POUNDS number, so a metric athlete was told to load "86 kg" when the number was 86 POUNDS — a
+   * mislabelled figure, which is worse than an unconverted one because it looks right.
+   *
+   * `progression.ts`'s own `fmt` hardcodes ' lb' for exactly this reason. Match it and let the screen
+   * convert.
+   */
   const message = say(
     'intra_up',
     profile.register as Register,
-    { lift: input.exerciseName, weight: `${suggestedWeight}${input.unit ? ` ${input.unit}` : ''}` },
+    { lift: input.exerciseName, weight: `${suggestedWeight} lb` },
     choose,
   );
   // No sentence, no suggestion. A number with nothing said about it is not coaching.

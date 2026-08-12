@@ -266,7 +266,9 @@ export default function WorkoutScreen() {
   /** Bumped to re-run the mount flow after discarding, so one code path builds every session. */
   const [reloadKey, setReloadKey] = useState(0);
   // A conditioning leg shows distance in the athlete's own system; the record stays in miles.
-  const { units } = useUnits();
+  /* `fmt` re-expresses an already-formatted pounds string in the athlete's system — the app-wide rule
+     that keeps every weight display honest without threading a number through every layer. */
+  const { units, fmt: inUnits } = useUnits();
   const soundOn = useSoundEnabled();
   const [phase, setPhase] = useState<Phase>('loading');
   const [sheet, setSheet] = useState<SetSheet | null>(null);
@@ -346,7 +348,7 @@ export default function WorkoutScreen() {
   const coachIntensity = useCoachIntensity();
   /* The whole blob and its refetch, so the in-session dial writes the SAME field `/preferences` writes
      rather than a second copy that could disagree with it. */
-  const { prefs: appPrefs, refetch: refetchPrefs } = useAppPrefs();
+  const { prefs: appPrefs, loaded: prefsLoaded, refetch: refetchPrefs } = useAppPrefs();
   const coachProfile = useMemo(() => profileFor(coachIntensity, experience), [coachIntensity, experience]);
 
   /* The last thing they said about each of these lifts. Keyed by catalogKey ?? name, the same identity
@@ -1005,7 +1007,6 @@ export default function WorkoutScreen() {
       /* Counted off the SESSION AFTER this set landed, so the last set of an exercise reports zero and
          the module's "nothing left to instruct" gate closes on its own. */
       setsRemaining: ex.sets.filter((s2) => !s2.done).length,
-      unit: unitLabel(units),
     });
     if (nudge) setIntraLine({ ei, text: nudge.message });
 
@@ -1626,13 +1627,27 @@ export default function WorkoutScreen() {
    * `live` is null until Stage 4 lands the mid-set nudge — the slot exists now so the priority rule is
    * written once and tested, rather than being retrofitted around a shipped two-case version.
    */
-  const says = coachLine({
+  const saysRaw = coachLine({
     /* Scoped to the exercise it was said about — a nudge about bench press has nothing to say once the
        athlete is standing at a squat rack, and the coin would otherwise carry it there. */
     live: intraLine?.ei === exIdx ? intraLine.text : null,
     progression: progression?.message,
     planCue: ex.coachNote,
   });
+  /*
+   * ⚠ THE COACH SPEAKS POUNDS; THE SCREEN SPEAKS THE ATHLETE'S UNIT.
+   *
+   * Reported by the PO: *"Holt is talking in KG and I have it set to lbs."* Two faults met here. The
+   * mid-set line stamped `unitLabel(units)` onto a POUNDS number, so a metric athlete was told to load
+   * "86 kg" when the figure was 86 pounds — mislabelled, which is worse than unconverted because it
+   * looks right. And the coin never ran through `fmt` at all, so `progressionFor`'s hardcoded " lb"
+   * reached a metric athlete untouched.
+   *
+   * Now every line the coin carries goes through the same converter every other weight string in the
+   * app does. It is a no-op for imperial and does the arithmetic for metric, so neither athlete can be
+   * shown a number wearing the wrong name.
+   */
+  const says = saysRaw ? { ...saysRaw, text: inUnits(saysRaw.text) } : null;
   /* The collapsed strip's `Prev`, indexed to the SAME set position last time — set 3 against last week's
      set 3, not against their best set of the day. `currentSetIdx` is -1 once every set is done, at which
      point there is no next set to compare and the strip says nothing. */
@@ -2732,6 +2747,18 @@ export default function WorkoutScreen() {
              and `refetch` pushes it back through the provider so the coach's very next line uses it. */
           intensity={coachIntensity}
           onSetIntensity={(level) => {
+            /*
+             * ⚠ GUARDED ON `prefsLoaded`, AND THIS IS NOT DEFENSIVE PROGRAMMING — IT IS A DATA-LOSS BUG.
+             *
+             * `useAppPrefs` serves `APP_PREFS_DEFAULTS` while its fetch is in flight, so spreading it
+             * before the read lands writes DEFAULTS over every other preference this athlete has:
+             * their units flip to imperial, reduce-motion resets, and — worst — an analytics opt-out is
+             * silently cleared, which `ecosystem.test.mjs` calls "the one failure in this file that
+             * would make the privacy policy untrue".
+             *
+             * A chip in a sheet opened two seconds into a workout is exactly the tap that lands first.
+             */
+            if (!prefsLoaded) return;
             void saveAppPrefs({ ...appPrefs, coachIntensity: level }).then(() => refetchPrefs());
           }}
           currentLoad={coachLoad}

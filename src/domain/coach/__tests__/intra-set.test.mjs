@@ -17,7 +17,6 @@ const base = (over = {}) => ({
   justLogged: { weight: 185, actualReps: 12 },
   topReps: 10,
   setsRemaining: 2,
-  unit: 'lb',
   ...over,
 });
 
@@ -29,6 +28,17 @@ test('a genuine overshoot offers the next set heavier', () => {
   const got = intraSetSuggestion(base(), first);
   assert.equal(got.suggestedWeight, 190); // 185 + 5 (horizontal push, intermediate, ×1)
   assert.ok(got.message.includes('190 lb'));
+});
+
+test('⚠ the coach always speaks POUNDS — the screen converts, never this module', () => {
+  /* Reported by the PO: "Holt is talking in KG and I have it set to lbs." The first version took a unit
+     label and stamped it onto the pounds number, so a metric athlete was told to load "86 kg" when the
+     figure was 86 POUNDS — mislabelled, which is worse than unconverted because it looks right.
+     `useUnits().fmt` re-expresses the finished string, exactly as it does for every other weight in the
+     app, and it is a no-op for imperial. */
+  const got = intraSetSuggestion(base(), first);
+  assert.ok(got.message.includes('lb'), got.message);
+  assert.ok(!got.message.toLowerCase().includes('kg'), got.message);
 });
 
 test('the jump follows the movement, not a flat number', () => {

@@ -17,6 +17,16 @@ import { convertMeasure, formatLoad, type UnitSystem } from '@/domain/settings/u
  */
 interface SettingsState {
   prefs: AppPrefs;
+  /**
+   * ⚠ FALSE UNTIL THE SERVER READ LANDS, AND ANY READ-MODIFY-WRITE MUST CHECK IT.
+   *
+   * `prefs` serves `APP_PREFS_DEFAULTS` while the fetch is in flight, which is right for READING — a
+   * screen should draw sane values immediately rather than flicker. It is a data-loss trap for WRITING:
+   * `saveAppPrefs({ ...prefs, oneField })` before the read lands persists the defaults over every other
+   * preference the athlete has, including an analytics opt-out. This flag is how a writer tells the two
+   * situations apart, and it exists because that bug shipped.
+   */
+  loaded: boolean;
   refetch: () => void;
 }
 
@@ -43,7 +53,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     if (data) setAnalyticsEnabled(!data.analyticsOptOut);
   }, [data]);
 
-  return <SettingsContext.Provider value={{ prefs: data ?? APP_PREFS_DEFAULTS, refetch }}>{children}</SettingsContext.Provider>;
+  return (
+    <SettingsContext.Provider value={{ prefs: data ?? APP_PREFS_DEFAULTS, loaded: data != null, refetch }}>
+      {children}
+    </SettingsContext.Provider>
+  );
 }
 
 export function useAppPrefs(): SettingsState {
