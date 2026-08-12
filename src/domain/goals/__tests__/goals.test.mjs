@@ -189,3 +189,65 @@ test('unit chips smart-order by goal name and always offer the full set', () => 
     assert.equal(new Set(chips).size, UNIT_CHIPS.length, 'every unit stays available, no duplicates');
   }
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ⚠ "LOSE 5 LB" DREW A FULL BAR — the PO's own goal, 2026-08-11
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('a cut that has not started yet is 0%, not 100% — the reported bug', () => {
+  // 195 lb, target 190. Saved before the editor asked, so metricDir defaulted to 'up'.
+  const g = { target: 190, current: 195, achievedAt: null, metricDir: 'up', metricStartValue: 195 };
+  assert.equal(progressPct(g), 0);
+});
+
+test('…and it is not silently marked achieved either', () => {
+  const g = { target: 190, current: 195, metricDir: 'up', metricStartValue: 195 };
+  assert.equal(meetsTarget(g), false);
+});
+
+test('the bar moves a pound at a time as weight is logged', () => {
+  const at = (current) => progressPct({ target: 190, current, achievedAt: null, metricDir: 'up', metricStartValue: 195 });
+  assert.equal(at(195), 0);
+  assert.equal(at(194), 20);
+  assert.equal(at(193), 40);
+  assert.equal(at(192.5), 50);
+  assert.equal(at(191), 80);
+  assert.equal(at(190), 100);
+});
+
+test('overshooting the target stays at 100, never above', () => {
+  assert.equal(progressPct({ target: 190, current: 186, achievedAt: null, metricDir: 'down', metricStartValue: 195 }), 100);
+  assert.equal(meetsTarget({ target: 190, current: 186, metricDir: 'down', metricStartValue: 195 }), true);
+});
+
+test('gaining backwards reads as 0, not as negative progress', () => {
+  assert.equal(progressPct({ target: 190, current: 198, achievedAt: null, metricDir: 'down', metricStartValue: 195 }), 0);
+});
+
+test('a cut with NO baseline yet is 0% — never the accumulate ratio', () => {
+  // 195 / 190 = 103% → the old code clamped that to a full bar.
+  assert.equal(progressPct({ target: 190, current: 195, achievedAt: null, metricDir: 'down', metricStartValue: null }), 0);
+});
+
+test('a cut with no baseline still reads 100 once it actually arrives', () => {
+  assert.equal(progressPct({ target: 190, current: 189, achievedAt: null, metricDir: 'down', metricStartValue: null }), 100);
+});
+
+test('a GAIN goal is unaffected — the numbers say up and it climbs', () => {
+  const at = (current) => progressPct({ target: 200, current, achievedAt: null, metricDir: 'up', metricStartValue: 190 });
+  assert.equal(at(190), 0);
+  assert.equal(at(195), 50);
+  assert.equal(at(200), 100);
+});
+
+test('a stored direction that disagrees with the numbers cannot make the bar lie', () => {
+  // "Gain to 190" from 195 is a contradiction `bodyTargetProblem` surfaces in words. The BAR must still
+  // draw the journey the numbers describe rather than declaring it finished.
+  assert.equal(progressPct({ target: 190, current: 195, achievedAt: null, metricDir: 'up', metricStartValue: 195 }), 0);
+  assert.equal(progressPct({ target: 190, current: 192, achievedAt: null, metricDir: 'up', metricStartValue: 195 }), 60);
+});
+
+test('an accumulate goal with no baseline keeps the original ratio behaviour', () => {
+  assert.equal(progressPct({ target: 400, current: 100, achievedAt: null }), 25);
+  assert.equal(progressPct({ target: 400, current: 500, achievedAt: null }), 100);
+});

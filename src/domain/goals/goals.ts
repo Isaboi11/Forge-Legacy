@@ -135,30 +135,76 @@ type ProgressShape = Pick<Goal, 'target' | 'current' | 'achievedAt'> & { metricD
 const clampPct = (n: number): number => Math.max(0, Math.min(100, Math.round(n)));
 
 /**
+ * ⚠ WHICH WAY THIS GOAL ACTUALLY TRAVELS — the numbers first, the stored flag only as a fallback.
+ *
+ * ══ THE BUG THIS EXISTS TO FIX ══
+ *
+ * Reported by the PO: *"I weigh 195 and I'm trying to get to 190… the bar is completely full but
+ * shouldn't be."* Two different stored states produced that same full bar, and both are this function:
+ *
+ *   · `metricDir = 'up'` with a baseline (goals saved before the editor asked the question defaulted to
+ *     'up'). `span = target - start = 190 − 195 = −5`, which is `<= 0`, so it fell to `meetsTarget` —
+ *     and `meetsTarget` on an 'up' goal is `current >= target`, i.e. 195 ≥ 190. **A cut read as
+ *     complete because the athlete had not started it yet.**
+ *   · No baseline at all. It fell to the accumulate ratio `current / target` = 195 / 190 = 103% → 100.
+ *
+ * A baseline and a target TOGETHER are unambiguous: nobody sets a target of 190 from 195 and means
+ * "go up". So when both exist, they decide, and a stored direction that disagrees cannot make the bar
+ * lie. The stored `metricDir` still governs the LABELS and `bodyTargetProblem`'s contradiction warning,
+ * which is the right place to surface a disagreement — a bar cannot explain itself, a sentence can.
+ */
+/* Deliberately narrower than `ProgressShape` — `meetsTarget` has never taken `achievedAt` (whether a
+   goal is MARKED achieved is a different question from whether the number satisfies it), and widening
+   this would force every caller to carry a field it has no business knowing. */
+type DirShape = Pick<Goal, 'target'> & { metricDir?: MetricDir; metricStartValue?: number | null };
+
+const travelDir = (g: DirShape): MetricDir => {
+  const start = g.metricStartValue ?? null;
+  if (start != null && g.target != null && start !== g.target) return g.target < start ? 'down' : 'up';
+  return g.metricDir ?? 'up';
+};
+
+/**
  * Progress toward the target, 0–100. Three shapes:
  *  · narrative (no target) — 0 until achieved, then 100.
  *  · level (a baseline is set) — measured from the baseline toward the target, either direction.
- *  · accumulate / ratio (no baseline) — `current / target` (the original higher-is-better behaviour).
+ *  · accumulate / ratio (no baseline, ascending) — `current / target`.
  */
 export function progressPct(g: ProgressShape): number {
   if (g.target == null) return g.achievedAt != null ? 100 : 0;
-  const dir = g.metricDir ?? 'up';
+  const dir = travelDir(g);
   const start = g.metricStartValue ?? null;
   if (start != null) {
     const span = dir === 'down' ? start - g.target : g.target - start;
-    if (span <= 0) return meetsTarget(g) ? 100 : 0; // target already met/at baseline — no range to fill
+    if (span <= 0) return meetsTarget({ ...g, metricDir: dir }) ? 100 : 0; // baseline IS the target
     const done = dir === 'down' ? start - g.current : g.current - start;
     return clampPct((done / span) * 100);
   }
+  /*
+   * ⚠ A DESCENDING GOAL HAS NO RATIO, and `current / target` is not merely imprecise for one — it is
+   * backwards. The further you are from losing the weight, the fuller it drew the bar, which is how 195
+   * against a 190 target rendered as finished.
+   *
+   * With no baseline there is nothing to measure a JOURNEY against, so the only honest answers are
+   * "arrived" and "not yet". It self-corrects on the next weigh-in: `syncAutoGoals` captures the first
+   * real reading as the baseline, and from then on the bar moves a pound at a time.
+   */
+  if (dir === 'down') return meetsTarget({ ...g, metricDir: dir }) ? 100 : 0;
   if (g.target <= 0) return 0;
   return clampPct((g.current / g.target) * 100);
 }
 
 /** Has a quantifiable goal reached its target? (Used to auto-mark achieved on a progress update.) A
- *  'down' goal needs a real reading (`current > 0`) so a not-yet-logged body goal never auto-completes. */
-export const meetsTarget = (g: Pick<Goal, 'target' | 'current'> & { metricDir?: MetricDir }): boolean => {
+ *  'down' goal needs a real reading (`current > 0`) so a not-yet-logged body goal never auto-completes.
+ *
+ *  ⚠ Reads `travelDir`, not the raw flag. A cut stored as 'up' — every body goal saved before the editor
+ *  asked — would otherwise AUTO-COMPLETE on the athlete's first weigh-in, because weighing more than
+ *  your target satisfies `current >= target`. That marks a goal achieved on the day it was started. */
+export const meetsTarget = (
+  g: Pick<Goal, 'target' | 'current'> & { metricDir?: MetricDir; metricStartValue?: number | null },
+): boolean => {
   if (g.target == null) return false;
-  return (g.metricDir ?? 'up') === 'down' ? g.current > 0 && g.current <= g.target : g.target > 0 && g.current >= g.target;
+  return travelDir(g) === 'down' ? g.current > 0 && g.current <= g.target : g.target > 0 && g.current >= g.target;
 };
 
 /** "225 / 405 lb" (accumulate) · "195 lb → 185 lb" (level journey) · "In progress" (narrative). */
