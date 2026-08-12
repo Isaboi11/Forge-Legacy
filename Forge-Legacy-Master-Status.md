@@ -787,6 +787,10 @@ Kept from the design: the labelled stat cells with units, the real date format, 
 
 ⚠ **Count the whole suite, not `src/domain/**`.** That glob matches 22 of the repository's 132 test files and reports **1,711** — it was written into this entry before being caught. `find src -name "*.test.mjs" -print0 | xargs -0 node --test` is the honest command; the 1,987 and 2,049 figures in the two entries below were produced by different globs again and should not be read as a trend.
 
+**Shipped:** commit `de8e592` on `feat/home-onramp`, **deployed to `forgelegacy.expo.app`** — root 200 and the live `entry-3916e693…js` matches the local build byte for byte. ⚠ The commit was scoped to seven files by hand: a parallel session's Coach AI work (`coach-interpret-live.ts`, `medical-routing.ts`, `0144`, `supabase/functions/`, `tsconfig.json`) was in the tree uncommitted and was deliberately left there — the fourth such collision, and concurrent sessions still want separate branches. It is reachable from nothing, so the deploy does not surface it.
+
+⚠ **A dynamic route 404s on direct load in the web preview, and always has.** `/weekly-review/2026-08-03` returns 404 because the static export writes the literal `dist/weekly-review/[week].html` and cannot prerender an arbitrary segment. `/squad-recap/abc`, `/transformation/abc` and `/program/abc` behave identically — this is the export mode, not this screen. **Reaching the review by tapping the Home card works**, because the SPA router resolves it client-side without a server request. Test it that way; a pasted deep link will look broken and is not.
+
 ### 0a. Holt learns what you reach for — swaps teach preference, never avoidance (2026-08-12, CODE only, no migration)
 
 **THE SIGNAL WAS BEING WRITTEN AND READ BY NOBODY.** `0138` has captured `workout_exercises.prescribed_catalog_key` — what the plan asked for next to what the athlete actually did — and `exercise_avoidance` since it shipped. Neither reached the engine. So when the PO asked whether Holt learns *"what that person likes and doesn't like, what they swap for"*, the honest answer was that the data existed and the coach ignored it.
