@@ -28,11 +28,18 @@
 -- SAFE TO RUN TWICE: every statement is guarded (`if not exists`, `create or replace`,
 -- `drop policy if exists`, and 0139's WHERE clause skips rows already correct).
 --
--- VERIFY AFTER RUNNING — all three should return without error:
+-- VERIFY AFTER RUNNING:
 --   select count(*) from public.exercise_avoidance;                  -- 0 rows is the pass
---   select public.admin_recent_signups(5);                           -- your newest accounts
 --   select count(*) from public.profiles
 --    where app_prefs->>'units' is distinct from 'imperial';          -- must be 0
+--   select to_regprocedure('public.admin_recent_signups(int)') is not null as signups_fn;   -- t
+--
+-- ⚠ DO NOT CALL `admin_recent_signups()` FROM THE SQL EDITOR. It will fail with
+--   `42501: not authorized`, and that is the gate WORKING, not a broken migration. `admin_guard()`
+--   tests `auth.uid()` against `app_admins`; the dashboard runs as `postgres`, where `auth.uid()` is
+--   NULL, so no dashboard session can ever pass it. That is deliberate — AA-D5 puts the boundary in
+--   Postgres rather than in the client, so it holds against anybody holding the anon key too. Check the
+--   function EXISTS (above) and read the list from /admin in the app, signed in as yourself.
 -- ═══════════════════════════════════════════════════════════════════════════════════════════════
 
 
