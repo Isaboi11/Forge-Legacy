@@ -1,16 +1,14 @@
 import { usePathname } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { flColor, flFont } from '@/constants/foundation';
 import { hasMetHolt } from '@/lib/coach-thread';
 import { loadProgramDraft } from '@/lib/program-draft';
 import { useCeremony } from '@/hooks/useCeremony';
 import { useTour } from '@/hooks/useTour';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { CoachChatSheet } from '@/components/forge/CoachChatSheet';
-import { BUBBLE_SHADOW, BUBBLE_SIZE, HoltMark } from '@/components/forge/HoltMark';
+import { CoachSays } from '@/components/forge/CoachSays';
 
 /**
  * The four surfaces the coach belongs on, and nowhere else.
@@ -155,73 +153,14 @@ export function CoachBubble() {
   if (open) return <CoachChatSheet onClose={() => setOpen(false)} />;
 
   return (
-    <View
-      pointerEvents="box-none"
-      // 18px above the tab bar, 20 from the right edge (PROMPT §3.1).
-      style={[styles.wrap, { bottom: 96 + insets.bottom, right: 20 }]}
-    >
-      {line ? (
-        <Pressable
-          onPress={openCoach}
-          accessibilityRole="button"
-          accessibilityLabel={introducing ? `Coach Holt — ${line}` : line}
-          style={[styles.teaser, introducing && styles.teaserIntro]}
-        >
-          {/* Named on the introduction and only there. The whole complaint was that nobody knows who the
-              medallion is, and a line in his voice with no name on it does not answer that. */}
-          {introducing ? <Text style={styles.teaserName}>Coach Holt</Text> : null}
-          <Text style={[styles.teaserText, introducing && styles.teaserTextIntro]}>{line}</Text>
-        </Pressable>
-      ) : null}
-      {/* ⚠ THE MARK, NOT A LETTER. `coach-holt-mark.png` cover-filled, per PROMPT §3.2 — the struck
-          bronze medallion IS the feature's identity, and a "C" in a circle was standing in for it. */}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Open Coach Holt"
-        onPress={openCoach}
-        style={({ pressed }) => [styles.bubble, pressed && styles.pressed]}
-      >
-        <HoltMark size={BUBBLE_SIZE} />
-      </Pressable>
-    </View>
+    /* Placement is the caller's: 18px above the tab bar, 20 from the right edge (PROMPT §3.1). The
+       Active Workout mounts the same component at its own height, above its action bar. */
+    <CoachSays
+      line={line}
+      named={introducing}
+      onPress={openCoach}
+      openLabel="Open Coach Holt"
+      style={{ bottom: 96 + insets.bottom, right: 20 }}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  /* `box-none` on the wrapper, so the empty space around the bubble stays tappable by whatever is under
-     it. A full-width absolute container that swallowed touches would make the bottom of every scroll
-     view dead, which is the classic way a floating button breaks a screen it was only meant to sit on. */
-  wrap: { position: 'absolute', zIndex: 40, alignItems: 'flex-end', gap: 10 },
-  teaser: {
-    maxWidth: 200,
-    paddingHorizontal: 13,
-    paddingVertical: 9,
-    // The flat corner points down-right, at the mark it came from.
-    borderTopLeftRadius: 14,
-    borderTopRightRadius: 14,
-    borderBottomRightRadius: 4,
-    borderBottomLeftRadius: 14,
-    backgroundColor: flColor.charcoal700,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorderSubtle,
-  },
-  teaserText: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
-  /* The introduction is the one teaser that has to be NOTICED — it is competing with an athlete's eye
-     going straight past a corner of the screen they have learned holds nothing. Bronze edge and tint,
-     the same language the mark itself wears, so it reads as coming FROM the medallion. */
-  teaserIntro: { maxWidth: 226, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800 },
-  teaserName: { fontFamily: flFont.display, fontSize: 13.5, fontWeight: '600', letterSpacing: 0.2, color: flColor.bronze400, marginBottom: 2 },
-  teaserTextIntro: { color: flColor.cream100 },
-  bubble: {
-    width: BUBBLE_SIZE,
-    height: BUBBLE_SIZE,
-    borderRadius: BUBBLE_SIZE / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
-    // A dark rim to lift it off whatever it floats over, the badge glow, then the float shadow (§3.3).
-    boxShadow: BUBBLE_SHADOW,
-  },
-  pressed: { opacity: 0.86 },
-});

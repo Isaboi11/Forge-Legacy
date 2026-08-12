@@ -59,6 +59,8 @@ import {
   type AcceptedTraining,
 } from '@/domain/workout/partner-credit';
 import { durText, supersetLabels } from '@/domain/program/prescription';
+import { coachLine } from '@/domain/coach/coach-says';
+import { CoachSays } from '@/components/forge/CoachSays';
 import { clearWorkoutLaunch, readWorkoutLaunch } from '@/lib/workout-launch';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { clearSession, hasLoggedWork, loadSession, persistSession } from '@/domain/workout/autosave';
@@ -70,7 +72,6 @@ import { fetchLiftHistory, liftId, type LiftHistory } from '@/data/lift-history-
 import { backOffTo, incrementFor, progressionFor, sessionPerformance, type Progression } from '@/domain/coach/progression';
 import { DEFAULT_HOLD_SEC, itemByKey, itemByName } from '@/domain/exercise-picker/data';
 import { loadExperience } from '@/lib/coach-memory';
-import { BUBBLE_SIZE, BUBBLE_SHADOW, HoltMark } from '@/components/forge/HoltMark';
 import { SessionCoachSheet } from '@/components/forge/SessionCoachSheet';
 import { PlaylistSheet } from '@/components/forge/composites/Playlist';
 import { JoinRequestBanner } from '@/components/forge/JoinRequestBanner';
@@ -1543,6 +1544,18 @@ export default function WorkoutScreen() {
   const lastText = lastPerf ? wxr(lastPerf.weight, lastPerf.reps) : '—';
   const bestText = liftHist?.best ? wxr(liftHist.best.weight, liftHist.best.reps) : '—';
   const progression = progressions.get(exIdx) ?? null;
+  /*
+   * WHAT THE COIN IS SAYING ABOUT THIS EXERCISE.
+   *
+   * Derived on every render rather than fired as an event, which is what lets the line survive things it
+   * has no business being cancelled by: a set resolving and collapsing the hero, the ⋮ sheet opening,
+   * moving to the next exercise and back. `holtHidden` can take the mark off screen and the sentence is
+   * still there when it returns, because nothing ever "showed" it.
+   *
+   * `live` is null until Stage 4 lands the mid-set nudge — the slot exists now so the priority rule is
+   * written once and tested, rather than being retrofitted around a shipped two-case version.
+   */
+  const says = coachLine({ live: null, progression: progression?.message, planCue: ex.coachNote });
   /* The collapsed strip's `Prev`, indexed to the SAME set position last time — set 3 against last week's
      set 3, not against their best set of the day. `currentSetIdx` is -1 once every set is done, at which
      point there is no next set to compare and the strip says nothing. */
@@ -2265,23 +2278,6 @@ export default function WorkoutScreen() {
               Shown only for a DIFFERENT session — repeating back a note you wrote ninety seconds ago
               would be the app talking to itself.
             */}
-            {/*
-              ══ WHAT THE PLAN SAYS ══
-
-              The AUTHOR's cue — "4 seconds down, then push up" — carried from the program or template
-              this session came from. It sits ABOVE "LAST TIME" because it is an instruction and that is
-              a recollection: if only one of them is read before the first rep, it should be this one.
-
-              Unconditional, unlike the note below it. The athlete's own note suppresses "LAST TIME"
-              (repeating back what you wrote ninety seconds ago is the app talking to itself), but a
-              coaching cue is not a conversation — it is the prescription, and it holds all session.
-            */}
-            {ex.coachNote ? (
-              <View style={[styles.lastNote, styles.coachNote]}>
-                <Text style={styles.coachNoteLabel}>THE PLAN SAYS</Text>
-                <Text style={styles.lastNoteText}>{ex.coachNote}</Text>
-              </View>
-            ) : null}
             {lastNote && !ex.note ? (
               <View style={styles.lastNote}>
                 <Text style={styles.lastNoteLabel}>LAST TIME</Text>
@@ -2289,27 +2285,18 @@ export default function WorkoutScreen() {
               </View>
             ) : null}
             {/*
-              ══ WHAT THE COACH MAKES OF IT ══
+              ⚠ `HOLT SAYS` AND `THE PLAN SAYS` USED TO BE TWO CARDS HERE, AND BOTH VANISHED AFTER SET ONE.
 
-              One sentence — "you hit 3 × 10 at 185, go to 190 and start back at 8" — from
-              `progressionFor`, which reads their last two sessions on this lift and decides between
-              adding weight, adding a rep, holding, and coming back down.
+              They were stacked in this hero — the author's cue and `progressionFor`'s sentence — and the
+              hero AUTO-COLLAPSES the first time a set resolves (see `autoCollapsed` in `completeSet`). So
+              the coach spoke before the first rep and then said nothing for the rest of the session,
+              while the medallion in the corner volunteered nothing and only opened a sheet.
 
-              ⚠ THIS IS THE PART SPEC §6.2 USED TO FORBID, and the ban is lifted deliberately
-              (W9-Amendment-005, D-3). §6.2 was written against SCORING mid-workout — "down 5 lb from last
-              week" — and it is still right about that. This is the opposite: a scoreboard tells you how
-              you did, and a coach tells you what to do next. Nothing here grades a set.
-
-              It sits BELOW the plan's cue and the athlete's own note, because both of those are things a
-              person wrote and this is arithmetic — and above the numbers it was derived from, so the
-              instruction is read before its evidence.
+              Both now come out of the coin (`CoachSays`, bottom right), which is the PO's call and the
+              right one: *"whatever the coach says should come from the coach coin."* One object says the
+              thing, points at itself, and is tappable to answer. It also survives the collapse, which is
+              the actual defect. `coachLine` decides which of the three he says — see `domain/coach/coach-says`.
             */}
-            {progression ? (
-              <View style={[styles.lastNote, styles.holtNote]}>
-                <Text style={styles.holtNoteLabel}>HOLT SAYS</Text>
-                <Text style={styles.lastNoteText}>{progression.message}</Text>
-              </View>
-            ) : null}
             {/*
               insight row: Last · Goal · Best
 
@@ -2636,16 +2623,18 @@ export default function WorkoutScreen() {
         which is why it hides the bubble in `holtHidden` rather than being dodged by arithmetic.
       */}
       {!holtHidden ? (
-        <View pointerEvents="box-none" style={styles.holtWrap}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Ask Coach Holt about this exercise"
-            onPress={() => setCoachOpen(true)}
-            style={({ pressed }) => [styles.holtBubble, pressed && styles.holtPressed]}
-          >
-            <HoltMark size={BUBBLE_SIZE} />
-          </Pressable>
-        </View>
+        /*
+         * ⚠ THE LINE IS QUEUED BEHIND `holtHidden`, NOT DROPPED BY IT. The fourteen conditions exist so
+         * the mark never floats over the number pad, a ceremony or the seal — but a cue the athlete has
+         * not read yet is not stale because a sheet was open. Closing the sheet brings the coach back
+         * with the same thing to say, because `coachLine` is derived, not fired.
+         */
+        <CoachSays
+          line={says?.text ?? null}
+          onPress={() => setCoachOpen(true)}
+          openLabel="Ask Coach Holt about this exercise"
+          style={styles.holtWrap}
+        />
       ) : null}
       {coachOpen ? (
         <SessionCoachSheet
@@ -3689,17 +3678,9 @@ const styles = StyleSheet.create({
      screen takes none anywhere — the bar sits at the foot of a plain flex root — and introducing one
      here alone would float the bubble at a different height than every other element it lines up with. */
   holtWrap: { position: 'absolute', right: 18, bottom: 96, zIndex: 42, alignItems: 'flex-end' },
-  holtBubble: {
-    width: BUBBLE_SIZE,
-    height: BUBBLE_SIZE,
-    borderRadius: BUBBLE_SIZE / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
-    boxShadow: BUBBLE_SHADOW,
-  },
-  holtPressed: { opacity: 0.86 },
+  /* ⚠ `holtBubble`/`holtPressed` were deleted with the local mark. `CoachSays` draws it now, so the
+     two screens that show the coach cannot drift apart on what he looks like. Only the PLACEMENT stays
+     here, because the height that clears this screen's action bar is this screen's business. */
 
   // progress band
   band: { paddingHorizontal: 18, paddingTop: 12, paddingBottom: 14, gap: 12, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
@@ -3917,13 +3898,10 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   lastNoteLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.3, color: flColor.bronze400 },
-  /* The cue reads as the plan's voice, not the athlete's: a bronze left edge marks it as authored. */
-  coachNote: { borderLeftWidth: 2, borderLeftColor: flColor.bronze400 },
-  coachNoteLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.3, color: flColor.bronze400 },
-  /* The same block as the plan's cue and the athlete's own note, one shade quieter on the rule — three
-     stacked blocks is the worst case, and the coach's line is the one of the three that is derived. */
-  holtNote: { borderLeftWidth: 2, borderLeftColor: flColor.bronze600 },
-  holtNoteLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.3, color: flColor.bronze600 },
+  /* ⚠ `coachNote`, `coachNoteLabel`, `holtNote` and `holtNoteLabel` were deleted here, not orphaned.
+     They dressed the two hero cards the coin replaced, and a style with no consumer reads as a thing
+     the screen still draws — which is exactly how somebody rebuilds a card that was removed on purpose.
+     `coachNoteSub` survives: the ⋮ Options sheet still shows the plan's cue, and should. */
   /* Not clamped to one line like `optSub` — a cue is the content of its row, not a caption on it. */
   coachNoteSub: { fontSize: 12, lineHeight: 18, color: flColor.cream100, fontStyle: 'italic', marginTop: 2 },
   lastNoteText: { fontSize: 13.5, lineHeight: 20, color: flColor.cream100, fontStyle: 'italic' },
