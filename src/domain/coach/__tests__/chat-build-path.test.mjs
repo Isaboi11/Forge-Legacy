@@ -225,3 +225,31 @@ test('weeksBetween counts down and floors at zero', () => {
   assert.equal(weeksBetween(null, now), 0);
   assert.equal(weeksBetween('not a date', now), 0, 'garbage must not become NaN on the card');
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ⚠ A SHOULDER DAY — reported by the PO, 2026-08-12
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('Holt can be asked for a shoulders-only day', () => {
+  /* The engine always could: `day.ts` carries `shoulders` as a standalone BodyPart over four
+     deltoid/cuff muscles, and 63 catalogue exercises name one of them as a PRIMARY mover. The chat
+     simply never offered it — "Shoulders & arms" was the only chip that mentioned them. */
+  const q = nextQuestion({}, 'day');
+  assert.equal(q.id, 'day_focus');
+  const shouldersOnly = q.chips.find((c) => {
+    const f = c.patch.dayFocus;
+    return f?.kind === 'body_parts' && f.parts.length === 1 && f.parts[0] === 'shoulders';
+  });
+  assert.ok(shouldersOnly, 'no chip asks for shoulders alone');
+});
+
+test('…and the paired shoulders-and-arms day survives beside it', () => {
+  // Different days, not two names for one — a delt-only session and delts-plus-arms divide a fixed
+  // exercise budget very differently.
+  const q = nextQuestion({}, 'day');
+  const paired = q.chips.find((c) => {
+    const f = c.patch.dayFocus;
+    return f?.kind === 'body_parts' && f.parts.includes('shoulders') && f.parts.length > 1;
+  });
+  assert.ok(paired, 'the paired option was replaced rather than added to');
+});

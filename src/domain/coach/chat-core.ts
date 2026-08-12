@@ -314,6 +314,19 @@ const FOCUS_CHIPS: [string, DayFocus][] = [
   [SPLIT_LABEL.lower, { kind: 'split', split: 'lower' }],
   [`${BODY_PART_LABEL.chest} & ${BODY_PART_LABEL.triceps}`, { kind: 'body_parts', parts: ['chest', 'triceps'] }],
   [`${BODY_PART_LABEL.back} & ${BODY_PART_LABEL.biceps}`, { kind: 'body_parts', parts: ['back', 'biceps'] }],
+  /*
+   * ⚠ SHOULDERS STANDS ALONE AS WELL AS PAIRED, AND IT DID NOT.
+   *
+   * PO: *"shoulders need to be its own muscle for Holt to do a just shoulder day."* The engine had this
+   * the whole time — `day.ts` carries `shoulders` as a standalone `BodyPart` over four deltoid/cuff
+   * muscles, the catalogue has 63 exercises with one of them as a PRIMARY mover, and the `/coach` wizard
+   * offers all eight parts individually. The only thing missing was a chip here, so an athlete talking to
+   * Holt could ask for "shoulders and arms" but never for shoulders.
+   *
+   * Both stay. They are different days, not two names for one: a delt-only session and a delts-plus-arms
+   * session divide a fixed exercise budget very differently.
+   */
+  [BODY_PART_LABEL.shoulders, { kind: 'body_parts', parts: ['shoulders'] }],
   [`${BODY_PART_LABEL.shoulders} & arms`, { kind: 'body_parts', parts: ['shoulders', 'biceps', 'triceps'] }],
   [BODY_PART_LABEL.core, { kind: 'body_parts', parts: ['core'] }],
 ];
