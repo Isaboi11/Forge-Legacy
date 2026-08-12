@@ -840,6 +840,28 @@ surface to test on, minus video compression, which is native-only by nature.
 **ONCE 0d07a777 IS INSTALLED**, runtime `3508eed9…` becomes the OTA target and ordinary
 `eas update` resumes for JS-only work. Re-run `fingerprint:compare` before the next one anyway.
 
+### 0aa. DEPLOYED — and a new deployment failure mode, recorded (2026-08-11)
+
+**Live:** `forgelegacy.expo.app` serving `entry-b6b2319ef4aa662e06642f2c158d17d1.js`, verified 200 on
+`/`, `/admin`, `/workouts`, `/legacy`, `/privacy`. Branch `feat/home-onramp` pushed through `3a71297`
+(7 commits: the five PO items, the coach capture layer, and the Home splash work that had been sitting
+uncommitted in the tree).
+
+**⚠ THE "DEPLOY 404" HAS TWO DIFFERENT CAUSES AND THE RECORDED FIX ONLY ADDRESSES ONE.** The dashboard
+note has said "a successful deploy serving 404 has happened twice; re-run fixes it". That is the
+**empty-upload** fault. This was the other one: the upload was perfect and **the production alias never
+moved**, while the CLI printed `Promoting deployment to production ✔` and the production URL. Three
+consecutive `eas deploy --prod` runs each produced a healthy new deployment and left prod pointing at an
+old one.
+
+**Tell them apart by curling the DEPLOYMENT-SPECIFIC URL, not just prod.** Deployment URL also 404 →
+empty upload, re-run. Deployment URL 200 while prod 404s → alias, and re-running cannot fix it:
+`npx eas-cli deploy:alias --prod --id <deploymentId>`.
+
+The giveaway here was that `/privacy` and `/manifest.json` (both `public/` assets) served 200 off prod
+while every expo-router page 404'd — prod was pinned to a deployment old enough to predate those routes.
+`npx expo export` vs `--platform web` is a red herring; both produce identical output.
+
 ### 0b. Coach Holt does not learn — the capture layer (2026-08-11, CODE + `Coach-Adaptive-Learning-Amendment-001`; migration 0138 NOT YET APPLIED)
 
 **Gates:** tsc **0** · **1,884 `node --test` / all green** (11 new) · eslint baseline.
