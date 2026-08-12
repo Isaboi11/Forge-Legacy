@@ -157,6 +157,7 @@ function RootNavigator() {
         <Stack.Screen name="squad-requests" />
         <Stack.Screen name="inbox" />
         <Stack.Screen name="squad-recap/[id]" />
+        <Stack.Screen name="weekly-review/[week]" />
         <Stack.Screen name="squad-records" />
         <Stack.Screen name="competitions" />
         <Stack.Screen name="create-challenge" options={{ presentation: 'fullScreenModal' }} />

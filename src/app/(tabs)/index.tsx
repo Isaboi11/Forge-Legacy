@@ -15,6 +15,9 @@ import { ChapterTitleBlock } from '@/components/forge/compositions/ChapterTitleB
 import { TodaysWorkoutCard } from '@/components/forge/compositions/TodaysWorkoutCard';
 import { ProgramMissionGrid } from '@/components/forge/compositions/ProgramMissionGrid';
 import { YourCircleCard } from '@/components/forge/compositions/YourCircleCard';
+import { WeeklyReviewCard } from '@/components/forge/WeeklyReviewCard';
+import { fetchWeeklyReview, type WeeklyReview } from '@/data/weekly-review-live';
+import { useEntitlement } from '@/lib/entitlement';
 import { QuickActionsRow } from '@/components/forge/compositions/QuickActionsRow';
 import { TrainingNowSheet } from '@/components/forge/TrainingNowSheet';
 import { todaysPrinciple } from '@/data/home-principles';
@@ -229,6 +232,24 @@ function ProgramPathChooser({
 }
 
 export default function HomeScreen() {
+  /*
+   * Last week, read once on mount. ⚠ NOT on focus: `ensure_weekly_review()` generates on first call, and
+   * re-running it every time the athlete returns to Home would be a write attempt per tab switch for a
+   * row that changes once a week.
+   */
+  const [weeklyReview, setWeeklyReview] = useState<WeeklyReview | null>(null);
+  const [reviewSkipped, setReviewSkipped] = useState(false);
+  const { entitled: reviewEntitled } = useEntitlement('weekly_review');
+  useEffect(() => {
+    let alive = true;
+    void fetchWeeklyReview().then((r) => {
+      if (alive) setWeeklyReview(r);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   const [friendSheetOpen, setFriendSheetOpen] = useState(false);
   /**
    * Unfinished work sitting in local storage, re-read every time Home comes into focus.
@@ -1168,6 +1189,35 @@ export default function HomeScreen() {
               onMission={() => router.push('/goals')}
               programAnchor="current-program"
               missionAnchor="mission"
+            />
+          ) : null}
+
+
+          {/*
+            ══ YOUR WEEK, FROM HOLT ══
+
+            PO: *"the review should appear on the Home screen the next time they open it and the review
+            is ready. Should be a card that they can view review or skip."*
+
+            ⚠ THIS IS ALSO THE DELIVERY MECHANISM, not just a nice placement. The review generates
+            LAZILY — `ensure_weekly_review()` writes the row the first time the athlete opens the app in
+            a new week — so by the time it exists they are already here and a push has nothing to
+            announce. A Home card needs no notification permission, no token and no scheduler.
+
+            ⚠ IT SITS BELOW THE HERO AND NEVER OUTRANKS IT. An unfinished workout or today's session is
+            what somebody opened the app to do; a summary of last week can wait four inches. Same
+            reasoning that keeps `showQuietProgramLink` one line under the real content.
+
+            ⚠ AND IT IS NOT IN `composition.ts`. That module derives the hero and the tiles from program
+            state, purely and synchronously. Whether a review exists is an async fact about a different
+            table — threading it through would make a pure function depend on a network read.
+          */}
+          {weeklyReview && !reviewSkipped ? (
+            <WeeklyReviewCard
+              review={weeklyReview}
+              entitled={reviewEntitled}
+              onView={() => router.push({ pathname: '/weekly-review/[week]', params: { week: weeklyReview.weekStart } })}
+              onSkip={() => setReviewSkipped(true)}
             />
           ) : null}
 
