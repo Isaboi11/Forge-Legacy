@@ -27,6 +27,7 @@ import {
   fetchAdminGrowth,
   fetchAdminOverview,
   fetchAdminSocial,
+  fetchRecentSignups,
   isAppAdmin,
 } from '@/data/admin-live';
 import { column, RANGES, rangeLabel, rangeToDays, type RangeKey } from '@/domain/admin/series';
@@ -84,6 +85,9 @@ export default function AdminScreen() {
   const content = useQuery(() => fetchAdminContent(days, 12, tz), [days, tz]);
   const social = useQuery(() => fetchAdminSocial(days, tz), [days, tz]);
   const events = useQuery(() => fetchAdminEvents(days, 15, tz), [days, tz]);
+  /* Not range-scoped, deliberately: "did this person sign up yet" is not a question about the last 30
+     days, and re-fetching the list every time the range chips move would answer a question nobody asked. */
+  const signups = useQuery(() => fetchRecentSignups(60), []);
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/account-settings'));
 
@@ -173,6 +177,43 @@ export default function AdminScreen() {
                 <AdminLineChart values={column(g.series, 'cumulative')} days={growthDays} title="Total athletes" />
               </>
             ) : null}
+          </Section>
+        </SectionCard>
+
+        {/*
+          ── Newest athletes (0137) ─────────────────────────────────────
+          ⚠ THE ONE SECTION ON THIS SCREEN THAT NAMES ANYBODY, and it is an amendment rather than a
+          slip — `Admin-Analytics-Amendment-001` AA-D8. The chart above answers "how many", which is
+          the wrong shape of answer while invitations are going out to named people one at a time.
+
+          ⚠ ACCOUNT EXISTENCE ONLY. No workout count, no streak, no rank, no last-active time may join
+          this list; AA-D2's performance prohibitions are unamended (AA-D9). If a column is ever added
+          here, it is a new decision against a locked one.
+        */}
+        <SectionCard
+          title="Newest athletes"
+          subtitle="Who has an account, newest first. “Not named yet” means they created an account but haven’t finished the Account step — the profile is still the placeholder."
+        >
+          <Section state={signups}>
+            {(signups.data ?? []).length === 0 ? (
+              <Text style={styles.sectionError}>No accounts yet.</Text>
+            ) : (
+              (signups.data ?? []).map((a) => (
+                <View key={a.id} style={styles.signupRow}>
+                  <View style={styles.signupWho}>
+                    <Text style={[styles.signupName, !a.named && styles.signupUnnamed]} numberOfLines={1}>
+                      {a.named ? a.name : 'Not named yet'}
+                    </Text>
+                    {a.handle ? (
+                      <Text style={styles.signupHandle} numberOfLines={1}>
+                        @{a.handle}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <Text style={styles.signupWhen}>{signupDate(a.createdAt)}</Text>
+                </View>
+              ))
+            )}
           </Section>
         </SectionCard>
 
@@ -442,13 +483,33 @@ export default function AdminScreen() {
           athletes who left “Help improve Forge” on in Settings › Privacy. It never includes anything an athlete
           wrote or lifted, no photos and no location. All figures are bucketed in {tz}.
         </Text>
+        {/* ⚠ THIS PARAGRAPH USED TO SAY "no athlete is named on this screen." It was true when it was
+            written and "Newest athletes" made it false. Corrected in place rather than deleted — the
+            claim worth making is the narrower one, and a footer that silently drops a promise is worse
+            than one that never made it. See `Admin-Analytics-Amendment-001` (AA-D8/AA-D9). */}
         <Text style={styles.disclaimer}>
-          Aggregates only, by design — no athlete is named on this screen, and nothing here may be shown inside the app
-          (Admin-Analytics-Architecture AA-D2 / AA-D3).
+          Aggregates only, by design — with one exception. “Newest athletes” names people, and it carries{' '}
+          <Text style={styles.disclaimerStrong}>account existence and nothing else</Text>: no workouts, no streak, no
+          rank, no last-active time. Every other figure on this screen is a population aggregate, and nothing here —
+          named or not — may be shown inside the app (Admin-Analytics-Architecture AA-D2 / AA-D3, amended by AA-D8).
         </Text>
       </ScrollView>
     </View>
   );
+}
+
+/**
+ * "Aug 11, 2:14 PM" — the date AND the time, because during a hand-run rollout the operator is often
+ * looking for somebody who signed up twenty minutes ago and a bare date cannot tell them apart.
+ *
+ * The device's own clock, not `dashboardTz()`: every other figure on this screen is BUCKETED and has to
+ * agree with the others about where a day begins, which is what that one clock exists to guarantee. A
+ * signup is a single instant with nothing to line it up against.
+ */
+function signupDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
 /** Loading / error / content for one section, so a slow query never blanks the whole screen. */
@@ -487,6 +548,23 @@ const styles = StyleSheet.create({
   empty: { color: flColor.gray600, fontSize: 12, lineHeight: 17, paddingVertical: 6 },
   sectionLoading: { paddingVertical: 22, alignItems: 'center' },
   sectionError: { color: flColor.redMuted, fontSize: 12, lineHeight: 17, paddingVertical: 8 },
+
+  // Newest athletes (0137). A hairline between rows and nothing else — it is a list, not a table.
+  signupRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingVertical: 9,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: flColor.charcoal700,
+  },
+  signupWho: { flex: 1, minWidth: 0 },
+  signupName: { fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
+  /* Dimmed on purpose: "Not named yet" is a state, not a name, and it must not read like one. */
+  signupUnnamed: { color: flColor.gray600, fontStyle: 'italic', fontWeight: '500' },
+  signupHandle: { marginTop: 1, fontSize: 11.5, color: flColor.gray600 },
+  signupWhen: { flexShrink: 0, fontSize: 11.5, color: flColor.gray400 },
   disclaimer: { color: flColor.gray600, fontSize: 10.5, lineHeight: 16, marginTop: 4 },
   disclaimerStrong: { color: flText.secondary, fontFamily: flFont.displayMedium },
 });

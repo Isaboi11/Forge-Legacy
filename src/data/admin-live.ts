@@ -30,10 +30,14 @@ import { supabase } from '@/lib/supabase';
 const MISSING_FN = 'PGRST202';
 const NOT_AUTHORIZED = '42501';
 
+/* Which migration each RPC came from, so "not applied yet" names the file to paste rather than a file
+   that is already in. Everything in 0130 is the default; anything added since is listed. */
+const FROM_MIGRATION: Record<string, string> = { admin_recent_signups: '0137' };
+
 function rpcError(e: unknown, fn: string): Error {
   const err = e as { code?: string; message?: string } | null;
   if (err?.code === MISSING_FN) {
-    return new Error(`Migration 0130 has not been applied yet — ${fn} does not exist in the database.`);
+    return new Error(`Migration ${FROM_MIGRATION[fn] ?? '0130'} has not been applied yet — ${fn} does not exist in the database.`);
   }
   if (err?.code === NOT_AUTHORIZED || /not authorized/i.test(err?.message ?? '')) {
     return new Error('Not authorized.');
@@ -511,4 +515,45 @@ export async function fetchAdminSocial(days: number, tz = dashboardTz()): Promis
       devices: counts(p.devices),
     },
   };
+}
+
+// ── Newest athletes (0137) ───────────────────────────────────────────────────
+
+/** One account, as `/admin` › Newest athletes lists it. Account existence ONLY — see AA-D8. */
+export interface RecentSignup {
+  id: string;
+  name: string;
+  handle: string;
+  createdAt: string;
+  /** False while the profile is still the `Athlete` placeholder `handle_new_user()` mints. */
+  named: boolean;
+}
+
+/**
+ * WHO HAS AN ACCOUNT — the one place `/admin` names anybody.
+ *
+ * ══ THIS IS AN AMENDMENT, NOT AN EXCEPTION ══
+ *
+ * AA-D2 says "never a roster", and this is a roster. `Admin-Analytics-Amendment-001` (AA-D8) narrows
+ * that phrase to "never a roster of TRAINING data" and this list is the whole of what it permits: name,
+ * handle, when the account was made, and whether onboarding has named them yet.
+ *
+ * ⚠ **NOTHING ELSE MAY BE ADDED HERE.** No workout count, no streak, no rank, no last-active time, no
+ * email. AA-D2's enumerated prohibitions — volume, standing, leaderboard position, rank — are unamended
+ * and absolute, and AA-D9 exists to say so: attaching a training figure to one of these names is a new
+ * decision against a locked one, never a small extension of this function.
+ *
+ * Accounts still called "Athlete" are INCLUDED deliberately. Somebody who signed up and stalled during
+ * onboarding is precisely the case the PO could not see, and it is a different problem from somebody who
+ * never signed up at all — which is why `named` is returned rather than filtered on.
+ */
+export async function fetchRecentSignups(limit = 60): Promise<RecentSignup[]> {
+  const rows = arr<Record<string, unknown>>(await callRpc('admin_recent_signups', { p_limit: limit }));
+  return rows.map((r) => ({
+    id: String(r.id ?? ''),
+    name: String(r.name ?? 'Athlete'),
+    handle: String(r.handle ?? ''),
+    createdAt: String(r.created_at ?? ''),
+    named: r.named === true,
+  }));
 }
