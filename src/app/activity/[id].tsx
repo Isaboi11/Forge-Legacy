@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
@@ -26,6 +26,7 @@ import { WORKOUT_NAME_MAX, renameWorkout } from '@/data/workout-complete-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useUnits } from '@/lib/settings';
 import { openPlaylist } from '@/components/forge/composites/Playlist';
+import { ShareSessionSheet } from '@/components/forge/ShareSessionSheet';
 import { playlistLabel, type WorkoutPlaylistLink } from '@/domain/workout/playlist';
 
 /**
@@ -75,6 +76,7 @@ export default function ActivityDetailScreen() {
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameDraft, setRenameDraft] = useState('');
   const [savingName, setSavingName] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [renameError, setRenameError] = useState<string | null>(null);
   const title = nameEdit !== undefined ? (nameEdit ?? 'Workout') : (data?.title ?? 'Workout');
 
@@ -105,7 +107,34 @@ export default function ActivityDetailScreen() {
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.legacy} overlay={{ flat: 'rgba(5,5,5,0.3)' }} />
-      <AppBar title="" onBack={() => router.back()} />
+      {/*
+        ⚠ SHARE LIVES HERE NOW, ONE TAP FROM RECENT ACTIVITY.
+        PO: *"when I go into recent activity I have to go two pages deep to get to the hidden share
+        button."* This screen's own header recorded sharing as DEFERRED because "there is no share or
+        export path here" — true when it was written, and no longer: `ShareSessionSheet` is the same
+        destination sheet Workout Complete uses, so both screens offer the same audiences from one
+        implementation.
+
+        ⚠ NOT ON A SHARED SESSION. `detail.viewer === 'shared'` means this is somebody else's training,
+        opened from their post. Re-sharing another athlete's session is a different act with different
+        consent, and 0117 withholds what a repost would need anyway.
+      */}
+      <AppBar
+        title=""
+        onBack={() => router.back()}
+        actions={
+          data && data.viewer !== 'shared' ? (
+            <Pressable onPress={() => setShareOpen(true)} accessibilityRole="button" accessibilityLabel="Share this session" hitSlop={8}>
+              <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <Circle cx={6} cy={12} r={2.5} />
+                <Circle cx={17} cy={6} r={2.5} />
+                <Circle cx={17} cy={18} r={2.5} />
+                <Path d="M8.2 10.8l6.6-3.6M8.2 13.2l6.6 3.6" />
+              </Svg>
+            </Pressable>
+          ) : null
+        }
+      />
 
       {loading ? (
         <View style={styles.center}>
@@ -118,6 +147,14 @@ export default function ActivityDetailScreen() {
         </View>
       ) : (
         <>
+          {/* Mounted in the SAME branch as the button that opens it — `overlay-branch.test.mjs` exists
+              because a sheet was once rendered where its opener could never reach it. */}
+          <ShareSessionSheet
+            open={shareOpen}
+            onClose={() => setShareOpen(false)}
+            workoutId={data.id}
+            workoutName={title}
+          />
           <Body
             detail={data}
             title={title}

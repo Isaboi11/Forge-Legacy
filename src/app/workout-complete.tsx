@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Animated, Modal, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Circle, Defs, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -22,9 +22,8 @@ import { withinContinueWindow } from '@/domain/workout/save';
 import { openPlaylist, PlaylistChip, PlaylistSheet } from '@/components/forge/composites/Playlist';
 import type { WorkoutPlaylistLink } from '@/domain/workout/playlist';
 import { distanceLabel, fmtClock, fmtPace, toDistance, toPace, type UnitSystem } from '@/domain/run/run-core';
-import { addSquadPost, recapSummaryFrom } from '@/data/squad-feed-live';
-import { createFriendPost, type PostAudience } from '@/data/friends-feed-live';
-import { fetchMySquads, type SquadSummary } from '@/data/squad-live';
+import { recapSummaryFrom } from '@/data/squad-feed-live';
+import { ShareSessionSheet } from '@/components/forge/ShareSessionSheet';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 
 const AnimatedGradient = Animated.createAnimatedComponent(LinearGradient);
@@ -134,11 +133,10 @@ export default function WorkoutComplete() {
     });
   }, [graduation, enqueue]);
 
-  const [mySquads, setMySquads] = useState<SquadSummary[] | null>(null);
+  /* ⚠ `mySquads`, `squadStep` and `sharing` moved into `ShareSessionSheet` with the destination logic.
+     They were screen state serving a sheet that is no longer this screen's, and leaving them here would
+     be three variables that look like they still decide something. */
   const [shareOpen, setShareOpen] = useState(false);
-  /** Non-null while the destination sheet is on its second page: which audience the squad is FOR. */
-  const [squadStep, setSquadStep] = useState<'SQUAD' | 'BOTH' | null>(null);
-  const [sharing, setSharing] = useState(false);
   const vol = (lb: number) => thousands(displayWeight(lb, units).value);
   const volUnit = displayWeight(0, units).unit;
   const [step, setStep] = useState<Step>('seal');
@@ -403,72 +401,6 @@ export default function WorkoutComplete() {
       // on the device would take it — never that the playlist is gone.
       if (!ok) showToast('Nothing on this device could open that link.');
     });
-  };
-
-  const onShare = () => {
-    if (!data) return;
-    void Share.share({ title: 'Forge Legacy', message: `${shownName} — sealed. ${vol(data.volume)} ${volUnit} moved.` });
-  };
-  /**
-   * Share the sealed session inside Forge — to friends, to a squad, or to both.
-   *
-   * WHY `createFriendPost` CARRIES 'BOTH' AND NOT `addSquadPost`. `addSquadPost` never writes the
-   * `audience` column, so it can only ever produce a SQUAD row; teaching it a third audience would
-   * give two functions the same job. `createFriendPost` already takes `audience` + `squadId` and
-   * already applies `squad_id: audience === 'FRIENDS' ? null : squadId`, which is exactly the shape of
-   * the `(audience = 'FRIENDS') = (squad_id is null)` constraint.
-   *
-   * That constraint is an EQUIVALENCE, stated both ways, so BOTH must carry a squad. An athlete in no
-   * squads therefore gets Friends only — and the sheet says so rather than hiding the rows, because a
-   * missing option teaches nothing and a disabled one with a reason does.
-   */
-  const postRecap = (audience: PostAudience, squad: SquadSummary | null) => {
-    if (!data || sharing) return;
-    if (audience !== 'FRIENDS' && !squad) return; // unreachable via the sheet; the constraint's belt-and-braces
-    setSharing(true);
-    const summary = recapSummaryFrom(data);
-    const settle = (message: string) => {
-      setSharing(false);
-      setShareOpen(false);
-      setSquadStep(null);
-      showToast(message);
-    };
-    const failed = (e: unknown) => {
-      setSharing(false);
-      showToast(e instanceof Error ? e.message : 'Couldn’t share that.');
-    };
-
-    if (audience === 'SQUAD' && squad) {
-      addSquadPost({ squadId: squad.id, type: 'recap', body: '', workoutId: data.workoutId, workoutSummary: summary }).then(
-        () => settle(`Shared to ${squad.name}`),
-        failed,
-      );
-      return;
-    }
-    createFriendPost({
-      body: '',
-      audience,
-      squadId: squad?.id ?? null,
-      media: [],
-      type: 'recap',
-      workoutId: data.workoutId,
-      workoutSummary: summary,
-    }).then(() => settle(squad ? `Shared to your friends and ${squad.name}` : 'Shared with your friends'), failed);
-  };
-
-  const openShareTo = async () => {
-    if (sharing) return;
-    // Fetched before the sheet opens so the squad rows know whether they are available, rather than
-    // offering a destination and discovering on tap that there isn't one.
-    if (!mySquads) setMySquads(await fetchMySquads().catch(() => [] as SquadSummary[]));
-    setShareOpen(true);
-  };
-  const hasSquad = (mySquads ?? []).length > 0;
-  const chooseDestination = (audience: PostAudience) => {
-    if (audience === 'FRIENDS') return postRecap('FRIENDS', null);
-    const squads = mySquads ?? [];
-    if (squads.length === 1) return postRecap(audience, squads[0]);
-    setSquadStep(audience === 'BOTH' ? 'BOTH' : 'SQUAD');
   };
 
   if (loading || !data) {
@@ -953,8 +885,8 @@ export default function WorkoutComplete() {
           session can go behind it.
         */}
         <View style={styles.shareActions}>
-          <Button variant="primary" fullWidth onPress={openShareTo} accessibilityLabel="Share this session">
-            {sharing ? 'Sharing…' : 'Share'}
+          <Button variant="primary" fullWidth onPress={() => setShareOpen(true)} accessibilityLabel="Share this session">
+            Share
           </Button>
           <Button variant="text" fullWidth onPress={() => setStep('seal')} accessibilityLabel="Back">
             Back
@@ -962,106 +894,23 @@ export default function WorkoutComplete() {
         </View>
       </View>
 
-      {/* Destination, then (only when it's ambiguous) which squad. Mounted in the SAME branch as the
-          button that opens it — see `overlay-branch.test.mjs`. */}
-      <Modal
-        visible={shareOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => {
-          setShareOpen(false);
-          setSquadStep(null);
-        }}
-      >
-        <Pressable
-          style={styles.pickerBackdrop}
-          onPress={() => {
-            setShareOpen(false);
-            setSquadStep(null);
-          }}
-        >
-          <Pressable style={styles.pickerCard} onPress={() => {}}>
-            {squadStep ? (
-              <>
-                <Text style={styles.pickerTitle}>{squadStep === 'BOTH' ? 'Friends and which squad?' : 'Share to which squad?'}</Text>
-                <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
-                  {(mySquads ?? []).map((s, i) => (
-                    <Pressable
-                      key={s.id}
-                      onPress={() => postRecap(squadStep, s)}
-                      disabled={sharing}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Share to ${s.name}`}
-                      style={[styles.pickerRow, i > 0 ? styles.pickerRowDiv : null]}
-                    >
-                      <Text style={styles.pickerName} numberOfLines={1}>
-                        {s.name}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </ScrollView>
-              </>
-            ) : (
-              <>
-                <Text style={styles.pickerTitle}>Share this session with</Text>
-                <View style={styles.destList}>
-                  <DestRow label="Friends" sub="Everyone you're connected to" onPress={() => chooseDestination('FRIENDS')} disabled={sharing} />
-                  <DestRow
-                    label="A Squad"
-                    sub={hasSquad ? 'Just the people you train with' : 'You’re not in a squad yet'}
-                    onPress={() => chooseDestination('SQUAD')}
-                    disabled={sharing || !hasSquad}
-                  />
-                  <DestRow
-                    label="Friends & Squad"
-                    sub={hasSquad ? 'Both, as one post' : 'Needs a squad'}
-                    onPress={() => chooseDestination('BOTH')}
-                    disabled={sharing || !hasSquad}
-                  />
-                  {/* Outside Forge — the same sheet, so "where does this go" is asked once. Last
-                      because the rows above keep it inside the app, where a session is a post somebody
-                      can answer rather than an image in a camera roll. */}
-                  <DestRow
-                    label="Anywhere else"
-                    sub="Messages, Instagram, anywhere on your phone"
-                    onPress={() => {
-                      setShareOpen(false);
-                      onShare();
-                    }}
-                    disabled={sharing}
-                  />
-                </View>
-                {/* A squad is required for both of the middle rows — the audience constraint is an
-                    equivalence, so "Both" cannot exist without one. Say that rather than hide them. */}
-                {!hasSquad ? <Text style={styles.destNote}>You’re not in a squad yet, so Friends is the only place inside Forge to share this.</Text> : null}
-              </>
-            )}
-          </Pressable>
-        </Pressable>
-      </Modal>
-
-      {templateNameSheet}
+      {/* ⚠ THE SAME SHEET ACTIVITY DETAIL USES. It lived inline here, which is why the only way to
+          share a session was to have just finished one. Extracted to `ShareSessionSheet` — the audience
+          rules, the squad-count edge cases and the `(audience = 'FRIENDS') = (squad_id is null)`
+          constraint now have one home instead of one per screen. */}
+      <ShareSessionSheet
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        workoutId={data.workoutId}
+        workoutName={shownName}
+        summary={recapSummaryFrom(data)}
+      />
     </Shell>
   );
 }
 
 // ── pieces ──
 /** One destination in the share sheet. Disabled rows stay visible and carry their reason. */
-function DestRow({ label, sub, onPress, disabled }: { label: string; sub: string; onPress: () => void; disabled?: boolean }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      accessibilityRole="button"
-      accessibilityLabel={`${label} — ${sub}`}
-      accessibilityState={{ disabled: !!disabled }}
-      style={[styles.destRow, disabled && styles.destRowOff]}
-    >
-      <Text style={[styles.destLabel, disabled && styles.destLabelOff]}>{label}</Text>
-      <Text style={styles.destSub}>{sub}</Text>
-    </Pressable>
-  );
-}
 
 function Shell({ children }: { children: ReactNode }) {
   return (
