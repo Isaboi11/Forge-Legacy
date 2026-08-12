@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { SCREEN_TOURS, type ScreenTourKey } from '@/domain/onboarding/tour-plan';
+import { SCREEN_TOURS, type ScreenTourKey, type TourPhase } from '@/domain/onboarding/tour-plan';
 import { createSeenSet } from './screen-prompts-model';
 
 /**
@@ -29,18 +29,36 @@ const TIPS_KEY = 'forge_guided_tips_enabled_v1';
 
 export type ScreenKey = ScreenTourKey;
 
-const SCREEN_KEYS: readonly string[] = Object.keys(SCREEN_TOURS);
-const isScreenKey = (x: unknown): x is ScreenKey => typeof x === 'string' && SCREEN_KEYS.includes(x);
+/**
+ * What actually goes in the seen-set — a surface AND which phase of it was delivered.
+ *
+ * ⚠ PHASE 1 KEEPS THE BARE KEY, and that is a compatibility decision rather than a stylistic one. Every
+ * athlete already has a stored set of bare surface names; suffixing all three phases would make every
+ * one of those entries unrecognised, the validator would filter them out on read, and **every athlete in
+ * the field would be walked through all 27 surfaces again on their next launch.** Phase 1 is what those
+ * stored entries mean, so phase 1 is what they keep meaning.
+ */
+export type PromptKey = string;
 
-const seenSet = createSeenSet<ScreenKey>({ store: AsyncStorage, storageKey: KEY, isKey: isScreenKey });
+export const promptKeyFor = (key: ScreenKey, phase: TourPhase): PromptKey => (phase === 1 ? key : `${key}:${phase}`);
 
-export async function getSeenPrompts(): Promise<ScreenKey[]> {
+/*
+ * Derived from the step data, never retyped beside it — see the header. The phase suffixes are generated
+ * here for the same reason the base keys are: a key the validator does not recognise is filtered on every
+ * READ, so that surface records itself as seen, reads back as unseen, and fires forever.
+ */
+const SEEN_KEYS: ReadonlySet<string> = new Set(Object.keys(SCREEN_TOURS).flatMap((k) => [k, `${k}:2`, `${k}:3`]));
+const isSeenKey = (x: unknown): x is PromptKey => typeof x === 'string' && SEEN_KEYS.has(x);
+
+const seenSet = createSeenSet<PromptKey>({ store: AsyncStorage, storageKey: KEY, isKey: isSeenKey });
+
+export async function getSeenPrompts(): Promise<PromptKey[]> {
   return seenSet.read();
 }
 
-/** Add a screen to the seen-set (idempotent, and safe against a concurrent mark of another screen). */
-export async function markPromptSeen(key: ScreenKey): Promise<void> {
-  return seenSet.mark(key);
+/** Add a (screen, phase) to the seen-set (idempotent, and safe against a concurrent mark of another). */
+export async function markPromptSeen(key: ScreenKey, phase: TourPhase = 1): Promise<void> {
+  return seenSet.mark(promptKeyFor(key, phase));
 }
 
 /** Forget every first-visit walkthrough (used by the account-switch reset and "Replay all tips"). */

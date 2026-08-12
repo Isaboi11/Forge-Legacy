@@ -45,11 +45,21 @@ import { router } from 'expo-router';
 import { useCeremony } from '@/hooks/useCeremony';
 import { useTourAnchors } from '@/hooks/useTourAnchors';
 import { useAuth } from '@/lib/auth';
+import { track } from '@/lib/analytics';
 import { HonorCeremony } from '@/components/ceremony/HonorCeremony';
 import { HonorSymbol } from '@/components/ceremony/HonorSymbol';
 import { Button } from '@/components/forge/composites/Button';
 import { flColor, flFont } from '@/constants/foundation';
-import { legsIn, planTour, type TourLeg, type TourStep } from '@/domain/onboarding/tour-plan';
+import {
+  legsIn,
+  phaseFor,
+  planTour,
+  stepsFor,
+  type ScreenTourStep,
+  type TourLeg,
+  type TourPhase,
+  type TourStep,
+} from '@/domain/onboarding/tour-plan';
 import {
   getHomeTourStatus,
   getTourStatus,
@@ -65,8 +75,11 @@ import {
   getSeenPrompts,
   markPromptSeen,
   setGuidedTipsEnabled,
+  promptKeyFor,
+  type PromptKey,
   type ScreenKey,
 } from '@/lib/screen-prompts';
+import { getWorkoutsLogged } from '@/lib/tour-phase';
 
 export type { TourStep } from '@/domain/onboarding/tour-plan';
 
@@ -136,9 +149,11 @@ interface TourContextValue {
   /** Resume a tour deferred by "View Honor" — the Honors Hub calls this as it's left. */
   resumeTour: () => void;
   // first-visit seen-set (consumed by useScreenPrompt)
-  seen: ScreenKey[];
+  seen: PromptKey[];
+  /** Lifetime workouts, or null while unknown — null means every phase is unlocked (see the state above). */
+  workoutsLogged: number | null;
   seenLoaded: boolean;
-  markSeen: (key: ScreenKey) => void;
+  markSeen: (key: ScreenKey, phase?: TourPhase) => void;
   /** The Guided Tips master switch (Account Settings). Off suppresses every first-visit banner. */
   tipsEnabled: boolean;
   setTipsEnabled: (on: boolean) => void;
@@ -161,7 +176,17 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const [deferred, setDeferred] = useState(false);
   const [requested, setRequested] = useState(false);
   const [announced, setAnnounced] = useState(true); // assume announced until storage says otherwise — never flash a repeat
-  const [seen, setSeen] = useState<ScreenKey[]>([]);
+  /* Composite keys — a surface plus the phase of it that was delivered. See `promptKeyFor`. */
+  const [seen, setSeen] = useState<PromptKey[]>([]);
+  /**
+   * Lifetime workouts, which decides how much of each walkthrough is unlocked.
+   *
+   * ⚠ `null` UNTIL IT IS KNOWN, AND NULL MEANS "NO RESTRICTION". Defaulting to 0 while the read is in
+   * flight would hand a veteran the beginner tutorial for the first second of every launch — and on a
+   * failed read, forever. Under-teaching on a missing number is the failure that looks like the feature
+   * working, so absence unlocks rather than restricts.
+   */
+  const [workoutsLogged, setWorkoutsLogged] = useState<number | null>(null);
   const [seenLoaded, setSeenLoaded] = useState(false);
   const [tipsEnabled, setTips] = useState(true); // absent preference = on, the first-run default
 
@@ -242,6 +267,22 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
    * The three paths that genuinely consume the ceremony — `startFromCeremony`, `viewHonor` and
    * `markAnnounced` — each record it themselves. A run started by anything else must leave it alone.
    */
+  /*
+   * WHERE PEOPLE STOP.
+   *
+   * ⚠ THE PREMISE OF THE PHASED TUTORIAL IS CURRENTLY UNMEASURED. "People skip it or get overwhelmed"
+   * is a reasonable read of the shape of the thing — 105 authored steps, ~23 of them before a first
+   * workout — but nothing in this app has ever recorded a skip. Without these three events the phasing
+   * ships blind and we cannot tell afterwards whether it helped.
+   *
+   * An effect rather than a call inside `nextStep`, so it fires once per step no matter how many renders
+   * the spotlight's measure-and-scroll pass causes, and so it also catches the first step of a run.
+   */
+  useEffect(() => {
+    if (!run || run.length === 0) return;
+    track('tour_step_shown', { section: 'guided', step: stepIndex, total: run.length });
+  }, [run, stepIndex]);
+
   const beginRun = useCallback((steps: TourStep[]) => {
     if (steps.length === 0) return;
     setStepIndex(0);
@@ -260,6 +301,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     (opts: { replay?: boolean; assumeFace?: TourFace } = {}) => {
       const current = opts.assumeFace ?? face;
       return planTour({
+        workoutsLogged: workoutsLogged ?? undefined,
         tabsDone: tabsStatus !== 'pending',
         homeDone: homeStatus !== 'pending',
         homeHasCards: current === 'settled',
@@ -267,7 +309,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
         replay: opts.replay,
       });
     },
-    [face, tabsStatus, homeStatus, registeredAnchors],
+    [face, tabsStatus, homeStatus, registeredAnchors, workoutsLogged],
   );
 
   // Home reports its face on focus. Stable identity on purpose: it must not react to tour state, or setting
@@ -317,6 +359,13 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
    * meant a control labelled "Replay all tips" replayed eleven steps and skipped sixty-three. The label is
    * the contract.
    */
+  /*
+   * ⚠ "REPLAY ALL TIPS" DOES NOT TOUCH THE WORKOUT COUNTER, and that is one easily-missed line away from
+   * undoing the whole phasing feature. Replaying is a request to be shown what you are OWED again; the
+   * counter is what you have EARNED. Clearing it would hand a two-year athlete the beginner tutorial and
+   * make them re-earn phases 2 and 3 by training ten more times. `forgetWorkoutsLogged` exists for the
+   * account switch, which is a genuinely different athlete, and is deliberately not called here.
+   */
   const startTour = useCallback(() => {
     setTabsStatus('pending');
     setHomeStatus('pending');
@@ -340,21 +389,26 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
    * Account Settings, which really does turn everything off.
    */
   const skipTour = useCallback(() => {
+    /* ⚠ OUTSIDE THE UPDATER. `setRun`'s callback already carries one side effect (`recordLegs`), and a
+       state updater must stay pure — StrictMode calls it twice, which would double every event. */
+    if (run) track('tour_skipped', { section: 'guided', step: stepIndex, total: run.length });
     setRun((prev) => {
       if (prev) recordLegs(prev.slice(0, stepIndex + 1), 'skipped');
       return null;
     });
     setRequested(false);
     setStepIndex(0);
-  }, [recordLegs, stepIndex]);
+  }, [recordLegs, stepIndex, run]);
 
   const finishRun = useCallback(() => {
+    // Both ends of the funnel, or a skip rate has no denominator.
+    if (run) track('tour_completed', { section: 'guided', total: run.length });
     setRun((prev) => {
       if (prev) recordLegs(prev, 'completed');
       return null;
     });
     setStepIndex(0);
-  }, [recordLegs]);
+  }, [recordLegs, run]);
 
   const nextStep = useCallback(() => {
     const total = run?.length ?? 0;
@@ -401,9 +455,20 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     void setGuidedTipsEnabled(on);
   }, []);
 
-  const markSeen = useCallback((key: ScreenKey) => {
-    setSeen((prev) => (prev.includes(key) ? prev : [...prev, key]));
-    void markPromptSeen(key);
+  useEffect(() => {
+    let alive = true;
+    void getWorkoutsLogged().then((n) => {
+      if (alive && n != null) setWorkoutsLogged(n);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const markSeen = useCallback((key: ScreenKey, phase: TourPhase = 1) => {
+    const composite = promptKeyFor(key, phase);
+    setSeen((prev) => (prev.includes(composite) ? prev : [...prev, composite]));
+    void markPromptSeen(key, phase);
   }, []);
 
   // Memoized so an idle provider doesn't hand a fresh `[]` to every consumer on every render.
@@ -428,6 +493,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       seen,
       seenLoaded,
       markSeen,
+      workoutsLogged,
       tipsEnabled,
       setTipsEnabled,
     }),
@@ -447,6 +513,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       seen,
       seenLoaded,
       markSeen,
+      workoutsLogged,
       tipsEnabled,
       setTipsEnabled,
     ],
@@ -500,8 +567,13 @@ export function useTour(): TourContextValue {
  * and persists it, so it never returns on relaunch. No effect, no render-phase ref: the strict hooks rules
  * forbid both, and this needs neither.
  */
-export function useScreenPrompt(key: ScreenKey): { shouldShow: boolean; dismiss: () => void } {
-  const { seen, seenLoaded, markSeen, status, tipsEnabled } = useTour();
+export function useScreenPrompt(key: ScreenKey): {
+  shouldShow: boolean;
+  dismiss: () => void;
+  /** How many steps of this surface are unlocked — the caller renders exactly these. */
+  steps: readonly ScreenTourStep[];
+} {
+  const { seen, seenLoaded, markSeen, status, tipsEnabled, workoutsLogged } = useTour();
   /**
    * BLOCKING MEANS "SOMETHING IS ON SCREEN", NOT "THE TOUR IS UNFINISHED".
    *
@@ -515,9 +587,21 @@ export function useScreenPrompt(key: ScreenKey): { shouldShow: boolean; dismiss:
    * told nothing.
    */
   const blocking = status === 'loading' || status === 'running';
-  const shouldShow = tipsEnabled && seenLoaded && !blocking && !seen.includes(key);
-  const dismiss = useCallback(() => markSeen(key), [markSeen, key]);
-  return { shouldShow, dismiss };
+
+  /*
+   * WHICH PHASE THIS ATHLETE IS OWED, and the steps that come with it.
+   *
+   * ⚠ A SURFACE IS OWED AGAIN WHEN A NEW PHASE OPENS, which is the whole feature: the seen-set is keyed
+   * by (surface, phase), so "Workouts" seen at phase 1 does not cover the phase-2 steps that unlock at
+   * three workouts. It also means an athlete never re-reads a step they have already been shown — the
+   * earlier phases stay marked.
+   */
+  const phase = phaseFor(workoutsLogged ?? Number.MAX_SAFE_INTEGER);
+  const steps = useMemo(() => stepsFor(key, workoutsLogged ?? Number.MAX_SAFE_INTEGER), [key, workoutsLogged]);
+
+  const shouldShow = tipsEnabled && seenLoaded && !blocking && steps.length > 0 && !seen.includes(promptKeyFor(key, phase));
+  const dismiss = useCallback(() => markSeen(key, phase), [markSeen, key, phase]);
+  return { shouldShow, dismiss, steps };
 }
 
 const styles = StyleSheet.create({

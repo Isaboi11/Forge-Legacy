@@ -31,12 +31,12 @@
  * rectangle or counts a step it can't show.
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { SpotlightStage, type SpotlightStep } from '@/components/tour/SpotlightStage';
 import { useScreenPrompt } from '@/hooks/useTour';
+import { track } from '@/lib/analytics';
 import { useTourAnchors } from '@/hooks/useTourAnchors';
-import { SCREEN_TOURS } from '@/domain/onboarding/tour-plan';
 import type { ScreenKey } from '@/lib/screen-prompts';
 
 export function ScreenTour({
@@ -52,7 +52,7 @@ export function ScreenTour({
   ready?: boolean;
   restingBottom?: number;
 }) {
-  const { shouldShow, dismiss } = useScreenPrompt(screenKey);
+  const { shouldShow, dismiss, steps: unlocked } = useScreenPrompt(screenKey);
   const { registeredAnchors } = useTourAnchors();
   const [stepIndex, setStepIndex] = useState(0);
   const [closed, setClosed] = useState(false);
@@ -68,13 +68,50 @@ export function ScreenTour({
   const steps = useMemo<SpotlightStep[]>(() => {
     if (!live) return [];
     const mounted = registeredAnchors();
-    return SCREEN_TOURS[screenKey].filter((s) => !s.anchor || mounted.includes(s.anchor));
+    /* ⚠ `unlocked`, NOT `SCREEN_TOURS[screenKey]`. The phase decides how much of a surface fires on this
+       visit — two steps on the first, the rest once the athlete has trained enough to have a reason to
+       care. Reading the full list here would draw the whole walkthrough and mark only the phase seen. */
+    return unlocked.filter((s) => !s.anchor || mounted.includes(s.anchor));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live, screenKey]);
+  }, [live, screenKey, unlocked]);
 
-  if (!live || steps.length === 0) return null;
+  return <ScreenTourStage screenKey={screenKey} live={live} steps={steps} stepIndex={stepIndex} setStepIndex={setStepIndex} setStarted={setStarted} started={started} setClosed={setClosed} dismiss={dismiss} restingBottom={restingBottom} />;
+}
+
+/**
+ * Split out so the effects below can run unconditionally — a hook after an early `return null` is a
+ * hook that fires in some renders and not others, which React forbids outright.
+ */
+function ScreenTourStage({ screenKey, live, steps, stepIndex, setStepIndex, started, setStarted, setClosed, dismiss, restingBottom }: {
+  screenKey: ScreenKey;
+  live: boolean;
+  steps: SpotlightStep[];
+  stepIndex: number;
+  setStepIndex: (fn: (i: number) => number) => void;
+  started: boolean;
+  setStarted: (v: boolean) => void;
+  setClosed: (v: boolean) => void;
+  dismiss: () => void;
+  restingBottom?: number;
+}) {
+  const showing = live && steps.length > 0;
+
+  /* One event when a surface starts teaching, one per step after that. `screenKey` rides `section`,
+     which is an allow-listed enum-shaped prop — no athlete text reaches this. */
+  useEffect(() => {
+    if (showing) track('screen_tour_started', { section: screenKey, total: steps.length });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showing, screenKey]);
+
+  useEffect(() => {
+    if (showing) track('tour_step_shown', { section: screenKey, step: stepIndex, total: steps.length });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showing, screenKey, stepIndex]);
+
+  if (!showing) return null;
 
   const finish = () => {
+    track('tour_skipped', { section: screenKey, step: stepIndex, total: steps.length });
     setClosed(true); // hide immediately…
     dismiss(); // …and mark this surface seen so it won't fire again (idempotent if already recorded)
   };

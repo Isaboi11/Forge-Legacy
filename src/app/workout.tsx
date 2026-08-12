@@ -71,6 +71,7 @@ import { doneSetCount, hasLoggedSet, PR_MAX_REPS } from '@/domain/workout/metric
 import { perSideFor } from '@/domain/workout/per-side-core';
 import { continueWorkout, fetchLastNotes, saveWorkout, type LastNote } from '@/domain/workout/save';
 import { saveAppPrefs } from '@/data/settings-live';
+import { bumpWorkoutsLogged } from '@/lib/tour-phase';
 import { fetchLiftHistory, liftId, type LiftHistory } from '@/data/lift-history-live';
 import { backOffTo, incrementFor, progressionFor, sessionPerformance, type Progression } from '@/domain/coach/progression';
 import { DEFAULT_HOLD_SEC, itemByKey, itemByName } from '@/domain/exercise-picker/data';
@@ -1305,6 +1306,10 @@ export default function WorkoutScreen() {
         ? (await continueWorkout(session.continuingWorkoutId, session), session.continuingWorkoutId)
         : (await saveWorkout(session, partnerNames)).workoutId;
       await clearSession();
+      /* One more session in the book — the tutorial's phases are counted in workouts, and this is the
+         only place a workout becomes one. A no-op until the count has been seeded from the server, so it
+         can never invent a "1" for a veteran on a new phone. */
+      void bumpWorkoutsLogged();
       finishWorkout();
       router.replace({ pathname: '/workout-complete', params: { id: workoutId } });
     } catch (e) {

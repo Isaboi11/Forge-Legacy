@@ -1240,6 +1240,92 @@ export interface TourPlanInput {
   anchors: readonly TourAnchorId[];
   /** "Replay all tips" — re-run everything available regardless of what's already been seen. */
   replay?: boolean;
+  /**
+   * Lifetime workouts logged, for the Home leg's phase.
+   *
+   * ⚠ OPTIONAL, AND ABSENT MEANS "EVERYTHING". A caller that has not read the count yet must not get a
+   * thinner tour by accident — under-teaching on a missing number is the failure that looks like the
+   * feature working. Only a real zero thins the run.
+   */
+  workoutsLogged?: number;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// PHASES — thinning the first visit (ONB-D20 Progressive Discovery, finally built)
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * WHY THE TUTORIAL IS PHASED.
+ *
+ * PO: *"It's really heavy and people either skip it or get overwhelmed. So I think we go in phases.
+ * Where the first time they download it we just have the basics and need to knows, then phase two is a
+ * little more in depth, then phase three is more niche things. And have to spread apart."*
+ *
+ * They are right about the shape: 105 authored steps, and a new athlete meets about twenty-three of them
+ * before finishing a single workout. But the TRIGGER was never the problem — a per-surface walkthrough
+ * already fires only when you first reach that screen. **The density is the problem**, so the fix is to
+ * thin each first visit rather than to withhold whole screens.
+ *
+ * That distinction is load-bearing. Gating surfaces would mean somebody who opens Squads on day one is
+ * taught nothing at all — taught silence — whereas thinning means every surface still explains itself the
+ * first time, in two steps, and the depth arrives when the athlete has earned a reason to care.
+ *
+ * ⚠ THIS IS AN UNIMPLEMENTED LOCKED SPEC, NOT A NEW IDEA. `Onboarding-First-Time-Journey-Architecture`
+ * ONB-D20 has said since it locked: *"Feature education is delivered later, when relevant — never
+ * front-loaded."* ONB-D21 names both failure modes this sits between — an overwhelming tour, and a
+ * barren start. See `Onboarding-Amendment-004`.
+ */
+export type TourPhase = 1 | 2 | 3;
+
+/**
+ * Workouts logged before each phase opens.
+ *
+ * Counted in SESSIONS rather than days because teaching should track use, not the calendar: somebody
+ * training four times a week has met far more of the app by Friday than somebody who opened it twice,
+ * and a day-based gate teaches the second athlete things they have no context for yet.
+ */
+export const PHASE_UNLOCK: Record<TourPhase, number> = { 1: 0, 2: 3, 3: 10 };
+
+/** How many of a surface's steps belong to phase 1, then to phase 2. The rest are phase 3. */
+export const PHASE_1_STEPS = 2;
+export const PHASE_2_STEPS = 2;
+
+/** How much of the Home leg fires on the very first run. The rest waits for phase 2. */
+export const HOME_PHASE_1_STEPS = 3;
+
+/** Which phase an athlete is in. Monotonic — it never goes backwards. */
+export function phaseFor(workoutsLogged: number): TourPhase {
+  const n = Math.max(0, Math.floor(workoutsLogged || 0));
+  if (n >= PHASE_UNLOCK[3]) return 3;
+  if (n >= PHASE_UNLOCK[2]) return 2;
+  return 1;
+}
+
+/**
+ * Which phase a step belongs to, by its POSITION in its surface's list.
+ *
+ * ⚠ POSITIONAL, AND DELIBERATELY NOT A PER-STEP TAG. Every walkthrough was authored in reading order —
+ * what the screen is, then the decision it asks of you, then the details — so position already encodes
+ * depth. Ninety-four hand-applied tags would encode the same thing less reliably and would rot the first
+ * time somebody reordered a list.
+ */
+export function phaseOfStep(index: number): TourPhase {
+  if (index < PHASE_1_STEPS) return 1;
+  if (index < PHASE_1_STEPS + PHASE_2_STEPS) return 2;
+  return 3;
+}
+
+/**
+ * The steps of one surface that are unlocked at this many workouts.
+ *
+ * ⚠ ALWAYS RETURNS THE FIRST STEPS, never a later slice. A surface teaches itself from the top every
+ * time it is owed — an athlete reaching phase 2 does not resume mid-explanation on a screen they last
+ * saw eight sessions ago. The seen-set is what stops a phase being re-shown, not this function.
+ */
+export function stepsFor(key: ScreenTourKey, workoutsLogged: number): readonly ScreenTourStep[] {
+  const phase = phaseFor(workoutsLogged);
+  return SCREEN_TOURS[key].filter((_s, i) => phaseOfStep(i) <= phase);
 }
 
 /**
@@ -1258,14 +1344,24 @@ export interface TourPlanInput {
  * which is also, exactly, the two-moments design this tour was split into in the first place.
  */
 export function planTour(input: TourPlanInput): TourStep[] {
-  const { tabsDone, homeDone, homeHasCards, anchors, replay = false } = input;
+  const { tabsDone, homeDone, homeHasCards, anchors, replay = false, workoutsLogged } = input;
 
   // Tabs first whenever it's owed — it is the shorter, more general orientation, and Home is still there
   // afterwards. Home's own moment comes next, on its own.
   if (replay || !tabsDone) return [...TAB_STEPS];
 
   if (homeHasCards && (replay || !homeDone)) {
-    return HOME_STEPS.filter((s) => !s.anchor || anchors.includes(s.anchor));
+    /*
+     * Phase thins the HOME leg only, and only by CONTENT — never by routing. `planTour`'s one-leg-per-run
+     * rule is a bug fix (see the header above), so a phase may drop steps from a leg but may never make a
+     * run span two of them.
+     *
+     * The tabs leg is untouched at every phase: four one-sentence steps naming what each tab is for is
+     * the orientation everything else assumes, and thinning it would leave an athlete who has trained
+     * three times being introduced to a tab bar they have used all week.
+     */
+    const homeLimit = workoutsLogged == null || phaseFor(workoutsLogged) > 1 ? HOME_STEPS.length : HOME_PHASE_1_STEPS;
+    return HOME_STEPS.slice(0, homeLimit).filter((s) => !s.anchor || anchors.includes(s.anchor));
   }
 
   return [];
