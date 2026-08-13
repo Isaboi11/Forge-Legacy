@@ -351,7 +351,14 @@ export default function WorkoutsScreen() {
             {/* YOUR TEMPLATES — a personal artifact, so it sits with programs rather than under "Library"
                 beside two platform surfaces everyone shares. That grouping was the real error. */}
             <TourAnchor id="workouts-templates">
-              <SectionHeader label="Your Templates" action={templates.length > 3 ? 'View all' : undefined} onAction={() => router.push('/templates')} />
+              {/* `mine=1` — this link sits under "Your Templates", so it answers with the athlete's own
+                  shelf and not the From Forge suggestions. Same defect the row taps had; the rows were
+                  fixed and the section link was left pointing at the undifferentiated hub. */}
+              <SectionHeader
+                label="Your Templates"
+                action={templates.length > 3 ? 'View all' : undefined}
+                onAction={() => router.push({ pathname: '/templates', params: { mine: '1' } })}
+              />
               <View style={[styles.sectionBody, styles.stackTight]}>
                 {templates.slice(0, 3).map((t) => (
                   <LibraryRow

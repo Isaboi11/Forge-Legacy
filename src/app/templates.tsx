@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -51,6 +51,15 @@ import { writeWorkoutLaunch } from '@/lib/workout-launch';
 
 export default function TemplatesScreen() {
   const router = useRouter();
+  /**
+   * `?mine=1` — arrived from a section headed "Your Templates", so show only what the athlete owns.
+   *
+   * An ADOPTED Forge session still counts as theirs: they saved it, it lives in their own
+   * `workout_templates` row, and they can edit and delete it. What is suppressed is the SUGGESTION
+   * shelf — sessions they have not taken — which is discovery, not inventory.
+   */
+  const { mine } = useLocalSearchParams<{ mine?: string }>();
+  const mineOnly = mine === '1';
   const { showToast } = useToast();
   const { profile } = useProfile();
   const { data, loading, error, refetch } = useQuery(fetchTemplates, []);
@@ -143,7 +152,7 @@ export default function TemplatesScreen() {
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.bg2} base="#060708" overlay={{ flat: 'rgba(6,7,8,0.32)' }} />
       <AppBar
-        title="Templates"
+        title={mineOnly ? 'Your Templates' : 'Templates'}
         onBack={goBack}
         actions={
           list.length > 0 ? (
@@ -190,14 +199,24 @@ export default function TemplatesScreen() {
           contentContainerStyle={styles.scroll}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.lede}>Reusable workouts, ready whenever you are. Recently used appear first.</Text>
+          <Text style={styles.lede}>
+            {mineOnly
+              ? 'Everything you’ve built, saved or duplicated. Recently used appear first.'
+              : 'Reusable workouts, ready whenever you are. Recently used appear first.'}
+          </Text>
 
           {/* ── FROM FORGE ────────────────────────────────────────────────────────────────────────
               Above your own, and the whole reason this screen no longer greets a new athlete with an
               empty panel under a heading that promised templates. The card body PREVIEWS; only Add
               writes anything — the same "body and action are distinct targets" rule the cards below
-              follow. Taking one makes it yours: editable, deletable, keeping its own history. ── */}
-          {starters.length > 0 ? (
+              follow. Taking one makes it yours: editable, deletable, keeping its own history.
+
+              ⚠ HIDDEN WHEN ARRIVING FROM "VIEW ALL" (`?mine=1`). That link sits under a heading that
+              says **Your Templates**, and answering it with four sessions somebody else wrote is the
+              same defect the row taps had — see the note in `(tabs)/workouts.tsx`, which fixed it for
+              the rows and left the section link pointing here. A shelf that is right as DISCOVERY on
+              the hub is wrong as an ANSWER to "show me mine". ── */}
+          {!mineOnly && starters.length > 0 ? (
             <View style={styles.shelf}>
               <View style={styles.shelfHead}>
                 <Text style={styles.shelfLabel}>From Forge</Text>
