@@ -7,7 +7,14 @@
       "PowerShell(npx eas-cli@latest deploy --prod --export-dir dist --non-interactive 2>&1)",
       "Skill(claude-api)",
       "Skill(claude-api:*)",
-      "Read(//c/Users/isaia/.claude/plans/**)"
+      "Read(//c/Users/isaia/.claude/plans/**)",
+      "PowerShell($f=\"c:\\\\Users\\\\isaia\\\\OneDrive - qest4.com\\\\ForgeLegacy\\\\Docs\\\\Launch-Checklist-Free-And-Premium.md\"; \\(Get-Item $f\\).Length; \\(Get-Content $f | Measure-Object -Line\\).Lines)",
+      "PowerShell(npx tsc --noEmit)",
+      "PowerShell(npx expo lint 2>&1)",
+      "PowerShell(node --test --experimental-strip-types src/domain/coach/__tests__/short-block.test.mjs 2>&1)",
+      "PowerShell(node --test --experimental-strip-types src/domain/program/__tests__/progress-core.test.mjs 2>&1)",
+      "PowerShell(node --test --experimental-strip-types src/domain/program/__tests__/short-program-migration.test.mjs 2>&1)",
+      "PowerShell(git fetch origin 2>$null)"
     ]
   },
   "enabledPlugins": {
