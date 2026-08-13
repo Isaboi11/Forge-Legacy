@@ -18,16 +18,20 @@
 
 import React, { useState } from 'react'
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native'
+import { Image } from 'expo-image'
 import Svg, { Path } from 'react-native-svg'
 
 import { Button } from '../Button'
 import { BottomSheet } from '../BottomSheet'
 import { InputField } from '../InputField'
 import { flColor, flFont, flRadius } from '@/constants/foundation'
+import { artLabel } from '@/domain/workout/playlist-art'
+import { usePlaylistArt } from '@/lib/usePlaylistArt'
 import {
   parsePlaylistLink,
   playlistLabel,
   PLAYLIST_NAME_MAX,
+  SERVICE_LABEL,
   type WorkoutPlaylistLink,
 } from '@/domain/workout/playlist'
 
@@ -112,7 +116,51 @@ export function PlaylistChip({ link, onOpen, onEdit, onRemove }: PlaylistChipPro
   )
 }
 
+/**
+ * ONE ROW IN "ATTACH ONE YOU'VE USED BEFORE" — cover art, the name, the service, and that is the tap.
+ *
+ * No confirm step: choosing a playlist you have already used is not a decision that needs reviewing,
+ * and a Save button under a list of six identical-looking rows is a second tap buying nothing.
+ */
+function RecentRow({ link, selected, onPick }: { link: WorkoutPlaylistLink; selected: boolean; onPick: () => void }) {
+  const art = usePlaylistArt(link)
+  const label = artLabel(link, art, SERVICE_LABEL[link.service])
+  const source = SERVICE_LABEL[link.service].replace(/ Playlist$/, '')
+  return (
+    <Pressable
+      onPress={onPick}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      accessibilityLabel={`Attach ${label}, ${source}`}
+      style={({ pressed }) => [styles.recentRow, selected ? styles.recentRowOn : null, pressed ? styles.chipPressed : null]}
+    >
+      <View style={styles.recentArt}>
+        {art ? <Image source={{ uri: art.imageUrl }} style={styles.recentArtImg} contentFit="cover" transition={220} /> : <NoteGlyph size={18} color={flColor.bronze400} />}
+      </View>
+      <View style={styles.recentText}>
+        <Text style={styles.recentName} numberOfLines={1}>
+          {label}
+        </Text>
+        <Text style={styles.recentMeta} numberOfLines={1}>
+          {source}
+        </Text>
+      </View>
+    </Pressable>
+  )
+}
+
 export interface PlaylistSheetProps {
+  /**
+   * Playlists this athlete has attached before, most recent first — `fetchRecentPlaylists`.
+   *
+   * ⚠ FETCHED BY THE CALLER, not in here. This is a Tier-2 composite and composites do not read the
+   * database; a sheet that queries would be a design-system component with a Supabase dependency, and
+   * every screen that ever mounts it would inherit that.
+   *
+   * Optional and absent-by-default: the mid-workout "⋯ Options" attach passes nothing and renders no
+   * section, which is correct until somebody decides that surface wants it too.
+   */
+  recent?: WorkoutPlaylistLink[]
   /**
    * The link being edited, or null to attach a new one. Read ONCE, when the sheet mounts.
    *
@@ -137,10 +185,13 @@ export interface PlaylistSheetProps {
  * §7): V1 stores a link and a service tag. No OAuth, no SDK, no metadata fetch, no cover art. The athlete
  * pastes what their share sheet gave them.
  */
-export function PlaylistSheet({ initial, onClose, onSave, saving = false }: PlaylistSheetProps) {
+export function PlaylistSheet({ initial, recent = [], onClose, onSave, saving = false }: PlaylistSheetProps) {
   const [url, setUrl] = useState(() => initial?.url ?? '')
   const [name, setName] = useState(() => initial?.displayName ?? '')
   const [error, setError] = useState<string | null>(null)
+  /* What is already attached never appears as something to attach — it would be a row that does
+     nothing, sitting above the field that edits it. */
+  const offered = recent.filter((r) => r.url !== initial?.url)
 
   const submit = () => {
     const parsed = parsePlaylistLink(url, name)
@@ -155,12 +206,29 @@ export function PlaylistSheet({ initial, onClose, onSave, saving = false }: Play
   }
 
   return (
-    <BottomSheet open onClose={onClose} title={initial ? 'Edit playlist' : 'Attach a playlist'}>
+    <BottomSheet open onClose={onClose} scroll={offered.length > 0} title={initial ? 'Edit playlist' : 'Attach a playlist'}>
       <View style={styles.sheetBody}>
-        <Text style={styles.sheetBlurb}>
-          Paste a link from Spotify or Apple Music. Forge Legacy just keeps it with the session — it
-          won&apos;t play anything.
-        </Text>
+        {/*
+          ⚠ WHAT YOU TRAINED TO LAST TIME, NOT WHAT THE PHONE THINKS IS PLAYING.
+          Reading another app's playback is not reachable from this stack (see `fetchRecentPlaylists`),
+          and this removes nearly the same friction without ever guessing: almost everybody trains to
+          the same handful of playlists, so after the first attach it is one tap. SMART OMISSION — a
+          first-ever attach has no history, so the whole section is absent rather than empty.
+        */}
+        {offered.length ? (
+          <View style={styles.recentBlock}>
+            <Text style={styles.recentLabel}>WHAT YOU TRAINED TO BEFORE</Text>
+            {offered.map((r) => (
+              <RecentRow key={r.url} link={r} selected={r.url === initial?.url} onPick={() => onSave(r)} />
+            ))}
+            <Text style={styles.recentOr}>Or paste a new one</Text>
+          </View>
+        ) : (
+          <Text style={styles.sheetBlurb}>
+            Paste a link from Spotify or Apple Music. Forge Legacy just keeps it with the session — it
+            won&apos;t play anything.
+          </Text>
+        )}
 
         <InputField
           label="Playlist link"
@@ -234,6 +302,28 @@ const styles = StyleSheet.create({
 
   sheetBody: { gap: 14 },
   sheetBlurb: { fontFamily: flFont.sans, fontSize: 13, lineHeight: 19, color: flColor.gray400 },
+
+  recentBlock: { gap: 8 },
+  recentLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.8, color: flColor.bronze400 },
+  recentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+    minHeight: 56,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: flRadius.md,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.surfaceRecessed,
+  },
+  recentRowOn: { borderColor: flColor.bronzeBorder },
+  recentArt: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.xs, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.bronzeTint, overflow: 'hidden' },
+  recentArtImg: { width: '100%', height: '100%' },
+  recentText: { flex: 1, minWidth: 0, gap: 2 },
+  recentName: { fontFamily: flFont.sans, fontSize: 14, fontWeight: '600', color: flColor.cream100 },
+  recentMeta: { fontFamily: flFont.sans, fontSize: 11.5, color: flColor.gray600 },
+  recentOr: { marginTop: 4, fontSize: 12, color: flColor.gray600 },
   nameGap: { marginTop: 2 },
   sheetActions: { marginTop: 6, gap: 8 },
 })

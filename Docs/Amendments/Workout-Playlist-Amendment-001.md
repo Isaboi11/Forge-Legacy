@@ -33,7 +33,7 @@ This is a small, optional, additive feature. It does not require a new architect
 - Playback controls of any kind (play/pause/skip) inside Forge Legacy
 - OAuth, API integration, or SDK embedding with Spotify or Apple Music
 - Verifying that the pasted link is a valid, accessible, or public playlist
-- Showing track lists, cover art, or any playlist metadata beyond a display name the athlete may optionally type
+- Showing track lists, cover art, or any playlist metadata beyond a display name the athlete may optionally type — ⚠ **COVER ART AMENDED by `Workout-Playlist-Amendment-002-Cover-Art-And-Recall.md` (LOCKED, August 2026):** a playlist's cover image and provider title may be fetched via Spotify's **unauthenticated oEmbed** endpoint. The premise below ("no metadata fetch exists") was false; the boundary is the AUTHENTICATION, not the artwork, and OAuth/SDK/token remain forbidden. Apple Music has no unauthenticated equivalent and keeps the glyph. **Track lists and counts stay out of scope** (PL-A2-D5).
 - Syncing or updating the playlist contents — the link is a static reference captured at attach time
 
 ## 3. Data Model
@@ -89,7 +89,7 @@ Everywhere the playlist link is shown, it renders as a small chip:
 |---|---|
 | In-app playback, scrubbing, or queueing | V1 is a reference link only — no SDK/API integration of any kind |
 | Validating the link resolves to a real playlist | Forge Legacy does not call out to Spotify or Apple Music APIs; the link is trusted as entered |
-| Showing track lists, cover art, or duration | No metadata fetch exists; only the athlete-typed display name is stored |
+| Showing track lists, ~~cover art,~~ or duration | ⚠ **Cover art is now permitted** — see Amendment 002, PL-A2-D1. Track lists and duration stay out: the oEmbed response carries neither, and the catalog API that does means OAuth. |
 | Multiple playlists per session | One link per session — replacing, not appending |
 | Tappable playlist chip on the externally-rendered share image | Static images cannot be interactive; this is a platform constraint documented in WSR-001 §7.1 |
 | Playlist link on `AthleteShareSettings` as a profile-level default | The link is session-specific, attached fresh per workout, not a standing preference |
