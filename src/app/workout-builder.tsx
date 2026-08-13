@@ -240,7 +240,7 @@ export default function WorkoutBuilderScreen() {
     return (
       <View style={styles.root}>
         <ScreenBackground image={SCREEN_BG.bg2} base="#060708" overlay={{ flat: 'rgba(6,7,8,0.32)' }} />
-        <AppBar title="Build a Workout" onBack={onBack} />
+        <AppBar title="Build a Template" onBack={onBack} />
         <View style={styles.center}>
           <ActivityIndicator color={flColor.bronze400} />
         </View>
@@ -256,7 +256,9 @@ export default function WorkoutBuilderScreen() {
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.bg2} base="#060708" overlay={{ flat: 'rgba(6,7,8,0.32)' }} />
-      <AppBar title={draft.editId ? 'Edit Workout' : 'Build a Workout'} onBack={onBack} />
+      {/* "Template", not "Workout" — PO call 2026-08-13. The screen saves a template; naming it after
+          the activity made every door into it read as "start training now". */}
+      <AppBar title={draft.editId ? 'Edit Template' : 'Build a Template'} onBack={onBack} />
 
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View style={styles.head}>

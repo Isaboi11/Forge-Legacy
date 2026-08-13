@@ -375,11 +375,17 @@ export default function WorkoutsScreen() {
                     tapping it. The sixth door on that same list settles the treatment: Templates' own
                     "New" pushes the builder directly (`templates.tsx`), and so does this.
 
-                    The LABEL deliberately stays "Build a Workout": it is the name the builder gives
-                    itself (`workout-builder.tsx`'s AppBar) and the name the Templates hub's own primary
-                    button uses, so all three doors to one screen agree — and "Build a Week" reads as its
-                    sibling beside it, where "Build a Template" would not. */}
-                <CreateRow label="Build a Workout" onPress={() => router.push('/workout-builder')} />
+                    ⚠ AND THE LABEL IS "TEMPLATE", NOT "WORKOUT" — PO call, 2026-08-13, overturning the
+                    note that used to sit here arguing for consistency with the builder's own title. The
+                    consistency argument was answered by renaming the OTHER three instead: this row, the
+                    Templates hub's button, and the builder's own AppBar all say Template now, because a
+                    template is what the screen produces. "Build a Workout" described the activity; the
+                    athlete is choosing an artifact. */}
+                <CreateRow label="Build a Template" onPress={() => router.push('/workout-builder')} />
+                {/* The week door, beside its sibling. It was reachable only from the Templates hub, so an
+                    athlete looking for it on the tab that lists their templates found the one-session
+                    builder and reasonably concluded weeks were not built yet (PO, 2026-08-13). */}
+                <CreateRow label="Build a Week" onPress={() => router.push({ pathname: '/program-builder', params: { mode: 'week' } })} />
               </View>
             </TourAnchor>
 

@@ -4,6 +4,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
+import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { ScreenBackground } from '@/components/screen-background';
 import { ScreenTour } from '@/components/tour/ScreenTour';
@@ -107,11 +108,13 @@ export default function TemplatesScreen() {
     router.push({ pathname: '/program-builder', params: { mode: 'week' } });
   };
 
-  const onNew = () => {
-    // With no weeks yet there is nothing to disambiguate: one door, no question.
-    if (weeks.length === 0) newTemplate();
-    else setNewOpen(true);
-  };
+  /**
+   * ⚠ THIS USED TO SKIP THE CHOOSER WHEN THE ATHLETE HAD NO WEEKS YET, on the reasoning that there was
+   * nothing to disambiguate. That reasoning is exactly backwards for a NEW feature: the only people it
+   * "helped" were the ones who had never seen weeks, i.e. everybody, so the `+` never once mentioned
+   * them. Discovery cannot be gated on already having discovered the thing.
+   */
+  const onNew = () => setNewOpen(true);
 
   const remove = async (t: WorkoutTemplate) => {
     setConfirmDelete(null);
@@ -175,8 +178,8 @@ export default function TemplatesScreen() {
             Plan one here, or train a session and keep its shape — after any workout, The Record offers to save it.
             No program required either way.
           </Text>
-          <Pressable onPress={newTemplate} accessibilityRole="button" accessibilityLabel="Build a workout" style={styles.primaryBtn}>
-            <Text style={styles.primaryBtnLabel}>Build a Workout</Text>
+          <Pressable onPress={newTemplate} accessibilityRole="button" accessibilityLabel="Build a template" style={styles.primaryBtn}>
+            <Text style={styles.primaryBtnLabel}>Build a Template</Text>
           </Pressable>
         </View>
       ) : (
@@ -352,9 +355,9 @@ export default function TemplatesScreen() {
           </TourAnchor>
 
           <TourAnchor id="templates-new">
-            <Pressable onPress={newTemplate} accessibilityRole="button" accessibilityLabel="Build a workout" style={({ pressed }) => [styles.newRow, pressed ? styles.pressed : null]}>
+            <Pressable onPress={newTemplate} accessibilityRole="button" accessibilityLabel="Build a template" style={({ pressed }) => [styles.newRow, pressed ? styles.pressed : null]}>
               <PlusGlyph size={16} />
-              <Text style={styles.newRowText}>Build a workout</Text>
+              <Text style={styles.newRowText}>Build a template</Text>
             </Pressable>
             {/* Its own row rather than a second option behind the first: two distinct things to author,
                 each one tap. The chooser sheet exists for the AppBar `+`, which has no room to say two
@@ -371,22 +374,33 @@ export default function TemplatesScreen() {
           fires once there are templates to point at. */}
       <ScreenTour screenKey="templates" ready={list.length > 0} />
 
-      {/* The `+` asks which. Reusing ConfirmSheet rather than adding a chooser component: it is two
-          options and a dismiss, which is exactly what this sheet already is. `tone="primary"` because
-          neither answer destroys anything. */}
-      <ConfirmSheet
-        open={newOpen}
-        headline="What are you building?"
-        body="A workout is one session you can start any time. A week is several days you run in order, like a short program."
-        confirmLabel="Build a week"
-        cancelLabel="Build a workout"
-        tone="primary"
-        onConfirm={newWeek}
-        onClose={() => {
-          setNewOpen(false);
-          newTemplate();
-        }}
-      />
+      {/* The `+` asks which.
+          ⚠ NOT a ConfirmSheet, which was the first attempt and was wrong: its cancel and its
+          backdrop-dismiss are the same callback, so tapping OUTSIDE the sheet — the universal gesture
+          for "never mind" — would have opened the template builder. A chooser has two actions and a
+          dismiss, and the dismiss must do nothing. Same two-row shape as `StartStrengthSheet`. */}
+      <BottomSheet open={newOpen} onClose={() => setNewOpen(false)} title="What are you building?">
+        <View style={styles.chooser}>
+          <Pressable
+            onPress={() => { setNewOpen(false); newTemplate(); }}
+            accessibilityRole="button"
+            accessibilityLabel="Build a template. One session you can start any time."
+            style={({ pressed }) => [styles.chooserRow, pressed ? styles.pressed : null]}
+          >
+            <Text style={styles.chooserTitle}>Build a template</Text>
+            <Text style={styles.chooserSub}>One session you can start any time.</Text>
+          </Pressable>
+          <Pressable
+            onPress={newWeek}
+            accessibilityRole="button"
+            accessibilityLabel="Build a week. Several days you run in order, like a short program."
+            style={({ pressed }) => [styles.chooserRow, pressed ? styles.pressed : null]}
+          >
+            <Text style={styles.chooserTitle}>Build a week</Text>
+            <Text style={styles.chooserSub}>Several days you run in order, like a short program.</Text>
+          </Pressable>
+        </View>
+      </BottomSheet>
 
       <ConfirmSheet
         open={!!confirmDelete}
@@ -496,6 +510,15 @@ const styles = StyleSheet.create({
 
   newRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 14, paddingVertical: 14, borderRadius: flRadius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   newRowText: { fontSize: 13.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronze300 },
+
+  chooser: { gap: 10, paddingBottom: 6 },
+  chooserRow: {
+    paddingVertical: 14, paddingHorizontal: 16,
+    borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600,
+    backgroundColor: flColor.charcoal800, gap: 3,
+  },
+  chooserTitle: { fontFamily: flFont.display, fontSize: 15.5, fontWeight: '600', color: flColor.cream100 },
+  chooserSub: { fontSize: 12.5, lineHeight: 17, color: flColor.gray600 },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 34 },
   emptyCrest: { width: 58, height: 58, marginBottom: 14, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
