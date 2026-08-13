@@ -132,11 +132,22 @@ declare
     'public.squad_checkin_mark_reclaimed(text[])',
     'public.squad_checkin_orphans()',
     -- engine internals
-    'public.evaluate_honors(text)',
+    --
+    -- ⚠ `public.evaluate_honors(text)` WAS IN THIS LIST AND HAD TO BE TAKEN BACK OUT — see 0150.
+    --   The reasoning below ("callee is SECURITY DEFINER, so the grant does not matter") is wrong as
+    --   written, and revoking `evaluate_honors` broke Finish Workout, Continue Training and session-skip
+    --   for every athlete. SECURITY DEFINER on the CALLEE decides who it runs as, not who may call it.
+    --   The grant is skipped only when the CALLER is SECURITY DEFINER, because then the permission check
+    --   is against the caller's owner. `evaluate_honors`'s callers — `save_workout` (0124:49),
+    --   `continue_workout` (0125:43), `skip_program_session` (0123:145) — are all `security invoker`.
+    --   Before adding anything to this list: check the security mode of its CALLERS, not its own.
+    --
     -- ⚠ SUPERSEDES 0146. That migration granted `honor_metrics` to `authenticated` to preserve its
-    --   documented self-read. This audit then confirmed ZERO client call sites, and `evaluate_honors` —
-    --   its only real caller — is SECURITY DEFINER and so executes as its owner regardless of this grant.
-    --   An unused grant on a function that returns a full metrics bundle is not worth keeping.
+    --   documented self-read. This audit then confirmed ZERO client call sites, and its only caller —
+    --   `evaluate_honors` — IS SECURITY DEFINER, so `honor_metrics` executes as that function's owner and
+    --   this revoke cannot reach it. (That is the correct form of the argument above: the caller is the
+    --   definer, not the callee.) An unused grant on a function returning a full metrics bundle is not
+    --   worth keeping.
     'public.honor_metrics(uuid)'
   ];
 begin
@@ -227,10 +238,12 @@ select
       and has_function_privilege('authenticated', p.oid, 'execute')) as authenticated_executable,
   (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and p.prokind = 'f'
+      -- `evaluate_honors` is deliberately NOT here: 0150 grants it back to `authenticated`, so counting it
+      -- would make this figure report 1 forever. See the note in §3.
       and p.proname in ('push_drain','push_reconcile','push_enqueue_for','notification_events_for',
                         'app_events_prune','metrics_rollup','metrics_rollup_backfill',
                         'squad_checkin_prune','squad_checkin_mark_reclaimed','squad_checkin_orphans',
-                        'evaluate_honors','honor_metrics')
+                        'honor_metrics')
       and (has_function_privilege('anon', p.oid, 'execute')
         or has_function_privilege('authenticated', p.oid, 'execute')))
                                                                      as maintenance_still_reachable_expect_0;
