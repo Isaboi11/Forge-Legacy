@@ -209,15 +209,33 @@ export async function fetchUncelebratedHonors(): Promise<UncelebratedHonor[]> {
    * ⚠ AND IT IS BEST-EFFORT. An honor is earned whether or not we can explain it; a failed catalog read
    * must never swallow somebody's ceremony. They get the old generic line instead.
    */
+  /*
+   * ⚠ AND THE CODE CATALOG IS THE SECOND SOURCE, NOT NOTHING.
+   *
+   * `initiative` is granted by its own RPC (0014) and has no metric or threshold, so it will NEVER be a
+   * `honor_catalog` row — which made the very first honor an athlete earns the one honor that could not
+   * say why. It reached the athlete two ways and only one of them was covered: the tour renders its own
+   * ceremony with a hand-written body, but with Guided Tips off, or after a leg was interrupted, the
+   * honor comes through here instead and announced itself with the generic line.
+   *
+   * `honorMeta` already holds the sentence, and `fetchHonorsHub` has always fallen back to it (the Hub
+   * shows Initiative's trigger correctly today). Same fallback here, so one honor reads the same on both
+   * screens — and so the catch below degrades to prose rather than to silence.
+   */
+  const cite = (h: (typeof earned)[number], c: CatalogHonor | undefined): UncelebratedHonor => {
+    if (c) return { ...h, citation: triggerText(c.metric, c.threshold, c.metricKey, c.displayAmount) };
+    const code = honorMeta(h.slug, h.name).trigger.trim();
+    return code ? { ...h, citation: code } : h;
+  };
+
   try {
     const catalog = await fetchHonorCatalog();
     const bySlug = new Map(catalog.map((c) => [c.slug, c]));
-    return earned.map((h) => {
-      const c = bySlug.get(h.slug);
-      return c ? { ...h, citation: triggerText(c.metric, c.threshold, c.metricKey, c.displayAmount) } : h;
-    });
+    return earned.map((h) => cite(h, bySlug.get(h.slug)));
   } catch {
-    return earned;
+    // The catalog is unreadable, so nothing derived is available — but an honor this map knows about is
+    // still explainable. Everything else keeps the locked M-2 line, which is what it was written for.
+    return earned.map((h) => cite(h, undefined));
   }
 }
 

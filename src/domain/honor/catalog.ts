@@ -58,7 +58,19 @@ export interface HonorMeta {
   trigger: string;
 }
 
-/** Grantable honors (DB `honor_type` slug → metadata). Names/triggers from the map; `initiative` is ours. */
+/**
+ * Grantable honors (DB `honor_type` slug → metadata). Names/triggers from the map; `initiative` is ours.
+ *
+ * ⚠ EVERY `trigger` HERE IS ATHLETE-FACING PROSE, and has to be. Three of these read as rule notation
+ * — *"Total sessions ≥ 1"* — which was harmless only while nothing rendered them: the DB catalog holds
+ * a row for all three, so `honors.tsx` and the Hub always took the derived-sentence branch. That stopped
+ * being true the moment this map became the ceremony's fallback for an honor with no catalog row, which
+ * is a path a failed catalog read puts EVERY honor on. A card announcing "Total sessions ≥ 25" to
+ * somebody who just trained is worse than the generic line it replaced.
+ *
+ * The wording matches `triggerText`'s output for the same metric and threshold, so an honor reads the
+ * same sentence whichever branch produced it.
+ */
 const CATALOG: Record<string, HonorMeta> = {
   initiative: {
     slug: 'initiative',
@@ -70,19 +82,19 @@ const CATALOG: Record<string, HonorMeta> = {
     slug: 'first_workout_logged',
     name: 'First Workout Logged',
     category: 'training',
-    trigger: 'Total sessions ≥ 1',
+    trigger: 'Log your first workout.',
   },
   workouts_logged_25: {
     slug: 'workouts_logged_25',
     name: '25 Workouts Logged',
     category: 'training',
-    trigger: 'Total sessions ≥ 25',
+    trigger: 'Log 25 workouts.',
   },
   workouts_in_chapter_10: {
     slug: 'workouts_in_chapter_10',
     name: '10 Workouts in a Chapter',
     category: 'chapters',
-    trigger: 'Sessions within one chapter ≥ 10',
+    trigger: 'Log 10 workouts inside a single chapter.',
   },
 };
 
