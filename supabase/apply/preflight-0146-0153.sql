@@ -1,4 +1,9 @@
--- Forge Legacy — PRE-FLIGHT: what is actually applied, 0144 → 0153
+-- Forge Legacy — PRE-FLIGHT: what is actually applied, 0144 → 0154
+--
+-- ⚠ THE FILENAME STOPS AT 0153 AND THE CONTENT DOES NOT. Extended 2026-08-13 to cover 0154; the name is
+--   left alone deliberately, because `Docs/Launch-Checklist-Free-And-Premium.md` §8.1 and the Master
+--   Status board both name this file, and a rename to fix a cosmetic mismatch would break two live
+--   references to fix nothing. Read this header, not the name.
 --
 -- Read-only. Creates nothing, changes nothing. Paste it, run it, and read one row per check.
 --
@@ -183,6 +188,29 @@ with checks as (
          exists (select 1 from pg_trigger t join pg_class c on c.oid = t.tgrelid
                   where c.relname = 'profiles' and t.tgname = 'push_training_started'
                     and not t.tgisinternal)
+
+  -- ── 0154 · the two trigger functions 0153 left granted to PUBLIC ───────────
+  -- ⚠ THIS ROW IS WHY THE FILE EXISTS. 0154 was written because THIS pre-flight returned 0147's
+  --   invariant as MISSING on 2026-08-13 — `create or replace` preserves grants on a function that
+  --   already exists, but on a NEW one it is a plain `create`, which carries Postgres's default EXECUTE
+  --   to PUBLIC. 0153's two brand-new trigger functions were the only ones that needed a revoke and the
+  --   two that missed it. A file that reports on 0153 and not on its own follow-up is the same blind
+  --   spot one migration later.
+  --
+  -- ⚠ CHECKED ON THE ACL TEXT, NOT `has_function_privilege('public', …)` — `public` is not a role name
+  --   that function accepts. The PUBLIC entry is the aclitem with an EMPTY grantee, i.e. a `=`
+  --   immediately after the opening brace or a comma; `like '%=X/%'` would match `postgres=X/postgres`
+  --   and read as still-granted on a perfectly clean function. And a NULL `proacl` means DEFAULT
+  --   privileges, which INCLUDE PUBLIC — so it must coalesce to something that DOES match, or the row
+  --   goes green on exactly the function that never had a revoke.
+  union all
+  select '0154 · PUBLIC grant gone from 0153 trigger fns',
+         coalesce(
+           (select bool_and(coalesce(p.proacl::text, '{=X/postgres}') !~ '[{,]=')
+              from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+             where n.nspname = 'public'
+               and p.proname in ('push_tg_training_started', 'push_tg_training_finished')),
+           false)
 )
 select grp as "migration / check",
        case when ok then '✅ APPLIED' else '❌ MISSING' end as "state"

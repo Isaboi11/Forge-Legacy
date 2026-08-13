@@ -22,6 +22,7 @@ import {
   distanceLabel,
   distanceStepIn,
   distanceUnitFor,
+  CARDIO_OF_DISTANCE_ACTIVITY,
   effortLabel,
   fmtClock,
   fmtDistanceIn,
@@ -416,6 +417,58 @@ test('a swim is measured in yards, everything else in miles', () => {
   assert.equal(distanceUnitFor('run', false), 'mi');
   assert.equal(distanceUnitFor('bike', true), 'km');
   assert.equal(distanceUnitFor('row', false), 'mi', 'an erg reads metres but the model stores a distance in miles');
+});
+
+// ── Log a Run stores what the athlete meant ─────────────────────────────────
+//
+// ⚠ THESE ASSERT THE COMPOSITION, NOT THE PIECES. `distanceUnitFor` and `fromDistanceIn` were both
+//   correct and both tested while `log-activity.tsx` used NEITHER — it labelled the field "Miles"
+//   unconditionally and passed the typed figure through as `distanceMi`. Every unit test passed. The
+//   screen was wrong. So the thing worth testing is the chain a logged activity actually travels.
+const loggedMiles = (activity, typed, metric) =>
+  fromDistanceIn(typed, distanceUnitFor(CARDIO_OF_DISTANCE_ACTIVITY[activity], metric));
+
+test('every Log-a-Run activity maps to a cardio activity that has a distance', () => {
+  // `elliptical` and `stair` are deliberately absent — the flow cannot log them, and `stair` has no
+  // distance at all (it counts floors). A new DistanceActivity with no mapping is a tsc error, not a
+  // silent `undefined` reaching `distanceUnitFor`.
+  assert.deepEqual(
+    Object.keys(CARDIO_OF_DISTANCE_ACTIVITY).sort(),
+    ['cycling', 'rowing', 'running', 'swimming', 'walking'],
+  );
+  for (const cardio of Object.values(CARDIO_OF_DISTANCE_ACTIVITY)) {
+    assert.notEqual(cardio, 'stair', 'stair counts floors and cannot be logged as a distance');
+    assert.ok(distanceUnitFor(cardio, false), `${cardio} must have a display unit`);
+  }
+});
+
+test('an imperial athlete typing 3.1 stores 3.1 miles — exactly, not approximately', () => {
+  // Identity is what made the defect invisible for every athlete on 0139's imperial default, so it is
+  // also the property that has to hold exactly after the fix.
+  assert.equal(loggedMiles('running', 3.1, false), 3.1);
+  assert.equal(loggedMiles('cycling', 20, false), 20);
+});
+
+test('⚠ a metric athlete typing 5 stores 5 km, not 5 miles', () => {
+  // THE REGRESSION. Old code: `distanceMi = parseFloat(distance)` → 5, i.e. 5 miles logged for a 5 km
+  // run — 61% longer than the run they did, feeding distance goals and auto-tracking with it.
+  const mi = loggedMiles('running', 5, true);
+  assert.ok(Math.abs(mi - 3.106856) < 1e-6, `5 km must store as 3.1069 mi, got ${mi}`);
+  assert.ok(mi < 5, 'storing the typed figure verbatim is the bug this test exists for');
+});
+
+test('⚠ a swim is typed in pool lengths, so 1000 means 1000 yards not 1000 miles', () => {
+  const mi = loggedMiles('swimming', 1000, false);
+  assert.ok(Math.abs(mi - 1000 / 1760) < 1e-9, `1000 yd is 0.568 mi, got ${mi}`);
+  // A metric pool is metres, and 1000 m is longer than 1000 yd.
+  assert.ok(loggedMiles('swimming', 1000, true) > mi, '1000 m must exceed 1000 yd');
+});
+
+test('an empty or partial field never becomes a saveable distance', () => {
+  // `canSave` is `distanceMi > 0` with no separate NaN guard, so NaN must survive the conversion.
+  for (const typed of [NaN, 0]) {
+    assert.equal(loggedMiles('running', typed, true) > 0, false, `${typed} must not be saveable`);
+  }
 });
 
 test('yards round-trip through canonical miles without drifting', () => {

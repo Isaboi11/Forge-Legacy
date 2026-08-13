@@ -1,7 +1,10 @@
+import type { DistanceActivity } from './save';
+
 /**
  * Cardio blocks — a run, walk or ride authored into a program day and trained inside a session.
  *
- * Pure: no React, no Supabase, so `node --test` can load it.
+ * Pure: no React, no Supabase, so `node --test` can load it. (The one import above is `import type` and
+ * is erased before the runtime ever sees it — see `CARDIO_OF_DISTANCE_ACTIVITY`.)
  *
  * ══ TWO AXES, NOT ONE ══
  *
@@ -372,6 +375,28 @@ export function distanceUnitFor(activity: CardioActivity, metric: boolean): Dist
   if (USES_POOL_UNITS[activity]) return metric ? 'm' : 'yd';
   return metric ? 'km' : 'mi';
 }
+
+/**
+ * The "Log a Run" vocabulary → the one this module speaks.
+ *
+ * ⚠ IT LIVES HERE SO IT CAN BE TESTED. It was written inline in `log-activity.tsx`, where `node --test`
+ *   cannot reach it — and the screen is exactly where the units defect lived, unnoticed, because nothing
+ *   could assert on it. `save.ts` would be the other natural home and it imports Supabase, so it is not
+ *   loadable under the test runner either.
+ *
+ * The type import is `import type` deliberately: it is erased before `--experimental-strip-types` sees it,
+ * so this does NOT create a runtime cycle with `save.ts` — which imports `sessionActivityType` from here.
+ *
+ * Two enums for five things is not duplication to collapse: `DistanceActivity` is persisted, and
+ * `CardioActivity` carries `elliptical` and `stair`, which the Log-a-Run flow cannot record.
+ */
+export const CARDIO_OF_DISTANCE_ACTIVITY: Record<DistanceActivity, CardioActivity> = {
+  running: 'run',
+  walking: 'walk',
+  cycling: 'bike',
+  rowing: 'row',
+  swimming: 'swim',
+};
 
 const PER_MILE: Record<DistanceUnit, number> = { mi: 1, km: KM_PER_MI, yd: YD_PER_MI, m: M_PER_MI };
 

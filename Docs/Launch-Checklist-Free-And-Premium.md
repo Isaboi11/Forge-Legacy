@@ -1,9 +1,30 @@
 # Launch Checklist — Free & Premium
 
-## v1.0 | 2026-08-12 · THE WORKING LIST
+## v1.1 | 2026-08-13 · THE WORKING LIST
 
 **Purpose:** get Forge Legacy released with **Free and Premium only**. Written to be picked up by a
 session with no prior context. Work top to bottom; each item names its own files and its own finish line.
+
+### ⚠ v1.1 — THE RELEASE IS TWO STAGES, AND THEY RUN IN PARALLEL
+
+PO decisions, 2026-08-13: **the 20 testers get it now and some of them get it free; the public release
+carries the paywall; and the public release ships under a new Forge LLC organization account.**
+
+That splits this list in two, and the split is the schedule:
+
+| | **Stage 1 — TestFlight** | **Stage 2 — Public** |
+|---|---|---|
+| **Audience** | the 20 OG testers | everyone |
+| **Apple team** | existing `G722GV8H8C` (§8) | **new Forge LLC org account** (§9) |
+| **Entitlement** | `default_tier` stays `PREMIUM` — nothing gates | Phase F flip (§6) |
+| **Needs** | §8 only — the DB blockers and a build | §4 Phase E · §5 Legal · §6 · §9 · §10 |
+| **Blocked by** | nothing but §8.1 | **a D-U-N-S number: 3–14 days, and it has not been started** |
+
+**The D-U-N-S wait is the build window, not dead time.** Start §9.1 the day the LLC is filed; Phase E
+(§4) is roughly the same length and has no dependency on it. Do not let the two run in series.
+
+**Section order is no longer execution order.** Execute: **§8 → (§9.1 and §4 in parallel) → §10 → §5 →
+§6 → §7.**
 
 **Coach AI is deliberately NOT in this list.** PO decision 2026-08-12: no AI spend before full release,
 and no AI for testers. The D1 groundwork is already written and sits unused, costing nothing —
@@ -27,10 +48,15 @@ that function as part of this launch.** Scope for it later: `Docs/AI-Coach-Capab
 ### Standing rules this repo has been bitten by
 
 - **`ls supabase/migrations | tail` before authoring any migration.** Numbering is the dependency graph;
-  there is no CLI keeping a history table. Applied through **0143**; **0144 is taken** (Coach AI, unapplied).
+  there is no CLI keeping a history table. ⚠ **v1.1: files now run through `0154`, not 0143** — the line
+  below was already stale eleven files later, which is the failure this rule exists to prevent.
+  **`0144` is taken** (Coach AI, deliberately unapplied). ⚠ **`0152` is used twice** —
+  `0152_discover_trained_today.sql` and `0152_weekly_review_created_at.sql`. Both must be applied; neither
+  can be identified by number alone.
 - **Migrations are applied by pasting into the Supabase SQL editor.** No CLI, no service key. Use
-  `supabase/apply/preflight-what-is-applied.sql` to ask the database what is really applied — the ledger
-  in the dashboard has been wrong before and cost a session.
+  **`supabase/apply/preflight-0146-0153.sql`** to ask the database what is really applied — the ledger
+  in the dashboard has been wrong before and cost a session, and it is wrong right now (§8.1).
+  `preflight-what-is-applied.sql` is the older, narrower one and mislabelled `app_admins`.
 - **`@/` is type-only inside `src/domain/`.** A runtime `@/` import there breaks `node --test`. Use
   relative `.ts`.
 - **`git status` before any publish.** Publishing bundles the working tree, not HEAD. Another session's
@@ -303,6 +329,8 @@ app today and the right shape.
       happened. Everyone starts with it unspent, including anyone who has already used one. Accepted: it
       errs toward the athlete, and there is no data to do better with.
 - [ ] **6.2 — Enroll in the App Store Small Business Program** for the 15% rate rather than 30%.
+      ⚠ **SUPERSEDED BY §9.6 (v1.1).** Enrollment is per-entity, so it belongs to **Forge LLC**, not to
+      the qest4 team this line was written against.
 - [ ] **6.3 — Landing page.** `Docs/Marketing/Landing-Page-Design-Brief.md` §12 and the JSON-LD
       `offers: { price: "0" }` stay correct until this point, then need the real ladder — with
       **Never Charge For History as the headline**. No competitor can copy it without abandoning their
@@ -312,6 +340,9 @@ app today and the right shape.
 
 ## 7 · Ship
 
+⚠ **v1.1: this section is Stage 2 (public). Stage 1's ship steps are §8.7–§8.9** — same gates, existing
+Apple team, no paywall. Do not read 7.4 as the tester build.
+
 - [ ] **7.1 — Full gates green** (see standing rules above).
 - [ ] **7.2 — `git status` clean, `fingerprint:compare` against the live build.**
 - [ ] **7.3 — `eas update` + `expo export` + `eas deploy --prod`, then curl prod for a 200.**
@@ -319,6 +350,173 @@ app today and the right shape.
       **forgelegacy.expo.app** — a throwaway `--hash` URL wipes localStorage and signs people out.
 - [ ] **7.4 — New iOS build and App Store submission.**
 - [ ] **7.5 — Update `Forge-Legacy-Master-Status.md`** — a Recently Completed entry per shipped phase.
+
+---
+
+## 8 · Stage 1 — TestFlight to the 20 testers (existing Apple team) — **DO THIS FIRST**
+
+Nothing in §4–§6 blocks this. `default_tier` stays `PREMIUM`, so every tester resolves entitled and no
+cap is felt — which is exactly the free access the PO promised them. **No paywall code is needed to put
+the app in their hands.**
+
+- [x] **8.1 — ⛔ Establish what is actually applied.** ✅ **RUN 2026-08-13. ALL 24 CHECKS GREEN —
+      the database is fully applied through `0154`, and `0144` correctly reads MISSING.**
+      ⚠ **The dashboard, this checklist's own standing rule and the working notes were ALL wrong, and
+      all wrong in the same direction: they described work as pending that had already landed.** The
+      board said "applied and verified through 0143" while eleven more files were in; the notes had
+      0145, 0150 and 0152 as unapplied and every one of them is in. **The failure mode this project
+      keeps recording is a migration that lies about having worked — this is the mirror image, a
+      LEDGER that lies about work being undone, and it cost nothing only because the preflight was run
+      before anything was applied on top of it.** Re-pasting an applied migration is not free: `0141`
+      already died on `42P13` when re-run.
+      ⚠ **8.2–8.5 below are therefore CLOSED — do not apply anything.** They are kept rather than
+      deleted so the reasoning survives; the file also now covers `0154`, which the name still doesn't.
+- [x] **8.2 — ✅ ALREADY APPLIED (8.1, 2026-08-13). Saving a workout is NOT broken.** Kept below because
+      the reasoning is the most valuable thing in this file. Original text:
+      **Apply `0150_restore_evaluate_honors_grant.sql`. ⛔ HARDEST BLOCKER IN THE LIST.**
+      `0147` §3 revoked EXECUTE on `evaluate_honors(text)` from `authenticated`. Its three callers —
+      `save_workout`, `continue_workout`, `skip_program_session` — are `security invoker`, so the revoke
+      landed on the athlete. The call sits at the END of `save_workout`, so the transaction rolls back
+      and **the workout is gone**. Finish Workout, Continue Training and session-skip are dead for
+      every athlete until this lands. Do not hand a build to a tester before it does.
+- [ ] **8.3 — Apply `0151_stair_floors.sql` BEFORE deploying current code.** Three data modules name
+      `floors` in their select; PostgREST answers a missing column with `42703`, the whole query fails,
+      and `if (error) return null` renders that as *"there is nothing to continue."* This is the
+      0117/0118 failure exactly.
+- [ ] **8.4 — Apply `0148_delete_my_account.sql`, then test the path on device.**
+      **App Store Review 5.1.1(v) requires in-app account deletion for any app supporting account
+      creation — this is a submission blocker independent of the copy**, and `content.ts:44` already
+      promises it. The client side exists (`src/data/account-live.ts`, `src/app/account-settings.tsx`);
+      what is unverified is the round trip. Delete a real account with squads, a program, photos and
+      check-in video, and confirm nothing is orphaned and nothing else's rows went with it.
+- [ ] **8.5 — Apply the remainder:** `0149_hide_invite_code_and_presence.sql` ·
+      **both** `0152` files · `0153` (reported applied 2026-08-13 — confirm in 8.1, do not assume) ·
+      `0154_revoke_public_on_0153_trigger_fns.sql`. ⚠ **Not `0144`.**
+- [ ] **8.6 — Close the two open rulings that touch shipped surfaces** (`Docs/Launch-Audit-2026-08-12.md`
+      §4). **(a) The distance-units doctrine conflict** — `units.ts:8-10` forbids converting distance,
+      `0139:10-14` makes `units` the single switch, and the code follows both in different files
+      (`CardioBlockCard` converts; `log-activity` and the coach do not). Whichever is chosen makes the
+      other document wrong, so the losing doc gets a superseded banner in the same pass.
+      **(b) The storage-orphan ledger** — extend it to personal photos, or accept dashboard cleanup for
+      launch and write that down as a decision.
+- [ ] **8.7 — Gates, clean tree, then build.** `npx tsc --noEmit` → 0 · `node --test` all green ·
+      `npx expo lint` at baseline · **`git status` clean** (publishing bundles the working tree, not
+      HEAD) · `fingerprint:compare` against the live build. **Bump `ios.buildNumber` to `5`** in
+      `app.json` — build 4 (`5de44367`) is what is in the field.
+- [ ] **8.8 — TestFlight the 20 testers.** They need Apple IDs collected and an internal or external
+      group. **External testers require a Beta App Review**; internal (up to 100, must be App Store
+      Connect users on the team) do not. Pick internal if the 20 can be added as users — it removes a
+      review round trip from the critical path.
+- [ ] **8.9 — Deploy web from the same tree** — `expo export` → `eas deploy --prod` → **curl prod for a
+      200**. A "successful" deploy serving a 404 has happened twice; re-running fixes it. Only ever hand
+      over **forgelegacy.expo.app**; a throwaway `--hash` URL wipes localStorage and signs people out.
+
+---
+
+## 9 · Apple entity migration — Forge LLC
+
+PO decision 2026-08-13: **the public release ships under a new Forge LLC organization account**, not
+`G722GV8H8C` (the qest4 team that `eas.json` names today, holding app `6798436104` and the bundle
+`com.qest4.forgelegacy`).
+
+**✅ LLC FILED 2026-08-13** — entity, filing and work-order numbers in hand. Those are *state* identifiers
+and are **not** what Apple or D&B ask for; they are proof the entity exists, which is what unblocks 9.1.
+
+> **⚠ CORRECTION 2026-08-13, from Apple's own enrollment docs — an organization account needs more than
+> a D-U-N-S, and the extra requirements were NOT in v1.1 of this list.** Verified at
+> `developer.apple.com/help/account/membership/program-enrollment/`:
+> 1. **A public, functional website on a domain associated with the organization.** Social media pages
+>    are explicitly rejected, as are registrar parking pages and sites with minimal content.
+>    **⛔ `forgelegacy.expo.app` does NOT qualify — it is Expo's domain, not Forge LLC's.**
+> 2. **A work email address on that same domain.** A gmail address does not pass.
+> 3. **The legal entity name becomes the public seller name on the App Store listing.** No DBAs,
+>    fictitious names, trade names or branches are accepted.
+>
+> **This moves the domain from a §10 listing chore to a §9 enrollment gate (9.1b).** Left where v1.1 put
+> it, the D-U-N-S clears on day 7 against a website that does not exist and enrollment stalls anyway —
+> the wait would have been spent and the gate still shut.
+
+- [ ] **9.0 — Get the EIN from the IRS.** Free, online, issued immediately; the applicant must be the
+      Responsible Party with an SSN, and the LLC must already exist with the state (it does). The tool is
+      **weekdays 07:00–22:00 ET** and times out on inactivity, so do it in one sitting and save the PDF —
+      re-issuing is a phone call. Needed for the business bank account and for **App Store Connect's tax
+      and banking forms**, without which Apple cannot pay out. Not a D-U-N-S dependency; do it in parallel.
+- [ ] **9.1 — ⛔ START THE D-U-N-S NUMBER THE DAY THE LLC IS FILED. It is the long pole and it is free.**
+      Apple requires a D-U-N-S number for an *organization* Developer Program account, matched against
+      the legal entity name and address. Use **Apple's own look-up tool**
+      (`https://developer.apple.com/enroll/duns-lookup/`), not D&B directly — it is free and feeds
+      enrollment. **Sign in with the Apple ID intended to OWN the developer account**, not a personal one.
+      It asks for legal entity name · headquarters address · mailing address · work contact. It first
+      checks for an existing D-U-N-S, which would skip the wait entirely.
+      ⚠ **Apple's stated timeline is 5 business days at D&B + 2 for Apple to receive it (~7 business
+      days) — not the "3–14" written in v1.1.** **Expediting does not shorten it**; Apple says so
+      explicitly. Escalate to D&B only past two weeks. D&B may call or email asking business type and
+      employee count — **that is the step that stalls if it goes unanswered.**
+- [ ] **9.1b — ⛔ Buy the domain and stand up a real site + work email on it. Blocks enrollment, and
+      it is the item that will be discovered late.** Needs to be live *before* 9.2, i.e. within the
+      D-U-N-S window, not after it. `Docs/Marketing/Landing-Page-Design-Brief.md` is the source. This is
+      the same domain that must host privacy and terms (§10.1), so one purchase closes three items —
+      but the enrollment gate is the one with the deadline. Everything else in §9 waits on it, and §10's
+      listing work cannot be entered until the account exists.
+- [ ] **9.2 — Enroll Forge LLC in the Apple Developer Program** ($99/yr) once the D-U-N-S resolves.
+      The enrolling person must have legal authority to bind the entity.
+- [ ] **9.3 — ⚠ RESOLVE THE BUNDLE IDENTIFIER BEFORE BUILDING ANYTHING UNDER THE NEW TEAM. This is the
+      one item here that can genuinely bite, and it should be confirmed with Apple rather than assumed.**
+      Bundle IDs are globally unique across the App Store, and `com.qest4.forgelegacy` is currently
+      registered to `G722GV8H8C`. Three shapes, and they are not equivalent:
+      **(a) Release the identifier from the qest4 team** and register it under Forge LLC — keeps the ID
+      and every deep link, but the qest4 app record must be removed first and TestFlight builds under it
+      die with it.
+      **(b) New bundle ID** (e.g. `com.forgelegacy.app`) — always available, but it is a *different app*
+      to iOS: the 20 testers' installs do not upgrade, they sit alongside. Changes the native
+      fingerprint, so a new build regardless.
+      **(c) Apple app transfer** from qest4 to Forge LLC — preserves ID, installs and TestFlight, **but
+      transfer generally requires the app to have already been publicly released**, which contradicts
+      "first public release is under the LLC." Only viable if Stage 2 is re-sequenced to ship under
+      qest4 and transfer after.
+      ⚠ **Whichever is chosen, the `scheme` (`forgelegacy`) and the Supabase redirect allow-list must be
+      re-checked** — an auth callback that silently stops resolving is a launch-day outage.
+- [ ] **9.4 — Update `eas.json` `submit.production.ios`** (`ascAppId`, `appleTeamId`) and, if 9.3 chose
+      (b), `ios.bundleIdentifier` + `android.package` in `app.json`.
+      ⚠ **`eas.json` byte-for-byte matters** — a fresh checkout rewrites it with CRLF where the working
+      copy has LF: identical to read, different fingerprint. Edit in place; do not re-create the file.
+- [ ] **9.5 — Re-create the EAS project credentials** under the new team (push key, provisioning). Push
+      notifications are configured against the old team's APNs key; **a new key means push silently
+      stops** until it is uploaded.
+- [ ] **9.6 — Enroll Forge LLC in the App Store Small Business Program** for 15% rather than 30%.
+      Enrollment is per-entity and applies from the following month — **do it before revenue, not after.**
+      (This supersedes §6.2, which assumed a single account.)
+
+---
+
+## 10 · App Store listing artifacts — none of these exist yet
+
+No store-listing document exists in this repo. Every item below is unstarted and all of them gate
+submission, not just review.
+
+- [ ] **10.1 — Privacy policy and terms at a public HTTPS URL.** The in-app copy in
+      `src/domain/settings/content.ts` is not a link Apple can read; App Store Connect requires a URL,
+      and it must still resolve after launch. Host it on the landing-page domain.
+- [ ] **10.2 — ⚠ Fix the privacy policy's collection list BEFORE the nutrition labels are signed.**
+      `content.ts:53` claims to be exhaustive and **omits product-usage analytics** (Launch Audit §4-3).
+      The App Privacy labels are a declaration Apple holds you to, and signing one that contradicts your
+      own posted policy is the worst version of this bug. Fix the copy, then declare from the fixed copy.
+- [ ] **10.3 — App Privacy nutrition labels** — every category the app actually collects: account
+      identity, health/fitness data, photos and video, **precise location** (the app requests
+      `ACCESS_FINE_LOCATION` for run tracking), and usage analytics. Declare linkage and tracking use
+      honestly; `usesNonExemptEncryption: false` is already set in `app.json`.
+- [ ] **10.4 — Support URL and marketing URL.** Support URL is required. A mailto: alone is not enough.
+- [ ] **10.5 — Screenshots** at the required display sizes (6.9" and 6.5" iPhone at minimum), plus
+      app icon, description, promotional text, keywords, category (Health & Fitness), and age rating.
+      ⚠ **Do not state the program-catalogue count anywhere in the listing** — the catalogue is a
+      DISCOVER shelf now, Coach Holt is the product, and the number reads as a shortfall.
+- [ ] **10.6 — A review demo account, seeded.** Apple reviews behind the login. It needs a real account
+      with a running program, logged history, a squad with a second member, and a challenge — **the
+      social pillar is unreviewable from an empty account**, and "no content" reads as a broken app
+      under Guideline 2.1. Include reviewer notes explaining Train Together needs two devices.
+- [ ] **10.7 — Confirm the Stage-2 build carries the paywall** and that §5 (Legal) and §6 (Phase F) are
+      done before submission, not after. **An IAP that is present but not yet purchasable fails review;
+      an app that shows prices with no way to pay fails 3.1.2.**
 
 ---
 
