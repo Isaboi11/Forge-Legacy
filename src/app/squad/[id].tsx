@@ -33,13 +33,13 @@ import {
   toggleSquadReaction,
   type ProgressPostCard as ProgressCardData,
   type SquadFeedPost,
-  type SquadMedia,
   type SquadPostType,
 } from '@/data/squad-feed-live';
 import { ProgressPostCard } from '@/components/forge/ProgressPostCard';
-import { RecapStrip } from '@/components/forge/compositions/RecapStrip';
-import { FlameIcon } from '@/components/forge/primitives/icons/HomeIcons';
+import { EndOfLedger, LedgerPost, workoutStats, type LedgerMarker } from '@/components/forge/compositions/LedgerPost';
+import { openPlaylist } from '@/components/forge/composites/Playlist';
 import { useQuery } from '@/lib/useQuery';
+import { useUnits } from '@/lib/settings';
 import { useMediaPicker } from '@/lib/useMediaPicker';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
@@ -115,6 +115,9 @@ export default function SquadDetailRoute() {
   const { data, loading, error, refetch } = useQuery(() => fetchSquad(squadId), [squadId]);
   const { showToast } = useToast();
   const { pick, mediaPickerSheet } = useMediaPicker();
+  /* Volume on a squadmate's shared workout is stored in pounds and shown in YOUR unit — the feed had
+     been printing the canonical figure unconverted and unlabelled. */
+  const { units } = useUnits();
 
   const [feedLimit, setFeedLimit] = useState(5);
   const [reactMap, setReactMap] = useState<Record<string, { on: boolean; n: number }>>({});
@@ -731,10 +734,13 @@ export default function SquadDetailRoute() {
             </View>
           ) : (
             <View style={styles.feedList}>
-              {feedPosts.map((p) => (
+              {feedPosts.map((p, i) => (
                 <FeedCard
                   key={p.id}
                   post={p}
+                  units={units}
+                  squadName={squad.name}
+                  alt={i % 2 === 1}
                   reacted={reactMap[p.id]?.on ?? p.iReacted}
                   respect={reactMap[p.id]?.n ?? p.respectCount}
                   /* A shared workout opens THE SESSION, not a post about it — the destination
@@ -748,6 +754,8 @@ export default function SquadDetailRoute() {
                         ? router.push({ pathname: '/activity/[id]', params: { id: p.workoutId } })
                         : openPost(p.id)
                   }
+                  onComments={() => openPost(p.id)}
+                  onAuthor={() => router.push({ pathname: '/athlete/[id]', params: { id: p.authorId } })}
                   onReact={() => onReactCard(p)}
                 />
               ))}
@@ -756,7 +764,11 @@ export default function SquadDetailRoute() {
                   <Text style={styles.loadMoreText}>Load More</Text>
                   <ChevronDownGlyph />
                 </Pressable>
-              ) : null}
+              ) : (
+                /* Only once there is genuinely nothing left. Load More stays the control while there is;
+                   showing both would say "that's everything" over a button offering more. */
+                <EndOfLedger />
+              )}
             </View>
           )}
         </TourAnchor>
@@ -1018,30 +1030,6 @@ function CheckinViewer({ checkin, onClose, onReplace }: { checkin: SquadCheckin;
  * the remainder counted, because a card showing only the first photo of a six-pose capture reads as a
  * post that HAS one photo. The full set is one tap away in the post itself.
  */
-function FeedMedia({ media }: { media: SquadMedia[] }) {
-  const images = media.filter((m) => m.kind === 'image');
-  if (images.length <= 1) return <Image source={{ uri: images[0].url }} style={styles.feedMediaImage} contentFit="cover" />;
-
-  const shown = images.slice(0, 3);
-  const rest = images.length - shown.length;
-  return (
-    <View style={styles.feedMediaStrip}>
-      {shown.map((m, i) =>
-        rest > 0 && i === shown.length - 1 ? (
-          <View key={`${m.url}-${i}`} style={styles.feedMediaMoreWrap}>
-            <Image source={{ uri: m.url }} style={styles.feedMediaThumb} contentFit="cover" />
-            <View style={styles.feedMediaMore}>
-              <Text style={styles.feedMediaMoreText}>+{rest}</Text>
-            </View>
-          </View>
-        ) : (
-          <Image key={`${m.url}-${i}`} source={{ uri: m.url }} style={styles.feedMediaThumb} contentFit="cover" />
-        ),
-      )}
-    </View>
-  );
-}
-
 /**
  * The progress card inside a feed row. Measured rather than computed from the ancestors' padding: the
  * card scales to whatever width it is given, and a hardcoded `screenWidth - 116` would silently go
@@ -1050,21 +1038,60 @@ function FeedMedia({ media }: { media: SquadMedia[] }) {
 function FeedProgressCard({ card }: { card: ProgressCardData }) {
   const [w, setW] = useState(0);
   return (
-    <View style={styles.feedProgressWrap} onLayout={(e) => setW(e.nativeEvent.layout.width)}>
-      {w > 0 ? <ProgressPostCard card={card} width={w} /> : null}
-    </View>
+    <View onLayout={(e) => setW(e.nativeEvent.layout.width)}>{w > 0 ? <ProgressPostCard card={card} width={w} /> : null}</View>
   );
 }
 
-function FeedCard({ post, reacted, respect, onOpen, onReact }: { post: SquadFeedPost; reacted: boolean; respect: number; onOpen: () => void; onReact: () => void }) {
-  const isDiscussion = post.type === 'discussion';
-  const lead = isDiscussion ? post.body ?? '' : leadFor(post);
-  const detail = isDiscussion ? '' : detailFor(post);
+/** Which type marker a squad post carries, or null where the type is not worth announcing. */
+const SQUAD_MARKER: Partial<Record<SquadPostType, { kind: LedgerMarker; label: string }>> = {
+  recap: { kind: 'workout', label: 'Workout' },
+  pr: { kind: 'pr', label: 'PR' },
+  formcheck: { kind: 'formcheck', label: 'Form Check' },
+  transformation: { kind: 'transformation', label: 'Transformation' },
+  announcement: { kind: 'announcement', label: 'Announcement' },
+  checkin: { kind: 'milestone', label: 'Check-in' },
+};
+
+/**
+ * One squad-feed row, on the SAME renderer the Friends feed uses.
+ *
+ * ⚠ THE BUG THIS FIXES IS VISIBLE FROM ACROSS THE ROOM: a progress post rendered as the sentence
+ * *"Marcus Vale posted progress photos."* with **no photo underneath it** whenever the post carried
+ * loose media rather than a composed card, and as a strip of three cropped thumbnails when it did. The
+ * sentence was never meant to be the post — it is attribution, and it now sits above a real image with
+ * the member's own words below it.
+ *
+ * The old icon column went with the card. It said the same thing the type marker says, one row higher
+ * and in a bronze-tinted box, on a screen that has just been stripped of every other bronze container.
+ */
+function FeedCard({
+  post,
+  units,
+  squadName,
+  alt,
+  reacted,
+  respect,
+  onOpen,
+  onComments,
+  onAuthor,
+  onReact,
+}: {
+  post: SquadFeedPost;
+  units: ReturnType<typeof useUnits>['units'];
+  squadName: string;
+  alt: boolean;
+  reacted: boolean;
+  respect: number;
+  onOpen: () => void;
+  onComments: () => void;
+  onAuthor: () => void;
+  onReact: () => void;
+}) {
   const summary = post.type === 'recap' ? post.workoutSummary : null;
 
-  // The generated Weekly Summary — no author, its own bronze-washed treatment, and the one card that
-  // reads as the squad talking rather than a member. The design draws it untappable; it opens its
-  // breakdown here (see squad-recap/[id]).
+  // The generated Weekly Summary KEEPS ITS CARD. It is a system artifact rather than a member post —
+  // the squad talking, not a person — and against a feed of hairline-separated rows the contrast is
+  // now doing real work instead of competing with twenty other bordered boxes.
   if (post.type === 'weekly' && post.recap) {
     return (
       <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel="Open weekly summary" style={[styles.feedCard, styles.weeklyCard]}>
@@ -1086,66 +1113,44 @@ function FeedCard({ post, reacted, respect, onOpen, onReact }: { post: SquadFeed
     );
   }
 
+  const card = isProgressCard(post.layout) ? post.layout : null;
+  const media = card ? [] : post.media.map((m) => ({ url: m.url, kind: m.kind }));
+  const hasMedia = !!card || media.length > 0;
+  /* §3.7: a progress post gets the photo treatment and a form check the video treatment — which they
+     already do, because the media itself says which it is. What changes is that the stand-in sentence
+     stops being the post: above an image it is attribution, and it is not rendered at all without one. */
+  const attribution = post.type === 'discussion' ? null : `${post.authorName} ${leadFor(post)}`;
+  const detail = post.type === 'discussion' ? null : detailFor(post);
+
   return (
-    <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={`Open post by ${post.authorName}`} style={styles.feedCard}>
-      <View style={styles.feedCardRow}>
-        <View style={styles.feedIcon}>
-          <FeedTypeGlyph type={post.type} />
-        </View>
-        <View style={styles.feedCardBody}>
-          <Text style={styles.feedLine}>
-            <Text style={styles.feedWho}>{post.authorName}</Text>
-            {` ${lead}`}
-          </Text>
-          {summary ? (
-            <RecapStrip summary={summary} />
-          ) : detail ? (
-            <Text style={styles.feedDetail} numberOfLines={2}>
-              {detail}
-            </Text>
-          ) : null}
-          {/*
-            A progress post renders the CARD, not a thumbnail strip of the photos that went into it.
-            The layout the author chose — the format, the grid, the swipe — is the post; showing three
-            cropped squares instead would be a different post that happens to use the same images.
-          */}
-          {isProgressCard(post.layout) ? (
-            <FeedProgressCard card={post.layout} />
-          ) : post.media[0] ? (
-            post.media[0].kind === 'image' ? (
-              <FeedMedia media={post.media} />
-            ) : (
-              <View style={styles.feedVideoTile}>
-                <View style={styles.feedPlayDisc}>
-                  <PlayGlyph />
-                </View>
-              </View>
-            )
-          ) : null}
-          <View style={styles.feedActions}>
-            <Pressable
-              onPress={(e) => {
-                e.stopPropagation();
-                onReact();
-              }}
-              accessibilityRole="button"
-              accessibilityState={{ selected: reacted }}
-              accessibilityLabel="Respect"
-              style={styles.feedAction}
-              hitSlop={6}
-            >
-              <FlameIcon size={15} color={reacted ? flColor.bronze300 : flColor.gray600} />
-              <Text style={[styles.feedActionText, reacted ? styles.feedActionTextOn : null]}>{respect}</Text>
-            </Pressable>
-            <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel="Comments" style={styles.feedAction} hitSlop={6}>
-              <FeedCommentGlyph />
-              <Text style={styles.feedActionText}>{post.commentCount}</Text>
-            </Pressable>
-            <Text style={styles.feedTime}>{timeAgo(post.createdAt)}</Text>
-          </View>
-        </View>
-      </View>
-    </Pressable>
+    <LedgerPost
+      authorName={post.authorName}
+      authorAvatarUrl={post.authorAvatar}
+      audience={squadName}
+      time={timeAgo(post.createdAt)}
+      marker={hasMedia ? null : SQUAD_MARKER[post.type] ?? null}
+      title={summary ? summary.name ?? 'Workout' : post.type === 'pr' ? post.prExercise ?? 'A new best' : null}
+      context={summary ? summary.context ?? null : post.type === 'pr' ? [post.prValue, post.prLabel].filter(Boolean).join(' · ') || null : null}
+      stats={summary ? workoutStats(summary, units) : []}
+      playlist={summary?.playlist ?? null}
+      onPlaylist={summary?.playlist ? () => void openPlaylist(summary.playlist!) : undefined}
+      /* The member's own words. On a media post they move BELOW the image — `LedgerPost` places them,
+         which is the whole reason the detail slot above the media is now left empty. */
+      caption={post.type === 'discussion' ? post.body : detail || null}
+      media={media}
+      customMedia={card ? <FeedProgressCard card={card} /> : undefined}
+      attribution={attribution}
+      /* Past the section's own 20px inset, so an image reaches the card edge like the handoff asks. */
+      bleed={20}
+      alt={alt}
+      acknowledged={reacted}
+      acknowledgeCount={respect}
+      commentCount={post.commentCount}
+      onAuthor={onAuthor}
+      onOpen={onOpen}
+      onAcknowledge={onReact}
+      onComments={onComments}
+    />
   );
 }
 
@@ -1349,25 +1354,11 @@ function ChevronDownGlyph() {
     </Svg>
   );
 }
-function FeedCommentGlyph() {
-  return (
-    <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 5.5h16v11H9l-4 3z" />
-    </Svg>
-  );
-}
 function BannerGlyph({ size = 17, color = flColor.bronze300 }: { size?: number; color?: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
       <Path d="M6 3h12v16l-6-4-6 4z" />
       <Path d="M9 8h6" />
-    </Svg>
-  );
-}
-function PlayGlyph() {
-  return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill={flColor.bronze300}>
-      <Path d="M8 5v14l11-7z" />
     </Svg>
   );
 }
@@ -1394,67 +1385,6 @@ function CloseX() {
     </Svg>
   );
 }
-function FeedTypeGlyph({ type }: { type: SquadPostType }) {
-  const p = { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: flColor.bronze300, strokeWidth: 1.7, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
-  switch (type) {
-    case 'progress':
-      return (
-        <Svg {...p}>
-          <Path d="M4 8.5h3l1.5-2h7l1.5 2h3v10H4z" />
-          <Circle cx={12} cy={13} r={3.5} />
-        </Svg>
-      );
-    // Kept: a check-in can no longer be authored, but a feed full of them must not fall through to the
-    // discussion glyph and start describing itself as something it never was.
-    case 'checkin':
-      return (
-        <Svg {...p}>
-          <Path d="M5 12.5l4 4 10-10" />
-        </Svg>
-      );
-    case 'recap':
-      return (
-        <Svg {...p}>
-          <Path d="M6.5 8v8M17.5 8v8M4 10v4M20 10v4M6.5 12h11" />
-        </Svg>
-      );
-    case 'pr':
-      return (
-        <Svg {...p}>
-          <Path d="M7 5h10v3a5 5 0 0 1-10 0z" />
-          <Path d="M7 6H4v1.5a3.5 3.5 0 0 0 3.5 3.5M17 6h3v1.5A3.5 3.5 0 0 1 16.5 11M9.5 14h5M12 11v3M8.5 18.5h7" />
-        </Svg>
-      );
-    case 'announcement':
-      return (
-        <Svg {...p}>
-          <Path d="M4 9v6h3l8 4V5L7 9z" />
-          <Path d="M18 9a4 4 0 0 1 0 6" />
-        </Svg>
-      );
-    case 'formcheck':
-      return (
-        <Svg {...p}>
-          <Path d="M3.5 7h11v10h-11z" />
-          <Path d="M14.5 10.2l6-3.2v10l-6-3.2z" />
-        </Svg>
-      );
-    case 'transformation':
-      return (
-        <Svg {...p}>
-          <Path d="M4 7h3.4l1.2-2h6.8L16.6 7H20v12H4z" />
-          <Circle cx={12} cy={13} r={3.1} />
-        </Svg>
-      );
-    default: // discussion
-      return (
-        <Svg {...p}>
-          <Path d="M20 11.5a7.5 7.5 0 0 1-10.9 6.7L4 19.5l1.3-4A7.5 7.5 0 1 1 20 11.5z" />
-        </Svg>
-      );
-  }
-}
-
 const styles = StyleSheet.create({
   root: { flex: 1 },
   iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round },
@@ -1643,7 +1573,9 @@ const styles = StyleSheet.create({
   hallCrest: { width: 40, height: 40, flexShrink: 0, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: flRadius.md },
   newPostBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: '#3D2F1A', boxShadow: flShadow.glowSubtle },
   newPostText: { fontSize: 11.5, fontWeight: '700', letterSpacing: 0.3, color: flColor.bronze300 },
-  feedList: { gap: 10 },
+  /* No gap. Posts are separated by the hairline each one carries at its foot — a gap on top of that
+     would put a gutter between rows and the ledger would read as cards again. */
+  feedList: { gap: 0 },
   weeklyCard: { borderColor: flColor.bronzeBorder },
   weeklyIcon: {
     width: 34,

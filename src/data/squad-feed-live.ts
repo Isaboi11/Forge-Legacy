@@ -188,6 +188,21 @@ export interface WorkoutSummary {
   durationSec: number;
   prCount: number;
   exercises: RecapExercise[];
+  /**
+   * What the session was CALLED, and where it sat — the post's title and context line.
+   *
+   * ⚠ OPTIONAL, AND ABSENT ON EVERY POST WRITTEN BEFORE THIS FIELD EXISTED. A workout post with no title
+   * is an anonymous pile of numbers, which is the content half of the feed redesign; but this column is a
+   * JSONB snapshot, so the fix costs no migration and needs no backfill. An older recap simply renders
+   * with what it has, exactly as a pre-0113 recap renders without stats.
+   *
+   * `context` is the program the session belonged to. It does NOT carry "Week N · Day N": nothing stores
+   * which slot a saved workout satisfied — `program_sessions` is keyed by (week, day) and holds no
+   * workout id — so the week and the day would have to be guessed, and a guessed week on somebody's
+   * record is worse than a program name on its own.
+   */
+  name?: string | null;
+  context?: string | null;
   /** What they trained to, if they attached one. Optional because every post written before 0105 has no
    *  such key — an old recap reads `undefined` and simply renders no chip. */
   playlist?: WorkoutPlaylistLink | null;
@@ -439,15 +454,26 @@ interface CompletionLike {
   durationSec: number;
   exercises: { name: string; sets: number; topSet: string | null; isPR: boolean }[];
   playlist?: WorkoutPlaylistLink | null;
+  workoutName?: string | null;
+  programName?: string | null;
 }
 
 /** Snapshot a Completion's stats into the recap `WorkoutSummary` stored on the post. */
 export function recapSummaryFrom(c: CompletionLike): WorkoutSummary {
+  const name = c.workoutName?.trim() || null;
   return {
     volume: c.volume,
     durationSec: c.durationSec,
     prCount: c.exercises.filter((e) => e.isPR).length,
     exercises: c.exercises.map((e) => ({ name: e.name, sets: e.sets, topSet: e.topSet, isPR: e.isPR })),
+    /*
+     * ⚠ "Freestyle Workout" IS NOT A TITLE, it is the app's word for a session nobody named — and the
+     * feed's whole content rule is that a workout post must be a legible entry in someone's record
+     * rather than a generic label over a pile of numbers. Dropped to null so the post falls back to
+     * naming the type, instead of a feed of identical headings.
+     */
+    name: name && name.toLowerCase() !== 'freestyle workout' ? name : null,
+    context: c.programName?.trim() || null,
     /*
      * WSR-001 §6.3 / Workout-Playlist-Amendment-001 §2 put the playlist on squad check-in cards.
      *

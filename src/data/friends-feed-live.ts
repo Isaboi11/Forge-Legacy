@@ -163,6 +163,16 @@ export async function fetchFriendsFeed(limit = 40, before?: string): Promise<Fee
  * Names carry it, and the residual is a count of *unnamed people*, never a total presented as a score.
  * "You" comes first when you're among them, which is what the design does.
  */
+/**
+ * ⚠ NOTHING RENDERS THIS TODAY, AND THAT IS AN OPEN DECISION RATHER THAN DEAD CODE.
+ *
+ * This is SOC-D11's rule made concrete: an acknowledgement names people ("Acknowledged by Priya and
+ * Diego and 3 others") and is never rendered as a score. The feed redesign puts a COUNT beside the
+ * Acknowledge control instead, which is what the handoff draws and what PD-7 says governs — so the line
+ * is unmounted, not deleted, because the architecture it implements has not been amended.
+ *
+ * Delete it when SOC-D11 is amended to allow a count. Until then it is the reason to go and do that.
+ */
 export function acknowledgedLine(post: FeedPost): string | null {
   if (post.reactionCount === 0) return null;
   const named = post.reactors.slice(0, 2).map((r) => (r.isSelf ? 'You' : r.name.split(' ')[0]));

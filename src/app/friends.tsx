@@ -8,7 +8,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
-import { RecapStrip } from '@/components/forge/compositions/RecapStrip';
+import { EndOfLedger, LedgerPost, workoutStats, type LedgerMarker } from '@/components/forge/compositions/LedgerPost';
 import { ScreenBackground } from '@/components/screen-background';
 import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
@@ -16,7 +16,6 @@ import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/us
 import { BG_RADIAL } from '@/constants/backgrounds';
 import {
   REACTIONS,
-  acknowledgedLine,
   addPostComment,
   fetchFriendsFeed,
   fetchPostComments,
@@ -27,10 +26,12 @@ import {
   type Reaction,
 } from '@/data/friends-feed-live';
 import { fetchFriendLists } from '@/data/friends-live';
+import { openPlaylist } from '@/components/forge/composites/Playlist';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { useProfile } from '@/lib/profile';
-import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { useUnits } from '@/lib/settings';
+import { flColor, flFont, flRadius } from '@/constants/foundation';
 
 /**
  * Friends Feed — built to `Forge Friends Feed.dc.html`, on real posts (migration 0074).
@@ -47,11 +48,25 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
  * never calls. So in the design **no athlete-authored text can enter the system at all**, on the screen
  * whose entire purpose is sharing what you chose to say. Both are real inputs here, and both write.
  *
+ * ── A LEDGER, NOT A STACK OF CARDS ────────────────────────────────────────────────────────────────────
+ *
+ * Every post used to be a bordered, shadowed card with a second bronze-tinted container nested inside it
+ * for the workout numbers. Posts are now hairline-separated rows drawn by `LedgerPost`, which the Squad
+ * feed mounts too — the two feeds keep their own screens, their own queries and their own tables, and
+ * share exactly one thing: how a post looks. See that component's header for the rules.
+ *
  * ── FOUR ACKNOWLEDGEMENTS, NOT A LIKE ─────────────────────────────────────────────────────────────────
  *
- * Respect · Honor · Support · Strength in a floating pill above the row, tapping the same one again to clear
- * it. SOC-D11 calls these lightweight acknowledgements, so the summary names people ("Acknowledged by Priya
- * and Diego and 3 others") and no count is ever rendered as a score.
+ * Respect · Honor · Support · Strength, in a floating pill; tapping the same one again clears it. SOC-D11
+ * calls these lightweight acknowledgements.
+ *
+ * ⚠ TWO THINGS CHANGED HERE AND THE SECOND ONE CONTRADICTS SOC-D11. The pill is now reached by a PRESS
+ * AND HOLD rather than a tap, because the redesigned action row is a single Acknowledge control whose
+ * only state change is its colour — a tap that opened a chooser instead of acknowledging would not be
+ * that row. And the row shows a COUNT, which SOC-D11 rules out ("no count is ever rendered as a score",
+ * hence `acknowledgedLine`, which named people instead and is now unrendered). The design handoff is
+ * explicit about the count and PD-7 makes the design govern, so it is built as drawn — but this is a
+ * decision the Social architecture has not been amended for, and it should be.
  *
  * ── COMPOSING MOVED OUT, AND THE COMPOSER BAR IS NOW A DOOR ───────────────────────────────────────────
  *
@@ -107,6 +122,7 @@ export default function FriendsFeedScreen() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const feed = posts ?? [];
   const pendingRequests = lists?.incoming.length ?? 0;
+  const { units } = useUnits();
 
   const react = (post: FeedPost, reaction: Reaction) => {
     setPickerId(null);
@@ -123,6 +139,17 @@ export default function FriendsFeedScreen() {
       },
     );
   };
+
+  /*
+   * ⚠ ONE TAP ACKNOWLEDGES; THE FOUR KINDS MOVED TO A LONG PRESS.
+   *
+   * The action row is now a single Acknowledge control whose only state change is its colour — so a tap
+   * can no longer open a picker and ask which kind first. That is the right row, and deleting the four
+   * kinds with it would have been wrong: Respect · Honor · Support · Strength are SOC-D11, they are
+   * distinct values in `post_reactions`, and a UI that can only ever write one of them strands the other
+   * three in a table nothing can reach. So the tap writes the default and the press-and-hold changes it.
+   */
+  const toggle = (post: FeedPost) => react(post, post.myReaction ?? 'respect');
 
   return (
     <View style={styles.root}>
@@ -184,34 +211,53 @@ export default function FriendsFeedScreen() {
             The composer now lives at `/squad-composer` for BOTH feeds; the audience decides where the
             post lands. See that file's header.
           */}
+          {/* ONE FLAT ROW, NOT A CARD — the feed has no cards left for it to match. */}
           <Pressable
             onPress={() => router.push({ pathname: '/squad-composer', params: { audience: 'FRIENDS' } })}
             accessibilityRole="button"
             accessibilityLabel="Share a moment"
             style={styles.composerBar}
           >
-            <Avatar name={profile?.name ?? ''} src={profile?.avatarUrl ?? undefined} size="listRow" />
+            <LinearGradient colors={['rgba(191,143,79,0.035)', 'transparent']} style={StyleSheet.absoluteFill} />
+            <Avatar name={profile?.name ?? ''} src={profile?.avatarUrl ?? undefined} size={38} />
             <Text style={styles.composerText}>What did you forge today?</Text>
+            <View style={styles.composerPlus}>
+              <PlusGlyph />
+            </View>
           </Pressable>
           </TourAnchor>
 
           {feed.length === 0 ? (
             <EmptyFeed onFind={() => router.push('/add-friend')} hasFriends={(lists?.friends.length ?? 0) > 0} />
           ) : (
-            feed.map((post, pi) => (
-              <TourAnchor key={post.id} id={pi === 0 ? 'friends-post' : undefined}>
-              <PostCard
-                post={post}
-                pickerOpen={pickerId === post.id}
-                busy={busyId === post.id}
-                onTogglePicker={() => setPickerId((cur) => (cur === post.id ? null : post.id))}
-                onReact={(r) => react(post, r)}
-                onAuthor={() => router.push({ pathname: '/athlete/[id]', params: { id: post.authorId } })}
-                onComments={() => setCommentsFor(post)}
-                onWorkout={() => post.workoutId && router.push({ pathname: '/activity/[id]', params: { id: post.workoutId } })}
-              />
-              </TourAnchor>
-            ))
+            <>
+              {feed.map((post, pi) => (
+                <TourAnchor key={post.id} id={pi === 0 ? 'friends-post' : undefined}>
+                  <View style={styles.postWrap}>
+                    {/* The four-way picker floats above the row it belongs to — see `toggle`. */}
+                    {pickerId === post.id ? (
+                      <View style={styles.pickerWrap}>
+                        <ReactionPicker current={post.myReaction} onPick={(r) => react(post, r)} />
+                      </View>
+                    ) : null}
+                    <FeedLedgerPost
+                      post={post}
+                      units={units}
+                      alt={pi % 2 === 1}
+                      busy={busyId === post.id}
+                      onAcknowledge={() => toggle(post)}
+                      onLongAcknowledge={() => setPickerId((cur) => (cur === post.id ? null : post.id))}
+                      onAuthor={() => router.push({ pathname: '/athlete/[id]', params: { id: post.authorId } })}
+                      onComments={() => setCommentsFor(post)}
+                      onWorkout={() => post.workoutId && router.push({ pathname: '/activity/[id]', params: { id: post.workoutId } })}
+                    />
+                  </View>
+                </TourAnchor>
+              ))}
+              {/* The whole feed is one read of 40 with no pagination, so everything on screen IS
+                  everything there is. A feed that simply stops reads as one that failed to load. */}
+              <EndOfLedger />
+            </>
           )}
         </ScrollView>
       )}
@@ -247,134 +293,78 @@ function EmptyFeed({ onFind, hasFriends }: { onFind: () => void; hasFriends: boo
   );
 }
 
-function PostCard({
+/**
+ * One friends-feed row, mapped onto the shared ledger renderer.
+ *
+ * ⚠ THE LAYOUT IS NOT DECIDED HERE. This function's whole job is turning a `FeedPost` into the props
+ * `LedgerPost` takes; the gutters, the hairline, the media rules and the suppression of the marker /
+ * title / stats on a photo post all live in that component so the Squad feed gets the identical answer
+ * from a completely different row shape.
+ */
+function FeedLedgerPost({
   post,
-  pickerOpen,
+  units,
+  alt,
   busy,
-  onTogglePicker,
-  onReact,
+  onAcknowledge,
+  onLongAcknowledge,
   onAuthor,
   onComments,
   onWorkout,
 }: {
   post: FeedPost;
-  pickerOpen: boolean;
+  units: ReturnType<typeof useUnits>['units'];
+  alt: boolean;
   busy: boolean;
-  onTogglePicker: () => void;
-  onReact: (r: Reaction) => void;
+  onAcknowledge: () => void;
+  onLongAcknowledge: () => void;
   onAuthor: () => void;
   onComments: () => void;
   onWorkout: () => void;
 }) {
   const shape = shapeOf(post);
-  const line = acknowledgedLine(post);
+  const summary = shape === 'recap' ? post.workoutSummary : null;
+
+  /* PR and milestone posts keep their own marker; a plain note has no type worth announcing, and a
+     label reading DISCUSSION over somebody's sentence is the decoration this redesign removes. */
+  const marker: { kind: LedgerMarker; label: string } | null = summary
+    ? { kind: 'workout', label: 'Workout' }
+    : shape === 'milestone'
+      ? post.type === 'pr'
+        ? { kind: 'pr', label: post.prLabel ?? 'PR' }
+        : { kind: 'milestone', label: post.prLabel ?? 'Milestone' }
+      : null;
 
   return (
-    <View style={styles.card}>
-      <View style={styles.cardHead}>
-        <Pressable onPress={onAuthor} accessibilityRole="button" accessibilityLabel={`View ${post.authorName}'s profile`} style={styles.author}>
-          <Avatar src={post.authorAvatarUrl ?? undefined} name={post.authorName} size={38} />
-          <View style={styles.authorText}>
-            <Text style={styles.authorName} numberOfLines={1}>
-              {post.isMine ? 'You' : post.authorName}
-            </Text>
-            <Text style={styles.authorMeta}>
-              {shortAgo(post.createdAt)}
-              {post.audience === 'BOTH' ? ' · Friends & Squad' : ''}
-            </Text>
-          </View>
-        </Pressable>
-      </View>
-
-      {post.body ? <Text style={styles.caption}>{post.body}</Text> : null}
-
-      {shape === 'progress' ? (
-        <ProgressCompare post={post} />
-      ) : shape === 'photo' ? (
-        <Image source={{ uri: post.media[0].url }} style={styles.photo} contentFit="cover" />
-      ) : shape === 'gallery' ? (
-        <View style={styles.gallery}>
-          {post.media.map((m, i) => (
-            <Image key={`${m.url}-${i}`} source={{ uri: m.url }} style={styles.galleryCell} contentFit="cover" />
-          ))}
-        </View>
-      ) : shape === 'video' ? (
-        <View style={styles.videoWrap}>
-          <Image source={{ uri: post.media[0].url }} style={styles.photo} contentFit="cover" />
-          <View style={styles.playBtn}>
-            <PlayGlyph />
-          </View>
-        </View>
-      ) : shape === 'recap' && post.workoutSummary ? (
-        /* A shared workout, in the same bronze frame as a milestone but saying what it actually was.
-           `shapeOf` only returns 'recap' when the summary is there, so this never renders an empty
-           strip — a recap without stats is still a milestone card. Tapping opens the session itself. */
-        <Pressable
-          onPress={onWorkout}
-          disabled={!post.workoutId}
-          accessibilityRole={post.workoutId ? 'button' : undefined}
-          accessibilityLabel={post.workoutId ? `Open ${post.isMine ? 'your' : `${post.authorName}'s`} workout` : undefined}
-          style={styles.milestone}
-        >
-          <LinearGradient colors={['rgba(186, 134, 84,0.14)', 'transparent'] as const} locations={[0, 0.7] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
-          <View style={styles.milestoneHead}>
-            <MedalGlyph />
-            <Text style={styles.milestoneKind}>Workout</Text>
-          </View>
-          <RecapStrip summary={post.workoutSummary} />
-        </Pressable>
-      ) : shape === 'milestone' ? (
-        <View style={styles.milestone}>
-          <LinearGradient colors={['rgba(186, 134, 84,0.14)', 'transparent'] as const} locations={[0, 0.7] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
-          <View style={styles.milestoneHead}>
-            <MedalGlyph />
-            <Text style={styles.milestoneKind}>{post.prLabel ?? 'Milestone'}</Text>
-          </View>
-          <Text style={styles.milestoneTitle} numberOfLines={2}>
-            {post.prExercise ?? post.body ?? 'A milestone'}
-          </Text>
-          {post.prValue ? <Text style={styles.milestoneSub}>{post.prValue}</Text> : null}
-        </View>
-      ) : null}
-
-      {line ? (
-        <View style={styles.ackRow}>
-          <View style={styles.ackAvatars}>
-            {post.reactors.slice(0, 3).map((r, i) => (
-              <View key={r.id} style={[styles.ackAvatar, i > 0 ? styles.ackAvatarOverlap : null]}>
-                <Avatar src={r.avatarUrl ?? undefined} name={r.name} size={20} />
-              </View>
-            ))}
-          </View>
-          <Text style={styles.ackText} numberOfLines={1}>
-            {line}
-          </Text>
-        </View>
-      ) : null}
-
-      <View style={styles.actions}>
-        <View style={styles.reactWrap}>
-          {pickerOpen ? <ReactionPicker current={post.myReaction} onPick={onReact} /> : null}
-          <Pressable
-            onPress={onTogglePicker}
-            disabled={busy}
-            accessibilityRole="button"
-            accessibilityLabel={post.myReaction ? `Acknowledged as ${post.myReaction}. Change it` : 'Acknowledge this'}
-            style={({ pressed }) => [styles.action, post.myReaction ? styles.actionOn : null, pressed ? styles.pressed : null]}
-          >
-            {busy ? <ActivityIndicator size="small" color={flColor.bronze300} /> : <ReactionGlyph kind={post.myReaction ?? 'respect'} on={!!post.myReaction} />}
-            <Text style={[styles.actionLabel, post.myReaction ? styles.actionLabelOn : null]}>
-              {post.myReaction ? REACTIONS.find((r) => r.key === post.myReaction)?.label : 'Acknowledge'}
-            </Text>
-          </Pressable>
-        </View>
-
-        <Pressable onPress={onComments} accessibilityRole="button" accessibilityLabel={`${post.commentCount} comments`} style={({ pressed }) => [styles.action, pressed ? styles.pressed : null]}>
-          <CommentGlyph />
-          <Text style={styles.actionLabel}>{post.commentCount > 0 ? String(post.commentCount) : ''}</Text>
-        </Pressable>
-      </View>
-    </View>
+    <LedgerPost
+      authorName={post.isMine ? 'You' : post.authorName}
+      authorAvatarUrl={post.authorAvatarUrl}
+      audience={post.audience === 'BOTH' ? 'Friends & Squad' : 'Friends'}
+      time={shortAgo(post.createdAt)}
+      marker={marker}
+      /* `summary.name` is absent on every recap shared before the snapshot carried one, so the type
+         stands in rather than a heading reading "null". No backfill, no version check. */
+      title={summary ? summary.name ?? 'Workout' : shape === 'milestone' ? post.prExercise ?? post.body ?? 'A milestone' : null}
+      context={summary ? summary.context ?? null : shape === 'milestone' ? post.prValue : null}
+      stats={summary ? workoutStats(summary, units) : []}
+      playlist={summary?.playlist ?? null}
+      onPlaylist={summary?.playlist ? () => void openPlaylist(summary.playlist!) : undefined}
+      caption={post.body}
+      media={shape === 'photo' || shape === 'gallery' || shape === 'video' ? post.media.map((m) => ({ url: m.url, kind: m.kind })) : []}
+      /* The before/after comparison keeps its draggable divider — the art is the exception, the rules
+         around it are not: it still suppresses the marker, the title and the stats. */
+      customMedia={shape === 'progress' ? <ProgressCompare post={post} /> : undefined}
+      alt={alt}
+      busy={busy}
+      acknowledged={!!post.myReaction}
+      acknowledgeCount={post.reactionCount}
+      commentCount={post.commentCount}
+      onAuthor={onAuthor}
+      onOpen={summary && post.workoutId ? onWorkout : undefined}
+      onAcknowledge={onAcknowledge}
+      onLongAcknowledge={onLongAcknowledge}
+      onComments={onComments}
+    />
   );
 }
 
@@ -443,10 +433,21 @@ function ProgressCompare({ post }: { post: FeedPost }) {
         <Image source={{ uri: before.url }} style={[styles.compareImg, width > 0 ? { width } : null]} contentFit="cover" />
       </View>
       <View style={[styles.divider, { left: `${pct}%` }]} />
+      {/* The same grading every other media band gets — the comparison is full-bleed now, so it has to
+          be seated in the surface the same way or it reads as a photo pasted onto the feed. */}
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.compareGrade]} />
       <View style={styles.compareBadge}>
         <Text style={styles.compareBadgeText}>Progress</Text>
       </View>
     </View>
+  );
+}
+
+function PlusGlyph() {
+  return (
+    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2.2} strokeLinecap="round">
+      <Path d="M12 5v14M5 12h14" />
+    </Svg>
   );
 }
 
@@ -569,83 +570,38 @@ function ReactionGlyph({ kind, on }: { kind: Reaction; on: boolean }) {
     </Svg>
   );
 }
-function CommentGlyph({ color = flColor.gray600 }: { color?: string }) {
-  return (
-    <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 5.5h16v10H9l-5 4z" />
-    </Svg>
-  );
-}
-function PlayGlyph({ color = flColor.cream100 }: { color?: string }) {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill={color}>
-      <Path d="M8 5l12 7-12 7z" />
-    </Svg>
-  );
-}
-function MedalGlyph({ color = flColor.bronze300 }: { color?: string }) {
-  return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M8.8 10.4L6 4h4l2 3.2L14 4h4l-2.8 6.4" />
-      <Circle cx={12} cy={15} r={4.8} />
-    </Svg>
-  );
-}
+/* ⚠ `CommentGlyph`, `PlayGlyph` and `MedalGlyph` are gone with the card. The comment bubble and the
+   play disc live in `LedgerPost` now, drawn once for both feeds; the medal belonged to the bronze
+   milestone frame this redesign deletes, and there is no bronze frame left to put it on. */
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
   pressed: { opacity: 0.85 },
-  scroll: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 40, gap: 12 },
+  /* ⚠ NO HORIZONTAL PADDING, and that is what lets a photo reach the screen edge. The 18px gutter
+     lives inside `LedgerPost`, applied per block, so media can opt out of it and nothing else can. */
+  scroll: { paddingBottom: 0 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 34, gap: 4 },
   iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round },
   badge: { position: 'absolute', top: 4, right: 3, minWidth: 15, paddingHorizontal: 3, alignItems: 'center', borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal900, backgroundColor: flColor.bronze400 },
   badgeText: { fontSize: 8.5, fontWeight: '700', color: '#1A1206' },
 
-  composerBar: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.charcoal900, boxShadow: flShadow.card },
-  composerText: { flex: 1, minWidth: 0, fontSize: 13.5, color: flColor.gray600 },
+  composerBar: { height: 68, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 18, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  composerText: { flex: 1, minWidth: 0, fontSize: 15, color: flColor.gray600 },
+  composerPlus: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round, borderWidth: 1, borderColor: flColor.bronzeBorder },
 
-  card: { borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.charcoal900, boxShadow: flShadow.card, overflow: 'hidden' },
-  cardHead: { paddingHorizontal: 14, paddingTop: 13 },
-  author: { flexDirection: 'row', alignItems: 'center', gap: 11 },
-  authorText: { flex: 1, minWidth: 0 },
-  authorName: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
-  authorMeta: { marginTop: 1, fontSize: 10.5, color: flColor.gray600 },
-  caption: { paddingHorizontal: 14, paddingTop: 10, fontSize: 13.5, lineHeight: 20, color: flColor.gray400 },
+  postWrap: { position: 'relative' },
+  /* The picker floats over the action row it belongs to, which sits ~52px off the bottom of the post. */
+  pickerWrap: { position: 'absolute', left: 10, bottom: 52, zIndex: 10 },
 
-  photo: { width: '100%', height: 210, marginTop: 12, backgroundColor: flColor.charcoal800 },
-  /* Two up, and a lone odd one at the end fills the row rather than sitting beside a hole. */
-  gallery: { flexDirection: 'row', flexWrap: 'wrap', gap: 3, marginTop: 12 },
-  galleryCell: { flexGrow: 1, flexBasis: '48%', height: 190, backgroundColor: flColor.charcoal800 },
-  videoWrap: { position: 'relative' },
-  playBtn: { position: 'absolute', top: '50%', left: '50%', width: 46, height: 46, marginTop: -23, marginLeft: -23, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round, backgroundColor: 'rgba(0,0,0,0.55)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
-
-  compare: { position: 'relative', marginTop: 12, width: '100%', aspectRatio: 4 / 5, overflow: 'hidden', backgroundColor: flColor.charcoal800 },
+  compare: { position: 'relative', width: '100%', aspectRatio: 4 / 5, overflow: 'hidden', backgroundColor: flColor.charcoal800 },
   compareImg: { width: '100%', height: '100%' },
   compareClip: { position: 'absolute', top: 0, bottom: 0, left: 0, overflow: 'hidden' },
+  compareGrade: { boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.05), inset 0 -70px 70px -50px rgba(6,7,9,0.85)' },
   divider: { position: 'absolute', top: 0, bottom: 0, width: 2, marginLeft: -1, backgroundColor: flColor.bronze300 },
   compareBadge: { position: 'absolute', top: 10, left: 10, paddingHorizontal: 8, paddingVertical: 3, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: 'rgba(0,0,0,0.55)' },
   compareBadgeText: { fontSize: 9, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.bronze300 },
 
-  milestone: { position: 'relative', overflow: 'hidden', margin: 14, padding: 15, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800 },
-  milestoneHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  milestoneKind: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.bronze400 },
-  milestoneTitle: { marginTop: 8, fontFamily: flFont.display, fontSize: 19, fontWeight: '600', color: flColor.cream100 },
-  milestoneSub: { marginTop: 4, fontSize: 12.5, color: flColor.gray400 },
-
-  ackRow: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 14, paddingTop: 12 },
-  ackAvatars: { flexDirection: 'row' },
-  ackAvatar: { borderRadius: flRadius.round, borderWidth: 1.5, borderColor: flColor.charcoal900 },
-  ackAvatarOverlap: { marginLeft: -7 },
-  ackText: { flex: 1, minWidth: 0, fontSize: 11.5, color: flColor.gray600 },
-
-  actions: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12, paddingHorizontal: 12, paddingVertical: 8, borderTopWidth: 1, borderTopColor: flColor.charcoal800 },
-  reactWrap: { position: 'relative' },
-  action: { flexDirection: 'row', alignItems: 'center', gap: 7, minWidth: 44, minHeight: 34, paddingHorizontal: 10, borderRadius: flRadius.pill },
-  actionOn: { backgroundColor: flColor.bronzeTint },
-  actionLabel: { fontSize: 11.5, fontWeight: '600', color: flColor.gray600 },
-  actionLabelOn: { color: flColor.bronze300 },
-
-  picker: { position: 'absolute', bottom: 38, left: 0, flexDirection: 'row', gap: 2, padding: 4, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card, zIndex: 10 },
+  picker: { flexDirection: 'row', gap: 2, padding: 4, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800 },
   pickerItem: { alignItems: 'center', gap: 2, paddingHorizontal: 8, paddingVertical: 5, borderRadius: flRadius.pill },
   pickerItemOn: { backgroundColor: flColor.bronzeTint },
   pickerLabel: { fontSize: 8.5, fontWeight: '600', color: flColor.gray600 },
