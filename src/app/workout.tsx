@@ -78,6 +78,7 @@ import { bumpWorkoutsLogged } from '@/lib/tour-phase';
 import { SCREEN_GUTTER, useBarBottom } from '@/lib/screen-insets';
 import { fetchLiftHistory, liftId, type LiftHistory } from '@/data/lift-history-live';
 import { backOffTo, incrementFor, progressionFor, sessionPerformance, type Progression } from '@/domain/coach/progression';
+import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { DEFAULT_HOLD_SEC, itemByKey, itemByName } from '@/domain/exercise-picker/data';
 import { loadExperience } from '@/lib/coach-memory';
 import { SessionCoachSheet } from '@/components/forge/SessionCoachSheet';
@@ -315,7 +316,10 @@ export default function WorkoutScreen() {
    * are about to do, so it rides the coin until the exercise changes or a later set answers it. Cleared
    * when the athlete moves on, because a suggestion about bench press has nothing to say about squats.
    */
-  const [intraLine, setIntraLine] = useState<{ ei: number; text: string } | null>(null);
+  /* `upTo` is the weight the line asks them to reach — what lets `coachLine` retire it once they have
+     logged a set at or above it. Carried beside the text because the sentence has already been rendered
+     by then and no reliable number can be read back out of prose. */
+  const [intraLine, setIntraLine] = useState<{ ei: number; text: string; upTo: number } | null>(null);
   /**
    * What the recent record suggests about how hard to push — read ONLY when the coach sheet opens.
    *
@@ -335,6 +339,7 @@ export default function WorkoutScreen() {
   /* The keyboard primer — an always-mounted invisible input, focused synchronously inside the tap so
      the browser will open a keyboard at all. Full reasoning above the focus effect. */
   const primerRef = useRef<TextInput | null>(null);
+  const primeKeyboard = useKeyboardPrimer();
   const keyboardInset = useKeyboardInset();
   const [wheelMode, setWheelMode] = useState(false); // typing is the default; the saved pref loads on mount
   const [endConfirmOpen, setEndConfirmOpen] = useState(false);
@@ -1119,7 +1124,18 @@ export default function WorkoutScreen() {
          the module's "nothing left to instruct" gate closes on its own. */
       setsRemaining: ex.sets.filter((s2) => !s2.done).length,
     });
-    if (nudge) setIntraLine({ ei, text: nudge.message });
+    /*
+     * ⚠ THE NULL CASE WRITES TOO, AND THAT IS THE FIX. This was `if (nudge) setIntraLine(...)`, so a set
+     * that warranted no nudge left the PREVIOUS one standing — a sentence about a set two sets ago,
+     * presented as the newest thing the coach knows. PO: *"He needs to stay current."*
+     *
+     * Scoped to `ei`: a nudge on another exercise is not stale just because a set landed over here, and
+     * the coin already refuses to carry one across lifts. So a null result clears only this exercise's
+     * line and leaves the rest of the session alone.
+     */
+    setIntraLine((prev) =>
+      nudge ? { ei, text: nudge.message, upTo: nudge.suggestedWeight } : prev?.ei === ei ? null : prev,
+    );
 
     // milestone tier: exercise done (others remain) → non-blocking seal; else more sets → rest (never the last set)
     const exDone = ex.sets.every((s2) => s2.done);
@@ -1765,12 +1781,32 @@ export default function WorkoutScreen() {
    * `live` is null until Stage 4 lands the mid-set nudge — the slot exists now so the priority rule is
    * written once and tested, rather than being retrofitted around a shipped two-case version.
    */
+  /*
+   * ⚠ THE HEAVIEST SET ALREADY LOGGED ON THIS LIFT TODAY — what retires a line the athlete has outrun.
+   *
+   * PO: *"I did one set of 85lbs for ten reps, coach holt said move up the weight to 95lbs... the second
+   * set I actually did 165lbs for 8 reps. He still said move up to 95lbs."* Both lines below are written
+   * once and neither could expire; `coachLine` now drops a "go up to X" whose X is already behind them.
+   *
+   * Logged sets only (`done`), and the MAXIMUM rather than the latest: a back-off set after a heavy top
+   * set does not make "go to 95" current again.
+   */
+  const heaviestThisSession = ex.sets.reduce<number | null>(
+    (m, s) => (s.done && s.weight != null && (m == null || s.weight > m) ? s.weight : m),
+    null,
+  );
   const saysRaw = coachLine({
     /* Scoped to the exercise it was said about — a nudge about bench press has nothing to say once the
        athlete is standing at a squat rack, and the coin would otherwise carry it there. */
     live: intraLine?.ei === exIdx ? intraLine.text : null,
+    liveUpTo: intraLine?.ei === exIdx ? intraLine.upTo : null,
     progression: progression?.message,
+    /* ⚠ ONLY `add_weight` names a weight to REACH. `hold` names the one to stay at and `back_off` the
+       one to rebuild from — passing those would retire the line the moment the athlete did the set it
+       was asking for, which is the opposite of what it means. */
+    progressionUpTo: progression?.action === 'add_weight' ? progression.suggestedWeight : null,
     planCue: ex.coachNote,
+    heaviestThisSession,
   });
   /*
    * ⚠ THE COACH SPEAKS POUNDS; THE SCREEN SPEAKS THE ATHLETE'S UNIT.
@@ -2133,7 +2169,17 @@ export default function WorkoutScreen() {
    * `session.workoutName` in memory and autosave carries it; `save_workout` sends it with everything
    * else. Reaching for the database mid-session would create a row that does not exist yet.
    */
+  /*
+   * ⚠ THIS SCREEN INVENTED THE PRIMER AND THEN DID NOT USE IT HERE.
+   *
+   * `primerRef` below fixes the Set Input Sheet and is hardcoded to `decimal-pad`, which is right for a
+   * weight and wrong for a name — so these two overlays were left on bare `autoFocus` and have had the
+   * bug the whole time, three hundred lines from the comment explaining it. The shared
+   * `KeyboardPrimer` exists because the type has to be chosen at focus time; this asks for the plain
+   * keyboard.
+   */
   const openWorkoutName = () => {
+    primeKeyboard();
     setOptionsOpen(false);
     setWNameDraft(session?.workoutName ?? '');
     setWNameOpen(true);
@@ -2148,6 +2194,9 @@ export default function WorkoutScreen() {
   };
 
   const openNote = () => {
+    /* Same as `openWorkoutName` above — the note overlay is `{noteOpen != null ? … }`, so its field
+       mounts after this commit and its `autoFocus` lands outside the gesture. */
+    primeKeyboard();
     setOptionsOpen(false);
     setNoteDraft(session?.exercises[exIdx]?.note ?? '');
     setNoteOpen(exIdx);
@@ -2849,15 +2898,31 @@ export default function WorkoutScreen() {
           * carries "End workout" (now with the §13.2 empty-session guard the footer button never had),
           * and ← Exit still offers Save & Exit.
           */}
+        {/*
+          * ⚠ THE PRIMARY IS ON THE LEFT, WHICH IS BACKWARDS EVERYWHERE ELSE IN THIS APP, AND IS THE PO'S
+          * CALL FROM USING IT: *"during active workout the 'finish workout' and 'add workout' need to
+          * swap places"*.
+          *
+          * The rest of the app puts the primary on the right because that is where a confirm belongs in a
+          * dialog you are reading. This row is not that: the athlete is mid-set, looking at the exercise
+          * card, and reaches for the footer without reading it — so the button that gets tapped is the one
+          * under the thumb, not the one the convention nominates. Advancing happens once per exercise and
+          * adding a lift happens rarely, so the frequent action takes the reachable slot.
+          *
+          * Swapped by REORDERING the two wrappers, not by moving the buttons between them: `primaryWrap`
+          * carries `flex: 1.15` and the completion glow, `endWrap` carries `flex: 1`. Swapping the
+          * children instead would have moved the emphasis without moving the button, which is the shape of
+          * this change that looks identical in a diff and is wrong on screen.
+          */}
         <View style={[styles.bottomRow, { paddingBottom: barBottom }]}>
-          <View style={styles.endWrap}>
-            <Button variant="secondary" fullWidth onPress={openAdd} accessibilityLabel="Add an exercise">
-              Add Exercise
-            </Button>
-          </View>
           <View style={[styles.primaryWrap, workoutComplete && styles.primaryGlow]}>
             <Button variant="primary" fullWidth disabled={primaryDisabled} onPress={onPrimary} accessibilityLabel={primaryLabel}>
               {primaryLabel}
+            </Button>
+          </View>
+          <View style={styles.endWrap}>
+            <Button variant="secondary" fullWidth onPress={openAdd} accessibilityLabel="Add an exercise">
+              Add Exercise
             </Button>
           </View>
         </View>

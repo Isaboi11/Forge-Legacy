@@ -40,10 +40,25 @@ export interface CoachLineInput {
    * is most sets and every set at the quietest intensity.
    */
   live?: string | null;
+  /**
+   * The weight `live` is asking them to REACH, in pounds — `intraSetSuggestion().suggestedWeight`.
+   * Null when the line names no weight, which makes it exempt from the currency rule below.
+   */
+  liveUpTo?: number | null;
   /** `progressionFor().message` for the exercise on screen. */
   progression?: string | null;
+  /**
+   * The weight `progression` is asking them to reach. ⚠ ONLY for `action === 'add_weight'` — see the
+   * currency rule below for why `hold`, `back_off` and `add_reps` must NOT set this.
+   */
+  progressionUpTo?: number | null;
   /** The author's `coachNote` on this exercise — "brace before you unrack", "feel it in your legs". */
   planCue?: string | null;
+  /**
+   * The heaviest weight already logged on THIS exercise in THIS session, in pounds. Null before the
+   * first set. This is what makes the two lines above expire.
+   */
+  heaviestThisSession?: number | null;
 }
 
 export interface CoachLine {
@@ -54,18 +69,67 @@ export interface CoachLine {
 const clean = (s: string | null | undefined): string | null => s?.trim() || null;
 
 /**
+ * ══ HAS THE ATHLETE ALREADY DONE THE THING HE IS ASKING FOR? ══
+ *
+ * PO, from a real session: *"I did one set of 85lbs for ten reps, coach holt said move up the weight to
+ * 95lbs for 8 reps. The first was a warmup so the second set I actually did 165lbs for 8 reps. He still
+ * said move up to 95lbs. He needs to stay current."*
+ *
+ * Both lines the coin can carry are written ONCE and neither had any way to expire:
+ *
+ *   · `progression` is computed from the last two SESSIONS when the exercise loads. It is advice about
+ *     where to START today, and after the athlete has started it is a statement about a decision they
+ *     have already made.
+ *   · `live` is written by `completeSet` on the set that earned it and then simply stays. A later set
+ *     that warrants nothing leaves the older sentence standing.
+ *
+ * ⚠ AND FIXING ONLY ONE OF THEM FIXES NOTHING VISIBLE. They say the same thing in this case — a 10 lb
+ * step off 85 is 95 either way — and `live` outranks `progression`, so clearing the nudge alone just
+ * uncovers the identical sentence underneath it. The athlete sees no change and concludes the coach is
+ * broken, which he was.
+ *
+ * So the rule is one rule, applied to both: **a line telling you to reach a weight is spent once you
+ * have logged a set at or above it.** 165 answers "go to 95" completely — there is nothing left in that
+ * sentence for the athlete to act on.
+ *
+ * ⚠ ONLY LINES THAT ASK THEM TO GO UP. The caller passes `progressionUpTo` for `add_weight` and nothing
+ * else, and the reason is that the other verdicts do not mean what this test would read into them:
+ * `hold` names the weight they are supposed to stay at, and `back_off` names the one they are supposed
+ * to rebuild from — logging a set AT that weight is the advice being followed, not finished, and
+ * retiring the line there would silence the coach exactly when he is asking for three more sets of the
+ * same. `add_reps` and `no_history` name no weight at all.
+ *
+ * ⚠ AND ZERO IS NOT A WEIGHT HERE. A bodyweight lift logs `weight: 0` as a real answer, and its
+ * progression is measured in reps (`progressionFor`'s `weight === 0` branch). `0 >= 0` would retire
+ * every bodyweight line the instant the first push-up was logged.
+ */
+function spent(upTo: number | null | undefined, heaviest: number | null | undefined): boolean {
+  if (upTo == null || upTo <= 0) return false;
+  if (heaviest == null) return false;
+  return heaviest >= upTo;
+}
+
+/**
  * The one thing the coin says, or null for the mark alone.
  *
  * Whitespace-only is nothing, not something — an author who opened the cue field and thought better of
  * it must not put an empty bubble on the athlete's screen for the whole exercise.
  */
 export function coachLine(input: CoachLineInput): CoachLine | null {
+  const heaviest = input.heaviestThisSession;
+
   const live = clean(input.live);
-  if (live) return { text: live, source: 'live' };
+  if (live && !spent(input.liveUpTo, heaviest)) return { text: live, source: 'live' };
 
   const progression = clean(input.progression);
-  if (progression) return { text: progression, source: 'progression' };
+  if (progression && !spent(input.progressionUpTo, heaviest)) return { text: progression, source: 'progression' };
 
+  /*
+   * The plan cue is what is left when both of the above have been overtaken, and it is the right thing
+   * to be left with: a technique note is as true on the fourth set as the first. This is also why a
+   * spent line FALLS THROUGH rather than returning null — going quiet mid-exercise reads as the coach
+   * losing interest, and there is usually something timeless still worth saying.
+   */
   const planCue = clean(input.planCue);
   if (planCue) return { text: planCue, source: 'plan' };
 
