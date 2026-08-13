@@ -5,6 +5,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { Button } from '@/components/forge/composites/Button';
 import { EquipIcon } from '@/components/forge/EquipIcon';
 import { ExercisePoster } from '@/components/forge/ExercisePoster';
@@ -78,9 +79,14 @@ export default function ActivityDetailScreen() {
   const [savingName, setSavingName] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [renameError, setRenameError] = useState<string | null>(null);
+  const primeKeyboard = useKeyboardPrimer();
   const title = nameEdit !== undefined ? (nameEdit ?? 'Workout') : (data?.title ?? 'Workout');
 
   const openRename = () => {
+    /* ⚠ FIRST, AND SYNCHRONOUSLY — the sheet's field is inside a `<Modal>`, so it does not exist yet and
+       its `autoFocus` will fire one commit from now, outside this gesture. On iOS Safari that focuses
+       the field and shows no keyboard. See `KeyboardPrimer`. */
+    primeKeyboard();
     /* The STORED name, not the displayed fallback. `fetchActivityDetail` renders a nameless session
        as "Workout"; offering that word for editing would make an unnamed session look named, and
        tapping Save would then write it to a row that never had one. */

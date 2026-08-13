@@ -1059,6 +1059,29 @@ function ResultCell({ value, label, accent, first }: { value: string; label: str
  * A rejected parse leaves the previous value standing rather than clamping to a guess: this field's
  * whole job is to replace a number, and replacing it with something invented would be worse than
  * refusing.
+ *
+ * ══ ⚠ THE INPUT IS ALWAYS MOUNTED, AND ON AN IPHONE THAT IS THE DIFFERENCE BETWEEN WORKING AND NOT ══
+ *
+ * PO: *"When I go to log a run it's not letting me put in the time."*
+ *
+ * This used to be a `<Text>` inside a `Pressable` that swapped to a `<TextInput autoFocus>` on tap. On
+ * native that is fine. On web it is not, and the app already knew: a browser raises the software
+ * keyboard only for a `focus()` issued INSIDE the user-gesture call stack, and `autoFocus` fires after
+ * the element mounts — one state commit later, outside the gesture. iOS Safari then focuses the field
+ * and silently declines to show a keyboard. The caret appears, the field looks live, and nothing can be
+ * typed into it.
+ *
+ * `workout.tsx` hit this and worked around it with a permanently-mounted invisible "primer" input that
+ * takes focus during the tap so the keyboard is already up before the real field mounts. That was the
+ * right fix there, because the field lives in a sheet that genuinely does not exist at tap time.
+ *
+ * Here it does exist, so there is nothing to work around: tapping an input that is already on screen
+ * focuses it inside the gesture and the keyboard comes up by itself. `SetGoalPanel` was written this way
+ * from the start and its header names THIS FILE as the one still carrying the broken pattern — the
+ * defect was documented in a comment for a fortnight instead of being fixed.
+ *
+ * The behaviour the athlete sees is unchanged: the field shows the formatted value, tapping it clears to
+ * empty so the first keystroke replaces rather than appends, and blurring commits.
  */
 function Field({
   label,
@@ -1088,12 +1111,12 @@ function Field({
   keyboard?: 'numbers-and-punctuation' | 'decimal-pad' | 'number-pad';
 }) {
   const typeable = !!parse && !!onCommit;
-  const [editing, setEditing] = useState(false);
-  const [text, setText] = useState('');
+  /** What is in the box WHILE they are typing. `null` means "show the committed value". */
+  const [text, setText] = useState<string | null>(null);
 
   const commit = () => {
-    setEditing(false);
-    const n = parse?.(text);
+    const n = text == null ? null : parse?.(text);
+    setText(null);
     if (n != null) onCommit?.(n);
   };
 
@@ -1104,35 +1127,28 @@ function Field({
           <Text style={styles.fieldLabel}>{label}</Text>
           {hint ? <Text style={styles.fieldHint}>{hint}</Text> : null}
         </View>
-        {editing ? (
+        {typeable ? (
           <TextInput
-            value={text}
+            value={text ?? value}
+            /* Cleared on FOCUS rather than seeded with the current value: `selectTextOnFocus` is
+               unreliable across platforms, and having to clear a pre-filled field before typing is most
+               of the tedium this exists to remove. It also has to happen here rather than in an onPress,
+               because the tap now lands on the input itself — there is no Pressable left to hang it on. */
+            onFocus={() => setText('')}
             onChangeText={setText}
             onBlur={commit}
             onSubmitEditing={commit}
-            autoFocus
-            selectTextOnFocus
             keyboardType={keyboard}
             returnKeyType="done"
             placeholder={placeholder}
             placeholderTextColor={flColor.gray600}
-            accessibilityLabel={`${label}, type a value`}
-            style={[styles.fieldValue, styles.fieldInput]}
+            accessibilityLabel={`${label} is ${value}. Type to change it.`}
+            /* Dotted while idle, solid while they are in it — the app's own "you can type in here" mark
+               (cf. `SetGoalPanel`). The BOX is identical in both states so focusing cannot shift the
+               layout; only the underline changes, which is the whole reason these are two style objects
+               rather than one swapped wholesale. */
+            style={[styles.fieldValue, styles.fieldInput, text == null ? styles.fieldInputIdle : styles.fieldInputActive]}
           />
-        ) : typeable ? (
-          <Pressable
-            onPress={() => {
-              // Seeded empty, not with the current value: `selectTextOnFocus` is unreliable across
-              // platforms, and having to clear a pre-filled field before typing is most of the tedium
-              // this is meant to remove.
-              setText('');
-              setEditing(true);
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={`${label} is ${value}. Tap to type a new value.`}
-          >
-            <Text style={[styles.fieldValue, styles.fieldValueTypeable]}>{value}</Text>
-          </Pressable>
         ) : (
           <Text style={styles.fieldValue}>{value}</Text>
         )}
@@ -1265,8 +1281,12 @@ const styles = StyleSheet.create({
   fieldValue: { fontFamily: flFont.display, fontSize: 22, lineHeight: 24, fontWeight: '600', color: flColor.cream100 },
   /* A dotted rule under a typeable value — enough to read as an editable field, quiet enough that the
      value is still the thing you see. Same weight the set table uses for its editable cells. */
-  fieldValueTypeable: { borderBottomWidth: 1, borderBottomColor: flColor.bronzeBorder, borderStyle: 'dotted', alignSelf: 'flex-start', paddingRight: 6 },
-  fieldInput: { minWidth: 110, padding: 0, borderBottomWidth: 1, borderBottomColor: flColor.bronze400 },
+  /* `outlineWidth: 0` for the same reason as the Set Input Sheet's fields: react-native-web's TextInput
+     reset does not cover `outline`, so the browser would paint a blue focus ring over the bronze. It
+     matters more now than it did — the input is mounted the whole time rather than only while editing. */
+  fieldInput: { minWidth: 110, padding: 0, borderBottomWidth: 1, alignSelf: 'flex-start', paddingRight: 6, outlineWidth: 0 },
+  fieldInputIdle: { borderBottomColor: flColor.bronzeBorder, borderStyle: 'dotted' },
+  fieldInputActive: { borderBottomColor: flColor.bronze400, borderStyle: 'solid' },
   fieldBtns: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   stepBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal900, alignItems: 'center', justifyContent: 'center' },
   stepGlyph: { fontSize: 22, lineHeight: 26, color: flColor.bronze300 },

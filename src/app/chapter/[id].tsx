@@ -17,6 +17,7 @@ import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { fetchChapterDetail, renameChapter } from '@/data/chapter-detail-live';
 import { CHAPTER_TITLE_MAX, DEFAULT_CHAPTER_I_TITLE, isValidChapterTitle } from '@/domain/legacy/chapter-name';
 import { goalSections, isAchieved, isQuantifiable, progressLabel, progressPct, type Goal } from '@/domain/goals/goals';
@@ -73,8 +74,13 @@ export default function ChapterDetailScreen() {
   const [renameDraft, setRenameDraft] = useState('');
   const [savingName, setSavingName] = useState(false);
   const [renameError, setRenameError] = useState<string | null>(null);
+  const primeKeyboard = useKeyboardPrimer();
 
   const openRename = () => {
+    /* ⚠ FIRST, AND SYNCHRONOUSLY — the sheet's field is inside a `<Modal>`, so it does not exist yet and
+       its `autoFocus` fires one commit from now, outside this gesture. On iOS Safari that focuses the
+       field and shows no keyboard. See `KeyboardPrimer`. */
+    primeKeyboard();
     setRenameDraft(data?.title ?? '');
     setRenameError(null);
     setRenameOpen(true);

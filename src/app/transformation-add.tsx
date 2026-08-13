@@ -20,6 +20,7 @@ import { useMediaPicker } from '@/lib/useMediaPicker';
 import { useToast } from '@/hooks/useCeremony';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 
 /**
  * New / Edit Progress Set — built to the Add overlay of `Forge Transformation.dc.html`, wired to real
@@ -61,6 +62,7 @@ export default function TransformationAddRoute() {
   const [saving, setSaving] = useState(false);
   const [captionFocus, setCaptionFocus] = useState(false);
   const [customOpen, setCustomOpen] = useState(false);
+  const primeKeyboard = useKeyboardPrimer();
   const [customInput, setCustomInput] = useState('');
 
   // Prefill once the edit target loads (derive-then-seed via a ready flag — no effect setState churn).
@@ -241,7 +243,19 @@ export default function TransformationAddRoute() {
               </Pressable>
             );
           })}
-          <Pressable onPress={() => setCustomOpen((v) => !v)} accessibilityRole="button" accessibilityLabel="Add a custom tag" style={[styles.tagChip, styles.tagChipCustom]}>
+          <Pressable
+            /* The swap form: the `TextInput` below is `{customOpen ? … : null}`, so it mounts one commit
+               after this tap and its `autoFocus` lands outside the gesture — no keyboard on iOS Safari.
+               Primed only on the way OPEN; the toggle closing it has no field to focus. See
+               `KeyboardPrimer`. */
+            onPress={() => {
+              if (!customOpen) primeKeyboard();
+              setCustomOpen((v) => !v);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Add a custom tag"
+            style={[styles.tagChip, styles.tagChipCustom]}
+          >
             <Text style={styles.tagChipCustomText}>+ Custom</Text>
           </Pressable>
         </View>

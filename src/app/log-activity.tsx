@@ -83,13 +83,35 @@ export default function LogActivityScreen() {
             <InputField label="Miles" value={distance} onChange={(v) => setDistance(v.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" placeholder="3.1" />
             <View>
               <Text style={styles.faLabel}>Duration (optional)</Text>
+              {/*
+                * ⚠ THE `flex: 1` WRAPPERS ARE WHY THESE TWO FIELDS EXIST AT ALL ON SCREEN.
+                *
+                * PO: *"When I go to log a run it's not letting me put in the time."* They were not
+                * disabled and nothing threw — they had collapsed to a sliver of border with no room to
+                * put a caret in.
+                *
+                * `InputField` takes no style prop, so its root `<View>` is unstyled. In a COLUMN parent
+                * that is invisible — the Miles field directly above is a child of `card` and stretches
+                * to full width, which is why distance worked and duration did not. In a ROW parent
+                * (`durationCell`) an unstyled View is sized by its content, and its content is a
+                * `TextInput` carrying `flex: 1, minWidth: 0` — which contributes NO intrinsic width in
+                * Yoga. So the well shrank to its own 28pt of horizontal padding.
+                *
+                * Wrapped here rather than by adding a style prop to `InputField`: that is a Tier-2
+                * composite used on eleven screens, and widening its API to fix one caller's layout is
+                * the change most likely to move something else.
+                */}
               <View style={styles.durationRow}>
                 <View style={styles.durationCell}>
-                  <InputField value={min} onChange={(v) => setMin(v.replace(/[^0-9]/g, '').slice(0, 3))} keyboardType="number-pad" placeholder="0" />
+                  <View style={styles.durationInput}>
+                    <InputField value={min} onChange={(v) => setMin(v.replace(/[^0-9]/g, '').slice(0, 3))} keyboardType="number-pad" placeholder="0" accessibilityLabel="Minutes" />
+                  </View>
                   <Text style={styles.durationUnit}>min</Text>
                 </View>
                 <View style={styles.durationCell}>
-                  <InputField value={sec} onChange={(v) => setSec(v.replace(/[^0-9]/g, '').slice(0, 2))} keyboardType="number-pad" placeholder="00" />
+                  <View style={styles.durationInput}>
+                    <InputField value={sec} onChange={(v) => setSec(v.replace(/[^0-9]/g, '').slice(0, 2))} keyboardType="number-pad" placeholder="00" accessibilityLabel="Seconds" />
+                  </View>
                   <Text style={styles.durationUnit}>sec</Text>
                 </View>
               </View>
@@ -151,6 +173,9 @@ const styles = StyleSheet.create({
   // duration
   durationRow: { flexDirection: 'row', gap: 12 },
   durationCell: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  /* `minWidth` as well as `flex`, because `flex: 1` alone still permits a shrink to nothing when the
+     row is tight — and a field you cannot put a caret in is what this whole block is fixing. */
+  durationInput: { flex: 1, minWidth: 64 },
   durationUnit: { fontSize: 13, color: flColor.gray400 },
 
   // commit bar

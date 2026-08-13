@@ -8,6 +8,7 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { SectionHeader } from '@/components/forge/composites/SectionHeader';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -120,6 +121,7 @@ export default function TemplateDetailScreen() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
+  const primeKeyboard = useKeyboardPrimer();
   const [draftName, setDraftName] = useState('');
   const [busy, setBusy] = useState(false);
   const [showAllHistory, setShowAllHistory] = useState(false);
@@ -364,6 +366,9 @@ export default function TemplateDetailScreen() {
             only the title should not mean opening a builder and saving a whole shape back. */}
         <Pressable
           onPress={() => {
+            /* First and synchronously — the rename sheet's field is inside a `<Modal>` that has not
+               mounted yet, so its `autoFocus` fires outside this gesture. See `KeyboardPrimer`. */
+            primeKeyboard();
             setMoreOpen(false);
             setDraftName(t?.name ?? '');
             setRenameOpen(true);

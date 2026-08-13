@@ -11,6 +11,7 @@ import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { ForgeSplash } from '@/components/forge-splash';
 import { AnalyticsTracker } from '@/components/analytics-tracker';
 import { CoachBubble } from '@/components/forge/CoachBubble';
+import { KeyboardPrimerProvider } from '@/components/forge/KeyboardPrimer';
 import { OverlayBoundary } from '@/components/overlay-boundary';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { ProfileProvider, useProfile } from '@/lib/profile';
@@ -89,6 +90,12 @@ export default function RootLayout() {
               so a surface rendered outside this tree degrades to "blocked, with a retry" rather than to a
               launch crash. That is the lesson from the crash the CoachBubble boundary above records. */}
           <EntitlementProvider>
+          {/* The keyboard primer (see `KeyboardPrimer.tsx`). Outermost of the overlay providers because
+              it holds three permanently-mounted offscreen inputs and every screen inside can prime from
+              a tap; it reads nothing and depends on nothing, so its position is about reach, not order.
+              Its context defaults to a no-op, so a surface rendered outside this tree loses the keyboard
+              nicety rather than throwing. */}
+          <KeyboardPrimerProvider>
           <WorkoutSessionProvider>
             <ShareProvider>
               <CeremonyProvider>
@@ -123,6 +130,7 @@ export default function RootLayout() {
               </CeremonyProvider>
             </ShareProvider>
           </WorkoutSessionProvider>
+          </KeyboardPrimerProvider>
           </EntitlementProvider>
           </SettingsProvider>
         </PushProvider>

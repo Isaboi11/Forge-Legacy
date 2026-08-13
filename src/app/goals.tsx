@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { ScreenBackground } from '@/components/screen-background';
@@ -336,6 +337,7 @@ function GoalRow({ goal, onPress }: { goal: Goal; onPress: () => void }) {
 // ── goal detail ──
 function GoalDetail({ goal, chapterName, insets, onBack, onEdit, onChanged }: { goal: Goal; chapterName: string | null; insets: { bottom: number }; onBack: () => void; onEdit: () => void; onChanged: () => void }) {
   const [updateOpen, setUpdateOpen] = useState(false);
+  const primeKeyboard = useKeyboardPrimer();
   const [achieveOpen, setAchieveOpen] = useState(false);
   const { enqueue } = useCeremony();
   const { showToast } = useToast();
@@ -405,7 +407,20 @@ function GoalDetail({ goal, chapterName, insets, onBack, onEdit, onChanged }: { 
                     <Text style={styles.autoNoteText}>Tracked automatically from your workouts</Text>
                   </View>
                 ) : (
-                  <Pressable onPress={() => setUpdateOpen(true)} accessibilityRole="button" accessibilityLabel="Update progress" style={styles.updateBtn}>
+                  /* `primeKeyboard('decimal-pad')` first, synchronously — the sheet's field is inside a
+                     `<Modal>` and does not exist yet, so its `autoFocus` fires outside this gesture and
+                     iOS Safari shows no keyboard. The DECIMAL primer, because the field it hands over to
+                     is `decimal-pad`; priming the wrong one flips the keyboard visibly on handover.
+                     See `KeyboardPrimer`. */
+                  <Pressable
+                    onPress={() => {
+                      primeKeyboard('decimal-pad');
+                      setUpdateOpen(true);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Update progress"
+                    style={styles.updateBtn}
+                  >
                     <Glyph d={PENCIL} size={16} color={flColor.bronze300} width={2} />
                     <Text style={styles.updateText}>Update Progress</Text>
                   </Pressable>
@@ -533,6 +548,7 @@ function GoalForm({
   const [metricKind, setMetricKind] = useState<MetricKind>(existing?.metricKind ?? 'manual');
   const [metricKey, setMetricKey] = useState<string | null>(existing?.metricKey ?? null);
   const [liftOpen, setLiftOpen] = useState(false);
+  const primeKeyboard = useKeyboardPrimer();
   const [liftSearch, setLiftSearch] = useState('');
   const [saving, setSaving] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
@@ -592,6 +608,9 @@ function GoalForm({
     setMetricKind(k);
     if (k === 'exercise_max') {
       if (!metricKey || DIST_KEYS.includes(metricKey) || BODY_KEYS.includes(metricKey)) {
+        /* Reached from a chip tap, so this IS inside the gesture and priming works — see
+           `KeyboardPrimer`. The sheet it opens is the same one the row below opens. */
+        primeKeyboard();
         setMetricKey(null);
         setLiftOpen(true);
       }
@@ -675,7 +694,17 @@ function GoalForm({
               ))}
             </View>
             {metricKind === 'exercise_max' ? (
-              <Pressable onPress={() => setLiftOpen(true)} accessibilityRole="button" accessibilityLabel="Choose a lift" style={styles.metricRow}>
+              <Pressable
+                /* Primed for the same reason as every other sheet here — the search field inside it does
+                   not exist until the Modal mounts. See `KeyboardPrimer`. */
+                onPress={() => {
+                  primeKeyboard();
+                  setLiftOpen(true);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Choose a lift"
+                style={styles.metricRow}
+              >
                 <Text style={[styles.metricRowText, !metricKey && styles.metricRowPlaceholder]} numberOfLines={1}>
                   {metricKey ?? 'Choose a lift…'}
                 </Text>
@@ -774,7 +803,18 @@ function GoalForm({
                   <Text style={[styles.chipText, !customUnit && unit === u && styles.chipTextOn]}>{u}</Text>
                 </Pressable>
               ))}
-              <Pressable onPress={() => setCustomUnit(true)} accessibilityRole="button" accessibilityState={{ selected: customUnit }} style={[styles.chip, customUnit && styles.chipOn]}>
+              <Pressable
+                /* The plain swap form of the same bug: the `TextInput` below is `{customUnit ? … : null}`,
+                   so it mounts one commit after this tap and its `autoFocus` lands outside the gesture.
+                   See `KeyboardPrimer`. */
+                onPress={() => {
+                  primeKeyboard();
+                  setCustomUnit(true);
+                }}
+                accessibilityRole="button"
+                accessibilityState={{ selected: customUnit }}
+                style={[styles.chip, customUnit && styles.chipOn]}
+              >
                 <Text style={[styles.chipText, customUnit && styles.chipTextOn]}>Custom</Text>
               </Pressable>
             </View>

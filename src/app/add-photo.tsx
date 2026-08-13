@@ -15,6 +15,7 @@ import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { useCapGate } from '@/lib/entitlement';
 import { useMediaPicker } from '@/lib/useMediaPicker';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { PICKER_DB } from '@/domain/exercise-picker/data';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 
@@ -114,6 +115,7 @@ export default function AddPhotoScreen() {
      NAME and the column stores the KEY (0090). */
   const [picked, setPicked] = useState<{ key: string; name: string } | null>(null);
   const [liftOpen, setLiftOpen] = useState(false);
+  const primeKeyboard = useKeyboardPrimer();
   const [liftSearch, setLiftSearch] = useState('');
 
   const liftResults = (() => {
@@ -335,7 +337,13 @@ export default function AddPhotoScreen() {
               {/* Names the lift instead of just saying "Lift". Shows the chosen one so the chip reads back
                   what it did — and stays on only while the label still matches, same rule as `pickedKey`. */}
               <Pressable
-                onPress={() => setLiftOpen(true)}
+                /* `primeKeyboard` first, synchronously: the sheet's search field is inside a `<Modal>`
+                   and does not exist yet, so its `autoFocus` fires outside this gesture and iOS Safari
+                   declines to raise a keyboard. See `KeyboardPrimer`. */
+                onPress={() => {
+                  primeKeyboard();
+                  setLiftOpen(true);
+                }}
                 accessibilityRole="button"
                 accessibilityState={{ selected: !!pickedKey }}
                 accessibilityLabel={pickedKey ? `Lift: ${picked?.name}` : 'Choose a lift'}

@@ -7,6 +7,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
@@ -410,6 +411,7 @@ function ProgramBuilderScreen() {
   const [noteDraft, setNoteDraft] = useState('');
   /** Typing a cardio target instead of stepping to it — which target, and the text so far. */
   const [targetSheet, setTargetSheet] = useState<{ section: BuilderSection; index: number; field: 'time' | 'distance' } | null>(null);
+  const primeKeyboard = useKeyboardPrimer();
   const [targetDraft, setTargetDraft] = useState('');
   /** The unit the target sheet talks in — yards for a pool, miles for the road. */
   const targetUnitLabel =
@@ -711,12 +713,18 @@ function ProgramBuilderScreen() {
               list.map((x, k) => (k !== i ? x : { ...x, targetSec: bumpDuration(x.targetSec ?? null, dir) })),
             )
           }
+          /* Both prime FIRST and synchronously: the sheet's field is inside a `<Modal>`, so it does not
+             exist at the moment of the tap and its `autoFocus` fires one commit later — outside the
+             gesture, which is where iOS Safari stops raising a keyboard. `decimal-pad`, matching the
+             field being handed to. See `KeyboardPrimer`. */
           onTypeTime={(section, i) => {
+            primeKeyboard('decimal-pad');
             const cur = days[draft.openDay!]?.[section]?.[i]?.targetSec;
             setTargetDraft(cur == null ? '' : String(Math.round(cur / 60)));
             setTargetSheet({ section, index: i, field: 'time' });
           }}
           onTypeDistance={(section, i) => {
+            primeKeyboard('decimal-pad');
             const row = days[draft.openDay!]?.[section]?.[i];
             const unit = distanceUnitFor((row?.activity ?? 'run') as CardioActivity, metric);
             setTargetDraft(row?.targetMi == null ? '' : fmtDistanceIn(row.targetMi, unit));
