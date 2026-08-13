@@ -1,34 +1,47 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Circle, Defs, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useReducedMotion } from 'react-native-reanimated';
 
 import { Button } from '@/components/forge/composites/Button';
-import { Card } from '@/components/forge/composites/Surface';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useCeremony, useToast } from '@/hooks/useCeremony';
 import { saveWorkoutAsTemplate } from '@/data/templates-live';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { useUnits } from '@/lib/settings';
 import { displayWeight } from '@/domain/settings/units';
 import { WORKOUT_NAME_MAX, fetchCompletion, renameWorkout, savePlaylist, saveReflection, saveWorkoutNote, type CompletionCardio, type CompletionHero, type ExerciseDelta } from '@/data/workout-complete-live';
 import { fetchWorkoutAsSession } from '@/data/continue-workout-live';
 import { persistSession } from '@/domain/workout/autosave';
 import { withinContinueWindow } from '@/domain/workout/save';
-import { openPlaylist, PlaylistChip, PlaylistSheet } from '@/components/forge/composites/Playlist';
-import type { WorkoutPlaylistLink } from '@/domain/workout/playlist';
+import { PlaylistSheet } from '@/components/forge/composites/Playlist';
+import { playlistLabel, type WorkoutPlaylistLink } from '@/domain/workout/playlist';
 import { distanceLabel, fmtClock, fmtPace, toDistance, toPace, type UnitSystem } from '@/domain/run/run-core';
 import { recapSummaryFrom } from '@/data/squad-feed-live';
+import { fetchTodaysChapterPhotos } from '@/data/photos-live';
+import { fetchRecentPlaylists } from '@/data/playlists-live';
 import { ShareSessionSheet } from '@/components/forge/ShareSessionSheet';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 
 const AnimatedGradient = Animated.createAnimatedComponent(LinearGradient);
 
-type Step = 'seal' | 'record' | 'reflect' | 'share';
+/**
+ * TWO STAGES AND A DETOUR — `handoff/workout-complete-flow-change.md`.
+ *
+ * `seal` is the ceremony and it is finished the moment the hold completes. `capture` is a SECOND,
+ * distinct moment that happens after closure: the note, the photo and the playlist, with Share as the
+ * one filled button. `record` ("See the details") is an optional detour off either of them and returns
+ * to whichever one opened it.
+ *
+ * There is deliberately no path from `capture` back to `seal`. The seal is a one-time moment, and a
+ * screen that lets you walk back into it is offering a ritual whose outcome already happened.
+ */
+type Stage = 'seal' | 'capture' | 'record';
 
 // "Under Iron" clock, mm:ss (h:mm:ss past an hour) — matches the design's 52:18.
 function fmtDuration(sec: number): string {
@@ -136,10 +149,30 @@ export default function WorkoutComplete() {
   /* ⚠ `mySquads`, `squadStep` and `sharing` moved into `ShareSessionSheet` with the destination logic.
      They were screen state serving a sheet that is no longer this screen's, and leaving them here would
      be three variables that look like they still decide something. */
-  const [shareOpen, setShareOpen] = useState(false);
   const vol = (lb: number) => thousands(displayWeight(lb, units).value);
   const volUnit = displayWeight(0, units).unit;
-  const [step, setStep] = useState<Step>('seal');
+  /*
+   * ⚠ A REVIEWED SESSION OPENS ON `capture`, NOT ON `seal`.
+   *
+   * The seal face is a ceremony, and this screen's own rule (see the `review` note above) is that the
+   * ritual must not replay — so in review it had already been reduced to a medallion with a "Done"
+   * button under it, a ceremony with its ceremony removed. `capture` says exactly what is true of a
+   * session you have come back to: *the workout is sealed, what surrounds it is still yours to add*. It
+   * also carries every write that stays meaningful later — the note, the playlist, the photo, and Share
+   * — which the corner share glyph used to be the only door to.
+   *
+   * Nothing is lost by it. The medallion is here at 72px, the numbers are on the meta line, and the PR
+   * badges, the deltas and the record breakdown are one tap away on "See workout details".
+   */
+  const [stage, setStage] = useState<Stage>(review ? 'capture' : 'seal');
+  /** Which stage opened The Record, so its back control returns there instead of a hardcoded target. */
+  const [from, setFrom] = useState<Exclude<Stage, 'record'>>(review ? 'capture' : 'seal');
+  const openRecord = () => {
+    setFrom(stage === 'capture' ? 'capture' : 'seal');
+    setStage('record');
+  };
+  /** The one sheet the capture stage has open, if any. */
+  const [sheet, setSheet] = useState<'note' | 'playlist' | 'share' | null>(null);
   /* Saving the day as a template. Offered on The Record and nowhere else — it belongs beside the shape it
      would keep, and the primary path (Seal → hold → Legacy) never sees it, which is the point. Most
      sessions should not be templates. */
@@ -148,6 +181,7 @@ export default function WorkoutComplete() {
   /* Naming happens at save time, not afterwards. A template called "Freestyle Workout" is one you have
      to open to identify, and by the time you notice you're on a different screen. */
   const [nameOpen, setNameOpen] = useState(false);
+  const primeKeyboard = useKeyboardPrimer();
   const [templateName, setTemplateName] = useState('');
   /*
    * The session's own name, once the athlete has changed it. Same three-state idiom as `playlistEdit`
@@ -159,7 +193,45 @@ export default function WorkoutComplete() {
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameDraft, setRenameDraft] = useState('');
   const [savingName, setSavingName] = useState(false);
+  /* The reflection being typed in the note sheet, and the one that has been SEALED from this screen.
+     Same three-state idiom as `playlistEdit` below: `undefined` means "untouched — whatever the database
+     said", so a units-change refetch cannot wipe a note that was just written. */
   const [note, setNote] = useState('');
+  const [reflectionEdit, setReflectionEdit] = useState<string | undefined>(undefined);
+  const [savingNote, setSavingNote] = useState(false);
+  const reflection = (reflectionEdit !== undefined ? reflectionEdit : (data?.reflection ?? '')).trim();
+
+  /*
+   * HOW MANY PHOTOS THIS SCREEN PUT IN THE ARCHIVE — a delta, not a count.
+   *
+   * ⚠ A PHOTO IS NOT ATTACHED TO A WORKOUT. `chapter_photos` hangs off a CHAPTER and a date (L-15
+   * §2); there is no workout column and adding one is not this change's job. So "N photos attached"
+   * cannot be read back from the session — it has to be measured as *what you added while you were
+   * here*, which is the difference between today's photo count when this screen opened and now.
+   *
+   * Re-measured on focus rather than after the push resolves, because `/add-photo` is a route: it can
+   * be left by its own Close, by the system back gesture or by adding a photo, and only one of those
+   * ever comes back through a promise.
+   */
+  const [photoCount, setPhotoCount] = useState<{ base: number; now: number } | null>(null);
+  const photos = photoCount ? Math.max(0, photoCount.now - photoCount.base) : 0;
+  useFocusEffect(
+    useCallback(() => {
+      let alive = true;
+      void fetchTodaysChapterPhotos().then(
+        (p) => {
+          // Functional update: the baseline is whatever the FIRST read saw, and must survive every later one.
+          if (alive) setPhotoCount((prev) => (prev ? { base: prev.base, now: p.length } : { base: p.length, now: p.length }));
+        },
+        () => {
+          // A failed read just means the row keeps saying "Add photo or video" — never a wrong number.
+        },
+      );
+      return () => {
+        alive = false;
+      };
+    }, []),
+  );
   /*
    * The playlist, as it stands after any edit made on this screen (§8A.2).
    *
@@ -170,12 +242,30 @@ export default function WorkoutComplete() {
    * this repo's react-compiler lint requires.
    */
   const [playlistEdit, setPlaylistEdit] = useState<WorkoutPlaylistLink | null | undefined>(undefined);
-  const [playlistSheetOpen, setPlaylistSheetOpen] = useState(false);
   const [savingPlaylist, setSavingPlaylist] = useState(false);
+  /* Read on load rather than when the sheet opens: it is one small query, and a list that appears a
+     beat after the sheet does is a list the athlete has already scrolled past. */
+  const { data: recentPlaylists } = useQuery(() => fetchRecentPlaylists().catch(() => []), []);
   const playlist = playlistEdit !== undefined ? playlistEdit : (data?.playlist ?? null);
   const [sealed, setSealed] = useState(false);
   const [hold] = useState(() => new Animated.Value(0));
   const [holdPct, setHoldPct] = useState(0); // mirror of the hold value → "Keep holding…" + ink-flip past 55%
+  const reduce = useReducedMotion();
+  /* The capture stage arrives as ONE rise — opacity 0→1 with a 14px lift, 560ms, on the whole block.
+     Deliberately not staggered per child: this is a second moment settling into place, not a list
+     assembling itself. Instant under reduced motion, with the layout unchanged. */
+  const [rise] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    if (stage !== 'capture') return;
+    if (reduce) {
+      rise.setValue(1);
+      return;
+    }
+    rise.setValue(0);
+    const a = Animated.timing(rise, { toValue: 1, duration: 560, useNativeDriver: true });
+    a.start();
+    return () => a.stop();
+  }, [stage, reduce, rise]);
   // First-run "Chapter comes alive" reveal (ONB-D18) — a restrained bronze fade/scale-in on workout #1.
   const [reveal] = useState(() => new Animated.Value(0));
   useEffect(() => {
@@ -208,14 +298,20 @@ export default function WorkoutComplete() {
   const shownName = sessionName ?? 'Workout';
 
   /** Opens the naming sheet, prefilled with what the session was called. */
+  /* ⚠ BOTH PRIME FIRST, SYNCHRONOUSLY. Each opens a `BottomSheet`, which is a bare `<Modal>` — its field
+     does not exist at the moment of the tap, so `autoFocus` fires one commit later, outside the gesture,
+     and iOS Safari focuses the field without raising a keyboard. See `KeyboardPrimer`.
+     After the early return, so a tap that opens nothing does not put a keyboard up over the screen. */
   const openTemplateName = () => {
     if (!data || savingTemplate || savedTemplate) return;
+    primeKeyboard();
     setTemplateName(sessionName ?? '');
     setNameOpen(true);
   };
 
   const openRename = () => {
     if (!data || savingName) return;
+    primeKeyboard();
     setRenameDraft(sessionName ?? '');
     setRenameOpen(true);
   };
@@ -347,7 +443,16 @@ export default function WorkoutComplete() {
         setSealed(true);
         const nav = typeof navigator !== 'undefined' ? (navigator as { vibrate?: (p: number[]) => void }) : null;
         nav?.vibrate?.([10, 28, 45]); // haptics (web only; no-ops on native)
-        setTimeout(goHome, 650);
+        /*
+         * ⚠ THE SEAL NO LONGER LEAVES. It used to `goHome()` — the ceremony ended and the athlete was
+         * put on the Legacy tab, which is why the note, the photo and the playlist all had to be
+         * offered BEFORE the seal, in front of the moment instead of after it.
+         *
+         * 850ms is the stamp ring finishing (700ms) plus a beat to read "Sealed". Instant under
+         * reduced motion, where there is no stamp to wait for.
+         */
+        if (reduce) setStage('capture');
+        else setTimeout(() => setStage('capture'), 850);
       }
     });
   };
@@ -364,20 +469,34 @@ export default function WorkoutComplete() {
    * connection was discarded, the screen went to Legacy, and the athlete had every reason to believe it
    * was kept. This is the one surface whose own copy promises they will read it again someday.
    *
-   * On failure we now STAY. The workout itself is already committed, so staying costs nothing and is the
-   * only way the words survive long enough to retry — tapping Done again re-sends them. Going home with
-   * an apology would be honest and still lose the note.
+   * On failure we now STAY — the sheet does not close and the text stays in the field. The workout
+   * itself is already committed, so staying costs nothing and is the only way the words survive long
+   * enough to retry. Dismissing with an apology would be honest and still lose the note.
    */
   const onSealNote = async () => {
-    if (note.trim() && data) {
-      try {
-        await saveReflection(data.workoutId, note.trim());
-      } catch (e) {
-        showToast(errorMessage(e) || 'Couldn’t save your note — your workout is saved. Tap Done to try again.');
-        return;
-      }
+    if (!data || savingNote) return;
+    const text = note.trim();
+    if (!text) {
+      setSheet(null);
+      return;
     }
-    goHome();
+    setSavingNote(true);
+    try {
+      await saveReflection(data.workoutId, text);
+      setReflectionEdit(text);
+      setSheet(null);
+      showToast('Sealed with this session.');
+    } catch (e) {
+      showToast(errorMessage(e) || 'Couldn’t save your note — your workout is saved. Try again.');
+    } finally {
+      setSavingNote(false);
+    }
+  };
+  /* The sheet seeds its field from what is already stored, so re-opening a sealed note shows it back
+     rather than an empty box that looks like the note was lost. */
+  const openNote = () => {
+    setNote(reflection);
+    setSheet('note');
   };
   /*
    * §8A.2: the link "saves immediately on 'Save Playlist' confirmation, independent of 'Done'." There is
@@ -392,7 +511,7 @@ export default function WorkoutComplete() {
     if (!data || savingPlaylist) return;
     const previous = playlist;
     setPlaylistEdit(link);
-    setPlaylistSheetOpen(false);
+    setSheet(null);
     setSavingPlaylist(true);
     savePlaylist(data.workoutId, link).then(
       () => {
@@ -406,14 +525,10 @@ export default function WorkoutComplete() {
       },
     );
   };
-  const onOpenPlaylist = () => {
-    if (!playlist) return;
-    void openPlaylist(playlist).then((ok) => {
-      // §2 rules out checking that a link resolves to a real playlist, so this only reports that nothing
-      // on the device would take it — never that the playlist is gone.
-      if (!ok) showToast('Nothing on this device could open that link.');
-    });
-  };
+  /* ⚠ `onOpenPlaylist` WENT WITH THE CHIP. The capture row is an attach/edit control — one tap, one
+     sheet — so there is no "Open ›" here any more. Following the link is still offered where it belongs,
+     on Activity Detail, which is the screen you go to when you want to look at a session rather than
+     finish one. */
 
   if (loading || !data) {
     return (
@@ -423,8 +538,131 @@ export default function WorkoutComplete() {
     );
   }
 
-  // ── Stage 1 · Seal ──
-  if (step === 'seal') {
+  /*
+   * ── THE CAPTURE STAGE'S THREE SHEETS ──
+   *
+   * Declared here, below the loading guard, so they can read `data` without threading `?.` through every
+   * line of a card that is only ever drawn once the session has loaded. They are mounted in the capture
+   * branch and nowhere else, which is the rule `__tests__/overlay-branch.test.mjs` exists to hold.
+   */
+
+  /*
+   * WHAT THEY ARE ABOUT TO SEND, BEFORE THEY CHOOSE WHERE.
+   *
+   * Passed INTO the share sheet rather than built inside it: the seal mark, the chapter and the unit
+   * conversion all live on this screen, and Activity Detail — which opens the same sheet — holds a
+   * different shape and simply passes nothing.
+   */
+  const shareCard = (
+    <View style={styles.shareCard}>
+      <LinearGradient colors={['#0E1216', '#070A0C']} style={StyleSheet.absoluteFill} />
+      {/* RN has no radial gradient; a top-anchored linear wash that fades out by ~55% is the sanctioned
+          stand-in (the same trick the Mission Card uses). */}
+      <LinearGradient
+        colors={['rgba(198,154,110,0.13)', 'rgba(198,154,110,0)']}
+        locations={[0, 0.55]}
+        style={StyleSheet.absoluteFill}
+      />
+      <CaptureSeal size={64} />
+      <Text style={styles.shareSealed}>SESSION SEALED</Text>
+      <Text style={styles.shareName} numberOfLines={2}>
+        {shownName}
+      </Text>
+      {data.chapterName || data.dateLabel ? (
+        <Text style={styles.shareChapter}>{[data.chapterName, data.dateLabel].filter(Boolean).join(' · ')}</Text>
+      ) : null}
+      <View style={styles.shareRule} />
+      <View style={styles.shareStats}>
+        <ShareStat n={vol(data.volume)} label="Volume" />
+        <View style={styles.shareStatDiv} />
+        <ShareStat n={fmtDuration(data.durationSec)} label="Under Iron" />
+      </View>
+      <Text style={styles.shareWordmark}>FORGE LEGACY</Text>
+    </View>
+  );
+
+  const noteSheet = (
+    <BottomSheet open={sheet === 'note'} onClose={() => setSheet(null)} title="A note for future you">
+      <View style={styles.noteSheet}>
+        <Text style={styles.noteHelper}>One line. You&apos;ll read it again someday.</Text>
+        {/* SMART OMISSION: no past note, no block — never an empty state explaining what a memory would be.
+            The label is the data layer's, because only it knows whether this was a year ago or last time. */}
+        {data.pastReflection ? (
+          <View style={styles.pastRef}>
+            <Text style={styles.pastRefLabel}>{data.pastReflection.label}</Text>
+            <Text style={styles.pastRefText}>“{data.pastReflection.text}”</Text>
+          </View>
+        ) : null}
+        <TextInput
+          style={styles.noteInput}
+          placeholder="Today I…"
+          placeholderTextColor={flColor.gray600}
+          multiline
+          numberOfLines={3}
+          value={note}
+          onChangeText={setNote}
+          accessibilityLabel="Your reflection"
+        />
+        <Button variant="primary" fullWidth onPress={() => void onSealNote()} accessibilityLabel="Seal the note">
+          {savingNote ? 'Sealing…' : 'Seal the Note'}
+        </Button>
+      </View>
+    </BottomSheet>
+  );
+
+  /*
+   * ⚠ THE ATTACH SHEET, NOT A LIST OF PLAYLISTS — and that is a product fact, not a shortcut.
+   *
+   * The handoff draws this as rows you pick from, which presumes a library the app can read.
+   * Workout-Playlist-Amendment-001 §7/§8A.1 rules that out in as many words: V1 stores a link and a
+   * service tag, "no OAuth, no SDK, no metadata fetch, no cover art". There is nothing to list. What the
+   * handoff is actually insisting on — *this is a manual picker, there is no auto-detection of what was
+   * playing* — is exactly what this sheet already is, and §8.5 requires both attach points to open this
+   * same one rather than a second copy.
+   *
+   * Mounted conditionally because its draft fields seed from `initial` in a `useState` initialiser.
+   */
+  const playlistSheet =
+    sheet === 'playlist' ? (
+      <PlaylistSheet
+        initial={playlist}
+        /* What they trained to before, one tap each. The nearest thing to "detect what was playing"
+           that this stack can honestly do — see `fetchRecentPlaylists`. */
+        recent={recentPlaylists ?? []}
+        onClose={() => setSheet(null)}
+        onSave={onSavePlaylist}
+        saving={savingPlaylist}
+      />
+    ) : null;
+
+  /* ⚠ THE SAME SHEET ACTIVITY DETAIL USES. It lived inline on this screen, which is why the only way to
+     share a session was to have just finished one. The audience rules, the squad-count edge cases and the
+     `(audience = 'FRIENDS') = (squad_id is null)` constraint have one home. */
+  const shareSheet = (
+    <ShareSessionSheet
+      open={sheet === 'share'}
+      onClose={() => setSheet(null)}
+      workoutId={data.workoutId}
+      workoutName={shownName}
+      /* `sessionName`, not `data.workoutName`: renaming the session on The Record and then sharing must
+         not post the title the athlete just replaced. */
+      summary={recapSummaryFrom({ ...data, workoutName: sessionName })}
+      preview={shareCard}
+    />
+  );
+
+  /*
+   * ── Stage 1 · Seal ── UNTOUCHED BY THIS CHANGE EXCEPT IN TWO PLACES.
+   *
+   * Its only job is "you finished, it is sealed", and nothing may be added to it — so the corner share
+   * chip is GONE (Share lives on the capture stage now, as the one filled button) and the hold's outcome
+   * changed from "leave" to "become the capture stage". The hold interaction, the fill, the haptics, the
+   * "Sealed" label swap and the stamp ring are all exactly as they were.
+   *
+   * Unreachable in review: a reviewed session opens on `capture` and there is no path back here, which
+   * is why the `|| review` guards this branch used to carry are gone rather than left reading as live.
+   */
+  if (stage === 'seal') {
     const fillW = hold.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
     /*
      * "Up next" comes from the program this workout actually belonged to, and from nowhere else.
@@ -445,11 +683,10 @@ export default function WorkoutComplete() {
       const scale = reveal.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1] });
       return (
         <Shell>
-          <ShareChip onPress={() => setStep('share')} />
           <View style={styles.center}>
             <Text style={styles.firstEyebrow}>Your Chapter begins</Text>
             <Animated.View style={{ opacity: reveal, transform: [{ scale }] }}>
-              <SealMedallion size={132} sealed={sealed || review} />
+              <SealMedallion size={132} sealed={sealed} />
             </Animated.View>
             <Animated.Text style={[styles.revealChapter, { opacity: reveal, transform: [{ scale }] }]}>
               {data.chapterName ?? 'Your Chapter'}
@@ -471,7 +708,7 @@ export default function WorkoutComplete() {
             />
               <Text style={[styles.holdText, (sealed || holdPct > 0.55) && styles.holdTextDark]}>{sealed ? 'Sealed' : holdPct > 0 ? 'Keep holding…' : 'Hold to Seal'}</Text>
             </Pressable>
-            <Pressable onPress={() => setStep('record')} accessibilityRole="button" accessibilityLabel="See the details" style={styles.textLink}>
+            <Pressable onPress={openRecord} accessibilityRole="button" accessibilityLabel="See the details" style={styles.textLink}>
               <Text style={styles.textLinkText}>See the details</Text>
             </Pressable>
           </View>
@@ -481,16 +718,15 @@ export default function WorkoutComplete() {
 
     return (
       <Shell>
-        <ShareChip onPress={() => setStep('share')} />
         <View style={styles.center}>
           {data.chapterName ? <Text style={styles.eyebrow}>{data.chapterName}</Text> : null}
-          <SealMedallion size={132} sealed={sealed || review} />
+          <SealMedallion size={132} sealed={sealed} />
           {/*
             Name the destination. "Session Sealed" tells the athlete something happened but not where it
             went — and the chapter card is the only place it lands, so say so.
           */}
-          <Text style={[styles.sealStatus, (sealed || review) && styles.sealStatusSealed]}>
-            {sealed || review ? (data.chapterName ? `Sealed to ${data.chapterName}` : 'Session Sealed') : 'Session Complete'}
+          <Text style={[styles.sealStatus, sealed && styles.sealStatusSealed]}>
+            {sealed ? (data.chapterName ? `Sealed to ${data.chapterName}` : 'Session Sealed') : 'Session Complete'}
           </Text>
           <Text style={styles.sealTitle}>{shownName}</Text>
           {data.dateLabel ? <Text style={styles.sealSubtitle}>{data.dateLabel}</Text> : null}
@@ -514,38 +750,26 @@ export default function WorkoutComplete() {
                 <Text style={styles.upNextText}>Up next · {nextName}</Text>
               </View>
             ) : null}
-            {/* REVIEW SHOWS NO HOLD. The ritual already happened, and the hold writes nothing — offering
-                it again would be theatre over a settled fact. A plain Done returns where you came from. */}
-            {review ? (
-              <Pressable style={[styles.holdBtn, styles.holdBtnInSection]} onPress={goHome} accessibilityRole="button" accessibilityLabel="Done">
-                <AnimatedGradient
-                  colors={flGradient.bronzeMetallic.colors}
-                  locations={flGradient.bronzeMetallic.locations}
-                  start={flGradient.bronzeMetallic.start}
-                  end={flGradient.bronzeMetallic.end}
-                  style={[styles.holdFill, styles.holdFillFull]}
-                />
-                <Text style={[styles.holdText, styles.holdTextDark]}>Done</Text>
-              </Pressable>
-            ) : (
-              <Pressable
-                style={[styles.holdBtn, styles.holdBtnInSection]}
-                onPressIn={startHold}
-                onPressOut={cancelHold}
-                accessibilityRole="button"
-                accessibilityLabel="Press and hold to seal"
-              >
-                <AnimatedGradient
-                  colors={flGradient.bronzeMetallic.colors}
-                  locations={flGradient.bronzeMetallic.locations}
-                  start={flGradient.bronzeMetallic.start}
-                  end={flGradient.bronzeMetallic.end}
-                  style={[styles.holdFill, { width: fillW }]}
-                />
-                <Text style={[styles.holdText, (sealed || holdPct > 0.55) && styles.holdTextDark]}>{sealed ? 'Sealed' : holdPct > 0 ? 'Keep holding…' : 'Hold to Seal'}</Text>
-              </Pressable>
-            )}
-            <Pressable onPress={() => setStep('record')} accessibilityRole="button" accessibilityLabel="See the details" style={styles.textLink}>
+            {/* REVIEW NEVER REACHES THIS. The ritual already happened, and the hold writes nothing —
+                offering it again would be theatre over a settled fact, so a reviewed session opens on
+                the capture stage instead of on a ceremony with its ceremony taken out. */}
+            <Pressable
+              style={[styles.holdBtn, styles.holdBtnInSection]}
+              onPressIn={startHold}
+              onPressOut={cancelHold}
+              accessibilityRole="button"
+              accessibilityLabel="Press and hold to seal"
+            >
+              <AnimatedGradient
+                colors={flGradient.bronzeMetallic.colors}
+                locations={flGradient.bronzeMetallic.locations}
+                start={flGradient.bronzeMetallic.start}
+                end={flGradient.bronzeMetallic.end}
+                style={[styles.holdFill, { width: fillW }]}
+              />
+              <Text style={[styles.holdText, (sealed || holdPct > 0.55) && styles.holdTextDark]}>{sealed ? 'Sealed' : holdPct > 0 ? 'Keep holding…' : 'Hold to Seal'}</Text>
+            </Pressable>
+            <Pressable onPress={openRecord} accessibilityRole="button" accessibilityLabel="See the details" style={styles.textLink}>
               <Text style={styles.textLinkText}>See the details</Text>
             </Pressable>
           </View>
@@ -554,13 +778,111 @@ export default function WorkoutComplete() {
     );
   }
 
-  // ── Stage 2 · Record — "See the details" ──
-  if (step === 'record') {
+  /*
+   * ── Stage 2 · Capture — a second, distinct moment that happens AFTER closure ──
+   *
+   * Everything flows from the top: no `marginTop: auto`, no space-between, no pinned footer. The dead
+   * band between the rows and the buttons is the defect this layout exists to not have.
+   *
+   * The three rows are offers, not steps — nothing here is required and nothing is "skipped". The only
+   * done-affordance is the icon shifting from bronze-primary to bronze-bright; no ticks, no badges.
+   */
+  if (stage === 'capture') {
+    const noteFilled = reflection.length > 0;
+    const playlistName = playlist ? playlistLabel(playlist) : '';
+    /* One line instead of the seal stage's boxed stat strip — the numbers are a fact you already read a
+       moment ago, not the subject of this screen. Volume is omitted rather than shown as "0" on a
+       session that moved none (a run, a mobility day). */
+    const metaLine = [data.dateLabel, fmtDuration(data.durationSec), data.volume > 0 ? `${vol(data.volume)} volume` : null]
+      .filter(Boolean)
+      .join(' · ');
+    const riseY = rise.interpolate({ inputRange: [0, 1], outputRange: [14, 0] });
+
+    return (
+      <Shell>
+        <ScrollView contentContainerStyle={styles.capScroll} showsVerticalScrollIndicator={false}>
+          <Animated.View style={[styles.capBlock, { opacity: rise, transform: [{ translateY: riseY }] }]}>
+            {/* No ember glow and no pulse. The glow belongs to the ceremony, and this is not one. */}
+            <CaptureSeal size={72} />
+            <Text style={styles.capName}>{shownName}</Text>
+            {metaLine ? <Text style={styles.capMeta}>{metaLine}</Text> : null}
+
+            <View style={styles.capSection}>
+              <Text style={styles.capSectionLabel}>YOUR RECORD</Text>
+              {/* Load-bearing copy: it is the only thing explaining why the workout is already done and
+                  there are still things to add. Do not rewrite it. */}
+              <Text style={styles.capSectionBody}>The workout is sealed. What surrounds it is still yours to add.</Text>
+            </View>
+
+            <View style={styles.capRows}>
+              <CaptureRow
+                icon={<PencilGlyph size={18} color={noteFilled ? flColor.bronze300 : flColor.bronze400} />}
+                label={noteFilled ? `“${reflection}”` : 'Add a note'}
+                filled={noteFilled}
+                onPress={openNote}
+              />
+              <CaptureRow
+                divided
+                icon={<CameraGlyph size={18} color={photos > 0 ? flColor.bronze300 : flColor.bronze400} />}
+                label={photos > 0 ? `${photos} ${photos === 1 ? 'photo' : 'photos'} attached` : 'Add photo or video'}
+                filled={photos > 0}
+                /*
+                 * ROUTES TO THE ARCHIVE'S ONE DOOR rather than opening a bare picker. `/add-photo` is
+                 * where the 75-photo / 5-video cap is actually enforced (M-7's pre-action check — see
+                 * `useMediaPicker`'s header on why it is not enforced in the picker), and it is where a
+                 * photo gets its date, its label and its caption. A picker wired straight in here would
+                 * bypass the cap and file every shot as an unlabelled one.
+                 */
+                onPress={() => router.push('/add-photo')}
+              />
+              <CaptureRow
+                divided
+                icon={<NoteGlyph size={18} color={playlist ? flColor.bronze300 : flColor.bronze400} />}
+                label={playlist ? playlistName : 'Add playlist'}
+                filled={!!playlist}
+                onPress={() => setSheet('playlist')}
+              />
+            </View>
+
+            {/* The only filled button on this screen. */}
+            <View style={styles.capShare}>
+              <Button variant="primary" fullWidth onPress={() => setSheet('share')} accessibilityLabel="Share your workout">
+                Share your workout
+              </Button>
+            </View>
+
+            {/* Two bare text buttons, never full-width ones. The weight difference is the whole hierarchy:
+                the exit reads above the secondary navigation, and neither competes with Share. */}
+            <View style={styles.capExits}>
+              <Pressable onPress={goHome} accessibilityRole="button" accessibilityLabel={review ? 'Done' : 'Back to home'} style={styles.capExitBtn}>
+                <Text style={styles.capExit}>{review ? 'Done' : 'Back to home'}</Text>
+              </Pressable>
+              <Pressable onPress={openRecord} accessibilityRole="button" accessibilityLabel="See workout details" style={styles.capExitBtn}>
+                <Text style={styles.capExitSub}>See workout details</Text>
+              </Pressable>
+            </View>
+          </Animated.View>
+        </ScrollView>
+
+        {noteSheet}
+        {playlistSheet}
+        {shareSheet}
+      </Shell>
+    );
+  }
+
+  /*
+   * ── The Record — "See the details" / "See workout details" ──
+   *
+   * No longer a step in a forced sequence: it is an optional detour off either stage, it auto-advances
+   * to nothing, and both its back arrow and its bottom button return to whichever stage opened it.
+   */
+  if (stage === 'record') {
     const volUp = data.volumeDelta != null && data.volumeDelta > 0;
     return (
       <Shell>
         <View style={styles.recHeader}>
-          <Pressable onPress={() => setStep('seal')} accessibilityRole="button" accessibilityLabel="Back to the seal" style={styles.recBack}>
+          <Pressable onPress={() => setStage(from)} accessibilityRole="button" accessibilityLabel="Back" style={styles.recBack}>
             <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
               <Path d="M15 5l-7 7 7 7" />
             </Svg>
@@ -763,9 +1085,17 @@ export default function WorkoutComplete() {
             </View>
           </View>
 
+          {/* CONTEXTUAL, because this screen is now reached from two places and popping is all it does.
+              "Done" ends a ceremony you have not finished yet; "Back to your record" is what returning to
+              the capture stage actually is. */}
           <View style={styles.recAction}>
-            <Button variant="primary" fullWidth onPress={() => setStep('reflect')} accessibilityLabel="Done">
-              Done
+            <Button
+              variant="primary"
+              fullWidth
+              onPress={() => setStage(from)}
+              accessibilityLabel={from === 'capture' ? 'Back to your record' : 'Done'}
+            >
+              {from === 'capture' ? 'Back to Your Record' : 'Done'}
             </Button>
           </View>
         </ScrollView>
@@ -777,151 +1107,18 @@ export default function WorkoutComplete() {
     );
   }
 
-  // ── Stage 3 · Reflect ──
-  if (step === 'reflect') {
-    return (
-      <Shell>
-        <View style={styles.reflectWrap}>
-          <Text style={styles.eyebrow}>One Last Thing</Text>
-          <Text style={styles.reflectTitle}>A note for future you</Text>
-          <Text style={styles.reflectSub}>One line. You’ll read it again someday.</Text>
-          {data.pastReflection ? (
-            <View style={styles.pastRef}>
-              <Text style={styles.pastRefLabel}>{data.pastReflection.label}</Text>
-              <Text style={styles.pastRefText}>“{data.pastReflection.text}”</Text>
-            </View>
-          ) : null}
-          <TextInput
-            style={styles.reflectInput}
-            placeholder="Today I…"
-            placeholderTextColor={flColor.gray600}
-            multiline
-            value={note}
-            onChangeText={setNote}
-            accessibilityLabel="Your reflection"
-          />
-          {/* A photo is never more available than right after the session that earned it. Routes to the
-              shared capture flow against the ACTIVE chapter, which is the one this workout belongs to —
-              creation stays a chapter action (L-15 arch §2), this is just the moment it is offered. */}
-          <Pressable
-            onPress={() => router.push('/add-photo')}
-            accessibilityRole="button"
-            accessibilityLabel="Add a photo or video to this chapter"
-            style={({ pressed }) => [styles.addMedia, pressed ? styles.addMediaPressed : null]}
-          >
-            <CameraGlyph />
-            <Text style={styles.addMediaLabel}>Add a Photo or Video</Text>
-          </Pressable>
-
-          {/*
-            PLAYLIST — W-17 §8A, Tier 5.
-            The spec files it "alongside notes in this tier", and on this screen the reflection step IS
-            Tier 5, so it sits under the note and the photo offer rather than in its own labelled card.
-
-            §8A.1: when there's no link, the "+ Attach a playlist" CTA is the SOLE element — no empty-state
-            copy, nothing explaining what a playlist section would be. An athlete who doesn't want one
-            should read one short line and move on.
-
-            Authored to the app's language rather than traced: `Forge Workout Complete.dc.html` has no
-            playlist in it (the design's playlist row lives on W-19's `.dc`, which §9A matches exactly).
-            The chip's shape — glyph · name · "Open ›" — is §5's, which both surfaces share.
-          */}
-          {playlist ? (
-            <View style={styles.playlistBlock}>
-              <PlaylistChip
-                link={playlist}
-                onOpen={onOpenPlaylist}
-                onEdit={() => setPlaylistSheetOpen(true)}
-                onRemove={() => onSavePlaylist(null)}
-              />
-            </View>
-          ) : (
-            <Pressable
-              onPress={() => setPlaylistSheetOpen(true)}
-              accessibilityRole="button"
-              accessibilityLabel="Attach a playlist to this session"
-              style={({ pressed }) => [styles.addMedia, styles.playlistBlock, pressed ? styles.addMediaPressed : null]}
-            >
-              <NoteGlyph />
-              <Text style={styles.addMediaLabel}>Attach a Playlist</Text>
-            </Pressable>
-          )}
-
-          <View style={styles.reflectActions}>
-            <Button variant="primary" fullWidth onPress={onSealNote} accessibilityLabel="Seal the note">
-              Seal the Note
-            </Button>
-            <Button variant="text" fullWidth onPress={goHome} accessibilityLabel="Skip for today">
-              Skip for today
-            </Button>
-          </View>
-        </View>
-
-        {/* The same sheet W-9's "⋯ Options" opens (§8A.2). Mounted only while open so its draft fields
-            seed from the current link — see PlaylistSheetProps. */}
-        {playlistSheetOpen ? (
-          <PlaylistSheet
-            initial={playlist}
-            onClose={() => setPlaylistSheetOpen(false)}
-            onSave={onSavePlaylist}
-            saving={savingPlaylist}
-          />
-        ) : null}
-      </Shell>
-    );
-  }
-
-  // ── Stage 4 · Share ──
-  return (
-    <Shell>
-      <View style={styles.center}>
-        <Card variant="hero" style={styles.shareCard}>
-          <SealMedallion size={96} />
-          <Text style={styles.shareSealed}>Session Sealed</Text>
-          <Text style={styles.shareName}>{shownName}</Text>
-          {data.chapterName || data.dateLabel ? <Text style={styles.shareChapter}>{[data.chapterName, data.dateLabel].filter(Boolean).join(' · ')}</Text> : null}
-          <View style={styles.shareDivider} />
-          <View style={styles.sealStats}>
-            <Stat n={vol(data.volume)} label="Volume" />
-            <View style={styles.statDivider} />
-            <Stat n={fmtDuration(data.durationSec)} label="Under Iron" />
-          </View>
-          <Text style={styles.shareWordmark}>FORGE LEGACY</Text>
-          <Text style={styles.shareTagline}>Build your story.</Text>
-        </Card>
-        {/*
-          ⚠ ONE SHARE BUTTON, NOT TWO. This was "Share" and "Share to Forge" side by side, which asked
-          the athlete to choose a MECHANISM before choosing an AUDIENCE — and the two words are close
-          enough that the difference was learned by tapping one and finding out. PO: *"just have a share
-          button, not a share and a share to Forge. Those can be combined in a nice way."*
-
-          The combination is that the destination sheet already existed and already listed audiences;
-          the operating system is now simply one more destination in it. One entry point, every place a
-          session can go behind it.
-        */}
-        <View style={styles.shareActions}>
-          <Button variant="primary" fullWidth onPress={() => setShareOpen(true)} accessibilityLabel="Share this session">
-            Share
-          </Button>
-          <Button variant="text" fullWidth onPress={() => setStep('seal')} accessibilityLabel="Back">
-            Back
-          </Button>
-        </View>
-      </View>
-
-      {/* ⚠ THE SAME SHEET ACTIVITY DETAIL USES. It lived inline here, which is why the only way to
-          share a session was to have just finished one. Extracted to `ShareSessionSheet` — the audience
-          rules, the squad-count edge cases and the `(audience = 'FRIENDS') = (squad_id is null)`
-          constraint now have one home instead of one per screen. */}
-      <ShareSessionSheet
-        open={shareOpen}
-        onClose={() => setShareOpen(false)}
-        workoutId={data.workoutId}
-        workoutName={shownName}
-        summary={recapSummaryFrom(data)}
-      />
-    </Shell>
-  );
+  /*
+   * ⚠ THE STANDALONE REFLECT AND SHARE STEPS ARE GONE, and they were the whole reason this flow was
+   * four screens deep.
+   *
+   * Reflect is the note sheet on the capture stage. It kept the resurfaced memory block and lost the
+   * "Skip for today" button, because nothing is being skipped any more — the workout was already sealed
+   * two screens earlier and the note was never required.
+   *
+   * Share is the share sheet, reached from the one filled button on the capture stage instead of from a
+   * glyph in the corner of a ceremony that nobody found.
+   */
+  return null; // unreachable: `stage` is exhausted above
 }
 
 // ── pieces ──
@@ -1016,28 +1213,103 @@ function SealMedallion({ size = 132, sealed = false }: { size?: number; sealed?:
   );
 }
 /**
- * THE SHARE AFFORDANCE ON THE SEALED CARD.
+ * The seal at rest — the same mark, with the ceremony taken out of it.
  *
- * ⚠ THIS WAS A BARE GLYPH IN THE CORNER, AND NOBODY FOUND IT. PO: *"Right now it's not obvious that
- * you can share with people. Unless you know the top right button no one will share."* They are right —
- * three dots and two lines in the top-right of a ceremony screen reads as decoration, or at best as an
- * overflow menu, and the athlete has just finished a workout and is looking at the middle of the screen.
+ * ⚠ NO EMBER GLOW AND NO PULSE, deliberately. `SealMedallion` breathes because it is waiting to be
+ * pressed; by the capture stage it has been, and a disc still glowing at you is asking for something
+ * that already happened. Same rim, same inner ring, same forge-mark, no animation and no state.
  *
- * A word fixes it. The constraint the PO set in the same breath was *"I don't want it to look
- * crowded"*, so this stays in the corner and stays one control — it gains a label and an edge, not a
- * row of its own competing with Hold to Seal.
+ * ⚠ THE SHARE CHIP THAT USED TO BE HERE IS GONE. It was a bare glyph in a corner and nobody found it
+ * (PO: *"Unless you know the top right button no one will share"*); labelling it helped and did not fix
+ * it, because a corner control on a ceremony screen is competing with the ceremony. Share is now the one
+ * filled button on the stage that follows, which is the only place on this flow it can't be missed.
  */
-function ShareChip({ onPress }: { onPress: () => void }) {
+function CaptureSeal({ size }: { size: number }) {
+  const inset = Math.round(size * 0.097); // 7px at 72 — the ring holds its proportion on the share card
   return (
-    <Pressable style={styles.shareChip} onPress={onPress} accessibilityRole="button" accessibilityLabel="Share this session">
-      <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-        <Circle cx={6} cy={12} r={2.5} />
-        <Circle cx={17} cy={6} r={2.5} />
-        <Circle cx={17} cy={18} r={2.5} />
-        <Path d="M8.2 10.8l6.6-3.6M8.2 13.2l6.6 3.6" />
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      <View
+        style={{
+          position: 'absolute',
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          borderWidth: 1,
+          borderColor: flColor.bronzeBorder,
+          backgroundColor: flColor.charcoal800,
+          boxShadow: flShadow.borderInset,
+        }}
+      />
+      <View
+        style={{
+          position: 'absolute',
+          top: inset,
+          left: inset,
+          width: size - inset * 2,
+          height: size - inset * 2,
+          borderRadius: (size - inset * 2) / 2,
+          borderWidth: 1,
+          borderColor: flColor.bronzeBorderSubtle,
+        }}
+      />
+      <ForgeMarkGlyph size={Math.round(size * 0.47)} color={flColor.bronze300} />
+    </View>
+  );
+}
+
+/**
+ * One offer on the capture stage: `[icon] [label] [chevron]`, 54px, and nothing else.
+ *
+ * ⚠ THE ONLY "DONE" AFFORDANCE IS THE ICON GOING FROM BRONZE-PRIMARY TO BRONZE-BRIGHT. No checkmarks,
+ * no filled backgrounds, no badges — these are things you may add, not a checklist you are failing.
+ */
+function CaptureRow({
+  icon,
+  label,
+  filled,
+  onPress,
+  divided = false,
+}: {
+  icon: ReactNode;
+  label: string;
+  filled: boolean;
+  onPress: () => void;
+  divided?: boolean;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={({ pressed }) => [styles.capRow, divided ? styles.capRowDiv : null, pressed ? styles.capRowPressed : null]}
+    >
+      {icon}
+      <Text style={[styles.capRowLabel, filled ? styles.capRowLabelFilled : null]} numberOfLines={1}>
+        {label}
+      </Text>
+      <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M9 6l6 6-6 6" />
       </Svg>
-      <Text style={styles.shareChipText}>Share</Text>
     </Pressable>
+  );
+}
+
+function PencilGlyph({ size = 18, color = flColor.bronze400 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M12 20h9" />
+      <Path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+    </Svg>
+  );
+}
+
+/** One figure on the share card. Smaller and quieter than `Stat` — the card is 238px wide. */
+function ShareStat({ n, label }: { n: string; label: string }) {
+  return (
+    <View style={styles.shareStat}>
+      <Text style={styles.shareStatN}>{n}</Text>
+      <Text style={styles.shareStatLabel}>{label}</Text>
+    </View>
   );
 }
 
@@ -1231,35 +1503,45 @@ const styles = StyleSheet.create({
   templateRowPressed: { opacity: 0.82 },
   templateText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze400 },
   templateTextDone: { color: flColor.gray600 },
-  addMedia: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, marginTop: 18, paddingVertical: 14, borderRadius: flRadius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
-  addMediaPressed: { opacity: 0.88, borderColor: flColor.bronzeBorder },
-  addMediaLabel: { fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },
-  // Tighter than `addMedia`'s own marginTop: the playlist follows the photo offer as the second of two
-  // optional additions, so it reads as a pair rather than as another separated section.
-  playlistBlock: { marginTop: 10 },
   root: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 30, gap: 12 },
   scroll: { paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40 },
   err: { color: flColor.gray400, fontFamily: flFont.sans, fontSize: 15 },
 
-  /* ⚠ `shareIcon` was here and is gone with the bare glyph — see `ShareChip`. A label and a hairline
-     edge is the whole change; it stays in the corner so the ceremony is not crowded. */
-  shareChip: {
-    position: 'absolute',
-    top: 54,
-    right: 22,
-    zIndex: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: flRadius.pill,
+  /* ── capture stage ──
+     ⚠ EVERYTHING FLOWS FROM THE TOP. No `marginTop: 'auto'`, no space-between, no pinned footer: the
+     first draft pinned the buttons to the bottom and left a dead band under the rows on a tall phone,
+     which is the defect this layout exists to not have. `alignItems: center` + a 322px cap on each
+     block is what keeps it a column rather than a stretched form. */
+  capScroll: { paddingTop: 52, paddingHorizontal: 34, paddingBottom: 34, alignItems: 'center' },
+  capBlock: { width: '100%', alignItems: 'center' },
+  capName: { fontFamily: flFont.display, fontSize: 26, fontWeight: '700', lineHeight: 28, letterSpacing: 0.3, color: flColor.cream100, textAlign: 'center', marginTop: 15 },
+  capMeta: { fontFamily: flFont.sans, fontSize: 12.5, letterSpacing: 0.3, color: flColor.gray600, textAlign: 'center', marginTop: 6 },
+  capSection: { width: '100%', maxWidth: 322, marginTop: 30, gap: 7 },
+  capSectionLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronze400 },
+  capSectionBody: { fontFamily: flFont.sans, fontSize: 13, lineHeight: 19.5, color: flColor.gray400, marginBottom: 4 },
+  capRows: {
+    width: '100%',
+    maxWidth: 322,
+    borderRadius: flRadius.lg,
     borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
-    backgroundColor: flColor.bronzeTint,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.surfaceRecessed,
+    boxShadow: flShadow.borderInset,
+    overflow: 'hidden',
   },
-  shareChipText: { fontSize: 12.5, fontWeight: '600', letterSpacing: 0.2, color: flColor.bronze300 },
+  capRow: { height: 54, flexDirection: 'row', alignItems: 'center', gap: 13, paddingHorizontal: 15 },
+  // Between rows only — no rule above the first or below the last, or the group grows a double edge.
+  capRowDiv: { borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
+  capRowPressed: { backgroundColor: flColor.charcoal900 },
+  capRowLabel: { flex: 1, fontFamily: flFont.sans, fontSize: 14, color: flColor.gray400 },
+  capRowLabelFilled: { color: flColor.cream100 },
+  capShare: { width: '100%', maxWidth: 322, marginTop: 22 },
+  capExits: { marginTop: 10, gap: 6, alignItems: 'center' },
+  capExitBtn: { minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 },
+  capExit: { fontFamily: flFont.sans, fontSize: 14, fontWeight: '600', color: flColor.gray400 },
+  capExitSub: { fontFamily: flFont.sans, fontSize: 13.5, color: flColor.gray600 },
+
   eyebrow: { fontSize: 13, fontWeight: '600', letterSpacing: 2.6, textTransform: 'uppercase', color: flColor.gray400 },
 
   quoteRow: { flexDirection: 'row', gap: 12, maxWidth: 300, marginTop: 22, alignSelf: 'center' },
@@ -1288,7 +1570,6 @@ const styles = StyleSheet.create({
 
   holdBtn: { marginTop: 26, width: '100%', height: 54, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', boxShadow: flShadow.borderInset },
   holdFill: { position: 'absolute', left: 0, top: 0, bottom: 0 },
-  holdFillFull: { right: 0 },
   holdBtnInSection: { marginTop: 0 },
   sealBottom: { width: '100%', maxWidth: 320, marginTop: 32 },
   upNext: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 15 },
@@ -1352,23 +1633,53 @@ const styles = StyleSheet.create({
   longGameChapter: { fontFamily: flFont.display, fontSize: 15, color: flColor.bronze400 },
   recAction: { marginTop: 30 },
 
-  reflectWrap: { flex: 1, justifyContent: 'center', paddingHorizontal: 28, gap: 12 },
-  reflectTitle: { fontFamily: flFont.display, fontSize: 30, fontWeight: '600', color: flColor.cream100 },
-  reflectSub: { fontFamily: flFont.sans, fontSize: 14, color: flColor.gray400 },
-  reflectInput: {
-    marginTop: 10, minHeight: 96, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900,
-    borderRadius: flRadius.md, padding: 16, fontFamily: flFont.display, fontStyle: 'italic', fontSize: 17, color: flColor.cream100, textAlignVertical: 'top',
+  // ── the note sheet (the retired Reflect step) ──
+  noteSheet: { gap: 14 },
+  noteHelper: { fontFamily: flFont.sans, fontSize: 13, lineHeight: 19, color: flColor.gray400 },
+  noteInput: {
+    minHeight: 96,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.surfaceRecessed,
+    borderRadius: flRadius.lg,
+    paddingHorizontal: 15,
+    paddingVertical: 14,
+    fontFamily: flFont.display,
+    fontStyle: 'italic',
+    fontSize: 16,
+    lineHeight: 23,
+    color: flColor.cream100,
+    textAlignVertical: 'top',
+    outlineWidth: 0,
   },
-  reflectActions: { marginTop: 14, gap: 4 },
 
-  shareCard: { width: '100%', alignItems: 'center', gap: 8 },
-  shareSealed: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400, marginTop: 6 },
-  shareName: { fontFamily: flFont.display, fontSize: 24, color: flColor.cream100 },
-  shareChapter: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray400 },
-  shareDivider: { width: '60%', height: 1, backgroundColor: flColor.bronzeBorderSubtle, marginVertical: 10 },
-  shareWordmark: { fontSize: 12, fontWeight: '700', letterSpacing: 2, color: flColor.bronze400, marginTop: 10 },
-  shareActions: { width: '100%', gap: 4, marginTop: 24 },
-  shareTagline: { fontSize: 9.5, letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.gray600, marginTop: 3 },
+  /* ── the share card preview ──
+     What they are about to send, above the destinations rather than behind them. 238px is the mockup's
+     width and it is deliberately narrow: this is a picture of a card, not a card. */
+  shareCard: {
+    width: 238,
+    alignSelf: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    overflow: 'hidden',
+    paddingTop: 24,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    // `--fl-shadow-card-hero` — the same pair `Card variant="hero"` resolves to.
+    boxShadow: `${flShadow.elevated}, ${flShadow.glowSubtle}`,
+  },
+  shareSealed: { fontSize: 9, fontWeight: '700', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.bronze400, marginTop: 10 },
+  shareName: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', lineHeight: 25, color: flColor.cream100, textAlign: 'center', marginTop: 6 },
+  shareChapter: { fontFamily: flFont.sans, fontSize: 11, color: flColor.gray400, textAlign: 'center', marginTop: 4 },
+  shareRule: { width: 44, height: 1, backgroundColor: flColor.bronzeBorder, marginVertical: 14 },
+  shareStats: { flexDirection: 'row', alignItems: 'stretch' },
+  shareStatDiv: { width: 1, backgroundColor: flColor.bronzeBorderSubtle },
+  shareStat: { alignItems: 'center', gap: 3, paddingHorizontal: 14 },
+  shareStatN: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.cream100 },
+  shareStatLabel: { fontFamily: flFont.sans, fontSize: 8, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.gray600 },
+  shareWordmark: { fontFamily: flFont.display, fontSize: 12, fontWeight: '700', letterSpacing: 2.6, color: flColor.bronze300, marginTop: 16 },
 
   // hero ladder
   heroFeatured: { flexDirection: 'row', alignItems: 'center', gap: 14, width: '100%', maxWidth: 312, marginTop: 24, paddingVertical: 16, paddingHorizontal: 18, borderRadius: flRadius.lg, backgroundColor: flColor.bronzeTint, borderWidth: 1, borderColor: flColor.bronzeBorder, boxShadow: flShadow.glowSubtle },

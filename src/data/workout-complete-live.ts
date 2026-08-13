@@ -122,6 +122,15 @@ export interface Completion {
   /** The next session in THIS workout's program, or null for a session that wasn't part of one. */
   nextWorkoutName: string | null;
   /**
+   * The program this session belonged to — the feed post's context line, snapshotted at share time.
+   *
+   * Deliberately just the NAME. Which slot a saved workout satisfied is not recorded anywhere:
+   * `program_sessions` is keyed by (week, day) and holds no workout id, so "Week 6 · Day 2" would have
+   * to be inferred from a count, and a count is exactly the arithmetic `progress-core` retired for being
+   * wrong the moment anybody trained their days out of order.
+   */
+  programName: string | null;
+  /**
    * The program THIS workout graduated, or null — the M-4 ceremony's trigger and payload.
    *
    * ══ DERIVED FROM THE DATABASE, NOT HANDED OVER BY WHOEVER NAVIGATED HERE ══
@@ -197,6 +206,7 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
    * themselves the name was never found and the line silently disappeared.
    */
   let nextWorkoutName: string | null = null;
+  let programName: string | null = null;
   let graduation: Completion['graduation'] = null;
   if (workout.program_id) {
     try {
@@ -207,6 +217,7 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
         fetchProgramSessions(workout.program_id),
       ]);
       if (program) {
+        programName = program.name;
         const done = touchedCount(program.structure, marks);
         const next = nextSession(program.structure, done);
         if (next) nextWorkoutName = dayLabel(next.day, next.dayIndex);
@@ -602,6 +613,7 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
     isFirstWorkout,
     honorsEarned,
     nextWorkoutName,
+    programName,
     graduation,
   };
 }
