@@ -28,6 +28,8 @@ export type FLMEventType =
   | 'GOAL_ACHIEVED'
   | 'RANK_UP'
   | 'PROGRAM_GRADUATED'
+  /** A program under four weeks reached its last session (M4-A1-D4). Permanent record, no ceremony. */
+  | 'PROGRAM_COMPLETED'
   | 'ACCOMPLISHMENT'
   | 'HONOR_EARNED'
   | 'REFLECTION_ADDED'

@@ -1,0 +1,107 @@
+-- Forge Legacy — 0155: two enum labels, and NOTHING ELSE IN THIS FILE
+--
+-- ══ WHY THIS IS ITS OWN MIGRATION ══
+--
+-- `alter type … add value` is permitted inside a transaction block in PG12+, so this file keeps the
+-- repo's `begin; … commit;` convention. What is NOT permitted is USING the new label in the same
+-- transaction that added it — Postgres raises `55P04 unsafe_new_enum_value_usage`.
+--
+-- "Using" is broader than it sounds, and every one of these would raise if written below:
+--
+--   · create policy   … state in ('future','active','finished')   -- policy expressions parse at creation
+--   · create index    … where state in (…, 'finished')            -- index predicates parse at creation
+--   · create function … language sql … 'finished' …               -- a SQL body parses at creation
+--   · do $$ … select 'finished'::program_state … $$               -- executes immediately
+--
+-- A `language plpgsql` body would NOT raise at creation (its body is an opaque string until first call),
+-- which is exactly the kind of "it worked on my machine" that this split exists to remove. Do not rely
+-- on it.
+--
+-- ⚠ SO: RUN THIS FILE, LET IT COMMIT, AND ONLY THEN RUN 0156. They cannot be pasted into one editor tab
+--   as a single statement batch.
+--
+-- Depends on 0001 (flm_event_type), 0017 (program_state). Idempotent — `if not exists` on both, so a
+-- re-run after a partial paste is safe and reports nothing.
+--
+-- ══ WHAT THE LABELS ARE FOR ══
+--
+-- `Program-Architecture-Amendment-002` opens program length to 1–52 weeks, and D-RCM-30 rules that a
+-- program under four DESIGNED weeks earns no rank credit and no Programs Graduated honors.
+--
+-- The alternative to a new state was to keep writing 'graduated' and teach every consumer to inspect
+-- `structure->'weeks'`. That was rejected (PA2-D3): `honor_metrics()` computes `programs_graduated` as a
+-- live `count(*)` over `programs where state = 'graduated'`, and `rank-live.ts` runs the same filter.
+-- With a distinct state, BOTH NEED ZERO CHANGES — and any future query written against 'graduated' is
+-- correct by default rather than by vigilance. Rebuilding the ~200-line `honor_metrics()` by hand to add
+-- a jsonb predicate is precisely the operation that has silently deleted a shipped branch in this repo
+-- four times; 0151's header is the written record of it.
+--
+-- ⚠ NAMING: 'finished', deliberately NOT 'completed'. `src/domain/program/progress-core.ts` already
+--   exports `SessionState = 'completed' | 'skipped'` for a single session's mark, and both types are in
+--   scope simultaneously in `src/app/program/[id].tsx`. Two identical string literals meaning different
+--   things, with TypeScript unable to tell them apart — `x === 'completed'` compiles against either.
+--   The USER-FACING copy is still "Week complete"; only the wire value differs.
+
+begin;
+
+-- ─────────────────────────────────────────────────────────────────────────────────────────────────────
+-- 1. THE PROGRAM STATE
+-- ─────────────────────────────────────────────────────────────────────────────────────────────────────
+--
+-- `before 'ended_early'` rather than a bare append: nothing today does `order by state`, but the enum
+-- then reads in lifecycle order (future → active → graduated → finished → ended_early) and any future
+-- ordering groups the three sealed states together. Referencing an EXISTING label in the position clause
+-- is fine — it is only the NEW label that cannot be used yet.
+alter type program_state add value if not exists 'finished' before 'ended_early';
+
+-- ─────────────────────────────────────────────────────────────────────────────────────────────────────
+-- 2. THE TIMELINE EVENT
+-- ─────────────────────────────────────────────────────────────────────────────────────────────────────
+--
+-- M4-A1-D4: a short completion writes a timeline entry — it is a permanent legacy record (PA2-D7) and
+-- the timeline is where permanent records live — with copy distinct from a graduation's, exactly as
+-- Ended Early's already is.
+--
+-- It is a SEPARATE event type rather than a re-used PROGRAM_GRADUATED for the same reason the program
+-- state is: the timeline is read by `deriveFeatured`, the Friends feed router and three label maps, and
+-- every one of them should be able to tell the two apart without consulting a program's structure.
+alter type flm_event_type add value if not exists 'PROGRAM_COMPLETED';
+
+commit;
+
+-- ═════════════════════════════════════════════════════════════════════════════════════════════════════
+-- SELF-CHECK — run this SECOND, as its own statement, after the transaction above has committed.
+-- ═════════════════════════════════════════════════════════════════════════════════════════════════════
+--
+-- It is outside the transaction ON PURPOSE. Reading `pg_enum.enumlabel` is a text comparison and would
+-- be legal inside; casting a literal to the type would not be. Keeping the whole check out here means it
+-- proves the thing that actually matters — that the labels are USABLE — rather than merely present.
+--
+--   do $$
+--   begin
+--     if not exists (select 1 from pg_enum e join pg_type t on t.oid = e.enumtypid
+--                     where t.typname = 'program_state' and e.enumlabel = 'finished') then
+--       raise exception '0155 FAILED: program_state did not gain ''finished''';
+--     end if;
+--     if not exists (select 1 from pg_enum e join pg_type t on t.oid = e.enumtypid
+--                     where t.typname = 'flm_event_type' and e.enumlabel = 'PROGRAM_COMPLETED') then
+--       raise exception '0155 FAILED: flm_event_type did not gain ''PROGRAM_COMPLETED''';
+--     end if;
+--     raise notice '0155: both labels present.';
+--   end $$;
+--
+--   -- THE ONE THAT PROVES IT COMMITTED. If this raises 55P04, the transaction above did not commit and
+--   -- 0156 WILL FAIL — do not proceed.
+--   select 'finished'::program_state, 'PROGRAM_COMPLETED'::flm_event_type;
+--
+--   -- And the lifecycle order, for the record:
+--   select e.enumlabel, e.enumsortorder
+--     from pg_enum e join pg_type t on t.oid = e.enumtypid
+--    where t.typname = 'program_state'
+--    order by e.enumsortorder;
+--
+--   Expected: future, active, graduated, finished, ended_early
+--
+-- ⚠ NOTHING IS BROKEN YET AND NOTHING IS FIXED YET. After 0155 the label exists and no code path writes
+--   it: a one-week program still graduates, still fires M-4, and still credits rank. 0156 is what closes
+--   that, and until it runs the hole is open. Do not stop here.

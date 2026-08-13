@@ -213,7 +213,15 @@ export const SESSION_LENGTHS: readonly SessionMinutes[] = [30, 45, 60, 75];
 /** The Program Builder's own clamps, so nothing the coach builds is un-editable in the screen that opens it. */
 export const MIN_DAYS_PER_WEEK = 2;
 export const MAX_DAYS_PER_WEEK = 6;
-export const MIN_WEEKS = 4;
+/**
+ * 1, not 4 — PA2-D1. Holt may author a single week, and the rulebook makes one coherent rather than
+ * shipping the opening week of a mesocycle that does not exist (PAS-A7-D2, `rulebook/volume.ts`).
+ *
+ * ⚠ Endurance keeps its OWN, higher floors — 6 weeks for a 5K up to 12 for a marathon — and they are not
+ * this constant. `rulebook/endurance.ts` refuses below them in terms rather than compressing a plan that
+ * cannot honestly be compressed (PAS-A7-D3). Lowering this must never be read as overturning that.
+ */
+export const MIN_WEEKS = 1;
 export const MAX_WEEKS = 52;
 
 export interface CoachConstraints {

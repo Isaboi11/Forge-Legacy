@@ -16,6 +16,7 @@ const EVENT_LABEL: Record<FLMEventType, string> = {
   GOAL_ACHIEVED:    'Goal Achieved',
   RANK_UP:          'Rank Achieved',
   PROGRAM_GRADUATED:'Program Graduated',
+  PROGRAM_COMPLETED:'Week Complete',
   ACCOMPLISHMENT:   'Accomplishment',
   HONOR_EARNED:     'Honor Earned',
   REFLECTION_ADDED: 'Reflection Added',

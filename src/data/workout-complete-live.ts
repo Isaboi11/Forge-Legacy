@@ -148,6 +148,24 @@ export interface Completion {
     graduatedAt: string;
     workouts: number;
   } | null;
+  /**
+   * The WEEK this workout finished, or null — the quiet twin of `graduation` (M4-A1-D2).
+   *
+   * A program designed for fewer than four weeks seals as `finished` rather than `graduated`, earns no
+   * rank credit and fires no ceremony (D-RCM-30). It still finished, though, and a plan that simply stops
+   * with no acknowledgement reads as one that fizzled out — so W-17 states it inline.
+   *
+   * ⚠ THE TWO ARE MUTUALLY EXCLUSIVE BY CONSTRUCTION. A program reaches exactly one terminal state, so
+   * exactly one of these is ever non-null. Nothing enforces that here because nothing needs to: they are
+   * read off the same single `state` value.
+   */
+  completion: {
+    programId: string;
+    programName: string;
+    startedAt: string | null;
+    finishedAt: string;
+    workouts: number;
+  } | null;
 }
 
 interface WorkoutRow {
@@ -208,6 +226,7 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
   let nextWorkoutName: string | null = null;
   let programName: string | null = null;
   let graduation: Completion['graduation'] = null;
+  let completion: Completion['completion'] = null;
   if (workout.program_id) {
     try {
       /* The marks are fetched, not a pre-counted total: a count only means anything against a structure,
@@ -227,12 +246,24 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
          * from inside save_workout's transaction (0104). Re-opening an older workout of the same program
          * reads false, so the ceremony belongs to the session that actually earned it and to no other.
          */
-        if (program.state === 'graduated' && workout.saved_at && program.endedAt === workout.saved_at) {
+        const sealedByThisSave = !!workout.saved_at && program.endedAt === workout.saved_at;
+        if (program.state === 'graduated' && sealedByThisSave && program.endedAt) {
           graduation = {
             programId: program.id,
             programName: program.name,
             startedAt: program.startedAt,
             graduatedAt: program.endedAt,
+            workouts: done,
+          };
+        } else if (program.state === 'finished' && sealedByThisSave && program.endedAt) {
+          // Same proof, different verdict. Deliberately NOT folded into `graduation` with a flag: the
+          // ceremony queue reads that field, and a "graduation that should not celebrate" is exactly the
+          // kind of conditional that gets dropped by the next person to touch the queue.
+          completion = {
+            programId: program.id,
+            programName: program.name,
+            startedAt: program.startedAt,
+            finishedAt: program.endedAt,
             workouts: done,
           };
         }
@@ -615,6 +646,7 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
     nextWorkoutName,
     programName,
     graduation,
+    completion,
   };
 }
 

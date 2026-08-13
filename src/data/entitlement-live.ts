@@ -75,6 +75,15 @@ export async function fetchEntitlement(): Promise<EntitlementSnapshot | null> {
     founderSeat: d.founderSeat == null ? null : num(d.founderSeat),
     caps: {
       programs: num(rawCaps.programs),
+      /**
+       * ⚠ 0 UNTIL THE CONFIG ROW CARRIES THE KEY, AND 0 BLOCKS EVERYONE.
+       *
+       * `entitlement_config` has exactly one row, and changing a column DEFAULT does not touch it. If
+       * migration 0158's explicit UPDATE is skipped, `my_entitlement()` returns no `short_programs`,
+       * `num(undefined)` is 0, and `capAllows(0, 0)` is false — for every athlete on every tier,
+       * including Premium. Read the row back after applying; do not trust the default.
+       */
+      short_programs: num(rawCaps.short_programs),
       photos: num(rawCaps.photos),
       videos: num(rawCaps.videos),
       squads: num(rawCaps.squads),
@@ -86,6 +95,7 @@ export async function fetchEntitlement(): Promise<EntitlementSnapshot | null> {
     },
     usage: {
       programs: num(rawUsage.programs),
+      shortPrograms: num(rawUsage.shortPrograms),
       photos: num(rawUsage.photos),
       videos: num(rawUsage.videos),
       squads: num(rawUsage.squads),

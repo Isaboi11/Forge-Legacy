@@ -16,7 +16,7 @@ import { getPrograms } from '@/domain/training/active-program';
 import { fetchMyPrograms, type SavedProgram } from '@/data/programs-live';
 import { fetchProgramSessions } from '@/data/programs-live';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
-import { dayLabel, nextOpenSlot, sessionsPerWeek, shelvePrograms, viewForState } from '@/domain/program/progress-core';
+import { dayLabel, isSealed, nextOpenSlot, sessionsPerWeek, shelvePrograms, viewForState } from '@/domain/program/progress-core';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { StartStrengthSheet } from '@/components/forge/compositions/StartStrengthSheet';
 import { useQuery } from '@/lib/useQuery';
@@ -367,7 +367,19 @@ export default function WorkoutsScreen() {
                     onPress={() => router.push({ pathname: '/template/[id]', params: { id: t.id } })}
                   />
                 ))}
-                <CreateRow label="Build a Workout" onPress={chooseStrength} />
+                {/* ⚠ THIS OPENED THE START STRENGTH CHOOSER, under a header that says "Your Templates".
+                    W25-Amendment-001 listed six doors that dropped into an empty freestyle session and
+                    routed them all to the chooser; this row was one of them, and for the other five that
+                    was right — they ask "how do you want to train right now". This one does not. It asks
+                    to AUTHOR a shape, and the athlete has already answered the chooser's question by
+                    tapping it. The sixth door on that same list settles the treatment: Templates' own
+                    "New" pushes the builder directly (`templates.tsx`), and so does this.
+
+                    The LABEL deliberately stays "Build a Workout": it is the name the builder gives
+                    itself (`workout-builder.tsx`'s AppBar) and the name the Templates hub's own primary
+                    button uses, so all three doors to one screen agree — and "Build a Week" reads as its
+                    sibling beside it, where "Build a Template" would not. */}
+                <CreateRow label="Build a Workout" onPress={() => router.push('/workout-builder')} />
               </View>
             </TourAnchor>
 
@@ -662,7 +674,7 @@ function SavedProgramRow({ program, onPress }: { program: SavedProgram; onPress:
   const { pill } = viewForState(program.state, true);
   const perWeek = sessionsPerWeek(program.structure);
   const isActive = program.state === 'active';
-  const isRetired = program.state === 'ended_early' || program.state === 'graduated';
+  const isRetired = isSealed(program.state);
 
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${program.name}, ${pill}`} style={styles.libRow}>

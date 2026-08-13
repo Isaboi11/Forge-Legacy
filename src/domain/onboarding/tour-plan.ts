@@ -395,8 +395,8 @@ export const SCREEN_TOURS: Record<ScreenTourKey, readonly ScreenTourStep[]> = {
     },
     {
       key: 'wk-templates',
-      title: 'A template is a workout you’ve already done',
-      body: 'Not one you plan. You train freely, and afterwards The Record offers to keep the shape — so “Build a Workout” starts a session you log as you go, then save. Authoring a workout you’ve never done is guessing at your own capacity.',
+      title: 'A template is a session you can run again',
+      body: 'Most arrive by capture: you train, and afterwards The Record offers to keep the shape — a workout you’ve already done is one you know you can do. “Build a Workout” is the other way in, for when you want to plan it first. Tap any template to open it.',
       anchor: 'workouts-templates',
       pad: 8,
       radius: 18,

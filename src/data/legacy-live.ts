@@ -70,6 +70,9 @@ const EVENT_LABEL: Record<string, string> = {
   GOAL_ACHIEVED: 'Goal Achieved',
   RANK_UP: 'Rank Up',
   PROGRAM_GRADUATED: 'Program Graduated',
+  // Not "Graduated". The ladder did not count this one, and the timeline is the permanent record — the
+  // last place that should overstate what happened (M4-A1-D3).
+  PROGRAM_COMPLETED: 'Week Complete',
   ACCOMPLISHMENT: 'Accomplishment',
   HONOR_EARNED: 'Honor Earned',
   REFLECTION_ADDED: 'Reflection Added',

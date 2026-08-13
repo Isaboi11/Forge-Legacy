@@ -23,6 +23,7 @@ import {
 
 const FREE = {
   programs: 3,
+  short_programs: 3,
   photos: 75,
   videos: 5,
   squads: 1,
@@ -35,6 +36,7 @@ const FREE = {
 
 const PAID = {
   programs: 500,
+  short_programs: UNLIMITED,
   photos: 1000,
   videos: 100,
   squads: 5,
@@ -47,6 +49,7 @@ const PAID = {
 
 const usage = (over = {}) => ({
   programs: 0,
+  shortPrograms: 0,
   photos: 0,
   videos: 0,
   squads: 0,
@@ -123,6 +126,28 @@ test('Free hits every wall at the documented number', () => {
   assert.equal(gateFor('squads', FREE, usage({ squads: 1 })).outcome, 'blocked');
   assert.equal(gateFor('videos', FREE, usage({ videos: 5 })).outcome, 'blocked');
   assert.equal(gateFor('templates', FREE, usage({ templates: 5 })).outcome, 'blocked');
+  assert.equal(gateFor('short_programs', FREE, usage({ shortPrograms: 3 })).outcome, 'blocked');
+  assert.equal(gateFor('short_programs', FREE, usage({ shortPrograms: 2 })).outcome, 'allowed');
+});
+
+test('⚠ a week and a program spend DIFFERENT allowances', () => {
+  // The reason `short_programs` exists at all (MA4-D1). `programs` is 3 LIFETIME and never reopens, so
+  // if three throwaway deload weeks spent it, a free athlete could never build a real block again.
+  const spentWeeks = usage({ shortPrograms: 3, programs: 0 });
+  assert.equal(gateFor('short_programs', FREE, spentWeeks).outcome, 'blocked');
+  assert.equal(gateFor('programs', FREE, spentWeeks).outcome, 'allowed', 'weeks must not eat program slots');
+
+  const spentPrograms = usage({ programs: 3, shortPrograms: 0 });
+  assert.equal(gateFor('programs', FREE, spentPrograms).outcome, 'blocked');
+  assert.equal(gateFor('short_programs', FREE, spentPrograms).outcome, 'allowed');
+});
+
+test('the week wall borrows the Programs row rather than inventing a seventh', () => {
+  // M-7 §6.2 v1.1 locks CANONICAL at six and renders four; a seventh row would push a locked one off.
+  const { feature, reason } = m7Content('short_programs', 3);
+  assert.equal(feature, 'Unlimited programs');
+  assert.match(reason, /3 free training weeks/, 'the number is interpolated from config, never a literal');
+  assert.match(m7Content('short_programs', 1).reason, /1 free training week\b/, 'singular at one');
 });
 
 test('Premium is not blocked by anything an athlete could plausibly reach', () => {

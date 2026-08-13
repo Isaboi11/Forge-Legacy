@@ -56,6 +56,8 @@ import {
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { fetchTemplates } from '@/data/templates-live';
 import { daySectionsSummary, templateRowsToDay, type DaySections } from '@/domain/program/template-day';
+import { STRUCTURED_DEVELOPMENT_MIN_WEEKS } from '@/domain/rank/thresholds';
+import { fetchWeekTemplate, saveWeekTemplate } from '@/data/week-templates-live';
 import { defaultAudiences, filterStarters, starterMeta } from '@/domain/workout/starter-templates';
 import { useProfile } from '@/lib/profile';
 import type { Sex } from '@/domain/profile/schema';
@@ -233,7 +235,21 @@ function ProgramBuilderScreen() {
      Storage stays in miles either way — this only chooses the scale the steppers walk and the card reads. */
   const { units } = useUnits();
   const metric = units === 'metric';
-  const { o: entryMode, id: entryId } = useLocalSearchParams<{ o?: string; id?: string }>();
+  const { o: entryMode, id: entryId, mode: surfaceMode } = useLocalSearchParams<{ o?: string; id?: string; mode?: string }>();
+  /**
+   * ══ WEEK MODE — the same builder, authoring a different object (0157) ══
+   *
+   * `?mode=week` builds a WEEK TEMPLATE: one week, saved to `week_templates`, startable over and over.
+   *
+   * It is a mode of this screen rather than a screen of its own because `SetupView`, `WeekDaysView`,
+   * `DayBuilder`, `ExerciseCard` and `TemplateDaySheet` are all local to this file. A separate route
+   * would mean extracting five components out of the app's most-used authoring surface first — a large,
+   * risky refactor bought purely for a URL. What changes here is small and legible: the length control
+   * disappears (a week has no length to choose and no weeks to vary), the titles change, and Save writes
+   * somewhere else.
+   */
+  const isWeek = surfaceMode === 'week';
+  const draftKind = isWeek ? ('week' as const) : ('program' as const);
   const [draft, setDraft] = useState<ProgramDraft | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -372,7 +388,11 @@ function ProgramBuilderScreen() {
       }));
 
     const weeks = clampWeeks(imported.weeks);
-    const stretched = weeks !== imported.weeks;
+    // ⚠ THIS USED TO FIRE THE OTHER WAY. With a floor of 4, a single-week paste was silently stretched
+    // to 4 and the toast said so. The floor is 1 (PA2-D1), so a one-week paste now imports as one week
+    // and says nothing — the stretch was the bug, and the note explaining it was the apology.
+    // Only the CEILING can still move a number, so the copy has to name that direction instead.
+    const clamped = weeks !== imported.weeks;
 
     mutate((d) => ({
       ...d,
@@ -391,7 +411,7 @@ function ProgramBuilderScreen() {
     const unmatched = unmatchedNames(preview, (n) => resolveName(n)?.key);
     const notes: string[] = [];
     if (droppedDays.length) notes.push(`${droppedDays.length} day${droppedDays.length === 1 ? '' : 's'} over the ${DAYS_MAX}-day limit dropped (${droppedDays.join(', ')})`);
-    if (stretched) notes.push(`set to ${weeks} weeks — the shortest a program can be`);
+    if (clamped) notes.push(`set to ${weeks} weeks — the longest a program can be`);
     if (unmatched.length) notes.push(`${unmatched.length} name${unmatched.length === 1 ? '' : 's'} weren’t in the library and kept yours`);
     showToast(notes.length ? `Imported · ${notes.join(' · ')}` : 'Imported — review and save');
   };
@@ -433,7 +453,7 @@ function ProgramBuilderScreen() {
     useCallback(() => {
       let active = true;
       void (async () => {
-        const stored = await loadProgramDraft();
+        const stored = await loadProgramDraft(draftKind);
         // Only picks addressed to THIS builder. The single-day Workout Builder (W-25) shares the same
         // round-trip, and a pick meant for it must not be absorbed into a program day.
         const raw = await readBuilderInbox();
@@ -447,7 +467,8 @@ function ProgramBuilderScreen() {
         if (wantMode && entryId && !inbox) {
           const sameSession = d && d.mode === wantMode && d.srcId === entryId;
           if (!sameSession) {
-            const source = await fetchProgram(entryId);
+            // In week mode the source is a saved WEEK, not a program — different table, same structure.
+            const source = isWeek ? await fetchWeekTemplate(entryId) : await fetchProgram(entryId);
             d = source ? hydrateDraft(source, wantMode) : d;
           }
         } else if (!wantMode && !inbox && d && d.mode !== 'new') {
@@ -455,11 +476,16 @@ function ProgramBuilderScreen() {
         }
 
         d = d ?? newDraft();
+        // The pin, applied on every pass rather than only at creation: a draft that reached week mode by
+        // any route — resumed from storage, hydrated from a saved week, or handed back by the Picker —
+        // must still be exactly one week, because the database CHECK will refuse anything else and the
+        // athlete would find out at Save with a whole week already built.
+        if (isWeek) d = { ...d, weeks: 1, vary: false, weekPlans: null, openWeek: null };
         if (inbox) {
           await clearBuilderInbox();
           d = absorbBuilderInbox(d, inbox);
         }
-        await saveProgramDraft(d);
+        await saveProgramDraft(d, draftKind);
         if (active) setDraft(d);
         /* ⚠ `o=import` OPENS THE PASTE SHEET ON ARRIVAL. Coach Holt sends people here when they say they
            already have a plan, and "we take you to the Builder, now find the import button yourself" is
@@ -483,7 +509,7 @@ function ProgramBuilderScreen() {
     if (!draft) return;
     const next = fn(draft);
     setDraft(next);
-    void saveProgramDraft(next);
+    void saveProgramDraft(next, draftKind);
   };
 
   const patchActiveDay = (idx: number, fn: (day: ProgramDay) => ProgramDay) =>
@@ -580,7 +606,7 @@ function ProgramBuilderScreen() {
       setConfirmClose(true);
       return;
     }
-    void clearProgramDraft();
+    void clearProgramDraft(draftKind);
     router.back();
   };
 
@@ -591,7 +617,7 @@ function ProgramBuilderScreen() {
 
   const discardDraft = () => {
     setConfirmClose(false);
-    void clearProgramDraft();
+    void clearProgramDraft(draftKind);
     router.back();
   };
 
@@ -602,11 +628,23 @@ function ProgramBuilderScreen() {
        fix a typo in a program they already own, which is Never Charge For History pointed at the one
        thing it most obviously protects. The real pre-action check is at the tap that opens the
        builder; `programs_cap_guard()` in 0145 is the server's own last word. */
-    if (draft.mode !== 'edit' && !guard('programs')) return;
+    if (draft.mode !== 'edit' && !guard(isWeek ? 'short_programs' : 'programs')) return;
     setSaving(true);
     setError(null);
     try {
       const structure = draftToStructure(draft);
+
+      // A WEEK saves to `week_templates` and stops there — it is a shape, not a commitment, so nothing
+      // is started and nothing is recorded. Running it is a separate, deliberate act on its detail
+      // screen, which is also where the "this ends your active program" question belongs.
+      if (isWeek) {
+        const { id: weekId } = await saveWeekTemplate(draft.name, structure, draft.mode === 'edit' ? draft.editId : null);
+        await clearProgramDraft(draftKind);
+        void claimInitiativeHonor().catch(() => {});
+        router.replace({ pathname: '/week-template/[id]', params: { id: weekId } });
+        return;
+      }
+
       // Edit writes back over the source; new AND duplicate both create a fresh program, so a copy can
       // never overwrite the original it was forked from.
       let id: string;
@@ -616,7 +654,7 @@ function ProgramBuilderScreen() {
       } else {
         ({ id } = await createProgram(structure));
       }
-      await clearProgramDraft();
+      await clearProgramDraft(draftKind);
       // First-move honor (build path): grant "Initiative" — best-effort, DB dedupes to one row.
       void claimInitiativeHonor().catch(() => {});
       router.replace({ pathname: '/program/[id]', params: { id } });
@@ -766,6 +804,7 @@ function ProgramBuilderScreen() {
         <SetupView
           draft={draft}
           days={days}
+          isWeek={isWeek}
           saving={saving}
           error={error}
           onCancel={onCancel}
@@ -1497,6 +1536,7 @@ function ImpStep({ glyph, label, onPress }: { glyph: string; label: string; onPr
 function SetupView({
   draft,
   days,
+  isWeek,
   saving,
   error,
   onCancel,
@@ -1515,6 +1555,8 @@ function SetupView({
 }: {
   draft: ProgramDraft;
   days: ProgramDay[];
+  /** Authoring a week template rather than a program — hides length, structure and import (0157). */
+  isWeek: boolean;
   saving: boolean;
   error: string | null;
   onCancel: () => void;
@@ -1551,14 +1593,19 @@ function SetupView({
   const tourScroller = useTourScroller();
   const onTourScroll = useTourScrollTracker();
 
-  const title = draft.mode === 'edit' ? 'Edit Program' : draft.mode === 'dup' ? 'Duplicate Program' : 'New Program';
-  const saveLabel = draft.mode === 'edit' ? 'Save Changes' : draft.mode === 'dup' ? 'Create Copy' : 'Save Program';
+  const noun = isWeek ? 'Week' : 'Program';
+  const title = draft.mode === 'edit' ? `Edit ${noun}` : draft.mode === 'dup' ? `Duplicate ${noun}` : `New ${noun}`;
+  const saveLabel = draft.mode === 'edit' ? 'Save Changes' : draft.mode === 'dup' ? 'Create Copy' : `Save ${noun}`;
   const context =
     draft.mode === 'edit'
-      ? 'Editing your program'
+      ? `Editing your ${noun.toLowerCase()}`
       : draft.mode === 'dup'
         ? 'New copy — the original stays unchanged'
-        : null;
+        : isWeek
+          // Says what this object IS, because it is the app's newest noun and nothing else on the screen
+          // explains why there is no length control.
+          ? 'One week you can run again whenever you want'
+          : null;
 
   return (
     <>
@@ -1582,18 +1629,23 @@ function SetupView({
 
         <TourAnchor id="builder-details" style={styles.detailsCard}>
           <View style={styles.cardHeader}>
-            <SectionHeader label="Program details" />
+            <SectionHeader label={isWeek ? 'Week details' : 'Program details'} />
           </View>
 
           <InputField
-            label="Program name"
-            placeholder="e.g. Winter Powerbuilding"
+            label={isWeek ? 'Week name' : 'Program name'}
+            placeholder={isWeek ? 'e.g. Deload Week' : 'e.g. Winter Powerbuilding'}
             value={draft.name}
             onChange={onName}
             maxLength={40}
             showCount
           />
 
+          {/* ⚠ NO LENGTH CONTROL IN WEEK MODE. A week is one week — the stepper would offer to make it
+              something the database refuses, and the rank-credit line beneath it would be a permanent
+              scold on an object whose whole purpose is to be short. The Repeat/Customize block goes for
+              the same reason: there are no other weeks to vary from. */}
+          {isWeek ? null : (
           <View style={styles.field}>
             <Text style={styles.microLabel}>Length</Text>
             <View style={styles.stepperRow}>
@@ -1603,11 +1655,23 @@ function SetupView({
               </Text>
               <Stepper label="More weeks" sign="+" onPress={() => onWeeks(draft.weeks + 1)} />
             </View>
-            <Text style={styles.hint}>4–52 weeks — supports multi-month blocks</Text>
+            <Text style={styles.hint}>1–52 weeks — a single week, or a multi-month block</Text>
+            {/* W4-A1-D4 — the one consequence of going short that the athlete cannot otherwise know.
+                A quiet line, not a warning and not a confirmation: a one-week block is a legitimate
+                thing to build (a deload, a travel week, a test week) and the screen must not lecture
+                anyone for building one. It states the fact and passes no judgement, the same register
+                the Ended Early record uses. It NEVER blocks saving. */}
+            {draft.weeks < STRUCTURED_DEVELOPMENT_MIN_WEEKS ? (
+              <Text style={styles.hintQuiet}>
+                Under {STRUCTURED_DEVELOPMENT_MIN_WEEKS} weeks this won’t count toward your rank or the
+                Programs honors. Everything you log still counts.
+              </Text>
+            ) : null}
           </View>
+          )}
 
           <View style={styles.field}>
-            <Text style={styles.microLabel}>Training days / week</Text>
+            <Text style={styles.microLabel}>{isWeek ? 'Training days' : 'Training days / week'}</Text>
             <View style={styles.segmented}>
               {dayChips.map((n, i) => {
                 const on = draft.daysPerWeek === n;
@@ -1629,7 +1693,12 @@ function SetupView({
         </TourAnchor>
 
         {/* "Import from a spreadsheet" — the design places it here, between the length controls and the
-            structure choice, because importing decides both for you. */}
+            structure choice, because importing decides both for you.
+
+            Hidden in week mode: an import decides length and per-week structure, which is precisely what
+            a week template does not have. A paste of an 8-week block would be clamped to its first week
+            with no honest way to say so. */}
+        {isWeek ? null : (
         <Pressable
           ref={importRef}
           onPress={onOpenImport}
@@ -1642,7 +1711,9 @@ function SetupView({
           </Svg>
           <Text style={styles.importLinkText}>Import from a spreadsheet</Text>
         </Pressable>
+        )}
 
+        {isWeek ? null : (
         <TourAnchor id="builder-structure" style={styles.structure}>
           <SectionHeader label="Program structure" />
           <StructureOption
@@ -1658,6 +1729,7 @@ function SetupView({
             onPress={onVary}
           />
         </TourAnchor>
+        )}
 
         {draft.vary ? (
           <Pressable onPress={onOpenJump} accessibilityRole="button" accessibilityLabel="Jump to week" style={styles.progressBlock}>
@@ -2591,6 +2663,9 @@ const styles = StyleSheet.create({
   stepperText: { fontSize: 13, color: flColor.gray400 },
   stepperValue: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', color: flColor.cream100 },
   hint: { marginTop: 7, fontSize: 11, color: flColor.gray600 },
+  /* One step brighter than `hint` and no accent colour — this is a fact worth reading, not a warning
+     worth flinching at (W4-A1-D4). */
+  hintQuiet: { marginTop: 6, fontSize: 11, lineHeight: 16, color: flColor.gray400 },
 
   segmented: {
     flexDirection: 'row',

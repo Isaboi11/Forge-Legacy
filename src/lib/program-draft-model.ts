@@ -32,7 +32,24 @@ export interface ProgramDraft {
 export const DAY_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'] as const;
 
 // Clamps — design §14 / `setWeeks`,`setDays`,`bumpSets`,`bumpReps`.
-export const WEEKS_MIN = 4;
+/**
+ * ⚠ THIS WAS 4, AND IT WAS THE ONLY THING ENFORCING A RANK RULE.
+ *
+ * The design HTML says "4–52 weeks" and this clamp copied it, which made four weeks the shortest program
+ * anyone could build. Nothing downstream ever checked length: graduation is `logged >= prescribed`, rank
+ * counts graduated rows, and `honor_metrics` counts the same rows. So "only 4-week programs count toward
+ * rank" was true only because no shorter program could exist — a product rule held up by a stepper's
+ * lower bound (Program-Architecture-Amendment-002 §0).
+ *
+ * Athletes asked for a single week they could build and run — a deload, a travel week, a test week — so
+ * the floor is now 1. The rule that used to be an accident is now written down and enforced where it
+ * belongs: `earnsStructuredDevelopmentCredit` in `domain/program/progress-core.ts`, keyed to
+ * `STRUCTURED_DEVELOPMENT_MIN_WEEKS` (D-RCM-30), with a SQL twin so the server never trusts the client
+ * about something that buys five permanent honors.
+ *
+ * Do not restore 4 here to "protect rank". It never did.
+ */
+export const WEEKS_MIN = 1;
 export const WEEKS_MAX = 52;
 export const DAYS_MIN = 2;
 export const DAYS_MAX = 6;

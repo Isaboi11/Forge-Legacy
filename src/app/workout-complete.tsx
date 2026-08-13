@@ -134,6 +134,10 @@ export default function WorkoutComplete() {
   const { enqueue } = useCeremony();
   // Not in review — a graduation is a moment, and it has already had it. See the note on `review`.
   const graduation = review ? null : (data?.graduation ?? null);
+  /* Its quiet twin (M4-A1-D2). Suppressed in review for the same reason: the week finished once, and a
+     reopened session must not announce it again. Deliberately NOT enqueued anywhere — it is a line on
+     this screen, which is the whole of the decision. */
+  const completion = review ? null : (data?.completion ?? null);
   useEffect(() => {
     if (!graduation) return;
     enqueue({
@@ -744,7 +748,20 @@ export default function WorkoutComplete() {
           ) : null}
 
           <View style={styles.sealBottom}>
-            {nextName ? (
+            {/* ══ WEEK COMPLETE (M4-A1-D2) ══
+                A program under four weeks just reached its last session. It gets NO ceremony — no M-4, no
+                queue entry, no new CeremonyKind — because the ladder does not count it and a modal that
+                celebrates something the product itself does not credit is the product overstating.
+
+                It gets this instead: one line, in place of "Up next", which is exactly the slot the fact
+                belongs in — there IS no up next, and saying nothing would let a plan the athlete built
+                and finished simply stop. It claims nothing about rank or honors (M4-A1-D3). */}
+            {completion ? (
+              <View style={styles.upNext}>
+                <View style={styles.upNextDiamond} />
+                <Text style={styles.upNextText}>Week complete · {completion.programName}</Text>
+              </View>
+            ) : nextName ? (
               <View style={styles.upNext}>
                 <View style={styles.upNextDiamond} />
                 <Text style={styles.upNextText}>Up next · {nextName}</Text>

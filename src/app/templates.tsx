@@ -12,6 +12,7 @@ import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { deleteTemplate, fetchTemplates, templateSummary, type WorkoutTemplate } from '@/data/templates-live';
+import { fetchWeekTemplates, weekSummary } from '@/data/week-templates-live';
 import { STARTER_TEMPLATES, starterMeta, starterSummary, suggestedStarters } from '@/domain/workout/starter-templates';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { useProfile } from '@/lib/profile';
@@ -52,6 +53,10 @@ export default function TemplatesScreen() {
   const { showToast } = useToast();
   const { profile } = useProfile();
   const { data, loading, error, refetch } = useQuery(fetchTemplates, []);
+  /* Declared HERE, beside the query it parallels, because the focus effect below closes over its
+     `refetch` — a `const` further down the body is still in its temporal dead zone when that effect's
+     dependency array is evaluated during render, which is a crash rather than a stale read. */
+  const { data: weekData, refetch: refetchWeeks } = useQuery(fetchWeekTemplates, []);
   const [confirmDelete, setConfirmDelete] = useState<WorkoutTemplate | null>(null);
   const tourScroller = useTourScroller();
   const onTourScroll = useTourScrollTracker();
@@ -60,7 +65,8 @@ export default function TemplatesScreen() {
   useFocusEffect(
     useCallback(() => {
       refetch();
-    }, [refetch]),
+      refetchWeeks();
+    }, [refetch, refetchWeeks]),
   );
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/workouts'));
@@ -79,6 +85,32 @@ export default function TemplatesScreen() {
   const newTemplate = () => {
     if (!guard('templates')) return;
     router.push('/workout-builder');
+  };
+
+  /*
+   * ── WEEKS (0157) ──────────────────────────────────────────────────────────────────────────────
+   *
+   * A second kind of reusable shape lives here: a whole WEEK rather than one session. It belongs on this
+   * screen because the athlete's mental model is already "reusable shapes I can run" — and this hub
+   * already routes to two different detail screens, so a third is not a new idea.
+   *
+   * The `+` therefore has to ask WHICH, rather than assuming. Assuming is exactly what made a saved
+   * template unreachable from the Workouts tab (W25-A1-D8): a door that answers a question the athlete
+   * did not ask.
+   */
+  const weeks = weekData ?? [];
+  const [newOpen, setNewOpen] = useState(false);
+
+  const newWeek = () => {
+    setNewOpen(false);
+    if (!guard('short_programs')) return;
+    router.push({ pathname: '/program-builder', params: { mode: 'week' } });
+  };
+
+  const onNew = () => {
+    // With no weeks yet there is nothing to disambiguate: one door, no question.
+    if (weeks.length === 0) newTemplate();
+    else setNewOpen(true);
   };
 
   const remove = async (t: WorkoutTemplate) => {
@@ -112,7 +144,7 @@ export default function TemplatesScreen() {
         onBack={goBack}
         actions={
           list.length > 0 ? (
-            <Pressable onPress={newTemplate} accessibilityRole="button" accessibilityLabel="New template" hitSlop={8} style={styles.barBtn}>
+            <Pressable onPress={onNew} accessibilityRole="button" accessibilityLabel="New template or week" hitSlop={8} style={styles.barBtn}>
               <PlusGlyph />
             </Pressable>
           ) : undefined
@@ -209,6 +241,42 @@ export default function TemplatesScreen() {
             </View>
           ) : null}
 
+          {/* ── YOUR WEEKS (0157) ─────────────────────────────────────────────────────────────────
+              A whole week, above the single sessions, because a week CONTAINS them — putting it below
+              would read as a subtype of the thing it is made of. Body opens W-29; the footer's Start
+              lives there rather than here, because starting a week ends your active program and that
+              question needs a screen, not a row. ── */}
+          {weeks.length > 0 ? (
+            <View style={styles.shelf}>
+              <View style={styles.shelfHead}>
+                <Text style={styles.shelfLabel}>Your Weeks</Text>
+              </View>
+              <View style={styles.stack}>
+                {weeks.map((w) => (
+                  <Pressable
+                    key={w.id}
+                    onPress={() => router.push({ pathname: '/week-template/[id]', params: { id: w.id } })}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open ${w.name}`}
+                    style={({ pressed }) => [styles.card, pressed ? styles.pressed : null]}
+                  >
+                    <View style={styles.cardTop}>
+                      <View style={styles.cardHead}>
+                        <View style={styles.cardHeadText}>
+                          <Text style={styles.cardName} numberOfLines={2}>{w.name}</Text>
+                          <Text style={styles.cardStructure}>{weekSummary(w)}</Text>
+                        </View>
+                        <View style={styles.forgePill}>
+                          <Text style={styles.forgePillText}>1 WEEK</Text>
+                        </View>
+                      </View>
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          ) : null}
+
           <TourAnchor id="templates-list" style={styles.stack}>
             {list.map((t) => (
               <View key={t.id} style={[styles.card, t.lastUsedAt ? styles.cardUsed : null]}>
@@ -288,6 +356,13 @@ export default function TemplatesScreen() {
               <PlusGlyph size={16} />
               <Text style={styles.newRowText}>Build a workout</Text>
             </Pressable>
+            {/* Its own row rather than a second option behind the first: two distinct things to author,
+                each one tap. The chooser sheet exists for the AppBar `+`, which has no room to say two
+                words — it is not the primary door. */}
+            <Pressable onPress={newWeek} accessibilityRole="button" accessibilityLabel="Build a week" style={({ pressed }) => [styles.newRow, pressed ? styles.pressed : null]}>
+              <PlusGlyph size={16} />
+              <Text style={styles.newRowText}>Build a week</Text>
+            </Pressable>
           </TourAnchor>
         </ScrollView>
       )}
@@ -295,6 +370,23 @@ export default function TemplatesScreen() {
       {/* The empty state already says, in full sentences, the one thing this tour teaches — so it only
           fires once there are templates to point at. */}
       <ScreenTour screenKey="templates" ready={list.length > 0} />
+
+      {/* The `+` asks which. Reusing ConfirmSheet rather than adding a chooser component: it is two
+          options and a dismiss, which is exactly what this sheet already is. `tone="primary"` because
+          neither answer destroys anything. */}
+      <ConfirmSheet
+        open={newOpen}
+        headline="What are you building?"
+        body="A workout is one session you can start any time. A week is several days you run in order, like a short program."
+        confirmLabel="Build a week"
+        cancelLabel="Build a workout"
+        tone="primary"
+        onConfirm={newWeek}
+        onClose={() => {
+          setNewOpen(false);
+          newTemplate();
+        }}
+      />
 
       <ConfirmSheet
         open={!!confirmDelete}

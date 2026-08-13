@@ -87,6 +87,30 @@ export const PER_SESSION_FLOOR_IS_OPEN_FOR_HIGH_FREQUENCY = true;
 /** Above this many sessions a week, a below-floor session is a known-open question, not a defect. */
 export const HIGH_FREQUENCY_DAYS = 5;
 
+/**
+ * PAS-A7-D2 — at or below this many weeks, a block is a REPRESENTATIVE week, not an OPENING one.
+ *
+ * ══ WHY A SHORT BLOCK CANNOT BE AUTHORED BY THE ORDINARY RULE ══
+ *
+ * A periodised block ramps: week 1 sits at the BOTTOM of its rep range and later weeks climb it. That is
+ * double progression, it is what `prescribeReps` implements, and it is why an opening week is deliberately
+ * the easiest week — it is the entry point of a staircase.
+ *
+ * A one-week block has no later weeks to climb into. Authored by that rule it ships the introductory week
+ * of a mesocycle that does not exist: the easiest week of a program the athlete will never see the rest
+ * of. That is not a truncated block, it is the WRONG PRESCRIPTION — and the failure is silent, because
+ * the output looks like a perfectly ordinary week 1.
+ *
+ * So at or below this length the prescription anchors at the MIDPOINT of the range and does not ramp. A
+ * deload week, a travel week and a test week are all self-contained pieces of work an athlete could run
+ * in isolation and be trained by, which is exactly what a short block is for.
+ *
+ * 3 is the boundary because PAS-D7's own first band already declines to require periodisation structure,
+ * and because four weeks is where the Standard begins describing a program rather than a stretch of
+ * training — the same line D-RCM-30 draws for rank credit, for the same reason.
+ */
+export const SHORT_BLOCK_WEEKS = 3;
+
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // DELOADS — PAS-D7 and PAS-D8
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────

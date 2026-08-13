@@ -212,10 +212,16 @@ export function isHomeReady(reads: readonly boolean[], ceilingReached: boolean):
   return ceilingReached || reads.every(Boolean);
 }
 
-/** The minimum a Home program row has to expose for the selection below. */
+/**
+ * The minimum a Home program row has to expose for the selection below.
+ *
+ * The state union is spelled out rather than imported so this file stays free of `@/data` — but it must
+ * stay in step with `ProgramState` in `domain/program/progress-core.ts`. `finished` is 0155's fifth
+ * state; the selection below whitelists `active`/`future`, so it needs no new branch, only admission.
+ */
 export interface HomeProgramRow {
   id: string;
-  state: 'future' | 'active' | 'graduated' | 'ended_early';
+  state: 'future' | 'active' | 'graduated' | 'finished' | 'ended_early';
 }
 
 export interface HomePrograms<T> {

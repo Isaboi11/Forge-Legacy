@@ -84,6 +84,10 @@ const KIND_OF: Record<string, TimelineKind> = {
   GOAL_ACHIEVED: 'goal',
   RANK_UP: 'rank',
   PROGRAM_GRADUATED: 'program-grad',
+  // Same kind, deliberately: the timeline renders both as "a program you finished", and the two are
+  // distinguished by their own `object_name` copy rather than by a second icon. What must NOT happen is
+  // falling through to the unknown-kind default, which would drop the row from the timeline entirely.
+  PROGRAM_COMPLETED: 'program-grad',
   ACCOMPLISHMENT: 'accomplishment',
   HONOR_EARNED: 'honor',
   REFLECTION_ADDED: 'reflection',

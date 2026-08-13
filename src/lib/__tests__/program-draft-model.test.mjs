@@ -42,8 +42,13 @@ function withMainOn(i) {
 
 // ── clamps (design §14) ───────────────────────────────────────────────────────
 
-test('clamps hold the design bounds: weeks 4–52, sets 1–8, reps 1–60', () => {
-  assert.equal(clampWeeks(3), 4);
+test('clamps hold the design bounds: weeks 1–52, sets 1–8, reps 1–60', () => {
+  // ⚠ The floor was 4 and is now 1 (PA2-D1). A 3-week block is a real thing an athlete can build; it
+  // simply earns no rank credit, which is enforced at the seal and not by this clamp.
+  assert.equal(clampWeeks(3), 3);
+  assert.equal(clampWeeks(1), 1);
+  assert.equal(clampWeeks(0), 1);
+  assert.equal(clampWeeks(-5), 1);
   assert.equal(clampWeeks(53), 52);
   assert.equal(clampWeeks(12), 12);
   assert.equal(clampSets(0), 1);

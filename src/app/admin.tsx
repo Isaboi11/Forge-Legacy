@@ -377,6 +377,7 @@ export default function AdminScreen() {
                 <StatLine label="Sessions completed" value={a.programs.sessionsCompleted} />
                 <StatLine label="Sessions skipped" value={a.programs.sessionsSkipped} />
                 <StatLine label="Graduated" value={a.programs.graduated} />
+                <StatLine label="Weeks completed" value={a.programs.finished} />
                 <StatLine label="Ended early" value={a.programs.endedEarly} />
                 <StatLine label="Currently active" value={a.programs.active} />
                 {a.programs.dropoffByWeek.length ? (

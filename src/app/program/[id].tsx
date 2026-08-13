@@ -36,6 +36,7 @@ import {
   computeStats,
   equipmentOf,
   fmtVolume,
+  isSealed,
   nextOpenSlot,
   plannedDays,
   swapSessionOrder,
@@ -320,7 +321,11 @@ export default function ProgramDetailScreen() {
   const equipment = equipmentOf(structure);
   const trained = workouts.length > 0;
   /** Sealed: a permanent legacy record. Not editable, not deletable, never reactivated (Amendment-001). */
-  const terminal = state === 'graduated' || state === 'ended_early';
+  const terminal = isSealed(state);
+  /* The three sealed states are not interchangeable in COPY. Two of them describe a program that ran to
+     its end; only one of those earned anything. Derived once here because three separate ternaries on
+     `state` is how the share card and the record start disagreeing with each other. */
+  const sealedWord = state === 'graduated' ? 'Graduated' : state === 'finished' ? 'Week complete' : 'Ended early';
   /* A copy of something Forge ships, rather than something the athlete wrote. Decides whether the
      destructive action reads "Remove from Planned" or "Delete Program" — see the action row. */
   const isForgeProgram = program != null && program.sourceDefinitionId != null;
@@ -431,7 +436,7 @@ export default function ProgramDetailScreen() {
     // filtered rather than interpolated — a share card reading "Graduated · null" is the exact class of
     // defect this file's own header is about, and it would be leaving the app when it happened.
     const completion = terminal
-      ? [state === 'graduated' ? 'Graduated' : 'Ended early', workoutsLabel(workouts.length)].filter(Boolean).join(' · ')
+      ? [sealedWord, workoutsLabel(workouts.length)].filter(Boolean).join(' · ')
       : trained
         ? `Week ${progress.week} of ${structure.weeks} · ${progress.pct}%`
         : '';
@@ -666,7 +671,7 @@ export default function ProgramDetailScreen() {
         {terminal && program?.endedAt ? (
           <View style={styles.sealed}>
             <Text style={styles.sealedWhen}>
-              {state === 'graduated' ? 'Graduated' : 'Ended'} {fmtLongDate(program?.endedAt ?? null)}
+              {state === 'ended_early' ? 'Ended' : sealedWord} {fmtLongDate(program?.endedAt ?? null)}
             </Text>
             <Text style={styles.sealedWhat}>
               {[workoutsLabel(workouts.length), spanLabel(program?.startedAt ?? null, program?.endedAt ?? null)]

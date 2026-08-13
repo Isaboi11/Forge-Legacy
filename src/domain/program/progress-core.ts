@@ -11,10 +11,29 @@
 import type { ProgramDay, ProgramExercise, ProgramStructure } from '@/data/programs-live';
 import { blockRoundsText, deriveBlocks, isAmrap, schemeText, supersetBlockLetters, type PrescriptionBlock } from './prescription.ts';
 import { contextMaxFor, loadText, type LoadContext } from './percent-max.ts';
+// Relative + extensioned: `@/` is TYPE-ONLY in domain code, and this is a runtime read.
+import { STRUCTURED_DEVELOPMENT_MIN_WEEKS } from '../rank/thresholds.ts';
 
 export type { LoadContext };
 
-export type ProgramState = 'future' | 'active' | 'graduated' | 'ended_early';
+/**
+ * ⚠ `'finished'`, NOT `'completed'` — and the distinction is load-bearing in this very file.
+ *
+ * `SessionState` below is `'completed' | 'skipped'` and describes ONE session's mark. Both types are in
+ * scope simultaneously in `src/app/program/[id].tsx`, and `x === 'completed'` compiles against either, so
+ * a mix-up would be invisible to the compiler. The user-facing copy is still "Week complete"; only the
+ * wire value differs. Same choice as migration 0155's enum label.
+ *
+ * `finished` = the program reached its last session but was designed for fewer than
+ * `STRUCTURED_DEVELOPMENT_MIN_WEEKS` weeks, so it earns no rank credit and no Programs honors (D-RCM-30).
+ * It is otherwise a sealed record exactly like `graduated`: permanent, undeletable, never reactivated.
+ */
+export type ProgramState = 'future' | 'active' | 'graduated' | 'finished' | 'ended_early';
+
+/** The three terminal states. A program here is history and nothing may be added to it (PA2-D7). */
+export const SEALED_STATES: readonly ProgramState[] = ['graduated', 'finished', 'ended_early'];
+
+export const isSealed = (s: ProgramState): boolean => SEALED_STATES.includes(s);
 
 /** A saved workout attributed to a program, with everything the log needs. */
 export interface LoggedWorkout {
@@ -132,6 +151,36 @@ export function totalSessions(structure: ProgramStructure): number {
  */
 export function isFinalSession(structure: ProgramStructure, completedCount: number): boolean {
   return completedCount >= totalSessions(structure);
+}
+
+/**
+ * Does finishing this program earn a structured-development credit? — D-RCM-30.
+ *
+ * ══ THIS RULE ALSO EXISTS TWICE, FOR THE SAME REASON AS THE ONE ABOVE ══
+ *
+ * `public.program_earns_credit(jsonb)` (migration `0156_short_program_credit.sql`) is its SQL twin, with
+ * the same golden vectors asserted at apply time. The server must decide credit without trusting the
+ * client, because what a graduation buys is a rank family and five never-revocable honors — a
+ * client-supplied "this one counts" flag would be the most attractive field in the app.
+ *
+ * ══ WHAT IT READS, AND WHAT IT DELIBERATELY DOES NOT ══
+ *
+ * The DECLARED `weeks` — the number the athlete chose before logging anything. Not `weekSizes().length`,
+ * which floors each week at 1 and falls back to `daysPerWeek`, and so can differ; not elapsed calendar
+ * time, which `Program-Architecture-Amendment-001` §4 forbids judging anyone by. An athlete who takes
+ * nine months over an eight-week program has graduated it (PA2-D6).
+ *
+ * ══ FALSE IS THE SAFE ANSWER ══
+ *
+ * An unreadable structure earns nothing, mirroring 0104's rule that a null session total means "do not
+ * graduate" rather than "graduate at zero". The product never fails open on a claim it cannot revoke.
+ *
+ * ⚠ IT IS EVALUATED ONCE, AT THE SEAL, and never re-derived — safe only because migration 0123 forbids
+ * an active program changing its session count, so `weeks` cannot move afterwards (PA2-D4).
+ */
+export function earnsStructuredDevelopmentCredit(structure: ProgramStructure | null | undefined): boolean {
+  const w = structure?.weeks;
+  return typeof w === 'number' && Number.isFinite(w) && Math.floor(w) >= STRUCTURED_DEVELOPMENT_MIN_WEEKS;
 }
 
 export const dayLabel = (d: ProgramDay, i: number) => (d.name.trim() ? d.name : `Day ${d.letter || String.fromCharCode(65 + i)}`);
@@ -414,17 +463,32 @@ export interface StateView {
 export function viewForState(state: ProgramState, owned: boolean): StateView {
   if (!owned) return { pill: 'Preview', cta: 'Start Program', secondary: null };
   switch (state) {
+    case 'future':
+      return { pill: 'Planned', cta: 'Start Program', secondary: 'Remove from Planned' };
     case 'active':
       return { pill: 'Active', cta: 'Continue Training', secondary: 'End Program' };
     // W-3 §7.2's own words. "Run Again" read like a rewind, which is exactly the thing this must not be
     // and exactly what the button used to do — it creates a NEW program and leaves the record sealed.
     case 'graduated':
       return { pill: 'Graduated', cta: 'Run This Program Again', secondary: null };
+    // A week that finished. Sealed exactly like a graduation, and re-run the same way — the same week run
+    // four times is four honest records, which is most of the point of a week template (PA2-D8). The word
+    // "graduated" is deliberately absent: the ladder did not count this, so the screen does not say it did.
+    case 'finished':
+      return { pill: 'Week complete', cta: 'Run This Week Again', secondary: null };
     case 'ended_early':
       return { pill: 'Ended early', cta: 'Restart Program', secondary: null };
     default:
-      return { pill: 'Planned', cta: 'Start Program', secondary: 'Remove from Planned' };
+      /* ⚠ EXHAUSTIVE ON PURPOSE. This used to be `default:` returning the Planned view, so widening
+         `ProgramState` without adding a case compiled cleanly and put a **Start Program** button on a
+         sealed record — a silent, plausible-looking failure. Now a new state is a type error here. */
+      return assertNever(state);
   }
+}
+
+/** Compile-time proof that a switch covered every case; throws only if one is reached at runtime. */
+function assertNever(x: never): never {
+  throw new Error(`unhandled program state: ${String(x)}`);
 }
 
 /**
@@ -454,7 +518,7 @@ export interface ProgramShelves<T> {
 }
 
 export function shelvePrograms<T extends Shelvable>(mine: T[]): ProgramShelves<T> {
-  const sealed = (p: T) => p.state === 'graduated' || p.state === 'ended_early';
+  const sealed = (p: T) => isSealed(p.state);
   return {
     active: mine.find((p) => p.state === 'active') ?? null,
     planned: mine.filter((p) => p.state === 'future'),

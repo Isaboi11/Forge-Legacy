@@ -652,14 +652,16 @@ export const TYPING_ENABLED = false;
  * coach's answer — "built around the three you already run" is the sentence that proves he listened.
  */
 export function preamble(c: CoachConstraints, weeks: number): string {
+  // A block can be one week since PA2-D1, and "1 weeks" in the coach's own voice reads as a bug in him.
+  const wk = `${weeks} week${weeks === 1 ? '' : 's'}`;
   if (isEnduranceGoal(c.goal)) {
     const spec = RACE_SPEC[c.goal];
     const base = c.currentWeeklyMi ?? 0;
     return base > 0
-      ? `${pick('lead_block')} ${weeks} weeks, ${c.daysPerWeek} days, and it's built around the ${base} miles you already run.`
-      : `${pick('lead_block')} ${weeks} weeks to the ${spec.label}, starting from where you actually are rather than where you'd like to be.`;
+      ? `${pick('lead_block')} ${wk}, ${c.daysPerWeek} days, and it's built around the ${base} miles you already run.`
+      : `${pick('lead_block')} ${wk} to the ${spec.label}, starting from where you actually are rather than where you'd like to be.`;
   }
-  return `${pick('lead_block')} ${weeks} weeks, ${c.daysPerWeek} days a week, built for what you've got.`;
+  return `${pick('lead_block')} ${wk}, ${c.daysPerWeek} days a week, built for what you've got.`;
 }
 
 /** The line above a single day. */

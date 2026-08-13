@@ -23,7 +23,7 @@
  */
 
 import type { Experience, Goal, SessionMinutes } from './constraints.ts';
-import { DELOAD_MARKER, deloadSets, type PasCategory } from './rulebook/volume.ts';
+import { DELOAD_MARKER, deloadSets, SHORT_BLOCK_WEEKS, type PasCategory } from './rulebook/volume.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // ROLES
@@ -144,6 +144,12 @@ export interface PrescribeContext {
   experience: Experience;
   /** Zero-based. Drives the within-block rep progression. */
   weekIndex: number;
+  /**
+   * How many weeks the whole block runs — needed to know whether `weekIndex` is a step on a staircase or
+   * the entire program (PAS-A7-D2). Optional so existing callers and tests keep their meaning: absent
+   * reads as "long enough to ramp", which is what every caller meant before short blocks existed.
+   */
+  totalWeeks?: number;
   /** PAS-D7 says this week is a deload; PAS-D8 says what that means. */
   isDeload: boolean;
 }
@@ -160,6 +166,12 @@ export interface PrescribeContext {
  *
  * A deload cuts sets per PAS-D8 and takes the reps back to the bottom of the range — the week is meant to
  * be easy in both dimensions, and a deload that keeps top-of-range reps is a deload in name only.
+ *
+ * ══ AND A BLOCK TOO SHORT TO RAMP DOES NOT START AT THE BOTTOM ══
+ *
+ * The climb only makes sense when there are later weeks to climb into. At `SHORT_BLOCK_WEEKS` or under,
+ * week 0's bottom-of-range reps would be the WHOLE program — the easiest week of a staircase with no
+ * second step. Such a block anchors mid-range instead and does not ramp (PAS-A7-D2).
  */
 export function prescribeReps(role: SlotRole, ctx: PrescribeContext): RepPrescription {
   const [lo, hi] = REP_RANGES[ctx.category][role];
@@ -171,7 +183,8 @@ export function prescribeReps(role: SlotRole, ctx: PrescribeContext): RepPrescri
 
   // Climb the range a rep a week, then wrap. `hi - lo` of 0 (RUNNING/MOBILITY) leaves it at `lo`.
   const span = hi - lo;
-  const reps = span > 0 ? lo + (ctx.weekIndex % (span + 1)) : lo;
+  const short = ctx.totalWeeks != null && ctx.totalWeeks <= SHORT_BLOCK_WEEKS;
+  const reps = span === 0 ? lo : short ? lo + Math.round(span / 2) : lo + (ctx.weekIndex % (span + 1));
 
   return {
     sets: base,

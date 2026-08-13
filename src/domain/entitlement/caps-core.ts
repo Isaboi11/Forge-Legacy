@@ -25,6 +25,14 @@
 /** Every capped dimension. Named rather than stringly-typed so a typo is a compile error. */
 export type CapKey =
   | 'programs'
+  /**
+   * Week templates saved AND programs shorter than four weeks, sharing one allowance (MA4-D1).
+   *
+   * It is separate from `programs` because that cap is 3 LIFETIME and never reopens (MA3-D9) — three
+   * throwaway deload weeks would have permanently closed the door on a real 12-week block. The split
+   * runs on exactly the line D-RCM-30 draws, so the product has one threshold meaning one thing.
+   */
+  | 'short_programs'
   | 'photos'
   | 'videos'
   | 'squads'
@@ -36,6 +44,7 @@ export type CapKey =
 
 export const CAP_KEYS: readonly CapKey[] = [
   'programs',
+  'short_programs',
   'photos',
   'videos',
   'squads',
@@ -59,6 +68,7 @@ export type Tier = 'FREE' | 'PREMIUM';
 
 export interface Caps {
   programs: number;
+  short_programs: number;
   photos: number;
   videos: number;
   squads: number;
@@ -71,6 +81,8 @@ export interface Caps {
 
 export interface Usage {
   programs: number;
+  /** Week templates saved + short programs created. One counter, two doors (MA4-D1). */
+  shortPrograms: number;
   photos: number;
   videos: number;
   squads: number;
@@ -85,6 +97,7 @@ export interface Usage {
 /** Which usage figure answers which cap. The one place the two vocabularies meet. */
 const USAGE_FOR: Record<CapKey, keyof Usage> = {
   programs: 'programs',
+  short_programs: 'shortPrograms',
   photos: 'photos',
   videos: 'videos',
   squads: 'squads',
@@ -215,8 +228,15 @@ const CANONICAL: { key: CapKey; label: string }[] = [
   { key: 'templates', label: 'Unlimited day templates' },
 ];
 
-/** Triggers that are not themselves a canonical row borrow one — video has no row of its own. */
+/**
+ * Triggers that are not themselves a canonical row borrow one — video has no row of its own.
+ *
+ * ⚠ `short_programs` borrows `programs` rather than adding a seventh CANONICAL row: M-7 §6.2 v1.1 locks
+ * the list at six and renders four, so a seventh would push a locked row off the modal. "Unlimited
+ * programs" is also the honest benefit — Premium removes both ceilings.
+ */
 const ROW_FOR: Partial<Record<CapKey, CapKey>> = {
+  short_programs: 'programs',
   holt_days_per_month: 'holt_programs',
   holt_in_workout: 'holt_programs',
 };
@@ -237,6 +257,11 @@ function reasonFor(key: CapKey, cap: number): string {
   switch (key) {
     case 'programs':
       return `You've reached your ${cap}-program limit.`;
+    case 'short_programs':
+      // "Training week" rather than "week template", because the allowance is spent by saving a template
+      // AND by starting a short program, and naming only one of the two doors would read as a bug to
+      // whoever hit the other one. Interpolated from `cap`, never a literal (M7-D14).
+      return `You've used your ${cap} free training week${cap === 1 ? '' : 's'}.`;
     case 'photos':
       return `You've reached your ${cap}-photo limit.`;
     case 'videos':

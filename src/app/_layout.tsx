@@ -264,6 +264,8 @@ function RootNavigator() {
         <Stack.Screen name="chapter/reflect" />
         <Stack.Screen name="template/[id]" />
         <Stack.Screen name="starter-template/[id]" />
+        {/* W-29 — a saved week. Its sibling `template/[id]` is one session; this one is a whole week. */}
+        <Stack.Screen name="week-template/[id]" />
         <Stack.Screen name="forge-templates" />
         <Stack.Screen name="home-gym" />
         <Stack.Screen name="account-settings" />

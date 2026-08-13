@@ -59,6 +59,35 @@ export const IMPORT_PRESTIGE_CREDIT = 0.5;
  */
 export const SELF_DIRECTED_BLOCK = { weeks: 6, minDaysPerWeek: 3, windowWeeks: 8 } as const;
 
+/**
+ * THE OTHER KIND OF EVIDENCE HAS A FLOOR TOO — a graduation credits only from four DESIGNED weeks
+ * (D-RCM-30, `Rank-Computation-Model-Amendment-003`).
+ *
+ * It lives here, beside `SELF_DIRECTED_BLOCK`, because it is the same question asked of the other form of
+ * structured development, and this file has no runtime imports so anything may read it.
+ *
+ * ══ IT USED TO BE A STEPPER'S LOWER BOUND ══
+ *
+ * Nothing ever checked program length: graduation is `logged >= prescribed`, rank counts graduated rows,
+ * `honor_metrics` counts the same rows. Four weeks held only because the Builder would not go below it.
+ * Opening program length to one week (PA2-D1) turned that accident into a hole, and this closes it.
+ *
+ * DESIGNED, NOT ELAPSED. It reads the week count the athlete chose before logging anything — never the
+ * calendar time the program occupied. Amendment-001 §4 forbids withholding a graduation because someone
+ * was slow, and D-RCM-30 R1 does not touch that.
+ *
+ * ⚠ 4 HERE vs 6 IN `SELF_DIRECTED_BLOCK` IS A KNOWN, ACCEPTED ASYMMETRY, not a bug to "fix" by aligning
+ * them. D-RCM-29 calls the two forms "additive at parity"; D-RCM-30 §3 accepts the gap in writing, on the
+ * grounds that a program is authored and adhered to where a block is inferred from behaviour. Raising
+ * this to 6 would strip credit from the shipped 4-week Mobility Foundation; lowering the block to 4 would
+ * move rank arithmetic for every existing athlete.
+ *
+ * ⚠ SQL TWIN: `public.program_earns_credit(jsonb)`. The server decides credit without trusting the
+ * client, because what a graduation buys is a rank family and five never-revocable honors. The two carry
+ * the same golden vectors and the migration asserts them at apply time.
+ */
+export const STRUCTURED_DEVELOPMENT_MIN_WEEKS = 4;
+
 /** The improvement "shape" a family transition demands (CAL Q13). Checked in improvement.ts. */
 export type ImprovementRequirement = 'none' | 'first' | 'multi-period' | 'repeated' | 'multi-year' | 'multi-phase';
 

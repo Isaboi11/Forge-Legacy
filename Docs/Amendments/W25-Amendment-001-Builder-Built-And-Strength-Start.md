@@ -3,7 +3,8 @@
 **Amends:** `Free-Workout-Builder-Spec-W25.md` §2 (Entry Paths) · `Workout-Templates-Hub-Spec-W26.md` ·
 `Workout-Template-Detail-Spec-W27.md` §Edit
 **Status:** 🔒 LOCKED
-**Date:** 2026-08-03
+**Date:** 2026-08-03 · **Addendum 2026-08-13** (Section 3, W25-A1-D8 — narrows W25-A1-D1: an *authoring*
+door opens the builder, not the chooser)
 **Design authority:** `Forge Strength Start.dc.html`, `Forge Free Workout Builder.dc.html`
 
 ---
@@ -94,3 +95,38 @@ Template Detail's Edit was **Rename**, and its own header said why: *"a button l
 renames is exactly the kind of small lie this codebase keeps removing."* With the builder in place, Edit
 opens the template in it — exercises, order, sets, reps and supersets. **Rename survives** in the ⋯
 overflow, because changing only a title should not mean opening a builder and saving a whole shape back.
+
+---
+
+## Section 3 — Addendum, 2026-08-13: one of the six doors was not a training door
+
+### W25-A1-D8 — An *authoring* entry point opens the builder directly, not the chooser
+
+W25-A1-D1 named six doors that dropped the athlete into an empty freestyle session and routed all six to
+the Start Strength chooser. For five of them that is right: Home's hero, Home's path card, Home's
+"Something else today?", the Workouts `+` sheet and Start Workout with no active program are all asking
+**how do you want to train right now**, and the chooser is the honest answer.
+
+The sixth — **"Build a Workout", the create row at the foot of the Workouts tab's "Your Templates"
+section** — is not a training door. It sits under a header naming the artifact it authors, and an athlete
+who taps it has *already* answered the chooser's question. Sending them to a sheet titled "Start
+Strength" answered *"author me a template"* with *"how do you want to begin?"*, and the builder they
+asked for sat three taps away behind its middle option.
+
+W25-A1-D1's own list contains the precedent for the fix: the Templates hub's "New" was never wired to the
+chooser — it pushes `/workout-builder` directly. **The Workouts-tab row now does the same.** The
+distinction the amendment was reaching for is not *which screen* a door leads to but *which question it
+answers*: a door that starts training opens the chooser; a door that authors a shape opens the builder.
+
+The **label stays "Build a Workout"** — it is what the builder calls itself and what the Templates hub's
+primary button says, so all three doors to one screen agree.
+
+**Reported by the PO, 2026-08-13:** *"I clicked on the build a template button in the workouts tab and it
+took me to the same place the start workout would take me to."* Both doors did land in the same sheet;
+that was the defect, and it was one this amendment introduced.
+
+**Also corrected:** the guided tour's `wk-templates` step still taught the pre-W-25 world — *"'Build a
+Workout' starts a session you log as you go"* and *"authoring a workout you've never done is guessing at
+your own capacity"* — which W25-A1-D3 had already overturned by shipping the builder. Capture is still
+described as the primary loop, because it is; authoring is now described as the second door, because it
+exists.

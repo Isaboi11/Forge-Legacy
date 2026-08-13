@@ -270,8 +270,18 @@ type ProgramRow = {
   lift_maxes?: unknown;
 };
 
+/**
+ * ⚠ ANYTHING UNRECOGNISED FALLS BACK TO 'future', AND THAT FALLBACK IS A TRAP.
+ *
+ * Adding a state to the database without adding it here does not throw and does not warn: every row in
+ * the new state simply reads back as Planned, and Planned renders a **Start Program** button. So a sealed
+ * record would offer to be started, and the failure looks exactly like ordinary correct behaviour.
+ *
+ * The fallback is still right for genuinely unknown values — a client older than the database must not
+ * crash — but every state the app knows about has to be listed. `finished` is 0155's.
+ */
 const asState = (v: string | null): ProgramState =>
-  v === 'active' || v === 'graduated' || v === 'ended_early' ? v : 'future';
+  v === 'active' || v === 'graduated' || v === 'finished' || v === 'ended_early' ? v : 'future';
 
 const toProgram = (r: ProgramRow): SavedProgram => ({
   id: r.id,
@@ -287,15 +297,29 @@ const toProgram = (r: ProgramRow): SavedProgram => ({
   liftMaxes: (r.lift_maxes as LiftMaxes | null) ?? {},
 });
 
-/** Persist a user-authored program (owner RLS). Returns the new id. */
-export async function createProgram(structure: ProgramStructure): Promise<{ id: string }> {
+/**
+ * Persist a user-authored program (owner RLS). Returns the new id.
+ *
+ * `sourceWeekTemplateId` marks a program started from a saved week (0157). It is read by the entitlement
+ * guard so starting a template the athlete already paid for does not spend a second allowance (MA4-D4) —
+ * so passing it is not decoration, it is the difference between one charge and two.
+ */
+export async function createProgram(
+  structure: ProgramStructure,
+  sourceWeekTemplateId?: string | null,
+): Promise<{ id: string }> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error('Not signed in.');
   const { data, error } = await supabase
     .from('programs')
-    .insert({ athlete_id: user.id, name: structure.name, structure })
+    .insert({
+      athlete_id: user.id,
+      name: structure.name,
+      structure,
+      ...(sourceWeekTemplateId ? { source_week_template_id: sourceWeekTemplateId } : {}),
+    })
     .select('id')
     .single();
   if (error) throw error;
@@ -406,12 +430,17 @@ export async function fetchActiveProgram(): Promise<SavedProgram | null> {
  * Start `id`, ending whatever was active. Atomic in the DB (0017) so the "one active program" rule
  * can't be broken by a race between two devices.
  *
- * RAISES on a graduated or ended program since 0104 — a sealed record is never reactivated
- * (Amendment-001 §1). Use `runProgramAgain` for that; it is a new program, not a rewind.
+ * RAISES on a graduated, finished or ended program since 0104/0156 — a sealed record is never
+ * reactivated (Amendment-001 §1). Use `runProgramAgain` for that; it is a new program, not a rewind.
+ *
+ * Returns which program this ENDED, if any. The RPC has always reported it; the return was discarded,
+ * which meant a caller could never say "we ended X for you" without asking again and racing itself.
  */
-export async function startProgram(id: string): Promise<void> {
-  const { error } = await supabase.rpc('start_program', { p_program_id: id });
+export async function startProgram(id: string): Promise<{ started: string; ended: string | null }> {
+  const { data, error } = await supabase.rpc('start_program', { p_program_id: id });
   if (error) throw error;
+  const r = (data ?? {}) as { started?: string; ended?: string | null };
+  return { started: r.started ?? id, ended: r.ended ?? null };
 }
 
 /**

@@ -4,8 +4,10 @@ import {
   buildLog,
   computeProgress,
   computeStats,
+  earnsStructuredDevelopmentCredit,
   equipmentOf,
   fmtVolume,
+  isSealed,
   nextSession,
   scheduleSlots,
   sessionsPerWeek,
@@ -16,6 +18,7 @@ import {
   viewForState,
   weekSizes,
 } from '../progress-core.ts';
+import { STRUCTURED_DEVELOPMENT_MIN_WEEKS } from '../../rank/thresholds.ts';
 
 const ex = (name, sets = 3, reps = 10, equip = 'Barbell') => ({ name, sets, reps, equip });
 const day = (letter, name, main = [], warmup = [], cooldown = []) => ({ letter, name, warmup, main, cooldown });
@@ -308,6 +311,61 @@ test('golden vectors — the rule 0104 mirrors in SQL', () => {
   }
 });
 
+/**
+ * ══════════════════════════════════════════════════════════════════════════════════════════════════════
+ * CREDIT GOLDEN VECTORS — D-RCM-30, duplicated verbatim into 0156's SELF-CHECK A.
+ *
+ * Same contract as the list above: 0156 `raise exception`s on the first mismatch and rolls the migration
+ * back, so `earnsStructuredDevelopmentCredit` and `public.program_earns_credit(jsonb)` can only drift
+ * through a deliberate edit to both. Change the rule in three places or not at all.
+ *
+ * The last four exist to prove the thing that matters most about this predicate: it FAILS CLOSED and it
+ * NEVER THROWS. It runs inside the workout-save commit, and what it gates is five never-revocable honors.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════════════
+ */
+const CREDIT_GOLDEN = [
+  ['one week — the case this whole feature exists for', { weeks: 1, daysPerWeek: 3 }, false],
+  ['three weeks', { weeks: 3, daysPerWeek: 3 }, false],
+  ['EXACTLY FOUR — the boundary', { weeks: 4, daysPerWeek: 3 }, true],
+  ['five weeks', { weeks: 5, daysPerWeek: 3 }, true],
+  ['fifty-two weeks', { weeks: 52, daysPerWeek: 3 }, true],
+  ['fractional floors DOWN', { weeks: 3.9, daysPerWeek: 3 }, false],
+  ['fractional at the boundary', { weeks: 4.7, daysPerWeek: 3 }, true],
+  ['zero', { weeks: 0, daysPerWeek: 3 }, false],
+  ['negative', { weeks: -8, daysPerWeek: 3 }, false],
+  ['weeks absent', { daysPerWeek: 3 }, false],
+  ['weeks as a STRING — must not raise', { weeks: 'four' }, false],
+  ['weeks null', { weeks: null }, false],
+  ['empty object', {}, false],
+  ['null structure', null, false],
+];
+
+test('credit golden vectors — the rule 0156 mirrors in SQL', () => {
+  for (const [label, structure, expected] of CREDIT_GOLDEN) {
+    assert.equal(earnsStructuredDevelopmentCredit(structure), expected, label);
+  }
+});
+
+test('the credit threshold is the one in thresholds.ts, not a number typed twice', () => {
+  const n = STRUCTURED_DEVELOPMENT_MIN_WEEKS;
+  assert.equal(earnsStructuredDevelopmentCredit({ weeks: n - 1, daysPerWeek: 3 }), false);
+  assert.equal(earnsStructuredDevelopmentCredit({ weeks: n, daysPerWeek: 3 }), true);
+});
+
+test('⚠ credit reads DESIGNED weeks, never the walked schedule', () => {
+  // A 5-week program whose weeks are all empty still WALKS as 5 × daysPerWeek slots, and a 3-week one
+  // packed with days walks longer than a sparse 5-week one. Credit must follow the number the athlete
+  // chose, not the shape they built into it (D-RCM-30 R1).
+  const sparseLong = { weeks: 5, daysPerWeek: 2, vary: false, days: [day('A', '')], weekPlans: null };
+  const denseShort = { weeks: 3, daysPerWeek: 6, vary: false,
+    days: [day('A', '', [ex('a')]), day('B', '', [ex('b')]), day('C', '', [ex('c')]),
+           day('D', '', [ex('d')]), day('E', '', [ex('e')]), day('F', '', [ex('f')])], weekPlans: null };
+
+  assert.ok(totalSessions(denseShort) > totalSessions(sparseLong), 'the short one really is more work');
+  assert.equal(earnsStructuredDevelopmentCredit(sparseLong), true);
+  assert.equal(earnsStructuredDevelopmentCredit(denseShort), false, 'more sessions does not buy the credit');
+});
+
 test('isFinalSession is the graduation predicate, and it is inclusive', () => {
   const p = { weeks: 2, daysPerWeek: 2, vary: false, days: [day('A', '', [ex('a')]), day('B', '', [ex('b')])], weekPlans: null };
   assert.equal(totalSessions(p), 4);
@@ -323,6 +381,47 @@ test('the graduated CTA offers a new run, not a rewind', () => {
   assert.equal(viewForState('graduated', true).cta, 'Run This Program Again');
   assert.equal(viewForState('graduated', true).pill, 'Graduated');
   assert.equal(viewForState('graduated', true).secondary, null, 'a sealed record offers nothing else');
+});
+
+/*
+ * ══ THE FIFTH STATE — and the two ways it could fail SILENTLY ══
+ *
+ * `viewForState` used to end in a `default:` returning the Planned view. So widening `ProgramState`
+ * without adding a case compiled cleanly and rendered a **Start Program** button on a sealed record —
+ * an offer to restart something that can never be restarted, looking exactly like ordinary behaviour.
+ * The switch is now exhaustive; these assert the outcome rather than the mechanism.
+ */
+
+test('a finished week is sealed, and never offers to be started', () => {
+  const v = viewForState('finished', true);
+  assert.equal(v.pill, 'Week complete');
+  assert.equal(v.cta, 'Run This Week Again', 'a new run, not a rewind — same rule as a graduation');
+  assert.equal(v.secondary, null, 'a sealed record offers nothing else');
+  assert.notEqual(v.cta, 'Start Program', '⚠ the silent failure this replaced');
+});
+
+test('⚠ the finished CTA does not say "graduated" — the ladder did not count it', () => {
+  const v = viewForState('finished', true);
+  assert.doesNotMatch(`${v.pill} ${v.cta}`, /graduat/i, 'M4-A1-D3: state the fact, claim nothing more');
+});
+
+test('every program state has its own view — no state falls through to Planned', () => {
+  const seen = new Map();
+  for (const s of ['future', 'active', 'graduated', 'finished', 'ended_early']) {
+    const v = viewForState(s, true);
+    assert.ok(v.pill && v.cta, `${s} has no view`);
+    const key = `${v.pill}|${v.cta}`;
+    assert.ok(!seen.has(key), `${s} renders identically to ${seen.get(key)} — one of them is a fallthrough`);
+    seen.set(key, s);
+  }
+});
+
+test('isSealed names all three terminal states and none of the live ones', () => {
+  assert.equal(isSealed('graduated'), true);
+  assert.equal(isSealed('finished'), true, '⚠ a finished week is history, not a draft');
+  assert.equal(isSealed('ended_early'), true);
+  assert.equal(isSealed('active'), false);
+  assert.equal(isSealed('future'), false);
 });
 
 // ── Shelves: where each program sits on the Workouts tab ─────────────────────────────────────────────
@@ -353,6 +452,26 @@ test('a sealed Forge run keeps a home, and an authored one stays with your progr
 
   assert.deepEqual(s.past.map((p) => p.id), ['e'], 'a finished Forge program needs somewhere to be read from');
   assert.deepEqual(s.built.map((p) => p.id), ['f'], 'a program you wrote stays yours after it ends');
+});
+
+test('a finished week shelves as sealed, not as one still waiting to be run', () => {
+  // A week template you built and ran is the common case, so it lands under `built`; a Forge week under
+  // `past`. What must NEVER happen is `planned` — that shelf is "queued, not started", and a sealed
+  // record sitting there would be the app offering to start it again.
+  const s = shelvePrograms([row('g', 'finished'), row('h', 'finished', 'forge-deload-week')]);
+
+  assert.deepEqual(s.planned, [], '⚠ a sealed week is not queued');
+  assert.equal(s.active, null);
+  assert.deepEqual(s.built.map((p) => p.id), ['g']);
+  assert.deepEqual(s.past.map((p) => p.id), ['h']);
+});
+
+test('a finished week releases its catalog plan back to Discover', () => {
+  // `liveSourceIds` is what Discover hides. A sealed run must not hide the plan forever — 0104 dropped
+  // the one-row-per-source index precisely so a program could be run again, and a week template is the
+  // case where running it again is the entire point.
+  assert.deepEqual([...liveSourceIds([row('h', 'finished', 'forge-deload-week')])], []);
+  assert.deepEqual([...liveSourceIds([row('i', 'active', 'forge-deload-week')])], ['forge-deload-week']);
 });
 
 test('Discover withholds only what you have a live claim on', () => {

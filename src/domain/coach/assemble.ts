@@ -223,6 +223,8 @@ function buildDay(
     goal: CoachConstraints['goal'];
     experience: CoachConstraints['experience'];
     weekIndex: number;
+    /** The block's full length — `prescribeReps` needs it to know whether `weekIndex` can ramp (PAS-A7-D2). */
+    totalWeeks: number;
     isDeload: boolean;
     budget: number;
     owned: readonly string[];
@@ -254,6 +256,7 @@ function buildDay(
       category: opts.category,
       experience: opts.experience.lifting,
       weekIndex: opts.weekIndex,
+      totalWeeks: opts.totalWeeks,
       isDeload: opts.isDeload,
     };
 
@@ -442,6 +445,7 @@ export function assemble(
           goal: c.goal,
           experience: c.experience,
           weekIndex,
+          totalWeeks: weeks,
           isDeload,
           budget,
           owned,

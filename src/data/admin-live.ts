@@ -179,6 +179,8 @@ export interface AdminAdoption {
     sessionsCompleted: number;
     sessionsSkipped: number;
     graduated: number;
+    /** Programs under four weeks that ran to their end (0155). Finished, but not a graduation. */
+    finished: number;
     endedEarly: number;
     active: number;
     dropoffByWeek: { week: number; programs: number }[];
@@ -368,6 +370,10 @@ export async function fetchAdminAdoption(days: number, tz = dashboardTz()): Prom
       sessionsCompleted: num(p.sessions_completed),
       sessionsSkipped: num(p.sessions_skipped),
       graduated: num(p.graduated),
+      // Reads 0 until migration 0157 teaches `admin_program_metrics` the new state. `num()` coerces a
+      // missing key to 0 rather than throwing, so the dashboard degrades to "none yet" rather than
+      // breaking — which is right, but means an unchanged 0 here is not proof there are none.
+      finished: num(p.finished),
       endedEarly: num(p.ended_early),
       active: num(p.active),
       dropoffByWeek: arr<Record<string, unknown>>(p.dropoff_by_week).map((d) => ({
