@@ -43,9 +43,14 @@ const SQL_0127 = readFileSync(resolve(ROOT, 'supabase/migrations/0127_timed_set_
  */
 const SQL_0126 = readFileSync(resolve(ROOT, 'supabase/migrations/0126_squad_recap_notification.sql'), 'utf8');
 const SQL_0134 = readFileSync(resolve(ROOT, 'supabase/migrations/0134_goal_contribution_workout.sql'), 'utf8');
-// 0135 is the newest definition of the union, `push_pref_key`, `push_pref_default`, `push_enqueue_for`
-// and `push_drain` — repointed per the warning above, which is part of adding a branch.
-const SQL = readFileSync(resolve(ROOT, 'supabase/migrations/0135_post_reply_notifications.sql'), 'utf8');
+/*
+ * 0135 is still read for the one thing it now owns alone: `push_drain`'s payload, which 0153 had no
+ * reason to touch. It is NO LONGER the newest union — see `SQL` below.
+ */
+const SQL_0135 = readFileSync(resolve(ROOT, 'supabase/migrations/0135_post_reply_notifications.sql'), 'utf8');
+// 0153 is the newest definition of the union, `push_pref_key`, `push_pref_default` and
+// `push_enqueue_for` — repointed per the warning above, which is part of adding a branch.
+const SQL = readFileSync(resolve(ROOT, 'supabase/migrations/0153_squad_training_notifications.sql'), 'utf8');
 
 /** Every migration paired with the bundle that gets pasted into the dashboard. */
 const BUNDLES = [
@@ -59,7 +64,8 @@ const BUNDLES = [
   /* 0134 and 0135 ship together in one bundle: 0135 is the reason to open the SQL editor and 0134 is a
      one-function fix that would otherwise wait for a paste of its own. */
   ['0134_goal_contribution_workout', 'pending-0134-0135', SQL_0134],
-  ['0135_post_reply_notifications', 'pending-0134-0135', SQL],
+  ['0135_post_reply_notifications', 'pending-0134-0135', SQL_0135],
+  ['0153_squad_training_notifications', 'pending-0153', SQL],
 ];
 
 /**
@@ -77,14 +83,45 @@ test('every paste-ready bundle carries its migration verbatim', () => {
   }
 });
 
-/** The body of one SQL function, so a `when … then …` scan cannot stray into the next one. */
+/**
+ * The body of one SQL function, so a `when … then …` scan cannot stray into the next one — with SQL
+ * COMMENTS REMOVED.
+ *
+ * ⚠ THE STRIPPING IS NOT TIDINESS. Every assertion below matches source text, so a branch that is
+ * commented out still reads as present: `/* … *\/` around branch 14 and the sixteen-branch check stayed
+ * green, which was found by mutation-testing this file rather than by anything failing. That is exactly
+ * the fault mode this test exists for — 0088, 0092 and 0106 each shipped a union missing a branch — and
+ * the guard could not see the most literal form of it.
+ *
+ * Only `--` to end-of-line and `/* … *\/` blocks. Neither delimiter appears inside a string literal in
+ * any body parsed here (checked: the only hyphens are in route paths like `/squad-post/`, and there is
+ * no `/*` in any of them), so the naive strip is safe and stays readable.
+ */
 function fnBody(name) {
   const start = SQL.indexOf(`function public.${name}(`);
   assert.notEqual(start, -1, `${name} is missing from the migration`);
   const open = SQL.indexOf('as $$', start);
   const close = SQL.indexOf('$$;', open);
   assert.ok(open !== -1 && close !== -1, `${name} has no readable body`);
-  return SQL.slice(open, close);
+  return SQL.slice(open, close)
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/--[^\n]*/g, '');
+}
+
+/**
+ * ONE branch of the union — from its own `select` to the next `union all`, and never past it.
+ *
+ * The tests below used to take a fixed slice (`at + 600`, `at + 1400`) and guess at the length. That was
+ * wrong in both directions and quietly: too short and a real predicate at the bottom of a long branch is
+ * invisible; too long — which is what stripping the comments made every one of them — and the slice runs
+ * into the NEXT branch, so a guard on branch 15 passes because branch 16 still has the line. Mutation
+ * testing caught exactly that: deleting the leader's gate from branch 15 kept every assertion green.
+ */
+function branchOf(body, kind) {
+  const at = body.indexOf(`'${kind}'::text`);
+  assert.notEqual(at, -1, `${kind} branch is missing`);
+  const next = body.indexOf('union all', at);
+  return body.slice(at, next === -1 ? body.length : next);
 }
 
 function pairs(body, valuePattern) {
@@ -129,7 +166,7 @@ test('every default in the SQL matches the toggle the athlete actually sees', ()
  * 0088 and 0092 dropped both friend branches, 0106 dropped program graduation. Each compiled cleanly and
  * each was found by a person, not a test. This is that test.
  */
-test('notification_events_for still has all fourteen branches', () => {
+test('notification_events_for still has all sixteen branches', () => {
   const body = fnBody('notification_events_for');
   const kinds = [...body.matchAll(/select\s+'([a-z_]+)'::text/g)].map((m) => m[1]);
   // Branch 3 is built from the row's status rather than a literal, so it is matched separately.
@@ -156,6 +193,12 @@ test('notification_events_for still has all fourteen branches', () => {
          anybody answered. Unlike 10/11/12 these do not fan out: one comment notifies one person. */
       'post_comment',
       'post_reaction',
+      /* Branches 15 and 16, added 0153. The first branches whose subject is a fact about somebody's
+         body rather than a row they wrote — `profiles.training_since` had been written on every
+         session start since 0086 with nothing reading it, and `public.workouts` had never carried a
+         trigger of any kind. */
+      'squad_training_started',
+      'squad_training_finished',
     ],
     'a branch has been added or lost — if this is intentional, update the list and say so in the migration',
   );
@@ -241,7 +284,9 @@ test('a reply opens the feed that actually holds the post', () => {
   const enqueue = SQL.slice(SQL.indexOf('function public.push_enqueue_for'));
   assert.match(enqueue, /'post_comment'\s+then case when po\.audience = 'FRIENDS' then '\/friends'/);
   assert.match(enqueue, /'post_reaction'\s+then case when po\.audience = 'FRIENDS' then '\/friends'/);
-  assert.match(SQL, /'postAudience', \(select sp\.audience from public\.squad_posts sp where sp\.id = r\.post_id\)/, 'push_drain must send the audience or a tapped push cannot route');
+  // `push_drain`'s payload is still 0135's — 0153 rebuilt the union and the sender and had no reason to
+  // touch the transport, so this one assertion stays pointed at the migration that owns it.
+  assert.match(SQL_0135, /'postAudience', \(select sp\.audience from public\.squad_posts sp where sp\.id = r\.post_id\)/, 'push_drain must send the audience or a tapped push cannot route');
 });
 
 /**
@@ -281,10 +326,7 @@ test('a join request expires with the host presence it is about', () => {
 test('both fan-out branches are bounded in time', () => {
   const body = fnBody('notification_events_for');
   for (const kind of ['squad_post', 'squad_checkin', 'squad_recap']) {
-    const at = body.indexOf("'" + kind + "'::text");
-    assert.notEqual(at, -1, kind + ' branch is missing');
-    const branch = body.slice(at, at + 600);
-    assert.match(branch, /created_at > now\(\) - interval '14 days'/, kind + ' must stay windowed');
+    assert.match(branchOf(body, kind), /created_at > now\(\) - interval '14 days'/, kind + ' must stay windowed');
   }
 });
 
@@ -401,7 +443,132 @@ test('the parameterised union is never granted to authenticated', () => {
       name + ' grants the parameterised union to authenticated — it answers for ANY user id',
     );
   }
-  assert.match(SQL, /grant execute on function public\.notification_events\(\) to authenticated;/, 'the wrapper must stay callable by the client');
+  /*
+   * ⚠ STATED AS A PROPERTY OF THE MIGRATIONS THAT DROP THE WRAPPER, not of "the newest file".
+   *
+   * This used to assert the grant against whichever migration `SQL` pointed at, which was right only for
+   * as long as every union change happened to drop and rebuild `notification_events()`. 0153 rebuilds the
+   * union IN PLACE — the OUT columns did not change, so 42P13 does not apply and `create or replace`
+   * preserves privileges — and the old form would have gone red demanding a grant statement that would
+   * have been pure noise in a file that never revoked anything. The rule is: whoever drops it, re-grants
+   * it.
+   */
+  for (const [name, , body] of BUNDLES) {
+    if (!/drop function if exists public\.notification_events\(\);/.test(body)) continue;
+    assert.match(
+      body,
+      /grant execute on function public\.notification_events\(\) to authenticated;/,
+      name + ' drops the wrapper without re-granting it — the client would lose its own inbox',
+    );
+  }
+});
+
+/**
+ * 0153 — THE THREE GATES, and each of them is somebody's decision that the branch must not skip.
+ *
+ * Every one of these fails silently and looks like "notifications are quiet": drop `s.training_alerts`
+ * and a squad announces sessions its leader never opted into; drop `me.notify_start` / `me.notify_finish`
+ * and every member of that squad is notified whether or not they asked; drop `vis_clears` and an athlete
+ * who set their training to private is announced to their squad anyway — by a preference belonging to
+ * somebody else, which is the one failure here that cannot be undone by turning a switch off.
+ */
+test('a training alert needs the leader, the recipient AND the actor to allow it', () => {
+  const body = fnBody('notification_events_for');
+
+  for (const [kind, own] of [
+    ['squad_training_started', 'me\\.notify_start'],
+    ['squad_training_finished', 'me\\.notify_finish'],
+  ]) {
+    const branch = branchOf(body, kind);
+    assert.match(branch, /s\.training_alerts/, kind + ": the squad leader's gate is gone");
+    assert.match(branch, new RegExp('and ' + own), kind + ": the recipient's own toggle is gone");
+    assert.match(
+      branch,
+      /vis_clears\(coalesce\(p\.visibility->>'training', 'squads'\), 'squad'\)/,
+      kind + ": the ACTOR's own training audience is gone — this one publishes something they hid",
+    );
+    assert.match(branch, /other\.user_id <> p_user/, kind + ': the athlete would be notified about themselves');
+  }
+});
+
+/**
+ * ⚠ AND THEY ARE WINDOWED TIGHTER THAN EVERYTHING ABOVE THEM, deliberately.
+ *
+ * A start expires with the session: 4 hours is the presence ceiling `training_now()` and branch 9 both
+ * use, and the row is an invitation to join — it is worthless the moment they finish. A finish gets 24
+ * hours rather than the 14 days every written branch uses, because this is the widest fan-out in the
+ * union: a 50-member squad training four times a week would put ~200 rows a fortnight in every member's
+ * inbox and bury everything else in it.
+ */
+test('the training branches expire faster than the written ones', () => {
+  const body = fnBody('notification_events_for');
+  const started = branchOf(body, 'squad_training_started');
+  const finished = branchOf(body, 'squad_training_finished');
+  assert.match(started, /training_since > now\(\) - interval '4 hours'/);
+  assert.match(finished, /saved_at > now\(\) - interval '24 hours'/);
+  // A workout row exists before it is finished; without this the branch announces sessions in progress.
+  assert.match(finished, /w\.state = 'saved'/, 'branch 16 must take only saved workouts');
+});
+
+/**
+ * The two triggers must not be able to take a workout down with them.
+ *
+ * `push_workout_saved` is the FIRST trigger ever placed on `public.workouts`, and it fires inside
+ * `save_workout` — the transaction that commits the session the athlete just trained. An unhandled raise
+ * anywhere in the fan-out (a deleted squad, a null id, a permission drift three functions away) would
+ * roll that back. This schema has already lost Finish Workout once to exactly that shape, with every
+ * other gate green, so the exception block is the load-bearing line rather than defensive habit.
+ */
+test('a failed notification can never roll back the workout that caused it', () => {
+  for (const fn of ['push_tg_training_started', 'push_tg_training_finished']) {
+    const at = SQL.indexOf('function public.' + fn);
+    assert.notEqual(at, -1, fn + ' is missing');
+    const body = SQL.slice(at, SQL.indexOf('$$;', at));
+    assert.match(body, /exception when others then/, fn + ' can raise into its caller');
+    assert.match(body, /push_enqueue_for/, fn + ' does not actually enqueue anything');
+  }
+  // And the workouts trigger only fires on a session that is actually finished.
+  assert.match(SQL, /create trigger push_workout_saved[\s\S]*?when \(new\.state = 'saved' and new\.saved_at is not null\)/);
+  // The profiles trigger is narrowed to the one column, because profiles is written on nearly every
+  // launch — the timezone, the seen stamp, the avatar — and each of those would walk the athlete's squads.
+  assert.match(SQL, /create trigger push_training_started\s+after update of training_since on public\.profiles/);
+  assert.match(SQL, /when \(new\.training_since is not null and new\.training_since is distinct from old\.training_since\)/);
+});
+
+/**
+ * A member sets their own toggles through an RPC, and `squad_members` never gains an UPDATE policy.
+ *
+ * RLS gates ROWS, not COLUMNS. `for update using (user_id = auth.uid())` is the obvious way to let a
+ * member flip these two switches and it would also let them rewrite their own `role` to 'owner' and
+ * their own `squad_id` to any squad in the database — joining a private squad by updating a row they
+ * legitimately own, past every approval path 0050 and 0053 exist to enforce.
+ */
+test('the per-squad toggles are written by a definer function, never by a policy', () => {
+  assert.match(SQL, /create or replace function public\.set_squad_notify\(p_squad uuid, p_start boolean, p_finish boolean\)/);
+  assert.match(SQL, /security definer/);
+  // Only the two columns, and only the caller's own row.
+  const at = SQL.indexOf('function public.set_squad_notify');
+  const fn = SQL.slice(at, SQL.indexOf('$$;', at));
+  assert.match(fn, /update public\.squad_members\s+set notify_start\s+= coalesce\(p_start,\s+notify_start\),\s+notify_finish = coalesce\(p_finish, notify_finish\)/);
+  assert.match(fn, /user_id\s+= auth\.uid\(\)/, 'it must scope to the caller');
+  /*
+   * The SET list alone, not the whole body — `where squad_id = p_squad` is the scoping predicate and
+   * matching on it would have made this assertion fail for the reason it exists to allow.
+   */
+  const setList = fn.slice(fn.indexOf('set notify_start') + 4, fn.indexOf('where squad_id'));
+  assert.deepEqual(
+    [...setList.matchAll(/(\w+)\s*=\s*coalesce/g)].map((m) => m[1]).sort(),
+    ['notify_finish', 'notify_start'],
+    'set_squad_notify writes a column other than the two toggles — role and squad_id must stay out of reach',
+  );
+
+  for (const [name, , body] of BUNDLES) {
+    assert.doesNotMatch(
+      body,
+      /create policy \w+ on public\.squad_members for update/,
+      name + ' adds an UPDATE policy to squad_members — that grants the whole row, including role',
+    );
+  }
 });
 
 // ── a rejection is never pushed ───────────────────────────────────────────────
@@ -450,6 +617,32 @@ test('a tapped push lands where the inbox row lands', () => {
   for (const kind of ['squad_post', 'squad_checkin']) {
     assert.deepEqual(destinationFor({ kind, squadId: 'q1' }), { pathname: '/squad/[id]', params: { id: 'q1' } });
   }
+
+  /*
+   * 0153. The two training kinds must NOT fall to that default arm, and the way this breaks is quiet:
+   * both carry a `squadId` (the push needs it to name the squad), so a missing case would route to the
+   * squad page, look deliberate, and lose the only action either notification has.
+   *
+   * A start is joinable and the window is minutes long, so it opens the ASK side of Train Together. A
+   * finish has nothing to join and opens the athlete.
+   */
+  assert.deepEqual(destinationFor({ kind: 'squad_training_started', actorId: 'a1', squadId: 'q1' }), {
+    pathname: '/workout-join',
+    params: { athlete: 'a1' },
+  });
+  assert.deepEqual(destinationFor({ kind: 'squad_training_finished', actorId: 'a1', squadId: 'q1' }), {
+    pathname: '/athlete/[id]',
+    params: { id: 'a1' },
+  });
+  // No actor is the inbox, never a route with an empty segment.
+  for (const kind of ['squad_training_started', 'squad_training_finished']) {
+    assert.equal(destinationFor({ kind, squadId: 'q1' }), '/inbox');
+  }
+
+  // And the SQL sender has to land in the same two places.
+  const enqueue = SQL.slice(SQL.indexOf('function public.push_enqueue_for'));
+  assert.match(enqueue, /'squad_training_started'\s+then '\/workout-join\?athlete=' \|\| e\.actor_id::text/);
+  assert.match(enqueue, /'squad_training_finished'\s+then '\/athlete\/' \|\| e\.actor_id::text/);
 });
 
 test('a notification missing the id it routes on falls back to the inbox, never a broken route', () => {

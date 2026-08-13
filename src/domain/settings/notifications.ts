@@ -16,17 +16,19 @@
  *
  * ══ WHAT ACTUALLY SENDS TODAY ══
  *
- * Six of the nine map to a branch of `notification_events_for` and are live:
+ * Nine of the eleven map to a branch of `notification_events_for` and are live:
  *   squad_activity · friend_requests · workout_tags · program_shares · challenge_updates · squad_feed
+ *   · post_comments · squad_reactions · squad_training
  *
  * `squad_feed` joined them in 0122, which added the first FAN-OUT branches (`squad_post`,
  * `squad_checkin` — one row becomes one event per squad member, windowed at 14 days). It had been inert
- * since 0022: the control claimed to govern squad posts and governed nothing.
+ * since 0022: the control claimed to govern squad posts and governed nothing. `squad_reactions` was
+ * inert for thirteen migrations for the same reason and went live in 0135.
  *
- * THREE are locked by P-5 §3.1/§3.2 and still have no event branch emitting them. They persist intent,
+ * TWO are locked by P-5 §3.1/§3.2 and still have no event branch emitting them. They persist intent,
  * exactly as all nine did before 0120, and they are listed here so the screen matches the locked
  * architecture rather than matching the sender:
- *   squad_reactions · squad_goals · squad_invites
+ *   squad_goals · squad_invites
  *
  * ⚠ `squad_invites` cannot become live by writing a branch: THERE IS NO SQUAD-INVITE TABLE. Invites are
  * code-only — `squad-invite.tsx` shares a link and a code, and nothing records a directed invitation. It
@@ -45,7 +47,8 @@ export type NotifKey =
   | 'program_shares'
   | 'squad_invites'
   | 'challenge_updates'
-  | 'post_comments';
+  | 'post_comments'
+  | 'squad_training';
 
 export interface NotifToggle {
   key: NotifKey;
@@ -84,6 +87,35 @@ export const NOTIF_SECTIONS: NotifSection[] = [
       { key: 'workout_tags', label: 'Workout Invitations', desc: 'When someone shares a workout with you', def: true, icon: 'dumbbell' },
       { key: 'program_shares', label: 'Shared Programs', desc: 'When someone sends you a program', def: true, icon: 'book' },
       { key: 'squad_invites', label: 'Squad Invitations', desc: 'When you’re invited to join a squad', def: true, icon: 'banner' },
+    ],
+  },
+  /*
+   * 0153. Its own section, and the ONE default-ON ambient row in this file — both for the same reason.
+   *
+   * Every other Squad Activity toggle governs something that arrives whether or not you asked for it,
+   * which is why that section's blurb promises "Off by default". This one cannot arrive uninvited: the
+   * squad's LEADER has to switch training alerts on for the squad, and then the athlete has to say which
+   * half they want, in which squads, in that squad's own settings. Two deliberate acts on two screens
+   * before a single notification exists.
+   *
+   * ⚠ SO A DEFAULT OF OFF WOULD BE THE TRAP, not the safe choice. It would sit on a screen the athlete
+   * has no reason to visit, silently discarding notifications they had just finished turning on
+   * somewhere else — a control whose only observable behaviour is making another control not work. The
+   * per-squad switches are the real answer to "do I want this"; this row is the global off switch for
+   * an athlete who wants them all to stop at once, which is what it says.
+   */
+  {
+    key: 'training',
+    label: 'Training Alerts',
+    blurb: 'When your squad-mates train. Turned on per squad — this is the switch that silences them all.',
+    toggles: [
+      {
+        key: 'squad_training',
+        label: 'Squad Training Alerts',
+        desc: 'When a squad-mate starts or finishes a session, in squads where you’ve asked for it',
+        def: true,
+        icon: 'dumbbell',
+      },
     ],
   },
   /*
@@ -166,6 +198,12 @@ export const PUSH_KIND_PREF: Record<string, NotifKey> = {
      Both still appear in `/inbox` regardless — these govern push only (P-5 §4). */
   post_comment: 'post_comments',
   post_reaction: 'squad_reactions',
+  /* 0153. Both training kinds ride ONE key. The per-squad columns (`squad_members.notify_start` /
+     `notify_finish`) already answer "starts, finishes, or both" — a second, global pair would be a
+     rival answer to the same question, able to disagree with the first with only the SQL knowing which
+     of them won. */
+  squad_training_started: 'squad_training',
+  squad_training_finished: 'squad_training',
 };
 
 /** Merge a stored map over the defaults, keeping only known keys with boolean values. */

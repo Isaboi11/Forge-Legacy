@@ -152,7 +152,10 @@ function NotificationRow({ notification: n, divided, onPress }: { notification: 
     n.kind === 'program_shared' ||
     // A person commented or reacted, even when the post they answered lives in a squad (0135).
     n.kind === 'post_comment' ||
-    n.kind === 'post_reaction';
+    n.kind === 'post_reaction' ||
+    // 0153. A squad-mate trained. The squad is only the reason we are told — the row is about them.
+    n.kind === 'squad_training_started' ||
+    n.kind === 'squad_training_finished';
 
   return (
     <Animated.View style={{ opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }] }}>
@@ -285,6 +288,22 @@ function bodyFor(n: ForgeNotification, actor: string) {
           <Text style={styles.strong}>{actor}</Text> reacted to your post
         </>
       );
+    /* Present tense, and the squad named, because both are load-bearing. "is training" is the only
+       sentence in this list describing something still happening — the row is an invitation, and the
+       tense is what says so. And an athlete in three squads is told which one this came from, since
+       that is the setting they would go and change. */
+    case 'squad_training_started':
+      return (
+        <>
+          <Text style={styles.strong}>{actor}</Text> is training in <Text style={styles.strong}>{n.squadName}</Text>
+        </>
+      );
+    case 'squad_training_finished':
+      return (
+        <>
+          <Text style={styles.strong}>{actor}</Text> finished a workout in <Text style={styles.strong}>{n.squadName}</Text>
+        </>
+      );
   }
 }
 
@@ -321,6 +340,11 @@ function subFor(n: ForgeNotification): string {
       return 'Read it and reply';
     case 'post_reaction':
       return 'Open your post';
+    // The only sub-line in this list that is an offer rather than a description of where the tap goes.
+    case 'squad_training_started':
+      return 'Ask to join them';
+    case 'squad_training_finished':
+      return 'See what they did';
   }
 }
 
@@ -357,6 +381,10 @@ function accessibilityLabelFor(n: ForgeNotification, actor: string): string {
       return `${actor} commented on your post, ${when} ago. Read it and reply.`;
     case 'post_reaction':
       return `${actor} reacted to your post, ${when} ago. Open your post.`;
+    case 'squad_training_started':
+      return `${actor} is training in ${n.squadName}, started ${when} ago. Ask to join them.`;
+    case 'squad_training_finished':
+      return `${actor} finished a workout in ${n.squadName}, ${when} ago. See what they did.`;
   }
 }
 
@@ -394,6 +422,12 @@ function glyphFor(kind: ForgeNotification['kind']) {
       return <SpeechGlyph size={11} color={flColor.bronze300} />;
     case 'post_reaction':
       return <HeartGlyph size={11} color={flColor.bronze300} />;
+    /* The play glyph for a start — the same mark `squad_checkin` uses for something live and expiring,
+       which is exactly what this is. A finish takes the check, because it is done. */
+    case 'squad_training_started':
+      return <PlayGlyph size={11} color={flColor.bronze300} />;
+    case 'squad_training_finished':
+      return <CheckGlyph size={11} color="#8FB295" />;
   }
 }
 

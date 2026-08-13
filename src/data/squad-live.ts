@@ -663,6 +663,85 @@ export async function setSquadNotifPrefs(squadId: string, prefs: SquadNotifPrefs
   }
 }
 
+// ── Training alerts (0153) — the ONE per-squad preference the server actually reads ──────────────────
+
+/**
+ * ⚠ THESE ARE NOT THE FOUR ABOVE, AND THE DIFFERENCE IS THE WHOLE POINT.
+ *
+ * `SquadNotifPrefs` lives in AsyncStorage and no server code has ever read it — four switches that move
+ * and change nothing, on one device. These three are columns, read by `notification_events_for` on every
+ * scan, and they are kept in a separate type rather than folded into that one precisely so nothing can
+ * quietly treat a real preference as a device note or the reverse.
+ *
+ * ══ THREE SWITCHES, TWO OWNERS ══
+ *
+ *   `squadOn`  — `squads.training_alerts`. The LEADER's, and the outer gate. False and the other two do
+ *                nothing at all, which is why the UI hides them behind it rather than showing controls
+ *                that save correctly and produce silence.
+ *   `start` / `finish` — `squad_members.notify_start` / `notify_finish`. This athlete's own, in THIS
+ *                squad, and separate because "tell me when someone starts so I can join" and "tell me
+ *                when they finish" are different wants.
+ *
+ * A fourth gate is nobody's setting on this screen: the ACTOR's own `visibility.training` audience. An
+ * athlete who hides their training is never announced, whatever their squad-mates switch on here.
+ */
+export interface SquadTrainingAlerts {
+  squadOn: boolean;
+  start: boolean;
+  finish: boolean;
+}
+
+/**
+ * Null means the columns are not there yet — 0153 unapplied — and the caller hides the controls.
+ *
+ * Fetched on its own rather than added to `SQUAD_COLS`, for the reason `fetchWeeklyStandard` above
+ * records: the client ships before the migration is pasted in by hand, and a missing COLUMN raises 42703,
+ * which the table-level guards do not catch. In the shared select it would take every squad screen down
+ * until somebody opened the SQL editor.
+ */
+export async function fetchSquadTrainingAlerts(squadId: string): Promise<SquadTrainingAlerts | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const [sq, me] = await Promise.all([
+    supabase.from('squads').select('training_alerts').eq('id', squadId).maybeSingle(),
+    supabase.from('squad_members').select('notify_start, notify_finish').eq('squad_id', squadId).eq('user_id', user.id).maybeSingle(),
+  ]);
+  if (sq.error || !sq.data || me.error) return null;
+
+  const squadOn = (sq.data as { training_alerts?: boolean }).training_alerts === true;
+  const row = (me.data ?? {}) as { notify_start?: boolean; notify_finish?: boolean };
+  return { squadOn, start: row.notify_start === true, finish: row.notify_finish === true };
+}
+
+/** The leader's switch. Guarded by the existing `squads_update` owner policy (0029) — no new grant. */
+export async function setSquadTrainingAlerts(squadId: string, on: boolean): Promise<void> {
+  const { error } = await supabase.from('squads').update({ training_alerts: on, updated_at: new Date().toISOString() }).eq('id', squadId);
+  if (error) throw error;
+}
+
+/**
+ * The member's own, through the 0153 RPC rather than a table update.
+ *
+ * `squad_members` has no UPDATE policy and deliberately never gets one: RLS gates rows, not columns, so
+ * `using (user_id = auth.uid())` would also let a member rewrite their own `role` and their own
+ * `squad_id`. The definer function can only write these two columns.
+ */
+export async function setMyTrainingAlerts(squadId: string, start: boolean, finish: boolean): Promise<void> {
+  const { data, error } = await supabase.rpc('set_squad_notify', { p_squad: squadId, p_start: start, p_finish: finish });
+  if (error) {
+    if ((error as { code?: string }).code === 'PGRST202') {
+      throw new Error('Training alerts aren’t available yet — migration 0153 hasn’t been applied.');
+    }
+    throw error;
+  }
+  // FALSE is the RPC's way of saying "you are not in that squad". Reported rather than swallowed: a
+  // switch that moved and saved nothing is the failure this whole file keeps arguing against.
+  if (data === false) throw new Error('You’re not a member of this squad.');
+}
+
 /**
  * Upload a squad photo to the public `squad-photos` bucket and return its public URL. The object lives under
  * `<squadId>/…` so the owner-scoped storage policy resolves; the squad must already exist (create → upload →

@@ -97,25 +97,40 @@ test('a stored visibility map merges over defaults and drops junk', () => {
 // ── notifications ──────────────────────────────────────────────────────────────
 
 /**
- * ⚠ TEN, NOT NINE, SINCE 0135 — and the tenth is an unapplied locked decision rather than an addition.
+ * ⚠ ELEVEN, NOT TEN, SINCE 0153 — and this count is asserted precisely so a row cannot appear without
+ * somebody naming where it came from. The four ceremony toggles below are what happens when one does.
  *
+ * The tenth (0135) is an unapplied LOCKED decision rather than an addition:
  * `Social-System-Architecture-v1.0` SOC-D11 locks *"Comments generate notifications (to the post author;
- * new P-5 row, §13)"*. The row was never built; 0135 built the emitter and this is that row. The count
- * is asserted precisely so a tenth toggle cannot appear without somebody stating which locked decision
- * it comes from — the ceremony toggles below are what happens when one appears without that.
+ * new P-5 row, §13)"*. The row was never built; 0135 built the emitter and this is that row. REACTIONS
+ * did NOT get a row, deliberately: they ride `squad_reactions`, which P-5 §3.1 locked and 0022 shipped
+ * inert, and whose OFF default SOC-D11 also locks.
  *
- * REACTIONS did NOT get a row, deliberately: they ride `squad_reactions`, which P-5 §3.1 locked and 0022
- * shipped inert, and whose OFF default SOC-D11 also locks.
+ * The eleventh (0153) is a PO DECISION, and is recorded as one rather than dressed up as a spec: *"Squad
+ * leader should be able to set if they want a notification for when someone in the squad starts working
+ * out. And then individually you can set whether or not you want those notifications. Either when that
+ * squad member starts or finishes."* P-5 has no §3.1 row for it, because nothing in the app had ever
+ * emitted a training event — `profiles.training_since` had been written since 0086 with nothing reading
+ * it. It is the fifth section for the reason 0135's was the fourth: Squad Activity's blurb promises
+ * "Off by default", and this is the one ambient key that defaults ON.
  */
-test('ten toggles across four sections, squad off / requests on / challenges off / comments on', () => {
-  assert.equal(NOTIF_SECTIONS.flatMap((s) => s.toggles).length, 10);
-  assert.equal(NOTIF_SECTIONS.length, 4);
+test('eleven toggles across five sections, squad off / requests on / challenges off / comments on', () => {
+  assert.equal(NOTIF_SECTIONS.flatMap((s) => s.toggles).length, 11);
+  assert.equal(NOTIF_SECTIONS.length, 5);
   assert.equal(NOTIF_DEFAULTS.squad_feed, false);
   assert.equal(NOTIF_DEFAULTS.squad_invites, true);
   assert.equal(NOTIF_DEFAULTS.friend_requests, true, 'a direct request stays on (P-5 §3.2b)');
   assert.equal(NOTIF_DEFAULTS.challenge_updates, false, 'ambient competition stays off (P-5 §3.2a)');
   assert.equal(NOTIF_DEFAULTS.post_comments, true, 'a comment is aimed at you by name, so it stays on (SOC-D11, P-5 §3.2b)');
   assert.equal(NOTIF_DEFAULTS.squad_reactions, false, 'SOC-D11 locks reaction pushes OFF — the inbox still shows them');
+  /*
+   * ⚠ ON, and the only ambient default in this file that is. It is not reachable without TWO deliberate
+   * opt-ins on another screen — the squad leader's `squads.training_alerts` and the athlete's own
+   * per-squad `notify_start` / `notify_finish`, both false out of the migration. Defaulting this OFF
+   * would mean somebody turning training alerts on in squad settings and receiving nothing, with the
+   * reason sitting on a screen they had no cause to open.
+   */
+  assert.equal(NOTIF_DEFAULTS.squad_training, true, 'nothing can reach this key until two other switches are already on (0153)');
 });
 
 // P-5 Architecture §1 (LOCKED): M-1/M-2/M-4 each list "fire as a push notification" under their own

@@ -46,7 +46,22 @@ export type NotificationKind =
    * feature with its own volume problem.
    */
   | 'post_comment'
-  | 'post_reaction';
+  | 'post_reaction'
+  /**
+   * A squad-mate started, or finished, a session (0153) — fan-out, and the first kinds in this union
+   * whose subject is a fact about somebody's body rather than a row they wrote.
+   *
+   * Three switches stand between the fact and this event: the squad leader's `squads.training_alerts`,
+   * the recipient's own per-squad `notify_start` / `notify_finish`, and the ACTOR's `visibility.training`
+   * audience — the same gate that decides whether they appear on Live Now. All three default to
+   * producing nothing, so an existing squad is silent until somebody deliberately turns this on.
+   *
+   * Windowed tighter than everything above: 4 hours for a start (the presence ceiling — the ask expires
+   * with the session it is about) and 24 hours for a finish. A fortnight of every squad-mate's sessions
+   * would be the whole inbox.
+   */
+  | 'squad_training_started'
+  | 'squad_training_finished';
 
 export interface ForgeNotification {
   kind: NotificationKind;

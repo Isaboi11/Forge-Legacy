@@ -20,9 +20,12 @@ import {
   DEFAULT_SQUAD_NOTIF,
   deleteSquad,
   fetchSquad,
+  fetchSquadTrainingAlerts,
   getSquadNotifPrefs,
   leaveSquad,
+  setMyTrainingAlerts,
   setSquadNotifPrefs,
+  setSquadTrainingAlerts,
   updateSquad,
   fetchWeeklyStandard,
   uploadSquadPhoto,
@@ -30,6 +33,7 @@ import {
   type SquadMemberView,
   type SquadNotifPrefs,
   type SquadPrivacy,
+  type SquadTrainingAlerts,
 } from '@/data/squad-live';
 import { SQUAD_CATEGORIES, fetchPendingRequestCount, fetchSquadDiscovery, updateSquadDiscovery, type SquadCategory } from '@/data/squad-discover-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -404,6 +408,9 @@ export default function SquadSettingsScreen() {
           </>
         ) : null}
 
+        {/* Training Alerts (0153) — the leader's gate, then the leader's own two toggles under it. */}
+        <TrainingAlerts squadId={squad.id} isLeader />
+
         {/* Membership — the owner's join-request queue */}
         <TourAnchor id="settings-roster">
           <Text style={styles.sectionLabel}>Membership</Text>
@@ -664,6 +671,9 @@ function MemberSettings({ squad, members, onBack }: { squad: SquadDetail; member
           {memberSince ? <InfoRow icon={<CalendarGlyph />} label="Member Since" right={<Text style={styles.infoRowValue}>{memberSince}</Text>} divided /> : null}
         </View>
 
+        {/* Training Alerts (0153) — real, server-read, and above the four device-local ones below. */}
+        <TrainingAlerts squadId={squad.id} isLeader={false} />
+
         {/* Notifications */}
         <Text style={styles.sectionLabel}>Notifications</Text>
         <View style={styles.notifCard}>
@@ -756,6 +766,100 @@ function NotifRow({ icon, title, sub, on, dim = false, divided = false, onToggle
       </View>
       <NotifSwitch on={on} disabled={dim} onToggle={onToggle} label={title} />
     </View>
+  );
+}
+/**
+ * Training Alerts (0153) — the ONE per-squad notification control the server actually reads.
+ *
+ * ══ WHY IT IS NOT A ROW IN THE NOTIFICATIONS CARD BELOW IT ══
+ *
+ * That card's four switches live in AsyncStorage and no server code has ever read one; "Mute Squad" is a
+ * master switch over three toggles that govern nothing. Putting a REAL preference inside it would put a
+ * working control under a mute that cannot mute it — the athlete would turn training alerts on, mute the
+ * squad, and keep getting them. Its own card, with its own label, and deliberately not wired to `muted`.
+ *
+ * ══ THE LEADER'S SWITCH IS A GATE, SO IT IS DRAWN AS ONE ══
+ *
+ * `squads.training_alerts` off means `notify_start` and `notify_finish` produce nothing, so the two
+ * personal rows are not rendered at all in that state — they would save correctly and change nothing,
+ * which is the silent dead end this feature is most likely to be mistaken for. The member is told whose
+ * decision it is instead.
+ *
+ * `null` from the fetch means 0153 has not been pasted into the SQL editor yet: the whole section
+ * disappears rather than offering switches nothing is listening to. Same rule as Discovery and the
+ * weekly standard above.
+ */
+function TrainingAlerts({ squadId, isLeader }: { squadId: string; isLeader: boolean }) {
+  const persist = usePersist();
+  const { data } = useQuery(() => fetchSquadTrainingAlerts(squadId), [squadId]);
+  const [edits, setEdits] = useState<Partial<SquadTrainingAlerts>>({});
+
+  if (!data) return null;
+
+  const v: SquadTrainingAlerts = { ...data, ...edits };
+
+  const setMine = (patch: { start?: boolean; finish?: boolean }) => {
+    const next = { ...v, ...patch };
+    const before = edits;
+    setEdits((e) => ({ ...e, ...patch }));
+    // `detail: true` — the RPC's own sentences say something useful ("0153 hasn't been applied", "you're
+    // not a member of this squad"), and the generic couldn't-save line would throw both away.
+    persist(() => setMyTrainingAlerts(squadId, next.start, next.finish), { rollback: () => setEdits(before), detail: true });
+  };
+
+  const setGate = (on: boolean) => {
+    const before = edits;
+    setEdits((e) => ({ ...e, squadOn: on }));
+    persist(() => setSquadTrainingAlerts(squadId, on), { rollback: () => setEdits(before) });
+  };
+
+  return (
+    <>
+      <Text style={styles.sectionLabel}>Training Alerts</Text>
+      <View style={styles.notifCard}>
+        {isLeader ? (
+          <NotifRow
+            icon={<BellGlyph />}
+            title="Announce Sessions"
+            sub="Let this squad know when its members start and finish training."
+            on={v.squadOn}
+            onToggle={() => setGate(!v.squadOn)}
+          />
+        ) : null}
+
+        {v.squadOn ? (
+          <>
+            <NotifRow
+              icon={<FlameGlyph />}
+              title="When someone starts"
+              sub="So you can ask to join while they’re still training."
+              on={v.start}
+              divided={isLeader}
+              onToggle={() => setMine({ start: !v.start })}
+            />
+            <NotifRow
+              icon={<TargetGlyph />}
+              title="When someone finishes"
+              sub="A session logged in this squad."
+              on={v.finish}
+              divided
+              onToggle={() => setMine({ finish: !v.finish })}
+            />
+          </>
+        ) : (
+          <View style={[styles.notifRow, isLeader ? styles.notifRowDivided : null]}>
+            <Text style={styles.notifSub}>
+              {isLeader ? 'Turn this on to choose which alerts you get.' : 'Your squad leader hasn’t turned these on.'}
+            </Text>
+          </View>
+        )}
+      </View>
+      {/* The one gate on this feature that is nobody's setting on this screen, said out loud — otherwise
+          it reads as a bug the first time somebody trains and nothing arrives. */}
+      <Text style={styles.trainingAlertsFoot}>
+        Anyone who keeps their training private in Privacy settings is never announced, whatever is switched on here.
+      </Text>
+    </>
   );
 }
 function NotifSwitch({ on, disabled = false, onToggle, label }: { on: boolean; disabled?: boolean; onToggle: () => void; label: string }) {
@@ -999,6 +1103,8 @@ const styles = StyleSheet.create({
   notifRow: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingHorizontal: 15, paddingVertical: 14 },
   notifRowDivided: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
   notifRowDim: { opacity: 0.4 },
+  // The privacy line under the Training Alerts card (0153) — a caption, not a row.
+  trainingAlertsFoot: { marginTop: 8, marginHorizontal: 4, fontSize: 11.5, lineHeight: 16, color: flColor.gray600 },
   notifIcon: { width: 34, height: 34, flexShrink: 0, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.bronzeTint, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
   notifText: { flex: 1, minWidth: 0, gap: 2 },
   notifTitle: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },

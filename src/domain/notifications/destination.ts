@@ -33,6 +33,7 @@ export type NotificationDestination =
   | { pathname: '/challenge/[id]'; params: { id: string } }
   | { pathname: '/squad-requests'; params: { id: string } }
   | { pathname: '/athlete/[id]'; params: { id: string } }
+  | { pathname: '/workout-join'; params: { athlete: string } }
   | { pathname: '/squad/[id]'; params: { id: string } }
   | { pathname: '/squad-post/[id]'; params: { id: string } }
   | '/friends'
@@ -78,6 +79,25 @@ export function destinationFor(n: NotificationTarget): NotificationDestination {
     case 'post_reaction':
       if (n.postAudience === 'FRIENDS') return '/friends';
       return n.postId ? { pathname: '/squad-post/[id]', params: { id: n.postId } } : '/inbox';
+    /*
+     * 0153. THE TWO TRAINING KINDS DO NOT SHARE A DESTINATION, even though they share a preference and
+     * a sentence structure, because the only thing you can DO about each is different.
+     *
+     * A start is joinable and the window is minutes long, so it opens the ASK side of Train Together
+     * (0121) — one tap from "they're training" to "can I come". Sending it to a profile instead would
+     * be the same mistake the Home live card made before 0121: a button labelled View, on the one
+     * notification in the app with a live action attached to it.
+     *
+     * A finish has nothing to join. It opens the athlete, which is where what they did is legible.
+     *
+     * ⚠ Neither falls through to the `default` arm below, and that matters: both carry a `squadId` (the
+     * push needs it to name the squad in the body), so the catch-all would have quietly routed them to
+     * a squad page — right-looking, and never what the athlete tapped for.
+     */
+    case 'squad_training_started':
+      return n.actorId ? { pathname: '/workout-join', params: { athlete: n.actorId } } : '/inbox';
+    case 'squad_training_finished':
+      return n.actorId ? { pathname: '/athlete/[id]', params: { id: n.actorId } } : '/inbox';
     default:
       return n.squadId ? { pathname: '/squad/[id]', params: { id: n.squadId } } : '/inbox';
   }
