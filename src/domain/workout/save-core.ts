@@ -199,6 +199,14 @@ export function buildSaveExercises(session: ActiveSession) {
               duration_sec: s.durationSec ?? null,
               distance: s.distanceMi ?? null,
               distance_unit: s.distanceMi != null ? 'mi' : null,
+              /*
+               * ⚠ ITS OWN KEY, NEVER `distance` (0151). A stair climber's floors are the only cardio
+               * measurement that is not a distance, and `save_workout` rolls every set's `distance` up
+               * into `workouts.distance` — the column mileage goals, distance honors and challenge
+               * scoring all read as miles. Sixty floors sent as sixty miles would win a distance
+               * challenge from a stair machine.
+               */
+              floors: s.floors ?? null,
               // How it was RECORDED, not what the toggle currently says (0097).
               modality: s.modality ?? null,
               incline_pct: s.inclinePct ?? null,

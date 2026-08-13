@@ -1184,6 +1184,12 @@ function CardioRecordRow({ name, cardio, units }: { name: string; cardio: Comple
   if (cardio.distanceMi != null) {
     cells.push({ value: toDistance(cardio.distanceMi, units).toFixed(2), label: u.toUpperCase() });
   }
+  /* Floors sit where miles would, and take the accent for the same reason a distance does: on a stair
+     session it is the number the athlete came for. ⚠ NOT passed through `toDistance` — there is no
+     metric floor, and converting one would invent a measurement. */
+  if (cardio.floors != null) {
+    cells.push({ value: String(cardio.floors), label: 'FLOORS', accent: cardio.distanceMi == null });
+  }
   if (cardio.durationSec != null) cells.push({ value: fmtClock(cardio.durationSec), label: 'TIME' });
   if (cardio.paceSecPerMi != null) {
     cells.push({ value: fmtPace(toPace(cardio.paceSecPerMi, units)), label: `AVG /${u.toUpperCase()}`, accent: true });

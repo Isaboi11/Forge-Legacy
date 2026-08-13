@@ -18,18 +18,23 @@ import {
   distanceStepIn,
   distanceUnitFor,
   FIRST_TARGET,
+  floorsStep,
   fmtClock,
   fmtDistanceIn,
   fmtDuration,
+  fmtFloors,
   fmtPace,
   fromDistanceIn,
   hasRateTarget,
   isLogged,
   parseClock,
   parseDistanceIn,
+  parseFloors,
   parsePace,
   parseWithin,
   toDistanceIn,
+  TRACKS_DISTANCE,
+  TRACKS_FLOORS,
   usesSpeed,
   VERB,
   type CardioActivity,
@@ -97,6 +102,8 @@ const BAND_H = 140;
 
 interface Draft {
   distanceMi: number;
+  /** Stair climber only — the machine's floor count. Zero means "not entered", as Open does elsewhere. */
+  floors: number;
   timeSec: number;
   inclinePct: number;
   /** Frozen when the form opens. A toggle flipped mid-edit must not change the form's shape. */
@@ -118,7 +125,16 @@ interface Props {
   units: UnitSystem;
   onSetModality: (m: Modality) => void;
   onSave: (r: {
-    distanceMi: number;
+    /**
+     * ⚠ NULL FOR AN ACTIVITY THAT COVERS NO GROUND. It used to be `number`, and the form seeded it from
+     * `targetMi ?? 1` for every activity alike — so a stair bout logged without touching the field wrote
+     * ONE MILE the athlete never travelled, into the column `save_workout` rolls up as `workouts.distance`
+     * and distance goals, honors and challenge leaderboards all read. `TRACKS_DISTANCE` existed the whole
+     * time and this card never consulted it.
+     */
+    distanceMi: number | null;
+    /** Stair climber only, and the other half of that fix. Never a distance — see `TRACKS_FLOORS`. */
+    floors: number | null;
     timeSec: number;
     inclinePct: number | null;
     modality: Modality;
@@ -152,6 +168,17 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
 
   const [draft, setDraft] = useState<Draft | null>(null);
   const [distanceText, setDistanceText] = useState('');
+
+  /**
+   * ══ WHAT THIS BOUT ACTUALLY MEASURES ══
+   *
+   * `TRACKS_DISTANCE` and `TRACKS_FLOORS` have been the model's answer to that question since the model
+   * existed, and this card never asked. Everything below — which field the form draws, which cells the
+   * result row shows, whether an average is even a meaningful thing to compute — follows from these two
+   * booleans rather than from an activity name compared inline.
+   */
+  const tracksDistance = TRACKS_DISTANCE[activity];
+  const tracksFloors = TRACKS_FLOORS[activity];
 
   /**
    * A target the ATHLETE set for this one bout, when the program set none.
@@ -314,10 +341,23 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
     // A bout with a measured distance is TRACKED; one with only a clock is not, and must not be filed
     // as though GPS vouched for the number the athlete is about to type.
     const gpsMeasured = bout?.distanceMi != null;
-    const distanceMi = bout?.distanceMi ?? result?.distanceMi ?? target;
+    /*
+     * ⚠ A BOUT THAT COVERS NO GROUND OPENS AT ZERO, NOT AT ONE.
+     *
+     * The seed used to be `targetMi ?? 1` for every activity alike, so a stair block — which has no
+     * distance and never had one — opened its form on "1.0 mi" and wrote that mile on save unless the
+     * athlete happened to notice and zero it. Guarding the seed rather than the save keeps the two ends
+     * agreeing: the number the form shows is the number that gets filed.
+     */
+    const distanceMi = tracksDistance ? (bout?.distanceMi ?? result?.distanceMi ?? target) : 0;
     setDraft({
       distanceMi,
-      timeSec: bout ? bout.timeSec : (result?.timeSec ?? (timer.elapsedSec || Math.round(target * pace))),
+      floors: result?.floors ?? 0,
+      /* Without a distance there is nothing to multiply by a pace, and `target * pace` would seed the
+         clock off a mile that does not exist. The athlete's own timer is the honest default. */
+      timeSec: bout
+        ? bout.timeSec
+        : (result?.timeSec ?? (timer.elapsedSec || (tracksDistance ? Math.round(target * pace) : 0))),
       inclinePct: result?.inclinePct ?? (formTreadmill ? 1 : 0),
       hasIncline: formTreadmill,
       modality: formTreadmill ? 'indoor' : 'outdoor',
@@ -326,9 +366,12 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
     setDistanceText(dText(distanceMi));
   };
 
-  const adj = (field: 'distanceMi' | 'timeSec' | 'inclinePct', delta: number) =>
+  const adj = (field: 'distanceMi' | 'floors' | 'timeSec' | 'inclinePct', delta: number) =>
     setDraft((d) => {
       if (!d) return d;
+      /* Whole floors, five at a tap. There is no such reading as 12.4 floors, so this is the one field
+         here that never touches a decimal. */
+      if (field === 'floors') return { ...d, floors: Math.max(0, d.floors + delta * floorsStep()) };
       if (field === 'distanceMi') {
         /* Stepped IN THE DISPLAY UNIT. Rounding the mile figure to a tenth would move a pool session by
            176 yards a tap and land it somewhere no lane ever ends. `delta` is ±1 tap; the size of a tap
@@ -349,9 +392,10 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
    * authoritative distance when it parses, and letting the two drift is how a typed distance would be
    * discarded at the last moment.
    */
-  const setTyped = (field: 'distanceMi' | 'timeSec' | 'inclinePct', value: number) =>
+  const setTyped = (field: 'distanceMi' | 'floors' | 'timeSec' | 'inclinePct', value: number) =>
     setDraft((d) => {
       if (!d) return d;
+      if (field === 'floors') return { ...d, floors: value };
       if (field === 'distanceMi') {
         setDistanceText(dText(value));
         return { ...d, distanceMi: value };
@@ -500,10 +544,19 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
               <View style={styles.bandStatus}>
                 {timer.running ? <View style={styles.liveDot} /> : null}
                 <Text style={styles.bandStatusText}>
+                  {/* The caption names what was measured. A stair bout says its floors; a machine with
+                      neither distance nor floors says it was logged, because "0.0 mi ON THE BELT" is a
+                      claim about ground that was never covered. */}
                   {logged
-                    ? loggedIndoors
-                      ? `${d1(result?.distanceMi)} ${dU} ON THE BELT`
-                      : `${d1(result?.distanceMi)} ${dU} LOGGED OUTDOORS`
+                    ? tracksFloors
+                      ? result?.floors != null
+                        ? `${fmtFloors(result.floors).toUpperCase()} CLIMBED`
+                        : 'LOGGED'
+                      : !tracksDistance
+                        ? 'LOGGED'
+                        : loggedIndoors
+                          ? `${d1(result?.distanceMi)} ${dU} ON THE BELT`
+                          : `${d1(result?.distanceMi)} ${dU} LOGGED OUTDOORS`
                     : timer.running
                       ? 'BELT RUNNING'
                       : timer.elapsedSec > 0
@@ -700,22 +753,42 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
         {/* ── STATE C · the log form ─────────────────────────────────────── */}
         {draft ? (
           <View style={styles.form}>
-            <Field
-              label="DISTANCE"
-              hint={draft.hasIncline ? 'Read it off the console' : ''}
-              value={`${d1(draft.distanceMi)} ${dU}`}
-              onDec={() => adj('distanceMi', -1)}
-              onInc={() => adj('distanceMi', 1)}
-              decLabel="Less distance"
-              incLabel="More distance"
-              /* Bounded by the UNIT: the mile parser refuses anything over 500 and would throw away a
-                 typed 1200 yards without saying so. */
-              parse={(raw) => parseDistanceIn(raw, dU)}
-              /* Typed in the athlete's display units; stored in miles, like every other write here. */
-              onCommit={(n) => setTyped('distanceMi', n)}
-              placeholder={dU}
-              keyboard="decimal-pad"
-            />
+            {/* One slot, and the activity decides what belongs in it: ground covered, floors climbed, or
+                — for a machine that reports neither — nothing at all, leaving the clock to carry the bout. */}
+            {tracksDistance ? (
+              <Field
+                label="DISTANCE"
+                hint={draft.hasIncline ? 'Read it off the console' : ''}
+                value={`${d1(draft.distanceMi)} ${dU}`}
+                onDec={() => adj('distanceMi', -1)}
+                onInc={() => adj('distanceMi', 1)}
+                decLabel="Less distance"
+                incLabel="More distance"
+                /* Bounded by the UNIT: the mile parser refuses anything over 500 and would throw away a
+                   typed 1200 yards without saying so. */
+                parse={(raw) => parseDistanceIn(raw, dU)}
+                /* Typed in the athlete's display units; stored in miles, like every other write here. */
+                onCommit={(n) => setTyped('distanceMi', n)}
+                placeholder={dU}
+                keyboard="decimal-pad"
+              />
+            ) : tracksFloors ? (
+              <Field
+                label="FLOORS"
+                hint="Read it off the console"
+                value={draft.floors > 0 ? String(draft.floors) : '—'}
+                onDec={() => adj('floors', -1)}
+                onInc={() => adj('floors', 1)}
+                decLabel="Fewer floors"
+                incLabel="More floors"
+                /* No unit and no conversion — a floor is the same for a metric athlete as an imperial
+                   one, which is why nothing here consults `dU`. */
+                parse={parseFloors}
+                onCommit={(n) => setTyped('floors', n)}
+                placeholder="floors"
+                keyboard="number-pad"
+              />
+            ) : null}
             <Field
               label="TIME"
               /*
@@ -752,12 +825,21 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
                 keyboard="decimal-pad"
               />
             ) : null}
-            <View style={styles.computed}>
-              <Text style={styles.computedLabel}>{speed ? 'AVG SPEED' : 'AVG PACE'}</Text>
-              <Text style={styles.computedValue}>
-                {draftPace == null ? '—' : speed ? `${toSpeed(3600 / draftPace, units).toFixed(1)}` : `${fmtPace(toPace(draftPace, units))} /${dU}`}
-              </Text>
-            </View>
+            {/* An average is a distance over a time. Without the distance it is not "—", it is not a
+                question — so the row goes, rather than standing there with a dash in it. */}
+            {tracksDistance ? (
+              <View style={styles.computed}>
+                <Text style={styles.computedLabel}>{speed ? 'AVG SPEED' : 'AVG PACE'}</Text>
+                <Text style={styles.computedValue}>
+                  {draftPace == null ? '—' : speed ? `${toSpeed(3600 / draftPace, units).toFixed(1)}` : `${fmtPace(toPace(draftPace, units))} /${dU}`}
+                </Text>
+              </View>
+            ) : tracksFloors && draft.floors > 0 ? (
+              <View style={styles.computed}>
+                <Text style={styles.computedLabel}>CLIMBED</Text>
+                <Text style={styles.computedValue}>{fmtFloors(draft.floors)}</Text>
+              </View>
+            ) : null}
             <View style={styles.formActions}>
               <View style={styles.half}>
                 <Button variant="secondary" fullWidth onPress={() => setDraft(null)} accessibilityLabel="Cancel">
@@ -772,7 +854,16 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
                   onPress={() => {
                   const typed = parseDistanceIn(distanceText, dU);
                   const mi = typed ?? draft.distanceMi;
-                  onSave({ distanceMi: dRound(mi), timeSec: draft.timeSec, inclinePct: draft.hasIncline ? draft.inclinePct : null, modality: draft.modality, source: draft.source });
+                  onSave({
+                    /* NULL, not 0, for a machine that covers no ground — the record should say "this bout
+                       had no distance", not "it travelled nothing". Zero is a measurement. */
+                    distanceMi: tracksDistance ? dRound(mi) : null,
+                    floors: tracksFloors && draft.floors > 0 ? Math.round(draft.floors) : null,
+                    timeSec: draft.timeSec,
+                    inclinePct: draft.hasIncline ? draft.inclinePct : null,
+                    modality: draft.modality,
+                    source: draft.source,
+                  });
                     setDraft(null);
                     timer.reset();
                   }}
@@ -786,16 +877,26 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
           /* ── STATE D · logged ─────────────────────────────────────────── */
           <View style={styles.form}>
             <View style={styles.resultRow}>
-              <ResultCell value={d1(result?.distanceMi)} label={dU.toUpperCase()} first />
-              <ResultCell value={fmtClock(result?.timeSec)} label={(result?.timeSec ?? 0) >= 3600 ? 'TIME · H:MM:SS' : 'TIME · MIN:SEC'} />
+              {/* The bout reports what it measured and nothing else. A stair session shows its floors
+                  where a run shows its miles; a machine that measures neither shows the clock alone,
+                  rather than three cells of dashes claiming the numbers went missing. */}
+              {tracksDistance ? <ResultCell value={d1(result?.distanceMi)} label={dU.toUpperCase()} first /> : null}
+              {tracksFloors ? <ResultCell value={result?.floors != null ? String(result.floors) : '—'} label="FLOORS" first accent /> : null}
               <ResultCell
-                value={(() => {
-                  const p = avgPaceSec(result?.distanceMi, result?.timeSec);
-                  return p == null ? '—' : speed ? toSpeed(3600 / p, units).toFixed(1) : fmtPace(toPace(p, units));
-                })()}
-                label={speed ? 'AVG' : `AVG /${dU.toUpperCase()}`}
-                accent
+                value={fmtClock(result?.timeSec)}
+                label={(result?.timeSec ?? 0) >= 3600 ? 'TIME · H:MM:SS' : 'TIME · MIN:SEC'}
+                first={!tracksDistance && !tracksFloors}
               />
+              {tracksDistance ? (
+                <ResultCell
+                  value={(() => {
+                    const p = avgPaceSec(result?.distanceMi, result?.timeSec);
+                    return p == null ? '—' : speed ? toSpeed(3600 / p, units).toFixed(1) : fmtPace(toPace(p, units));
+                  })()}
+                  label={speed ? 'AVG' : `AVG /${dU.toUpperCase()}`}
+                  accent
+                />
+              ) : null}
               {/* Incline is a treadmill fact. It shows only when the bout was RECORDED indoors — not
                   when the toggle happens to be sitting there now. */}
               {loggedIndoors && result?.inclinePct != null ? (
@@ -983,7 +1084,8 @@ function Field({
   parse?: (raw: string) => number | null;
   onCommit?: (n: number) => void;
   placeholder?: string;
-  keyboard?: 'numbers-and-punctuation' | 'decimal-pad';
+  /** 'number-pad' is the floors field: whole numbers only, so the decimal key should not be offered. */
+  keyboard?: 'numbers-and-punctuation' | 'decimal-pad' | 'number-pad';
 }) {
   const typeable = !!parse && !!onCommit;
   const [editing, setEditing] = useState(false);

@@ -39,6 +39,8 @@ export type ExerciseDelta = { kind: 'weight'; n: number } | { kind: 'reps'; n: n
 /** One conditioning bout as it was recorded. Miles and seconds — the screen converts for display. */
 export interface CompletionCardio {
   distanceMi: number | null;
+  /** Stair climber only — floors off the machine (0151). Never a distance, and never converted. */
+  floors: number | null;
   durationSec: number | null;
   /** Seconds per mile. Null when there isn't enough distance to divide by honestly. */
   paceSecPerMi: number | null;
@@ -163,6 +165,8 @@ interface SetRow {
   /** Cardio bouts (0096/0097). Null on every strength set. */
   duration_sec?: number | null;
   distance?: number | null;
+  /** Stair climber only (0151). ⚠ Naming it in the select requires the migration to be applied. */
+  floors?: number | null;
   modality?: string | null;
   incline_pct?: number | null;
 }
@@ -239,7 +243,7 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
   const { data: setRows, error: se } = exIds.length
     ? await supabase
         .from('workout_sets')
-        .select('workout_exercise_id, weight, reps, duration_sec, distance, modality, incline_pct')
+        .select('workout_exercise_id, weight, reps, duration_sec, distance, floors, modality, incline_pct')
         .in('workout_exercise_id', exIds)
     : { data: [], error: null };
   if (se) throw se;
@@ -447,13 +451,14 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
     const now = top && top.weight != null && top.reps != null ? { w: top.weight, r: top.reps } : null;
 
     // A cardio block is recognised by what it MEASURED, not by a stored flag — the evidence of what it
-    // was is the distance and the clock.
-    const bout = exSets.find((x) => (x.distance ?? 0) > 0 || (x.duration_sec ?? 0) > 0) ?? null;
+    // was is the distance, the floors and the clock.
+    const bout = exSets.find((x) => (x.distance ?? 0) > 0 || (x.floors ?? 0) > 0 || (x.duration_sec ?? 0) > 0) ?? null;
     const dist = bout?.distance != null && bout.distance > 0 ? Number(bout.distance) : null;
     const dur = bout?.duration_sec != null && bout.duration_sec > 0 ? Number(bout.duration_sec) : null;
     const cardio: CompletionCardio | null = bout
       ? {
           distanceMi: dist,
+          floors: bout.floors != null && bout.floors > 0 ? Number(bout.floors) : null,
           durationSec: dur,
           // 0.05 mi is the floor under the division: a 90-foot bout would otherwise report a pace, and
           // it would be a wild one.

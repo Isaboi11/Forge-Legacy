@@ -24,6 +24,11 @@ export interface DetailSet {
   weightUnit: string | null;
   reps: number | null;
   /**
+   * Floors climbed, for a stair-climber bout (0151). Never a distance and never converted — see
+   * `TRACKS_FLOORS`. Null on everything else, which is every other set in the app.
+   */
+  floors?: number | null;
+  /**
    * Seconds held, for a set measured by the clock rather than by repetitions — a Plank, a Dead Hang,
    * a loaded carry. Null on an ordinary strength set, which is most of them.
    *
@@ -192,6 +197,17 @@ export function setLine(s: DetailSet): string {
    * the athlete's forty-five second plank would appear in their history as an exercise name with an
    * empty line under it. `40 lbs × 45s` is the loaded-carry shape; `45s` the unloaded one.
    */
+  /*
+   * FLOORS COME FIRST, ahead of the clock.
+   *
+   * A stair bout carries both, and the clock arm below would swallow it: "24:10" alone, with the number
+   * the athlete actually climbed nowhere in their history. Read as "48 floors · 24:10", which is both
+   * halves in the order the machine reports them. No weight arm — nothing loads a stair climber.
+   */
+  if (s.floors != null && s.floors > 0) {
+    const f = `${s.floors} ${s.floors === 1 ? 'floor' : 'floors'}`;
+    return s.durationSec != null && s.durationSec > 0 ? `${f} · ${durText(s.durationSec)}` : f;
+  }
   if (s.durationSec != null && s.durationSec > 0) {
     const d = durText(s.durationSec);
     return hasW ? `${s.weight} ${unit} × ${d}` : isBw ? `BW × ${d}` : d;

@@ -35,10 +35,23 @@ The engine is bounded by the data model. These are facts, verified in code, not 
 | **Activities available** | `run · walk · bike · row · elliptical · swim · stair` (`conditioning.ts`) |
 | **Can be done outdoors** | run, walk, bike **only**. Row, elliptical, swim, stair are indoor-typed. |
 | **Carries a rate** | **pace** (min/mi) for run and walk · **speed** (mph) for bike · **none** for row, elliptical, swim, stair |
-| **Carries a distance** | everything except stair (which counts floors) |
+| **Carries a distance** | everything except stair |
+| **Carries floors** | stair **only** — and as of 0151 they are LOGGED, not just named here. See the note below. |
 | **The athlete's program can hold** | `targetMi`, `targetSec`, `targetPaceSec`, `targetSpdMph`, `modality` — so **"run 6 mi @ 8:30" is fully expressible** |
 | **Forge's own catalogue cannot** | `ExercisePrescription` has `targetMi`/`targetSec` but **no pace or speed fields** |
 | **GPS live tracking** | run, walk, bike — **foreground only** |
+
+> **📌 CORRECTION 2026-08-12 — the stair row changed, and this table is why it is allowed to.** §0.1 states
+> that these are *"facts, verified in code"*, so when the code moves the fact moves with it; this is not a
+> decision being reopened. Migration `0151` gives `workout_sets` a `floors` column and the log form a Floors
+> field, so *"stair counts floors"* is now something the app does rather than something this document
+> observed about a gap. **Nothing in §1–§6 depends on it**: Holt has never prescribed a stair bout by
+> anything but the clock (`prescribe.ts` refuses to ask a stair climber for miles), and floors are logged,
+> not targeted — the athlete's program still cannot hold a floor target, which is why the row above stops
+> at "logged". Making floors prescribable WOULD be an amendment; **EPS-D12** is the natural home for it if
+> the PO wants it. **Also corrected in the same pass, and it was a real defect rather than a gap:** the log
+> form seeded its distance field for every activity alike, so a stair bout silently recorded one mile it
+> never travelled — into the column distance goals, honors and challenge leaderboards all read.
 
 **Three consequences that shape the whole standard:**
 

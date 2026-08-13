@@ -35,8 +35,9 @@ export type ExerciseKind = 'strength' | 'cardio';
  *    target PACE is not. A rower's honest metric is a 500 m split and a swimmer's is per-100, neither of
  *    which this app computes, so neither is offered rather than approximated with a per-mile number
  *    nobody in either sport uses.
- *  · MACHINES WITHOUT ONE (stair) — time only. A stair climber counts floors, and floors are not miles.
- *    Converting them would invent a distance the athlete never travelled.
+ *  · MACHINES WITHOUT ONE (stair) — the clock, and FLOORS. A stair climber counts floors, and floors are
+ *    not miles. Converting them would invent a distance the athlete never travelled, so they travel in
+ *    their own field and their own column — see `TRACKS_FLOORS`.
  */
 export type CardioActivity = 'run' | 'walk' | 'bike' | 'row' | 'elliptical' | 'swim' | 'stair';
 export type Modality = 'outdoor' | 'indoor';
@@ -61,6 +62,36 @@ export const TRACKS_DISTANCE: Record<CardioActivity, boolean> = {
   elliptical: true,
   swim: true,
   stair: false,
+};
+
+/**
+ * ══ FLOORS ARE THE STAIR CLIMBER'S DISTANCE, AND THEY ARE NOT A DISTANCE ══
+ *
+ * The machine's own readout is a floor count, and it is the only number a stair session has to show for
+ * itself besides the clock. This file has said "floors, not miles" since it was written and the app
+ * captured neither, so a stair bout was recorded as bare minutes — the one activity that reports back
+ * nothing about what it did.
+ *
+ * ⚠ WHY THIS IS NOT `distanceMi` WITH A 'floors' UNIT, WHICH IS THE OBVIOUS SHORTCUT.
+ *
+ * `workout_sets.distance` sums into `workouts.distance` inside `save_workout` (0124:109), and that column
+ * is read by mileage goals (0035), distance honors (0078), challenge scoring (0061) and squad goal totals
+ * (0107) — every one of them treating it as miles. Sixty floors would enter the athlete's record as sixty
+ * MILES: a distance goal completed by a stair session, a distance honor awarded for it, a challenge
+ * leaderboard won with it. The swim's yards can ride in that column because a yard converts to a mile
+ * exactly; a floor converts to nothing. So floors get their own field here and their own column there.
+ *
+ * ⚠ AND THEY DO NOT CONVERT. `distanceUnitFor` has no opinion to offer: a floor is the same height for a
+ * metric athlete as an imperial one. There is no `toFloorsIn`, and there should never be one.
+ */
+export const TRACKS_FLOORS: Record<CardioActivity, boolean> = {
+  run: false,
+  walk: false,
+  bike: false,
+  row: false,
+  elliptical: false,
+  swim: false,
+  stair: true,
 };
 
 /**
@@ -94,6 +125,11 @@ export interface CardioBlock {
 /** What was actually recorded, once it has been. */
 export interface CardioResult {
   distanceMi: number | null;
+  /**
+   * Stair climber only — the machine's floor count. Never a distance, never converted; see
+   * `TRACKS_FLOORS` for why it is not carried in `distanceMi`.
+   */
+  floors: number | null;
   timeSec: number | null;
   /** Treadmill only. */
   inclinePct: number | null;
@@ -114,6 +150,7 @@ export interface CardioResult {
 
 export const EMPTY_RESULT: CardioResult = {
   distanceMi: null,
+  floors: null,
   timeSec: null,
   inclinePct: null,
   loggedModality: null,
@@ -128,7 +165,9 @@ export const CARDIO_ACTIVITIES: { key: CardioActivity; name: string; sub: string
   { key: 'bike', name: 'Ride', sub: 'Outdoor or trainer', symbol: 'bicycle' },
   { key: 'row', name: 'Row', sub: 'Ergometer, indoors', symbol: 'rower' },
   { key: 'elliptical', name: 'Elliptical', sub: 'Low impact, steady effort', symbol: 'elliptical' },
-  { key: 'stair', name: 'Stair Climber', sub: 'Floors, not miles', symbol: 'stairs' },
+  // "Floors, not miles" until floors were actually captured — a caption explaining an absence. It now
+  // names the thing the card asks for.
+  { key: 'stair', name: 'Stair Climber', sub: 'Floors climbed', symbol: 'stairs' },
   { key: 'swim', name: 'Swim', sub: 'Pool lengths', symbol: 'swim' },
 ];
 
@@ -402,6 +441,51 @@ export function bumpDistanceUnit(
   return fromDistanceIn(Math.min(POOL.max, next), unit);
 }
 
+// ── FLOORS ──────────────────────────────────────────────────────────────────
+//
+// One scale, no unit system, no conversion — see `TRACKS_FLOORS`. A floor is a whole thing: the machine
+// counts them and there is no such measurement as 12.4 floors, so this parses and steps integers only,
+// which is the one place floors behave differently from every other quantity in this file.
+
+/**
+ * Steps of five, because a stair session is 40 or 60 floors and stepping to it one at a time is a toll.
+ * The cap is deliberately generous — a tower-climb event runs to the high hundreds — and exists only to
+ * reject a mistyped readout, not to have an opinion about anybody's session.
+ */
+const FLOORS = { step: 5, min: 1, max: 2000, seed: 20 };
+
+/**
+ * A typed floor count.
+ *
+ * Rejects rather than clamps, exactly as `parseDistanceIn` does: null leaves the previous value standing,
+ * which is the safe failure for a field whose job is to replace one. A decimal is rejected outright
+ * rather than rounded — "12.5" is a misread of the machine, not half a floor.
+ */
+export function parseFloors(raw: string): number | null {
+  const cleaned = raw.trim();
+  if (!/^\d+$/.test(cleaned)) return null;
+  const n = Number(cleaned);
+  if (!Number.isFinite(n) || n <= 0 || n > FLOORS.max) return null;
+  return n;
+}
+
+/** Open is the bottom of the scale here too — stepping below one floor clears the count. */
+export function bumpFloors(current: number | null, dir: 1 | -1, seed: number = FLOORS.seed): number | null {
+  if (current == null) return dir > 0 ? seed : null;
+  const next = current + dir * FLOORS.step;
+  if (next < FLOORS.min) return null;
+  return Math.min(FLOORS.max, next);
+}
+
+/** How one tap moves the log form's floor count. */
+export const floorsStep = (): number => FLOORS.step;
+
+/** "48 floors", "1 floor" — the caller decides the case. */
+export function fmtFloors(n: number | null | undefined): string {
+  if (n == null || n <= 0) return '';
+  return `${Math.round(n)} ${Math.round(n) === 1 ? 'floor' : 'floors'}`;
+}
+
 // ── A BOUT PRESCRIBED BY THE CLOCK ──────────────────────────────────────────
 //
 // ══ WHY THIS STEPPER DID NOT EXIST, AND HAD TO ══
@@ -509,8 +593,22 @@ export function avgPaceSec(distanceMi: number | null | undefined, timeSec: numbe
  * Giving a run one set means it counts as one unit of progress, identical to a single-set exercise, and
  * none of that math has to know cardio exists. `weight` stays null so the block contributes zero volume.
  */
+/**
+ * Has this bout been FILED?
+ *
+ * ⚠ IT USED TO REQUIRE A DISTANCE, which quietly assumed every bout has one. It held while the only way
+ * to reach the log form was an activity that covers ground — and the stair climber reached it too,
+ * seeded to a mile it never travelled, so the assumption looked true because a phantom mile was
+ * upholding it. With that mile gone (0151) a stair bout has no distance at all, and the old rule would
+ * have called every one of them unlogged: no result row, no progress, the card offering to log a session
+ * the athlete had just logged.
+ *
+ * So the test is the CLOCK, which every bout has, plus any one piece of evidence that the athlete
+ * actually filed it — the distance, the floors, or `loggedModality`, which is written once at log time
+ * and never otherwise. Widened, never narrowed: anything that read as logged before still does.
+ */
 export const isLogged = (r: CardioResult | null | undefined): boolean =>
-  !!r && r.distanceMi != null && r.timeSec != null;
+  !!r && r.timeSec != null && (r.distanceMi != null || r.floors != null || r.loggedModality != null);
 
 /**
  * Parse a typed distance. Accepts "3", "3.1" and "3,1" (a comma decimal, which many phone keypads

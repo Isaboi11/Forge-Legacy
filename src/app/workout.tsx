@@ -2021,7 +2021,15 @@ export default function WorkoutScreen() {
    * arrived by a different path entirely. Now that both arrive here, that guess would file every
    * measured run as a claim.
    */
-  const saveCardioLog = (r: { distanceMi: number; timeSec: number; inclinePct: number | null; modality: 'outdoor' | 'indoor'; source: 'tracked' | 'manual' }) => {
+  const saveCardioLog = (r: {
+    /** Null for a machine that covers no ground — see the card's `onSave`, and 0151. */
+    distanceMi: number | null;
+    floors: number | null;
+    timeSec: number;
+    inclinePct: number | null;
+    modality: 'outdoor' | 'indoor';
+    source: 'tracked' | 'manual';
+  }) => {
     mutate((cur) => {
       const withResult = {
         ...cur,
@@ -2032,6 +2040,7 @@ export default function WorkoutScreen() {
                 ...e,
                 cardio: {
                   distanceMi: r.distanceMi,
+                  floors: r.floors,
                   timeSec: r.timeSec,
                   inclinePct: r.modality === 'indoor' ? r.inclinePct : (e.cardio?.inclinePct ?? null),
                   loggedModality: r.modality,
@@ -2045,6 +2054,9 @@ export default function WorkoutScreen() {
         done: true,
         durationSec: r.timeSec,
         distanceMi: r.distanceMi,
+        /* Its own field the whole way down to the column. Folding it into `distanceMi` here would put
+           floors in `workouts.distance`, which every mileage total in the app reads as miles. */
+        floors: r.floors,
         inclinePct: r.modality === 'indoor' ? r.inclinePct : null,
         modality: r.modality,
         actualReps: null,

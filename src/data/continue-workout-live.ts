@@ -28,7 +28,7 @@ export async function fetchWorkoutAsSession(workoutId: string): Promise<ActiveSe
   const { data, error } = await supabase
     .from('workouts')
     .select(
-      'id, workout_name, activity_type, started_at, program_id, template_id, workout_exercises(name, catalog_key, section, position, notes, group_id, group_name, group_kind, group_rounds, workout_sets(set_index, weight, reps, duration_sec, distance, modality, incline_pct))',
+      'id, workout_name, activity_type, started_at, program_id, template_id, workout_exercises(name, catalog_key, section, position, notes, group_id, group_name, group_kind, group_rounds, workout_sets(set_index, weight, reps, duration_sec, distance, floors, modality, incline_pct))',
     )
     .eq('id', workoutId)
     .eq('athlete_id', user.id)
@@ -42,6 +42,13 @@ export async function fetchWorkoutAsSession(workoutId: string): Promise<ActiveSe
     reps: number | null;
     duration_sec: number | null;
     distance: number | null;
+    /**
+     * 0151. ⚠ NAMING IT IN THE SELECT MAKES THIS FILE DEPEND ON THE MIGRATION BEING APPLIED. PostgREST
+     * answers a missing column with `42703` and the whole query fails, which `if (error) return null`
+     * turns into "there is nothing to continue" — the 0117/0118 failure exactly. Apply 0151 BEFORE the
+     * deploy that carries this line, not after it.
+     */
+    floors?: number | null;
     modality: string | null;
     incline_pct: number | null;
   };
@@ -81,6 +88,7 @@ export async function fetchWorkoutAsSession(workoutId: string): Promise<ActiveSe
           actualReps: s.reps,
           durationSec: s.duration_sec,
           distanceMi: s.distance,
+          floors: s.floors ?? null,
           inclinePct: s.incline_pct,
           modality: (s.modality as SessionSet['modality']) ?? null,
           done: true,

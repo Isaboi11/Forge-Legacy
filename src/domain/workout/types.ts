@@ -32,6 +32,13 @@ export interface SessionSet {
    */
   durationSec?: number | null;
   distanceMi?: number | null;
+  /**
+   * Stair climber only — the floor count off the machine (0151).
+   *
+   * ⚠ DELIBERATELY NOT FOLDED INTO `distanceMi`. That field sums into `workouts.distance`, which mileage
+   * goals, distance honors and challenge scoring all read as miles. See `TRACKS_FLOORS`.
+   */
+  floors?: number | null;
   inclinePct?: number | null;
   modality?: Modality | null;
   /** Prescribed reps (the Target column). The FLOOR when a range was prescribed — see `targetRepsMax`. */
