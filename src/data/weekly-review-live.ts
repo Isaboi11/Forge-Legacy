@@ -30,6 +30,14 @@ export interface WeeklyReview {
   data: WeeklyReviewData;
   /** Holt's line. Composed on first read and stored; never regenerated after that. */
   note: string | null;
+  /**
+   * When the row was written — which is when the card first became visible, since 0140 generates on
+   * first open. The 24-hour Home window runs from here (`reviewWindowOpen`).
+   *
+   * Null on a database without 0152, and null reads as "still open" so an unapplied migration cannot
+   * make every athlete's review disappear.
+   */
+  createdAt: string | null;
 }
 
 const MISSING = 'PGRST202';
@@ -53,8 +61,20 @@ export async function fetchWeeklyReview(): Promise<WeeklyReview | null> {
     }
     if (!data) return null;
 
-    const d = data as { week_start: string; week_end: string; review: WeeklyReviewData; note: string | null };
-    const review: WeeklyReview = { weekStart: d.week_start, weekEnd: d.week_end, data: d.review, note: d.note };
+    const d = data as {
+      week_start: string;
+      week_end: string;
+      review: WeeklyReviewData;
+      note: string | null;
+      created_at?: string | null;
+    };
+    const review: WeeklyReview = {
+      weekStart: d.week_start,
+      weekEnd: d.week_end,
+      data: d.review,
+      note: d.note,
+      createdAt: d.created_at ?? null,
+    };
 
     /* Compose once, then keep. `set_weekly_review_note` only accepts a note while one is absent, so a
        race between two devices settles on whichever landed first rather than fighting over wording. */

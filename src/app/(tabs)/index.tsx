@@ -17,6 +17,7 @@ import { ProgramMissionGrid } from '@/components/forge/compositions/ProgramMissi
 import { YourCircleCard } from '@/components/forge/compositions/YourCircleCard';
 import { WeeklyReviewCard } from '@/components/forge/WeeklyReviewCard';
 import { fetchWeeklyReview, type WeeklyReview } from '@/data/weekly-review-live';
+import { reviewWindowOpen } from '@/domain/coach/rulebook/review';
 import { useEntitlement } from '@/lib/entitlement';
 import { QuickActionsRow } from '@/components/forge/compositions/QuickActionsRow';
 import { TrainingNowSheet } from '@/components/forge/TrainingNowSheet';
@@ -1219,7 +1220,11 @@ export default function HomeScreen() {
             state, purely and synchronously. Whether a review exists is an async fact about a different
             table — threading it through would make a pure function depend on a network read.
           */}
-          {weeklyReview && !reviewSkipped ? (
+          {/* ⚠ THE 24-HOUR WINDOW (0152). Checked HERE rather than at fetch time on purpose: Home is a
+              mounted tab that can sit open across the boundary, and a card whose welcome ran out three
+              hours ago should not still be sitting there because the app happened not to be restarted.
+              This re-evaluates on every render, which is exactly as often as it needs to. */}
+          {weeklyReview && !reviewSkipped && reviewWindowOpen(weeklyReview.createdAt) ? (
             <WeeklyReviewCard
               review={weeklyReview}
               entitled={reviewEntitled}

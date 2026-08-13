@@ -149,6 +149,34 @@ function parts(iso: string): { y: number; m: number; d: number } | null {
 }
 
 /**
+ * ══ THE CARD STANDS DOWN AFTER A DAY ══
+ *
+ * PO: *"Weekly review should disappear after 24 hours."* 0140 is lazy — the row is written on the first
+ * app open of a new week and handed back on every call until the next one — so without this the card sat
+ * on Home for up to seven days. A review of last week is read once; after a day it is furniture.
+ *
+ * ⚠ MEASURED FROM WHEN IT APPEARED, NOT FROM MONDAY. The two are the same thing only for an athlete who
+ * opens the app on Monday. Someone who first opens it on Wednesday first SEES the review on Wednesday,
+ * and a window anchored to the week's end would have expired before they ever laid eyes on it — the card
+ * would exist for nobody, which is a worse bug than the one being fixed and a silent one. `created_at`
+ * (0152) is the moment it became visible, so it is the only honest start.
+ *
+ * Expiry belongs to the CARD, not to the week: `/weekly-review/[week]` still opens the review, and the
+ * row is never deleted. This decides one thing — whether Home is still offering it.
+ *
+ * A missing or unparseable timestamp reads as OPEN. That is the safe failure: an unapplied 0152 returns
+ * no `created_at`, and the wrong answer there is to make every athlete's review vanish.
+ */
+export const REVIEW_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+export function reviewWindowOpen(createdAtISO: string | null | undefined, now: number = Date.now()): boolean {
+  if (!createdAtISO) return true;
+  const t = Date.parse(createdAtISO);
+  if (!Number.isFinite(t)) return true;
+  return now - t < REVIEW_WINDOW_MS;
+}
+
+/**
  * "3 – 9 August 2026" · "27 July – 2 August 2026" · "29 December 2025 – 4 January 2026".
  *
  * The month is named once when both ends share it, which is the common case — a week that reads as one

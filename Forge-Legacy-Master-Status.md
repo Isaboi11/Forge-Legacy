@@ -768,6 +768,32 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
+### 0. The weekly review stops living on Home (2026-08-12, CODE + migration `0152` — ⚠ **AUTHORED, NOT APPLIED**)
+
+**PO: *"Weekly review should disappear after 24 hours."*** 0140 is lazy by design — the row is written on the first app open of a new week and handed back on every call until the next — so the card sat on Home for up to seven days. `0152` returns `athlete_weekly_reviews.created_at` (a column that has existed since 0140 and was never surfaced) and `reviewWindowOpen` retires the card 24 hours later.
+
+**⚠ THE ANCHOR IS THE WHOLE DECISION.** Measuring from the week's END would have been the obvious reading and would have expired the card before an athlete who opens the app mid-week ever saw it — a card that exists for nobody, failing silently. The row is written on FIRST OPEN, so `created_at` is the moment it became visible, and that is the only honest start. `created_at` is also **read back from the row** rather than taken as `now()`: the insert carries `on conflict do nothing`, so two devices must measure the same day from the same instant.
+
+**Expiry belongs to the card, not to the week.** The row is never deleted and `/weekly-review/[week]` still opens it. A missing timestamp reads as OPEN — an unapplied 0152 must not make every athlete's review vanish.
+
+**Gates:** `tsc` 0 · **2,141 tests green** (3 new, covering the anchor trap and the safe failure).
+
+### 0. The stair climber counts floors — and had been quietly logging a mile it never travelled (2026-08-12, CODE + migration `0151` — ⚠ **AUTHORED, NOT APPLIED**)
+
+**PO: *"Stair master needs to be changed to floors climbed."*** A stair bout recorded nothing but a clock. `conditioning.ts` has carried the comment *"a stair climber counts floors, and floors are not miles"* since it was written, and `Endurance-Programming-Standard-v1.0` §0.1 records *"carries a distance: everything except stair (which counts floors)"* as a fact about the data model. **Floors were named in two places and stored in none.** `0151` adds `workout_sets.floors`, a Floors field on the log form, and readback on the completion screen and in session history (`48 floors · 24m 10s`).
+
+**⚠ THE BUG FOUND WHILE WIRING IT IS THE BIGGER HALF.** `CardioBlockCard` never consulted `TRACKS_DISTANCE` — it does not even import it — and seeded its distance field from `targetMi ?? 1` for every activity alike. So **a stair bout logged without touching that field wrote 1.00 mi**, into `workout_sets.distance`, which `save_workout` rolls up into `workouts.distance`, which mileage goals (0035), distance honors (0078), challenge scoring (0061) and squad goal totals (0107) all read as miles. A phantom mile per stair session, in every distance total in the app, with nothing raised. The distance field now renders only for an activity that carries one, and a bout that covers no ground saves `null` rather than `0` — an absence, not a measurement.
+
+**Floors deliberately do NOT ride in `distance` with a `'floors'` unit**, which was the cheap-looking option: that column is summed as miles in nine places. A swim's yards can live there because a yard converts to a mile exactly; a floor converts to nothing. `stair-floors.test.mjs` carries the regression — **mutation-verified**, it fails the moment anybody folds floors back into the distance field.
+
+**`isLogged` had to widen.** It required `distanceMi != null`, which held only because the phantom mile was propping it up; with the mile gone, every stair bout would have read as unlogged. It now tests the clock plus any evidence of filing (distance, floors, or `loggedModality`) — widened, never narrowed.
+
+**Both function bodies in `0151` were produced by SCRIPT from the newest installed versions** (`save_workout` from 0124, `continue_workout` from 0125), two asserted substitutions each, with six structural checks that the branches this schema has lost before — graduation, the notes write, the honors call, `program_slots`, the chapter counter, the `v_legs` rollup — all survived. The diff against the originals is exactly the two intended lines.
+
+**⚠ APPLY `0151` BEFORE DEPLOYING THIS CODE.** Three data modules now name `floors` in their select; PostgREST answers a missing column with `42703` and the whole query fails, which `if (error) return null` turns into "there is nothing to continue". That is the 0117/0118 failure exactly.
+
+**Gates:** `tsc` 0 · **2,138 tests green** (11 new).
+
 ### 0. ⚠ The security sweep broke Finish Workout, and the RPC gate could not see it (2026-08-12, migration `0150` — ⚠ **AUTHORED, NOT APPLIED — saving is broken until it is**)
 
 **Reported from device: a finished 30-set lower-body session showed `Couldn't save — permission denied for function evaluate_honors (42501)` and was lost.** `0147` §3 revoked EXECUTE on `evaluate_honors(text)` from `authenticated` on the premise that *"`evaluate_honors` is SECURITY DEFINER and so executes as its owner regardless of this grant."* **SECURITY DEFINER on the CALLEE decides who a function runs as, not who may call it — the caller still needs EXECUTE.** The exemption belongs to the CALLER: a call made from inside a definer function is checked against that function's owner. That is what makes the other eleven entries safe (all thirteen functions in `0120` are definer; the prune/rollup functions are pg_cron as `postgres`; `honor_metrics`'s only caller is `evaluate_honors`, which IS definer — so it stays revoked and 0146's supersession holds). `evaluate_honors` is the single entry whose callers are **`security invoker`**, so the revoke landed on the athlete: `save_workout` (0124:49→208) · `continue_workout` (0125:43→129) · `skip_program_session` (0123:145→202). The call sits at the END of `save_workout`, so the transaction rolls back and the workout is gone — **Finish Workout, Continue Training and session-skip were all dead for every athlete.**

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { REVIEW_LINES, formatWeekRange, reviewNote, shapeOf } from '../rulebook/review.ts';
+import { REVIEW_LINES, formatWeekRange, reviewNote, reviewWindowOpen, shapeOf } from '../rulebook/review.ts';
 import { resetVoice } from '../rulebook/voice.ts';
 
 const first = () => 0;
@@ -139,4 +139,41 @@ test('⚠ the date is NOT parsed as UTC — the first of a month stays the first
 test('a malformed date degrades to the raw pair instead of throwing', () => {
   assert.equal(formatWeekRange('not-a-date', '2026-08-09'), 'not-a-date — 2026-08-09');
   assert.equal(formatWeekRange('2026-13-01', '2026-13-07'), '2026-13-01 — 2026-13-07');
+});
+
+/**
+ * ══ THE 24-HOUR HOME WINDOW (0152) ══
+ *
+ * PO: *"Weekly review should disappear after 24 hours."* The trap this guards is the anchor: measuring
+ * from the week's end rather than from `created_at` would expire the card before an athlete who opens
+ * the app mid-week ever saw it — a card that exists for nobody, failing silently.
+ */
+
+const HOUR = 60 * 60 * 1000;
+const MADE = Date.parse('2026-08-10T07:30:00Z');
+
+test('the review card stands down 24 hours after it appeared', () => {
+  const at = (h) => MADE + h * HOUR;
+  assert.equal(reviewWindowOpen('2026-08-10T07:30:00Z', at(0)), true, 'the moment it is written');
+  assert.equal(reviewWindowOpen('2026-08-10T07:30:00Z', at(23.9)), true, 'still inside the day');
+  assert.equal(reviewWindowOpen('2026-08-10T07:30:00Z', at(24)), false, 'exactly a day later it is done');
+  assert.equal(reviewWindowOpen('2026-08-10T07:30:00Z', at(72)), false, 'and stays done');
+});
+
+test('the window runs from FIRST SIGHT, not from the end of the week', () => {
+  // 0140 is lazy: an athlete who does not open the app until Wednesday has the row written on Wednesday.
+  // Anchoring to the week's end would have expired this before it was ever drawn.
+  const openedWednesday = '2026-08-12T18:00:00Z';
+  assert.equal(reviewWindowOpen(openedWednesday, Date.parse('2026-08-12T18:05:00Z')), true);
+  assert.equal(reviewWindowOpen(openedWednesday, Date.parse('2026-08-13T17:00:00Z')), true);
+  assert.equal(reviewWindowOpen(openedWednesday, Date.parse('2026-08-13T19:00:00Z')), false);
+});
+
+test('a missing or unparseable timestamp keeps the card UP — the safe failure', () => {
+  // An unapplied 0152 returns no created_at. Defaulting the other way would make every athlete's review
+  // vanish on a database that is merely one migration behind.
+  assert.equal(reviewWindowOpen(null), true);
+  assert.equal(reviewWindowOpen(undefined), true);
+  assert.equal(reviewWindowOpen(''), true);
+  assert.equal(reviewWindowOpen('not-a-date'), true);
 });
