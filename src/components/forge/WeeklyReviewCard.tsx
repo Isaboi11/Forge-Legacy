@@ -28,9 +28,16 @@ import type { WeeklyReview } from '@/data/weekly-review-live';
  * dismissal that quietly turned into an opt-out would be the app deciding something the athlete did
  * not.
  *
- * The dismissal is deliberately in memory rather than stored: the row is snapshotted and permanent, so
- * a skipped review is still findable in full afterwards. Skipping means "not now", and "not now"
- * expiring on the next launch is the honest reading of it.
+ * ⚠ AND IT STICKS ACROSS LAUNCHES (Amendment 001). It shipped held in memory, on the reading that "not
+ * now" should expire on the next launch — which on the web preview meant it expired on the next page
+ * refresh, and on the phone on the next cold start. With 0152 unapplied the card had no other way to
+ * stand down either, so it came back for seven days. `weekly-review-seen.ts` retires it per `weekStart`:
+ * still this week only, still nothing about the feature, but the dismissal now outlives the screen.
+ *
+ * ⚠ BOTH ACTIONS RETIRE IT. `onView` is not a navigation-only callback — reading the review is the
+ * strongest signal the card is spent, and leaving it up afterwards asked the athlete to dismiss
+ * something they had already acted on. Neither action deletes anything: the row is snapshotted and
+ * permanent, so a retired review is still findable in full at `/weekly-review/[week]`.
  *
  * ⚠ AND SKIP STAYS BESIDE THE PRIMARY, NOT UNDER IT. Two stacked full-width buttons read as two equal
  * choices; a bare text action beside a pill reads as the way out of one. It is respected, not promoted.
@@ -40,6 +47,7 @@ export interface WeeklyReviewCardProps {
   review: WeeklyReview;
   /** From `useEntitlement('weekly_review')`. False draws the locked face rather than hiding the card. */
   entitled: boolean;
+  /** Open the full week. ⚠ The caller must ALSO retire the card — see the header. */
   onView: () => void;
   onSkip: () => void;
 }

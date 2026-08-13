@@ -18,6 +18,7 @@ import { YourCircleCard } from '@/components/forge/compositions/YourCircleCard';
 import { WeeklyReviewCard } from '@/components/forge/WeeklyReviewCard';
 import { fetchWeeklyReview, type WeeklyReview } from '@/data/weekly-review-live';
 import { reviewWindowOpen } from '@/domain/coach/rulebook/review';
+import { getRetiredReviewWeeks, isWeekRetired, retireReviewWeek } from '@/lib/weekly-review-seen';
 import { useEntitlement } from '@/lib/entitlement';
 import { QuickActionsRow } from '@/components/forge/compositions/QuickActionsRow';
 import { TrainingNowSheet } from '@/components/forge/TrainingNowSheet';
@@ -239,17 +240,37 @@ export default function HomeScreen() {
    * row that changes once a week.
    */
   const [weeklyReview, setWeeklyReview] = useState<WeeklyReview | null>(null);
-  const [reviewSkipped, setReviewSkipped] = useState(false);
+  const [reviewRetired, setReviewRetired] = useState(false);
   const { entitled: reviewEntitled } = useEntitlement('weekly_review');
+  /*
+   * ⚠ BOTH READS SETTLE BEFORE EITHER IS SHOWN. The retired list is device-local and resolves in a
+   * millisecond, the RPC does not — so setting `weeklyReview` the moment the network answers would paint a
+   * card the athlete retired last night and pull it a frame later. `Promise.all` makes the pair one fact.
+   */
   useEffect(() => {
     let alive = true;
-    void fetchWeeklyReview().then((r) => {
-      if (alive) setWeeklyReview(r);
+    void Promise.all([fetchWeeklyReview(), getRetiredReviewWeeks()]).then(([r, retired]) => {
+      if (!alive) return;
+      setReviewRetired(isWeekRetired(retired, r?.weekStart));
+      setWeeklyReview(r);
     });
     return () => {
       alive = false;
     };
   }, []);
+
+  /**
+   * The card is done with — for THIS WEEK, on this device.
+   *
+   * ⚠ VIEWING RETIRES IT TOO, not just Skip. Reading the review is the strongest possible signal that the
+   * card has done its job; leaving it up afterwards asked the athlete to dismiss something they had already
+   * acted on. Skip and View differ in where they send you, not in what they mean about the card.
+   */
+  const retireReview = useCallback(() => {
+    if (!weeklyReview) return;
+    setReviewRetired(true);
+    void retireReviewWeek(weeklyReview.weekStart);
+  }, [weeklyReview]);
 
   const [friendSheetOpen, setFriendSheetOpen] = useState(false);
   /**
@@ -1223,13 +1244,22 @@ export default function HomeScreen() {
           {/* ⚠ THE 24-HOUR WINDOW (0152). Checked HERE rather than at fetch time on purpose: Home is a
               mounted tab that can sit open across the boundary, and a card whose welcome ran out three
               hours ago should not still be sitting there because the app happened not to be restarted.
-              This re-evaluates on every render, which is exactly as often as it needs to. */}
-          {weeklyReview && !reviewSkipped && reviewWindowOpen(weeklyReview.createdAt) ? (
+              This re-evaluates on every render, which is exactly as often as it needs to.
+
+              ⚠ AND `reviewRetired` IS THE HALF THAT DOES NOT DEPEND ON A MIGRATION. The window above is
+              only real once 0152 is applied — until then `createdAt` is null, `reviewWindowOpen` returns
+              true by design, and the card would sit on Home for the full seven days. Retirement is
+              device-local and works either way, so View and Skip are the athlete's guaranteed way out.
+              See `weekly-review-seen-model.ts`. */}
+          {weeklyReview && !reviewRetired && reviewWindowOpen(weeklyReview.createdAt) ? (
             <WeeklyReviewCard
               review={weeklyReview}
               entitled={reviewEntitled}
-              onView={() => router.push({ pathname: '/weekly-review/[week]', params: { week: weeklyReview.weekStart } })}
-              onSkip={() => setReviewSkipped(true)}
+              onView={() => {
+                retireReview();
+                router.push({ pathname: '/weekly-review/[week]', params: { week: weeklyReview.weekStart } });
+              }}
+              onSkip={retireReview}
             />
           ) : null}
 

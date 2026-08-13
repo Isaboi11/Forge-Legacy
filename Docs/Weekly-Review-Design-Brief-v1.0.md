@@ -98,7 +98,7 @@ the app to do comes first; a summary of last week can wait four inches.
 |---|---|
 | **Entitled** (today: everyone) | Eyebrow `YOUR WEEK` · title *"Holt looked at your week"* · **his line only** · three stats (`4 sessions` · `38,420` · `4:52:10`) · **View review** + **Skip** |
 | **Locked** (paid tier lands later) | Same frame, title *"Your week is ready"*, body *"4 sessions last week. Holt's read on it comes with the paid tier."* · **See what you get** + **Skip** |
-| **Skipped** | Card disappears for this session only |
+| **Skipped** | ⚠ **AMENDED 001** — card is retired for **this week**, and the dismissal survives a relaunch. Was "this session only" |
 | **No review** | **Nothing renders.** No placeholder, no "check back Monday" |
 
 Two rules that are decisions, not accidents:
@@ -106,8 +106,11 @@ Two rules that are decisions, not accidents:
 - **The card carries Holt's sentence, not the numbers.** If the card showed the full week there would be
   nothing left to open. The three stats are a teaser, not a summary.
 - **Skip is real, and it is for this week only.** It dismisses *this* card — it is not a preference, does
-  not disable the feature, and next week's review still arrives. It is held in memory, not stored,
-  because "not now" expiring on the next launch is the honest reading of it.
+  not disable the feature, and next week's review still arrives. ⚠ **AMENDED 001:** it is now **stored**
+  device-locally, keyed to `week_start`. The original rule held it in memory because "not now" expiring on
+  the next launch read as honest; on the web preview "the next launch" is a page refresh, so it expired
+  before the athlete had left the screen. **Reading the review retires the card too** — see
+  `Docs/Amendments/Weekly-Review-Amendment-001-Card-Retirement.md`.
 - **Locked shows as locked, never hidden.** An athlete who cannot see the feature exists has no reason to
   want it — and hiding it would also make their week look like it did not happen.
 
