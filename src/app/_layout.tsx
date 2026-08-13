@@ -17,6 +17,7 @@ import { ProfileProvider, useProfile } from '@/lib/profile';
 import { PushProvider } from '@/lib/push';
 import { SettingsProvider } from '@/lib/settings';
 import { EntitlementProvider } from '@/lib/entitlement';
+import { usePendingInvite } from '@/lib/pending-invite';
 import { routeFor } from '@/lib/route-for';
 import { WorkoutSessionProvider } from '@/hooks/useWorkoutSession';
 import { ShareProvider } from '@/hooks/useShareSheet';
@@ -151,6 +152,13 @@ function RootNavigator() {
   // the launch showed the carved pillars, then took them away, then showed a spinner on a slightly
   // different dark. `ForgeSplash` is the native splash reproduced in JS, so a slow read now looks like
   // the app still opening rather than like a different screen that arrived first.
+  /*
+   * ⚠ CALLED BEFORE THE SPLASH RETURN, so it runs in all four boot states — `'auth'` most of all. That is
+   * the state where a tapped invite used to be lost: only `sign-in` is declared there, so expo-router
+   * strips `join-squad` out of the tree and the `?code=` with it. See `lib/pending-invite.tsx`.
+   */
+  usePendingInvite(route);
+
   if (route === 'splash') return <BootLoading />;
   return (
     <Stack screenOptions={{ headerShown: false }}>

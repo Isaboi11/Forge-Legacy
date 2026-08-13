@@ -42,7 +42,23 @@ export default function JoinSquadRoute() {
 
   const canContinue = code.trim().length >= 4 && !busy;
 
+  /*
+   * ⚠ THE CAP IS CHECKED HERE, WHERE EVERY PATH MEETS.
+   *
+   * It used to sit in `onContinue` only, so a free athlete already at their squad cap was refused when
+   * they TYPED a code and admitted when they FOLLOWED A LINK — the same action, two answers, and the
+   * bypass was on the path `squad-invite.tsx` makes primary. Deferred invites
+   * (`lib/pending-invite.tsx`) now route every athlete who signed up FROM an invite through that same
+   * link path, so it stopped being an edge case.
+   *
+   * Here rather than in the auto-resolve effect for two reasons. `guard()` opens M-7, which is a
+   * setState, and react-compiler rightly refuses that synchronously inside an effect body. And it is the
+   * more correct place regardless: SQ-D14 makes resolving a squad a READ — you are shown what you would
+   * be joining — and joining is the action a cap governs. Still pre-action per M-7 §2, because it runs
+   * before the write, not halfway through it.
+   */
   const join = (accept: boolean, forCode: string = code) => {
+    if (!guard('squads')) return;
     setBusy(true);
     joinSquadByCode(forCode.trim(), accept).then(
       (res) => {
@@ -90,10 +106,10 @@ export default function JoinSquadRoute() {
 
   const onContinue = () => {
     if (!canContinue) return;
-    // Pre-action (M-7 §2). Joining and creating share one cap, so a squad you were invited to is refused
-    // at the same number as one you would have made — Amendment 001 §7: the invitation stays visible and
-    // simply cannot be accepted.
-    if (!guard('squads')) return;
+    // Resolving is a read (SQ-D14) — the cap is enforced in `join`, which is where every path meets and
+    // where the write actually happens. Joining and creating share one cap, so a squad you were invited
+    // to is refused at the same number as one you would have made (Amendment 001 §7): the invitation
+    // stays visible and simply cannot be accepted.
     resolve(code);
   };
 
@@ -107,6 +123,15 @@ export default function JoinSquadRoute() {
    *
    * Guarded by a ref rather than by state so a re-render cannot fire it twice, and so returning to a
    * dismissed commitment panel does not immediately re-resolve it.
+   *
+   * ⚠ THE CAP IS CHECKED HERE TOO, and it was not. `onContinue` above runs `guard('squads')` before it
+   * resolves; this path ran `resolve` directly, so a free athlete already at their squad cap was refused
+   * when they TYPED a code and admitted when they FOLLOWED A LINK — the same action, two answers, and the
+   * bypass was on the path `squad-invite.tsx` makes primary.
+   *
+   * It matters more now than when the audit found it: deferred invites (`lib/pending-invite.tsx`) route
+   * every athlete who signed up FROM an invite through this exact effect, so this is the path most
+   * newcomers now arrive on rather than an edge case.
    */
   const autoStarted = useRef(false);
   useEffect(() => {

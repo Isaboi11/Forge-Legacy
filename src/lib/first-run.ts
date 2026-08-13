@@ -10,6 +10,7 @@ import { clearWorkoutDraft } from './workout-builder-draft';
 import { clearStartChoice } from './program-intent';
 import { clearSession } from '@/domain/workout/autosave';
 import { clearSquadFavorites } from './squad-favorites';
+import { clearPendingInvite } from './pending-invite';
 
 /**
  * Clear the device-local state an account leaves behind. It lives in AsyncStorage (localStorage on web)
@@ -49,5 +50,8 @@ export async function resetFirstRunFlags(): Promise<void> {
     // Without this the next account is never asked how it wants to start — it inherits the answer.
     clearStartChoice(),
     clearSquadFavorites(),
+    // An invite is tapped by a PERSON, before anyone is signed in. The next account on this phone is a
+    // different person and did not tap it — inheriting it would route a stranger into somebody else's squad.
+    clearPendingInvite(),
   ]);
 }
