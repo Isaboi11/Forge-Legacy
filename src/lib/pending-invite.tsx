@@ -1,9 +1,18 @@
 import { useEffect, useRef } from 'react';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { inviteCodeFromUrl } from '@/domain/squad/invite-link';
+import { stashPendingInvite, takePendingInvite } from './pending-invite-store';
+
+/*
+ * ⚠ THE STORAGE HELPERS LIVE IN `pending-invite-store.ts`, WHICH IMPORTS NEITHER REACT NOR THE ROUTER.
+ *
+ * They were here, and `first-run.ts` importing `clearPendingInvite` from this file dragged `expo-router`
+ * into the auth-initialisation chain — upstream of the router itself. The app booted to a white screen.
+ * The full account is in that file's header. Do not move them back.
+ */
+export { clearPendingInvite, stashPendingInvite, takePendingInvite } from './pending-invite-store';
 
 /**
  * An invite that arrives before there is an account to accept it.
@@ -26,48 +35,6 @@ import { inviteCodeFromUrl } from '@/domain/squad/invite-link';
  *   to attach it to. `resetFirstRunFlags` clears it on an account switch for the same reason it clears
  *   the rest: the next person to use this phone did not tap that invite.
  */
-
-const KEY = 'forge.pending.invite.v1';
-
-/** Long enough to survive a sign-up with an email round trip; short enough that a stale code is not honoured weeks later. */
-const TTL_MS = 24 * 60 * 60 * 1000;
-
-interface Stashed {
-  code: string;
-  at: number;
-}
-
-export async function stashPendingInvite(code: string): Promise<void> {
-  try {
-    await AsyncStorage.setItem(KEY, JSON.stringify({ code, at: Date.now() } satisfies Stashed));
-  } catch {
-    /* Best-effort: a device that cannot write this still reaches sign-in, just without the code. */
-  }
-}
-
-export async function takePendingInvite(): Promise<string | null> {
-  try {
-    const raw = await AsyncStorage.getItem(KEY);
-    if (!raw) return null;
-    // Read-and-clear in one step. An invite is honoured ONCE — leaving it would re-route the athlete to
-    // join-squad on every launch, including after they declined it.
-    await AsyncStorage.removeItem(KEY);
-    const parsed = JSON.parse(raw) as Partial<Stashed>;
-    if (typeof parsed?.code !== 'string' || typeof parsed?.at !== 'number') return null;
-    if (Date.now() - parsed.at > TTL_MS) return null;
-    return parsed.code;
-  } catch {
-    return null;
-  }
-}
-
-export async function clearPendingInvite(): Promise<void> {
-  try {
-    await AsyncStorage.removeItem(KEY);
-  } catch {
-    /* ignore */
-  }
-}
 
 /**
  * Catches an invite URL whatever the app was doing when it arrived, and redeems it once there is an

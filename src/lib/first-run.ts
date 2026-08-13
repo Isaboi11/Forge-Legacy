@@ -10,7 +10,9 @@ import { clearWorkoutDraft } from './workout-builder-draft';
 import { clearStartChoice } from './program-intent';
 import { clearSession } from '@/domain/workout/autosave';
 import { clearSquadFavorites } from './squad-favorites';
-import { clearPendingInvite } from './pending-invite';
+// ⚠ the STORE, not './pending-invite' — that module imports expo-router and this file is reached
+//   during auth init, upstream of the router. See pending-invite-store.ts.
+import { clearPendingInvite } from './pending-invite-store';
 
 /**
  * Clear the device-local state an account leaves behind. It lives in AsyncStorage (localStorage on web)

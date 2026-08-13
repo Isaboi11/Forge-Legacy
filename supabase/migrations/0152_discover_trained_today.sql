@@ -1,6 +1,6 @@
--- Forge Legacy — 0151: "training today" counts people who TRAINED, on Discover and Preview too
+-- Forge Legacy — 0152: "training today" counts people who TRAINED, on Discover and Preview too
 --
--- ⚠ WAS 0150, RENUMBERED. Two concurrent sessions both took 0150 on 2026-08-12 — the other being
+-- ⚠ WAS 0150 THEN 0151, RENUMBERED TWICE. Two concurrent sessions both took 0150 on 2026-08-12 — the other being
 --   `0150_restore_evaluate_honors_grant.sql`, which was applied first. Numbering is this project's whole
 --   dependency graph and there is no history table to arbitrate, so the unapplied one moves. Recorded
 --   because a renumbered migration that says nothing about why is the next reader's confusion.
@@ -60,7 +60,7 @@ begin
    where n.nspname = 'public' and p.proname = 'discover_squads';
 
   if v_src is null then
-    raise exception '0151: discover_squads() not found — apply 0053 first';
+    raise exception '0152: discover_squads() not found — apply 0053 first';
   end if;
 
   /*
@@ -81,7 +81,7 @@ begin
   );
 
   if v_new = v_src then
-    raise exception '0151: the pre-0108 check-in expression was not found in discover_squads() — it may already be fixed, or its body has changed. Inspect it by hand rather than guessing: select pg_get_functiondef(''public.discover_squads''::regproc);';
+    raise exception '0152: the pre-0108 check-in expression was not found in discover_squads() — it may already be fixed, or its body has changed. Inspect it by hand rather than guessing: select pg_get_functiondef(''public.discover_squads''::regproc);';
   end if;
 
   execute v_new;
@@ -101,7 +101,7 @@ begin
    where n.nspname = 'public' and p.proname = 'squad_preview';
 
   if v_src is null then
-    raise exception '0151: squad_preview() not found — apply 0055 first';
+    raise exception '0152: squad_preview() not found — apply 0055 first';
   end if;
 
   v_new := replace(
@@ -113,7 +113,7 @@ begin
   );
 
   if v_new = v_src then
-    raise exception '0151: the pre-0108 check-in expression was not found in squad_preview() — it may already be fixed, or its body has changed. Inspect it by hand: select pg_get_functiondef(''public.squad_preview''::regproc);';
+    raise exception '0152: the pre-0108 check-in expression was not found in squad_preview() — it may already be fixed, or its body has changed. Inspect it by hand: select pg_get_functiondef(''public.squad_preview''::regproc);';
   end if;
 
   execute v_new;
