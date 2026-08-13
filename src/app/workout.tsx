@@ -276,7 +276,7 @@ export default function WorkoutScreen() {
       refetchMemories();
     }, [refetchMemories]),
   );
-  const { finishWorkout, abandonWorkout } = useWorkoutSession();
+  const { session: liveSession, startWorkout, finishWorkout, abandonWorkout } = useWorkoutSession();
   const [session, setSession] = useState<ActiveSession | null>(null);
   const [resumable, setResumable] = useState<ActiveSession | null>(null);
   /** A launch intent parked because work was already in progress. Null = they just opened the logger. */
@@ -499,6 +499,49 @@ export default function WorkoutScreen() {
     },
     [showToast],
   );
+
+  /**
+   * ⚠ LIVE PRESENCE IS DERIVED FROM A SESSION EXISTING, NOT FROM REMEMBERING TO ANNOUNCE ONE.
+   *
+   * `setTrainingStatus` has exactly one caller — `useWorkoutSession`'s `startWorkout` — so an athlete is
+   * only visible in Live Now if the screen that launched them remembered to call it. EIGHT did not:
+   * `workout-invite`, `workout-join`, `templates`, `template/[id]`, `starter-template/[id]`,
+   * `workout-builder` (both paths) and `program/[id]`'s `goTrain`, all of which just
+   * `router.replace('/workout')`. Nor did resuming after the app was killed.
+   *
+   * The consequences were the two-device kind this domain has already had to fix once: accept a Train
+   * Together invite and you are INVISIBLE to the person who invited you — Live Now is empty, nobody can
+   * tap "Join workout" on you, and branch 9 of `notification_events_for` (which gates on the recipient's
+   * `training_since`) cannot fire either.
+   *
+   * `program/[id].tsx:391` carries a comment saying `startWorkout` "is not optional here even though the
+   * logger builds its own session: it is what sets LIVE PRESENCE" — the sibling in the same file proves
+   * the other omissions are oversights, not decisions.
+   *
+   * So the logger asserts it instead. This screen is the one place that always knows a session is
+   * running, whatever route reached it, so presence stops depending on nine callers agreeing. Inside the
+   * async body rather than the effect's own scope because `startWorkout` is a setState and
+   * react-compiler refuses that synchronously in an effect.
+   */
+  useEffect(() => {
+    const name = session?.workoutName;
+    // Nothing to announce, or the provider already knows (the athlete came through a screen that did
+    // call `startWorkout`). Re-announcing would reset `startedAt` and lose the time it really began.
+    if (!name || liveSession) return;
+    let alive = true;
+    /*
+     * Deferred by a microtask, not called inline. Synchronising React state to an external system is
+     * exactly what an effect is for, but `startWorkout` is a setState and react-compiler refuses that in
+     * an effect BODY (`react-hooks/set-state-in-effect`, the rule that already holds this repo's one
+     * standing lint error). One tick later is outside the body and changes nothing an athlete can see.
+     */
+    void Promise.resolve().then(() => {
+      if (alive) startWorkout(name);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [session?.workoutName, liveSession, startWorkout]);
 
   // Resume-or-fresh on mount. A fresh session prefers the launch context (Program Detail's "Continue
   // Training" names the exact program + slot, so the prescription is that day's and the saved workout
