@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Constants from 'expo-constants';
@@ -11,8 +11,13 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { SettingsToggle } from '@/components/forge/SettingsToggle';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
+import { Button } from '@/components/forge/composites/Button';
+import { InputField } from '@/components/forge/composites/InputField';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { deleteMyAccount } from '@/data/account-live';
 import { isAppAdmin } from '@/data/admin-live';
+import { usePersist } from '@/hooks/usePersist';
+import { useToast } from '@/hooks/useCeremony';
 import { fetchHomeGym } from '@/data/home-gym-live';
 import { fetchAccountIdentity } from '@/domain/profile/live';
 import {
@@ -71,6 +76,38 @@ function Glyph({ d, size = 15, color, width = 1.9 }: { d: string; size?: number;
 }
 
 export default function AccountSettingsScreen() {
+  /*
+   * ⚠ REQUIRED BY APP STORE REVIEW 5.1.1(v) — and the Terms have promised it the whole time.
+   *
+   * Typed confirmation, matching `squad-settings.tsx` exactly rather than inventing a second ceremony for
+   * the same weight of action: an irreversible delete should feel the same everywhere in the product.
+   *
+   * The order is load-bearing and lives in `deleteMyAccount()`: storage objects go FIRST, while the
+   * athlete still owns them (0146) and while the rows naming them still exist. Delete the account first
+   * and nothing knows which bytes were theirs.
+   */
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteText, setDeleteText] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const persist = usePersist();
+  const { showToast } = useToast();
+  const canDelete = deleteText.trim().toUpperCase() === 'DELETE';
+
+  const doDeleteAccount = () => {
+    if (!canDelete || deleting) return;
+    setDeleting(true);
+    persist(() => deleteMyAccount(), {
+      onOk: async (res) => {
+        /* Signing out is what actually ends the session — the account is already gone, so this cannot
+           fail in a way that matters, but it must run AFTER the delete resolved. */
+        if (res.squadsTransferred > 0) showToast(`Squad ownership passed on. Your account is deleted.`);
+        await signOut();
+      },
+      rollback: () => setDeleting(false),
+      detail: true,
+    });
+  };
+
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { signOut } = useAuth();
@@ -178,15 +215,19 @@ export default function AccountSettingsScreen() {
                 {sec.rows.map((row, i) => (
                   <Pressable
                     key={row.key}
-                    onPress={() => (row.action.type === 'route' ? router.push(row.action.path as never) : setSheet(row.action.key))}
+                    onPress={() => {
+                      if (row.action.type === 'route') return router.push(row.action.path as never);
+                      if (row.action.type === 'deleteAccount') return setDeleteOpen(true);
+                      return setSheet(row.action.key);
+                    }}
                     accessibilityRole="button"
                     accessibilityLabel={row.label}
                     style={[styles.row, i > 0 && styles.rowBorder]}
                   >
-                    <Text style={styles.rowLabel}>{row.label}</Text>
+                    <Text style={[styles.rowLabel, row.destructive && styles.rowLabelDanger]}>{row.label}</Text>
                     <View style={styles.rowRight}>
                       {row.value ? <Text style={styles.rowValue}>{row.value}</Text> : null}
-                      <Glyph d={CHEVRON} color={flColor.gray600} width={2} />
+                      <Glyph d={CHEVRON} color={row.destructive ? flColor.redMuted : flColor.gray600} width={2} />
                     </View>
                   </Pressable>
                 ))}
@@ -227,12 +268,53 @@ export default function AccountSettingsScreen() {
           ))}
         </ScrollView>
       </BottomSheet>
+
+      {/* Delete account — typed confirmation, matching the squad-delete ceremony (App Store 5.1.1(v)). */}
+      <Modal visible={deleteOpen} transparent animationType="fade" onRequestClose={() => setDeleteOpen(false)}>
+        <View style={styles.confirmBackdrop}>
+          <View style={styles.confirmCard}>
+            <Text style={styles.confirmTitle}>Delete your account?</Text>
+            <Text style={styles.confirmBody}>
+              This erases your chapters, workouts, records, goals, honors and photos. It cannot be undone
+              and nothing here can be recovered afterwards.
+            </Text>
+            {/* Said separately because it is the one reassurance in this dialog, and it answers the
+                question an owner would otherwise have to guess at. */}
+            <Text style={styles.confirmBody}>
+              Any squad you own passes to its longest-standing member, so nobody else loses their work.
+            </Text>
+            <Text style={styles.confirmPrompt}>
+              Type <Text style={styles.confirmWord}>DELETE</Text> to confirm
+            </Text>
+            <View style={styles.confirmInput}>
+              <InputField value={deleteText} onChange={setDeleteText} placeholder="DELETE" autoCapitalize="characters" autoCorrect={false} />
+            </View>
+            <View style={styles.confirmActions}>
+              <Button variant="destructive" fullWidth disabled={!canDelete || deleting} onPress={doDeleteAccount} accessibilityLabel="Delete my account forever">
+                {deleting ? 'Deleting…' : 'Delete My Account'}
+              </Button>
+              <Button variant="secondary" fullWidth onPress={() => setDeleteOpen(false)} accessibilityLabel="Cancel">
+                Keep My Account
+              </Button>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: flColor.base },
+  rowLabelDanger: { color: flColor.redMuted },
+  confirmBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.72)', alignItems: 'center', justifyContent: 'center', padding: 26 },
+  confirmCard: { width: '100%', maxWidth: 380, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900, padding: 22, alignItems: 'center' },
+  confirmTitle: { fontFamily: flFont.display, fontSize: 21, color: flColor.cream100, textAlign: 'center', marginBottom: 10 },
+  confirmBody: { fontSize: 13, lineHeight: 19, color: flColor.gray400, textAlign: 'center', marginBottom: 16 },
+  confirmPrompt: { fontSize: 12, color: flColor.gray400, marginBottom: 8 },
+  confirmWord: { color: flColor.redMuted, fontWeight: '700' },
+  confirmInput: { width: '100%', marginBottom: 16 },
+  confirmActions: { width: '100%', gap: 9 },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   body: { paddingHorizontal: 18 },
 

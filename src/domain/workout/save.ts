@@ -140,7 +140,30 @@ export async function saveWorkout(
     p_program_week: session.programWeek ?? null,
     p_program_day: session.programDay ?? null,
   });
-  if (error) throw error;
+  /*
+   * ⚠ A LOST RESPONSE IS NOT A FAILED SAVE — AND RETRYING ONE MAKES A SECOND WORKOUT.
+   *
+   * `save_workout` takes no idempotency key and there is no unique index on `workouts`, so if the RPC
+   * commits and the connection drops before the reply arrives, the athlete sees "Couldn't save — try
+   * again", taps Finish a second time, and the whole insert runs again: a second `workouts` row, a second
+   * `chapters.workout_count` bump, a second set of `personal_records`, a second `evaluate_honors` pass and
+   * a second `program_sessions` claim against the same slot. `continue_workout`'s own header names this
+   * doubling as the reason IT exists; the first save had no equivalent guard.
+   *
+   * So before reporting failure, ASK WHETHER IT LANDED. `started_at` is the session's own start instant —
+   * it is fixed when the workout begins, identical across every retry, and an athlete cannot begin two
+   * sessions in the same millisecond. That makes it a natural fingerprint for "this exact session",
+   * needing no schema change and no rebuild of `save_workout` — a 200-line function this project has
+   * three recorded ways of breaking by rebuilding.
+   *
+   * If the row is there, the save worked and only the receipt was lost: return it as the success it was.
+   * If it is not, the failure is real and is re-thrown untouched.
+   */
+  if (error) {
+    const recovered = await findCommittedWorkout(user.id, session.startedAt);
+    if (!recovered) throw error;
+    return { workoutId: recovered, prs, volume: sessionVolume(session), sets: doneSetCount(session) };
+  }
 
   /*
    * ANNOTATIONS, WRITTEN AFTER THE COMMIT — never part of it.
@@ -432,3 +455,30 @@ export async function continueWorkout(
  * sessions — one read where there were three. The "absent means never done it, never zero" rule moved
  * with it: default a missing mark to zero and every athlete's first set becomes a personal record.
  */
+
+
+/**
+ * Did this exact session already commit?
+ *
+ * Answers the one question a lost response leaves open. Keyed on `(athlete_id, started_at)` and filtered
+ * to `state = 'saved'` so a draft row can never be mistaken for a completed save.
+ *
+ * ⚠ FAILS TOWARD RE-THROWING. If this read itself cannot complete, it returns null and the caller
+ * surfaces the original error — telling an athlete their workout did not save when it did is recoverable
+ * (they retry, and the retry now recovers); telling them it saved when it did not loses the session.
+ */
+async function findCommittedWorkout(athleteId: string, startedAt: string): Promise<string | null> {
+  try {
+    const { data, error } = await supabase
+      .from('workouts')
+      .select('id')
+      .eq('athlete_id', athleteId)
+      .eq('started_at', startedAt)
+      .eq('state', 'saved')
+      .maybeSingle();
+    if (error || !data) return null;
+    return (data as { id: string }).id;
+  } catch {
+    return null;
+  }
+}

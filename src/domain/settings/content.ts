@@ -41,7 +41,17 @@ export const LEGAL: Record<LegalKey, LegalDocument> = {
     updated: 'Last updated · Feb 2026',
     body: [
       'Welcome to Forge Legacy. By creating an account and using the app you agree to train responsibly and to the terms set out below.',
-      'Your Legacy — your ranks, records, and honors — belongs to you. We store it so it follows you across devices, and you may export or delete it at any time from Account settings.',
+      /*
+       * ⚠ "EXPORT OR DELETE" WAS HALF FALSE, AND HAD BEEN SINCE THIS WAS WRITTEN.
+       *
+       * Neither control existed. Delete does now (0148 + Account Settings, App Store 5.1.1(v)). Export
+       * does not, and promising it in a legal document while it does not exist is the kind of claim that
+       * is worse in Terms than anywhere else in the product.
+       *
+       * Amended to what is true rather than left aspirational. If a data export is built, this sentence
+       * is where it gets its promise back.
+       */
+      'Your Legacy — your ranks, records, and honors — belongs to you. We store it so it follows you across devices, and you may delete it at any time from Account settings.',
       'Forge Legacy is a training companion, not medical advice. Consult a qualified professional before beginning any new program, and stop if something hurts.',
       'These terms may change as the app grows. We’ll surface material changes in-app before they take effect.',
     ],
@@ -93,7 +103,9 @@ export interface SettingsRow {
   /** Trailing value text, e.g. the membership state or the home-gym item count. Empty renders just a chevron. */
   value?: string;
   /** What tapping does: push a route, or open one of the in-app sheets. */
-  action: { type: 'route'; path: string } | { type: 'sheet'; key: LegalKey | 'about' };
+  action: { type: 'route'; path: string } | { type: 'sheet'; key: LegalKey | 'about' } | { type: 'deleteAccount' };
+  /** Renders in the destructive treatment. Only ever the one row — see `settingsSections`. */
+  destructive?: boolean;
 }
 
 export interface SettingsSection {
@@ -154,6 +166,22 @@ export function settingsSections(opts: {
     key: 'about',
     label: 'About',
     rows: [{ key: 'about', label: 'About Forge Legacy', action: { type: 'sheet', key: 'about' } }],
+  });
+
+  /*
+   * ⚠ REQUIRED, NOT A FEATURE. App Store Review Guideline 5.1.1(v): an app that lets you create an
+   * account must let you delete it from inside the app. There was no delete path anywhere in Forge
+   * Legacy — and `LEGAL.terms` above has been promising one the whole time ("you may export or delete it
+   * at any time from Account settings"). The Terms described a control that did not exist.
+   *
+   * Its own section, at the bottom, under its own heading. A destructive, irreversible action does not
+   * belong in a list beside "Preferences" where a mis-tap can reach it — and the section label is the
+   * first honest warning the athlete gets.
+   */
+  sections.push({
+    key: 'danger',
+    label: 'Account',
+    rows: [{ key: 'delete', label: 'Delete Account', action: { type: 'deleteAccount' }, destructive: true }],
   });
 
   // Last, and in its own section, so it reads as what it is — an operator tool sitting beside the

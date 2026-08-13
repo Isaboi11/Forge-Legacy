@@ -63,7 +63,7 @@ test('a row is never offered for a screen that is switched off', () => {
 
 test('the full menu carries all three settings screens in the design’s order', () => {
   const full = settingsSections({ hasVisibility: true, hasNotifications: true, hasPreferences: true });
-  assert.deepEqual(full.map((s) => s.key), ['privacy', 'training', 'membership', 'about']);
+  assert.deepEqual(full.map((s) => s.key), ['privacy', 'training', 'membership', 'about', 'danger']);
   assert.deepEqual(full[0].rows.map((r) => r.key), ['vis', 'notif'], 'Privacy & Alerts: Visibility then Notifications');
   assert.deepEqual(full[1].rows.map((r) => r.key), ['gym', 'prefs']);
 });
@@ -91,7 +91,7 @@ test('the Creator Dashboard row CANNOT appear for a normal athlete', () => {
 
 test('an admin gets the row, last, in its own section', () => {
   const menu = settingsSections({ hasVisibility: true, hasNotifications: true, hasPreferences: true, isAdmin: true });
-  assert.deepEqual(menu.map((s) => s.key), ['privacy', 'training', 'membership', 'about', 'operator']);
+  assert.deepEqual(menu.map((s) => s.key), ['privacy', 'training', 'membership', 'about', 'danger', 'operator']);
 
   const operator = menu[menu.length - 1];
   assert.equal(operator.label, 'Operator', 'it reads as an operator tool, not one of the athlete’s settings');
@@ -154,4 +154,35 @@ test('the rank line omits what is unset rather than inventing a tier', () => {
   assert.equal(rankLine('architect', null), 'Architect', 'no level — show the family alone');
   assert.equal(rankLine('architect', 9), 'Architect', 'out of range is not a tier');
   assert.equal(rankLine(null, 4), null, 'no family — no rank line at all');
+});
+
+
+test('⚠ deleting your account is reachable from inside the app — App Store 5.1.1(v)', () => {
+  /*
+   * Not a feature: an app that lets you create an account MUST let you delete it in-app, and `LEGAL.terms`
+   * has promised exactly that since it was written — "you may export or delete it at any time from Account
+   * settings" — while no such control existed. The audit found the Terms describing a screen that did not.
+   *
+   * Asserted for every menu shape, because the row must not be one of the ones gated behind a flag.
+   */
+  for (const opts of [{}, { hasVisibility: true, hasNotifications: true, hasPreferences: true }, { isAdmin: true }]) {
+    const menu = settingsSections(opts);
+    const danger = menu.find((s) => s.key === 'danger');
+    assert.ok(danger, `a delete path must exist for every menu shape (${JSON.stringify(opts)})`);
+    assert.deepEqual(danger.rows.map((r) => r.key), ['delete']);
+    assert.equal(danger.rows[0].action.type, 'deleteAccount');
+    assert.equal(danger.rows[0].destructive, true, 'it must render as destructive, not as an ordinary row');
+  }
+});
+
+test('the delete row sits in its own section, never beside an ordinary setting', () => {
+  // A mis-tap must not be able to reach it from a list of harmless rows.
+  const menu = settingsSections({ hasVisibility: true, hasNotifications: true, hasPreferences: true });
+  const danger = menu.find((s) => s.key === 'danger');
+  assert.equal(danger.rows.length, 1, 'nothing else may share the section');
+  assert.equal(danger.label, 'Account');
+  assert.ok(
+    menu.every((s) => s.key === 'danger' || s.rows.every((r) => r.action.type !== 'deleteAccount')),
+    'no other section may carry a delete action',
+  );
 });
