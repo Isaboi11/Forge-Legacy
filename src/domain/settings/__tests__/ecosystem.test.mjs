@@ -26,8 +26,35 @@ test('convertMeasure only touches a pounds measure, and only for metric', () => 
   assert.equal(convertMeasure('315 lb', 'metric'), '143 kg');
   assert.equal(convertMeasure('225 lbs × 5', 'metric'), '102 kg × 5');
   assert.equal(convertMeasure('19:48', 'metric'), '19:48', 'a time is not a weight');
-  assert.equal(convertMeasure('18.2 mi', 'metric'), '18.2 mi', 'a distance is left as authored');
+  // Not "distance stays as authored" — distance DOES convert, via `distanceUnitFor`, which carries the
+  // value and the unit together. This function is the LOAD-string converter and must leave a distance
+  // alone precisely because it has no unit to convert it into.
+  assert.equal(convertMeasure('18.2 mi', 'metric'), '18.2 mi', 'a distance is not this function’s job');
   assert.equal(convertMeasure('20 reps', 'metric'), '20 reps');
+});
+
+test('⚠ a fractional pounds value converts as ONE number, not just its fraction', () => {
+  /*
+   * The pattern had no decimal branch, so it could not match at "227" (a "." follows) and matched the
+   * fractional digit instead — converting 5 lb and splicing the result back in:
+   *
+   *     "227.5 lb"  ->  "227.2 kg"        2.2× wrong, and plausible enough to be believed.
+   *
+   * Half-plates make this ordinary: `0085_chapter_photos.sql` uses 227.5 as its own example of a PR.
+   */
+  assert.equal(convertMeasure('227.5 lb', 'metric'), '103 kg');
+  assert.equal(convertMeasure('2.5 lb', 'metric'), '1 kg');
+  assert.equal(convertMeasure('45.5 lbs', 'metric'), '21 kg');
+  assert.equal(
+    convertMeasure('Heaviest was Bench Press at 227.5 lb.', 'metric'),
+    'Heaviest was Bench Press at 103 kg.',
+    'the whole sentence, with the number read whole',
+  );
+  // The regression itself: the fraction must never survive as a separate figure.
+  assert.ok(!convertMeasure('227.5 lb', 'metric').includes('227'), 'the integer part must not be left behind');
+  // Thousands separators still work, with and without a fraction.
+  assert.equal(convertMeasure('1,225 lb', 'metric'), '556 kg');
+  assert.equal(convertMeasure('1,225.5 lb', 'metric'), '556 kg');
 });
 
 test('the preview matches what a real 315 lb squat would render', () => {

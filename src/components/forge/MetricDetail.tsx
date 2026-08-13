@@ -8,6 +8,8 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { changeLabel, currentLabel, monthYear, pointLabel, tickIndices, type MetricSeries } from '@/domain/progress/lift-series';
+import { useUnits } from '@/lib/settings';
+import { unitLabel } from '@/domain/settings/units';
 
 /**
  * P-2 Metric Detail overlay (`Forge Progress Hub.dc.html` §10) — one lift's progression in full: the
@@ -40,6 +42,7 @@ const CLUBS = [135, 225, 315, 405, 495, 585, 675, 765];
 const W = 320, H = 200, PADX = 20, PADTOP = 18, PADBOT = 34;
 
 export function MetricDetail({ metric, onClose }: { metric: MetricSeries; onClose: () => void }) {
+  const { units } = useUnits();
   const insets = useSafeAreaInsets();
   const [sel, setSel] = useState<number | null>(null);
 
@@ -72,8 +75,10 @@ export function MetricDetail({ metric, onClose }: { metric: MetricSeries; onClos
       : [];
   const prIdx = pts.map((p, i) => (p.isPR ? i : -1)).filter((i) => i >= 0);
   const recent = [...pts].reverse().slice(0, 5);
-  const changeText = changeLabel(metric);
-  const unitWord = metric.unit === 'reps' ? 'reps' : 'lb';
+  const changeText = changeLabel(metric, units);
+  // Labels the Best / Start / Change strip directly above it — those figures are now converted, so this
+  // caption has to move with them or it names the wrong unit for its own numbers.
+  const unitWord = metric.unit === 'reps' ? 'reps' : unitLabel(units);
 
   return (
     <View style={[StyleSheet.absoluteFill, styles.root]}>
@@ -91,7 +96,7 @@ export function MetricDetail({ metric, onClose }: { metric: MetricSeries; onClos
 
       <ScrollView contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
         <Text style={styles.eyebrow}>{metric.category} · Latest</Text>
-        <Text style={styles.big}>{currentLabel(metric)}</Text>
+        <Text style={styles.big}>{currentLabel(metric, units)}</Text>
         {/* The reps the top set was moved for. Without it "245 lb" is half a fact, and the line would
             read as progress on a day the athlete went heavier for fewer. */}
         {metric.unit === 'weight' && pts[pts.length - 1]?.reps != null ? (
@@ -137,7 +142,7 @@ export function MetricDetail({ metric, onClose }: { metric: MetricSeries; onClos
           <View style={styles.selReadout}>
             <View style={styles.selDot} />
             <Text style={styles.selText}>
-              {pointLabel(metric, pts[sel])} · {monthYear(pts[sel].date)}
+              {pointLabel(metric, pts[sel], units)} · {monthYear(pts[sel].date)}
               {pts[sel].isPR ? ' · PR' : ''}
             </Text>
           </View>
@@ -165,6 +170,12 @@ export function MetricDetail({ metric, onClose }: { metric: MetricSeries; onClos
             {milestones.map((m) => (
               <View key={m.club} style={styles.mRow}>
                 <ForgeSymbol name="trophy" size={16} color={flColor.bronze300} />
+                {/* ⚠ DELIBERATELY NOT CONVERTED — flagged for the PO rather than decided here.
+                    "225 lb Club" is a proper noun in lifting, not a measurement: the metric equivalents
+                    are 100/140/180 kg, which are different milestones, not conversions of these. Turning
+                    it into "102 kg Club" would name a number no lifter recognises. Left explicit so a
+                    metric athlete reads a self-labelled imperial milestone rather than a mislabelled
+                    figure — every OTHER number on this screen is now in their own units. */}
                 <Text style={styles.mName}>{m.club} lb Club</Text>
                 <Text style={styles.mDate}>{monthYear(m.date)}</Text>
               </View>
@@ -178,7 +189,7 @@ export function MetricDetail({ metric, onClose }: { metric: MetricSeries; onClos
             <Text style={styles.sectionLabel}>Recent sessions</Text>
             {recent.map((p, i) => (
               <View key={`${p.date}-${i}`} style={styles.rRow}>
-                <Text style={styles.rTitle}>{pointLabel(metric, p)}</Text>
+                <Text style={styles.rTitle}>{pointLabel(metric, p, units)}</Text>
                 <View style={styles.rRight}>
                   {p.isPR ? (
                     <View style={styles.prPill}>

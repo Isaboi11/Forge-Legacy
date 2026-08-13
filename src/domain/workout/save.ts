@@ -1,7 +1,8 @@
 import { supabase } from '@/lib/supabase';
 import { sessionActivityType } from './conditioning';
 import { detectPRs, doneSetCount, PR_MAX_REPS, sessionVolume, type DetectedPR } from './metrics';
-import { buildAppendExercises, buildSaveExercises, buildSubstitutions } from './save-core';
+import { buildAppendExercises, buildSaveExercises, buildSubstitutions, canonicalizeWeights } from './save-core';
+import type { UnitSystem } from '@/domain/settings/units';
 import { playlistToRow } from './playlist';
 import type { ActiveSession } from './types';
 
@@ -33,11 +34,25 @@ export interface SaveResult {
  * reason.
  */
 export async function saveWorkout(
-  session: ActiveSession,
+  sessionAsTyped: ActiveSession,
   partners: string[] = [],
   /** What `progressionFor` decided about each lift this session — see the write at the foot of this function. */
   intensitySignals: IntensitySignalRow[] = [],
+  /**
+   * The system the athlete TYPED their weights in. Defaulted to imperial so every existing caller keeps
+   * its exact behaviour — `toCanonicalLb(x, 'imperial') === x`.
+   */
+  system: UnitSystem = 'imperial',
 ): Promise<SaveResult> {
+  /*
+   * ⚠ CANONICALISE FIRST. NOTHING BELOW MAY READ `sessionAsTyped`.
+   *
+   * `priorBest` is read from `personal_records`, which is in pounds. Session weights are in whatever the
+   * athlete typed. Comparing the two directly is how a metric athlete's genuine record went unnoticed —
+   * 100 (kg) measured against a stored 225 (lb) — and how a lighter lift could be announced as one.
+   * Both `detectPRs` and `buildSaveExercises` now take the same canonical session.
+   */
+  const session = canonicalizeWeights(sessionAsTyped, system);
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -344,8 +359,13 @@ export { CONTINUE_WINDOW_MIN, withinContinueWindow } from './save-core';
  */
 export async function continueWorkout(
   workoutId: string,
-  session: ActiveSession,
+  sessionAsTyped: ActiveSession,
+  /** As `saveWorkout` — the system the weights were typed in. Imperial is the identity. */
+  system: UnitSystem = 'imperial',
 ): Promise<{ setsAdded: number; prs: DetectedPR[] }> {
+  // Canonicalise before anything reads a weight — the appended sets are stored, and the PRs below are
+  // detected against `personal_records`, which is in pounds.
+  const session = canonicalizeWeights(sessionAsTyped, system);
   const {
     data: { user },
   } = await supabase.auth.getUser();

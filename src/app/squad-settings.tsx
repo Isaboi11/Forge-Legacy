@@ -35,6 +35,7 @@ import { SQUAD_CATEGORIES, fetchPendingRequestCount, fetchSquadDiscovery, update
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useMediaPicker } from '@/lib/useMediaPicker';
 import { useToast } from '@/hooks/useCeremony';
+import { usePersist } from '@/hooks/usePersist';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 
 /**
@@ -587,6 +588,7 @@ const fmtMonthYear = (iso: string): string => {
 };
 
 function MemberSettings({ squad, members, onBack }: { squad: SquadDetail; members: SquadMemberView[]; onBack: () => void }) {
+  const persist = usePersist();
   const router = useRouter();
   const { showToast } = useToast();
   const { data: prefsData } = useQuery(() => getSquadNotifPrefs(squad.id), [squad.id]);
@@ -597,8 +599,9 @@ function MemberSettings({ squad, members, onBack }: { squad: SquadDetail; member
   const prefs: SquadNotifPrefs = { ...DEFAULT_SQUAD_NOTIF, ...(prefsData ?? {}), ...edits };
   const setPref = (patch: Partial<SquadNotifPrefs>) => {
     const next = { ...prefs, ...patch };
+    const before = edits;
     setEdits((e) => ({ ...e, ...patch }));
-    void setSquadNotifPrefs(squad.id, next);
+    persist(() => setSquadNotifPrefs(squad.id, next), { rollback: () => setEdits(before) });
   };
 
   const owner = members.find((m) => m.role === 'owner');

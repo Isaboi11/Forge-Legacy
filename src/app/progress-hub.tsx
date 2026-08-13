@@ -25,6 +25,7 @@ import { useToast } from '@/hooks/useCeremony';
 import { MetricDetail } from '@/components/forge/MetricDetail';
 import { EditMetricsSheet } from '@/components/forge/EditMetricsSheet';
 import { BodySection } from '@/components/forge/BodySection';
+import { useUnits } from '@/lib/settings';
 
 /**
  * P-2 Progress Hub (`Forge Progress Hub.dc.html`) — the full picture reached from the Legacy rank badge:
@@ -48,6 +49,9 @@ const ORDER = LADDER.map((l) => l.key);
 
 export default function ProgressHubScreen() {
   const router = useRouter();
+  // `fmt` is convertMeasure — the pinned PR is built server-side as "<lift> <n> lb · Personal Record"
+  // (`progress-hub-live.ts:183`, which cannot read a preference), so it is converted at the edge here.
+  const { fmt } = useUnits();
   const tourScroller = useTourScroller();
   const onTourScroll = useTourScrollTracker();
   const insets = useSafeAreaInsets();
@@ -115,7 +119,7 @@ export default function ProgressHubScreen() {
               <View style={styles.pinnedText}>
                 <Text style={styles.pinnedLabel}>Pinned</Text>
                 <Text style={styles.pinnedValue} numberOfLines={1}>
-                  {data.pinned}
+                  {fmt(data.pinned)}
                 </Text>
               </View>
             </Pressable>
@@ -327,12 +331,13 @@ function Rung({ def, state, subTier, sex }: { def: { key: RankFamily; name: stri
 }
 
 function StrengthTile({ metric, onPress }: { metric: MetricSeries; onPress: () => void }) {
+  const { units } = useUnits();
   const s = spark(metric.points.map((p) => p.value));
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${metric.name} — ${currentLabel(metric)}, ${metric.sessions} sessions`}
+      accessibilityLabel={`${metric.name} — ${currentLabel(metric, units)}, ${metric.sessions} sessions`}
       style={styles.strengthTile}
     >
       <Text style={styles.tileCat}>{metric.category}</Text>
@@ -340,8 +345,9 @@ function StrengthTile({ metric, onPress }: { metric: MetricSeries; onPress: () =
         {metric.name}
       </Text>
       <View style={styles.tileValueRow}>
-        {/* Was hardcoded "lb", which was wrong the moment a bodyweight lift could be charted. */}
-        <Text style={styles.tileValue}>{currentLabel(metric)}</Text>
+        {/* Was hardcoded "lb" here, then hardcoded again inside `currentLabel` when it moved. It now
+            takes the athlete's system, so a metric athlete reads kg on their own progress. */}
+        <Text style={styles.tileValue}>{currentLabel(metric, units)}</Text>
         {metric.improving ? <Glyph d={PATHS.trendUp} size={13} color={flColor.bronze300} width={2} /> : <Text style={styles.tileFlat}>—</Text>}
       </View>
       {s ? (

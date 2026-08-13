@@ -53,6 +53,7 @@ import { addBodyEntry, fetchBodyEntries, latestBodyReading, type BodyMeasureKey 
 import { PICKER_DB } from '@/domain/exercise-picker/data';
 import { useQuery } from '@/lib/useQuery';
 import { useCeremony, useToast } from '@/hooks/useCeremony';
+import { usePersist } from '@/hooks/usePersist';
 
 /**
  * G-1 Goal Hub (+ Detail, Create/Edit, Update Progress) — `Forge Goal Hub.dc.html` and siblings, LOCKED.
@@ -338,6 +339,7 @@ function GoalDetail({ goal, chapterName, insets, onBack, onEdit, onChanged }: { 
   const [achieveOpen, setAchieveOpen] = useState(false);
   const { enqueue } = useCeremony();
   const { showToast } = useToast();
+  const persist = usePersist();
   const { data: history, refetch: refetchHistory } = useQuery(() => fetchGoalHistory(goal.id), [goal.id]);
   const done = isAchieved(goal);
 
@@ -349,13 +351,27 @@ function GoalDetail({ goal, chapterName, insets, onBack, onEdit, onChanged }: { 
     else showToast('Goal achieved · recorded in your legacy');
   };
 
-  // Achieving is permanent (GD-D5) — confirm before it's written, so it's never an accidental tap.
+  /*
+   * Achieving is permanent (GD-D5) — confirm before it's written, so it's never an accidental tap.
+   *
+   * ⚠ AND ITS FAILURE MUST BE LOUD, FOR THE SAME REASON IT IS CONFIRMED. This was a single-argument
+   * `.then()` with no rejection arm: the sheet closed, `markAchieved` threw, and nothing happened at all.
+   * The confirm copy says "there's no undo", so an athlete who sees the sheet close believes it is done
+   * and will never tap it again — the one interaction in the product where a silent failure is least
+   * likely to be discovered.
+   */
   const runAchieve = () => {
     setAchieveOpen(false);
-    void markAchieved(goal.id).then((res) => {
-      celebrate(res.newlyAchieved);
-      onChanged();
-    });
+    persist(
+      () => markAchieved(goal.id),
+      {
+        onOk: (res) => {
+          celebrate(res.newlyAchieved);
+          onChanged();
+        },
+        message: 'Couldn’t record that — check your connection and try again. The goal is unchanged.',
+      },
+    );
   };
 
   return (

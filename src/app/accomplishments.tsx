@@ -28,6 +28,7 @@ import {
 import { CalendarField } from '@/components/forge/composites/CalendarField';
 import { useMediaPicker } from '@/lib/useMediaPicker';
 import { useToast } from '@/hooks/useCeremony';
+import { usePersist } from '@/hooks/usePersist';
 import {
   accSubline,
   canToggleFeatured,
@@ -235,6 +236,7 @@ function AccomplishmentDetail({
   const [featured, setFeatured] = useState(item.featured);
   const [delOpen, setDelOpen] = useState(false);
   const [replaceOpen, setReplaceOpen] = useState(false);
+  const persist = usePersist();
   const nFeatured = featuredCount(all.map((a) => (a.id === item.id ? { ...a, featured } : a)));
   // The current featured three (persisted) — the pool the replace picker offers when we're at the cap.
   const currentFeatured = featuredAccomplishments(all);
@@ -247,21 +249,46 @@ function AccomplishmentDetail({
       return;
     }
     setFeatured(next);
-    void setAccomplishmentFeatured(item.id, next).then(onChanged);
+    persist(() => setAccomplishmentFeatured(item.id, next), {
+      onOk: onChanged,
+      rollback: () => setFeatured(!next),
+    });
   };
 
-  // Swap: un-feature the chosen one, feature this one.
+  /*
+   * Swap: un-feature the chosen one, feature this one.
+   *
+   * ⚠ TWO WRITES, NO TRANSACTION — SO THE HALF-DONE STATE MUST BE VISIBLE. If the first succeeds and the
+   * second fails, the athlete is left with TWO featured accomplishments where they had three, having been
+   * shown the swap as complete. `onChanged` refetches either way now, so the star reflects what the
+   * server actually holds rather than what the tap intended.
+   */
   const doReplace = (targetId: string) => {
     setReplaceOpen(false);
     setFeatured(true);
-    void setAccomplishmentFeatured(targetId, false)
-      .then(() => setAccomplishmentFeatured(item.id, true))
-      .then(onChanged);
+    persist(
+      async () => {
+        await setAccomplishmentFeatured(targetId, false);
+        await setAccomplishmentFeatured(item.id, true);
+      },
+      {
+        onOk: onChanged,
+        rollback: () => {
+          setFeatured(false);
+          onChanged(); // re-read: the first write may have landed even though the second did not
+        },
+        message: 'Couldn’t swap those — check your connection and try again.',
+      },
+    );
   };
 
+  // Destructive and irreversible: never let it look done when it is not.
   const doDelete = () => {
     setDelOpen(false);
-    void removeAccomplishment(item.id).then(onDeleted);
+    persist(() => removeAccomplishment(item.id), {
+      onOk: onDeleted,
+      message: 'Couldn’t delete that — check your connection and try again.',
+    });
   };
 
   const chapter = item.chapterId ? chapterLabel(item.chapterId) : null;

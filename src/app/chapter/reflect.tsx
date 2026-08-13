@@ -11,6 +11,7 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { fetchChapterDetail, saveReflection, sealChapter } from '@/data/chapter-detail-live';
 import { isAchieved, isQuantifiable, progressLabel } from '@/domain/goals/goals';
+import { usePersist } from '@/hooks/usePersist';
 import { useQuery } from '@/lib/useQuery';
 
 /**
@@ -68,6 +69,7 @@ export default function ChapterReflectionScreen() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
+  const persist = usePersist();
 
   const header = useMemo(() => {
     if (!data) return null;
@@ -93,17 +95,45 @@ export default function ChapterReflectionScreen() {
     router.back();
   };
 
+  /*
+   * ⚠ THE LEAST REVERSIBLE ACTION IN THE PRODUCT, AND IT USED TO FAIL IN SILENCE.
+   *
+   * This was `void action.then(() => setSaved(true)).finally(() => setBusy(false))` — no rejection arm on
+   * either branch. `sealChapter` and `saveReflection` both throw correctly; nobody caught it. `saved` is
+   * the sole gate on the "This chapter has been sealed." overlay, so on a failed write the button simply
+   * un-greyed and NOTHING else happened. Backing out then offered to discard the reflection they had just
+   * written, which reads as though the app threw their words away on purpose.
+   *
+   * `busy` is cleared by `usePersist`'s own arms rather than a `finally`, because `.finally()` re-throws
+   * and that is how the rejection escaped in the first place.
+   */
   const complete = () => {
     if (!hasText || busy) return;
     setBusy(true);
-    const action = isPost ? saveReflection(id, text.trim()) : sealChapter(id, text.trim());
-    void action.then(() => setSaved(true)).finally(() => setBusy(false));
+    persist(() => (isPost ? saveReflection(id, text.trim()) : sealChapter(id, text.trim())), {
+      onOk: () => {
+        setSaved(true);
+        setBusy(false);
+      },
+      rollback: () => setBusy(false),
+      message: isPost
+        ? 'Couldn’t save your reflection — check your connection and try again.'
+        : 'Couldn’t seal the chapter — check your connection and try again. Your reflection is still here.',
+    });
   };
-  // Sealing only: seal without a reflection.
+  // Sealing only: seal without a reflection. Same failure shape as `complete` — a seal that did not
+  // happen must never look like one that did.
   const skip = () => {
     if (busy || isPost) return;
     setBusy(true);
-    void sealChapter(id).then(() => setSaved(true)).finally(() => setBusy(false));
+    persist(() => sealChapter(id), {
+      onOk: () => {
+        setSaved(true);
+        setBusy(false);
+      },
+      rollback: () => setBusy(false),
+      message: 'Couldn’t seal the chapter — check your connection and try again.',
+    });
   };
 
   return (

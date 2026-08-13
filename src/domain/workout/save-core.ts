@@ -6,10 +6,25 @@
  * arithmetic over a session and belong where a test can reach them.
  */
 
-import type { ActiveSession } from './types.ts';
+import { toCanonicalLb, type UnitSystem } from '../settings/units.ts';
+import type { ActiveSession, SessionExercise } from './types.ts';
 
 /**
- * The exercise rows a session commits — pure, so the rules in it can be tested.
+ * ⚠ THE ONE LIST. Every function that writes, annotates or appends to a session MUST walk this — never
+ * `session.exercises` — and must join between them by `ex.position`, never by array index.
+ *
+ * ══ WHY THIS EXISTS AS A FUNCTION AND NOT A FILTER SPELLED OUT THREE TIMES ══
+ *
+ * It used to be spelled out three times, and one of the three drifted. `buildAppendExercises` mapped over
+ * the FILTERED rows while indexing `session.exercises[i]` — the UNFILTERED list — so the moment a session
+ * contained a cardio block with no logged set, every row after it paired with the wrong exercise. The
+ * observable result was silent and total: continue a finished workout, add three sets, tap Finish, and
+ * `buildAppendExercises` returned `[]`. `continue_workout` reported `sets_added: 0`, raised nothing, and
+ * the athlete was shown the completion screen. The sets were gone.
+ *
+ * `buildSubstitutions` had already been given a comment warning about exactly this ("POSITION IS THE JOIN,
+ * and it must be read off the SAME list"). A comment is a thing to remember. This is a thing that cannot
+ * be forgotten — there is now only one list to walk, so the two cannot disagree.
  *
  * ══ A BOUT THAT MEASURED NOTHING DID NOT HAPPEN ══
  *
@@ -29,6 +44,46 @@ import type { ActiveSession } from './types.ts';
  * Extracted rather than mocked: the rule is arithmetic over a session, and belongs somewhere
  * `node --test` can reach it.
  */
+export function recordedExercises(session: ActiveSession): SessionExercise[] {
+  return session.exercises.filter((ex) => ex.kind !== 'cardio' || ex.sets.some((s) => s.done));
+}
+
+/**
+ * A session whose weights are canonical POUNDS, whatever the athlete typed them in.
+ *
+ * ══ ONE NORMALISATION, AT ONE POINT, BEFORE ANYTHING READS A WEIGHT ══
+ *
+ * Session state holds what the athlete TYPED — on metric, kilograms. That is right for the logger: the
+ * number on screen must be the number they entered. It is wrong for everything downstream, and it was
+ * wrong in two places at once:
+ *
+ *   · `buildSaveExercises` stamped `weight_unit: 'lb'` on it and stored it unconverted, so the database
+ *     held kilos labelled pounds;
+ *   · `detectPRs` compared those typed figures against `priorBest`, which comes FROM the database — so a
+ *     metric athlete's 100 (kg) was measured against a stored 225 (lb) and their genuine PR was missed,
+ *     or a lighter lift announced as one.
+ *
+ * Threading a unit system through every consumer would mean remembering it at each one. Normalising the
+ * whole session ONCE, here, means no consumer has to know: everything after this call is in pounds, which
+ * is what every other layer already believes.
+ *
+ * ⚠ CALL THIS BEFORE `detectPRs` AND BEFORE `buildSaveExercises`, and pass the result to both. Passing
+ *   the raw session to one and the canonical one to the other is the bug this function exists to remove.
+ *
+ * ⚠ IDENTITY ON IMPERIAL — `toCanonicalLb(x, 'imperial') === x`, so for every athlete today this returns
+ *   an equivalent session and nothing changes. Only `weight` moves; reps, durations, distances and every
+ *   flag are carried through untouched. Distance is already stored canonically in miles (`0096:37`).
+ */
+export function canonicalizeWeights(session: ActiveSession, system: UnitSystem): ActiveSession {
+  if (system !== 'metric') return session; // exact identity — no object churn on the common path
+  return {
+    ...session,
+    exercises: session.exercises.map((ex) => ({
+      ...ex,
+      sets: ex.sets.map((s) => (s.weight == null ? s : { ...s, weight: toCanonicalLb(s.weight, system) })),
+    })),
+  };
+}
 
 /**
  * How long a finished workout stays reopenable, and whether this one still is.
@@ -58,9 +113,13 @@ export function withinContinueWindow(savedAtISO: string | null | undefined, now 
  * or continuing a session and doing nothing would append a row of empty exercises to it.
  */
 export function buildAppendExercises(session: ActiveSession) {
+  // ⚠ `recordedExercises(session)`, NOT `session.exercises`. These two rows must describe the SAME
+  //   exercise, and `buildSaveExercises` walks the filtered list — see the note on `recordedExercises`
+  //   for what indexing the unfiltered one silently cost.
+  const recorded = recordedExercises(session);
   return buildSaveExercises(session)
     .map((row, i) => {
-      const ex = session.exercises[i];
+      const ex = recorded[i];
       const fresh = ex.sets.filter((s) => s.done && !s.saved);
       return { row, fresh };
     })
@@ -94,8 +153,7 @@ export function buildSubstitutions(session: ActiveSession): {
   prescribed_catalog_key: string | null;
   prescribed_name: string;
 }[] {
-  return session.exercises
-    .filter((ex) => ex.kind !== 'cardio' || ex.sets.some((s) => s.done))
+  return recordedExercises(session)
     .filter((ex) => {
       const was = ex.prescribedName?.trim();
       // Null means nothing was replaced. A swap back to the same movement replaced nothing either —

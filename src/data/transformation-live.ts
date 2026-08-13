@@ -86,12 +86,26 @@ export async function fetchTransformationEntries(): Promise<TransformationEntry[
   return ((data ?? []) as unknown as Row[]).map(toEntry);
 }
 
-/** One entry by id (null if gone / not yours). */
+/**
+ * One entry by id. `null` means GONE OR NOT YOURS. A failed read THROWS.
+ *
+ * ⚠ THE DIFFERENCE IS SIX IRREPLACEABLE PHOTOS. This used to be `if (error || !data) return null`, which
+ * made a dropped connection indistinguishable from a deleted entry. The edit screen prefills only when
+ * this resolves truthy, so on `null` it rendered a COMPLETELY BLANK form — no date, no poses, no
+ * reflection — while still enabling Save, because `canSave` was satisfied by edit mode alone. An athlete
+ * who assumed it hadn't finished loading and tapped Save wrote `photos: {}` and `video_url: null` over a
+ * full entry. The objects stay in the bucket and nothing in the app can ever re-link them.
+ *
+ * Throwing puts the failure in `useQuery`'s `error`, which is the only way the screen can tell the two
+ * apart and refuse to save. `fetchTransformationEntries` above deliberately still returns `[]` on error —
+ * that one feeds a list where an empty state is survivable, and changing it is a separate decision.
+ */
 export async function fetchTransformationEntry(entryId: string): Promise<TransformationEntry | null> {
   const id = await uid();
   if (!id) return null;
   const { data, error } = await supabase.from('transformation_entries').select(COLS).eq('id', entryId).eq('athlete_id', id).maybeSingle();
-  if (error || !data) return null;
+  if (error) throw error;
+  if (!data) return null;
   return toEntry(data as unknown as Row);
 }
 

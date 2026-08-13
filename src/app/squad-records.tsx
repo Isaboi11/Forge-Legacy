@@ -13,7 +13,8 @@ import { TourAnchor } from '@/components/tour/TourAnchor';
 import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { fetchSquad } from '@/data/squad-live';
-import { RECORD_META, fetchSquadRecords, formatRecordValue, isNewRecord, type SquadRecord, type SquadRecordKind } from '@/data/squad-records-live';
+import { RECORD_META, fetchSquadRecords, formatRecordValue, isNewRecord, recordUnit, type SquadRecord, type SquadRecordKind } from '@/data/squad-records-live';
+import { useUnits } from '@/lib/settings';
 import { useQuery } from '@/lib/useQuery';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 
@@ -143,6 +144,7 @@ export default function SquadRecordsScreen() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function RecordRow({ record, onOpen }: { record: SquadRecord; onOpen: () => void }) {
+  const { units } = useUnits();
   const meta = RECORD_META[record.kind];
   const top = record.reigns[0];
   const previous = record.reigns[1];
@@ -152,7 +154,7 @@ function RecordRow({ record, onOpen }: { record: SquadRecord; onOpen: () => void
     <Pressable
       onPress={onOpen}
       accessibilityRole="button"
-      accessibilityLabel={`${meta.label} — ${top.holderName}, ${formatRecordValue(record.kind, top.value)} ${meta.unit}`}
+      accessibilityLabel={`${meta.label} — ${top.holderName}, ${formatRecordValue(record.kind, top.value, units)} ${recordUnit(record.kind, units)}`}
       style={({ pressed }) => [styles.row, fresh ? styles.rowNew : styles.rowPlain, pressed ? styles.rowPressed : null]}
     >
       {fresh ? (
@@ -186,13 +188,13 @@ function RecordRow({ record, onOpen }: { record: SquadRecord; onOpen: () => void
       </View>
 
       <View style={styles.valueBlock}>
-        <Text style={styles.value}>{formatRecordValue(record.kind, top.value)}</Text>
+        <Text style={styles.value}>{formatRecordValue(record.kind, top.value, units)}</Text>
         {/* The design swaps the unit out for the delta here, leaving the number unitless. Both shown. */}
-        <Text style={styles.unit}>{meta.unit}</Text>
+        <Text style={styles.unit}>{recordUnit(record.kind, units)}</Text>
         {fresh && previous ? (
           <View style={styles.deltaRow}>
             <ArrowUpGlyph />
-            <Text style={styles.deltaText}>from {formatRecordValue(record.kind, previous.value)}</Text>
+            <Text style={styles.deltaText}>from {formatRecordValue(record.kind, previous.value, units)}</Text>
           </View>
         ) : null}
       </View>
@@ -201,7 +203,9 @@ function RecordRow({ record, onOpen }: { record: SquadRecord; onOpen: () => void
 }
 
 function RecordHistory({ record, onHolder }: { record: SquadRecord; onHolder: (holderId: string) => void }) {
-  const meta = RECORD_META[record.kind];
+  // `meta` is gone: its only use here was `meta.unit`, a fixed string. The unit is now `recordUnit(kind,
+  // units)`, so it moves with the value instead of contradicting it.
+  const { units } = useUnits();
   const [current, ...previous] = record.reigns;
   const fresh = isNewRecord(record);
 
@@ -212,9 +216,9 @@ function RecordHistory({ record, onHolder }: { record: SquadRecord; onHolder: (h
           <FlameGlyph size={26} />
           <Text style={styles.newBannerLabel}>NEW RECORD</Text>
           <View style={styles.newBannerRow}>
-            <Text style={styles.oldValue}>{formatRecordValue(record.kind, previous[0].value)}</Text>
+            <Text style={styles.oldValue}>{formatRecordValue(record.kind, previous[0].value, units)}</Text>
             <ArrowRightGlyph />
-            <Text style={styles.newValue}>{formatRecordValue(record.kind, current.value)}</Text>
+            <Text style={styles.newValue}>{formatRecordValue(record.kind, current.value, units)}</Text>
           </View>
         </View>
       ) : null}
@@ -235,8 +239,8 @@ function RecordHistory({ record, onHolder }: { record: SquadRecord; onHolder: (h
           </Text>
         </View>
         <View style={styles.currentValueBlock}>
-          <Text style={styles.currentValue}>{formatRecordValue(record.kind, current.value)}</Text>
-          <Text style={styles.unit}>{meta.unit}</Text>
+          <Text style={styles.currentValue}>{formatRecordValue(record.kind, current.value, units)}</Text>
+          <Text style={styles.unit}>{recordUnit(record.kind, units)}</Text>
         </View>
       </Pressable>
 
@@ -265,7 +269,7 @@ function RecordHistory({ record, onHolder }: { record: SquadRecord; onHolder: (h
                 </Text>
                 <Text style={styles.lineageDate}>{monthYear(p.achievedOn)}</Text>
               </View>
-              <Text style={styles.lineageValue}>{formatRecordValue(record.kind, p.value)}</Text>
+              <Text style={styles.lineageValue}>{formatRecordValue(record.kind, p.value, units)}</Text>
             </Pressable>
           ))}
         </View>

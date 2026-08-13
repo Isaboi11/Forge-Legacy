@@ -19,6 +19,7 @@ import {
   type NotifKey,
   type NotifMap,
 } from '@/domain/settings/notifications';
+import { usePersist } from '@/hooks/usePersist';
 import { useQuery } from '@/lib/useQuery';
 
 /**
@@ -40,11 +41,21 @@ export default function NotificationsScreen() {
   const { data, loading } = useQuery(fetchNotifPrefs, []);
   const [override, setOverride] = useState<Partial<NotifMap>>({});
   const value = (k: NotifKey): boolean => override[k] ?? data?.[k] ?? NOTIF_DEFAULTS[k];
+  const persist = usePersist();
 
+  /*
+   * ⚠ A SWITCH THAT MOVED AND DID NOT SAVE IS WORSE THAN ONE THAT REFUSED.
+   *
+   * This was a bare `void saveNotifPrefs(next)`. `writeColumn` throws, nothing caught it, and the
+   * optimistic override stayed — so turning "Friend Requests" off on a bad connection showed OFF while
+   * the server kept sending them. The athlete's conclusion is that the toggle does nothing, which is
+   * true, and that the app is ignoring them, which is worse than an error.
+   */
   const toggle = (k: NotifKey, on: boolean) => {
+    const before = override;
     setOverride((o) => ({ ...o, [k]: on })); // optimistic — the switch must not lag the tap
     const next: NotifMap = { ...NOTIF_DEFAULTS, ...data, ...override, [k]: on };
-    void saveNotifPrefs(next);
+    persist(() => saveNotifPrefs(next), { rollback: () => setOverride(before) });
   };
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/account-settings'));

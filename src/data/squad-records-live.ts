@@ -1,4 +1,6 @@
 import { supabase } from '@/lib/supabase';
+import { weightInExact, type UnitSystem } from '@/domain/settings/units';
+import { toDistanceIn } from '@/domain/workout/conditioning';
 
 /**
  * Squad Records (C-6) — the squad's record book (migration 0058).
@@ -33,7 +35,14 @@ export interface SquadRecord {
   reigns: SquadRecordReign[];
 }
 
-/** Label and unit per record, so the list, the sheet and any future share card can't disagree. */
+/**
+ * Label and unit per record, so the list, the sheet and any future share card can't disagree.
+ *
+ * ⚠ THE UNIT IS NOW A FUNCTION OF THE ATHLETE'S SYSTEM. It used to be a fixed string — `'lb'`,
+ * `'lb volume'`, `'miles'` — so a metric athlete opened their squad's record book and read every mark in
+ * pounds and miles under an "lb" label. `unit` is kept as the imperial default so nothing that reads
+ * `RECORD_META` untouched changes behaviour; `recordUnit()` is what a screen should call.
+ */
 export const RECORD_META: Record<SquadRecordKind, { label: string; unit: string }> = {
   heaviest_lift: { label: 'Heaviest Lift', unit: 'lb' },
   biggest_session: { label: 'Biggest Single Session', unit: 'lb volume' },
@@ -41,6 +50,15 @@ export const RECORD_META: Record<SquadRecordKind, { label: string; unit: string 
   longest_run: { label: 'Longest Run', unit: 'miles' },
   most_prs_month: { label: 'Most PRs / Month', unit: 'in a month' },
 };
+
+/** The unit as the athlete reads it. Counts ("in a month") have no unit to convert. */
+export function recordUnit(kind: SquadRecordKind, system: UnitSystem): string {
+  if (system !== 'metric') return RECORD_META[kind].unit;
+  if (kind === 'heaviest_lift') return 'kg';
+  if (kind === 'biggest_session') return 'kg volume';
+  if (kind === 'longest_run') return 'km';
+  return RECORD_META[kind].unit;
+}
 
 /** A mark taken in the last 30 days still reads as news — the design's `isNew` treatment. */
 const NEW_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
@@ -52,8 +70,16 @@ export const isNewRecord = (r: SquadRecord): boolean => {
 };
 
 /** Thousands separators; up to one decimal, and never a trailing ".0". 31200 → "31,200". */
-export function formatRecordValue(kind: SquadRecordKind, value: number): string {
-  const n = kind === 'longest_run' ? Number(value.toFixed(1)) : Math.round(value);
+export function formatRecordValue(kind: SquadRecordKind, value: number, system: UnitSystem = 'imperial'): string {
+  /* Storage is canonical: loads in lb, distances in mi (`0096:37`). Convert here, once, at the edge —
+     and always alongside `recordUnit()`, so the number and its unit can never disagree. */
+  const converted =
+    system === 'metric' && (kind === 'heaviest_lift' || kind === 'biggest_session')
+      ? weightInExact(value, system)
+      : system === 'metric' && kind === 'longest_run'
+        ? toDistanceIn(value, 'km')
+        : value;
+  const n = kind === 'longest_run' ? Number(converted.toFixed(1)) : Math.round(converted);
   return n.toLocaleString('en-US');
 }
 

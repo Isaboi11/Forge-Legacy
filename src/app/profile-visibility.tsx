@@ -13,6 +13,8 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flRadius } from '@/constants/foundation';
 import { fetchAppPrefs, fetchVisibility, saveAppPrefs, saveVisibility } from '@/data/settings-live';
 import { APP_PREFS_DEFAULTS } from '@/domain/settings/preferences';
+import { useToast } from '@/hooks/useCeremony';
+import { usePersist } from '@/hooks/usePersist';
 import { setAnalyticsEnabled } from '@/lib/analytics';
 import {
   AUDIENCES,
@@ -41,33 +43,79 @@ export default function ProfileVisibilityScreen() {
   const { data, loading } = useQuery(fetchVisibility, []);
   const [override, setOverride] = useState<Partial<VisibilityMap>>({});
   const [toast, setToast] = useState(false);
+  const persistWrite = usePersist();
+  const { showToast } = useToast();
   const value = (k: VisibilityKey): AudienceId => override[k] ?? data?.[k] ?? VISIBILITY_DEFAULTS[k];
 
   /* The analytics opt-out (P6-A1-D5/D6). Server truth is `profiles.app_prefs`; `setAnalyticsEnabled`
      mirrors it to AsyncStorage so the emitter can check consent SYNCHRONOUSLY on the next launch,
      before anything can be queued. Both writes happen on tap — a toggle that only takes effect after a
      round trip would keep collecting for the rest of the session the athlete just declined. */
-  const { data: prefs } = useQuery(fetchAppPrefs, []);
+  const { data: prefs, loading: prefsLoading, error: prefsError } = useQuery(fetchAppPrefs, []);
   const [optOutOverride, setOptOutOverride] = useState<boolean | null>(null);
   const analyticsOptOut = optOutOverride ?? prefs?.analyticsOptOut ?? APP_PREFS_DEFAULTS.analyticsOptOut;
 
+  /**
+   * ⚠ TWO SEPARATE DEFECTS LIVED IN THIS ONE FUNCTION, AND THE SECOND WAS THE WORSE.
+   *
+   * 1. The write had no rejection arm, so an opt-out the server refused stayed showing as opted out.
+   *    `src/lib/settings.tsx` then reconciles the local mirror FROM SERVER TRUTH on the next launch —
+   *    so collection silently resumed for somebody who had said no and been shown that it took.
+   *
+   * 2. **`{ ...APP_PREFS_DEFAULTS, ...prefs }` where `prefs` is `null` spreads NOTHING and writes pure
+   *    defaults over the whole blob.** `useQuery` returns `data: null` while loading AND on error
+   *    (`useQuery.ts:77`), and `saveAppPrefs` → `sanitizePrefs` fills every field, so the write is
+   *    complete and cannot merge. Tapping this control in the first moments of the screen — or any time
+   *    after that read failed — reset units to lbs, coach intensity to default, and Sound and
+   *    Reduce-Motion with them, app-wide.
+   *
+   *    `src/lib/settings.tsx:20-29` documents this exact trap and says "it exists because that bug
+   *    shipped". The `loaded` guard built to prevent it was never used on this screen.
+   *
+   * So the tap is refused outright until the read has actually resolved. A control that cannot yet be
+   * honoured must not appear to work.
+   */
+  const prefsReady = !prefsLoading && !prefsError && !!prefs;
+
   const setAnalytics = (on: boolean) => {
+    if (!prefsReady) {
+      showToast('Still loading your settings — try that again in a moment.');
+      return;
+    }
+    const before = optOutOverride;
     setOptOutOverride(!on);
     setAnalyticsEnabled(on);
-    void saveAppPrefs({ ...APP_PREFS_DEFAULTS, ...prefs, analyticsOptOut: !on });
+    persistWrite(() => saveAppPrefs({ ...APP_PREFS_DEFAULTS, ...prefs, analyticsOptOut: !on }), {
+      rollback: () => {
+        setOptOutOverride(before);
+        setAnalyticsEnabled(!on); // put the synchronous local mirror back too
+      },
+    });
   };
 
-  const persist = (map: VisibilityMap) => void saveVisibility(map);
-
+  /*
+   * ⚠ VISIBILITY IS A PROMISE ABOUT WHAT OTHER PEOPLE CAN SEE. A segment that moves on a write the server
+   * rejected tells the athlete their sealed chapters are private when they are not.
+   */
   const set = (k: VisibilityKey, id: AudienceId) => {
+    const before = override;
     setOverride((o) => ({ ...o, [k]: id }));
-    persist({ ...VISIBILITY_DEFAULTS, ...data, ...override, [k]: id });
+    persistWrite(() => saveVisibility({ ...VISIBILITY_DEFAULTS, ...data, ...override, [k]: id }), {
+      rollback: () => setOverride(before),
+    });
   };
 
+  /*
+   * ⚠ THE TOAST USED TO FIRE UNCONDITIONALLY, BEFORE AND REGARDLESS OF THE WRITE. "Reset to defaults" is
+   * a confident claim about a privacy state; it now only appears once the server has actually accepted it.
+   */
   const reset = () => {
+    const before = override;
     setOverride({ ...VISIBILITY_DEFAULTS });
-    persist({ ...VISIBILITY_DEFAULTS });
-    setToast(true);
+    persistWrite(() => saveVisibility({ ...VISIBILITY_DEFAULTS }), {
+      onOk: () => setToast(true),
+      rollback: () => setOverride(before),
+    });
   };
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/account-settings'));

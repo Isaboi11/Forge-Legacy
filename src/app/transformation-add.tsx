@@ -42,7 +42,12 @@ export default function TransformationAddRoute() {
 
   // Stable per-session draft id → the storage path prefix (the entry id in edit mode).
   const [draftId] = useState(() => String(editId ?? `xf-${Date.now()}`));
-  const { data: existing, loading: loadingEntry } = useQuery(() => (isEdit ? fetchTransformationEntry(String(editId)) : Promise.resolve(null)), [editId]);
+  const {
+    data: existing,
+    loading: loadingEntry,
+    error: entryError,
+    refetch: refetchEntry,
+  } = useQuery(() => (isEdit ? fetchTransformationEntry(String(editId)) : Promise.resolve(null)), [editId]);
   const { data: activeChapter } = useQuery(() => (isEdit ? Promise.resolve(null) : fetchActiveChapter()), [editId]);
 
   const [ready, setReady] = useState(false);
@@ -71,7 +76,16 @@ export default function TransformationAddRoute() {
 
   const chapterName = isEdit ? existing?.chapterName ?? 'this chapter' : activeChapter?.name ?? 'your active chapter';
   const poseFilled = Object.keys(photos).length;
-  const canSave = poseFilled > 0 || !!videoUrl || caption.trim().length > 0 || isEdit;
+  /*
+   * ⚠ IN EDIT MODE, `ready` IS A PRECONDITION OF SAVING — not a rendering detail.
+   *
+   * `isEdit` alone used to satisfy this, so a form that had never loaded was still saveable. The save
+   * sends `photos` and `videoUrl` unconditionally and `updateTransformationEntry` writes any key that is
+   * not `undefined`, so saving an unloaded form wrote `{}` and `null` over a full entry and unreferenced
+   * six photos permanently. `ready` is only set by the prefill below, which only runs on a real row — so
+   * requiring it here means an entry can never be overwritten by a form that never held it.
+   */
+  const canSave = isEdit ? ready : poseFilled > 0 || !!videoUrl || caption.trim().length > 0;
 
   const pickPose = async (key: PoseKey) => {
     if (uploading) return;
@@ -149,6 +163,38 @@ export default function TransformationAddRoute() {
         <TopBar title="Edit Progress Set" onClose={() => router.back()} />
         <View style={styles.center}>
           <ActivityIndicator color={flColor.bronze400} />
+        </View>
+      </View>
+    );
+  }
+
+  /*
+   * ⚠ NEVER RENDER AN EDITABLE FORM WE DID NOT LOAD.
+   *
+   * `canSave` already refuses to write an unloaded entry, but a blank form with a dead Save button is a
+   * screen that looks broken and explains nothing — and the athlete's next move is to fill it in by hand
+   * and try again, which is the overwrite we just prevented, performed deliberately.
+   *
+   * Two distinct outcomes, and they need different sentences: `entryError` is a read that FAILED and is
+   * worth retrying; a resolved `null` is an entry that is genuinely gone (deleted on another device) and
+   * retrying will never help.
+   */
+  if (isEdit && !loadingEntry && !existing) {
+    return (
+      <View style={styles.root}>
+        <TopBar title="Edit Progress Set" onClose={() => router.back()} />
+        <View style={styles.center}>
+          <Text style={styles.loadErrorTitle}>{entryError ? 'Couldn’t open this set' : 'This set is gone'}</Text>
+          <Text style={styles.loadErrorBody}>
+            {entryError
+              ? 'Your photos are safe — we just couldn’t read them right now. Check your connection and try again.'
+              : 'It looks like this progress set was deleted.'}
+          </Text>
+          {entryError ? (
+            <Pressable onPress={refetchEntry} style={styles.loadErrorBtn} accessibilityRole="button">
+              <Text style={styles.loadErrorBtnText}>Try again</Text>
+            </Pressable>
+          ) : null}
         </View>
       </View>
     );
@@ -343,6 +389,12 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#070707' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { paddingHorizontal: 18, paddingTop: 20, paddingBottom: 40 },
+
+  // The edit target could not be read (or is gone). Never a blank, saveable form — see `canSave`.
+  loadErrorTitle: { fontFamily: flFont.display, fontSize: 20, color: flColor.cream100, marginBottom: 8, textAlign: 'center' },
+  loadErrorBody: { fontSize: 13, lineHeight: 19, color: flColor.gray400, textAlign: 'center', paddingHorizontal: 34 },
+  loadErrorBtn: { marginTop: 20, paddingVertical: 12, paddingHorizontal: 26, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: '#3D2F1A' },
+  loadErrorBtnText: { fontSize: 14, fontWeight: '700', letterSpacing: 0.3, color: flColor.bronze300 },
 
   topBar: { height: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
   topBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },

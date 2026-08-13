@@ -467,8 +467,17 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
 
     return {
       name: ex.name,
-      // A set logged at 0 lb is a bodyweight set, and "0 × 12" is not what the athlete did.
-      topSet: top ? `${top.weight === 0 ? 'BW' : top.weight} × ${top.reps}` : null,
+      /*
+       * A set logged at 0 lb is a bodyweight set, and "0 × 12" is not what the athlete did.
+       *
+       * ⚠ THE UNIT IS PART OF THE STRING, and it has to be. This read this way for a metric athlete:
+       * "3 sets · top 225 × 5" — canonical pounds, unconverted and unlabelled. The screen runs it
+       * through `fmt` (`convertMeasure`), which converts a POUNDS measure and leaves anything else
+       * alone — so with no unit in the string there was nothing for it to match, and it passed through
+       * untouched. Naming the unit is what makes the existing conversion work; it also stops the figure
+       * being ambiguous for everyone else. "BW" carries no unit because it is not a weight.
+       */
+      topSet: top ? `${top.weight === 0 ? 'BW' : `${top.weight} lb`} × ${top.reps}` : null,
       cardio,
       /*
        * EVERY SET THAT WAS LOGGED, whether or not it carried a weight.

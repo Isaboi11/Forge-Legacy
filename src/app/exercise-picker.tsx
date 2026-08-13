@@ -21,6 +21,7 @@ import { addFavorite, fetchFavoriteKeys, fetchRecentExerciseKeys, removeFavorite
 import { createCustomExercise } from '@/data/custom-exercises-live';
 import { customKey, emptyDraft } from '@/domain/exercise-picker/custom-core';
 import { useToast } from '@/hooks/useCeremony';
+import { usePersist } from '@/hooks/usePersist';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import {
   CONDITIONING_ROWS,
@@ -80,6 +81,7 @@ const resolveKey = (k: string): PickerItem | undefined =>
  * these personal signals are used instead of an invented "most common" ordering.
  */
 export default function ExercisePickerScreen() {
+  const persist = usePersist();
   const barBottom = useBarBottom();
   const router = useRouter();
   const params = useLocalSearchParams<{
@@ -140,7 +142,11 @@ export default function ExercisePickerScreen() {
   const toggleFavorite = (key: string) => {
     const next = !isFavorite(key);
     setFavOverride((o) => ({ ...o, [key]: next })); // optimistic: the list must not jump under a long press
-    void (next ? addFavorite(key) : removeFavorite(key)).then(() => refetchFavorites());
+    // The override wins over server truth for the life of the mount, so a silent failure never corrects.
+    persist(() => (next ? addFavorite(key) : removeFavorite(key)), {
+      onOk: () => refetchFavorites(),
+      rollback: () => setFavOverride((o) => ({ ...o, [key]: !next })),
+    });
   };
 
   /**

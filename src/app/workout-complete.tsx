@@ -357,12 +357,24 @@ export default function WorkoutComplete() {
     Animated.timing(hold, { toValue: 0, duration: 180, useNativeDriver: false }).start();
   };
 
+  /*
+   * ⚠ THE NOTE IS OPTIONAL. LOSING ONE THE ATHLETE WROTE IS NOT.
+   *
+   * This used to `catch {}` and then `goHome()` unconditionally — so a reflection typed on a bad
+   * connection was discarded, the screen went to Legacy, and the athlete had every reason to believe it
+   * was kept. This is the one surface whose own copy promises they will read it again someday.
+   *
+   * On failure we now STAY. The workout itself is already committed, so staying costs nothing and is the
+   * only way the words survive long enough to retry — tapping Done again re-sends them. Going home with
+   * an apology would be honest and still lose the note.
+   */
   const onSealNote = async () => {
     if (note.trim() && data) {
       try {
         await saveReflection(data.workoutId, note.trim());
-      } catch {
-        /* note is optional — never block the return home */
+      } catch (e) {
+        showToast(errorMessage(e) || 'Couldn’t save your note — your workout is saved. Tap Done to try again.');
+        return;
       }
     }
     goHome();
@@ -717,12 +729,15 @@ export default function WorkoutComplete() {
                 setNoteDraft(t);
                 setSessNoteSaved(false);
               }}
+              /*
+               * ⚠ THE HINT LINE IS THE ONLY FEEDBACK THIS FIELD HAS, and its default text reads exactly
+               * like the pre-save state. So a swallowed failure was invisible by construction: the note
+               * vanished and the hint went on saying "For the next time you train this."
+               */
               onBlur={() => {
                 void saveWorkoutNote(data.workoutId, sessNote)
                   .then(() => setSessNoteSaved(true))
-                  .catch(() => {
-                    /* ignore — the workout is saved; a lost note is not worth an error on this screen */
-                  });
+                  .catch(() => showToast('Couldn’t save that note — check your connection and try again.'));
               }}
               accessibilityLabel="A note about this session"
             />

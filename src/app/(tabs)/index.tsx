@@ -588,8 +588,15 @@ export default function HomeScreen() {
         .catch(() => {});
       refetchPrograms();
       refetchBuiltDone();
-    } catch {
-      // leave them on the suggestion rather than dropping them somewhere unexplained
+    } catch (e) {
+      /*
+       * ⚠ STAYING PUT IS RIGHT. SAYING NOTHING IS NOT.
+       *
+       * Leaving them on the suggestion rather than dropping them somewhere unexplained is the correct
+       * call — but with no message the screen simply did not react to a tap, which reads as a dead
+       * button on the day-one onramp, the first thing a new athlete ever presses.
+       */
+      showToast(errorMessage(e) || 'Couldn’t start that program — check your connection and try again.');
     }
   };
 

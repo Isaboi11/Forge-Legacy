@@ -33,6 +33,7 @@ import {
   type LibraryView,
 } from '@/domain/exercise-library/hub-core';
 import { useQuery } from '@/lib/useQuery';
+import { usePersist } from '@/hooks/usePersist';
 
 /**
  * W-21 Exercise Library (`Forge Exercise Library.dc.html`) — browse, search and filter the whole
@@ -80,6 +81,7 @@ const STAR = 'M12 3.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8-5.3-2.8-5.3 2.8 1-5.8-4.2-4.1 
 const CHEVRON = 'M9 6l6 6-6 6';
 
 export default function ExerciseLibraryScreen() {
+  const persist = usePersist();
   const router = useRouter();
 
   // `?home=1` is the Home Gym Editor's return handshake: the athlete asked for their own gym before
@@ -122,10 +124,18 @@ export default function ExerciseLibraryScreen() {
   }, [favData, favOverride]);
   const isFav = (key: string) => favOverride[key] ?? (favData ?? []).includes(key);
 
+  /*
+   * ⚠ THE OVERRIDE OUTLIVES THE REFETCH, so a swallowed failure is permanent for the life of the screen:
+   * `isFav` reads `favOverride[key] ?? favData`, and nothing clears the override. A bookmark that failed
+   * to save stayed filled until the athlete left, then quietly wasn't there.
+   */
   const toggleFav = (key: string) => {
     const next = !isFav(key);
     setFavOverride((o) => ({ ...o, [key]: next })); // optimistic — the row must not jump under the tap
-    void (next ? addFavorite(key) : removeFavorite(key)).then(() => refetchFavorites());
+    persist(() => (next ? addFavorite(key) : removeFavorite(key)), {
+      onOk: () => refetchFavorites(),
+      rollback: () => setFavOverride((o) => ({ ...o, [key]: !next })),
+    });
   };
 
   const recents = recentData ?? [];

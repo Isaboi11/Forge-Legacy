@@ -6,6 +6,7 @@ import { Button } from '@/components/forge/composites/Button';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { addBodyEntry } from '@/data/body-metrics-live';
 import type { UnitSystem } from '@/domain/settings/units';
+import { usePersist } from '@/hooks/usePersist';
 
 /**
  * Log Weight sheet (`Forge Progress Hub.dc.html` §12) — a quiet weigh-in: bodyweight (+ optional
@@ -28,6 +29,7 @@ export function LogWeightSheet({ open, onClose, onSaved, units }: { open: boolea
   const [chest, setChest] = useState('');
   const [arm, setArm] = useState('');
   const [busy, setBusy] = useState(false);
+  const persist = usePersist();
   const [focus, setFocus] = useState<string | null>(null);
 
   const n = parseFloat(weight);
@@ -37,16 +39,27 @@ export function LogWeightSheet({ open, onClose, onSaved, units }: { open: boolea
     return Number.isFinite(v) && v > 0 ? v : null;
   };
 
+  /*
+   * ⚠ THE SHEET MUST NOT CLOSE ON A WRITE THAT DID NOT LAND.
+   *
+   * This was `.then(...).finally(() => setBusy(false))` with no rejection arm — `addBodyEntry` throws, so
+   * on failure the sheet stayed open, the button re-enabled, and NOTHING said why. The athlete taps Save
+   * again, gets the same silence, and concludes the app cannot record a weigh-in. Closing only on success
+   * makes the two outcomes distinguishable without reading a toast.
+   */
   const save = () => {
     if (!valid || busy) return;
     setBusy(true);
     const lb = Math.round(metric ? n / LB_PER_KG : n);
-    void addBodyEntry({ weightLb: lb, waist: num(waist), chest: num(chest), arm: num(arm) })
-      .then(() => {
+    persist(() => addBodyEntry({ weightLb: lb, waist: num(waist), chest: num(chest), arm: num(arm) }), {
+      onOk: () => {
+        setBusy(false);
         onSaved();
         onClose();
-      })
-      .finally(() => setBusy(false));
+      },
+      rollback: () => setBusy(false),
+      message: 'Couldn’t save your weigh-in — check your connection and try again.',
+    });
   };
 
   const field = (label: string, value: string, set: (v: string) => void, placeholder: string, key: string) => (

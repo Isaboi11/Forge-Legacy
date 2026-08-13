@@ -33,7 +33,7 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { useAppPrefs, useCoachIntensity, useSoundEnabled, useUnits } from '@/lib/settings';
 import { loadContextFor } from '@/domain/program/percent-max';
-import { unitLabel, weightInExact } from '@/domain/settings/units';
+import { displayWeight, unitLabel, weightInExact } from '@/domain/settings/units';
 import { playRestDing, primeDing } from '@/lib/ding';
 import { CardioBlockCard } from '@/components/workout/CardioBlockCard';
 import { HoldTimer } from '@/components/workout/HoldTimer';
@@ -288,6 +288,17 @@ export default function WorkoutScreen() {
      that keeps every weight display honest without threading a number through every layer. */
   const { units, fmt: inUnits } = useUnits();
   /*
+   * ⚠ EVERY WEIGHT LABEL ON THIS SCREEN NOW NAMES THE ATHLETE'S UNIT — because the number beside it is
+   * ALREADY in that unit. The athlete types into the display system: a metric athlete enters 100 and
+   * means 100 kg. Six labels said "lb" regardless — the table header, the entry-sheet field, the wheel's
+   * unit chip, the PR prompt, the exercise seal and the overview row — so the one surface where the
+   * number is unambiguous was the one contradicting it mid-set.
+   *
+   * The storage fix landed with these: `canonicalizeWeights` normalises the session to pounds once, at
+   * the save boundary, so the database holds true lb and every read may convert. These labels are correct
+   * either way — the typed number is in the athlete's unit in both worlds — which is why they went first.
+   */
+  /*
    * ⚠ THE ACTION BAR USED TO SIT ON THE HOME INDICATOR. This screen's own note said it takes no
    * safe-area inset anywhere "and introducing one here alone would float the bubble at a different
    * height than every other element it lines up with" — which was a fair reason to leave it and is no
@@ -465,6 +476,29 @@ export default function WorkoutScreen() {
     setToast({ msg, token });
     setTimeout(() => setToast((t) => (t && t.token === token ? null : t)), 1900);
   }, []);
+
+  /**
+   * `usePersist` for the coach-intensity writes, but against THIS screen's toast rather than the ceremony
+   * one.
+   *
+   * ⚠ DELIBERATELY NOT `usePersist()`. That hook routes through `useToast` from `useCeremony`, and a
+   * ceremony-layer toast during an active workout is the wrong surface — W-9–W-16 own their own overlay
+   * (`showToast` above, 1.9s, inside the session chrome) precisely so nothing from the app's ceremony
+   * queue can interrupt a working set. The RULE is shared; the surface is not.
+   *
+   * The four call sites all set `coachIntensity`, and each had a bare `void saveAppPrefs(...)` whose
+   * failure was invisible — one of them then toasted "Pushing harder from here." regardless, which is a
+   * statement about what the coach will do next that the next prescription would contradict.
+   */
+  const persistPref = useCallback(
+    (write: () => Promise<unknown>, opts?: { onOk?: () => void }) => {
+      void write().then(
+        () => opts?.onOk?.(),
+        () => showToast('Couldn’t save that — check your connection.'),
+      );
+    },
+    [showToast],
+  );
 
   // Resume-or-fresh on mount. A fresh session prefers the launch context (Program Detail's "Continue
   // Training" names the exact program + slot, so the prescription is that day's and the saved workout
@@ -1014,7 +1048,7 @@ export default function WorkoutScreen() {
         const w = done.weight;
         const r = done.actualReps;
         setPrShown((p) => ({ ...p, [ei]: true }));
-        setPrPrompt({ name: ex.name, perf: `${w} lb × ${r}`, key: ex.catalogKey ?? null });
+        setPrPrompt({ name: ex.name, perf: `${w} ${unitLabel(units)} × ${r}`, key: ex.catalogKey ?? null });
       }
     }
 
@@ -1355,8 +1389,12 @@ export default function WorkoutScreen() {
         pattern: patternOf(session.exercises[i]),
       }));
       const workoutId = session.continuingWorkoutId
-        ? (await continueWorkout(session.continuingWorkoutId, session), session.continuingWorkoutId)
-        : (await saveWorkout(session, partnerNames, signals)).workoutId;
+        /* ⚠ `units` TRAVELS WITH THE SESSION. The athlete types in their own system; storage is
+           canonical pounds. Omit it and a metric athlete's kilos go into the database labelled lb — the
+           defect `canonicalizeWeights` exists to close. Imperial is the identity, so this is a no-op for
+           everyone today and correct the moment somebody chooses Kgs. */
+        ? (await continueWorkout(session.continuingWorkoutId, session, units), session.continuingWorkoutId)
+        : (await saveWorkout(session, partnerNames, signals, units)).workoutId;
       await clearSession();
       /* One more session in the book — the tutorial's phases are counted in workouts, and this is the
          only place a workout becomes one. A no-op until the count has been seeded from the server, so it
@@ -1649,20 +1687,26 @@ export default function WorkoutScreen() {
    * `—` for a lift with no history, never `0`. An absent mark means "never done it", and the whole card
    * has to keep saying that honestly: the first time you meet a movement is a baseline, not a failure.
    *
-   * ⚠ SHOWN AS STORED, NOT CONVERTED, AND THAT IS DELIBERATE. Every other weight on this screen does the
-   * same — `targetWeight` two hundred lines below renders its raw number beside `unitLabel(units)`. The
-   * reason is that the stored figure is NOT actually canonical: `save-core` writes whatever the athlete
-   * typed and stamps `weight_unit: 'lb'` on it unconditionally, with no conversion. So for an athlete on
-   * metric the number in the table is kilos wearing a pounds label, and running it through a lb→kg
-   * conversion on the way back out would halve their own logged lift in front of them. Reading it back
-   * exactly as it was typed round-trips correctly for everyone; the storage bug is real, pre-existing,
-   * and logged in W9-Amendment-005 §7 rather than papered over here.
+   * ⚠ CONVERTED, AS OF THE CANONICAL-WEIGHT FIX. This block used to explain at length why these figures
+   * were shown RAW: `save-core` stamped `weight_unit: 'lb'` on whatever the athlete typed, so for anyone
+   * on metric the stored number was kilos wearing a pounds label, and a lb→kg conversion on the way out
+   * would have halved their own logged lift in front of them. Reading it back exactly as typed was the
+   * only shape that round-tripped for everyone.
    *
-   * The unit is left off the figure, as the design has it: the column is a third of the card wide, and
-   * the table header just below already says which unit this screen is in.
+   * `canonicalizeWeights` closed that at the write: storage is genuinely pounds now, which is what every
+   * other layer in the project has always claimed. So the reasoning above inverted — showing these raw
+   * is what would now be wrong. `wxr` converts.
+   *
+   * The unit is still left off the figure, as the design has it: the column is a third of the card wide,
+   * and the table header just below says which unit this screen is in — and now says it correctly.
    */
   const liftHist = liftHistory?.get(liftId(ex)) ?? null;
-  const wxr = (weight: number, reps: number): string => `${weight} × ${reps}`;
+  /* ⚠ CONVERTS NOW. These figures come from `personal_records` / `workout_sets`, which hold canonical
+     POUNDS since `canonicalizeWeights` — so a metric athlete's own history has to be handed back in
+     kilos. Before that fix, storage held whatever was typed, and converting here would have halved a
+     metric athlete's logged lift in front of them; showing it raw was the correct workaround for a
+     broken write. The write is fixed, so the workaround is now the bug. */
+  const wxr = (weight: number, reps: number): string => `${displayWeight(weight, units).value} × ${reps}`;
   const lastPerf = liftHist?.sessions[0] ? sessionPerformance(liftHist.sessions[0]) : null;
   const lastText = lastPerf ? wxr(lastPerf.weight, lastPerf.reps) : '—';
   const bestText = liftHist?.best ? wxr(liftHist.best.weight, liftHist.best.reps) : '—';
@@ -2558,7 +2602,7 @@ export default function WorkoutScreen() {
           <View style={styles.headRow}>
             <Text style={[styles.h, styles.cSet]}>Set</Text>
             <Text style={[styles.h, styles.cTarget]}>Target</Text>
-            <Text style={[styles.h, styles.cWeight]}>Weight (lb)</Text>
+            <Text style={[styles.h, styles.cWeight]}>Weight ({unitLabel(units)})</Text>
             <Text style={[styles.h, styles.cActual]}>Actual</Text>
           </View>
           <View style={styles.rows}>
@@ -2809,7 +2853,9 @@ export default function WorkoutScreen() {
                * the same breath, so nothing here is silent.
                */
               if (next?.autoApply && prefsLoaded) {
-                void saveAppPrefs({ ...appPrefs, coachIntensity: next.to }).then(() => refetchPrefs());
+                // Silent on success by design (the sheet already said it); NOT silent on failure — the
+                // sheet has already told the athlete the level changed.
+                persistPref(() => saveAppPrefs({ ...appPrefs, coachIntensity: next.to }), { onOk: () => refetchPrefs() });
               }
             });
           }}
@@ -2839,16 +2885,28 @@ export default function WorkoutScreen() {
           proposal={proposal}
           onAcceptProposal={() => {
             if (!proposal || !prefsLoaded) return;
-            void saveAppPrefs({ ...appPrefs, coachIntensity: proposal.to }).then(() => refetchPrefs());
+            /* ⚠ THE TOAST USED TO FIRE UNCONDITIONALLY. "Pushing harder from here." is a statement about
+               what the coach will now do; saying it on a write that never landed makes the app's next
+               prescription contradict its own promise. It moves inside the success arm. */
+            persistPref(() => saveAppPrefs({ ...appPrefs, coachIntensity: proposal.to }), {
+              onOk: () => {
+                refetchPrefs();
+                showToast(`Pushing harder from here.`);
+              },
+            });
             setProposal(null);
-            showToast(`Pushing harder from here.`);
           }}
           /* The undo. On an UP this just declines the offer (nothing was applied). On a DOWN it puts
              the level back where it was — which is why `from` is carried on the proposal at all. */
           onDismissProposal={() => {
             if (proposal?.autoApply && prefsLoaded) {
-              void saveAppPrefs({ ...appPrefs, coachIntensity: proposal.from }).then(() => refetchPrefs());
-              showToast('Left it where it was.');
+              // The undo must be as trustworthy as the thing it undoes.
+              persistPref(() => saveAppPrefs({ ...appPrefs, coachIntensity: proposal.from }), {
+                onOk: () => {
+                  refetchPrefs();
+                  showToast('Left it where it was.');
+                },
+              });
             }
             setProposal(null);
           }}
@@ -2866,7 +2924,7 @@ export default function WorkoutScreen() {
              * A chip in a sheet opened two seconds into a workout is exactly the tap that lands first.
              */
             if (!prefsLoaded) return;
-            void saveAppPrefs({ ...appPrefs, coachIntensity: level }).then(() => refetchPrefs());
+            persistPref(() => saveAppPrefs({ ...appPrefs, coachIntensity: level }), { onOk: () => refetchPrefs() });
           }}
           currentLoad={coachLoad}
           lighterTo={coachLighter}
@@ -2925,7 +2983,7 @@ export default function WorkoutScreen() {
             <View style={styles.sealStats}>
               <Text style={styles.sealStatText}>{seal.sets} Sets</Text>
               <View style={styles.sealDot} />
-              <Text style={styles.sealStatText}>{fmtNum(seal.volume)} lb</Text>
+              <Text style={styles.sealStatText}>{fmtNum(seal.volume)} {unitLabel(units)}</Text>
             </View>
             {seal.next ? (
               <Text style={styles.sealNext}>
@@ -3007,7 +3065,7 @@ export default function WorkoutScreen() {
 
             <View style={styles.fieldRow}>
               <SetField
-                label="Weight (lb)"
+                label={`Weight (${unitLabel(units)})`}
                 value={draftW}
                 display={draftW === '' ? '—' : draftW === '0' ? 'BW' : draftW}
                 active={sheet.focus === 'weight'}
@@ -3047,7 +3105,7 @@ export default function WorkoutScreen() {
               <WheelPicker
                 options={sheet.focus === 'weight' ? sheetWeightOpts : REPS_OPTS}
                 value={Number(sheet.focus === 'weight' ? draftW : draftR) || 0}
-                unit={sheet.focus === 'weight' ? 'lb' : 'Reps'}
+                unit={sheet.focus === 'weight' ? unitLabel(units) : 'Reps'}
                 onChange={(v) => (sheet.focus === 'weight' ? setDraftW(String(v)) : setDraftR(String(v)))}
               />
             ) : null}
@@ -3209,7 +3267,7 @@ export default function WorkoutScreen() {
                     <View style={styles.ovRowText}>
                       <Text style={styles.ovRowName} numberOfLines={1}>{e.name}</Text>
                       <Text style={styles.ovRowSub}>
-                        {status} · {done}/{total} sets{w != null ? ` · ${w} lb` : ''}
+                        {status} · {done}/{total} sets{w != null ? ` · ${w} ${unitLabel(units)}` : ''}
                       </Text>
                     </View>
                     <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">

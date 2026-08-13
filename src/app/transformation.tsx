@@ -24,6 +24,7 @@ import {
 } from '@/data/transformation-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
+import { usePersist } from '@/hooks/usePersist';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 
 /**
@@ -43,6 +44,7 @@ const FREQ_OPTS: [RemindFreq, string][] = [
 ];
 
 export default function TransformationRoute() {
+  const persist = usePersist();
   const router = useRouter();
   const { showToast } = useToast();
   const { data, refetch } = useQuery(fetchTransformationEntries, []);
@@ -80,10 +82,10 @@ export default function TransformationRoute() {
 
   const r: Remind = remind ?? { enabled: false, freq: 'monthly' };
   const toggleRemind = () => {
-    void setRemind({ ...r, enabled: !r.enabled }).then(refetchRemind);
+    persist(() => setRemind({ ...r, enabled: !r.enabled }), { onOk: refetchRemind });
   };
   const pickFreq = (f: RemindFreq) => {
-    void setRemind({ ...r, freq: f }).then(refetchRemind);
+    persist(() => setRemind({ ...r, freq: f }), { onOk: refetchRemind });
   };
 
   const doDelete = () => {

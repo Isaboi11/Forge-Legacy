@@ -35,6 +35,8 @@
  * line would put 12 (reps) below 135 (lb) and call it a collapse.
  */
 
+import { displayWeight, weightInExact, type UnitSystem } from '../settings/units.ts';
+
 export type MetricUnit = 'weight' | 'reps';
 
 export interface MetricPoint {
@@ -155,15 +157,33 @@ export function buildLiftSeries(sets: readonly LoggedSet[], prDays: ReadonlySet<
 
 export { dayKey as prDayKey };
 
-/** "245 lb × 3" · "12 reps" — one point, said the way the athlete would say it. */
-export function pointLabel(m: Pick<MetricSeries, 'unit'>, p: Pick<MetricPoint, 'value' | 'reps'>): string {
+/**
+ * ⚠ EVERY LABEL BELOW TAKES THE ATHLETE'S UNIT SYSTEM. THEY USED TO HARDCODE "lb".
+ *
+ * Progress Hub and the Metric Detail sheet are the two surfaces an athlete opens to watch a lift move,
+ * and both printed stored pounds with the literal string "lb" to everyone. `progress-hub.tsx:343` even
+ * carried a comment claiming the hardcode had been fixed — it had only been moved down here.
+ *
+ * `system` is threaded rather than read from a hook because this file is pure domain: `node --test` can
+ * reach it, and a hook would put it behind React. The two callers both have `useUnits` already.
+ */
+
+/** "245 lb × 3" · "111 kg × 3" · "12 reps" — one point, said the way the athlete would say it. */
+export function pointLabel(
+  m: Pick<MetricSeries, 'unit'>,
+  p: Pick<MetricPoint, 'value' | 'reps'>,
+  system: UnitSystem = 'imperial',
+): string {
   if (m.unit === 'reps') return `${p.value} ${p.value === 1 ? 'rep' : 'reps'}`;
-  return p.reps != null ? `${p.value} lb × ${p.reps}` : `${p.value} lb`;
+  const { value, unit } = displayWeight(p.value, system);
+  return p.reps != null ? `${value} ${unit} × ${p.reps}` : `${value} ${unit}`;
 }
 
 /** The headline figure on a card or the detail hero. */
-export function currentLabel(m: Pick<MetricSeries, 'unit' | 'current'>): string {
-  return m.unit === 'reps' ? `${m.current} ${m.current === 1 ? 'rep' : 'reps'}` : `${m.current} lb`;
+export function currentLabel(m: Pick<MetricSeries, 'unit' | 'current'>, system: UnitSystem = 'imperial'): string {
+  if (m.unit === 'reps') return `${m.current} ${m.current === 1 ? 'rep' : 'reps'}`;
+  const { value, unit } = displayWeight(m.current, system);
+  return `${value} ${unit}`;
 }
 
 /**
@@ -172,13 +192,22 @@ export function currentLabel(m: Pick<MetricSeries, 'unit' | 'current'>): string 
  * Says nothing at all from a single session, rather than "+0" — an athlete who has trained a lift once
  * has not failed to progress, they have not yet had the chance.
  */
-export function changeLabel(m: MetricSeries): string | null {
+export function changeLabel(m: MetricSeries, system: UnitSystem = 'imperial'): string | null {
   if (m.points.length < 2) return null;
   const start = m.points[0].value;
   const delta = m.current - start;
-  const unit = m.unit === 'reps' ? (Math.abs(delta) === 1 ? 'rep' : 'reps') : 'lb';
-  if (delta === 0) return `Holding at ${m.current} ${m.unit === 'reps' ? 'reps' : 'lb'}`;
-  return `${delta > 0 ? '+' : '−'}${Math.abs(delta)} ${unit} since ${monthYear(m.points[0].date)}`;
+  if (m.unit === 'reps') {
+    if (delta === 0) return `Holding at ${m.current} reps`;
+    const word = Math.abs(delta) === 1 ? 'rep' : 'reps';
+    return `${delta > 0 ? '+' : '−'}${Math.abs(delta)} ${word} since ${monthYear(m.points[0].date)}`;
+  }
+  /* ⚠ CONVERT THE DELTA, NOT THE ENDPOINTS. Rounding 245 and 200 to kg and subtracting drifts by up to
+     a kilo against the "+45 lb" the athlete would compute themselves; converting the difference keeps
+     the sentence true in both systems. */
+  const { unit } = displayWeight(m.current, system);
+  if (delta === 0) return `Holding at ${displayWeight(m.current, system).value} ${unit}`;
+  const shown = Math.round(Math.abs(weightInExact(delta, system)));
+  return `${delta > 0 ? '+' : '−'}${shown} ${unit} since ${monthYear(m.points[0].date)}`;
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
