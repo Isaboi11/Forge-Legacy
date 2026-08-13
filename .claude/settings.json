@@ -4,7 +4,10 @@
       "PowerShell($d = Invoke-WebRequest -Uri \"https://forgelegacy--zipydk5aic.expo.app\" -UseBasicParsing; \"DEPLOY STATUS: $\\($d.StatusCode\\)\"; \\($d.Content | Select-String -Pattern 'entry-[a-f0-9]+\\\\.js' -AllMatches\\).Matches.Value | Select-Object -Unique)",
       "PowerShell(\\(Get-Content dist/index.html -Raw | Select-String -Pattern 'entry-[a-f0-9]+\\\\.js' -AllMatches\\).Matches.Value | Select-Object -Unique)",
       "PowerShell($js = \\(Invoke-WebRequest -Uri \"https://forgelegacy--zipydk5aic.expo.app/_expo/static/js/web/entry-0fb243d2e1dc12b571cb59fa203c29b1.js\" -UseBasicParsing\\).Content; \"LEN: $\\($js.Length\\)\"; foreach \\($s in @\\('All poses','Poses in this post','Which pose','feedMediaMore'\\)\\) { if \\($js.Contains\\($s\\)\\) { \"FOUND: $s\" } else { \"MISSING: $s\" } })",
-      "PowerShell(npx eas-cli@latest deploy --prod --export-dir dist --non-interactive 2>&1)"
+      "PowerShell(npx eas-cli@latest deploy --prod --export-dir dist --non-interactive 2>&1)",
+      "Skill(claude-api)",
+      "Skill(claude-api:*)",
+      "Read(//c/Users/isaia/.claude/plans/**)"
     ]
   },
   "enabledPlugins": {
