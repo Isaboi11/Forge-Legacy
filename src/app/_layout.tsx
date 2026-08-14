@@ -272,6 +272,9 @@ function RootNavigator() {
         {/* Declared bare, with no `options`, on purpose: these already render with the navigator's
             defaults today, and a guard fix must not quietly restyle a screen's presentation. */}
         <Stack.Screen name="chapter/reflect" />
+        {/* L-5 Chapter Creation. Locked in June 2026 and unbuilt until 2026-08-14, which made sealing a
+            one-way door — the only `insert into chapters` was the onboarding RPC. */}
+        <Stack.Screen name="chapter/new" />
         <Stack.Screen name="template/[id]" />
         <Stack.Screen name="starter-template/[id]" />
         {/* W-29 — a saved week. Its sibling `template/[id]` is one session; this one is a whole week. */}

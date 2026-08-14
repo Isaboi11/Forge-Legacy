@@ -27,6 +27,39 @@ import {
  * Home hero and the activity detail would disagree about what a chapter is called.
  */
 
+/**
+ * ⚠ THE SECOND CHAPTER — added 2026-08-14 with L-5 (`src/app/chapter/new.tsx`).
+ *
+ * Until then no athlete could HAVE one: the only `insert into chapters` in the repo was the onboarding
+ * RPC, which `0066` guards so a second call is a retry. `createChapter` now derives the prefix from the
+ * count of chapters the athlete has ever had, so the numbering behaviour finally has a caller — and it
+ * only ever ran on 1 before, where every off-by-one looks identical.
+ */
+test('the ordinal follows the count of chapters ever had, sealed ones included', () => {
+  // Chapter III follows Chapter II even though II is closed — the count is lifetime, not active.
+  const nameFor = (existing) => chapterNameFrom('The Rebuild', `Chapter ${chapterOrdinal(existing + 1)}`);
+  assert.equal(nameFor(0), 'Chapter I — The Rebuild');
+  assert.equal(nameFor(1), 'Chapter II — The Rebuild');
+  assert.equal(nameFor(2), 'Chapter III — The Rebuild');
+  assert.equal(nameFor(11), 'Chapter XII — The Rebuild');
+});
+
+test('past twelve it degrades to a number rather than breaking', () => {
+  // `chapterOrdinal` has twelve Roman numerals and falls back. Nobody is expected to reach it, but a
+  // thirteenth chapter must still be creatable — an `undefined` prefix would write "Chapter undefined".
+  assert.equal(chapterOrdinal(13), '13');
+  assert.equal(chapterNameFrom('Year Two', `Chapter ${chapterOrdinal(13)}`), 'Chapter 13 — Year Two');
+});
+
+test('a name typed into L-5 survives the round trip the two parsers disagree about', () => {
+  // The suggestions are offered as taps in L-5a, so they are the most likely titles in existence and
+  // must survive their own sanitiser unchanged.
+  for (const s of CHAPTER_SUGGESTIONS) {
+    assert.equal(sanitizeChapterTitle(s), s, `${s} must not be altered by sanitising`);
+    assert.equal(splitChapterName(chapterNameFrom(s, 'Chapter II')).title, s);
+  }
+});
+
 test('a typed title is prefixed, never typed with its own number', () => {
   assert.equal(chapterNameFrom('The Comeback'), 'Chapter I — The Comeback');
 });

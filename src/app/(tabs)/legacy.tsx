@@ -267,7 +267,34 @@ export default function LegacyScreen() {
         </TourAnchor>
 
         {/* What I'm Building — current chapter + primary goal */}
-        {chapter ? <CurrentChapter chapter={chapter} dayCount={data.dayCount} onOpen={() => router.push({ pathname: '/chapter/[id]', params: { id: chapter.id } })} /> : null}
+        {chapter ? (
+          <CurrentChapter chapter={chapter} dayCount={data.dayCount} onOpen={() => router.push({ pathname: '/chapter/[id]', params: { id: chapter.id } })} />
+        ) : (
+          /*
+           * ⚠ NO ACTIVE CHAPTER USED TO RENDER NOTHING AT ALL, AND THAT IS HOW A DEAD END HIDES.
+           *
+           * This was `{chapter ? <CurrentChapter/> : null}`. Sealing a chapter left this section — and
+           * the timeline block below it, which carries the same guard — simply absent, so the Legacy hub
+           * quietly lost its spine and offered no way to get it back. L-5 §2 names this exact card
+           * ("L-1 Legacy Hub · Start a Chapter · Invitation card, no active chapter"); it was specified
+           * in June and never built, which is why sealing was a one-way door.
+           *
+           * An absent value renders nothing, so nothing looks broken. That is the standing lesson of this
+           * codebase, and it cost the PO a confused evening.
+           */
+          <View style={styles.sectionPad}>
+            <View style={styles.inviteCard}>
+              <Text style={styles.inviteEyebrow}>No open chapter</Text>
+              <Text style={styles.inviteTitle}>Begin your next chapter</Text>
+              <Text style={styles.inviteBody}>
+                Everything you log belongs to a chapter. Name the season you’re starting and your workouts, goals and honors gather under it.
+              </Text>
+              <Pressable onPress={() => router.push('/chapter/new')} accessibilityRole="button" accessibilityLabel="Start a chapter" style={styles.inviteBtn}>
+                <Text style={styles.inviteBtnText}>Start a Chapter</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
 
         {/* ── PINNED LEGACY · My Museum (real pins + L-13 pin manager) ── */}
         <TourAnchor id="legacy-pinned" style={styles.section}>
@@ -752,6 +779,16 @@ const styles = StyleSheet.create({
   section: { marginTop: 46 },
   sectionPad: { marginTop: 46, paddingHorizontal: 24 },
   sectionHeaderPad: { paddingHorizontal: 24 },
+
+  /* The "no active chapter" invitation (L-5 §2). SOLID, not dashed like the Accomplishments slot below —
+     that one is an optional space to fill, this is the spine of the product being absent, and it should
+     read as the primary thing to do rather than as one more empty shelf. */
+  inviteCard: { padding: 24, borderRadius: flRadius.xl, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.surfaceRecessed, boxShadow: flShadow.card },
+  inviteEyebrow: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronze400 },
+  inviteTitle: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', letterSpacing: -0.3, color: flColor.cream100, marginTop: 12 },
+  inviteBody: { fontFamily: flFont.sans, fontSize: 13.5, lineHeight: 21, color: flColor.gray400, marginTop: 10 },
+  inviteBtn: { marginTop: 20, paddingVertical: 14, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint, alignItems: 'center' },
+  inviteBtnText: { fontFamily: flFont.sans, fontSize: 14, fontWeight: '700', letterSpacing: 0.4, color: flColor.bronze300 },
   stripPad: { gap: 12, paddingHorizontal: 24, paddingTop: 8 },
   // The empty Accomplishments invitation — dashed, so it reads as a slot to fill rather than a card
   // that already holds something.

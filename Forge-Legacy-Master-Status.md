@@ -768,6 +768,22 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
+### 0. Sealing a chapter was a one-way door, and the spec for the door had been locked since June (2026-08-14, CODE — no migration)
+
+**PO, minutes after sealing a chapter for the first time: *"I ended my chapter and the page that came up wasn't great. And then also, I can't start another chapter anywhere."*** Both were true, and the second is the serious one.
+
+**⚠ THE ONLY `insert into chapters` IN THE ENTIRE REPO WAS THE ONBOARDING RPC** — and `0066` deliberately guards it (*"a second call is a retry, not a request for a second chapter"*). So an athlete who sealed their chapter could **never start another, ever.** `Docs/L-5-Chapter-Creation-Spec.md` — full-screen modal, name then optional goal, atomic at completion, draft/offline/partial-failure behaviour all decided — has been **LOCKED since June 2026 and was never built.** The recurring failure of this project, in its most expensive form yet: not an amendment left unapplied, but the primary lifecycle act of the Legacy pillar.
+
+**⚠ AND IT HID, BECAUSE ABSENCE RENDERS NOTHING.** Goals are chapter-scoped, chapter photos and the transformation gallery need an active chapter, and Home's chapter card, the Progress hub and the Legacy hub all filter `is_active`. `legacy.tsx` read `{chapter ? <CurrentChapter/> : null}` — so the hub's spine and its timeline block simply **vanished** rather than erroring. Nothing looked broken. **The standing lesson — an absent value renders nothing while a wrong one at least announces itself — is what made this cost an evening rather than a minute.**
+
+**BUILT: `/chapter/new` to the locked spec**, plus `createChapter`, plus the entry point L-5 §2 names on the Legacy hub, plus the one the PO actually wanted — on the seal itself.
+
+**⚠ NO MIGRATION, DELIBERATELY.** `chapters_own` (0001:168) is `for all` with `athlete_id = auth.uid()`, so an authenticated insert is already permitted, and **`chapters_one_active_per_athlete` — a partial unique index — already enforces the one-active rule.** A `create_chapter` RPC would put a **second** implementation of the `Chapter N — ` convention in SQL, and that convention has exactly one authority (`domain/legacy/chapter-name.ts`); two would drift, which is the reasoning `renameChapter` already records for why the ordinal is never recomputed. **The race is therefore handled by the index, not by the count** — two devices both read the same count, the index refuses the loser with `23505`, and that is translated into a sentence a person can act on. Checking-then-inserting would have been the bug.
+
+**THE SEAL IS NOW THE CELEBRATION IT SHOULD HAVE BEEN.** It was a checkmark, "Reflection saved.", one line and Continue — months of training acknowledged more quietly than finishing a single set. It now shows the chapter's own record: name, date range, the achieved primary goal, and the **outcome stats that `ChapterDetail` had been computing all along and no screen displayed at this moment** — workouts, honors, goals met, duration, every figure real, so a thin chapter reads thin rather than fabricating a milestone. **⚠ It refetches after the write**, because the detail loaded on mount described an ACTIVE chapter and rendering pre-seal copy under the word "Sealed" is exactly the confident-specific-wrong claim this board keeps recording.
+
+**A guard caught the one thing I forgot.** `every screen is declared in _layout, so the auth guard can reach it` went red on `chapter/new` — the test that exists because 17 ungated routes once shipped. Gates: `tsc` 0 · **2,365 tests green** (+3) · lint at baseline. ⏳ Not yet deployed.
+
 ### 0. Account deletion proven on a real account — the App Store 5.1.1(v) blocker is closed (2026-08-14, TEST — no code, no migration)
 
 **`0148` had been applied and never exercised.** App Store Review **5.1.1(v)** requires in-app account deletion for any app supporting account creation, and `content.ts:44` has promised it the whole time — so this was a submission blocker whose *code* existed and whose *round trip* nobody had run. Now run, on a purpose-built account (`@test`, `97d8d119…`) carrying a workout, a chapter photo, a transformation entry, and **two squads chosen to exercise both ownership branches**.

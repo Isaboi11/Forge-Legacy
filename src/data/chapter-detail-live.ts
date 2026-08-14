@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { chapterNameFrom, sanitizeChapterTitle, splitChapterName } from '@/domain/legacy/chapter-name';
+import { chapterNameFrom, chapterOrdinal, sanitizeChapterTitle, splitChapterName } from '@/domain/legacy/chapter-name';
 import { fetchLegacyData } from './legacy-live';
 import { fetchChapterGoals } from './goals-live';
 import { fetchMyPrograms, fetchProgramCompletedCount } from './programs-live';
@@ -119,6 +119,79 @@ export async function fetchChapterDetail(chapterId: string): Promise<ChapterDeta
     outcomeHeadline,
     outcomeStats,
   };
+}
+
+/**
+ * Begin the next chapter — L-5.
+ *
+ * ══ ⚠ THIS DID NOT EXIST, AND SEALING WAS THEREFORE A ONE-WAY DOOR ══
+ *
+ * `Docs/L-5-Chapter-Creation-Spec.md` has been LOCKED since June 2026 and was never built. The only
+ * `insert into chapters` in the entire repo was `complete_onboarding`, and `0066` deliberately guards it
+ * — *"a second call is a retry, not a request for a second chapter."* So an athlete who sealed their
+ * chapter had **no way to start another, ever**, and the app quietly hollowed out around them: goals are
+ * chapter-scoped, the transformation gallery and chapter photos need an active chapter, and Home's
+ * chapter card, the Progress hub and the Legacy hub all read `is_active = true`. Every one of those
+ * renders an EMPTY state rather than an error, so nothing looks broken — the standing lesson that an
+ * absent value renders nothing while a wrong one at least announces itself.
+ *
+ * Reported by the PO on 2026-08-14, immediately after sealing a chapter for the first time.
+ *
+ * ══ WHY THERE IS NO MIGRATION ══
+ *
+ * `chapters_own` (0001:168) is `for all` with `athlete_id = auth.uid()`, so an ordinary authenticated
+ * insert is already permitted, and **`chapters_one_active_per_athlete` — a partial unique index over
+ * active rows — already enforces the one-active rule in the database.** A `create_chapter` RPC would add
+ * a second implementation of the `Chapter N — ` convention in SQL, and that convention has exactly one
+ * authority today (`domain/legacy/chapter-name.ts`). Two would drift, and `renameChapter` right below
+ * this already records why the ordinal must never be recomputed by a second guesser.
+ *
+ * ⚠ SO THE RACE IS HANDLED BY THE INDEX, NOT BY THE COUNT. Two devices creating at once both read the
+ *   same count; the index refuses the loser with `23505`, which is translated below into the sentence a
+ *   person should read. Checking first and inserting second would be the bug this avoids.
+ */
+export async function createChapter(title: string): Promise<{ id: string; name: string }> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not signed in');
+
+  const clean = sanitizeChapterTitle(title);
+  if (clean.length < 2) throw new Error('Give the chapter a name.');
+
+  // The ordinal is the count of chapters the athlete has EVER had, sealed ones included — Chapter III
+  // follows Chapter II even though Chapter II is closed. `head: true` fetches no rows, just the count.
+  const { count, error: countErr } = await supabase
+    .from('chapters')
+    .select('id', { count: 'exact', head: true })
+    .eq('athlete_id', user.id);
+  if (countErr) throw countErr;
+
+  const name = chapterNameFrom(clean, `Chapter ${chapterOrdinal((count ?? 0) + 1)}`);
+
+  /*
+   * `start_date` is a DATE column, and the athlete's calendar day is the one that matters — a chapter
+   * begun at 11pm must not be stamped tomorrow. `toISOString()` would do exactly that for anyone west of
+   * UTC, so the date is assembled from local parts.
+   */
+  const now = new Date();
+  const startDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+  const { data, error } = await supabase
+    .from('chapters')
+    .insert({ athlete_id: user.id, name, start_date: startDate, is_active: true, workout_count: 0, honor_count: 0 })
+    .select('id')
+    .single();
+
+  if (error) {
+    // 23505 is `chapters_one_active_per_athlete` — another chapter is still open. That is a state, not a
+    // fault, and the athlete needs to be told which action to take rather than shown a constraint name.
+    if ((error as { code?: string }).code === '23505') {
+      throw new Error('You already have an open chapter. Seal it before beginning the next one.');
+    }
+    throw error;
+  }
+  return { id: (data as { id: string }).id, name };
 }
 
 /**

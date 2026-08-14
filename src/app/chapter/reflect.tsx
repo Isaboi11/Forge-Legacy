@@ -52,7 +52,7 @@ export default function ChapterReflectionScreen() {
   const path: ReflectPath = params.path === 'post' ? 'post' : 'sealing';
   const isPost = path === 'post';
 
-  const { data, loading } = useQuery(() => fetchChapterDetail(id), [id]);
+  const { data, loading, refetch } = useQuery(() => fetchChapterDetail(id), [id]);
 
   const existing = data?.reflection?.trim() ?? '';
   const locked = isPost && existing.length > 0;
@@ -114,6 +114,10 @@ export default function ChapterReflectionScreen() {
       onOk: () => {
         setSaved(true);
         setBusy(false);
+        // The summary underneath describes a chapter that is only NOW sealed — its date range, duration
+        // and reflection all change with the write. Reading the pre-seal copy under the word "Sealed"
+        // would be a confident, specific, false claim.
+        refetch();
       },
       rollback: () => setBusy(false),
       message: isPost
@@ -130,6 +134,7 @@ export default function ChapterReflectionScreen() {
       onOk: () => {
         setSaved(true);
         setBusy(false);
+        refetch(); // same reason as `complete` — the summary must describe the sealed chapter
       },
       rollback: () => setBusy(false),
       message: 'Couldn’t seal the chapter — check your connection and try again.',
@@ -245,24 +250,99 @@ export default function ChapterReflectionScreen() {
         }}
       />
 
-      {/* saved · quiet confirmation before returning */}
+      {/*
+        * SEALED · the chapter's own record, and the door to the next one.
+        *
+        * ══ ⚠ WHAT THIS REPLACED, AND WHY ══
+        *
+        * A checkmark, "Reflection saved.", one line, and Continue. PO, 2026-08-14: *"the seal just
+        * doesn't look good, doesn't give an overview… the workout complete card is better and shows a
+        * lot more. We want it to be a great celebration."* Sealing a chapter is the most significant
+        * act in the product — months of training becoming permanent — and it was acknowledged more
+        * quietly than finishing a single set.
+        *
+        * ⚠ EVERY FIGURE HERE IS ALREADY COMPUTED — `outcomeStats` has existed on `ChapterDetail` for the
+        *   L-4 sealed record the whole time and no screen showed it at this moment. Nothing is invented
+        *   and nothing is a placeholder: workouts, honors, goals met and duration are spine data, so a
+        *   chapter with little in it shows little rather than a fabricated milestone.
+        *
+        * ⚠ AND IT IS REFETCHED AFTER THE WRITE. The detail loaded on mount described an ACTIVE chapter;
+        *   the date range and duration only become correct once `sealed_at` exists. Rendering the
+        *   pre-seal copy under the word "Sealed" would be a confident, specific, wrong claim — the exact
+        *   failure this project keeps recording.
+        */}
       {saved ? (
         <View style={[StyleSheet.absoluteFill, styles.savedWrap]}>
           <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.3} overlay={{ flat: 'rgba(5,5,5,0.72)' }} />
-          <View style={styles.savedInner}>
+          <ScrollView contentContainerStyle={[styles.sealedScroll, { paddingTop: insets.top + 28, paddingBottom: 190 + insets.bottom }]} showsVerticalScrollIndicator={false}>
             <View style={styles.savedMark}>
               <Glyph d={CHECK} size={26} color="#1A1206" width={2.4} />
             </View>
-            <Text style={styles.savedTitle}>Reflection saved.</Text>
-            <Text style={styles.savedBody}>{isPost ? 'It’s now part of your legacy.' : 'This chapter has been sealed.'}</Text>
-          </View>
-          <View style={[styles.continue, { bottom: 24 + insets.bottom }]}>
-            <Button variant="primary" fullWidth onPress={leave} accessibilityLabel="Continue">
-              <View style={styles.continueInner}>
-                <Text style={styles.continueText}>Continue</Text>
-                <Glyph d={ARROW} size={16} color="#F7F5F1" width={2.2} />
+
+            <Text style={styles.sealedEyebrow}>{isPost ? 'Reflection Saved' : 'Chapter Sealed'}</Text>
+            <Text style={styles.sealedName}>{data?.number ?? ''}</Text>
+            <Text style={styles.sealedTitleBig}>{data?.title ?? ''}</Text>
+            {data?.statusLabel ? <Text style={styles.sealedRange}>{data.statusLabel}</Text> : null}
+
+            {/* The outcome line — an achieved primary goal names itself, otherwise this is the chapter. */}
+            {data?.outcomeHeadline && data.outcomeHeadline !== `${data.number} — ${data.title}` ? (
+              <View style={styles.sealedOutcome}>
+                <Glyph d={CHECK} size={15} color={flColor.bronze300} width={2.4} />
+                <Text style={styles.sealedOutcomeText}>{data.outcomeHeadline}</Text>
               </View>
-            </Button>
+            ) : null}
+
+            {/* What the chapter actually contained. Two columns, real numbers only. */}
+            {data?.outcomeStats?.length ? (
+              <View style={styles.statGrid}>
+                {data.outcomeStats.map((s) => (
+                  <View key={s.label} style={styles.statCell}>
+                    <Text style={styles.statValue}>{s.value}</Text>
+                    <Text style={styles.statLabel}>{s.label}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+
+            {/* Their own words, if they wrote any. Shown because this is the last moment it is new. */}
+            {data?.reflection?.trim() ? (
+              <View style={styles.sealedReflection}>
+                <Text style={styles.sealedReflectionLabel}>Reflection</Text>
+                <Text style={styles.sealedReflectionText}>&ldquo;{data.reflection.trim()}&rdquo;</Text>
+              </View>
+            ) : null}
+
+            <Text style={styles.sealedPermanence}>This is permanent now. It stays in your legacy whatever comes next.</Text>
+          </ScrollView>
+
+          {/*
+            * ⚠ THE WAY FORWARD, WHICH DID NOT EXIST. Sealing was a one-way door: the only
+            *   `insert into chapters` in the repo is the onboarding RPC. `/chapter/new` is L-5, a locked
+            *   spec that had never been built, and this is the moment an athlete most wants it.
+            *   Secondary on the POST path — that athlete already has an active chapter and must not be
+            *   offered a second (the partial unique index would refuse it anyway).
+            */}
+          <View style={[styles.continue, { bottom: 20 + insets.bottom }]}>
+            {!isPost ? (
+              <Button variant="primary" fullWidth onPress={() => router.replace('/chapter/new')} accessibilityLabel="Begin your next chapter">
+                <View style={styles.continueInner}>
+                  <Text style={styles.continueText}>Begin Your Next Chapter</Text>
+                  <Glyph d={ARROW} size={16} color="#F7F5F1" width={2.2} />
+                </View>
+              </Button>
+            ) : (
+              <Button variant="primary" fullWidth onPress={leave} accessibilityLabel="Continue">
+                <View style={styles.continueInner}>
+                  <Text style={styles.continueText}>Continue</Text>
+                  <Glyph d={ARROW} size={16} color="#F7F5F1" width={2.2} />
+                </View>
+              </Button>
+            )}
+            {!isPost ? (
+              <Pressable onPress={leave} accessibilityRole="button" accessibilityLabel="Not now" style={styles.sealedTertiary}>
+                <Text style={styles.sealedTertiaryText}>Not now</Text>
+              </Pressable>
+            ) : null}
           </View>
         </View>
       ) : null}
@@ -319,11 +399,37 @@ const styles = StyleSheet.create({
   tertiary: { alignItems: 'center', paddingVertical: 10, marginTop: 6 },
   tertiaryText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.gray400 },
 
-  savedWrap: { alignItems: 'center', justifyContent: 'center' },
-  savedInner: { alignItems: 'center', paddingHorizontal: 34 },
+  /* ── the sealed record ─────────────────────────────────────────────────────
+     Was a centred check + two lines. It is now a scrollable summary, because a chapter with six months
+     in it has more to say than one screen height — and `justifyContent: 'center'` on a scrolling parent
+     silently clips the top of tall content, so the wrapper no longer centres. */
+  savedWrap: {},
+  sealedScroll: { alignItems: 'center', paddingHorizontal: 30 },
   savedMark: { width: 52, height: 52, borderRadius: flRadius.md, backgroundColor: flColor.bronze400, alignItems: 'center', justifyContent: 'center', marginBottom: 22 },
-  savedTitle: { fontFamily: flFont.display, fontSize: 25, fontWeight: '700', letterSpacing: -0.2, color: flColor.cream100, textAlign: 'center' },
-  savedBody: { fontFamily: flFont.sans, fontSize: 14, lineHeight: 22, color: flColor.gray400, textAlign: 'center', marginTop: 12 },
+
+  sealedEyebrow: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronze400, textAlign: 'center' },
+  sealedName: { fontFamily: flFont.sans, fontSize: 12, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.gray400, textAlign: 'center', marginTop: 14 },
+  sealedTitleBig: { fontFamily: flFont.display, fontSize: 30, fontWeight: '700', letterSpacing: -0.4, lineHeight: 35, color: flColor.cream100, textAlign: 'center', marginTop: 6 },
+  sealedRange: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray400, textAlign: 'center', marginTop: 12 },
+
+  sealedOutcome: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 18, paddingVertical: 10, paddingHorizontal: 16, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  sealedOutcomeText: { fontFamily: flFont.sans, fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },
+
+  /* Two columns rather than a row: four stats in a row on a 390pt screen sets the numbers at a size that
+     reads as a footnote, and these are the point of the screen. */
+  statGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 30, borderTopWidth: 1, borderTopColor: HAIRLINE },
+  statCell: { width: '50%', paddingVertical: 20, alignItems: 'center', borderBottomWidth: 1, borderBottomColor: HAIRLINE },
+  statValue: { fontFamily: flFont.display, fontSize: 30, fontWeight: '700', letterSpacing: -0.5, color: flColor.cream100 },
+  statLabel: { fontFamily: flFont.sans, fontSize: 10.5, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.gray600, marginTop: 7 },
+
+  sealedReflection: { marginTop: 28, padding: 20, borderRadius: flRadius.xl, borderWidth: 1, borderColor: HAIRLINE, backgroundColor: flColor.surfaceRecessed, alignSelf: 'stretch' },
+  sealedReflectionLabel: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 12 },
+  sealedReflectionText: { fontFamily: flFont.display, fontStyle: 'italic', fontSize: 16, lineHeight: 27, color: flColor.gray400 },
+
+  sealedPermanence: { fontFamily: flFont.sans, fontSize: 12.5, lineHeight: 20, color: flColor.gray600, textAlign: 'center', marginTop: 28 },
+  sealedTertiary: { alignItems: 'center', paddingVertical: 14, marginTop: 2 },
+  sealedTertiaryText: { fontFamily: flFont.sans, fontSize: 13.5, fontWeight: '600', color: flColor.gray400 },
+
   continue: { position: 'absolute', left: 24, right: 24 },
   continueInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   continueText: { fontFamily: flFont.sans, fontSize: 14, fontWeight: '700', letterSpacing: 0.5, color: '#F7F5F1' },
