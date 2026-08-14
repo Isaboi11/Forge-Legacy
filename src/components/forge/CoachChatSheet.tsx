@@ -8,7 +8,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 import { Button } from '@/components/forge/composites/Button';
+import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { HoltMark } from '@/components/forge/HoltMark';
+import { usePremiumGate } from '@/hooks/usePremiumGate';
+import { launchRowsFor, templateRowsFor } from '@/domain/coach/save-shapes';
+import { saveTemplate } from '@/data/templates-live';
+import { saveWeekTemplate, startWeekTemplate } from '@/data/week-templates-live';
+import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { assemble } from '@/domain/coach/assemble';
 import {
   dayPreamble,
@@ -57,7 +63,15 @@ import { canDoExercise } from '@/domain/home-gym/equipment';
 import { fetchActiveProgram } from '@/data/programs-live';
 import { clearThread, hasMetHolt, loadThread, rememberMetHolt, saveThread } from '@/lib/coach-thread';
 import { loadExperience, rememberExperience } from '@/lib/coach-memory';
-import { fetchProgramSessions, updateProgram, type ProgramDay, type SavedProgram } from '@/data/programs-live';
+import {
+  createProgram,
+  fetchProgramSessions,
+  startProgram,
+  updateProgram,
+  type ProgramDay,
+  type ProgramStructure,
+  type SavedProgram,
+} from '@/data/programs-live';
 import type { SessionMark } from '@/domain/program/progress-core';
 import { contextFrom } from '@/domain/coach/candidates';
 import { setCardioTarget, setPrescription, swapExercise, type EditScope } from '@/domain/coach/edit-ops';
@@ -101,8 +115,29 @@ import { saveWorkoutDraft } from '@/lib/workout-builder-draft';
 /** PROMPT §2.4 — the sheet's top inset. The thread's bottom reserve is a share of `window - SHEET_TOP`. */
 const SHEET_TOP = 64;
 
+/**
+ * What Holt just built — the object, not a label for it.
+ *
+ * A week and a block come out of `assemble()` as the same shape and are two different things to save,
+ * so the distinction is made once, where the engine's own `structure.weeks` can be read, rather than
+ * re-derived at each button.
+ */
+type Built =
+  | { kind: 'program'; structure: ProgramStructure }
+  | { kind: 'week'; structure: ProgramStructure }
+  | { kind: 'day'; day: ProgramDay };
+
 export function CoachChatSheet({ onClose }: { onClose: () => void }) {
   const router = useRouter();
+  /*
+   * ⚠ **THIS SHEET HAD NO GATE AT ALL**, while the dead wizard at `/coach` had two. Free athletes could
+   * walk the whole conversation and every one of Holt's ceilings was open.
+   *
+   * The doors are gated, not the buttons: M-7 §2 is explicit that the check is PRE-ACTION, and being
+   * asked six questions about your goal and your equipment and only then being refused is the worst
+   * possible order to do it in.
+   */
+  const guard = usePremiumGate();
 
   /*
    * §2.9 — the sheet RISES: translateY 100% → 0 over 250ms with the system's ease-out, and reverses in
@@ -200,8 +235,17 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
   const [busy, setBusy] = useState<'thinking' | 'building' | null>(null);
   const [mode, setMode] = useState<'program' | 'day' | null>(null);
   const [constraints, setConstraints] = useState<ChatState>({});
-  /** Which builder the card's button opens. The draft itself is already on disk by then. */
-  const [built, setBuilt] = useState<{ kind: 'program' | 'day' } | null>(null);
+  /**
+   * What Holt just built, and enough of it to act on.
+   *
+   * ⚠ IT USED TO BE `{ kind }` ALONE, which was enough to pick a builder route and nothing else. The
+   * artifact's buttons need the OBJECT: a week has to be written to `week_templates`, a day to
+   * `workout_templates`, and neither can be reconstructed from a card that only carries strings.
+   */
+  const [built, setBuilt] = useState<Built | null>(null);
+  /** Naming what a Start is about to end (W-29). Null until there is genuinely something to lose. */
+  const [confirmEnd, setConfirmEnd] = useState<string | null>(null);
+  const [handing, setHanding] = useState(false);
   /** The whole plan, read-only, before the Builder. Holds the last card so it can be redrawn in full. */
   const [preview, setPreview] = useState(false);
   /** §2's NEW CHAT popover. Open is a look, not an action — nothing happens until a row is tapped. */
@@ -373,7 +417,7 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
              block goes to the PROGRAM builder — two different review screens, and the chat has no business
              inventing a third route to either. */
           await saveWorkoutDraft({ name: r.day.name, warmup: r.day.warmup, main: r.day.main, cooldown: r.day.cooldown, editId: null });
-          setBuilt({ kind: 'day' });
+          setBuilt({ kind: 'day', day: r.day });
           const dayCard = dayCardFor(merged, r.day);
           setLastCard({ day: dayCard });
           /* CL-D2 — if a learned preference actually landed in this session, he says so in his own
@@ -404,7 +448,11 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
 
         const structure = res.assembly.structure;
         await saveProgramDraft(draftFromStructure(structure));
-        setBuilt({ kind: 'program' });
+        /* A week and a block are the same object from the engine and two different things to save — one
+           goes to `week_templates`, the other to the Program Builder's draft. The size answer is what
+           tells them apart, and `structure.weeks` is the engine's own word for it rather than the
+           request's, so a clamp cannot make the buttons lie. */
+        setBuilt({ kind: structure.weeks === 1 ? 'week' : 'program', structure });
         const volume = volumeFor(c, structure.weeks);
         const reason = rationaleFor({
           goal: c.goal,
@@ -790,6 +838,17 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
         return;
       }
 
+      /*
+       * ⚠ THE GATE IS HERE, AT THE DOOR, BEFORE A SINGLE QUESTION (M-7 §2).
+       *
+       * `holt_programs` and `holt_days_per_month` are Holt's OWN allowances — what it costs to have him
+       * write something — and they are the two the wizard already gates on. The caps on what you then
+       * KEEP (`short_programs` for a week, `templates` for a day) are checked at the save, because
+       * "what should I train today?" is a free question whose answer you can train without saving, and
+       * refusing it at the door would take away something the athlete is entitled to.
+       */
+      if (!guard(opener.mode === 'day' ? 'holt_days_per_month' : 'holt_programs')) return;
+
       setMode(opener.mode);
       void (async () => {
         if (opener.mode === 'program') {
@@ -896,6 +955,133 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
      * program) → back returns to Workouts, which is what the athlete expects.
      */
     router.push(built?.kind === 'day' ? '/workout-builder' : '/program-builder');
+  };
+
+  /* ── what the artifact's two buttons do ────────────────────────────────────────────────────────
+   *
+   * ══ SAVE FOR LATER MUST ACTUALLY SAVE ══
+   *
+   * ⚠ A DAY USED TO SAVE A *DRAFT*, NOT A TEMPLATE. `saveWorkoutDraft` writes to
+   * `forge_workout_builder_draft_v1` and hands over to `/workout-builder`, where saving is a second,
+   * deliberate act — so "Save for later" would have been a button that saved nothing and an athlete
+   * who closed the builder would have lost it. It calls `saveTemplate` directly.
+   *
+   * A PROGRAM is the exception and it is not one: the draft IS the handover, because a multi-week block
+   * is reviewed and named in the Program Builder before it becomes a row. That is the same promise Holt
+   * makes about everything else he writes — nothing is saved until you have seen it.
+   *
+   * ⚠ `buildDayWorkout` RETURNS EMPTY `warmup`/`cooldown` — only `main` is populated. The template is
+   * saved as exactly that and never implies a warm-up it does not contain.
+   */
+  const leaveFor = (route: string) => {
+    onClose();
+    router.push(route as Parameters<typeof router.push>[0]);
+  };
+
+  const saveForLater = () => {
+    if (!built || handing) return;
+    void (async () => {
+      /* The PROGRAM path spends nothing here — the block becomes a row in the Builder, where the caps
+         are enforced at the point of creation. The other two write immediately, so they ask first. */
+      if (built.kind === 'week' && !guard('short_programs')) return;
+      if (built.kind === 'day' && !guard('templates')) return;
+      setHanding(true);
+      try {
+        if (built.kind === 'program') {
+          openBuilder();
+          return;
+        }
+        if (built.kind === 'week') {
+          const { id } = await saveWeekTemplate(built.structure.name, built.structure);
+          say({ kind: 'saved', text: `Saved as a week. It's under Your Weeks whenever you want it.` });
+          leaveFor(`/week-template/${id}`);
+          return;
+        }
+        const id = await saveTemplate(built.day.name, templateRowsFor(built.day));
+        say({ kind: 'saved', text: `Saved as a template. It's under Your Templates whenever you want it.` });
+        leaveFor(`/template/${id}`);
+      } catch (e) {
+        say({ kind: 'error', text: "That didn't save.", sub: errorText(e), action: 'Nothing was lost. Try again in a moment.' });
+      } finally {
+        setHanding(false);
+      }
+    })();
+  };
+
+  /**
+   * ⚠ **STARTING ANYTHING ENDS THE PROGRAM THAT IS RUNNING** (Amendment 001 §2), and neither
+   * `startProgram` nor `startWeekTemplate` warns — by design, they are data functions, and one that
+   * opened a dialog would be unusable from anywhere else. W-29 asks first, by name, and so does this.
+   *
+   * A DAY does not: starting a workout ends nothing.
+   */
+  const startNow = () => {
+    if (!built || handing) return;
+    if (built.kind === 'week' && !guard('short_programs')) return;
+    if (built.kind === 'day') {
+      void (async () => {
+        setHanding(true);
+        try {
+          await writeWorkoutLaunch({ exercises: launchRowsFor(built.day), workoutName: built.day.name });
+          leaveFor('/workout');
+        } catch (e) {
+          say({ kind: 'error', text: "I couldn't open that.", sub: errorText(e), action: 'Try again in a moment.' });
+        } finally {
+          setHanding(false);
+        }
+      })();
+      return;
+    }
+    void (async () => {
+      setBusy('thinking');
+      const active = await Promise.race([
+        fetchActiveProgram().catch(() => null),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), ACTIVE_LOOKUP_TIMEOUT_MS)),
+      ]);
+      setBusy(null);
+      // Only ask when there is genuinely something to lose — the same rule W-29 keeps.
+      if (active) {
+        setConfirmEnd(active.name);
+        return;
+      }
+      await reallyStart();
+    })();
+  };
+
+  /* One object, built once, so a card cannot be given half a handoff. A block goes to the Builder to be
+     finished and named, which is a different promise from "saved" — so it says so. */
+  const handoff: Handoff = {
+    onPreview: () => setPreview(true),
+    onStart: startNow,
+    onSave: saveForLater,
+    saveLabel: built?.kind === 'program' ? 'Adjust it' : 'Save for later',
+  };
+
+  const reallyStart = async () => {
+    if (!built || built.kind === 'day') return;
+    setConfirmEnd(null);
+    setHanding(true);
+    try {
+      if (built.kind === 'week') {
+        /* ⚠ SAVED FIRST, THEN STARTED, AND THAT COSTS ONE ALLOWANCE RATHER THAN TWO. `createProgram`
+           takes the week template's id and 0157's guard reads it: starting a week you have already paid
+           for does not spend a second unit (MA4-D4). Going straight to `createProgram` without the
+           template would charge for the program AND leave nothing to run again. */
+        const { id } = await saveWeekTemplate(built.structure.name, built.structure);
+        const { programId, endedProgramId } = await startWeekTemplate(id);
+        if (endedProgramId) say({ kind: 'saved', text: 'Your previous program was ended.' });
+        leaveFor(`/program/${programId}`);
+        return;
+      }
+      const { id } = await createProgram(built.structure);
+      const res = await startProgram(id);
+      if (res?.ended) say({ kind: 'saved', text: 'Your previous program was ended.' });
+      leaveFor(`/program/${id}`);
+    } catch (e) {
+      say({ kind: 'error', text: "That didn't start.", sub: errorText(e), action: 'Your training is unchanged. Try again in a moment.' });
+    } finally {
+      setHanding(false);
+    }
   };
 
   return (
@@ -1068,15 +1254,14 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
                        above it is history and steps back a level of contrast. */
                     live={bi === blocks.length - 1}
                     onChip={tapChip}
-                    onPreview={() => setPreview(true)}
-                    onOpenBuilder={openBuilder}
+                    handoff={handoff}
                   />
                 </TurnEnter>
               );
             }
             return (
               <TurnEnter key={b.key}>
-                <TurnView turn={b.turn} onChip={tapChip} onPreview={() => setPreview(true)} onOpenBuilder={openBuilder} />
+                <TurnView turn={b.turn} onChip={tapChip} handoff={handoff} />
               </TurnEnter>
             );
           })}
@@ -1145,6 +1330,22 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
         )}
       </LinearGradient>
       </Animated.View>
+
+      {/*
+        ⚠ **STARTING THIS ENDS THE BLOCK THAT IS RUNNING**, and it is named (W-29 · Amendment 001 §2).
+        `startProgram` and `startWeekTemplate` both do it server-side, atomically, without a word — the
+        caller is responsible for having asked, and a silent swap is how an athlete finds out days later
+        that their twelve-week block stopped in week six.
+      */}
+      <ConfirmSheet
+        open={confirmEnd != null}
+        onClose={() => setConfirmEnd(null)}
+        headline="This ends your current program"
+        body={`${confirmEnd ?? 'Your program'} will end and anything you have already trained stays exactly as it happened. Only one program runs at a time.`}
+        confirmLabel="Start it anyway"
+        cancelLabel="Keep what I've got"
+        onConfirm={() => void reallyStart()}
+      />
     </View>
   );
 }
@@ -1164,6 +1365,8 @@ const SURFACE_ELEVATED = ['#1F2024', flColor.charcoal700] as const;
 /* ────────────────────────────────────────────────────────────────────────────────────────────────── */
 
 const pause = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+const errorText = (e: unknown): string => (e instanceof Error ? e.message : String(e));
 
 /**
  * §5.3 — a turn arrives: opacity 0→1 and 10px up, 280ms, ease-out.
@@ -1462,8 +1665,7 @@ function HoltTurn({
   answer,
   live,
   onChip,
-  onPreview,
-  onOpenBuilder,
+  handoff,
 }: {
   text: string;
   at?: number;
@@ -1471,8 +1673,7 @@ function HoltTurn({
   answer: string | null;
   live: boolean;
   onChip: (c: Chip) => void;
-  onPreview: () => void;
-  onOpenBuilder: () => void;
+  handoff: Handoff;
 }) {
   const clock = clockOf(at);
   return (
@@ -1487,7 +1688,7 @@ function HoltTurn({
         {attached.length ? (
           <View style={styles.holtAttached}>
             {attached.map((t, i) => (
-              <TurnView key={i} turn={t} answer={answer} onChip={onChip} onPreview={onPreview} onOpenBuilder={onOpenBuilder} />
+              <TurnView key={i} turn={t} answer={answer} onChip={onChip} handoff={handoff} />
             ))}
           </View>
         ) : null}
@@ -1737,19 +1938,26 @@ function ThinkingDot({ delay }: { delay: number }) {
   return <Animated.View style={[styles.dot, { opacity: v }]} />;
 }
 
+/** Everything a card's buttons need, passed as one object so a new card cannot forget half of it. */
+interface Handoff {
+  onPreview: () => void;
+  onStart: () => void;
+  onSave: () => void;
+  /** "Save for later" everywhere except a multi-week block, which goes to the Builder to be finished. */
+  saveLabel: string;
+}
+
 function TurnView({
   turn,
   answer,
   onChip,
-  onOpenBuilder,
-  onPreview,
+  handoff,
 }: {
   turn: Turn;
   /** §6 — what the athlete answered the question above with, so the chosen control reads as chosen. */
   answer?: string | null;
   onChip: (c: Chip) => void;
-  onOpenBuilder: () => void;
-  onPreview: () => void;
+  handoff: Handoff;
 }) {
   switch (turn.kind) {
     case 'me':
@@ -1764,10 +1972,18 @@ function TurnView({
       return <Answers chips={turn.chips} ctl={turn.ctl} answer={answer ?? null} onChip={onChip} />;
 
     case 'program':
-      return <ProgramCardView card={turn.card} onPreview={onPreview} onOpenBuilder={onOpenBuilder} />;
+      return (
+        <ProgramCardView
+          card={turn.card}
+          onPreview={handoff.onPreview}
+          onStart={handoff.onStart}
+          onSave={handoff.onSave}
+          saveLabel={handoff.saveLabel}
+        />
+      );
 
     case 'day':
-      return <DayCardView card={turn.card} onOpenBuilder={onOpenBuilder} onPreview={onPreview} />;
+      return <DayCardView card={turn.card} onPreview={handoff.onPreview} onStart={handoff.onStart} onSave={handoff.onSave} />;
 
     case 'refusal':
       return <RefusalCardView card={turn.card} onChip={onChip} />;
@@ -2144,7 +2360,19 @@ function DraftBanner() {
  * was a picture of a button. What it meant is now covered honestly: read it in full, save it, or start
  * it.
  */
-function ProgramCardView({ card, onPreview, onOpenBuilder }: { card: ProgramCard; onPreview: () => void; onOpenBuilder: () => void }) {
+function ProgramCardView({
+  card,
+  onPreview,
+  onStart,
+  onSave,
+  saveLabel,
+}: {
+  card: ProgramCard;
+  onPreview: () => void;
+  onStart: () => void;
+  onSave: () => void;
+  saveLabel: string;
+}) {
   return (
     <View style={styles.artifactWrap}>
       <CardSurface hero>
@@ -2208,18 +2436,45 @@ function ProgramCardView({ card, onPreview, onOpenBuilder }: { card: ProgramCard
         </Pressable>
       </CardSurface>
 
-      {/* Deciding happens outside the card. The design system's own Button for both — rolling my own
-          Pressable is what lost the forged-bronze fill, the machined rim and the glow. */}
-      <View style={styles.artifactActions}>
-        <Button variant="primary" fullWidth onPress={onOpenBuilder} accessibilityLabel="Adjust it">
-          Adjust it
-        </Button>
-      </View>
+      <ArtifactActions onStart={onStart} onSave={onSave} saveLabel={saveLabel} />
     </View>
   );
 }
 
-function DayCardView({ card, onOpenBuilder, onPreview }: { card: DayCard; onOpenBuilder: () => void; onPreview: () => void }) {
+/**
+ * The two decisions, outside the card (§7).
+ *
+ * PO decision, this session: `Start it now` / `Save for later`, and what each MEANS depends on what was
+ * built — a program hands over to the Builder, a week becomes a week template, a day becomes a workout
+ * template. The design system's own Button for both; rolling my own Pressable is what lost the
+ * forged-bronze fill, the machined rim and the glow.
+ */
+function ArtifactActions({ onStart, onSave, saveLabel }: { onStart: () => void; onSave: () => void; saveLabel: string }) {
+  return (
+    <View style={styles.artifactActions}>
+      <View style={styles.ctaGrow}>
+        <Button variant="primary" fullWidth onPress={onStart} accessibilityLabel="Start it now">
+          Start it now
+        </Button>
+      </View>
+      <Button variant="text" onPress={onSave} accessibilityLabel={saveLabel}>
+        {saveLabel}
+      </Button>
+    </View>
+  );
+}
+
+function DayCardView({
+  card,
+  onPreview,
+  onStart,
+  onSave,
+}: {
+  card: DayCard;
+  onPreview: () => void;
+  onStart: () => void;
+  onSave: () => void;
+}) {
   return (
     <View style={styles.artifactWrap}>
       <CardSurface>
@@ -2252,11 +2507,7 @@ function DayCardView({ card, onOpenBuilder, onPreview }: { card: DayCard; onOpen
           </Svg>
         </Pressable>
       </CardSurface>
-      <View style={styles.artifactActions}>
-        <Button variant="primary" fullWidth onPress={onOpenBuilder} accessibilityLabel="Adjust it">
-          Adjust it
-        </Button>
-      </View>
+      <ArtifactActions onStart={onStart} onSave={onSave} saveLabel="Save for later" />
     </View>
   );
 }
