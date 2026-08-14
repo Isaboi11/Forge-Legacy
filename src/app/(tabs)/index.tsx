@@ -15,6 +15,9 @@ import { ChapterTitleBlock } from '@/components/forge/compositions/ChapterTitleB
 import { TodaysWorkoutCard } from '@/components/forge/compositions/TodaysWorkoutCard';
 import { ProgramMissionGrid } from '@/components/forge/compositions/ProgramMissionGrid';
 import { YourCircleCard } from '@/components/forge/compositions/YourCircleCard';
+import { circleActivity as circleActivityFor } from '@/domain/home/circle-activity';
+import { displayWeight } from '@/domain/settings/units';
+import { useUnits } from '@/lib/settings';
 import { WeeklyReviewCard } from '@/components/forge/WeeklyReviewCard';
 import { fetchWeeklyReview, type WeeklyReview } from '@/data/weekly-review-live';
 import { reviewWindowOpen } from '@/domain/coach/rulebook/review';
@@ -397,16 +400,24 @@ export default function HomeScreen() {
   // chosen (show the question), a level = show the suggested starting program. No DB write; re-askable.
   const { data: homeLevel, refetch: refetchLevel, settled: levelSettled } = useQuery(getHomeLevel, []);
   // How they answered the starting-point question, if they have. Local; see `program-intent.ts`.
+  /* The athlete's unit. Volume is stored canonical pounds everywhere in this app and converted at the
+     moment of drawing — a friend's session on the circle row is no exception. */
+  const { units } = useUnits();
   const { data: startChoice, refetch: refetchStartChoice, settled: startChoiceSettled } = useQuery(getStartChoice, []);
   // Goals + equipment intake (local only) — feeds the recommendation on the suggested face.
   const { data: homeIntake, refetch: refetchIntake, settled: intakeSettled } = useQuery(getHomeIntake, []);
   const { data: homeGymData, refetch: refetchHomeGym, settled: homeGymSettled } = useQuery(fetchHomeGym, []);
   /* Your Circle's friend row, real since 0074 — the newest post from anyone the athlete is connected to.
-     One post, not the feed: this is a doorway, and `/friends` is the room. Live presence is NOT read
+     One ROW, not the feed: this is a doorway, and `/friends` is the room. Live presence is NOT read
      because there is nothing to read — an in-progress workout lives in a client-side session, not a
      table, so no athlete can observe another training. The fixture that claimed two squad-mates were
-     mid-workout is retired rather than reproduced. */
-  const { data: circlePosts, settled: circleSettled } = useQuery(() => fetchFriendsFeed(1), []);
+     mid-workout is retired rather than reproduced.
+
+     ⚠ IT FETCHES TEN AND SHOWS ONE. It used to fetch exactly one and then filter it — for not being the
+     athlete's own, and for having something to say — so the row went blank whenever the newest post in
+     the whole feed failed either test. A card reporting an empty circle because of what the athlete
+     themselves had just posted. Ten is a doorway's worth of looking, not a second feed. */
+  const { data: circlePosts, settled: circleSettled } = useQuery(() => fetchFriendsFeed(10), []);
   /* The Competitions badge, real. It also advances any due challenge lifecycle transitions — there is no
      scheduler, so a season closes when someone opens a screen that reads it, and Home is the screen
      opened most. The badge is the cheap part; keeping every squad's competitions honest is the point. */
@@ -422,11 +433,19 @@ export default function HomeScreen() {
   const { data: planned, refetch: refetchPlanned, settled: plannedSettled } = useQuery(fetchPlannedWorkout, []);
   const { data: friendLists, settled: friendListsSettled } = useQuery(fetchFriendLists, []);
   const hasCircle = (friendLists?.friends.length ?? 0) > 0 || live.length > 0;
-  const circleActivity = useMemo(() => {
-    const p = (circlePosts ?? []).find((x) => !x.isMine && (x.body ?? '').trim().length > 0);
-    if (!p) return null;
-    return { name: p.authorName, quote: (p.body ?? '').trim(), avatarUrl: p.authorAvatarUrl };
-  }, [circlePosts]);
+  /*
+   * ⚠ A POST NO LONGER HAS TO CARRY WORDS TO REACH THIS CARD.
+   *
+   * PO: *"Moses posted his workout. It showed up when I clicked see your circle, but shouldn't it show up
+   * in that card on the Home Screen?"* It should. The old rule demanded a non-empty `body` and rendered
+   * it italic, so the row could only ever hold somebody's SENTENCE — and a shared workout has none unless
+   * a note was written. `circleActivity` lets a session describe itself instead, and marks the difference
+   * so a derived line is not dressed as a quotation. See `domain/home/circle-activity`.
+   */
+  const circleRow = useMemo(
+    () => circleActivityFor(circlePosts ?? [], (lb) => displayWeight(lb, units)),
+    [circlePosts, units],
+  );
   // Re-read on focus so the hero flips OFF awaiting after the first workout AND reflects a program just
   // built in the builder (Home is a mounted tab; without this it fetches once and stays stale).
   const firstAwaitFocus = useRef(true);
@@ -1281,7 +1300,7 @@ export default function HomeScreen() {
           <TourAnchor id="your-circle">
             <YourCircleCard
               liveUsers={live}
-              friendActivity={circleActivity}
+              friendActivity={circleRow}
               hasCircle={hasCircle}
               onAddFriends={() => router.push('/add-friend')}
               /* Two handlers, not one (0121). The BUTTON asks to join the session they are in; the ROW

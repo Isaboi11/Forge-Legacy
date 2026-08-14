@@ -40,6 +40,17 @@ import { minutesTraining, othersLine, type TrainingAthlete } from '@/data/presen
 export interface FriendActivity {
   name: string
   quote: string
+  /**
+   * Whether `quote` is the athlete's OWN words.
+   *
+   * ⚠ IT DECIDES THE ITALIC, AND THAT IS NOT DECORATION. This row only ever held somebody's sentence, so
+   * the slant was safe to hardcode. It now also carries a line derived from a shared session — `Push Day
+   * · 12,400 lb` — and italic is the mark of a quotation: setting a description in it tells the reader
+   * their friend said something they did not.
+   *
+   * Defaults to true so any caller written against the old shape keeps rendering exactly as it did.
+   */
+  quoted?: boolean
   avatarUrl?: string | null
 }
 
@@ -149,7 +160,7 @@ export function YourCircleCard({ liveUsers, friendActivity, hasCircle = true, on
             </View>
             <View style={styles.friendBody}>
               <Text style={styles.friendName}>{friendActivity.name}</Text>
-              <Text style={styles.friendQuote} numberOfLines={2}>
+              <Text style={[styles.friendQuote, friendActivity.quoted === false ? styles.friendLine : null]} numberOfLines={2}>
                 {friendActivity.quote}
               </Text>
             </View>
@@ -321,6 +332,8 @@ const styles = StyleSheet.create({
     color: flColor.cream100,
     opacity: 0.9,
   },
+  /** A line this app wrote about their session — upright, because it is not a quotation. */
+  friendLine: { fontStyle: 'normal' },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
