@@ -768,6 +768,32 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
+### 0. Coach Holt Chat v2 — the surface stopped being a form (2026-08-13, CODE only · no migrations · ⚠ NOT DEPLOYED)
+
+**`Coach Holt Chat v2.dc.html` (design project `b029488a`), built in `src/components/forge/CoachChatSheet.tsx`.** Five passes; `tsc` 0 · **2,239 tests green** · lint at the documented baseline (1 error + 13 warnings, none new) between every one. Commits `432b235` · `06bdf11` · `a175552` · `3520bb8` · `c0252cb` · `a70ba28` · `90b8af8`.
+
+**THE ROOM UNDER THE OPTIONS, AND THE BUG UNDER THE ROOM.** The PO's report was that a turn's choices sit at the very bottom edge. Two problems wearing one symptom: **neither coach surface used `useSafeAreaInsets` at all**, so with the composer hidden the last chip row rendered 8px from the *physical* bottom — underneath the home indicator — and even inset-correct, a control flush to the bottom reads as the end of the screen. The reserve is a computed quarter of the sheet, not a constant.
+
+**⚠ `completeFor()` WAS A WHITELIST PRETENDING TO BE A MERGE.** It rebuilt the constraint object field by field, so anything it did not name was dropped silently, with no type error. Two live consequences: the sheet read `c.splitStyle ?? null` after it ran and had **always** got `null`, whatever the athlete chose; and a "One week" chip would have set the state, shown *One week* back in the transcript, passed every existing test — and built eight. Fixed with a mutation-proven test that removing the spread fails.
+
+**COACH HOME.** Five identical pills became **BUILD / TODAY / ADJUST** as capability cards over two quiet rows. Home is a *rendering of the opener turn*, not new state — so `intro.test.mjs` and `voice.test.mjs` still describe what happens and a thread already stored on a device restores with no migration. **⚠ The contextual action row is NOT built:** every variant needs the live program and the last session, and reading either would make the greeting wait on the network. Left out rather than faked.
+
+**THE THREE VOICES.** Holt in a 40px gutter with his mark and the time, speech **open on the background and never a bubble**; the controls moved INSIDE his content column so an answer aligns to the question rather than to the avatar; YOU right-aligned with ticks. §6's selection model is **derived** — the chosen control reads as chosen because the thread already records the answer one turn later. Unselected surfaces went white: with every option bronze-edged, choosing one had no contrast left to gain.
+
+**⚠ FOUR BUTTONS HAD NO `onPress`, AND EACH GOT A DECISION RATHER THAN A REDRAW.** ProgramCard's "Not this" — **dropped**. `RefusalCardView`'s pair — **wired**; the card whose entire point is *"the alternative is a thing with a button"* had two pictures of buttons, and `altGoal` is what made the primary possible (the label was a sentence, not a goal key). `EditCardView` — **removed**: nothing has ever emitted a `kind: 'edit'` turn, so the card was designed, styled and unreachable. Wiring "Pick another race" also exposed a live bug: `picksRace` ignored the chip's patch, so it could never clear the goal it was refused for.
+
+**HOLT CAN BUILD ONE WEEK.** BUILD's first question is *"How much are we building?"*, asked **by the opener** — not by `askProgram` and not by `missingFor`, which is the constraint validator and would have made the wizard and every import demand a length they already know. **⚠ A race is exempt and the exemption is structural:** rather than take the answer and let `assembleEnduranceGoal` overrule it from the race date, "One week" *removes the race door* from the goal question. And **a week is not asked how many days *a week*** (PO, mid-session) — that question asks what you can sustain, and there is nothing to sustain in a week that ends on Sunday.
+
+**THE ARTIFACT HANDS OVER.** `Start it now` / `Save for later`, and what each means depends on what was built: a program to the Builder's draft, a week to `week_templates`, a day to `workout_templates`. **⚠ A day used to "save" a DRAFT** — `saveWorkoutDraft`, where saving is a second deliberate act — so the button would have saved nothing. **⚠ Starting anything ends the running block** (Amdt 001 §2) and neither data function warns; W-29's confirmation is reproduced, naming it, and only when there is something to lose. A week is saved before it is started so 0157's guard charges **one** allowance, not two (MA4-D4).
+
+**⚠ AND THE SHEET HAD NO PREMIUM GATE AT ALL** while the dead wizard at `/coach` had two. The **doors** are gated pre-action (M-7 §2): `holt_programs` on BUILD, `holt_days_per_month` on TODAY. **Stated deviation:** the caps on what you *keep* are checked at the save — `templates` at the door would refuse an athlete at their cap from asking "what should I train today?", a free question whose answer they can train without saving. `short_programs` **is** pre-action, because a week's only two outcomes both spend it.
+
+**THE COMPOSER SLOT HOLDS "How do I…".** Typing stays off (`TYPING_ENABLED = false`) with every path under it live, so the field and send button are not drawn — **and it is a row with a chevron, not a disabled pill**: a field that refuses to focus reads as broken, not forthcoming. One help topic added because this session's own work opened the gap — *Find something I saved* → Templates.
+
+**⚠ `/coach` STAYS DEAD AND NOW DIVERGES FURTHER.** 1,441 lines carrying a second, drifting copy of the question list, reachable only by deep link. Flagged, deliberately untouched: retiring it needs its own grep-every-symbol pass and its own commit.
+
+**Known deltas vs the `.dc`, accepted:** sheet top inset stays **64px** (design says 50 — the `.dc` is a 404×868 desktop canvas and 64 is the app's own decision, made against real status bars); corner radius stays 24; the warm wash is a vertical `LinearGradient` approximation because RN has no radial gradient.
+
 ### 0. A week you can build and run — and the rank rule that turned out to be a stepper's lower bound (2026-08-13, CODE + 8 docs + migrations `0155`·`0156`·`0157`·`0158` — ⚠ **ALL FOUR AUTHORED, NONE APPLIED**)
 
 **PO, from tester feedback: *"someone wants to make a template for a full week… it could be treated like a one-week program?"*** — plus a directive that program length open from 1 to unlimited weeks while **only 4+ counts toward rank**.
