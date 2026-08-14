@@ -383,7 +383,16 @@ the app in their hands.**
       `floors` in their select; PostgREST answers a missing column with `42703`, the whole query fails,
       and `if (error) return null` renders that as *"there is nothing to continue."* This is the
       0117/0118 failure exactly.
-- [ ] **8.4 — Apply `0148_delete_my_account.sql`, then test the path on device.**
+- [x] **8.4 — ✅ DONE 2026-08-14. Applied AND exercised end to end on a real account — this 5.1.1(v)
+      submission blocker is CLOSED.** Predictions were written down BEFORE the delete and all held:
+      `auth.users` 0 · `profiles` 0 · the solo squad dissolved · the shared squad survived with
+      **exactly one** owner, the longest-serving remaining member. `owners = 1` is the result that
+      mattered — `delete_my_account` demotes then promotes because `squad_one_owner` is a partial unique
+      index, and a squad left with zero owners cannot be repaired from inside the app.
+      ⚠ **Still uncovered, deliberately:** a squad owned by SOMEONE ELSE that the athlete had joined (a
+      plain `squad_members` cascade, materially lower risk), and **storage cleanup, which SQL cannot
+      see** — the client removes objects best-effort before the cascade. Original text:
+      **Apply `0148_delete_my_account.sql`, then test the path on device.**
       **App Store Review 5.1.1(v) requires in-app account deletion for any app supporting account
       creation — this is a submission blocker independent of the copy**, and `content.ts:44` already
       promises it. The client side exists (`src/data/account-live.ts`, `src/app/account-settings.tsx`);

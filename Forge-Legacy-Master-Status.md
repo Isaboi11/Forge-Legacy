@@ -768,6 +768,20 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
+### 0. Account deletion proven on a real account — the App Store 5.1.1(v) blocker is closed (2026-08-14, TEST — no code, no migration)
+
+**`0148` had been applied and never exercised.** App Store Review **5.1.1(v)** requires in-app account deletion for any app supporting account creation, and `content.ts:44` has promised it the whole time — so this was a submission blocker whose *code* existed and whose *round trip* nobody had run. Now run, on a purpose-built account (`@test`, `97d8d119…`) carrying a workout, a chapter photo, a transformation entry, and **two squads chosen to exercise both ownership branches**.
+
+**⚠ THE PREDICTIONS WERE WRITTEN DOWN BEFORE THE DELETE, WHICH IS WHAT MAKES IT A TEST RATHER THAN A LOOK.** *Test* (2 members, heir `isaboi11` by `joined_at`) must SURVIVE with exactly one owner; *Test 2* (solo) must be DELETED. Both held, and every other check with them: `auth.users` 0 · `profiles` 0 · solo squad 0 · shared squad 1 · owner `isaboi11` · **owners = 1** · members 1.
+
+**`owners = 1` IS THE RESULT THAT MATTERS.** `delete_my_account` demotes the leaving owner and *then* promotes the heir, because `squad_one_owner` is a **partial unique index** that refuses two owners even for an instant — run the other way it raises, and a squad left with **zero** owners cannot be repaired from inside the app. 0 or 2 would both have been failures; it returned 1.
+
+**⚠ AND THE SETUP IS THE REASON IT PROVED ANYTHING.** The first `@test` account had ONE squad, which exercises one branch and reports success. The transfer branch — the one that destroys other athletes' records if wrong, since `squad_posts` cascades from `squads` and takes every member's history including Friends-audience posts — needs a *second member*, and dissolution needs a *solo* squad. Two more minutes of setup was the difference between a test and a demonstration.
+
+**Not covered, and said rather than implied:** a squad owned by SOMEBODY ELSE that the deleted athlete had joined. That path is a plain `squad_members` cascade rather than the ownership dance, so it is materially lower-risk — but it is untested. **Storage is also outside SQL's reach**: the client removes objects best-effort BEFORE the cascade (only possible at all because `0146` gave those buckets owner-scoped delete policies), and anything missed is an unreferenced orphan, since the rows naming it are gone.
+
+**⚠ AND THIS TEST IS WHAT FOUND THE SQUADS OUTAGE.** Going to create a squad for it surfaced `42501` on every squad read — see the entry below. The bug was nowhere near the feature under test.
+
 ### 0. One revoke, three breakages — and the third was a trigger that could not read the column it fills (2026-08-14, migrations `0160` + `0161` — ✅ BOTH APPLIED, squad create + transfer verified working)
 
 **`0149` hid ONE column and broke THREE separate things.** It revoked SELECT on `squads.invite_code` (SQ-D16) and `profiles.training_since`/`training_label` (P-6). Postgres cannot revoke a single column from a table-level grant, so the only mechanism available is: revoke the table, re-grant every other column individually. Everything downstream follows from that.
