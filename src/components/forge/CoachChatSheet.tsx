@@ -32,6 +32,8 @@ import {
   preamble,
   programCardFor,
   readyToBuild,
+  sizeAnswered,
+  sizeQuestion,
   greetReturning,
   refusalCardFor,
   volumeFor,
@@ -790,7 +792,22 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
 
       setMode(opener.mode);
       void (async () => {
-        if (opener.mode === 'program' && !(await guardActiveProgram())) return;
+        if (opener.mode === 'program') {
+          if (!(await guardActiveProgram())) return;
+          /*
+           * ⚠ **THE SIZE QUESTION BELONGS TO THIS DOOR AND NOWHERE ELSE.** Holt can write one week as
+           * well as a block, and only "Build me a program" is ambiguous about which — "What should I
+           * train today?" is already a single day, and an import already carries its own length.
+           *
+           * Asked once. `weeks: null` from "A program" is an ANSWER, not an absence, so coming back
+           * through this door mid-conversation does not ask again.
+           */
+          if (!sizeAnswered(constraints)) {
+            const q = sizeQuestion();
+            say({ kind: 'holt', text: q.ask }, { kind: 'chips', chips: q.chips, ctl: q.ctl });
+            return;
+          }
+        }
         await advance({ ...constraints, ...opener.patch }, opener.mode);
       })();
       return;

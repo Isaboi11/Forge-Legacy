@@ -165,6 +165,7 @@ export type ChatState = Partial<CoachConstraints> & {
 };
 
 export type QuestionId =
+  | 'size'
   | 'goal'
   | 'day_focus'
   | 'race_distance'
@@ -258,6 +259,46 @@ function withControl(q: Question | null): Question | null {
   return q && !q.ctl ? { ...q, ctl: CONTROL_FOR[q.id] ?? 'chips' } : q;
 }
 
+/**
+ * ══ HOW MUCH ARE WE BUILDING? — PO decision, this session ══
+ *
+ * Holt can write one week as well as a block, and the athlete has to be able to say which.
+ *
+ * ⚠ **THE OPENER ASKS IT, NOT `askProgram`, AND NOT `missingFor`.** Three reasons, in order of how badly
+ * each would have hurt:
+ *
+ *   1. `missingFor()` is the constraint VALIDATOR. Adding `weeks` to it would make every build path in
+ *      the app — the wizard, an import, a rebuild from a refusal — start demanding a length it already
+ *      knows or does not need.
+ *   2. Only BUILD has the question. "What should I train today?" is already a single day, and asking a
+ *      day flow how many weeks it wants is the coach not listening.
+ *   3. It has to come FIRST, before the goal, because the answer changes which goals are on offer —
+ *      see below.
+ *
+ * `A program` sets `weeks: null` rather than leaving it absent, and that distinction is doing real work:
+ * `null` means *asked and answered — use your default*, `undefined` means *not asked yet*, and the
+ * opener uses exactly that to avoid asking twice.
+ *
+ * ⚠ **A RACE IS EXEMPT, AND THE EXEMPTION IS STRUCTURAL.** `assembleEnduranceGoal` derives weeks from
+ * `raceDate` and the per-race floors (6–12 weeks) stand, so a one-week marathon block is not a thing the
+ * engine will ever build. Rather than asking the question and then quietly ignoring the answer, `One
+ * week` REMOVES the race door from the goal question — so the two can never disagree.
+ */
+export function sizeQuestion(): Question {
+  return {
+    id: 'size',
+    ask: pick('ask_size'),
+    ctl: 'segmented',
+    chips: [chip('A program', { weeks: null }), chip('One week', { weeks: 1 })],
+  };
+}
+
+/** Has the size question been answered? `null` is an answer; absent is not. */
+export const sizeAnswered = (c: ChatState): boolean => c.weeks !== undefined;
+
+/** A single week. Decides the goal chips, the days wording, and what the artifact's buttons save. */
+export const isOneWeek = (c: ChatState): boolean => c.weeks === 1;
+
 function askProgram(c: ChatState): Question | null {
 
   if (c.goal == null && !c.pickingRace) {
@@ -272,7 +313,11 @@ function askProgram(c: ChatState): Question | null {
       ask: pick('ask_goal'),
       chips: [
         ...STRENGTH_GOALS.filter((g) => AUTHORED_GOALS.includes(g)).map((g) => chip(GOAL_LABEL[g], { goal: g })),
-        { label: 'Run a race', patch: {}, picksRace: true },
+        /* ⚠ NO RACE DOOR ON A ONE-WEEK BUILD. A race is a block — every distance carries a floor of six
+           to twelve weeks and `assembleEnduranceGoal` counts back from the race date, so `weeks: 1`
+           would be silently overruled. Removing the chip is how the size answer stays true instead of
+           being taken and then ignored. */
+        ...(isOneWeek(c) ? [] : [{ label: 'Run a race', patch: {}, picksRace: true } as Chip]),
       ],
     };
   }
@@ -313,8 +358,10 @@ function askProgram(c: ChatState): Question | null {
   if (c.daysPerWeek == null) {
     return {
       id: 'days',
-      // The PO's own words, kept verbatim — this line already ships in the wizard.
-      ask: endurance ? pick('ask_days_run') : pick('ask_days'),
+      /* The PO's own words, kept verbatim — this line already ships in the wizard. A one-week build gets
+         its own: "how many days A WEEK can you train" asks what you can SUSTAIN, and there is nothing to
+         sustain in a week that ends on Sunday. */
+      ask: endurance ? pick('ask_days_run') : isOneWeek(c) ? pick('ask_days_week') : pick('ask_days'),
       chips: [2, 3, 4, 5, 6].map((n) => chip(`${n} days`, { daysPerWeek: n })),
     };
   }

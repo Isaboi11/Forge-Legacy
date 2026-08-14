@@ -60,6 +60,10 @@ const POOL = buildPickerDb({
  *
  * It deliberately mirrors the sheet rather than importing it — the component cannot be imported under
  * `node --test` — so if the sheet's order of operations changes, this must change with it.
+ *
+ * ⚠ ONE STEP HAPPENS BEFORE THIS AND IS NOT MIRRORED: the BUILD opener asks `sizeQuestion()` and puts
+ * `weeks` into the state before `advance` is ever called. That is deliberate — it belongs to the door,
+ * not to the turn cycle — so the mirror starts, correctly, from a state that already carries it.
  */
 function runBuildPath(partial, mode) {
   // The mode decides which questions exist at all — a day never asks a program's questions.
@@ -105,7 +109,7 @@ function runBuildPath(partial, mode) {
     restructuredBecause: res.assembly.restructured?.because,
   });
   preamble(c, structure.weeks);
-  return { outcome: 'built', card: programCardFor(c, structure, volume, reason) };
+  return { outcome: 'built', structure, card: programCardFor(c, structure, volume, reason) };
 }
 
 // A race far enough out that every distance is reachable, so refusals in this file are rulebook
@@ -291,6 +295,58 @@ test('weeksBetween counts down and floors at zero', () => {
   assert.equal(weeksBetween('2025-06-01', now), 0, 'a race in the past is zero weeks away, not negative');
   assert.equal(weeksBetween(null, now), 0);
   assert.equal(weeksBetween('not a date', now), 0, 'garbage must not become NaN on the card');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ⚠ ONE WEEK IS ONE WEEK — end to end, chip to structure
+// ─────────────────────────────────────────────────────────────────────────────
+
+/*
+ * The unit test above proves `weeks` survives `completeFor`. This proves the whole path: the chip's
+ * patch reaches `assemble` and the block that comes back is one week long.
+ *
+ * It is the assertion the plan asked for by name, and the one that would have caught the original bug —
+ * a "One week" chip that set the state, showed "One week" back in the transcript, passed every existing
+ * test, and built eight.
+ */
+const WEEK_ATHLETE = {
+  goal: 'strength',
+  environment: 'full_gym',
+  daysPerWeek: 3,
+  sessionMinutes: 60,
+  limitations: [],
+  experience: { lifting: 'intermediate', running: 'intermediate' },
+  ownedEquipment: [],
+};
+
+test('⚠ "One week" builds ONE week, and "A program" builds the default', () => {
+  const week = runBuildPath({ ...WEEK_ATHLETE, weeks: 1 }, 'program');
+  assert.equal(week.outcome, 'built', 'a one-week block must be buildable, not refused');
+  assert.equal(week.structure.weeks, 1, 'the chip said one week and the engine built something else');
+  assert.match(week.card.subtitle, /1 week ·/, 'and the card must say so in the coach\'s own voice');
+
+  // `weeks: null` is "use your default" — the block must NOT collapse to one just because the field
+  // is now carried. This is the half of the fix that a test on `weeks: 1` alone cannot see.
+  const block = runBuildPath({ ...WEEK_ATHLETE, weeks: null }, 'program');
+  assert.equal(block.outcome, 'built');
+  assert.ok(block.structure.weeks > 1, `"A program" built ${block.structure.weeks} weeks`);
+});
+
+test('⚠ a one-week block anchors mid-range rather than opening a mesocycle it has no room for', () => {
+  /*
+   * `short-block.test.mjs` proves the rulebook does this. This proves the CHAT reaches it: week 1 of a
+   * twelve-week block is the lightest week of a ramp, and handing an athlete who asked for one week the
+   * opening rung of a progression that is never going to happen is the wrong week entirely.
+   */
+  const week = runBuildPath({ ...WEEK_ATHLETE, weeks: 1 }, 'program');
+  const twelve = runBuildPath({ ...WEEK_ATHLETE, weeks: 12 }, 'program');
+  const repsOf = (r) => JSON.stringify(r.structure.weeks_ ?? r.structure).match(/"reps":\s*(\d+)/g) ?? [];
+  const one = repsOf(week);
+  const many = repsOf(twelve);
+  // Preconditions, so the comparison below cannot pass by both sides being empty.
+  assert.ok(one.length > 0, 'the one-week block prescribed nothing');
+  assert.ok(many.length > one.length, 'the twelve-week block should carry far more prescriptions');
+  assert.notDeepEqual(one, many.slice(0, one.length), 'a one-week block is not week one of twelve');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

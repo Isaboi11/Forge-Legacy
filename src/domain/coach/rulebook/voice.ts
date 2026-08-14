@@ -37,6 +37,7 @@ export type VoiceKey =
   | 'greet_return_anon'
   | 'greet_return_second'
   | 'ack'
+  | 'ask_size'
   | 'ask_goal'
   | 'ask_day_focus'
   | 'ask_day_goal'
@@ -45,6 +46,7 @@ export type VoiceKey =
   | 'ask_race_base'
   | 'ask_days'
   | 'ask_days_run'
+  | 'ask_days_week'
   | 'ask_where'
   | 'ask_time'
   | 'ask_experience'
@@ -104,6 +106,14 @@ export const VOICE: Record<VoiceKey, readonly string[]> = {
   ack: ['Good.', 'Right.', 'Noted.', 'Understood.', 'Got it.', 'Fine.', 'Alright.', 'Makes sense.', 'That helps.', 'OK.'],
 
   // ── the questions ────────────────────────────────────────────────────────────────────────────────
+  /* The first thing the BUILD door asks, before anything about the athlete. */
+  ask_size: [
+    'How much are we building?',
+    'Are we building a block, or one week?',
+    'How far ahead are we planning?',
+    'How big is this — a program, or a single week?',
+    'A whole block, or just the week?',
+  ],
   ask_goal: [
     'What are you training for?',
     "What's the goal?",
@@ -159,6 +169,19 @@ export const VOICE: Record<VoiceKey, readonly string[]> = {
     'How many days a week can you get out? Three you keep beats five you abandon.',
     'How many runs a week does your life allow? Give me the honest number.',
     "How many days can you run? The ramp is safer on fewer days done properly.",
+  ],
+  /*
+   * ⚠ A WEEK IS NOT A BLOCK, SO IT IS NOT ASKED LIKE ONE. "How many days A WEEK can you train" is a
+   * question about a habit — it asks what you can sustain, and the answer shapes twelve weeks. When the
+   * athlete has asked for one week, there is no habit to protect and nothing to sustain: the honest
+   * question is how many days THIS week has in it.
+   */
+  ask_days_week: [
+    'How many days are we training this week?',
+    'How many sessions do you want in the week?',
+    'How many days has this week got in it?',
+    "How many days this week? Give me the number you'll actually hit.",
+    'How many sessions? Tell me what this week really allows.',
   ],
   ask_where: [
     'Where are you training?',

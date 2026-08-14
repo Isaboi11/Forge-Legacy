@@ -36,9 +36,12 @@ import {
   programCardFor,
   readyToBuild,
   refusalCardFor,
+  sizeAnswered,
+  sizeQuestion,
 } from '../chat-core.ts';
 import { AUTHORED_GOALS, isAuthored } from '../rulebook/skeletons.ts';
 import { isEnduranceGoal } from '../constraints.ts';
+import { VOICE } from '../rulebook/voice.ts';
 
 /** Walk the conversation by always taking the first chip, as a fast tapper would. */
 function walk(seed = {}, maxTurns = 20) {
@@ -193,6 +196,55 @@ test('every opener is a real thing Holt can do', () => {
     assert.ok(['build', 'import', 'edit', 'help'].includes(r.kind), `"${label}" has no action`);
     if (r.kind === 'build') assert.ok(r.mode === 'program' || r.mode === 'day');
   }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HOW MUCH ARE WE BUILDING? — a block, or one week
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('the size question offers two real answers and nothing else', () => {
+  const q = sizeQuestion();
+  assert.equal(q.id, 'size');
+  assert.equal(q.ctl, 'segmented', 'a block and a week are an ordered scale, not a set of unlike things');
+  assert.deepEqual(q.chips.map((c) => c.patch), [{ weeks: null }, { weeks: 1 }]);
+});
+
+test('⚠ `null` is an answer and absent is not — or he asks twice', () => {
+  /*
+   * The distinction the whole opener rests on. "A program" does not leave `weeks` unset, it sets it to
+   * `null` — meaning *asked, and use your default*. If those two collapsed into one state, coming back
+   * through the BUILD door mid-conversation would ask how much we are building all over again.
+   */
+  assert.equal(sizeAnswered({}), false);
+  assert.equal(sizeAnswered({ weeks: null }), true, 'answering "a program" must count as answering');
+  assert.equal(sizeAnswered({ weeks: 1 }), true);
+});
+
+test('⚠ one week removes the race door, rather than taking the answer and ignoring it', () => {
+  /*
+   * Every distance carries a floor of six to twelve weeks and `assembleEnduranceGoal` counts back from
+   * the race date, so `weeks: 1` on a race is silently overruled by the engine. Asking the athlete and
+   * then overruling them is worse than not offering it — so the exemption is structural.
+   */
+  const block = nextQuestion({ weeks: null });
+  assert.ok(block.chips.some((c) => c.picksRace), 'a block build must still be able to be a race');
+
+  const week = nextQuestion({ weeks: 1 });
+  assert.equal(week.id, 'goal');
+  assert.ok(!week.chips.some((c) => c.picksRace), 'a one-week marathon block is not a thing the engine builds');
+  assert.ok(week.chips.length > 0 && week.chips.every((c) => c.patch.goal), 'and every chip left must answer the question');
+});
+
+test('⚠ a week is not asked how many days A WEEK — the PO caught this one', () => {
+  // "How many days a week can you train" asks what you can SUSTAIN. There is nothing to sustain in a
+  // week that ends on Sunday; the honest question is how many days this week has in it.
+  const week = nextQuestion({ weeks: 1, goal: 'strength' });
+  assert.equal(week.id, 'days', 'a one-week build must still be asked how many days');
+  assert.ok(VOICE.ask_days_week.includes(week.ask), `a one-week build asked "${week.ask}"`);
+  assert.deepEqual(week.chips.map((c) => c.patch.daysPerWeek), [2, 3, 4, 5, 6]);
+
+  const block = nextQuestion({ weeks: null, goal: 'strength' });
+  assert.ok(VOICE.ask_days.includes(block.ask), 'a block must keep the habit question');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
