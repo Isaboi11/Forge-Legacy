@@ -39,7 +39,6 @@ import {
   type ChatState,
   type Chip,
   type DayCard,
-  type EditCard,
   type ProgramCard,
   type QuestionControl,
   type RefusalCard,
@@ -191,7 +190,7 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
 
   /* §6.5 — the introduction is three paragraphs and lands as three beats. Dropping all three at once is
      a wall of text pretending to be a greeting. */
-  const [thread, setThread] = useState<Turn[]>([{ kind: 'holt', text: INTRO[0] }]);
+  const [thread, setThread] = useState<Turn[]>(() => stamped([{ kind: 'holt', text: INTRO[0] }]));
   const [introStep, setIntroStep] = useState(1);
   const [draft, setDraft] = useState('');
   /* Declared ABOVE the intro effect, which sets it: a hook cannot close over a const declared below it,
@@ -203,6 +202,8 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
   const [built, setBuilt] = useState<{ kind: 'program' | 'day' } | null>(null);
   /** The whole plan, read-only, before the Builder. Holds the last card so it can be redrawn in full. */
   const [preview, setPreview] = useState(false);
+  /** §2's NEW CHAT popover. Open is a look, not an action — nothing happens until a row is tapped. */
+  const [menu, setMenu] = useState(false);
 
   /**
    * Where we are in changing a live program.
@@ -236,9 +237,11 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
     const id = setTimeout(() => {
       setThread((t) => [
         ...t,
-        beat != null
-          ? { kind: 'holt' as const, text: beat }
-          : { kind: 'chips' as const, chips: OPENERS.map((label) => ({ label, patch: {} })) },
+        ...stamped([
+          beat != null
+            ? { kind: 'holt' as const, text: beat }
+            : { kind: 'chips' as const, chips: OPENERS.map((label) => ({ label, patch: {} })) },
+        ]),
       ]);
       setIntroStep((n) => n + 1);
     }, gap);
@@ -257,7 +260,7 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
      depends on something React cannot see. */
   const greeted = useRef(false);
 
-  const say = useCallback((...turns: Turn[]) => setThread((t) => [...t, ...turns]), []);
+  const say = useCallback((...turns: Turn[]) => setThread((t) => [...t, ...stamped(turns)]), []);
 
   useEffect(() => {
     const id = setTimeout(() => scroller.current?.scrollToEnd({ animated: true }), 60);
@@ -299,7 +302,7 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
       /* He greets you on arrival — unless he is already stood at the door with the openers up, which is
          what a stored thread ending in chips means. Otherwise every glance would stack another hello. */
       const endsWaiting = stored != null && stored[stored.length - 1]?.kind === 'chips';
-      setThread([...(stored ?? []), ...(endsWaiting ? [] : greetReturning(firstName))]);
+      setThread([...(stored ?? []), ...stamped(endsWaiting ? [] : greetReturning(firstName))]);
     })();
     return () => {
       alive = false;
@@ -514,7 +517,7 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
     /* The remembered experience is deliberately kept, and everything situational is deliberately not. */
     setConstraints((c) => (c.experience ? { experience: c.experience } : {}));
     setIntroStep(INTRO.length + 1);
-    setThread(greetReturning(firstName));
+    setThread(stamped(greetReturning(firstName)));
   };
 
   /* ── changing a plan already running ─────────────────────────────────────────────────────────────
@@ -731,7 +734,11 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
 
     if (chip.picksRace) {
       say({ kind: 'me', text: chip.label });
-      void advance({ ...constraints, pickingRace: true }, mode ?? 'program');
+      /* ⚠ THE PATCH IS APPLIED HERE TOO, and it was not. "Run a race" carries an empty one, so nothing
+         changed and nobody noticed — until the refusal card's "Pick another race" needed to CLEAR the
+         goal it was refused for. Without this it would set `pickingRace` over a goal that is still set,
+         `askProgram` would skip straight past the distances, and the button would look broken. */
+      void advance({ ...constraints, ...chip.patch, pickingRace: true }, mode ?? 'program');
       return;
     }
 
@@ -854,6 +861,26 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
 
   /* ── render ────────────────────────────────────────────────────────────────────────────────────── */
 
+  /* The flat thread, grouped into what the design draws: Home, the greeting stack, and Holt turns that
+     carry their own controls. Derived every render on purpose — the thread is capped at 100 turns and a
+     memo here would be a second copy that can go stale. */
+  const blocks = layOut(thread);
+
+  const openBuilder = () => {
+    onClose();
+    /*
+     * ⚠ PUSH, NOT REPLACE — and this was a dead back button (PO, 2026-08-09).
+     *
+     * The wizard at `/coach` uses `replace` correctly: it IS a route, so the builder takes its place and
+     * dismissing returns you where you were. This sheet is NOT a route — it is an overlay on a tab — so
+     * `replace` swapped out the TAB underneath it. Save, press back, and there was nothing beneath.
+     *
+     * Push leaves the tab in the stack: tab → builder → (builder replaces itself with the saved
+     * program) → back returns to Workouts, which is what the athlete expects.
+     */
+    router.push(built?.kind === 'day' ? '/workout-builder' : '/program-builder');
+  };
+
   return (
     <View style={styles.wrap}>
       <Animated.View style={[styles.backdrop, { opacity: rise }]}>
@@ -875,18 +902,42 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
         end={{ x: 0.5, y: 1 }}
         style={[styles.sheet, keyboardInset > 0 && { paddingBottom: keyboardInset }]}
       >
+        {/*
+          §1's warm wash — the ONE atmospheric layer, over the top 300px and nothing below it. RN has no
+          radial gradient, so this is the vertical component of it: the design's falls to zero by 76% of
+          a 300px box, which is what the stops below reproduce. `pointerEvents="none"` because it sits
+          over the header and would otherwise eat the taps.
+        */}
+        <LinearGradient
+          colors={['rgba(198,156,100,0.055)', 'rgba(198,156,100,0.022)', 'rgba(198,156,100,0)']}
+          locations={[0, 0.4, 0.76]}
+          start={{ x: 0.14, y: 0 }}
+          end={{ x: 0.6, y: 1 }}
+          style={styles.warmWash}
+          pointerEvents="none"
+        />
         {/* The grab handle, and it really grabs — drag it down and the sheet goes back to being the
             bubble it came from. */}
         <View style={styles.grabWrap} {...handleResponder.panHandlers}>
           <View style={styles.grab} />
         </View>
+        {/* §2 — medallion, serif name, liveness line, two icon-over-caption actions. NO RULE UNDERNEATH:
+            the separation is spacing plus the warm wash, and a hard line under it flattens the header
+            into a toolbar. */}
         <View style={styles.header}>
-          <HoltMark size={36} state={waiting ?? 'idle'} />
+          <HoltMark size={52} state={waiting ?? 'idle'} />
           <View style={styles.headerText}>
             <Text style={styles.headerName}>COACH HOLT</Text>
-            <Text style={styles.headerStatus}>
-              {busy === 'building' ? 'Building your block' : busy === 'thinking' ? 'Thinking' : 'Ready'}
-            </Text>
+            {/* `YOUR COACH · ● · READY`. The dot is the ONLY green on this surface, and it is a liveness
+                indicator rather than a colour in the palette — so it stays lit while he works and the
+                word beside it changes instead. */}
+            <View style={styles.headerStatusRow}>
+              <Text style={styles.headerStatus}>YOUR COACH</Text>
+              <View style={styles.headerDot} />
+              <Text style={styles.headerStatus}>
+                {busy === 'building' ? 'BUILDING' : busy === 'thinking' ? 'THINKING' : 'READY'}
+              </Text>
+            </View>
           </View>
           {/*
             ⚠ **STARTING AGAIN USED TO MEAN SCROLLING.** Come back after finishing a conversation and the
@@ -894,18 +945,56 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
             the way in. §15 is right that the thread persists, and a rolling thread with no way to clear
             it is a filing cabinet you have to read to get a new sheet of paper.
           */}
-          <Pressable onPress={newChat} accessibilityRole="button" accessibilityLabel="Start a new conversation" hitSlop={8} style={styles.close}>
-            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M12 5v14M5 12h14" />
-            </Svg>
-          </Pressable>
+          <HeaderAction
+            label="NEW CHAT"
+            on={menu}
+            onPress={() => setMenu((v) => !v)}
+            accessibilityLabel="Start something new"
+            expanded={menu}
+          >
+            <Path d="M12 5v14M5 12h14" />
+          </HeaderAction>
           {/* §4.9 — it collapses to the bubble; it does not clear the conversation. */}
-          <Pressable onPress={collapse} accessibilityRole="button" accessibilityLabel="Close" hitSlop={8} style={styles.close}>
-            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round">
-              <Path d="M6 6l12 12M18 6L6 18" />
-            </Svg>
-          </Pressable>
+          <HeaderAction label="CLOSE" onPress={collapse} accessibilityLabel="Close" pad>
+            <Path d="M6 6l12 12M18 6L6 18" />
+          </HeaderAction>
         </View>
+
+        {/*
+          ⚠ **IT MUST NOT DESTROY THE THREAD** (§2). Two of the three rows START something inside the
+          conversation already running; only the one that says so ends it. A menu behind a `+` that
+          silently wiped five minutes of answers would be the worst button on the surface.
+        */}
+        {menu ? (
+          <>
+            <Pressable style={styles.menuScrim} onPress={() => setMenu(false)} accessibilityLabel="Dismiss" />
+            <MenuPop>
+              <MenuRow
+                label="New conversation"
+                onPress={() => {
+                  setMenu(false);
+                  newChat();
+                }}
+              />
+              <MenuRow
+                divided
+                label="Build a program"
+                onPress={() => {
+                  setMenu(false);
+                  tapChip({ label: 'Build me a program', patch: {} });
+                }}
+              />
+              <MenuRow
+                divided
+                label="Training question"
+                onPress={() => {
+                  setMenu(false);
+                  tapChip({ label: 'How do I…?', patch: {} });
+                }}
+              />
+            </MenuPop>
+          </>
+        ) : null}
 
         {preview && lastCard ? (
           <PlanPreview
@@ -925,7 +1014,7 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
           contentContainerStyle={[styles.threadInner, { paddingBottom: threadPad }]}
           keyboardShouldPersistTaps="handled"
         >
-          {thread.map((t, i) => {
+          {blocks.map((b, bi) => {
             /*
              * ══ COACH HOME, DRAWN IN PLACE OF THE OPENER CHIPS ══
              *
@@ -933,43 +1022,44 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
              * and scrolls away with it."* The opener turn is already exactly that position — it is the
              * last thing in the thread before the athlete says anything — so Home is a RENDERING of it
              * rather than a sixth piece of state that could disagree with the thread about where it is.
-             *
-             * The greeting above it is the run of Holt lines that precede it, drawn in Home's own voice
-             * (serif, then the line, then the quiet third) rather than as chat turns.
              */
-            if (isHomeTurn(t)) {
+            if (b.kind === 'home') {
               return (
-                <TurnEnter key={i}>
+                <TurnEnter key={b.key}>
                   <CoachHome onOpener={(label) => tapChip({ label, patch: {} })} />
                   {/* §4 — the bronze rule only exists once there is a conversation under it. */}
-                  {i < thread.length - 1 ? <ConversationDivider /> : null}
+                  {bi < blocks.length - 1 ? <ConversationDivider /> : null}
                 </TurnEnter>
               );
             }
-            const slot = greetingSlot(thread, i);
+            if (b.kind === 'greeting') {
+              return (
+                <TurnEnter key={b.key} pullUp={GREETING_PULL[b.slot]}>
+                  <Text style={styles[GREETING_STYLE[b.slot]]}>{b.text}</Text>
+                </TurnEnter>
+              );
+            }
+            if (b.kind === 'holt') {
+              return (
+                <TurnEnter key={b.key}>
+                  <HoltTurn
+                    text={b.text}
+                    at={b.at}
+                    attached={b.attached}
+                    answer={b.answer}
+                    /* §5's live turn is the one still on the table: brighter text, a lit mark. Everything
+                       above it is history and steps back a level of contrast. */
+                    live={bi === blocks.length - 1}
+                    onChip={tapChip}
+                    onPreview={() => setPreview(true)}
+                    onOpenBuilder={openBuilder}
+                  />
+                </TurnEnter>
+              );
+            }
             return (
-              <TurnEnter key={i} pullUp={slot ? GREETING_PULL[slot] : 0}>
-                <TurnView
-                  turn={t}
-                  slot={slot}
-                  onChip={tapChip}
-                  onPreview={() => setPreview(true)}
-                  onOpenBuilder={() => {
-                    onClose();
-                    /*
-                     * ⚠ PUSH, NOT REPLACE — and this was a dead back button (PO, 2026-08-09).
-                     *
-                     * The wizard at `/coach` uses `replace` correctly: it IS a route, so the builder
-                     * takes its place and dismissing returns you where you were. This sheet is NOT a
-                     * route — it is an overlay on a tab — so `replace` swapped out the TAB underneath
-                     * it. Save, press back, and there was nothing beneath to go back to.
-                     *
-                     * Push leaves the tab in the stack: tab → builder → (builder replaces itself with
-                     * the saved program) → back returns to Workouts, which is what the athlete expects.
-                     */
-                    router.push(built?.kind === 'day' ? '/workout-builder' : '/program-builder');
-                  }}
-                />
+              <TurnEnter key={b.key}>
+                <TurnView turn={b.turn} onChip={tapChip} onPreview={() => setPreview(true)} onOpenBuilder={openBuilder} />
               </TurnEnter>
             );
           })}
@@ -1226,6 +1316,82 @@ function ConversationDivider() {
   );
 }
 
+/** Turns carry the wall clock they arrived at — §5 draws it under the mark and beside the ticks. */
+const stamped = (turns: Turn[]): Turn[] =>
+  turns.map((t) => ((t.kind === 'holt' || t.kind === 'me') && t.at == null ? { ...t, at: Date.now() } : t));
+
+/** `4:31 PM`. Absent on threads stored before v2, and then nothing is drawn rather than a guess. */
+function clockOf(at: number | undefined): string | null {
+  if (at == null) return null;
+  try {
+    return new Date(at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * ══ THE THREAD, LAID OUT ══
+ *
+ * §5: *"Controls live INSIDE the content column, so they align to Holt's text and not to the gutter."*
+ * The state machine emits them as separate turns — `say({kind:'holt'}, {kind:'chips'})` is the shape of
+ * every question — so the grouping happens here, at render, and the thread keeps the flat shape its
+ * tests and its storage describe.
+ *
+ * What attaches: anything Holt SHOWED you as part of the same breath — the answers, the card he built,
+ * the counter-offer. What does not: `stop` and `error`, which are their own moment and are already
+ * emitted alone.
+ */
+const ATTACHES: ReadonlySet<Turn['kind']> = new Set(['chips', 'program', 'day', 'refusal', 'explain', 'saved', 'wall']);
+
+type Block =
+  | { key: number; kind: 'home' }
+  | { key: number; kind: 'greeting'; text: string; slot: GreetingSlot }
+  | {
+      key: number;
+      kind: 'holt';
+      text: string;
+      at?: number;
+      attached: Turn[];
+      /**
+       * What the athlete answered this block with, if anything — the text of the `me` turn that follows
+       * it. §6's selection model, DERIVED: the thread already records the answer one turn later, and a
+       * second copy of it on the chips turn is a second thing that can disagree.
+       */
+      answer: string | null;
+    }
+  | { key: number; kind: 'turn'; turn: Turn };
+
+function layOut(thread: Turn[]): Block[] {
+  const out: Block[] = [];
+  for (let i = 0; i < thread.length; i += 1) {
+    const t = thread[i];
+    if (isHomeTurn(t)) {
+      out.push({ key: i, kind: 'home' });
+      continue;
+    }
+    if (t.kind === 'holt') {
+      const slot = greetingSlot(thread, i);
+      if (slot) {
+        out.push({ key: i, kind: 'greeting', text: t.text, slot });
+        continue;
+      }
+      const attached: Turn[] = [];
+      let j = i + 1;
+      while (j < thread.length && ATTACHES.has(thread[j].kind) && !isHomeTurn(thread[j])) {
+        attached.push(thread[j]);
+        j += 1;
+      }
+      const next = thread[j];
+      out.push({ key: i, kind: 'holt', text: t.text, at: t.at, attached, answer: next?.kind === 'me' ? next.text : null });
+      i = j - 1;
+      continue;
+    }
+    out.push({ key: i, kind: 'turn', turn: t });
+  }
+  return out;
+}
+
 /** Which slot of Home's greeting stack a turn occupies, if any. */
 type GreetingSlot = 'greeting' | 'line' | 'sub';
 const GREETING_SLOTS: readonly GreetingSlot[] = ['greeting', 'line', 'sub'];
@@ -1253,8 +1419,167 @@ function greetingSlot(thread: Turn[], i: number): GreetingSlot | null {
   return i < start ? null : (GREETING_SLOTS[i - start] ?? null);
 }
 
-/** How far a greeting line pulls back against the thread's 18px turn gap to reach the design's 4px. */
-const GREETING_PULL: Record<GreetingSlot, number> = { greeting: 0, line: 14, sub: 12 };
+/** How far a greeting line pulls back against the thread's turn gap to reach the design's 4px. */
+const GREETING_PULL: Record<GreetingSlot, number> = { greeting: 0, line: 16, sub: 14 };
+const GREETING_STYLE: Record<GreetingSlot, 'homeGreeting' | 'homeLine' | 'homeSub'> = {
+  greeting: 'homeGreeting',
+  line: 'homeLine',
+  sub: 'homeSub',
+};
+
+/**
+ * ══ HOLT SPEAKS IN THE OPEN — §5, and rule 2 of the whole design ══
+ *
+ * *"Holt's speech is open on the background. It never gets a bubble. Only the athlete's own turns get a
+ * container."* The mark and the time sit in a 40px gutter on the left; his words, and everything he put
+ * on the table with them, sit in the column beside it.
+ *
+ * The controls are INSIDE that column rather than below the turn, so an answer lines up with the
+ * question it answers instead of with the avatar. That indent is the difference between a conversation
+ * and a form with a portrait next to it.
+ */
+function HoltTurn({
+  text,
+  at,
+  attached,
+  answer,
+  live,
+  onChip,
+  onPreview,
+  onOpenBuilder,
+}: {
+  text: string;
+  at?: number;
+  attached: Turn[];
+  answer: string | null;
+  live: boolean;
+  onChip: (c: Chip) => void;
+  onPreview: () => void;
+  onOpenBuilder: () => void;
+}) {
+  const clock = clockOf(at);
+  return (
+    <View style={styles.holtRow}>
+      <View style={[styles.holtGutter, !live && styles.holtGutterPast]}>
+        <HoltMark size={40} />
+        {clock ? <Text style={styles.holtTime} numberOfLines={1}>{clock}</Text> : null}
+      </View>
+      <View style={styles.holtBody}>
+        <Text style={styles.holtEyebrow}>HOLT</Text>
+        <Text style={[styles.holtText, !live && styles.holtTextPast]}>{text}</Text>
+        {attached.length ? (
+          <View style={styles.holtAttached}>
+            {attached.map((t, i) => (
+              <TurnView key={i} turn={t} answer={answer} onChip={onChip} onPreview={onPreview} onOpenBuilder={onOpenBuilder} />
+            ))}
+          </View>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+/**
+ * The athlete's own turn — §5. Eyebrow, bubble, then the time and two ticks.
+ *
+ * ⚠ QUIETER THAN HOLT AND QUIETER THAN ANY CONTROL, deliberately. It is history: a record of what you
+ * already said, not a thing to act on. Bronze-TINTED, never bronze-filled, so it cannot be mistaken for
+ * a button.
+ */
+function MeTurn({ text, at }: { text: string; at?: number }) {
+  const clock = clockOf(at);
+  return (
+    <View style={styles.meBlock}>
+      <Text style={styles.meEyebrow}>YOU</Text>
+      <View style={styles.meRow}>
+        <Text style={styles.meText}>{text}</Text>
+      </View>
+      <View style={styles.meMeta}>
+        {clock ? <Text style={styles.meTime}>{clock}</Text> : null}
+        <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze600} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+          <Path d="M1.5 13l4 4L13 8" />
+          <Path d="M9 17l1.5 1.5L22 7" />
+        </Svg>
+      </View>
+    </View>
+  );
+}
+
+/**
+ * A header action — §2: a 20×20 stroke icon over an 8px caption, not a bare glyph.
+ *
+ * The caption is the point. Two unlabelled icons in the corner of a sheet are two guesses, and one of
+ * them wipes the conversation.
+ */
+function HeaderAction({
+  label,
+  children,
+  onPress,
+  accessibilityLabel,
+  on = false,
+  pad = false,
+  expanded,
+}: {
+  label: string;
+  children: React.ReactNode;
+  onPress: () => void;
+  accessibilityLabel: string;
+  on?: boolean;
+  pad?: boolean;
+  expanded?: boolean;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={expanded == null ? undefined : { expanded }}
+      hitSlop={8}
+      style={[styles.headerAction, pad && styles.headerActionPad]}
+    >
+      <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={on ? flColor.bronze300 : flColor.gray600} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+        {children}
+      </Svg>
+      <Text style={[styles.headerActionLabel, on && styles.headerActionLabelOn]} numberOfLines={1}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+/** §2's popover — 224 wide, elevated, rising 8px over 180ms. */
+function MenuPop({ children }: { children: React.ReactNode }) {
+  const v = useAnimatedValue(0);
+  const still = useReducedMotion();
+  useEffect(() => {
+    Animated.timing(v, { toValue: 1, duration: 180, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: true }).start();
+  }, [v]);
+  return (
+    <Animated.View
+      style={[
+        styles.menu,
+        { opacity: v, transform: still ? [] : [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }] },
+      ]}
+    >
+      <LinearGradient colors={SURFACE_ELEVATED} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }}>
+        {children}
+      </LinearGradient>
+    </Animated.View>
+  );
+}
+
+function MenuRow({ label, onPress, divided = false }: { label: string; onPress: () => void; divided?: boolean }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={({ pressed }) => [styles.menuRow, divided && styles.menuRowDivided, pressed && styles.menuRowPressed]}
+    >
+      <Text style={styles.menuText}>{label}</Text>
+    </Pressable>
+  );
+}
 
 function SendGlyph({ color }: { color: string }) {
   return (
@@ -1397,43 +1722,38 @@ function ThinkingDot({ delay }: { delay: number }) {
 
 function TurnView({
   turn,
-  slot,
+  answer,
   onChip,
   onOpenBuilder,
   onPreview,
 }: {
   turn: Turn;
-  /** Set when this Holt line is one of Home's greeting lines rather than ordinary speech. */
-  slot?: GreetingSlot | null;
+  /** §6 — what the athlete answered the question above with, so the chosen control reads as chosen. */
+  answer?: string | null;
   onChip: (c: Chip) => void;
   onOpenBuilder: () => void;
   onPreview: () => void;
 }) {
   switch (turn.kind) {
     case 'me':
-      return (
-        <View style={styles.meRow}>
-          <Text style={styles.meText}>{turn.text}</Text>
-        </View>
-      );
+      return <MeTurn text={turn.text} at={turn.at} />;
 
+    /* Reached only by a stored thread whose Holt line lost its grouping — `layOut` renders every live
+       one as a `HoltTurn`. Kept so a turn can never render as nothing. */
     case 'holt':
-      return <HoltLine text={turn.text} slot={slot} />;
+      return <HoltLine text={turn.text} />;
 
     case 'chips':
-      return <Answers chips={turn.chips} ctl={turn.ctl} onChip={onChip} />;
+      return <Answers chips={turn.chips} ctl={turn.ctl} answer={answer ?? null} onChip={onChip} />;
 
     case 'program':
-      return <ProgramCardView card={turn.card} onPreview={onPreview} />;
+      return <ProgramCardView card={turn.card} onPreview={onPreview} onOpenBuilder={onOpenBuilder} />;
 
     case 'day':
       return <DayCardView card={turn.card} onOpenBuilder={onOpenBuilder} onPreview={onPreview} />;
 
-    case 'edit':
-      return <EditCardView card={turn.card} />;
-
     case 'refusal':
-      return <RefusalCardView card={turn.card} />;
+      return <RefusalCardView card={turn.card} onChip={onChip} />;
 
     case 'explain':
       return <ExplainerView name={turn.name} />;
@@ -1497,7 +1817,20 @@ function TurnView({
  * ⚠ `ctl` ABSENT MEANS `chips`. The openers, the help menu and the edit flow all emit bare chip turns
  * and must keep rendering exactly as they do — this is additive by construction, not by care.
  */
-function Answers({ chips, ctl, onChip }: { chips: Chip[]; ctl?: QuestionControl; onChip: (c: Chip) => void }) {
+function Answers({
+  chips,
+  ctl,
+  answer,
+  onChip,
+}: {
+  chips: Chip[];
+  ctl?: QuestionControl;
+  /** The label the athlete went with, once they have. §6's selected state, read off the thread. */
+  answer?: string | null;
+  onChip: (c: Chip) => void;
+}) {
+  const chosen = (c: Chip) => answer != null && c.label === answer;
+
   /* An ordered scale — 2·3·4·5·6 days, 30·45·60·75 minutes. A ROW, left to right, because the order is
      the information; wrapped pills throw that away and a stepper hides the range. Equal widths so no
      option looks weightier than its neighbour. */
@@ -1510,9 +1843,10 @@ function Answers({ chips, ctl, onChip }: { chips: Chip[]; ctl?: QuestionControl;
             onPress={() => onChip(c)}
             accessibilityRole="button"
             accessibilityLabel={c.label}
-            style={({ pressed }) => [styles.seg, pressed && styles.ctlPressed]}
+            accessibilityState={{ selected: chosen(c) }}
+            style={({ pressed }) => [styles.seg, (pressed || chosen(c)) && styles.ctlOn]}
           >
-            <Text style={styles.segText} numberOfLines={1}>{c.label}</Text>
+            <Text style={[styles.segText, chosen(c) && styles.segTextOn]} numberOfLines={1}>{c.label}</Text>
           </Pressable>
         ))}
       </View>
@@ -1534,13 +1868,16 @@ function Answers({ chips, ctl, onChip }: { chips: Chip[]; ctl?: QuestionControl;
               onPress={() => onChip(c)}
               accessibilityRole="button"
               accessibilityLabel={c.label}
-              style={({ pressed }) => [styles.optCard, pressed && styles.ctlPressed]}
+              accessibilityState={{ selected: chosen(c) }}
+              style={({ pressed }) => [styles.optCard, (pressed || chosen(c)) && styles.ctlOn]}
             >
               <View style={styles.optCardText}>
-                <Text style={styles.optCardTitle}>{title}</Text>
+                <Text style={[styles.optCardTitle, chosen(c) && styles.ctlTextOn]}>{title}</Text>
                 {sub ? <Text style={styles.optCardSub}>{sub}</Text> : null}
               </View>
-              <View style={styles.optDot} />
+              {/* ⚠ ROUND = PICK ONE. §6 hangs the whole rule on the indicator's shape, so a circle here
+                  and a square on the grid is a promise about how many answers are allowed. */}
+              <View style={[styles.optDot, chosen(c) && styles.optDotOn]}>{chosen(c) ? <Tick size={10} /> : null}</View>
             </Pressable>
           );
         })}
@@ -1559,9 +1896,11 @@ function Answers({ chips, ctl, onChip }: { chips: Chip[]; ctl?: QuestionControl;
             onPress={() => onChip(c)}
             accessibilityRole="button"
             accessibilityLabel={c.label}
-            style={({ pressed }) => [styles.gridCell, pressed && styles.ctlPressed]}
+            accessibilityState={{ selected: chosen(c) }}
+            style={({ pressed }) => [styles.gridCell, (pressed || chosen(c)) && styles.ctlOn]}
           >
-            <Text style={styles.gridText} numberOfLines={2}>{c.label}</Text>
+            <Text style={[styles.gridText, chosen(c) && styles.ctlTextOn]} numberOfLines={2}>{c.label}</Text>
+            <View style={[styles.optSquare, chosen(c) && styles.optDotOn]}>{chosen(c) ? <Tick size={9} /> : null}</View>
           </Pressable>
         ))}
       </View>
@@ -1579,7 +1918,7 @@ function Answers({ chips, ctl, onChip }: { chips: Chip[]; ctl?: QuestionControl;
             onPress={() => onChip(c)}
             accessibilityRole="button"
             accessibilityLabel={c.label}
-            style={({ pressed }) => [styles.importRow, pressed && styles.ctlPressed]}
+            style={({ pressed }) => [styles.importRow, pressed && styles.ctlOn]}
           >
             <Text style={styles.importText}>{c.label}</Text>
             <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
@@ -1600,12 +1939,23 @@ function Answers({ chips, ctl, onChip }: { chips: Chip[]; ctl?: QuestionControl;
           onPress={() => onChip(c)}
           accessibilityRole="button"
           accessibilityLabel={c.label}
-          style={({ pressed }) => [styles.chipCell, pressed && styles.ctlPressed]}
+          accessibilityState={{ selected: chosen(c) }}
+          style={({ pressed }) => [styles.chipCell, (pressed || chosen(c)) && styles.ctlOn]}
         >
-          <Text style={styles.chipCellText} numberOfLines={2}>{c.label}</Text>
+          <Text style={[styles.chipCellText, chosen(c) && styles.ctlTextOn]} numberOfLines={1}>{c.label}</Text>
+          {chosen(c) ? <Tick size={13} /> : null}
         </Pressable>
       ))}
     </View>
+  );
+}
+
+/** §6's check — bronze-bright, and drawn only when a control is actually chosen. */
+function Tick({ size }: { size: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M20 6L9 17l-5-5" />
+    </Svg>
   );
 }
 
@@ -1626,10 +1976,7 @@ function splitCardLabel(label: string): [string, string | null] {
  * §6.7 — the container is NOT a live region. Streaming characters to a screen reader would read the
  * sentence out one letter at a time. The finished line is announced once, when it is finished.
  */
-function HoltLine({ text, slot }: { text: string; slot?: GreetingSlot | null; live?: boolean }) {
-  /* §3's greeting stack: a serif line, the sentence under it, then a quieter third. It is the same Holt
-     turn either way — only Home changes how loudly it is set. */
-  if (slot) return <Text style={styles[slot === 'greeting' ? 'homeGreeting' : slot === 'line' ? 'homeLine' : 'homeSub']}>{text}</Text>;
+function HoltLine({ text }: { text: string; live?: boolean }) {
   return <Text style={styles.holtText}>{text}</Text>;
 }
 
@@ -1762,37 +2109,44 @@ function DraftBanner() {
   );
 }
 
-/** The most important object on the surface. Every figure on it came out of the engine. */
-function ProgramCardView({ card, onPreview }: { card: ProgramCard; onPreview: () => void }) {
-  /* §11.1.12 — tapping the CARD BODY walks the weeks; tapping an action does not. The actions sit
-     outside this Pressable for exactly that reason, rather than relying on event ordering. */
-  const [open, setOpen] = useState(false);
-
+/**
+ * ══ THE ARTIFACT — §7, four bands ══
+ *
+ * The most important object on the surface, and every figure on it came out of the engine.
+ *
+ * Draft strip · title block over the warm wash · the block's rows · the way into the full read. The
+ * design is explicit that *"reading the object happens inside the card; deciding about it happens
+ * outside"* — so `Preview program` is a row within the card, and the two decisions are buttons beneath
+ * it.
+ *
+ * ⚠ **THE WEEKS ARE NO LONGER HIDDEN BEHIND A TAP.** They were the card's body doubling as a button,
+ * which is an affordance nobody discovers and the reason the ribbon caption had to end with "Tap to walk
+ * the weeks". §7 draws the rows as a band, so they are one.
+ *
+ * ⚠ **AND "NOT THIS" IS GONE RATHER THAN REDRAWN.** It had no `onPress` and never had — a button that
+ * was a picture of a button. What it meant is now covered honestly: read it in full, save it, or start
+ * it.
+ */
+function ProgramCardView({ card, onPreview, onOpenBuilder }: { card: ProgramCard; onPreview: () => void; onOpenBuilder: () => void }) {
   return (
-    <CardSurface hero>
-      <DraftBanner />
-      {/* The warm wash the hero card carries over its top edge — `--fl-card-hero-wash`. */}
-      <LinearGradient
-        colors={flGradient.missionCardWash.colors}
-        locations={flGradient.missionCardWash.locations}
-        start={flGradient.missionCardWash.start}
-        end={flGradient.missionCardWash.end}
-        style={styles.heroWash}
-        pointerEvents="none"
-      />
-      <View style={styles.cardBody}>
-        <Pressable
-          onPress={() => setOpen((v) => !v)}
-          accessibilityRole="button"
-          accessibilityLabel={open ? 'Hide the weeks' : 'Walk the weeks'}
-          accessibilityState={{ expanded: open }}
-          style={styles.cardTap}
-        >
-          <View style={styles.cardHead}>
-            <Text style={styles.kicker}>{card.kicker}</Text>
-            <Text style={styles.cardTitle}>{card.title}</Text>
-          </View>
+    <View style={styles.artifactWrap}>
+      <CardSurface hero>
+        <DraftBanner />
+        <View style={styles.titleBlock}>
+          {/* The warm wash the hero card carries over its top edge — `--fl-card-hero-wash`. */}
+          <LinearGradient
+            colors={flGradient.missionCardWash.colors}
+            locations={flGradient.missionCardWash.locations}
+            start={flGradient.missionCardWash.start}
+            end={flGradient.missionCardWash.end}
+            style={styles.heroWash}
+            pointerEvents="none"
+          />
+          <Text style={styles.cardTitle}>{card.title}</Text>
+          <Text style={styles.cardSubtitle}>{card.subtitle}</Text>
+        </View>
 
+        <View style={styles.artifactBody}>
           <View style={styles.statGrid}>
             {card.stats.map((st) => (
               <View key={st.label} style={styles.stat}>
@@ -1804,120 +2158,86 @@ function ProgramCardView({ card, onPreview }: { card: ProgramCard; onPreview: ()
 
           {card.ribbon.length > 1 ? <VolumeRibbon weeks={card.ribbon} caption={card.ribbonCaption} /> : null}
 
-          {open ? (
-            <View style={styles.weekList}>
-              {card.weeks.map((w) => (
-                <View key={w.label} style={styles.weekRow}>
-                  <Text style={styles.weekLabel}>{w.label}</Text>
-                  <Text style={styles.weekDetail}>{w.detail}</Text>
-                </View>
-              ))}
+          {/* §7's rows band — a bronze marker in a 32px column, then what that week actually is. */}
+          <View style={styles.markerList}>
+            {card.weeks.map((w) => (
+              <View key={w.label} style={styles.markerRow}>
+                <Text style={styles.marker}>{w.label.replace(/^Week /, 'WK ')}</Text>
+                <Text style={styles.markerText}>{w.detail}</Text>
+              </View>
+            ))}
+            <View style={styles.markerClosing}>
+              <Text style={styles.markerClosingText}>{card.closing}</Text>
             </View>
-          ) : null}
+          </View>
 
           <Text style={styles.reasoning}>{card.reasoning}</Text>
-        </Pressable>
-
-        {/* The design imports the design system's own Button for every action — primary and text. Rolling
-            my own Pressable is what lost the forged-bronze fill, the machined rim and the glow. */}
-        <View style={styles.cardActions}>
-          {/* ⚠ PREVIEW FIRST, BUILDER SECOND (PO, 2026-08-09). The card is a summary — weeks, peak,
-              longest run — and the athlete asked to see the WHOLE thing before deciding whether it needs
-              changing. Sending them straight to the Builder made the review step the editing step, which
-              is the wrong order: you cannot judge a block from inside the tool for altering it. */}
-          <View style={styles.ctaGrow}>
-            <Button variant="primary" fullWidth onPress={onPreview} accessibilityLabel="See the whole plan">
-              See the whole plan
-            </Button>
-          </View>
-          <Button variant="text" accessibilityLabel="Not this">
-            Not this
-          </Button>
         </View>
+
+        {/* ⚠ PREVIEW FIRST, BUILDER SECOND (PO, 2026-08-09). The card is a summary and the athlete asked
+            to see the WHOLE thing before deciding whether it needs changing. Sending them straight to
+            the Builder made the review step the editing step, which is the wrong order: you cannot judge
+            a block from inside the tool for altering it. */}
+        <Pressable
+          onPress={onPreview}
+          accessibilityRole="button"
+          accessibilityLabel="Preview the whole program"
+          style={({ pressed }) => [styles.previewRow, pressed && styles.previewRowPressed]}
+        >
+          <Text style={styles.previewRowText}>Preview program</Text>
+          <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <Path d="M9 6l6 6-6 6" />
+          </Svg>
+        </Pressable>
+      </CardSurface>
+
+      {/* Deciding happens outside the card. The design system's own Button for both — rolling my own
+          Pressable is what lost the forged-bronze fill, the machined rim and the glow. */}
+      <View style={styles.artifactActions}>
+        <Button variant="primary" fullWidth onPress={onOpenBuilder} accessibilityLabel="Adjust it">
+          Adjust it
+        </Button>
       </View>
-    </CardSurface>
+    </View>
   );
 }
 
 function DayCardView({ card, onOpenBuilder, onPreview }: { card: DayCard; onOpenBuilder: () => void; onPreview: () => void }) {
   return (
-    <CardSurface>
-      <DraftBanner />
-      <View style={styles.cardBody}>
-        <View style={styles.cardHead}>
-          <Text style={styles.kicker}>{card.kicker}</Text>
+    <View style={styles.artifactWrap}>
+      <CardSurface>
+        <DraftBanner />
+        <View style={styles.titleBlock}>
           <Text style={styles.cardTitle}>{card.title}</Text>
+          <Text style={styles.cardSubtitle}>{card.kicker.split(' · ').join(' · ').toLowerCase()}</Text>
         </View>
-        <View style={styles.dayList}>
-          {card.rows.map((r, i) => (
-            <View key={r.name + i} style={styles.dayRow}>
-              <Text style={styles.dayName} numberOfLines={1}>
-                {r.name}
-              </Text>
-              <Text style={styles.dayPrescription}>{r.prescription}</Text>
-            </View>
-          ))}
-        </View>
-        <View style={styles.cardActions}>
-          <View style={styles.ctaGrow}>
-            <Button variant="primary" fullWidth onPress={onPreview} accessibilityLabel="See the whole session">
-              See the whole session
-            </Button>
+        <View style={styles.artifactBody}>
+          <View style={styles.dayList}>
+            {card.rows.map((r, i) => (
+              <View key={r.name + i} style={styles.dayRow}>
+                <Text style={styles.dayName} numberOfLines={1}>
+                  {r.name}
+                </Text>
+                <Text style={styles.dayPrescription}>{r.prescription}</Text>
+              </View>
+            ))}
           </View>
-          <Button variant="text" onPress={onOpenBuilder} accessibilityLabel="Send to the builder">
-            Send to the builder
-          </Button>
         </View>
-      </View>
-    </CardSurface>
-  );
-}
-
-/** Before, after, and how far it reaches. Scope is chosen before applying, never a surprise afterwards. */
-function EditCardView({ card }: { card: EditCard }) {
-  const [scope, setScope] = useState<'week' | 'block'>('week');
-  return (
-    <View style={styles.editCard}>
-      <Text style={styles.kickerBronze}>{card.kicker}</Text>
-      <View style={styles.beforeAfter}>
-        <View style={styles.baBox}>
-          <Text style={styles.baLabel}>{card.fromLabel}</Text>
-          <Text style={styles.baValue}>{card.fromValue}</Text>
-        </View>
-        <View style={styles.baArrow}>
+        <Pressable
+          onPress={onPreview}
+          accessibilityRole="button"
+          accessibilityLabel="Preview the whole session"
+          style={({ pressed }) => [styles.previewRow, pressed && styles.previewRowPressed]}
+        >
+          <Text style={styles.previewRowText}>Preview session</Text>
           <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <Path d="M5 12h14M13 6l6 6-6 6" />
+            <Path d="M9 6l6 6-6 6" />
           </Svg>
-        </View>
-        <View style={[styles.baBox, styles.baBoxTo]}>
-          <Text style={styles.baLabel}>{card.toLabel}</Text>
-          <Text style={styles.baValue}>{card.toValue}</Text>
-        </View>
-      </View>
-      <Text style={styles.scopeLabel}>SCOPE</Text>
-      <View style={styles.scopeRow}>
-        {(['week', 'block'] as const).map((k) => (
-          <Pressable
-            key={k}
-            onPress={() => setScope(k)}
-            accessibilityRole="button"
-            accessibilityState={{ selected: scope === k }}
-            style={[styles.scopeBtn, scope === k && styles.scopeBtnOn]}
-          >
-            <Text style={[styles.scopeText, scope === k && styles.scopeTextOn]}>
-              {k === 'week' ? 'Just this week' : 'Rest of the block'}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-      <View style={styles.cardActions}>
-        <View style={styles.ctaGrow}>
-          <Button variant="primary" fullWidth accessibilityLabel="Apply">
-            Apply
-          </Button>
-        </View>
-        <Button variant="text" accessibilityLabel="Not that">
-          Not that
+        </Pressable>
+      </CardSurface>
+      <View style={styles.artifactActions}>
+        <Button variant="primary" fullWidth onPress={onOpenBuilder} accessibilityLabel="Adjust it">
+          Adjust it
         </Button>
       </View>
     </View>
@@ -1927,8 +2247,13 @@ function EditCardView({ card }: { card: EditCard }) {
 /**
  * The counter-offer. Bronze and recessed — no red, no warning icon, no apology. This is Holt being
  * right, and the alternative is framed as the better plan rather than a consolation.
+ *
+ * ⚠ **BOTH BUTTONS WERE DEAD AND ARE NOW WIRED.** They rendered with no `onPress` at all, which made the
+ * one card whose entire purpose is *"the alternative is a thing with a button"* the one card whose
+ * buttons did nothing. `altGoal` on the card is what made the primary possible: the label was a
+ * sentence, and a sentence is not a goal key.
  */
-function RefusalCardView({ card }: { card: RefusalCard }) {
+function RefusalCardView({ card, onChip }: { card: RefusalCard; onChip: (c: Chip) => void }) {
   return (
     <View style={styles.refusalCard}>
       <Text style={styles.kickerBronze}>WHAT I&rsquo;D BUILD INSTEAD</Text>
@@ -1939,11 +2264,22 @@ function RefusalCardView({ card }: { card: RefusalCard }) {
       <Text style={styles.refusalBody}>{card.body}</Text>
       <View style={styles.cardActions}>
         <View style={styles.ctaGrow}>
-          <Button variant="primary" fullWidth accessibilityLabel={card.primary}>
+          <Button
+            variant="primary"
+            fullWidth
+            onPress={() => onChip({ label: card.primary, patch: { goal: card.altGoal } })}
+            accessibilityLabel={card.primary}
+          >
             {card.primary}
           </Button>
         </View>
-        <Button variant="text" accessibilityLabel={card.secondary}>
+        {/* Back to the distances. `picksRace` is the same flag "Run a race" carries — it NARROWS the
+            question rather than answering it, so the engine is never handed a distance nobody chose. */}
+        <Button
+          variant="text"
+          onPress={() => onChip({ label: card.secondary, patch: { goal: undefined }, picksRace: true })}
+          accessibilityLabel={card.secondary}
+        >
           {card.secondary}
         </Button>
       </View>
@@ -2029,15 +2365,42 @@ const styles = StyleSheet.create({
     // The inset warm highlight along the top edge is half of what makes it read as raised metal.
     boxShadow: '0 -18px 44px rgba(0,0,0,0.7), inset 0 1px 0 rgba(198,156,100,0.22)',
   },
-  grabWrap: { alignItems: 'center', paddingTop: 9, paddingBottom: 4 },
+  /* §1 — the only atmospheric layer on the surface, and it stops dead at 300px. */
+  warmWash: { position: 'absolute', left: 0, right: 0, top: 0, height: 300 },
+  grabWrap: { alignItems: 'center', paddingTop: 8, paddingBottom: 2 },
   grab: { width: 38, height: 4, borderRadius: 2, backgroundColor: flColor.charcoal500 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 18, paddingTop: 6, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: flColor.charcoal600 },
-  mark: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
-  headerText: { flex: 1, gap: 2 },
-  headerName: { fontSize: 11, fontWeight: '700', letterSpacing: 2.4, color: flColor.bronze400 },
-  // 12.5 and SECONDARY, not tertiary — the status is information, not a footnote.
-  headerStatus: { fontSize: 12.5, color: flColor.gray400 },
-  close: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  /* ⚠ NO BOTTOM BORDER (§2). "Separation is spacing plus the warm wash. Do not add a rule." A hard line
+     here turns the header into a toolbar and the sheet into a screen. */
+  header: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 },
+  headerText: { flex: 1, gap: 5 },
+  headerName: { fontFamily: flFont.display, fontSize: 21, fontWeight: '600', letterSpacing: 1.4, color: flColor.bronze400 },
+  headerStatusRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  headerStatus: { fontSize: 9.5, fontWeight: '700', letterSpacing: 2.2, color: flColor.gray600 },
+  /* The only green on this surface, and it is a liveness indicator rather than a palette colour. */
+  headerDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#5A9E68', boxShadow: '0 0 6px rgba(90,158,104,0.55)' },
+  headerAction: { alignItems: 'center', gap: 5 },
+  headerActionPad: { paddingLeft: 12 },
+  headerActionLabel: { fontSize: 8, fontWeight: '700', letterSpacing: 1.4, color: flColor.gray600 },
+  headerActionLabelOn: { color: flColor.bronze300 },
+
+  /* §2's popover. Anchored under NEW CHAT rather than centred — it belongs to that button. */
+  menuScrim: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, zIndex: 5 },
+  menu: {
+    position: 'absolute',
+    right: 52,
+    top: 66,
+    width: 224,
+    zIndex: 6,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.charcoal500,
+    overflow: 'hidden',
+    boxShadow: flShadow.elevated,
+  },
+  menuRow: { paddingHorizontal: 15, paddingVertical: 13 },
+  menuRowDivided: { borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
+  menuRowPressed: { backgroundColor: 'rgba(198,156,100,0.06)' },
+  menuText: { fontSize: 14, color: flColor.cream100 },
 
   /* ⚠ **`flexGrow: 0` PUT THE COMPOSER AT THE TOP OF THE SCREEN.** The list sized itself to its
      content, so one short line of introduction made it one line tall and the input rode up directly
@@ -2052,7 +2415,7 @@ const styles = StyleSheet.create({
    * the physical bottom of the phone — underneath the home indicator. Two separate things were missing:
    * a safe-area inset, and room to actually read the options.
    */
-  threadInner: { paddingHorizontal: 18, paddingTop: 20, gap: 18 },
+  threadInner: { paddingHorizontal: 16, paddingTop: 4, gap: 20 },
 
   /* ══ COACH HOME (§3) ══════════════════════════════════════════════════════════════════════════ */
   /* The greeting stack. Serif, then the sentence, then the quiet third — one paragraph in three
@@ -2110,46 +2473,50 @@ const styles = StyleSheet.create({
   dividerRule: { flex: 1, height: 1 },
   dividerLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 2.4, color: flColor.bronze400 },
 
+  /* ══ THE ATHLETE'S TURN (§5) ══ Eyebrow, bubble, then the time and the ticks. */
+  meBlock: { alignItems: 'flex-end', gap: 5 },
+  meEyebrow: { fontSize: 9, fontWeight: '700', letterSpacing: 2.2, color: flColor.bronze400 },
   meRow: {
-    alignSelf: 'flex-end',
     maxWidth: '78%',
     paddingHorizontal: 15,
     paddingVertical: 11,
-    // The flat corner points at the sender (§7.2).
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    // The flat corner points at the sender (§5).
+    borderTopLeftRadius: 14,
+    borderTopRightRadius: 14,
     borderBottomRightRadius: 4,
-    borderBottomLeftRadius: 16,
-    // ⚠ Bronze-TINTED, never bronze-filled — it must not compete with a primary button (§7.5).
-    backgroundColor: 'rgba(186, 146, 92, 0.11)',
+    borderBottomLeftRadius: 14,
+    // ⚠ Bronze-TINTED, never bronze-filled — it must not compete with a primary button.
+    backgroundColor: 'rgba(186, 146, 92, 0.10)',
     borderWidth: 1,
-    borderColor: 'rgba(186, 146, 92, 0.30)',
-    boxShadow: 'inset 0 1px 0 rgba(198,156,100,0.14)',
+    borderColor: 'rgba(186, 146, 92, 0.28)',
   },
-  meText: { fontSize: 15, lineHeight: 22, color: flColor.cream100 },
+  meText: { fontSize: 14.5, lineHeight: 20, color: flColor.cream100 },
+  meMeta: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  meTime: { fontSize: 9.5, color: flColor.gray600 },
 
-  holtText: { fontSize: 15.5, lineHeight: 24, color: flColor.cream100, maxWidth: '86%' },
-
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: flRadius.pill,
-    borderWidth: 1,
-    // Bronze-edged, not charcoal — a chip is a decision waiting to be made (§8.2).
-    borderColor: flColor.bronzeBorderSubtle,
-    backgroundColor: flColor.charcoal800,
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  chipOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
-  chipText: { fontSize: 13.5, fontWeight: '500', color: flColor.cream100 },
+  /* ══ HOLT'S TURN (§5) ══ A gutter and a column, and NEVER a bubble. */
+  holtRow: { flexDirection: 'row', gap: 12 },
+  holtGutter: { width: 40, flexGrow: 0, flexShrink: 0, alignItems: 'center', gap: 6 },
+  /* History steps back a level rather than changing shape. */
+  holtGutterPast: { opacity: 0.7 },
+  holtTime: { fontSize: 9, color: flColor.gray600 },
+  holtBody: { flex: 1, minWidth: 0, gap: 7 },
+  holtEyebrow: { fontSize: 9.5, fontWeight: '700', letterSpacing: 2.4, color: flColor.bronze400 },
+  holtText: { fontSize: 16.5, lineHeight: 24, color: flColor.cream100 },
+  holtTextPast: { fontSize: 15.5, lineHeight: 22.5, color: flColor.gray400 },
+  /* ⚠ INSIDE the content column, so the answers align to the question and not to the mark. */
+  holtAttached: { paddingTop: 6, gap: 12 },
 
   /* ══ v2 LAYER 2 — THE ANSWER CONTROLS ══
-     One vocabulary, five shapes: 48pt tall, 13px radius, bronze-edged because a control here is a
-     decision waiting to be made. `chipRow`/`chip` above are kept for the legacy wrap the openers and
-     the help menu still use; these are what a QUESTION renders as. */
-  ctlPressed: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+     One vocabulary, five shapes: 48pt tall, 13px radius, never a full pill.
+
+     ⚠ **UNSELECTED IS WHITE, NOT BRONZE** (§6). The first pass gave every control a bronze edge on the
+     v1 handoff's reasoning that "a chip is a decision waiting to be made". v2 reverses it, and the
+     reason is the rule above everything else on this surface: bronze is the ACCENT. When every option
+     is already bronze-edged, choosing one has nowhere left to go — the selected state had no contrast
+     to gain, so the whole indicator system was invisible. */
+  ctlOn: { borderColor: flColor.bronzeBorder, backgroundColor: 'rgba(186,146,92,0.13)' },
+  ctlTextOn: { fontWeight: '600' },
 
   // chips — two to a row, a set of unlike things.
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
@@ -2158,15 +2525,19 @@ const styles = StyleSheet.create({
     // trailing option stays half-width instead of stretching across.
     flexBasis: '48%',
     flexGrow: 1,
-    minHeight: 48,
-    justifyContent: 'center',
-    paddingHorizontal: 13,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    height: 48,
+    paddingHorizontal: 12,
     borderRadius: 13,
     borderWidth: 1,
-    borderColor: flColor.bronzeBorderSubtle,
-    backgroundColor: flColor.charcoal800,
+    borderColor: 'rgba(255,255,255,0.075)',
+    backgroundColor: 'rgba(255,255,255,0.032)',
   },
-  chipCellText: { fontSize: 13.5, fontWeight: '500', color: flColor.cream100 },
+  /* ⚠ `flex: 1; minWidth: 0` with one line and an ellipsis. §6: a fixed-height control must never wrap,
+     because the text then spills out of a box that cannot grow. */
+  chipCellText: { flex: 1, minWidth: 0, fontSize: 13.5, color: flColor.cream100 },
 
   // segmented — an ordered scale, so a row, equal widths, order left to right.
   segRow: { flexDirection: 'row', gap: 7 },
@@ -2178,10 +2549,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: flColor.bronzeBorderSubtle,
-    backgroundColor: flColor.charcoal800,
+    borderColor: 'rgba(255,255,255,0.075)',
+    backgroundColor: 'rgba(255,255,255,0.032)',
   },
-  segText: { fontSize: 13, fontWeight: '600', color: flColor.cream100 },
+  segText: { fontSize: 13, color: flColor.cream100 },
+  segTextOn: { fontWeight: '600', color: flColor.bronze300 },
 
   // cards — a choice that needs a sentence.
   cardCol: { gap: 8 },
@@ -2193,28 +2565,33 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     borderRadius: 13,
     borderWidth: 1,
-    borderColor: flColor.bronzeBorderSubtle,
-    backgroundColor: flColor.charcoal800,
+    borderColor: 'rgba(255,255,255,0.075)',
+    backgroundColor: 'rgba(255,255,255,0.032)',
   },
   optCardText: { flex: 1, minWidth: 0, gap: 4 },
-  optCardTitle: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
-  optCardSub: { fontSize: 12, lineHeight: 17, color: flColor.gray600 },
-  optDot: { width: 18, height: 18, borderRadius: 9, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
+  optCardTitle: { fontSize: 14.5, fontWeight: '500', color: flColor.cream100 },
+  optCardSub: { fontSize: 12, lineHeight: 17.5, color: flColor.gray600 },
+  /* ⚠ ROUND = PICK ONE, SQUARE = PICK MANY. The indicator's shape carries the rule (§6). */
+  optDot: { width: 18, height: 18, borderRadius: 9, borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)', alignItems: 'center', justifyContent: 'center' },
+  optSquare: { width: 17, height: 17, borderRadius: 5, borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)', alignItems: 'center', justifyContent: 'center' },
+  optDotOn: { borderColor: flColor.bronzeBorder, backgroundColor: 'rgba(186,146,92,0.18)' },
 
   // grid — places and kit. Taller than a chip because the names are longer.
   gridWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   gridCell: {
     flexBasis: '48%',
     flexGrow: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
     minHeight: 52,
-    justifyContent: 'center',
-    paddingHorizontal: 13,
+    paddingHorizontal: 12,
     borderRadius: 13,
     borderWidth: 1,
-    borderColor: flColor.bronzeBorderSubtle,
-    backgroundColor: flColor.charcoal800,
+    borderColor: 'rgba(255,255,255,0.075)',
+    backgroundColor: 'rgba(255,255,255,0.032)',
   },
-  gridText: { fontSize: 13.5, fontWeight: '500', lineHeight: 18, color: flColor.cream100 },
+  gridText: { flex: 1, minWidth: 0, fontSize: 13, lineHeight: 18, color: flColor.cream100 },
 
   // imports — an act, not a selection. Chevron, because it leaves.
   importRow: {
@@ -2225,12 +2602,14 @@ const styles = StyleSheet.create({
     minHeight: 52,
     borderRadius: 13,
     borderWidth: 1,
-    borderColor: flColor.bronzeBorderSubtle,
-    backgroundColor: flColor.charcoal800,
+    borderColor: 'rgba(255,255,255,0.075)',
+    backgroundColor: 'rgba(255,255,255,0.032)',
   },
-  importText: { flex: 1, minWidth: 0, fontSize: 14.5, color: flColor.cream100 },
+  importText: { flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
 
-  dotsWrap: { paddingHorizontal: 18, paddingBottom: 14, alignItems: 'flex-start' },
+  /* Indented to the Holt gutter (40 + 12), so the dots sit exactly where his line will and nothing
+     jumps sideways when the line replaces them. */
+  dotsWrap: { paddingLeft: 52, alignItems: 'flex-start' },
   /* Left-aligned and small — it sits where the line will, so nothing jumps when the line replaces it. */
   typingBubble: {
     flexDirection: 'row',
@@ -2248,8 +2627,7 @@ const styles = StyleSheet.create({
   },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: flColor.bronze400, opacity: 0.5 },
   buildCard: {
-    marginHorizontal: 18,
-    marginBottom: 16,
+    marginLeft: 52,
     padding: 18,
     paddingBottom: 16,
     gap: 14,
@@ -2269,21 +2647,42 @@ const styles = StyleSheet.create({
   rail: { height: 3, borderRadius: 2, backgroundColor: flColor.charcoal700, overflow: 'hidden' },
   railFill: { height: 3, borderRadius: 2, backgroundColor: flColor.bronze400 },
 
-  refusal: { borderLeftWidth: 2, borderLeftColor: flColor.bronze400, paddingLeft: 12, paddingVertical: 2 },
-  refusalText: { fontSize: 15, lineHeight: 23, color: flColor.cream100 },
-
   error: { borderRadius: flRadius.md, borderWidth: 1, borderColor: 'rgba(196,86,72,0.45)', backgroundColor: 'rgba(196,86,72,0.08)', padding: 13, gap: 3 },
   errorTitle: { fontSize: 14.5, fontWeight: '600', color: '#E4A099' },
   errorSub: { fontSize: 13, lineHeight: 19, color: flColor.gray400 },
   errorAction: { marginTop: 6, fontSize: 13.5, fontWeight: '700', color: '#E4A099' },
 
   /* ── shared card language ───────────────────────────────────────────────────────────────────── */
-  kicker: { fontSize: 10.5, fontWeight: '700', letterSpacing: 2.2, color: flColor.gray600 },
   kickerBronze: { fontSize: 10, fontWeight: '700', letterSpacing: 2.2, color: flColor.bronze400 },
-  cardHead: { gap: 6 },
   cardActions: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 2 },
   reasoning: { fontSize: 13.5, lineHeight: 21, color: flColor.gray400 },
-  cardTap: { gap: 14 },
+
+  /* ══ THE ARTIFACT (§7) ══ Reading it happens inside the card; deciding happens outside. */
+  artifactWrap: { gap: 10 },
+  titleBlock: { paddingHorizontal: 15, paddingTop: 16, paddingBottom: 6, gap: 4 },
+  artifactBody: { paddingHorizontal: 15, paddingTop: 14, gap: 14 },
+  cardSubtitle: { fontSize: 12.5, color: flColor.gray400 },
+  /* The rows band — a bronze marker in a fixed column, then what that week actually is. */
+  markerList: {},
+  markerRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 11, borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
+  marker: { width: 34, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, color: flColor.bronze400 },
+  markerText: { flex: 1, minWidth: 0, fontSize: 14, color: flColor.cream100 },
+  markerClosing: { paddingTop: 11, paddingBottom: 13, borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
+  markerClosingText: { fontSize: 12.5, color: flColor.gray600 },
+  /* Inside the card, under its own rule: the way into the full read, not a decision about it. */
+  previewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 15,
+    paddingVertical: 13,
+    borderTopWidth: 1,
+    borderTopColor: flColor.charcoal600,
+    backgroundColor: 'rgba(255,255,255,0.02)',
+  },
+  previewRowPressed: { backgroundColor: 'rgba(198,156,100,0.06)' },
+  previewRowText: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
+  artifactActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   previewWrap: { flex: 1 },
   previewBar: {
     flexDirection: 'row',
@@ -2327,44 +2726,11 @@ const styles = StyleSheet.create({
   // Tabular figures so the prescriptions line up in a column, and it never wraps (§11.2.4/11.2.6).
   dayPrescription: { fontSize: 14.5, color: flColor.gray400, fontVariant: ['tabular-nums'], flexShrink: 0 },
 
-  /* ── edit card ──────────────────────────────────────────────────────────────────────────────── */
-  editCard: {
-    borderRadius: flRadius.xl,
-    backgroundColor: flColor.charcoal800,
-    borderWidth: 1,
-    borderColor: flColor.charcoal500,
-    padding: 16,
-    gap: 14,
-    boxShadow: flShadow.trainTogetherCard,
-  },
-  beforeAfter: { flexDirection: 'row', alignItems: 'stretch', gap: 10 },
-  baBox: {
-    flex: 1,
-    padding: 12,
-    borderRadius: flRadius.md,
-    backgroundColor: flColor.surfaceRecessed,
-    borderWidth: 1,
-    borderColor: flColor.charcoal600,
-    gap: 5,
-  },
-  /* The destination carries the bronze edge — it is the thing being decided, not the thing being left. */
-  baBoxTo: { borderColor: flColor.bronzeBorderSubtle },
-  baLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.5, color: flColor.gray600 },
-  baValue: { fontSize: 14.5, color: flColor.cream100 },
-  baArrow: { alignItems: 'center', justifyContent: 'center' },
-  scopeLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.6, color: flColor.gray600 },
-  scopeRow: { flexDirection: 'row', gap: 8 },
-  scopeBtn: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: flRadius.pill,
-    borderWidth: 1,
-    borderColor: flColor.charcoal600,
-    alignItems: 'center',
-  },
-  scopeBtnOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
-  scopeText: { fontSize: 13, color: flColor.gray400 },
-  scopeTextOn: { color: flColor.bronze300 },
+  /* ⚠ THE EDIT CARD'S STYLES ARE GONE WITH `EditCardView`. Nothing ever emitted a `kind: 'edit'` turn —
+     the whole card was designed, styled and unreachable, and its Apply button had no `onPress` either.
+     Changing a live program is the CHIP flow in `stepEdit`, which works. The `edit` Turn kind and the
+     `EditCard` type stay in `chat-core` for now: removing them is a retirement pass with its own grep,
+     not something to do inside a design pass. */
 
   /* ── refusal ────────────────────────────────────────────────────────────────────────────────── */
   refusalCard: {
@@ -2467,9 +2833,7 @@ const styles = StyleSheet.create({
     borderBottomColor: flColor.bronzeBorderSubtle,
   },
   draftBannerText: { fontSize: 10, fontWeight: '700', letterSpacing: 2.2, color: flColor.bronze400 },
-  cardBody: { padding: 16, gap: 10 },
-  cardTitle: { fontFamily: flFont.display, fontSize: 22, lineHeight: 27, color: flColor.cream100 },
-  cardSub: { fontSize: 13.5, lineHeight: 20, color: flColor.gray400 },
+  cardTitle: { fontFamily: flFont.display, fontSize: 24, lineHeight: 29, fontWeight: '600', letterSpacing: 0.4, color: flColor.cream100 },
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 14, columnGap: 10 },
   // Three across, so six stats form two clean rows and a dropped cell reflows rather than leaving a hole.
   stat: { width: '31%', gap: 3 },

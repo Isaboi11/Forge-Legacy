@@ -44,9 +44,10 @@ import { BODY_PART_LABEL, SPLIT_LABEL, type DayFocus } from './day.ts';
 
 /** Which of the three voices a line is in. Text is conversation; a card is an object. Never both. */
 export type Turn =
-  | { kind: 'me'; text: string }
+  /** `at` is epoch ms, stamped when the turn is appended. Absent on threads stored before v2. */
+  | { kind: 'me'; text: string; at?: number }
   /** `live` types itself out, character by character. Exactly one turn at a time may be live. */
-  | { kind: 'holt'; text: string; live?: boolean }
+  | { kind: 'holt'; text: string; live?: boolean; at?: number }
   /** `ctl` is how they are DRAWN (v2 layer 2). Absent → the 2-col chip grid, which is what every
    *  answer used to be. The openers and the help menu carry none, and correctly render as chips. */
   | { kind: 'chips'; chips: Chip[]; ctl?: QuestionControl }
@@ -64,13 +65,17 @@ export type Turn =
 export interface ProgramCard {
   kicker: string;
   title: string;
+  /** v2 §7's title block — `4 days · 8 weeks · Strength`. The shape of the block in one line. */
+  subtitle: string;
   stats: { value: string; label: string }[];
   /** Weekly volume, one entry per week. Empty for a block whose shape is not volume. */
   ribbon: number[];
   ribbonCaption: string;
   reasoning: string;
-  /** §11.1.12 — what the card shows when its body is tapped: the block, week by week. */
+  /** The block, week by week. v2 §7 draws these as rows with bronze markers. */
   weeks: { label: string; detail: string }[];
+  /** v2 §7's closing row, under its own rule: what every session in the block costs. */
+  closing: string;
 }
 
 export interface DayCard {
@@ -94,6 +99,15 @@ export interface RefusalCard {
   body: string;
   primary: string;
   secondary: string;
+  /**
+   * ⚠ THE GOAL THE PRIMARY BUTTON ACTUALLY BUILDS, and its absence is why that button did nothing.
+   *
+   * The card was rendered with two `Button`s and no `onPress` on either, because nothing on it said
+   * which race "Build the half marathon" meant — the label was a sentence, not a key. A refusal whose
+   * whole purpose is that the alternative is a THING WITH A BUTTON, shipped with a button that was a
+   * picture of one.
+   */
+  altGoal: Goal;
 }
 
 /**
@@ -859,9 +873,15 @@ export function programCardFor(
 
   const peakAt = volume.length ? volume.reduce((b, v, i) => (v.mileage > volume[b].mileage ? i : b), 0) : -1;
 
+  const wk = `${structure.weeks} week${structure.weeks === 1 ? '' : 's'}`;
+
   return {
     kicker: endurance && spec ? `${spec.label.toUpperCase()} · RACE BUILD` : `${GOAL_LABEL[c.goal].toUpperCase()} · BLOCK`,
     title: structure.name,
+    /* ⚠ READ, LIKE EVERY OTHER FIGURE ON THE CARD. `structure.weeks` rather than what the athlete asked
+       for: the engine clamps and restructures, and a subtitle quoting the request would describe a block
+       that was not built. */
+    subtitle: `${structure.daysPerWeek} days · ${wk} · ${endurance && spec ? capitalise(spec.label) : GOAL_LABEL[c.goal]}`,
     stats,
     ribbon: volume.map((v) => v.mileage),
     weeks: volume.length
@@ -874,9 +894,14 @@ export function programCardFor(
           detail: structure.daysPerWeek + ' sessions',
         })),
     ribbonCaption: peakAt >= 0
-      ? `Weekly volume · peak at week ${peakAt + 1}, then it comes down. Tap to walk the weeks.`
+      ? `Weekly volume · peak at week ${peakAt + 1}, then it comes down.`
       : '',
     reasoning: rationale,
+    /* §7's closing row. A race has no session budget — a long run is as long as it is — so it states the
+       shape of the week instead of a length nobody chose. */
+    closing: endurance
+      ? `${structure.daysPerWeek} runs a week`
+      : `${c.sessionMinutes} min sessions`,
   };
 }
 
@@ -924,6 +949,7 @@ export function refusalCardFor(goal: Goal, weeksAvailable: number, daysPerWeek: 
     body: message,
     primary: `Build the ${alt.label}`,
     secondary: 'Pick another race',
+    altGoal: spec.fallback,
   };
 }
 

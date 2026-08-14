@@ -334,6 +334,41 @@ test('a refusal card always names the race it is offering instead', () => {
   assert.ok(card.body.length > 30, 'the reasoning travels with it');
 });
 
+test('⚠ v2 §7 — the title block and the closing row describe the block that was BUILT', () => {
+  /*
+   * The subtitle and the closing row are read off `structure`, not off what the athlete asked for. The
+   * engine clamps and restructures — ask for 20 weeks of a goal that tops out at 12 and you get 12 — so
+   * a subtitle quoting the request would caption a block that does not exist.
+   */
+  const strength = { ...raceConstraints, goal: 'strength', raceDate: null, currentWeeklyMi: null, sessionMinutes: 45 };
+  const card = programCardFor(strength, { name: 'Foundation 4', weeks: 8, daysPerWeek: 4 }, [], 'because');
+  assert.equal(card.subtitle, '4 days · 8 weeks · Get stronger');
+  assert.equal(card.closing, '45 min sessions');
+
+  /* ⚠ The structure's figures, not the constraints'. `strength.daysPerWeek` is 4 and this structure
+     says 3 — read the wrong one and the subtitle describes a week the athlete is not going to train.
+     A one-week block is also the plural trap PA2-D1 opened, and it reaches the subtitle too. */
+  const week = programCardFor(strength, { name: 'One Week', weeks: 1, daysPerWeek: 3 }, [], 'because');
+  assert.equal(week.subtitle, '3 days · 1 week · Get stronger', '"1 weeks" in the coach\'s own voice reads as a bug in him');
+
+  // A race has no session budget — a long run is as long as it is — so it states the week's shape.
+  const race = programCardFor(raceConstraints, { name: 'Half', weeks: 14, daysPerWeek: 4 }, [{ mileage: 15, longRunMi: 6 }], 'because');
+  assert.equal(race.closing, '4 runs a week');
+  assert.doesNotMatch(race.closing, /min/, 'a race plan must not quote a session length nobody chose');
+});
+
+test('⚠ the refusal card names the goal its button builds, not just the words for it', () => {
+  /*
+   * Both buttons on this card shipped with no `onPress`, and this field is why the primary was
+   * impossible: "Build the half marathon" is a sentence, and the sheet had no way to turn it back into
+   * a goal key. The one card whose entire purpose is that the alternative is a THING WITH A BUTTON.
+   */
+  const card = refusalCardFor('run_marathon', 8, 4, 'msg');
+  assert.ok(card.altGoal, 'the counter-offer must carry the goal it counter-offers');
+  assert.ok(AUTHORED_GOALS.includes(card.altGoal), 'it must be a goal the engine can actually build');
+  assert.match(card.primary.toLowerCase(), new RegExp(card.altGoal.replace(/^run_/, '').replace(/_/g, ' ')), 'the label and the key must name the same race');
+});
+
 test('a goal with nowhere to fall back to offers no card, and Holt just says it', () => {
   // A 5k is the shortest thing there is — there is no smaller race to counter-offer, so the honest
   // answer is words alone rather than a card pointing at nothing.
