@@ -7,7 +7,53 @@ Paste this whole document into Claude Design.
 Same design system, same spine, different job. The deck is *spoken over* by a founder in a room.
 **This page has no presenter.** Every emotional beat the speaker carried must now be carried by the page itself.
 
-**Status:** brief authored 2026-08-03.
+**Status:** brief authored 2026-08-03. **⚠ REVISED 2026-08-14 — read the block below before pasting it
+into Claude Design. The page's central factual claim changed.**
+
+---
+
+## ⚠ 0a · WHAT CHANGED SINCE 2026-08-03 — read this first
+
+The brief below is sound in structure, voice and design system. Five things in it are now **factually
+wrong**, and one of them is repeated in three places and would be the first thing a tester corrected.
+
+**1 — ⛔ IT IS NO LONGER "A WEB APP WITH NOTHING TO INSTALL." THIS IS THE BIG ONE.**
+Written on 2026-08-03, the only surface was `forgelegacy.expo.app`. As of 2026-08-14 the product ships as
+a **native iOS app** — build 5 is in TestFlight, the App Store submission path is open, and the web
+preview is now a *testing* surface, not the product. Three places say otherwise and all three must change:
+§13 FAQ *"Which phone do I need?"*, §14's `Free. Opens on your phone. Nothing to install.`, and §10 item 7.
+⚠ **And the honest version is narrower than the old one: iOS only. There are zero Android builds.** Do not
+write "iPhone or Android". A landing page that promises Android to an Android visitor converts them into a
+disappointed one.
+
+**2 — The entity now exists, and it is the App Store seller name.**
+**Forge Legacy LLC** (filed 2026-08-14, EIN issued). The footer copyright, the JSON-LD `publisher`, and the
+Privacy/Terms documents must all carry it exactly, with no comma before "LLC" — the same string the LLC was
+filed under, because that is what buyers see on the listing.
+
+**3 — Pricing is staged, and §12 is right for Stage 1 only.**
+`Free while we're testing.` is TRUE today and must stay until **Phase F** of
+`Docs/Launch-Checklist-Free-And-Premium.md`. The public release carries a paywall (Premium at
+$12.99/mo · $99.99/yr, Coach AI a separate add-on). **The JSON-LD `offers: { price: "0" }` in §8 is
+correct today and becomes a false claim the moment Phase F flips** — it is on the checklist as §6.3 and it
+is easy to forget, because nothing about the page will look wrong.
+
+**4 — This page is now an Apple ENROLLMENT REQUIREMENT, not just marketing.**
+An organization Apple Developer account requires *"a public, functional website on a domain associated
+with your organization"*, and Apple **explicitly rejects** registrar parking pages, social links, and
+sites with minimal content. It also requires a **work email on that same domain**. So this page must be
+live, on the real domain, **before** the D-U-N-S clears (~2026-08-24) or enrollment stalls with everything
+else ready. It must also host **Privacy and Terms at stable URLs** — those are separate App Store Connect
+fields.
+
+**5 — The verified numbers, measured 2026-08-14** (§9's placeholders are filled in below; re-measure on
+publish day, as §9 already instructs).
+
+| §9 row | Value on 2026-08-14 |
+|---|---|
+| Migrations | **161** (`0001`–`0161`) |
+| Automated tests | **2,362** |
+| Exercises | ⚠ **still unreconciled — see §9. The app shows 721; the file has 797.** Use "hundreds" until somebody decides which number the page means |
 
 ---
 
@@ -421,12 +467,12 @@ Accordion, all collapsed, keyboard-operable, `<details>`-based so it works witho
 | Question | Answer |
 |---|---|
 | **Is my data private?** | Yes, by default. Per-section visibility controls, no public profiles, and row-level security on every table in the database. Nothing about you is discoverable by a stranger. |
-| **Which phone do I need?** | Either. It's a web app — open the link, add it to your home screen, and it opens like an app. iPhone or Android. Nothing to download, no App Store. |
+| **Which phone do I need?** | ⚠ **REWRITTEN 2026-08-14 — the old answer is now false.** Use: `iPhone. Forge Legacy is an iOS app — download it from the App Store and sign in. Android isn't ready yet, and we'd rather say so than take your email for a list.` **Do not write "iPhone or Android", and do not describe it as a web app with nothing to install.** Both were true on 2026-08-03 and neither is now. The honesty about Android is not a weakness on this page — it is §10's promise-keeping voice applied to the product's own gaps, and a visitor who is told plainly trusts the rest of the page more. |
 | **I already use another app.** | Run both for a couple of weeks. The program builder takes your existing program today, so you're not starting over to try it. |
 | **Does it track calories?** | No, and it isn't going to. Nutrition is a different product. This one does training and what training builds. |
 | **What if I stop for a while?** | Nothing happens. Your rank doesn't fall, your chapter doesn't fail, and the app doesn't send you a guilt notification. Come back and keep going. |
 | **Isn't "no comparison" bad for engagement?** | Comparison is rented engagement. Identity is owned. We're not optimising for day-one usage; we're optimising for whether you still want this in year five. |
-| **How is it built?** | [MIGRATION COUNT] database migrations, security policies on every table, [TEST COUNT] automated tests, a live backend. It is a real application, not a prototype. |
+| **How is it built?** | `161 database migrations, security policies on every table, 2,362 automated tests, and a live backend. It is a real application, not a prototype.` ⚠ Measured 2026-08-14. **Both numbers move weekly — re-measure on publish day** (`ls supabase/migrations \| wc -l` and the `node --test` total). Do not copy them from the tester deck, which measures a different day. |
 
 ---
 
@@ -438,7 +484,13 @@ Full-bleed `#09090C`. Bronze hairline above. Centred, generous.
 `It's helping you become someone you're proud of ten years from now.`
 
 **CTA:** `Start Chapter One` — same bronze pill, 56px.
-Under it: `Free. Opens on your phone. Nothing to install.`
+Under it: ⚠ **REPLACED 2026-08-14.** Was `Free. Opens on your phone. Nothing to install.`, which described
+the web preview and is now false. Use: **`Free to start. On the App Store, for iPhone.`**
+The CTA itself points at the **App Store listing**, not at `forgelegacy.expo.app` — that URL is now a
+testing surface, and handing it to the public ships them a build with no update path.
+⚠ Every other `Start Chapter One` on the page (hero, sticky bar) points at the same destination. **One
+destination, decided once** — a page with two different "start" targets is how a visitor ends up on the
+web preview believing it is the product.
 
 Then the wordmark. Asset: `assets/welcome-logo-carved.png`
 
@@ -447,7 +499,19 @@ Then the wordmark. Asset: `assets/welcome-logo-carved.png`
 ### § 15 · FOOTER
 
 `#09090C`, 13px tertiary, single row on desktop:
-Wordmark · `Privacy` · `Terms` · `[CONTACT EMAIL]` · `© 2026 Forge Legacy`
+Wordmark · `Privacy` · `Terms` · `[CONTACT EMAIL]` · **`© 2026 Forge Legacy LLC`**
+
+⚠ **`Forge Legacy LLC`, exactly — updated 2026-08-14.** The LLC was filed that day and this string is the
+**App Store seller name** buyers see on the listing. No comma before "LLC". The same string must appear in
+the JSON-LD `publisher`, in the Privacy policy and in the Terms; three documents disagreeing about who
+operates the service is the kind of detail that matters only when it matters.
+
+⚠ **`Privacy` and `Terms` must be REAL PAGES at stable URLs on this domain, not anchors on this one.**
+App Store Connect takes them as separate fields, Apple checks they resolve, and they must keep resolving
+after launch. Source copy: `src/domain/settings/content.ts`. ⚠ **That copy has a known defect — its
+collection list claims to be exhaustive and omits product-usage analytics. Fix it BEFORE the App Privacy
+labels are signed**, since a declaration that contradicts your own posted policy is worse than either
+error alone.
 
 No newsletter signup. No social icons — the product's position is that it isn't a social platform, and a
 row of social badges in the footer undercuts § 10 promise 3 for anyone paying attention.
@@ -634,7 +698,9 @@ the page is published. A landing-page number that drifts is a number a tester wi
 | Rank ladder | **7 families, 25 levels** | Cleared — *not 28; that's the badge-art file count* |
 | Legacy rank | **7 years** (2,555 days) | Cleared |
 | Cardio activities | **7** | Cleared |
-| Migrations · tests | **[VERIFY]** · **[VERIFY]** | FAQ "How is it built?" only. Both change weekly — measure, don't copy from the deck |
+| Migrations · tests | **161** · **2,362** | Measured 2026-08-14. FAQ "How is it built?" only. Both change weekly — **re-measure on publish day**, don't copy from the deck |
+| Platform | **iOS only** | ⚠ Cleared 2026-08-14, and it is a *limit*, not a feature. **There are zero Android builds.** Never write "iPhone or Android" |
+| Price | **Free** | ⚠ True for Stage 1 ONLY. Becomes false at Phase F — see §0a-3 and `Launch-Checklist-Free-And-Premium.md` §6.3 |
 
 **Never state the program-catalogue count.** Standing PO decision. § 8 feature block 2 replaces breadth
 with depth — the builder and the text importer are the stronger and equally true claim.
@@ -651,9 +717,20 @@ logos. No "as seen in." If a number can't be pointed at in the repository, it do
 2. **Capture the nine screenshots** in the § 4 manifest at 3× on a 390pt device, then downscale to WebP.
 3. **Export brand assets** — 7 rank badges, `seal-flame.png`, `welcome-logo-carved.png`.
 4. **Decide the testimonial call** — ship § 9 hidden, or collect three quotes first using the § 5 questions.
-5. **Supply:** contact email, Privacy and Terms URLs, migration/test counts for the FAQ.
+5. **Supply:** contact email **on the site's own domain** (a gmail address fails Apple's enrollment check
+   and looks wrong in the footer), Privacy and Terms URLs, migration/test counts for the FAQ.
 6. **Re-verify every number** in § 9 against the repo on publish day.
-7. **Check the CTA URL is `forgelegacy.expo.app`** and not a deploy hash.
+7. ⚠ **REPLACED 2026-08-14.** Was *"check the CTA URL is `forgelegacy.expo.app`"* — that is now the wrong
+   destination. **Every CTA points at the App Store listing.** `forgelegacy.expo.app` is a testing surface;
+   sending the public there gives them a build with no update path and no App Store presence.
+8. ⚠ **THE PAGE IS AN APPLE ENROLLMENT GATE, SO IT HAS A DEADLINE THE REST OF THIS LIST DOES NOT.** An
+   organization Developer account requires a public, functional website on a domain associated with the
+   organization — **parking pages, social links and thin sites are explicitly rejected** — plus a work
+   email at that domain. The D-U-N-S clears ~2026-08-24. **Live before then, or enrollment stalls with
+   everything else finished.**
+9. **Footer, JSON-LD `publisher`, Privacy and Terms all say `Forge Legacy LLC`** — identically.
+10. ⚠ **Re-read §12 and the §8 JSON-LD `offers` against the CURRENT pricing stage.** Both say "free", both
+    are correct today, and both become false claims at Phase F with nothing on the page looking wrong.
 
 ---
 
