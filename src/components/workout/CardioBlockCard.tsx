@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 
@@ -244,8 +244,26 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
   const pool = dU === 'yd' || dU === 'm';
   /** A display figure back to canonical miles — the one conversion, replacing four inline `/ 1.609344`. */
   const dMi = (v: number) => fromDistanceIn(v, dU);
-  const d1 = (mi: number | null | undefined) => fmtDistanceIn(mi ?? 0, dU);
-  /** What the typed field holds: whole lengths in a pool, two decimals on the road. */
+  /**
+   * How a distance READS on this card.
+   *
+   * ⚠ TWO DECIMALS ON THE ROAD, AND IT USED TO BE ONE.
+   *
+   * PO: *"The distance should track with 3 digits and not just 2 (ie 1.23 instead of 1.2)."* They are
+   * right, and the half of it that matters is that the number was already there. `fmtDistanceIn` rounds
+   * to a tenth, but `dText` — the string the SAVE parses — has always kept two, and `parseDistanceIn`
+   * accepts any decimal. So an athlete typing the 1.23 they actually ran had it stored as 1.23, filed as
+   * 1.23, and shown back to them as "1.2". The card was under-reporting its own value.
+   *
+   * A tenth of a mile is 176 yards. On a run that is the difference between a route and an approximation
+   * of one, and it is exactly the precision a watch hands you.
+   *
+   * A POOL IS STILL WHOLE LENGTHS. `fmtDistanceIn` is kept for that, and left alone everywhere else: on
+   * the Program Builder it formats a prescribed TARGET, where "3.0 mi" is the honest grain of an
+   * instruction and "3.00 mi" claims a precision nobody asked for.
+   */
+  const d1 = (mi: number | null | undefined) => (pool ? fmtDistanceIn(mi ?? 0, dU) : toDistanceIn(mi ?? 0, dU).toFixed(2));
+  /** What the typed field holds — the same grain the card now displays, so the two cannot disagree. */
   const dText = (mi: number) => (pool ? String(Math.round(toDistanceIn(mi, dU))) : toDistance(mi, units).toFixed(2));
   /**
    * The figure that gets STORED, rounded in the unit it was entered in.
@@ -1113,6 +1131,8 @@ function Field({
   const typeable = !!parse && !!onCommit;
   /** What is in the box WHILE they are typing. `null` means "show the committed value". */
   const [text, setText] = useState<string | null>(null);
+  /** So the pencil can put the caret in the field it marks. Read only from an event handler. */
+  const inputRef = useRef<TextInput>(null);
 
   const commit = () => {
     const n = text == null ? null : parse?.(text);
@@ -1128,27 +1148,59 @@ function Field({
           {hint ? <Text style={styles.fieldHint}>{hint}</Text> : null}
         </View>
         {typeable ? (
-          <TextInput
-            value={text ?? value}
-            /* Cleared on FOCUS rather than seeded with the current value: `selectTextOnFocus` is
-               unreliable across platforms, and having to clear a pre-filled field before typing is most
-               of the tedium this exists to remove. It also has to happen here rather than in an onPress,
-               because the tap now lands on the input itself — there is no Pressable left to hang it on. */
-            onFocus={() => setText('')}
-            onChangeText={setText}
-            onBlur={commit}
-            onSubmitEditing={commit}
-            keyboardType={keyboard}
-            returnKeyType="done"
-            placeholder={placeholder}
-            placeholderTextColor={flColor.gray600}
-            accessibilityLabel={`${label} is ${value}. Type to change it.`}
-            /* Dotted while idle, solid while they are in it — the app's own "you can type in here" mark
-               (cf. `SetGoalPanel`). The BOX is identical in both states so focusing cannot shift the
-               layout; only the underline changes, which is the whole reason these are two style objects
-               rather than one swapped wholesale. */
-            style={[styles.fieldValue, styles.fieldInput, text == null ? styles.fieldInputIdle : styles.fieldInputActive]}
-          />
+          /*
+           * ══ THE FIELD HAS TO LOOK LIKE A FIELD ══
+           *
+           * PO, on being unable to enter an exact run time: they did not know the number could be typed.
+           * It always could — this is a mounted `TextInput` and has been since the keyboard fix — but the
+           * only thing saying so was a 1px dotted rule at 40% opacity under a 22px display face, on a
+           * dark card. An affordance nobody can see is not an affordance, and the athlete's conclusion
+           * was the reasonable one: that the steppers were the only way in, and 15 seconds was the
+           * finest their time could be.
+           *
+           * So the rule is drawn in a colour that reads, and the value carries the same bronze pencil the
+           * Goal figure uses on the strength card — one mark, meaning "this one is yours to change",
+           * already established elsewhere in this screen.
+           *
+           * The pencil is a TAP TARGET, not a picture. Focusing from its `onPress` is inside the gesture
+           * stack, which is the condition iOS Safari actually requires — the bug this file's header
+           * describes was `autoFocus` firing a commit later, outside it.
+           */
+          <View style={styles.fieldInputRow}>
+            <TextInput
+              ref={inputRef}
+              value={text ?? value}
+              /* Cleared on FOCUS rather than seeded with the current value: `selectTextOnFocus` is
+                 unreliable across platforms, and having to clear a pre-filled field before typing is most
+                 of the tedium this exists to remove. It happens on focus rather than in a press handler
+                 because focus arrives from BOTH doors now — the input itself and the pencil beside it. */
+              onFocus={() => setText('')}
+              onChangeText={setText}
+              onBlur={commit}
+              onSubmitEditing={commit}
+              keyboardType={keyboard}
+              returnKeyType="done"
+              placeholder={placeholder}
+              placeholderTextColor={flColor.gray600}
+              accessibilityLabel={`${label} is ${value}. Type to change it.`}
+              /* Dotted while idle, solid while they are in it — the app's own "you can type in here" mark
+                 (cf. `SetGoalPanel`). The BOX is identical in both states so focusing cannot shift the
+                 layout; only the underline changes, which is the whole reason these are two style objects
+                 rather than one swapped wholesale. */
+              style={[styles.fieldValue, styles.fieldInput, text == null ? styles.fieldInputIdle : styles.fieldInputActive]}
+            />
+            <Pressable
+              onPress={() => inputRef.current?.focus()}
+              accessibilityRole="button"
+              accessibilityLabel={`Type an exact ${label.toLowerCase()}`}
+              hitSlop={10}
+              style={styles.fieldPencil}
+            >
+              <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" opacity={0.9}>
+                <Path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+              </Svg>
+            </Pressable>
+          </View>
         ) : (
           <Text style={styles.fieldValue}>{value}</Text>
         )}
@@ -1285,8 +1337,13 @@ const styles = StyleSheet.create({
      reset does not cover `outline`, so the browser would paint a blue focus ring over the bronze. It
      matters more now than it did — the input is mounted the whole time rather than only while editing. */
   fieldInput: { minWidth: 110, padding: 0, borderBottomWidth: 1, alignSelf: 'flex-start', paddingRight: 6, outlineWidth: 0 },
-  fieldInputIdle: { borderBottomColor: flColor.bronzeBorder, borderStyle: 'dotted' },
+  /* ⚠ `bronze400`, NOT `bronzeBorder`. The border token is 40% opacity, which under a 22px display face
+     on a near-black card is a rule you cannot see — and an invisible affordance is the reason the PO
+     believed the steppers were the only way to enter a time. Dotted still distinguishes it from focused. */
+  fieldInputIdle: { borderBottomColor: flColor.bronze400, borderStyle: 'dotted' },
   fieldInputActive: { borderBottomColor: flColor.bronze400, borderStyle: 'solid' },
+  fieldInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  fieldPencil: { paddingVertical: 2 },
   fieldBtns: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   stepBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal900, alignItems: 'center', justifyContent: 'center' },
   stepGlyph: { fontSize: 22, lineHeight: 26, color: flColor.bronze300 },

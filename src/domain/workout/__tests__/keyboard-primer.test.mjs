@@ -164,6 +164,15 @@ test('the cardio value field never goes back to swapping a Text for an input', (
   const src = code(readFileSync(join(SRC, 'components/workout/CardioBlockCard.tsx'), 'utf8'));
   assert.doesNotMatch(src, /\bautoFocus\b/, 'an always-mounted input must not need autoFocus');
   assert.doesNotMatch(src, /setEditing\(/, 'the Text→TextInput swap is what broke typing on iOS');
-  // The input is rendered on the `typeable` PROP — a call-site capability, not a tap.
-  assert.match(src, /\{typeable \? \(\s*<TextInput/, 'the value must render as an input whenever it is typeable');
+  /*
+   * The input is rendered on the `typeable` PROP — a call-site capability, not a tap.
+   *
+   * ⚠ THE MATCH ALLOWS MARKUP BETWEEN THE BRANCH AND THE INPUT, and it did not before. It read
+   * `\{typeable \? \(\s*<TextInput`, which is the shape of the code on the day it was written rather
+   * than the rule it protects: the field grew a wrapping row and a pencil button — the input still
+   * mounts on the prop, and the guard went red anyway. A source guard that fails on a refactor it does
+   * not care about gets loosened in a hurry by whoever is mid-change, which is how a real one gets lost.
+   * Bounded so it cannot stretch across the file and match some unrelated input further down.
+   */
+  assert.match(src, /\{typeable \? \([\s\S]{0,1500}?<TextInput/, 'the value must render as an input whenever it is typeable');
 });
