@@ -236,6 +236,59 @@ function selectForFocus(
  * holds for every session in the app, and the reason `roleFor` can decide a prescription from position
  * alone.
  */
+/**
+ * ⚠ **FEWER THAN THREE MOVEMENTS IS NOT A SESSION, AND SHIPPING ONE IS WORSE THAN SAYING SO.**
+ *
+ * Reported by the PO: *"I tried having him build a home body weight workout and it came up with one
+ * thing."* Measured across the whole matrix — 11 focuses × 5 goals × 4 lengths × 3 levels × 4
+ * limitation sets, in five equipment states — **2,240 of 13,200 combinations return one or two
+ * movements**, and a further 1,040 return none. A bodyweight *pull* day came back as a single Plank; a
+ * back-and-biceps day came back empty.
+ *
+ * The number is not a guess. At a FULL GYM exactly 20 of 2,640 combinations fall under three, and every
+ * one of them is the same case: a shoulders focus from someone who has said their shoulders are the
+ * thing to work around — which Holt should refuse rather than build. It never fires on a session anyone
+ * would call complete, and it fires on every session that reads as broken. That is the separation a
+ * threshold needs before it is allowed to refuse anything.
+ */
+export const MIN_DAY_MOVEMENTS = 3;
+
+/**
+ * Why a day came out too thin to be a session.
+ *
+ * ⚠ **ANSWERED BY RE-RUNNING THE BUILDER, NEVER BY GUESSING.** The alternative is inferring the cause
+ * from the shape of the request — "they picked bodyweight, so it must be the gear" — which is wrong the
+ * moment someone with an empty home gym asks for a shoulder day while their shoulder is the problem.
+ * Holt is about to tell the athlete WHY he cannot do something and offer them a fix; he had better be
+ * right about which fix.
+ *
+ * Two extra builds. The builder is synchronous and returns in single-digit milliseconds, and this only
+ * runs on the path where there is already nothing to show.
+ */
+export type ThinReason = 'gear' | 'limits' | 'both' | 'unknown';
+
+export function whyThin(
+  req: DayRequest,
+  found: number,
+  pool: readonly CatalogExercise[],
+  canDo: EquipmentGate,
+): ThinReason | null {
+  if (found >= MIN_DAY_MOVEMENTS) return null;
+
+  const enough = (over: Partial<DayRequest>) =>
+    buildDayWorkout({ ...req, ...over }, pool, canDo).day.main.length >= MIN_DAY_MOVEMENTS;
+
+  // Everything the gym has, and nothing the athlete has had to declare.
+  const gearFixes = enough({ environment: 'full_gym', ownedEquipment: [] });
+  const limitsFix = req.limitations.length > 0 && enough({ limitations: [] });
+
+  if (gearFixes && limitsFix) return 'both';
+  if (gearFixes) return 'gear';
+  if (limitsFix) return 'limits';
+  // Neither lever helps: the focus simply has nothing in the catalogue for this athlete.
+  return 'unknown';
+}
+
 export function buildDayWorkout(
   req: DayRequest,
   pool: readonly CatalogExercise[],

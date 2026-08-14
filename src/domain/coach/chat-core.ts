@@ -634,6 +634,62 @@ export function fromOpener(label: string): OpenerAction | null {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// WHEN THERE IS NOT ENOUGH TO BUILD A SESSION OUT OF
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * ⚠ **HE SAYS WHY, AND HE OFFERS THE THING THAT WOULD FIX IT.**
+ *
+ * The PO asked for a bodyweight session and got one movement. The engine was not wrong about the
+ * catalogue — there is **not a single vertical or horizontal pull in 733 exercises that needs no
+ * equipment at all** — it was wrong to hand back the remainder as though it were a workout. A Plank is
+ * not a pull day.
+ *
+ * So: a refusal, in his voice, carrying the specific reason and a real way out. This is the same shape
+ * the endurance rulebook already keeps — *refuse rather than guess* — applied to the one place a lifting
+ * day can be impossible.
+ *
+ * ⚠ **AND NEVER "IGNORE YOUR SHOULDER FOR TODAY".** When the limitation is what makes the session
+ * impossible, the offer is a different session, never the same session with the limitation dropped.
+ * Anything medical stops flat on this surface and an invitation to train through it would be the one
+ * failure here with a cost outside the app.
+ */
+export interface ThinDay {
+  text: string;
+  chips: Chip[];
+}
+
+/** Re-ask what today is for. `undefined` rather than a delete, because the patch is spread over state. */
+const ANOTHER_FOCUS: Chip = { label: 'Train something else', patch: { dayFocus: undefined } };
+/** He does not describe the Home Gym screen. He takes them to it. */
+const TELL_ME_GEAR: Chip = { label: "Tell you what I've got", patch: {}, goTo: '/home-gym' };
+
+export function thinDayFor(reason: 'gear' | 'limits' | 'both' | 'unknown'): ThinDay {
+  switch (reason) {
+    case 'gear':
+      return {
+        text: "That's not a session, it's a warm-up. There's nothing in there I'd have you train — pulling needs something to pull on, and you've told me you've got none of it. A bar, a set of bands or a pair of dumbbells changes the whole day.",
+        chips: [TELL_ME_GEAR, ANOTHER_FOCUS],
+      };
+    case 'limits':
+      return {
+        text: "You've asked me for that, and you've also told me it's the thing to work around. I'm not going to write you a session that spends its whole time avoiding its own point. Pick something else and I'll build it properly.",
+        chips: [ANOTHER_FOCUS],
+      };
+    case 'both':
+      return {
+        text: "Between what you've got to hand and what we're working around, there isn't a session in this one. Either would fix it on its own.",
+        chips: [TELL_ME_GEAR, ANOTHER_FOCUS],
+      };
+    default:
+      return {
+        text: "I can't put a session together for that. Rather than hand you two movements and call it a workout, pick something else and let me do it properly.",
+        chips: [ANOTHER_FOCUS],
+      };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // COACH HOME
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 

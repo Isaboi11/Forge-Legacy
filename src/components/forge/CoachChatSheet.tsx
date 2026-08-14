@@ -40,6 +40,7 @@ import {
   readyToBuild,
   sizeAnswered,
   sizeQuestion,
+  thinDayFor,
   greetReturning,
   refusalCardFor,
   volumeFor,
@@ -55,12 +56,13 @@ import {
 import { pick } from '@/domain/coach/rulebook/voice';
 import { useProfile } from '@/lib/profile';
 import { rationaleFor } from '@/domain/coach/rulebook/rationale';
-import { buildDayWorkout } from '@/domain/coach/day';
+import { buildDayWorkout, whyThin } from '@/domain/coach/day';
 import { itemByKey, PICKER_DB } from '@/domain/exercise-picker/data';
 import { fetchLearnedPreferences } from '@/data/learned-preference-live';
 import { appliedSentence } from '@/domain/coach/learned-preference';
 import { canDoExercise } from '@/domain/home-gym/equipment';
 import { fetchActiveProgram } from '@/data/programs-live';
+import { fetchHomeGym } from '@/data/home-gym-live';
 import { clearThread, hasMetHolt, loadThread, rememberMetHolt, saveThread } from '@/lib/coach-thread';
 import { loadExperience, rememberExperience } from '@/lib/coach-memory';
 import {
@@ -344,8 +346,26 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
     if (profileLoading || greeted.current) return undefined;
     greeted.current = true;
     void (async () => {
-      const [met, stored, remembered] = await Promise.all([hasMetHolt(), loadThread(), loadExperience()]);
+      const [met, stored, remembered, gym] = await Promise.all([
+        hasMetHolt(),
+        loadThread(),
+        loadExperience(),
+        /*
+         * ⚠ **THE CHAT NEVER READ THE ATHLETE'S HOME GYM, AND THAT IS WHY "MY HOME GYM" BUILT
+         * BODYWEIGHT.** `equipmentForEnvironment('home', owned)` returns `owned` verbatim, and the sheet
+         * never set it — so choosing *My home gym* resolved to an empty list, byte-identical to
+         * *Bodyweight only*. An athlete with a rack in their garage was handed push-ups. The dead wizard
+         * at `/coach` has read this since it was written (`fetchHomeGym`, line 153); the chat simply
+         * never did.
+         *
+         * ⚠ `null` ≠ `[]` (Home Gym profile rule). `null` means never set up and must NOT become "I own
+         * nothing" — that is a claim the athlete has not made, and it is the difference between Holt
+         * asking what they've got and Holt assuming the worst.
+         */
+        fetchHomeGym().catch(() => null),
+      ]);
       if (!alive) return;
+      if (gym) setConstraints((c) => ({ ownedEquipment: gym, ...c }));
       /* ⚠ ASKED ONCE, EVER. How long somebody has been training does not change between Tuesday and
          Thursday, and asking again every session is the app visibly not remembering a conversation it
          just had. Everything else — the time they have, the room they are in, what hurts — genuinely
@@ -401,27 +421,35 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
         const learned = await fetchLearnedPreferences();
 
         if (mode_ === 'day') {
-          const r = buildDayWorkout(
-            {
-              /* ⚠ WAS HARDCODED `full_body`, WHICH IS WHY A BACK-AND-BICEPS ASK CAME BACK AS A FULL BODY
-                 SESSION. The day builder has supported muscle groups since it was written; the chat was
-                 handing it the same focus every time and never asking. */
-              focus: merged.dayFocus ?? { kind: 'split', split: 'full_body' },
-              /* The goal decides the prescription AND the cue — 5 × 5 heavy or 3 × 12, and what he says about it. */
-              goal: c.goal,
-              sessionMinutes: c.sessionMinutes,
-              experience: c.experience.lifting,
-              environment: c.environment,
-              ownedEquipment: c.ownedEquipment,
-              limitations: c.limitations,
-              learned,
-            },
-            PICKER_DB,
-            canDoExercise,
-          );
+          const dayReq = {
+            /* ⚠ WAS HARDCODED `full_body`, WHICH IS WHY A BACK-AND-BICEPS ASK CAME BACK AS A FULL BODY
+               SESSION. The day builder has supported muscle groups since it was written; the chat was
+               handing it the same focus every time and never asking. */
+            focus: merged.dayFocus ?? ({ kind: 'split', split: 'full_body' } as const),
+            /* The goal decides the prescription AND the cue — 5 × 5 heavy or 3 × 12, and what he says about it. */
+            goal: c.goal,
+            sessionMinutes: c.sessionMinutes,
+            experience: c.experience.lifting,
+            environment: c.environment,
+            ownedEquipment: c.ownedEquipment,
+            limitations: c.limitations,
+            learned,
+          };
+          const r = buildDayWorkout(dayReq, PICKER_DB, canDoExercise);
           setBusy(null);
-          if (r.day.main.length === 0) {
-            say({ kind: 'holt', text: pick('nothing_to_build') });
+          /*
+           * ⚠ **TWO MOVEMENTS IS NOT A SESSION, AND THIS USED TO SHIP THEM.** The old guard was
+           * `length === 0`, so a bodyweight pull day came back as a single Plank and a beginner with a
+           * bad back got "Walking Lunge, Dead Bug" — reported by the PO as *"it came up with one thing"*.
+           *
+           * `whyThin` re-runs the builder to find out WHICH lever would have fixed it rather than
+           * inferring it from the request, because Holt is about to name a cause and offer a fix, and
+           * being confidently wrong about which one is worse than saying nothing.
+           */
+          const thin = whyThin(dayReq, r.day.main.length, PICKER_DB, canDoExercise);
+          if (thin) {
+            const out = thinDayFor(thin);
+            say({ kind: 'holt', text: out.text }, { kind: 'chips', chips: out.chips });
             return;
           }
           /* The wizard's own handoff, not a second one. A single day goes to the WORKOUT builder and a
@@ -575,8 +603,13 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
     setPreview(false);
     setDraft('');
     askedAboutReplacing.current = false;
-    /* The remembered experience is deliberately kept, and everything situational is deliberately not. */
-    setConstraints((c) => (c.experience ? { experience: c.experience } : {}));
+    /* Facts about the ATHLETE survive a new conversation; everything situational deliberately does not.
+       Their skill level and the kit in their garage did not change because they tapped New chat, and
+       making them re-answer either would defeat the point of having read it. */
+    setConstraints((c) => ({
+      ...(c.experience ? { experience: c.experience } : {}),
+      ...(c.ownedEquipment ? { ownedEquipment: c.ownedEquipment } : {}),
+    }));
     setIntroStep(INTRO.length + 1);
     setThread(stamped(greetReturning(firstName)));
   };
