@@ -24,8 +24,22 @@ const DISABLED_FILL_COLORS = ['#1C1E22', '#15171B'] as const
 
 export type ButtonVariant = 'primary' | 'secondary' | 'destructive' | 'text' | 'icon'
 
+/**
+ * `lg` — the hero CTA metrics: 64dp tall, 17px label, 2.4px tracking, 14 radius.
+ *
+ * ⚠ A SIZE, NOT A SECOND BUTTON. `Forge Workout Entry.dc.html` §7 specifies a CTA at those numbers, and
+ * the alternative was hand-rolling `flGradient.bronzeFill` in that screen — which §7 itself forbids
+ * ("the design system's single sanctioned bronze fill"). A screen that needs a bigger button asks for a
+ * bigger button; it does not get its own copy of the fill, the rim and the glow to drift away from.
+ *
+ * Applies to the filled variants only. `secondary`/`text`/`icon` ignore it — nothing has asked, and a
+ * size that silently does nothing on three of five roles is worse than one that is scoped.
+ */
+export type ButtonSize = 'md' | 'lg'
+
 export interface ButtonProps {
   variant?: ButtonVariant
+  size?: ButtonSize
   icon?: React.ReactNode
   trailingIcon?: React.ReactNode
   fullWidth?: boolean
@@ -37,6 +51,7 @@ export interface ButtonProps {
 
 export function Button({
   variant = 'primary',
+  size = 'md',
   icon = null,
   trailingIcon = null,
   fullWidth = false,
@@ -48,6 +63,7 @@ export function Button({
   const [pressed, setPressed] = useState(false)
 
   const hasLabel = variant !== 'icon' && children != null
+  const lg = size === 'lg'
 
   if (variant === 'primary' || variant === 'destructive') {
     const isPrimary = variant === 'primary'
@@ -71,6 +87,7 @@ export function Button({
             style={[
               styles.base,
               styles.filled,
+              lg && styles.filledLg,
               fullWidth && styles.fullWidth,
               {
                 borderColor: disabled ? 'rgba(150, 140, 122, 0.22)' : flColor.bronzeBorder,
@@ -80,7 +97,7 @@ export function Button({
           >
             {icon ? <View style={styles.iconWrap}>{icon}</View> : null}
             {hasLabel ? (
-              <Text style={[styles.filledLabel, { color: disabled ? 'rgba(240,237,232,0.42)' : '#F7F5F1' }]}>{children}</Text>
+              <Text style={[styles.filledLabel, lg && styles.filledLabelLg, { color: disabled ? 'rgba(240,237,232,0.42)' : '#F7F5F1' }]}>{children}</Text>
             ) : null}
             {trailingIcon ? <View style={styles.iconWrap}>{trailingIcon}</View> : null}
           </LinearGradient>
@@ -185,6 +202,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.9,
     textTransform: 'uppercase',
   },
+  /** `size="lg"` — the hero CTA. Height rather than padding, so the 64 is the 64 the design names. */
+  filledLg: { height: 64, paddingVertical: 0, paddingHorizontal: 22, gap: 16, borderRadius: 14 },
+  filledLabelLg: { fontSize: 17, letterSpacing: 2.4 },
   secondary: {
     paddingVertical: 14,
     paddingHorizontal: 26,

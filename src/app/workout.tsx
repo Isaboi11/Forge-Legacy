@@ -21,7 +21,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
 import { ExerciseLoop } from '@/components/forge/ExerciseLoop';
-import { Card } from '@/components/forge/composites/Surface';
 import { Pill } from '@/components/forge/composites/Pill';
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { ScreenBackground } from '@/components/screen-background';
@@ -66,6 +65,10 @@ import { proposeIntensity, type IntensityProposal } from '@/domain/coach/intensi
 import { fetchIntensitySignals } from '@/data/coach-signal-live';
 import { useCapGate } from '@/lib/entitlement';
 import { CoachSays } from '@/components/forge/CoachSays';
+import { WorkoutEntry } from '@/components/forge/WorkoutEntry';
+import { lastExerciseName, sessionStatLine } from '@/domain/workout/entry-summary';
+import { resolveHomeWorkoutArtwork } from '@/domain/home-artwork/resolver';
+import { useProfile } from '@/lib/profile';
 import { clearWorkoutLaunch, readWorkoutLaunch } from '@/lib/workout-launch';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { clearSession, hasLoggedWork, loadSession, persistSession } from '@/domain/workout/autosave';
@@ -86,7 +89,7 @@ import { PlaylistSheet } from '@/components/forge/composites/Playlist';
 import { JoinRequestBanner } from '@/components/forge/JoinRequestBanner';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
 import { playlistLabel } from '@/domain/workout/playlist';
-import { equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
+import { enrichSessionExercises, equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
 import { getRestTimerEnabled, setRestTimerEnabled } from '@/lib/rest-timer-pref';
 import { getWheelInput, setWheelInput } from '@/lib/set-input-pref';
 import { useKeyboardInset } from '@/lib/useKeyboardInset';
@@ -280,6 +283,8 @@ export default function WorkoutScreen() {
   const { session: liveSession, startWorkout, finishWorkout, abandonWorkout } = useWorkoutSession();
   const [session, setSession] = useState<ActiveSession | null>(null);
   const [resumable, setResumable] = useState<ActiveSession | null>(null);
+  /** When the resume prompt was raised — the clock its "38 min" is measured against. See the setter. */
+  const [resumeAt, setResumeAt] = useState<number | null>(null);
   /** A launch intent parked because work was already in progress. Null = they just opened the logger. */
   const [pendingLaunch, setPendingLaunch] = useState<Awaited<ReturnType<typeof readWorkoutLaunch>> | null>(null);
   /** Bumped to re-run the mount flow after discarding, so one code path builds every session. */
@@ -399,6 +404,45 @@ export default function WorkoutScreen() {
      rather than a second copy that could disagree with it. */
   const { prefs: appPrefs, loaded: prefsLoaded, refetch: refetchPrefs } = useAppPrefs();
   const coachProfile = useMemo(() => profileFor(coachIntensity, experience), [coachIntensity, experience]);
+
+  /*
+   * ══ THE ARTWORK ON THE ENTRY SCREEN — THE SAME RESOLVER HOME CALLS ══
+   *
+   * `Forge Workout Entry.dc.html` §2 is explicit that production must NOT hardcode the path the mock
+   * uses: the whole reason to resolve here is that Resume should carry the art of the session being
+   * resumed, so a Push Day resumes under push art.
+   *
+   * A live `ActiveSession` maps onto the resolver's `Workout` shape with nothing invented: the name feeds
+   * its title rung, and `catalogKey` · `section` · `workingSets` are exactly what `enrichSessionExercises`
+   * carries into the muscle, family and composition rungs. `WorkoutSectionKind` and `WorkoutSection` are
+   * the same three-value union, so the section passes straight through rather than being mapped.
+   *
+   * ⚠ A KEYLESS EXERCISE IS DROPPED, NOT DEFAULTED. A custom lift with no catalogue key has no muscles to
+   * read, and `enrichWithIndex` already discards a dangling key — passing `''` would rely on that, so the
+   * filter here says it out loud. `sex` is the athlete's SAVED answer or `'unspecified'`, the resolver's
+   * deliberate neutral path, so a profile that hasn't loaded degrades to neutral art rather than guessing.
+   *
+   * A freestyle session holds no exercises, so this lands on the neutral default — which is the correct
+   * art for "nothing planned", reached by the normal path rather than by a special case.
+   */
+  const { profile: athleteProfile } = useProfile();
+  const artFor = (s: ActiveSession) =>
+    resolveHomeWorkoutArtwork({
+      user: { sex: athleteProfile?.sex ?? 'unspecified' },
+      workout: { name: s.workoutName },
+      program: null,
+      exercises: enrichSessionExercises(
+        s.exercises
+          .filter((e) => !!e.catalogKey)
+          .map((e) => ({ catalogKey: e.catalogKey!, section: e.section, workingSets: e.sets.length })),
+      ),
+    });
+
+  /** `Last: <exercise>` — §9's entire progress treatment. Omitted rather than faked on a fresh session. */
+  const lastLine = (s: ActiveSession) => {
+    const name = lastExerciseName(s);
+    return name ? `Last: ${name}` : null;
+  };
 
   /* The last thing they said about each of these lifts. Keyed by catalogKey ?? name, the same identity
      every other lift-history read in this app uses. */
@@ -573,6 +617,11 @@ export default function WorkoutScreen() {
       if (hasWork) {
         setResumable(saved);
         setPendingLaunch(wantsSomething ? launch : null);
+        /* ⚠ THE CLOCK IS READ HERE, NOT IN RENDER. `Date.now()` in a render body is an impure call the
+           react-compiler lint rejects outright — and it would be wrong anyway: the elapsed figure would
+           jump on every unrelated re-render. Frozen at the moment the prompt is raised, which is also the
+           moment the number describes. */
+        setResumeAt(Date.now());
         setPhase('resume');
         // Held, not consumed: whichever way they answer, `startPending` re-reads it.
         return;
@@ -1612,51 +1661,52 @@ export default function WorkoutScreen() {
   };
 
   // ── resume prompt ──
+  /*
+   * ══ THE CARD IS GONE — `Forge Workout Entry.dc.html`, Resume state ══
+   *
+   * This was a `Card variant="hero"` floating in a vertically-centred void with left-aligned type inside
+   * it. It is now the shared Workout Entry composition: artwork over a bottom-anchored centred column,
+   * bronze spent on the CTA alone. See `WorkoutEntry` for what the shell does and what it deliberately
+   * leaves out.
+   *
+   * ⚠ THE SECOND LINE IS SESSION STATE, NOT AN INSTRUCTION. `N sets logged. Resume where you left off?`
+   * asked a question the two buttons underneath already ask. §9 replaces it with the facts — the stat
+   * line, and `Last: <exercise>` as the entire progress treatment.
+   *
+   * ⚠ AND THERE IS A THIRD STATE THE DESIGN DOES NOT DRAW. `pendingLaunch` means the athlete picked a
+   * DIFFERENT workout while this one was still open, so the dismiss does not end anything — it starts the
+   * other one. Labelling that "End workout" would hide the more important half, so that case keeps its
+   * shipped copy and says what it does.
+   */
   if (phase === 'resume' && resumable) {
     return (
       <Shell>
-        <View style={styles.center}>
-          <Card variant="hero" style={styles.resumeCard}>
-            <Text style={styles.kicker}>Session in progress</Text>
-            <Text style={styles.resumeName}>{resumable.workoutName}</Text>
-            <Text style={styles.resumeSub}>
-              {doneSetCount(resumable)} sets logged.
-              {pendingLaunch ? ' Resume it, or start what you just picked?' : ' Resume where you left off?'}
-            </Text>
-            <View style={styles.resumeActions}>
-              <Button
-                variant="primary"
-                fullWidth
-                onPress={async () => {
-                  // Resuming abandons the new intent — otherwise it would ambush them later.
-                  if (pendingLaunch) await clearWorkoutLaunch();
-                  setPendingLaunch(null);
-                  setSession(resumable);
-                  setPhase('active');
-                }}
-                accessibilityLabel="Resume workout"
-              >
-                Resume
-              </Button>
-              <Button
-                variant="text"
-                fullWidth
-                onPress={async () => {
-                  await clearSession();
-                  setResumable(null);
-                  // Re-enter the mount flow with no saved work in the way, so the parked launch is
-                  // built by the same branches that would have built it in the first place.
-                  setPendingLaunch(null);
-                  setPhase('loading');
-                  setReloadKey((k) => k + 1);
-                }}
-                accessibilityLabel={pendingLaunch ? 'Discard and start the new one' : 'Discard and start fresh'}
-              >
-                {pendingLaunch ? 'Discard & start the new one' : 'Discard & start fresh'}
-              </Button>
-            </View>
-          </Card>
-        </View>
+        <WorkoutEntry
+          art={artFor(resumable)}
+          eyebrow="WORKOUT IN PROGRESS"
+          title={resumable.workoutName}
+          titleSize={38}
+          line1={sessionStatLine(resumable, resumeAt ?? Date.parse(resumable.startedAt))}
+          line2={pendingLaunch ? 'You picked a different workout while this one was open.' : lastLine(resumable)}
+          ctaLabel="RESUME WORKOUT"
+          onCta={async () => {
+            // Resuming abandons the new intent — otherwise it would ambush them later.
+            if (pendingLaunch) await clearWorkoutLaunch();
+            setPendingLaunch(null);
+            setSession(resumable);
+            setPhase('active');
+          }}
+          dismissLabel={pendingLaunch ? 'Discard & start the new one' : 'End workout'}
+          onDismiss={async () => {
+            await clearSession();
+            setResumable(null);
+            // Re-enter the mount flow with no saved work in the way, so the parked launch is
+            // built by the same branches that would have built it in the first place.
+            setPendingLaunch(null);
+            setPhase('loading');
+            setReloadKey((k) => k + 1);
+          }}
+        />
       </Shell>
     );
   }
@@ -1677,36 +1727,27 @@ export default function WorkoutScreen() {
   if (session.exercises.length === 0) {
     return (
       <Shell>
-        <View style={styles.center}>
-          <Card variant="hero" style={styles.resumeCard}>
-            <Text style={styles.kicker}>Freestyle</Text>
-            <Text style={styles.resumeName}>{session.workoutName}</Text>
-            <Text style={styles.resumeSub}>Nothing planned — add whatever you train, as you go.</Text>
-            <View style={styles.resumeActions}>
-              <Button
-                variant="primary"
-                fullWidth
-                onPress={() => router.push({ pathname: '/exercise-picker', params: { mode: 'add' } })}
-                accessibilityLabel="Add an exercise"
-              >
-                Add Exercise
-              </Button>
-              <Button
-                variant="text"
-                fullWidth
-                onPress={async () => {
-                  // "Not today" discards outright — so BOTH facts end: the autosave and the presence.
-                  await clearSession();
-                  abandonWorkout();
-                  router.replace('/(tabs)');
-                }}
-                accessibilityLabel="Leave without logging"
-              >
-                Not today
-              </Button>
-            </View>
-          </Card>
-        </View>
+        <WorkoutEntry
+          /* Nothing has been added yet, so the resolver has nothing to classify and lands on its neutral
+             default — which is the right art for "no plan". Passed the same context Home passes rather
+             than special-cased, per the design's §2. */
+          art={artFor(session)}
+          eyebrow="FREESTYLE"
+          title={session.workoutName}
+          titleSize={34}
+          line1="Build today’s session as you go."
+          line2="Add exercises as you train."
+          ctaLabel="ADD EXERCISE"
+          ctaPlus
+          onCta={() => router.push({ pathname: '/exercise-picker', params: { mode: 'add' } })}
+          dismissLabel="Not today"
+          onDismiss={async () => {
+            // "Not today" discards outright — so BOTH facts end: the autosave and the presence.
+            await clearSession();
+            abandonWorkout();
+            router.replace('/(tabs)');
+          }}
+        />
       </Shell>
     );
   }
@@ -4268,11 +4309,9 @@ const styles = StyleSheet.create({
   primaryGlow: { boxShadow: flShadow.glowSubtle },
 
   // resume
-  resumeCard: { width: '100%', gap: 10, alignItems: 'flex-start' },
-  kicker: { fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
-  resumeName: { fontFamily: flFont.display, fontSize: 24, color: flColor.cream100 },
-  resumeSub: { fontFamily: flFont.sans, fontSize: 14, color: flColor.gray400 },
-  resumeActions: { width: '100%', gap: 6, marginTop: 12 },
+  /* The resume/freestyle card's own styles are GONE, not orphaned: `resumeCard`, `kicker`, `resumeName`,
+     `resumeSub` and `resumeActions` described a bordered box that no longer exists. `WorkoutEntry` owns
+     the composition that replaced them. */
 
   // picker sheet
   /* Off-screen rather than invisible: `opacity: 0` alone still occupies layout, and `display: none`
