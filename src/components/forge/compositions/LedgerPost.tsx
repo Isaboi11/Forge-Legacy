@@ -25,6 +25,13 @@
  * title and no stat row, whatever the caller passes — the image announces what the post is, and a
  * `PHOTO` label above a photo is the same mistake as the nested container. A caller cannot get that
  * wrong because it is not a prop.
+ *
+ * ⚠ WITH ONE EXCEPTION, AND IT IS THE SAME RULE READ PROPERLY: **a post carrying STATS keeps its body.**
+ * "The image announces what the post is" holds when the image is the subject. A photo taken after a
+ * session is evidence attached to one — it announces nothing about volume, time or lifts — so applying
+ * the suppression there deletes the post's content and leaves a picture where a workout was. See
+ * `showBody`. Nothing shipped before this passed both, so it enables a combination rather than
+ * loosening the rule.
  */
 
 import { useState, type ReactNode } from 'react';
@@ -165,9 +172,22 @@ export function LedgerPost({
   footer,
 }: LedgerPostProps) {
   const hasMedia = media.length > 0 || customMedia != null;
-  // ⚠ Not a prop and not the caller's call — see the header.
-  const showBody = !hasMedia;
   const shownStats = stats.slice(0, 3);
+  /*
+   * ⚠ NOT A PROP AND NOT THE CALLER'S CALL — see the header. But the rule is "the image announces what
+   * the post is", and that is only true when the image is the SUBJECT.
+   *
+   * A photo taken after a session is EVIDENCE attached to one. It announces nothing about volume, time
+   * or lifts, so suppressing the stat row there deletes the post's actual content and leaves a picture
+   * where a workout was. The refinement is therefore keyed on the one thing that distinguishes the two
+   * cases: a post with STATS has something the image cannot say, and keeps its body.
+   *
+   * ⚠ This is inert for every post type shipped before it. Nothing passed media and stats together — a
+   * transformation, progress card, check-in or form check carries no summary and therefore no stats, and
+   * until the completion screen started sending its photos no recap carried media. It enables the new
+   * combination rather than loosening the old rule.
+   */
+  const showBody = !hasMedia || shownStats.length > 0;
 
   return (
     <View style={[styles.post, alt ? styles.postAlt : null]}>

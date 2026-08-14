@@ -23,7 +23,7 @@ import { PlaylistSheet } from '@/components/forge/composites/Playlist';
 import { playlistLabel, type WorkoutPlaylistLink } from '@/domain/workout/playlist';
 import { distanceLabel, fmtClock, fmtPace, toDistance, toPace, type UnitSystem } from '@/domain/run/run-core';
 import { recapSummaryFrom } from '@/data/squad-feed-live';
-import { fetchTodaysChapterPhotos } from '@/data/photos-live';
+import { fetchTodaysChapterPhotos, type ChapterPhoto } from '@/data/photos-live';
 import { fetchRecentPlaylists } from '@/data/playlists-live';
 import { ShareSessionSheet } from '@/components/forge/ShareSessionSheet';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
@@ -216,16 +216,27 @@ export default function WorkoutComplete() {
    * Re-measured on focus rather than after the push resolves, because `/add-photo` is a route: it can
    * be left by its own Close, by the system back gesture or by adding a photo, and only one of those
    * ever comes back through a promise.
+   *
+   * ⚠ THE BASELINE IS A SET OF IDS NOW, NOT A COUNT, and that is two fixes rather than one. Sharing has
+   * to send the actual photos, so their urls have to survive the read — a delta of two integers knows
+   * how many appeared and nothing about which. It also makes the count itself honest: `now - base` goes
+   * negative-clamped-to-zero if a photo is deleted from the archive in another tab, hiding a shot that
+   * WAS added here. Identity cannot drift that way.
    */
-  const [photoCount, setPhotoCount] = useState<{ base: number; now: number } | null>(null);
-  const photos = photoCount ? Math.max(0, photoCount.now - photoCount.base) : 0;
+  const [photoState, setPhotoState] = useState<{ baseIds: string[]; today: ChapterPhoto[] } | null>(null);
+  /** Only what was added on this visit — the archive's older shots are not this session's to post. */
+  const addedPhotos = photoState ? photoState.today.filter((p) => !photoState.baseIds.includes(p.id)) : [];
+  const photos = addedPhotos.length;
+  /* What Share sends. `is_video` decides the kind, because the archive takes both and a video posted as
+     an image renders a dead grey frame. */
+  const sharePhotos = addedPhotos.map((p) => ({ url: p.url, kind: p.isVideo ? ('video' as const) : ('image' as const) }));
   useFocusEffect(
     useCallback(() => {
       let alive = true;
       void fetchTodaysChapterPhotos().then(
         (p) => {
           // Functional update: the baseline is whatever the FIRST read saw, and must survive every later one.
-          if (alive) setPhotoCount((prev) => (prev ? { base: prev.base, now: p.length } : { base: p.length, now: p.length }));
+          if (alive) setPhotoState((prev) => ({ baseIds: prev ? prev.baseIds : p.map((x) => x.id), today: p }));
         },
         () => {
           // A failed read just means the row keeps saying "Add photo or video" — never a wrong number.
@@ -648,9 +659,31 @@ export default function WorkoutComplete() {
       onClose={() => setSheet(null)}
       workoutId={data.workoutId}
       workoutName={shownName}
-      /* `sessionName`, not `data.workoutName`: renaming the session on The Record and then sharing must
-         not post the title the athlete just replaced. */
-      summary={recapSummaryFrom({ ...data, workoutName: sessionName })}
+      /*
+       * ⚠ `sessionName` AND `playlist`, NOT THE VALUES ON `data`.
+       *
+       * `data` is the completion as it was FETCHED. Renaming the session or attaching a playlist writes
+       * to the database and updates this screen's own derived state — it does not refetch — so anything
+       * read off `data` here is the session as it looked before the athlete touched it.
+       *
+       * The rename case was already handled. The playlist case was not, and it is the whole of a reported
+       * regression: attaching a playlist on this stage and sharing in the same visit posted a snapshot
+       * whose `playlist` was still null, so the feed card showed no playlist row while Activity Detail —
+       * which reads the WORKOUT rather than the post — showed it correctly. The card was not dropping the
+       * playlist; the share never carried one.
+       *
+       * The old flow hid this: the playlist was attached from the ⋯ menu DURING the session, so it was
+       * already on the row by the time this screen loaded. Moving the attach point into `capture` moved
+       * it to after the read.
+       */
+      summary={recapSummaryFrom({ ...data, workoutName: sessionName, playlist })}
+      /*
+       * The three things `capture` invites, all of which used to stop at this screen. A recap posted a
+       * snapshot and nothing else — `body: ''` and `media: []` were hardcoded in the sheet — so the note
+       * and the photo an athlete had just added were, from the feed's point of view, never made.
+       */
+      note={reflection || null}
+      media={sharePhotos}
       preview={shareCard}
     />
   );

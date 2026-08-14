@@ -1128,15 +1128,25 @@ function FeedCard({
       authorAvatarUrl={post.authorAvatar}
       audience={squadName}
       time={timeAgo(post.createdAt)}
-      marker={hasMedia ? null : SQUAD_MARKER[post.type] ?? null}
+      /* ⚠ `&& !summary`: a recap keeps its WORKOUT marker even when it carries a photo, for the same
+         reason it keeps its stats — see `LedgerPost`'s `showBody`. Without this the screen nulls the
+         marker before the component ever gets to decide, and the body comes back headless. */
+      marker={hasMedia && !summary ? null : SQUAD_MARKER[post.type] ?? null}
       title={summary ? summary.name ?? 'Workout' : post.type === 'pr' ? post.prExercise ?? 'A new best' : null}
       context={summary ? summary.context ?? null : post.type === 'pr' ? [post.prValue, post.prLabel].filter(Boolean).join(' · ') || null : null}
       stats={summary ? workoutStats(summary, units) : []}
       playlist={summary?.playlist ?? null}
       onPlaylist={summary?.playlist ? () => void openPlaylist(summary.playlist!) : undefined}
       /* The member's own words. On a media post they move BELOW the image — `LedgerPost` places them,
-         which is the whole reason the detail slot above the media is now left empty. */
-      caption={post.type === 'discussion' ? post.body : detail || null}
+         which is the whole reason the detail slot above the media is now left empty.
+
+         ⚠ A RECAP TAKES `post.body` WHOLE, like a discussion does. `detailFor` truncates at 90 characters
+         because it was written for a one-line EXCERPT under a lead sentence; in the ledger this slot is
+         the caption itself. Now that a shared session actually carries the athlete's reflection, that
+         cutoff would end it mid-sentence — and the friends feed, which passes `post.body` straight
+         through, would show the same post in full. Other types keep `detailFor`: their bodies are
+         stand-ins it exists to suppress. */
+      caption={post.type === 'discussion' || summary ? post.body : detail || null}
       media={media}
       customMedia={card ? <FeedProgressCard card={card} /> : undefined}
       attribution={attribution}

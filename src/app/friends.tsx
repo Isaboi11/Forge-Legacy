@@ -350,7 +350,20 @@ function FeedLedgerPost({
       playlist={summary?.playlist ?? null}
       onPlaylist={summary?.playlist ? () => void openPlaylist(summary.playlist!) : undefined}
       caption={post.body}
-      media={shape === 'photo' || shape === 'gallery' || shape === 'video' ? post.media.map((m) => ({ url: m.url, kind: m.kind })) : []}
+      /*
+       * ⚠ `recap` IS IN THIS LIST NOW, AND NOTHING ELSE WAS ADDED WITH IT.
+       *
+       * `shapeOf` returns `recap` the moment a post carries a summary — before it ever looks at media —
+       * so a session shared WITH a photo had its media silently dropped here: the row held it, the card
+       * never asked for it. The squad feed has no such hole (it maps `post.media` for every type), so one
+       * post showed a photo in one feed and not the other.
+       *
+       * Deliberately NOT written as "everything except progress". That would also start rendering media
+       * on `milestone` — PR and weekly posts, which fall through the same early return — and nothing has
+       * asked for that. `progress` stays out regardless: its media are the before/after pair that
+       * `customMedia` draws with a draggable divider, and passing them here too would render both.
+       */
+      media={shape === 'photo' || shape === 'gallery' || shape === 'video' || shape === 'recap' ? post.media.map((m) => ({ url: m.url, kind: m.kind })) : []}
       /* The before/after comparison keeps its draggable divider — the art is the exception, the rules
          around it are not: it still suppresses the marker, the title and the stats. */
       customMedia={shape === 'progress' ? <ProgressCompare post={post} /> : undefined}

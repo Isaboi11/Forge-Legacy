@@ -71,6 +71,28 @@ export interface ShareSessionSheetProps {
    */
   summary?: WorkoutSummary | null;
   /**
+   * The athlete's own words, posted as the card's caption.
+   *
+   * ⚠ IT WAS HARDCODED TO `''` HERE, WHICH MEANT A REFLECTION WRITTEN ON THE COMPLETION SCREEN WENT
+   * NOWHERE. The capture stage asks for a note, a photo and a playlist in one breath and then shared a
+   * bare stats snapshot, so two of the three stopped at the screen that collected them. The feeds have
+   * always drawn `post.body` as the caption; nothing was ever put in it.
+   *
+   * Optional and null-safe: Activity Detail passes the session's stored note, and a caller with nothing
+   * to say passes nothing rather than an empty string that reads as a deliberate blank.
+   */
+  note?: string | null;
+  /**
+   * Photos or video to post with the session.
+   *
+   * ⚠ THESE ARE NOT "THE WORKOUT'S PHOTOS" — there is no such thing. `chapter_photos` hangs off a
+   * CHAPTER and a date (L-15 §2) with no workout column, so the only honest set is *what the athlete
+   * added while they were on the screen that offered it*. Workout Complete measures exactly that;
+   * Activity Detail passes none, because by then there is no way to tell which of a day's shots belonged
+   * to this session.
+   */
+  media?: { url: string; kind: 'image' | 'video' }[];
+  /**
    * The card the athlete is about to send, drawn by the caller and shown ABOVE the destinations.
    *
    * ⚠ PASSED IN RATHER THAN BUILT HERE, and optional. The seal mark, the chapter name and the lb/kg
@@ -81,7 +103,7 @@ export interface ShareSessionSheetProps {
   preview?: ReactNode;
 }
 
-export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summary, preview }: ShareSessionSheetProps) {
+export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summary, note, media = [], preview }: ShareSessionSheetProps) {
   const { showToast } = useToast();
   const [mySquads, setMySquads] = useState<SquadSummary[] | null>(null);
   const [squadStep, setSquadStep] = useState<PostAudience | null>(null);
@@ -130,7 +152,20 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
     if (!targets.length) return; // the footer disables this; belt-and-braces for the constraint
     setSharing(true);
 
-    const recap = { type: 'recap' as const, body: '', workoutId, workoutSummary: snapshot };
+    /*
+     * The whole post, built once so the squad and friends paths cannot carry different things.
+     *
+     * `body` and `media` used to be the literals `''` and `[]` right here, which is why a session shared
+     * with a note and a photo arrived as a bare stat strip. The playlist rides inside `snapshot` — see
+     * `recapSummaryFrom` — and the caller is responsible for that snapshot being current.
+     */
+    const recap = {
+      type: 'recap' as const,
+      body: note?.trim() ?? '',
+      workoutId,
+      workoutSummary: snapshot,
+      media,
+    };
     const run = async () => {
       const landed: string[] = [];
       try {
@@ -138,7 +173,7 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
           if (t.audience === 'SQUAD' && t.squadId) {
             await addSquadPost({ squadId: t.squadId, ...recap });
           } else {
-            await createFriendPost({ ...recap, audience: t.audience, squadId: t.squadId, media: [] });
+            await createFriendPost({ ...recap, audience: t.audience, squadId: t.squadId });
           }
           const name = squads.find((s) => s.id === t.squadId)?.name;
           if (name) landed.push(name);

@@ -160,6 +160,13 @@ export default function ActivityDetailScreen() {
             onClose={() => setShareOpen(false)}
             workoutId={data.id}
             workoutName={title}
+            /* The session's own note becomes the post's caption, the same as a reflection written on the
+               completion screen. No `media`: `chapter_photos` has no workout column, so by the time a
+               session is history there is no honest way to say which of that day's shots were of it —
+               and the completion screen's answer (what you added while you were there) is not
+               reconstructable. No summary either; the sheet fetches its own via `buildWorkoutRecap`,
+               which reads the workout row and therefore already carries the playlist. */
+            note={data.note}
           />
           <Body
             detail={data}
