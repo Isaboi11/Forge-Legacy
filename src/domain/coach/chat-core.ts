@@ -283,41 +283,38 @@ function withControl(q: Question | null): Question | null {
 }
 
 /**
- * ══ HOW MUCH ARE WE BUILDING? — PO decision, this session ══
+ * ══ HOW LONG IS THE BLOCK? — PO, 2026-08-13 and 2026-08-14 ══
  *
- * Holt can write one week as well as a block, and the athlete has to be able to say which.
+ * First: *Holt should be able to build a week or a single day, not only a multi-week program.* Then:
+ * *"when building a program I think we should be able to choose how long the program should be."*
+ * Those are one question, so it is one question — a scale from a single week to twelve.
  *
- * ⚠ **THE OPENER ASKS IT, NOT `askProgram`, AND NOT `missingFor`.** Three reasons, in order of how badly
- * each would have hurt:
+ * ⚠ **IT MOVED FROM THE OPENER INTO THE QUESTIONNAIRE, AFTER THE GOAL, AND THAT FIXED A REAL PROBLEM.**
  *
- *   1. `missingFor()` is the constraint VALIDATOR. Adding `weeks` to it would make every build path in
- *      the app — the wizard, an import, a rebuild from a refusal — start demanding a length it already
- *      knows or does not need.
- *   2. Only BUILD has the question. "What should I train today?" is already a single day, and asking a
- *      day flow how many weeks it wants is the coach not listening.
- *   3. It has to come FIRST, before the goal, because the answer changes which goals are on offer —
- *      see below.
+ * The first cut asked it at the BUILD door, before anything else, offering *A program* or *One week*.
+ * Adding real lengths to that made an existing awkwardness impossible to keep: `assembleEnduranceGoal`
+ * derives a race block's length from `raceDate` and enforces per-race floors of six to twelve weeks, so
+ * an athlete who picked "12 weeks" and then picked "Run a marathon" would have had their answer
+ * silently overruled by the calendar. The first cut worked around that by REMOVING the race door once
+ * "One week" was chosen — a fix that only covered one of the four answers.
  *
- * `A program` sets `weeks: null` rather than leaving it absent, and that distinction is doing real work:
- * `null` means *asked and answered — use your default*, `undefined` means *not asked yet*, and the
- * opener uses exactly that to avoid asking twice.
+ * Asked after the goal, it is simply **skipped for a race**, and the two can no longer disagree at all.
  *
- * ⚠ **A RACE IS EXEMPT, AND THE EXEMPTION IS STRUCTURAL.** `assembleEnduranceGoal` derives weeks from
- * `raceDate` and the per-race floors (6–12 weeks) stand, so a one-week marathon block is not a thing the
- * engine will ever build. Rather than asking the question and then quietly ignoring the answer, `One
- * week` REMOVES the race door from the goal question — so the two can never disagree.
+ * ⚠ **`missingFor()` STILL GAINS NOTHING.** It is the constraint VALIDATOR, and putting `weeks` in it
+ * would make every other build path in the app — the wizard, an import, a rebuild from a refusal —
+ * start demanding a length it already knows or does not need. The question is the CHAT's; `undefined`
+ * means nobody asked, and `assemble` falls back to `defaultWeeksFor` exactly as it always has.
  */
+export const BLOCK_LENGTHS: readonly number[] = [1, 4, 8, 12];
+
 export function sizeQuestion(): Question {
   return {
     id: 'size',
     ask: pick('ask_size'),
     ctl: 'segmented',
-    chips: [chip('A program', { weeks: null }), chip('One week', { weeks: 1 })],
+    chips: BLOCK_LENGTHS.map((w) => chip(w === 1 ? 'One week' : `${w} weeks`, { weeks: w })),
   };
 }
-
-/** Has the size question been answered? `null` is an answer; absent is not. */
-export const sizeAnswered = (c: ChatState): boolean => c.weeks !== undefined;
 
 /** A single week. Decides the goal chips, the days wording, and what the artifact's buttons save. */
 export const isOneWeek = (c: ChatState): boolean => c.weeks === 1;
@@ -336,11 +333,7 @@ function askProgram(c: ChatState): Question | null {
       ask: pick('ask_goal'),
       chips: [
         ...STRENGTH_GOALS.filter(offerable).map((g) => chip(GOAL_LABEL[g], { goal: g })),
-        /* ⚠ NO RACE DOOR ON A ONE-WEEK BUILD. A race is a block — every distance carries a floor of six
-           to twelve weeks and `assembleEnduranceGoal` counts back from the race date, so `weeks: 1`
-           would be silently overruled. Removing the chip is how the size answer stays true instead of
-           being taken and then ignored. */
-        ...(isOneWeek(c) ? [] : [{ label: 'Run a race', patch: {}, picksRace: true } as Chip]),
+        { label: 'Run a race', patch: {}, picksRace: true },
       ],
     };
   }
@@ -354,6 +347,11 @@ function askProgram(c: ChatState): Question | null {
   }
 
   const endurance = isEnduranceGoal(c.goal);
+
+  /* ⚠ SKIPPED FOR A RACE, WHICH IS THE WHOLE REASON IT SITS HERE RATHER THAN AT THE DOOR. A race block's
+     length is counted back from `raceDate` against per-race floors, so asking would be taking an answer
+     Holt is about to overrule. See the note on `sizeQuestion`. */
+  if (!endurance && c.weeks === undefined) return sizeQuestion();
 
   if (endurance && c.raceDate == null) {
     return {
@@ -637,6 +635,21 @@ function isoInWeeks(weeks: number): string {
 export function interpret(text: string, q: Question): Partial<CoachConstraints> | null {
   const t = text.trim().toLowerCase();
   if (!t) return null;
+
+  /*
+   * ⚠ **BEFORE THE CHIP LOOP, BECAUSE "1" IS A SUBSTRING OF "12 weeks".**
+   *
+   * The loop below matches a typed line against chip labels by containment, which is right for words and
+   * catastrophic for a bare number on this particular question: someone typing `1`, meaning one week,
+   * would fall through "One week" (no digit in it), past "4 weeks" and "8 weeks", and land on "12 weeks"
+   * — a twelve-week block from an athlete who asked for one. Snapped to the nearest rung instead.
+   */
+  if (q.id === 'size') {
+    const w = Number(t.replace(/[^0-9.]/g, ''));
+    if (Number.isFinite(w) && w > 0) {
+      return { weeks: BLOCK_LENGTHS.reduce((a, b) => (Math.abs(b - w) < Math.abs(a - w) ? b : a)) };
+    }
+  }
 
   // An exact or contained chip label is the common case: people type what they see.
   for (const c of q.chips) {

@@ -36,7 +36,6 @@ import {
   programCardFor,
   readyToBuild,
   refusalCardFor,
-  sizeAnswered,
   sizeQuestion,
 } from '../chat-core.ts';
 import { AUTHORED_GOALS, isAuthored } from '../rulebook/skeletons.ts';
@@ -123,7 +122,8 @@ test('the goal question only offers goals the engine can build', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 test('a typed answer resolves to the same patch as tapping the chip', () => {
-  const q = nextQuestion({ goal: 'strength' });
+  // `weeks` is seeded because the length question now sits between the goal and the days.
+  const q = nextQuestion({ goal: 'strength', weeks: 8 });
   assert.equal(q.id, 'days');
   // Typing what you can see is the common case, and it must land identically.
   assert.deepEqual(interpret('4 days', q), q.chips.find((c) => c.label === '4 days').patch);
@@ -133,7 +133,7 @@ test('a typed answer resolves to the same patch as tapping the chip', () => {
 test('a number means what the question on the table says it means', () => {
   // ⚠ SCOPED ON PURPOSE. "4" is four days on one turn and would be four miles on the next; a parser that
   // answered globally would put the right number in the wrong field and never say a word about it.
-  const days = nextQuestion({ goal: 'strength' });
+  const days = nextQuestion({ goal: 'strength', weeks: 8 });
   assert.deepEqual(interpret('4', days), { daysPerWeek: 4 });
 
   const base = nextQuestion({ goal: 'run_half', raceDate: '2026-12-01' });
@@ -150,10 +150,25 @@ test('anything it cannot place returns null rather than a guess', () => {
 });
 
 test('an out-of-range number is not forced into range', () => {
-  const q = nextQuestion({ goal: 'strength' });
+  const q = nextQuestion({ goal: 'strength', weeks: 8 });
+  assert.equal(q.id, 'days');
   // 9 days a week is not an answer. Clamping it silently would be the app deciding it knew better.
   assert.equal(interpret('9', q), null);
   assert.equal(interpret('0', q), null);
+});
+
+test('⚠ a bare "1" on the length question is one week, not twelve', () => {
+  /*
+   * The chip loop matches by containment, which is right for words and catastrophic for a bare number
+   * here: "1" is not in "One week" but IS in "12 weeks", so it fell through to a twelve-week block from
+   * an athlete who asked for one. Snapped to the nearest rung, ahead of the loop.
+   */
+  const q = nextQuestion({ goal: 'strength' });
+  assert.equal(q.id, 'size');
+  assert.deepEqual(interpret('1', q), { weeks: 1 });
+  assert.deepEqual(interpret('12', q), { weeks: 12 });
+  assert.deepEqual(interpret('one week', q), { weeks: 1 }, 'and the words still work');
+  assert.deepEqual(interpret('6 weeks', q), { weeks: 4 }, 'an unoffered length snaps to the nearest rung');
 });
 
 test('interpret only ever returns constraint fields', () => {
@@ -202,37 +217,47 @@ test('every opener is a real thing Holt can do', () => {
 // HOW MUCH ARE WE BUILDING? — a block, or one week
 // ─────────────────────────────────────────────────────────────────────────────
 
-test('the size question offers two real answers and nothing else', () => {
+test('the length question is a scale, and every rung sets a real number of weeks', () => {
   const q = sizeQuestion();
   assert.equal(q.id, 'size');
-  assert.equal(q.ctl, 'segmented', 'a block and a week are an ordered scale, not a set of unlike things');
-  assert.deepEqual(q.chips.map((c) => c.patch), [{ weeks: null }, { weeks: 1 }]);
+  assert.equal(q.ctl, 'segmented', 'one week to twelve is an ordered scale, not a set of unlike things');
+  assert.deepEqual(q.chips.map((c) => c.patch), [{ weeks: 1 }, { weeks: 4 }, { weeks: 8 }, { weeks: 12 }]);
+  assert.deepEqual(q.chips.map((c) => c.label), ['One week', '4 weeks', '8 weeks', '12 weeks']);
 });
 
-test('⚠ `null` is an answer and absent is not — or he asks twice', () => {
+test('⚠ it is asked AFTER the goal, so a race can skip it', () => {
   /*
-   * The distinction the whole opener rests on. "A program" does not leave `weeks` unset, it sets it to
-   * `null` — meaning *asked, and use your default*. If those two collapsed into one state, coming back
-   * through the BUILD door mid-conversation would ask how much we are building all over again.
+   * ⚠ **THIS MOVED, AND THE MOVE IS THE FIX** (PO, 2026-08-14: *"we should be able to choose how long
+   * the program should be"*).
+   *
+   * It used to be the BUILD door's first question, offering "A program" or "One week". Real lengths
+   * made that untenable: `assembleEnduranceGoal` counts a race block back from `raceDate` against
+   * floors of six to twelve weeks, so an athlete picking "12 weeks" and then "Run a marathon" would
+   * have been silently overruled by the calendar. The first cut papered over it by removing the race
+   * door once "One week" was picked — which covered one of four answers.
+   *
+   * Asked after the goal, it is simply not asked of a race at all.
    */
-  assert.equal(sizeAnswered({}), false);
-  assert.equal(sizeAnswered({ weeks: null }), true, 'answering "a program" must count as answering');
-  assert.equal(sizeAnswered({ weeks: 1 }), true);
+  assert.equal(nextQuestion({}).id, 'goal', 'the goal still comes first');
+  assert.equal(nextQuestion({ goal: 'strength' }).id, 'size', 'and the length straight after it');
+
+  const race = nextQuestion({ goal: 'run_half' });
+  assert.notEqual(race.id, 'size', 'a race must never be asked a length it does not decide');
+  const { asked } = walk({ goal: 'run_marathon' });
+  assert.ok(!asked.includes('size'), `a marathon was asked its length: ${asked.join(', ')}`);
 });
 
-test('⚠ one week removes the race door, rather than taking the answer and ignoring it', () => {
-  /*
-   * Every distance carries a floor of six to twelve weeks and `assembleEnduranceGoal` counts back from
-   * the race date, so `weeks: 1` on a race is silently overruled by the engine. Asking the athlete and
-   * then overruling them is worse than not offering it — so the exemption is structural.
-   */
-  const block = nextQuestion({ weeks: null });
-  assert.ok(block.chips.some((c) => c.picksRace), 'a block build must still be able to be a race');
+test('the race door is open again, because nothing can overrule it now', () => {
+  // The counterpart of the move: with the length asked afterwards, "Run a race" no longer has to be
+  // hidden from anybody.
+  assert.ok(nextQuestion({}).chips.some((c) => c.picksRace));
+});
 
-  const week = nextQuestion({ weeks: 1 });
-  assert.equal(week.id, 'goal');
-  assert.ok(!week.chips.some((c) => c.picksRace), 'a one-week marathon block is not a thing the engine builds');
-  assert.ok(week.chips.length > 0 && week.chips.every((c) => c.patch.goal), 'and every chip left must answer the question');
+test('⚠ answered once, and never asked twice', () => {
+  // `undefined` means nobody asked. Any number means they did — including 1.
+  assert.equal(nextQuestion({ goal: 'strength' }).id, 'size');
+  assert.notEqual(nextQuestion({ goal: 'strength', weeks: 1 }).id, 'size');
+  assert.notEqual(nextQuestion({ goal: 'strength', weeks: 8 }).id, 'size');
 });
 
 test('⚠ a week is not asked how many days A WEEK — the PO caught this one', () => {

@@ -139,6 +139,19 @@ function* everyAthlete() {
                 raceDate: RACE,
                 currentWeeklyMi: 12,
                 canRunContinuously: true,
+                /*
+                 * ⚠ **WITHOUT THIS THE WHOLE CROSS-PRODUCT TESTS NOTHING, AND SAYS SO IN GREEN.**
+                 *
+                 * A question was added to the questionnaire (`size`, 2026-08-14). These athletes did not
+                 * answer it, so `readyToBuild` went false for every one of them, so `runBuildPath`
+                 * returned `{outcome:'asked'}` 13,440 times without calling `assemble` once — and the
+                 * file passed, because nothing threw. The only visible symptom was the suite getting
+                 * faster.
+                 *
+                 * `assertReallyBuilt` below is the backstop: the next question added here fails loudly
+                 * instead of quietly emptying this file.
+                 */
+                weeks: 8,
               };
             }
           }
@@ -155,11 +168,13 @@ function* everyAthlete() {
 test('⚠ no athlete the chat can describe makes the build path throw', () => {
   const failures = [];
   let ran = 0;
+  let built = 0;
 
   for (const athlete of everyAthlete()) {
     ran++;
     try {
-      runBuildPath(athlete, 'program');
+      const r = runBuildPath(athlete, 'program');
+      if (r.outcome === 'built' || r.outcome === 'refused') built++;
     } catch (e) {
       const who = `${athlete.goal}/${athlete.environment}/${athlete.experience.lifting}/${athlete.daysPerWeek}d/${athlete.sessionMinutes}m/[${athlete.limitations}]`;
       failures.push(`${who} → ${e.message}`);
@@ -167,6 +182,13 @@ test('⚠ no athlete the chat can describe makes the build path throw', () => {
   }
 
   assert.ok(ran > 1000, `expected a real cross-product, ran ${ran}`);
+  /*
+   * ⚠ **THE ASSERTION THAT THIS FILE IS STILL DOING ITS JOB.** "Nothing threw" is trivially true of a
+   * run that never reached the engine, and that is exactly what happened when a question was added to
+   * the questionnaire: every athlete came back `asked`, `assemble` was called zero times, and the file
+   * stayed green. A coverage guard, not a behaviour one.
+   */
+  assert.equal(built, ran, `only ${built} of ${ran} athletes reached the engine — seed the new question in everyAthlete()`);
   assert.deepEqual(failures.slice(0, 10), [], `${failures.length} of ${ran} threw`);
 });
 
@@ -320,17 +342,32 @@ const WEEK_ATHLETE = {
   ownedEquipment: [],
 };
 
-test('⚠ "One week" builds ONE week, and "A program" builds the default', () => {
-  const week = runBuildPath({ ...WEEK_ATHLETE, weeks: 1 }, 'program');
-  assert.equal(week.outcome, 'built', 'a one-week block must be buildable, not refused');
-  assert.equal(week.structure.weeks, 1, 'the chip said one week and the engine built something else');
-  assert.match(week.card.subtitle, /1 week ·/, 'and the card must say so in the coach\'s own voice');
+test('⚠ every rung of the length question builds exactly that many weeks', () => {
+  for (const weeks of [1, 4, 8, 12]) {
+    const r = runBuildPath({ ...WEEK_ATHLETE, weeks }, 'program');
+    assert.equal(r.outcome, 'built', `${weeks} weeks must be buildable, not refused`);
+    assert.equal(r.structure.weeks, weeks, `the athlete asked for ${weeks} and the engine built ${r.structure.weeks}`);
+  }
+  const one = runBuildPath({ ...WEEK_ATHLETE, weeks: 1 }, 'program');
+  assert.match(one.card.subtitle, /1 week ·/, "and the card must say so in the coach's own voice");
+});
 
-  // `weeks: null` is "use your default" — the block must NOT collapse to one just because the field
-  // is now carried. This is the half of the fix that a test on `weeks: 1` alone cannot see.
+test('a build that was never asked its length still gets the engine default', () => {
+  /*
+   * `null` and absent both mean "nobody chose", and `assemble` reads `c.weeks ?? defaultWeeksFor(goal)`.
+   * The block must NOT collapse to one just because the field is now carried through `completeFor` —
+   * that is the half of the original fix a test on `weeks: 1` alone cannot see, and it still matters for
+   * every path that does not go through the chat.
+   */
   const block = runBuildPath({ ...WEEK_ATHLETE, weeks: null }, 'program');
   assert.equal(block.outcome, 'built');
-  assert.ok(block.structure.weeks > 1, `"A program" built ${block.structure.weeks} weeks`);
+  assert.ok(block.structure.weeks > 1, `an unanswered length built ${block.structure.weeks} weeks`);
+
+  /* ⚠ AND `undefined` IS NOT THE SAME AS `null` HERE, WHICH IS THE POINT OF THE GUARD IN `askProgram`.
+     Absent means nobody has been asked yet, so the CHAT asks; `null` means asked-and-declined, or a
+     build that arrived from somewhere with no length to state, and the ENGINE fills it in. Collapsing
+     the two would either ask twice or never ask at all. */
+  assert.equal(runBuildPath({ ...WEEK_ATHLETE, weeks: undefined }, 'program').outcome, 'asked');
 });
 
 test('⚠ a one-week block anchors mid-range rather than opening a mesocycle it has no room for', () => {
