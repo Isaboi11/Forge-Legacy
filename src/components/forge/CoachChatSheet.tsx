@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, Easing, PanResponder, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useAnimatedValue } from 'react-native';
+import { Animated, Easing, PanResponder, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useAnimatedValue, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path, Rect } from 'react-native-svg';
 
 import { LinearGradient } from 'expo-linear-gradient';
@@ -92,6 +93,9 @@ import { saveWorkoutDraft } from '@/lib/workout-builder-draft';
  * question set; every program comes from `assemble()`. The paid tier replaces exactly one function
  * (`interpret`) and nothing on this screen changes.
  */
+/** PROMPT §2.4 — the sheet's top inset. The thread's bottom reserve is a share of `window - SHEET_TOP`. */
+const SHEET_TOP = 64;
+
 export function CoachChatSheet({ onClose }: { onClose: () => void }) {
   const router = useRouter();
 
@@ -158,6 +162,28 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
   )[0];
   const keyboardInset = useKeyboardInset();
   const scroller = useRef<ScrollView | null>(null);
+
+  /**
+   * ══ ROOM UNDER THE OPTIONS ══
+   *
+   * Two problems wearing one symptom. The PO's report was that a turn's choices sit at the very bottom
+   * edge and cannot be read in full.
+   *
+   * 1. NO SAFE-AREA INSET, ANYWHERE ON THIS SCREEN. The last chip row rendered 8px from the PHYSICAL
+   *    bottom, so on any phone with a home indicator it sat underneath it. That is the defect.
+   * 2. NO READING ROOM. Even inset-correct, a control flush to the bottom of a sheet reads as the end
+   *    of the screen rather than as something you scroll past — so a long turn looked truncated.
+   *
+   * A QUARTER OF THE SHEET, COMPUTED, NOT A CONSTANT. The sheet starts at `top: 64`, so its height is
+   * the window minus that. 200px is a quarter of one phone and a third of another, and the whole point
+   * is that the proportion holds.
+   *
+   * It is CONTENT PADDING rather than a spacer view, so a short conversation that does not fill the
+   * thread costs nothing — there is no invisible block pushing a two-line greeting up the screen.
+   */
+  const { height: winH } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const threadPad = insets.bottom + Math.round((winH - SHEET_TOP) * 0.25);
 
   /* §6.5 — the introduction is three paragraphs and lands as three beats. Dropping all three at once is
      a wall of text pretending to be a greeting. */
@@ -889,7 +915,12 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
             }}
           />
         ) : (
-        <ScrollView ref={scroller} style={styles.thread} contentContainerStyle={styles.threadInner} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          ref={scroller}
+          style={styles.thread}
+          contentContainerStyle={[styles.threadInner, { paddingBottom: threadPad }]}
+          keyboardShouldPersistTaps="handled"
+        >
           {thread.map((t, i) => (
             <TurnEnter key={i}>
             <TurnView
@@ -937,8 +968,10 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
           * So the composer stays live. `send()` queues when busy and the drain effect plays it back the
           * moment he finishes.
           */}
+        {/* The inset below is for the day this returns rather than something anyone can see now — fixed
+            alongside the two visible ones so all three stop guessing at the home indicator together. */}
         {preview || !TYPING_ENABLED ? null : (
-        <View style={[styles.composer, busy ? styles.composerBusy : null]}>
+        <View style={[styles.composer, { paddingBottom: 12 + insets.bottom }, busy ? styles.composerBusy : null]}>
           <TextInput
             value={draft}
             onChangeText={setDraft}
@@ -1334,6 +1367,9 @@ function PlanPreview({
   onBack: () => void;
   onOpenBuilder: () => void;
 }) {
+  /* 22 was a guess at the home indicator, made before this screen had insets. On a phone with a taller
+     indicator the Final-touches button sat under it; on one with none, it floated. */
+  const insets = useSafeAreaInsets();
   return (
     <View style={styles.previewWrap}>
       <View style={styles.previewBar}>
@@ -1386,7 +1422,7 @@ function PlanPreview({
         ) : null}
       </ScrollView>
 
-      <View style={styles.previewActions}>
+      <View style={[styles.previewActions, { paddingBottom: 12 + insets.bottom }]}>
         <Button variant="primary" fullWidth onPress={onOpenBuilder} accessibilityLabel="Final touches">
           Final touches
         </Button>
@@ -1662,8 +1698,11 @@ const styles = StyleSheet.create({
   backdrop: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(3,5,7,0.66)' },
   /* ⚠ A TOP INSET, NOT A MAX HEIGHT. PROMPT §2.4: 64px from the top "so a sliver of the app is always
      visible above it — this is the whole point." A percentage height looks similar on one device and
-     wrong on every other. The geometry lives on the wrapper so the rise can transform it. */
-  sheetWrap: { position: 'absolute', left: 0, right: 0, bottom: 0, top: 64 },
+     wrong on every other. The geometry lives on the wrapper so the rise can transform it.
+
+     Named because the thread's bottom reserve is measured against the sheet's height, and that height
+     is `window - SHEET_TOP`. Two copies of 64 would silently disagree the day this moves. */
+  sheetWrap: { position: 'absolute', left: 0, right: 0, bottom: 0, top: SHEET_TOP },
   sheet: {
     flex: 1,
     // 24, not the token's 16 — the design opens the sheet wider than a card corner on purpose.
@@ -1690,7 +1729,15 @@ const styles = StyleSheet.create({
      underneath it with the whole sheet empty below. It has to FILL, so the thread grows downward from
      the header and the composer stays pinned to the bottom edge where it is reachable with a thumb. */
   thread: { flex: 1 },
-  threadInner: { paddingHorizontal: 18, paddingTop: 20, paddingBottom: 8, gap: 18 },
+  /**
+   * ⚠ `paddingBottom` IS APPLIED AT RENDER, NOT HERE — see `threadPad` in the component.
+   *
+   * It was a flat 8, which was right while a ~90px composer sat underneath. `TYPING_ENABLED` is false,
+   * so the composer is not rendered, and 8 became the entire distance between the last answer chip and
+   * the physical bottom of the phone — underneath the home indicator. Two separate things were missing:
+   * a safe-area inset, and room to actually read the options.
+   */
+  threadInner: { paddingHorizontal: 18, paddingTop: 20, gap: 18 },
 
   meRow: {
     alignSelf: 'flex-end',
@@ -1795,7 +1842,8 @@ const styles = StyleSheet.create({
   previewTitle: { flex: 1, fontFamily: flFont.display, fontSize: 18, color: flColor.cream100 },
   previewScroll: { flex: 1 },
   previewInner: { padding: 18, gap: 16 },
-  previewActions: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 22, borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
+  /* `paddingBottom` is applied at render from the safe-area inset — see `PlanPreview`. */
+  previewActions: { paddingHorizontal: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
   weekList: { borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
   weekRow: {
     flexDirection: 'row',
@@ -1985,7 +2033,7 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 22,
+    /* `paddingBottom` applied at render from the safe-area inset. */
     borderTopWidth: 1,
     borderTopColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal800,

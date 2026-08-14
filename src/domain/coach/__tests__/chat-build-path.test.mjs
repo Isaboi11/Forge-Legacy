@@ -211,6 +211,73 @@ test('completeFor never invents a race date or a starting mileage', () => {
   assert.equal(c.currentWeeklyMi, null);
 });
 
+/*
+ * ══ ⚠ THE ONE THAT WAS MISSING, AND WHAT IT COST ══
+ *
+ * `completeFor` rebuilds the constraint object field by field, so anything it does not name is DROPPED
+ * — with no type error, because the optional fields are satisfied by omission.
+ *
+ * That was already live and already wrong: the sheet read `c.splitStyle ?? null` after this ran and
+ * therefore always got `null`, whatever the athlete picked. And it would have made "build me one week"
+ * a lie — the chip sets `weeks: 1`, the transcript says One week, every existing test passes, and
+ * `assemble` reads `c.weeks ?? defaultWeeksFor(goal)` and builds eight.
+ *
+ * These assert the SURVIVAL of an answer, not a default. A new constraint the chat can set needs a line
+ * here, or the engine goes on quietly using its own default while the conversation says otherwise.
+ */
+test('⚠ completeFor carries an answer through — it is a merge, not a whitelist', () => {
+  const c = completeFor({ goal: 'strength', weeks: 1, splitStyle: 'full_body' }, 'program');
+  assert.equal(c.weeks, 1, 'a one-week block would silently have become eight');
+  assert.equal(c.splitStyle, 'full_body', 'this one was already live and already dropped');
+});
+
+test('completeFor still supplies defaults for what was never answered', () => {
+  // The other half of the contract: the merge must not turn "unanswered" into "undefined reaches the
+  // engine". `null` and absent behave identically downstream; a MISSING key does not.
+  const c = completeFor({ goal: 'strength' }, 'program');
+  assert.equal(c.weeks, null, 'absent, not undefined — assemble falls back to defaultWeeksFor');
+  assert.equal(c.splitStyle, null);
+  assert.equal(c.daysPerWeek, 4);
+  assert.equal(c.sessionMinutes, 60);
+  assert.deepEqual(c.limitations, []);
+  assert.deepEqual(c.excludeExercises, []);
+});
+
+test('⚠ a field completeFor does NOT name still survives it', () => {
+  /*
+   * This is the one that actually guards the fix, and the first version of this test did not.
+   *
+   * `weeks` and `splitStyle` are now carried TWICE — by the `...c` spread and by an explicit line each.
+   * So a test using only those two passes even with the spread deleted, which makes it no guard at all.
+   * (Confirmed by mutation: removing `...c` left it green.)
+   *
+   * `recentRaceMi` / `recentRaceSec` are named nowhere in `completeFor`, so they can only arrive via the
+   * spread. They are also real: `assemble` derives training paces from them, and without them Holt
+   * describes effort instead of writing a pace (EPS-D10). Dropping them silently downgrades a race plan.
+   */
+  const c = completeFor({ goal: 'run_5k', recentRaceMi: 3.1, recentRaceSec: 1500 }, 'program');
+  assert.equal(c.recentRaceMi, 3.1, 'only the spread can carry this — the fix is gone');
+  assert.equal(c.recentRaceSec, 1500);
+});
+
+test('an answered field always beats the default, for every field completeFor names', () => {
+  // Guards the shape of the fix rather than one field: `...c` first, defaults after, so a real answer
+  // can never be overwritten by a `??` that was meant to fill a gap.
+  const answered = {
+    goal: 'muscle',
+    daysPerWeek: 6,
+    sessionMinutes: 30,
+    environment: 'home_gym',
+    limitations: ['knee'],
+    excludeExercises: ['back-squat'],
+    weeks: 2,
+  };
+  const c = completeFor(answered, 'program');
+  for (const [k, v] of Object.entries(answered)) {
+    assert.deepEqual(c[k], v, `completeFor overwrote the athlete's ${k} with a default`);
+  }
+});
+
 test('volumeFor is empty for lifting and a real curve for running', () => {
   assert.deepEqual(volumeFor(completeFor({ goal: 'strength' }, 'program'), 8), []);
   const curve = volumeFor({ ...completeFor({ goal: 'run_marathon' }, 'program'), currentWeeklyMi: 20 }, 16);

@@ -901,9 +901,30 @@ export function weeksBetween(raceDate?: string | null, now: number = Date.now())
   return Number.isNaN(ms) ? 0 : Math.max(0, Math.floor(ms / (7 * 24 * 3600 * 1000)));
 }
 
-/** Fill the fields the chat never asks, so `assemble` gets the shape it expects. */
+/**
+ * Fill the fields the chat never asks, so `assemble` gets the shape it expects.
+ *
+ * ══ ⚠ THIS IS A COPY, NOT A MERGE, AND THAT HAS BITTEN TWICE ══
+ *
+ * It rebuilds the constraint object field by field. Anything not named here is DROPPED — silently,
+ * with no type error, because `CoachConstraints`'s optional fields are satisfied by omission.
+ *
+ * Two live consequences, both invisible until someone traced them:
+ *
+ *   · `splitStyle` — `CoachChatSheet` reads `c.splitStyle ?? null` after this runs and has therefore
+ *     ALWAYS got `null`, whatever the athlete chose.
+ *   · `weeks` — `assemble()` reads `c.weeks ?? defaultWeeksFor(c.goal)`. A one-week block would have
+ *     set the state, shown "One week" back in the transcript, passed every test — and built eight.
+ *
+ * ⚠ SO: A NEW CONSTRAINT THE CHAT CAN SET MUST BE ADDED HERE TOO. The failure mode is not an error,
+ * it is the engine quietly using its default while the conversation says otherwise. The spread below
+ * (`...c`) now carries anything future work adds; the explicit fields after it are the DEFAULTS, and
+ * they must stay explicit because `?? ` on an absent key is what supplies them.
+ */
 export function completeFor(c: Partial<CoachConstraints>, mode: 'program' | 'day'): CoachConstraints {
   return {
+    // Everything the athlete actually answered, including fields this function does not know about.
+    ...c,
     goal: c.goal ?? 'strength',
     experience: c.experience ?? { lifting: 'intermediate', running: 'intermediate' },
     daysPerWeek: c.daysPerWeek ?? 4,
@@ -912,9 +933,15 @@ export function completeFor(c: Partial<CoachConstraints>, mode: 'program' | 'day
     environment: c.environment ?? (mode === 'program' && c.goal && isEnduranceGoal(c.goal) ? 'outdoor' : 'full_gym'),
     ownedEquipment: c.ownedEquipment ?? [],
     limitations: c.limitations ?? [],
-    excludeExercises: [],
+    excludeExercises: c.excludeExercises ?? [],
     raceDate: c.raceDate ?? null,
     currentWeeklyMi: c.currentWeeklyMi ?? null,
     canRunContinuously: c.canRunContinuously ?? null,
+    /* Explicit rather than left to the spread, so the two that were being dropped are visible here and
+       a reader can see they are carried on purpose. `null` and `undefined` behave identically
+       downstream (`c.weeks ?? defaultWeeksFor(...)`), so this changes nothing for a program that never
+       sets them — which is what makes the fix safe to land on its own. */
+    weeks: c.weeks ?? null,
+    splitStyle: c.splitStyle ?? null,
   };
 }
