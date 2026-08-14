@@ -82,6 +82,28 @@ with checks as (
   union all
   select '0149 · profiles.training_since hidden from anon',
          not has_column_privilege('anon', 'public.profiles', 'training_since', 'select')
+  union all
+  -- ⚠ THE INVERSE CHECK, AND ITS ABSENCE COST THE SQUADS PILLAR A DAY.
+  --
+  -- The two rows above assert what must be ABSENT, and both were green while every read of `squads`
+  -- returned `42501 permission denied for table squads` for every athlete. 0149 revokes table-level
+  -- SELECT and re-grants each column individually, enumerating them AT APPLY TIME — so `training_alerts`
+  -- (added by 0153, one day later) had no grant, and because PostgREST issues `select *`, ONE ungranted
+  -- column fails the WHOLE statement. Squads tab, Squad Detail, Discover, create and join, all dead.
+  --
+  -- **A privilege check that only tests what must be missing cannot see what went missing by accident.**
+  -- 0160 repairs it and adds `reapply_hidden_column_grants()`; this row is the standing backstop for the
+  -- next column somebody adds to either table.
+  select '0149/0160 · every non-hidden column on profiles+squads is readable',
+         not exists (
+           select 1 from information_schema.columns c
+            where c.table_schema = 'public'
+              and c.table_name in ('profiles', 'squads')
+              and not ((c.table_name = 'squads'   and c.column_name = 'invite_code')
+                    or (c.table_name = 'profiles' and c.column_name in ('training_since', 'training_label')))
+              and not has_column_privilege('authenticated', ('public.' || c.table_name)::regclass,
+                                           c.column_name, 'select')
+         )
 
   -- ── 0150 · the grant that unbroke Finish Workout ───────────────────────────
   -- ⚠ SECURITY DEFINER exempts the CALLER, not the CALLEE. `save_workout` calls `evaluate_honors`, and
