@@ -24,9 +24,13 @@ import {
   WALL,
   NOT_UNDERSTOOD,
   OPENERS,
+  HOME_CARDS,
+  HOME_ROWS,
   dayCardFor,
   fromOpener,
+  greetReturning,
   interpret,
+  isHomeTurn,
   isMedical,
   nextQuestion,
   programCardFor,
@@ -189,6 +193,41 @@ test('every opener is a real thing Holt can do', () => {
     assert.ok(['build', 'import', 'edit', 'help'].includes(r.kind), `"${label}" has no action`);
     if (r.kind === 'build') assert.ok(r.mode === 'program' || r.mode === 'day');
   }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COACH HOME — the same five doors, drawn as three cards and two rows
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('⚠ every Home tile fires an opener that resolves', () => {
+  /*
+   * Home does not know how to start anything. Each card and each row carries an `OPENERS` label and goes
+   * through `fromOpener` like every other door, so the surface cannot grow a second entrance to the
+   * questionnaire that drifts from the first. A tile whose label stops resolving is a card that does
+   * nothing when tapped, and this is where that gets caught rather than on a phone.
+   */
+  for (const tile of [...HOME_CARDS, ...HOME_ROWS]) {
+    assert.ok(OPENERS.includes(tile.opener), `Home offers "${tile.opener}", which is not an opener`);
+    assert.ok(fromOpener(tile.opener), `"${tile.opener}" leads nowhere`);
+  }
+});
+
+test('Home covers all five openers, once each', () => {
+  // Five doors in, five doors drawn. A missing one is a capability with no way to reach it from Home.
+  const fired = [...HOME_CARDS, ...HOME_ROWS].map((t) => t.opener);
+  assert.deepEqual([...fired].sort(), [...OPENERS].sort());
+  assert.equal(new Set(fired).size, fired.length, 'two tiles fire the same opener');
+});
+
+test('⚠ Home replaces the opener turn, and only the opener turn', () => {
+  // `isHomeTurn` decides where Home is drawn. If it matched a question's chips, the answers to that
+  // question would be replaced by three capability cards mid-conversation.
+  const openerTurn = { kind: 'chips', chips: OPENERS.map((label) => ({ label, patch: {} })) };
+  assert.equal(isHomeTurn(openerTurn), true);
+  assert.equal(isHomeTurn(greetReturning('Isaiah').at(-1)), true, 'coming back must land on Home');
+  assert.equal(isHomeTurn(nextQuestion({}, 'program') && { kind: 'chips', chips: nextQuestion({}, 'program').chips }), false);
+  assert.equal(isHomeTurn({ kind: 'holt', text: 'anything' }), false);
+  assert.equal(isHomeTurn({ kind: 'chips', chips: [{ label: OPENERS[0], patch: {} }] }), false, 'a subset is not Home');
 });
 
 test('an opener that pre-answers something does not ask it again', () => {

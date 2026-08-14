@@ -22,6 +22,9 @@ import {
   completeFor,
   fromOpener,
   HELP_TOPICS,
+  HOME_CARDS,
+  HOME_ROWS,
+  isHomeTurn,
   TYPING_ENABLED,
   interpret,
   isMedical,
@@ -922,30 +925,54 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
           contentContainerStyle={[styles.threadInner, { paddingBottom: threadPad }]}
           keyboardShouldPersistTaps="handled"
         >
-          {thread.map((t, i) => (
-            <TurnEnter key={i}>
-            <TurnView
-              turn={t}
-              onChip={tapChip}
-              onPreview={() => setPreview(true)}
-              onOpenBuilder={() => {
-                onClose();
-                /*
-                 * ⚠ PUSH, NOT REPLACE — and this was a dead back button (PO, 2026-08-09).
-                 *
-                 * The wizard at `/coach` uses `replace` correctly: it IS a route, so the builder takes
-                 * its place and dismissing returns you where you were. This sheet is NOT a route — it
-                 * is an overlay on a tab — so `replace` swapped out the TAB underneath it. Save, press
-                 * back, and there was nothing beneath to go back to.
-                 *
-                 * Push leaves the tab in the stack: tab → builder → (builder replaces itself with the
-                 * saved program) → back returns to Workouts, which is what the athlete expects.
-                 */
-                router.push(built?.kind === 'day' ? '/workout-builder' : '/program-builder');
-              }}
-            />
-            </TurnEnter>
-          ))}
+          {thread.map((t, i) => {
+            /*
+             * ══ COACH HOME, DRAWN IN PLACE OF THE OPENER CHIPS ══
+             *
+             * The design's rule: *"Home is not a screen you leave. It stays pinned above the conversation
+             * and scrolls away with it."* The opener turn is already exactly that position — it is the
+             * last thing in the thread before the athlete says anything — so Home is a RENDERING of it
+             * rather than a sixth piece of state that could disagree with the thread about where it is.
+             *
+             * The greeting above it is the run of Holt lines that precede it, drawn in Home's own voice
+             * (serif, then the line, then the quiet third) rather than as chat turns.
+             */
+            if (isHomeTurn(t)) {
+              return (
+                <TurnEnter key={i}>
+                  <CoachHome onOpener={(label) => tapChip({ label, patch: {} })} />
+                  {/* §4 — the bronze rule only exists once there is a conversation under it. */}
+                  {i < thread.length - 1 ? <ConversationDivider /> : null}
+                </TurnEnter>
+              );
+            }
+            const slot = greetingSlot(thread, i);
+            return (
+              <TurnEnter key={i} pullUp={slot ? GREETING_PULL[slot] : 0}>
+                <TurnView
+                  turn={t}
+                  slot={slot}
+                  onChip={tapChip}
+                  onPreview={() => setPreview(true)}
+                  onOpenBuilder={() => {
+                    onClose();
+                    /*
+                     * ⚠ PUSH, NOT REPLACE — and this was a dead back button (PO, 2026-08-09).
+                     *
+                     * The wizard at `/coach` uses `replace` correctly: it IS a route, so the builder
+                     * takes its place and dismissing returns you where you were. This sheet is NOT a
+                     * route — it is an overlay on a tab — so `replace` swapped out the TAB underneath
+                     * it. Save, press back, and there was nothing beneath to go back to.
+                     *
+                     * Push leaves the tab in the stack: tab → builder → (builder replaces itself with
+                     * the saved program) → back returns to Workouts, which is what the athlete expects.
+                     */
+                    router.push(built?.kind === 'day' ? '/workout-builder' : '/program-builder');
+                  }}
+                />
+              </TurnEnter>
+            );
+          })}
           {waiting ? <Waiting kind={waiting} /> : null}
         </ScrollView>
         )}
@@ -1039,7 +1066,7 @@ const pause = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
  * with no dependencies and the value is never reset. Anything keyed off props would make the entire
  * conversation twitch each time a character is typed.
  */
-function TurnEnter({ children }: { children: React.ReactNode }) {
+function TurnEnter({ children, pullUp = 0 }: { children: React.ReactNode; pullUp?: number }) {
   const v = useAnimatedValue(0);
   const still = useReducedMotion();
   useEffect(() => {
@@ -1054,6 +1081,11 @@ function TurnEnter({ children }: { children: React.ReactNode }) {
     <Animated.View
       style={{
         opacity: v,
+        /* The thread's own `gap` is the space between two TURNS. Home's greeting stack is three lines of
+           one paragraph, at `gap: 4`, so the lines after the first pull back against it. A negative
+           margin rather than a second container, because the lines have to stay individual turns — they
+           arrive one beat at a time and each animates in on its own. */
+        marginTop: pullUp ? -pullUp : undefined,
         // The fade stays — it is the arrival. Only the travel goes.
         transform: still ? [] : [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
       }}
@@ -1062,6 +1094,167 @@ function TurnEnter({ children }: { children: React.ReactNode }) {
     </Animated.View>
   );
 }
+
+/**
+ * ══ COACH HOME — `Coach Holt Chat v2.dc.html` §3 ══
+ *
+ * Three capability cards over two quiet rows. The five doors are the same five `OPENERS` the chip wrap
+ * offered; what changes is that they no longer look equal, because they are not. BUILD is what Holt is
+ * for and carries the warm wash and the only shadow; TODAY and ADJUST sit beside it in the plain
+ * treatment; the import and the help menu drop below a rule as rows.
+ *
+ * ⚠ **THE CONTEXTUAL ACTION ROW IS NOT BUILT, DELIBERATELY.** §3 draws up to two actions above the cards
+ * for the states the design ships — *scheduled tomorrow*, *missed a day*, *Week 4 · Day 2* — and every one
+ * of them needs the athlete's live program and their last session, which this sheet does not read and
+ * cannot read without making the greeting wait on the network. That is the silent stall this surface has
+ * already been fixed for once. Drawing the row from anything less than the real schedule would be Holt
+ * claiming to know what you trained yesterday. It is left out rather than faked.
+ */
+function CoachHome({ onOpener }: { onOpener: (opener: string) => void }) {
+  return (
+    <View style={styles.home}>
+      <View style={styles.homeCards}>
+        {HOME_CARDS.map((c) => (
+          <Pressable
+            key={c.tag}
+            onPress={() => onOpener(c.opener)}
+            accessibilityRole="button"
+            accessibilityLabel={`${c.title}. ${c.sub}`}
+            style={({ pressed }) => [
+              styles.homeCard,
+              c.tag === 'BUILD' ? styles.homeCardPrimary : styles.homeCardPlain,
+              pressed && styles.homeCardPressed,
+            ]}
+          >
+            <HomeCardIcon tag={c.tag} />
+            <Text style={styles.homeTag}>{c.tag}</Text>
+            <Text style={styles.homeCardTitle}>{c.title}</Text>
+            <Text style={styles.homeCardSub}>{c.sub}</Text>
+            {/* `marginTop: auto` is what keeps the three arrows on one baseline when the subs are
+                different lengths — the design calls it out by name. Keep it. */}
+            <View style={styles.homeArrow}>
+              <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+                <Path d="M5 12h14M13 6l6 6-6 6" />
+              </Svg>
+            </View>
+          </Pressable>
+        ))}
+      </View>
+
+      <View style={styles.homeRows}>
+        {HOME_ROWS.map((r, i) => (
+          <Pressable
+            key={r.icon}
+            onPress={() => onOpener(r.opener)}
+            accessibilityRole="button"
+            accessibilityLabel={r.label}
+            style={({ pressed }) => [styles.homeRow, i === HOME_ROWS.length - 1 && styles.homeRowLast, pressed && styles.homeRowPressed]}
+          >
+            {/* Rounded square for the document, a circle for the question — the container's shape is the
+                only thing separating two rows that are otherwise identical. */}
+            <View style={[styles.homeGlyph, r.icon === 'question' && styles.homeGlyphRound]}>
+              <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                {r.icon === 'document' ? (
+                  <>
+                    <Path d="M6.5 3.5h7L18 8v12.5h-11.5z" />
+                    <Path d="M13.5 3.5V8H18" />
+                  </>
+                ) : (
+                  <>
+                    <Path d="M9.3 9.2a2.8 2.8 0 115.4 1.4c-.8 1.1-2.1 1.4-2.1 2.9" />
+                    <Path d="M12.6 17.2h-.01" />
+                  </>
+                )}
+              </Svg>
+            </View>
+            <Text style={styles.homeRowLabel}>{r.label}</Text>
+            <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M9 6l6 6-6 6" />
+            </Svg>
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+/** BUILD dumbbell · TODAY calendar · ADJUST sliders — 22×22, 1.8 stroke, bronze (§3). */
+function HomeCardIcon({ tag }: { tag: HomeCardTag }) {
+  return (
+    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      {tag === 'BUILD' ? (
+        <>
+          <Path d="M7 8.5v7M17 8.5v7" />
+          <Path d="M4.5 10v4M19.5 10v4" />
+          <Path d="M7 12h10" />
+        </>
+      ) : tag === 'TODAY' ? (
+        <>
+          <Path d="M5 5.5h14v14H5z" />
+          <Path d="M8.5 3.5v4M15.5 3.5v4M5 10h14" />
+        </>
+      ) : (
+        <>
+          <Path d="M4 7h9M17 7h3M4 17h3M11 17h9" />
+          <Path d="M15 4.8v4.4M9 14.8v4.4" />
+        </>
+      )}
+    </Svg>
+  );
+}
+
+type HomeCardTag = (typeof HOME_CARDS)[number]['tag'];
+
+/** §4 — `CONVERSATION` in bronze between two rules that fade outward. */
+function ConversationDivider() {
+  return (
+    <View style={styles.dividerRow}>
+      <LinearGradient
+        colors={['rgba(181,138,97,0)', 'rgba(181,138,97,0.28)']}
+        start={{ x: 0, y: 0.5 }}
+        end={{ x: 1, y: 0.5 }}
+        style={styles.dividerRule}
+      />
+      <Text style={styles.dividerLabel}>CONVERSATION</Text>
+      <LinearGradient
+        colors={['rgba(181,138,97,0.28)', 'rgba(181,138,97,0)']}
+        start={{ x: 0, y: 0.5 }}
+        end={{ x: 1, y: 0.5 }}
+        style={styles.dividerRule}
+      />
+    </View>
+  );
+}
+
+/** Which slot of Home's greeting stack a turn occupies, if any. */
+type GreetingSlot = 'greeting' | 'line' | 'sub';
+const GREETING_SLOTS: readonly GreetingSlot[] = ['greeting', 'line', 'sub'];
+
+/**
+ * Is this Holt turn part of the greeting Home is wearing, and which line of it?
+ *
+ * The greeting stack is the run of Holt lines immediately before the opener turn — the introduction's
+ * three beats on a first visit, `greetReturning`'s two on every one after. Derived rather than stored,
+ * because the thread already knows: a second flag saying which lines are "the greeting" is a second
+ * thing that can disagree with it.
+ *
+ * ⚠ CAPPED AT THREE, which is how many slots the design's stack has. It also stops a stored conversation
+ * that happens to end in Holt speech from being swallowed into the greeting when he greets over the top
+ * of it — those lines stay conversation, which is what they are.
+ */
+function greetingSlot(thread: Turn[], i: number): GreetingSlot | null {
+  if (thread[i].kind !== 'holt') return null;
+  let home = i;
+  while (home < thread.length && thread[home].kind === 'holt') home += 1;
+  if (home >= thread.length || !isHomeTurn(thread[home])) return null;
+  let runStart = home;
+  while (runStart > 0 && thread[runStart - 1].kind === 'holt') runStart -= 1;
+  const start = Math.max(runStart, home - GREETING_SLOTS.length);
+  return i < start ? null : (GREETING_SLOTS[i - start] ?? null);
+}
+
+/** How far a greeting line pulls back against the thread's 18px turn gap to reach the design's 4px. */
+const GREETING_PULL: Record<GreetingSlot, number> = { greeting: 0, line: 14, sub: 12 };
 
 function SendGlyph({ color }: { color: string }) {
   return (
@@ -1204,11 +1397,14 @@ function ThinkingDot({ delay }: { delay: number }) {
 
 function TurnView({
   turn,
+  slot,
   onChip,
   onOpenBuilder,
   onPreview,
 }: {
   turn: Turn;
+  /** Set when this Holt line is one of Home's greeting lines rather than ordinary speech. */
+  slot?: GreetingSlot | null;
   onChip: (c: Chip) => void;
   onOpenBuilder: () => void;
   onPreview: () => void;
@@ -1222,7 +1418,7 @@ function TurnView({
       );
 
     case 'holt':
-      return <HoltLine text={turn.text} />;
+      return <HoltLine text={turn.text} slot={slot} />;
 
     case 'chips':
       return <Answers chips={turn.chips} ctl={turn.ctl} onChip={onChip} />;
@@ -1430,7 +1626,10 @@ function splitCardLabel(label: string): [string, string | null] {
  * §6.7 — the container is NOT a live region. Streaming characters to a screen reader would read the
  * sentence out one letter at a time. The finished line is announced once, when it is finished.
  */
-function HoltLine({ text }: { text: string; live?: boolean }) {
+function HoltLine({ text, slot }: { text: string; slot?: GreetingSlot | null; live?: boolean }) {
+  /* §3's greeting stack: a serif line, the sentence under it, then a quieter third. It is the same Holt
+     turn either way — only Home changes how loudly it is set. */
+  if (slot) return <Text style={styles[slot === 'greeting' ? 'homeGreeting' : slot === 'line' ? 'homeLine' : 'homeSub']}>{text}</Text>;
   return <Text style={styles.holtText}>{text}</Text>;
 }
 
@@ -1854,6 +2053,62 @@ const styles = StyleSheet.create({
    * a safe-area inset, and room to actually read the options.
    */
   threadInner: { paddingHorizontal: 18, paddingTop: 20, gap: 18 },
+
+  /* ══ COACH HOME (§3) ══════════════════════════════════════════════════════════════════════════ */
+  /* The greeting stack. Serif, then the sentence, then the quiet third — one paragraph in three
+     weights, not three messages. */
+  homeGreeting: { fontFamily: flFont.display, fontSize: 25, lineHeight: 30, fontWeight: '600', color: flColor.cream100 },
+  homeLine: { fontSize: 16, lineHeight: 23, color: flColor.gray400 },
+  homeSub: { fontSize: 14, lineHeight: 21, color: flColor.gray600 },
+
+  home: { gap: 16, paddingTop: 4, paddingBottom: 4 },
+  homeCards: { flexDirection: 'row', gap: 8 },
+  homeCard: { flex: 1, minWidth: 0, paddingHorizontal: 12, paddingTop: 13, paddingBottom: 11, borderRadius: 14, gap: 9 },
+  /* BUILD is the primary and the only card that carries a shadow — it is what Holt is for. */
+  homeCardPrimary: {
+    backgroundColor: 'rgba(198,156,100,0.045)',
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    boxShadow: flShadow.trainTogetherCard,
+  },
+  homeCardPlain: { backgroundColor: 'rgba(255,255,255,0.028)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)' },
+  homeCardPressed: { backgroundColor: 'rgba(198,156,100,0.08)', borderColor: flColor.bronzeBorderSubtle },
+  homeTag: { fontSize: 8.5, fontWeight: '700', letterSpacing: 1.8, color: flColor.bronze400 },
+  homeCardTitle: { fontSize: 13.5, fontWeight: '600', lineHeight: 17.5, color: flColor.cream100 },
+  homeCardSub: { fontSize: 11, lineHeight: 15.5, color: flColor.gray600 },
+  /* ⚠ `marginTop: auto` is load-bearing — it holds the three arrows on one baseline when the three subs
+     wrap to different heights. The design names it explicitly. */
+  homeArrow: { alignSelf: 'flex-end', marginTop: 'auto', paddingTop: 8 },
+
+  /* The two quiet rows: a stacked pair, not cards. Rules top and bottom rather than a container. */
+  homeRows: {},
+  homeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 13,
+    paddingVertical: 14,
+    paddingHorizontal: 2,
+    borderTopWidth: 1,
+    borderTopColor: flColor.charcoal600,
+  },
+  homeRowLast: { borderBottomWidth: 1, borderBottomColor: flColor.charcoal600 },
+  homeRowPressed: { backgroundColor: 'rgba(198,156,100,0.055)' },
+  homeGlyph: {
+    width: 26,
+    height: 26,
+    borderRadius: flRadius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+  },
+  homeGlyphRound: { borderRadius: 13 },
+  homeRowLabel: { flex: 1, minWidth: 0, fontSize: 14.5, color: flColor.cream100 },
+
+  /* §4 — the conversation begins here, and only once there is one. */
+  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 18, paddingBottom: 4 },
+  dividerRule: { flex: 1, height: 1 },
+  dividerLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 2.4, color: flColor.bronze400 },
 
   meRow: {
     alignSelf: 'flex-end',

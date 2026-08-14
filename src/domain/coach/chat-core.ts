@@ -573,6 +573,89 @@ export function fromOpener(label: string): OpenerAction | null {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// COACH HOME
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * The front door, as `Coach Holt Chat v2.dc.html` §3 draws it: three capability cards over two quiet rows.
+ *
+ * ══ WHY THIS IS A TABLE AND NOT FIVE PILLS ══
+ *
+ * The openers were a wrap of identical chips, so the five doors read as five equal options — and they are
+ * not. Building a block is the thing Holt exists for; asking how the app works is a footnote. The design
+ * gives the first three a card with a tag, a sentence of explanation and an arrow, and demotes the other
+ * two to rows under a rule. The hierarchy IS the information.
+ *
+ * ⚠ **EVERY TILE FIRES AN `OPENERS` LABEL, NOT ITS OWN ACTION.** `opener` is the exact string
+ * `fromOpener()` resolves, so Home gains no second way into the questionnaire — it is a new way of
+ * DRAWING the same five doors. A tile whose `opener` stops resolving is caught by `chat-core.test.mjs`
+ * rather than by an athlete tapping a card that does nothing.
+ *
+ * The card copy is the design's, and it deliberately differs from the opener it fires ("Build a program"
+ * vs "Build me a program"). The tile is a capability; the transcript records the request.
+ */
+export interface HomeCard {
+  tag: 'BUILD' | 'TODAY' | 'ADJUST';
+  title: string;
+  sub: string;
+  /** ⚠ Must be a member of `OPENERS`. */
+  opener: string;
+}
+
+export const HOME_CARDS: readonly HomeCard[] = [
+  {
+    tag: 'BUILD',
+    title: 'Build a program',
+    sub: 'Training built around your goals and schedule.',
+    opener: 'Build me a program',
+  },
+  {
+    tag: 'TODAY',
+    title: 'What should I train?',
+    sub: "I'll work around your program and recent training.",
+    opener: 'What should I train today?',
+  },
+  {
+    tag: 'ADJUST',
+    title: 'Change my program',
+    sub: 'Modify your split, volume, exercises or schedule.',
+    opener: 'Change my program',
+  },
+];
+
+/** The two quiet rows under the cards. Same contract: `opener` must be an `OPENERS` member. */
+export interface HomeRow {
+  /** Which glyph the 26×26 outlined container holds — a rounded square, or a circle. */
+  icon: 'document' | 'question';
+  label: string;
+  opener: string;
+}
+
+export const HOME_ROWS: readonly HomeRow[] = [
+  { icon: 'document', label: 'I already have a program', opener: "I've got a program already" },
+  { icon: 'question', label: 'Ask Holt something', opener: 'How do I…?' },
+];
+
+/**
+ * Is this the turn Coach Home is drawn in place of?
+ *
+ * ⚠ **THE THREAD'S SHAPE IS UNCHANGED, AND THAT IS DELIBERATE.** The introduction still ends in an
+ * opener chips turn and `greetReturning` still emits one — `intro.test.mjs` and `voice.test.mjs` both
+ * assert exactly that, and they are the spec. Home is a RENDERING of that turn, so a thread stored by
+ * the previous build restores into the new surface without a migration.
+ *
+ * Matched on the labels rather than a flag for the same reason: a thread already on a device carries no
+ * flag, and a Home that only appears for new conversations would be worse than no Home at all.
+ */
+export function isHomeTurn(turn: Turn): boolean {
+  return (
+    turn.kind === 'chips' &&
+    turn.chips.length === OPENERS.length &&
+    turn.chips.every((c) => OPENERS.includes(c.label))
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // HELP, WITHOUT A MODEL
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
