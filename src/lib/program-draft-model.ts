@@ -312,6 +312,49 @@ export function completedWeeks(d: ProgramDraft): number {
   return (d.weekPlans ?? []).filter(weekComplete).length;
 }
 
+/** Where the Day Builder's forward button goes next. `week` is null when the move stays inside this one. */
+export interface NextDayStop {
+  /** The week to open, or null to stay in the current one. */
+  week: number | null;
+  /** The day index within that week. */
+  day: number;
+}
+
+/**
+ * BUILDING IS A SEQUENCE, SO THE BUILDER HAS TO KNOW WHAT COMES NEXT.
+ *
+ * PO: *"It needs to be more obvious that I can save that day and move on to the next… all the way until
+ * the last day and week."* The Day Builder only ever knew about the day after this one **within the open
+ * week**, so the forward path died at Day D of Week 1 in a twelve-week program — the athlete was dropped
+ * back to a list and had to find their own way into Week 2. Forward now means the next day, and when
+ * there isn't one, **the first day of the next week**.
+ *
+ * ⚠ ONLY IN CUSTOMIZE-PER-WEEK MODE. A repeating template has no week dimension at all — `d.days` IS
+ * every week — so its last day is genuinely the end and returning null there is the correct answer, not
+ * a missing case. `d.weeks` can be 12 while `vary` is false; reading it anyway would invent eleven
+ * weeks' worth of days that do not exist.
+ *
+ * Returns null at the true end of the build, which is what turns the footer back into a plain Save.
+ */
+export function nextDayStop(d: ProgramDraft): NextDayStop | null {
+  if (d.openDay == null) return null;
+
+  const days = activeDays(d);
+  if (d.openDay + 1 < days.length) return { week: null, day: d.openDay + 1 };
+
+  // Past the last day of the week: step into the next week if this draft HAS weeks to step into.
+  if (!d.vary || !d.weekPlans || d.openWeek == null) return null;
+  const nextWeek = d.openWeek + 1;
+  if (nextWeek >= d.weeks || !d.weekPlans[nextWeek]) return null;
+  return { week: nextWeek, day: 0 };
+}
+
+/** The day a `NextDayStop` points at, so a caller can name it without re-deriving where it lives. */
+export function dayAtStop(d: ProgramDraft, stop: NextDayStop): ProgramDay | undefined {
+  const days = stop.week == null ? activeDays(d) : d.weekPlans?.[stop.week]?.days ?? [];
+  return days[stop.day];
+}
+
 /**
  * Is there anything in this draft worth not losing? Drives the leave-the-builder confirmation: a
  * never-touched draft closes silently, anything the athlete actually typed or added asks first.

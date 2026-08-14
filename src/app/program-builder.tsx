@@ -91,6 +91,8 @@ import {
   isDraftValid,
   loadProgramDraft,
   newDraft,
+  nextDayStop,
+  dayAtStop,
   nextIncompleteWeek,
   normalizeDraft,
   pairWithNext,
@@ -153,6 +155,8 @@ function inferLabel(items: ProgramExercise[]): string {
 }
 
 const dayName = (day: ProgramDay) => (day.name.trim() ? day.name : `Day ${day.letter || '?'}`);
+/** Fit a name into a button. Display only — never what a screen reader is handed. */
+const ellipsis = (s: string, max: number) => (s.length > max ? `${s.slice(0, max - 1).trimEnd()}…` : s);
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 /**
@@ -593,6 +597,33 @@ function ProgramBuilderScreen() {
     if (!weekBuilt(plans[i]) && canCopy) setWeekSheet({ index: i, entering: true });
   };
 
+  /**
+   * ══ THE DAY BUILDER'S FORWARD MOVE — AND WHY IT CAN CROSS A WEEK ══
+   *
+   * PO: *"It needs to be more obvious that I can save that day and move on to the next… all the way until
+   * the last day and week."* `nextDayStop` decides WHERE forward is (the next day, else the first day of
+   * the next week, else nowhere); this decides what opening it entails.
+   *
+   * ⚠ ENTERING A WEEK IS NOT THE SAME AS OPENING A DAY IN IT. An untouched week that has a built sibling
+   * gets offered a copy — that is `openWeek`'s job and it is the difference between rebuilding twelve
+   * weeks by hand and copying one. Walking into Week 2 from the last day of Week 1 must not skip it, so
+   * the copy sheet is raised here on exactly the same condition, over the day that is now open. Both of
+   * its answers (copy, or start empty) leave the athlete on that day, so neither path loses the move.
+   */
+  const goToNextDay = () => {
+    if (!draft) return;
+    const stop = nextDayStop(draft);
+    if (!stop) return;
+    if (stop.week == null) {
+      mutate((d) => ({ ...d, openDay: stop.day }));
+      return;
+    }
+    const plans = draft.weekPlans ?? [];
+    const canCopy = plans.some((w, k) => k !== stop.week && weekBuilt(w));
+    mutate((d) => ({ ...d, openWeek: stop.week, openDay: stop.day }));
+    if (!weekBuilt(plans[stop.week]) && canCopy) setWeekSheet({ index: stop.week, entering: true });
+  };
+
   /** "Save & continue" — move to the next week still needing work; all built → back to the week list. */
   const advanceWeek = () => {
     if (!draft || draft.openWeek == null) return;
@@ -677,6 +708,22 @@ function ProgramBuilderScreen() {
   // Three views off one draft: a day being built wins, then an open week's day list, else Setup.
   const weekView = !openDay && draft.vary && draft.openWeek != null;
 
+  /*
+   * What the Day Builder's forward button promises, or null on the last day of the last week — which is
+   * what demotes it and puts Save back in charge. A cross-week move names the WEEK as well, because
+   * "Save & go to Day A" from the end of Week 1 would read as going backwards.
+   */
+  const nextStop = nextDayStop(draft);
+  const nextStopDay = nextStop ? dayAtStop(draft, nextStop) : undefined;
+  /*
+   * ⚠ THE DAY NAME IS TRUNCATED FOR THE BUTTON AND NOT FOR THE SCREEN READER. A day name takes 30
+   * characters, and "Save & go to Week 2 · Upper Body Heavy Push" wraps a footer button onto three
+   * lines. The ellipsis is a fit problem, so it is solved where the fit is — the accessibility label
+   * keeps the whole name, because a truncation is not something to read aloud.
+   */
+  const nextStopLabel = nextStop && nextStopDay ? `${nextStop.week == null ? '' : `Week ${nextStop.week + 1} · `}${dayName(nextStopDay)}` : null;
+  const nextStopShort = nextStop && nextStopDay ? `${nextStop.week == null ? '' : `Week ${nextStop.week + 1} · `}${ellipsis(dayName(nextStopDay), 16)}` : null;
+
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.bg2} overlay={{ flat: 'rgba(6,7,8,0.3)' }} />
@@ -684,11 +731,10 @@ function ProgramBuilderScreen() {
       {openDay && draft.openDay != null ? (
         <DayBuilder
           day={openDay}
-          index={draft.openDay}
-          dayCount={days.length}
-          nextName={draft.openDay + 1 < days.length ? dayName(days[draft.openDay + 1]) : null}
+          nextLabel={nextStopShort}
+          nextLabelFull={nextStopLabel}
           onBack={() => mutate((d) => ({ ...d, openDay: null }))}
-          onNext={() => mutate((d) => ({ ...d, openDay: d.openDay != null && d.openDay + 1 < days.length ? d.openDay + 1 : null }))}
+          onNext={goToNextDay}
           onName={(v) => patchActiveDay(draft.openDay!, (day) => ({ ...day, name: v }))}
           onAdd={(section) => {
             router.push({
@@ -2005,9 +2051,8 @@ function Stepper({ label, sign, onPress }: { label: string; sign: string; onPres
 
 function DayBuilder({
   day,
-  index,
-  dayCount,
-  nextName,
+  nextLabel,
+  nextLabelFull,
   onBack,
   onNext,
   onName,
@@ -2028,9 +2073,10 @@ function DayBuilder({
   onUnpair,
 }: {
   day: ProgramDay;
-  index: number;
-  dayCount: number;
-  nextName: string | null;
+  /** Where "save and keep going" leads — the next day, or `Week 2 · Day A`. Null on the very last day. */
+  nextLabel: string | null;
+  /** The same destination with the day name intact, for the accessibility label. */
+  nextLabelFull: string | null;
   onBack: () => void;
   onNext: () => void;
   onName: (v: string) => void;
@@ -2186,16 +2232,44 @@ function DayBuilder({
         </Pressable>
       </Animated.ScrollView>
 
+      {/*
+        ══ THE FORWARD MOVE LEADS ══
+
+        PO: *"It needs to be more obvious that I can save that day and move on to the next. Right now it
+        has 'save workout' as the more obvious button, and then 'save and move on to day B' underneath,
+        and that should be reversed."*
+
+        It was backwards against what building actually is. Nobody opens a four-day program to author ONE
+        day: the sequence is the task, and the button that continues it was a grey line of text under a
+        bronze button that ends the session. So the hierarchy now matches the work — **forward is the
+        primary, and leaving is the quiet one** — right up until there is nowhere forward to go, where the
+        two swap back and Save is the only thing on offer.
+
+        BOTH BUTTONS SAVE, WHICH IS WHY NEITHER SAYS "DISCARD". The draft autosaves on every mutation, so
+        the difference is only where you land: still building, or back at the overview. `Save workout` keeps
+        its name because it is the athlete's own word for it.
+      */}
       <LinearGradient colors={['rgba(6,7,8,0.35)', 'rgba(6,7,8,0.82)']} style={styles.footer}>
-        <Button variant="primary" fullWidth onPress={onBack} accessibilityLabel="Save workout">
-          Save Workout
-        </Button>
-        {index + 1 < dayCount && nextName ? (
-          <Pressable onPress={onNext} accessibilityRole="button" accessibilityLabel={`Save and go to ${nextName}`} style={styles.nextDay}>
-            <Text style={styles.nextDayText}>Save &amp; go to {nextName}</Text>
-            <Glyph d="M9 6l6 6-6 6" size={14} color={flColor.bronze300} />
-          </Pressable>
-        ) : null}
+        {nextLabel ? (
+          <>
+            <Button
+              variant="primary"
+              fullWidth
+              onPress={onNext}
+              accessibilityLabel={`Save and go to ${nextLabelFull ?? nextLabel}`}
+              trailingIcon={<Glyph d="M9 6l6 6-6 6" size={15} color="#F7F5F1" width={2.2} />}
+            >
+              Save &amp; go to {nextLabel}
+            </Button>
+            <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel="Save workout and go back" style={styles.nextDay}>
+              <Text style={styles.nextDayText}>Save workout</Text>
+            </Pressable>
+          </>
+        ) : (
+          <Button variant="primary" fullWidth onPress={onBack} accessibilityLabel="Save workout">
+            Save Workout
+          </Button>
+        )}
       </LinearGradient>
     </>
   );
@@ -2909,8 +2983,9 @@ const styles = StyleSheet.create({
   },
   addText: { fontSize: 12.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronze300 },
 
+  /** The recessive half of the footer pair — it ends the session, so it reads as a link, not a button. */
   nextDay: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 9, paddingVertical: 10 },
-  nextDayText: { fontSize: 12.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronze300 },
+  nextDayText: { fontSize: 12.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.gray400 },
 
   // ── resize confirmation
   resizeSheet: { gap: 16 },

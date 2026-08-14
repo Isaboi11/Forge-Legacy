@@ -28,6 +28,8 @@ import {
   copyWeek,
   clearWeek,
   nextIncompleteWeek,
+  nextDayStop,
+  dayAtStop,
   completedWeeks,
   templateIntoDay,
 } from '../program-draft-model.ts';
@@ -483,4 +485,55 @@ test('a cardio block keeps its open targets rather than being clamped to a set c
 test('templateIntoDay on a day that does not exist changes nothing', () => {
   const d = openDraft();
   assert.equal(templateIntoDay(d, 99, rows(), { mode: 'replace' }), d);
+});
+
+// ── the Day Builder's forward move (PO: "all the way until the last day and week") ────────────────
+
+/** A customize-per-week draft with `weeks` weeks, sitting on week `w`, day `dayIndex`. */
+function varyDraft(weeks, w, dayIndex) {
+  const seeded = setVaryMode({ ...newDraft(), weeks });
+  return { ...seeded, openWeek: w, openDay: dayIndex };
+}
+
+test('forward is the next day while there is one', () => {
+  const d = openDraft(0);
+  assert.deepEqual(nextDayStop(d), { week: null, day: 1 });
+  assert.equal(dayAtStop(d, nextDayStop(d)).letter, 'B');
+});
+
+test('a repeating template ENDS at its last day — it has no weeks to walk into', () => {
+  // ⚠ `weeks` is 8 here and must be ignored: `vary` is false, so d.days IS every week. Reading the
+  // count anyway would invent seven weeks of days that do not exist.
+  const last = { ...openDraft(3), weeks: 8 };
+  assert.equal(last.days.length, 4);
+  assert.equal(nextDayStop(last), null);
+});
+
+test('⚠ the last day of a week walks into the NEXT WEEK, not to a dead end', () => {
+  const d = varyDraft(4, 0, 3); // week 1, day D of 4
+  assert.deepEqual(nextDayStop(d), { week: 1, day: 0 }, 'the forward path died here before');
+  assert.equal(dayAtStop(d, nextDayStop(d)).letter, 'A');
+});
+
+test('and keeps walking, week after week, until the real end', () => {
+  let d = varyDraft(3, 0, 0);
+  const visited = [];
+  for (let guard = 0; guard < 50; guard++) {
+    const stop = nextDayStop(d);
+    if (!stop) break;
+    visited.push(`${(stop.week ?? d.openWeek) + 1}-${stop.day}`);
+    d = { ...d, openWeek: stop.week ?? d.openWeek, openDay: stop.day };
+  }
+  assert.equal(visited.length, 3 * 4 - 1, 'every day of every week is reachable by pressing forward');
+  assert.equal(visited[3], '2-0', 'week 1 hands over to week 2');
+  assert.equal(visited[visited.length - 1], '3-3');
+  assert.equal(nextDayStop(d), null, 'the last day of the last week is where it stops');
+});
+
+test('the last week has no week after it', () => {
+  assert.equal(nextDayStop(varyDraft(2, 1, 3)), null);
+});
+
+test('no open day, no forward move', () => {
+  assert.equal(nextDayStop(newDraft()), null);
 });
