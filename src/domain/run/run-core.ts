@@ -17,6 +17,10 @@ export interface Fix {
   accuracy: number | null;
   /** Milliseconds. */
   at: number;
+  /** Metres above sea level, or null when the device won't say. Optional — a fix without one still counts. */
+  alt?: number | null;
+  /** Metres of VERTICAL uncertainty. Far worse than horizontal on a phone; see `CLIMB_THRESHOLD_M`. */
+  altAccuracy?: number | null;
 }
 
 export interface TrackPoint {
@@ -25,6 +29,23 @@ export interface TrackPoint {
   at: number;
   /** Cumulative miles at this point — carried so the route and the readout can never disagree. */
   mi: number;
+  /**
+   * Metres above sea level as reported, or null. Kept raw; the SMOOTHED reference lives in `climbRef`.
+   *
+   * ⚠ OPTIONAL, AND EVERY TRACK WRITTEN BEFORE THIS EXISTED HAS NONE. A track is client-side state
+   * rebuilt on every run, so there is nothing to migrate — but a resumed session's stored track can
+   * predate it, and reading `alt` off one of those must be `undefined`, not a crash.
+   */
+  alt?: number | null;
+  /** Cumulative metres CLIMBED at this point, carried for the same reason `mi` is. */
+  gainM?: number;
+  /**
+   * The altitude the next climb is measured against — see `acceptFix`.
+   *
+   * It is NOT the last reading. It only moves once a reading clears the threshold, which is what stops
+   * a noisy altimeter accumulating gain while an athlete stands still.
+   */
+  climbRef?: number | null;
 }
 
 // ── geometry ────────────────────────────────────────────────────────────────
@@ -104,21 +125,97 @@ export function acceptFix(track: TrackPoint[], fix: Fix, kind: ActivityKind): Ac
   if (fix.accuracy != null && fix.accuracy > ACCURACY_FLOOR_M) return { track, rejected: 'accuracy' };
 
   const last = track[track.length - 1];
-  if (!last) return { track: [{ lat: fix.lat, lon: fix.lon, at: fix.at, mi: 0 }], rejected: null };
+  if (!last) return { track: [{ lat: fix.lat, lon: fix.lon, at: fix.at, mi: 0, ...climbSeed(fix) }], rejected: null };
 
   const step = haversineMi(last, fix);
   if (step < minStepMi(fix.accuracy)) return { track, rejected: 'jitter' };
 
   const hours = Math.max(1e-9, (fix.at - last.at) / 3_600_000);
   if (step / hours > MAX_MPH[kind]) {
-    // Re-anchor without crediting the jump.
-    return { track: [...track, { lat: fix.lat, lon: fix.lon, at: fix.at, mi: last.mi }], rejected: 'teleport' };
+    // Re-anchor without crediting the jump — horizontally OR vertically. A signal that jumped a block
+    // also jumped a floor, and crediting that rise would put a staircase in the middle of a flat road.
+    return {
+      track: [...track, { lat: fix.lat, lon: fix.lon, at: fix.at, mi: last.mi, alt: fix.alt ?? null, gainM: last.gainM ?? 0, climbRef: last.climbRef ?? null }],
+      rejected: 'teleport',
+    };
   }
 
-  return { track: [...track, { lat: fix.lat, lon: fix.lon, at: fix.at, mi: last.mi + step }], rejected: null };
+  return {
+    track: [...track, { lat: fix.lat, lon: fix.lon, at: fix.at, mi: last.mi + step, ...climbFrom(last, fix) }],
+    rejected: null,
+  };
+}
+
+/**
+ * ══ CLIMB — AND WHY IT IS NOT "ADD UP EVERY RISE" ══
+ *
+ * A phone's altimeter is far noisier vertically than horizontally: consecutive fixes standing still
+ * wander by several metres, and a naive `max(0, alt - lastAlt)` summed over an hour reports hundreds of
+ * feet of climb on a flat track. It is the altitude version of the jitter the horizontal path already
+ * guards against, and it is worse, because the error is larger and it only ever adds.
+ *
+ * So gain accumulates against a REFERENCE rather than against the previous reading. The reference only
+ * moves once a reading clears it by `CLIMB_THRESHOLD_M`; a descent moves it straight down, because the
+ * bottom of a hill is where the next climb starts. Noise inside the threshold band moves nothing.
+ *
+ * The threshold is the standard grade for consumer GPS. It undercounts a series of very small rollers,
+ * which is the right way to be wrong: an athlete would rather see a climb figure they can trust than one
+ * flattered by standing at a traffic light.
+ */
+export const CLIMB_THRESHOLD_M = 3;
+
+/**
+ * A fix's vertical accuracy has to be believable before its altitude is used at all.
+ *
+ * A reading the device itself says is ±40 m cannot resolve a 3 m step, and taking it anyway is how a
+ * flat run acquires a mountain. Null is ACCEPTED — plenty of devices simply do not report it, and
+ * refusing those would mean no climb data on hardware that measures altitude perfectly well.
+ */
+export const ALT_ACCURACY_FLOOR_M = 15;
+
+const usableAlt = (fix: Fix): number | null => {
+  if (fix.alt == null || !Number.isFinite(fix.alt)) return null;
+  if (fix.altAccuracy != null && fix.altAccuracy > ALT_ACCURACY_FLOOR_M) return null;
+  return fix.alt;
+};
+
+/** The first point's climb state: no gain yet, and this altitude is what the first climb measures from. */
+function climbSeed(fix: Fix): { alt: number | null; gainM: number; climbRef: number | null } {
+  const a = usableAlt(fix);
+  return { alt: a, gainM: 0, climbRef: a };
+}
+
+/** Carry the climb forward one fix. */
+function climbFrom(last: TrackPoint, fix: Fix): { alt: number | null; gainM: number; climbRef: number | null } {
+  const a = usableAlt(fix);
+  const gain = last.gainM ?? 0;
+  const ref = last.climbRef ?? null;
+
+  if (a == null) return { alt: null, gainM: gain, climbRef: ref };
+  // No reference yet — the altimeter only just became usable, so this reading becomes the datum.
+  if (ref == null) return { alt: a, gainM: gain, climbRef: a };
+
+  const delta = a - ref;
+  if (delta >= CLIMB_THRESHOLD_M) return { alt: a, gainM: gain + delta, climbRef: a };
+  // A descent past the threshold resets the datum without subtracting: gain is climb, not net change.
+  if (delta <= -CLIMB_THRESHOLD_M) return { alt: a, gainM: gain, climbRef: a };
+  return { alt: a, gainM: gain, climbRef: ref };
 }
 
 export const totalMiles = (track: TrackPoint[]): number => track[track.length - 1]?.mi ?? 0;
+
+/** Cumulative metres climbed over the whole track. */
+export const totalGainM = (track: TrackPoint[]): number => track[track.length - 1]?.gainM ?? 0;
+
+/** Whether this track measured altitude at all — the difference between "0 ft" and "we could not tell". */
+export const hasClimbData = (track: TrackPoint[]): boolean => track.some((p) => p.alt != null);
+
+const FT_PER_M = 3.280839895;
+
+/** Metres of climb → the athlete's unit, rounded to something a person reads off a watch. */
+export function displayGain(gainM: number, metric: boolean): { value: number; unit: string } {
+  return metric ? { value: Math.round(gainM), unit: 'm' } : { value: Math.round(gainM * FT_PER_M), unit: 'ft' };
+}
 
 // ── pace ────────────────────────────────────────────────────────────────────
 

@@ -54,6 +54,9 @@ import {
   toPace,
   toSpeed,
   totalMiles,
+  totalGainM,
+  hasClimbData,
+  displayGain,
   type ActivityKind,
   type UnitSystem,
 } from '@/domain/run/run-core';
@@ -222,6 +225,14 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
   // simulated: an empty track has nothing to say and says nothing.
   const liveMi = totalMiles(tracker.track);
   const livePaceSec = currentPaceSec(tracker.track);
+  /**
+   * Climb so far, or null when this device never reported a usable altitude.
+   *
+   * PO: *"Do we have trail runs that can track time, distance, and climb or elevation gain?"* The fixes
+   * always carried it and the tracker threw it away. Null rather than 0 is the whole point — see the
+   * readout — and `hasClimbData` is what tells the two apart.
+   */
+  const liveClimb = hasClimbData(tracker.track) ? displayGain(totalGainM(tracker.track), units === 'metric') : null;
   /**
    * The bout is UNDER WAY — running or paused, measured or not.
    *
@@ -655,6 +666,18 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
                             ? `${toSpeed(3600 / livePaceSec, units).toFixed(1)} ${units === 'metric' ? 'km/h' : 'mph'}`
                             : `${fmtPace(toPace(livePaceSec, units))} /${dU}`}
                       </Text>
+                      {/* ⚠ ONLY WHEN THE PHONE ACTUALLY MEASURED ALTITUDE. `hasClimbData` is the
+                          difference between "0 ft" — a claim that the route was flat — and a device that
+                          never reported a usable altitude, where the honest answer is to say nothing.
+                          Same rule as the missing exercise count on the Home hero. */}
+                      {liveClimb != null ? (
+                        <>
+                          <Text style={styles.liveMetaDot}>·</Text>
+                          <Text style={styles.liveMeta}>
+                            ↑ {liveClimb.value} {liveClimb.unit}
+                          </Text>
+                        </>
+                      ) : null}
                     </View>
                   </>
                 ) : (

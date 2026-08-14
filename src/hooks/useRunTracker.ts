@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 import * as Location from 'expo-location';
 
-import { ACCURACY_FLOOR_M, acceptFix, type ActivityKind, type TrackPoint } from '@/domain/run/run-core';
+import { ACCURACY_FLOOR_M, acceptFix, type ActivityKind, type Fix, type TrackPoint } from '@/domain/run/run-core';
+import { clearBackgroundFixes, drainBackgroundFixes, startBackgroundFixes, stopBackgroundFixes } from '@/domain/run/background-task';
+
+/** Fold a batch of buffered fixes into a track through the ONE accept rule. Order matters; it is time. */
+const applyFixes = (track: TrackPoint[], fixes: Fix[], kind: ActivityKind): TrackPoint[] =>
+  fixes.reduce((t, f) => acceptFix(t, f, kind).track, track);
 
 /**
  * The GPS side of a run — permissions, the position subscription, the clock, and pause.
@@ -108,12 +114,21 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
         lon: loc.coords.longitude,
         accuracy: loc.coords.accuracy ?? null,
         at: loc.timestamp,
+        /* ⚠ THESE WERE BEING DROPPED. Every fix has carried an altitude since the day this was written;
+           the destructuring took three fields and discarded it, so a hill climbed was a hill unrecorded.
+           `acceptFix` decides whether a reading is believable — see `CLIMB_THRESHOLD_M`. */
+        alt: loc.coords.altitude ?? null,
+        altAccuracy: loc.coords.altitudeAccuracy ?? null,
       };
       if (reanchor.current) {
         if (fix.accuracy != null && fix.accuracy > ACCURACY_FLOOR_M) return prev;
         reanchor.current = false;
         const last = prev[prev.length - 1];
-        return last ? [...prev, { lat: fix.lat, lon: fix.lon, at: fix.at, mi: last.mi }] : [{ ...fix, mi: 0 }];
+        /* A re-anchor after a pause credits neither distance NOR climb: whatever happened while the run
+           was stopped is not the run. The altitude is carried so the NEXT climb measures from here. */
+        return last
+          ? [...prev, { lat: fix.lat, lon: fix.lon, at: fix.at, mi: last.mi, alt: fix.alt, gainM: last.gainM ?? 0, climbRef: fix.alt ?? last.climbRef ?? null }]
+          : [{ lat: fix.lat, lon: fix.lon, at: fix.at, mi: 0, alt: fix.alt, gainM: 0, climbRef: fix.alt }];
       }
       return acceptFix(prev, fix, kind).track;
     });
@@ -165,6 +180,9 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
     reanchor.current = false;
     setPhase('live');
     setGps('acquiring');
+    /* A new run never inherits the last one's tail. The buffer is durable, so a run the app was killed
+       during can leave fixes behind — draining them into THIS track would add somebody's walk home. */
+    void clearBackgroundFixes().then(() => startBackgroundFixes());
     // Wall-time-driven rather than a counter, so a throttled background tab can't make a 40-minute run
     // report 26 minutes.
     let lastTick = Date.now();
@@ -190,9 +208,36 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
 
   const stop = useCallback(() => {
     clearAll();
+    /* ⚠ DRAIN BEFORE STOPPING, and apply what comes back. Ending a run that was backgrounded to its last
+       foreground fix would throw away the miles the athlete actually cared most about measuring. */
+    void drainBackgroundFixes().then((fixes) => {
+      if (fixes.length) setTrack((prev) => applyFixes(prev, fixes, kind));
+      void stopBackgroundFixes();
+    });
     setPhase('idle');
     setGps('off');
-  }, [clearAll]);
+  }, [clearAll, kind]);
+
+  /**
+   * ══ COMING BACK ══
+   *
+   * The buffer is what the OS collected while the JS was asleep; this is the only place it becomes
+   * distance. Draining on FOREGROUND rather than only on stop means an athlete who glances at the card
+   * mid-run sees the miles they have actually covered, not the miles from before they pocketed the phone.
+   *
+   * `applyFixes` is the same `acceptFix` the live watcher uses, in order, so a backgrounded segment gets
+   * the identical jitter, teleport and climb treatment as a watched one. There is one distance rule in
+   * this app and this is it — a second one here is how the two halves of a run would start to disagree.
+   */
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next !== 'active' || !running.current) return;
+      void drainBackgroundFixes().then((fixes) => {
+        if (fixes.length) setTrack((prev) => applyFixes(prev, fixes, kind));
+      });
+    });
+    return () => sub.remove();
+  }, [kind]);
 
   // Everything below is DERIVED. "Acquiring" becomes "tracking" the moment a fix is good enough to have
   // entered the track, and patience runs out on its own — both are functions of state already held, and

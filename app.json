@@ -12,6 +12,12 @@
       "buildNumber": "4",
       "config": {
         "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "location"
+        ],
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Forge Legacy keeps measuring your run while your phone is locked or in your pocket, so the distance, pace and climb are the whole session rather than the part you were looking at. It is only read during a session you started, and the route is never shared."
       }
     },
     "android": {
@@ -31,7 +37,9 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE_LOCATION"
       ]
     },
     "web": {
@@ -62,7 +70,11 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Forge Legacy uses your location while you're running, walking, or riding to measure the distance and pace of that session. It is only read during a session you started, and the route is never shared."
+          "locationWhenInUsePermission": "Forge Legacy uses your location while you're running, walking, or riding to measure the distance and pace of that session. It is only read during a session you started, and the route is never shared.",
+          "locationAlwaysAndWhenInUsePermission": "Forge Legacy keeps measuring your run while your phone is locked or in your pocket, so the distance, pace and climb are the whole session rather than the part you were looking at. It is only read during a session you started, and the route is never shared.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
         }
       ],
       "expo-notifications",

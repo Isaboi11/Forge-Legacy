@@ -7,6 +7,16 @@ import { useFonts } from 'expo-font';
 import { useColorScheme } from 'react-native';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 
+/*
+ * ⚠ IMPORTED FOR A SIDE EFFECT, AND IT HAS TO BE AT THE ROOT.
+ *
+ * `TaskManager.defineTask` must have run before the OS delivers a background location batch. After a
+ * cold background launch there is no mounted component to register it from, so registration cannot live
+ * in an effect — it has to happen at import time, in a module the app always loads. Removing this line
+ * does not break the build, does not fail a test, and silently ends every backgrounded run at the last
+ * fix taken while the screen was on.
+ */
+import '@/domain/run/background-task';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { ForgeSplash } from '@/components/forge-splash';
 import { AnalyticsTracker } from '@/components/analytics-tracker';

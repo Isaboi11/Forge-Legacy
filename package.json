@@ -30,6 +30,7 @@
     "expo-status-bar": "~56.0.4",
     "expo-symbols": "~56.0.6",
     "expo-system-ui": "~56.0.5",
+    "expo-task-manager": "~56.0.25",
     "expo-updates": "~56.0.23",
     "expo-video": "~56.1.4",
     "expo-web-browser": "~56.0.6",
