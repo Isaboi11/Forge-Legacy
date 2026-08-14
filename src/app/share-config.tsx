@@ -5,6 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { TransformationLayout } from '@/components/forge/TransformationLayout';
+import { SquadSelectList, selectedSquads } from '@/components/forge/SquadSelectList';
+import { shareSummary, shareTargets, shareVerb } from '@/domain/share/fanout';
 import { addSquadPost, type ComparePair, type EntryTemplate, type PoseShot, type ShareTemplate, type TransformationLayoutData } from '@/data/squad-feed-live';
 import { fetchFriendLists } from '@/data/friends-live';
 import { createFriendPost } from '@/data/friends-feed-live';
@@ -43,6 +45,10 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
  * Four destinations that all work beats ten where six lie. Same reasoning that omitted the Friends chip
  * from Challenges and the Community filter from Discover: absent renders nothing, a fake renders a
  * confident false claim.
+ *
+ * THE SQUAD PICKER TAKES MORE THAN ONE ANSWER (PO: *"I want to be able to easily select 1/3, 2/3, or 3/3
+ * of those"*). Its rows are checkboxes with a pinned confirm; the fan-out and the "what actually landed"
+ * message come from `domain/share/fanout`, shared with the two share sheets.
  */
 
 type ToggleKey = 'chapter' | 'reflection' | 'date' | 'photo' | 'name';
@@ -101,6 +107,8 @@ export default function ShareConfigRoute() {
   const [excluded, setExcluded] = useState<number[]>([]);
   const [mySquads, setMySquads] = useState<SquadSummary[] | null>(null);
   const [squadPickerOpen, setSquadPickerOpen] = useState(false);
+  /** Which squads the picker has ticked. Multi-select since the PO asked for "1/3, 2/3, or 3/3". */
+  const [squadPick, setSquadPick] = useState<Set<string>>(new Set());
   const [sharing, setSharing] = useState(false);
   /** Separate from `sharing`: saving an image is not posting, and one must not block the other. */
   const [savingImage, setSavingImage] = useState(false);
@@ -191,10 +199,10 @@ export default function ShareConfigRoute() {
     layout: isCompare ? layoutData : useShots.length ? entryLayout : null,
   });
 
-  const finishShare = (where: string) => {
+  const finishShare = (message: string) => {
     setSharing(false);
     setSquadPickerOpen(false);
-    showToast(`Shared to ${where}`);
+    showToast(message);
     setTimeout(() => router.back(), 700);
   };
 
@@ -203,10 +211,29 @@ export default function ShareConfigRoute() {
     showToast(errorMessage(e));
   };
 
-  const postToSquad = (squad: SquadSummary) => {
-    if (sharing) return;
+  /**
+   * One post per squad, awaited in turn.
+   *
+   * ⚠ NOT `Promise.all`. These are separate inserts into separate feeds; running them concurrently makes
+   * a partial failure unattributable, and the recovery message here has to be able to say which squads
+   * already have the transformation so nobody posts it to them twice.
+   */
+  const postToSquads = async (squads: SquadSummary[]) => {
+    if (sharing || !squads.length) return;
     setSharing(true);
-    addSquadPost({ ...composePost(), squadId: squad.id }).then(() => finishShare(squad.name), failShare);
+    const landed: string[] = [];
+    const body = composePost();
+    try {
+      for (const t of shareTargets(squads.map((s) => s.id), false)) {
+        await addSquadPost({ ...body, squadId: t.squadId! });
+        landed.push(squads.find((s) => s.id === t.squadId)!.name);
+      }
+    } catch (e) {
+      setSharing(false);
+      showToast(landed.length ? `${errorMessage(e)} ${shareSummary(landed, false)}.` : errorMessage(e));
+      return;
+    }
+    finishShare(shareSummary(landed, false));
   };
 
   /**
@@ -253,7 +280,7 @@ export default function ShareConfigRoute() {
             ]
           : post.media,
       });
-      finishShare('your friends');
+      finishShare(shareSummary([], true));
     } catch (e) {
       failShare(e);
     }
@@ -271,10 +298,12 @@ export default function ShareConfigRoute() {
         showToast('Create or join a squad first');
         return;
       }
+      // One squad is not a choice; more than one is, and it is a choice of ANY of them.
       if (squads.length === 1) {
-        postToSquad(squads[0]);
+        void postToSquads(squads);
         return;
       }
+      setSquadPick(new Set());
       setSquadPickerOpen(true);
       return;
     }
@@ -502,19 +531,25 @@ export default function ShareConfigRoute() {
         </View>
       </View>
 
+      {/* ⚠ THE ROW TAPS NO LONGER POST. This was a list of buttons: tapping a name shared to it and shut
+          the modal, so two squads meant walking the whole screen twice. It is a checkbox list with a
+          confirm now, which is the only shape that can express "these two but not that one". */}
       <Modal visible={squadPickerOpen} transparent animationType="fade" onRequestClose={() => setSquadPickerOpen(false)}>
         <Pressable style={styles.pickerBackdrop} onPress={() => setSquadPickerOpen(false)}>
           <Pressable style={styles.pickerCard} onPress={() => {}}>
-            <Text style={styles.pickerTitle}>Share to which squad?</Text>
+            <Text style={styles.pickerTitle}>Share to which squads?</Text>
             <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
-              {(mySquads ?? []).map((s, i) => (
-                <Pressable key={s.id} onPress={() => postToSquad(s)} disabled={sharing} accessibilityRole="button" accessibilityLabel={`Share to ${s.name}`} style={[styles.pickerRow, i > 0 ? styles.pickerRowDiv : null]}>
-                  <Text style={styles.pickerName} numberOfLines={1}>
-                    {s.name}
-                  </Text>
-                </Pressable>
-              ))}
+              <SquadSelectList squads={mySquads ?? []} selected={squadPick} onChange={setSquadPick} disabled={sharing} />
             </ScrollView>
+            <Pressable
+              onPress={() => void postToSquads(selectedSquads(mySquads ?? [], squadPick))}
+              disabled={sharing || squadPick.size === 0}
+              accessibilityRole="button"
+              accessibilityLabel={shareVerb(squadPick.size, false)}
+              style={[styles.pickerCta, sharing || squadPick.size === 0 ? styles.pickerCtaOff : null]}
+            >
+              <Text style={styles.pickerCtaText}>{sharing ? 'Sharing…' : shareVerb(squadPick.size, false)}</Text>
+            </Pressable>
           </Pressable>
         </Pressable>
       </Modal>
@@ -698,7 +733,7 @@ const styles = StyleSheet.create({
   pickerCard: { width: '100%', maxWidth: 320, backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.charcoal500, borderRadius: flRadius.xl, paddingVertical: 20, paddingHorizontal: 20, boxShadow: flShadow.ambient },
   pickerTitle: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', color: flColor.cream100, marginBottom: 12 },
   pickerScroll: { maxHeight: 300 },
-  pickerRow: { paddingVertical: 14 },
-  pickerRowDiv: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
-  pickerName: { fontSize: 15.5, fontWeight: '600', color: flColor.cream100 },
+  pickerCta: { marginTop: 16, alignItems: 'center', paddingVertical: 13, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: '#3D2F1A' },
+  pickerCtaOff: { opacity: 0.45 },
+  pickerCtaText: { fontSize: 14, fontWeight: '700', letterSpacing: 0.3, color: '#F7F5F1' },
 });

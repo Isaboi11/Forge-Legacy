@@ -3,11 +3,14 @@ import { Linking, Platform, Pressable, Share, StyleSheet, Text, View } from 'rea
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { Button } from '@/components/forge/composites/Button';
+import { SquadSelectList, selectedSquads } from '@/components/forge/SquadSelectList';
 import { flColor, flRadius } from '@/constants/foundation';
 import { useToast } from '@/hooks/useCeremony';
 import { addSquadPost, buildWorkoutRecap, fmtVolume, type WorkoutSummary } from '@/data/squad-feed-live';
 import { createFriendPost, type PostAudience } from '@/data/friends-feed-live';
 import { fetchMySquads, type SquadSummary } from '@/data/squad-live';
+import { shareSummary, shareTargets, shareVerb } from '@/domain/share/fanout';
 
 /**
  * WHERE A SESSION GOES — one sheet, every destination, wherever it is opened from.
@@ -41,6 +44,15 @@ import { fetchMySquads, type SquadSummary } from '@/data/squad-live';
  * That constraint is an EQUIVALENCE stated both ways, so BOTH must carry a squad. An athlete in no
  * squads therefore gets Friends only — and the sheet SAYS so rather than hiding the rows, because a
  * missing option teaches nothing and a disabled one with a reason does.
+ *
+ * ══ AND "WHICH SQUAD?" IS NOW "WHICH SQUADS?" ══
+ *
+ * PO: *"If I click squads then I can only pick one. I want to be able to easily select 1/3, 2/3, or 3/3
+ * of those."* The second step was a list of buttons that posted on tap, so two squads meant opening the
+ * sheet twice. It is a `SquadSelectList` now — checkboxes, a one-tap Select all, and a pinned confirm
+ * that names the count. The row taps stopped committing, which is why this sheet gained a footer.
+ *
+ * The rows that produces are NOT one per squad when Friends is included: see `domain/share/fanout`.
  */
 
 export interface ShareSessionSheetProps {
@@ -73,6 +85,8 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
   const { showToast } = useToast();
   const [mySquads, setMySquads] = useState<SquadSummary[] | null>(null);
   const [squadStep, setSquadStep] = useState<PostAudience | null>(null);
+  /** Which squads the second step has selected. Empty until they choose — nothing is pre-ticked. */
+  const [picked, setPicked] = useState<Set<string>>(new Set());
   const [sharing, setSharing] = useState(false);
   const [fetched, setFetched] = useState<WorkoutSummary | null>(null);
 
@@ -95,46 +109,68 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
   }, [open, workoutId, summary, fetched, mySquads]);
 
   const hasSquad = (mySquads ?? []).length > 0;
+  /** Whether the tiles should promise a CHOICE — with one squad there is nothing to pick between. */
+  const manySquads = (mySquads ?? []).length > 1;
 
-  const post = (audience: PostAudience, squad: SquadSummary | null) => {
+  /**
+   * Send it — to every squad chosen, and to friends if they were.
+   *
+   * ⚠ `shareTargets` decides the ROWS, not this function. Friends-plus-three-squads is one `BOTH` row and
+   * two `SQUAD` rows, never three `BOTH`s, because `friends_feed` reads `FRIENDS`+`BOTH` and would show
+   * the same session three times. That rule lives in `domain/share/fanout` with the constraint it
+   * implements; see its header before changing the shape here.
+   *
+   * SEQUENTIAL, not `Promise.all`: each insert is one athlete's deliberate post to one squad, and a
+   * partial failure has to be reportable as "these landed, that one didn't" rather than as a race.
+   */
+  const post = (audience: PostAudience, squads: SquadSummary[]) => {
     if (sharing || !snapshot) return;
-    if (audience !== 'FRIENDS' && !squad) return; // unreachable via the sheet; the constraint's belt-and-braces
+    const includeFriends = audience === 'FRIENDS' || audience === 'BOTH';
+    const targets = shareTargets(squads.map((s) => s.id), includeFriends);
+    if (!targets.length) return; // the footer disables this; belt-and-braces for the constraint
     setSharing(true);
-    const settle = (message: string) => {
+
+    const recap = { type: 'recap' as const, body: '', workoutId, workoutSummary: snapshot };
+    const run = async () => {
+      const landed: string[] = [];
+      try {
+        for (const t of targets) {
+          if (t.audience === 'SQUAD' && t.squadId) {
+            await addSquadPost({ squadId: t.squadId, ...recap });
+          } else {
+            await createFriendPost({ ...recap, audience: t.audience, squadId: t.squadId, media: [] });
+          }
+          const name = squads.find((s) => s.id === t.squadId)?.name;
+          if (name) landed.push(name);
+        }
+      } catch (e) {
+        setSharing(false);
+        // Anything already inserted STAYS inserted, so the message says what got through rather than
+        // implying the whole share failed and inviting a second, duplicating attempt.
+        const done = landed.length ? ` ${shareSummary(landed, includeFriends)}.` : '';
+        showToast(`${e instanceof Error ? e.message : 'Couldn’t share that.'}${done}`);
+        return;
+      }
       setSharing(false);
       setSquadStep(null);
+      setPicked(new Set());
       onClose();
-      showToast(message);
+      showToast(shareSummary(landed, includeFriends));
     };
-    const failed = (e: unknown) => {
-      setSharing(false);
-      showToast(e instanceof Error ? e.message : 'Couldn’t share that.');
-    };
-
-    if (audience === 'SQUAD' && squad) {
-      addSquadPost({ squadId: squad.id, type: 'recap', body: '', workoutId, workoutSummary: snapshot }).then(
-        () => settle(`Shared to ${squad.name}`),
-        failed,
-      );
-      return;
-    }
-    createFriendPost({
-      body: '',
-      audience,
-      squadId: squad?.id ?? null,
-      media: [],
-      type: 'recap',
-      workoutId,
-      workoutSummary: snapshot,
-    }).then(() => settle(squad ? `Shared to your friends and ${squad.name}` : 'Shared with your friends'), failed);
+    void run();
   };
 
   const choose = (audience: PostAudience) => {
-    if (audience === 'FRIENDS') return post('FRIENDS', null);
+    if (audience === 'FRIENDS') return post('FRIENDS', []);
     const squads = mySquads ?? [];
-    if (squads.length === 1) return post(audience, squads[0]);
+    // One squad is not a choice. More than one is, and it is a choice of ANY of them.
+    if (squads.length === 1) return post(audience, squads);
+    setPicked(new Set());
     setSquadStep(audience);
   };
+
+  const stepSquads = mySquads ?? [];
+  const stepPicked = selectedSquads(stepSquads, picked);
 
   const sentence = () => {
     const vol = snapshot ? ` ${fmtVolume(snapshot.volume)} moved.` : '';
@@ -169,6 +205,7 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
 
   const close = () => {
     setSquadStep(null);
+    setPicked(new Set());
     onClose();
   };
 
@@ -183,26 +220,46 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
    * sending before you pick where it goes.
    */
   return (
-    <BottomSheet open={open} onClose={close} scroll title={squadStep ? (squadStep === 'BOTH' ? 'Friends and which squad?' : 'Share to which squad?') : 'Share your workout'}>
+    <BottomSheet
+      open={open}
+      onClose={close}
+      scroll
+      title={squadStep ? (squadStep === 'BOTH' ? 'Friends and which squads?' : 'Share to which squads?') : 'Share your workout'}
+      /*
+       * ⚠ THE STEP NEEDS A FOOTER BECAUSE THE TAPS NO LONGER COMMIT.
+       *
+       * A single-select list posts on the row tap; a multi-select one cannot — the athlete has to be able
+       * to tick two things before anything is sent. So the confirm moves to a pinned button, and it names
+       * the count so nobody discovers how many posts they made by reading their feeds afterwards.
+       */
+      footer={
+        squadStep ? (
+          <Button
+            variant="primary"
+            fullWidth
+            disabled={sharing || (squadStep !== 'FRIENDS' && stepPicked.length === 0)}
+            onPress={() => post(squadStep, stepPicked)}
+            accessibilityLabel={shareVerb(stepPicked.length, squadStep === 'BOTH')}
+          >
+            {sharing ? 'Sharing…' : shareVerb(stepPicked.length, squadStep === 'BOTH')}
+          </Button>
+        ) : null
+      }
+    >
       {/* A plain View, not a second ScrollView: `scroll` above already gives the sheet one, and nesting
           two on the same axis is what `BottomSheet`'s own header warns against. */}
       {squadStep ? (
-        <View>
-          {(mySquads ?? []).map((s, i) => (
-            <Pressable
-              key={s.id}
-              onPress={() => post(squadStep, s)}
-              disabled={sharing}
-              accessibilityRole="button"
-              accessibilityLabel={`Share to ${s.name}`}
-              style={[styles.row, i > 0 ? styles.rowDiv : null]}
-            >
-              <Text style={styles.rowName} numberOfLines={1}>
-                {s.name}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+        <SquadSelectList
+          squads={stepSquads}
+          selected={picked}
+          onChange={setPicked}
+          disabled={sharing}
+          hint={
+            squadStep === 'BOTH'
+              ? 'One post to your friends, and one to each squad you pick.'
+              : 'One post to each squad you pick.'
+          }
+        />
       ) : (
         <View style={styles.body}>
           {preview ? <View style={styles.preview}>{preview}</View> : null}
@@ -228,14 +285,14 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
               label="Squads"
               onPress={() => choose('SQUAD')}
               disabled={sharing || !hasSquad || !snapshot}
-              hint={hasSquad ? 'Just the people you train with' : 'You’re not in a squad yet'}
+              hint={!hasSquad ? 'You’re not in a squad yet' : manySquads ? 'Any of the squads you train with' : 'Just the people you train with'}
             />
             <Tile
               icon={<BothGlyph />}
               label="Both"
               onPress={() => choose('BOTH')}
               disabled={sharing || !hasSquad || !snapshot}
-              hint={hasSquad ? 'One post, both audiences' : 'Needs a squad'}
+              hint={!hasSquad ? 'Needs a squad' : manySquads ? 'Friends, and any squads you pick' : 'One post, both audiences'}
             />
           </View>
           {!hasSquad ? (
@@ -395,7 +452,4 @@ const styles = StyleSheet.create({
   outRowLabel: { flex: 1, fontSize: 14, color: flColor.cream100 },
 
   note: { fontSize: 12, lineHeight: 18, color: flColor.gray600 },
-  row: { paddingVertical: 13 },
-  rowDiv: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
-  rowName: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
 });

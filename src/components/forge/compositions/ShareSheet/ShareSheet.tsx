@@ -25,6 +25,14 @@
  * STILL HONESTLY PLACEHOLDER: image export. The card is rendered on screen but not captured, so an
  * external share carries the text snippet. The note under the button says so rather than implying a
  * picture went with it.
+ *
+ * ══ THE SQUAD CHIPS ARE CHECKBOXES ══
+ *
+ * PO: *"If I click squads then I can only pick one. I want to be able to easily select 1/3, 2/3, or 3/3
+ * of those."* They were a radio group, so an honor could reach one squad per pass through this sheet.
+ * Each chip toggles independently now, `Select all` covers 3-of-3 in one tap, and the button counts what
+ * it is about to do. Posting order and the "what actually landed" toast come from `domain/share/fanout`,
+ * shared with the session sheet and Share Transformation so the three cannot drift.
  */
 
 import React, { useEffect, useMemo, useState } from 'react'
@@ -39,6 +47,7 @@ import { createFriendPost } from '@/data/friends-feed-live'
 import { fetchMySquads, type SquadSummary } from '@/data/squad-live'
 import { errorMessage } from '@/lib/useQuery'
 import { shareSnippet, type ShareContent } from '@/domain/share/content'
+import { shareSummary, shareTargets, shareVerb } from '@/domain/share/fanout'
 
 export interface ShareSheetProps {
   open: boolean
@@ -59,7 +68,15 @@ export function ShareSheet({ open, onClose, content }: ShareSheetProps) {
   const [dest, setDest] = useState<DestId>('squad')
   const [toast, setToast] = useState<string | null>(null)
   const [squads, setSquads] = useState<SquadSummary[] | null>(null)
-  const [squadId, setSquadId] = useState<string | null>(null)
+  /**
+   * WHICH SQUADS — plural since the PO asked for "1/3, 2/3, or 3/3 of those". The chips below were a
+   * radio group; they are checkboxes now, and the button counts them.
+   *
+   * The FIRST squad is still pre-selected, exactly as the single-select default was, so the athlete who
+   * has one squad (or doesn't care which) still shares in one tap. Adding a second is one more tap; all
+   * of them is one tap on `All`.
+   */
+  const [squadIds, setSquadIds] = useState<Set<string>>(new Set())
   const [posting, setPosting] = useState(false)
 
   // The squad list is only needed once the sheet is up, and it decides whether the Squad destination
@@ -71,7 +88,7 @@ export function ShareSheet({ open, onClose, content }: ShareSheetProps) {
       (rows) => {
         if (!alive) return
         setSquads(rows)
-        setSquadId((cur) => cur ?? rows[0]?.id ?? null)
+        setSquadIds((cur) => (cur.size ? cur : new Set(rows[0] ? [rows[0].id] : [])))
       },
       () => alive && setSquads([]),
     )
@@ -89,10 +106,14 @@ export function ShareSheet({ open, onClose, content }: ShareSheetProps) {
     })
 
   const snippet = useMemo(() => shareSnippet(content, hidden, includeName), [content, hidden, includeName])
-  const destVerb = FORGE_DESTS.find((d) => d.id === dest)?.verb ?? 'Share'
   const noSquads = squads != null && squads.length === 0
-  const chosenSquad = squads?.find((s) => s.id === squadId) ?? null
-  const canPost = !posting && (dest === 'friends' || !!squadId)
+  const chosen = (squads ?? []).filter((s) => squadIds.has(s.id))
+  const allChosen = (squads?.length ?? 0) > 0 && chosen.length === squads!.length
+  const destVerb =
+    dest === 'friends'
+      ? FORGE_DESTS.find((d) => d.id === 'friends')!.verb
+      : shareVerb(chosen.length, false)
+  const canPost = !posting && (dest === 'friends' || chosen.length > 0)
 
   const flash = (msg: string) => setToast(msg)
 
@@ -100,24 +121,30 @@ export function ShareSheet({ open, onClose, content }: ShareSheetProps) {
    * Post it. The card is not captured, so what lands in the feed is the SNIPPET — the same text the
    * external share carries, and the same text the preview above is built from. No media, because
    * claiming an image was attached would be the original lie in a new place.
+   *
+   * ONE INSERT PER CHOSEN SQUAD, in the order they are shown, and awaited one at a time so a failure
+   * halfway through can name what already landed instead of leaving the athlete to guess and re-post.
    */
   const onForgeShare = async () => {
     if (posting || !canPost) return
     setPosting(true)
+    const landed: string[] = []
     try {
       if (dest === 'squad') {
-        if (!squadId) return
-        await addSquadPost({ squadId, type: 'discussion', body: snippet })
-        flash(chosenSquad ? `Shared to ${chosenSquad.name}` : 'Shared to your squad')
+        for (const t of shareTargets(chosen.map((s) => s.id), false)) {
+          await addSquadPost({ squadId: t.squadId!, type: 'discussion', body: snippet })
+          landed.push(chosen.find((s) => s.id === t.squadId)?.name ?? 'your squad')
+        }
+        flash(shareSummary(landed, false))
       } else {
         await createFriendPost({ body: snippet, audience: 'FRIENDS', squadId: null, media: [] })
-        flash('Shared with your friends')
+        flash(shareSummary([], true))
       }
       setTimeout(onClose, 900)
     } catch (e) {
       // The toast reports the failure instead of the success. This is the case the old code could not
       // reach, because it never attempted anything that could fail.
-      flash(errorMessage(e))
+      flash(landed.length ? `${errorMessage(e)} ${shareSummary(landed, false)}.` : errorMessage(e))
     } finally {
       setPosting(false)
     }
@@ -178,25 +205,53 @@ export function ShareSheet({ open, onClose, content }: ShareSheetProps) {
           </View>
           {noSquads ? <Text style={styles.note}>You’re not in a squad yet, so Friends is the only place inside Forge to share this.</Text> : null}
 
-          {/* WHICH squad. Only asked when the answer isn't already decided — one squad needs no picker,
-              and none needs no question. Posting to the wrong squad is not undoable from here. */}
+          {/* WHICH squads. Only asked when the answer isn't already decided — one squad needs no picker,
+              and none needs no question. Posting to the wrong squad is not undoable from here.
+
+              ⚠ THE CHIPS TOGGLE, THEY DO NOT SELECT. They were a radio group, so an athlete in three
+              squads could reach exactly one of them per pass through this sheet. Each chip is its own
+              on/off now and `All` covers the 3-of-3 case in one tap, which is the case the PO named. */}
           {dest === 'squad' && (squads?.length ?? 0) > 1 ? (
-            <View style={styles.squadRow}>
-              {squads!.map((s) => (
+            <>
+              <View style={styles.squadHead}>
+                <Text style={styles.squadCount}>
+                  {chosen.length} of {squads!.length} selected
+                </Text>
                 <Pressable
-                  key={s.id}
-                  onPress={() => setSquadId(s.id)}
+                  onPress={() => setSquadIds(allChosen ? new Set() : new Set(squads!.map((s) => s.id)))}
                   accessibilityRole="button"
-                  accessibilityLabel={`Share to ${s.name}`}
-                  accessibilityState={{ selected: squadId === s.id }}
-                  style={[styles.squadChip, squadId === s.id ? styles.squadChipOn : null]}
+                  accessibilityLabel={allChosen ? 'Clear all squads' : 'Select all squads'}
                 >
-                  <Text style={[styles.squadChipText, squadId === s.id ? styles.squadChipTextOn : null]} numberOfLines={1}>
-                    {s.name}
-                  </Text>
+                  <Text style={styles.squadAll}>{allChosen ? 'Clear' : 'Select all'}</Text>
                 </Pressable>
-              ))}
-            </View>
+              </View>
+              <View style={styles.squadRow}>
+                {squads!.map((s) => {
+                  const on = squadIds.has(s.id)
+                  return (
+                    <Pressable
+                      key={s.id}
+                      onPress={() =>
+                        setSquadIds((cur) => {
+                          const next = new Set(cur)
+                          if (next.has(s.id)) next.delete(s.id)
+                          else next.add(s.id)
+                          return next
+                        })
+                      }
+                      accessibilityRole="checkbox"
+                      accessibilityLabel={s.name}
+                      accessibilityState={{ checked: on }}
+                      style={[styles.squadChip, on ? styles.squadChipOn : null]}
+                    >
+                      <Text style={[styles.squadChipText, on ? styles.squadChipTextOn : null]} numberOfLines={1}>
+                        {s.name}
+                      </Text>
+                    </Pressable>
+                  )
+                })}
+              </View>
+            </>
           ) : null}
           {dest === 'squad' && squads == null ? (
             <View style={styles.squadLoading}>
@@ -278,7 +333,10 @@ const styles = StyleSheet.create({
   destOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   destOff: { opacity: 0.4 },
   destText: { fontSize: 12, fontWeight: '600', color: flColor.gray400 },
-  squadRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
+  squadHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, marginHorizontal: 2 },
+  squadCount: { fontSize: 11, fontWeight: '600', color: flColor.gray600 },
+  squadAll: { fontSize: 11.5, fontWeight: '700', color: flColor.bronze300 },
+  squadRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   squadChip: {
     paddingHorizontal: 11,
     paddingVertical: 7,
