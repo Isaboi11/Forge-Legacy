@@ -47,7 +47,9 @@ export type Turn =
   | { kind: 'me'; text: string }
   /** `live` types itself out, character by character. Exactly one turn at a time may be live. */
   | { kind: 'holt'; text: string; live?: boolean }
-  | { kind: 'chips'; chips: Chip[] }
+  /** `ctl` is how they are DRAWN (v2 layer 2). Absent → the 2-col chip grid, which is what every
+   *  answer used to be. The openers and the help menu carry none, and correctly render as chips. */
+  | { kind: 'chips'; chips: Chip[]; ctl?: QuestionControl }
   | { kind: 'program'; card: ProgramCard }
   | { kind: 'day'; card: DayCard }
   | { kind: 'edit'; card: EditCard }
@@ -160,6 +162,42 @@ export type QuestionId =
   | 'experience'
   | 'limits';
 
+/**
+ * How a question's answers are drawn — Coach Holt Chat v2, layer 2: **the question picks the control.**
+ *
+ * Every question rendered as the same wrap of pills, which is why the screen read as a form rather than
+ * as a conversation. The shape now carries meaning:
+ *
+ *   · `chips`     — 2-col grid, 48pt, a leading icon and a check when chosen. A SET of unlike things.
+ *   · `segmented` — one equal-width row. A scale WITH AN ORDER TO IT: 2·3·4·5·6 days, 30·45·60·75 min.
+ *                   Laid out in a row precisely because the order is the information.
+ *   · `cards`     — full-width, title + sub + radio. A choice that needs a SENTENCE to be fair, where a
+ *                   two-word pill would make the athlete guess what they were picking.
+ *   · `grid`      — 2-col, 52pt. Like `chips`, for options that are places or equipment rather than
+ *                   intentions.
+ *   · `imports`   — action rows with chevrons. NOT a selection: bringing something in is an ACT, and it
+ *                   leaves the conversation. The control type is the answer type.
+ *
+ * ⚠ OPTIONAL, AND ABSENT MEANS `chips`. A question that forgets to declare one still renders exactly as
+ * it does today, so adding this could not regress a flow — and a future question is never blocked on
+ * someone remembering to pick a shape.
+ */
+export type QuestionControl = 'chips' | 'segmented' | 'cards' | 'grid' | 'imports';
+
+/** The shape each question is drawn in. Absent → `chips`. */
+export const CONTROL_FOR: Partial<Record<QuestionId, QuestionControl>> = {
+  // Ordered scales. A row, left to right, because "more" is a direction.
+  days: 'segmented',
+  time: 'segmented',
+  race_when: 'segmented',
+  // Needs a sentence: "a year or two, on and off" is not a pill.
+  experience: 'cards',
+  race_base: 'cards',
+  // Places and kit.
+  where: 'grid',
+  // Everything else — goal, day_focus, race_distance, limits — is a set of unlike things.
+};
+
 export interface Question {
   id: QuestionId;
   /** Holt's line. Spoken, not labelled — the wizard's heading rewritten as something a person says. */
@@ -167,6 +205,8 @@ export interface Question {
   chips: Chip[];
   /** A question the athlete may pass on. `limits` is the only one, because "none" is a real answer. */
   skippable?: boolean;
+  /** v2 layer 2. Omitted → `chips`, so nothing regresses by being forgotten. */
+  ctl?: QuestionControl;
 }
 
 const chip = (label: string, patch: Partial<CoachConstraints>): Chip => ({ label, patch });
@@ -190,7 +230,21 @@ const chip = (label: string, patch: Partial<CoachConstraints>): Chip => ({ label
  * to avoid. Nothing else.
  */
 export function nextQuestion(c: ChatState, mode: 'program' | 'day' = 'program'): Question | null {
-  if (mode === 'day') return nextDayQuestion(c);
+  return withControl(mode === 'day' ? nextDayQuestion(c) : askProgram(c));
+}
+
+/**
+ * Stamp each question with its control shape, in ONE place.
+ *
+ * The alternative was a `ctl:` line on each of the ten return sites, which is ten chances to forget and
+ * no way to see the vocabulary as a whole. Here the mapping is a table you can read (`CONTROL_FOR`), and
+ * a question that is not in it gets `chips` — the shape everything used before this existed.
+ */
+function withControl(q: Question | null): Question | null {
+  return q && !q.ctl ? { ...q, ctl: CONTROL_FOR[q.id] ?? 'chips' } : q;
+}
+
+function askProgram(c: ChatState): Question | null {
 
   if (c.goal == null && !c.pickingRace) {
     /*

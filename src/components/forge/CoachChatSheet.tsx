@@ -38,6 +38,7 @@ import {
   type DayCard,
   type EditCard,
   type ProgramCard,
+  type QuestionControl,
   type RefusalCard,
   type Turn,
 } from '@/domain/coach/chat-core';
@@ -325,7 +326,7 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
           /* The short beat before the question — "Good." / "Right." / "Noted." It is what the original
            hardcoded line did ("Good. What are you training for?"), now varied so it does not become the
              tic that makes him sound like a script. */
-          if (q) say({ kind: 'holt', text: `${pick('ack')} ${q.ask}` }, { kind: 'chips', chips: q.chips });
+          if (q) say({ kind: 'holt', text: `${pick('ack')} ${q.ask}` }, { kind: 'chips', chips: q.chips, ctl: q.ctl });
           return;
         }
 
@@ -831,7 +832,7 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
       /* He asks again rather than guessing. A coach who mishears and proceeds is worse than one who
          checks — and until the model lands, this is the honest edge of what he understands. */
       say({ kind: 'holt', text: NOT_UNDERSTOOD });
-      if (q) say({ kind: 'chips', chips: q.chips });
+      if (q) say({ kind: 'chips', chips: q.chips, ctl: q.ctl });
       return;
     }
     void advance({ ...constraints, ...patch }, mode ?? 'program');
@@ -1224,20 +1225,7 @@ function TurnView({
       return <HoltLine text={turn.text} />;
 
     case 'chips':
-      return (
-        <View style={styles.chipRow}>
-          {turn.chips.map((c) => (
-            <Pressable
-              key={c.label}
-              onPress={() => onChip(c)}
-              accessibilityRole="button"
-              style={({ pressed }) => [styles.chip, pressed && styles.chipOn]}
-            >
-              <Text style={styles.chipText}>{c.label}</Text>
-            </Pressable>
-          ))}
-        </View>
-      );
+      return <Answers chips={turn.chips} ctl={turn.ctl} onChip={onChip} />;
 
     case 'program':
       return <ProgramCardView card={turn.card} onPreview={onPreview} />;
@@ -1301,6 +1289,134 @@ function TurnView({
     default:
       return null;
   }
+}
+
+/**
+ * The answers to one question — **layer 2 of Coach Holt Chat v2: the question picks the control.**
+ *
+ * Every answer used to be the same wrap of pills, which is what made the screen read as a form rather
+ * than a conversation. The shape now carries meaning, and `chat-core`'s `CONTROL_FOR` decides it, so
+ * this component holds no opinion about which question gets what.
+ *
+ * ⚠ `ctl` ABSENT MEANS `chips`. The openers, the help menu and the edit flow all emit bare chip turns
+ * and must keep rendering exactly as they do — this is additive by construction, not by care.
+ */
+function Answers({ chips, ctl, onChip }: { chips: Chip[]; ctl?: QuestionControl; onChip: (c: Chip) => void }) {
+  /* An ordered scale — 2·3·4·5·6 days, 30·45·60·75 minutes. A ROW, left to right, because the order is
+     the information; wrapped pills throw that away and a stepper hides the range. Equal widths so no
+     option looks weightier than its neighbour. */
+  if (ctl === 'segmented') {
+    return (
+      <View style={styles.segRow}>
+        {chips.map((c) => (
+          <Pressable
+            key={c.label}
+            onPress={() => onChip(c)}
+            accessibilityRole="button"
+            accessibilityLabel={c.label}
+            style={({ pressed }) => [styles.seg, pressed && styles.ctlPressed]}
+          >
+            <Text style={styles.segText} numberOfLines={1}>{c.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+    );
+  }
+
+  /* A choice that needs a sentence to be fair. "A year or two, on and off" is not a pill, and reducing
+     it to one would make the athlete guess what they were agreeing to. Full width, title over sub. */
+  if (ctl === 'cards') {
+    return (
+      <View style={styles.cardCol}>
+        {chips.map((c) => {
+          // The copy already carries its own qualifier after an em dash; split it rather than rewriting
+          // the voice bank, so Holt's words stay Holt's.
+          const [title, sub] = splitCardLabel(c.label);
+          return (
+            <Pressable
+              key={c.label}
+              onPress={() => onChip(c)}
+              accessibilityRole="button"
+              accessibilityLabel={c.label}
+              style={({ pressed }) => [styles.optCard, pressed && styles.ctlPressed]}
+            >
+              <View style={styles.optCardText}>
+                <Text style={styles.optCardTitle}>{title}</Text>
+                {sub ? <Text style={styles.optCardSub}>{sub}</Text> : null}
+              </View>
+              <View style={styles.optDot} />
+            </Pressable>
+          );
+        })}
+      </View>
+    );
+  }
+
+  /* Places and kit — two columns, a little taller than a chip. Same idea as `chips`; the wider cell
+     exists because equipment names are longer than intentions are. */
+  if (ctl === 'grid') {
+    return (
+      <View style={styles.gridWrap}>
+        {chips.map((c) => (
+          <Pressable
+            key={c.label}
+            onPress={() => onChip(c)}
+            accessibilityRole="button"
+            accessibilityLabel={c.label}
+            style={({ pressed }) => [styles.gridCell, pressed && styles.ctlPressed]}
+          >
+            <Text style={styles.gridText} numberOfLines={2}>{c.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+    );
+  }
+
+  /* Bringing something in is an ACT, not a selection — and it leaves the conversation. So: action rows
+     with a chevron, the shape the rest of the app uses for "this takes you somewhere". */
+  if (ctl === 'imports') {
+    return (
+      <View style={styles.cardCol}>
+        {chips.map((c) => (
+          <Pressable
+            key={c.label}
+            onPress={() => onChip(c)}
+            accessibilityRole="button"
+            accessibilityLabel={c.label}
+            style={({ pressed }) => [styles.importRow, pressed && styles.ctlPressed]}
+          >
+            <Text style={styles.importText}>{c.label}</Text>
+            <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M9 5l7 7-7 7" />
+            </Svg>
+          </Pressable>
+        ))}
+      </View>
+    );
+  }
+
+  /* The default, and what every question used to be: a set of unlike things, two to a row. */
+  return (
+    <View style={styles.chipGrid}>
+      {chips.map((c) => (
+        <Pressable
+          key={c.label}
+          onPress={() => onChip(c)}
+          accessibilityRole="button"
+          accessibilityLabel={c.label}
+          style={({ pressed }) => [styles.chipCell, pressed && styles.ctlPressed]}
+        >
+          <Text style={styles.chipCellText} numberOfLines={2}>{c.label}</Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+/** `"Beginner — new to lifting"` → `['Beginner', 'new to lifting']`. No dash → title only. */
+function splitCardLabel(label: string): [string, string | null] {
+  const i = label.indexOf('—');
+  return i < 0 ? [label, null] : [label.slice(0, i).trim(), label.slice(i + 1).trim()];
 }
 
 /**
@@ -1773,6 +1889,91 @@ const styles = StyleSheet.create({
   },
   chipOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   chipText: { fontSize: 13.5, fontWeight: '500', color: flColor.cream100 },
+
+  /* ══ v2 LAYER 2 — THE ANSWER CONTROLS ══
+     One vocabulary, five shapes: 48pt tall, 13px radius, bronze-edged because a control here is a
+     decision waiting to be made. `chipRow`/`chip` above are kept for the legacy wrap the openers and
+     the help menu still use; these are what a QUESTION renders as. */
+  ctlPressed: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+
+  // chips — two to a row, a set of unlike things.
+  chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chipCell: {
+    // Two per row, accounting for the 8px gap. `flexBasis` rather than `width: '48%'` so a lone
+    // trailing option stays half-width instead of stretching across.
+    flexBasis: '48%',
+    flexGrow: 1,
+    minHeight: 48,
+    justifyContent: 'center',
+    paddingHorizontal: 13,
+    borderRadius: 13,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    backgroundColor: flColor.charcoal800,
+  },
+  chipCellText: { fontSize: 13.5, fontWeight: '500', color: flColor.cream100 },
+
+  // segmented — an ordered scale, so a row, equal widths, order left to right.
+  segRow: { flexDirection: 'row', gap: 7 },
+  seg: {
+    flex: 1,
+    minWidth: 0,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    backgroundColor: flColor.charcoal800,
+  },
+  segText: { fontSize: 13, fontWeight: '600', color: flColor.cream100 },
+
+  // cards — a choice that needs a sentence.
+  cardCol: { gap: 8 },
+  optCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    borderRadius: 13,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    backgroundColor: flColor.charcoal800,
+  },
+  optCardText: { flex: 1, minWidth: 0, gap: 4 },
+  optCardTitle: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
+  optCardSub: { fontSize: 12, lineHeight: 17, color: flColor.gray600 },
+  optDot: { width: 18, height: 18, borderRadius: 9, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
+
+  // grid — places and kit. Taller than a chip because the names are longer.
+  gridWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  gridCell: {
+    flexBasis: '48%',
+    flexGrow: 1,
+    minHeight: 52,
+    justifyContent: 'center',
+    paddingHorizontal: 13,
+    borderRadius: 13,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    backgroundColor: flColor.charcoal800,
+  },
+  gridText: { fontSize: 13.5, fontWeight: '500', lineHeight: 18, color: flColor.cream100 },
+
+  // imports — an act, not a selection. Chevron, because it leaves.
+  importRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 14,
+    minHeight: 52,
+    borderRadius: 13,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    backgroundColor: flColor.charcoal800,
+  },
+  importText: { flex: 1, minWidth: 0, fontSize: 14.5, color: flColor.cream100 },
 
   dotsWrap: { paddingHorizontal: 18, paddingBottom: 14, alignItems: 'flex-start' },
   /* Left-aligned and small — it sits where the line will, so nothing jumps when the line replaces it. */
