@@ -97,7 +97,7 @@ test('a stored visibility map merges over defaults and drops junk', () => {
 // ── notifications ──────────────────────────────────────────────────────────────
 
 /**
- * ⚠ ELEVEN, NOT TEN, SINCE 0153 — and this count is asserted precisely so a row cannot appear without
+ * ⚠ TWELVE, NOT ELEVEN, SINCE 0159 — and this count is asserted precisely so a row cannot appear without
  * somebody naming where it came from. The four ceremony toggles below are what happens when one does.
  *
  * The tenth (0135) is an unapplied LOCKED decision rather than an addition:
@@ -113,10 +113,19 @@ test('a stored visibility map merges over defaults and drops junk', () => {
  * emitted a training event — `profiles.training_since` had been written since 0086 with nothing reading
  * it. It is the fifth section for the reason 0135's was the fourth: Squad Activity's blurb promises
  * "Off by default", and this is the one ambient key that defaults ON.
+ *
+ * The twelfth (0159) is a formal amendment, `P-5-Amendment-003-Training-Briefing.md`, and it needed to be
+ * one: it is the FIRST notification in the app that nobody causes. Every other key here governs an
+ * arrival — somebody invited, joined, commented, reacted, trained — and P-5 §1's audit records that
+ * re-engagement notifications are absent from every locked document, while CAL-D19 says the app "never
+ * notifies about inactivity". The amendment grants a bounded exception (P5B-D1) on one distinction: a
+ * BRIEFING states what is next, a NUDGE comments on what you did not do. It is the sixth section because
+ * it is neither squad activity nor a request from another person — it is the only self-directed control
+ * on the screen — and it defaults OFF, back on P-5 §3.1's ambient side.
  */
-test('eleven toggles across five sections, squad off / requests on / challenges off / comments on', () => {
-  assert.equal(NOTIF_SECTIONS.flatMap((s) => s.toggles).length, 11);
-  assert.equal(NOTIF_SECTIONS.length, 5);
+test('twelve toggles across six sections, squad off / requests on / challenges off / comments on', () => {
+  assert.equal(NOTIF_SECTIONS.flatMap((s) => s.toggles).length, 12);
+  assert.equal(NOTIF_SECTIONS.length, 6);
   assert.equal(NOTIF_DEFAULTS.squad_feed, false);
   assert.equal(NOTIF_DEFAULTS.squad_invites, true);
   assert.equal(NOTIF_DEFAULTS.friend_requests, true, 'a direct request stays on (P-5 §3.2b)');
@@ -131,6 +140,13 @@ test('eleven toggles across five sections, squad off / requests on / challenges 
    * reason sitting on a screen they had no cause to open.
    */
   assert.equal(NOTIF_DEFAULTS.squad_training, true, 'nothing can reach this key until two other switches are already on (0153)');
+  /*
+   * ⚠ OFF, and deliberately NOT following `squad_training` above. That row is ON because it cannot fire
+   * until two other people-facing switches already are, so OFF would silently discard a preference set
+   * elsewhere. This one answers to nobody but the athlete, so no such trap exists — and a daily push
+   * nobody asked for is exactly what DNA §8 ("always feel invited, never pushed") rules out. P5B-D1.
+   */
+  assert.equal(NOTIF_DEFAULTS.training_briefing, false, 'a self-directed daily push must be asked for (P5B-D1)');
 });
 
 // P-5 Architecture §1 (LOCKED): M-1/M-2/M-4 each list "fire as a push notification" under their own

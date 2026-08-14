@@ -48,7 +48,8 @@ export type NotifKey =
   | 'squad_invites'
   | 'challenge_updates'
   | 'post_comments'
-  | 'squad_training';
+  | 'squad_training'
+  | 'training_briefing';
 
 export interface NotifToggle {
   key: NotifKey;
@@ -147,6 +148,34 @@ export const NOTIF_SECTIONS: NotifSection[] = [
       { key: 'challenge_updates', label: 'Challenge Updates', desc: 'Invitations and standing changes in your competitions', def: false, icon: 'trophy' },
     ],
   },
+  /*
+   * 0159, and the ONLY row in this file whose notification nobody else causes.
+   *
+   * Every other toggle here governs an arrival — somebody invited, joined, commented, reacted, trained.
+   * `P-5-Notifications-Architecture.md` §1 records that as an audit finding and notes that re-engagement
+   * notifications are absent from every locked document; `P-5-Amendment-003-Training-Briefing.md` is the
+   * review that adds this one, and the whole of it turns on a single distinction: a BRIEFING states what
+   * is next, a NUDGE comments on what you did not do. This is the first kind only.
+   *
+   * ⚠ OFF BY DEFAULT, unlike Training Alerts above. That row breaks the ambient-is-off habit because two
+   * people on two screens must opt in before it can fire at all. This one needs nobody's permission but
+   * the athlete's, so the ambient default (P-5 §3.1) is the right one — and DNA §8's "always feel
+   * invited, never pushed" is hard to square with a daily push somebody did not ask for.
+   */
+  {
+    key: 'briefing',
+    label: 'Morning Briefing',
+    blurb: 'What’s next in your training, before you open the app. You choose the days and the time.',
+    toggles: [
+      {
+        key: 'training_briefing',
+        label: 'Morning Briefing',
+        desc: 'Your next session, named — never a nudge about a session you haven’t done',
+        def: false,
+        icon: 'dumbbell',
+      },
+    ],
+  },
 ];
 
 export const ALWAYS_DELIVERED = {
@@ -204,6 +233,10 @@ export const PUSH_KIND_PREF: Record<string, NotifKey> = {
      of them won. */
   squad_training_started: 'squad_training',
   squad_training_finished: 'squad_training',
+  /* 0159. The kind and the key are the same word because there is only one of each — and it is here at
+     all so `briefing_send()` can gate itself through `push_prefs_allows`, the identical check every other
+     notification passes, rather than reading `notif_prefs` a second way that could disagree with this. */
+  training_briefing: 'training_briefing',
 };
 
 /** Merge a stored map over the defaults, keeping only known keys with boolean values. */

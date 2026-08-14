@@ -22,7 +22,7 @@
 - P-5 Notifications wireframe spec (recommended immediately — see Section 7)
 - Backend/data architecture (must define and expose Workout Tags and Squad Invitations notification preferences — see Section 3; this document states the requirement, not the implementation)
 
-**Amendment Log:** v1.4 — added **Squad Goal & Mission Updates** to Section A (Goal Completed, Mission Started, Mission Ending Soon, Everyone Checked In — merged into one new toggle, default OFF); relabeled "Squad Check-ins" → "Squad Feed Activity" and "Squad Reactions" → "Squad Reactions & Mentions" (same backing fields, expanded scope per `Squad-System-Architecture-v1.0` SQ-D12 — no schema change); reconciled Competition Started/Ending to the existing "Challenge Updates" toggle (no new toggle) and Honors Earned to the existing M-2 ceremony-only rule (no push, no toggle). v1.3 — added **Section E (Communities)** per `P-5-Amendment-002-Community-Notifications.md` (`Community-System-Architecture-v1.0` COM-D12): Replies & Mentions / Pinned Announcements / Event Reminders (default OFF); Membership Approval / Moderator Actions (non-toggleable, always ON); binding no-per-post-push rule; Community competitions route through the existing Challenges category, no new toggle. v1.2.1 — reconciliation pass for `Social-System-Architecture-v1.0`: reserved downstream Post Comments / optional Post Reactions notifications (§3.2c), no new locked toggle. v1.2 — added Section D (Friend Requests) per Friend-Relationship-Architecture-Amendment-001 FR-D7 (Requests-class, default ON). v1.1 — added Section C (Challenges) per P-5-Amendment-001. v1.0 LOCKED initial.
+**Amendment Log:** v1.5 — added **Section F — Training** per `P-5-Amendment-003-Training-Briefing.md` (P5B-D1): one **Morning Briefing** toggle, default **OFF**, plus a delivery schedule (`briefing_schedule`: weekdays + local hour). Inventory item 22. **The first category in this document whose trigger names no person**, and therefore the first bounded narrowing of §1's "no marketing or re-engagement notification" finding — see §3.2e for the five conditions that bound it. Not a branch of `notification_events_for` and produces no `/inbox` row (P5B-D9). v1.4 — added **Squad Goal & Mission Updates** to Section A (Goal Completed, Mission Started, Mission Ending Soon, Everyone Checked In — merged into one new toggle, default OFF); relabeled "Squad Check-ins" → "Squad Feed Activity" and "Squad Reactions" → "Squad Reactions & Mentions" (same backing fields, expanded scope per `Squad-System-Architecture-v1.0` SQ-D12 — no schema change); reconciled Competition Started/Ending to the existing "Challenge Updates" toggle (no new toggle) and Honors Earned to the existing M-2 ceremony-only rule (no push, no toggle). v1.3 — added **Section E (Communities)** per `P-5-Amendment-002-Community-Notifications.md` (`Community-System-Architecture-v1.0` COM-D12): Replies & Mentions / Pinned Announcements / Event Reminders (default OFF); Membership Approval / Moderator Actions (non-toggleable, always ON); binding no-per-post-push rule; Community competitions route through the existing Challenges category, no new toggle. v1.2.1 — reconciliation pass for `Social-System-Architecture-v1.0`: reserved downstream Post Comments / optional Post Reactions notifications (§3.2c), no new locked toggle. v1.2 — added Section D (Friend Requests) per Friend-Relationship-Architecture-Amendment-001 FR-D7 (Requests-class, default ON). v1.1 — added Section C (Challenges) per P-5-Amendment-001. v1.0 LOCKED initial.
 
 ---
 
@@ -69,6 +69,9 @@ Every notification-producing event found during the audit, with its trigger, rec
 | 19 | Squad Mission started / ending soon | A new Mission is set, or the active Mission is approaching its end date | All current squad members | OFF — merged into "Squad Goal & Mission Updates" | `Squad-System-Architecture-v1.0` SQ-D4, SQ-D12 |
 | 20 | Everyone checked in | Every current squad member has logged today's check-in | All current squad members | OFF — merged into "Squad Goal & Mission Updates" | `Squad-System-Architecture-v1.0` SQ-D5, SQ-D12 |
 | 21 | Squad Feed mention | A member is @-mentioned in a Squad Feed comment | Mentioned member | OFF — merged into "Squad Reactions & Mentions" | `Squad-System-Architecture-v1.0` SQ-D9.4, SQ-D12 |
+| 22 | Morning briefing | **The athlete's own chosen weekday and local hour** — `pg_cron`, not a person | The athlete themselves | OFF | `P-5-Amendment-003-Training-Briefing.md` (P5B-D1) |
+
+⚠ **Item 22 is the first row in this table whose Trigger column names no person, and the first whose Recipient is the athlete themselves.** Every row above it is an arrival. That difference is why it required a formal amendment rather than a new toggle, and why §3.2e states the conditions bounding it.
 
 This document resolves items 3, 4, and 7 (Section 3); items 9–10 are added in Section 3.2b (Section D); **items 11–17 are added in Section 3.2d (Section E)**; **items 18–21 are added in Section 3.1 (Section A)**, per `Squad-System-Architecture-v1.0` SQ-D12. Items 1 and 2 are exposed as-is from WSR-001, **now relabeled and scope-expanded** (Section 3.1) rather than left unmodified. Items 5 and 6 remain non-optional (Section 3). **Challenge updates (item 8) are already participant-based** — the toggle fires for joined challenges in **any** context (SQUAD, FRIENDS, or — v1.3 — COMMUNITY); Friend and Community Challenges introduce no new notification category (CA3-D9 / CC4-D7). **Squad Competition Started/Ending routes through item 8's existing toggle** — no new category, same pattern as Community competition-start (item 15). **Squad Honors Earned is not a notification category at all** — per the standing Ceremonies-are-not-notifications rule (§1), it surfaces via M-2 only, exactly like every other honor.
 
@@ -76,7 +79,7 @@ This document resolves items 3, 4, and 7 (Section 3); items 9–10 are added in 
 
 ## Section 3 — Notification Settings Inventory
 
-Per this workstream's explicit preference for grouped controls over a large toggle matrix, and because the inventory evidences two distinct *kinds* of notification (passive activity broadcasts vs. direct requests awaiting a response), P-5 is organized into grouped sections plus non-toggleable notes. As of v1.3 these are **five** grouped sections — **A — Squad Activity** (broadcasts, default OFF), **B — Requests** (Workout Tags + Squad Invitations, default ON), **C — Challenges** (ambient competition, default OFF; participant-based, context-agnostic across SQUAD/FRIENDS/COMMUNITY), **D — Friend Requests** (Requests-class, default ON), **E — Communities** (mixed: ambient items default OFF, direct-consequence items non-toggleable/always ON) — plus the non-toggleable Squad Updates note.
+Per this workstream's explicit preference for grouped controls over a large toggle matrix, and because the inventory evidences two distinct *kinds* of notification (passive activity broadcasts vs. direct requests awaiting a response), P-5 is organized into grouped sections plus non-toggleable notes. As of v1.5 these are **six** grouped sections — **A — Squad Activity** (broadcasts, default OFF), **B — Requests** (Workout Tags + Squad Invitations, default ON), **C — Challenges** (ambient competition, default OFF; participant-based, context-agnostic across SQUAD/FRIENDS/COMMUNITY), **D — Friend Requests** (Requests-class, default ON), **E — Communities** (mixed: ambient items default OFF, direct-consequence items non-toggleable/always ON), **F — Training** (self-directed, default OFF — the only section not about another person) — plus the non-toggleable Squad Updates note.
 
 ### 3.1 Section A — Squad Activity
 
@@ -150,6 +153,32 @@ A fifth grouped section, added when the Communities subsystem shipped. Mixed def
 
 **Community competition-start (item 15)** is **not** a Section E row — it routes through the existing Section C "Challenge Updates" toggle, context-agnostically, exactly as Friend Challenges did when added (no new toggle was created for them either).
 
+### 3.2e Section F — Training  *(P-5-Amendment-003-Training-Briefing.md)*
+
+A sixth grouped section, and the first that is not about another person at all. One toggle plus a delivery schedule.
+
+| Setting | Type | Default | Maps To |
+|---|---|---|---|
+| Morning Briefing | Toggle + schedule | **OFF** | `notif_prefs.training_briefing`; the chosen weekdays and local hour live in `briefing_schedule` (0159), not in `notif_prefs` |
+
+**Why it is its own section:** it is neither an ambient broadcast about a squad (A/C/E) nor a direct request awaiting a reply (B/D). Nobody is asking the athlete for anything; the notification reports the athlete's own plan back to them. It is the only self-directed control on this screen.
+
+**Why OFF, when it is not ambient either:** the ON class (§3.2, §3.2b) is *"a direct request requiring a response — missing one defeats the entire point of the feature it belongs to."* Nothing is missed here: the same answer is on the Home hero whenever the athlete opens the app. And DNA §8's *"always feel invited, never pushed"* is difficult to square with a daily push nobody asked for. ⚠ It deliberately does **not** follow §3.1's `squad_training` exception (default ON) — that row defaults ON only because two other people-facing switches must already be on before it can fire, so OFF would silently discard a preference set elsewhere. This one answers to nobody but the athlete, so no such trap exists.
+
+**⚠ The bounded narrowing of §1.** §1 records that *"any marketing or re-engagement notification"* is absent from every locked document, and `Calendar-System-Architecture-v1.0` CAL-D19 holds that the app *"never notifies about inactivity."* Both stand in their general form. The exception carved here is bounded to a notification that is **all five** of:
+
+1. **opt-in** — default OFF, and the schedule row exists only once the athlete turns it on;
+2. **self-directed** — it reports the athlete's own plan and mentions no other person;
+3. **content-bearing** — it names a specific session, and sends nothing when it has nothing to name (P5B-D4);
+4. **self-silencing** — it announces any one open session at most twice and then goes quiet until progress is recorded, rather than escalating (P5B-D3); and
+5. **never absence-referencing** — no elapsed time, no missed session, no streak, no "days since" (P5B-D6).
+
+A notification failing **any** of these five is the re-engagement pattern §1 rules out, and is not authorised by this section.
+
+**⚠ It says "Next up", never "today" (P5B-D2).** Forge Legacy has no calendar — `planned_workouts` carries no date, `ProgramStructure` has no weekday, and progress moves only when a session is logged. The chosen weekdays are a **delivery schedule, not a training schedule** (P5B-D7); a "I train Mon/Wed/Fri" field belongs to `Calendar-System-Architecture-v1.0` (LOCKED, unbuilt) and would hand the app the ability to decide a Tuesday was a failure.
+
+**⚠ The one category with no in-app counterpart (P5B-D9).** It is not a branch of `notification_events_for` and writes no `/inbox` row — nobody caused it, it belongs to no relationship, and it has no actor. This is a narrow, deliberate exception to §4's principle: the in-app surface for "what's next" is the Home hero, which is always present and was never gated by this toggle. **Tone follows `coachIntensity` (CI-D1/D10), not a control of its own** (P5B-D5).
+
 ### 3.2c Reconciliation Note — Post Engagement (downstream from Social-System-Architecture-v1.0)
 
 > **Reconciliation note — Social-System-Architecture-v1.0 (LOCKED, June 2026; governing social authority).** The Social System (SOC-D11 / SOC-D16) defines **two future P-5 additions** for the intentional Posts / Friends Feed surface. They are **identified and reserved here, not yet locked as toggles** — they are authored when P-5 is next formally revised alongside the social wireframes, exactly as FR-D7's Friend Requests were reserved before being added in v1.2:
@@ -186,6 +215,8 @@ Squad invitations are **not** part of this note — they were moved into Section
 | Event Reminders ON/OFF | Yes/No | The event remains visible on the Community Page's Events tab regardless of toggle |
 | Membership Approval (always on) | Always | The athlete's membership state is visible in-app regardless of the notification |
 | Moderator Actions (always on) | Always | No separate in-app surface beyond the notification and the action's own visible effect |
+| Morning Briefing ON | Yes — on the athlete's chosen days, at most twice per open session (P5B-D3) | The Home hero always names the next session, and is not gated by this or any toggle (H-1) |
+| Morning Briefing OFF | No | Unchanged — the Home hero is exactly as it was; this toggle has never conditioned it |
 
 **Principle carried through every row:** toggles control push delivery only. They never hide or condition the underlying in-app data or surface. This is already established behavior in WSR-001 and WwF; this document doesn't change it — it only exposes the push-layer control that was previously unreachable by the athlete.
 
@@ -226,6 +257,7 @@ P-5 is small: four toggles across two grouped sections, plus one informational n
 
 | Version | Date | Change |
 |---|---|---|
+| 1.5 | 2026-08-14 | `P-5-Amendment-003-Training-Briefing.md` (LOCKED) merged. Added inventory item 22 (§2) and **Section F — Training** (§3.2e): one **Morning Briefing** toggle, default **OFF**, plus a weekday/local-hour delivery schedule in `briefing_schedule` (0159). **The first category in this document not caused by another person**, and therefore the first bounded narrowing of §1's "no marketing or re-engagement notification" finding — §3.2e states the five conditions (opt-in · self-directed · content-bearing · self-silencing · never absence-referencing) that bound it, and records that failing any one of them is not authorised. It says "Next up", never "today" (P5B-D2); the chosen days are a delivery schedule and never a training schedule (P5B-D7); tone rides the existing `coachIntensity` dial rather than a new control (P5B-D5). Not a branch of `notification_events_for` and no `/inbox` row — a narrow, stated exception to §4 (P5B-D9). §4 state-matrix rows added. **No existing Section A/B/C/D/E row changed, and no existing default changed.** |
 | 1.4 | June 2026 | `Squad-System-Architecture-v1.0.md` (LOCKED) SQ-D12 merged. Relabeled "Squad Check-ins" → **Squad Feed Activity** and "Squad Reactions" → **Squad Reactions & Mentions** in Section A (same backing fields, `squadNotificationsEnabled` / `reactionsNotificationEnabled` — no schema change; scope expanded to the new Squad Feed and @-mentions). Added **Squad Goal & Mission Updates** (new merged toggle, default OFF) covering Goal Completed, Mission Started/Ending Soon, and Everyone Checked In (inventory items 18–20). Added inventory item 21 (Squad Feed mention). **Competition Started/Ending routes through the existing Section C "Challenge Updates" toggle — no new toggle.** **Honors Earned is not a notification category — reconciled to the existing M-2 ceremony-only rule (§1), no push, no toggle.** §4 state-matrix rows updated. No change to Sections B/C/D/E. |
 | 1.3 | June 2026 | `P-5-Amendment-002-Community-Notifications.md` merged. Added inventory items 11–17 (§2) and **Section E — Communities** (§3.2d): Replies & Mentions (merged, default OFF), Pinned Announcements (OFF), Event Reminders (OFF) as toggles; Membership Approval and Moderator Actions as non-toggleable, always-ON rows. Restated the binding no-per-post-push rule (`Community-System-Architecture-v1.0` COM-D12). Community competition-start notifications route through the existing Section C "Challenge Updates" toggle — no new toggle created. §4 state-matrix rows added. No existing Section A/B/C/D row changed. |
 | 1.2.1 | June 2026 | Reconciliation pass for `Social-System-Architecture-v1.0`. Added §3.2c reconciliation note **reserving** two downstream P-5 additions (Post Comments — notify author, activity-class; optional Post Reactions — mirror WSR-001, default OFF), to be authored at the next P-5 revision per SOC-D11/SOC-D16. **No new locked toggle added; no existing decision changed.** |
@@ -235,7 +267,7 @@ P-5 is small: four toggles across two grouped sections, plus one informational n
 
 ---
 
-*P-5 Notifications Architecture — v1.4 (Squad System Architecture reconciliation merged — Squad Feed Activity, Squad Reactions & Mentions, Squad Goal & Mission Updates)*
+*P-5 Notifications Architecture — v1.5 (Section F — Training merged: the Morning Briefing, the first notification here that nobody causes)*
 *Architecture Specification — Notification Preferences Information Architecture*
 *June 2026*
 *Authority: WSR-001-Workout-Share-Result-Architecture.md (LOCKED), Workout-With-Friend-Spec-WwF.md (LOCKED), Squad-Management-Permissions-Spec-S3.md (LOCKED), Squads-Hub-Wireframe-Spec-S1.md (LOCKED), Rank-Up-Modal-Spec-M1.md / Honor-Earned-Modal-Spec-M2.md / M-4-Program-Graduated-Spec.md (all LOCKED), P-2-Progress-Hub-Spec.md (LOCKED), P-4-Settings-Root-Architecture.md (LOCKED), P-4-Settings-Root-Wireframe-Spec.md (LOCKED), Community-System-Architecture-v1.0 (LOCKED), Community-Roles-and-Moderation-v1.0 (LOCKED), Squad-System-Architecture-v1.0 (LOCKED)*

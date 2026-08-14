@@ -21,16 +21,23 @@ import { NOTIF_DEFAULTS, PUSH_KIND_PREF } from '../../settings/notifications.ts'
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
 
 /*
- * ⚠ `SQL` MUST POINT AT THE NEWEST MIGRATION THAT DEFINES THESE FUNCTIONS, not at 0120.
+ * ⚠ EVERY ASSERTION MUST PARSE THE NEWEST MIGRATION THAT DEFINES THE FUNCTION IT IS ABOUT, not at 0120.
  *
  * This file was pinned to 0120 and every assertion below parsed 0120 and only 0120. The moment 0121
  * redefined `push_pref_key`, the deep-equality against `PUSH_KIND_PREF` was comparing the client to a
  * function body the database no longer runs — it would have gone red for the right reason and been
  * "fixed" by editing the client to match a stale file. Repointing it is part of adding a branch.
  *
- * 0120 is still read, as `SQL_BASE`, for the invariants that live ONLY there: the revokes, the outbox
- * unique index, and the thin `notification_events()` wrapper. Later migrations use CREATE OR REPLACE
- * and deliberately do not restate those.
+ * ⚠ AND AS OF 0159 THERE IS NO SINGLE "NEWEST" ANY MORE, which is why `fnBody` now takes its source.
+ * 0159 adds a notification NOBODY CAUSES — a scheduled briefing — so it restates the two preference
+ * functions and deliberately does not touch `notification_events_for`, which it is not a branch of. The
+ * union's newest body is therefore still 0153's while the preference map's is 0159's, and a single `SQL`
+ * constant could only have been right about one of them. Read each from the file that owns it:
+ *
+ *   · `SQL`       0153 — the union, `push_enqueue_for`, the squad-training triggers
+ *   · `SQL_PREFS` 0159 — `push_pref_key`, `push_pref_default`
+ *   · `SQL_BASE`  0120 — the invariants that live ONLY there: the revokes, the outbox unique index, and
+ *                        the thin `notification_events()` wrapper, none of which later files restate.
  */
 const SQL_BASE = readFileSync(resolve(ROOT, 'supabase/migrations/0120_push_notifications.sql'), 'utf8');
 const SQL_0121 = readFileSync(resolve(ROOT, 'supabase/migrations/0121_workout_join_requests.sql'), 'utf8');
@@ -48,9 +55,10 @@ const SQL_0134 = readFileSync(resolve(ROOT, 'supabase/migrations/0134_goal_contr
  * reason to touch. It is NO LONGER the newest union — see `SQL` below.
  */
 const SQL_0135 = readFileSync(resolve(ROOT, 'supabase/migrations/0135_post_reply_notifications.sql'), 'utf8');
-// 0153 is the newest definition of the union, `push_pref_key`, `push_pref_default` and
-// `push_enqueue_for` — repointed per the warning above, which is part of adding a branch.
+// 0153 is the newest definition of the union, `push_enqueue_for` and the squad-training triggers.
 const SQL = readFileSync(resolve(ROOT, 'supabase/migrations/0153_squad_training_notifications.sql'), 'utf8');
+// 0159 is the newest definition of the two preference functions — see the warning above.
+const SQL_PREFS = readFileSync(resolve(ROOT, 'supabase/migrations/0159_training_briefing.sql'), 'utf8');
 
 /** Every migration paired with the bundle that gets pasted into the dashboard. */
 const BUNDLES = [
@@ -66,6 +74,7 @@ const BUNDLES = [
   ['0134_goal_contribution_workout', 'pending-0134-0135', SQL_0134],
   ['0135_post_reply_notifications', 'pending-0134-0135', SQL_0135],
   ['0153_squad_training_notifications', 'pending-0153', SQL],
+  ['0159_training_briefing', 'pending-0159', SQL_PREFS],
 ];
 
 /**
@@ -97,13 +106,13 @@ test('every paste-ready bundle carries its migration verbatim', () => {
  * any body parsed here (checked: the only hyphens are in route paths like `/squad-post/`, and there is
  * no `/*` in any of them), so the naive strip is safe and stays readable.
  */
-function fnBody(name) {
-  const start = SQL.indexOf(`function public.${name}(`);
+function fnBody(name, src = SQL) {
+  const start = src.indexOf(`function public.${name}(`);
   assert.notEqual(start, -1, `${name} is missing from the migration`);
-  const open = SQL.indexOf('as $$', start);
-  const close = SQL.indexOf('$$;', open);
+  const open = src.indexOf('as $$', start);
+  const close = src.indexOf('$$;', open);
   assert.ok(open !== -1 && close !== -1, `${name} has no readable body`);
-  return SQL.slice(open, close)
+  return src.slice(open, close)
     .replace(/\/\*[\s\S]*?\*\//g, ' ')
     .replace(/--[^\n]*/g, '');
 }
@@ -135,12 +144,30 @@ function pairs(body, valuePattern) {
 // ── the two sides agree ───────────────────────────────────────────────────────
 
 test('the SQL kind→preference map is the one the client believes in', () => {
-  const sql = pairs(fnBody('push_pref_key'), `'([a-z_]+)'`);
+  const sql = pairs(fnBody('push_pref_key', SQL_PREFS), `'([a-z_]+)'`);
   assert.deepEqual(sql, PUSH_KIND_PREF, 'push_pref_key() and PUSH_KIND_PREF must be the same map');
 });
 
+/**
+ * ⚠ 0159 RESTATED BOTH PREFERENCE FUNCTIONS, so it had to carry every key 0153 already had.
+ *
+ * A migration that adds a key by rebuilding these from an older copy silently reverts every other one —
+ * the failure 0088, 0092 and 0106 each shipped, and the reason `push_pref_key` is restated whole rather
+ * than patched. `squad_training` is the canary: it is the only default that breaks the ambient-is-off
+ * habit, so a rebuild from a pre-0153 body flips it to false and the squad training alerts go quiet with
+ * every toggle on screen still reading ON.
+ */
+test('the newest preference bodies did not drop a key an older migration added', () => {
+  const keys = fnBody('push_pref_key', SQL_PREFS);
+  for (const kind of ['squad_training_started', 'squad_training_finished', 'post_comment', 'squad_recap']) {
+    assert.ok(keys.includes(`'${kind}'`), `0159's push_pref_key lost '${kind}' — it was rebuilt from a stale copy`);
+  }
+  const defaults = pairs(fnBody('push_pref_default', SQL_PREFS), `(true|false)`);
+  assert.equal(defaults.squad_training, 'true', "0153's squad_training default did not survive 0159's restatement");
+});
+
 test('every default in the SQL matches the toggle the athlete actually sees', () => {
-  const sql = pairs(fnBody('push_pref_default'), `(true|false)`);
+  const sql = pairs(fnBody('push_pref_default', SQL_PREFS), `(true|false)`);
   assert.ok(Object.keys(sql).length > 0, 'no defaults parsed — the regex has drifted from the SQL');
 
   for (const [key, value] of Object.entries(sql)) {
@@ -575,7 +602,7 @@ test('the per-squad toggles are written by a definer function, never by a policy
 
 test('request_declined is delivered to the inbox and never to a lock screen', () => {
   assert.ok(!('request_declined' in PUSH_KIND_PREF), 'a decline must map to no preference at all');
-  assert.equal(fnBody('push_pref_key').includes('request_declined'), false);
+  assert.equal(fnBody('push_pref_key', SQL_PREFS).includes('request_declined'), false);
   // It is still a real feed row with a real destination — silenced, not erased.
   assert.equal(destinationFor({ kind: 'request_declined' }), '/discover-squads');
 });

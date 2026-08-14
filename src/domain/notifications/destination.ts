@@ -38,6 +38,7 @@ export type NotificationDestination =
   | { pathname: '/squad-post/[id]'; params: { id: string } }
   | '/friends'
   | '/discover-squads'
+  | '/'
   | '/inbox';
 
 export function destinationFor(n: NotificationTarget): NotificationDestination {
@@ -98,6 +99,21 @@ export function destinationFor(n: NotificationTarget): NotificationDestination {
       return n.actorId ? { pathname: '/workout-join', params: { athlete: n.actorId } } : '/inbox';
     case 'squad_training_finished':
       return n.actorId ? { pathname: '/athlete/[id]', params: { id: n.actorId } } : '/inbox';
+    /*
+     * 0159. HOME, NOT THE WORKOUT — and this is the one destination in the file chosen for what the
+     * SENDER could not know rather than for what the notification is about.
+     *
+     * `briefing_send()` runs in Postgres, where the `resume` face of the hero card is invisible: an
+     * unfinished session lives in the device's local autosave and has never touched the server. So the
+     * briefing names the next PROGRAM session even for an athlete who is halfway through something else.
+     * Landing on Home re-runs `composeHome()` against the full picture — resume > program > planned — and
+     * the athlete gets the card that is actually true, which may not be the one the push named.
+     *
+     * Launching the named workout directly would have been the obvious build, and would silently discard
+     * work in progress.
+     */
+    case 'training_briefing':
+      return '/';
     default:
       return n.squadId ? { pathname: '/squad/[id]', params: { id: n.squadId } } : '/inbox';
   }
