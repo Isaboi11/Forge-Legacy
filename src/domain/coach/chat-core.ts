@@ -37,6 +37,8 @@ import { AUTHORED_GOALS } from './rulebook/skeletons.ts';
 import { RACE_SPEC, weeklyVolumePlan } from './rulebook/endurance.ts';
 import { pick, pickNamed } from './rulebook/voice.ts';
 import { BODY_PART_LABEL, BODY_PARTS, SPLIT_LABEL, type BodyPart, type DayFocus, type SplitName } from './day.ts';
+import { plannedDays, trainingDays } from '../program/progress-core.ts';
+import type { ProgramStructure } from '@/data/programs-live';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // THE THREAD
@@ -72,8 +74,16 @@ export interface ProgramCard {
   ribbon: number[];
   ribbonCaption: string;
   reasoning: string;
-  /** The block, week by week. v2 §7 draws these as rows with bronze markers. */
-  weeks: { label: string; detail: string }[];
+  /**
+   * The block, week by week. v2 §7 draws these as rows with bronze markers.
+   *
+   * ⚠ `days` IS WHY THE DRILL-DOWN COULD NOT WORK BEFORE. PO, 2026-08-14: *"be sure that we can see each
+   * individual day in a drop down from the week. It won't show them right now."* The card carried
+   * `"4 sessions"` — a COUNT, composed here — and nothing else, so there was nothing for a row to open
+   * onto. The sessions are read off the structure the engine actually built, per week, so a block that
+   * varies (six days for two weeks, then five) shows the week it really is rather than week one repeated.
+   */
+  weeks: { label: string; detail: string; days: { marker: string; title: string }[] }[];
   /** v2 §7's closing row, under its own rule: what every session in the block costs. */
   closing: string;
 }
@@ -1072,9 +1082,27 @@ export const OFFERABLE_GOALS: readonly Goal[] = AUTHORED_GOALS.filter(offerable)
  * actually produced. A stat the engine cannot answer is OMITTED rather than filled with a plausible
  * number, which is why the grid is a list and not a fixed six.
  */
+/**
+ * The sessions in one week, as the drill-down lists them.
+ *
+ * ⚠ READ FROM THE STRUCTURE, PER WEEK, NEVER FROM WEEK ONE REPEATED. `plannedDays` is the same function
+ * the progress bar and the scheduler read, and it is per-week for a reason: a real block runs six days
+ * for two weeks and then five. Deriving the list once and reusing it would show the athlete a week that
+ * is not in their program — the exact class of mistake that broke Continue Training at session 18.
+ *
+ * ⚠ AND THE FALLBACK IS EMPTY, NOT INVENTED. A caller that hands over a bare `{name, weeks, daysPerWeek}`
+ * — several tests do — gets no days rather than `daysPerWeek` rows of "Session 1", which would be the
+ * card describing a shape nobody built.
+ */
+function daysOfWeek(structure: Partial<ProgramStructure> & { daysPerWeek: number }, weekIndex: number) {
+  if (!structure.days) return [];
+  const days = trainingDays(plannedDays(structure as ProgramStructure, weekIndex));
+  return days.map((d, i) => ({ marker: d.letter?.trim() || String(i + 1), title: d.name }));
+}
+
 export function programCardFor(
   c: CoachConstraints,
-  structure: { name: string; weeks: number; daysPerWeek: number },
+  structure: Partial<ProgramStructure> & { name: string; weeks: number; daysPerWeek: number },
   volume: { mileage: number; longRunMi: number }[],
   rationale: string,
 ): ProgramCard {
@@ -1117,11 +1145,19 @@ export function programCardFor(
       ? volume.map((v, i) => ({
           label: 'Week ' + (i + 1),
           detail: Math.round(v.mileage) + ' mi · long run ' + v.longRunMi + ' mi',
+          days: daysOfWeek(structure, i),
         }))
-      : Array.from({ length: structure.weeks }, (_, i) => ({
-          label: 'Week ' + (i + 1),
-          detail: structure.daysPerWeek + ' sessions',
-        })),
+      : Array.from({ length: structure.weeks }, (_, i) => {
+          const days = daysOfWeek(structure, i);
+          return {
+            label: 'Week ' + (i + 1),
+            /* ⚠ THE REAL COUNT FOR THAT WEEK, not `daysPerWeek` restated. They differ in any block with
+               a short week in it, and the row saying "5 sessions" over a list of four is the card
+               disagreeing with itself in the space of one tap. */
+            detail: `${days.length || structure.daysPerWeek} session${(days.length || structure.daysPerWeek) === 1 ? '' : 's'}`,
+            days,
+          };
+        }),
     ribbonCaption: peakAt >= 0
       ? `Weekly volume · peak at week ${peakAt + 1}, then it comes down.`
       : '',

@@ -2498,10 +2498,7 @@ function ProgramCardView({
           {/* §7's rows band — a bronze marker in a 32px column, then what that week actually is. */}
           <View style={styles.markerList}>
             {card.weeks.map((w) => (
-              <View key={w.label} style={styles.markerRow}>
-                <Text style={styles.marker}>{w.label.replace(/^Week /, 'WK ')}</Text>
-                <Text style={styles.markerText}>{w.detail}</Text>
-              </View>
+              <WeekRow key={w.label} week={w} />
             ))}
             <View style={styles.markerClosing}>
               <Text style={styles.markerClosingText}>{card.closing}</Text>
@@ -2529,6 +2526,56 @@ function ProgramCardView({
       </CardSurface>
 
       <ArtifactActions onStart={onStart} onSave={onSave} saveLabel={saveLabel} />
+    </View>
+  );
+}
+
+/**
+ * One week of the block, and the sessions inside it.
+ *
+ * ⚠ **THE DAYS WERE NOT MISSING FROM THE UI, THEY WERE MISSING FROM THE CARD.** PO: *"be sure that we
+ * can see each individual day in a drop down from the week. It won't show them right now."* The row
+ * carried the string `"4 sessions"` — a count, composed for display — so there was nothing to open onto.
+ * `ProgramCard.weeks[].days` now carries the real sessions, read per week off the structure the engine
+ * built.
+ *
+ * Closed by default: a twelve-week block is twelve rows, and opening all of them by default would put
+ * sixty lines between the athlete and the two buttons that decide anything.
+ */
+function WeekRow({ week }: { week: ProgramCard['weeks'][number] }) {
+  const [open, setOpen] = useState(false);
+  const has = week.days.length > 0;
+
+  return (
+    <View>
+      <Pressable
+        onPress={() => setOpen((v) => !v)}
+        disabled={!has}
+        accessibilityRole={has ? 'button' : undefined}
+        accessibilityLabel={`${week.label} — ${week.detail}`}
+        accessibilityState={has ? { expanded: open } : undefined}
+        style={({ pressed }) => [styles.markerRow, pressed && has && styles.markerRowPressed]}
+      >
+        <Text style={styles.marker}>{week.label.replace(/^Week /, 'WK ')}</Text>
+        <Text style={styles.markerText}>{week.detail}</Text>
+        {/* No chevron on a week with nothing to open — an affordance that does nothing is worse than
+            none, and an endurance block's weeks are mileage rather than named sessions. */}
+        {has ? (
+          <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            {open ? <Path d="M18 15l-6-6-6 6" /> : <Path d="M6 9l6 6 6-6" />}
+          </Svg>
+        ) : null}
+      </Pressable>
+      {open ? (
+        <View style={styles.dayDrop}>
+          {week.days.map((d, i) => (
+            <View key={d.marker + i} style={styles.dayDropRow}>
+              <Text style={styles.dayDropMarker}>{d.marker}</Text>
+              <Text style={styles.dayDropTitle} numberOfLines={1}>{d.title}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -3028,8 +3075,21 @@ const styles = StyleSheet.create({
   /* The rows band — a bronze marker in a fixed column, then what that week actually is. */
   markerList: {},
   markerRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 11, borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
+  markerRowPressed: { backgroundColor: 'rgba(198,156,100,0.06)' },
   marker: { width: 34, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, color: flColor.bronze400 },
   markerText: { flex: 1, minWidth: 0, fontSize: 14, color: flColor.cream100 },
+  /* The sessions inside a week. Indented to the marker column so they read as belonging to the row
+     above rather than as more weeks, and recessed so an open week is visibly a drawer. */
+  dayDrop: {
+    marginLeft: 34,
+    paddingLeft: 14,
+    paddingBottom: 4,
+    borderLeftWidth: 1,
+    borderLeftColor: flColor.bronzeBorderSubtle,
+  },
+  dayDropRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7 },
+  dayDropMarker: { width: 14, fontSize: 10, fontWeight: '700', color: flColor.bronze600 },
+  dayDropTitle: { flex: 1, minWidth: 0, fontSize: 13.5, color: flColor.gray400 },
   markerClosing: { paddingTop: 11, paddingBottom: 13, borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
   markerClosingText: { fontSize: 12.5, color: flColor.gray600 },
   /* Inside the card, under its own rule: the way into the full read, not a decision about it. */

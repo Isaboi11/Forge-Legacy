@@ -352,6 +352,44 @@ test('⚠ every rung of the length question builds exactly that many weeks', () 
   assert.match(one.card.subtitle, /1 week ·/, "and the card must say so in the coach's own voice");
 });
 
+test('⚠ every week on the card can be opened onto its own sessions', () => {
+  /*
+   * PO, 2026-08-14: *"be sure that we can see each individual day in a drop down from the week. It
+   * won't show them right now."*
+   *
+   * ⚠ THE DAYS WERE NOT MISSING FROM THE UI, THEY WERE MISSING FROM THE CARD. Each week row carried
+   * the string `"4 sessions"` — a count, composed for display — and nothing else, so there was nothing
+   * for a row to open onto. This asserts the card CARRIES them, which is the half that was absent.
+   */
+  const r = runBuildPath({ ...WEEK_ATHLETE, weeks: 8 }, 'program');
+  assert.equal(r.outcome, 'built');
+  assert.equal(r.card.weeks.length, 8, 'one row per week');
+
+  for (const w of r.card.weeks) {
+    assert.ok(w.days.length > 0, `${w.label} has no sessions to open onto`);
+    for (const d of w.days) {
+      assert.ok(d.title?.trim(), `${w.label} has a session with no name`);
+      assert.ok(d.marker?.trim(), `${w.label} has a session with no marker`);
+    }
+    /* ⚠ THE ROW AND THE DRAWER MUST AGREE. "5 sessions" over a list of four is the card contradicting
+       itself in the space of one tap — and weeks genuinely differ in length in a real block. */
+    assert.match(w.detail, new RegExp(`^${w.days.length} session`), `${w.label}: "${w.detail}" over ${w.days.length} days`);
+  }
+});
+
+test('a card built without a real structure offers no drawer rather than an invented one', () => {
+  // Several callers hand over a bare `{name, weeks, daysPerWeek}`. Filling that with `daysPerWeek` rows
+  // of "Session 1" would be the card describing a shape nobody built.
+  const bare = programCardFor(
+    { ...WEEK_ATHLETE, excludeExercises: [], raceDate: null, currentWeeklyMi: null, canRunContinuously: null },
+    { name: 'Bare', weeks: 3, daysPerWeek: 4 },
+    [],
+    'because',
+  );
+  for (const w of bare.weeks) assert.deepEqual(w.days, []);
+  assert.match(bare.weeks[0].detail, /^4 sessions/, 'and it falls back to the configured count for the row');
+});
+
 test('a build that was never asked its length still gets the engine default', () => {
   /*
    * `null` and absent both mean "nobody chose", and `assemble` reads `c.weeks ?? defaultWeeksFor(goal)`.
