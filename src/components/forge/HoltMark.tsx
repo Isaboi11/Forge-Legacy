@@ -1,5 +1,18 @@
-import { useEffect } from 'react';
-import { Animated, Easing, Image, StyleSheet, View, useAnimatedValue } from 'react-native';
+import { useEffect, useState } from 'react';
+/*
+ * ⚠ NOT `useAnimatedValue` — IT DOES NOT EXIST ON WEB, AND IT TAKES THE WHOLE PAGE DOWN.
+ *
+ * React Native ships `useAnimatedValue`; **react-native-web does not implement it at all** (zero hits
+ * anywhere in the package). So on web the import resolves to `undefined`, calling it throws
+ * `(0, b.useAnimatedValue) is not a function`, and because that happens during render there is nothing
+ * to catch it — the app renders a WHITE SCREEN. Reported from the web preview 2026-08-14 on the exercise
+ * picker, which mounts this mark.
+ *
+ * `useState` with a lazy initialiser is the pattern the other ~30 animated values in this codebase
+ * already use. It is stable across renders like a ref, and unlike `useRef(...).current` it does not trip
+ * the react-compiler lint rule against reading `ref.current` during render.
+ */
+import { Animated, Easing, Image, StyleSheet, View } from 'react-native';
 
 import { flColor, flShadow } from '@/constants/foundation';
 import { useReducedMotion } from '@/lib/useReducedMotion';
@@ -30,8 +43,8 @@ import { useReducedMotion } from '@/lib/useReducedMotion';
 export type MarkState = 'idle' | 'thinking' | 'building';
 
 export function HoltMark({ size = 36, state = 'idle' }: { size?: number; state?: MarkState }) {
-  const pulse = useAnimatedValue(0);
-  const spin = useAnimatedValue(0);
+  const [pulse] = useState(() => new Animated.Value(0));
+  const [spin] = useState(() => new Animated.Value(0));
   const still = useReducedMotion();
 
   useEffect(() => {

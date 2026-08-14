@@ -16,8 +16,11 @@ import {
   StyleSheet,
   Text,
   View,
-  ViewStyle,
 } from 'react-native'
+/* `import type` on purpose: `ViewStyle` is a type, and importing a type in value position is
+   indistinguishable — to a bundler, a reviewer, or `react-native-web-parity.test.mjs` — from importing a
+   runtime binding that react-native-web may not have. Erased either way; only this form says so. */
+import type { ViewStyle } from 'react-native'
 import { color, shadow, space } from '@/constants/tokens'
 import { CARD } from './_cardTokens'
 import type { BaseCardProps } from './types'

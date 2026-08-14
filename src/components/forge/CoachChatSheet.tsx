@@ -1,6 +1,20 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, Easing, PanResponder, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useAnimatedValue, useWindowDimensions } from 'react-native';
+/*
+ * ⚠ NOT `useAnimatedValue` — IT DOES NOT EXIST ON WEB, AND IT TAKES THE WHOLE PAGE DOWN.
+ *
+ * React Native ships `useAnimatedValue`; **react-native-web does not implement it at all**. On web the
+ * import is `undefined`, calling it throws `(0, b.useAnimatedValue) is not a function` during render, and
+ * an uncaught throw in render is a WHITE SCREEN, not a broken component. Reported from the web preview
+ * 2026-08-14. This file and `HoltMark.tsx` were the only two using it; the other ~30 animated values in
+ * this codebase already use the `useState` lazy-initialiser form below, which is stable across renders
+ * and does not trip the react-compiler rule against reading `ref.current` during render.
+ *
+ * ⚠ IT IS ALSO A REMINDER THAT `tsc` CANNOT SEE THIS CLASS OF BUG. The export exists in
+ * `@types/react-native`, so the types are correct and the runtime is not — the same shape as the
+ * `useSafeAreaInsets` crash that shipped with every gate green.
+ */
+import { Animated, Easing, PanResponder, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path, Rect } from 'react-native-svg';
 
@@ -150,8 +164,8 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
    * The close path always goes through `collapse()` so the sheet is never yanked off screen: the scrim
    * tap, the header's X and the drag all play the same 200ms exit before `onClose` unmounts it.
    */
-  const rise = useAnimatedValue(0);
-  const drag = useAnimatedValue(0);
+  const [rise] = useState(() => new Animated.Value(0));
+  const [drag] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     Animated.timing(rise, {
@@ -1405,7 +1419,7 @@ const errorText = (e: unknown): string => (e instanceof Error ? e.message : Stri
  * conversation twitch each time a character is typed.
  */
 function TurnEnter({ children, pullUp = 0 }: { children: React.ReactNode; pullUp?: number }) {
-  const v = useAnimatedValue(0);
+  const [v] = useState(() => new Animated.Value(0));
   const still = useReducedMotion();
   useEffect(() => {
     Animated.timing(v, {
@@ -1795,7 +1809,7 @@ function HeaderAction({
 
 /** §2's popover — 224 wide, elevated, rising 8px over 180ms. */
 function MenuPop({ children }: { children: React.ReactNode }) {
-  const v = useAnimatedValue(0);
+  const [v] = useState(() => new Animated.Value(0));
   const still = useReducedMotion();
   useEffect(() => {
     Animated.timing(v, { toValue: 1, duration: 180, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: true }).start();
@@ -1881,7 +1895,7 @@ const BUILD_STEPS = [
 
 function BuildingCard() {
   const [step, setStep] = useState(0);
-  const fill = useAnimatedValue(0);
+  const [fill] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     const id = setInterval(() => setStep((n) => Math.min(n + 1, BUILD_STEPS.length)), 175);
@@ -1947,7 +1961,7 @@ function TypingBubble() {
 }
 
 function ThinkingDot({ delay }: { delay: number }) {
-  const v = useAnimatedValue(0.25);
+  const [v] = useState(() => new Animated.Value(0.25));
   const still = useReducedMotion();
   useEffect(() => {
     if (still) {
