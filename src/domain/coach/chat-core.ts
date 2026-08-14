@@ -767,6 +767,18 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     route: '/program-builder?o=import',
     cta: 'Import one',
   },
+  /*
+   * ⚠ ADDED WITH THE ARTIFACT'S SAVE BUTTONS, because they opened the gap. Holt can now hand back a week
+   * or a single day that goes straight into the athlete's own library — and until this topic existed,
+   * nothing in the app told them where that library is. A "Save for later" whose result is unfindable is
+   * a worse button than one that does nothing.
+   */
+  {
+    q: 'Find something I saved',
+    a: "Templates. Anything I've saved for you is there — single sessions under Your Templates, whole weeks under Your Weeks — and you can start one straight from it or edit it first.",
+    route: '/templates',
+    cta: 'Open Templates',
+  },
   {
     q: 'See my history',
     a: 'Activity History has every session you have logged, oldest to newest. Nothing in there can be edited or deleted — that is deliberate.',
