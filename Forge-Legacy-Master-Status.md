@@ -768,6 +768,22 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
+### 0. One revoke, three breakages — and the third was a trigger that could not read the column it fills (2026-08-14, migrations `0160` + `0161` — ✅ BOTH APPLIED, squad create + transfer verified working)
+
+**`0149` hid ONE column and broke THREE separate things.** It revoked SELECT on `squads.invite_code` (SQ-D16) and `profiles.training_since`/`training_label` (P-6). Postgres cannot revoke a single column from a table-level grant, so the only mechanism available is: revoke the table, re-grant every other column individually. Everything downstream follows from that.
+
+1. **Every read of `squads`, for every athlete** — `0153` added `training_alerts` a day later, it had no grant, PostgREST issues `select *`, and **one ungranted column fails the whole STATEMENT**. Fixed by `0160`, which turns 0149's loop into `reapply_hidden_column_grants()` so the next migration calls a function instead of copying a block that will drift.
+2. **Any `select *` on the table**, permanently and by design.
+3. **⚠ `squads_set_invite_code()` — the BEFORE INSERT trigger that generates the join code — READS `invite_code` to check uniqueness, and carried no security clause, so it ran as the athlete.** From the moment of the revoke, **the generator could not read the column it exists to populate, and creating any squad failed.** Fixed by `0161`: SECURITY DEFINER, search_path pinned.
+
+**⚠ THIS IS `0150`'s LESSON FROM THE OTHER DIRECTION, AND BOTH HALVES ARE NOW WRITTEN DOWN.** `0150`: **SECURITY DEFINER exempts the CALLER, not the callee** — `save_workout` still needed EXECUTE on `evaluate_honors`. `0161`: **a SECURITY INVOKER CALLEE inherits the CALLER's restrictions** — this trigger is only ever reached from inside `create_squad`, and still read with the athlete's privileges. **"Internal" describes where a function is CALLED FROM. It says nothing about what it may READ.**
+
+**⚠ THE GENERAL RULE: A REVOKE'S BLAST RADIUS IS EVERY READER, AND MOST READERS ARE NOT CLIENT QUERIES.** They are RLS policies, triggers and function bodies, none of which any client-side audit enumerates. `0147`'s verifier walked only the RPCs `src/` names directly — that is precisely why it missed `evaluate_honors` (0150) and precisely why it missed this. `0161`'s verify therefore enumerates **every remaining `security invoker` function in `public` that references a hidden column**, so the rest of the class is found here rather than by an athlete. It returned one name, `set_training_status`, which is a **false positive**: it only ever WRITES those columns (`update … set training_since = …`), and an UPDATE needs UPDATE privilege, which 0149 never touched.
+
+**Two side-findings worth keeping.** `0161` also fixes a latent bug **older than 0149**: as an invoker function the uniqueness probe ran under RLS and saw only squads the athlete could select, so it could hand out a code already held by an invisible private squad — surfacing later as a `squads_invite_code_key` violation. As a definer it sees every row. And **`0161`'s own verify block shipped without `prokind = 'f'` and died on `42809 "array_agg" is an aggregate function` AFTER the migration had committed** — which reads exactly like a failed migration. `pg_get_functiondef()` raises on aggregates; the other preflights carry that filter and this one did not.
+
+**⚠ AND THE PREFLIGHT WAS GREEN THROUGHOUT ALL OF IT.** It asserted `invite_code` is hidden — true then, true now — while every squad read returned 42501. **A privilege check that only tests what must be ABSENT cannot see what has gone missing by accident.** The inverse is now a standing preflight row: every non-hidden column on both tables must be selectable. **Verified end to end after the fix: squad create and ownership transfer both work.**
+
 ### 0. One new boolean made every squad unreadable, and the preflight was green throughout (2026-08-14, migration `0160`)
 
 **Reported as "it won't let me make a squad" on a test account with zero squads — so not a cap.** The toast carried it: **`permission denied for table squads (42501)`**. Not creation: **every READ of `squads` was failing for every athlete** — the Squads tab, Squad Detail, Discover, create and join, dead since 2026-08-13.
