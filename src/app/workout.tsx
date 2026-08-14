@@ -1807,6 +1807,10 @@ export default function WorkoutScreen() {
     progressionUpTo: progression?.action === 'add_weight' ? progression.suggestedWeight : null,
     planCue: ex.coachNote,
     heaviestThisSession,
+    /* ⚠ EVERY LOGGED SET, NOT JUST THE ONES CARRYING A WEIGHT. A plank, a carry and a bodyweight row
+       all log with `weight` null or 0, and counting only weighted sets would leave their cue on screen
+       for the whole exercise — which is the report, on the exercises where it is most obvious. */
+    setsDoneThisExercise: ex.sets.filter((s) => s.done).length,
   });
   /*
    * ⚠ THE COACH SPEAKS POUNDS; THE SCREEN SPEAKS THE ATHLETE'S UNIT.

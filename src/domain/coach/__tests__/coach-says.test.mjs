@@ -135,3 +135,71 @@ test('a spent live line uncovers the one beneath it, when that one is still curr
     { text: 'Stay at 185.', source: 'progression' },
   );
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ⭐ THE ARRIVAL LINES ARE FOR THE FIRST SET — PO, 2026-08-14
+// ─────────────────────────────────────────────────────────────────────────────
+
+/*
+ * *"There are times where I get to an exercise, coach holt says something, and then after I do the
+ * first set it doesn't go away. It should be gone after the first set."*
+ *
+ * ⚠ THIS REVERSES A DECISION RECORDED IN THIS FILE, and the reversal is right. The old reasoning was
+ * that a technique cue "is as true on the fourth set as the first" — true, and beside the point. Both
+ * `progression` and `planCue` are what Holt says when you WALK UP to the bar: where to start, and what
+ * to watch on the first rep. Once you have done a set, a sentence that will not leave stops reading as
+ * coaching and starts reading as a stuck screen.
+ */
+
+test('⚠ the plan cue is gone after the first set', () => {
+  const cue = { planCue: 'Brace before you unrack.' };
+  assert.deepEqual(coachLine({ ...cue, setsDoneThisExercise: 0 }), { text: 'Brace before you unrack.', source: 'plan' });
+  assert.equal(coachLine({ ...cue, setsDoneThisExercise: 1 }), null, 'it should be gone after the first set');
+  assert.equal(coachLine({ ...cue, setsDoneThisExercise: 4 }), null);
+});
+
+test('⚠ so is the progression line, even when it names no weight to outgrow', () => {
+  // `hold` and `back_off` carry no `progressionUpTo` and so could never expire by the currency rule.
+  // They are still arrival lines, and this is the case the athlete actually stares at for four sets.
+  const held = { progression: 'Stay at 185 and rebuild from there.', progressionUpTo: null };
+  assert.equal(coachLine({ ...held, setsDoneThisExercise: 0 })?.source, 'progression');
+  assert.equal(coachLine({ ...held, setsDoneThisExercise: 1 }), null);
+});
+
+test('⚠ a bodyweight cue goes too — the case `heaviestThisSession` could never have caught', () => {
+  /*
+   * A plank, a carry and a bodyweight row log with `weight` null or 0, so the currency rule is blind to
+   * them by design. Counting SETS rather than weight is what makes the fix reach the exercises where
+   * the stuck sentence is most obvious.
+   */
+  const plank = { planCue: 'Squeeze the glutes, ribs down.', heaviestThisSession: null };
+  assert.equal(coachLine({ ...plank, setsDoneThisExercise: 0 })?.source, 'plan');
+  assert.equal(coachLine({ ...plank, setsDoneThisExercise: 2 }), null);
+});
+
+test('⚠ the mid-set nudge is EXEMPT, or it would vanish before it could be read', () => {
+  /*
+   * `live` is written BY a completed set. Retiring it on the same signal that creates it would mean
+   * every line the coin exists to carry appeared and disappeared in one render.
+   */
+  const nudge = { live: 'That moved well — take the next one to 95.', liveUpTo: 95 };
+  assert.equal(coachLine({ ...nudge, setsDoneThisExercise: 1 })?.source, 'live');
+  assert.equal(coachLine({ ...nudge, setsDoneThisExercise: 3 })?.source, 'live');
+});
+
+test('an absent count is treated as "not started", so nothing regresses by omission', () => {
+  // Every existing caller and every older test omits it. Absent must keep the arrival lines, or the
+  // coin goes silent everywhere at once.
+  assert.equal(coachLine({ planCue: 'Brace.' })?.source, 'plan');
+  assert.equal(coachLine({ progression: 'Add 5 lb.', progressionUpTo: 190 })?.source, 'progression');
+});
+
+test('once the arrival lines retire, a live nudge still gets through', () => {
+  // The coin is not silenced for the rest of the exercise — it is waiting for something new.
+  const got = coachLine({
+    live: 'Two more like that.',
+    planCue: 'Brace before you unrack.',
+    setsDoneThisExercise: 2,
+  });
+  assert.deepEqual(got, { text: 'Two more like that.', source: 'live' });
+});

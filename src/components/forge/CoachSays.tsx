@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
-import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { flColor, flRadius, flShadow } from '@/constants/foundation';
 import { BUBBLE_SHADOW, BUBBLE_SIZE, HoltMark } from '@/components/forge/HoltMark';
 
 /**
@@ -41,10 +42,12 @@ export interface CoachSaysProps {
   /** The line, or null for the mark alone. Never an empty string — nothing is a real answer. */
   line?: string | null;
   /**
-   * Names him above the line. The introduction only.
+   * The introduction — the one line that has to be noticed.
    *
-   * The whole complaint was that nobody knows who the medallion is, and a line in his voice with no
-   * name on it does not answer that. Every later line is from someone the athlete has already met.
+   * ⚠ IT NO LONGER CONTROLS ATTRIBUTION. Every line now carries the `HOLT` eyebrow, because an
+   * unattributed sentence in the corner of a gym screen is a sentence from nobody. What this still
+   * buys is EMPHASIS: a bronze edge on the first line an athlete ever sees from him, competing with
+   * an eye that has learned that corner holds nothing.
    */
   named?: boolean;
   /** Opens the reply/options surface — `SessionCoachSheet` in a session, the chat sheet elsewhere. */
@@ -67,20 +70,33 @@ export function CoachSays({ line, named = false, onPress, openLabel, style }: Co
         <Pressable
           onPress={onPress}
           accessibilityRole="button"
-          accessibilityLabel={named ? `Coach Holt — ${said}` : said}
+          accessibilityLabel={`Coach Holt — ${said}`}
           style={[styles.bubble, named && styles.bubbleNamed]}
         >
-          {named ? <Text style={styles.name}>Coach Holt</Text> : null}
-          {/*
-            ⚠ THREE LINES, THEN TAP. A progression sentence runs to about ninety characters ("You hit
-            3 × 10 at 185 lb on Barbell Bench Press — go to 190 lb and start back at 8") and a cue is
-            allowed two hundred; unbounded, that is a five-line panel hanging over the set table, which
-            is the "it blocks things on screens" complaint that shrank the coach's reach in the first
-            place. Nothing is lost by clipping: the sheet this opens shows the same sentence in full.
-          */}
-          <Text style={[styles.text, named && styles.textNamed]} numberOfLines={3}>
-            {said}
-          </Text>
+          <LinearGradient colors={SURFACE_ELEVATED} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={styles.bubbleInner}>
+            {/*
+              ⚠ **THE EYEBROW, ALWAYS, NOT A NAME ON THE FIRST LINE ONLY** (Coach Holt Chat v2 §5).
+              The chat marks every one of his turns `HOLT` in bronze at 9.5/700/2.4, and that is now
+              what identifies him here too — so the sentence over the set table and the sentence in the
+              conversation are visibly the same person speaking, rather than two bronze things.
+
+              It also finishes the job the `named` flag started. That flag showed a serif "Coach Holt"
+              exactly once, on the introduction, on the reasoning that every later line is from someone
+              you have met — which is true of the CHAT, where the thread is right there. In the gym,
+              five sets later, an unattributed sentence in the corner is a sentence from nobody.
+            */}
+            <Text style={styles.eyebrow}>HOLT</Text>
+            {/*
+              ⚠ THREE LINES, THEN TAP. A progression sentence runs to about ninety characters ("You hit
+              3 × 10 at 185 lb on Barbell Bench Press — go to 190 lb and start back at 8") and a cue is
+              allowed two hundred; unbounded, that is a five-line panel hanging over the set table, which
+              is the "it blocks things on screens" complaint that shrank the coach's reach in the first
+              place. Nothing is lost by clipping: the sheet this opens shows the same sentence in full.
+            */}
+            <Text style={styles.text} numberOfLines={3}>
+              {said}
+            </Text>
+          </LinearGradient>
         </Pressable>
       ) : null}
       {/* ⚠ THE MARK, NOT A LETTER. `coach-holt-mark.png` cover-filled — the struck bronze medallion IS
@@ -97,28 +113,39 @@ export function CoachSays({ line, named = false, onPress, openLabel, style }: Co
   );
 }
 
+/** `--fl-surface-elevated`, the same material the chat's artifact card is cut from. */
+const SURFACE_ELEVATED = ['#1F2024', flColor.charcoal700] as const;
+
 const styles = StyleSheet.create({
-  wrap: { position: 'absolute', zIndex: 40, alignItems: 'flex-end', gap: 10 },
+  /* ⚠ 12, MATCHING THE CHAT'S HOLT ROW GAP (v2 §5). It was 10 — near enough to look like a mistake
+     rather than a system, which is exactly what the PO meant by "spacing too". */
+  wrap: { position: 'absolute', zIndex: 40, alignItems: 'flex-end', gap: 12 },
   bubble: {
-    maxWidth: 236,
-    paddingHorizontal: 13,
-    paddingVertical: 9,
-    // The flat corner points down-right, at the mark it came from.
+    /* Wider than the 236 it was, because the type inside grew to the chat's scale and a 90-character
+       progression sentence at 15px in a 236pt box is four lines of two words. */
+    maxWidth: 268,
+    // The flat corner points down-right, at the mark it came from — the athlete's own bubble in the
+    // chat does the mirror of this, and for the same reason.
     borderTopLeftRadius: 14,
     borderTopRightRadius: 14,
     borderBottomRightRadius: 4,
     borderBottomLeftRadius: 14,
-    backgroundColor: flColor.charcoal700,
     borderWidth: 1,
-    borderColor: flColor.bronzeBorderSubtle,
+    borderColor: flColor.charcoal500,
+    /* ⚠ `overflow: hidden` IS LOAD-BEARING with a gradient child — without it the fill squares off the
+       corners this container just rounded. */
+    overflow: 'hidden',
+    boxShadow: flShadow.trainTogetherCard,
   },
-  text: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
-  /* The introduction is the one line that has to be NOTICED — it competes with an athlete's eye going
-     straight past a corner of the screen they have learned holds nothing. Bronze edge and tint, the same
-     language the mark itself wears, so it reads as coming FROM the medallion. */
-  bubbleNamed: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800 },
-  name: { fontFamily: flFont.display, fontSize: 13.5, fontWeight: '600', letterSpacing: 0.2, color: flColor.bronze400, marginBottom: 2 },
-  textNamed: { color: flColor.cream100 },
+  /* v2 §5's content column: eyebrow over text at gap 7, and the same 15px/16px gutter the cards use. */
+  bubbleInner: { paddingHorizontal: 15, paddingVertical: 11, gap: 7 },
+  eyebrow: { fontSize: 9.5, fontWeight: '700', letterSpacing: 2.4, color: flColor.bronze400 },
+  /* Was 12.5/18 in `gray400` — a caption. The chat sets Holt's live line at 16.5/24 in `cream100`; this
+     is that voice stepped down one notch for a floating overlay, not a different one. */
+  text: { fontSize: 15, lineHeight: 21.5, color: flColor.cream100 },
+  /* The introduction still has to be NOTICED — it competes with an eye that has learned this corner of
+     the screen holds nothing. It earns the bronze edge; every later line wears the card's own. */
+  bubbleNamed: { borderColor: flColor.bronzeBorder },
   mark: {
     width: BUBBLE_SIZE,
     height: BUBBLE_SIZE,

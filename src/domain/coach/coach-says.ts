@@ -59,6 +59,23 @@ export interface CoachLineInput {
    * first set. This is what makes the two lines above expire.
    */
   heaviestThisSession?: number | null;
+  /**
+   * ⚠ **HOW MANY SETS OF THIS EXERCISE ARE ALREADY LOGGED — THE ARRIVAL LINES RETIRE AFTER THE FIRST.**
+   *
+   * PO, 2026-08-14: *"there are times where I get to an exercise, coach holt says something, and then
+   * after I do the first set it doesn't go away. It should be gone after the first set."*
+   *
+   * This reverses a decision recorded above, and the reversal is right. The old reasoning was that a
+   * technique cue "is as true on the fourth set as the first" — true, and beside the point. Both
+   * `progression` and `planCue` are things Holt says when you WALK UP to the bar: where to start, and
+   * what to watch for on the first rep. Once the athlete has done a set they know both, and a sentence
+   * that will not leave stops reading as coaching and starts reading as a stuck screen.
+   *
+   * `heaviestThisSession` could not carry this job. It is null for every bodyweight lift and for any
+   * set logged without a weight, so a plank's cue would have hung there all session — and it answers a
+   * different question anyway (*have they passed the number he named*, not *have they started*).
+   */
+  setsDoneThisExercise?: number;
 }
 
 export interface CoachLine {
@@ -117,21 +134,30 @@ function spent(upTo: number | null | undefined, heaviest: number | null | undefi
  */
 export function coachLine(input: CoachLineInput): CoachLine | null {
   const heaviest = input.heaviestThisSession;
+  /*
+   * ⚠ **THE ARRIVAL LINES ARE FOR THE FIRST SET.** Both `progression` and `planCue` are what Holt says
+   * as you walk up to the bar — where to start, and what to watch on the first rep. After a set they
+   * have been read, acted on, and are just words that will not leave. See `setsDoneThisExercise`.
+   *
+   * ⚠ `live` IS EXEMPT AND MUST STAY THAT WAY. It is written BY a completed set, so retiring it on the
+   * same signal that created it would mean the mid-set nudge appeared and vanished in one render —
+   * every line the coin exists to carry, gone before it could be read.
+   */
+  const started = (input.setsDoneThisExercise ?? 0) > 0;
 
   const live = clean(input.live);
   if (live && !spent(input.liveUpTo, heaviest)) return { text: live, source: 'live' };
 
   const progression = clean(input.progression);
-  if (progression && !spent(input.progressionUpTo, heaviest)) return { text: progression, source: 'progression' };
+  if (!started && progression && !spent(input.progressionUpTo, heaviest)) return { text: progression, source: 'progression' };
 
   /*
-   * The plan cue is what is left when both of the above have been overtaken, and it is the right thing
-   * to be left with: a technique note is as true on the fourth set as the first. This is also why a
-   * spent line FALLS THROUGH rather than returning null — going quiet mid-exercise reads as the coach
-   * losing interest, and there is usually something timeless still worth saying.
+   * ⚠ A SPENT LINE STILL FALLS THROUGH rather than returning null — that part of the old rule stands.
+   * Going quiet because one sentence expired, while another is sitting unread underneath it, is the
+   * coach losing his thread rather than finishing a thought.
    */
   const planCue = clean(input.planCue);
-  if (planCue) return { text: planCue, source: 'plan' };
+  if (!started && planCue) return { text: planCue, source: 'plan' };
 
   return null;
 }
