@@ -36,7 +36,7 @@ import {
 import { AUTHORED_GOALS } from './rulebook/skeletons.ts';
 import { RACE_SPEC, weeklyVolumePlan } from './rulebook/endurance.ts';
 import { pick, pickNamed } from './rulebook/voice.ts';
-import { BODY_PART_LABEL, SPLIT_LABEL, type DayFocus } from './day.ts';
+import { BODY_PART_LABEL, BODY_PARTS, SPLIT_LABEL, type BodyPart, type DayFocus, type SplitName } from './day.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // THE THREAD
@@ -132,6 +132,11 @@ export interface Chip {
   goTo?: string;
   /** One step of changing a live program. Must stay JSON-serialisable — the thread is persisted. */
   edit?: EditPick;
+  /**
+   * One tap of the multi-select focus question. The patch is NOT computed per chip, because what the
+   * day ends up being depends on every other tap — see `mergeFocus`.
+   */
+  focus?: FocusPick;
   label: string;
   /** What tapping it fills in. The typed path resolves to the same thing — see `interpret`. */
   /* Widened to ChatState so a chip can carry `dayFocus`, which describes one WORKOUT rather than the
@@ -197,7 +202,7 @@ export type QuestionId =
  * it does today, so adding this could not regress a flow — and a future question is never blocked on
  * someone remembering to pick a shape.
  */
-export type QuestionControl = 'chips' | 'segmented' | 'cards' | 'grid' | 'imports';
+export type QuestionControl = 'chips' | 'segmented' | 'cards' | 'grid' | 'imports' | 'multi';
 
 /** The shape each question is drawn in. Absent → `chips`. */
 export const CONTROL_FOR: Partial<Record<QuestionId, QuestionControl>> = {
@@ -210,6 +215,9 @@ export const CONTROL_FOR: Partial<Record<QuestionId, QuestionControl>> = {
   race_base: 'cards',
   // Places and kit.
   where: 'grid',
+  /* ⚠ THE ONLY QUESTION YOU MAY ANSWER MORE THAN ONCE. Every other one advances on the tap; this one
+     collects and waits, because "chest and triceps and a bit of conditioning" is one answer. */
+  day_focus: 'multi',
   // Everything else — goal, day_focus, race_distance, limits — is a set of unlike things.
 };
 
@@ -225,6 +233,21 @@ export interface Question {
 }
 
 const chip = (label: string, patch: Partial<CoachConstraints>): Chip => ({ label, patch });
+
+/**
+ * ⚠ **NOT OFFERED IS NOT THE SAME AS NOT AUTHORED** (PO, 2026-08-14: *"Take out Get Fitter"*).
+ *
+ * `conditioning` keeps its skeletons, its default length and its place in `AUTHORED_GOALS`, because
+ * programs already running under it must keep building — deleting the goal would break a block somebody
+ * is six weeks into. What changes is that Holt stops putting it on the table: it sat between "Build
+ * muscle" and "Lose weight" answering neither question well, and an athlete who wants to be fitter is
+ * better served by one of the two either side of it.
+ *
+ * The filter is here, in the CHAT, rather than in the rulebook, for exactly that reason.
+ */
+const NOT_OFFERED: readonly Goal[] = ['conditioning'];
+
+const offerable = (g: Goal): boolean => AUTHORED_GOALS.includes(g) && !NOT_OFFERED.includes(g);
 
 /**
  * The next thing worth asking, or `null` when there is enough to build.
@@ -312,7 +335,7 @@ function askProgram(c: ChatState): Question | null {
       id: 'goal',
       ask: pick('ask_goal'),
       chips: [
-        ...STRENGTH_GOALS.filter((g) => AUTHORED_GOALS.includes(g)).map((g) => chip(GOAL_LABEL[g], { goal: g })),
+        ...STRENGTH_GOALS.filter(offerable).map((g) => chip(GOAL_LABEL[g], { goal: g })),
         /* ⚠ NO RACE DOOR ON A ONE-WEEK BUILD. A race is a block — every distance carries a floor of six
            to twelve weeks and `assembleEnduranceGoal` counts back from the race date, so `weeks: 1`
            would be silently overruled. Removing the chip is how the size answer stays true instead of
@@ -326,7 +349,7 @@ function askProgram(c: ChatState): Question | null {
     return {
       id: 'race_distance',
       ask: pick('ask_race_distance'),
-      chips: ENDURANCE_GOALS.filter((g) => AUTHORED_GOALS.includes(g)).map((g) => chip(GOAL_LABEL[g], { goal: g })),
+      chips: ENDURANCE_GOALS.filter(offerable).map((g) => chip(GOAL_LABEL[g], { goal: g })),
     };
   }
 
@@ -420,38 +443,105 @@ function askProgram(c: ChatState): Question | null {
  * athlete who came in thinking "back and biceps day" should not have to work out that we call it Pull.
  * `day.ts` already supported both; nothing here was asking.
  */
-const FOCUS_CHIPS: [string, DayFocus][] = [
-  [SPLIT_LABEL.full_body, { kind: 'split', split: 'full_body' }],
-  [SPLIT_LABEL.push, { kind: 'split', split: 'push' }],
-  [SPLIT_LABEL.pull, { kind: 'split', split: 'pull' }],
-  [SPLIT_LABEL.legs, { kind: 'split', split: 'legs' }],
-  [SPLIT_LABEL.upper, { kind: 'split', split: 'upper' }],
-  [SPLIT_LABEL.lower, { kind: 'split', split: 'lower' }],
-  [`${BODY_PART_LABEL.chest} & ${BODY_PART_LABEL.triceps}`, { kind: 'body_parts', parts: ['chest', 'triceps'] }],
-  [`${BODY_PART_LABEL.back} & ${BODY_PART_LABEL.biceps}`, { kind: 'body_parts', parts: ['back', 'biceps'] }],
-  /*
-   * ⚠ SHOULDERS STANDS ALONE AS WELL AS PAIRED, AND IT DID NOT.
-   *
-   * PO: *"shoulders need to be its own muscle for Holt to do a just shoulder day."* The engine had this
-   * the whole time — `day.ts` carries `shoulders` as a standalone `BodyPart` over four deltoid/cuff
-   * muscles, the catalogue has 63 exercises with one of them as a PRIMARY mover, and the `/coach` wizard
-   * offers all eight parts individually. The only thing missing was a chip here, so an athlete talking to
-   * Holt could ask for "shoulders and arms" but never for shoulders.
-   *
-   * Both stay. They are different days, not two names for one: a delt-only session and a delts-plus-arms
-   * session divide a fixed exercise budget very differently.
-   */
-  [BODY_PART_LABEL.shoulders, { kind: 'body_parts', parts: ['shoulders'] }],
-  [`${BODY_PART_LABEL.shoulders} & arms`, { kind: 'body_parts', parts: ['shoulders', 'biceps', 'triceps'] }],
-  [BODY_PART_LABEL.core, { kind: 'body_parts', parts: ['core'] }],
+/**
+ * ══ WHAT TODAY IS FOR — twelve doors, and you may open more than one (PO, 2026-08-14) ══
+ *
+ * The old list shipped the COMBINATIONS: "Chest & Triceps", "Back & Biceps", "Shoulders & arms". Every
+ * one of those is a pairing somebody at the gym made up, and the list could only ever hold the handful
+ * we thought of — an athlete who trains chest and back on the same day had no way to say so, and the
+ * three pairs we did ship crowded out the parts themselves.
+ *
+ * So the pills are the ATOMS and the athlete does the combining. Twelve of them, and picking Chest and
+ * Triceps is now something they did rather than something we anticipated.
+ *
+ * ⚠ **A SPLIT IS EXCLUSIVE; PARTS COMBINE.** "Push" already names a whole day — it IS a list of patterns
+ * — so "Push and Legs" is not a session, it is two. Selecting a split clears the parts and selecting a
+ * part clears the split. That rule lives in `mergeFocus` so the sheet cannot hold a different opinion.
+ *
+ * ⚠ **AND CARDIO IS NOT A MUSCLE.** It rides as a flag on the focus rather than a ninth `BodyPart` —
+ * see the note on `DayFocus.cardio`. It combines with anything, including nothing.
+ */
+export type FocusPick =
+  | { kind: 'split'; split: SplitName }
+  | { kind: 'part'; part: BodyPart }
+  | { kind: 'cardio' };
+
+export const FOCUS_PICKS: readonly { label: string; pick: FocusPick }[] = [
+  { label: SPLIT_LABEL.full_body, pick: { kind: 'split', split: 'full_body' } },
+  { label: SPLIT_LABEL.push, pick: { kind: 'split', split: 'push' } },
+  { label: SPLIT_LABEL.pull, pick: { kind: 'split', split: 'pull' } },
+  { label: SPLIT_LABEL.legs, pick: { kind: 'split', split: 'legs' } },
+  { label: SPLIT_LABEL.upper, pick: { kind: 'split', split: 'upper' } },
+  { label: BODY_PART_LABEL.chest, pick: { kind: 'part', part: 'chest' } },
+  { label: BODY_PART_LABEL.back, pick: { kind: 'part', part: 'back' } },
+  { label: BODY_PART_LABEL.shoulders, pick: { kind: 'part', part: 'shoulders' } },
+  { label: BODY_PART_LABEL.biceps, pick: { kind: 'part', part: 'biceps' } },
+  { label: BODY_PART_LABEL.triceps, pick: { kind: 'part', part: 'triceps' } },
+  { label: BODY_PART_LABEL.core, pick: { kind: 'part', part: 'core' } },
+  { label: 'Cardio', pick: { kind: 'cardio' } },
 ];
+
+/**
+ * Fold the taps into one focus, keeping the split/parts rule.
+ *
+ * ⚠ THE LAST SPLIT WINS AND IT WINS OUTRIGHT. Tapping Push after Chest means the athlete changed their
+ * mind about the shape of the day, not that they want a push session that also does chest — "Push"
+ * already contains a chest movement. Silently merging them would double the pressing and quietly spend
+ * a third of the session's budget on it.
+ */
+export function mergeFocus(picks: readonly FocusPick[]): DayFocus | null {
+  const lastSplit = [...picks].reverse().find((p) => p.kind === 'split');
+  if (lastSplit && lastSplit.kind === 'split') return { kind: 'split', split: lastSplit.split };
+
+  const parts = picks.filter((p): p is Extract<FocusPick, { kind: 'part' }> => p.kind === 'part').map((p) => p.part);
+  const cardio = picks.some((p) => p.kind === 'cardio');
+  if (parts.length === 0 && !cardio) return null;
+  // De-duplicated, and in the order the catalogue names them rather than the order they were tapped, so
+  // the same three taps always produce the same day.
+  const ordered = BODY_PARTS.filter((b) => parts.includes(b));
+  return cardio ? { kind: 'body_parts', parts: ordered, cardio: true } : { kind: 'body_parts', parts: ordered };
+}
+
+const sameFocus = (a: FocusPick, b: FocusPick): boolean =>
+  a.kind === b.kind &&
+  (a.kind !== 'split' || (b.kind === 'split' && a.split === b.split)) &&
+  (a.kind !== 'part' || (b.kind === 'part' && a.part === b.part));
+
+/**
+ * Is this pill lit?
+ *
+ * ⚠ **ASKED DIRECTLY, BECAUSE INFERRING IT FROM `toggleFocus` IS WRONG FOR SPLITS.** The obvious
+ * shortcut — "toggling it would make the list shorter, so it must be on" — holds for a part and fails
+ * for a split: toggling an UNSELECTED split returns a list of one, which is shorter than two selected
+ * parts, so Push and Pull would both draw as chosen while neither was.
+ */
+export const hasFocus = (picks: readonly FocusPick[], p: FocusPick): boolean => picks.some((x) => sameFocus(x, p));
+
+/** Selecting a split replaces everything; selecting anything else drops the split. Used by the control. */
+export function toggleFocus(picks: readonly FocusPick[], next: FocusPick): FocusPick[] {
+  if (hasFocus(picks, next)) return picks.filter((p) => !sameFocus(p, next));
+  if (next.kind === 'split') return [next];
+  return [...picks.filter((p) => p.kind !== 'split'), next];
+}
 
 function nextDayQuestion(c: ChatState): Question | null {
   if (c.dayFocus == null) {
+    /*
+     * ⚠ **THE PAIRINGS ARE GONE AND THE PAIRED DAYS ARE NOT** (PO, 2026-08-14).
+     *
+     * This question used to ship "Chest & Triceps", "Back & Biceps" and "Shoulders & arms" as single
+     * chips. Every one of those was a combination we happened to think of, and the athlete who trains
+     * chest and back together had no way to say so at all. Now the pills are the parts and the athlete
+     * combines them — three taps still produce the shoulders-and-arms day, and eleven others besides.
+     *
+     * ⚠ `patch` IS EMPTY ON PURPOSE. What the day becomes depends on every tap, not on this one, so the
+     * focus is folded by `mergeFocus` when they say they are done. A per-chip patch here would make the
+     * last tap silently win.
+     */
     return {
       id: 'day_focus',
       ask: pick('ask_day_focus'),
-      chips: FOCUS_CHIPS.map(([label, dayFocus]) => ({ label, patch: { dayFocus } })),
+      chips: FOCUS_PICKS.map(({ label, pick: p }) => ({ label, patch: {}, focus: p })),
     };
   }
   /*
@@ -466,7 +556,7 @@ function nextDayQuestion(c: ChatState): Question | null {
     return {
       id: 'goal',
       ask: pick('ask_day_goal'),
-      chips: STRENGTH_GOALS.filter((g) => AUTHORED_GOALS.includes(g)).map((g) => chip(GOAL_LABEL[g], { goal: g })),
+      chips: STRENGTH_GOALS.filter(offerable).map((g) => chip(GOAL_LABEL[g], { goal: g })),
     };
   }
   if (c.sessionMinutes == null) {
@@ -598,7 +688,11 @@ export const INTRO: string[] = [
  * you already have, or ask how the app works.
  */
 export const OPENERS: string[] = [
-  'Build me a program',
+  /* ⚠ NOT "Build me a program" ANY MORE (PO, 2026-08-14: *"should we have it called 'build a program'
+     if it goes into 'program or week'?"*). It should not, and it was the transcript that gave it away:
+     the athlete's own line read "Build me a program" and Holt's very next question was "a program, or
+     one week?" — the app contradicting the athlete about what they had just asked for. */
+  'Build me something',
   'What should I train today?',
   'Change my program',
   "I've got a program already",
@@ -614,7 +708,7 @@ export type OpenerAction =
 
 export function fromOpener(label: string): OpenerAction | null {
   switch (label) {
-    case 'Build me a program':
+    case 'Build me something':
       return { kind: 'build', mode: 'program', patch: {} };
     case 'What should I train today?':
       return { kind: 'build', mode: 'day', patch: {} };
@@ -722,9 +816,13 @@ export interface HomeCard {
 export const HOME_CARDS: readonly HomeCard[] = [
   {
     tag: 'BUILD',
-    title: 'Build a program',
+    /* ⚠ IT NO LONGER SAYS "a program", BECAUSE THE NEXT QUESTION ASKS WHICH (PO, 2026-08-14). The tag
+       already says BUILD; the title's job is to name what comes out, and two things come out of this
+       door. The transcript is what gave it away — the athlete's own line read "Build me a program" and
+       Holt's very next question was "a program, or one week?" */
+    title: 'A program or a week',
     sub: 'Training built around your goals and schedule.',
-    opener: 'Build me a program',
+    opener: 'Build me something',
   },
   {
     tag: 'TODAY',
@@ -750,7 +848,10 @@ export interface HomeRow {
 
 export const HOME_ROWS: readonly HomeRow[] = [
   { icon: 'document', label: 'I already have a program', opener: "I've got a program already" },
-  { icon: 'question', label: 'Ask Holt something', opener: 'How do I…?' },
+  /* ⚠ IT SAYS THE QUESTION, NOT A DESCRIPTION OF THE QUESTION (PO, 2026-08-14). "Ask Holt something"
+     is a category; "How do I…" is the sentence somebody is actually about to finish, and it is the same
+     words the topics themselves answer. */
+  { icon: 'question', label: 'How do I…', opener: 'How do I…?' },
 ];
 
 /**
@@ -944,7 +1045,7 @@ export const dayPreamble = (): string => pick('preamble_day');
 export const readyToBuild = (c: ChatState, mode: 'program' | 'day' = 'program'): boolean => nextQuestion(c, mode) == null;
 
 /** The goal keys the chat can actually offer, so a chip can never name a dead end. */
-export const OFFERABLE_GOALS: readonly Goal[] = AUTHORED_GOALS;
+export const OFFERABLE_GOALS: readonly Goal[] = AUTHORED_GOALS.filter(offerable);
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // TURNING WHAT THE ENGINE BUILT INTO WHAT THE CARD SHOWS

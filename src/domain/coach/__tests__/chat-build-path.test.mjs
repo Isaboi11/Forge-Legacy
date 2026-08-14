@@ -40,6 +40,7 @@ import {
   programCardFor,
   dayCardFor,
   refusalCardFor,
+  mergeFocus,
   nextQuestion,
   readyToBuild,
   preamble,
@@ -359,20 +360,22 @@ test('Holt can be asked for a shoulders-only day', () => {
      simply never offered it — "Shoulders & arms" was the only chip that mentioned them. */
   const q = nextQuestion({}, 'day');
   assert.equal(q.id, 'day_focus');
-  const shouldersOnly = q.chips.find((c) => {
-    const f = c.patch.dayFocus;
-    return f?.kind === 'body_parts' && f.parts.length === 1 && f.parts[0] === 'shoulders';
-  });
-  assert.ok(shouldersOnly, 'no chip asks for shoulders alone');
+  const shoulders = q.chips.find((c) => c.focus?.kind === 'part' && c.focus.part === 'shoulders');
+  assert.ok(shoulders, 'no pill asks for shoulders');
+  assert.deepEqual(mergeFocus([shoulders.focus]), { kind: 'body_parts', parts: ['shoulders'] }, 'on its own it is a delt day');
 });
 
-test('…and the paired shoulders-and-arms day survives beside it', () => {
-  // Different days, not two names for one — a delt-only session and delts-plus-arms divide a fixed
-  // exercise budget very differently.
+test('…and the paired shoulders-and-arms day survives the pairs being deleted', () => {
+  /*
+   * ⚠ **THIS TEST CHANGED BECAUSE THE PRODUCT DID** (PO, 2026-08-14: the focus pills are the parts now,
+   * and you pick as many as you want). "Shoulders & arms" was a single chip; it is three taps.
+   *
+   * The property it was written to protect is untouched and is what is asserted: a delt-only session
+   * and a delts-plus-arms session are DIFFERENT DAYS, because they divide a fixed exercise budget very
+   * differently — so both must still be askable.
+   */
   const q = nextQuestion({}, 'day');
-  const paired = q.chips.find((c) => {
-    const f = c.patch.dayFocus;
-    return f?.kind === 'body_parts' && f.parts.includes('shoulders') && f.parts.length > 1;
-  });
-  assert.ok(paired, 'the paired option was replaced rather than added to');
+  const pick = (part) => q.chips.find((c) => c.focus?.kind === 'part' && c.focus.part === part)?.focus;
+  const paired = mergeFocus([pick('shoulders'), pick('biceps'), pick('triceps')]);
+  assert.deepEqual(paired, { kind: 'body_parts', parts: ['shoulders', 'biceps', 'triceps'] });
 });

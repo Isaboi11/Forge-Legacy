@@ -41,12 +41,16 @@ import {
   sizeAnswered,
   sizeQuestion,
   thinDayFor,
+  toggleFocus,
+  hasFocus,
+  mergeFocus,
   greetReturning,
   refusalCardFor,
   volumeFor,
   weeksBetween,
   type ChatState,
   type Chip,
+  type FocusPick,
   type DayCard,
   type ProgramCard,
   type QuestionControl,
@@ -226,17 +230,11 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
   const { height: winH } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   /*
-   * ⚠ THE INSET IS NO LONGER ADDED HERE, AND THAT IS NOT A REGRESSION OF THE FIX ABOVE.
-   *
-   * The thread used to end at the physical bottom of the phone, so it had to clear the home indicator
-   * itself. It does not any more: the "How do I…" row is pinned beneath it and carries `insets.bottom`
-   * in its own padding. Adding it in both places would reserve the indicator twice and push the last
-   * control a whole indicator's height further up than the quarter it is supposed to sit above.
-   *
-   * The QUARTER stays, and it is still computed rather than a constant — 200px is a quarter of one phone
-   * and a third of another, and the whole point is that the proportion holds.
+   * ⚠ THE INSET IS BACK, because the pinned row beneath the thread is gone (PO, 2026-08-14) and the
+   * scroll reaches the physical bottom of the phone again. It has to clear the home indicator itself,
+   * and the quarter sits on top of that as reading room.
    */
-  const threadPad = Math.round((winH - SHEET_TOP) * 0.25);
+  const threadPad = insets.bottom + Math.round((winH - SHEET_TOP) * 0.25);
 
   /* §6.5 — the introduction is three paragraphs and lands as three beats. Dropping all three at once is
      a wall of text pretending to be a greeting. */
@@ -633,7 +631,7 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
       setBusy(null);
       say(
         { kind: 'holt', text: pick('no_active_program') },
-        { kind: 'chips', chips: [{ label: 'Build me a program', patch: {} }] },
+        { kind: 'chips', chips: [{ label: 'Build me something', patch: {} }] },
       );
       return;
     }
@@ -1225,10 +1223,10 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
               />
               <MenuRow
                 divided
-                label="Build a program"
+                label="Build something"
                 onPress={() => {
                   setMenu(false);
-                  tapChip({ label: 'Build me a program', patch: {} });
+                  tapChip({ label: 'Build me something', patch: {} });
                 }}
               />
               <MenuRow
@@ -1334,42 +1332,6 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
           */}
         {/* The inset below is for the day this returns rather than something anyone can see now — fixed
             alongside the two visible ones so all three stop guessing at the home indicator together. */}
-        {/*
-          ══ WHERE THE COMPOSER GOES WHILE TYPING IS OFF — "How do I…" ══
-
-          §8 draws a text field and a forged send button here. `TYPING_ENABLED` is false, so drawing them
-          would be advertising an understanding the app does not have. The slot is not left empty either:
-          it holds the one thing this surface can answer without a model, promoted from a chip buried in
-          the openers to the thing pinned to the bottom of the sheet.
-
-          ⚠ **NOT A DISABLED TEXT FIELD.** A pill with placeholder text that refuses to focus reads as
-          broken, not as forthcoming — so it is a ROW WITH A CHEVRON, in the shape the rest of the app
-          uses for "this takes you somewhere". No radius that could be mistaken for an input.
-
-          ⚠ AND IT DOES NOT SCROLL AWAY. Pinned outside the thread, so the way to ask a question is
-          always where a question would be typed.
-        */}
-        {preview ? null : TYPING_ENABLED ? null : (
-          <View style={[styles.helpBar, { paddingBottom: 20 + insets.bottom }]}>
-            <Pressable
-              onPress={() => tapChip({ label: 'How do I…?', patch: {} })}
-              accessibilityRole="button"
-              accessibilityLabel="Ask Holt how to do something"
-              style={({ pressed }) => [styles.helpRow, pressed && styles.helpRowPressed]}
-            >
-              <View style={styles.helpGlyph}>
-                <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                  <Path d="M9.3 9.2a2.8 2.8 0 115.4 1.4c-.8 1.1-2.1 1.4-2.1 2.9" />
-                  <Path d="M12.6 17.2h-.01" />
-                </Svg>
-              </View>
-              <Text style={styles.helpText}>How do I…</Text>
-              <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                <Path d="M9 6l6 6-6 6" />
-              </Svg>
-            </Pressable>
-          </View>
-        )}
         {preview || !TYPING_ENABLED ? null : (
         <View style={[styles.composer, { paddingBottom: 12 + insets.bottom }, busy ? styles.composerBusy : null]}>
           <TextInput
@@ -2144,6 +2106,9 @@ function Answers({
 }) {
   const chosen = (c: Chip) => answer != null && c.label === answer;
 
+  /* The one question you answer more than once — see `CONTROL_FOR.day_focus`. */
+  if (ctl === 'multi') return <MultiAnswers chips={chips} answer={answer ?? null} onChip={onChip} />;
+
   /* An ordered scale — 2·3·4·5·6 days, 30·45·60·75 minutes. A ROW, left to right, because the order is
      the information; wrapped pills throw that away and a stepper hides the range. Equal widths so no
      option looks weightier than its neighbour. */
@@ -2259,6 +2224,67 @@ function Answers({
           {chosen(c) ? <Tick size={13} /> : null}
         </Pressable>
       ))}
+    </View>
+  );
+}
+
+/**
+ * ══ THE ONE CONTROL THAT COLLECTS BEFORE IT ANSWERS ══
+ *
+ * PO: *"I should be able to select multiple to have him build the template."* Every other question on
+ * this surface advances on the tap, which is right when the answer is one thing. "What are we training?"
+ * is not one thing — chest and triceps and a bit of conditioning is a single answer with three parts —
+ * so this one gathers and waits for a deliberate "Build it".
+ *
+ * ⚠ **THE SPLIT/PARTS RULE IS `toggleFocus`'s, NOT THIS COMPONENT'S.** Tapping Push after Chest replaces
+ * rather than merges, because "Push" already contains a chest movement and quietly combining them would
+ * spend a third of the session's budget pressing. That belongs somewhere `node --test` can prove it.
+ *
+ * ⚠ AND IT IS SQUARE INDICATORS THROUGHOUT (§6): round means pick one, square means pick many. The shape
+ * is the promise about how many answers are allowed, so it has to be right before the first tap.
+ */
+function MultiAnswers({ chips, answer, onChip }: { chips: Chip[]; answer: string | null; onChip: (c: Chip) => void }) {
+  const [picks, setPicks] = useState<FocusPick[]>([]);
+  /* Once answered, the turn is history: it shows what was chosen and does not invite a second go. */
+  const settled = answer != null;
+  const on = (c: Chip) =>
+    settled ? (answer ?? '').split(', ').includes(c.label) : c.focus != null && hasFocus(picks, c.focus);
+
+  const build = () => {
+    const focus = mergeFocus(picks);
+    if (!focus) return;
+    /* The label IS the transcript line, so it reads back as what they picked rather than as a shape
+       nobody chose: "Chest, Triceps, Cardio". Drawn in the pills' own order, not the tapping order,
+       for the same reason `mergeFocus` sorts: the same three taps must read back the same way. */
+    const label = chips.filter((c) => c.focus && hasFocus(picks, c.focus)).map((c) => c.label).join(', ');
+    onChip({ label, patch: { dayFocus: focus } });
+  };
+
+  return (
+    <View style={styles.multiWrap}>
+      <View style={styles.chipGrid}>
+        {chips.map((c) => (
+          <Pressable
+            key={c.label}
+            onPress={() => (settled || !c.focus ? undefined : setPicks((p) => toggleFocus(p, c.focus!)))}
+            disabled={settled}
+            accessibilityRole="checkbox"
+            accessibilityLabel={c.label}
+            accessibilityState={{ checked: on(c), disabled: settled }}
+            style={({ pressed }) => [styles.chipCell, (on(c) || pressed) && styles.ctlOn]}
+          >
+            <Text style={[styles.chipCellText, on(c) && styles.ctlTextOn]} numberOfLines={1}>{c.label}</Text>
+            <View style={[styles.optSquare, on(c) && styles.optDotOn]}>{on(c) ? <Tick size={9} /> : null}</View>
+          </Pressable>
+        ))}
+      </View>
+      {/* Absent once answered, and absent until something is picked — a Build button that refuses is a
+          button that lies about being ready. */}
+      {settled || picks.length === 0 ? null : (
+        <Button variant="primary" fullWidth onPress={build} accessibilityLabel="Build it">
+          {picks.length === 1 ? 'Build it' : `Build these ${picks.length}`}
+        </Button>
+      )}
     </View>
   );
 }
@@ -2866,6 +2892,9 @@ const styles = StyleSheet.create({
   ctlOn: { borderColor: flColor.bronzeBorder, backgroundColor: 'rgba(186,146,92,0.13)' },
   ctlTextOn: { fontWeight: '600' },
 
+  // multi — collects taps, then a deliberate Build.
+  multiWrap: { gap: 12 },
+
   // chips — two to a row, a set of unlike things.
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chipCell: {
@@ -3194,39 +3223,6 @@ const styles = StyleSheet.create({
   barHeavy: { backgroundColor: flColor.bronze400 },
   barDown: { backgroundColor: flColor.bronzeDark },
   ribbonCaption: { fontSize: 11.5, lineHeight: 17, color: flColor.gray600 },
-
-  /* §8's slot, holding a row rather than a field. Same panel, same top rule, same 14px gutter. */
-  helpBar: {
-    paddingHorizontal: 14,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: flColor.charcoal600,
-    backgroundColor: flColor.charcoal800,
-  },
-  helpRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    height: 52,
-    paddingHorizontal: 14,
-    /* ⚠ 13, NOT `flRadius.pill`. A pill at this size in this position IS a text field, and one that
-       will not focus reads as broken rather than as an invitation. */
-    borderRadius: 13,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.075)',
-    backgroundColor: 'rgba(255,255,255,0.032)',
-  },
-  helpRowPressed: { borderColor: flColor.bronzeBorder, backgroundColor: 'rgba(186,146,92,0.13)' },
-  helpGlyph: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorderSubtle,
-  },
-  helpText: { flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
 
   composer: {
     flexDirection: 'row',

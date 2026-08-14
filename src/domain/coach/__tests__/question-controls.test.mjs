@@ -18,11 +18,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { CONTROL_FOR, nextQuestion } from '../chat-core.ts';
+import { CONTROL_FOR, mergeFocus, nextQuestion } from '../chat-core.ts';
 
-const SHAPES = ['chips', 'segmented', 'cards', 'grid', 'imports'];
+/** ⚠ `multi` joined this list on 2026-08-14 — the focus question collects taps instead of advancing. */
+const SHAPES = ['chips', 'segmented', 'cards', 'grid', 'imports', 'multi'];
 
-/** Walk the program questionnaire taking the first chip each turn, collecting every question asked. */
+/**
+ * Walk the program questionnaire taking the first chip each turn, collecting every question asked.
+ *
+ * ⚠ `day_focus` CARRIES A `focus` RATHER THAN A `patch` — it is the multi-select question, and what the
+ * day becomes depends on every tap. A walker reading only `patch` never answers it and loops.
+ */
 function askedIn(mode, seed = {}) {
   const out = [];
   let c = { ...seed };
@@ -30,8 +36,9 @@ function askedIn(mode, seed = {}) {
     const q = nextQuestion(c, mode);
     if (!q) return out;
     out.push(q);
-    c = { ...c, ...q.chips[0].patch };
-    if (q.chips[0].picksRace) c = { ...c, pickingRace: true };
+    const first = q.chips[0];
+    c = { ...c, ...first.patch, ...(first.focus ? { dayFocus: mergeFocus([first.focus]) } : {}) };
+    if (first.picksRace) c = { ...c, pickingRace: true };
   }
   throw new Error('the questionnaire never terminated');
 }

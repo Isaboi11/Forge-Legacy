@@ -57,6 +57,9 @@ export type SplitName = 'push' | 'pull' | 'legs' | 'upper' | 'lower' | 'full_bod
 
 export const SPLITS: readonly SplitName[] = ['push', 'pull', 'legs', 'upper', 'lower', 'full_body'];
 
+/** The catalogue's own name for conditioning work. One place, so a rename cannot silently empty a day. */
+export const CARDIO_PATTERN = 'Cardio / Locomotion';
+
 export const SPLIT_LABEL: Record<SplitName, string> = {
   push: 'Push',
   pull: 'Pull',
@@ -127,7 +130,23 @@ export const BODY_PART_LABEL: Record<BodyPart, string> = {
 /** What today's workout is for. */
 export type DayFocus =
   | { kind: 'split'; split: SplitName }
-  | { kind: 'body_parts'; parts: readonly BodyPart[] };
+  | {
+      kind: 'body_parts';
+      parts: readonly BodyPart[];
+      /**
+       * ⚠ **A FLAG RATHER THAN A NINTH `BodyPart`, AND THAT IS THE WHOLE REASON IT IS SHAPED THIS WAY.**
+       *
+       * Conditioning is not a muscle. The body-part path selects on `primaryMuscleIds`, and the 20
+       * `Cardio / Locomotion` movements — jump rope, ski erg, sled drag, bear crawl — do not name a
+       * primary mover in any sense a filter could use. Adding `'cardio'` to `BodyPart` would put a
+       * non-muscle into `BODY_PART_MUSCLES`, into the exercise library's own filters, and into every
+       * switch that believes that union is anatomy.
+       *
+       * Optional, so every existing focus keeps its meaning untouched. `parts: []` with `cardio: true`
+       * is a legitimate request: a conditioning-only session.
+       */
+      cardio?: boolean;
+    };
 
 export interface DayRequest {
   focus: DayFocus;
@@ -344,7 +363,12 @@ export function buildDayWorkout(
     // "chest day" made of movements that merely involve the chest is the commonest way this goes wrong.
     const byPattern = new Map<string, CatalogExercise[]>();
     for (const ex of pool) {
-      if (!ex.primaryMuscleIds.some((m) => targets.has(m))) continue;
+      /* Conditioning joins on its PATTERN, not on a muscle — see the note on `DayFocus.cardio`. It is an
+         `||` rather than a separate pass so a session that asks for chest and conditioning gets both
+         spread through the same round-robin, instead of the cardio arriving as an afterthought bolted
+         on the end. */
+      const wanted = ex.primaryMuscleIds.some((m) => targets.has(m)) || (req.focus.cardio === true && ex.pattern === CARDIO_PATTERN);
+      if (!wanted) continue;
       if (ctx.excludePatterns.has(ex.pattern) || ctx.excludeKeys.has(ex.key)) continue;
       if (!canDo(ex, owned)) continue;
       if (!difficultyAllows(ex, req.experience)) continue;
@@ -392,12 +416,33 @@ export function buildDayWorkout(
       }),
     );
 
-    for (const ex of selectForFocus(ordered, budget)) chosen.push({ ex, pattern: ex.pattern });
+    /*
+     * ⚠ **CONDITIONING GETS A SLOT RESERVED, OR IT NEVER ARRIVES.**
+     *
+     * Letting it compete in the rotation on merit was the obvious implementation and it was wrong:
+     * `Cardio / Locomotion` holds no preferred movement, so it sorts last, and a back day fills its
+     * whole budget from Horizontal Pull, Vertical Pull and Shoulder Isolation before reaching it. The
+     * measured result was that "Back & Cardio" produced a session byte-identical to "Back" — under a
+     * title that said Cardio. A card naming something the session does not contain is the exact failure
+     * this surface exists to avoid.
+     *
+     * So conditioning is a FINISHER: one piece, taken off the top of the cardio queue, with the muscle
+     * work budgeted around it. A whole day of it is different — `parts` is empty, there is nothing to
+     * reserve against, and the rotation is already all cardio.
+     */
+    const wantsFinisher = req.focus.cardio === true && req.focus.parts.length > 0;
+    const finisher = wantsFinisher ? (ordered.get(CARDIO_PATTERN) ?? [])[0] : undefined;
+    if (wantsFinisher) ordered.delete(CARDIO_PATTERN);
+
+    for (const ex of selectForFocus(ordered, finisher ? budget - 1 : budget)) chosen.push({ ex, pattern: ex.pattern });
+    if (finisher) chosen.push({ ex: finisher, pattern: finisher.pattern });
 
     for (const p of req.focus.parts) {
       const muscles = new Set(BODY_PART_MUSCLES[p]);
       if (!chosen.some((c) => c.ex.primaryMuscleIds.some((m) => muscles.has(m)))) missing.push(p);
     }
+    // Asked for and not found — say so, rather than let a title claim it.
+    if (req.focus.cardio && !chosen.some((c) => c.pattern === CARDIO_PATTERN)) missing.push('Cardio');
   }
 
   chosen.sort((a, b) => Number(isCompound(b.pattern)) - Number(isCompound(a.pattern)));
@@ -428,7 +473,14 @@ export function buildDayWorkout(
     };
   });
 
-  return { day: { letter: 'A', name: titleFor(req.focus), warmup: [], main, cooldown: [] }, missing };
+  /* ⚠ THE TITLE IS NAMED FROM WHAT IS IN THE DAY, NOT FROM WHAT WAS ASKED FOR. If conditioning was
+     requested and nothing could be found for it — a bare floor and no rope — the session is "Back", not
+     "Back & Cardio". `missing` already carries the fact; the name must not contradict it. */
+  const gotCardio = chosen.some((c) => c.pattern === CARDIO_PATTERN);
+  const named: DayFocus =
+    req.focus.kind === 'body_parts' && req.focus.cardio && !gotCardio ? { ...req.focus, cardio: false } : req.focus;
+
+  return { day: { letter: 'A', name: titleFor(named), warmup: [], main, cooldown: [] }, missing };
 }
 
 function difficultyAllows(ex: CatalogExercise, experience: Experience): boolean {
@@ -454,9 +506,11 @@ function skeletonSlotsFor(split: SplitName, week: { name: string; slots: readonl
   return week.find((d) => d.name === want[split])?.slots ?? week[0]?.slots ?? [];
 }
 
-function titleFor(focus: DayFocus): string {
+/** ⚠ Exported so a template saved from a Holt day is named the same thing the card called it. */
+export function titleFor(focus: DayFocus): string {
   if (focus.kind === 'split') return SPLIT_LABEL[focus.split];
-  const parts = focus.parts.map((p) => BODY_PART_LABEL[p]);
+  // Conditioning reads as one more thing being trained, because that is what it is: "Back & Cardio".
+  const parts = [...focus.parts.map((p) => BODY_PART_LABEL[p]), ...(focus.cardio ? ['Cardio'] : [])];
   if (parts.length === 0) return 'Workout';
   if (parts.length === 1) return parts[0];
   return `${parts.slice(0, -1).join(', ')} & ${parts[parts.length - 1]}`;

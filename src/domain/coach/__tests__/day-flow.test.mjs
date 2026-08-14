@@ -24,7 +24,7 @@ import path from 'node:path';
 import { buildPickerDb } from '../../exercise-picker/catalog-core.ts';
 import { canDoExercise } from '../../home-gym/equipment.ts';
 import { buildDayWorkout, BODY_PART_MUSCLES } from '../day.ts';
-import { nextQuestion, readyToBuild } from '../chat-core.ts';
+import { mergeFocus, nextQuestion, readyToBuild } from '../chat-core.ts';
 import { ENDURANCE_GOALS } from '../constraints.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -37,7 +37,14 @@ const POOL = buildPickerDb({
   equipment: src('equipment.json'),
 });
 
-/** Walk the day questionnaire, answering with the first chip each time. */
+/**
+ * Walk the day questionnaire, answering with the first chip each time.
+ *
+ * ⚠ `day_focus` IS THE ONE QUESTION WHOSE CHIP CARRIES NO PATCH (PO, 2026-08-14). It is multi-select —
+ * what the day becomes depends on every tap, not on one — so a tap contributes a `FocusPick` and the
+ * answer is folded by `mergeFocus` when the athlete says they are done. A walker that only reads
+ * `patch` would loop forever on it, which is exactly what happened when this changed.
+ */
 function walkDay(start = {}) {
   let state = { ...start };
   const asked = [];
@@ -45,10 +52,21 @@ function walkDay(start = {}) {
     const q = nextQuestion(state, 'day');
     if (!q) return { asked, state };
     asked.push(q.id);
-    state = { ...state, ...q.chips[0].patch };
+    const c = q.chips[0];
+    state = { ...state, ...c.patch, ...(c.focus ? { dayFocus: mergeFocus([c.focus]) } : {}) };
   }
   throw new Error(`the day questionnaire never finished: ${asked.join(', ')}`);
 }
+
+/** The focus pill with this label, as the day it would produce on its own. */
+const focusOf = (...labels) =>
+  mergeFocus(
+    labels.map((l) => {
+      const c = nextQuestion({}, 'day').chips.find((x) => x.label === l);
+      assert.ok(c, `there is no "${l}" pill`);
+      return c.focus;
+    }),
+  );
 
 // ─────────────────────────────────────────────────────────────────────────────
 // WHAT IT ASKS, AND WHAT IT MUST NOT
@@ -106,13 +124,20 @@ test('the program flow is untouched by any of this', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 test('⚠ "Back & Biceps" builds a back and biceps session, not a full body one', () => {
-  const chip = nextQuestion({}, 'day').chips.find((c) => /back/i.test(c.label) && /biceps/i.test(c.label));
-  assert.ok(chip, 'the athlete cannot ask for back and biceps at all');
-  assert.deepEqual(chip.patch.dayFocus, { kind: 'body_parts', parts: ['back', 'biceps'] });
+  /*
+   * ⚠ **THE CHIP THAT USED TO SAY THIS IS GONE, AND THE DAY IS NOT** (PO, 2026-08-14).
+   *
+   * "Back & Biceps" shipped as a single pill, alongside "Chest & Triceps" and "Shoulders & arms" —
+   * three combinations we happened to think of, and no way at all to ask for the fourth. The pills are
+   * the parts now, so this day is two taps rather than one. The COMPLAINT this test exists for is
+   * unchanged and so is the assertion under it: what comes back must actually train back and biceps.
+   */
+  const focus = focusOf('Back', 'Biceps');
+  assert.deepEqual(focus, { kind: 'body_parts', parts: ['back', 'biceps'] });
 
   const { day } = buildDayWorkout(
     {
-      focus: chip.patch.dayFocus,
+      focus,
       sessionMinutes: 60,
       experience: 'intermediate',
       environment: 'full_gym',
@@ -195,12 +220,12 @@ test('a caller with no goal still gets a workout, just no cue', () => {
   assert.ok(d.main.every((e) => !e.coachNote), 'it invented a cue for a goal nobody gave');
 });
 
-test('every focus chip builds something real', () => {
-  // A chip that produces an empty session is a dead end the athlete cannot recover from.
+test('every focus pill builds something real on its own', () => {
+  // A pill that produces an empty session is a dead end the athlete cannot recover from.
   for (const chip of nextQuestion({}, 'day').chips) {
     const { day } = buildDayWorkout(
       {
-        focus: chip.patch.dayFocus,
+        focus: mergeFocus([chip.focus]),
         sessionMinutes: 45,
         experience: 'beginner',
         environment: 'full_gym',
@@ -214,10 +239,93 @@ test('every focus chip builds something real', () => {
   }
 });
 
-test('the focus offers both splits and muscle pairs, because they are different questions', () => {
-  // "Pull" and "Back & Biceps" are not redundant — one is a movement pattern split, the other names the
+test('the focus offers both splits and single parts, because they are different questions', () => {
+  // "Pull" and "Back + Biceps" are not redundant — one is a movement-pattern split, the other names the
   // muscles — and an athlete thinking "back and biceps day" should not have to know we call it Pull.
   const chips = nextQuestion({}, 'day').chips;
-  assert.ok(chips.some((c) => c.patch.dayFocus.kind === 'split'));
-  assert.ok(chips.some((c) => c.patch.dayFocus.kind === 'body_parts'));
+  assert.ok(chips.some((c) => c.focus.kind === 'split'), 'no split is offered');
+  assert.ok(chips.some((c) => c.focus.kind === 'part'), 'no individual muscle is offered');
+  assert.ok(chips.some((c) => c.focus.kind === 'cardio'), 'conditioning is not offered');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ⭐ PICK SEVERAL — PO, 2026-08-14
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('the twelve pills are the ones the PO asked for, in that order', () => {
+  assert.deepEqual(
+    nextQuestion({}, 'day').chips.map((c) => c.label),
+    ['Full body', 'Push', 'Pull', 'Legs', 'Upper body', 'Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps', 'Core', 'Cardio'],
+  );
+});
+
+test('⚠ the paired days survive the pairs being deleted', () => {
+  // The three combinations that used to be single chips are still reachable — as taps, not as options
+  // somebody had to think of in advance.
+  assert.deepEqual(focusOf('Chest', 'Triceps'), { kind: 'body_parts', parts: ['chest', 'triceps'] });
+  assert.deepEqual(focusOf('Back', 'Biceps'), { kind: 'body_parts', parts: ['back', 'biceps'] });
+  assert.deepEqual(focusOf('Shoulders', 'Biceps', 'Triceps'), {
+    kind: 'body_parts',
+    parts: ['shoulders', 'biceps', 'triceps'],
+  });
+  // And the one nobody could ask for before, which is the point of the change.
+  assert.deepEqual(focusOf('Chest', 'Back'), { kind: 'body_parts', parts: ['chest', 'back'] });
+});
+
+test('the same taps in a different order build the same day', () => {
+  // Ordered by the catalogue rather than by the tapping, so Holt is deterministic about it — the same
+  // three pills must not produce two different sessions depending on which was pressed first.
+  assert.deepEqual(focusOf('Triceps', 'Chest'), focusOf('Chest', 'Triceps'));
+  assert.deepEqual(focusOf('Core', 'Back', 'Biceps'), focusOf('Back', 'Biceps', 'Core'));
+});
+
+test('⚠ a split replaces the parts rather than merging with them', () => {
+  /*
+   * "Push" is already a list of patterns and it already contains a chest movement. Merging it with
+   * Chest would spend a third of a fixed exercise budget pressing, so the last split wins outright —
+   * tapping Push after Chest means they changed their mind about the shape of the day.
+   */
+  assert.deepEqual(focusOf('Chest', 'Push'), { kind: 'split', split: 'push' });
+  assert.deepEqual(focusOf('Push', 'Chest'), { kind: 'split', split: 'push' }, 'and it wins from either side');
+  assert.deepEqual(focusOf('Push', 'Pull'), { kind: 'split', split: 'pull' }, 'two splits: the later one');
+});
+
+test('cardio combines with anything, including nothing', () => {
+  assert.deepEqual(focusOf('Cardio'), { kind: 'body_parts', parts: [], cardio: true });
+  assert.deepEqual(focusOf('Back', 'Cardio'), { kind: 'body_parts', parts: ['back'], cardio: true });
+});
+
+test('⚠ a conditioning-only day is a real session, not an empty one', () => {
+  // The reason `cardio` is a flag and not a ninth BodyPart: it selects on the movement PATTERN, so an
+  // empty `parts` list is legitimate and must still fill a day.
+  const { day } = buildDayWorkout(
+    {
+      focus: focusOf('Cardio'),
+      goal: 'conditioning',
+      sessionMinutes: 45,
+      experience: 'intermediate',
+      environment: 'full_gym',
+      ownedEquipment: [],
+      limitations: [],
+    },
+    POOL,
+    canDoExercise,
+  );
+  assert.ok(day.main.length >= 3, `a cardio day came back with ${day.main.length} movements`);
+  assert.match(day.name, /Cardio/, 'and it is named for what it is');
+});
+
+test('cardio ADDS to a muscle day rather than replacing it', () => {
+  const withOut = focusOf('Back');
+  const withIt = focusOf('Back', 'Cardio');
+  const run = (focus) =>
+    buildDayWorkout(
+      { focus, goal: 'muscle', sessionMinutes: 60, experience: 'intermediate', environment: 'full_gym', ownedEquipment: [], limitations: [] },
+      POOL,
+      canDoExercise,
+    ).day.main.map((e) => e.name);
+  const a = run(withOut);
+  const b = run(withIt);
+  assert.ok(b.length > 0);
+  assert.notDeepEqual(a, b, 'asking for conditioning changed nothing about the session');
 });
