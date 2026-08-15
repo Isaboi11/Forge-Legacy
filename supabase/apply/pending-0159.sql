@@ -25,7 +25,7 @@
 --   select jobname, schedule, active from cron.job where jobname = 'forge-briefing';
 --   -- one row, '*/15 * * * *', active = true
 --
---   select count(*) from public.briefing_lines;          -- 12
+--   select count(*) from public.briefing_lines;          -- 80  (40 plain + 40 direct)
 --   select public.push_pref_default('training_briefing'); -- false
 --   select public.push_pref_default('squad_training');    -- true  ← 0153 survived the restatement
 --
@@ -241,21 +241,100 @@ alter table public.briefing_lines enable row level security;
 -- ⚠ NO POLICIES, and not an omission — the same posture 0137 takes with `app_admins`. Nothing on a client
 -- reads this: the sender words the notification server-side and `push_outbox` stores the finished text.
 
+-- ⚠ FORTY PER REGISTER, AND THE COUNT IS A DESIGN NUMBER RATHER THAN A ROUND ONE. `briefing_body` picks
+-- deterministically on `md5(athlete || item_key || idx)`, so the draw is uniform and independent between
+-- sessions: with N lines, consecutive sessions collide at 1/N. Six lines meant a repeat roughly every
+-- sixth session — often enough to read as a canned app, which is the failure mode a "let's get it"
+-- message has. Forty puts it near 2.5%, far below the rate at which anyone notices a pattern.
+
 insert into public.briefing_lines (register, idx, text) values
-  -- `plain` — steady and push. An invitation with the door already open.
+  -- `plain` — steady and push. An invitation with the door already open. It coaches the CRAFT: set-up,
+  -- tempo, range, honest warm-ups, writing the numbers down. Nothing here raises its voice.
   ('plain',  1, 'It''s there when you are.'),
   ('plain',  2, 'Everything''s laid out. Just show up.'),
   ('plain',  3, 'The work is written. Go do it.'),
   ('plain',  4, 'Start with the warm-up. It earns the rest of the session.'),
   ('plain',  5, 'One session. That''s the whole ask.'),
   ('plain',  6, 'Take your time on the first set.'),
-  -- `direct` — drive. Louder, never harsher; it talks about the work, never about the athlete.
-  ('direct', 1, 'Go take it.'),
-  ('direct', 2, 'Load the bar. The first set decides the session.'),
-  ('direct', 3, 'You know the lifts. Go get after them.'),
-  ('direct', 4, 'Chalk up. Let''s work.'),
-  ('direct', 5, 'Get in, do the work, get out.'),
-  ('direct', 6, 'Let''s get it.')
+  ('plain',  7, 'Move well before you move heavy.'),
+  ('plain',  8, 'Warm up honestly and the heavy sets take care of themselves.'),
+  ('plain',  9, 'Technique first. Load second.'),
+  ('plain', 10, 'Control the way down. That''s where most of the work hides.'),
+  ('plain', 11, 'Breathe, brace, then lift.'),
+  ('plain', 12, 'Full range on every rep. Half a rep builds half of something.'),
+  ('plain', 13, 'Rest the whole rest. It''s part of the prescription.'),
+  ('plain', 14, 'Small jumps hold. Big ones rarely do.'),
+  ('plain', 15, 'If the bar moves fast, it''s ready to go up.'),
+  ('plain', 16, 'Write the numbers down. You''ll want them later.'),
+  ('plain', 17, 'A good session is mostly unremarkable. That''s the point.'),
+  ('plain', 18, 'Set up carefully. Most lifts are decided before they start.'),
+  ('plain', 19, 'Finish the accessories. They''re not decoration.'),
+  ('plain', 20, 'Warm-up sets are practice reps. Use them that way.'),
+  ('plain', 21, 'Lift the weight you''ve earned, not the one you want.'),
+  ('plain', 22, 'Leave one rep in the tank early. Spend it at the end.'),
+  ('plain', 23, 'Quality reps compound. So does the other kind.'),
+  ('plain', 24, 'Own the setup and the rep mostly takes care of itself.'),
+  ('plain', 25, 'Find your position under the bar before you move it.'),
+  ('plain', 26, 'Chase the rep quality. The numbers follow it.'),
+  ('plain', 27, 'Give the warm-up five honest minutes.'),
+  ('plain', 28, 'Every set is a rep of the pattern. Practice it well.'),
+  ('plain', 29, 'The plan is simple. Simple is hard enough.'),
+  ('plain', 30, 'Trust the numbers on the page. They were chosen for a reason.'),
+  ('plain', 31, 'Do the reps you can do well, then one more like it.'),
+  ('plain', 32, 'Bar path first, weight second.'),
+  ('plain', 33, 'Show up, do the work, write it down.'),
+  ('plain', 34, 'Add a little or repeat it better. Both are progress.'),
+  ('plain', 35, 'Match the tempo to the intent, not to the clock.'),
+  ('plain', 36, 'Strength is built one honest rep at a time.'),
+  ('plain', 37, 'Set the bar down between sets. Stand up. Breathe.'),
+  ('plain', 38, 'The warm-up is the cheapest insurance in the gym.'),
+  ('plain', 39, 'Two good sets beat four rushed ones.'),
+  ('plain', 40, 'Start light enough that the first set feels easy.'),
+  -- `direct` — drive. Louder, never harsher.
+  --
+  -- ⚠ THE TEST THAT GUARDS THIS TABLE CANNOT SEE THE DIFFERENCE, SO IT IS STATED HERE: every one of these
+  -- is an imperative aimed at THE WORK — the bar, the set, the rep, the plate. None is a verdict on the
+  -- athlete. "You're better than this" would pass the regex and still be the wrong product.
+  ('direct',  1, 'Go take it.'),
+  ('direct',  2, 'Load the bar. The first set decides the session.'),
+  ('direct',  3, 'You know the lifts. Go get after them.'),
+  ('direct',  4, 'Chalk up. Let''s work.'),
+  ('direct',  5, 'Get in, do the work, get out.'),
+  ('direct',  6, 'Let''s get it.'),
+  ('direct',  7, 'Grip it and go.'),
+  ('direct',  8, 'Set up, brace, drive.'),
+  ('direct',  9, 'Attack the first set. Earn the rest of them.'),
+  ('direct', 10, 'Hands on the bar. Decide.'),
+  ('direct', 11, 'That weight is not moving itself.'),
+  ('direct', 12, 'Hard sets only. That''s the whole game.'),
+  ('direct', 13, 'Own every rep. Give none away.'),
+  ('direct', 14, 'Big lifts first. Nothing else matters until they''re done.'),
+  ('direct', 15, 'Make the warm-up look easy, then make the work look hard.'),
+  ('direct', 16, 'Leave nothing on the platform.'),
+  ('direct', 17, 'Add weight. You can handle it.'),
+  ('direct', 18, 'Finish every set like it''s the one that counts.'),
+  ('direct', 19, 'Under the bar. Now.'),
+  ('direct', 20, 'Make the final rep look like the first.'),
+  ('direct', 21, 'Fight for the rep. All of them.'),
+  ('direct', 22, 'Full effort on the main lift. Everything else is detail.'),
+  ('direct', 23, 'Rack it, breathe, go get the next one.'),
+  ('direct', 24, 'No half reps. Full range, full effort.'),
+  ('direct', 25, 'Set the tone on rep one.'),
+  ('direct', 26, 'Move like you mean it.'),
+  ('direct', 27, 'Strap in. There''s work to do.'),
+  ('direct', 28, 'Turn it up and get to it.'),
+  ('direct', 29, 'Do the work nobody watches.'),
+  ('direct', 30, 'Earn the shower.'),
+  ('direct', 31, 'Two hands, one job. Lift.'),
+  ('direct', 32, 'The heavy set is where it gets built. Go find it.'),
+  ('direct', 33, 'Sweat first. Talk after.'),
+  ('direct', 34, 'Nobody lifts it for you. Go.'),
+  ('direct', 35, 'Warm up fast, work hard, walk out taller.'),
+  ('direct', 36, 'Get your hands dirty.'),
+  ('direct', 37, 'Pick it up like you own it.'),
+  ('direct', 38, 'Every plate you add is a decision. Make it.'),
+  ('direct', 39, 'Drive through the floor and finish the rep.'),
+  ('direct', 40, 'Beat the bar. Then rack it and do it one more time.')
 on conflict (register, idx) do nothing;
 
 comment on table public.briefing_lines is
@@ -637,9 +716,19 @@ begin
   if to_regprocedure('public.briefing_send()') is null then
     raise exception '0159 self-check: briefing_send was not created';
   end if;
-  if (select count(*) from public.briefing_lines) < 12 then
-    raise exception '0159 self-check: the copy table is short — expected 12 lines, found %',
+  -- ⚠ `<`, NOT `<>`. The whole point of keeping the copy in a table is that somebody can add or retire a
+  -- line with an UPDATE; an equality check here would turn the next such edit into a migration.
+  if (select count(*) from public.briefing_lines) < 80 then
+    raise exception '0159 self-check: the copy table is short — expected 80 lines, found %',
       (select count(*) from public.briefing_lines);
+  end if;
+  -- The seed is `on conflict do nothing`, so re-running this file over an earlier copy of it TOPS UP the
+  -- table (idx 7–40 are new primary keys) and leaves any hand-edited line 1–6 exactly as it was.
+  if (select count(*) from public.briefing_lines where register = 'plain') < 40
+     or (select count(*) from public.briefing_lines where register = 'direct') < 40 then
+    raise exception '0159 self-check: a register is short — plain %, direct %',
+      (select count(*) from public.briefing_lines where register = 'plain'),
+      (select count(*) from public.briefing_lines where register = 'direct');
   end if;
   if not exists (select 1 from cron.job where jobname = 'forge-briefing' and active) then
     raise exception '0159 self-check: forge-briefing is not scheduled';

@@ -61,6 +61,9 @@ import {
   type UnitSystem,
 } from '@/domain/run/run-core';
 import { routeForStorage } from '@/domain/run/route-privacy';
+import { storedRouteToLatLng } from '@/domain/run/route-region';
+import { RouteMap } from './RouteMap';
+import { RouteSheet } from './RouteSheet';
 import type { SessionExercise } from '@/domain/workout/types';
 
 /**
@@ -483,6 +486,25 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
     ? { d: fitted.d, start: fitted.start, head: fitted.head }
     : null;
 
+  /**
+   * ══ THE REAL MAP, AND WHERE IT DOES AND DOES NOT GO ══
+   *
+   * PO: *"It just looks like a line and not a map. He also couldn't click on the map to zoom in."*
+   * Both true — the band is an `<Svg>` on a drawn grid with `pointerEvents="none"`.
+   *
+   * A LOGGED outdoor bout now draws real tiles from its stored route, and tapping it opens the
+   * fullscreen map where the gestures live.
+   *
+   * ⚠ THE LIVE BOUT DELIBERATELY KEEPS THE TRACED SVG, and that is a decision rather than an omission.
+   * A `MapView` mounted inside the workout screen's horizontal pager, re-rendering a growing polyline
+   * once a second for half an hour, costs battery during the one activity where the phone is already
+   * running the GPS radio flat out — and the live band is mostly covered by the distance readout
+   * anyway. The shape while you run is a progress indicator; the map afterwards is the artefact.
+   */
+  const storedRoute = traced ? storedRouteToLatLng(result?.route) : [];
+  const hasMap = storedRoute.length > 1;
+  const [mapOpen, setMapOpen] = useState(false);
+
   const note = signalNote(tracker.phase === 'paused', tracker.weakSignal, tracker.accuracyM, tracker.gps);
 
   /**
@@ -594,6 +616,17 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
 
   return (
     <View style={styles.card}>
+      {/* The map the athlete can actually handle. Mounted here rather than inside the band so it is a
+          sibling of the card's content and not a child of the pager's scroll view. */}
+      {hasMap ? (
+        <RouteSheet
+          visible={mapOpen}
+          onClose={() => setMapOpen(false)}
+          points={storedRoute}
+          summary={`${d1(result?.distanceMi)} ${dU} · ${fmtClock(result?.timeSec)}`}
+        />
+      ) : null}
+
       {/* ── TERRAIN BAND ─────────────────────────────────────────────────── */}
       <View style={[styles.band, treadmill ? styles.bandIndoor : styles.bandOutdoor]}>
         {treadmill ? (
@@ -641,6 +674,10 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
           </>
         ) : (
           <>
+            {/* A logged run gets tiles and streets; everything else keeps the traced band. */}
+            {hasMap ? (
+              <RouteMap points={storedRoute} height={BAND_H} onPress={() => setMapOpen(true)} testID="cardio-route-map" />
+            ) : (
             <Svg width="100%" height={BAND_H} viewBox="0 0 372 126" pointerEvents="none">
               <Defs>
                 <RadialGradient id="cbg" cx="50%" cy="12%" r="130%">
@@ -687,6 +724,7 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
               )}
               <Rect x={0} y={74} width={372} height={52} fill="url(#cscrim)" />
             </Svg>
+            )}
 
             {/* The live read-out sits ON the route while it's being drawn — the number and the shape it
                 came from in one place, rather than a clock at the top and a distance three rows down. */}
@@ -754,7 +792,11 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
                   ? `${d1(targetMi)} ${dU} target reached · keep going if you like`
                   : note
                 : traced
-                  ? `${d1(result?.distanceMi)} ${dU} · ${fmtClock(result?.timeSec)}`
+                  ? /* With a map on screen the caption earns its space by saying what the map cannot:
+                       that the line is short at both ends on purpose. Without one it stays the numbers. */
+                    hasMap
+                    ? `${d1(result?.distanceMi)} ${dU} · tap the map · ends trimmed for privacy`
+                    : `${d1(result?.distanceMi)} ${dU} · ${fmtClock(result?.timeSec)}`
                   : loggedIndoors
                     ? 'Logged on a treadmill · no route'
                     : 'Your route traces as you run'}

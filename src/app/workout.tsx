@@ -2129,6 +2129,10 @@ export default function WorkoutScreen() {
                   inclinePct: r.modality === 'indoor' ? r.inclinePct : (e.cardio?.inclinePct ?? null),
                   loggedModality: r.modality,
                   source: r.source,
+                  /* Kept on the RESULT as well as on the set, so the card can draw its map after the
+                     live track is gone — a resume, a reload, or just paging to another exercise. */
+                  route: r.route,
+                  climbM: r.climbM,
                 },
               },
         ),

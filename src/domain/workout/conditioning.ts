@@ -149,6 +149,17 @@ export interface CardioResult {
    */
   loggedModality: Modality | null;
   source: 'tracked' | 'manual' | null;
+  /**
+   * The bout's route as a TRIMMED encoded polyline (0162), so the card can draw a map for a run it no
+   * longer holds a live track for — after a resume, a reload, or simply moving to another exercise.
+   *
+   * ⚠ ALREADY TRIMMED. The first and last 200 m were removed before this was encoded (D-RTE-1), so
+   * every surface drawing it is drawing LESS than the run and must say so — see `ROUTE_TRIM_NOTE`.
+   * Never a source of distance: `distanceMi` is measured on the untrimmed track.
+   */
+  route?: string | null;
+  /** Elevation gain in whole METRES; null — never 0 — when no usable altitude was read. */
+  climbM?: number | null;
 }
 
 export const EMPTY_RESULT: CardioResult = {
