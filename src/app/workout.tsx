@@ -2110,6 +2110,9 @@ export default function WorkoutScreen() {
     inclinePct: number | null;
     modality: 'outdoor' | 'indoor';
     source: 'tracked' | 'manual';
+    /** The trimmed polyline and the climb (0162). Null unless GPS measured an outdoor bout. */
+    route: string | null;
+    climbM: number | null;
   }) => {
     mutate((cur) => {
       const withResult = {
@@ -2140,6 +2143,10 @@ export default function WorkoutScreen() {
         floors: r.floors,
         inclinePct: r.modality === 'indoor' ? r.inclinePct : null,
         modality: r.modality,
+        /* Already trimmed by `routeForStorage` before it reached the card's `onSave` (0162). Nothing
+           between here and the column may re-derive it, and nothing may read a distance off it. */
+        route: r.route,
+        climbM: r.climbM,
         actualReps: null,
       }));
     });

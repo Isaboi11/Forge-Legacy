@@ -210,6 +210,19 @@ export function buildSaveExercises(session: ActiveSession) {
               // How it was RECORDED, not what the toggle currently says (0097).
               modality: s.modality ?? null,
               incline_pct: s.inclinePct ?? null,
+              /*
+               * The shape of the bout, and the hill in it (0162).
+               *
+               * ⚠ ALREADY TRIMMED BY THE TIME IT REACHES HERE. `routeForStorage` removes the first and
+               * last 200 m before encoding — see `route-privacy.ts` and D-RTE-1 — and this layer must
+               * never be the place that decides, or a second writer would eventually skip it. Null for
+               * an indoor bout, an untracked one, and a run too short to have a middle.
+               *
+               * ⚠ AND IT IS NEVER A SOURCE OF DISTANCE. `distance` above comes from the UNtrimmed
+               * track; deriving mileage from this polyline would shorten every run by 400 m.
+               */
+              route: s.route ?? null,
+              climb_m: s.climbM ?? null,
             }
           : /*
              * A HOLD IS MEASURED BY THE CLOCK, and until now it was written down as ten repetitions.

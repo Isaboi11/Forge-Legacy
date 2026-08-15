@@ -60,6 +60,7 @@ import {
   type ActivityKind,
   type UnitSystem,
 } from '@/domain/run/run-core';
+import { routeForStorage } from '@/domain/run/route-privacy';
 import type { SessionExercise } from '@/domain/workout/types';
 
 /**
@@ -143,6 +144,14 @@ interface Props {
     modality: Modality;
     /** Whether the distance was MEASURED or typed. A tracked run must never be filed as a claim. */
     source: 'tracked' | 'manual';
+    /**
+     * The bout's route as a TRIMMED encoded polyline, and its climb in metres (0162).
+     *
+     * Both null unless GPS actually measured an outdoor bout. The trim happens in `routeForStorage`
+     * and nowhere else — see `route-privacy.ts` — so no caller can hand up an untrimmed route.
+     */
+    route: string | null;
+    climbM: number | null;
   }) => void;
   /**
    * A bout has started, or has ended.
@@ -939,6 +948,15 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
                     inclinePct: draft.hasIncline ? draft.inclinePct : null,
                     modality: draft.modality,
                     source: draft.source,
+                    /*
+                     * ⚠ BOTH CONDITIONS, NOT EITHER. A route is kept only when GPS measured this bout
+                     * AND it was recorded outdoors. `tracker.track` outlives the run — the card holds
+                     * it so a finished route still draws — so a manual entry typed after a tracked one
+                     * was cancelled would otherwise file somebody's earlier run as its shape.
+                     *
+                     * The trim lives inside `routeForStorage`, which is the only way to a stored route.
+                     */
+                    ...routeForStorage(tracker.track, draft.source === 'tracked' && draft.modality === 'outdoor'),
                   });
                     setDraft(null);
                     timer.reset();

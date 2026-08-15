@@ -1,6 +1,6 @@
 # Forge Legacy — Route and Elevation Persistence Amendment 001
 ## Storing the shape of a run
-### Status: DRAFT — awaiting product decision | August 2026
+### Status: Approved | Locked | August 2026
 
 **Amendment Authority:** This is the "separate, dedicated architecture review" that `Endurance-Statistics-Architecture-Amendment-001.md` §9 names as the precondition for storing route data. It does not revisit that amendment's lifetime-statistics model, which stands unchanged in every respect.
 
@@ -138,4 +138,5 @@ This amendment is correctly implemented when:
 
 | Version | Date | Change |
 |---|---|---|
+| v1.0 | 2026-08-15 | **Approved and locked.** Implemented the same day as `0162_route_and_climb.sql` (columns, both function bodies transformed by script from 0151, a shape constraint refusing raw coordinates) and `src/domain/run/route-privacy.ts` (the trim and the encoder, as one exported step so no caller can reach the encoder with an untrimmed track). D-RTE-1 is mutation-tested end to end: skipping the trim, or shrinking it, fails the suite. The map surface (#4) remains undesigned and unbuilt. |
 | Draft | 2026-08-15 | Initial draft. Written as the dedicated architecture review required by `Endurance-Statistics-Architecture-Amendment-001.md` §9 before route data may be stored. Reconciles three §9 non-behaviors against shipped code — GPS tracking and live elevation already crossed, route storage not. Adopts `External-Activity-Import-Architecture-Evaluation.md` §3's home-location-inference finding in full and discharges it with a write-time endpoint trim (D-RTE-1) rather than a display rule. Decides geometry-only storage (D-RTE-3), scalar elevation gain (D-RTE-4), never-shared (D-RTE-5), and cascade deletion (D-RTE-6). Names the P-6 privacy gap. No map surface designed; no import behavior changed; no statistics model altered. |

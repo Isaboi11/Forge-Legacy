@@ -768,7 +768,25 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
-### 0. Sealing a chapter was a one-way door, and the spec for the door had been locked since June (2026-08-14, CODE — no migration)
+### 0. A three-mile run measured 0.0 miles (2026-08-15, CODE + **migration 0162 — NOT YET APPLIED**)
+
+**PO ran 3.01 mi against a watch. Forge reported 0.0 mi over 34:37 — and drew a route while saying it.** That combination was the diagnosis: fixes were arriving and being kept as POSITIONS while every one of them was refused as DISTANCE.
+
+**⚠ THE DISTANCE RULE JUDGED EACH FIX AGAINST THE ONE A SECOND EARLIER.** GPS noise alone moves a stationary phone 5–10 m between consecutive fixes — 11–22 mph, past the 20 mph ceiling above which a reading was treated as a signal jump and credited nothing. Replayed against a noisy stream, the old pipeline scored **3.76 / 2.33 / 1.56 / 0.86 / 0.10 mi** as reported accuracy widened 10 m → 65 m. **The same defect pointing the other way had a parked phone accumulating 1.23 mi in ten minutes.** Over- and under-counting were one bug: distance computed from raw fixes.
+
+**FIXED** — Kalman position smoothing weighted by the device's own reported accuracy, then distance accumulated from an ANCHOR rather than the previous point. Same run: **2.97–3.15 mi across every accuracy a phone reports**; ten minutes parked, 0.021 mi. `GATE_MIN_M` and `DRIFT_MPS` were **tuned, not chosen** — the sweeps are recorded where they are defined. **⚠ Every existing test in that file fed CLEAN coordinates, which is why none of them caught it.**
+
+**Three more in the same family.** (1) **Two location streams fed one track** — on iOS the background task keeps delivering while the app is on screen, so the buffer replayed fixes the foreground had already folded in; older than the head, `Math.max(1e-9, dt)` turned each into millions of mph and re-anchored the run backwards. Now refused as `stale`. (2) **`stop()` drained into the void** — the log form was seeded a tick before the buffered tail landed, which on a pocketed phone is most of the run; `stop()` is now awaited and returns the finished track. (3) **`start()` reset neither track nor clock**, so ending a run and pressing Start again — which the card offers the moment the form is cancelled — carried the old mileage straight over.
+
+**⚠ THE ROUTE AND THE CLIMB WERE BOTH BEING THROWN AWAY**, which is what blocked the map the PO asked for. Storing either crossed `Endurance-Statistics-Architecture-Amendment-001.md` §9, which forbids route/GPS storage *"without a separate, dedicated architecture review"* — on `External-Activity-Import-Architecture-Evaluation.md` §3's finding that route geometry is a materially higher privacy surface than anything this schema holds: **a run begins and ends at the athlete's front door.** **Two of that section's three non-behaviors already described a product that no longer exists** (GPS tracking shipped; live elevation with it) — the recurring drift, wearing its other face.
+
+**`Docs/Amendments/Route-And-Elevation-Persistence-Amendment-001.md` is that review, approved.** Its load-bearing decision **D-RTE-1: the first and last 200 m are removed BEFORE the route is written — not hidden at read time.** A route stored whole and masked in the UI still has the front door in the database, recoverable by any bug, export or breach. Also decided: geometry only (a timestamped track is a movement log, a bare polyline is a shape), climb as a scalar, **never shared by any surface** (the condition under which §3's Prohibited-Patterns concern does not apply), cascade deletion re-proven rather than assumed.
+
+**⚠ MIGRATION `0162_route_and_climb.sql` IS AUTHORED AND NOT APPLIED.** Both function bodies transformed **by script** from 0151, each substitution asserted to match exactly once — 0151's own header records that rebuilding one from a partial read has silently deleted a shipped feature four times here. **Order against the client does not matter**: a deploy first sends keys nothing reads, the migration first reads keys nothing sends; both store no route and neither errors. **⚠ P-6 Privacy mentions location, route and GPS ZERO times across both of its documents — named as an open gap.**
+
+**Shipped OTA to `production`** (build 5 fingerprint `6af97516…`, verified with `fingerprint:compare` before publishing). 2,396 tests green, tsc clean, lint at baseline. **The map surface (#4) remains undesigned and unbuilt — it needs a native build, not an OTA.**
+
+### 1. Sealing a chapter was a one-way door, and the spec for the door had been locked since June (2026-08-14, CODE — no migration)
 
 **PO, minutes after sealing a chapter for the first time: *"I ended my chapter and the page that came up wasn't great. And then also, I can't start another chapter anywhere."*** Both were true, and the second is the serious one.
 

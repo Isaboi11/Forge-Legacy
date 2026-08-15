@@ -41,6 +41,20 @@ export interface SessionSet {
   floors?: number | null;
   inclinePct?: number | null;
   modality?: Modality | null;
+  /**
+   * The bout's route, as an encoded polyline — outdoor GPS-tracked cardio only (0162).
+   *
+   * ⚠ ALREADY TRIMMED. `routeForStorage` strips the first and last 200 m before encoding, so nothing
+   * that reaches this field has ever contained where the athlete set off from or finished. That is a
+   * privacy control (D-RTE-1), not a formatting choice, and it is why this field is allowed to exist at
+   * all — `Endurance-Statistics-Architecture-Amendment-001.md` §9 forbade storing routes until
+   * `Route-And-Elevation-Persistence-Amendment-001.md` set that condition.
+   *
+   * Never a source of distance: `distanceMi` is measured on the UNtrimmed track.
+   */
+  route?: string | null;
+  /** Elevation gain for the bout in whole METRES; null — never 0 — when no usable altitude was read. */
+  climbM?: number | null;
   /** Prescribed reps (the Target column). The FLOOR when a range was prescribed — see `targetRepsMax`. */
   targetReps: number;
   /**
