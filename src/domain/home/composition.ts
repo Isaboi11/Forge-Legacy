@@ -118,7 +118,21 @@ export function composeHome(s: HomeStateInput): HomeComposition {
    * back before saving, and Home showed the Continue card with "How do you want to start?" underneath —
    * asked again, directly over the proof it had been answered.
    */
-  const settled = !s.awaiting || s.startChosen;
+  /*
+   * ⚠ A PROGRAM SETTLES IT TOO, AND LEAVING THAT OUT PUT A HOLE BETWEEN THE TWO SLOTS.
+   *
+   * `startingPoint` below has always treated `s.hasProgram` as an answer to "How do you want to start?"
+   * — having one IS the answer. The hero did not, so the two disagreed, and an athlete who had a program
+   * while `awaiting` was true fell down the gap: the hero read `'none'` because it was not settled, the
+   * starting-point card read `'none'` because there was a program, and Home drew NEITHER. The screen
+   * went from the chapter quote straight to the Program / Mission grid with no way to start training on
+   * it at all.
+   *
+   * That state was unreachable until a second chapter became possible — see `fetchAwaitingChapter`,
+   * which is the other half of this fix. This half is what stops any future route into it: the two slots
+   * now decide from the same predicate, so they cannot both abstain.
+   */
+  const settled = !s.awaiting || s.startChosen || s.hasProgram;
 
   const hero: HomeHero = hasResume
     ? 'resume'

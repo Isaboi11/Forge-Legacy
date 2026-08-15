@@ -328,3 +328,65 @@ test('the ceiling is a launch-length wait, not a timeout', () => {
   // hang, and under a second it would fire before the reads it exists to wait for.
   assert.ok(HOME_READY_CEILING_MS >= 1500 && HOME_READY_CEILING_MS <= 3000, `${HOME_READY_CEILING_MS}ms`);
 });
+
+/*
+ * ══ ⚠ THE HOLE BETWEEN THE TWO SLOTS ══
+ *
+ * PO: *"What happened to my start workout card?"* — the Train Today hero vanished from Home entirely
+ * after they sealed Chapter I and started Chapter II.
+ *
+ * `awaiting` means "the active chapter has no workouts in it", which was a fair reading of "brand-new
+ * athlete" for exactly as long as an athlete could only have ONE chapter. Chapter creation made a second
+ * one reachable and the reading stopped holding: a veteran with an eight-week program on their second
+ * chapter matched it perfectly.
+ *
+ * The vanishing itself was a second, independent defect, and the more dangerous one. `startingPoint` has
+ * always treated a program as an answer to "How do you want to start?"; the hero did not. So with a
+ * program AND `awaiting`, the hero abstained (not settled) and the chooser abstained (there is a
+ * program) — and Home rendered NEITHER. No hero, no chooser, no way to start training.
+ *
+ * `fetchAwaitingChapter` no longer reports a second chapter as awaiting. These lock the other half: the
+ * two slots decide from one predicate, so they can never both fall silent again.
+ */
+test('⚠ a program-holding athlete on a fresh chapter still gets a hero', () => {
+  const c = compose({ awaiting: true, hasProgram: true });
+  assert.notEqual(c.hero, 'none', 'Home drew no hero AND no chooser — there was no way to start a workout');
+  assert.equal(c.hero, 'open', 'nothing scheduled today, so the freestyle hero is the offer');
+});
+
+test('⚠ the hero and the starting point never both abstain', () => {
+  // Exhaustive over every combination of the flags that feed the decision. The PO's state was one cell
+  // of this table, and nothing in the module said the table had to be covered.
+  const bool = [false, true];
+  for (const awaiting of bool)
+    for (const startChosen of bool)
+      for (const hasProgram of bool)
+        for (const hasProgramSession of bool)
+          for (const hasPlannedWorkout of bool)
+            for (const resumeSets of [null, 4]) {
+              const c = compose({ awaiting, startChosen, hasProgram, hasProgramSession, hasPlannedWorkout, resumeSets });
+              const silent = c.hero === 'none' && c.startingPoint === 'none';
+              assert.equal(
+                silent,
+                false,
+                `Home offers nothing at all for ${JSON.stringify({ awaiting, startChosen, hasProgram, hasProgramSession, hasPlannedWorkout, resumeSets })}`,
+              );
+            }
+});
+
+test('a genuinely new athlete with no program is still asked the question', () => {
+  // The fix must not swallow the case the chooser exists for.
+  const c = compose({ awaiting: true, hasProgram: false });
+  assert.equal(c.startingPoint, 'chooser');
+  assert.equal(c.hero, 'none', 'the chooser IS the offer — a hero beside it would ask twice');
+});
+
+test('a program with a session today still shows the session, not the freestyle hero', () => {
+  const c = compose({ awaiting: true, hasProgram: true, hasProgramSession: true });
+  assert.equal(c.hero, 'program', 'the planned day outranks the open hero');
+});
+
+test('unfinished work still outranks everything on a fresh chapter', () => {
+  const c = compose({ awaiting: true, hasProgram: true, resumeSets: 7 });
+  assert.equal(c.hero, 'resume');
+});
