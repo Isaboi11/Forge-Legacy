@@ -151,7 +151,24 @@ test('the guard catches the lines it exists to catch', () => {
 
 test('no briefing line refers to elapsed time or anything undone', () => {
   const lines = briefingLines();
-  assert.equal(lines.length, 12, 'the copy table parsed short — the seed or this parser has drifted');
+  assert.equal(lines.length, 80, 'the copy table parsed short — the seed or this parser has drifted');
+  // Forty each. The pick is uniform over a register (md5 order, one row), so the register with fewer
+  // lines is the one that repeats sooner — a shortfall on one side would be invisible to every other
+  // assertion in this file and visible to the athlete holding that dial.
+  for (const register of ['plain', 'direct']) {
+    assert.equal(
+      lines.filter((l) => l.register === register).length,
+      40,
+      `the ${register} register is short — its lines would repeat sooner than the other's`,
+    );
+  }
+  // A duplicated line is a silent doubling of its odds, and reads as the app repeating itself.
+  const seen = new Set();
+  for (const { register, text } of lines) {
+    const k = `${register}::${text.toLowerCase()}`;
+    assert.ok(!seen.has(k), `"${text}" appears twice in ${register} — it would be drawn twice as often`);
+    seen.add(k);
+  }
 
   for (const { register, text } of lines) {
     assert.doesNotMatch(
