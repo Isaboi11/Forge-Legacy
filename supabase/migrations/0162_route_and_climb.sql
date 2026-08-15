@@ -456,13 +456,17 @@ select 'columns' as check, count(*)::text as value
   from information_schema.columns
  where table_schema = 'public' and table_name = 'workout_sets' and column_name in ('route', 'climb_m')
 union all
+-- ⚠ NO PARENTHESES. The body writes it as nullif(v_set->>'route', ''), so a pattern demanding
+--   (v_set->>'route') — closing paren straight after — can never match a correct body. This row read
+--   NO on a migration that had applied perfectly, which is the third guard in this file written to a
+--   shape nobody checked against the actual text.
 select 'save_workout writes route',
-       case when pg_get_functiondef(p.oid) like '%(v_set->>''route'')%' then 'yes' else 'NO' end
+       case when pg_get_functiondef(p.oid) like '%v_set->>''route''%' then 'yes' else 'NO' end
   from pg_proc p join pg_namespace n on n.oid = p.pronamespace
  where n.nspname = 'public' and p.proname = 'save_workout'
 union all
 select 'continue_workout writes route',
-       case when pg_get_functiondef(p.oid) like '%(v_set->>''route'')%' then 'yes' else 'NO' end
+       case when pg_get_functiondef(p.oid) like '%v_set->>''route''%' then 'yes' else 'NO' end
   from pg_proc p join pg_namespace n on n.oid = p.pronamespace
  where n.nspname = 'public' and p.proname = 'continue_workout'
 union all
