@@ -10,7 +10,8 @@ import { SectionHeader } from '@/components/forge/composites/SectionHeader';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
-import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { Button } from '@/components/forge/composites/Button/Button';
+import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
@@ -307,17 +308,19 @@ export default function TemplateDetailScreen() {
 
           {/* sticky action bar — one bronze primary, two quiet peers, one escape hatch */}
           <View style={styles.actionBar}>
-            <Pressable
+            <Button
+              variant="primary"
+              fullWidth
               onPress={() => void start()}
-              accessibilityRole="button"
               accessibilityLabel="Start this workout"
-              style={({ pressed }) => [styles.startBtn, pressed ? styles.pressed : null]}
+              icon={
+                <Svg width={14} height={14} viewBox="0 0 24 24">
+                  <Path d="M7 5l12 7-12 7z" fill={flColor.cream100} />
+                </Svg>
+              }
             >
-              <Svg width={14} height={14} viewBox="0 0 24 24">
-                <Path d="M7 5l12 7-12 7z" fill={flColor.cream100} />
-              </Svg>
-              <Text style={styles.startText}>Start Workout</Text>
-            </Pressable>
+              Start Workout
+            </Button>
             <View style={styles.secondaryRow}>
               <Pressable
                 onPress={() => router.push({ pathname: '/workout-builder', params: { id: t.id } })}
@@ -413,15 +416,17 @@ export default function TemplateDetailScreen() {
           maxLength={60}
           autoFocus
         />
-        <Pressable
-          onPress={() => void doRename()}
-          disabled={busy || !draftName.trim()}
-          accessibilityRole="button"
-          accessibilityLabel="Save name"
-          style={({ pressed }) => [styles.startBtn, styles.renameSave, busy || !draftName.trim() ? styles.disabled : null, pressed ? styles.pressed : null]}
-        >
-          <Text style={styles.startText}>Save</Text>
-        </Pressable>
+        <View style={styles.renameSave}>
+          <Button
+            variant="primary"
+            fullWidth
+            onPress={() => void doRename()}
+            disabled={busy || !draftName.trim()}
+            accessibilityLabel="Save name"
+          >
+            Save
+          </Button>
+        </View>
       </BottomSheet>
 
       {/* The design's copy, kept whole: it names the template, states what survives, states finality. */}
@@ -522,8 +527,6 @@ const styles = StyleSheet.create({
   emptyHistText: { fontSize: 12.5, lineHeight: 18, color: flColor.gray600, textAlign: 'center' },
 
   actionBar: { paddingHorizontal: 18, paddingTop: 12, paddingBottom: 16, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: 'rgba(6,7,8,0.86)' },
-  startBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronze600, boxShadow: flShadow.card },
-  startText: { fontSize: 14, fontWeight: '700', letterSpacing: 0.5, color: flColor.cream100 },
   secondaryRow: { flexDirection: 'row', gap: 8, marginTop: 9 },
   secondaryBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 11, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
   secondaryText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },

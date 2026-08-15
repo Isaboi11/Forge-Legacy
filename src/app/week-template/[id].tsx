@@ -6,6 +6,7 @@ import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
+import { Button } from '@/components/forge/composites/Button/Button';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
@@ -209,15 +210,15 @@ export default function WeekTemplateDetail() {
               behind the overflow, per W-27's own rule that a destructive action must never be one tap
               from the primary one. */}
           <View style={styles.actions}>
-            <Pressable
+            <Button
+              variant="primary"
+              fullWidth
               onPress={onStart}
               disabled={busy}
-              accessibilityRole="button"
               accessibilityLabel="Start this week"
-              style={({ pressed }) => [styles.primaryBtn, (pressed || busy) && styles.pressed]}
             >
-              <Text style={styles.primaryBtnText}>{busy ? 'Starting…' : 'Start This Week'}</Text>
-            </Pressable>
+              {busy ? 'Starting…' : 'Start This Week'}
+            </Button>
             <View style={styles.actionRow}>
               <Pressable
                 onPress={() => router.push({ pathname: '/program-builder', params: { mode: 'week', o: 'edit', id: week.id } })}
@@ -325,11 +326,6 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.base, borderTopWidth: 1, borderTopColor: flColor.charcoal700,
     gap: 10,
   },
-  primaryBtn: {
-    height: 50, alignItems: 'center', justifyContent: 'center',
-    borderRadius: flRadius.pill, backgroundColor: flColor.bronze400,
-  },
-  primaryBtnText: { fontSize: 15, fontWeight: '600', color: flColor.base },
   actionRow: { flexDirection: 'row', gap: 10 },
   quietBtn: {
     flex: 1, height: 44, alignItems: 'center', justifyContent: 'center',

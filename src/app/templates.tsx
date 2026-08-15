@@ -5,6 +5,7 @@ import Svg, { Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { Button } from '@/components/forge/composites/Button/Button';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { ScreenBackground } from '@/components/screen-background';
 import { ScreenTour } from '@/components/tour/ScreenTour';
@@ -187,9 +188,11 @@ export default function TemplatesScreen() {
             Plan one here, or train a session and keep its shape — after any workout, The Record offers to save it.
             No program required either way.
           </Text>
-          <Pressable onPress={newTemplate} accessibilityRole="button" accessibilityLabel="Build a template" style={styles.primaryBtn}>
-            <Text style={styles.primaryBtnLabel}>Build a Template</Text>
-          </Pressable>
+          <View style={styles.primaryWrap}>
+            <Button variant="primary" onPress={newTemplate} accessibilityLabel="Build a template">
+              Build a Template
+            </Button>
+          </View>
         </View>
       ) : (
         <ScrollView
@@ -543,8 +546,7 @@ const styles = StyleSheet.create({
   emptyCrest: { width: 58, height: 58, marginBottom: 14, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
   emptyTitle: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', color: flColor.cream100 },
   emptyBody: { marginTop: 10, maxWidth: 260, fontSize: 13.5, lineHeight: 21, textAlign: 'center', color: flColor.gray400 },
-  primaryBtn: { marginTop: 22, paddingHorizontal: 22, paddingVertical: 13, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeMetalBorder, backgroundColor: flColor.bronze600, boxShadow: `${flShadow.bronzeMetalTopRim}, ${flShadow.card}` },
-  primaryBtnLabel: { fontSize: 14, fontWeight: '700', letterSpacing: 0.4, color: '#F7F5F1' },
+  primaryWrap: { marginTop: 22 },
 
   missingTitle: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', textAlign: 'center', color: flColor.cream100 },
   missingBody: { marginTop: 9, fontSize: 13, lineHeight: 19, textAlign: 'center', color: flColor.gray400 },

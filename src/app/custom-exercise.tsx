@@ -5,10 +5,11 @@ import Svg, { Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { Button } from '@/components/forge/composites/Button/Button';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
-import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { useToast } from '@/hooks/useCeremony';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import {
@@ -442,9 +443,11 @@ function MultiSelectSheet({
           </View>
         ))}
       </ScrollView>
-      <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Done" style={styles.doneBtn}>
-        <Text style={styles.doneLabel}>Done</Text>
-      </Pressable>
+      <View style={styles.doneWrap}>
+        <Button variant="primary" fullWidth onPress={onClose} accessibilityLabel="Done">
+          Done
+        </Button>
+      </View>
     </BottomSheet>
   );
 }
@@ -495,8 +498,7 @@ const styles = StyleSheet.create({
   sheetScroll: { maxHeight: 380 },
   sheetGroup: { marginBottom: 18 },
   sheetGroupLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.4, color: flColor.gray600, marginBottom: 9 },
-  doneBtn: { marginTop: 8, paddingVertical: 14, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronze600, alignItems: 'center', boxShadow: flShadow.card },
-  doneLabel: { fontSize: 14, fontWeight: '700', letterSpacing: 0.4, color: flColor.cream100 },
+  doneWrap: { marginTop: 8 },
 
   pressed: { opacity: 0.85 },
 });

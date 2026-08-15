@@ -1478,9 +1478,7 @@ const styles = StyleSheet.create({
   resultValueAccent: { color: flColor.bronze300 },
   resultLabel: { fontSize: 9, fontWeight: '600', letterSpacing: 1.2, color: flColor.gray600 },
 
-  primary: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeMetalBorder, backgroundColor: flColor.bronze600 },
   tall: { paddingVertical: 17 },
-  primaryText: { fontSize: 14, fontWeight: '700', letterSpacing: 0.4, color: flColor.cream100 },
   secondary: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
   secondaryText: { fontSize: 14, fontWeight: '600', color: flColor.gray400 },
   textBtn: { alignItems: 'center', paddingVertical: 9 },
