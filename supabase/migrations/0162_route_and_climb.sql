@@ -396,7 +396,14 @@ begin
   -- ⚠ THE NEGATIVE THAT MATTERS. A route must never become a distance. `distance` is computed from the
   --   UNtrimmed track and read as miles by goals (0035), honors (0078), challenges (0061) and squad
   --   totals (0107); deriving it from a TRIMMED polyline would silently shorten every run by 400 m.
-  if v_save like '%v_legs%route%' or v_save like '%route%v_legs :=%' then
+  --
+  -- ⚠ A REGEX, AND THE FIRST DRAFT OF THIS CHECK WAS A LIKE THAT COULD NEVER PASS.
+  --   It read: v_save like '%v_legs%route%' — "v_legs occurs somewhere, and route occurs somewhere
+  --   after it". v_legs is DECLARED at the top of the function and the insert carrying the route is
+  --   two hundred lines below, so every correct body matches it. It rejected the very migration it
+  --   shipped in. The question is local, so the pattern has to be: does the v_legs ASSIGNMENT
+  --   EXPRESSION — up to its semicolon — mention the route?
+  if v_save ~ 'v_legs\s*:=[^;]*route' then
     raise exception '0162: save_workout is deriving mileage from the route — distance must come from the untrimmed track.';
   end if;
   if v_save not like '%v_legs := v_legs + coalesce((v_set->>''distance'')::numeric, 0)%' then
