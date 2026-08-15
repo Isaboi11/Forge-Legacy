@@ -360,7 +360,10 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
     // to write the numbers down, and a timer still counting behind the form would keep inflating a
     // duration they are in the middle of confirming.
     if (timer.running) timer.pause();
-    if (tracking) tracker.stop();
+    /* Fire-and-forget is correct HERE and only here: these are the paths that carry no measured
+       distance (a treadmill bout, an edit, a manual entry), so nothing downstream is waiting on what
+       the drain returns. The outdoor End button awaits it — see `endBout`. */
+    if (tracking) void tracker.stop();
     onLiveChange?.(false);
     // The form's shape is decided ONCE, here, from how the bout was (or will be) recorded — not from
     // whatever the toggle says later. Otherwise editing an outdoor-toggled treadmill run drops its incline.
@@ -393,6 +396,24 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
       source: gpsMeasured ? 'tracked' : (result?.source ?? 'manual'),
     });
     setDistanceText(dText(distanceMi));
+  };
+
+  /**
+   * End an OUTDOOR bout, and read the distance only once the run has actually finished producing one.
+   *
+   * ⚠ THE ORDER HERE IS THE FIX. This used to be `openLog({ distanceMi: liveMi, … })` inline on the
+   * button, and `liveMi` is a render value — the track as it stood before `stop()` drained whatever the
+   * OS was still holding. So the last stretch before pressing End, which on a pocketed phone is most of
+   * the run, landed in the track a moment AFTER the number it belonged to had been written into the form.
+   *
+   * `stop()` now hands back the finished track and the distance is taken from that.
+   */
+  const endBout = async () => {
+    const timeSec = tracker.elapsedSec;
+    const finished = await tracker.stop();
+    const mi = totalMiles(finished);
+    // A bout GPS never measured opens the form on the distance field, exactly like a treadmill one.
+    openLog(mi > 0 ? { distanceMi: +mi.toFixed(2), timeSec } : { timeSec });
   };
 
   const adj = (field: 'distanceMi' | 'floors' | 'timeSec' | 'inclinePct', delta: number) =>
@@ -1029,13 +1050,7 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
                     <Button
                       variant="primary"
                       fullWidth
-                      onPress={() =>
-                        openLog(
-                          measured
-                            ? { distanceMi: +liveMi.toFixed(2), timeSec: tracker.elapsedSec }
-                            : { timeSec: tracker.elapsedSec },
-                        )
-                      }
+                      onPress={() => void endBout()}
                       accessibilityLabel={`End ${VERB[activity].toLowerCase()}`}
                     >
                       End {VERB[activity]}

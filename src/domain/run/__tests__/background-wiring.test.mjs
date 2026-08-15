@@ -82,9 +82,47 @@ test('the tracker drains the buffer when the app comes back', () => {
 });
 
 test('and drains it again on stop, so ending a backgrounded run keeps its miles', () => {
-  const stop = TRACKER.match(/const stop = useCallback\([\s\S]{0,700}?\}, \[/);
+  const stop = TRACKER.match(/const stop = useCallback\([\s\S]*?\n  \}, \[/);
   assert.ok(stop, 'stop() is no longer a useCallback — move this assertion with it');
   assert.match(stop[0], /drainBackgroundFixes/, 'a run ended while backgrounded would report only its watched miles');
+});
+
+/*
+ * ══ ⚠ DRAINING IS NOT ENOUGH — THE ANSWER HAS TO REACH THE FORM ══
+ *
+ * `stop()` drained correctly and still lost the miles, because it did it in the background and returned
+ * void. The log form was seeded from the render's `track`, one tick before the buffered tail landed — so
+ * the last stretch before pressing End, which on a pocketed phone is most of the run, arrived just after
+ * the number it belonged to had already been written down.
+ *
+ * A drain nobody waits for is a drain nobody reads. These two are what make it arrive in time, and
+ * neither is visible to a type-check: `stop()` returning a promise nobody awaits compiles perfectly.
+ */
+test('⚠ stop() hands the finished track BACK, rather than draining into the void', () => {
+  const stop = TRACKER.match(/const stop = useCallback\([\s\S]*?\n  \}, \[/);
+  assert.match(stop[0], /await drainBackgroundFixes\(\)/, 'the drain must be awaited, not fired off');
+  assert.match(stop[0], /return finished/, 'and what it produced must be returned to the caller');
+});
+
+test('⚠ the card AWAITS the end of the run before reading its distance', () => {
+  const CARD = read('src', 'components', 'workout', 'CardioBlockCard.tsx');
+  const end = CARD.match(/const endBout = async \(\) => \{[\s\S]*?\n  \};/);
+  assert.ok(end, 'endBout() is gone — the End button is reading a distance from somewhere else again');
+  const awaitAt = end[0].indexOf('await tracker.stop()');
+  const openAt = end[0].indexOf('openLog(');
+  assert.ok(awaitAt > -1, 'the bout must end through the awaited stop()');
+  assert.ok(openAt > awaitAt, 'the form is seeded BEFORE the run finished measuring');
+  assert.match(end[0], /totalMiles\(finished\)/, 'the distance must come from the finished track, not from a render value');
+});
+
+test('a second bout starts from zero rather than continuing the last one', () => {
+  // stop() deliberately leaves the track standing so the finished run can still be read off the card,
+  // which means start() is the only place that can clear it. Without this, ending a run and pressing
+  // Start again — which the card offers as soon as the log form is cancelled — resumed the old mileage.
+  const start = TRACKER.match(/const start = useCallback\([\s\S]*?\n  \}, \[/);
+  assert.ok(start, 'start() is no longer a useCallback — move this assertion with it');
+  assert.match(start[0], /commit\(\[\]\)/, 'the track carries over into the next bout');
+  assert.match(start[0], /setElapsedSec\(0\)/, 'so does the clock');
 });
 
 test('⚠ buffered fixes go through acceptFix, not their own arithmetic', () => {

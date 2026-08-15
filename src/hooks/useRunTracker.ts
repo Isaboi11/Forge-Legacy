@@ -77,7 +77,19 @@ export interface RunTracker {
   start: () => void;
   pause: () => void;
   resume: () => void;
-  stop: () => void;
+  /**
+   * End the run and hand back the FINISHED track — the one that includes whatever the OS was still
+   * holding when the athlete pressed the button.
+   *
+   * ⚠ IT RETURNS A PROMISE, AND THAT IS THE WHOLE POINT. This used to return void and kick the final
+   * drain off in the background, so the log form was seeded from `track` as it stood one render EARLIER
+   * — before the buffered tail had been folded in. The miles measured in the last stretch before
+   * stopping, which on a phone carried in a pocket is most of them, arrived a moment after the number
+   * they were supposed to be part of had already been written into the form.
+   *
+   * Awaiting it is not optional for any caller that reads a distance.
+   */
+  stop: () => Promise<TrackPoint[]>;
 }
 
 export function useRunTracker(kind: ActivityKind): RunTracker {
@@ -95,6 +107,29 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
    * otherwise walking to the water fountain and back while "paused" is silently added to the run.
    */
   const reanchor = useRef(false);
+  /** Ends a bout exactly once, so a second `stop()` returns the finished track instead of re-draining. */
+  const stopped = useRef(false);
+
+  /**
+   * ══ THE TRACK IS HELD IN A REF AS WELL AS IN STATE, AND THE REF IS THE ONE THAT IS TRUE NOW ══
+   *
+   * Every writer here is an event — a fix arriving, the app coming forward, the athlete pressing End —
+   * and every one of them needs the CURRENT track to fold the next thing into. React state cannot answer
+   * that: inside a handler it is the value from the last render, and `setTrack(prev => …)` can answer it
+   * only by refusing to tell anyone else, which is exactly why `stop()` could not report what it drained.
+   *
+   * So the ref is the accumulator and the state is the copy the screen renders. `commit` is the only
+   * place they are both written, so they cannot drift.
+   *
+   * This is safe precisely BECAUSE nothing here runs during render: writing a ref while rendering is what
+   * this repo's lint forbids, and rightly — a value that changes without a render is a value the UI can
+   * disagree with. These all run from callbacks, where the ref is simply the newest answer.
+   */
+  const trackRef = useRef<TrackPoint[]>([]);
+  const commit = useCallback((next: TrackPoint[]) => {
+    trackRef.current = next;
+    setTrack(next);
+  }, []);
 
   const clearAll = useCallback(() => {
     sub.current?.remove();
@@ -112,7 +147,8 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
     setAccuracyM(loc.coords.accuracy ?? null);
     if (!running.current) return; // paused: the ground still moves, the run does not
 
-    setTrack((prev) => {
+    commit((() => {
+      const prev = trackRef.current;
       const fix = {
         lat: loc.coords.latitude,
         lon: loc.coords.longitude,
@@ -142,11 +178,9 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
           : [{ lat: fix.lat, lon: fix.lon, at: fix.at, mi: 0, alt: fix.alt, gainM: 0, climbRef: fix.alt, ...restart }];
       }
       return acceptFix(prev, fix, kind).track;
-    });
-    // `kind` cannot change mid-session, so closing over it is safe and avoids writing a ref during
-    // render — which the react-compiler lint forbids, correctly: a value that changes without a render
-    // is a value the UI can disagree with.
-  }, [kind]);
+    })());
+    // `kind` cannot change mid-session, so closing over it is safe.
+  }, [kind, commit]);
 
   /**
    * Attach the position stream. Separate from `start` because it must not be able to prevent one.
@@ -189,6 +223,18 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
   const start = useCallback(() => {
     running.current = true;
     reanchor.current = false;
+    stopped.current = false;
+    /*
+     * ⚠ A SECOND BOUT USED TO CONTINUE THE FIRST ONE'S NUMBERS.
+     *
+     * Neither the track nor the clock was reset here, and `stop()` leaves both standing so the finished
+     * run can still be read off the card. Ending a run and then pressing Start again — which the card
+     * offers the moment the log form is cancelled — resumed the old track: `acceptFix` measured the
+     * first new fix from where the last run finished, and the mileage carried straight over.
+     */
+    commit([]);
+    setElapsedSec(0);
+    setAccuracyM(null);
     setPhase('live');
     setGps('acquiring');
     /* A new run never inherits the last one's tail. The buffer is durable, so a run the app was killed
@@ -204,7 +250,7 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
       if (running.current) setElapsedSec((s) => s + delta);
     }, 1000);
     void attachGps();
-  }, [attachGps]);
+  }, [attachGps, commit]);
 
   const pause = useCallback(() => {
     running.current = false;
@@ -217,17 +263,25 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
     setPhase('live');
   }, []);
 
-  const stop = useCallback(() => {
+  const stop = useCallback(async (): Promise<TrackPoint[]> => {
+    /* Pressing End twice, or a caller ending a bout that `openLog` also ends, must not re-drain: the
+       buffer is destructive to read, so the second call would find it empty and report a shorter run
+       than the first. It returns the finished track instead. */
+    if (stopped.current) return trackRef.current;
+    stopped.current = true;
     clearAll();
     /* ⚠ DRAIN BEFORE STOPPING, and apply what comes back. Ending a run that was backgrounded to its last
-       foreground fix would throw away the miles the athlete actually cared most about measuring. */
-    void drainBackgroundFixes().then((fixes) => {
-      if (fixes.length) setTrack((prev) => applyFixes(prev, fixes, kind));
-      void stopBackgroundFixes();
-    });
+       foreground fix would throw away the miles the athlete actually cared most about measuring.
+
+       AWAITED, not fired off. The distance this produces is the distance that goes into the log form. */
+    const fixes = await drainBackgroundFixes();
+    const finished = fixes.length ? applyFixes(trackRef.current, fixes, kind) : trackRef.current;
+    commit(finished);
+    void stopBackgroundFixes();
     setPhase('idle');
     setGps('off');
-  }, [clearAll, kind]);
+    return finished;
+  }, [clearAll, kind, commit]);
 
   /**
    * ══ COMING BACK ══
@@ -244,11 +298,11 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
     const sub = AppState.addEventListener('change', (next) => {
       if (next !== 'active' || !running.current) return;
       void drainBackgroundFixes().then((fixes) => {
-        if (fixes.length) setTrack((prev) => applyFixes(prev, fixes, kind));
+        if (fixes.length) commit(applyFixes(trackRef.current, fixes, kind));
       });
     });
     return () => sub.remove();
-  }, [kind]);
+  }, [kind, commit]);
 
   // Everything below is DERIVED. "Acquiring" becomes "tracking" the moment a fix is good enough to have
   // entered the track, and patience runs out on its own — both are functions of state already held, and
