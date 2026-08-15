@@ -76,12 +76,39 @@ test('acceptFix: a low-accuracy fix is rejected and does not move the track', ()
  * at 0.00 while the athlete walked, with nothing on screen to say why. The replacement defence is that
  * movement must clear the device's own error bars, which is a claim these tests have to hold to.
  */
+/** Walk `n` steps of 0.02 mi, one fix every 20 s, all at the given accuracy. */
+function walkAt(accuracy, n) {
+  let track = [];
+  for (let i = 0; i <= n; i++) {
+    track = acceptFix(track, pt(40 + (i * 0.02) / MI_PER_DEG_LAT, -105, at0 + i * 20_000, accuracy), 'run').track;
+  }
+  return totalMiles(track);
+}
+
+/*
+ * ⚠ THIS USED TO BE TWO POINTS, and two points is no longer a fair question to ask.
+ *
+ * `acceptFix` smooths, so it deliberately trails the newest measurement — most of all on a wide fix,
+ * where it has least reason to believe any single reading. That trailing is a FIXED distance, paid once:
+ * the estimate settles a constant way behind and then tracks. So the right test is not a tolerance on one
+ * length, it is that the SAME deficit shows up whatever the distance — a lag, not a rate error. If it
+ * ever became proportional, the filter would be losing a percentage of every run and this would catch it.
+ *
+ * (Tuning note: `DRIFT_MPS` trades this lag against noise. Raising it 3 → 8 recovers 0.44 → 0.48 here and
+ * costs a measured 3.01-mile run at ±10 m going 3.05 → 3.27, with standing-still drift 0.021 → 0.161 mi.
+ * The lag is the cheaper error, so it stays.)
+ */
 test('acceptFix: an ordinary browser fix (±45 m) is USABLE, not thrown away', () => {
-  const seed = acceptFix([], pt(40, -105, at0, 45), 'run').track;
-  // ~55 m of real walking — comfortably past ±45 m of uncertainty.
-  const { track, rejected } = acceptFix(seed, pt(40.0005, -105, at0 + 40_000, 45), 'run');
-  assert.equal(rejected, null, 'a 45 m fix used to be discarded, which is why distance never moved');
-  assert.ok(totalMiles(track) > 0.03, `expected real distance, got ${totalMiles(track)}`);
+  const half = walkAt(45, 25); // 0.5 mi
+  assert.ok(half > 0.42, `a run on ±45 m fixes must still produce distance, got ${half}`);
+
+  const threeMi = walkAt(45, 150); // 3.0 mi, identical conditions
+  const shortfallHalf = 0.5 - half;
+  const shortfallLong = 3.0 - threeMi;
+  assert.ok(
+    Math.abs(shortfallLong - shortfallHalf) < 0.02,
+    `the deficit must be a fixed lag, not a rate: ${shortfallHalf.toFixed(3)} over half a mile vs ${shortfallLong.toFixed(3)} over three`,
+  );
 });
 
 test('acceptFix: on a poor signal, movement smaller than the error bars still counts as noise', () => {
@@ -90,10 +117,29 @@ test('acceptFix: on a poor signal, movement smaller than the error bars still co
   const { track, rejected } = acceptFix(seed, pt(40.0001, -105, at0 + 8000, 60), 'run');
   assert.equal(rejected, 'jitter');
   assert.equal(totalMiles(track), 0, 'a wide fix must not manufacture distance from its own uncertainty');
+});
 
-  // The same 11 m step on a good fix is real movement and IS credited.
-  const good = acceptFix([], pt(40, -105, at0, 6), 'run').track;
-  assert.equal(acceptFix(good, pt(40.0001, -105, at0 + 8000, 6), 'run').rejected, null);
+/*
+ * The gate DEFERS a step, it does not discard one.
+ *
+ * This is the half of the rule that is easy to get wrong and easy to test wrong. A step under the gate
+ * credits nothing — but the anchor does not move either, so the ground is still there to be claimed by
+ * the next fix. Distance is measured anchor-to-here, never fix-to-fix, and that is the whole reason a
+ * 1 Hz stream stopped being able to lose (or invent) miles.
+ */
+test('acceptFix: a step under the gate is not lost — the next fix claims the ground', () => {
+  let track = acceptFix([], pt(40, -105, at0, 6), 'run').track;
+  // ~11 m at ±6 m: real movement, but inside the 10 m floor once smoothed.
+  const first = acceptFix(track, pt(40.0001, -105, at0 + 8000, 6), 'run');
+  assert.equal(first.rejected, 'jitter');
+  assert.equal(totalMiles(first.track), 0);
+  // Keep walking the same line. The anchor never moved, so the distance arrives intact.
+  track = first.track;
+  for (let i = 2; i <= 6; i++) {
+    track = acceptFix(track, pt(40 + i * 0.0001, -105, at0 + i * 8000, 6), 'run').track;
+  }
+  // Six steps of ~11 m is ~66 m = 0.041 mi.
+  assert.ok(totalMiles(track) > 0.03, `the deferred metres must still arrive, got ${totalMiles(track)}`);
 });
 
 test('acceptFix: standing-still drift is rejected as jitter, so a traffic light adds no distance', () => {
@@ -125,18 +171,134 @@ test('acceptFix: what a teleport re-anchors to becomes the base for the next rea
 });
 
 test('acceptFix: a bike tolerates a speed that would be a teleport on foot', () => {
-  const seed = acceptFix([], pt(40, -105, at0), 'bike').track;
-  // 30 mph — absurd running, ordinary cycling.
-  const mi = 30 / 3600;
-  const { rejected } = acceptFix(seed, pt(40 + mi / MI_PER_DEG_LAT, -105, at0 + 1000), 'bike');
-  assert.equal(rejected, null);
-  const onFoot = acceptFix(acceptFix([], pt(40, -105, at0), 'run').track, pt(40 + mi / MI_PER_DEG_LAT, -105, at0 + 1000), 'run');
-  assert.equal(onFoot.rejected, 'teleport');
+  // 30 mph — absurd running, ordinary cycling. Measured over TEN SECONDS rather than one: the speed
+  // test now judges the smoothed step across the anchor's baseline, so a one-second fixture no longer
+  // clears the movement gate and both activities would read `jitter` without ever reaching the question.
+  const mi = (30 * 10) / 3600; // 30 mph for 10 s
+  const step = (kind) =>
+    acceptFix(acceptFix([], pt(40, -105, at0), kind).track, pt(40 + mi / MI_PER_DEG_LAT, -105, at0 + 10_000), kind).rejected;
+  assert.equal(step('bike'), null, '30 mph is a bicycle going downhill');
+  assert.equal(step('run'), 'teleport', 'and nobody runs it');
 });
 
 test('acceptFix: an accumulated track sums to the distance walked', () => {
   const track = buildTrack(21, 0.05, 20); // 20 steps of 0.05 mi
-  assert.ok(Math.abs(totalMiles(track) - 1.0) < 0.005, `got ${totalMiles(track)}`);
+  /*
+   * ⚠ THE TOLERANCE WIDENED FROM 0.005 TO 0.01, and the reason is inherent rather than sloppy.
+   *
+   * A smoothing filter always trails the newest measurement by a fraction of one step — that lag IS the
+   * smoothing. Here it costs ~9 m out of a mile (0.6%), it does not accumulate, and it is the price of
+   * not counting the several metres a second that a parked phone wanders. A tighter bound would only be
+   * satisfiable by trusting every raw fix, which is what reported 0.0 mi on a real three-mile run.
+   */
+  assert.ok(Math.abs(totalMiles(track) - 1.0) < 0.01, `got ${totalMiles(track)}`);
+});
+
+// ── ⚠ THE RUN THAT REPORTED 0.0 MILES ────────────────────────────────────────
+//
+// PO, on a real 3.01-mile run measured against a watch: *"It didn't track any of his miles or log them."*
+// Forge said 0.0 mi over 34:37 — and drew a route while saying it, which is the tell: the fixes were
+// arriving and being kept as POSITIONS while every one of them was refused as DISTANCE.
+//
+// The old rule judged each fix against the one a second before it. GPS noise alone moves a stationary
+// phone 5–10 m between consecutive fixes, which reads as 11–22 mph — past the 20 mph "teleport" ceiling —
+// so on a poor signal nearly every fix was classed as a jump and credited nothing.
+//
+// These replay that run against a noisy fix stream at each accuracy an iPhone actually reports. The old
+// pipeline scored 3.76 / 2.33 / 1.56 / 0.86 / 0.10 mi down this range. There is no unit test that could
+// have caught it, because every test in this file fed it CLEAN coordinates.
+
+/** A run of `miles` at `mps`, one fix a second, each displaced by gaussian noise scaled to `accM`. */
+function noisyRun(miles, mps, accM, seedN = 42) {
+  let s = seedN;
+  const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  const gauss = () => Math.sqrt(-2 * Math.log(rnd() || 1e-9)) * Math.cos(2 * Math.PI * rnd());
+  const M_PER_DEG_LAT = 111_320;
+  let track = [];
+  for (let t = 0; t <= (miles * 1609.344) / mps; t++) {
+    track = acceptFix(track, {
+      lat: 40 + (t * mps + gauss() * accM * 0.5) / M_PER_DEG_LAT,
+      lon: -105 + (gauss() * accM * 0.5) / (M_PER_DEG_LAT * Math.cos(rad40)),
+      accuracy: accM,
+      at: at0 + t * 1000,
+    }, 'run').track;
+  }
+  return track;
+}
+const rad40 = (40 * Math.PI) / 180;
+
+test('⚠ acceptFix: the PO’s 3.01-mile run measures 3.01, at every accuracy a phone reports', () => {
+  for (const acc of [3, 5, 8, 10, 12, 16, 20, 30, 40, 50, 65]) {
+    const mi = totalMiles(noisyRun(3.01, 2.596, acc)); // 10:20/mi
+    assert.ok(
+      Math.abs(mi - 3.01) < 0.25,
+      `±${acc} m: got ${mi.toFixed(2)} mi for a 3.01-mile run (this range used to read 3.76 down to 0.10)`,
+    );
+  }
+});
+
+test('⚠ acceptFix: a phone standing still for ten minutes travels nowhere', () => {
+  // The same defect pointing the other way: drift that happened to clear the old jitter floor was
+  // credited in full, so a parked phone at ±10 m accumulated 1.23 miles in ten minutes.
+  let s = 7;
+  const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  const gauss = () => Math.sqrt(-2 * Math.log(rnd() || 1e-9)) * Math.cos(2 * Math.PI * rnd());
+  let track = [];
+  for (let t = 0; t < 600; t++) {
+    track = acceptFix(track, {
+      lat: 40 + (gauss() * 5) / 111_320,
+      lon: -105 + (gauss() * 5) / (111_320 * Math.cos(rad40)),
+      accuracy: 10,
+      at: at0 + t * 1000,
+    }, 'run').track;
+  }
+  assert.ok(totalMiles(track) < 0.05, `a parked phone reported ${totalMiles(track).toFixed(3)} mi (was 1.227)`);
+});
+
+// ── ⚠ THE FIX THAT ARRIVES TWICE ─────────────────────────────────────────────
+//
+// A run has two location streams — the foreground watcher and the background task — and on iOS the task
+// keeps delivering while the app is on screen. So the durable buffer accumulates fixes the foreground has
+// already folded in, and draining it replays them. Replayed, they are older than the head, and
+// `Math.max(1e-9, …)` on a negative interval turned each one into an implied speed of millions of miles
+// an hour: a teleport, which re-anchored the track to where the athlete had been minutes before.
+
+test('⚠ acceptFix: a replayed fix is refused as stale rather than counted twice', () => {
+  const track = buildTrack(11, 0.05, 20); // 0.5 mi
+  const before = totalMiles(track);
+  const head = track[track.length - 1];
+
+  // Exactly the head's own timestamp, and one from the middle of the run: both already spent.
+  assert.equal(acceptFix(track, pt(head.lat, head.lon, head.at), 'run').rejected, 'stale');
+  const old = acceptFix(track, pt(40, -105, at0 + 3 * 20_000), 'run');
+  assert.equal(old.rejected, 'stale');
+  assert.equal(old.track, track, 'a stale fix leaves the array untouched');
+  assert.equal(totalMiles(old.track), before);
+});
+
+test('⚠ acceptFix: draining a buffer that overlaps the foreground does not double the distance', () => {
+  // Sixty seconds watched, then the screen locks; the buffer holds the WHOLE run including that minute.
+  const fixes = [];
+  for (let i = 0; i <= 90; i++) fixes.push(pt(40 + (i * 0.01) / MI_PER_DEG_LAT, -105, at0 + i * 20_000));
+
+  let track = [];
+  for (const f of fixes.slice(0, 30)) track = acceptFix(track, f, 'run').track;
+  let stale = 0;
+  for (const f of fixes) {
+    const r = acceptFix(track, f, 'run');
+    if (r.rejected === 'stale') stale++;
+    track = r.track;
+  }
+  assert.equal(stale, 30, 'every already-spent fix should be recognised');
+  assert.ok(Math.abs(totalMiles(track) - 0.9) < 0.02, `0.9 mi walked, got ${totalMiles(track)}`);
+});
+
+test('acceptFix: the track does not grow a point per fix', () => {
+  // The provisional head is REPLACED, not appended to. Without that a half-hour run holds ~1,800 points,
+  // every one of them re-rendered into an SVG path string on every tick of the clock.
+  const track = noisyRun(3.01, 2.596, 10);
+  assert.ok(track.length < 900, `1,866 fixes should not be 1,866 points, got ${track.length}`);
+  assert.ok(track.length > 100, `but the route still needs its shape, got ${track.length}`);
 });
 
 // ── pace ─────────────────────────────────────────────────────────────────────
@@ -157,7 +319,14 @@ test('currentPaceSec: reads the trailing window, not the whole session', () => {
   }
   const cur = currentPaceSec(track, 30);
   const avg = averagePaceSec(totalMiles(track), (t - at0) / 1000);
-  assert.ok(cur < 400, `window should see the faster finish, got ${cur}`);
+  /*
+   * ⚠ ASSERTED AS A COMPARISON, not against a bare number. This read `cur < 400`, which was really a
+   * claim about how closely the track reproduces its input — and a smoothed track trails it slightly, so
+   * a 6:00/mi finish reads a little over 400 and the test failed while measuring exactly what it should.
+   * What the window has to prove is that it sees the FINISH and the average does not; that is a
+   * relationship between the two numbers, and it holds regardless of the filter's lag.
+   */
+  assert.ok(cur < avg - 50, `window should see the faster finish: window ${cur}, average ${avg}`);
   assert.ok(avg > 400, `average should still be dragged by the slow start, got ${avg}`);
 });
 

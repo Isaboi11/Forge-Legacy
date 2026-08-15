@@ -123,12 +123,30 @@ test('⚠ a teleport credits no climb — a signal that jumped a block also jump
   assert.equal(track.length, 2, 'the position is still re-anchored');
 });
 
-test('a jittered fix is dropped whole, so it cannot sneak climb in either', () => {
+test('a fix inside the movement gate cannot sneak climb in either', () => {
   let track = acceptFix([], fix(0, 100), 'run').track;
-  const before = track.length;
-  // A centimetre away, 10 m up. Rejected horizontally; its altitude must not be credited.
-  track = acceptFix(track, { lat: 40.0000001, lon: -105, accuracy: 5, at: fix(0, 0).at + 5000, alt: 110, altAccuracy: 5 }, 'run').track;
-  assert.equal(track.length, before);
+  // A centimetre away, 10 m up. Refused horizontally; its altitude must not be credited.
+  const res = acceptFix(track, { lat: 40.0000001, lon: -105, accuracy: 5, at: fix(0, 0).at + 5000, alt: 110, altAccuracy: 5 }, 'run');
+  assert.equal(res.rejected, 'jitter');
+  assert.equal(totalGainM(res.track), 0, 'climb accrues only where distance does');
+  assert.equal(res.track[res.track.length - 1].mi, 0, 'and no ground was covered either');
+});
+
+/*
+ * ⚠ THIS TEST USED TO ASSERT `track.length` DID NOT CHANGE, and that assertion is gone on purpose.
+ *
+ * Under the old accept rule a jittered fix was discarded outright, so "the track did not grow" was a fair
+ * proxy for "nothing was credited". `acceptFix` now keeps a PROVISIONAL head — a fix inside the gate
+ * still improves the estimate of where the athlete is standing, it just isn't travel — so the array does
+ * change, by replacement rather than growth. What must not change is the climb and the distance, and
+ * those are what the test above now reads directly instead of inferring from a length.
+ */
+test('a run of gate-inside fixes replaces the head rather than piling up', () => {
+  let track = acceptFix([], fix(0, 100), 'run').track;
+  for (let i = 1; i <= 20; i++) {
+    track = acceptFix(track, { lat: 40 + i * 1e-7, lon: -105, accuracy: 5, at: fix(0, 0).at + i * 1000, alt: 100, altAccuracy: 5 }, 'run').track;
+  }
+  assert.equal(track.length, 2, 'the seed, plus one provisional head — not twenty-one points of standing still');
   assert.equal(totalGainM(track), 0);
 });
 

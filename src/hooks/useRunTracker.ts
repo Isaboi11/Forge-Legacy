@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import * as Location from 'expo-location';
 
-import { ACCURACY_FLOOR_M, acceptFix, type ActivityKind, type Fix, type TrackPoint } from '@/domain/run/run-core';
+import { ACCURACY_FLOOR_M, acceptFix, totalMiles, type ActivityKind, type Fix, type TrackPoint } from '@/domain/run/run-core';
 import { clearBackgroundFixes, drainBackgroundFixes, startBackgroundFixes, stopBackgroundFixes } from '@/domain/run/background-task';
 
 /** Fold a batch of buffered fixes into a track through the ONE accept rule. Order matters; it is time. */
@@ -30,10 +30,10 @@ const applyFixes = (track: TrackPoint[], fixes: Fix[], kind: ActivityKind): Trac
  * athlete still has a timed run and types the distance at the end, exactly as they would on a treadmill.
  * A run is not contingent on being measurable.
  *
- * FOREGROUND ONLY. Background tracking needs `isIosBackgroundLocationEnabled` plus a task-manager task,
- * a heavier permission prompt, and a native build to verify — none of which can be tested from this
- * project's setup. Locking the phone will pause the trace on a real device; that limit is stated on the
- * card rather than discovered mid-run.
+ * ⚠ NOT FOREGROUND ONLY — this header said it was, for a build after the one that fixed it. Background
+ * tracking arrived with `background-task.ts` and shipped in iOS build 5: the OS buffers fixes while the
+ * app is suspended and this hook drains them through the same `acceptFix`. Two streams therefore feed one
+ * track, which is why a fix that does not advance the clock is refused as `stale` — see `acceptFix`.
  */
 
 /** Is the athlete running? */
@@ -59,11 +59,15 @@ export interface RunTracker {
   /** Metres of uncertainty on the newest fix, for the signal read-out. Null before the first one. */
   accuracyM: number | null;
   /**
-   * True while the run is live but no MOVEMENT has been accepted yet.
+   * True while the run is live but no MOVEMENT has been credited yet.
    *
-   * Deliberately `< 2` and not `=== 0`: the very first fix always seeds the track at zero miles, so a
-   * length of 1 means "we know where you are and nothing you've done since has cleared the noise floor".
-   * That is the exact state that used to sit on screen as a silent 0.00 while someone walked around.
+   * ⚠ THIS USED TO READ `track.length < 2`, AND THAT STOPPED MEANING ANYTHING. Under the old accept rule
+   * a point only entered the track by clearing the noise floor, so a length of one WAS "we know where you
+   * are and nothing since has counted". `acceptFix` now keeps a provisional head that every fix refines,
+   * so the track reaches two points within a second or so of standing still — and the state this flag
+   * exists to name, a silent 0.00 while someone walks around, would never be reported again.
+   *
+   * Distance is the honest test: nothing has cleared the gate, whatever the array length says.
    */
   weakSignal: boolean;
   /** Nothing has arrived for long enough that "still looking" would be a lie. */
@@ -125,10 +129,17 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
         reanchor.current = false;
         const last = prev[prev.length - 1];
         /* A re-anchor after a pause credits neither distance NOR climb: whatever happened while the run
-           was stopped is not the run. The altitude is carried so the NEXT climb measures from here. */
+           was stopped is not the run. The altitude is carried so the NEXT climb measures from here.
+
+           ⚠ IT ALSO RESTARTS THE FILTER. This point is hand-built rather than folded through `acceptFix`,
+           so it has to carry what `acceptFix` would have left on it: the estimate begins again AT this
+           raw fix, believing it exactly as much as the device does, and the anchor is this point. Without
+           `varM2` the next fix would read the seed default, and without the anchor it would measure its
+           first step from wherever the athlete was standing when they pressed Pause. */
+        const restart = { varM2: (fix.accuracy ?? 12) ** 2, aLat: fix.lat, aLon: fix.lon, aAt: fix.at };
         return last
-          ? [...prev, { lat: fix.lat, lon: fix.lon, at: fix.at, mi: last.mi, alt: fix.alt, gainM: last.gainM ?? 0, climbRef: fix.alt ?? last.climbRef ?? null }]
-          : [{ lat: fix.lat, lon: fix.lon, at: fix.at, mi: 0, alt: fix.alt, gainM: 0, climbRef: fix.alt }];
+          ? [...(last.provisional ? prev.slice(0, -1) : prev), { lat: fix.lat, lon: fix.lon, at: fix.at, mi: last.mi, alt: fix.alt, gainM: last.gainM ?? 0, climbRef: fix.alt ?? last.climbRef ?? null, ...restart }]
+          : [{ lat: fix.lat, lon: fix.lon, at: fix.at, mi: 0, alt: fix.alt, gainM: 0, climbRef: fix.alt, ...restart }];
       }
       return acceptFix(prev, fix, kind).track;
     });
@@ -254,7 +265,7 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
     track,
     elapsedSec: Math.floor(elapsedSec),
     accuracyM,
-    weakSignal: live && (effectiveGps === 'acquiring' || effectiveGps === 'tracking') && track.length < 2,
+    weakSignal: live && (effectiveGps === 'acquiring' || effectiveGps === 'tracking') && totalMiles(track) === 0,
     gpsStalled,
     noGps: effectiveGps === 'denied' || effectiveGps === 'unavailable',
     start,

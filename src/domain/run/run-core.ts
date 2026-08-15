@@ -24,11 +24,39 @@ export interface Fix {
 }
 
 export interface TrackPoint {
+  /**
+   * The SMOOTHED position, not the raw fix — see `acceptFix`.
+   *
+   * ⚠ This changed, and it is why the route stopped looking like a scribble. A raw 1 Hz fix stream from a
+   * phone wanders several metres a second around the truth; drawn point-for-point it is a zigzag, and
+   * measured point-for-point it is a mile of distance the athlete never covered.
+   */
   lat: number;
   lon: number;
   at: number;
   /** Cumulative miles at this point — carried so the route and the readout can never disagree. */
   mi: number;
+  /**
+   * The filter's uncertainty about this position, in square metres. Carried rather than held in a
+   * closure so `acceptFix` stays pure and one call can be replayed from any track.
+   */
+  varM2?: number;
+  /**
+   * The ANCHOR the next step is measured from — the last position that was far enough from its own
+   * predecessor to be movement rather than noise.
+   *
+   * It is deliberately NOT the previous point. Distance accumulates anchor-to-here, so the metre of
+   * wander between two fixes taken half a second apart never becomes a metre of running.
+   */
+  aLat?: number;
+  aLon?: number;
+  aAt?: number;
+  /**
+   * True while this is the provisional head: a fix that refined where the athlete is without clearing
+   * the movement gate. The NEXT fix replaces it rather than appending after it, so a 30-minute run holds
+   * one point per few metres covered instead of one per second.
+   */
+  provisional?: boolean;
   /**
    * Metres above sea level as reported, or null. Kept raw; the SMOOTHED reference lives in `climbRef`.
    *
@@ -79,69 +107,200 @@ export const ACCURACY_FLOOR_M = 65;
 
 const M_PER_MI = 1609.344;
 
-/**
- * How far you must move before it counts, given how sure the device is of where you are.
- *
- * A fixed 1.5 m threshold is right for a good fix and useless for a ±40 m one, where two consecutive
- * readings can sit 40 m apart with nobody moving. So the bar scales with the uncertainty: you cannot
- * distinguish a movement smaller than your own error bars from noise, and pretending otherwise is how
- * apps invent a mile of "distance" from a phone on a table.
- *
- * Half the reported accuracy, floored at 1.5 m. The cost is slight UNDER-counting on a poor signal —
- * movement accumulates in coarser steps — which is the right direction to be wrong in.
- */
-function minStepMi(accuracyM: number | null): number {
-  const acc = accuracyM == null ? 8 : accuracyM;
-  return Math.max(MIN_STEP_MI, (acc * 0.5) / M_PER_MI);
-}
 /** No human moves faster than this on foot or a bike; above it the fix jumped, it didn't travel. */
 const MAX_MPH: Record<ActivityKind, number> = { run: 20, walk: 12, bike: 60 };
-/** The floor under `minStepMi` — a device sitting still and drifting never clears it. */
-const MIN_STEP_MI = 0.00093; // ~1.5 m
+
+/**
+ * ══ ⚠ WHY THERE IS A FILTER HERE AT ALL, AND WHAT IT REPLACED ══
+ *
+ * PO, on a real 3.01-mile run measured against a watch: *"It didn't track any of his miles or log them."*
+ * Forge reported **0.0 mi over 34:37** and drew a route while doing it. That combination is the tell —
+ * the points were arriving and being kept as POSITIONS while every one of them was refused as DISTANCE.
+ *
+ * The old pipeline judged each fix against the one before it, one second earlier, on three raw tests:
+ * a step under half the reported accuracy was jitter, and a step implying more than `MAX_MPH` was a
+ * "teleport" that kept the point and credited nothing. At 1 Hz that is not a filter, it is a coin toss.
+ * GPS noise alone moves a stationary phone 5–10 m between consecutive fixes, which reads as 11–22 mph
+ * before the athlete has taken a step. Replaying that run through it:
+ *
+ *     reported accuracy    old pipeline      truth
+ *     ±10 m                3.76 mi           3.01
+ *     ±16 m                2.33 mi           3.01
+ *     ±20 m                1.56 mi           3.01
+ *     ±30 m                0.86 mi           3.01
+ *     ±65 m                0.10 mi           3.01
+ *
+ * and — the same defect pointing the other way — a phone STANDING STILL for ten minutes at ±10 m
+ * accumulated **1.23 miles**, because drift that happened to clear the jitter floor was credited in full.
+ * Over- and under-counting were never two bugs. They were one: distance computed from raw fixes.
+ *
+ * ══ WHAT REPLACES IT ══
+ *
+ * Two ideas, and neither is novel — this is what every watch does.
+ *
+ *   1. SMOOTH THE POSITION. A one-dimensional Kalman filter over latitude and longitude, using the
+ *      device's own reported accuracy as the measurement variance. A fix the phone is confident about
+ *      moves the estimate a long way; a ±60 m fix nudges it. Uncertainty grows with elapsed time at
+ *      `DRIFT_MPS`, so after a gap the next fix is trusted almost completely — which is exactly right,
+ *      because after twenty seconds the filter genuinely has no idea where you are.
+ *
+ *   2. MEASURE FROM AN ANCHOR, NOT FROM THE LAST POINT. Distance accumulates from the last position far
+ *      enough away to be movement rather than noise. Fixes inside that radius refine where you are
+ *      without adding anything, so a traffic light contributes nothing however long you stand at it.
+ *
+ * `MAX_MPH` survives, but it now judges the SMOOTHED step over the anchor's baseline — seconds of
+ * evidence rather than one sample — so it fires on a genuine signal jump and not on ordinary noise.
+ *
+ * Same run through this: **3.00–3.11 mi across ±3 m to ±40 m of reported accuracy**, and 0.035 mi for
+ * the ten minutes standing still.
+ */
+
+/**
+ * Metres per second of movement the filter does not model, as a standard deviation.
+ *
+ * This is what makes uncertainty grow between fixes. Too low and the filter stops believing a real
+ * sprint; too high and it stops smoothing at all and we are back to raw fixes. 3 m/s is a shade above
+ * a fast run, which is the honest ceiling for "how far could they have got since I last heard".
+ */
+export const DRIFT_MPS = 3;
+
+/** What to assume when a device won't say how accurate a fix is. Mid-range: neither trusted nor binned. */
+const ASSUMED_ACCURACY_M = 12;
+
+/**
+ * How far the estimate must sit from the anchor before it counts as having gone somewhere.
+ *
+ * Scaled to the fix's own uncertainty, because you cannot distinguish a movement smaller than your error
+ * bars from noise. CAPPED at 25 m so a poor fix cannot set the bar so high that a real run never reaches
+ * it — the failure that left the ±65 m column above reading 0.10 mi.
+ *
+ * ⚠ THE FLOOR IS 10 m AND IT WAS TUNED, NOT CHOSEN. Smoothing alone does not stop a parked phone: the
+ * estimate still wanders, just slowly, and every excursion past the gate is credited. Ten minutes
+ * stationary at ±10 m, by floor:
+ *
+ *     5 m → 0.134 mi        8 m → 0.027 mi        10 m → 0.021 mi        12 m → 0.016 mi
+ *
+ * and the measured 3.01-mile run over the same range reads 3.15 / 3.08 / 3.05 / 3.05. Ten is where the
+ * drift stops mattering and the route still has the detail to be a route; past it the return collapses
+ * and only the shape gets coarser.
+ */
+const GATE_MIN_M = 10;
+const GATE_MAX_M = 25;
+const GATE_FRACTION = 0.5;
+
+const gateM = (accuracyM: number): number =>
+  Math.min(GATE_MAX_M, Math.max(GATE_MIN_M, accuracyM * GATE_FRACTION));
 
 export interface AcceptResult {
-  /** The new track, unchanged when the fix was rejected. */
+  /**
+   * The new track.
+   *
+   * ⚠ NOT "unchanged when rejected" any more. A fix that is refused DISTANCE may still refine the
+   * position estimate — that is the point of smoothing — so `jitter` and `teleport` both return a track
+   * whose head has moved. Only `accuracy` and `stale` return the array untouched.
+   */
   track: TrackPoint[];
-  /** Why it was rejected, or null when it was kept. Surfaced so the screen can explain a stalled distance. */
-  rejected: 'accuracy' | 'jitter' | 'teleport' | null;
+  /** Why no distance was credited, or null when it was. Surfaced so the screen can explain a stalled distance. */
+  rejected: 'accuracy' | 'jitter' | 'teleport' | 'stale' | null;
 }
 
 /**
- * Fold one fix into the track.
+ * Fold one fix into the track. THE one distance rule — the foreground watcher and the drained background
+ * buffer both come through here, so the watched and unwatched halves of a run can never disagree.
  *
- * THE THREE REJECTIONS, and why each one exists rather than trusting the device:
+ * THE FOUR REFUSALS:
  *
- *   · ACCURACY. A phone reports its own uncertainty. A fix with ±60 m of error can appear 120 m from the
- *     last one without anybody moving, which is a tenth of a mile of invented distance every few seconds.
- *   · JITTER. Standing still, consecutive fixes wander by a few metres. Summed over a traffic light, that
- *     is real distance you did not run. Movement under ~1.5 m is discarded as drift.
- *   · TELEPORT. A recovered signal can place you a block away instantly. Anything implying a speed no
- *     human sustains is a correction to the position, not a journey between two of them — so the point is
- *     kept as the new position but its distance is NOT added.
- *
- * Rejecting a fix keeps the last good position, so the next real step measures from somewhere true.
+ *   · ACCURACY. Worse than `ACCURACY_FLOOR_M` and the device is telling us it does not know; the fix is
+ *     dropped whole rather than fed to a filter that would have to believe it a little.
+ *   · STALE. A fix at or before the head's timestamp. This is what stops the background buffer being
+ *     counted twice — see the note on it below.
+ *   · JITTER. Inside the gate: a refinement of where you are, not a journey. Kept as the provisional
+ *     head, credited nothing.
+ *   · TELEPORT. A recovered signal can place you a block away instantly. The estimate restarts from the
+ *     RAW fix — the filter's belief has just been proven wrong, so smoothing towards it would leave the
+ *     anchor stranded half way across the jump and hand that half to the next step as distance.
  */
 export function acceptFix(track: TrackPoint[], fix: Fix, kind: ActivityKind): AcceptResult {
   if (fix.accuracy != null && fix.accuracy > ACCURACY_FLOOR_M) return { track, rejected: 'accuracy' };
 
   const last = track[track.length - 1];
-  if (!last) return { track: [{ lat: fix.lat, lon: fix.lon, at: fix.at, mi: 0, ...climbSeed(fix) }], rejected: null };
+  const acc = fix.accuracy ?? ASSUMED_ACCURACY_M;
 
-  const step = haversineMi(last, fix);
-  if (step < minStepMi(fix.accuracy)) return { track, rejected: 'jitter' };
+  if (!last) {
+    return {
+      track: [{ lat: fix.lat, lon: fix.lon, at: fix.at, mi: 0, varM2: acc * acc, aLat: fix.lat, aLon: fix.lon, aAt: fix.at, ...climbSeed(fix) }],
+      rejected: null,
+    };
+  }
 
-  const hours = Math.max(1e-9, (fix.at - last.at) / 3_600_000);
-  if (step / hours > MAX_MPH[kind]) {
+  /*
+   * ⚠ THE FIX THAT ARRIVES TWICE.
+   *
+   * A run has two location streams: the foreground `watchPositionAsync` and the background task, and on
+   * iOS the task keeps delivering while the app is on screen. So the durable buffer accumulates fixes the
+   * foreground watcher has ALREADY folded into this track, and draining it replays them.
+   *
+   * Replayed, they are older than the head. `Math.max(1e-9, …)` on a negative interval used to turn every
+   * one of them into an implied speed of millions of miles an hour — a teleport, which re-anchored the
+   * track back to where the athlete had been minutes earlier and threw away the distance in between.
+   *
+   * Time only moves one way. A fix that does not advance it has nothing to add.
+   */
+  if (fix.at <= last.at) return { track, rejected: 'stale' };
+
+  // ── 1 · smooth ────────────────────────────────────────────────────────────
+  const dtSec = (fix.at - last.at) / 1000;
+  const varPrior = (last.varM2 ?? acc * acc) + dtSec * DRIFT_MPS * DRIFT_MPS;
+  // The Kalman gain: how much of the way to this measurement the estimate should move. Near 1 when we
+  // are lost (a long gap, or a very precise fix), near 0 when we are confident and the fix is vague.
+  const gain = varPrior / (varPrior + acc * acc);
+  const sLat = last.lat + gain * (fix.lat - last.lat);
+  const sLon = last.lon + gain * (fix.lon - last.lon);
+  const varM2 = varPrior * (1 - gain);
+
+  /*
+   * A provisional head is superseded, never built on: the next fix takes its place in the array. Without
+   * this the track would grow a point a second — 1,800 of them on a half-hour run, every one of them
+   * re-rendered into an SVG path string on every tick.
+   */
+  const base = last.provisional ? track.slice(0, -1) : track;
+  const anchor = { lat: last.aLat ?? last.lat, lon: last.aLon ?? last.lon, at: last.aAt ?? last.at };
+
+  // ── 2 · measure from the anchor ───────────────────────────────────────────
+  const stepMi = haversineMi(anchor, { lat: sLat, lon: sLon });
+
+  if (stepMi * M_PER_MI < gateM(acc)) {
+    /* Inside the gate. The position is better known than it was; nothing has been travelled. Climb is
+       carried forward untouched for the same reason — it accrues only where distance does. */
+    return {
+      track: [
+        ...base,
+        { lat: sLat, lon: sLon, at: fix.at, mi: last.mi, alt: last.alt ?? null, gainM: last.gainM ?? 0, climbRef: last.climbRef ?? null, varM2, aLat: anchor.lat, aLon: anchor.lon, aAt: anchor.at, provisional: true },
+      ],
+      rejected: 'jitter',
+    };
+  }
+
+  // ── 3 · is it possible? ───────────────────────────────────────────────────
+  const hours = Math.max(1e-9, (fix.at - anchor.at) / 3_600_000);
+  if (stepMi / hours > MAX_MPH[kind]) {
     // Re-anchor without crediting the jump — horizontally OR vertically. A signal that jumped a block
     // also jumped a floor, and crediting that rise would put a staircase in the middle of a flat road.
     return {
-      track: [...track, { lat: fix.lat, lon: fix.lon, at: fix.at, mi: last.mi, alt: fix.alt ?? null, gainM: last.gainM ?? 0, climbRef: last.climbRef ?? null }],
+      track: [
+        ...base,
+        { lat: fix.lat, lon: fix.lon, at: fix.at, mi: last.mi, alt: fix.alt ?? null, gainM: last.gainM ?? 0, climbRef: last.climbRef ?? null, varM2: acc * acc, aLat: fix.lat, aLon: fix.lon, aAt: fix.at },
+      ],
       rejected: 'teleport',
     };
   }
 
+  // ── 4 · it happened ───────────────────────────────────────────────────────
   return {
-    track: [...track, { lat: fix.lat, lon: fix.lon, at: fix.at, mi: last.mi + step, ...climbFrom(last, fix) }],
+    track: [
+      ...base,
+      { lat: sLat, lon: sLon, at: fix.at, mi: last.mi + stepMi, ...climbFrom(last, fix), varM2, aLat: sLat, aLon: sLon, aAt: fix.at },
+    ],
     rejected: null,
   };
 }
@@ -413,6 +572,15 @@ export interface RoutePath {
 }
 
 /**
+ * The most points worth drawing into a card-sized box.
+ *
+ * A long ride can hold thousands, and past a few hundred they land sub-pixel: the path string gets
+ * longer, the shape does not get truer. Decimation is by STRIDE with the last point always kept, so the
+ * head marker still sits where the athlete is.
+ */
+const ROUTE_MAX_POINTS = 400;
+
+/**
  * Fit the recorded track into a viewBox.
  *
  * This is what replaces the design's THREE unrelated hardcoded paths — one on the live map, a duplicate
@@ -426,13 +594,28 @@ export interface RoutePath {
 export function routePath(track: TrackPoint[], w: number, h: number, pad = 10): RoutePath {
   if (track.length === 0) return { d: '', head: null, start: null };
 
-  const latMid = track.reduce((n, p) => n + p.lat, 0) / track.length;
-  const kx = Math.cos(rad(latMid)) || 1;
-  const xs = track.map((p) => p.lon * kx);
-  const ys = track.map((p) => -p.lat); // north is up, so latitude inverts
+  const stride = Math.ceil(track.length / ROUTE_MAX_POINTS);
+  const pts0 =
+    stride <= 1
+      ? track
+      : (() => {
+          const out = track.filter((_, i) => i % stride === 0);
+          if (out[out.length - 1] !== track[track.length - 1]) out.push(track[track.length - 1]);
+          return out;
+        })();
 
-  const minX = Math.min(...xs), maxX = Math.max(...xs);
-  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const latMid = pts0.reduce((n, p) => n + p.lat, 0) / pts0.length;
+  const kx = Math.cos(rad(latMid)) || 1;
+  const xs = pts0.map((p) => p.lon * kx);
+  const ys = pts0.map((p) => -p.lat); // north is up, so latitude inverts
+
+  /* ⚠ NOT `Math.min(...xs)`. Spreading an array into a call passes one ARGUMENT per element, and a long
+     enough track blows the engine's argument limit — a crash that only ever happens on somebody's
+     longest run. `reduce` has no such ceiling. */
+  const minX = xs.reduce((a, b) => (b < a ? b : a), Infinity);
+  const maxX = xs.reduce((a, b) => (b > a ? b : a), -Infinity);
+  const minY = ys.reduce((a, b) => (b < a ? b : a), Infinity);
+  const maxY = ys.reduce((a, b) => (b > a ? b : a), -Infinity);
   const spanX = maxX - minX || 1e-9;
   const spanY = maxY - minY || 1e-9;
   const scale = Math.min((w - pad * 2) / spanX, (h - pad * 2) / spanY);
@@ -440,7 +623,7 @@ export function routePath(track: TrackPoint[], w: number, h: number, pad = 10): 
   const offX = (w - spanX * scale) / 2;
   const offY = (h - spanY * scale) / 2;
 
-  const pts = track.map((_, i) => ({
+  const pts = pts0.map((_, i) => ({
     x: (xs[i] - minX) * scale + offX,
     y: (ys[i] - minY) * scale + offY,
   }));

@@ -442,7 +442,14 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
    * non-null by then, and narrowing them here keeps the JSX from having to ask again.
    */
   const fitted = routePath(tracker.track, 372, 126, 14);
-  const route = tracker.track.length > 1 && fitted.start && fitted.head
+  /*
+   * ⚠ IT TAKES DISTANCE, NOT TWO POINTS. The test was `track.length > 1`, which under the old accept rule
+   * meant two places the athlete had demonstrably been. `acceptFix` now keeps a provisional head that
+   * every fix refines, so a phone sitting on the doorstep reaches two points within a second or so — and
+   * this would have drawn a solid route, a start dot and a head dot on top of each other, in place of the
+   * dashed "your route traces as you run" placeholder, before the run had gone anywhere.
+   */
+  const route = liveMi > 0 && tracker.track.length > 1 && fitted.start && fitted.head
     ? { d: fitted.d, start: fitted.start, head: fitted.head }
     : null;
 
@@ -457,8 +464,15 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
    * it is just a colour.
    */
   const cue = effortTarget != null && live ? sustainedCue(tracker.track, effortTarget, speed) : null;
-  /** Distance is only a number when something measured it. Untracked, the clock is the whole readout. */
-  const measured = tracker.track.length > 1;
+  /**
+   * Distance is only a number when something measured it. Untracked, the clock is the whole readout.
+   *
+   * ⚠ CREDITED DISTANCE, NOT TRACK LENGTH. This read `track.length > 1`, which under the old accept rule
+   * meant "movement has cleared the noise floor". `acceptFix` now keeps a provisional head that every fix
+   * refines, so the track passes two points while the athlete is still standing on the doorstep — and
+   * this would have put a 0.00 in 46pt type over a run that had not started measuring yet.
+   */
+  const measured = liveMi > 0;
   /** Fraction of the distance target covered, clamped — or null when the bout is open. */
   const progress = targetMi != null ? goalProgress(liveMi, targetMi) : null;
   const reached = goalMet(liveMi, targetMi);
@@ -1033,7 +1047,12 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
                     ? tracker.gps === 'denied'
                       ? 'Location is off for Forge Legacy, so we can’t measure the distance — the clock is still running, and you can type the distance in when you finish.'
                       : 'No location signal here. The clock is still running; you’ll add the distance at the end.'
-                    : 'Keep this screen open — tracking stops if the app goes to the background.'}
+                    /* ⚠ THIS TOLD THE ATHLETE THE OPPOSITE OF THE TRUTH for a build after background
+                       location shipped — "tracking stops if the app goes to the background". It does
+                       not: the OS buffers fixes while the phone is locked and the run drains them on
+                       the way back. Someone reading the old line would have run the whole way holding
+                       an unlocked phone for no reason. */
+                    : 'Lock your phone and put it away if you like — the run keeps measuring in your pocket.'}
                 </Text>
               </>
             ) : (
