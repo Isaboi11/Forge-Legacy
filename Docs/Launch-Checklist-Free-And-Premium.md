@@ -8,14 +8,14 @@ session with no prior context. Work top to bottom; each item names its own files
 ### ⚠ v1.1 — THE RELEASE IS TWO STAGES, AND THEY RUN IN PARALLEL
 
 PO decisions, 2026-08-13: **the 20 testers get it now and some of them get it free; the public release
-carries the paywall; and the public release ships under a new Forge LLC organization account.**
+carries the paywall; and the public release ships under a new Forge Legacy LLC organization account.**
 
 That splits this list in two, and the split is the schedule:
 
 | | **Stage 1 — TestFlight** | **Stage 2 — Public** |
 |---|---|---|
 | **Audience** | the 20 OG testers | everyone |
-| **Apple team** | existing `G722GV8H8C` (§8) | **new Forge LLC org account** (§9) |
+| **Apple team** | existing `G722GV8H8C` (§8) | **new Forge Legacy LLC org account** (§9) |
 | **Entitlement** | `default_tier` stays `PREMIUM` — nothing gates | Phase F flip (§6) |
 | **Needs** | §8 only — the DB blockers and a build | §4 Phase E · §5 Legal · §6 · §9 · §10 |
 | **Blocked by** | nothing but §8.1 | **a D-U-N-S number: 3–14 days, and it has not been started** |
@@ -329,7 +329,7 @@ app today and the right shape.
       happened. Everyone starts with it unspent, including anyone who has already used one. Accepted: it
       errs toward the athlete, and there is no data to do better with.
 - [ ] **6.2 — Enroll in the App Store Small Business Program** for the 15% rate rather than 30%.
-      ⚠ **SUPERSEDED BY §9.6 (v1.1).** Enrollment is per-entity, so it belongs to **Forge LLC**, not to
+      ⚠ **SUPERSEDED BY §9.6 (v1.1).** Enrollment is per-entity, so it belongs to **Forge Legacy LLC**, not to
       the qest4 team this line was written against.
 - [ ] **6.3 — Landing page.** `Docs/Marketing/Landing-Page-Design-Brief.md` §12 and the JSON-LD
       `offers: { price: "0" }` stay correct until this point, then need the real ladder — with
@@ -422,21 +422,37 @@ the app in their hands.**
 
 ---
 
-## 9 · Apple entity migration — Forge LLC
+## 9 · Apple entity migration — Forge Legacy LLC
 
-PO decision 2026-08-13: **the public release ships under a new Forge LLC organization account**, not
+PO decision 2026-08-13: **the public release ships under a new Forge Legacy LLC organization account**, not
 `G722GV8H8C` (the qest4 team that `eas.json` names today, holding app `6798436104` and the bundle
 `com.qest4.forgelegacy`).
 
-**✅ LLC FILED 2026-08-13** — entity, filing and work-order numbers in hand. Those are *state* identifiers
-and are **not** what Apple or D&B ask for; they are proof the entity exists, which is what unblocks 9.1.
+**✅ LLC FILED 2026-08-13.** The entity of record, and the exact strings Apple and D&B match against:
+
+| | |
+|---|---|
+| **Legal name** | `Forge Legacy LLC` — ⚠ *not* "Forge LLC"; this becomes the public App Store seller name |
+| **Utah entity number** | `14725906-0160` |
+| **Filing number** | `2608131147918B`, effective 2026-08-13 02:06 PM |
+| **Principal / mailing address** | `3832 E Cunninghill Dr, Eagle Mountain, UT 84005` |
+| **Registered agent** | Isaiah Altamirano, individual, same address |
+| **EIN** | `42-4433633`, issued 2026-08-13 (CP 575 saved) |
+| **Parent** | **`Altimealix Holdings LLC` owns 100%**, same address — first of several planned subsidiaries |
+
+⚠ **Utah's Certificate of Organization has no member field.** The parent-child link lives in Utah's
+principals data and the operating agreement — it is **not** on the stamped certificate and cannot be
+evidenced with it. Anywhere ownership must be *proved* rather than asserted, this is the gap.
+
+⚠ **Every downstream form matches on the name and address above, exactly.** A mismatch is the single
+most common rejection at D&B and at Apple enrollment, and it restarts the clock rather than erroring.
 
 > **⚠ CORRECTION 2026-08-13, from Apple's own enrollment docs — an organization account needs more than
 > a D-U-N-S, and the extra requirements were NOT in v1.1 of this list.** Verified at
 > `developer.apple.com/help/account/membership/program-enrollment/`:
 > 1. **A public, functional website on a domain associated with the organization.** Social media pages
 >    are explicitly rejected, as are registrar parking pages and sites with minimal content.
->    **⛔ `forgelegacy.expo.app` does NOT qualify — it is Expo's domain, not Forge LLC's.**
+>    **⛔ `forgelegacy.expo.app` does NOT qualify — it is Expo's domain, not Forge Legacy LLC's.**
 > 2. **A work email address on that same domain.** A gmail address does not pass.
 > 3. **The legal entity name becomes the public seller name on the App Store listing.** No DBAs,
 >    fictitious names, trade names or branches are accepted.
@@ -445,12 +461,18 @@ and are **not** what Apple or D&B ask for; they are proof the entity exists, whi
 > it, the D-U-N-S clears on day 7 against a website that does not exist and enrollment stalls anyway —
 > the wait would have been spent and the gate still shut.
 
-- [ ] **9.0 — Get the EIN from the IRS.** Free, online, issued immediately; the applicant must be the
+- [x] **9.0 — ✅ DONE 2026-08-13. EIN `42-4433633`.** Free, online, issued immediately; the applicant must be the
       Responsible Party with an SSN, and the LLC must already exist with the state (it does). The tool is
       **weekdays 07:00–22:00 ET** and times out on inactivity, so do it in one sitting and save the PDF —
       re-issuing is a phone call. Needed for the business bank account and for **App Store Connect's tax
       and banking forms**, without which Apple cannot pay out. Not a D-U-N-S dependency; do it in parallel.
-- [ ] **9.1 — ⛔ START THE D-U-N-S NUMBER THE DAY THE LLC IS FILED. It is the long pole and it is free.**
+- [~] **9.1 — 🟡 REQUESTED 2026-08-13, IN VERIFICATION. It is the long pole and it is free.**
+      **Status: D&B case # 10803372.** They wrote 2026-08-13 asking for two documents showing the
+      business name and address; **answered 2026-08-15** with the stamped Certificate of Organization,
+      the CP 575, and their Business Information Form (parent declared as Altimealix Holdings LLC,
+      100%). ⏳ **Next: D&B phones to verify business type and employee count — answer it.** The
+      answers must match the form: software publisher · 1 employee · Utah LLC formed Aug 2026 ·
+      pre-revenue. Expect resolution late Aug; escalate only past two weeks.
       Apple requires a D-U-N-S number for an *organization* Developer Program account, matched against
       the legal entity name and address. Use **Apple's own look-up tool**
       (`https://developer.apple.com/enroll/duns-lookup/`), not D&B directly — it is free and feeds
@@ -467,19 +489,19 @@ and are **not** what Apple or D&B ask for; they are proof the entity exists, whi
       the same domain that must host privacy and terms (§10.1), so one purchase closes three items —
       but the enrollment gate is the one with the deadline. Everything else in §9 waits on it, and §10's
       listing work cannot be entered until the account exists.
-- [ ] **9.2 — Enroll Forge LLC in the Apple Developer Program** ($99/yr) once the D-U-N-S resolves.
+- [ ] **9.2 — Enroll Forge Legacy LLC in the Apple Developer Program** ($99/yr) once the D-U-N-S resolves.
       The enrolling person must have legal authority to bind the entity.
 - [ ] **9.3 — ⚠ RESOLVE THE BUNDLE IDENTIFIER BEFORE BUILDING ANYTHING UNDER THE NEW TEAM. This is the
       one item here that can genuinely bite, and it should be confirmed with Apple rather than assumed.**
       Bundle IDs are globally unique across the App Store, and `com.qest4.forgelegacy` is currently
       registered to `G722GV8H8C`. Three shapes, and they are not equivalent:
-      **(a) Release the identifier from the qest4 team** and register it under Forge LLC — keeps the ID
+      **(a) Release the identifier from the qest4 team** and register it under Forge Legacy LLC — keeps the ID
       and every deep link, but the qest4 app record must be removed first and TestFlight builds under it
       die with it.
       **(b) New bundle ID** (e.g. `com.forgelegacy.app`) — always available, but it is a *different app*
       to iOS: the 20 testers' installs do not upgrade, they sit alongside. Changes the native
       fingerprint, so a new build regardless.
-      **(c) Apple app transfer** from qest4 to Forge LLC — preserves ID, installs and TestFlight, **but
+      **(c) Apple app transfer** from qest4 to Forge Legacy LLC — preserves ID, installs and TestFlight, **but
       transfer generally requires the app to have already been publicly released**, which contradicts
       "first public release is under the LLC." Only viable if Stage 2 is re-sequenced to ship under
       qest4 and transfer after.
@@ -492,7 +514,7 @@ and are **not** what Apple or D&B ask for; they are proof the entity exists, whi
 - [ ] **9.5 — Re-create the EAS project credentials** under the new team (push key, provisioning). Push
       notifications are configured against the old team's APNs key; **a new key means push silently
       stops** until it is uploaded.
-- [ ] **9.6 — Enroll Forge LLC in the App Store Small Business Program** for 15% rather than 30%.
+- [ ] **9.6 — Enroll Forge Legacy LLC in the App Store Small Business Program** for 15% rather than 30%.
       Enrollment is per-entity and applies from the following month — **do it before revenue, not after.**
       (This supersedes §6.2, which assumed a single account.)
 
