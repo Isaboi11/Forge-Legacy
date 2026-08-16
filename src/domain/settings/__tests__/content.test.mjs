@@ -20,10 +20,41 @@ test('all three legal documents carry a host, title, updated line and real body'
     assert.match(doc.host, /^forgelegacy\.app\//, `${key} host`);
     assert.ok(doc.title.length > 0);
     assert.ok(doc.updated.length > 0);
-    assert.equal(doc.body.length, 4, `${key} should carry the design's 4 paragraphs`);
+    /*
+     * ⚠ WAS `=== 4`, "the design's 4 paragraphs", AND THAT COUNT WAS ENFORCING A DEFECT.
+     *
+     * The privacy document's four paragraphs claimed to list what the app collects and omitted precise
+     * location, photos/video, and usage analytics — all three genuinely collected. The 2026-08-12 launch
+     * audit flagged the omission (§4-3); this assertion would have failed the correction.
+     *
+     * A count is the wrong thing to pin on a document whose job is to be COMPLETE. Length is now a floor,
+     * and the substance is asserted below.
+     */
+    assert.ok(doc.body.length >= 4, `${key} should carry at least the design's 4 paragraphs`);
     assert.ok(doc.body.every((p) => p.length > 40), `${key} has a stub paragraph`);
   }
   assert.ok(ABOUT_BODY.length >= 3);
+});
+
+/**
+ * ⚠ THE COLLECTION LIST MUST NAME EVERYTHING SENSITIVE THE APP ACTUALLY TAKES.
+ *
+ * App Store Connect's App Privacy labels are a declaration Apple holds you to, and a label that
+ * contradicts your own posted policy is worse than either error alone. These three are the categories
+ * most likely to be forgotten, because none of them is what the product is *about*: precise location
+ * (tracked runs), photos and video (progress and squad media), and product-usage analytics.
+ *
+ * ⚠ THIS IS THE IN-APP SUMMARY OF `site/privacy.html`, WHICH GOVERNS. Shorter by design, never different
+ *   in substance — if the hosted document gains a category, this fails until it gains one too.
+ */
+test('the in-app privacy summary names location, media and analytics', () => {
+  const text = LEGAL.privacy.body.join(' ').toLowerCase();
+  assert.match(text, /location/, 'tracked runs read precise location — say so');
+  assert.match(text, /photo|video/, 'progress photos and squad video are collected — say so');
+  assert.match(text, /usage|analytics|events/, 'product-usage events are recorded — say so');
+  assert.match(text, /delete/, 'App Store 5.1.1(v): in-app deletion exists and must be findable');
+  // A collection list that says "only" is making a completeness claim it cannot keep as the app grows.
+  assert.ok(!/\bonly what\b/.test(text), '"only what the app needs" is the phrasing that made this wrong');
 });
 
 test('the sign-out confirm warns about losing device access, not about losing data', () => {

@@ -59,12 +59,28 @@ export const LEGAL: Record<LegalKey, LegalDocument> = {
   privacy: {
     host: 'forgelegacy.app/privacy',
     title: 'Privacy Policy',
-    updated: 'Last updated · Feb 2026',
+    updated: 'Last updated · Aug 2026',
+    /*
+     * ⚠ THIS LIST SAID "ONLY" AND WAS NOT EXHAUSTIVE, WHICH IS THE ONE THING A COLLECTION LIST MUST NOT
+     *   DO. Flagged by the 2026-08-12 launch audit (§4-3): it named workouts, goals and squads, and
+     *   omitted precise location, photos and video, and product-usage analytics — all three of which the
+     *   app genuinely collects.
+     *
+     *   That matters beyond accuracy. **App Store Connect's App Privacy labels are a declaration Apple
+     *   holds you to, and signing one that contradicts your own posted policy is worse than either error
+     *   alone.** So this is corrected BEFORE those labels are filled in, not after.
+     *
+     * ⚠ AND IT MUST NOT DRIFT FROM `site/privacy.html`, which is the hosted document Apple links to and
+     *   the one that governs. This is the in-app summary of it — shorter by design, never different in
+     *   substance. Change one, change the other.
+     */
     body: [
-      'We collect only what the app needs to work: your workouts, the goals you set, and the squads you join.',
-      'You control what others see. Profile visibility is set per-section, and nothing you mark private is shared beyond you.',
-      'We never sell your data. Aggregate, de-identified trends may inform product decisions, but your individual records stay yours.',
-      'Questions about your data? Reach us any time from Settings › Privacy.',
+      'We collect what the app needs to work: your workouts and records, the goals you set, the chapters you keep, the photos and video you add, and the squads you join.',
+      'Tracked runs, walks and rides read your precise location while the session is running. Route maps are trimmed by 200 metres at each end before they are saved, so your start and finish are never stored — not hidden on screen, removed.',
+      'We record limited usage events — which features get opened — so we know what to build next. They are never sold, never given to advertisers, and never used to track you across other apps.',
+      'You control what others see. Visibility is set per-section, and nothing you mark private is shared beyond you.',
+      'We never sell your data. You can delete your account, and everything in it, from Account Settings — it is immediate and permanent.',
+      'The full policy is at forgelegacy.app/privacy. Questions? support@forgelegacy.app',
     ],
   },
 };
