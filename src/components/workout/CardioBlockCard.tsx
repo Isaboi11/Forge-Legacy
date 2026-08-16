@@ -60,7 +60,7 @@ import {
   type ActivityKind,
   type UnitSystem,
 } from '@/domain/run/run-core';
-import { routeForStorage } from '@/domain/run/route-privacy';
+import { MIN_MAPPABLE_MI, routeForStorage } from '@/domain/run/route-privacy';
 import { storedRouteToLatLng } from '@/domain/run/route-region';
 import { RouteMap } from './RouteMap';
 import { RouteSheet } from './RouteSheet';
@@ -503,6 +503,19 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
    */
   const storedRoute = traced ? storedRouteToLatLng(result?.route) : [];
   const hasMap = storedRoute.length > 1;
+  /**
+   * Saved, outdoors, GPS measured it — and it is STILL too short to hold a route.
+   *
+   * ⚠ SAY THIS RATHER THAN NOTHING. The 200 m trimmed off each end is the whole bout when the bout is
+   * under `MIN_MAPPABLE_MI`, so there is nothing left to store and no map appears. That is correct (see
+   * `route-privacy.ts`) and it was completely silent: a tester walked to the end of the street, saved
+   * 0.22 mi, got the dashed sketch back and reasonably concluded the map was broken.
+   *
+   * Only for a TRACKED bout. Saying "too short to map" about a hand-typed distance would imply the app
+   * had tried to measure one.
+   */
+  const tooShortToMap =
+    traced && !hasMap && result?.source === 'tracked' && (result?.distanceMi ?? 0) < MIN_MAPPABLE_MI;
   const [mapOpen, setMapOpen] = useState(false);
 
   const note = signalNote(tracker.phase === 'paused', tracker.weakSignal, tracker.accuracyM, tracker.gps);
@@ -793,10 +806,13 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
                   : note
                 : traced
                   ? /* With a map on screen the caption earns its space by saying what the map cannot:
-                       that the line is short at both ends on purpose. Without one it stays the numbers. */
+                       that the line is short at both ends on purpose. Without one it stays the numbers —
+                       unless the REASON there is no map is the trim, which has to be said outright. */
                     hasMap
                     ? `${d1(result?.distanceMi)} ${dU} · tap the map · ends trimmed for privacy`
-                    : `${d1(result?.distanceMi)} ${dU} · ${fmtClock(result?.timeSec)}`
+                    : tooShortToMap
+                      ? `${d1(result?.distanceMi)} ${dU} · ${fmtClock(result?.timeSec)} · too short to map`
+                      : `${d1(result?.distanceMi)} ${dU} · ${fmtClock(result?.timeSec)}`
                   : loggedIndoors
                     ? 'Logged on a treadmill · no route'
                     : 'Your route traces as you run'}

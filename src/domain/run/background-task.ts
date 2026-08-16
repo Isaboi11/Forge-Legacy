@@ -107,15 +107,39 @@ TaskManager.defineTask(RUN_LOCATION_TASK, async ({ data, error }) => {
 /**
  * Start delivering fixes while the app is away.
  *
- * ⚠ IT ASKS FOR "ALWAYS" AND CARRIES ON WITHOUT IT. Background permission is a second, heavier prompt
- * that an athlete can decline — and a declined prompt must degrade to the foreground run that has always
- * worked, not refuse to start. Every failure here is swallowed for that reason: the return value says
- * whether the background stream attached, and nothing about whether the run may proceed.
+ * ⚠ IT ASKS FOR "ALWAYS" AND STARTS ANYWAY. Background permission is a second, heavier prompt that an
+ * athlete can decline — and a declined prompt must degrade to the foreground run that has always worked,
+ * not refuse to start. Every failure here is swallowed for that reason: the return value says whether the
+ * background stream attached, and nothing about whether the run may proceed.
+ *
+ * ══ ⚠ WHY `granted` IS NOT A GATE ══
+ *
+ * It was one: `if (!granted) return false`. And `granted` is true ONLY for "Always" — so this returned
+ * false for every athlete who had not gone into Settings by hand, which on iOS is all of them. The first
+ * location prompt offers **Allow Once / Allow While Using App / Don't Allow and nothing else**; Always is
+ * an upgrade the OS raises later, if ever. So `startLocationUpdatesAsync` below was never reached, iOS
+ * suspended the app on lock, and a 100-minute trail run measured 0.01 miles — carrying a perfectly
+ * correct clock, because `elapsedSec` reads the time of day and ticks straight through a suspension.
+ * Every gate stayed green. Nothing threw. The run just had no distance in it.
+ *
+ * "When In Use" is enough. With the location background mode declared and updates STARTED FROM THE
+ * FOREGROUND, iOS keeps delivering them after the screen locks — that is how a fitness app works, and
+ * `showsBackgroundLocationIndicator` below is the blue status bar the OS shows while it does. So the
+ * start is attempted whatever the permission call reported, and the `catch` is the real answer: if the
+ * OS genuinely refuses, this returns false exactly as it did before and the run degrades to foreground.
+ *
+ * The request is still made, for its SIDE EFFECT — it is the only thing that raises the Always upgrade
+ * prompt at all. Its ANSWER is not a verdict on whether to try.
  */
 export async function startBackgroundFixes(): Promise<boolean> {
   try {
-    const { granted } = await Location.requestBackgroundPermissionsAsync();
-    if (!granted) return false;
+    /* Fired for the prompt, not for the answer — and caught separately so that a throwing permission
+       call cannot skip the start attempt below. The two failures are unrelated. */
+    try {
+      await Location.requestBackgroundPermissionsAsync();
+    } catch {
+      /* asked and refused, or asked at a moment the OS would not ask for; the start is the real test */
+    }
     if (await TaskManager.isTaskRegisteredAsync(RUN_LOCATION_TASK)) return true;
     await Location.startLocationUpdatesAsync(RUN_LOCATION_TASK, {
       accuracy: Location.Accuracy.BestForNavigation,

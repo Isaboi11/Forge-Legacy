@@ -33,6 +33,7 @@ const APP = JSON.parse(read('app.json')).expo;
 const PKG = JSON.parse(read('package.json'));
 const LAYOUT = read('src', 'app', '_layout.tsx');
 const TRACKER = read('src', 'hooks', 'useRunTracker.ts');
+const BG = read('src', 'domain', 'run', 'background-task.ts');
 
 // ── 1 · the native capability ───────────────────────────────────────────────
 
@@ -64,6 +65,42 @@ test('Android has the background and foreground-service-location permissions', (
 
 test('expo-task-manager is a dependency — the task cannot be defined without it', () => {
   assert.ok(PKG.dependencies['expo-task-manager'], 'background location is delivered through TaskManager');
+});
+
+// ── 1a · the permission is actually obtainable ──────────────────────────────
+
+/*
+ * ══ ⚠ EVERY TEST ABOVE PASSED WHILE THE FEATURE MEASURED NOTHING ══
+ *
+ * The config was right, the task was registered, the buffer drained and the drain was awaited. And a
+ * 100-minute trail run recorded 0.01 miles, because `startLocationUpdatesAsync` was never once called:
+ * the permission the code demanded before calling it is one iOS does not offer.
+ *
+ * The two guards below are the halves of that. Neither is visible to a type-check, a lint or any runtime
+ * this repo can host — the failure is a permission constant on a device, and it is SILENT.
+ */
+
+test('⚠ background updates are attempted without "Always", because iOS never offers Always first', () => {
+  // The first location prompt is Allow Once / Allow While Using App / Don't Allow. `granted` is true
+  // only for Always, so gating on it meant the background stream never started for anybody. "When In
+  // Use" plus the location background mode is enough, provided the updates START in the foreground.
+  const fn = BG.match(/export async function startBackgroundFixes[\s\S]*?\n\}/);
+  assert.ok(fn, 'startBackgroundFixes is gone — move this assertion with it');
+  assert.doesNotMatch(fn[0], /if \(!granted\)/, 'the Always-only gate is back, and it closes for every athlete');
+  assert.match(fn[0], /startLocationUpdatesAsync/, 'nothing starts the background stream');
+});
+
+test('⚠ the Always request comes AFTER the When-In-Use answer, not racing it', () => {
+  // On iOS you cannot be granted Always from `notDetermined`. An upgrade request raised while the first
+  // prompt is still on screen is discarded silently and NEVER re-raised — so parallel `void` calls here
+  // cost the install its background tracking permanently. Observed on device: no second prompt, ever.
+  const start = TRACKER.match(/const start = useCallback\([\s\S]*?\n  \}, \[/);
+  assert.ok(start, 'start() is no longer a useCallback — move this assertion with it');
+  const gpsAt = start[0].indexOf('attachGps()');
+  const bgAt = start[0].indexOf('startBackgroundFixes()');
+  assert.ok(gpsAt > -1 && bgAt > -1, 'start() no longer attaches GPS and the background stream');
+  assert.match(start[0], /await attachGps\(\)/, 'the foreground answer must be awaited, not fired off');
+  assert.ok(bgAt > gpsAt, 'the Always request races the When-In-Use prompt, and iOS throws it away');
 });
 
 // ── 2 · the task is registered before anything is delivered ─────────────────

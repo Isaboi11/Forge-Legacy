@@ -34,6 +34,12 @@ const applyFixes = (track: TrackPoint[], fixes: Fix[], kind: ActivityKind): Trac
  * tracking arrived with `background-task.ts` and shipped in iOS build 5: the OS buffers fixes while the
  * app is suspended and this hook drains them through the same `acceptFix`. Two streams therefore feed one
  * track, which is why a fix that does not advance the clock is refused as `stale` — see `acceptFix`.
+ *
+ * ⚠ AND IT SHIPPED WITHOUT WORKING, FOR TWO BUILDS. Every piece above was correct and none of it ever
+ * ran: the permission it needed was requested in a way iOS discards (see `start()`), so
+ * `startLocationUpdatesAsync` was never called and the app was suspended on lock like before. A
+ * 100-minute trail run recorded 0.01 miles under a perfectly correct clock. Shipping the mechanism is
+ * not shipping the feature, and nothing on this side of the boundary can tell the two apart.
  */
 
 /** Is the athlete running? */
@@ -237,9 +243,6 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
     setAccuracyM(null);
     setPhase('live');
     setGps('acquiring');
-    /* A new run never inherits the last one's tail. The buffer is durable, so a run the app was killed
-       during can leave fixes behind — draining them into THIS track would add somebody's walk home. */
-    void clearBackgroundFixes().then(() => startBackgroundFixes());
     // Wall-time-driven rather than a counter, so a throttled background tab can't make a 40-minute run
     // report 26 minutes.
     let lastTick = Date.now();
@@ -249,7 +252,31 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
       lastTick = now;
       if (running.current) setElapsedSec((s) => s + delta);
     }, 1000);
-    void attachGps();
+    /*
+     * ══ ⚠ THE ORDER OF THESE THREE IS THE FEATURE, NOT A TIDY-UP ══
+     *
+     * They used to be two parallel fire-and-forgets — `clearBackgroundFixes().then(startBackgroundFixes)`
+     * and `attachGps()` — so the ALWAYS request raced the WHEN-IN-USE one. On iOS you cannot be granted
+     * Always from `notDetermined`: the OS shows exactly one prompt, and an upgrade request raised while
+     * that prompt is still on screen is discarded SILENTLY and never re-raised. Background tracking could
+     * therefore never attach, for the entire life of the install, on a permission that could not arrive.
+     *
+     * Observed on device: the When-In-Use prompt appeared, was granted, and the second prompt never came.
+     *
+     * `attachGps` is awaited for its PERMISSION, not for its subscription — the await ends once the
+     * athlete has answered, which is the first moment Always is askable. The run itself started
+     * synchronously above and is waiting for none of this; a refusal anywhere in here still leaves a
+     * timed run the athlete types the distance into.
+     *
+     * The clear stays first for the reason it always did: the buffer is durable, so a run the app was
+     * killed during can leave fixes behind, and draining them into THIS track would add somebody's
+     * walk home.
+     */
+    void (async () => {
+      await clearBackgroundFixes();
+      await attachGps();
+      await startBackgroundFixes();
+    })();
   }, [attachGps, commit]);
 
   const pause = useCallback(() => {

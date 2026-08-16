@@ -12,10 +12,11 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import { buildSaveExercises } from '../save-core.ts';
 import { acceptFix } from '../../run/run-core.ts';
-import { routeForStorage, decodePolyline, metresBetween, TRIM_M } from '../../run/route-privacy.ts';
+import { routeForStorage, decodePolyline, metresBetween, TRIM_M, MIN_MAPPABLE_MI } from '../../run/route-privacy.ts';
 
 const MI_PER_DEG_LAT = 69.0546;
 const at0 = 1_700_000_000_000;
@@ -134,4 +135,39 @@ test('⚠ what the encoder emits satisfies 0162’s CHECK constraint', () => {
   assert.ok(route.length >= 2 && route.length <= 65536);
   // And the characters it DOES use include brackets, which is why the constraint cannot exclude them.
   assert.match(route, /^[\x3f-\x7e]+$/, 'every byte must sit in the printable polyline range 63–126');
+});
+
+// ── the bout too short to have a route, and the sentence that admits it ──────
+
+/*
+ * ══ ⚠ A CORRECT REFUSAL THAT SAID NOTHING READ AS A BROKEN MAP ══
+ *
+ * A tester walked to the end of the street, saved 0.22 mi, got the dashed placeholder back and asked what
+ * had happened to the Apple map. Nothing had: 200 m off each end of a 354 m walk is the whole walk, so
+ * there was no route to store and none to draw. The threshold is the privacy control working. The silence
+ * was the defect — and it is the kind nobody can debug from the screen, because a missing map and a
+ * withheld map look identical.
+ */
+
+/** A straight-line bout of `mi` miles, built through the real accept path. */
+const trackMi = (mi) => {
+  let t = [];
+  for (let i = 0; i * 0.01 <= mi; i++) {
+    t = acceptFix(t, { lat: HOME.lat + (i * 0.01) / MI_PER_DEG_LAT, lon: HOME.lon, accuracy: 5, at: at0 + i * 6000 }, 'run').track;
+  }
+  return t;
+};
+
+test('⚠ a bout under MIN_MAPPABLE_MI stores no route at all — the two trims meet in the middle', () => {
+  assert.ok(MIN_MAPPABLE_MI > 0.24 && MIN_MAPPABLE_MI < 0.25, `the threshold moved to ${MIN_MAPPABLE_MI} mi`);
+  // Below it, every point is within TRIM_M of one end or the other, which is the thing being protected.
+  assert.equal(routeForStorage(trackMi(0.22), true).route, null, 'a 354 m walk stored a shape made entirely of doorstep');
+  // And a bout comfortably over it still keeps its middle, so this is a floor and not an off switch.
+  assert.ok(routeForStorage(trackMi(1), true).route, 'a one-mile run lost its route to the floor');
+});
+
+test('⚠ and the card SAYS "too short to map" rather than showing a sketch and no reason', () => {
+  const CARD = readFileSync(new URL('../../../components/workout/CardioBlockCard.tsx', import.meta.url), 'utf8');
+  assert.match(CARD, /MIN_MAPPABLE_MI/, 'the card can no longer tell a withheld route from a missing one');
+  assert.match(CARD, /too short to map/, 'a saved outdoor run with no map explains itself to nobody again');
 });

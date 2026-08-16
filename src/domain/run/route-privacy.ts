@@ -43,6 +43,18 @@ const M_PER_MI = 1609.344;
 const TRIM_MI = TRIM_M / M_PER_MI;
 
 /**
+ * The shortest bout that can carry a stored route at all — the two trims meeting in the middle.
+ *
+ * Below this there IS no middle: every point on a shorter bout is within `TRIM_M` of one end or the
+ * other, which is precisely the thing that must not be kept. So nothing is stored, and no map is drawn.
+ *
+ * ⚠ EXPORTED SO THE CARD CAN SAY SO. A saved outdoor run that shows no map and gives no reason reads as
+ * a broken map — a tester walked to the end of the street, got 0.22 mi, and asked what had happened to
+ * it. The threshold is right; the silence was the bug. Any real run clears this in its first minute.
+ */
+export const MIN_MAPPABLE_MI = TRIM_MI * 2;
+
+/**
  * Drop the first and last `TRIM_M` metres of travel.
  *
  * Measured along the cumulative `mi` the track already carries, not as a radius from the start: an
@@ -56,7 +68,7 @@ const TRIM_MI = TRIM_M / M_PER_MI;
 export function trimEnds(track: readonly TrackPoint[]): TrackPoint[] {
   if (track.length < 2) return [];
   const total = track[track.length - 1].mi;
-  if (total <= TRIM_MI * 2) return [];
+  if (total <= MIN_MAPPABLE_MI) return [];
   return track.filter((p) => p.mi >= TRIM_MI && p.mi <= total - TRIM_MI);
 }
 
