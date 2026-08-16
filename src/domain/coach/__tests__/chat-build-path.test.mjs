@@ -377,6 +377,76 @@ test('⚠ every week on the card can be opened onto its own sessions', () => {
   }
 });
 
+test('⚠ and each of those sessions carries the movements in it, not just its name', () => {
+  /*
+   * PO, 2026-08-16, looking at Preview program: *"It shows the weeks, but I need to be able to see the
+   * days and what's within the days."*
+   *
+   * ⚠ THE SAME DEFECT AS THE TEST ABOVE, ONE LAYER DOWN. That one made `days` real and stopped there,
+   * so a session was a marker and a title — enough to NAME a session, not enough to describe one — and
+   * `PlanPreview` had nothing to draw under a week no matter what the UI did. The assertion above passes
+   * on a card with no exercise anywhere in it, which is exactly the card that shipped.
+   */
+  const r = runBuildPath({ ...WEEK_ATHLETE, weeks: 8 }, 'program');
+  assert.equal(r.outcome, 'built');
+
+  for (const w of r.card.weeks) {
+    for (const d of w.days) {
+      assert.ok(d.items.length > 0, `${w.label} · ${d.title} prescribes nothing`);
+      for (const it of d.items) {
+        assert.ok(it.name?.trim(), `${w.label} · ${d.title} has a movement with no name`);
+        assert.equal(typeof it.scheme, 'string', `${w.label} · ${d.title} · ${it.name} has no scheme field`);
+      }
+      /* A day whose every row is nameless-and-schemeless would satisfy the loop above trivially. At
+         least one real prescription per session is the thing the athlete came here to read. */
+      assert.ok(d.items.some((it) => it.scheme.trim()), `${w.label} · ${d.title}: not one stated prescription`);
+    }
+  }
+});
+
+test('⚠ the preview states a rep RANGE, because it reads the canonical renderer', () => {
+  /*
+   * `chat-core` carries its own `prescriptionText` for the single-day card and it cannot see `repsMax`,
+   * so every range it renders loses its top: what Holt authored as `3 × 8-12` reaches the athlete as
+   * `3 × 8`. That is not a formatting nit — it is `50a22de` exactly ("rep ranges were authored and
+   * thrown away"), and the drawer would have reintroduced it on a brand-new surface.
+   *
+   * ⚠ THIS IS A REUSE ASSERTION, AND IT WAS MEASURED RATHER THAN ASSUMED. The first version pinned a
+   * LADDER — a shape Holt never authors — so it passed under both renderers and proved nothing. Dumping
+   * the real block's distinct schemes under each is what showed where they actually diverge:
+   *
+   *   schemeText        4 × 3-5 · 3 × 8-12 · 3 × 10-12 · 4 × 6-8 · 4 × 8
+   *   prescriptionText  4 × 3   · 3 × 8    · 3 × 10    · 4 × 6   · 4 × 8
+   *
+   * So the claim is that ranges EXIST in the output — the one thing the flattened helper cannot produce
+   * for any block, mutation-tested against it.
+   */
+  const r = runBuildPath({ ...WEEK_ATHLETE, weeks: 8 }, 'program');
+  const schemes = r.card.weeks.flatMap((w) => w.days.flatMap((d) => d.items.map((it) => it.scheme)));
+
+  assert.ok(
+    schemes.some((s) => /\d+\s*-\s*\d+/.test(s)),
+    `not one prescription states a range — every top has been dropped. Saw: ${[...new Set(schemes)].join(', ')}`,
+  );
+  // And nothing may fall back to a bare set count with the reps dropped altogether.
+  for (const s of schemes) assert.doesNotMatch(s, /^\d+ sets$/, `"${s}" states sets and refuses to state reps`);
+});
+
+test('⚠ main is the whole session — a warm-up Holt started authoring would vanish from the preview', () => {
+  /*
+   * `daysOfWeek` lists `d.main` only, which omits nothing TODAY because `assemble.ts` writes
+   * `warmup: []` and `cooldown: []` on every day it builds. That is an assumption about another file,
+   * and the day it stops being true the preview starts lying by omission with every gate green.
+   */
+  const r = runBuildPath({ ...WEEK_ATHLETE, weeks: 8 }, 'program');
+  for (const wp of r.structure.weekPlans) {
+    for (const d of wp.days) {
+      assert.deepEqual(d.warmup, [], `${d.name} authored a warm-up the preview does not show`);
+      assert.deepEqual(d.cooldown, [], `${d.name} authored a cool-down the preview does not show`);
+    }
+  }
+});
+
 test('a card built without a real structure offers no drawer rather than an invented one', () => {
   // Several callers hand over a bare `{name, weeks, daysPerWeek}`. Filling that with `daysPerWeek` rows
   // of "Session 1" would be the card describing a shape nobody built.

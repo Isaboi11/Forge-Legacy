@@ -2355,7 +2355,22 @@ function CardSurface({ children, hero = false }: { children: React.ReactNode; he
  * a block from inside the thing for altering it, because everything is a control and nothing is a
  * statement.
  *
- * So: every week, every day, every movement, with nothing tappable. Then `Final touches`.
+ * So: every week, every day, every movement. Then `Final touches`.
+ *
+ * ⚠ AND IT SHOWED NONE OF THAT UNTIL 2026-08-16. The comment above has said "every day, every movement"
+ * since the screen landed; the body rendered `w.label` and `w.detail` and stopped, so the athlete got
+ * eight rows reading "5 sessions" and no way to reach a single lift. PO: *"It shows the weeks, but I
+ * need to be able to see the days and what's within the days."* The days were missing from the DATA
+ * (`ProgramCard.weeks[].days` carried no movements) — the same shape as the drill-down defect on the
+ * card itself, one layer down.
+ *
+ * ⚠ "NOTHING TAPPABLE" MEANT NO EDITING CONTROLS, AND STILL DOES. That line was about the difference
+ * between this screen and the Builder — *"you cannot judge a block from inside the thing for altering
+ * it"* — not a ban on disclosure. Holt writes `vary: true` always, so eight weeks are eight genuinely
+ * different weeks: at five sessions and five or six movements each that is upwards of 240 rows, and a
+ * flat wall of them is not a thing anyone can read either. Weeks collapse. **Week one opens by
+ * default**, so the substance is on screen without the athlete having to discover the affordance —
+ * which is the state the PO was actually complaining about.
  */
 function PlanPreview({
   program,
@@ -2401,11 +2416,8 @@ function PlanPreview({
             </View>
             <Text style={styles.reasoning}>{program.reasoning}</Text>
             <View style={styles.weekList}>
-              {program.weeks.map((w) => (
-                <View key={w.label} style={styles.weekRow}>
-                  <Text style={styles.weekLabel}>{w.label}</Text>
-                  <Text style={styles.weekDetail}>{w.detail}</Text>
-                </View>
+              {program.weeks.map((w, i) => (
+                <PreviewWeek key={w.label} week={w} defaultOpen={i === 0} />
               ))}
             </View>
           </>
@@ -2428,6 +2440,71 @@ function PlanPreview({
           Final touches
         </Button>
       </View>
+    </View>
+  );
+}
+
+/**
+ * One week of the preview, opened onto its sessions and every movement in them.
+ *
+ * The card's `WeekRow` opens onto session TITLES, because the card is a summary and a twelve-week block
+ * would otherwise bury the two buttons that decide anything. This is the other screen — the one whose
+ * entire job is the full read — so it goes one level deeper and states the prescriptions.
+ *
+ * The row shape under a day is the design's own DAY CARD row: name left, scheme right, tabular figures
+ * so the column lines up (§11.2.4/11.2.6). Reusing `dayRow`/`dayName`/`dayPrescription` rather than
+ * inventing a third row style is deliberate — a prescription should look the same everywhere it is read.
+ */
+function PreviewWeek({ week, defaultOpen }: { week: ProgramCard['weeks'][number]; defaultOpen: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
+  const has = week.days.length > 0;
+
+  return (
+    <View>
+      <Pressable
+        onPress={() => setOpen((v) => !v)}
+        disabled={!has}
+        accessibilityRole={has ? 'button' : undefined}
+        accessibilityLabel={`${week.label} — ${week.detail}`}
+        accessibilityState={has ? { expanded: open } : undefined}
+        style={styles.weekRow}
+      >
+        <Text style={styles.weekLabel}>{week.label}</Text>
+        <View style={styles.weekRight}>
+          <Text style={styles.weekDetail}>{week.detail}</Text>
+          {/* No chevron on a week with nothing to open — an endurance block's weeks are mileage, not
+              named sessions, and an affordance that does nothing is worse than none. */}
+          {has ? (
+            <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              {open ? <Path d="M18 15l-6-6-6 6" /> : <Path d="M6 9l6 6 6-6" />}
+            </Svg>
+          ) : null}
+        </View>
+      </Pressable>
+
+      {open && has ? (
+        <View style={styles.previewDays}>
+          {week.days.map((d, i) => (
+            <View key={d.marker + i} style={styles.previewDay}>
+              <View style={styles.previewDayHead}>
+                <Text style={styles.previewDayMarker}>{d.marker}</Text>
+                <Text style={styles.previewDayTitle} numberOfLines={1}>{d.title}</Text>
+              </View>
+              {d.items.length ? (
+                d.items.map((it, j) => (
+                  <View key={it.name + j} style={styles.dayRow}>
+                    <Text style={styles.dayName}>{it.name}</Text>
+                    {/* An empty scheme renders as nothing rather than as a guess — see `daysOfWeek`. */}
+                    {it.scheme ? <Text style={styles.dayPrescription}>{it.scheme}</Text> : null}
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.previewDayEmpty}>Nothing prescribed</Text>
+              )}
+            </View>
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -3147,6 +3224,22 @@ const styles = StyleSheet.create({
   },
   weekLabel: { fontSize: 13.5, color: flColor.cream100 },
   weekDetail: { fontSize: 13.5, color: flColor.gray400, fontVariant: ['tabular-nums'] },
+  /* The count and the chevron travel together on the right, so the disclosure reads as belonging to the
+     count rather than floating at the edge of the row. */
+  weekRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  /* The week's sessions, indented under a bronze spine so a long scroll never loses which week it is in. */
+  previewDays: {
+    marginLeft: 8,
+    paddingLeft: 14,
+    paddingBottom: 10,
+    borderLeftWidth: 1,
+    borderLeftColor: flColor.bronzeBorderSubtle,
+  },
+  previewDay: { paddingTop: 12 },
+  previewDayHead: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingBottom: 2 },
+  previewDayMarker: { fontSize: 10, fontWeight: '700', letterSpacing: 1.4, color: flColor.bronze600 },
+  previewDayTitle: { flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
+  previewDayEmpty: { paddingVertical: 11, fontSize: 13.5, color: flColor.gray600 },
 
   /* ── day card ───────────────────────────────────────────────────────────────────────────────── */
   dayList: { borderTopWidth: 1, borderTopColor: flColor.charcoal600 },

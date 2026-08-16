@@ -38,6 +38,9 @@ import { RACE_SPEC, weeklyVolumePlan } from './rulebook/endurance.ts';
 import { pick, pickNamed } from './rulebook/voice.ts';
 import { BODY_PART_LABEL, BODY_PARTS, SPLIT_LABEL, type BodyPart, type DayFocus, type SplitName } from './day.ts';
 import { plannedDays, trainingDays } from '../program/progress-core.ts';
+/* The canonical prescription renderer — the one Program Detail and the logger read. A second one here
+   would drift, and the local `prescriptionText` below is already the shape that drift takes. */
+import { schemeText } from '../program/prescription.ts';
 import type { ProgramStructure } from '@/data/programs-live';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -83,7 +86,20 @@ export interface ProgramCard {
    * onto. The sessions are read off the structure the engine actually built, per week, so a block that
    * varies (six days for two weeks, then five) shows the week it really is rather than week one repeated.
    */
-  weeks: { label: string; detail: string; days: { marker: string; title: string }[] }[];
+  /**
+   * ⚠ `items` IS WHY THE PREVIEW COULD SHOW WEEKS AND NOTHING UNDER THEM. PO, 2026-08-16: *"It shows
+   * the weeks, but I need to be able to see the days and what's within the days."* `days` carried a
+   * marker and a title — enough to name a session, not enough to describe one — so `PlanPreview` had
+   * nothing to draw even though its own doc comment promised "every week, every day, every movement".
+   *
+   * `scheme` is `schemeText`, the same renderer Program Detail and the logger use, so a ladder reads as
+   * `6-6-4-4` here exactly as it does there rather than being flattened to its first number.
+   */
+  weeks: {
+    label: string;
+    detail: string;
+    days: { marker: string; title: string; items: { name: string; scheme: string }[] }[];
+  }[];
   /** v2 §7's closing row, under its own rule: what every session in the block costs. */
   closing: string;
 }
@@ -1093,11 +1109,22 @@ export const OFFERABLE_GOALS: readonly Goal[] = AUTHORED_GOALS.filter(offerable)
  * ⚠ AND THE FALLBACK IS EMPTY, NOT INVENTED. A caller that hands over a bare `{name, weeks, daysPerWeek}`
  * — several tests do — gets no days rather than `daysPerWeek` rows of "Session 1", which would be the
  * card describing a shape nobody built.
+ *
+ * ⚠ `main` IS THE WHOLE SESSION HERE, NOT A SLICE OF IT. `assemble.ts` writes `warmup: []` and
+ * `cooldown: []` on every day it builds, so listing the main work omits nothing — this is the session
+ * entire. If Holt ever authors a warm-up, this function is where the preview would start lying by
+ * omission, and the test below pins that.
  */
 function daysOfWeek(structure: Partial<ProgramStructure> & { daysPerWeek: number }, weekIndex: number) {
   if (!structure.days) return [];
   const days = trainingDays(plannedDays(structure as ProgramStructure, weekIndex));
-  return days.map((d, i) => ({ marker: d.letter?.trim() || String(i + 1), title: d.name }));
+  return days.map((d, i) => ({
+    marker: d.letter?.trim() || String(i + 1),
+    title: d.name,
+    /* An item the author left blank gets an empty scheme rather than an invented "3 × 10" — `schemeText`
+       refuses on purpose, and the row renders as a name with nothing after it. */
+    items: d.main.map((ex) => ({ name: ex.name, scheme: schemeText(ex) })),
+  }));
 }
 
 export function programCardFor(
