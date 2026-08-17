@@ -7,21 +7,61 @@ build is a separate surface (`forgelegacy.expo.app`) and is a *testing* surface,
 |---|---|
 | `privacy.html` | ✅ **DONE** — real page, matches the app's tokens |
 | `terms.html` | ✅ **DONE** |
-| `assets/landing/*` | ✅ **DONE** — 775 KB, generated from repo art (see below) |
-| `index.html` | ⛔ **NOT BUILT** — the landing page. This is the remaining work |
+| `assets/landing/*` | ✅ **DONE** — 328 KB WebP, generated from repo art (see below) |
+| `index.html` | ✅ **DONE** — 152 KB, built 2026-08-16 from Landing v5 |
+| `favicon.png` | ✅ **DONE** — 64 px, from the wordmark mark |
 | `_exported-bundle.html` | reference only, **git-ignored**. See "Why not this" |
 
 ---
 
-## The remaining task: build `index.html`
+## How `index.html` was built
 
 **Source of truth:** `Forge Legacy Landing v5.dc.html` in the Claude Design project
 `b029488a-201b-432f-b04c-b0df5228381e`, readable with the `DesignSync` tool
-(`get_file`, ~147 KB). The line-region-by-line-region description is
-`handoff/landing-v5-implementation.md` in that same project — the PO has pasted it into chat before and
-it is the better starting point, but **the `.dc.html` is what governs when they disagree.**
+(`get_file`, ~147 KB / 1,201 lines). The line-region-by-line-region description is
+`handoff/landing-v5-implementation.md` in that same project — it is the better starting point, but
+**the `.dc.html` is what governs when they disagree.** Both were read in full for this build.
 
-Rebuild it as **plain HTML + CSS**, self-contained apart from Google Fonts and `assets/landing/`.
+It is **plain HTML + CSS**, self-contained apart from Google Fonts and `assets/landing/`. The design
+file is already almost entirely inline styles, so the conversion was mostly subtraction:
+
+- `<x-dc>`, `<helmet>`, `<sc-if>`, `support.js`, `image-slot.js` and the `DCLogic` class are gone; the
+  head is a real `<head>` and the beat engine is a plain IIFE with the same three concerns.
+- `_ds_bundle.js` and `styles.css` are **not** needed — the page carries **zero** CSS classes, so
+  nothing in the design system's component stylesheet was ever reachable from it.
+- `tokens/foundation.css` is inlined as the **41-token subset the page actually uses**, hex copied
+  1:1. `image-slot::part(ring)` and the dead `flSquadScroll` keyframe were dropped.
+- The `--gut` / `--shotw` / `--shotml` / `--bz` / `--bzr` responsive contract is carried over exactly.
+  **Do not replace it with media-query-per-component CSS** — it is the reason the phone mock goes edge
+  to edge at 100vw below 760px instead of scaling app text down to an unreadable ~10px.
+
+### Deltas from the `.dc.html`, and why
+
+| Delta | Why |
+|---|---|
+| CTAs are non-interactive `<span>`s reading **Coming to the App Store** | PO decision 2026-08-16, below |
+| Sticky CTA bar dropped, and its JS with it | Same decision |
+| `badge-hall.webp` → **`badge-legend.webp`** | `src/domain/rank/thresholds.ts` `FAMILIES` says `legend`. The ladder row was always labelled Legend; only the filename disagreed. **The README's open question is closed.** |
+| One wordmark file serves the hero lockup *and* the closing mark | The design pointed the closing mark at `assets/welcome-logo-carved.png` — the same art the wordmark is cut from — and declared it `88×88` when it is `308×452`, which would have shifted layout on load |
+| The bench demo stays a **still** | The animated original is 960 KB, larger than this whole page's budget. Subsampled to 14 frames it is still 194 KB against a 17.5 KB still. In the app the loop is resolved live by `domain/exercise-detail/media.ts`; a static page cannot do that, and hotlinking Supabase storage from marketing traffic is a live backend dependency with no upside |
+| Every mock frame carries `role="img"` + `aria-label` | Otherwise a screen reader wades through ~200 spans of mock app UI as though it were body copy |
+| All `width`/`height` attrs are each file's real intrinsic size | The brief's no-layout-shift rule. Several in the design were wrong |
+
+### Verified by rendering, not by reading
+
+| Measure | Design | Built |
+|---|---|---|
+| Page height at 390px | ~10,970px | **11,038px** |
+| Hero CTA bottom at 390px | 456px | **367px** — still inside the first screen |
+| Horizontal overflow at 390px / 1280px | 0 | **0 / 0** |
+| Broken images | 0 | **0** of 21 |
+| Unresolved `var(--fl-*)` | 0 of 39 | **0 of 41** |
+| Page weight | ≤ 900 KB | **394 KB** (152 KB HTML + 242 KB assets) |
+
+Also confirmed in a headless browser: `prefers-reduced-motion` collapses all 73 animated elements to
+their end state and stops both scroll loops and the workout sequence; with **JavaScript disabled** all
+73 settle and all 1,252 words stay readable; the bezel returns at ≥760px; the promise grid renders
+4-up and never 3 + 1.
 
 ### ⚠ Why not just deploy the design tool's own export
 
@@ -41,29 +81,43 @@ enrollment deadline ever forces it, it *can* go up as a stopgap. It should not b
 
 ---
 
-## Assets — already done, and where they came from
+## Assets — done, and where they came from
 
-**Everything was generated from art already in this repo.** Nothing needs to be exported from the design
-project, and the design's `.webp` files are not required.
+**Everything is generated from art already in this repo**, except the one frame noted below. Nothing
+needs to be exported from the design project. All of it is WebP; the previous PNG/JPG set was 775 KB
+for fewer assets, this one is 328 KB for more.
 
-| `assets/landing/` | Generated from |
-|---|---|
-| `bg-legacy.jpg` (700w, q78) | `assets/backgrounds/legacy-bg.png` |
-| `bg-slate.jpg` (700w, q78) | `assets/backgrounds/forge-slate.png` |
-| `bg-squad.jpg` (560w, q72) | `assets/backgrounds/squad-bg-continued.png` |
-| `wordmark.png` (240w) | `assets/welcome-logo-carved.png` |
-| `badge-foundation` · `-builder` · `-craftsman` · `-architect` · `-established-m` · `-hall` · `-legacy` (140w) | `assets/artwork/ranks/<family>-4.png` |
+Regenerate with `sharp` (**not** a project dependency — `npm i sharp` in a scratch directory):
 
-⚠ **`badge-hall.png` is generated from `legend-4.png`.** The design calls that rank "hall", the repo calls
-it "legend". Confirm the mapping against `src/domain/rank/thresholds.ts` before shipping — a landing page
-that shows the wrong badge beside a rank name is the kind of error a tester spots instantly.
+| `assets/landing/` | Generated from | Recipe |
+|---|---|---|
+| `bg-legacy.webp` | `assets/backgrounds/legacy-bg.png` | 700w, q74 |
+| `bg-slate.webp` | `assets/backgrounds/forge-slate.png` | 700w, q74 |
+| `bg-squad.webp` | `assets/backgrounds/squad-bg-continued.png` | 520w, q68 — the **tall** 853×5532 variant, not the 2:1 crop, because the mock scrolls to −274cqw |
+| `wordmark.webp` | `assets/welcome-logo-carved.png` | 160w, q88 |
+| `badge-foundation` · `-builder` · `-craftsman` · `-architect` · `-established-m` · `-legend` · `-legacy` | `assets/artwork/ranks/<family>-4.png` | 140w, q82 |
+| `honor-strength` · `-consistency` · `-endurance` · `-milestones` · `-completion` · `-community` | `assets/artwork/honors/<name>.png` | 140w, q80 |
+| `coach-mark.webp` | `assets/images/coach-holt-mark.png` | 64w, q86 |
+| `bench-demo-frame.webp` | frame 34 of `exercise-media/male/barbell-bench-press.webp` | 232×302 cover, q78 |
+| `og-card.jpg` | composed: wordmark over the bronze radial on `#0C1013` | 1200×630, q86 |
+| `../favicon.png` | `assets/welcome-logo-carved.png` | 64×64 on `#0C1013` |
 
-⚠ **`bench-demo-frame.jpg` is NOT here and is the one genuinely missing asset.** The design crops it from
-the shipped exercise render `exercise-media/male/barbell-bench-press.webp`, which lives in **Supabase
-storage**, not the repo. Options: pull one frame from that bucket, or resolve the live animated WebP at
-runtime through `domain/exercise-detail/media.ts` (the handoff recommends the latter — *"the figure
-presses while the screen sequence runs around it"* — and says to resolve the URL from the catalog id,
-never to hardcode it).
+✅ **`badge-hall` is now `badge-legend`, and the open question is closed.** `src/domain/rank/thresholds.ts`
+`FAMILIES` is the authority and it says `legend`; the design's ladder row was always labelled *Legend*, so
+only the filename disagreed. The art is still cut from `legend-4.png`.
+
+✅ **`bench-demo-frame` is no longer missing.** It is a still cropped from the shipped render pulled from
+the public `exercise-media` bucket. It stays a still deliberately — see the deltas table above.
+
+⚠ **`legacy-bg.png`, `forge-slate.png` and `forge-slate2.png` are BYTE-IDENTICAL in this repo**
+(`f8bed839…`). So `bg-legacy.webp` and `bg-slate.webp` are the same picture; the design distinguishes the
+two surfaces by opacity and overlay, not by art. They are kept as **two files on purpose** so that real
+slate art can drop in later without touching a line of `index.html`. If you ever wonder why the workout
+mock's background looks like the Legacy hub's, this is why, and the fix belongs in `assets/backgrounds/`.
+
+⚠ **The honor artwork is opaque, not cut out.** Alpha is 255 everywhere in the source PNGs, so the honors
+strip renders as six dark medallion tiles rather than floating glyphs. That matches the design, which uses
+the same files — it is not a conversion artifact.
 
 ---
 
@@ -84,18 +138,57 @@ never to hardcode it).
     it into a lead-gen form is the thing the page argues against.
   - Keep the three `data-analytics` hooks on whatever element carries the label, so the swap at launch is
     one string in three known places — exactly as the handoff intends.
+  - ✅ **BUILT THIS WAY.** ⚠ One correction to the instruction above: dropping the sticky bar also drops
+    the element that carried `cta-sticky`, so **two** hooks survive, not three — `cta-hero` in § 1 and
+    `cta-final` in § 10. Both are `<span>`s, both are commented in place. **At launch: turn those two
+    spans back into `<a href="…">`, restore the sticky bar from the `.dc.html` (lines 1090–1098) along
+    with its show/hide logic, and `cta-sticky` comes back with it.**
 - ✅ **Contact email** — `support@forgelegacy.app`, live on the domain (Cloudflare Email Routing,
   forwarding, verified by test 2026-08-15). `isaiah@forgelegacy.app` also routes.
 - ✅ **`/privacy` and `/terms`** — real pages, in this directory, at stable URLs.
-- ⚠ **Re-measure the FAQ's claim on publish day.** It reads "161 database migrations … 2,362 automated
-  tests", measured 2026-08-14. Both move weekly. `ls supabase/migrations | wc -l` and the `node --test`
-  total.
+- ⚠ **Re-measure the FAQ's claim on publish day.** Re-measured **2026-08-16 on `feat/route-map`** and the
+  page now reads **"162 database migrations … 2,426 automated tests"** (was 161 / 2,362 on 2026-08-14).
+  Both move weekly, so do it again on the day.
+  - `ls supabase/migrations/*.sql | wc -l` → **162**. Note the numbering is not the count: `0002` was
+    never used and `0152` is used twice (`0152_discover_trained_today`, `0152_weekly_review_created_at`),
+    so there are 162 files across 161 distinct numbers up to `0162`. The page says *migrations*, so the
+    file count is the honest figure.
+  - `node --test --experimental-strip-types "src/**/*.test.mjs"` → **2,426 passing, 0 failing**
+    (~110s). Note the bare `node --test … src` form in `.claude/settings.json` treats `src` as a
+    *file* and reports a single phantom failure — use the glob.
 - ⚠ **"Free while we're testing"** is true only until **Phase F** of
   `Docs/Launch-Checklist-Free-And-Premium.md`. That block and any JSON-LD `offers: price "0"` both become
   false claims the moment the paywall flips, and nothing on the page will look wrong.
 - ⚠ **No exercise-count figure anywhere** until 721 / 794 / 797 is reconciled.
 - ⚠ **No Apple Watch claim.** We do not have it.
 - **iOS only.** There are zero Android builds — the page says so deliberately (handoff §11-9).
+
+---
+
+## Checking `index.html` after a change
+
+The page has no build step and no test suite, so the checks are a script you write once and throw away.
+Two passes were used for this build and both are worth repeating after any edit to the hero or the mocks:
+
+1. **Static** — every `src`/`href` resolves on disk · every `<img>` `width`/`height` equals the file's
+   real intrinsic size · every `var(--fl-*)` resolves in the inlined `:root` · no design-tool residue
+   (`x-dc`, `helmet`, `sc-if`, `image-slot`, `_ds_bundle`, `styles.css`, `support.js`, `DCLogic`) ·
+   one `<h1>` · `<main>`/`<footer>` landmarks · **no banned claim** ("iPhone or Android", Apple Watch,
+   "nothing to install", `forgelegacy.expo.app` as a destination, any exercise count).
+2. **Rendered** (headless Chromium, `file://` is enough) — the measurements in the table above. Load the
+   page, **step down a screen at a time** so lazy images enter the viewport and each scene plays, then
+   wait out the longest beat (3,900 ms in § 6) before sampling. Sampling earlier reports phantom broken
+   images and phantom unsettled elements; both were false alarms during this build.
+
+⚠ **`prefers-reduced-motion` and JS-off are not optional extras here.** The page's whole argument is
+carried by scroll-revealed copy, so a regression in the settle logic makes sections permanently
+invisible rather than merely unanimated. The `<noscript>` block is what covers the JS-off case; the
+`data-settle` attributes are what stop the sealing modal and the forge glow from settling to the wrong
+state. Check all 73 animated elements, not a sample.
+
+⚠ **`og:image`, `og:url` and `canonical` are absolute `https://forgelegacy.app/…` URLs.** They are
+correct but inert until the apex resolves — link previews will stay blank until then, which is expected,
+not a bug in the page.
 
 ---
 
