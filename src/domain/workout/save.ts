@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { sessionActivityType } from './conditioning';
 import { detectPRs, doneSetCount, PR_MAX_REPS, sessionVolume, type DetectedPR } from './metrics';
-import { buildAppendExercises, buildSaveExercises, buildSubstitutions, canonicalizeWeights, sessionDurationSec } from './save-core';
+import { buildAppendExercises, buildSaveExercises, buildSubstitutions, canonicalizeWeights, sessionDurationSec, sessionWorkoutName } from './save-core';
 import type { UnitSystem } from '@/domain/settings/units';
 import { playlistToRow } from './playlist';
 import type { ActiveSession } from './types';
@@ -116,7 +116,10 @@ export async function saveWorkout(
   const exercises = buildSaveExercises(session);
 
   const { data, error } = await supabase.rpc('save_workout', {
-    p_workout_name: session.workoutName,
+    /* Derived for the same reason `p_activity_type` below is: a freestyle session that turned out to be
+       one treadmill walk was filed under the literal "Freestyle Workout". See `sessionWorkoutName` —
+       it only ever replaces that placeholder, never a name the athlete chose. */
+    p_workout_name: sessionWorkoutName(session),
     // Derived, not taken on trust: every construction site hard-codes 'strength', which stopped being
     // true when a run could be the whole session.
     p_activity_type: sessionActivityType(session.exercises, session.activityType),

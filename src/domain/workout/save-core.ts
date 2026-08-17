@@ -97,7 +97,95 @@ export function sessionDurationSec(session: ActiveSession, now = Date.now()): nu
     }
   }
 
+  /* ⚠ WHEN NOTHING WAS WATCHED, THE WALL CLOCK IS NOT EVIDENCE — IT IS HOW LONG THE APP SAT OPEN.
+     See `typedInSession`. A 20-minute walk typed into a session left open for 28 saved as 28. */
+  if (typedInSession(session)) return Math.round(logged);
+
   return Math.max(wall, Math.round(logged));
+}
+
+/**
+ * Was this session ENTIRELY typed in — every bout in it recorded by hand, nothing measured?
+ *
+ * ══ THE OTHER HALF OF THE SAME REPORT ══
+ *
+ * PO: *"She manually inputed her results for a 20 min walk … it saved as 28 minutes."* The `max(wall,
+ * logged)` rule above fixed the case where the wall clock was far too SHORT — 90 minutes typed in over
+ * forty seconds — by never letting the session be shorter than the training in it. It could not fix the
+ * mirror image, because a max only ever moves the number one way: open the app, walk with it in your
+ * pocket or your bag or not at all, come back 28 minutes later and type 20, and `max(28, 20)` is 28.
+ *
+ * Note this was NOT a regression from that fix. Before it the column was the bare wall clock, which is
+ * the same 28 — the fix simply never reached this direction.
+ *
+ * The wall clock earns its authority from the app having WATCHED the session. `source` records exactly
+ * that, and it is already stored on every bout: `'tracked'` when GPS measured it, `'manual'` for the two
+ * doors the card offers on purpose ("Skip timer · enter it myself", "Already did it · log manually").
+ * When every recorded bout says `'manual'`, the app watched nothing, and the only honest number in the
+ * session is the one the athlete typed.
+ *
+ * ⚠ NARROW BY CONSTRUCTION, and each guard is load-bearing:
+ *
+ *   · ALL of them, never some. One tracked bout means a real session was under way, and the wall clock
+ *     is the truth about the whole of it again.
+ *   · CARDIO ONLY — via `recordedExercises`, so a lift in the session disqualifies it. Strength work
+ *     writes no bout, so summing what was typed would silently discard the time spent lifting.
+ *   · `'manual'` EXPLICITLY. A bout with no `source` at all (a resumed session written before the field
+ *     existed) is not a claim that nothing was watched, so it keeps the max.
+ *
+ * ⚠ AND THIS IS THE ONE PLACE A SUM IS RIGHT. The rule above is a max because bouts trained back to back
+ * sit INSIDE a session that held them, with rest between. Here there is no such session to sit inside —
+ * nothing was measured, and two walks typed in as 20 minutes each are forty minutes of walking.
+ */
+function typedInSession(session: ActiveSession): boolean {
+  const recorded = recordedExercises(session);
+  if (!recorded.length) return false;
+  return recorded.every((ex) => ex.kind === 'cardio' && ex.cardio?.source === 'manual');
+}
+
+/**
+ * ⚠ THE LITERAL THE LAUNCH PATHS WRITE, and the exact string `sessionWorkoutName` treats as "unnamed".
+ * Home, the Workouts tab and `workout.tsx`'s own fallbacks each spell it out; a test pins them together,
+ * because a session started under a different placeholder would silently stop being renamed.
+ */
+export const FREESTYLE_NAME = 'Freestyle Workout';
+
+/**
+ * The name the session is SAVED under — which is not always the one it started with.
+ *
+ * ══ "IT LOGGED IT AS A FREESTYLE WORKOUT" ══
+ *
+ * PO, on a treadmill walk typed in by hand. Both fixes on the card before this one renamed a session
+ * that was named for its bout at the door — Home's cardio chooser writes `deriveName(activity, …)` and
+ * Track a Run hard-codes "Outdoor Run" — and `setCardioModality` re-derives that name when the toggle
+ * flips. None of it reaches the athlete who came in through the OTHER door: "Start a freestyle workout",
+ * then add a walk from the picker. That session is called `Freestyle Workout` before it contains
+ * anything, the guard on the toggle is `cur.workoutName === was` — the block's own previous derived
+ * name — and `Freestyle Workout` is not that, so the rename never fires and the walk is filed under a
+ * name that describes nothing.
+ *
+ * Deriving it HERE rather than at the toggle is what makes it door-independent: this runs once, at save,
+ * over the session's final shape, so it cannot be defeated by which control the athlete happened to
+ * touch — or by their never having touched one.
+ *
+ * ⚠ ONLY EVER REPLACES THE PLACEHOLDER, and only for a session that is one cardio block:
+ *
+ *   · `Freestyle Workout` is the app's word for a day you have not done yet, never the athlete's — no
+ *     control writes it and W-17's rename cannot produce it. Any other name was chosen and is theirs.
+ *   · ONE recorded block, so a walk plus squats stays freestyle. "Treadmill Walk" would then be a name
+ *     for the smaller half of the session, which is worse than the placeholder it replaced.
+ *   · `recordedExercises`, so an un-ended bout — dropped from the save entirely — cannot name a session
+ *     it is not even part of.
+ *
+ * Not retroactive. Rows already saved keep the name they were given; W-17 and the activity detail screen
+ * both let the athlete change it.
+ */
+export function sessionWorkoutName(session: ActiveSession): string {
+  if (session.workoutName !== FREESTYLE_NAME) return session.workoutName;
+  const recorded = recordedExercises(session);
+  if (recorded.length !== 1) return session.workoutName;
+  const only = recorded[0];
+  return only.kind === 'cardio' && only.name ? only.name : session.workoutName;
 }
 
 /**

@@ -26,7 +26,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-import { sessionDurationSec } from '../save-core.ts';
+import { FREESTYLE_NAME, sessionDurationSec, sessionWorkoutName } from '../save-core.ts';
 import { deriveName } from '../conditioning.ts';
 import { fmtDuration } from '../../activity/history-core.ts';
 
@@ -153,4 +153,107 @@ test('Track a Run’s hard-coded label still matches what the block derives', ()
   const src = readFileSync(path.join(here, '../../../app/(tabs)/workouts.tsx'), 'utf8');
   assert.match(src, /startWorkout\('Outdoor Run'\)/);
   assert.equal(deriveName('run', 'outdoor'), 'Outdoor Run');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3 · THE SAME REPORT, THROUGH THE FREESTYLE DOOR
+//
+// PO: *"Kim did a treadmill workout. She manually inputed her results for a 20 min walk. It logged it
+// as a freestyle workout and it saved as 28 minutes."* Neither of the two fixes above reaches her,
+// because she came in through "Start a freestyle workout" and added the walk from the picker:
+//
+//   · the session is called `Freestyle Workout` before it holds anything, and the toggle's rename guard
+//     compares against the BLOCK's previous derived name — which that is not, so it never fires;
+//   · `max(wall, logged)` only ever moves the number UP, and 28 minutes of app-open beats the 20 she
+//     typed. Note this is not a regression from the max: the bare wall clock was the same 28.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** A bout recorded by hand — what the card's two manual doors write (`source: 'manual'`). */
+const typed = (timeSec, extra = {}) => ({
+  kind: 'cardio',
+  activity: 'walk',
+  name: 'Treadmill Walk',
+  modality: 'indoor',
+  position: 0,
+  section: 'main',
+  cardio: { timeSec, distanceMi: 1, source: 'manual', loggedModality: 'indoor' },
+  sets: [{ setIndex: 0, weight: null, done: true, durationSec: timeSec, distanceMi: 1, ...extra }],
+});
+
+const freestyle = (exercises) => ({
+  workoutName: FREESTYLE_NAME,
+  activityType: 'strength',
+  startedAt: START,
+  exercises,
+});
+
+test('KIM · a 20-minute walk typed in is twenty minutes, not the 28 the app sat open', () => {
+  const s = freestyle([typed(20 * 60)]);
+  assert.equal(sessionDurationSec(s, after(28 * 60)), 20 * 60);
+  assert.equal(fmtDuration(sessionDurationSec(s, after(28 * 60))), '20 min');
+});
+
+test('KIM · and it is not filed under the placeholder the athlete never chose', () => {
+  assert.equal(sessionWorkoutName(freestyle([typed(20 * 60)])), 'Treadmill Walk');
+});
+
+test('the placeholder the launch paths write is the exact one that gets replaced', () => {
+  // Three doors spell this literal out. If any drifts, that door's sessions silently stop being named.
+  for (const f of ['../../../app/(tabs)/index.tsx', '../../../app/(tabs)/workouts.tsx', '../../../app/workout.tsx']) {
+    const src = readFileSync(path.join(here, f), 'utf8');
+    assert.ok(src.includes(`'${FREESTYLE_NAME}'`), `${f} no longer writes ${FREESTYLE_NAME}`);
+  }
+});
+
+test('a name the athlete chose is never touched', () => {
+  const s = { ...freestyle([typed(20 * 60)]), workoutName: 'Morning walk with the dog' };
+  assert.equal(sessionWorkoutName(s), 'Morning walk with the dog');
+  // …and the clock fix is independent of the name, so it still applies to a renamed session.
+  assert.equal(sessionDurationSec(s, after(28 * 60)), 20 * 60);
+});
+
+test('a walk PLUS a lift stays freestyle — and keeps the wall clock', () => {
+  // "Treadmill Walk" would name the session after the smaller half of it. And the lift writes no bout,
+  // so crediting only what was typed would discard every minute spent lifting.
+  const s = freestyle([
+    typed(20 * 60),
+    { ...lift([{ setIndex: 0, weight: 95, targetReps: 5, actualReps: 5, done: true }]), position: 1 },
+  ]);
+  assert.equal(sessionWorkoutName(s), FREESTYLE_NAME);
+  assert.equal(sessionDurationSec(s, after(50 * 60)), 50 * 60);
+});
+
+test('one TRACKED bout puts the wall clock back in charge of the whole session', () => {
+  const s = freestyle([
+    { ...typed(20 * 60), cardio: { timeSec: 20 * 60, source: 'tracked' } },
+    { ...typed(10 * 60), position: 1 },
+  ]);
+  assert.equal(sessionDurationSec(s, after(45 * 60)), 45 * 60, 'the app watched part of this session');
+});
+
+test('two bouts typed in are summed — there is no measured session for them to sit inside', () => {
+  // The wall clock is deliberately LONGER than the sum here, so this fails if the max ever comes back:
+  // an hour of app-open around two walks that took 35 minutes between them.
+  const s = freestyle([typed(20 * 60), { ...typed(15 * 60), position: 1 }]);
+  assert.equal(sessionDurationSec(s, after(60 * 60)), 35 * 60);
+});
+
+test('a bout with no source at all keeps the max — absence is not a claim', () => {
+  // A session resumed from before the field existed. `max` is the safe direction: never shorter.
+  const s = freestyle([{ ...typed(20 * 60), cardio: { timeSec: 20 * 60 } }]);
+  assert.equal(sessionDurationSec(s, after(28 * 60)), 28 * 60);
+});
+
+test('an un-ended bout names nothing and times nothing', () => {
+  // Dropped from the save entirely by `recordedExercises`, so it cannot name the session either.
+  const s = freestyle([typed(20 * 60, { done: false })]);
+  assert.equal(sessionWorkoutName(s), FREESTYLE_NAME);
+  assert.equal(sessionDurationSec(s, after(28 * 60)), 28 * 60);
+});
+
+test('saveWorkout sends the derived name, not the raw one', () => {
+  const src = readFileSync(path.join(here, '../save.ts'), 'utf8');
+  assert.match(src, /p_workout_name:\s*sessionWorkoutName\(session\)/);
+  // continueWorkout must NOT: it appends to a row that already has a name.
+  assert.doesNotMatch(src, /p_workout_name:\s*session\.workoutName/);
 });
