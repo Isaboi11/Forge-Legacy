@@ -49,6 +49,58 @@ export function recordedExercises(session: ActiveSession): SessionExercise[] {
 }
 
 /**
+ * How long the session lasted — and it can never be shorter than the training inside it.
+ *
+ * ══ THE WALL CLOCK IS NOT THE SESSION WHEN THE BOUT WAS TYPED IN ══
+ *
+ * PO: *"My last bike I logged for 90 min and it said less than one minute."* Exactly right. This was
+ * `Date.now() - startedAt` and nothing else, which is honest for a workout you actually performed with
+ * the app open — you started it, you lifted, you finished — and is a lie about the two paths a cardio
+ * block deliberately offers: *"Skip timer · enter it myself"* and *"Already did it · log manually"*.
+ * Both exist so a bout the app never watched can still be recorded. Take those, type 90 minutes, tap
+ * Finish, and the wall clock is the forty seconds of typing — which `fmtDuration` then rounds down to
+ * the literal words the athlete read back: "< 1 min".
+ *
+ * It was never only a label. `workouts.duration_sec` is what W-17 divides the distance by to report the
+ * session's pace, so a 15-mile ride filed as 45 seconds also announced a personal best at 1200 mph.
+ *
+ * So the clock is the LONGER of the two: the wall clock, or the bouts the athlete filed. Both readings
+ * survive —
+ *
+ *   · a tracked run keeps its wall clock, which already agrees with the bout to within seconds;
+ *   · a strength session with a cool-down walk keeps its wall clock, which is longer than the walk;
+ *   · a manually entered bout gets the time it actually took.
+ *
+ * ⚠ NEVER SHORTER, WHICH IS WHY IT IS A MAX AND NOT A SUM. Two bouts trained back to back with rest
+ * between them add up to less than the session; the wall clock is the truth there and wins. This
+ * mirrors `continue_workout`'s own rule on the same column — `greatest(duration_sec, p_duration_sec)`,
+ * "a continue only adds time" — so the two writers cannot disagree about which way this number moves.
+ *
+ * ⚠ CARDIO ONLY. A timed STRENGTH set writes `duration_sec` too (a 60s plank), and summing those would
+ * be summing pieces of a session against the session — a hundred holds is not a hundred minutes of
+ * training. A cardio block carries exactly one bout and that bout IS the exercise, which is what makes
+ * it comparable to the whole.
+ */
+export function sessionDurationSec(session: ActiveSession, now = Date.now()): number {
+  const started = Date.parse(session.startedAt);
+  // A start we cannot read is not a duration of NaN — which is what `Math.max(0, Math.round(NaN))`
+  // quietly produced here before, and what `save_workout` would then have been sent.
+  const wall = Number.isFinite(started) ? Math.max(0, Math.round((now - started) / 1000)) : 0;
+
+  let logged = 0;
+  for (const ex of session.exercises) {
+    if (ex.kind !== 'cardio') continue;
+    for (const s of ex.sets) {
+      // The same "a bout that measured nothing did not happen" rule `recordedExercises` applies: an
+      // un-ended treadmill walk must not lengthen the session it was never part of.
+      if (s.done && s.durationSec != null && s.durationSec > 0) logged += s.durationSec;
+    }
+  }
+
+  return Math.max(wall, Math.round(logged));
+}
+
+/**
  * A session whose weights are canonical POUNDS, whatever the athlete typed them in.
  *
  * ══ ONE NORMALISATION, AT ONE POINT, BEFORE ANYTHING READS A WEIGHT ══

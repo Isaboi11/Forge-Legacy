@@ -2157,15 +2157,32 @@ export default function WorkoutScreen() {
     showToast(`${ex.name} logged`);
   };
 
-  /** Switch where the block is being done. Renames it, and never touches what was already recorded. */
+  /**
+   * Switch where the block is being done. Renames it, and never touches what was already recorded.
+   *
+   * ══ AND RENAMES THE SESSION, WHEN THE SESSION IS THIS BLOCK ══
+   *
+   * PO: *"It's logging it as an outdoor walk when it's a treadmill."* The block renamed itself here and
+   * the WORKOUT did not. A cardio-only session is named at the door — Home's "Something else today?"
+   * calls `startWorkout(deriveName(activity, modality))` and Workouts' Track a Run hard-codes "Outdoor
+   * Run" — and the modality toggle lives on the card, one screen later, because nobody decides indoors
+   * or outdoors from a menu. So every treadmill walk started that way was filed under "Outdoor Walk":
+   * the name in the athlete's history said the one thing about the session that was not true.
+   *
+   * ⚠ ONLY WHEN THE NAME IS STILL THE DERIVED ONE, and only for a one-block session. `⋯ Options → name
+   * this workout` writes `workoutName` too, and a name the athlete typed is theirs — a toggle must
+   * never overwrite it. Matching the block's own previous name is the exact test for "nobody has
+   * renamed this yet", and it costs nothing when they have.
+   */
   const setCardioModality = (m: 'outdoor' | 'indoor') => {
     if (!ex.activity || ex.modality === m) return;
     const activity = ex.activity;
+    const was = ex.name;
+    const next = deriveName(activity, m);
     mutate((cur) => ({
       ...cur,
-      exercises: cur.exercises.map((e, i) =>
-        i !== exIdx ? e : { ...e, modality: m, name: deriveName(activity, m) },
-      ),
+      workoutName: cur.exercises.length === 1 && cur.workoutName === was ? next : cur.workoutName,
+      exercises: cur.exercises.map((e, i) => (i !== exIdx ? e : { ...e, modality: m, name: next })),
     }));
   };
 

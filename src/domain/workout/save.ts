@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { sessionActivityType } from './conditioning';
 import { detectPRs, doneSetCount, PR_MAX_REPS, sessionVolume, type DetectedPR } from './metrics';
-import { buildAppendExercises, buildSaveExercises, buildSubstitutions, canonicalizeWeights } from './save-core';
+import { buildAppendExercises, buildSaveExercises, buildSubstitutions, canonicalizeWeights, sessionDurationSec } from './save-core';
 import type { UnitSystem } from '@/domain/settings/units';
 import { playlistToRow } from './playlist';
 import type { ActiveSession } from './types';
@@ -109,7 +109,9 @@ export async function saveWorkout(
   }
 
   const prs = detectPRs(session, priorBest);
-  const durationSec = Math.max(0, Math.round((Date.now() - Date.parse(session.startedAt)) / 1000));
+  /* The wall clock, or the bouts the athlete filed — whichever is longer. See `sessionDurationSec`:
+     a bike typed in as 90 minutes used to be saved as the forty seconds of typing. */
+  const durationSec = sessionDurationSec(session);
 
   const exercises = buildSaveExercises(session);
 
@@ -425,7 +427,9 @@ export async function continueWorkout(
   /* Detected over a session whose already-saved sets are marked done — so a record set BEFORE the
      accidental finish is already in `priorBest` above and cannot be claimed twice. */
   const prs = detectPRs(session, priorBest);
-  const durationSec = Math.max(0, Math.round((Date.now() - Date.parse(session.startedAt)) / 1000));
+  /* Same rule as the first save — a bout added on the way back out is worth its own logged time, and
+     `continue_workout` takes the `greatest` of this and what is already on the row either way. */
+  const durationSec = sessionDurationSec(session);
 
   const { data, error } = await supabase.rpc('continue_workout', {
     p_workout_id: workoutId,
