@@ -34,13 +34,17 @@ import { useProfile } from '@/lib/profile'
 import type { ShareKind } from '@/domain/share/content'
 
 /**
- * ⚠ FLIP THIS WHEN `src/app/subscription.tsx` EXISTS (Launch Checklist 4.1, P-8).
+ * ✅ FLIPPED 2026-08-16 — `src/app/subscription.tsx` exists (Launch Checklist 4.1, P-8).
  *
  * A constant rather than a route-existence probe: expo-router has no reliable "does this route resolve"
  * question from inside a component, and this repo has already shipped a dynamic route that 404s on direct
  * load. One greppable boolean is honest about the state and cannot be wrong at runtime.
+ *
+ * ⚠ THE ROUTE EXISTING IS NOT THE SAME AS A STORE EXISTING. P-8 renders its Free state complete and says
+ * so honestly when no billing SDK is registered (`src/lib/billing.ts`) — which is better than this toast,
+ * because the athlete gets the comparison, their usage and the plan structure either way.
  */
-const SUBSCRIPTION_ROUTE_BUILT = false
+const SUBSCRIPTION_ROUTE_BUILT = true
 
 export type CeremonyContextValue = {
   enqueue: (events: CeremonyEvent | CeremonyEvent[]) => void
@@ -181,11 +185,14 @@ export function CeremonyProvider({ children }: { children: React.ReactNode }) {
    * Flip the constant when `src/app/subscription.tsx` lands and the tap becomes navigation.
    */
   const onUpgrade = () => {
+    /*
+     * ⚠ DISMISS FIRST, THEN ROUTE (§2.2). M-7 closes and P-8 presents over whichever surface triggered
+     * the gate — W-4, S-1, L-15, W-1 — never onto the Settings stack, because the athlete never opened
+     * Settings to get here. `?from=gate` is what makes P-8 draw a [×] instead of a back chevron, so its
+     * dismiss returns to that same surface, which then re-evaluates its own limit per M-7's contract.
+     */
     dismiss()
-    // The cast is the proof the route does not exist: expo-router's generated union has no
-    // '/subscription' member yet, so tsc rejects the literal. When 4.1 lands the route joins the union
-    // and the cast can be deleted — which is a better reminder than a comment.
-    if (SUBSCRIPTION_ROUTE_BUILT) router.push('/subscription' as never)
+    if (SUBSCRIPTION_ROUTE_BUILT) router.push('/subscription?from=gate')
     else showToast('Subscriptions open with the next release.')
   }
 

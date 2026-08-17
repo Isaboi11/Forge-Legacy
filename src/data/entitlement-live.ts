@@ -47,6 +47,36 @@ function num(v: unknown): number {
 }
 
 /**
+ * One caps parser, used for the caller's own caps and for both columns of P-8's comparison.
+ *
+ * ⚠ A MISSING KEY BECOMES 0, AND 0 BLOCKS EVERYONE — see the `short_programs` note below. That is the
+ * correct failure direction (a cap that cannot be read must not open a door), but it is loud rather than
+ * subtle, so read the config row back after applying a migration instead of trusting a column DEFAULT.
+ */
+function capsFrom(raw: Record<string, unknown>): Caps {
+  return {
+    programs: num(raw.programs),
+    /**
+     * ⚠ 0 UNTIL THE CONFIG ROW CARRIES THE KEY, AND 0 BLOCKS EVERYONE.
+     *
+     * `entitlement_config` has exactly one row, and changing a column DEFAULT does not touch it. If
+     * migration 0158's explicit UPDATE is skipped, `my_entitlement()` returns no `short_programs`,
+     * `num(undefined)` is 0, and `capAllows(0, 0)` is false — for every athlete on every tier,
+     * including Premium. Read the row back after applying; do not trust the default.
+     */
+    short_programs: num(raw.short_programs),
+    photos: num(raw.photos),
+    videos: num(raw.videos),
+    squads: num(raw.squads),
+    templates: num(raw.templates),
+    imports: num(raw.imports),
+    holt_programs: num(raw.holt_programs),
+    holt_days_per_month: num(raw.holt_days_per_month),
+    holt_in_workout: num(raw.holt_in_workout),
+  };
+}
+
+/**
  * Read the caller's entitlement.
  *
  * Returns `null` when it cannot be established — not applied, signed out, offline, or any other failure.
@@ -73,26 +103,7 @@ export async function fetchEntitlement(): Promise<EntitlementSnapshot | null> {
     premiumUntil: (d.premiumUntil as string) ?? null,
     coachAi: d.coachAi === true,
     founderSeat: d.founderSeat == null ? null : num(d.founderSeat),
-    caps: {
-      programs: num(rawCaps.programs),
-      /**
-       * ⚠ 0 UNTIL THE CONFIG ROW CARRIES THE KEY, AND 0 BLOCKS EVERYONE.
-       *
-       * `entitlement_config` has exactly one row, and changing a column DEFAULT does not touch it. If
-       * migration 0158's explicit UPDATE is skipped, `my_entitlement()` returns no `short_programs`,
-       * `num(undefined)` is 0, and `capAllows(0, 0)` is false — for every athlete on every tier,
-       * including Premium. Read the row back after applying; do not trust the default.
-       */
-      short_programs: num(rawCaps.short_programs),
-      photos: num(rawCaps.photos),
-      videos: num(rawCaps.videos),
-      squads: num(rawCaps.squads),
-      templates: num(rawCaps.templates),
-      imports: num(rawCaps.imports),
-      holt_programs: num(rawCaps.holt_programs),
-      holt_days_per_month: num(rawCaps.holt_days_per_month),
-      holt_in_workout: num(rawCaps.holt_in_workout),
-    },
+    caps: capsFrom(rawCaps),
     usage: {
       programs: num(rawUsage.programs),
       shortPrograms: num(rawUsage.shortPrograms),
@@ -141,6 +152,36 @@ export async function markFreeImportUsed(): Promise<boolean> {
   const { data, error } = await supabase.rpc('mark_free_import_used');
   if (error) return false;
   return data === true;
+}
+
+/**
+ * BOTH columns of the cap configuration, for P-8's Free-vs-Premium comparison.
+ *
+ * ⚠ `my_entitlement()` CANNOT ANSWER THIS. It returns the caps that apply to *the caller* — one column,
+ * correctly, because a gate only ever needs the athlete's own ceiling. P-8 is the one surface that has
+ * to show the other tier's numbers too, and inventing them client-side is exactly the literal MA3-D16
+ * forbids. So it reads the config row directly: `entitlement_config` is RLS-on with a `select`-to-
+ * authenticated policy and no write policy at all, which is how "read-only to the app" is said in
+ * Postgres.
+ *
+ * Null when it cannot be read. P-8 then draws no comparison table rather than a half-true one.
+ */
+export async function fetchCapConfig(): Promise<{ free: Caps; paid: Caps } | null> {
+  const { data, error } = await supabase
+    .from('entitlement_config')
+    .select('free_caps, paid_caps')
+    .maybeSingle();
+
+  if (error || !data) return null;
+  const row = data as Record<string, unknown>;
+  const free = row.free_caps;
+  const paid = row.paid_caps;
+  if (!free || typeof free !== 'object' || !paid || typeof paid !== 'object') return null;
+
+  return {
+    free: capsFrom(free as Record<string, unknown>),
+    paid: capsFrom(paid as Record<string, unknown>),
+  };
 }
 
 /** How many Founder seats are left. Null when it cannot be read — P8W-D5 hides the row rather than guess. */

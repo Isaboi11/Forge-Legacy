@@ -282,6 +282,11 @@ function RootNavigator() {
         <Stack.Screen name="forge-templates" />
         <Stack.Screen name="home-gym" />
         <Stack.Screen name="account-settings" />
+        {/* P-8. A plain push in BOTH entry contexts, deliberately: the spec's two contexts differ only in
+            the dismiss affordance (§2.3), which `?from=gate` switches, and M-7 dismisses before routing —
+            so the push lands over the triggering surface and back returns to it, exactly as §6 requires.
+            A `fullScreenModal` here would be wrong from Account Settings, and there is one route. */}
+        <Stack.Screen name="subscription" />
         <Stack.Screen name="edit-profile" />
         <Stack.Screen name="preferences" />
         <Stack.Screen name="profile-visibility" />

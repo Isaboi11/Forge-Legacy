@@ -151,6 +151,12 @@ export function settingsSections(opts: {
    * bundle either way, and what actually refuses a non-admin is `admin_guard()` in Postgres.
    */
   isAdmin?: boolean;
+  /**
+   * What the Subscription row reports. `undefined` means entitlement has not resolved — the row then
+   * shows no value rather than naming a tier nobody has confirmed. Typed structurally rather than
+   * importing `Tier`, so this module stays free of runtime imports outside its own folder.
+   */
+  tier?: 'FREE' | 'PREMIUM';
 }): SettingsSection[] {
   const sections: SettingsSection[] = [];
 
@@ -172,10 +178,29 @@ export function settingsSections(opts: {
   }
   sections.push({ key: 'training', label: 'Training', rows: training });
 
+  /*
+   * ⚠ THE ROW NOW OPENS P-8, NOT THE MEMBERSHIP SHEET (Launch Checklist 4.1).
+   *
+   * The sheet stays in `LEGAL` — it is the membership *document*, reachable from the footer's legal
+   * links like Terms and Privacy — but the Subscription row's destination is the screen that can
+   * actually change the plan. This is the first of P-8's two locked entry contexts (§2.1): a push, so
+   * the header draws a back chevron and popping returns here. The other is M-7's Upgrade tap.
+   *
+   * ⚠ THE VALUE IS DERIVED, NOT ASSERTED. "Free while testing" was true when nothing could be bought
+   * and is a claim about billing the moment something can. `undefined` — entitlement not yet read —
+   * renders no value at all rather than guessing a tier onto the row.
+   */
   sections.push({
     key: 'membership',
     label: 'Membership',
-    rows: [{ key: 'sub', label: 'Subscription', value: 'Free while testing', action: { type: 'sheet', key: 'membership' } }],
+    rows: [
+      {
+        key: 'sub',
+        label: 'Subscription',
+        value: opts.tier === 'PREMIUM' ? 'Premium' : opts.tier === 'FREE' ? 'Free' : undefined,
+        action: { type: 'route', path: '/subscription' },
+      },
+    ],
   });
 
   sections.push({

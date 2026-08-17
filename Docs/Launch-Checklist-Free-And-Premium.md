@@ -272,15 +272,39 @@ app today and the right shape.
 
 ## 4 · Phase E — P-8, billing, referrals
 
-- [ ] **4.1 — Build `src/app/subscription.tsx`** to `Docs/P-8-Subscription-Wireframe-Spec.md`. Dual entry
-      (back-chevron from Account Settings, × over an M-7 trigger). **Annual pre-selected**, saving shown,
-      monthly secondary, Founder seat counter while seats remain, and the line
-      ***"Coach AI is a separate subscription"* above the lifetime option** — above the buy button, not in
-      the terms.
+- [x] **4.1 — Build `src/app/subscription.tsx`** ✅ **DONE 2026-08-16.** Built to the spec: loading /
+      Free / Premium / `unknown` states, dual entry (back-chevron from Account Settings, × via
+      `?from=gate` over an M-7 trigger), plan picker with **annual pre-selected**, computed saving,
+      Founder row with a live seat count, usage review, restore, and the disclosure line **in the sticky
+      commit bar directly above the buy button**. `SUBSCRIPTION_ROUTE_BUILT` is flipped and the Account
+      Settings row routes here instead of opening the membership sheet.
+      **New:** `src/domain/billing/plans-core.ts` (pure, 23 tests) · `src/lib/billing.ts` (the store
+      port) · `fetchCapConfig()` in `entitlement-live.ts`.
+      ⚠ **The `.dc` and the spec disagreed and the split was a PO decision (2026-08-16): the design
+      governs the visual language, the locked spec governs every number, plan and claim.** The `.dc`
+      predates the pricing lock — three plans at typed prices, no Founder or Lifetime, no Coach AI
+      disclosure, and benefits promising analytics, Communities and "unlimited Squads" (which M7-D15
+      forbids). Deltas are enumerated in the screen's header comment.
+      ⚠ **`Docs/P-8-Subscription-Wireframe-Spec.md` contradicts itself on picker placement** — §11.2's
+      prose says "between the reassurance line and the usage review", its own §3.2 diagram puts it above
+      the buy button. Built to the diagram, because plan → disclosure → button adjacency is the whole
+      point of P8W-D4. **Owed: an amendment resolving §11.2.**
+      ⚠ **Not yet rendered in a browser.** `tsc` 0 · 2,450 tests green · lint at baseline · web bundle
+      builds and emits the route — but static export is shell-only, so the screen has not been *seen*.
 - [ ] **4.2 — Integrate RevenueCat.** Resolves P-8 open question #1: entitlement, Restore Purchases and
       receipt validation in one dependency, free under $2.5k monthly tracked revenue. No billing
       dependency exists in `package.json` today. Multiple concurrent entitlements (Premium + Coach AI) is
       exactly what it handles well.
+      ⚠ **P-8 is already written against a port, so this is an adapter, not a rewrite.** Implement
+      `BillingAdapter` from `src/lib/billing.ts` over `react-native-purchases` and call
+      `registerBilling()` once at app start. Until then `UNAVAILABLE_BILLING` is in force and the screen
+      says so honestly instead of faking a price.
+      ⚠ **Identify plans by RevenueCat PACKAGE, never by SKU id.** `premium_annual_9999` carries its
+      price in its name, so importing one into `src/` smuggles a price past the §9 grep —
+      `plans-core.test.mjs` fails the build if any of them appear.
+      ⚠ **Do not add the dependency until a native build is going out anyway.** It changes the
+      fingerprint, and every OTA to the build in testers' hands stops being deliverable the moment it
+      lands. Stage 1 (§8) needs none of this.
 - [ ] **4.3 — Configure 6 SKUs** in App Store Connect:
       `premium_monthly_1299` · `premium_annual_9999` · `premium_lifetime_299` ·
       `coach_ai_monthly_999` · `coach_ai_annual_8999` · `founder_lifetime_149` (first 100, then delisted).

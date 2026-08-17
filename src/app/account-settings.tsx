@@ -31,6 +31,7 @@ import {
   type LegalKey,
 } from '@/domain/settings/content';
 import { useAuth } from '@/lib/auth';
+import { useTier } from '@/lib/entitlement';
 import { useQuery } from '@/lib/useQuery';
 import { useTour } from '@/hooks/useTour';
 
@@ -131,6 +132,8 @@ export default function AccountSettingsScreen() {
     hasNotifications: true,
     hasPreferences: true,
     isAdmin: isAdmin === true,
+    /* `null` while entitlement is loading or unverifiable, which the row reads as "say nothing". */
+    tier: useTier() ?? undefined,
   });
 
   const buildNo = Constants.expoConfig?.ios?.buildNumber ?? Constants.expoConfig?.android?.versionCode ?? null;

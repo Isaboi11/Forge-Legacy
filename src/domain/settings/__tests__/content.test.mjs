@@ -142,9 +142,19 @@ test('Membership stays its own group — billing is a different mental model', (
   const s = settingsSections({});
   const membership = s.find((x) => x.key === 'membership');
   assert.equal(membership.rows.length, 1);
-  assert.equal(membership.rows[0].value, 'Free while testing');
-  assert.deepEqual(membership.rows[0].action, { type: 'sheet', key: 'membership' });
+  // P-8's first entry context (§2.1): a push, so the screen draws a back chevron and popping returns here.
+  assert.deepEqual(membership.rows[0].action, { type: 'route', path: '/subscription' });
   assert.ok(!s.some((x) => x.key === 'training' && x.rows.some((r) => r.key === 'sub')), 'never folded into Training');
+});
+
+test('the Subscription row names a tier only when one has been read', () => {
+  // "Free while testing" was true while nothing could be bought, and becomes a claim about billing the
+  // moment something can. Unresolved entitlement must render no value at all rather than pick a side —
+  // the same `unknown ≠ blocked` discipline the cap gates run on (M-7 §10).
+  const row = (tier) => settingsSections(tier ? { tier } : {}).find((s) => s.key === 'membership').rows[0];
+  assert.equal(row(undefined).value, undefined, 'unresolved entitlement asserts nothing');
+  assert.equal(row('FREE').value, 'Free');
+  assert.equal(row('PREMIUM').value, 'Premium');
 });
 
 test('the membership sheet claims no billing that does not exist', () => {
