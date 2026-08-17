@@ -1,8 +1,14 @@
 # GO-LIVE — the short list
 
-**v1.2 · 2026-08-17 · every claim below re-verified against the repo on this date.**
-**STAGE 1 IS CLOSED.** The testers have the build (PO, 08-17) and the website is live, so **D-U-N-S is the
-only thing gating the public release** — everything else in Stage 2 is work that can be done during the wait.
+**v1.3 · 2026-08-17 · every claim below re-verified against the repo on this date.**
+**STAGE 1 IS CLOSED AND D-U-N-S IS IN** (`149910851`, issued this date). **Nothing external gates the
+public release any more** — every remaining item is work this team controls.
+
+⚠ **The critical path just moved, and it moved onto US.** For four days the honest answer to *"what is
+blocking launch"* was "D&B." That answer is gone. What stands between here and submission is now the
+paywall (§6), the bundle-identifier decision (§5), the store listing (§7) and legal (§8) — **and the
+bundle-ID decision should be started first, because it is the only one whose answer comes from Apple
+rather than from us, and it must be settled BEFORE anything is built under the new team.**
 
 > **v1.2 corrected four things this file asserted and the repo contradicted.** Recorded because the pattern
 > is the point: *every one was stale in the "still to do" direction* — the same failure as the migration
@@ -33,7 +39,7 @@ file is stale — fix it.**
 | **Entity** | Forge Legacy LLC · Utah · EIN 42-4433633 · parent Altimealix Holdings LLC |
 | **Domain** | `forgelegacy.app` registered, Cloudflare nameservers. Email live (`isaiah@`, `support@`). ✅ **Apex + `www` resolve, HTTP 301s to HTTPS, MX untouched** |
 | **Website** | ✅ **LIVE at `forgelegacy.app`** — deployed 2026-08-16 as a **Cloudflare Worker with static assets** named `forgelegacy` (*not* Pages; the dashboard steers new projects to Workers now). Root / `/privacy` / `/terms` all 200. Redeploy = drag `site/`'s deployable files into the project's upload flow, minus `_exported-bundle.html` |
-| **D-U-N-S** | Requested 2026-08-13 · D&B case **10803372** · documents answered 2026-08-15 · **pending** |
+| **D-U-N-S** | ✅ **`149910851`** — issued 2026-08-17 18:14 UTC, case `10803372` resolved, *"verified through a company spokesperson"*. Tracking `10740542`. Matched exactly as recorded: **Forge Legacy LLC · 3832 E Cunninghill Dr, Eagle Mountain UT 84005 · 1 employee · principal Isaiah Altamirano** — the name/address match was the single biggest rejection risk and it came back clean. ⏳ **D&B says the record is queryable in 24–48 h** (i.e. from ~08-18 18:14 UTC), and Apple then needs its own ~2 days to receive it |
 | **Apple** | App `6798436104` on team `G722GV8H8C` (qest4). The public release ships under a **new Forge Legacy LLC org account** |
 | **Paywall** | 🟡 **Screen built, store not.** `src/app/subscription.tsx` shipped 2026-08-16 (37 KB, 23 tests, written against `BillingAdapter`; `UNAVAILABLE_BILLING` in force so it states the truth rather than faking a price). **`react-native-purchases` is deliberately NOT installed** — it is a native module, and the moment it lands every OTA to the build in testers' hands stops being deliverable. Still owed: the adapter, 6 SKUs, referrals, the Founder counter, StoreKit sandbox (§4.2–4.6). ⚠ *This row read "Not built · no `subscription.tsx`" in v1.1 — written 50 minutes before the file landed* |
 
@@ -68,8 +74,18 @@ Cloudflare-to-origin hop for `Full (strict)` to protect. Do not "fix" it.
 
 ## STAGE 2 — public launch
 
-**3. ⏳ D-U-N-S clears** (waiting on D&B). ⚠ **Answer the phone** — an unreturned call verifying business
-type and employee count is what stalls a case.
+**3. ✅ DONE 2026-08-17 — D-U-N-S `149910851`.** Case `10803372` resolved *"verified through a company
+spokesperson"*; the documents answered on 08-15 did it, and no phone call was needed. Four days end to
+end, well inside Apple's stated ~7 business days.
+
+⏳ **But do NOT attempt enrollment yet.** D&B's own resolution says *"information will be available in
+24–48 hours"* — the number exists, the **record is not queryable until it propagates** (~08-18 18:14 UTC
+at the earliest), and Apple's enrollment validates by looking it up at D&B. Enrolling into a lookup that
+misses is how a case gets rejected and the clock restarts, which is the exact failure this project has
+already paid for once at D&B.
+**Gate step 4 on this, not on the clock:** confirm the number resolves in Apple's own tool at
+`https://developer.apple.com/enroll/duns-lookup/` **first**. When it returns Forge Legacy LLC at the
+Eagle Mountain address, enrollment is safe to start.
 
 **4. Enroll Forge Legacy LLC** in the Apple Developer Program.
 ✅ **Both prerequisites are now met**: a live, functional website on the org's own domain (step 2,

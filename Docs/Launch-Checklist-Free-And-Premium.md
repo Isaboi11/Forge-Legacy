@@ -1,6 +1,16 @@
 # Launch Checklist — Free & Premium
 
-## v1.2 | 2026-08-17 · THE WORKING LIST
+## v1.3 | 2026-08-17 · THE WORKING LIST
+
+> **⭐ v1.3 — D-U-N-S `149910851` IS IN (§9.1), and with it the last EXTERNAL blocker on the public
+> release.** ⏳ The record needs 24–48 h to become queryable before §9.2 can start — that is a wait, not
+> a blocker, and it is gated on Apple's `duns-lookup` returning the company rather than on the calendar.
+>
+> **⚠ Execution order has changed, because the critical path is now entirely ours.** §9.3 — the bundle
+> identifier — **moves to the front.** It is the only remaining item whose answer comes from Apple rather
+> than from us, it carries a support round trip, and it must be settled *before* anything is built under
+> the new team. Revised order: **§9.3 (ask Apple now) → §9.2 (once the lookup resolves) → §4 Phase E →
+> §10 → §5 → §6 → §7.**
 
 > **⚠ v1.2 — STAGE 1 IS CLOSED, AND SIX ITEMS BELOW WERE STALE IN THE SAME DIRECTION.** The testers have
 > the build (PO, 08-17), the database runs through `0162`, the website is live, the paywall *screen* is
@@ -31,7 +41,7 @@ That splits this list in two, and the split is the schedule:
 | **Apple team** | existing `G722GV8H8C` (§8) | **new Forge Legacy LLC org account** (§9) |
 | **Entitlement** | `default_tier` stays `PREMIUM` — nothing gates | Phase F flip (§6) |
 | **Needs** | §8 only — the DB blockers and a build | §4 Phase E · §5 Legal · §6 · §9 · §10 |
-| **Blocked by** | ✅ **nothing — shipped, testers have it** | **D-U-N-S only.** Requested 08-13, D&B case `10803372`, documents answered 08-15, **pending**. Apple's own figure is ~7 business days, and expediting does not shorten it |
+| **Blocked by** | ✅ **nothing — shipped, testers have it** | ✅ **Nothing external.** D-U-N-S `149910851` issued 2026-08-17 (§9.1). ⏳ The record needs 24–48 h to become queryable before 9.2 can start, but that is a wait, not a blocker. **Everything remaining is work this team controls** |
 
 **The D-U-N-S wait is the build window, not dead time.** Start §9.1 the day the LLC is filed; Phase E
 (§4) is roughly the same length and has no dependency on it. Do not let the two run in series.
@@ -530,13 +540,20 @@ most common rejection at D&B and at Apple enrollment, and it restarts the clock 
       **weekdays 07:00–22:00 ET** and times out on inactivity, so do it in one sitting and save the PDF —
       re-issuing is a phone call. Needed for the business bank account and for **App Store Connect's tax
       and banking forms**, without which Apple cannot pay out. Not a D-U-N-S dependency; do it in parallel.
-- [~] **9.1 — 🟡 REQUESTED 2026-08-13, IN VERIFICATION. It is the long pole and it is free.**
-      **Status: D&B case # 10803372.** They wrote 2026-08-13 asking for two documents showing the
-      business name and address; **answered 2026-08-15** with the stamped Certificate of Organization,
-      the CP 575, and their Business Information Form (parent declared as Altimealix Holdings LLC,
-      100%). ⏳ **Next: D&B phones to verify business type and employee count — answer it.** The
-      answers must match the form: software publisher · 1 employee · Utah LLC formed Aug 2026 ·
-      pre-revenue. Expect resolution late Aug; escalate only past two weeks.
+- [x] **9.1 — ✅ DONE 2026-08-17. D-U-N-S `149910851`.** Case `10803372` resolved at 18:14 UTC, tracking
+      `10740542`, sub-resolution *"Verified through a company spokesperson"* — **the documents answered on
+      08-15 closed it and the anticipated phone call never came.** Four days from request to number,
+      comfortably inside Apple's stated ~7 business days.
+      **The record came back matching what was filed, field for field** — `Forge Legacy LLC` ·
+      `3832 E Cunninghill Dr, Eagle Mountain, UT 84005` · 1 employee · principal Isaiah Altamirano. That
+      exact-match was the single most common rejection at D&B and at Apple, and it is clean.
+      ⏳ **⚠ THE NUMBER EXISTS AND THE RECORD DOES NOT RESOLVE YET.** D&B's own resolution text: *"a DUNS
+      number has been generated for the business, and information will be available in 24–48 hours"* —
+      so ~08-18 18:14 UTC at the earliest, and Apple's enrollment **validates by querying D&B**. Starting
+      9.2 against a lookup that misses is how an enrollment is rejected and the clock restarts.
+      **Gate 9.2 on the lookup succeeding, not on the calendar:** confirm at
+      `https://developer.apple.com/enroll/duns-lookup/`, **signed in as the Apple ID intended to OWN the
+      developer account**, that it returns Forge Legacy LLC at the Eagle Mountain address. Then enroll.
       Apple requires a D-U-N-S number for an *organization* Developer Program account, matched against
       the legal entity name and address. Use **Apple's own look-up tool**
       (`https://developer.apple.com/enroll/duns-lookup/`), not D&B directly — it is free and feeds
