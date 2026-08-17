@@ -1,7 +1,16 @@
 # `site/` — the public website at **forgelegacy.app**
 
-Static files, deployed to **Cloudflare Pages**. Nothing here is part of the app bundle; the Expo web
-build is a separate surface (`forgelegacy.expo.app`) and is a *testing* surface, not the product.
+✅ **LIVE since 2026-08-16.** Static files served by a **Cloudflare Worker with static assets**, project
+name **`forgelegacy`** (`forgelegacy.isaiahaltamirano.workers.dev`), custom domains `forgelegacy.app`
+and `www.forgelegacy.app`. Nothing here is part of the app bundle; the Expo web build is a separate
+surface (`forgelegacy.expo.app`) and is a *testing* surface, not the product.
+
+⚠ **It is a Worker, not Pages**, despite what every earlier draft of this file said. Cloudflare's
+"Create application" flow now routes static uploads to Workers and leaves Pages behind a
+*"Looking to deploy Pages?"* footnote. Both would have worked; the Worker is the non-deprecated path.
+⚠ **A Worker cannot be renamed.** The first upload auto-named itself `patient-thunder-a29b` because the
+name field was left at its random default; it was deleted and redone as `forgelegacy` before anything
+pointed at it. Name it *before* dragging the folder in.
 
 | File | State |
 |---|---|
@@ -192,14 +201,43 @@ not a bug in the page.
 
 ---
 
-## Deploying
+## Deploying — done, and how to redo it
 
-Cloudflare Pages, connected to this directory. Then point `forgelegacy.app` at it.
+**Live 2026-08-16.** Cloudflare → Workers & Pages → project **`forgelegacy`** → *Upload assets*. Custom
+domains were added from the project's **Domains** tab; because the zone is on Cloudflare nameservers in
+the same account, **Cloudflare wrote the DNS records itself** — the DNS tab was never touched, and the
+MX records that run `isaiah@`/`support@` were unaffected.
 
-⚠ **The domain currently has MX records only** — email resolves, the website does not. There is no A or
-CNAME for the apex yet, which is why `forgelegacy.app` does not load.
+⚠ **NEVER upload this directory as-is.** `_exported-bundle.html` is 4 MB, is git-ignored, and would
+become a public indexable page at `/_exported-bundle.html`. Stage a folder with exactly these **24
+files** and upload that:
+
+```
+index.html  privacy.html  terms.html  favicon.png  assets/landing/*   (20 files)
+```
+
+The live deployment serves `/_exported-bundle.html` as **404**. Keep it that way.
+
+### Verified from outside on deploy day
+
+| | |
+|---|---|
+| `forgelegacy.app` | **200**, 155,105 b — byte-for-byte `index.html` |
+| `/privacy` · `/terms` | **200** · **200** — extension-less routing is automatic, no `_redirects` needed |
+| `www.forgelegacy.app` | **200** |
+| `http://` (both hosts) | **301 → https** (*Always Use HTTPS*, SSL/TLS → Edge Certificates) |
+| `/_exported-bundle.html` | **404** ✅ |
+| MX | all three `route*.mx.cloudflare.net` intact |
+
+⚠ **SSL/TLS mode is `Full`, not `Full (strict)`, and that is correct.** The origin *is* the Worker,
+running at the edge — there is no Cloudflare-to-origin hop for strict mode to protect. Do not change it.
+
+⚠ **A stale negative DNS cache will lie to you.** Right after `www` was added, `curl` returned
+`000`/exit-6 while `nslookup 8.8.8.8` resolved it fine — a local router holding an old NXDOMAIN.
+`curl --resolve www.forgelegacy.app:443:104.21.69.62` proved the edge was serving 200 all along.
+Test against the edge before believing a local failure.
 
 ⚠ **This is an Apple enrollment gate, not just marketing.** An organization Developer account requires a
 public, functional website on a domain associated with the organization; parking pages and thin sites are
-explicitly rejected. The D-U-N-S was requested 2026-08-13 (D&B case 10803372, documents answered
-2026-08-15). **The site must be live before enrollment.**
+explicitly rejected. ✅ **That gate is now cleared.** The D-U-N-S was requested 2026-08-13 (D&B case
+10803372, documents answered 2026-08-15) and remains the sole blocker on enrollment.

@@ -1,6 +1,7 @@
 # GO-LIVE — the short list
 
-**v1.0 · 2026-08-16 · verified against the repo and the live domain on that date.**
+**v1.1 · 2026-08-16 · verified against the repo and the live domain on that date.**
+**The website is live** — `forgelegacy.app` deployed this date, which clears the Apple enrollment gate. See Stage 1 step 2.
 
 ⚠ **This is a VIEW, not a fork.** The detail — every phase, every number, every reason — lives in
 `Docs/Launch-Checklist-Free-And-Premium.md` (v1.1) and `Forge-Legacy-Master-Status.md`. This file exists
@@ -14,11 +15,11 @@ file is stale — fix it.**
 | | |
 |---|---|
 | **App** | iOS only. Zero Android builds. Live at `forgelegacy.expo.app` (a *testing* surface, not the product) |
-| **Database** | 162 migration files. ⚠ **Applied state unverified since 0159** — run the preflight before trusting anything |
+| **Database** | 162 migration files. **Applied through 0162** — `0155`–`0158` preflighted 15/15 on 08-13, `0159` applied 08-15, `0160`/`0161` verified by working squad create+transfer, `0162` confirmed by a route drawn on device 08-16. `0144` absent by decision. ⚠ *This line has been wrong in both directions before — run `supabase/apply/preflight-*.sql` rather than trusting it* |
 | **Entitlement** | `default_tier = PREMIUM`, so **every cap is built and nothing gates**. Phase F is one UPDATE |
 | **Entity** | Forge Legacy LLC · Utah · EIN 42-4433633 · parent Altimealix Holdings LLC |
-| **Domain** | `forgelegacy.app` registered. Email live (`isaiah@`, `support@`, Cloudflare routing). ⛔ **Website does NOT resolve — MX records only** |
-| **Website** | `site/index.html` **built** (151 KB), privacy + terms done. ⛔ **Not deployed** |
+| **Domain** | `forgelegacy.app` registered, Cloudflare nameservers. Email live (`isaiah@`, `support@`). ✅ **Apex + `www` resolve, HTTP 301s to HTTPS, MX untouched** |
+| **Website** | ✅ **LIVE at `forgelegacy.app`** — deployed 2026-08-16 as a **Cloudflare Worker with static assets** named `forgelegacy` (*not* Pages; the dashboard steers new projects to Workers now). Root / `/privacy` / `/terms` all 200. Redeploy = drag `site/`'s deployable files into the project's upload flow, minus `_exported-bundle.html` |
 | **D-U-N-S** | Requested 2026-08-13 · D&B case **10803372** · documents answered 2026-08-15 · **pending** |
 | **Apple** | App `6798436104` on team `G722GV8H8C` (qest4). The public release ships under a **new Forge Legacy LLC org account** |
 | **Paywall** | ⛔ **Not built.** No `subscription.tsx`, no billing SDK in `package.json`, no SKUs |
@@ -33,9 +34,14 @@ screen, the squads outage and the chapter dead end have all reached nobody.
 App Store Connect → TestFlight → **Test Information** (required) → **External Testing** group → add
 emails → attach the newest build → Beta App Review (usually < 1 day).
 
-**2. Deploy the website.** Cloudflare Pages → connect `site/` → add the DNS record for the apex.
-⚠ The domain has **MX only** today, which is why email works and the site does not.
-Then: root **200**, `/privacy` **200**, `/terms` **200**.
+**2. ✅ DONE 2026-08-16 — the website is live.** Cloudflare **Worker + static assets**, project `forgelegacy`,
+custom domains `forgelegacy.app` (apex) and `www.forgelegacy.app`, **Always Use HTTPS** on.
+Verified from outside: root **200** · `/privacy` **200** · `/terms` **200** · `www` **200** · HTTP **301 → HTTPS** ·
+MX records intact, so `isaiah@` and `support@` are unaffected.
+⚠ **`_exported-bundle.html` (4 MB) was deliberately excluded** and returns **404** — do not let a future
+redeploy sweep the whole `site/` directory in, or that file becomes a public, indexable page.
+⚠ **SSL/TLS mode is `Full`, and that is correct here** — the origin *is* the Worker, so there is no
+Cloudflare-to-origin hop for `Full (strict)` to protect. Do not "fix" it.
 
 ---
 
@@ -45,8 +51,8 @@ Then: root **200**, `/privacy` **200**, `/terms` **200**.
 type and employee count is what stalls a case.
 
 **4. Enroll Forge Legacy LLC** in the Apple Developer Program.
-⚠ **Requires the website to be live** on the org's own domain — parking pages and thin sites are
-explicitly rejected — plus a **work email at that domain** (done). This is why step 2 is not optional.
+✅ **Both prerequisites are now met**: a live, functional website on the org's own domain (step 2,
+done 2026-08-16) and a work email at that domain. **D-U-N-S is the only thing still gating this.**
 Then enroll in the **Small Business Program** (15% not 30%) — per entity, before revenue.
 
 **5. ⚠ Settle the bundle identifier BEFORE building under the new team.** `com.qest4.forgelegacy` belongs
