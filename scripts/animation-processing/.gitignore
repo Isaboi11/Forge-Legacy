@@ -1,2 +1,16 @@
 __pycache__/
 *.pyc
+
+# Generated review surfaces — rebuilt from the bucket / the library by their build scripts.
+# The PAGES are disposable; the verdicts live in the browser and are exported to CSV/JSON.
+animation-review.html
+alternates-review.html
+reprocess-review.html
+_alt_shots/
+_work*/
+
+# The PO's exported verdicts. Kept OUT of the repo deliberately: they are an input to a pass, not a
+# record of one, and re-exporting mid-pass would churn the diff. `source-map.json`, `alternates.json`
+# and `source-audit.json` ARE committed — those are derived facts about the library, not opinions.
+animation-review.csv
+alternate-picks.json

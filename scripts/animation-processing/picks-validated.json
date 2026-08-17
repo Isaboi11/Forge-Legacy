@@ -1,0 +1,126 @@
+{
+  "clean": [
+    "male/cable-chest-fly",
+    "male/cable-chest-press",
+    "male/cable-lat-pulldown",
+    "male/cable-lateral-raise",
+    "female/cable-lateral-raise",
+    "male/cat-cow",
+    "male/cross-body-hammer-curl",
+    "female/dumbbell-lateral-lunge",
+    "male/dumbbell-reverse-lunge",
+    "female/horizontal-leg-press",
+    "male/machine-biceps-curl",
+    "male/machine-leg-press",
+    "female/pendulum-squat",
+    "male/reverse-crunch",
+    "female/seated-calf-raise-machine",
+    "female/seated-hamstring-stretch",
+    "male/single-arm-cable-row",
+    "male/single-arm-dumbbell-bench-press",
+    "female/single-arm-dumbbell-lateral-raise",
+    "female/sit-up",
+    "female/split-squat",
+    "male/step-up"
+  ],
+  "concerns": [
+    {
+      "key": "female/band-reverse-curl",
+      "name": "Band Reverse Curl",
+      "note": "",
+      "file": "Cable-Reverse-Curl_Forearm.mp4",
+      "issues": [
+        "wants BAND, pick is CABLE"
+      ]
+    },
+    {
+      "key": "male/barbell-front-squat",
+      "name": "Barbell Front Squat",
+      "note": "",
+      "file": "Barbell-Clean-grip-Front-Squat_Thighs-FIX_.mp4",
+      "issues": [
+        "pick adds movement \"clean\""
+      ]
+    },
+    {
+      "key": "female/barbell-push-press",
+      "name": "Barbell Push Press",
+      "note": "",
+      "file": "Barbell-Clean-and-Press-(female)_Shoulders_.mp4",
+      "issues": [
+        "pick adds movement \"clean\""
+      ]
+    },
+    {
+      "key": "female/cable-hip-thrust",
+      "name": "Cable Hip Thrust",
+      "note": "",
+      "file": "Hip-Thrusts-(Female)_Hips-FIX_.mp4",
+      "issues": [
+        "wants CABLE, pick is not equipment-named"
+      ]
+    },
+    {
+      "key": "female/cable-reverse-crunch",
+      "name": "Cable Reverse Crunch",
+      "note": "",
+      "file": "Band-Reverse-Crunch-(female)_Waist_.mp4",
+      "issues": [
+        "wants CABLE, pick is BAND"
+      ]
+    },
+    {
+      "key": "male/single-arm-kettlebell-press",
+      "name": "Single-Arm Kettlebell Press",
+      "note": "",
+      "file": "Kettlebell-Single-arm-Clean-and-Push-Press-(male)_.mp4",
+      "issues": [
+        "pick adds movement \"clean\""
+      ]
+    },
+    {
+      "key": "female/single-arm-kettlebell-press",
+      "name": "Single-Arm Kettlebell Press",
+      "note": "",
+      "file": "Kettlebell-Single-Arm-Clean-(female)_Weightlifts_.mp4",
+      "issues": [
+        "pick adds movement \"clean\""
+      ]
+    },
+    {
+      "key": "female/single-leg-leg-extension",
+      "name": "Single-Leg Leg Extension",
+      "note": "",
+      "file": "Lever-Leg-Extension-(female)_Thighs.mp4",
+      "issues": [
+        "wants SINGLE-arm/leg, pick is not"
+      ]
+    }
+  ],
+  "none": [
+    "female/cable-calf-raise",
+    "female/cable-chest-fly",
+    "male/cable-rear-delt-fly",
+    "female/cable-rear-delt-fly",
+    "male/calf-raise",
+    "female/dumbbell-decline-bench-press",
+    "male/dumbbell-lateral-lunge",
+    "female/machine-biceps-curl",
+    "male/machine-squat",
+    "female/medicine-ball-wall-ball",
+    "male/plank",
+    "male/push-up",
+    "female/scapular-push-up"
+  ],
+  "undecided": [
+    "male/air-bike",
+    "female/air-bike",
+    "female/cable-external-rotation",
+    "male/cable-hip-thrust",
+    "female/crab-walk",
+    "female/high-cable-row",
+    "female/high-to-low-cable-fly",
+    "female/incline-push-up",
+    "female/kettlebell-floor-press"
+  ]
+}

@@ -75,6 +75,8 @@ DARK_FRAC     = 0.15     # remove blob if this fraction of its ring is dark (equ
 E255_FRAC     = 0.90     # OR remove a near-perfectly-flat-255 blob (a see-through limb gap)...
 BIG_FLAT_FRAC = 0.00265  # ...that is also at least this big (frac of frame). Muscle highlights
                          # are smaller AND not perfectly flat, so the area gate spares them.
+BAR_LEVEL     = 40       # a pixel never brighter than this is letterbox bar, not picture
+BG_FRAC       = 0.90     # white in >= this share of frames -> background (see static_background)
 RING_DIL      = 3        # ring search radius (px)
 HOLE_MAX_FRAC = 0.0003   # fill enclosed body holes smaller than this (tiny notches); real gaps stay open
 MIN_FG_PX     = 40       # drop isolated foreground specks smaller than this
@@ -105,6 +107,62 @@ def recolor(rgb):
     return np.asarray(Image.fromarray(hsv2, "HSV").convert("RGB"))
 
 
+def crop_letterbox(frames):
+    """
+    Remove uniform black letterbox/pillarbox bars, rewriting the decoded frames in place.
+
+    ══ WHY THIS RUNS BEFORE EVERYTHING ELSE ══
+
+    `clip_threshold` reads the background level off the four corners. That is sound for the vendor's
+    renders, which are white to the edge — and completely wrong for a clip delivered inside black
+    bars, where all four corners are the bar. `bg_min` comes back 0, the threshold goes to -5, every
+    pixel in the frame satisfies `> thr`, the entire frame is classified background, and the clip
+    mattes away to nothing. `main()` then raises "no subject found", which points at the background
+    without saying that the real problem is a letterbox.
+
+    Cropping first is better than teaching the threshold to ignore bars, because the bars break more
+    than the threshold: they are not white, so `matte()` would keep them as subject, and the bbox
+    crop at the end would preserve them as two black slabs beside the athlete.
+
+    Only a run of edge rows/columns that is uniformly near-black is removed. A white-background
+    render has none, so this is a no-op on every clip that was already working — which is what makes
+    it safe to apply to all of them rather than only to the one that failed.
+    """
+    probe = frames[:: max(1, len(frames) // 8)]
+    acc = None
+    for fp in probe:
+        v = np.asarray(Image.open(fp).convert("RGB")).max(axis=2)
+        acc = v if acc is None else np.maximum(acc, v)   # brightest this pixel ever gets
+    H, W = acc.shape
+    dark_row = (acc < BAR_LEVEL).all(axis=1)
+    dark_col = (acc < BAR_LEVEL).all(axis=0)
+
+    def run(mask):
+        """Length of the uniformly-dark run at the START of mask (edges only — a dark band through
+        the middle of the picture is content, not a bar)."""
+        n = 0
+        while n < len(mask) and mask[n]:
+            n += 1
+        return n
+
+    top, bottom = run(dark_row), run(dark_row[::-1])
+    left, right = run(dark_col), run(dark_col[::-1])
+    if not (top or bottom or left or right):
+        return False
+
+    y0, y1 = top, H - bottom
+    x0, x1 = left, W - right
+    if y1 - y0 < H // 4 or x1 - x0 < W // 4:
+        # Nearly everything is dark — this is not a letterboxed white render, and cropping it would
+        # be a guess. Leave it alone and let the caller fail loudly.
+        return False
+
+    for fp in frames:
+        Image.open(fp).convert("RGB").crop((x0, y0, x1, y1)).save(fp)
+    print(f"  letterbox: cropped {left}L {right}R {top}T {bottom}B -> {x1-x0}x{y1-y0}")
+    return True
+
+
 def clip_threshold(frames):
     """
     ONE white threshold for the whole clip.
@@ -129,9 +187,9 @@ def clip_threshold(frames):
     return min(WHITE_THR, bg_min - 5)
 
 
-def static_background(frames, thr):
+def static_background(frames, thr, frac=BG_FRAC):
     """
-    Pixels that are white in EVERY frame of the clip. Background, with certainty.
+    Pixels that are white in at least `frac` of the clip's frames. Background.
 
     ══ THE MACHINE FLICKER, AND WHY THIS FIXES IT ══
 
@@ -143,10 +201,29 @@ def static_background(frames, thr):
     is removed on one frame and kept on the next, so the athlete watches the source's white
     background blink through the machine.
 
-    A pixel that is white in ALL frames cannot be part of the subject. Not the athlete, who moves
+    A pixel that is white across the clip cannot be part of the subject. Not the athlete, who moves
     through their own silhouette; not a muscle highlight, which is bronze after `recolor()` and never
     flat white; not equipment, which is rendered grey. It is either outer background or a see-through
-    gap, and either way it must be transparent — in every frame, not most of them.
+    gap, and either way it must be transparent.
+
+    ══ WHY "MOST FRAMES" AND NOT "EVERY FRAME" ══
+
+    This demanded ALL frames first, and that left half the bug in place. The gaps that still flashed
+    were exactly the ones the athlete sweeps through — the window between the uprights that an arm
+    crosses at the top of the rep, the space a cable passes over. Covered for even one frame, the
+    pixel fails an all-frames test, drops back to the per-frame blob heuristic, and gets called
+    subject: the gap fills in white for that stretch of the rep and empties again after. The PO
+    described it exactly — "good moments, then glitchy moments" — and it is worst on cables and
+    machines because those clips have both the most gaps and something crossing them every rep.
+
+    A gap briefly crossed is still a gap. A spot the athlete genuinely occupies is white for a real
+    share of the clip, not 95% of it, so the body is not eaten by the relaxation: at 0.90 the
+    foreground given up is 0.34% of the subject, and it is the flashing patches themselves.
+
+    `frac` errs high on purpose. The two failure modes are not symmetric — too loose eats the
+    athlete, permanently and on every clip; too tight leaves some flashing, on machine clips only.
+    Measured on Cable Standing Crossover (alpha flips per pixel, delivery size):
+    1.00 -> 4.8% · 0.90 -> 3.3% · 0.80 -> 2.6%, against 0.34% / 0.97% of foreground given up.
 
     Small regions are left to `matte()`'s existing judgement (`AREA_MIN` exists to protect them), so
     this only overrules the decision where the decision was unstable in the first place.
@@ -155,7 +232,8 @@ def static_background(frames, thr):
     for fp in frames:
         rgb = np.asarray(Image.open(fp).convert("RGB"))
         w = (rgb[..., 0] > thr) & (rgb[..., 1] > thr) & (rgb[..., 2] > thr)
-        acc = w if acc is None else (acc & w)
+        acc = w.astype(np.uint16) if acc is None else (acc + w)
+    acc = acc >= frac * len(frames)
     H, W = acc.shape
     area_min = AREA_MIN * (H / 720.0) ** 2
     lbl, n = ndimage.label(acc)
@@ -254,6 +332,9 @@ def main(src, out, work):
         raise RuntimeError("no frames decoded")
 
     t = time.time()
+    # Bars first: they poison the corner sample `clip_threshold` depends on, and every later stage
+    # inherits that mistake as a fully-transparent clip.
+    crop_letterbox(frames)
     # Two clip-wide passes BEFORE any per-frame work. Both quantities used to be re-derived from
     # each frame in isolation, and a matte that re-decides the same question every frame answers it
     # differently near its thresholds — which the athlete sees as the background blinking through a

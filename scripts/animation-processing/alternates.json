@@ -1,0 +1,2235 @@
+[
+  {
+    "key": "male/air-bike",
+    "id": "air-bike",
+    "name": "Air Bike",
+    "variant": "male",
+    "note": "",
+    "current": "MP4/MALE/Home_Workout_/Air-Bike-(male)_Waist-FIX_.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Jumping-Air-Bike-(male)_Plyometrics_.mp4",
+        "rel": "MP4/MALE/Home_Workout_/Jumping-Air-Bike-(male)_Plyometrics_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Shuffle-Air-Bike-(male)_Plyometrics_.mp4",
+        "rel": "MP4/MALE/Home_Workout_/Shuffle-Air-Bike-(male)_Plyometrics_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Standing-Air-Bike_Waist.mp4",
+        "rel": "MP4/MALE/Home_Workout_/Standing-Air-Bike_Waist.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Stepback-Air-Bike-(male)_Plyometrics_.mp4",
+        "rel": "MP4/MALE/Home_Workout_/Stepback-Air-Bike-(male)_Plyometrics_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Sitting-Air-Bike-on-a-Chair-(male)_Waist_.mp4",
+        "rel": "MP4/MALE/Home_Workout_/Sitting-Air-Bike-on-a-Chair-(male)_Waist_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Standing-Single-Air-Bike-(male)_Plyometrics_.mp4",
+        "rel": "MP4/MALE/Home_Workout_/Standing-Single-Air-Bike-(male)_Plyometrics_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "female/air-bike",
+    "id": "air-bike",
+    "name": "Air Bike",
+    "variant": "female",
+    "note": "",
+    "current": "MP4/FEMALE/Home_Workout_/Air-Bike-(VERSION-2)-(female)_Waist.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Air-Bike-on-a-Chair-(female)_Waist_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Air-Bike-on-a-Chair-(female)_Waist_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Squat-Air-Bike-(female)_Plyometrics_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Squat-Air-Bike-(female)_Plyometrics_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Standing-Air-Bike-(female)_Waist_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Standing-Air-Bike-(female)_Waist_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Forward-Step-Air-Bike-(female)_Plyometrics_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Forward-Step-Air-Bike-(female)_Plyometrics_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Resistance-Band-Air-Bike-(female)_Waist_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Resistance-Band-Air-Bike-(female)_Waist_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Sitting-Air-Bike-on-a-Chair-(female)_Waist_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Sitting-Air-Bike-on-a-Chair-(female)_Waist_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "female/band-reverse-curl",
+    "id": "band-reverse-curl",
+    "name": "Band Reverse Curl",
+    "variant": "female",
+    "note": "",
+    "current": "MP4/FEMALE/Gym_Workout_/Barbell-Reverse-Curl-(female)_Forearms.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Band-Reverse-Crunch-(female)_Waist_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Band-Reverse-Crunch-(female)_Waist_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Reverse-Curl_Forearm.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Cable-Reverse-Curl_Forearm.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Band-Concentration-Curl-(female)_Upper-Arms_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Band-Concentration-Curl-(female)_Upper-Arms_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Band-standing-leg-curl-(female)_Thighs.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Band-standing-leg-curl-(female)_Thighs.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Barbell-Reverse-Wrist-Curl-(female)_Forearms_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Barbell-Reverse-Wrist-Curl-(female)_Forearms_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Bottle-Weighted-Reverse-Curl-(female)_Forearms_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Bottle-Weighted-Reverse-Curl-(female)_Forearms_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "male/barbell-front-squat",
+    "id": "barbell-front-squat",
+    "name": "Barbell Front Squat",
+    "variant": "male",
+    "note": "",
+    "current": "MP4/MALE/Gym_Workout_/Barbell-Front-Bench-Squat_Thighs_.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Barbell-Front-Chest-Squat_Thighs.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Barbell-Front-Chest-Squat_Thighs.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Barbell-Pause-Front-Squat_Hips_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Barbell-Pause-Front-Squat_Hips_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Barbell-Pin-Front-Squat_Thighs_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Barbell-Pin-Front-Squat_Thighs_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Barbell-Clean-grip-Front-Squat_Thighs-FIX_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Barbell-Clean-grip-Front-Squat_Thighs-FIX_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Barbell-Split-Squat-Front-Foot-Elevanted_Thighs_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Barbell-Split-Squat-Front-Foot-Elevanted_Thighs_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Barbell-Bench-Squat_Hips_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Barbell-Bench-Squat_Hips_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "female/barbell-push-press",
+    "id": "barbell-push-press",
+    "name": "Barbell Push Press",
+    "variant": "female",
+    "note": "",
+    "current": "MP4/FEMALE/Home_Workout_/Incline-Push-Press_Chest-(female).mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Barbell-Bench-Press-(female)_Chest.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Barbell-Bench-Press-(female)_Chest.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Barbell-Clean-and-Press-(female)_Shoulders_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Barbell-Clean-and-Press-(female)_Shoulders_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Barbell-Decline-Bench-Press-(female)_Chest.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Barbell-Decline-Bench-Press-(female)_Chest.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Barbell-Incline-Bench-Press-(female)_Chest.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Barbell-Incline-Bench-Press-(female)_Chest.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Barbell-Seated-Overhead-Press-(female)_Shoulders.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Barbell-Seated-Overhead-Press-(female)_Shoulders.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Barbell-Wide-Bench-Press-(female)_Chest_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Barbell-Wide-Bench-Press-(female)_Chest_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "female/cable-calf-raise",
+    "id": "cable-calf-raise",
+    "name": "Cable Calf Raise",
+    "variant": "female",
+    "note": "",
+    "current": "MP4/FEMALE/Gym_Workout_/Donkey-Calf-Raise-(female)_Calves.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Cable-Front-Raise-(female)_Shoulders.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Cable-Front-Raise-(female)_Shoulders.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Lateral-Raise-(female)_Shoulders.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Cable-Lateral-Raise-(female)_Shoulders.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Suspender-Calf-Raise-(female)_Calves_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Suspender-Calf-Raise-(female)_Calves_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Calf-Raise-Clap-(female)_Plyometrics_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Calf-Raise-Clap-(female)_Plyometrics_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Standing-Calf-Raise-(female)_Calves_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Standing-Calf-Raise-(female)_Calves_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Barbell-Seated-Calf-Raise-(female)_Calves_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Barbell-Seated-Calf-Raise-(female)_Calves_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "male/cable-chest-fly",
+    "id": "cable-chest-fly",
+    "name": "Cable Chest Fly",
+    "variant": "male",
+    "note": "This needs to be a standing cable chest fly. Not sitting.",
+    "current": "MP4/MALE/Gym_Workout_/Cable-Seated-Chest-Fly_Chest_.mp4",
+    "wanted_from_note": [
+      "standing",
+      "sitting",
+      "cable"
+    ],
+    "candidates": [
+      {
+        "file": "Cable-Standing-Fly_Chest.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Standing-Fly_Chest.mp4",
+        "overlap": 1,
+        "noteHit": 2
+      },
+      {
+        "file": "Cable-Standing-Alternate-Chest-Fly_Chest_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Standing-Alternate-Chest-Fly_Chest_.mp4",
+        "overlap": 1,
+        "noteHit": 2
+      },
+      {
+        "file": "Cable-Standing-Neutral-grip-Fly-(male)_Chest_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Standing-Neutral-grip-Fly-(male)_Chest_.mp4",
+        "overlap": 1,
+        "noteHit": 2
+      },
+      {
+        "file": "Cable-Standing-Single-Arm-Fly_Chest_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Standing-Single-Arm-Fly_Chest_.mp4",
+        "overlap": 1,
+        "noteHit": 2
+      },
+      {
+        "file": "Cable-Standing-Chest-Press_Chest_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Standing-Chest-Press_Chest_.mp4",
+        "overlap": 0.67,
+        "noteHit": 2
+      },
+      {
+        "file": "Cable-Standing-Crossover-(male)_Chest_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Standing-Crossover-(male)_Chest_.mp4",
+        "overlap": 0.67,
+        "noteHit": 2
+      }
+    ]
+  },
+  {
+    "key": "female/cable-chest-fly",
+    "id": "cable-chest-fly",
+    "name": "Cable Chest Fly",
+    "variant": "female",
+    "note": "Needs to be standing not laying down..",
+    "current": "MP4/FEMALE/Gym_Workout_/Cable-Lying-Fly-(female)_Chest.mp4",
+    "wanted_from_note": [
+      "standing"
+    ],
+    "candidates": [
+      {
+        "file": "Cable-Standing-Chest-Press_Chest.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Cable-Standing-Chest-Press_Chest.mp4",
+        "overlap": 0.67,
+        "noteHit": 1
+      },
+      {
+        "file": "Bodyweight-Standing-Fly-(female)_Chest_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Bodyweight-Standing-Fly-(female)_Chest_.mp4",
+        "overlap": 0.67,
+        "noteHit": 1
+      },
+      {
+        "file": "Bodyweight-Standing-Triangle-Fly-(female)_Chest_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Bodyweight-Standing-Triangle-Fly-(female)_Chest_.mp4",
+        "overlap": 0.67,
+        "noteHit": 1
+      },
+      {
+        "file": "Bodyweight-Standing-Alternate-Chest-Fly-(female)_C.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Bodyweight-Standing-Alternate-Chest-Fly-(female)_C.mp4",
+        "overlap": 0.67,
+        "noteHit": 1
+      },
+      {
+        "file": "Bodyweight-Standing-Straight-Arm-Chest-Fly-(female.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Bodyweight-Standing-Straight-Arm-Chest-Fly-(female.mp4",
+        "overlap": 0.67,
+        "noteHit": 1
+      },
+      {
+        "file": "Bodyweight-Standing-Straight-Arm-Chest-High-Fly-(f.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Bodyweight-Standing-Straight-Arm-Chest-High-Fly-(f.mp4",
+        "overlap": 0.67,
+        "noteHit": 1
+      }
+    ]
+  },
+  {
+    "key": "male/cable-chest-press",
+    "id": "cable-chest-press",
+    "name": "Cable Chest Press",
+    "variant": "male",
+    "note": "Needs to be standing.",
+    "current": "MP4/MALE/Gym_Workout_/Cable-Seated-Chest-Press-(male)_Chest_.mp4",
+    "wanted_from_note": [
+      "standing"
+    ],
+    "candidates": [
+      {
+        "file": "Cable-Standing-Chest-Press_Chest_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Standing-Chest-Press_Chest_.mp4",
+        "overlap": 1,
+        "noteHit": 1
+      },
+      {
+        "file": "Cable-Standing-Squeez-Upper-Chest-Press-(male)_Chest_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Standing-Squeez-Upper-Chest-Press-(male)_Chest_.mp4",
+        "overlap": 1,
+        "noteHit": 1
+      },
+      {
+        "file": "Band-Standing-Chest-Press-(male)_Chest.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Band-Standing-Chest-Press-(male)_Chest.mp4",
+        "overlap": 0.67,
+        "noteHit": 1
+      },
+      {
+        "file": "Cable-Standing-Crossover-(male)_Chest_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Standing-Crossover-(male)_Chest_.mp4",
+        "overlap": 0.67,
+        "noteHit": 1
+      },
+      {
+        "file": "Cable-Standing-Fly_Chest.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Standing-Fly_Chest.mp4",
+        "overlap": 0.67,
+        "noteHit": 1
+      },
+      {
+        "file": "Standing-Plate-Press_Chest_.mp4",
+        "rel": "MP4/MALE/Home_Workout_/Standing-Plate-Press_Chest_.mp4",
+        "overlap": 0.67,
+        "noteHit": 1
+      }
+    ]
+  },
+  {
+    "key": "female/cable-external-rotation",
+    "id": "cable-external-rotation",
+    "name": "Cable External Rotation",
+    "variant": "female",
+    "note": "Needs to be a cable not a band.",
+    "current": "MP4/FEMALE/Home_Workout_/Sitting-External-Rotation-on-a-Chair-(female)_Back.mp4",
+    "wanted_from_note": [
+      "cable",
+      "band"
+    ],
+    "candidates": [
+      {
+        "file": "Resistance-Band-Standing-External-Rotation-(female.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Resistance-Band-Standing-External-Rotation-(female.mp4",
+        "overlap": 0.67,
+        "noteHit": 1
+      },
+      {
+        "file": "Resistance-Band-Shoulder-External-Rotation-in-Supp.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Resistance-Band-Shoulder-External-Rotation-in-Supp.mp4",
+        "overlap": 0.67,
+        "noteHit": 1
+      },
+      {
+        "file": "Resistance-Band-90-degrees-External-Rotation-(fema.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Resistance-Band-90-degrees-External-Rotation-(fema.mp4",
+        "overlap": 0.67,
+        "noteHit": 1
+      },
+      {
+        "file": "Seated-Hip-External-Rotation-(female)_Hips_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Seated-Hip-External-Rotation-(female)_Hips_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Kneeling-External-Rotation-(female)_Hips_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Kneeling-External-Rotation-(female)_Hips_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Lying-External-Shoulder-Rotation-(female).mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Dumbbell-Lying-External-Shoulder-Rotation-(female).mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "male/cable-hip-thrust",
+    "id": "cable-hip-thrust",
+    "name": "Cable Hip Thrust",
+    "variant": "male",
+    "note": "This is a bodyweight hip thrust. Needs to have a cable.",
+    "current": "MP4/MALE/Gym_Workout_/Hip-Thrusts_Hips_.mp4",
+    "wanted_from_note": [
+      "cable",
+      "bodyweight"
+    ],
+    "candidates": [
+      {
+        "file": "Cable-Donkey-Kickback-(male)_Hips_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Donkey-Kickback-(male)_Hips_.mp4",
+        "overlap": 0.67,
+        "noteHit": 1
+      },
+      {
+        "file": "Cable-hip-abduction-(version-2)-(male)_Hips_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-hip-abduction-(version-2)-(male)_Hips_.mp4",
+        "overlap": 0.67,
+        "noteHit": 1
+      },
+      {
+        "file": "Cable-Hip-Adduction_Thighs.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Hip-Adduction_Thighs.mp4",
+        "overlap": 0.67,
+        "noteHit": 1
+      },
+      {
+        "file": "Cable-pull-through_hips.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-pull-through_hips.mp4",
+        "overlap": 0.67,
+        "noteHit": 1
+      },
+      {
+        "file": "Cable-Romanian-Deadlift-(male)_Hips_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Romanian-Deadlift-(male)_Hips_.mp4",
+        "overlap": 0.67,
+        "noteHit": 1
+      },
+      {
+        "file": "Cable-Standing-Hip-Extension_Hips-FIX_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Standing-Hip-Extension_Hips-FIX_.mp4",
+        "overlap": 0.67,
+        "noteHit": 1
+      }
+    ]
+  },
+  {
+    "key": "female/cable-hip-thrust",
+    "id": "cable-hip-thrust",
+    "name": "Cable Hip Thrust",
+    "variant": "female",
+    "note": "",
+    "current": "MP4/FEMALE/Gym_Workout_/Cable-Standing-Hip-Thrust-(female)_Hips_.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Hip-Thrusts-(Female)_Hips-FIX_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Hip-Thrusts-(Female)_Hips-FIX_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Barbell-Hip-Thrust-(female)_Hips.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Barbell-Hip-Thrust-(female)_Hips.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Hip-Adduction-(female)_Hips.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Cable-Hip-Adduction-(female)_Hips.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Lever-Hip-Thrust_Hips.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Lever-Hip-Thrust_Hips.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Smith-Hip-Thrust-(female)_Hips_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Smith-Hip-Thrust-(female)_Hips_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Weighted-Hip-Thrusts-(female)_Hips_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Weighted-Hip-Thrusts-(female)_Hips_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "male/cable-lat-pulldown",
+    "id": "cable-lat-pulldown",
+    "name": "Cable Lat Pulldown",
+    "variant": "male",
+    "note": "Needs to be sitting",
+    "current": "MP4/MALE/Gym_Workout_/Cable-Standing-Lat-Pulldown_Back_.mp4",
+    "wanted_from_note": [
+      "sitting"
+    ],
+    "candidates": [
+      {
+        "file": "Cable One Arm Lat Pulldown.mp4",
+        "rel": "MP4/MALE/Library_database/Cable One Arm Lat Pulldown.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Neutral-Grip-Lat-Pulldown-(male)_Back_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Neutral-Grip-Lat-Pulldown-(male)_Back_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-one-arm-lat-pulldown_back.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-one-arm-lat-pulldown_back.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Pulldown-(pro-lat-bar)_Back_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Pulldown-(pro-lat-bar)_Back_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Close-Grip-Front-Lat-Pulldown_Back.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Close-Grip-Front-Lat-Pulldown_Back.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Incline-Single-Arm-Lat-Pulldown-(male)_Back_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Incline-Single-Arm-Lat-Pulldown-(male)_Back_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "male/cable-lateral-raise",
+    "id": "cable-lateral-raise",
+    "name": "Cable Lateral Raise",
+    "variant": "male",
+    "note": "If there is a single are cable lateral raise that would be better",
+    "current": "MP4/MALE/Gym_Workout_/Cable-Lateral-Raise_shoulder.mp4",
+    "wanted_from_note": [
+      "single",
+      "cable"
+    ],
+    "candidates": [
+      {
+        "file": "Cable-Single-Arm-Lateral-Raise-(VERSION-2)-(male)_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Single-Arm-Lateral-Raise-(VERSION-2)-(male)_.mp4",
+        "overlap": 1,
+        "noteHit": 2
+      },
+      {
+        "file": "Cable-Side-Lying-Single-Arm-Lateral-Raise-(male)_S.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Side-Lying-Single-Arm-Lateral-Raise-(male)_S.mp4",
+        "overlap": 1,
+        "noteHit": 2
+      },
+      {
+        "file": "Cable-Single-Arm-Neutral-Grip-Front-Raise_Shoulder.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Single-Arm-Neutral-Grip-Front-Raise_Shoulder.mp4",
+        "overlap": 0.67,
+        "noteHit": 2
+      },
+      {
+        "file": "Cable-Leaning-Lateral-Raise_Shoulders_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Leaning-Lateral-Raise_Shoulders_.mp4",
+        "overlap": 1,
+        "noteHit": 1
+      },
+      {
+        "file": "Cable One Arm Lateral Raise.mp4",
+        "rel": "MP4/MALE/Library_database/Cable One Arm Lateral Raise.mp4",
+        "overlap": 1,
+        "noteHit": 1
+      },
+      {
+        "file": "Cable-One-Arm-Lateral-Raise_Shoulders.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-One-Arm-Lateral-Raise_Shoulders.mp4",
+        "overlap": 1,
+        "noteHit": 1
+      }
+    ]
+  },
+  {
+    "key": "female/cable-lateral-raise",
+    "id": "cable-lateral-raise",
+    "name": "Cable Lateral Raise",
+    "variant": "female",
+    "note": "Needs single are lateral raise",
+    "current": "MP4/FEMALE/Gym_Workout_/Cable-Lateral-Raise-(female)_Shoulders.mp4",
+    "wanted_from_note": [
+      "single"
+    ],
+    "candidates": [
+      {
+        "file": "Dumbbell-Single-arm-Leaning-Lateral-Raise-(female).mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Dumbbell-Single-arm-Leaning-Lateral-Raise-(female).mp4",
+        "overlap": 0.67,
+        "noteHit": 1
+      },
+      {
+        "file": "Resistance-Band-Single-Arm-Lateral-Raise-(female)_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Resistance-Band-Single-Arm-Lateral-Raise-(female)_.mp4",
+        "overlap": 0.67,
+        "noteHit": 1
+      },
+      {
+        "file": "Cable-One-Arm-Lateral-Raise-(female)_Shoulders.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Cable-One-Arm-Lateral-Raise-(female)_Shoulders.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Band-Lateral-Raise-(female)_Shoulders_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Band-Lateral-Raise-(female)_Shoulders_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Front-Raise-(female)_Shoulders.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Cable-Front-Raise-(female)_Shoulders.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Lever-Lateral-Raise-(female)_Shoulder.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Lever-Lateral-Raise-(female)_Shoulder.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "male/cable-rear-delt-fly",
+    "id": "cable-rear-delt-fly",
+    "name": "Cable Rear Delt Fly",
+    "variant": "male",
+    "note": "Needs to be standing.",
+    "current": "MP4/MALE/Gym_Workout_/Cable-Incline-Rear-Delt-Fly-with-Back-Support-(mal.mp4",
+    "wanted_from_note": [
+      "standing"
+    ],
+    "candidates": [
+      {
+        "file": "Cable-Standing-Rear-Delt-Row-(with-rope)_Shoulder_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Standing-Rear-Delt-Row-(with-rope)_Shoulder_.mp4",
+        "overlap": 0.75,
+        "noteHit": 1
+      },
+      {
+        "file": "Cable-Rear-Delt-Row_Shoulders_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Rear-Delt-Row_Shoulders_.mp4",
+        "overlap": 0.75,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Rear-Delt-Row-(with-rope)_Shoulders.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Rear-Delt-Row-(with-rope)_Shoulders.mp4",
+        "overlap": 0.75,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Kneeling-Rear-Delt-Row-(with-rope)-(male)_Sh.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Kneeling-Rear-Delt-Row-(with-rope)-(male)_Sh.mp4",
+        "overlap": 0.75,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Rear-Delt-Row-(parallel-bar)_Shoulders_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Rear-Delt-Row-(parallel-bar)_Shoulders_.mp4",
+        "overlap": 0.75,
+        "noteHit": 0
+      },
+      {
+        "file": "Bodyweight-Bent-Over-Rear-Delt-Fly_Shoulders_.mp4",
+        "rel": "MP4/MALE/Home_Workout_/Bodyweight-Bent-Over-Rear-Delt-Fly_Shoulders_.mp4",
+        "overlap": 0.75,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "female/cable-rear-delt-fly",
+    "id": "cable-rear-delt-fly",
+    "name": "Cable Rear Delt Fly",
+    "variant": "female",
+    "note": "Needs to be standing.",
+    "current": "MP4/FEMALE/Gym_Workout_/Cable-Seated-Rear-Delt-Raise-(female)_Shoulders_.mp4",
+    "wanted_from_note": [
+      "standing"
+    ],
+    "candidates": [
+      {
+        "file": "Cable-Standing-Rear-Delt-Row-(with-rope)-(female)_shoulder.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Cable-Standing-Rear-Delt-Row-(with-rope)-(female)_shoulder.mp4",
+        "overlap": 0.75,
+        "noteHit": 1
+      },
+      {
+        "file": "Dumbbell-Rear-Delt-Fly-(female)_Shoulders.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Dumbbell-Rear-Delt-Fly-(female)_Shoulders.mp4",
+        "overlap": 0.75,
+        "noteHit": 0
+      },
+      {
+        "file": "Bodyweight-Bent-Over-Rear-Delt-Fly-(female)_Should.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Bodyweight-Bent-Over-Rear-Delt-Fly-(female)_Should.mp4",
+        "overlap": 0.75,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "female/cable-reverse-crunch",
+    "id": "cable-reverse-crunch",
+    "name": "Cable Reverse Crunch",
+    "variant": "female",
+    "note": "",
+    "current": "MP4/FEMALE/Gym_Workout_/Cable-Single-Leg-Tuck-Reverse-Crunch-(female)_Wais.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Cable-Kneeling-Crunch-(female).mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Cable-Kneeling-Crunch-(female).mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Reverse-Crunch-(female)_Waist-FIX_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Reverse-Crunch-(female)_Waist-FIX_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Band-Reverse-Crunch-(female)_Waist_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Band-Reverse-Crunch-(female)_Waist_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Kneeling-Crunch-(female)_Waist_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Cable-Kneeling-Crunch-(female)_Waist_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Reverse-Curl_Forearm.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Cable-Reverse-Curl_Forearm.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Seated-Crunch-(female)_Waist_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Cable-Seated-Crunch-(female)_Waist_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "male/calf-raise",
+    "id": "calf-raise",
+    "name": "Calf Raise",
+    "variant": "male",
+    "note": "",
+    "current": "MP4/MALE/Gym_Workout_/Smith-Calf-Raise-(version-2)_Calves-FIX_.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Hack-Calf-Raise_Calves_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Hack-Calf-Raise_Calves_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Lever-Standing-Calf-Raise_Calf-FIX_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Lever-Standing-Calf-Raise_Calf-FIX_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Calf-Raise-Clap-(male)_Plyometrics_.mp4",
+        "rel": "MP4/MALE/Home_Workout_/Calf-Raise-Clap-(male)_Plyometrics_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Donkey-Calf-Raise_Calves.mp4",
+        "rel": "MP4/MALE/Home_Workout_/Donkey-Calf-Raise_Calves.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Barbell-Floor-Calf-Raise_Calves_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Barbell-Floor-Calf-Raise_Calves_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Barbell-Standing-Calf-Raise_Calves.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Barbell-Standing-Calf-Raise_Calves.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "male/cat-cow",
+    "id": "cat-cow",
+    "name": "Cat-Cow",
+    "variant": "male",
+    "note": "",
+    "current": "MP4/MALE/Home_Workout_/Cat-Cow-Lookback-(male)_Stretching_.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Cat-Cow-Stretch_Stretching_.mp4",
+        "rel": "MP4/MALE/Home_Workout_/Cat-Cow-Stretch_Stretching_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Lat-Lean-to-Cat-Cow-(male)_Stretching_.mp4",
+        "rel": "MP4/MALE/Home_Workout_/Lat-Lean-to-Cat-Cow-(male)_Stretching_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Sitting-Cat-Cow-Pose-(male)_Stretching_.mp4",
+        "rel": "MP4/MALE/Home_Workout_/Sitting-Cat-Cow-Pose-(male)_Stretching_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Standing-Cat-Cow-Stretch-(male)_Stretching_.mp4",
+        "rel": "MP4/MALE/Home_Workout_/Standing-Cat-Cow-Stretch-(male)_Stretching_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "female/crab-walk",
+    "id": "crab-walk",
+    "name": "Crab Walk",
+    "variant": "female",
+    "note": "",
+    "current": "MP4/FEMALE/Home_Workout_/Side-Crab-Walk-Back-Fly-(female)_Plyometrics_.mp4",
+    "wanted_from_note": [],
+    "candidates": []
+  },
+  {
+    "key": "male/cross-body-hammer-curl",
+    "id": "cross-body-hammer-curl",
+    "name": "Cross-Body Hammer Curl",
+    "variant": "male",
+    "note": "Needs to be dumbells.",
+    "current": "MP4/MALE/Gym_Workout_/Cable-Cross-Body-Hammer-Curl-(male)_Upper-Arms_.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Dumbbell-Cross-Body-Hammer-Curl_Forearms.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Dumbbell-Cross-Body-Hammer-Curl_Forearms.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Cross-Body-Hammer-Curl-(Version-2)_Upper-Arms-FIX.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Dumbbell-Cross-Body-Hammer-Curl-(Version-2)_Upper-Arms-FIX.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "female/dumbbell-decline-bench-press",
+    "id": "dumbbell-decline-bench-press",
+    "name": "Dumbbell Decline Bench Press",
+    "variant": "female",
+    "note": "",
+    "current": "MP4/FEMALE/Gym_Workout_/Dumbbell-Decline-Bench-Press-(female)_Chest.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Dumbbell-Bench-Press-(female)_Chest.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Dumbbell-Bench-Press-(female)_Chest.mp4",
+        "overlap": 0.75,
+        "noteHit": 0
+      },
+      {
+        "file": "Barbell-Decline-Bench-Press-(female)_Chest.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Barbell-Decline-Bench-Press-(female)_Chest.mp4",
+        "overlap": 0.75,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Bench-Seated-Press-(female)_Shoulders_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Dumbbell-Bench-Seated-Press-(female)_Shoulders_.mp4",
+        "overlap": 0.75,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Incline-Bench-Press-(female)_Chest.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Dumbbell-Incline-Bench-Press-(female)_Chest.mp4",
+        "overlap": 0.75,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Squeeze-Bench-Press-(female)_Chest_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Dumbbell-Squeeze-Bench-Press-(female)_Chest_.mp4",
+        "overlap": 0.75,
+        "noteHit": 0
+      },
+      {
+        "file": "Smith-Decline-Bench-Press-(female)_Chest_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Smith-Decline-Bench-Press-(female)_Chest_.mp4",
+        "overlap": 0.75,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "male/dumbbell-lateral-lunge",
+    "id": "dumbbell-lateral-lunge",
+    "name": "Dumbbell Lateral Lunge",
+    "variant": "male",
+    "note": "",
+    "current": "MP4/MALE/Gym_Workout_/Barbell-Lateral-Lunge_Hips.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Dumbbell-Change-Lateral-Raise-Curtsey-Lunge-(male).mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Dumbbell-Change-Lateral-Raise-Curtsey-Lunge-(male).mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell Lateral Raise.mp4",
+        "rel": "MP4/MALE/Library_database/Dumbbell Lateral Raise.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Curtsey-Lunge-(male)_Thighs_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Dumbbell-Curtsey-Lunge-(male)_Thighs_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Goblet-Lunge_Thighs_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Dumbbell-Goblet-Lunge_Thighs_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Lateral-Raise_shoulder-FIX_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Dumbbell-Lateral-Raise_shoulder-FIX_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Lateral-Walk-(male)_Hips_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Dumbbell-Lateral-Walk-(male)_Hips_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "female/dumbbell-lateral-lunge",
+    "id": "dumbbell-lateral-lunge",
+    "name": "Dumbbell Lateral Lunge",
+    "variant": "female",
+    "note": "",
+    "current": "MP4/FEMALE/Gym_Workout_/Barbell-Lateral-Lunge-(female)_Thighs_.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Dumbbell-Lunge-(female)_Thighs.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Dumbbell-Lunge-(female)_Thighs.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Curtsey-lunge-(female)_Thighs_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Dumbbell-Curtsey-lunge-(female)_Thighs_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Rear-Lunge-(female)_Thighs_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Dumbbell-Rear-Lunge-(female)_Thighs_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Side-Lunge-(female)_Hips_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Dumbbell-Side-Lunge-(female)_Hips_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Static-Lunge-(female)_Thighs_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Dumbbell-Static-Lunge-(female)_Thighs_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Walking-Lunge-(female)_Thighs.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Dumbbell-Walking-Lunge-(female)_Thighs.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "male/dumbbell-reverse-lunge",
+    "id": "dumbbell-reverse-lunge",
+    "name": "Dumbbell Reverse Lunge",
+    "variant": "male",
+    "note": "This is elevated. Needs to just be on the floor flat.",
+    "current": "MP4/MALE/Gym_Workout_/Dumbbell-Reverse-Lunge-from-Deficit-(male)_Thighs_.mp4",
+    "wanted_from_note": [
+      "flat",
+      "floor"
+    ],
+    "candidates": [
+      {
+        "file": "Dumbbell-Reverse-Press-on-Floor_Chest_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Dumbbell-Reverse-Press-on-Floor_Chest_.mp4",
+        "overlap": 0.67,
+        "noteHit": 1
+      },
+      {
+        "file": "Dumbbell-Curtsey-Lunge-(male)_Thighs_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Dumbbell-Curtsey-Lunge-(male)_Thighs_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Goblet-Lunge_Thighs_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Dumbbell-Goblet-Lunge_Thighs_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Lunge_Hips-FIX2_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Dumbbell-Lunge_Hips-FIX2_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Overhead-Lunge_Thighs_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Dumbbell-Overhead-Lunge_Thighs_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Rear-Lunge_Thighs-FIX_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Dumbbell-Rear-Lunge_Thighs-FIX_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "female/high-cable-row",
+    "id": "high-cable-row",
+    "name": "High Cable Row",
+    "variant": "female",
+    "note": "",
+    "current": "MP4/FEMALE/Gym_Workout_/Cable-Seated-High-Row-(V-bar)-(female)_Back.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Cable-Seated-Row-(female)_Back_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Cable-Seated-Row-(female)_Back_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Upright-Row-(female)_Shoulders_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Cable-Upright-Row-(female)_Shoulders_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Ring-High-Row-(female)_Back_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Ring-High-Row-(female)_Back_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Front-Seated-Row_Back.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Cable-Front-Seated-Row_Back.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Low-Seated-Row-(female)_Back_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Cable-Low-Seated-Row-(female)_Back_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Straight-Back-Seated-Row-(female)_Back.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Cable-Straight-Back-Seated-Row-(female)_Back.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "female/high-to-low-cable-fly",
+    "id": "high-to-low-cable-fly",
+    "name": "High-to-Low Cable Fly",
+    "variant": "female",
+    "note": "",
+    "current": "MP4/FEMALE/Gym_Workout_/Cable-Low-Fly-(female)_Chest_.mp4",
+    "wanted_from_note": [],
+    "candidates": []
+  },
+  {
+    "key": "female/horizontal-leg-press",
+    "id": "horizontal-leg-press",
+    "name": "Horizontal Leg Press",
+    "variant": "female",
+    "note": "",
+    "current": "MP4/MALE/Gym_Workout_/Lever-Horizontal-One-leg-Press_Hips.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Lever-Horizontal-One-leg-Press_Hips.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Lever-Horizontal-One-leg-Press_Hips.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Smith-Leg-Press-(female)_Thighs.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Smith-Leg-Press-(female)_Thighs.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Horizontal-Pallof-Press-(female)_Waist_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Cable-Horizontal-Pallof-Press-(female)_Waist_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Lever-Angled-Leg-Press-(female)_Thighs_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Lever-Angled-Leg-Press-(female)_Thighs_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Lever-Seated-Leg-Press-(female)_Thighs_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Lever-Seated-Leg-Press-(female)_Thighs_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Sled-Calf-Press-On-Leg-Press-(female)_Calves.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Sled-Calf-Press-On-Leg-Press-(female)_Calves.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "female/incline-push-up",
+    "id": "incline-push-up",
+    "name": "Incline Push-Up",
+    "variant": "female",
+    "note": "",
+    "current": "MP4/FEMALE/Gym_Workout_/Suspender-Incline-Push-up-(female)_Chest_.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Push-up-(female)_Chest.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Push-up-(female)_Chest.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Decline-Push-up-(female)_Chest_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Decline-Push-up-(female)_Chest_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Push-up-Row-(female)_Back_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Push-up-Row-(female)_Back_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Suspender-Push-up-(female)_Chest_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Suspender-Push-up-(female)_Chest_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Band-Push-up-(female)_Chest_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Band-Push-up-(female)_Chest_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Burpee-with-Push-up-(female)_Cardio_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Burpee-with-Push-up-(female)_Cardio_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "female/kettlebell-floor-press",
+    "id": "kettlebell-floor-press",
+    "name": "Kettlebell Floor Press",
+    "variant": "female",
+    "note": "",
+    "current": "MP4/FEMALE/Gym_Workout_/Dumbbell-Alternating-Floor-Press-(female)_Chest_.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Kettlebell-Angled-Press-(female)_Back_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Kettlebell-Angled-Press-(female)_Back_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Kettlebell-Bent-Press-(female)_waist.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Kettlebell-Bent-Press-(female)_waist.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Kettlebell-Seesaw-Press-(female)_Shoulders_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Kettlebell-Seesaw-Press-(female)_Shoulders_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Lying-on-Floor-Chest-Press-(female)_Chest.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Dumbbell-Lying-on-Floor-Chest-Press-(female)_Chest.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Lying-on-Floor-Hammer-Press-(female)_Ches.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Dumbbell-Lying-on-Floor-Hammer-Press-(female)_Ches.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Lying-Straight-Arm-Press-on-Floor-(female.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Dumbbell-Lying-Straight-Arm-Press-on-Floor-(female.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "male/machine-biceps-curl",
+    "id": "machine-biceps-curl",
+    "name": "Machine Biceps Curl",
+    "variant": "male",
+    "note": "",
+    "current": "MP4/MALE/Gym_Workout_/Smith-Machine-Bicep-Curl_Upper-Arms.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Lying Leg Curl Machine.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Lying Leg Curl Machine.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Bar-Biceps-Curl_Upper-Arms_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Bar-Biceps-Curl_Upper-Arms_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Kettlebell-Biceps-Curl_Upper-Arms_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Kettlebell-Biceps-Curl_Upper-Arms_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Lever-Bicep-Curl_Upper-Arms_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Lever-Bicep-Curl_Upper-Arms_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Lever-Biceps-Curl_Upper-Arms_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Lever-Biceps-Curl_Upper-Arms_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Suspender-Biceps-Curl-(male)_Upper-Arms_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Suspender-Biceps-Curl-(male)_Upper-Arms_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "female/machine-biceps-curl",
+    "id": "machine-biceps-curl",
+    "name": "Machine Biceps Curl",
+    "variant": "female",
+    "note": "",
+    "current": "MP4/FEMALE/Gym_Workout_/Lever-Biceps-Curl-(female)_Upper-Arms_.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Side-to-Side-Bicep-Curl-(female)_Plyometrics_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Side-to-Side-Bicep-Curl-(female)_Plyometrics_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Biceps-Curl-(female)_Upper-Arms.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Dumbbell-Biceps-Curl-(female)_Upper-Arms.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Kettlebell-Biceps-Curl-(female)_Upper-Arms_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Kettlebell-Biceps-Curl-(female)_Upper-Arms_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Smith-Bicep-Curl-(female)_Upper-Arms_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Smith-Bicep-Curl-(female)_Upper-Arms_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Biceps-Curl-Front Step-(female)_Plyometrics_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Biceps-Curl-Front Step-(female)_Plyometrics_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Lying-Bicep-Curl-(female)_Upper-Arms_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Lying-Bicep-Curl-(female)_Upper-Arms_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "male/machine-leg-press",
+    "id": "machine-leg-press",
+    "name": "Machine Leg Press",
+    "variant": "male",
+    "note": "",
+    "current": "MP4/MALE/Gym_Workout_/Smith-Leg-Press_Thighs-FIX_.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Lever-Seated-Squat-Calf-Raise-on-Leg-Press-Machine_Calves.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Lever-Seated-Squat-Calf-Raise-on-Leg-Press-Machine_Calves.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Lying Leg Curl Machine.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Lying Leg Curl Machine.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Assisted-Single-Leg-Press_Thighs-FIX_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Assisted-Single-Leg-Press_Thighs-FIX_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Barbell-Leg-Twist-Press_Chest_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Barbell-Leg-Twist-Press_Chest_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Lever-Angled-Leg-Press-(male)_Thighs_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Lever-Angled-Leg-Press-(male)_Thighs_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Lever-Horizontal-Leg-Press_Thighs_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Lever-Horizontal-Leg-Press_Thighs_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "male/machine-squat",
+    "id": "machine-squat",
+    "name": "Machine Squat",
+    "variant": "male",
+    "note": "",
+    "current": "MP4/MALE/Home_Workout_/Bodyweight-Squat-(male)_Thighs-FIX_.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Lever-Seated-Squat-Calf-Raise-on-Leg-Press-Machine_Calves.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Lever-Seated-Squat-Calf-Raise-on-Leg-Press-Machine_Calves.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "female/medicine-ball-wall-ball",
+    "id": "medicine-ball-wall-ball",
+    "name": "Medicine Ball Wall Ball",
+    "variant": "female",
+    "note": "",
+    "current": "MP4/FEMALE/Gym_Workout_/Medicine-Ball-Sit-up-(wall)_Waist-FIX_.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Medicine-Ball-Overhead-Slam-(female)_Back_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Medicine-Ball-Overhead-Slam-(female)_Back_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Medicine-Ball-Alternate-V-Up-(female)_Waist_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Medicine-Ball-Alternate-V-Up-(female)_Waist_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "female/pendulum-squat",
+    "id": "pendulum-squat",
+    "name": "Pendulum Squat",
+    "variant": "female",
+    "note": "",
+    "current": "MP4/FEMALE/Home_Workout_/Squat-Side-Pendulum-Leg-(female)_Plyometrics_.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Lever-Pendulum-Squat-(plate-loaded)-(female)_Thigh.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Lever-Pendulum-Squat-(plate-loaded)-(female)_Thigh.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "male/plank",
+    "id": "plank",
+    "name": "Plank",
+    "variant": "male",
+    "note": "Yes but not on his knees. So this probably isn't it",
+    "current": "MP4/MALE/Home_Workout_/Kneeling-plank-(male)_Waist.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Chinese-Plank-(male)_Waist_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Chinese-Plank-(male)_Waist_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Ring-Plank-(male)_Waist_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Ring-Plank-(male)_Waist_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Suspender-Plank-(male)_Waist_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Suspender-Plank-(male)_Waist_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Bear-Plank_Plyometrics_.mp4",
+        "rel": "MP4/MALE/Home_Workout_/Bear-Plank_Plyometrics_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Plank-Jack_Waist.mp4",
+        "rel": "MP4/MALE/Home_Workout_/Plank-Jack_Waist.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Plank-on-Hands_Waist_.mp4",
+        "rel": "MP4/MALE/Home_Workout_/Plank-on-Hands_Waist_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "male/push-up",
+    "id": "push-up",
+    "name": "Push-Up",
+    "variant": "male",
+    "note": "",
+    "current": "MP4/MALE/Home_Workout_/Wrist-Push-up-(male)_Forearms_.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Decline Push Up.mp4",
+        "rel": "MP4/MALE/Library_database/Decline Push Up.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Decline-Push-Up_Chest-FIX_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Decline-Push-Up_Chest-FIX_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Deep-Push-Up_Chest.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Deep-Push-Up_Chest.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Landmine-Push-up-(male)_Chest_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Landmine-Push-up-(male)_Chest_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Push-up-Row-(male)_Back-FIX_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Push-up-Row-(male)_Back-FIX_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Suspended-Push-Up_Chest_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Suspended-Push-Up_Chest_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "male/reverse-crunch",
+    "id": "reverse-crunch",
+    "name": "Reverse Crunch",
+    "variant": "male",
+    "note": "",
+    "current": "MP4/MALE/Home_Workout_/Reverse-Crunch-(VERSION-2)_Waist.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Band-Reverse-Crunch-(male)_Waist_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Band-Reverse-Crunch-(male)_Waist_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Reverse-Crunch_Waist_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Reverse-Crunch_Waist_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Suspender-Reverse-Crunch_Waist_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Suspender-Reverse-Crunch_Waist_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Reverse-Crunch-m_waist.mp4",
+        "rel": "MP4/MALE/Home_Workout_/Reverse-Crunch-m_waist.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Roll-Reverse-Crunch_Waist_.mp4",
+        "rel": "MP4/MALE/Home_Workout_/Roll-Reverse-Crunch_Waist_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Tuck-Reverse-Crunch_waist.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Tuck-Reverse-Crunch_waist.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "female/scapular-push-up",
+    "id": "scapular-push-up",
+    "name": "Scapular Push-Up",
+    "variant": "female",
+    "note": "",
+    "current": "MP4/FEMALE/Home_Workout_/Single-Arm-Scapular-Push-up-to-Rotation-(female)_S.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Push-up-(female)_Chest.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Push-up-(female)_Chest.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Decline-Push-up-(female)_Chest_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Decline-Push-up-(female)_Chest_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Push-up-Row-(female)_Back_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Push-up-Row-(female)_Back_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Suspender-Push-up-(female)_Chest_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Suspender-Push-up-(female)_Chest_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Band-Push-up-(female)_Chest_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Band-Push-up-(female)_Chest_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Burpee-with-Push-up-(female)_Cardio_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Burpee-with-Push-up-(female)_Cardio_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "female/seated-calf-raise-machine",
+    "id": "seated-calf-raise-machine",
+    "name": "Seated Calf Raise Machine",
+    "variant": "female",
+    "note": "",
+    "current": "MP4/FEMALE/Gym_Workout_/Lever-Seated-Squat-Calf-Raise-on-Leg-Press-Machine.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Lever-Seated-Single-Leg-Squat-Calf-Raise-on-Leg-Press-Machine-(female)_Calves_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Lever-Seated-Single-Leg-Squat-Calf-Raise-on-Leg-Press-Machine-(female)_Calves_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Barbell-Seated-Calf-Raise-(female)_Calves_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Barbell-Seated-Calf-Raise-(female)_Calves_.mp4",
+        "overlap": 0.75,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Seated-Calf-Raise-(female)_Calves.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Dumbbell-Seated-Calf-Raise-(female)_Calves.mp4",
+        "overlap": 0.75,
+        "noteHit": 0
+      },
+      {
+        "file": "Lever-Seated-Calf-Raise-(plate-loaded)-(female)_Calves.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Lever-Seated-Calf-Raise-(plate-loaded)-(female)_Calves.mp4",
+        "overlap": 0.75,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "female/seated-hamstring-stretch",
+    "id": "seated-hamstring-stretch",
+    "name": "Seated Hamstring Stretch",
+    "variant": "female",
+    "note": "",
+    "current": "MP4/FEMALE/Home_Workout_/Seated-Hamstring-Stretch-with-Chair-(female)_Thigh.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Seated-Hamstring-Side-Stretch-(female)_Stretching_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Seated-Hamstring-Side-Stretch-(female)_Stretching_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Seated-Alternate-Hamstrings-Stretch-on-a-Chair-(fe.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Seated-Alternate-Hamstrings-Stretch-on-a-Chair-(fe.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Seated-Cross-Body-Hamstring-Reach-(female)_Stretch.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Seated-Cross-Body-Hamstring-Reach-(female)_Stretch.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Seated-Single-Leg-Hamstring-Stretch_Thighs-(female).mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Seated-Single-Leg-Hamstring-Stretch_Thighs-(female).mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Hamstring-Stretch-(female)_Thighs.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Hamstring-Stretch-(female)_Thighs.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Hamstrings-Lying-Stretch-(female)_Thighs-FIX_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Hamstrings-Lying-Stretch-(female)_Thighs-FIX_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "male/single-arm-cable-row",
+    "id": "single-arm-cable-row",
+    "name": "Single-Arm Cable Row",
+    "variant": "male",
+    "note": "",
+    "current": "MP4/MALE/Gym_Workout_/Cable-Single-Arm-High-Row_Back_.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Cable-Half-Kneeling-Single-Arm-Row-(male)_Back_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Half-Kneeling-Single-Arm-Row-(male)_Back_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Single-Arm-High-Scapular-Row_Back_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Single-Arm-High-Scapular-Row_Back_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Single-Arm-Low-Scapular-Row_Back_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Single-Arm-Low-Scapular-Row_Back_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Split-Stance-Single-Arm-Row-(male)_Back_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Split-Stance-Single-Arm-Row-(male)_Back_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Half-Kneeling-Single-Arm-Row-(VERSION-2)-(ma.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Half-Kneeling-Single-Arm-Row-(VERSION-2)-(ma.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Single-Arm-High-Row-with-Chest-Support_Back_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Single-Arm-High-Row-with-Chest-Support_Back_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "male/single-arm-dumbbell-bench-press",
+    "id": "single-arm-dumbbell-bench-press",
+    "name": "Single-Arm Dumbbell Bench Press",
+    "variant": "male",
+    "note": "We need to find one where he is on the bench.",
+    "current": "MP4/MALE/Gym_Workout_/Dumbbell-Single-Arm-Floor-Press_Chest_.mp4",
+    "wanted_from_note": [
+      "one",
+      "bench"
+    ],
+    "candidates": [
+      {
+        "file": "Dumbbell-One-Arm-Wide-Grip-Bench-Press_Chest_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Dumbbell-One-Arm-Wide-Grip-Bench-Press_Chest_.mp4",
+        "overlap": 0.8,
+        "noteHit": 2
+      },
+      {
+        "file": "Dumbbell-One-Arm-Triceps-Extension-(on-bench)_Upper-Arms.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Dumbbell-One-Arm-Triceps-Extension-(on-bench)_Upper-Arms.mp4",
+        "overlap": 0.6,
+        "noteHit": 2
+      },
+      {
+        "file": "Dumbbell-Over-Bench-One-Arm-Neutral-Wrist-Curl_For.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Dumbbell-Over-Bench-One-Arm-Neutral-Wrist-Curl_For.mp4",
+        "overlap": 0.6,
+        "noteHit": 2
+      },
+      {
+        "file": "Dumbbell-Standing-One-Arm-Curl-Over-Incline-Bench_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Dumbbell-Standing-One-Arm-Curl-Over-Incline-Bench_.mp4",
+        "overlap": 0.6,
+        "noteHit": 2
+      },
+      {
+        "file": "Dumbell-One-Arm-Side-Lying-Bench-Press-(male)_Ches.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Dumbell-One-Arm-Side-Lying-Bench-Press-(male)_Ches.mp4",
+        "overlap": 0.6,
+        "noteHit": 2
+      },
+      {
+        "file": "Dumbbell-Standing-One-Arm-Curl-(over-incline-bench)_Upper-Arms.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Dumbbell-Standing-One-Arm-Curl-(over-incline-bench)_Upper-Arms.mp4",
+        "overlap": 0.6,
+        "noteHit": 2
+      }
+    ]
+  },
+  {
+    "key": "female/single-arm-dumbbell-lateral-raise",
+    "id": "single-arm-dumbbell-lateral-raise",
+    "name": "Single-Arm Dumbbell Lateral Raise",
+    "variant": "female",
+    "note": "We don't want her leaning.",
+    "current": "MP4/FEMALE/Gym_Workout_/Dumbbell-Single-arm-Leaning-Lateral-Raise-(female).mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Dumbbell-One-Arm-Lateral-Raise-(female)_Shoulder.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Dumbbell-One-Arm-Lateral-Raise-(female)_Shoulder.mp4",
+        "overlap": 0.8,
+        "noteHit": 0
+      },
+      {
+        "file": "Resistance-Band-Single-Arm-Lateral-Raise-(female)_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Resistance-Band-Single-Arm-Lateral-Raise-(female)_.mp4",
+        "overlap": 0.8,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Seated-Bent-Arm-Lateral-Raise-(female)_Sh.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Dumbbell-Seated-Bent-Arm-Lateral-Raise-(female)_Sh.mp4",
+        "overlap": 0.8,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Standing-Bent-Arm-Lateral-raise-(female)_Shoulders.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Dumbbell-Standing-Bent-Arm-Lateral-raise-(female)_Shoulders.mp4",
+        "overlap": 0.8,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Lateral-to-Front-Raise-(female)_Shoulders.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Dumbbell-Lateral-to-Front-Raise-(female)_Shoulders.mp4",
+        "overlap": 0.6,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Seated-Lateral-Raise-(female)_Shoulders.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Dumbbell-Seated-Lateral-Raise-(female)_Shoulders.mp4",
+        "overlap": 0.6,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "male/single-arm-kettlebell-press",
+    "id": "single-arm-kettlebell-press",
+    "name": "Single-Arm Kettlebell Press",
+    "variant": "male",
+    "note": "",
+    "current": "MP4/MALE/Gym_Workout_/Kettlebell-Single-Arm-Clean-and-Press-(male)_Weigh.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Kettlebell-Single-arm-Clean-and-Push-Press-(male)_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Kettlebell-Single-arm-Clean-and-Push-Press-(male)_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Landmine-Single-Arm-Press_Shoulders_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Landmine-Single-Arm-Press_Shoulders_.mp4",
+        "overlap": 0.75,
+        "noteHit": 0
+      },
+      {
+        "file": "Band-Single-Arm-Shoulder-Press_Shoulders_.mp4",
+        "rel": "MP4/MALE/Home_Workout_/Band-Single-Arm-Shoulder-Press_Shoulders_.mp4",
+        "overlap": 0.75,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Seated-Single-Arm-Chest-Press-(male)_Chest_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Seated-Single-Arm-Chest-Press-(male)_Chest_.mp4",
+        "overlap": 0.75,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Single-Arm-Bench-Press_Chest_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Cable-Single-Arm-Bench-Press_Chest_.mp4",
+        "overlap": 0.75,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Single-Arm-Clean-and-Press-(male)_Weightl.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Dumbbell-Single-Arm-Clean-and-Press-(male)_Weightl.mp4",
+        "overlap": 0.75,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "female/single-arm-kettlebell-press",
+    "id": "single-arm-kettlebell-press",
+    "name": "Single-Arm Kettlebell Press",
+    "variant": "female",
+    "note": "",
+    "current": "MP4/FEMALE/Home_Workout_/Band-Single-Arm-Shoulder-Press-(female)_Shoulders_.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Kettlebell-Single-Arm-Clean-(female)_Weightlifts_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Kettlebell-Single-Arm-Clean-(female)_Weightlifts_.mp4",
+        "overlap": 0.75,
+        "noteHit": 0
+      },
+      {
+        "file": "Kettlebell-Single-Arm-Swing-(female)_Weightlifts_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Kettlebell-Single-Arm-Swing-(female)_Weightlifts_.mp4",
+        "overlap": 0.75,
+        "noteHit": 0
+      },
+      {
+        "file": "Cable-Seated-Single-Arm-Chest-Press-(female)_Chest.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Cable-Seated-Single-Arm-Chest-Press-(female)_Chest.mp4",
+        "overlap": 0.75,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "female/single-leg-leg-extension",
+    "id": "single-leg-leg-extension",
+    "name": "Single-Leg Leg Extension",
+    "variant": "female",
+    "note": "",
+    "current": "MP4/FEMALE/Gym_Workout_/Cable-Seated-Single-Leg-Extension-(female)_Thighs_.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Lying-Single-Leg-Extension-(female)_Thighs_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Lying-Single-Leg-Extension-(female)_Thighs_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Single-Leg-Extension-(on-stability-ball)-(female)_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Single-Leg-Extension-(on-stability-ball)-(female)_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Lever-Leg-Extension-(female)_Thighs.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Lever-Leg-Extension-(female)_Thighs.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Lying-Leg-Extension-(female)_Waist_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Lying-Leg-Extension-(female)_Waist_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Roll-Calves-(Single-Leg)-(female)_Calves_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Roll-Calves-(Single-Leg)-(female)_Calves_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      },
+      {
+        "file": "Single-Leg-Bridge-(female)_Hips-FIX_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Single-Leg-Bridge-(female)_Hips-FIX_.mp4",
+        "overlap": 0.67,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "female/sit-up",
+    "id": "sit-up",
+    "name": "Sit-Up",
+    "variant": "female",
+    "note": "",
+    "current": "MP4/FEMALE/Home_Workout_/Sit-Up_Waist-FIX_.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Assisted-Sit-Up-(female)_Waist_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Assisted-Sit-Up-(female)_Waist_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Janda-Sit-up-(female)_Waist.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Janda-Sit-up-(female)_Waist.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Quarter-Sit-up-(female)_Waist.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Quarter-Sit-up-(female)_Waist.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Sit-up-Stand-up-(female)_Waist_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Sit-up-Stand-up-(female)_Waist_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Twist-Sit-up_Waist.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Twist-Sit-up_Waist.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Band-Decline-Sit-up-(female)_Hips.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Band-Decline-Sit-up-(female)_Hips.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "female/split-squat",
+    "id": "split-squat",
+    "name": "Split Squat",
+    "variant": "female",
+    "note": "",
+    "current": "MP4/FEMALE/Home_Workout_/Split-Squat-(female)_Hips-FIX2_.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Split-Squat-(female)_Hips-FIX_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Split-Squat-(female)_Hips-FIX_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Barbell-Split-Squat-(female)_Thighs.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Barbell-Split-Squat-(female)_Thighs.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Split-Squat-(female)_Thighs_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Dumbbell-Split-Squat-(female)_Thighs_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Kettlebell-Split-Squat-(female)_Thighs_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Kettlebell-Split-Squat-(female)_Thighs_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Smith-Split-Squat-(female)_Thighs_.mp4",
+        "rel": "MP4/FEMALE/Gym_Workout_/Smith-Split-Squat-(female)_Thighs_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Band-Split-Squat-(female)_Thighs_.mp4",
+        "rel": "MP4/FEMALE/Home_Workout_/Band-Split-Squat-(female)_Thighs_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      }
+    ]
+  },
+  {
+    "key": "male/step-up",
+    "id": "step-up",
+    "name": "Step-Up",
+    "variant": "male",
+    "note": "We need no dumbells/",
+    "current": "MP4/MALE/Gym_Workout_/Dumbbell-Step-up-(VERSION-2)-(male)_Thighs_.mp4",
+    "wanted_from_note": [],
+    "candidates": [
+      {
+        "file": "Barbell-Step-up_Hips-FIX_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Barbell-Step-up_Hips-FIX_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Dumbbell-Step-up_Hips_.mp4",
+        "rel": "MP4/MALE/Gym_Workout_/Dumbbell-Step-up_Hips_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Band-Step-up_Hips_.mp4",
+        "rel": "MP4/MALE/Home_Workout_/Band-Step-up_Hips_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Jump-Step-Up-(male)_Cardio.mp4",
+        "rel": "MP4/MALE/Home_Workout_/Jump-Step-Up-(male)_Cardio.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Lateral-Step-Up_Thighs_.mp4",
+        "rel": "MP4/MALE/Home_Workout_/Lateral-Step-Up_Thighs_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      },
+      {
+        "file": "Step-Up-on-Box_Thighs_.mp4",
+        "rel": "MP4/MALE/Home_Workout_/Step-Up-on-Box_Thighs_.mp4",
+        "overlap": 1,
+        "noteHit": 0
+      }
+    ]
+  }
+]

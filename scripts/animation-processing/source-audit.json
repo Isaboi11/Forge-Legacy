@@ -1,0 +1,2397 @@
+[
+  {
+    "key": "female/kettlebell-floor-press",
+    "name": "Kettlebell Floor Press",
+    "verdict": "no",
+    "source": "Dumbbell-Alternating-Floor-Press-(female)_Chest_.mp4",
+    "extra": [
+      "dumbbell",
+      "alternating"
+    ],
+    "missing": [
+      "kettlebell"
+    ],
+    "severity": 3.5
+  },
+  {
+    "key": "female/single-arm-band-row",
+    "name": "Single-Arm Band Row",
+    "verdict": "glitchy",
+    "source": "Band-One-Arm-Twisting-Seated-Row-(female)_Back.mp4",
+    "extra": [
+      "one",
+      "seated"
+    ],
+    "missing": [
+      "single"
+    ],
+    "severity": 3.5
+  },
+  {
+    "key": "male/pendulum-squat",
+    "name": "Pendulum Squat",
+    "verdict": "glitchy",
+    "source": "Lever-Pendulum-Squat-(plate-loaded)_Thighs_.mp4",
+    "extra": [
+      "lever",
+      "plate",
+      "loaded"
+    ],
+    "missing": [],
+    "severity": 3
+  },
+  {
+    "key": "male/single-leg-leg-extension",
+    "name": "Single-Leg Leg Extension",
+    "verdict": "glitchy",
+    "source": "Lever-Single-Leg-Extension-(plate-loaded)_Thighs_.mp4",
+    "extra": [
+      "lever",
+      "plate",
+      "loaded"
+    ],
+    "missing": [],
+    "severity": 3
+  },
+  {
+    "key": "female/band-reverse-curl",
+    "name": "Band Reverse Curl",
+    "verdict": "no",
+    "source": "Barbell-Reverse-Curl-(female)_Forearms.mp4",
+    "extra": [
+      "barbell"
+    ],
+    "missing": [
+      "band"
+    ],
+    "severity": 2.5
+  },
+  {
+    "key": "female/barbell-bulgarian-split-squat",
+    "name": "Barbell Bulgarian Split Squat",
+    "verdict": "yes",
+    "source": "Dumbbell-Bulgarian-Split-Squat-(female)_Thighs.mp4",
+    "extra": [
+      "dumbbell"
+    ],
+    "missing": [
+      "barbell"
+    ],
+    "severity": 2.5
+  },
+  {
+    "key": "female/barbell-push-press",
+    "name": "Barbell Push Press",
+    "verdict": "no",
+    "source": "Incline-Push-Press_Chest-(female).mp4",
+    "extra": [
+      "incline"
+    ],
+    "missing": [
+      "barbell"
+    ],
+    "severity": 2.5
+  },
+  {
+    "key": "female/barbell-seal-row",
+    "name": "Barbell Seal Row",
+    "verdict": "yes",
+    "source": "Barbell-Incline-Row-(female)_Back_.mp4",
+    "extra": [
+      "incline"
+    ],
+    "missing": [
+      "seal"
+    ],
+    "severity": 2.5
+  },
+  {
+    "key": "female/cable-face-pull",
+    "name": "Cable Face Pull",
+    "verdict": "glitchy",
+    "source": "Band-face-pull_Shoulders.mp4",
+    "extra": [
+      "band"
+    ],
+    "missing": [
+      "cable"
+    ],
+    "severity": 2.5
+  },
+  {
+    "key": "female/dumbbell-lateral-lunge",
+    "name": "Dumbbell Lateral Lunge",
+    "verdict": "no",
+    "source": "Barbell-Lateral-Lunge-(female)_Thighs_.mp4",
+    "extra": [
+      "barbell"
+    ],
+    "missing": [
+      "dumbbell"
+    ],
+    "severity": 2.5
+  },
+  {
+    "key": "female/kettlebell-reverse-lunge",
+    "name": "Kettlebell Reverse Lunge",
+    "verdict": "yes",
+    "source": "Bodyweight-Reverse-Lunge-(female)_Thighs_.mp4",
+    "extra": [
+      "bodyweight"
+    ],
+    "missing": [
+      "kettlebell"
+    ],
+    "severity": 2.5
+  },
+  {
+    "key": "female/machine-biceps-curl",
+    "name": "Machine Biceps Curl",
+    "verdict": "no",
+    "source": "Lever-Biceps-Curl-(female)_Upper-Arms_.mp4",
+    "extra": [
+      "lever"
+    ],
+    "missing": [
+      "machine"
+    ],
+    "severity": 2.5
+  },
+  {
+    "key": "female/machine-leg-press",
+    "name": "Machine Leg Press",
+    "verdict": "glitchy",
+    "source": "Lever-Angled-Leg-Press-(female)_Thighs_.mp4",
+    "extra": [
+      "lever"
+    ],
+    "missing": [
+      "machine"
+    ],
+    "severity": 2.5
+  },
+  {
+    "key": "female/machine-triceps-extension",
+    "name": "Machine Triceps Extension",
+    "verdict": "glitchy",
+    "source": "Lever-Triceps-Extension-(female)_Upper-Arms.mp4",
+    "extra": [
+      "lever"
+    ],
+    "missing": [
+      "machine"
+    ],
+    "severity": 2.5
+  },
+  {
+    "key": "female/renegade-kettlebell-row",
+    "name": "Renegade Kettlebell Row",
+    "verdict": "yes",
+    "source": "Dumbbell-Renegade-Row-(female)_Back_.mp4",
+    "extra": [
+      "dumbbell"
+    ],
+    "missing": [
+      "kettlebell"
+    ],
+    "severity": 2.5
+  },
+  {
+    "key": "female/single-arm-cable-curl",
+    "name": "Single-Arm Cable Curl",
+    "verdict": "glitchy",
+    "source": "Cable-One-Arm-Curl-(female)_Upper-Arms.mp4",
+    "extra": [
+      "one"
+    ],
+    "missing": [
+      "single"
+    ],
+    "severity": 2.5
+  },
+  {
+    "key": "female/single-arm-cable-lat-pulldown",
+    "name": "Single-Arm Cable Lat Pulldown",
+    "verdict": "glitchy",
+    "source": "Cable-One-Arm-Lat-Pulldown-(female)_back-FIX_.mp4",
+    "extra": [
+      "one"
+    ],
+    "missing": [
+      "single"
+    ],
+    "severity": 2.5
+  },
+  {
+    "key": "female/single-arm-kettlebell-press",
+    "name": "Single-Arm Kettlebell Press",
+    "verdict": "no",
+    "source": "Band-Single-Arm-Shoulder-Press-(female)_Shoulders_.mp4",
+    "extra": [
+      "band"
+    ],
+    "missing": [
+      "kettlebell"
+    ],
+    "severity": 2.5
+  },
+  {
+    "key": "male/dumbbell-lateral-lunge",
+    "name": "Dumbbell Lateral Lunge",
+    "verdict": "no",
+    "source": "Barbell-Lateral-Lunge_Hips.mp4",
+    "extra": [
+      "barbell"
+    ],
+    "missing": [
+      "dumbbell"
+    ],
+    "severity": 2.5
+  },
+  {
+    "key": "male/leaning-dumbbell-lateral-raise",
+    "name": "Leaning Dumbbell Lateral Raise",
+    "verdict": "yes",
+    "source": "Cable-Leaning-Lateral-Raise_Shoulders_.mp4",
+    "extra": [
+      "cable"
+    ],
+    "missing": [
+      "dumbbell"
+    ],
+    "severity": 2.5
+  },
+  {
+    "key": "male/machine-leg-press",
+    "name": "Machine Leg Press",
+    "verdict": "no",
+    "source": "Smith-Leg-Press_Thighs-FIX_.mp4",
+    "extra": [
+      "smith"
+    ],
+    "missing": [
+      "machine"
+    ],
+    "severity": 2.5
+  },
+  {
+    "key": "male/machine-squat",
+    "name": "Machine Squat",
+    "verdict": "no",
+    "source": "Bodyweight-Squat-(male)_Thighs-FIX_.mp4",
+    "extra": [
+      "bodyweight"
+    ],
+    "missing": [
+      "machine"
+    ],
+    "severity": 2.5
+  },
+  {
+    "key": "male/machine-triceps-extension",
+    "name": "Machine Triceps Extension",
+    "verdict": "glitchy",
+    "source": "Lever-Triceps-Extension_Upper-Arms.mp4",
+    "extra": [
+      "lever"
+    ],
+    "missing": [
+      "machine"
+    ],
+    "severity": 2.5
+  },
+  {
+    "key": "male/single-arm-cable-curl",
+    "name": "Single-Arm Cable Curl",
+    "verdict": "glitchy",
+    "source": "Cable-One-Arm-Curl_Upper-Arms.mp4",
+    "extra": [
+      "one"
+    ],
+    "missing": [
+      "single"
+    ],
+    "severity": 2.5
+  },
+  {
+    "key": "male/single-arm-cable-lat-pulldown",
+    "name": "Single-Arm Cable Lat Pulldown",
+    "verdict": "glitchy",
+    "source": "Cable-one-arm-lat-pulldown_back.mp4",
+    "extra": [
+      "one"
+    ],
+    "missing": [
+      "single"
+    ],
+    "severity": 2.5
+  },
+  {
+    "key": "female/cable-leg-extension",
+    "name": "Cable Leg Extension",
+    "verdict": "glitchy",
+    "source": "Cable-Seated-Single-Leg-Extension-(female)_Thighs_.mp4",
+    "extra": [
+      "seated",
+      "single"
+    ],
+    "missing": [],
+    "severity": 2
+  },
+  {
+    "key": "female/horizontal-leg-press",
+    "name": "Horizontal Leg Press",
+    "verdict": "no",
+    "source": "Lever-Horizontal-One-leg-Press_Hips.mp4",
+    "extra": [
+      "lever",
+      "one"
+    ],
+    "missing": [],
+    "severity": 2
+  },
+  {
+    "key": "female/kettlebell-jerk",
+    "name": "Kettlebell Jerk",
+    "verdict": "yes",
+    "source": "Kettlebell-One-Arm-Clean-and-Jerk-(female)_Shoulde.mp4",
+    "extra": [
+      "one",
+      "clean"
+    ],
+    "missing": [],
+    "severity": 2
+  },
+  {
+    "key": "female/shoulder-rolls",
+    "name": "Shoulder Rolls",
+    "verdict": "yes",
+    "source": "Roll-Posterior-Shoulder-Lying-on-Floor-(female)_Sh.mp4",
+    "extra": [
+      "lying",
+      "floor"
+    ],
+    "missing": [],
+    "severity": 2
+  },
+  {
+    "key": "female/single-leg-leg-extension",
+    "name": "Single-Leg Leg Extension",
+    "verdict": "no",
+    "source": "Cable-Seated-Single-Leg-Extension-(female)_Thighs_.mp4",
+    "extra": [
+      "cable",
+      "seated"
+    ],
+    "missing": [],
+    "severity": 2
+  },
+  {
+    "key": "male/barbell-seal-row",
+    "name": "Barbell Seal Row",
+    "verdict": "glitchy",
+    "source": "Barbell-Lying-Seal-Row-on-Rack_Back_.mp4",
+    "extra": [
+      "lying",
+      "rack"
+    ],
+    "missing": [],
+    "severity": 2
+  },
+  {
+    "key": "male/cable-calf-raise",
+    "name": "Cable Calf Raise",
+    "verdict": "yes",
+    "source": "Cable-Standing-One-Leg-Calf-Raise_Calves_.mp4",
+    "extra": [
+      "standing",
+      "one"
+    ],
+    "missing": [],
+    "severity": 2
+  },
+  {
+    "key": "male/double-kettlebell-clean",
+    "name": "Double Kettlebell Clean",
+    "verdict": "yes",
+    "source": "Kettlebell-Double-Alternating-Hang-Clean_Shoulders.mp4",
+    "extra": [
+      "alternating",
+      "hang"
+    ],
+    "missing": [],
+    "severity": 2
+  },
+  {
+    "key": "male/shoulder-rolls",
+    "name": "Shoulder Rolls",
+    "verdict": "yes",
+    "source": "Roll-Posterior-Shoulder-Lying-on-Floor_Shoulders_.mp4",
+    "extra": [
+      "lying",
+      "floor"
+    ],
+    "missing": [],
+    "severity": 2
+  },
+  {
+    "key": "male/strides",
+    "name": "Strides",
+    "verdict": "yes",
+    "source": "Single-Leg-Stride-Jump_Plyometrics_.mp4",
+    "extra": [
+      "single",
+      "jump"
+    ],
+    "missing": [],
+    "severity": 2
+  },
+  {
+    "key": "male/viking-press",
+    "name": "Viking Press",
+    "verdict": "glitchy",
+    "source": "Lever-Standing-Viking-Press-(male)_Shoulders_.mp4",
+    "extra": [
+      "lever",
+      "standing"
+    ],
+    "missing": [],
+    "severity": 2
+  },
+  {
+    "key": "female/barbell-pause-squat",
+    "name": "Barbell Pause Squat",
+    "verdict": "yes",
+    "source": "Barbell-Squat-(female)_Thighs.mp4",
+    "extra": [],
+    "missing": [
+      "pause"
+    ],
+    "severity": 1.5
+  },
+  {
+    "key": "female/barbell-pin-squat",
+    "name": "Barbell Pin Squat",
+    "verdict": "yes",
+    "source": "Barbell-Squat-(female)_Thighs.mp4",
+    "extra": [],
+    "missing": [
+      "pin"
+    ],
+    "severity": 1.5
+  },
+  {
+    "key": "female/cable-calf-raise",
+    "name": "Cable Calf Raise",
+    "verdict": "no",
+    "source": "Donkey-Calf-Raise-(female)_Calves.mp4",
+    "extra": [],
+    "missing": [
+      "cable"
+    ],
+    "severity": 1.5
+  },
+  {
+    "key": "female/cable-external-rotation",
+    "name": "Cable External Rotation",
+    "verdict": "no",
+    "source": "Sitting-External-Rotation-on-a-Chair-(female)_Back.mp4",
+    "extra": [],
+    "missing": [
+      "cable"
+    ],
+    "severity": 1.5
+  },
+  {
+    "key": "female/deficit-push-up",
+    "name": "Deficit Push-Up",
+    "verdict": "yes",
+    "source": "Push-up-(female)_Chest.mp4",
+    "extra": [],
+    "missing": [
+      "deficit"
+    ],
+    "severity": 1.5
+  },
+  {
+    "key": "female/dumbbell-reverse-lunge",
+    "name": "Dumbbell Reverse Lunge",
+    "verdict": "yes",
+    "source": "Dumbbell-Rear-Lunge-(female)_Thighs_.mp4",
+    "extra": [],
+    "missing": [
+      "reverse"
+    ],
+    "severity": 1.5
+  },
+  {
+    "key": "female/kettlebell-halo",
+    "name": "Kettlebell Halo",
+    "verdict": "glitchy",
+    "source": "Bottle-Weighted-Halo-(female)_Shoulders_.mp4",
+    "extra": [],
+    "missing": [
+      "kettlebell"
+    ],
+    "severity": 1.5
+  },
+  {
+    "key": "male/barbell-push-press",
+    "name": "Barbell Push Press",
+    "verdict": "yes",
+    "source": "Push-Press_Shoulders.mp4",
+    "extra": [],
+    "missing": [
+      "barbell"
+    ],
+    "severity": 1.5
+  },
+  {
+    "key": "male/cable-hip-thrust",
+    "name": "Cable Hip Thrust",
+    "verdict": "no",
+    "source": "Hip-Thrusts_Hips_.mp4",
+    "extra": [],
+    "missing": [
+      "cable"
+    ],
+    "severity": 1.5
+  },
+  {
+    "key": "male/dumbbell-front-squat",
+    "name": "Dumbbell Front Squat",
+    "verdict": "glitchy",
+    "source": "Dumbbell Squat.mp4",
+    "extra": [],
+    "missing": [
+      "front"
+    ],
+    "severity": 1.5
+  },
+  {
+    "key": "male/kettlebell-reverse-lunge",
+    "name": "Kettlebell Reverse Lunge",
+    "verdict": "yes",
+    "source": "Kettlebell-Backward-Lunge_Thighs-FIX_.mp4",
+    "extra": [],
+    "missing": [
+      "reverse"
+    ],
+    "severity": 1.5
+  },
+  {
+    "key": "female/back-extension",
+    "name": "Back Extension",
+    "verdict": "glitchy",
+    "source": "Lever-Back-Extension-(female)_Waist.mp4",
+    "extra": [
+      "lever"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/band-chest-press",
+    "name": "Band Chest Press",
+    "verdict": "yes",
+    "source": "Band-Standing-Chest-Press-(female)_Chest_.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/band-glute-kickback",
+    "name": "Band Glute Kickback",
+    "verdict": "yes",
+    "source": "Resistance-Band-Standing-Balance-Glute-Kickback-(female)_Hips_.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/band-lat-pulldown",
+    "name": "Band Lat Pulldown",
+    "verdict": "yes",
+    "source": "Resistance-Band-Standing-Lat-Pulldown-(female)_Bac.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/band-leg-extension",
+    "name": "Band Leg Extension",
+    "verdict": "yes",
+    "source": "Band-Seated-Leg-Extension-(female)_Thighs.mp4",
+    "extra": [
+      "seated"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/band-straight-arm-pulldown",
+    "name": "Band Straight-Arm Pulldown",
+    "verdict": "yes",
+    "source": "Resistance-Band-Standing-Straight-Arms-Pulldown-(f.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/barbell-calf-raise",
+    "name": "Barbell Calf Raise",
+    "verdict": "yes",
+    "source": "Barbell-Standing-Calf-Raise-(female)_Calves_.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/barbell-overhead-press",
+    "name": "Barbell Overhead Press",
+    "verdict": "yes",
+    "source": "Barbell-Seated-Overhead-Press-(female)_Shoulders.mp4",
+    "extra": [
+      "seated"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/barbell-overhead-triceps-extension",
+    "name": "Barbell Overhead Triceps Extension",
+    "verdict": "yes",
+    "source": "Barbell-Standing-Overhead-Triceps-Extension-(femal.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/barbell-pullover",
+    "name": "Barbell Pullover",
+    "verdict": "yes",
+    "source": "Barbell-Decline-Pullover-(female)_Chest_.mp4",
+    "extra": [
+      "decline"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/bench-dip",
+    "name": "Bench Dip",
+    "verdict": "yes",
+    "source": "Bench-dip-on-floor-(female)_Upper-Arms.mp4",
+    "extra": [
+      "floor"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/bulgarian-split-squat",
+    "name": "Bulgarian Split Squat",
+    "verdict": "yes",
+    "source": "Dumbbell-Bulgarian-Split-Squat-(female)_Thighs.mp4",
+    "extra": [
+      "dumbbell"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/cable-chest-fly",
+    "name": "Cable Chest Fly",
+    "verdict": "no",
+    "source": "Cable-Lying-Fly-(female)_Chest.mp4",
+    "extra": [
+      "lying"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/cable-chest-press",
+    "name": "Cable Chest Press",
+    "verdict": "glitchy",
+    "source": "Cable-Standing-Chest-Press_Chest_.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/cable-crossover",
+    "name": "Cable Crossover",
+    "verdict": "glitchy",
+    "source": "Cable-Standing-Up-Straight-Crossovers-(female)_Che.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/cable-crunch",
+    "name": "Cable Crunch",
+    "verdict": "yes",
+    "source": "Cable-Kneeling-Crunch-(female)_Waist_.mp4",
+    "extra": [
+      "kneeling"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/cable-glute-kickback",
+    "name": "Cable Glute Kickback",
+    "verdict": "glitchy",
+    "source": "Cable-Kneeling-Glute-Kickback-(female)_Hips_.mp4",
+    "extra": [
+      "kneeling"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/cable-hip-thrust",
+    "name": "Cable Hip Thrust",
+    "verdict": "no",
+    "source": "Cable-Standing-Hip-Thrust-(female)_Hips_.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/cable-lat-pulldown",
+    "name": "Cable Lat Pulldown",
+    "verdict": "glitchy",
+    "source": "Cable-Wide-Grip-Lat-Pulldown-(female)_Back.mp4",
+    "extra": [
+      "wide"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/cable-rear-delt-fly",
+    "name": "Cable Rear Delt Fly",
+    "verdict": "no",
+    "source": "Cable-Seated-Rear-Delt-Raise-(female)_Shoulders_.mp4",
+    "extra": [
+      "seated"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/cable-reverse-crunch",
+    "name": "Cable Reverse Crunch",
+    "verdict": "no",
+    "source": "Cable-Single-Leg-Tuck-Reverse-Crunch-(female)_Wais.mp4",
+    "extra": [
+      "single"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/cable-squat",
+    "name": "Cable Squat",
+    "verdict": "glitchy",
+    "source": "Cable-Goblet-Squat-(female)_Thighs_.mp4",
+    "extra": [
+      "goblet"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/calf-raise",
+    "name": "Calf Raise",
+    "verdict": "yes",
+    "source": "Standing-Calf-Raise-(female)_Calves_.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/calf-wall-stretch",
+    "name": "Calf Wall Stretch",
+    "verdict": "yes",
+    "source": "Standing-Calf-Stretch-against-Wall-(female)_Stretc.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/close-grip-cable-lat-pulldown",
+    "name": "Close-Grip Cable Lat Pulldown",
+    "verdict": "yes",
+    "source": "Cable-Close-Grip-Front-Lat-Pulldown-(female)_Back.mp4",
+    "extra": [
+      "front"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/cross-body-hammer-curl",
+    "name": "Cross-Body Hammer Curl",
+    "verdict": "yes",
+    "source": "Dumbbell-Cross-Body-Hammer-Curl-(Version-2)-(female)_Upper-Arms.mp4",
+    "extra": [
+      "dumbbell"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/crunch",
+    "name": "Crunch",
+    "verdict": "glitchy",
+    "source": "Crunch-Floor-(female)_Waist_.mp4",
+    "extra": [
+      "floor"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/curtsy-lunge",
+    "name": "Curtsy Lunge",
+    "verdict": "yes",
+    "source": "Single-Curtsy-Lunge-(female)_Hips_.mp4",
+    "extra": [
+      "single"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/deep-squat-hold",
+    "name": "Deep Squat Hold",
+    "verdict": "glitchy",
+    "source": "Deep-Sumo-Squat-Hold-(female)_Hips_.mp4",
+    "extra": [
+      "sumo"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/dragon-flag",
+    "name": "Dragon Flag",
+    "verdict": "yes",
+    "source": "Negative-Dragon-Flag-(female)_Waist_.mp4",
+    "extra": [
+      "negative"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/dumbbell-calf-raise",
+    "name": "Dumbbell Calf Raise",
+    "verdict": "yes",
+    "source": "Dumbbell-Standing-Calf-Raise-(female)_Calves.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/dumbbell-floor-press",
+    "name": "Dumbbell Floor Press",
+    "verdict": "yes",
+    "source": "Dumbbell-Lying-on-Floor-Chest-Press-(female)_Chest.mp4",
+    "extra": [
+      "lying"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/dumbbell-incline-bench-row",
+    "name": "Dumbbell Incline Bench Row",
+    "verdict": "glitchy",
+    "source": "Dumbbell-Hammer-Grip-Incline-Bench-Two-Arm-Row-(female)_Back.mp4",
+    "extra": [
+      "hammer"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/dumbbell-lateral-raise",
+    "name": "Dumbbell Lateral Raise",
+    "verdict": "yes",
+    "source": "Dumbbell-Standing-Lateral-Raise-(female)_Shoulders.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/dumbbell-overhead-press",
+    "name": "Dumbbell Overhead Press",
+    "verdict": "yes",
+    "source": "Dumbbell-Standing-Overhead-Press-(female)_Shoulders_.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/dumbbell-russian-twist",
+    "name": "Dumbbell Russian Twist",
+    "verdict": "glitchy",
+    "source": "Dumbbell-Russian-Twist-with-Legs-Floor-Off-(VERSIO.mp4",
+    "extra": [
+      "floor"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/elliptical",
+    "name": "Elliptical",
+    "verdict": "glitchy",
+    "source": "Elliptical-Machine-Skiing-(female)_Cardio.mp4",
+    "extra": [
+      "machine"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/frog-pump",
+    "name": "Frog Pump",
+    "verdict": "yes",
+    "source": "Bodyweight-Frog-Pump-(female)_Hips_.mp4",
+    "extra": [
+      "bodyweight"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/glute-bridge",
+    "name": "Glute Bridge",
+    "verdict": "glitchy",
+    "source": "Dumbbell-Glute-Bridge-(female)_Hips_.mp4",
+    "extra": [
+      "dumbbell"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/hack-squat-machine",
+    "name": "Hack Squat Machine",
+    "verdict": "glitchy",
+    "source": "Lever-Good-Morning-on-the-Hack-Squat-Machine-(fema.mp4",
+    "extra": [
+      "lever"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/high-cable-row",
+    "name": "High Cable Row",
+    "verdict": "no",
+    "source": "Cable-Seated-High-Row-(V-bar)-(female)_Back.mp4",
+    "extra": [
+      "seated"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/kettlebell-clean",
+    "name": "Kettlebell Clean",
+    "verdict": "yes",
+    "source": "Kettlebell-Single-Arm-Clean-(female)_Weightlifts_.mp4",
+    "extra": [
+      "single"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/lateral-lunge",
+    "name": "Lateral Lunge",
+    "verdict": "yes",
+    "source": "Barbell-Lateral-Lunge-(female)_Thighs_.mp4",
+    "extra": [
+      "barbell"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/leaning-dumbbell-lateral-raise",
+    "name": "Leaning Dumbbell Lateral Raise",
+    "verdict": "yes",
+    "source": "Dumbbell-Single-arm-Leaning-Lateral-Raise-(female).mp4",
+    "extra": [
+      "single"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/low-cable-row",
+    "name": "Low Cable Row",
+    "verdict": "glitchy",
+    "source": "Cable-Low-Seated-Row-(female)_Back_.mp4",
+    "extra": [
+      "seated"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/machine-lat-pulldown",
+    "name": "Machine Lat Pulldown",
+    "verdict": "glitchy",
+    "source": "Reverse-Grip-Machine-Lat-Pulldown-(female)_Back.mp4",
+    "extra": [
+      "reverse"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/medicine-ball-slam",
+    "name": "Medicine Ball Slam",
+    "verdict": "yes",
+    "source": "Medicine-Ball-Overhead-Slam-(female)_Back_.mp4",
+    "extra": [
+      "overhead"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/pec-deck-fly",
+    "name": "Pec Deck Fly",
+    "verdict": "glitchy",
+    "source": "Lever-Pec-Deck-Fly-(female)_Chest.mp4",
+    "extra": [
+      "lever"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/pistol-squat",
+    "name": "Pistol Squat",
+    "verdict": "yes",
+    "source": "Single-Leg-Squat-(pistol)-(female)_Hips-FIX2_.mp4",
+    "extra": [
+      "single"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/plank",
+    "name": "Plank",
+    "verdict": "glitchy",
+    "source": "Front-Plank-(female)_Waist_.mp4",
+    "extra": [
+      "front"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/plate-loaded-chest-press",
+    "name": "Plate-Loaded Chest Press",
+    "verdict": "glitchy",
+    "source": "Lever-Chest-Press-(plate-loaded)-(female)_Chest.mp4",
+    "extra": [
+      "lever"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/pull-up",
+    "name": "Pull-Up",
+    "verdict": "yes",
+    "source": "Assisted-Pull-up-(female)_Back_.mp4",
+    "extra": [
+      "assisted"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/reverse-hack-squat",
+    "name": "Reverse Hack Squat",
+    "verdict": "glitchy",
+    "source": "Lever-Reverse-Vertical-Hack-Squat-(female)_Hips_.mp4",
+    "extra": [
+      "lever"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/scapular-push-up",
+    "name": "Scapular Push-Up",
+    "verdict": "no",
+    "source": "Single-Arm-Scapular-Push-up-to-Rotation-(female)_S.mp4",
+    "extra": [
+      "single"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/seated-calf-raise-machine",
+    "name": "Seated Calf Raise Machine",
+    "verdict": "no",
+    "source": "Lever-Seated-Squat-Calf-Raise-on-Leg-Press-Machine.mp4",
+    "extra": [
+      "lever"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/single-arm-cable-chest-press",
+    "name": "Single-Arm Cable Chest Press",
+    "verdict": "glitchy",
+    "source": "Cable-Seated-Single-Arm-Chest-Press-(female)_Chest.mp4",
+    "extra": [
+      "seated"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/single-arm-cable-fly",
+    "name": "Single-Arm Cable Fly",
+    "verdict": "glitchy",
+    "source": "Cable-Bent-Over-Single-Arm-Crossover-(female)_Ches.mp4",
+    "extra": [
+      "bent"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/single-arm-cable-row",
+    "name": "Single-Arm Cable Row",
+    "verdict": "glitchy",
+    "source": "Cable-Seated-Single-Arm-Row-(female)_Back_.mp4",
+    "extra": [
+      "seated"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/single-arm-dumbbell-row",
+    "name": "Single-Arm Dumbbell Row",
+    "verdict": "glitchy",
+    "source": "Dumbbell-Bent-Over-Single-Arm-Row-(female)_Back_.mp4",
+    "extra": [
+      "bent"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/single-leg-calf-raise",
+    "name": "Single-Leg Calf Raise",
+    "verdict": "glitchy",
+    "source": "Dumbbell-Single-Leg-Calf-Raise-(female)-(VERSION-2)_Calves.mp4",
+    "extra": [
+      "dumbbell"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/sissy-squat",
+    "name": "Sissy Squat",
+    "verdict": "glitchy",
+    "source": "Sissy-Squat-Bodyweight-(female)_Thighs_.mp4",
+    "extra": [
+      "bodyweight"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/sled-push",
+    "name": "Sled Push",
+    "verdict": "glitchy",
+    "source": "Power-Sled-Push-(female)_Thighs.mp4",
+    "extra": [
+      "power"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/sled-row",
+    "name": "Sled Row",
+    "verdict": "glitchy",
+    "source": "Power-Sled-Pull-Row-(female)_Back_.mp4",
+    "extra": [
+      "power"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/stepmill",
+    "name": "StepMill",
+    "verdict": "glitchy",
+    "source": "Walking-on-Stepmill-(female)_Thighs_.mp4",
+    "extra": [
+      "walking"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/triceps-stretch",
+    "name": "Triceps Stretch",
+    "verdict": "yes",
+    "source": "Overhead-Triceps-Stretch-(female)_Upper-Arms-FIX_.mp4",
+    "extra": [
+      "overhead"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "female/windshield-wiper",
+    "name": "Windshield Wiper",
+    "verdict": "glitchy",
+    "source": "Lying-Windshield-Wiper-(female)_Waist_.mp4",
+    "extra": [
+      "lying"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/assisted-nordic-curl",
+    "name": "Assisted Nordic Curl",
+    "verdict": "yes",
+    "source": "Resistance-Band-Assisted-Nordic-Hamstring-Curl_Thi.mp4",
+    "extra": [
+      "band"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/band-chest-press",
+    "name": "Band Chest Press",
+    "verdict": "yes",
+    "source": "Band-Standing-Chest-Press-(male)_Chest.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/band-glute-kickback",
+    "name": "Band Glute Kickback",
+    "verdict": "yes",
+    "source": "Resistance-Band-Standing-Balance-Glute-Kickback-(V.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/band-hammer-curl",
+    "name": "Band Hammer Curl",
+    "verdict": "yes",
+    "source": "Band-Standing-Hammer-Curl_Upper-Arms.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/band-leg-extension",
+    "name": "Band Leg Extension",
+    "verdict": "yes",
+    "source": "Band-Seated-Leg-Extension-(male)_Thighs.mp4",
+    "extra": [
+      "seated"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/band-reverse-curl",
+    "name": "Band Reverse Curl",
+    "verdict": "yes",
+    "source": "Band-Standing-Reverse-Curl_Forearms_.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/band-straight-arm-pulldown",
+    "name": "Band Straight-Arm Pulldown",
+    "verdict": "yes",
+    "source": "Resistance-Band-Cross-Body-Single-Straight-Arm-Supinated-Pulldown-(male)_Back_.mp4",
+    "extra": [
+      "single"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/barbell-bulgarian-split-squat",
+    "name": "Barbell Bulgarian Split Squat",
+    "verdict": "yes",
+    "source": "Barbell-Zercher-Bulgarian-Split-Squat-(male)_Thigh.mp4",
+    "extra": [
+      "zercher"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/barbell-calf-raise",
+    "name": "Barbell Calf Raise",
+    "verdict": "yes",
+    "source": "Barbell-Standing-Calf-Raise_Calves.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/barbell-clean",
+    "name": "Barbell Clean",
+    "verdict": "yes",
+    "source": "Barbell-Clean-and-Jerk_Weightlifting_.mp4",
+    "extra": [
+      "jerk"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/barbell-deadlift",
+    "name": "Barbell Deadlift",
+    "verdict": "yes",
+    "source": "Barbell-Pause-Deadlift_Hips_.mp4",
+    "extra": [
+      "pause"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/barbell-decline-bench-press",
+    "name": "Barbell Decline Bench Press",
+    "verdict": "yes",
+    "source": "Barbell-Pause-Decline-Bench-Press_Chest_.mp4",
+    "extra": [
+      "pause"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/barbell-good-morning",
+    "name": "Barbell Good Morning",
+    "verdict": "yes",
+    "source": "Barbell-Pin-Good-Morning_Thighs_.mp4",
+    "extra": [
+      "pin"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/barbell-overhead-press",
+    "name": "Barbell Overhead Press",
+    "verdict": "yes",
+    "source": "Barbell-Seated-Overhead-Press_Shoulders.mp4",
+    "extra": [
+      "seated"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/barbell-overhead-triceps-extension",
+    "name": "Barbell Overhead Triceps Extension",
+    "verdict": "yes",
+    "source": "Barbell-Seated-Overhead-Triceps-Extension_Upper-Ar.mp4",
+    "extra": [
+      "seated"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/barbell-pin-squat",
+    "name": "Barbell Pin Squat",
+    "verdict": "yes",
+    "source": "Barbell-Pin-Front-Squat_Thighs_.mp4",
+    "extra": [
+      "front"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/barbell-shrug",
+    "name": "Barbell Shrug",
+    "verdict": "yes",
+    "source": "Barbell-Wide-Shrug_Back_.mp4",
+    "extra": [
+      "wide"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/barbell-skull-crusher",
+    "name": "Barbell Skull Crusher",
+    "verdict": "yes",
+    "source": "Barbell-Lying-Triceps-Extension-Skull-Crusher_Upper-Arms.mp4",
+    "extra": [
+      "lying"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/bench-dip",
+    "name": "Bench Dip",
+    "verdict": "yes",
+    "source": "Bench-Dip-on-Floor_Upper-Arms-FIX_.mp4",
+    "extra": [
+      "floor"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/cable-chest-fly",
+    "name": "Cable Chest Fly",
+    "verdict": "no",
+    "source": "Cable-Seated-Chest-Fly_Chest_.mp4",
+    "extra": [
+      "seated"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/cable-chest-press",
+    "name": "Cable Chest Press",
+    "verdict": "no",
+    "source": "Cable-Seated-Chest-Press-(male)_Chest_.mp4",
+    "extra": [
+      "seated"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/cable-chop",
+    "name": "Cable Chop",
+    "verdict": "glitchy",
+    "source": "Cable-Kneeling-High-Low-Anti-Rotation-Chop-(male)_.mp4",
+    "extra": [
+      "kneeling"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/cable-crossover",
+    "name": "Cable Crossover",
+    "verdict": "glitchy",
+    "source": "Cable-Standing-Crossover-(male)_Chest_.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/cable-crunch",
+    "name": "Cable Crunch",
+    "verdict": "yes",
+    "source": "Cable-Kneeling-Crunch_Waist-FIX2_.mp4",
+    "extra": [
+      "kneeling"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/cable-external-rotation",
+    "name": "Cable External Rotation",
+    "verdict": "glitchy",
+    "source": "Cable-Standing-Shoulder-External-Rotation_Back-FIX.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/cable-face-pull",
+    "name": "Cable Face Pull",
+    "verdict": "glitchy",
+    "source": "Cable-Standing-Face-Pull_Shoulders_.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/cable-glute-kickback",
+    "name": "Cable Glute Kickback",
+    "verdict": "yes",
+    "source": "Cable-Kneeling-Glute-Kickback-(male)_Hips_.mp4",
+    "extra": [
+      "kneeling"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/cable-lat-pulldown",
+    "name": "Cable Lat Pulldown",
+    "verdict": "no",
+    "source": "Cable-Standing-Lat-Pulldown_Back_.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/cable-leg-extension",
+    "name": "Cable Leg Extension",
+    "verdict": "glitchy",
+    "source": "Cable-Seated-Leg-Extension_Thighs_.mp4",
+    "extra": [
+      "seated"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/cable-lift",
+    "name": "Cable Lift",
+    "verdict": "yes",
+    "source": "Cable-Standing-Lift_waist.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/cable-pullover",
+    "name": "Cable Pullover",
+    "verdict": "yes",
+    "source": "Cable-Lying-Extension-Pullover-(with-rope-attachme.mp4",
+    "extra": [
+      "lying"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/cable-rear-delt-fly",
+    "name": "Cable Rear Delt Fly",
+    "verdict": "no",
+    "source": "Cable-Incline-Rear-Delt-Fly-with-Back-Support-(mal.mp4",
+    "extra": [
+      "incline"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/cable-reverse-curl",
+    "name": "Cable Reverse Curl",
+    "verdict": "yes",
+    "source": "Cable-Reverse-One-Arm-Curl_Forearms_.mp4",
+    "extra": [
+      "one"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/cable-skull-crusher",
+    "name": "Cable Skull Crusher",
+    "verdict": "glitchy",
+    "source": "Cable-Incline-Skull-Crusher_Upper-Arms_.mp4",
+    "extra": [
+      "incline"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/calf-raise",
+    "name": "Calf Raise",
+    "verdict": "no",
+    "source": "Smith-Calf-Raise-(version-2)_Calves-FIX_.mp4",
+    "extra": [
+      "smith"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/close-grip-cable-lat-pulldown",
+    "name": "Close-Grip Cable Lat Pulldown",
+    "verdict": "glitchy",
+    "source": "Cable-Close-Grip-Front-Lat-Pulldown_Back.mp4",
+    "extra": [
+      "front"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/cross-body-hammer-curl",
+    "name": "Cross-Body Hammer Curl",
+    "verdict": "no",
+    "source": "Cable-Cross-Body-Hammer-Curl-(male)_Upper-Arms_.mp4",
+    "extra": [
+      "cable"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/crunch",
+    "name": "Crunch",
+    "verdict": "glitchy",
+    "source": "Crunch-Floor-(male)_waist.mp4",
+    "extra": [
+      "floor"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/double-under",
+    "name": "Double-Under",
+    "verdict": "glitchy",
+    "source": "Double-Under-Jump-Rope-(male)_Cardio_.mp4",
+    "extra": [
+      "jump"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/dragon-flag",
+    "name": "Dragon Flag",
+    "verdict": "yes",
+    "source": "Negative-Dragon-Flag_Waist_.mp4",
+    "extra": [
+      "negative"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/dumbbell-calf-raise",
+    "name": "Dumbbell Calf Raise",
+    "verdict": "yes",
+    "source": "Dumbbell-Standing-Calf-Raise_Calves-FIX_.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/dumbbell-concentration-curl",
+    "name": "Dumbbell Concentration Curl",
+    "verdict": "yes",
+    "source": "Dumbbell-Standing-Concentration-Curl_Upper-Arms-FI.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/dumbbell-floor-press",
+    "name": "Dumbbell Floor Press",
+    "verdict": "yes",
+    "source": "Dumbbell-Lying-on-Floor-Chest-Press_Chest.mp4",
+    "extra": [
+      "lying"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/dumbbell-incline-bench-row",
+    "name": "Dumbbell Incline Bench Row",
+    "verdict": "yes",
+    "source": "Dumbbell-Hammer-Grip-Incline-Bench-Two-Arm-Row_Back.mp4",
+    "extra": [
+      "hammer"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/dumbbell-overhead-carry",
+    "name": "Dumbbell Overhead Carry",
+    "verdict": "yes",
+    "source": "Dumbbell-Single-Arm-Overhead-Carry_Weightlifting_.mp4",
+    "extra": [
+      "single"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/dumbbell-overhead-press",
+    "name": "Dumbbell Overhead Press",
+    "verdict": "yes",
+    "source": "Dumbbell-Standing-Overhead-Press_shoulder.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/dumbbell-reverse-curl",
+    "name": "Dumbbell Reverse Curl",
+    "verdict": "yes",
+    "source": "Dumbbell-Standing-Reverse-Curl_Forearms_.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/dumbbell-reverse-lunge",
+    "name": "Dumbbell Reverse Lunge",
+    "verdict": "no",
+    "source": "Dumbbell-Reverse-Lunge-from-Deficit-(male)_Thighs_.mp4",
+    "extra": [
+      "deficit"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/dumbbell-spider-curl",
+    "name": "Dumbbell Spider Curl",
+    "verdict": "glitchy",
+    "source": "Dumbbell-Reverse-Spider-Curl_Upper-Arms_.mp4",
+    "extra": [
+      "reverse"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/farmer-carry",
+    "name": "Farmer Carry",
+    "verdict": "yes",
+    "source": "Kettlebell-Farmers-Carry_Weightlifting_.mp4",
+    "extra": [
+      "kettlebell"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/glute-bridge",
+    "name": "Glute Bridge",
+    "verdict": "yes",
+    "source": "Dumbbell-Glute-Bridge_Hip.mp4",
+    "extra": [
+      "dumbbell"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/half-kneeling-pallof-press",
+    "name": "Half-Kneeling Pallof Press",
+    "verdict": "glitchy",
+    "source": "Cable-Half-Kneeling-Pallof-Press_Waist_.mp4",
+    "extra": [
+      "cable"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/hanging-leg-raise",
+    "name": "Hanging Leg Raise",
+    "verdict": "glitchy",
+    "source": "Cable-Hanging-Leg-Raise_Waist_.mp4",
+    "extra": [
+      "cable"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/high-to-low-cable-fly",
+    "name": "High-to-Low Cable Fly",
+    "verdict": "glitchy",
+    "source": "Cable-Kneeling-High-to-Low-Fly-(male)_Chest_.mp4",
+    "extra": [
+      "kneeling"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/horizontal-leg-press",
+    "name": "Horizontal Leg Press",
+    "verdict": "glitchy",
+    "source": "Lever-Horizontal-Leg-Press_Thighs_.mp4",
+    "extra": [
+      "lever"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/kettlebell-clean",
+    "name": "Kettlebell Clean",
+    "verdict": "yes",
+    "source": "Kettlebell-Hang-Clean_thighs.mp4",
+    "extra": [
+      "hang"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/kettlebell-floor-press",
+    "name": "Kettlebell Floor Press",
+    "verdict": "yes",
+    "source": "Kettlebell-Lying-on-Floor-Chest-Press_Chest_.mp4",
+    "extra": [
+      "lying"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/kettlebell-halo",
+    "name": "Kettlebell Halo",
+    "verdict": "yes",
+    "source": "Kettlebell-Half-Kneeling-Halo-(male)_Shoulders_.mp4",
+    "extra": [
+      "kneeling"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/kettlebell-high-pull",
+    "name": "Kettlebell High Pull",
+    "verdict": "yes",
+    "source": "Kettlebell-Sumo-High-Pull_Back_.mp4",
+    "extra": [
+      "sumo"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/kettlebell-jerk",
+    "name": "Kettlebell Jerk",
+    "verdict": "glitchy",
+    "source": "Kettlebell-One-Arm-Jerk_Shoulders.mp4",
+    "extra": [
+      "one"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/kettlebell-press",
+    "name": "Kettlebell Press",
+    "verdict": "yes",
+    "source": "Kettlebell-Alternating-Press_Shoulders_.mp4",
+    "extra": [
+      "alternating"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/kettlebell-row",
+    "name": "Kettlebell Row",
+    "verdict": "glitchy",
+    "source": "Kettlebell-Alternating-Row_Back_.mp4",
+    "extra": [
+      "alternating"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/lateral-lunge",
+    "name": "Lateral Lunge",
+    "verdict": "yes",
+    "source": "Barbell-Lateral-Lunge_Hips.mp4",
+    "extra": [
+      "barbell"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/low-cable-row",
+    "name": "Low Cable Row",
+    "verdict": "glitchy",
+    "source": "Cable Low Seated Row.mp4",
+    "extra": [
+      "seated"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/machine-biceps-curl",
+    "name": "Machine Biceps Curl",
+    "verdict": "no",
+    "source": "Smith-Machine-Bicep-Curl_Upper-Arms.mp4",
+    "extra": [
+      "smith"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/machine-lat-pulldown",
+    "name": "Machine Lat Pulldown",
+    "verdict": "glitchy",
+    "source": "reverse-grip-machine-lat-pulldown_Back.mp4",
+    "extra": [
+      "reverse"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/overhead-carry",
+    "name": "Overhead Carry",
+    "verdict": "glitchy",
+    "source": "Kettlebell-Overhead-Carry_Thighs_.mp4",
+    "extra": [
+      "kettlebell"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/pec-deck-fly",
+    "name": "Pec Deck Fly",
+    "verdict": "glitchy",
+    "source": "Lever-Pec-Deck-Fly_Chest_.mp4",
+    "extra": [
+      "lever"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/plank",
+    "name": "Plank",
+    "verdict": "no",
+    "source": "Kneeling-plank-(male)_Waist.mp4",
+    "extra": [
+      "kneeling"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/plate-loaded-chest-press",
+    "name": "Plate-Loaded Chest Press",
+    "verdict": "glitchy",
+    "source": "Lever-Chest-Press-(plate-loaded)_Chest-FIX_.mp4",
+    "extra": [
+      "lever"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/plate-loaded-incline-chest-press",
+    "name": "Plate-Loaded Incline Chest Press",
+    "verdict": "glitchy",
+    "source": "Lever-Incline-Chest-Press-(plate-loaded).mp4",
+    "extra": [
+      "lever"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/plate-loaded-seated-row",
+    "name": "Plate-Loaded Seated Row",
+    "verdict": "glitchy",
+    "source": "Lever-Seated-Row-(plate-loaded)_Back.mp4",
+    "extra": [
+      "lever"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/plate-loaded-shoulder-press",
+    "name": "Plate-Loaded Shoulder Press",
+    "verdict": "glitchy",
+    "source": "Lever-Shoulder-Press-(plate-loaded)-(VERSION-2)_Shoulders_.mp4",
+    "extra": [
+      "lever"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/renegade-kettlebell-row",
+    "name": "Renegade Kettlebell Row",
+    "verdict": "yes",
+    "source": "Kettlebell-Alternating-Renegade-Row_Back_.mp4",
+    "extra": [
+      "alternating"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/ring-push-up",
+    "name": "Ring Push-Up",
+    "verdict": "glitchy",
+    "source": "Ring-Incline-Push-up-(male)_Chest_.mp4",
+    "extra": [
+      "incline"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/seated-calf-raise-machine",
+    "name": "Seated Calf Raise Machine",
+    "verdict": "glitchy",
+    "source": "Lever-Seated-Squat-Calf-Raise-on-Leg-Press-Machine_Calves.mp4",
+    "extra": [
+      "lever"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/seated-hamstring-stretch",
+    "name": "Seated Hamstring Stretch",
+    "verdict": "yes",
+    "source": "Seated-Single-Leg-Hamstring-Stretch-(male)_Thighs_.mp4",
+    "extra": [
+      "single"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/single-arm-band-row",
+    "name": "Single-Arm Band Row",
+    "verdict": "glitchy",
+    "source": "Band-Standing-Single-Arm-Twist-Row_Back_.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/single-arm-cable-chest-press",
+    "name": "Single-Arm Cable Chest Press",
+    "verdict": "glitchy",
+    "source": "Cable-Seated-Single-Arm-Chest-Press-(male)_Chest_.mp4",
+    "extra": [
+      "seated"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/single-arm-cable-fly",
+    "name": "Single-Arm Cable Fly",
+    "verdict": "glitchy",
+    "source": "Cable-Standing-Single-Arm-Fly_Chest_.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/single-arm-cable-front-raise",
+    "name": "Single-Arm Cable Front Raise",
+    "verdict": "glitchy",
+    "source": "Cable-Single-Arm-Neutral-Grip-Front-Raise_Shoulder.mp4",
+    "extra": [
+      "neutral"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/single-arm-dumbbell-bench-press",
+    "name": "Single-Arm Dumbbell Bench Press",
+    "verdict": "no",
+    "source": "Dumbbell-Single-Arm-Floor-Press_Chest_.mp4",
+    "extra": [
+      "floor"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/single-arm-dumbbell-row",
+    "name": "Single-Arm Dumbbell Row",
+    "verdict": "glitchy",
+    "source": "Dumbbell-Single-Arm-Bent-Over-Row_Back_.mp4",
+    "extra": [
+      "bent"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/single-arm-kettlebell-press",
+    "name": "Single-Arm Kettlebell Press",
+    "verdict": "no",
+    "source": "Kettlebell-Single-Arm-Clean-and-Press-(male)_Weigh.mp4",
+    "extra": [
+      "clean"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/single-leg-calf-raise",
+    "name": "Single-Leg Calf Raise",
+    "verdict": "glitchy",
+    "source": "Dumbbell-Single-Leg-Calf-Raise_Calves-V2.mp4",
+    "extra": [
+      "dumbbell"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/single-leg-glute-bridge",
+    "name": "Single-Leg Glute Bridge",
+    "verdict": "yes",
+    "source": "Dumbbell-Single-Leg-Glute-Bridge_Hip.mp4",
+    "extra": [
+      "dumbbell"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/single-leg-leg-press",
+    "name": "Single-Leg Leg Press",
+    "verdict": "glitchy",
+    "source": "Lever-Angled-Single-Leg-Press-(male)_Thighs_.mp4",
+    "extra": [
+      "lever"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/sissy-squat",
+    "name": "Sissy Squat",
+    "verdict": "glitchy",
+    "source": "Sissy-Squat-Bodyweight_Thighs-FIX_.mp4",
+    "extra": [
+      "bodyweight"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/sit-up",
+    "name": "Sit-Up",
+    "verdict": "glitchy",
+    "source": "Assisted-Sit-Up_Waist-FIX_.mp4",
+    "extra": [
+      "assisted"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/sled-push",
+    "name": "Sled Push",
+    "verdict": "yes",
+    "source": "Power-Sled-Push-(male).mp4",
+    "extra": [
+      "power"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/step-up",
+    "name": "Step-Up",
+    "verdict": "no",
+    "source": "Dumbbell-Step-up-(VERSION-2)-(male)_Thighs_.mp4",
+    "extra": [
+      "dumbbell"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/stepmill",
+    "name": "StepMill",
+    "verdict": "glitchy",
+    "source": "Walking-on-Stepmill_Cardio.mp4",
+    "extra": [
+      "walking"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/suitcase-carry",
+    "name": "Suitcase Carry",
+    "verdict": "yes",
+    "source": "Dumbbell-Suitcase-Carry_Thighs_.mp4",
+    "extra": [
+      "dumbbell"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/thread-the-needle",
+    "name": "Thread the Needle",
+    "verdict": "yes",
+    "source": "Kneeling-Thread-the-Needle-(male)_Stretching_.mp4",
+    "extra": [
+      "kneeling"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/tibialis-raise",
+    "name": "Tibialis Raise",
+    "verdict": "yes",
+    "source": "Sitting-Floor-Tibialis-Raise-(male)_Stretching_.mp4",
+    "extra": [
+      "floor"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/triceps-stretch",
+    "name": "Triceps Stretch",
+    "verdict": "yes",
+    "source": "Overhead-Triceps-Stretch_Upper-Arms.mp4",
+    "extra": [
+      "overhead"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/v-sit",
+    "name": "V-Sit",
+    "verdict": "glitchy",
+    "source": "V-Sit-on-Floor_Waist_.mp4",
+    "extra": [
+      "floor"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/vertical-leg-press",
+    "name": "Vertical Leg Press",
+    "verdict": "glitchy",
+    "source": "Lever-Vertical-Leg-Press-(male)_Thighs_.mp4",
+    "extra": [
+      "lever"
+    ],
+    "missing": [],
+    "severity": 1
+  },
+  {
+    "key": "male/wall-angel",
+    "name": "Wall Angel",
+    "verdict": "yes",
+    "source": "Standing-Angel-Wall-Supported-(male)_Shoulders_.mp4",
+    "extra": [
+      "standing"
+    ],
+    "missing": [],
+    "severity": 1
+  }
+]
