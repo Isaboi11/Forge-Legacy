@@ -69,9 +69,21 @@ never to hardcode it).
 
 ## Wiring checklist (handoff §10), with current answers
 
-- ⛔ **The App Store URL is one string in THREE places** — hero CTA, sticky bar, final CTA, tagged
-  `data-analytics="cta-hero" | "cta-sticky" | "cta-final"`. **The App Store listing does not exist yet**,
-  so this is an open PO decision: TestFlight public link, a waitlist, or hold the page until launch.
+- ✅ **CTAs — DECIDED 2026-08-16 by the PO: hold them until launch.** There is no App Store listing, and
+  the page ships before there is one, because it is an Apple **enrollment gate** (see Deploying).
+  Build it this way:
+  - **Hero and final CTA become a non-interactive state**, not a dead link. Same bronze forged-metal
+    treatment, same 54px height and 340px max-width, label **`Coming to the App Store`**, with the
+    existing free-to-start line beneath it. No `<a href>` at all — a button that looks tappable and is
+    not is worse than one that never invited the tap.
+  - **⚠ DROP the sticky CTA bar for this version.** Its whole purpose is to follow the reader with a
+    door to walk through; a sticky bar carrying a label you cannot act on is pure noise, and it occupies
+    56px of a phone viewport permanently. Restore it at launch with the rest.
+  - **NO email capture / newsletter / waitlist.** §15 of the brief forbids a newsletter signup outright,
+    and the "hard never" list bans manufactured urgency. Holding the CTA honestly is the point; turning
+    it into a lead-gen form is the thing the page argues against.
+  - Keep the three `data-analytics` hooks on whatever element carries the label, so the swap at launch is
+    one string in three known places — exactly as the handoff intends.
 - ✅ **Contact email** — `support@forgelegacy.app`, live on the domain (Cloudflare Email Routing,
   forwarding, verified by test 2026-08-15). `isaiah@forgelegacy.app` also routes.
 - ✅ **`/privacy` and `/terms`** — real pages, in this directory, at stable URLs.
