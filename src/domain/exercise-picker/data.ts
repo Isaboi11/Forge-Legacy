@@ -20,6 +20,7 @@
 import { CARDIO_ACTIVITIES, cardioKey } from '../workout/conditioning.ts';
 import { type MatchResult } from '../program/exercise-match.ts';
 import { ALIASES_BY_ID, resolveAgainstCatalog } from './aliases.ts';
+import { mergeForSearch } from './custom-core.ts';
 import { matchesSearch, rankFor } from './search-core.ts';
 import equipmentData from '../exercise-relationships/source/equipment.json';
 import exerciseMusclesData from '../exercise-relationships/source/exercise_muscles.json';
@@ -99,8 +100,9 @@ export function canonicalName(raw: string): string {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FILTERS — W-23 §14.2: Muscle Group, Equipment, Difficulty. OR within, AND across (§14.3).
-// (Source — All / System / Custom / Favorites — is omitted until custom exercises and favorites have
-// a backend; a filter that cannot change the result set would be a decoration.)
+// (Source — All / System / Custom / Favorites — is omitted: Favorites and Custom both already lead the
+// My Exercises section, so the chip would only ever HIDE the catalogue, which the search field does
+// better.)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface PickerFilters {
@@ -184,7 +186,18 @@ export interface PickerSections {
   browsing: boolean;
   total: number;
   hasResults: boolean;
+  /** Custom exercises held back by `MINE_CUSTOM_MAX` while browsing — so the list can say so. */
+  customOverflow: number;
 }
+
+/**
+ * How many of the athlete's own exercises lead My Exercises before the rest are left to search.
+ *
+ * The cap is a scroll budget, not a policy: `CUSTOM_LIMIT` is 500, and an athlete who has imported a
+ * gym's worth of machines must not have to scroll past all of them to reach the category tiles. The
+ * overflow is COUNTED and stated (`customOverflow`), never silently dropped.
+ */
+export const MINE_CUSTOM_MAX = 8;
 
 /**
  * Two modes. Idle → the 6 category rows with live counts. Searching or filtering → a ranked flat list.
@@ -205,6 +218,14 @@ export function buildSections(opts: {
    * what an athlete owns.
    */
   pool?: readonly PickerItem[];
+  /**
+   * The athlete's OWN exercises, already in picker shape (`customToPickerItem`).
+   *
+   * Passed in for the same reason `pool` is: they are per-athlete and arrive async, and this module
+   * knows nothing about Supabase. Absent = the caller has none or has not asked for them, and every
+   * section below reads exactly as it did before they existed.
+   */
+  customs?: readonly PickerItem[];
 }): PickerSections {
   const { search, filters, isReplace, replacingName } = opts;
   const favorites = opts.favorites ?? [];
@@ -226,14 +247,40 @@ export function buildSections(opts: {
   const pool = filters.cat.includes('CARDIO') ? [...(opts.pool ?? PICKER_DB), ...CONDITIONING_ROWS] : (opts.pool ?? PICKER_DB);
   const matched = pool.filter((x) => matchItem(x, search, filters, exclude));
 
+  /*
+   * ══ THE ATHLETE'S OWN EXERCISES, AND THE ONE PLACE THEY DO NOT APPEAR ══
+   *
+   * They are matched by the same `matchItem` as everything else — search, equipment, muscle and
+   * difficulty all reach them — with a single exception: a CATEGORY chip. EX-001-D9 makes browsing
+   * "Push" mean browsing the shipped catalogue, and the tile counts below are computed from `matched`
+   * alone; a tile that reads 120 and then lists 121 is lying about the catalogue it names. They are
+   * reachable from that same screen through My Exercises, which is where somebody looking for their own
+   * exercise actually looks.
+   *
+   * The gear gate is NOT applied to them, and that is deliberate: `pool` is already gated by the caller,
+   * and an athlete who wrote down their own machine has told us they can do it. Their equipment ids come
+   * from the Home Gym vocabulary rather than the catalogue's, so gating them would also be comparing two
+   * different alphabets.
+   */
+  const matchedCustoms = (filters.cat.length ? [] : (opts.customs ?? [])).filter((x) =>
+    matchItem(x, search, filters, exclude),
+  );
+
   const best = isReplace && browsing && replacingName ? bestReplacements(replacingName, matched) : [];
   const bestKeys = new Set(best.map((b) => b.key));
 
   if (browsing) {
     const mineKeys = [...favorites, ...recents.filter((k) => !favSet.has(k))];
-    const mine = mineKeys
-      .map((k) => matched.find((x) => x.key === k))
-      .filter((x): x is PickerItem => Boolean(x) && !bestKeys.has((x as PickerItem).key));
+    const mine = [
+      /* THE ATHLETE'S OWN, FIRST AND WITHOUT BEING SEARCHED FOR. This is the only section that can show
+         them while browsing — the six tiles below are the catalogue's — so if they are not here, an
+         exercise the athlete wrote down themselves is reachable only by typing its name, which is the
+         bug this section closes. */
+      ...matchedCustoms.slice(0, MINE_CUSTOM_MAX),
+      ...mineKeys
+        .map((k) => matched.find((x) => x.key === k))
+        .filter((x): x is PickerItem => Boolean(x) && !bestKeys.has((x as PickerItem).key)),
+    ];
     /*
      * CARDIO counts its own rows, not the catalogue's.
      *
@@ -252,12 +299,17 @@ export function buildSections(opts: {
       categoryRows,
       results: [],
       browsing: true,
+      // The CATALOGUE's size, matching the tiles it introduces — custom exercises are counted by
+      // `customOverflow` and shown above, not folded into a number about the six categories.
       total: matched.length,
-      hasResults: categoryRows.length > 0,
+      hasResults: categoryRows.length > 0 || mine.length > 0,
+      customOverflow: Math.max(0, matchedCustoms.length - MINE_CUSTOM_MAX),
     };
   }
 
-  const results = matched
+  /* `mergeForSearch` decides only the TIE: two rows with the same name put the athlete's own first.
+     The sort below is the real order (W-23 §11.3), and it is stable, so that tie-break survives it. */
+  const results = mergeForSearch(matched, matchedCustoms)
     .filter((x) => !bestKeys.has(x.key))
     .sort(
       (a, b) =>
@@ -266,7 +318,16 @@ export function buildSections(opts: {
         a.name.localeCompare(b.name),
     );
 
-  return { best, mine: [], categoryRows: [], results, browsing: false, total: matched.length, hasResults: results.length > 0 || best.length > 0 };
+  return {
+    best,
+    mine: [],
+    categoryRows: [],
+    results,
+    browsing: false,
+    total: results.length + best.length,
+    hasResults: results.length > 0 || best.length > 0,
+    customOverflow: 0,
+  };
 }
 
 

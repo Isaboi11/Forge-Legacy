@@ -18,6 +18,7 @@ import {
   isDirty,
   mergeForSearch,
 } from '../custom-core.ts';
+import { matchesSearch } from '../search-core.ts';
 
 /**
  * PO review: *"Should we be able to add our own exercises if it's not on there?"*
@@ -150,6 +151,42 @@ test('your own exercise wins a name tie against the catalogue', () => {
   const merged = mergeForSearch(catalogue, mine);
   assert.deepEqual(merged.map((x) => x.name), ['Back Squat', 'Leg Press', 'Leg Press']);
   assert.equal(merged[1].key, customKey('a1'), 'theirs first when the names tie');
+});
+
+test('the merge is the picker RESULT LIST — it may reorder, never drop', () => {
+  // `buildSections` builds its results out of this. A merge that lost a row would delete part of the
+  // catalogue from the picker, which is a far worse failure than an ordering one and would look like
+  // "that exercise doesn't exist" rather than like a bug.
+  const catalogue = Array.from({ length: 12 }, (_, i) => ({ key: `k${i}`, name: `Ex ${i}` }));
+  const mine = [{ key: customKey('a1'), name: 'Belt Squat Machine' }];
+  const merged = mergeForSearch(catalogue, mine);
+  assert.equal(merged.length, 13);
+  assert.deepEqual(
+    new Set(merged.map((x) => x.key)),
+    new Set([...catalogue.map((x) => x.key), customKey('a1')]),
+  );
+});
+
+// ── found by the SAME matcher the catalogue is found by ──────────────────────
+//
+// The picker's pool was `PICKER_DB` alone, so an exercise the athlete created was saved and then
+// invisible: unsearchable, absent from My Exercises, and impossible to put into a program, a week
+// template or a workout template — all three of which add exercises through that one screen. Merging
+// them in means they have to survive `searchFields`, which reads `aliases`, `muscles` and `equip`, and a
+// custom exercise has nothing to put in the first of those.
+
+test('an athlete finds their own exercise by typing its name', () => {
+  const item = customToPickerItem(ex(), lookup);
+  assert.equal(matchesSearch(item, 'belt squat'), true);
+  assert.equal(matchesSearch(item, 'machine belt'), true, 'token-AND, same as the catalogue');
+  assert.equal(matchesSearch(item, ''), true, 'an empty query matches everything, theirs included');
+  assert.equal(matchesSearch(item, 'bench press'), false);
+});
+
+test('a name-only exercise is searchable — the empty alias list must not throw or match nothing', () => {
+  const item = customToPickerItem(ex({ name: 'Reverse Hyper' }), lookup);
+  assert.deepEqual(item.aliases, [], 'nothing invents aliases for a movement one person described');
+  assert.equal(matchesSearch(item, 'reverse hyper'), true);
 });
 
 // ── the discard prompt ───────────────────────────────────────────────────────

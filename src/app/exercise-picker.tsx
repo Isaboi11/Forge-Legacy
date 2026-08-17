@@ -1,6 +1,6 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -14,12 +14,19 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { writeExerciseInbox, type PickedExercise } from '@/lib/exercise-inbox';
 import { fetchHomeGym } from '@/data/home-gym-live';
-import { canDoExercise } from '@/domain/home-gym/equipment';
+import { canDoExercise, HOME_GYM_EQUIPMENT } from '@/domain/home-gym/equipment';
 import { dismissGearPrompt, getGearOnly, getGearPromptDismissed, setGearOnly } from '@/lib/gear-filter';
 import { writeBuilderInbox, type BuilderSection } from '@/lib/builder-inbox';
 import { addFavorite, fetchFavoriteKeys, fetchRecentExerciseKeys, removeFavorite } from '@/data/exercise-prefs-live';
-import { createCustomExercise } from '@/data/custom-exercises-live';
-import { customKey, emptyDraft } from '@/domain/exercise-picker/custom-core';
+import { createCustomExercise, fetchCustomExercise, fetchCustomExercises } from '@/data/custom-exercises-live';
+import {
+  customKey,
+  customToPickerItem,
+  emptyDraft,
+  isCustomKey,
+  type CustomExercise,
+} from '@/domain/exercise-picker/custom-core';
+import { takeCreatedCustom } from '@/lib/custom-exercise-inbox';
 import { useToast } from '@/hooks/useCeremony';
 import { usePersist } from '@/hooks/usePersist';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -45,8 +52,51 @@ import {
 } from '@/domain/exercise-picker/data';
 
 function toPicked(x: PickerItem): PickedExercise {
-  return { catalogKey: x.key, name: x.name, equip: x.equip, muscles: x.muscles, type: x.modality };
+  return {
+    catalogKey: x.key,
+    name: x.name,
+    equip: x.equip,
+    muscles: x.muscles,
+    type: x.modality,
+    /* ONLY for a custom row. A catalogue exercise's `unit` is read from `itemByKey` downstream, because
+       the catalogue is the authority on what a movement is; a custom exercise is not in `PICKER_DB`, so
+       the pick is the only thing that knows whether it draws a rep box or a countdown. See
+       `exercise-inbox`. */
+    ...(isCustomKey(x.key) ? { unit: x.unit } : null),
+  };
 }
+
+/* Custom exercises store IDS, not labels (0128) — and their equipment ids come from the HOME GYM
+   vocabulary, not the catalogue's, which is why this lookup is not `labelFor` below. */
+const EQUIP_LABEL = new Map(HOME_GYM_EQUIPMENT.map((e) => [e.id, e.label] as const));
+const MUSCLE_LABEL = new Map(MUSCLE_FILTER_GROUPS.flatMap((g) => g.muscles.map((m) => [m.id, m.name] as const)));
+const toCustomItem = (c: CustomExercise): PickerItem =>
+  customToPickerItem(c, {
+    muscleName: (id) => MUSCLE_LABEL.get(id) ?? id,
+    equipName: (id) => EQUIP_LABEL.get(id) ?? id,
+  });
+
+/**
+ * The row that was just inserted, as it will read once the server is asked for it again.
+ *
+ * Everything the name-only path does not collect is what 0128's own column defaults store, so this is a
+ * restatement of the row rather than a guess at it — and it exists only to cover the round trip between
+ * the insert returning an id and the list being refetched.
+ */
+const draftCustom = (id: string, name: string, unit: 'reps' | 'time'): CustomExercise => ({
+  id,
+  name,
+  category: null,
+  equipment: [],
+  primaryMuscles: [],
+  secondaryMuscles: [],
+  environments: [],
+  notes: null,
+  unit,
+  createdAt: '',
+  updatedAt: '',
+  deletedAt: null,
+});
 
 /**
  * The three runs, pinned above the catalog rather than inside it.
@@ -58,10 +108,6 @@ function toPicked(x: PickerItem): PickedExercise {
  * offered here, in the same list and through the same round-trip, without disturbing any of that.
  */
 // CONDITIONING_ROWS now lives in the picker domain — it is the CARDIO category's contents.
-
-/** Catalog first, then the pinned runs — so a conditioning key resolves everywhere a catalog one does. */
-const resolveKey = (k: string): PickerItem | undefined =>
-  itemByKey(k) ?? CONDITIONING_ROWS.find((c) => c.key === k);
 
 /**
  * W-23 Exercise Picker (`Forge Exercise Picker.dc.html`). Three modes off the route params:
@@ -76,9 +122,20 @@ const resolveKey = (k: string): PickerItem | undefined =>
  * onto the 6 locked browse categories). Deferred vs the `.dc`: the row ⓘ → Exercise Detail (W-22), the
  * "just this / this + future" scope writing differently (both commit the same today).
  *
- * MY EXERCISES is real: bookmarks come from `exercise_favorites` (0020) and recents from the athlete's
- * own logged `workout_exercises`. Both also rank results — the catalog carries no popularity data, so
- * these personal signals are used instead of an invented "most common" ordering.
+ * MY EXERCISES is real: bookmarks come from `exercise_favorites` (0020), recents from the athlete's own
+ * logged `workout_exercises`, and the athlete's OWN exercises from `custom_exercises` (0128). Both
+ * signals also rank results — the catalog carries no popularity data, so these personal signals are used
+ * instead of an invented "most common" ordering.
+ *
+ * ══ THE CUSTOM EXERCISE THAT COULD BE CREATED AND NEVER FOUND AGAIN ══
+ *
+ * This screen wrote to `custom_exercises` and never read from it. Creating one mid-workout worked,
+ * because `createInline` hands the new row STRAIGHT to the workout inbox without it ever passing through
+ * the list — so it landed in the session and looked saved. It was saved. It was simply invisible from
+ * then on: the pool was `PICKER_DB` alone, so the same exercise could not be found by search, did not
+ * appear under My Exercises, and above all could not be put into a program, a week template or a
+ * workout template, which all add exercises through this one screen in `builder` mode. `customToPickerItem`
+ * and `mergeForSearch` had been written and unit-tested for exactly this and had no call site.
  */
 export default function ExercisePickerScreen() {
   const persist = usePersist();
@@ -125,6 +182,62 @@ export default function ExercisePickerScreen() {
     for (const c of EXERCISE_CATEGORIES) m.set(c.key, c.label);
     return m;
   }, []);
+
+  /**
+   * The athlete's own exercises.
+   *
+   * Refetched on FOCUS, because the two ways to create one both leave this screen and come back: the
+   * full form at `/custom-exercise`, and (from the Library) an exercise edited or deleted while this
+   * picker sat underneath. `justCreated` covers the round trip in between — see `createInline`.
+   */
+  const { data: customData, refetch: refetchCustoms } = useQuery(fetchCustomExercises, []);
+  const [justCreated, setJustCreated] = useState<PickerItem[]>([]);
+  const customItems = useMemo(() => {
+    const fetched = (customData ?? []).map(toCustomItem);
+    const known = new Set(fetched.map((x) => x.key));
+    return [...justCreated.filter((x) => !known.has(x.key)), ...fetched];
+  }, [customData, justCreated]);
+
+  /**
+   * Tick a freshly-created exercise, however this screen is being used.
+   *
+   * ⚠ SELECTED, NOT COMMITTED — a delta from W-23 §15.4, which has the picker dismiss and hand the new
+   * exercise straight back. That reads correctly for a single-select replace and would be destructive
+   * here: `add` and `builder` are MULTI-select, and an athlete who ticked four lifts and then realised
+   * the fifth was missing would have the four thrown away by the act of creating it.
+   */
+  const selectCreated = (key: string) => {
+    if (isReplace) setSelected(key);
+    else setPicked((p) => (p.includes(key) ? p : [...p, key]));
+  };
+
+  /**
+   * Coming back from the full creator with the exercise it just made, already selected (W-23 §15.4).
+   *
+   * The row is fetched HERE rather than waited for: `refetchCustoms` is fire-and-forget, and selecting a
+   * key before anything can resolve it means a fast Confirm silently drops the exercise the athlete just
+   * spent a minute describing.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      let alive = true;
+      void (async () => {
+        const createdId = await takeCreatedCustom();
+        refetchCustoms();
+        if (!createdId || !alive) return;
+        const ex = await fetchCustomExercise(createdId).catch(() => null);
+        if (!alive || !ex) return;
+        const item = toCustomItem(ex);
+        setJustCreated((l) => (l.some((x) => x.key === item.key) ? l : [...l, item]));
+        selectCreated(item.key);
+      })();
+      return () => {
+        alive = false;
+      };
+      // `selectCreated` is stable for the life of the mount — it only reads route params.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [refetchCustoms]),
+  );
 
   // The athlete's own signals — bookmarked first, then what they've actually logged.
   const { data: favData, refetch: refetchFavorites } = useQuery(fetchFavoriteKeys, []);
@@ -182,6 +295,17 @@ export default function ExercisePickerScreen() {
     void setGearOnly(next);
   };
 
+  /**
+   * Catalog, then the pinned runs, then the athlete's own — so a key from any of the three resolves
+   * everywhere a catalog one does.
+   *
+   * ⚠ THIS IS WHAT MAKES CONFIRM WORK. `onConfirm` turns the selected KEYS back into rows through here
+   * and drops anything that fails to resolve, so a custom exercise that the list can show but this
+   * cannot resolve would be silently discarded at the moment the athlete pressed the button.
+   */
+  const resolveKey = (k: string): PickerItem | undefined =>
+    itemByKey(k) ?? CONDITIONING_ROWS.find((c) => c.key === k) ?? customItems.find((c) => c.key === k);
+
   const sections = buildSections({
     search,
     filters: applied,
@@ -190,6 +314,7 @@ export default function ExercisePickerScreen() {
     favorites,
     recents: recentData ?? [],
     pool,
+    customs: customItems,
   });
   const hasFilters = filtersActive(applied);
 
@@ -239,6 +364,11 @@ export default function ExercisePickerScreen() {
    * reached from the Active Workout, standing at a machine. So it writes the row, wraps it in the same
    * `PickedExercise` shape any catalogue row uses, and puts it in the inbox: the workout appends it and
    * the athlete logs a set. `unit` rides along on the row, so a custom HOLD gets its countdown.
+   *
+   * ⚠ EXCEPT IN `builder`, WHERE IT IS SELECTED AND THE SCREEN STAYS. An author writing a program day is
+   * ticking several exercises at once; committing on create would send this one and discard the rest. So
+   * the new row joins the selection and the search clears, which is the same two-step the athlete is
+   * already doing for every other exercise in the day.
    */
   const createInline = async () => {
     const name = search.trim();
@@ -255,6 +385,16 @@ export default function ExercisePickerScreen() {
         unit: createUnit,
       };
       setCreateOpen(false);
+      if (isBuilder) {
+        /* Held locally as well as refetched: the key goes into `picked` now, and until the refetch lands
+           there would otherwise be nothing for `resolveKey` to find — a Confirm inside that window would
+           drop the exercise without saying so. */
+        setJustCreated((l) => [...l, toCustomItem(draftCustom(id, name, createUnit))]);
+        selectCreated(customKey(id));
+        setSearch('');
+        refetchCustoms();
+        return;
+      }
       if (isReplace) {
         if (targetIdx >= 0) await writeExerciseInbox({ kind: 'replace', targetIdx, item });
       } else {
@@ -267,6 +407,12 @@ export default function ExercisePickerScreen() {
     } finally {
       setCreating(false);
     }
+  };
+
+  /** Open the full form (W-23 §15.1 entry 1). It writes the created id back to `custom-exercise-inbox`. */
+  const openCreator = () => {
+    Keyboard.dismiss();
+    router.push({ pathname: '/custom-exercise', params: { returnTo: 'picker' } });
   };
 
   const commitReplace = () => {
@@ -318,7 +464,7 @@ export default function ExercisePickerScreen() {
   const confirmDisabled = isReplace ? selected == null : picked.length === 0;
   const confirmLabel = isReplace
     ? selected != null
-      ? `Replace with ${itemByKey(selected)?.name ?? ''}`
+      ? `Replace with ${resolveKey(selected)?.name ?? ''}`
       : 'Select an exercise'
     : supersetOn
       ? `Add ${picked.length} exercises as a superset`
@@ -336,6 +482,7 @@ export default function ExercisePickerScreen() {
   const renderRow = (x: PickerItem) => {
     const sel = isReplace ? selected === x.key : picked.includes(x.key);
     const fav = isFavorite(x.key);
+    const own = isCustomKey(x.key);
     return (
       <Pressable
         key={x.key}
@@ -344,19 +491,24 @@ export default function ExercisePickerScreen() {
         delayLongPress={350}
         accessibilityRole="button"
         accessibilityState={{ selected: sel }}
-        accessibilityLabel={`${x.name}${fav ? ', bookmarked' : ''}. Long press to ${fav ? 'remove the bookmark' : 'bookmark'}.`}
+        accessibilityLabel={`${x.name}${own ? ', your own exercise' : ''}${fav ? ', bookmarked' : ''}. Long press to ${fav ? 'remove the bookmark' : 'bookmark'}.`}
         style={[styles.row, sel && styles.rowSel]}
       >
         <View style={styles.rowIcon}>
-          <ExercisePoster exerciseId={x.key} radius={20} fallback={<EquipIcon equip={x.equipId} />} />
+          {/* No poster for an athlete's own exercise: the media bucket is keyed by CATALOGUE id, so a
+              `custom:` key can only ever 404 — asking is a request that is guaranteed to fail. */}
+          <ExercisePoster exerciseId={own ? null : x.key} radius={20} fallback={<EquipIcon equip={x.equipId} />} />
         </View>
         <View style={styles.rowText}>
           <View style={styles.rowNameLine}>
             {fav ? <Text style={styles.favMark}>★</Text> : null}
             <Text style={styles.rowName} numberOfLines={1}>{x.name}</Text>
           </View>
+          {/* W-23 §10.4 — "Custom" leads the sub-line, so an athlete's own row is identifiable beside a
+              catalogue one without a badge or an icon. `equip` already reads "Custom" when they named no
+              equipment; when they did, the label would otherwise be the only thing there. */}
           <Text style={styles.rowSub} numberOfLines={1}>
-            {x.equip}
+            {own && x.equip !== 'Custom' ? `Custom · ${x.equip}` : x.equip}
             {x.muscles.length ? ` · ${x.muscles.slice(0, 3).join(', ')}` : ''}
           </Text>
         </View>
@@ -497,8 +649,18 @@ export default function ExercisePickerScreen() {
             {sections.browsing && sections.mine.length ? (
               <View style={styles.section}>
                 <SectionHeader label="My exercises" />
-                <Text style={styles.bestSub}>Bookmarked, and what you&rsquo;ve trained recently</Text>
+                <Text style={styles.bestSub}>
+                  {customItems.length
+                    ? 'The ones you added, plus bookmarks and what you’ve trained recently'
+                    : 'Bookmarked, and what you’ve trained recently'}
+                </Text>
                 <View style={styles.rows}>{sections.mine.map(renderRow)}</View>
+                {/* The cap is never silent — see `MINE_CUSTOM_MAX`. */}
+                {sections.customOverflow ? (
+                  <Text style={styles.overflowNote}>
+                    {sections.customOverflow} more of your own — search to find {sections.customOverflow === 1 ? 'it' : 'them'}.
+                  </Text>
+                ) : null}
               </View>
             ) : null}
 
@@ -550,6 +712,26 @@ export default function ExercisePickerScreen() {
                 </View>
               ) : null;
             })()}
+
+            {/* ══ ALWAYS AT THE BOTTOM OF THE LIST (W-23 §6, §15.1 entry 1) ══
+                The quiet one. It is not for the athlete who searched and found nothing — the empty state
+                below catches them, with their words already typed — but for the author building a program
+                who knows in advance that their gym's machine is not in anybody's catalogue. Subtle
+                because it must never compete with 809 exercises that ARE there; last because that is
+                where you arrive having decided the list does not have it. The full form, not the
+                name-only sheet: away from a live set there is time to say what the movement is, and it
+                comes back with the new exercise already ticked. */}
+            <Pressable
+              onPress={openCreator}
+              accessibilityRole="button"
+              accessibilityLabel="Add your own exercise"
+              style={({ pressed }) => [styles.ownRow, pressed ? styles.ownRowPressed : null]}
+            >
+              <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round">
+                <Path d="M12 5v14M5 12h14" />
+              </Svg>
+              <Text style={styles.ownRowText}>Add your own exercise</Text>
+            </Pressable>
           </>
         ) : (
           <View style={styles.empty}>
@@ -565,8 +747,12 @@ export default function ExercisePickerScreen() {
                 "It isn't in the list" was previously the end of the road — and it is the exact moment
                 the athlete knows what is missing AND has already typed its name. Offering creation here
                 costs them one tap and no retyping. Name-only, per W-28 §1.2's "fastest creation path":
-                a form in the middle of a workout is a form that gets abandoned. */}
-            {search.trim() && !isBuilder ? (
+                a form in the middle of a workout is a form that gets abandoned.
+
+                Now offered in `builder` too. It was withheld there only because the commit path behind it
+                wrote to the WORKOUT inbox, which a program builder never drains — the pick would have
+                vanished. `createInline` selects instead of committing in that mode, so the door opens. */}
+            {search.trim() ? (
               <Pressable
                 onPress={() => setCreateOpen(true)}
                 accessibilityRole="button"
@@ -576,6 +762,9 @@ export default function ExercisePickerScreen() {
                 <Text style={styles.createBtnText}>Add “{search.trim()}” as your own</Text>
               </Pressable>
             ) : null}
+            <Pressable onPress={openCreator} accessibilityRole="button" accessibilityLabel="Add your own exercise with full details" style={styles.emptyLink}>
+              <Text style={styles.emptyLinkText}>Or add one with muscles, equipment and notes</Text>
+            </Pressable>
           </View>
         )}
       </ScrollView>
@@ -640,8 +829,9 @@ export default function ExercisePickerScreen() {
             </Pressable>
           ))}
         </View>
-        <Button variant="primary" fullWidth disabled={creating} onPress={() => void createInline()} accessibilityLabel="Create and add">
-          {creating ? 'Adding…' : isReplace ? 'Create and swap in' : 'Create and add'}
+        {/* The label states what actually happens next, which differs by mode — see `createInline`. */}
+        <Button variant="primary" fullWidth disabled={creating} onPress={() => void createInline()} accessibilityLabel="Create this exercise">
+          {creating ? 'Adding…' : isBuilder ? 'Create and select' : isReplace ? 'Create and swap in' : 'Create and add'}
         </Button>
       </BottomSheet>
 
@@ -704,7 +894,7 @@ export default function ExercisePickerScreen() {
           <View style={styles.sheet}>
             <Text style={styles.sheetTitle}>Apply replacement</Text>
             <Text style={styles.persistBlurb}>
-              Swap {replacingName} for {selected != null ? itemByKey(selected)?.name : ''}.
+              Swap {replacingName} for {selected != null ? resolveKey(selected)?.name : ''}.
             </Text>
             <Pressable onPress={commitReplace} accessibilityRole="button" accessibilityLabel="Just this session" style={styles.persistRow}>
               <View style={styles.persistIcon}>
@@ -842,7 +1032,17 @@ const styles = StyleSheet.create({
   rowSub: { fontSize: 11.5, color: flColor.gray600 },
   emptyMark: { width: 18, height: 18, borderRadius: 9, borderWidth: 1.5, borderColor: flColor.charcoal500 },
 
+  overflowNote: { marginTop: 10, paddingHorizontal: 2, fontSize: 11.5, color: flColor.gray600 },
+
+  /* Deliberately quieter than a category row: no fill, dashed edge, bronze only on the glyph and the
+     label. It reads as an action available rather than an option being offered. */
+  ownRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4, paddingVertical: 13, borderRadius: flRadius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.charcoal600 },
+  ownRowPressed: { borderColor: flColor.bronzeBorderSubtle, opacity: 0.9 },
+  ownRowText: { fontSize: 13, fontWeight: '600', color: flColor.bronze300 },
+
   empty: { paddingVertical: 56, paddingHorizontal: 24, alignItems: 'center', gap: 12 },
+  emptyLink: { paddingVertical: 8, paddingHorizontal: 12 },
+  emptyLinkText: { fontSize: 12.5, color: flColor.gray600, textDecorationLine: 'underline' },
   emptyIcon: { width: 52, height: 52, borderRadius: 26, borderWidth: 1, borderColor: flColor.charcoal600, alignItems: 'center', justifyContent: 'center' },
   emptyTitle: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', color: flColor.cream100 },
   emptyBody: { fontSize: 13, lineHeight: 19, color: flColor.gray400, textAlign: 'center', maxWidth: 230 },

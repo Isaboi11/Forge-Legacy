@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { fetchActiveProgram, fetchProgramCompletedCount } from './programs-live';
 import { nextSession } from '@/domain/program/progress-core';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
+import { isCustomKey } from '@/domain/exercise-picker/custom-core';
 import {
   copyName,
   durationText,
@@ -143,7 +144,10 @@ export async function fetchPlannedSession(): Promise<{ name: string; exercises: 
       name: day.name.trim() || `Day ${day.letter}`,
       exercises: day.main.map((ex) => ({
         catalogKey: ex.catalogKey ?? null,
-        name: exerciseNameFor(ex.catalogKey),
+        /* The catalogue's words, EXCEPT for an exercise the athlete wrote themselves: there is no
+           catalogue entry behind a `custom:` key, so `exerciseNameFor` would prettify the uuid and
+           invite somebody to train "Custom:8F3A2B1C…". Their own name is the only one it has. */
+        name: isCustomKey(ex.catalogKey) ? ex.name : exerciseNameFor(ex.catalogKey),
         sets: ex.sets ?? 3,
         targetReps: ex.reps ?? 8,
       })),

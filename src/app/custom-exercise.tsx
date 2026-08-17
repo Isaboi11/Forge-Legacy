@@ -11,6 +11,7 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { useToast } from '@/hooks/useCeremony';
+import { writeCreatedCustom } from '@/lib/custom-exercise-inbox';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import {
   createCustomExercise,
@@ -69,9 +70,12 @@ const CATEGORY_CHIPS = EXERCISE_CATEGORIES.filter((c) => c.key !== 'CARDIO');
 export default function CustomExerciseScreen() {
   const router = useRouter();
   const { showToast } = useToast();
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, returnTo } = useLocalSearchParams<{ id?: string; returnTo?: string }>();
   const editId = typeof id === 'string' && id.length > 0 ? id : null;
   const isEdit = editId != null;
+  /* Sent here by the Exercise Picker to fill a gap in a workout or a program day — so the exercise is
+     wanted RIGHT NOW, not merely filed. See `custom-exercise-inbox`. */
+  const backToPicker = returnTo === 'picker';
 
   const { data: existing, loading, error } = useQuery(
     () => (editId ? fetchCustomExercise(editId) : Promise.resolve(null)),
@@ -118,6 +122,15 @@ export default function CustomExerciseScreen() {
         goBack();
       } else {
         const newId = await createCustomExercise(d);
+        if (backToPicker) {
+          /* Straight back to the picker, which is still mounted with everything the athlete had already
+             chosen. W-23 §15.4: it arrives selected, because they came here to fill a specific gap.
+             Landing them on the saved exercise instead would make them navigate back and find it. */
+          await writeCreatedCustom(newId);
+          showToast(`${d.name.trim()} added — it’s selected below.`);
+          goBack();
+          return;
+        }
         showToast(`${d.name.trim()} added to your library.`);
         /* `replace`, not push — going "back" from the exercise you just created should reach where you
            started, not the empty form you filled in to get here. */

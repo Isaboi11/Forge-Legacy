@@ -769,6 +769,24 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
+### 0. A custom exercise was saved and then invisible everywhere except the set it was created for (2026-08-16, CODE — no migration, OTA-deliverable)
+
+**PO: *"When I make my own exercise it saves on the workout page but it's not in the database when I go to make a program or week template or template."*** It was in the database. `custom_exercises` (0128) had the row, RLS let the athlete read it, and `fetchCustomExercises` worked — the **Exercise Picker simply never called it**.
+
+**⚠ THE SCREEN WROTE TO THE TABLE AND NEVER READ FROM IT.** `createInline` hands a newly-created exercise **straight to the workout inbox** without it passing through the list, so it landed in the live session and looked saved. It was saved. From that moment it could not be found: the picker's pool was `PICKER_DB` alone, so the exercise was unsearchable, absent from My Exercises, and — the reported symptom — **impossible to put into a program, a week template or a workout template**, all three of which add exercises through this one screen in `mode=builder`. The empty-state "add your own" door was explicitly **closed in `builder`** (`search.trim() && !isBuilder`), because the only commit path behind it wrote to the WORKOUT inbox, which no builder drains.
+
+**The pieces to fix it had been written, unit-tested, and never called.** `Launch-Audit-2026-08-12` §dead-code already names them: *"`customToPickerItem` and `mergeForSearch` have unit tests and **no screen call site**."* Both now have one.
+
+**FIXED** — the picker fetches the athlete's own exercises, refetches on focus, and folds them into the same `matchItem`/`matchesSearch` every catalogue row runs through. `resolveKey` resolves a `custom:` key, which is what makes **Confirm** work: it turns selected keys back into rows and drops anything unresolvable, so a row the list could show but the resolver could not find would have been discarded silently at the moment of the press. `toPicked` carries `unit` for a custom row only — the catalogue is the authority for its own.
+
+**One place they deliberately do not appear: a category chip.** EX-001-D9 makes browsing "Push" mean browsing the shipped catalogue, and the tile counts are computed from the catalogue alone — a tile reading 120 that then lists 121 is lying about the catalogue it names. They lead **My Exercises** instead (capped at `MINE_CUSTOM_MAX = 8`, overflow **counted and stated**, never silently dropped) and compete equally in search (W-23 §11.4). The gear gate is not applied to them: their equipment ids come from the Home Gym vocabulary, not the catalogue's, so gating would compare two different alphabets.
+
+**Plus the entry point the PO asked for**, which the LOCKED spec had already specified and nobody had built: **W-23 §6 / §15.1 — "Create Custom Exercise is always at the bottom of the default view."** A quiet dashed row under the list opens the full creator, and it comes back with the new exercise **already ticked** (§15.4). **⚠ Selected, not committed — a deliberate delta from §15.4**, which has the picker dismiss and hand the exercise straight back: `add` and `builder` are MULTI-select, so an author who ticked four lifts and then realised the fifth was missing would have the four thrown away by the act of creating it. `custom-exercise-inbox` carries the id back because `router.back()` cannot carry a parameter, and the row is **fetched at the hand-off** rather than waited for, so a fast Confirm cannot drop it.
+
+**Two smaller ones in the same feature.** The empty-state name-only sheet now works in `builder` (it selects instead of committing, so it cannot eat the other picks). And `fetchPlannedSession` renamed every lift through `exerciseNameFor` — which for a `custom:` key has no catalogue entry and would have invited a Train-Together partner to train **"Custom:8F3A2B1C…"**; their own words are the only name it has.
+
+**2,423 tests green (6 new, all pure), tsc clean, lint at baseline (1 error + 13 warnings, all pre-existing).** ✅ **Deployed to `forgelegacy.expo.app`** — production 200, live `entry-0c84662e…js` confirmed to contain the new path. **Needs no migration and no new build; 0128 has been applied since it shipped.**
+
 ### 0. The publishing entity now exists, and it is not the one the checklist named (2026-08-15, OPS — no code, no migration)
 
 **Stage 2 was blocked on a legal entity that did not exist. It does now: `Forge Legacy LLC`, Utah, filed 2026-08-13, entity `14725906-0160`, EIN `42-4433633` the same day.** Principal office, mailing address and registered agent are all `3832 E Cunninghill Dr, Eagle Mountain, UT 84005` — the PO is his own registered agent, so that home address is permanent public record and is the address every downstream form must now match.
