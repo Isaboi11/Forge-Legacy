@@ -71,7 +71,3 @@ design_reference/**/assets/
 design_reference/**/screenshots/
 design_reference/**/.thumbnail
 design_reference/**/.image-slots.state.json
-
-# The design tool's own 4MB standalone export — reference only, never the deployed artifact.
-# See site/README.md 'Why not just deploy the design tool's own export'.
-site/_exported-bundle.html
