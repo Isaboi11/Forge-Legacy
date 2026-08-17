@@ -77,8 +77,33 @@ export function CoachBubble() {
    * sitting in the Builder. That is the athlete's own unfinished action, it is true or it is not, and
    * picking the thread back up is a service. "Ready to train?" or "Need a program?" would be the app
    * talking to fill a silence, which is precisely what this rule exists to prevent.
+   *
+   * ══ AND IT BECAME THE NAG THAT RULE EXISTS TO PREVENT ══
+   *
+   * PO, 2026-08-16: *"Coach Holt is saying that my program is still in his pending. I clicked on him. The
+   * message still hasn't gone away."* Two separate defects, both of them here:
+   *
+   *   1. THE FACT WAS READ ONCE PER APP LAUNCH. `CoachBubble` is mounted in `_layout.tsx`, OUTSIDE the
+   *      navigator, so it mounts once and never again for the life of the session — and the draft read
+   *      was a `[]` effect. The Builder clears the draft correctly on save and on cancel; this line never
+   *      looked again. So an athlete could finish and save the program and be told for the rest of the
+   *      day that it was still sitting unsaved. It was not "pending" anywhere. It was gone.
+   *   2. NOTHING RETIRED IT. `openCoach` closed the INTRODUCTION and left the teaser up, so tapping the
+   *      coach, reading the line and closing the sheet put you back in front of the same sentence — told
+   *      again by the coach you had just finished talking to.
+   *
+   * Both are now: the fact is re-read whenever the athlete lands on a surface the bubble appears on, and
+   * the tap that answers the line spends it.
    */
-  const [teaser, setTeaser] = useState<string | null>(null);
+  const [draftName, setDraftName] = useState<string | null>(null);
+  /*
+   * Which draft they have already been told about — the NAME, not a bare "dismissed" boolean.
+   *
+   * A boolean would silence the teaser for the whole session, including for a DIFFERENT program abandoned
+   * an hour later, which is a real fact that has never been mentioned. Keying on the name spends exactly
+   * the one line that was actually shown.
+   */
+  const [seenDraft, setSeenDraft] = useState<string | null>(null);
 
   /*
    * ══ AN INTRODUCTION IS THE ONE GENERIC LINE THAT EARNS ITS PLACE ══
@@ -100,13 +125,30 @@ export function CoachBubble() {
    */
   const [met, setMet] = useState<boolean | null>(null);
 
+  /*
+   * RE-READ ON ARRIVAL, not once on mount. `usePathname` already re-renders this component on every
+   * navigation — it is what the allow-list below is built on — so keying the read to it costs one small
+   * AsyncStorage get when the athlete lands somewhere the line could appear, and nothing anywhere else.
+   * That is what makes "I saved it" and "I cancelled it" both clear the line, since the Builder's own
+   * `clearProgramDraft` is the thing being observed.
+   */
   useEffect(() => {
+    if (!HOME_SURFACES.has(pathname)) return;
     let alive = true;
     void loadProgramDraft().then((d) => {
-      if (!alive || !d) return;
-      const hasContent = d.days?.some((day) => day.main.length > 0) ?? false;
-      if (hasContent && d.name) setTeaser(`${d.name} is still sitting in the builder.`);
+      if (!alive) return;
+      const hasContent = d?.days?.some((day) => day.main.length > 0) ?? false;
+      /* ⚠ SET TO NULL, NOT MERELY LEFT ALONE. The old read could only ever turn the line ON — there was
+         no branch that took it back down — so even re-reading would not have cleared a saved draft. */
+      setDraftName(hasContent && d?.name ? d.name : null);
     });
+    return () => {
+      alive = false;
+    };
+  }, [pathname]);
+
+  useEffect(() => {
+    let alive = true;
     void hasMetHolt().then((v) => {
       if (alive) setMet(v);
     });
@@ -125,8 +167,16 @@ export function CoachBubble() {
    */
   const openCoach = () => {
     setMet(true);
+    /* THE TAP IS THE ANSWER, so the line is spent by it. Leaving it up meant closing the sheet and being
+       told the same thing again by the coach you had just been talking to — which is the definition of
+       the nag §3.5 forbids. Whether they act on the draft is their business; being informed of it is
+       something that has now definitively happened. */
+    setSeenDraft(draftName);
     setOpen(true);
   };
+
+  /* DERIVED, not a second piece of state — the line is simply the fact, minus the ones already told. */
+  const teaser = draftName && draftName !== seenDraft ? `${draftName} is still sitting in the builder.` : null;
 
   /*
    * WHICH LINE, WHEN BOTH ARE TRUE. The introduction wins: a note FROM Holt about a draft you left in the
