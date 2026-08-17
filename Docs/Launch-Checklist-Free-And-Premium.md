@@ -1,6 +1,19 @@
 # Launch Checklist — Free & Premium
 
-## v1.1 | 2026-08-13 · THE WORKING LIST
+## v1.2 | 2026-08-17 · THE WORKING LIST
+
+> **⚠ v1.2 — STAGE 1 IS CLOSED, AND SIX ITEMS BELOW WERE STALE IN THE SAME DIRECTION.** The testers have
+> the build (PO, 08-17), the database runs through `0162`, the website is live, the paywall *screen* is
+> built, and the privacy copy was fixed before any label was signed. **8.3 · 8.5 · 8.7 · 8.8 · 9.1b · 10.1
+> · 10.2 all now read ✅** — every one had been done days before this file admitted it.
+>
+> **That is this document's characteristic failure and it is worth naming.** It has never once described
+> work as finished that was not; it repeatedly describes finished work as pending. The cost is real —
+> §8.1 records the day nearly spent re-applying eleven migrations that were already in, and re-pasting an
+> applied migration is *not* free (`0141` died on `42P13`). **Verify before you execute anything here.**
+>
+> **One item moved the other way:** Phase F gained **6.2b**, because the "free while testing" claim lives
+> in three places and this list named one.
 
 **Purpose:** get Forge Legacy released with **Free and Premium only**. Written to be picked up by a
 session with no prior context. Work top to bottom; each item names its own files and its own finish line.
@@ -18,7 +31,7 @@ That splits this list in two, and the split is the schedule:
 | **Apple team** | existing `G722GV8H8C` (§8) | **new Forge Legacy LLC org account** (§9) |
 | **Entitlement** | `default_tier` stays `PREMIUM` — nothing gates | Phase F flip (§6) |
 | **Needs** | §8 only — the DB blockers and a build | §4 Phase E · §5 Legal · §6 · §9 · §10 |
-| **Blocked by** | nothing but §8.1 | **a D-U-N-S number: 3–14 days, and it has not been started** |
+| **Blocked by** | ✅ **nothing — shipped, testers have it** | **D-U-N-S only.** Requested 08-13, D&B case `10803372`, documents answered 08-15, **pending**. Apple's own figure is ~7 business days, and expediting does not shorten it |
 
 **The D-U-N-S wait is the build window, not dead time.** Start §9.1 the day the LLC is filed; Phase E
 (§4) is roughly the same length and has no dependency on it. Do not let the two run in series.
@@ -355,10 +368,26 @@ app today and the right shape.
 - [ ] **6.2 — Enroll in the App Store Small Business Program** for the 15% rate rather than 30%.
       ⚠ **SUPERSEDED BY §9.6 (v1.1).** Enrollment is per-entity, so it belongs to **Forge Legacy LLC**, not to
       the qest4 team this line was written against.
+- [ ] **6.2b — ⚠ RETIRE THE "FREE WHILE TESTING" CLAIM IN ALL THREE PLACES, IN THE SAME PASS AS 6.1(c).**
+      Every one of them is true today and becomes a **false billing claim** the instant `default_tier`
+      flips — and **nothing on any surface will look wrong**, which is why this is a grep and not a
+      review. Added v1.2, 2026-08-17: the list previously named only the landing page (6.3), so a Phase F
+      done to the letter would have shipped an in-app page telling paying athletes there was nothing to
+      cancel. `grep -rn "free while" src/ site/*.html` — three sites:
+      **(a) `site/index.html`** — the marketing copy **and** the JSON-LD `offers: { price: "0" }` (6.3).
+      **(b) `src/domain/settings/content.ts:30,32`** — *"Forge is free while we're testing. There is no
+      subscription, no billing, and nothing to cancel."* This one renders **inside the app**, on the
+      membership sheet, to the exact cohort being charged. It is the App Store 3.1.2 shape.
+      **(c) `src/domain/settings/__tests__/content.test.mjs:168`** — **a test that asserts the claim.**
+      `assert.match(text, /free while we're testing/i, 'says what is actually true')`. **Phase F fails
+      the test gate until this is updated**, which is the gate doing its job rather than an obstacle: the
+      same test already bans `renews yearly`, `billing is handled`, `next charge`, `cancel at any time`
+      and `Founder`, because shipped design-comp copy once told every tester all of those falsely.
+      Update the assertion to the new truth — do not delete it.
 - [ ] **6.3 — Landing page.** `Docs/Marketing/Landing-Page-Design-Brief.md` §12 and the JSON-LD
       `offers: { price: "0" }` stay correct until this point, then need the real ladder — with
       **Never Charge For History as the headline**. No competitor can copy it without abandoning their
-      revenue model.
+      revenue model. **See 6.2b — this is one of three claim sites, not the only one.**
 
 ---
 
@@ -403,7 +432,8 @@ the app in their hands.**
       landed on the athlete. The call sits at the END of `save_workout`, so the transaction rolls back
       and **the workout is gone**. Finish Workout, Continue Training and session-skip are dead for
       every athlete until this lands. Do not hand a build to a tester before it does.
-- [ ] **8.3 — Apply `0151_stair_floors.sql` BEFORE deploying current code.** Three data modules name
+- [x] **8.3 — ✅ APPLIED.** Confirmed by the 08-13 preflight and everything through `0162` since. Original text:
+      **Apply `0151_stair_floors.sql` BEFORE deploying current code.** Three data modules name
       `floors` in their select; PostgREST answers a missing column with `42703`, the whole query fails,
       and `if (error) return null` renders that as *"there is nothing to continue."* This is the
       0117/0118 failure exactly.
@@ -422,7 +452,12 @@ the app in their hands.**
       promises it. The client side exists (`src/data/account-live.ts`, `src/app/account-settings.tsx`);
       what is unverified is the round trip. Delete a real account with squads, a program, photos and
       check-in video, and confirm nothing is orphaned and nothing else's rows went with it.
-- [ ] **8.5 — Apply the remainder:** `0149_hide_invite_code_and_presence.sql` ·
+- [x] **8.5 — ✅ ALL APPLIED, and the database now runs through `0162`.** `0149`, both `0152` files, `0153`
+      and `0154` were confirmed by the 08-13 preflight (24/24); `0155`–`0158` preflighted 15/15 the same
+      day; `0159` applied 08-15; `0160`/`0161` evidenced by working squad create + transfer; `0162`
+      confirmed by a route drawn on device 08-16. **`0144` remains correctly absent by decision.**
+      ⚠ **Do not re-paste any of these** — `0141` already died on `42P13` when re-run. Original text:
+      **Apply the remainder:** `0149_hide_invite_code_and_presence.sql` ·
       **both** `0152` files · `0153` (reported applied 2026-08-13 — confirm in 8.1, do not assume) ·
       `0154_revoke_public_on_0153_trigger_fns.sql`. ⚠ **Not `0144`.**
 - [ ] **8.6 — Close the two open rulings that touch shipped surfaces** (`Docs/Launch-Audit-2026-08-12.md`
@@ -432,14 +467,19 @@ the app in their hands.**
       other document wrong, so the losing doc gets a superseded banner in the same pass.
       **(b) The storage-orphan ledger** — extend it to personal photos, or accept dashboard cleanup for
       launch and write that down as a decision.
-- [ ] **8.7 — Gates, clean tree, then build.** `npx tsc --noEmit` → 0 · `node --test` all green ·
-      `npx expo lint` at baseline · **`git status` clean** (publishing bundles the working tree, not
-      HEAD) · `fingerprint:compare` against the live build. **Bump `ios.buildNumber` to `5`** in
-      `app.json` — build 4 (`5de44367`) is what is in the field.
-- [ ] **8.8 — TestFlight the 20 testers.** They need Apple IDs collected and an internal or external
-      group. **External testers require a Beta App Review**; internal (up to 100, must be App Store
-      Connect users on the team) do not. Pick internal if the 20 can be added as users — it removes a
-      review round trip from the critical path.
+- [x] **8.7 — ✅ DONE.** `app.json` is at **`buildNumber` 6** (`411fd2b6…`, commit `aaee846c`, 08-15), two
+      past the `5` this item asked for. The gates themselves are not one-time — re-run them before every
+      publish. Original text: **Gates, clean tree, then build.** `npx tsc --noEmit` → 0 · `node --test`
+      all green · `npx expo lint` at baseline · **`git status` clean** (publishing bundles the working
+      tree, not HEAD) · `fingerprint:compare` against the live build.
+- [x] **8.8 — ✅ DONE. The testers have the build (PO, 2026-08-17)** and have had it for a while.
+      ✅ **And it is build 6** (PO, 2026-08-17) — the exact runtime (`411fd2b6…`, commit `aaee846c`) every
+      OTA since 08-15 has been published against. **The testers are current** on the units fix, the white
+      screen, the squads outage, the chapter dead end and both cardio fixes. Worth confirming rather than
+      assuming: an OTA only lands where the runtime matches, so on build 4 or 5 they would have received
+      nothing since, and no OTA could have repaired it — only a new binary.
+      **⇒ The cohort is OTA-reachable, and that is an asset with an expiry.** Any JS-only change reaches
+      them in minutes. **The first native module added ends it** — see §4.2.
 - [ ] **8.9 — Deploy web from the same tree** — `expo export` → `eas deploy --prod` → **curl prod for a
       200**. A "successful" deploy serving a 404 has happened twice; re-running fixes it. Only ever hand
       over **forgelegacy.expo.app**; a throwaway `--hash` URL wipes localStorage and signs people out.
@@ -507,12 +547,15 @@ most common rejection at D&B and at Apple enrollment, and it restarts the clock 
       days) — not the "3–14" written in v1.1.** **Expediting does not shorten it**; Apple says so
       explicitly. Escalate to D&B only past two weeks. D&B may call or email asking business type and
       employee count — **that is the step that stalls if it goes unanswered.**
-- [ ] **9.1b — ⛔ Buy the domain and stand up a real site + work email on it. Blocks enrollment, and
-      it is the item that will be discovered late.** Needs to be live *before* 9.2, i.e. within the
-      D-U-N-S window, not after it. `Docs/Marketing/Landing-Page-Design-Brief.md` is the source. This is
-      the same domain that must host privacy and terms (§10.1), so one purchase closes three items —
-      but the enrollment gate is the one with the deadline. Everything else in §9 waits on it, and §10's
-      listing work cannot be entered until the account exists.
+- [x] **9.1b — ✅ DONE 2026-08-16. `forgelegacy.app` is live and the enrollment gate is cleared.**
+      Root / `/privacy` / `/terms` / `www` all **200**, HTTP **301 → HTTPS**, MX intact so `isaiah@` and
+      `support@` were never at risk. Apple's requirement — a public, functional site on the org's own
+      domain, parking pages and thin sites explicitly rejected — **is satisfied**, and it closed §10.1 in
+      the same move. ⚠ **It is a Cloudflare WORKER named `forgelegacy`, not Pages**, and a Worker cannot
+      be renamed. ⚠ **Redeploy by staging files, never by dragging `site/` in** — `_exported-bundle.html`
+      is a git-ignored 4 MB export that a directory upload would publish as a public indexable page; it
+      returns 404 live and must stay that way. Original text: **Buy the domain and stand up a real site +
+      work email on it. Blocks enrollment, and it is the item that will be discovered late.**
 - [ ] **9.2 — Enroll Forge Legacy LLC in the Apple Developer Program** ($99/yr) once the D-U-N-S resolves.
       The enrolling person must have legal authority to bind the entity.
 - [ ] **9.3 — ⚠ RESOLVE THE BUNDLE IDENTIFIER BEFORE BUILDING ANYTHING UNDER THE NEW TEAM. This is the
@@ -544,18 +587,27 @@ most common rejection at D&B and at Apple enrollment, and it restarts the clock 
 
 ---
 
-## 10 · App Store listing artifacts — none of these exist yet
+## 10 · App Store listing artifacts — the legal half is done, the marketing half is not
 
-No store-listing document exists in this repo. Every item below is unstarted and all of them gate
-submission, not just review.
+⚠ **This section's heading read *"none of these exist yet"* and was wrong on its first two items.** The
+hosted policy and terms went live 08-15/08-16 and the privacy copy was corrected before any label was
+signed — which was the whole point of 10.2's ordering. **10.1 and 10.2 are closed. 10.3–10.7 are
+genuinely unstarted**, and all five gate submission rather than review.
 
-- [ ] **10.1 — Privacy policy and terms at a public HTTPS URL.** The in-app copy in
-      `src/domain/settings/content.ts` is not a link Apple can read; App Store Connect requires a URL,
-      and it must still resolve after launch. Host it on the landing-page domain.
-- [ ] **10.2 — ⚠ Fix the privacy policy's collection list BEFORE the nutrition labels are signed.**
-      `content.ts:53` claims to be exhaustive and **omits product-usage analytics** (Launch Audit §4-3).
-      The App Privacy labels are a declaration Apple holds you to, and signing one that contradicts your
-      own posted policy is the worst version of this bug. Fix the copy, then declare from the fixed copy.
+- [x] **10.1 — ✅ DONE. `forgelegacy.app/privacy` and `/terms` both return 200.** `site/privacy.html` is
+      the hosted document Apple links to and the one that governs; the in-app copy in
+      `src/domain/settings/content.ts` is the summary of it. **Use these two URLs in App Store Connect.**
+- [x] **10.2 — ✅ DONE 2026-08-15 (`cc2b5de`), and done in the right order — the copy was fixed BEFORE any
+      label was signed, which is the only thing this item was ever protecting.** The Launch Audit §4-3
+      finding is closed: the list no longer says *"only"*, and all three omissions are now stated —
+      **precise location** (with the 200 m route trim described as a storage guarantee, not a display
+      setting), **photos and video**, and **product-usage analytics**. Verified this pass that the two
+      documents agree in substance: `site/privacy.html` §2 carries seven collection categories and the
+      in-app summary contradicts none of them.
+      ⚠ **They must not drift.** The in-app text is shorter by design and never different in substance —
+      `content.ts` carries that rule in a comment above the body. **Change one, change the other**, and
+      re-check both against the labels in 10.3.
+      **Declare 10.3 from `site/privacy.html`, not from memory and not from the in-app summary.**
 - [ ] **10.3 — App Privacy nutrition labels** — every category the app actually collects: account
       identity, health/fitness data, photos and video, **precise location** (the app requests
       `ACCESS_FINE_LOCATION` for run tracking), and usage analytics. Declare linkage and tracking use

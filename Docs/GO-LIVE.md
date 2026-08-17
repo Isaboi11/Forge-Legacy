@@ -1,10 +1,23 @@
 # GO-LIVE — the short list
 
-**v1.1 · 2026-08-16 · verified against the repo and the live domain on that date.**
-**The website is live** — `forgelegacy.app` deployed this date, which clears the Apple enrollment gate. See Stage 1 step 2.
+**v1.2 · 2026-08-17 · every claim below re-verified against the repo on this date.**
+**STAGE 1 IS CLOSED.** The testers have the build (PO, 08-17) and the website is live, so **D-U-N-S is the
+only thing gating the public release** — everything else in Stage 2 is work that can be done during the wait.
+
+> **v1.2 corrected four things this file asserted and the repo contradicted.** Recorded because the pattern
+> is the point: *every one was stale in the "still to do" direction* — the same failure as the migration
+> ledger that once listed eleven applied files as pending. **This file is written by hand and the repo is
+> not. Re-verify before trusting any ⛔ in it.**
+> 1. **Stage 1 step 1** said the testers had no build. They have had one for a while.
+> 2. **The paywall row** said `subscription.tsx` did not exist. It shipped 2026-08-16 — 50 minutes after
+>    this file was last written.
+> 3. **Phase F step 10** named the landing page as the only home of the "free while testing" claim. There
+>    are three, and one of them is a *test that asserts it*.
+> 4. **The privacy-copy fix** (checklist §10.2) was listed as blocking the App Privacy labels. It was
+>    closed by `cc2b5de` on 08-15; the in-app summary and `site/privacy.html` are complete and agree.
 
 ⚠ **This is a VIEW, not a fork.** The detail — every phase, every number, every reason — lives in
-`Docs/Launch-Checklist-Free-And-Premium.md` (v1.1) and `Forge-Legacy-Master-Status.md`. This file exists
+`Docs/Launch-Checklist-Free-And-Premium.md` (v1.2) and `Forge-Legacy-Master-Status.md`. This file exists
 so a fresh session can pick up the thread in one read. **If the two disagree, the checklist wins and this
 file is stale — fix it.**
 
@@ -22,17 +35,25 @@ file is stale — fix it.**
 | **Website** | ✅ **LIVE at `forgelegacy.app`** — deployed 2026-08-16 as a **Cloudflare Worker with static assets** named `forgelegacy` (*not* Pages; the dashboard steers new projects to Workers now). Root / `/privacy` / `/terms` all 200. Redeploy = drag `site/`'s deployable files into the project's upload flow, minus `_exported-bundle.html` |
 | **D-U-N-S** | Requested 2026-08-13 · D&B case **10803372** · documents answered 2026-08-15 · **pending** |
 | **Apple** | App `6798436104` on team `G722GV8H8C` (qest4). The public release ships under a **new Forge Legacy LLC org account** |
-| **Paywall** | ⛔ **Not built.** No `subscription.tsx`, no billing SDK in `package.json`, no SKUs |
+| **Paywall** | 🟡 **Screen built, store not.** `src/app/subscription.tsx` shipped 2026-08-16 (37 KB, 23 tests, written against `BillingAdapter`; `UNAVAILABLE_BILLING` in force so it states the truth rather than faking a price). **`react-native-purchases` is deliberately NOT installed** — it is a native module, and the moment it lands every OTA to the build in testers' hands stops being deliverable. Still owed: the adapter, 6 SKUs, referrals, the Founder counter, StoreKit sandbox (§4.2–4.6). ⚠ *This row read "Not built · no `subscription.tsx`" in v1.1 — written 50 minutes before the file landed* |
 
 ---
 
-## STAGE 1 — testers (nothing blocks this)
+## STAGE 1 — testers ✅ CLOSED
 
-**1. ⛔ Send the build to the 20 testers.** *Longest-outstanding item, ~10 minutes, and waiting costs
-something every day.* They are on an old build and **cannot receive any OTA** — the units fix, the white
-screen, the squads outage and the chapter dead end have all reached nobody.
-App Store Connect → TestFlight → **Test Information** (required) → **External Testing** group → add
-emails → attach the newest build → Beta App Review (usually < 1 day).
+**1. ✅ DONE — the testers have the build, and have had it for a while (PO, 2026-08-17).** This item read
+⛔ through v1.1 and was **wrong**; distribution had already happened. Corrected rather than deleted,
+because the board being wrong in the "still to do" direction is the same failure as the migration ledger.
+
+✅ **And they are on build 6** (PO, 2026-08-17) — the runtime every OTA since 08-15 has been published
+against (`411fd2b6…`, commit `aaee846c`). **So the testers are current**: the units fix, the white screen,
+the squads outage, the chapter dead end and both cardio fixes have all reached them. This was worth
+asking rather than assuming — an OTA only lands on a device whose runtime matches, so had they been on
+build 4 or 5 they would have received *nothing* since, and no OTA could have repaired it.
+
+**What this buys, and it is the useful part: the tester cohort is OTA-reachable.** Any JS-only fix ships
+to them in minutes. That holds until a native module is added — which is exactly why §4.2's RevenueCat
+install is now a decision with a cost rather than a routine step.
 
 **2. ✅ DONE 2026-08-16 — the website is live.** Cloudflare **Worker + static assets**, project `forgelegacy`,
 custom domains `forgelegacy.app` (apex) and `www.forgelegacy.app`, **Always Use HTTPS** on.
@@ -81,8 +102,18 @@ The SQL is in `0145`'s footer.
 inserts made since 0145, so a populated account reads 0 and gets three more.
 &nbsp;&nbsp;**(b)** grant the 20 OG testers their seat-free PREMIUM row — *before* the flip, not after.
 &nbsp;&nbsp;**(c)** then `update entitlement_config set default_tier = 'FREE'`.
-Also swap the landing page's "Free while we're testing" and its JSON-LD `offers: price "0"` — both become
-false claims at this moment and **nothing on the page will look wrong**.
+&nbsp;&nbsp;**(d) ⚠ Retire the "free while testing" claim in all THREE places it lives.** Every one becomes a
+false billing claim the instant (c) runs, and **nothing on any surface will look wrong** — this is a
+grep, not a review:
+&nbsp;&nbsp;&nbsp;&nbsp;• `site/index.html` — the copy **and** the JSON-LD `offers: price "0"` (3 hits).
+&nbsp;&nbsp;&nbsp;&nbsp;• `src/domain/settings/content.ts:30,32` — *"Forge is free while we're testing. There
+is no subscription, no billing, and nothing to cancel."* Shown in-app, to the exact cohort being charged.
+&nbsp;&nbsp;&nbsp;&nbsp;• `src/domain/settings/__tests__/content.test.mjs:168` — **asserts the claim**
+(`assert.match(text, /free while we're testing/i)`). So Phase F **fails the test gate** until this is
+updated in the same pass. That is the gate working: the same test file already bans `renews yearly`,
+`cancel at any time` and `Founder` because shipped comp copy once made all three claims falsely.
+⚠ *v1.1 of this step named the landing page only, and would have shipped an in-app page telling paying
+athletes there was nothing to cancel.*
 
 **11. Ship.** Gates green · `git status` clean · `fingerprint:compare` · new build · submit.
 
