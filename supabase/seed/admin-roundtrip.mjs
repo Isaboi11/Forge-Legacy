@@ -1,4 +1,4 @@
-// Operator dashboard gate check (migrations 0129 + 0130 + 0133).
+// Operator dashboard gate check (migrations 0129 + 0130 + 0133 + 0137 + 0167).
 //
 // ══ WHAT THIS PROVES, AND WHY IT IS THE ONLY THING STANDING BETWEEN A TYPO AND TOTAL EXPOSURE ══
 //
@@ -37,7 +37,14 @@ const env = Object.fromEntries(
 
 const TZ = 'UTC';
 
-/** Every admin RPC, with the arguments the app sends. Keep in lockstep with 0130 and 0133. */
+/**
+ * Every admin READ model, with the arguments the app sends. Keep in lockstep with 0130, 0133, 0137, 0167.
+ *
+ * ⚠ `admin_recent_signups` (0137) and both 0167 functions were missing from this list until 0167 —
+ *   0137 shipped an admin function and never added it here, which is precisely the omission this file
+ *   exists to catch. If you add an `admin_*` function and this list does not grow in the same commit,
+ *   nothing anywhere will tell you.
+ */
 const FUNCTIONS = [
   ['admin_overview', { p_days: 30, p_tz: TZ }],
   ['admin_growth', { p_days: 30, p_tz: TZ }],
@@ -47,7 +54,22 @@ const FUNCTIONS = [
   ['admin_content_popularity', { p_days: 30, p_limit: 10, p_tz: TZ }],
   ['admin_social_health', { p_days: 30, p_tz: TZ }],
   ['admin_events', { p_days: 30, p_limit: 10, p_tz: TZ }], // 0133
+  ['admin_recent_signups', { p_limit: 10 }], // 0137
+  ['admin_feedback', { p_limit: 10, p_status: null }], // 0167
 ];
+
+/**
+ * Guarded WRITE functions. Refusal is asserted for anon and for a signed-in non-admin — the half that
+ * matters — but they are NOT invoked in the admin section, because a gate check must not mutate data to
+ * prove the gate works. `admin_guard()` is the first statement of each body, so a non-admin is refused
+ * before any argument is even validated, which is what makes a bogus id safe to send here.
+ */
+const GUARDED_WRITES = [
+  ['admin_feedback_set_status', { p_id: -1, p_status: 'READ' }], // 0167
+];
+
+/** Everything a non-admin must be refused, read or write. */
+const ALL_GUARDED = [...FUNCTIONS, ...GUARDED_WRITES];
 
 /** Tables a non-admin must not be able to read across. Checked alongside the RPCs. */
 const CLOSED_TABLES = ['app_admins', 'metrics_daily'];
@@ -84,7 +106,7 @@ console.log('\n── anon (no session) ──');
   }
 
   // `revoke execute from public` means anon cannot invoke these at all.
-  for (const [fn, args] of FUNCTIONS) {
+  for (const [fn, args] of ALL_GUARDED) {
     const { error: e } = await sb.rpc(fn, args);
     check(!!e, `anon ${fn} → refused${e ? ` (${e.code ?? '?'})` : ' — NOT REFUSED'}`);
   }
@@ -116,7 +138,18 @@ if (!process.env.SB_EMAIL || !process.env.SB_PASS) {
   const { error: evDelErr } = await sb.from('app_events').delete().eq('kind', 'screen_view');
   check(!!evDelErr, `app_events DELETE is refused${evDelErr ? '' : ' — IT WAS NOT.'}`);
 
-  for (const [fn, args] of FUNCTIONS) {
+  // 0167: an athlete may read THEIR OWN feedback and may not rewrite or delete it (no UPDATE/DELETE
+  // policy exists), which is what stops a report being edited after we have read it.
+  const { error: fbReadErr } = await sb.from('feedback').select('id').limit(1);
+  check(!fbReadErr, `own feedback is readable${fbReadErr ? ' — ' + fbReadErr.message : ''}`);
+
+  const { error: fbUpdErr } = await sb.from('feedback').update({ status: 'CLOSED' }).eq('status', 'NEW');
+  check(!!fbUpdErr, `feedback UPDATE is refused${fbUpdErr ? '' : ' — IT WAS NOT. An athlete must not be able to close their own ticket.'}`);
+
+  const { error: fbDelErr } = await sb.from('feedback').delete().eq('status', 'NEW');
+  check(!!fbDelErr, `feedback DELETE is refused${fbDelErr ? '' : ' — IT WAS NOT.'}`);
+
+  for (const [fn, args] of ALL_GUARDED) {
     const { data, error: e } = await sb.rpc(fn, args);
     // 42501 specifically — not merely "an error", and NOT an empty result. An empty result would be
     // indistinguishable from "there is no data yet" and would hide a guard that silently does nothing.
@@ -162,6 +195,13 @@ if (!process.env.SB_ADMIN_EMAIL || !process.env.SB_ADMIN_PASS) {
 
     // AA-D2: population aggregates only. A handle or an athlete id in a payload means somebody added a
     // per-athlete drill-down without the amendment that would be required to allow one.
+    //
+    // ⚠ SCOPED TO THESE TWO PAYLOADS ON PURPOSE — do not widen it to every function in FUNCTIONS.
+    //   `admin_recent_signups` (0137, permitted by AA-D8) and `admin_feedback` (0167) both return a
+    //   handle BY DESIGN: account existence and a support ticket are not performance data, and a bug
+    //   report you cannot attribute is a bug report you cannot answer. AA-D2 forbids a named athlete
+    //   beside a volume number, a standing, a leaderboard position or a rank — which is exactly what
+    //   `admin_overview` and `admin_retention_cohorts` carry, and why they are the two checked here.
     const blob = JSON.stringify([ov, co]);
     check(!/"handle"|"athlete_id"|"user_id"/.test(blob), 'no per-athlete identity leaks into a payload (AA-D2)');
   }

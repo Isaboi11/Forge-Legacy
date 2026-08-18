@@ -157,13 +157,16 @@ export default function RootLayout() {
  * guards. A real render-order dependency on auth + onboarding state — not a preview shim.
  */
 function RootNavigator() {
-  const { session, loading } = useAuth();
+  const { session, loading, recovering } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
   const route = routeFor({
     authLoading: loading,
     hasSession: !!session,
     profileLoading,
     onboardedAt: profile?.onboardedAt,
+    // Holds the auth route up over a live recovery session so the reset link lands on the
+    // set-a-new-password step instead of on Home. See `routeFor`.
+    recovering,
   });
   // Hold the SPLASH while auth/profile resolve — never a flash of the wrong destination, and never a
   // second picture either. This used to be a bronze `ActivityIndicator` on `flColor.base`, which meant
@@ -291,6 +294,11 @@ function RootNavigator() {
         <Stack.Screen name="preferences" />
         <Stack.Screen name="profile-visibility" />
         <Stack.Screen name="notifications" />
+        {/* Send Feedback (0167). Reached from Account Settings → Help & About, and deep-linkable as
+            `/feedback?from=<route>` so any screen can hand over the route a bug was seen on. ⚠ It is
+            the in-app half of an App Store obligation — Apple requires a Support URL and rejects a bare
+            `mailto:` — so `site/support.html` is the other half; neither is optional. */}
+        <Stack.Screen name="feedback" />
         <Stack.Screen name="community" />
         {/* NOT orphaned — this comment used to say it was, and the dashboard still repeats that. It has
             one inbound link: the Progress Hub's "See every rank" closer (`progress-hub.tsx`), added when

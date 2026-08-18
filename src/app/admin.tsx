@@ -24,6 +24,7 @@ import {
   fetchAdminContent,
   fetchAdminEngagement,
   fetchAdminEvents,
+  fetchAdminFeedback,
   fetchAdminGrowth,
   fetchAdminOverview,
   fetchAdminSocial,
@@ -88,6 +89,9 @@ export default function AdminScreen() {
   /* Not range-scoped, deliberately: "did this person sign up yet" is not a question about the last 30
      days, and re-fetching the list every time the range chips move would answer a question nobody asked. */
   const signups = useQuery(() => fetchRecentSignups(60), []);
+  /* Also not range-scoped. An unanswered bug report from six weeks ago is not less unanswered because
+     the range chips say 7D — a support queue is a to-do list, not a trend. */
+  const feedback = useQuery(() => fetchAdminFeedback(50, null), []);
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/account-settings'));
 
@@ -190,6 +194,49 @@ export default function AdminScreen() {
           this list; AA-D2's performance prohibitions are unamended (AA-D9). If a column is ever added
           here, it is a new decision against a locked one.
         */}
+        {/* ── Feedback (0167) ──────────────────────────────────────────── */}
+        <SectionCard
+          title="Feedback"
+          subtitle="What people have told us, newest first. Not range-scoped — an unanswered report is not less unanswered because the chips say 7D."
+        >
+          <Section state={feedback}>
+            {feedback.data ? (
+              <>
+                <StatLine label="Unanswered" value={feedback.data.unread} />
+                <StatLine label="Bug reports" value={feedback.data.bugs} />
+                <StatLine label="Total received" value={feedback.data.total} />
+                {/* ⚠ THE HONEST-ZERO LINE. "Nobody has written" and "nothing links to the screen" both
+                    render as 0 above, and the second is a bug that looks exactly like calm. A date here
+                    is proof the pipe works end to end; the sentence is the only other truthful answer. */}
+                <StatLine
+                  label="Last received"
+                  value={feedback.data.newestAt ? signupDate(feedback.data.newestAt) : 'nothing has ever arrived'}
+                />
+                {feedback.data.rows.length === 0 ? null : (
+                  <View style={styles.feedbackList}>
+                    {feedback.data.rows.map((f) => (
+                      <View key={f.id} style={styles.feedbackRow}>
+                        <View style={styles.feedbackHead}>
+                          <Text style={styles.feedbackKind}>{f.kind}</Text>
+                          <Text style={styles.feedbackWho} numberOfLines={1}>
+                            {f.athleteHandle ? `@${f.athleteHandle}` : f.athleteName}
+                          </Text>
+                          <Text style={styles.feedbackWhen}>{signupDate(f.createdAt)}</Text>
+                        </View>
+                        <Text style={styles.feedbackBody}>{f.body}</Text>
+                        <Text style={styles.feedbackMeta}>
+                          {[f.status, f.screen, f.platform, f.appVersion].filter(Boolean).join(' · ')}
+                          {f.contactOk ? '' : ' · no reply wanted'}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </>
+            ) : null}
+          </Section>
+        </SectionCard>
+
         <SectionCard
           title="Newest athletes"
           subtitle="Who has an account, newest first. “Not named yet” means they created an account but haven’t finished the Account step — the profile is still the placeholder."
@@ -365,7 +412,7 @@ export default function AdminScreen() {
         {/* ── Programs ─────────────────────────────────────────────────── */}
         <SectionCard
           title="Programs"
-          subtitle="Drop-off counts programs untouched for 3 weeks and not finished — not everyone currently mid-week."
+          subtitle="Drop-off counts programs untouched for 3 weeks that are still open — not everyone currently mid-week, and not ones already graduated, finished or ended early."
         >
           <Section state={adoption}>
             {a ? (
@@ -376,8 +423,12 @@ export default function AdminScreen() {
                 />
                 <StatLine label="Sessions completed" value={a.programs.sessionsCompleted} />
                 <StatLine label="Sessions skipped" value={a.programs.sessionsSkipped} />
+                {/* Two completion states, never summed. 'graduated' earns rank credit and Programs
+                    Graduated honors; 'finished' is the same achievement on a program under four designed
+                    weeks, which D-RCM-30 rules earns neither. Labelled so the difference is legible
+                    without the doc — "Weeks completed" was the old label here and counted programs. */}
                 <StatLine label="Graduated" value={a.programs.graduated} />
-                <StatLine label="Weeks completed" value={a.programs.finished} />
+                <StatLine label="Finished (under 4 weeks)" value={a.programs.finished} />
                 <StatLine label="Ended early" value={a.programs.endedEarly} />
                 <StatLine label="Currently active" value={a.programs.active} />
                 {a.programs.dropoffByWeek.length ? (
@@ -566,6 +617,28 @@ const styles = StyleSheet.create({
   signupUnnamed: { color: flColor.gray600, fontStyle: 'italic', fontWeight: '500' },
   signupHandle: { marginTop: 1, fontSize: 11.5, color: flColor.gray600 },
   signupWhen: { flexShrink: 0, fontSize: 11.5, color: flColor.gray400 },
+
+  // Feedback (0167). Stacked rather than tabular: the body is the point and it needs the full width.
+  feedbackList: { marginTop: 10 },
+  feedbackRow: {
+    paddingVertical: 11,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: flColor.charcoal700,
+  },
+  feedbackHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  feedbackKind: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    color: flColor.bronze400,
+  },
+  feedbackWho: { flex: 1, minWidth: 0, fontSize: 11.5, color: flColor.gray600 },
+  feedbackWhen: { flexShrink: 0, fontSize: 11.5, color: flColor.gray400 },
+  /* Full text, never truncated. A support message read halfway is a support message misread — and this
+     is the one screen in the app whose whole job is to show what somebody actually wrote. */
+  feedbackBody: { marginTop: 6, fontSize: 13, lineHeight: 19, color: flColor.cream100 },
+  feedbackMeta: { marginTop: 5, fontSize: 10.5, color: flColor.gray600 },
+
   disclaimer: { color: flColor.gray600, fontSize: 10.5, lineHeight: 16, marginTop: 4 },
   disclaimerStrong: { color: flText.secondary, fontFamily: flFont.displayMedium },
 });

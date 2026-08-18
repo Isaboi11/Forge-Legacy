@@ -80,6 +80,7 @@ export const LEGAL: Record<LegalKey, LegalDocument> = {
       'We record limited usage events — which features get opened — so we know what to build next. They are never sold, never given to advertisers, and never used to track you across other apps.',
       'You control what others see. Visibility is set per-section, and nothing you mark private is shared beyond you.',
       'We never sell your data. You can delete your account, and everything in it, from Account Settings — it is immediate and permanent.',
+      'If you send us feedback or a bug report, we keep what you wrote along with the screen you were on, so we can reproduce it and reply. It is the one place we store words you wrote yourself, and it goes when your account goes.',
       'The full policy is at forgelegacy.app/privacy. Questions? support@forgelegacy.app',
     ],
   },
@@ -205,8 +206,25 @@ export function settingsSections(opts: {
 
   sections.push({
     key: 'about',
-    label: 'About',
-    rows: [{ key: 'about', label: 'About Forge Legacy', action: { type: 'sheet', key: 'about' } }],
+    label: 'Help & About',
+    /*
+     * ⚠ SEND FEEDBACK IS A STORE REQUIREMENT, NOT A NICETY. App Store Connect demands a Support URL, and
+     *   Apple rejects a bare `mailto:` as one — so `site/support.html` exists, and this row is the
+     *   in-app half of the same obligation. Before this, the ONLY support touchpoint in the entire app
+     *   was a sentence of copy inside the privacy sheet (`LEGAL.privacy.body`), which is not reachable
+     *   by anyone looking for help.
+     *
+     * ⚠ IT LIVES IN THE EXISTING `about` SECTION ON PURPOSE. `settingsSections` is asserted by exact
+     *   section-key array in two tests (`content.test.mjs:97` and `:125`); a new "Help" section fails
+     *   both for no user-visible gain. The section LABEL widened to "Help & About" instead — no test
+     *   asserts it, and "About" alone is not where anyone looks for support.
+     *
+     * Feedback first: it is the actionable row, and the one somebody arrives at this screen needing.
+     */
+    rows: [
+      { key: 'feedback', label: 'Send Feedback', action: { type: 'route', path: '/feedback' } },
+      { key: 'about', label: 'About Forge Legacy', action: { type: 'sheet', key: 'about' } },
+    ],
   });
 
   /*

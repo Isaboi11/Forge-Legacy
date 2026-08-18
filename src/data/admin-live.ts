@@ -32,7 +32,11 @@ const NOT_AUTHORIZED = '42501';
 
 /* Which migration each RPC came from, so "not applied yet" names the file to paste rather than a file
    that is already in. Everything in 0130 is the default; anything added since is listed. */
-const FROM_MIGRATION: Record<string, string> = { admin_recent_signups: '0137' };
+const FROM_MIGRATION: Record<string, string> = {
+  admin_recent_signups: '0137',
+  admin_feedback: '0167',
+  admin_feedback_set_status: '0167',
+};
 
 function rpcError(e: unknown, fn: string): Error {
   const err = e as { code?: string; message?: string } | null;
@@ -370,9 +374,15 @@ export async function fetchAdminAdoption(days: number, tz = dashboardTz()): Prom
       sessionsCompleted: num(p.sessions_completed),
       sessionsSkipped: num(p.sessions_skipped),
       graduated: num(p.graduated),
-      // Reads 0 until migration 0157 teaches `admin_program_metrics` the new state. `num()` coerces a
-      // missing key to 0 rather than throwing, so the dashboard degrades to "none yet" rather than
-      // breaking — which is right, but means an unchanged 0 here is not proof there are none.
+      // Programs in the 'finished' state (0155): completed, but under four DESIGNED weeks, so they earn
+      // no rank credit and no Programs Graduated honors per D-RCM-30. Kept SEPARATE from `graduated` —
+      // `honor_metrics()` and `rank-live.ts` both filter `state = 'graduated'`, and summing the two here
+      // would make this screen disagree with the rank engine.
+      //
+      // Supplied by migration 0166. Before that the SQL never emitted the key at all and `num()` coerced
+      // the absence to 0, so this read a permanent zero. (The comment previously here claimed 0157 would
+      // fix it and named `admin_program_metrics`; 0157 is `week_templates` and no such function has ever
+      // existed. The real home is `admin_feature_adoption`.) Post-0166 a 0 here is a genuine zero.
       finished: num(p.finished),
       endedEarly: num(p.ended_early),
       active: num(p.active),
@@ -562,4 +572,80 @@ export async function fetchRecentSignups(limit = 60): Promise<RecentSignup[]> {
     createdAt: String(r.created_at ?? ''),
     named: r.named === true,
   }));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════════
+// FEEDBACK (0167)
+// ═══════════════════════════════════════════════════════════════════════════════════════════════════
+
+export interface FeedbackRow {
+  id: number;
+  kind: string;
+  body: string;
+  screen: string | null;
+  appVersion: string | null;
+  platform: string | null;
+  contactOk: boolean;
+  status: string;
+  createdAt: string;
+  athleteName: string;
+  athleteHandle: string;
+}
+
+export interface AdminFeedback {
+  rows: FeedbackRow[];
+  total: number;
+  unread: number;
+  bugs: number;
+  /**
+   * When the newest message arrived, or `null` when the table has never had a row.
+   *
+   * ⚠ THIS IS THE HONEST-ZERO GUARD AND IT IS THE POINT OF THIS FIELD. "Nobody has sent feedback" and
+   *   "the screen shipped but nothing links to it" both render as `total: 0`, and the second is a bug
+   *   that looks exactly like calm. A null here is the first state; a date is proof the pipe works.
+   *   `src/domain/settings/__tests__/content.test.mjs` asserts the settings row exists for the same
+   *   reason from the other end.
+   */
+  newestAt: string | null;
+}
+
+/**
+ * The operator's support inbox.
+ *
+ * ══ WHY THIS NAMES PEOPLE WHEN NOTHING ELSE ON /admin DOES ══
+ *
+ * AA-D2 forbids a named athlete beside "a volume number, a challenge standing, a leaderboard position,
+ * or a rank" — beside PERFORMANCE. A support ticket is none of those, and a bug report you cannot
+ * attribute is a bug report you cannot answer. `fetchRecentSignups` (AA-D8) set the precedent.
+ *
+ * ⚠ Same standing prohibition as that function: handle and display name only. Joining a workout count,
+ *   a streak or a rank onto one of these rows is the actual breach, and would be a new decision against
+ *   a locked one rather than a small extension of this file.
+ *
+ * ⚠ `kind` and `status` are returned as plain strings and NOT filtered against a client allow-list.
+ *   `notifications-live.ts`'s `KINDS` array silently dropped two notification kinds for eleven
+ *   migrations because it did the opposite. A fifth kind added in SQL must appear here the same day.
+ */
+export async function fetchAdminFeedback(limit = 100, status: string | null = null): Promise<AdminFeedback> {
+  const raw = obj(await callRpc('admin_feedback', { p_limit: limit, p_status: status }));
+  const counts = obj(raw.counts);
+  return {
+    rows: arr<Record<string, unknown>>(raw.rows).map((r) => ({
+      id: num(r.id),
+      kind: String(r.kind ?? 'OTHER'),
+      body: String(r.body ?? ''),
+      screen: r.screen == null ? null : String(r.screen),
+      appVersion: r.app_version == null ? null : String(r.app_version),
+      platform: r.platform == null ? null : String(r.platform),
+      contactOk: r.contact_ok === true,
+      status: String(r.status ?? 'NEW'),
+      createdAt: String(r.created_at ?? ''),
+      athleteName: String(r.athlete_name ?? 'Athlete'),
+      athleteHandle: String(r.athlete_handle ?? ''),
+    })),
+    total: num(counts.total),
+    unread: num(counts.new),
+    bugs: num(counts.bugs),
+    newestAt: counts.newest_at == null ? null : String(counts.newest_at),
+  };
 }

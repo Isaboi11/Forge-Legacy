@@ -99,6 +99,38 @@ test('the full menu carries all three settings screens in the design’s order',
   assert.deepEqual(full[1].rows.map((r) => r.key), ['gym', 'prefs']);
 });
 
+// ── Send Feedback (the support-URL obligation) ──────────────────────────────
+
+test('Send Feedback is reachable from settings, for every athlete, with no flag', () => {
+  // ⚠ THIS IS THE GUARD AGAINST A SILENT ZERO. The `/feedback` screen and the `feedback` table can both
+  //   be perfect while the dashboard reads "no feedback yet" — because nothing linked to the screen.
+  //   That failure mode has already shipped here once: `notifications-live.ts`'s KINDS allow-list left
+  //   two notification kinds invisible in /inbox for eleven migrations. An empty inbox and an unreachable
+  //   screen look identical from the operator's chair, so the reachability is asserted, not assumed.
+  //
+  // It takes no option because it is not a feature flag: App Store Review requires a support path, and
+  // one that appears only for some athletes is not a support path.
+  for (const opts of [
+    {},
+    { hasVisibility: true, hasNotifications: true, hasPreferences: true },
+    { hasVisibility: true, hasNotifications: true, hasPreferences: true, isAdmin: true },
+  ]) {
+    const rows = settingsSections(opts).flatMap((s) => s.rows);
+    const feedback = rows.find((r) => r.key === 'feedback');
+    assert.ok(feedback, `Send Feedback missing from ${JSON.stringify(opts)}`);
+    assert.equal(feedback.label, 'Send Feedback');
+    assert.deepEqual(feedback.action, { type: 'route', path: '/feedback' });
+    assert.ok(!feedback.destructive, 'Send Feedback is not a destructive row');
+  }
+});
+
+test('Send Feedback sits above About, in the Help & About section', () => {
+  const menu = settingsSections({ hasVisibility: true, hasNotifications: true, hasPreferences: true });
+  const about = menu.find((s) => s.key === 'about');
+  assert.equal(about.label, 'Help & About', 'the section is where someone looks for help, and says so');
+  assert.deepEqual(about.rows.map((r) => r.key), ['feedback', 'about'], 'the actionable row comes first');
+});
+
 // ── the operator row (0129/0130) ────────────────────────────────────────────
 
 test('the Creator Dashboard row CANNOT appear for a normal athlete', () => {

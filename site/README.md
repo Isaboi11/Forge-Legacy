@@ -16,6 +16,7 @@ pointed at it. Name it *before* dragging the folder in.
 |---|---|
 | `privacy.html` | ✅ **DONE** — real page, matches the app's tokens |
 | `terms.html` | ✅ **DONE** |
+| `support.html` | ✅ **DONE** — the App Store **Support URL**. Apple requires one and rejects a bare `mailto:` |
 | `assets/landing/*` | ✅ **DONE** — 328 KB WebP, generated from repo art (see below) |
 | `index.html` | ✅ **DONE** — 152 KB, built 2026-08-16 from Landing v5 |
 | `favicon.png` | ✅ **DONE** — 64 px, from the wordmark mark |
@@ -209,12 +210,16 @@ the same account, **Cloudflare wrote the DNS records itself** — the DNS tab wa
 MX records that run `isaiah@`/`support@` were unaffected.
 
 ⚠ **NEVER upload this directory as-is.** `_exported-bundle.html` is 4 MB, is git-ignored, and would
-become a public indexable page at `/_exported-bundle.html`. Stage a folder with exactly these **24
+become a public indexable page at `/_exported-bundle.html`. Stage a folder with exactly these **25
 files** and upload that:
 
 ```
-index.html  privacy.html  terms.html  favicon.png  assets/landing/*   (20 files)
+index.html  privacy.html  terms.html  support.html  favicon.png  assets/landing/*   (20 files)
 ```
+
+⚠ **`support.html` is the App Store Support URL.** App Store Connect requires one and Apple rejects a
+bare `mailto:` as an answer, so this page is a submission dependency, not a nicety — if a re-upload ever
+drops it, the listing's Support URL 404s. `/support` must return **200** after every deploy.
 
 The live deployment serves `/_exported-bundle.html` as **404**. Keep it that way.
 
