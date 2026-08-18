@@ -1,0 +1,787 @@
+{
+  "id": "within-reach-dumbbell-3day",
+  "name": "Within Reach (3-Day)",
+  "family": "Full Body & Home",
+  "difficulty": "Intermediate",
+  "durationWeeks": 8,
+  "frequencyPerWeek": 3,
+  "environment": "Home — two adjustable dumbbells and a bench",
+  "description": "Eight weeks of real strength work with nothing but a pair of dumbbells. Three full-body days a week, built around the five patterns that matter — squat, hinge, push, pull and carry — and around the one problem dumbbell training actually has: the weight runs out. So the load moves onto one leg and one arm at a time as you get stronger, which is how a fixed pair of bells keeps being enough long after they stop feeling heavy with two hands.",
+  "goals": [
+    "Build genuine strength without a barbell or a rack",
+    "Learn to squat, hinge, press, row and carry under load",
+    "Keep progressing after the dumbbells stop feeling heavy, by moving to one limb at a time",
+    "Hold three sessions a week for eight weeks",
+    "Arrive ready for a barbell program, or for Close Quarters if you would rather add size"
+  ],
+  "successorName": null,
+  "theme": "strength",
+  "structure": "full_body",
+  "status": "AUTHORED — original program, PO Lock Approval outstanding",
+  "source": "forge",
+  "sourceFile": "Programs/Full Body & Home/Within Reach/Design-Record.md",
+  "blocks": [
+    {
+      "label": "Weeks 1–3",
+      "weekStart": 1,
+      "weekEnd": 3,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Squat & Press",
+          "modality": "strength",
+          "split": "full_body",
+          "warmup": [
+            {
+              "name": "Bodyweight Squat",
+              "detail": "10 reps",
+              "text": "Bodyweight Squat — 10 reps"
+            },
+            {
+              "name": "Arm Circles",
+              "detail": "10 each direction",
+              "text": "Arm Circles — 10 each direction"
+            },
+            {
+              "name": "Glute Bridge",
+              "detail": "12 reps",
+              "text": "Glute Bridge — 12 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "dumbbell-goblet-squat",
+              "displayName": "Goblet Squat",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 12,
+              "coachNote": "Elbows inside the knees at the bottom. If the heels lift, put a book under them and carry on."
+            },
+            {
+              "catalogKey": "dumbbell-bench-press",
+              "displayName": "Dumbbell Bench Press",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 12
+            },
+            {
+              "catalogKey": "dumbbell-chest-supported-row",
+              "displayName": "Chest-Supported Row",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 12,
+              "coachNote": "Chest stays on the bench. If it comes off, the weight is choosing the range for you."
+            },
+            {
+              "catalogKey": "dumbbell-romanian-deadlift",
+              "displayName": "Romanian Deadlift",
+              "sets": 2,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 12,
+              "coachNote": "Push the hips back until you feel the hamstrings, then stop. This is not a squat with a bar in your hands."
+            },
+            {
+              "catalogKey": "dumbbell-hammer-curl",
+              "displayName": "Hammer Curl",
+              "sets": 2,
+              "reps": 12,
+              "unit": "reps",
+              "restSec": 60,
+              "repsMax": 15
+            },
+            {
+              "catalogKey": "dumbbell-dead-bug",
+              "displayName": "Dead Bug",
+              "sets": 2,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 60,
+              "per": "leg"
+            }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Hinge & Pull",
+          "modality": "strength",
+          "split": "full_body",
+          "warmup": [
+            {
+              "name": "Inchworm",
+              "detail": "6 reps",
+              "text": "Inchworm — 6 reps"
+            },
+            {
+              "name": "Glute Bridge",
+              "detail": "15 reps",
+              "text": "Glute Bridge — 15 reps"
+            },
+            {
+              "name": "World's Greatest Stretch",
+              "detail": "5 each side",
+              "text": "World's Greatest Stretch — 5 each side"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "dumbbell-sumo-deadlift",
+              "displayName": "Sumo Deadlift",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 12,
+              "coachNote": "The dumbbells stay between the feet. Stand up with the legs, not the back."
+            },
+            {
+              "catalogKey": "seated-dumbbell-shoulder-press",
+              "displayName": "Seated Shoulder Press",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 12
+            },
+            {
+              "catalogKey": "dumbbell-bent-over-row",
+              "displayName": "Bent-Over Row",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 12
+            },
+            {
+              "catalogKey": "dumbbell-reverse-lunge",
+              "displayName": "Reverse Lunge",
+              "sets": 2,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 12,
+              "per": "leg",
+              "coachNote": "Step back, not forward — it keeps the front knee quiet and the balance easier to find."
+            },
+            {
+              "catalogKey": "two-hand-dumbbell-overhead-triceps-extension",
+              "displayName": "Overhead Triceps Extension",
+              "sets": 2,
+              "reps": 12,
+              "unit": "reps",
+              "restSec": 60,
+              "repsMax": 15
+            },
+            {
+              "catalogKey": "dumbbell-farmer-carry",
+              "displayName": "Farmer Carry",
+              "sets": 2,
+              "reps": 40,
+              "unit": "reps",
+              "restSec": 75,
+              "coachNote": "Forty seconds, tall and quiet. Heaviest pair you can hold without the shoulders rolling forward."
+            }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "One Side at a Time",
+          "modality": "strength",
+          "split": "full_body",
+          "warmup": [
+            {
+              "name": "Arm Circles",
+              "detail": "10 each direction",
+              "text": "Arm Circles — 10 each direction"
+            },
+            {
+              "name": "Band Pull-Apart",
+              "detail": "20 reps",
+              "text": "Band Pull-Apart — 20 reps"
+            },
+            {
+              "name": "Push-Up",
+              "detail": "10 reps",
+              "text": "Push-Up — 10 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "dumbbell-bulgarian-split-squat",
+              "displayName": "Bulgarian Split Squat",
+              "sets": 3,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 10,
+              "per": "leg",
+              "coachNote": "⚠ This is where the load keeps going once the dumbbells run out. One leg at a time doubles the weight on it."
+            },
+            {
+              "catalogKey": "dumbbell-incline-bench-press",
+              "displayName": "Incline Dumbbell Press",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 12
+            },
+            {
+              "catalogKey": "dumbbell-gorilla-row",
+              "displayName": "Single-Arm Row",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 12,
+              "per": "side"
+            },
+            {
+              "catalogKey": "single-leg-dumbbell-romanian-deadlift",
+              "displayName": "Single-Leg Romanian Deadlift",
+              "sets": 2,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 10,
+              "per": "leg"
+            },
+            {
+              "catalogKey": "dumbbell-lateral-raise",
+              "displayName": "Lateral Raise",
+              "sets": 2,
+              "reps": 12,
+              "unit": "reps",
+              "restSec": 60,
+              "repsMax": 15
+            },
+            {
+              "catalogKey": "dumbbell-calf-raise",
+              "displayName": "Calf Raise",
+              "sets": 2,
+              "reps": 15,
+              "unit": "reps",
+              "restSec": 60,
+              "repsMax": 20
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Weeks 4–6",
+      "weekStart": 4,
+      "weekEnd": 6,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Squat & Press",
+          "modality": "strength",
+          "split": "full_body",
+          "warmup": [
+            {
+              "name": "Bodyweight Squat",
+              "detail": "10 reps",
+              "text": "Bodyweight Squat — 10 reps"
+            },
+            {
+              "name": "Arm Circles",
+              "detail": "10 each direction",
+              "text": "Arm Circles — 10 each direction"
+            },
+            {
+              "name": "Glute Bridge",
+              "detail": "12 reps",
+              "text": "Glute Bridge — 12 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "dumbbell-goblet-squat",
+              "displayName": "Goblet Squat",
+              "sets": 4,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 120,
+              "repsMax": 10,
+              "coachNote": "Elbows inside the knees at the bottom. If the heels lift, put a book under them and carry on."
+            },
+            {
+              "catalogKey": "dumbbell-bench-press",
+              "displayName": "Dumbbell Bench Press",
+              "sets": 4,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 120,
+              "repsMax": 10
+            },
+            {
+              "catalogKey": "dumbbell-chest-supported-row",
+              "displayName": "Chest-Supported Row",
+              "sets": 4,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 120,
+              "repsMax": 10,
+              "coachNote": "Chest stays on the bench. If it comes off, the weight is choosing the range for you."
+            },
+            {
+              "catalogKey": "dumbbell-romanian-deadlift",
+              "displayName": "Romanian Deadlift",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 12,
+              "coachNote": "Push the hips back until you feel the hamstrings, then stop. This is not a squat with a bar in your hands."
+            },
+            {
+              "catalogKey": "dumbbell-hammer-curl",
+              "displayName": "Hammer Curl",
+              "sets": 2,
+              "reps": 12,
+              "unit": "reps",
+              "restSec": 60,
+              "repsMax": 15
+            },
+            {
+              "catalogKey": "dumbbell-dead-bug",
+              "displayName": "Dead Bug",
+              "sets": 2,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 60,
+              "per": "leg"
+            }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Hinge & Pull",
+          "modality": "strength",
+          "split": "full_body",
+          "warmup": [
+            {
+              "name": "Inchworm",
+              "detail": "6 reps",
+              "text": "Inchworm — 6 reps"
+            },
+            {
+              "name": "Glute Bridge",
+              "detail": "15 reps",
+              "text": "Glute Bridge — 15 reps"
+            },
+            {
+              "name": "World's Greatest Stretch",
+              "detail": "5 each side",
+              "text": "World's Greatest Stretch — 5 each side"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "dumbbell-sumo-deadlift",
+              "displayName": "Sumo Deadlift",
+              "sets": 4,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 120,
+              "repsMax": 10,
+              "coachNote": "The dumbbells stay between the feet. Stand up with the legs, not the back."
+            },
+            {
+              "catalogKey": "seated-dumbbell-shoulder-press",
+              "displayName": "Seated Shoulder Press",
+              "sets": 4,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 120,
+              "repsMax": 10
+            },
+            {
+              "catalogKey": "dumbbell-bent-over-row",
+              "displayName": "Bent-Over Row",
+              "sets": 4,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 120,
+              "repsMax": 10
+            },
+            {
+              "catalogKey": "dumbbell-reverse-lunge",
+              "displayName": "Reverse Lunge",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 12,
+              "per": "leg",
+              "coachNote": "Step back, not forward — it keeps the front knee quiet and the balance easier to find."
+            },
+            {
+              "catalogKey": "two-hand-dumbbell-overhead-triceps-extension",
+              "displayName": "Overhead Triceps Extension",
+              "sets": 2,
+              "reps": 12,
+              "unit": "reps",
+              "restSec": 60,
+              "repsMax": 15
+            },
+            {
+              "catalogKey": "dumbbell-farmer-carry",
+              "displayName": "Farmer Carry",
+              "sets": 2,
+              "reps": 40,
+              "unit": "reps",
+              "restSec": 75,
+              "coachNote": "Forty seconds, tall and quiet. Heaviest pair you can hold without the shoulders rolling forward."
+            }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "One Side at a Time",
+          "modality": "strength",
+          "split": "full_body",
+          "warmup": [
+            {
+              "name": "Arm Circles",
+              "detail": "10 each direction",
+              "text": "Arm Circles — 10 each direction"
+            },
+            {
+              "name": "Band Pull-Apart",
+              "detail": "20 reps",
+              "text": "Band Pull-Apart — 20 reps"
+            },
+            {
+              "name": "Push-Up",
+              "detail": "10 reps",
+              "text": "Push-Up — 10 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "dumbbell-bulgarian-split-squat",
+              "displayName": "Bulgarian Split Squat",
+              "sets": 4,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 120,
+              "repsMax": 10,
+              "per": "leg",
+              "coachNote": "⚠ This is where the load keeps going once the dumbbells run out. One leg at a time doubles the weight on it."
+            },
+            {
+              "catalogKey": "dumbbell-incline-bench-press",
+              "displayName": "Incline Dumbbell Press",
+              "sets": 4,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 120,
+              "repsMax": 10
+            },
+            {
+              "catalogKey": "dumbbell-gorilla-row",
+              "displayName": "Single-Arm Row",
+              "sets": 4,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 120,
+              "repsMax": 10,
+              "per": "side"
+            },
+            {
+              "catalogKey": "single-leg-dumbbell-romanian-deadlift",
+              "displayName": "Single-Leg Romanian Deadlift",
+              "sets": 2,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 10,
+              "per": "leg"
+            },
+            {
+              "catalogKey": "dumbbell-lateral-raise",
+              "displayName": "Lateral Raise",
+              "sets": 2,
+              "reps": 12,
+              "unit": "reps",
+              "restSec": 60,
+              "repsMax": 15
+            },
+            {
+              "catalogKey": "dumbbell-calf-raise",
+              "displayName": "Calf Raise",
+              "sets": 2,
+              "reps": 15,
+              "unit": "reps",
+              "restSec": 60,
+              "repsMax": 20
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Weeks 7–8",
+      "weekStart": 7,
+      "weekEnd": 8,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Squat & Press",
+          "modality": "strength",
+          "split": "full_body",
+          "warmup": [
+            {
+              "name": "Bodyweight Squat",
+              "detail": "10 reps",
+              "text": "Bodyweight Squat — 10 reps"
+            },
+            {
+              "name": "Arm Circles",
+              "detail": "10 each direction",
+              "text": "Arm Circles — 10 each direction"
+            },
+            {
+              "name": "Glute Bridge",
+              "detail": "12 reps",
+              "text": "Glute Bridge — 12 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "dumbbell-goblet-squat",
+              "displayName": "Goblet Squat",
+              "sets": 4,
+              "reps": 6,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 8,
+              "coachNote": "Elbows inside the knees at the bottom. If the heels lift, put a book under them and carry on."
+            },
+            {
+              "catalogKey": "dumbbell-bench-press",
+              "displayName": "Dumbbell Bench Press",
+              "sets": 4,
+              "reps": 6,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 8
+            },
+            {
+              "catalogKey": "dumbbell-chest-supported-row",
+              "displayName": "Chest-Supported Row",
+              "sets": 4,
+              "reps": 6,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 8,
+              "coachNote": "Chest stays on the bench. If it comes off, the weight is choosing the range for you."
+            },
+            {
+              "catalogKey": "dumbbell-romanian-deadlift",
+              "displayName": "Romanian Deadlift",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 12,
+              "coachNote": "Push the hips back until you feel the hamstrings, then stop. This is not a squat with a bar in your hands."
+            },
+            {
+              "catalogKey": "dumbbell-hammer-curl",
+              "displayName": "Hammer Curl",
+              "sets": 2,
+              "reps": 12,
+              "unit": "reps",
+              "restSec": 60,
+              "repsMax": 15
+            },
+            {
+              "catalogKey": "dumbbell-dead-bug",
+              "displayName": "Dead Bug",
+              "sets": 2,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 60,
+              "per": "leg"
+            }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Hinge & Pull",
+          "modality": "strength",
+          "split": "full_body",
+          "warmup": [
+            {
+              "name": "Inchworm",
+              "detail": "6 reps",
+              "text": "Inchworm — 6 reps"
+            },
+            {
+              "name": "Glute Bridge",
+              "detail": "15 reps",
+              "text": "Glute Bridge — 15 reps"
+            },
+            {
+              "name": "World's Greatest Stretch",
+              "detail": "5 each side",
+              "text": "World's Greatest Stretch — 5 each side"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "dumbbell-sumo-deadlift",
+              "displayName": "Sumo Deadlift",
+              "sets": 4,
+              "reps": 6,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 8,
+              "coachNote": "The dumbbells stay between the feet. Stand up with the legs, not the back."
+            },
+            {
+              "catalogKey": "seated-dumbbell-shoulder-press",
+              "displayName": "Seated Shoulder Press",
+              "sets": 4,
+              "reps": 6,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 8
+            },
+            {
+              "catalogKey": "dumbbell-bent-over-row",
+              "displayName": "Bent-Over Row",
+              "sets": 4,
+              "reps": 6,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 8
+            },
+            {
+              "catalogKey": "dumbbell-reverse-lunge",
+              "displayName": "Reverse Lunge",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 12,
+              "per": "leg",
+              "coachNote": "Step back, not forward — it keeps the front knee quiet and the balance easier to find."
+            },
+            {
+              "catalogKey": "two-hand-dumbbell-overhead-triceps-extension",
+              "displayName": "Overhead Triceps Extension",
+              "sets": 2,
+              "reps": 12,
+              "unit": "reps",
+              "restSec": 60,
+              "repsMax": 15
+            },
+            {
+              "catalogKey": "dumbbell-farmer-carry",
+              "displayName": "Farmer Carry",
+              "sets": 2,
+              "reps": 40,
+              "unit": "reps",
+              "restSec": 75,
+              "coachNote": "Forty seconds, tall and quiet. Heaviest pair you can hold without the shoulders rolling forward."
+            }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "One Side at a Time",
+          "modality": "strength",
+          "split": "full_body",
+          "warmup": [
+            {
+              "name": "Arm Circles",
+              "detail": "10 each direction",
+              "text": "Arm Circles — 10 each direction"
+            },
+            {
+              "name": "Band Pull-Apart",
+              "detail": "20 reps",
+              "text": "Band Pull-Apart — 20 reps"
+            },
+            {
+              "name": "Push-Up",
+              "detail": "10 reps",
+              "text": "Push-Up — 10 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "dumbbell-bulgarian-split-squat",
+              "displayName": "Bulgarian Split Squat",
+              "sets": 4,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 10,
+              "per": "leg",
+              "coachNote": "⚠ This is where the load keeps going once the dumbbells run out. One leg at a time doubles the weight on it."
+            },
+            {
+              "catalogKey": "dumbbell-incline-bench-press",
+              "displayName": "Incline Dumbbell Press",
+              "sets": 4,
+              "reps": 6,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 8
+            },
+            {
+              "catalogKey": "dumbbell-gorilla-row",
+              "displayName": "Single-Arm Row",
+              "sets": 4,
+              "reps": 6,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 8,
+              "per": "side"
+            },
+            {
+              "catalogKey": "single-leg-dumbbell-romanian-deadlift",
+              "displayName": "Single-Leg Romanian Deadlift",
+              "sets": 2,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 10,
+              "per": "leg"
+            },
+            {
+              "catalogKey": "dumbbell-lateral-raise",
+              "displayName": "Lateral Raise",
+              "sets": 2,
+              "reps": 12,
+              "unit": "reps",
+              "restSec": 60,
+              "repsMax": 15
+            },
+            {
+              "catalogKey": "dumbbell-calf-raise",
+              "displayName": "Calf Raise",
+              "sets": 2,
+              "reps": 15,
+              "unit": "reps",
+              "restSec": 60,
+              "repsMax": 20
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

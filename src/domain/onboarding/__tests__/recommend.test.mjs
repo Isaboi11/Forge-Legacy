@@ -107,8 +107,12 @@ test('intendedProgramId — ports the design gym/home/bodyweight map', () => {
   // owner beats prescribing a barbell they do not have.
   assert.equal(intendedProgramId({ primaryGoal: 'muscle', experience: 'beginner', equipment: ['dumbbells'] }), 'fbh-dumbbell-only');
   assert.equal(intendedProgramId({ primaryGoal: 'health', experience: 'beginner', equipment: ['dumbbells'] }), 'fbh-home-minimalist');
+  /* ⚠ STRENGTH AT HOME NO LONGER FALLS THROUGH TO THE NO-EQUIPMENT ID. `Within Reach` is authored for
+     exactly this athlete, so strength / fat loss / athletic reach it. Endurance still does not: a running
+     goal is not answered by dumbbells, and Holt builds those. */
+  assert.equal(intendedProgramId({ primaryGoal: 'strength', experience: 'advanced', equipment: ['dumbbells'] }), 'fbh-home-strength');
+  assert.equal(intendedProgramId({ primaryGoal: 'fatloss', experience: 'beginner', equipment: ['dumbbells'] }), 'fbh-home-strength');
   assert.equal(intendedProgramId({ primaryGoal: 'endurance', experience: 'beginner', equipment: ['homegym'] }), 'fbh-bodyweight-basics');
-  assert.equal(intendedProgramId({ primaryGoal: 'strength', experience: 'advanced', equipment: ['dumbbells'] }), 'fbh-bodyweight-basics');
   // bodyweight — one id for the whole tier, endurance included.
   assert.equal(intendedProgramId({ primaryGoal: 'strength', experience: 'beginner', equipment: ['bands'] }), 'fbh-bodyweight-basics');
   assert.equal(intendedProgramId({ primaryGoal: 'endurance', experience: 'beginner', equipment: [] }), 'fbh-bodyweight-basics');
@@ -124,7 +128,14 @@ test('intendedProgramId — ports the design gym/home/bodyweight map', () => {
  * Both no-equipment tiers may only ever reach programs authored to need no equipment.
  */
 test('home and bodyweight access never resolve to a barbell program', () => {
-  const NEEDS_NO_EQUIPMENT = new Set(['bodyweight-foundation', 'close-quarters-6day', 'mobility-foundation']);
+  /* Every one of these is authored to need no barbell and no rack: bodyweight, a pair of dumbbells, or a
+     floor. `within-reach-dumbbell-3day` joined them when the dumbbell gap was closed. */
+  const NEEDS_NO_EQUIPMENT = new Set([
+    'bodyweight-foundation',
+    'close-quarters-6day',
+    'mobility-foundation',
+    'within-reach-dumbbell-3day',
+  ]);
   for (const { primaryGoal, experience } of EVERY_COMBINATION) {
     for (const equipment of [['dumbbells'], ['bands'], []]) {
       const id = resolveRecommendationId({ primaryGoal, experience, equipment });
@@ -141,7 +152,10 @@ test('resolveRecommendationId — each goal reaches the family authored for it',
   // Strength — the ladder that was always wired.
   assert.equal(gym('strength', 'beginner'), SF_I);
   assert.equal(gym('strength', 'intermediate'), SF_II);
-  assert.equal(gym('strength', 'advanced'), SF_II);
+  /* ⚠ ADVANCED HAS ITS OWN BLOCK NOW. It used to collapse onto Strength Foundation II — an Intermediate
+     program whose stated goal is "improve gym confidence" — which is the exact case `catalogServesLevel`
+     was written to refuse. `Strength Builder I` is also the successor SF-II has always NAMED. */
+  assert.equal(gym('strength', 'advanced'), 'strength-builder-i-4day');
   // Muscle — a beginner asking for size gets foundational strength first, on purpose.
   assert.equal(gym('muscle', 'beginner'), SF_I);
   assert.equal(gym('muscle', 'intermediate'), 'muscle-building-intermediate');
@@ -284,8 +298,15 @@ test('catalogServesLevel — an unreadable tag never blocks a recommendation', (
   assert.equal(catalogServesLevel('bogus', 'Beginner'), true);
 });
 
-/** The live proof of the defect, so it cannot quietly come back once a program is authored for them. */
-test('⚠ today the real catalogue does NOT serve an advanced lifter', () => {
+/**
+ * ⭐ THE DEFECT IS CLOSED, AND THIS IS THE TEST THAT SAID IT WOULD BE.
+ *
+ * It used to assert the opposite — that the catalogue could NOT serve an advanced lifter — with a note
+ * saying to update it and the copy it guards the day somebody authored one. `Strength Builder I (4-Day)`
+ * is that program, so the assertion flips rather than being deleted: an advanced athlete asking for
+ * strength at a full gym must now be handed a block authored at their level.
+ */
+test('⭐ an advanced lifter is now served a real Advanced block', () => {
   const id = resolveRecommendationId({ primaryGoal: 'strength', experience: 'advanced', equipment: ['fullgym'] });
   const dir = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'training', 'programs');
   const prog = readdirSync(dir)
@@ -293,11 +314,11 @@ test('⚠ today the real catalogue does NOT serve an advanced lifter', () => {
     .map((f) => JSON.parse(readFileSync(join(dir, f), 'utf8')))
     .find((p) => p.id === id);
   assert.ok(prog, `the recommendation ${id} is not in the catalogue`);
-  assert.equal(
-    catalogServesLevel('advanced', prog.difficulty),
-    false,
-    `${prog.name} is tagged ${prog.difficulty} — if an advanced block now exists, update this test and the copy it guards`,
-  );
+  assert.equal(prog.difficulty, 'Advanced', `${prog.name} is tagged ${prog.difficulty}`);
+  assert.equal(catalogServesLevel('advanced', prog.difficulty), true, `${prog.name} does not serve them`);
+  /* The honest-refusal card stays reachable for the goals that still have nothing at that level — muscle
+     and health — so removing it along with this defect would be the wrong lesson to take. */
+  assert.equal(catalogServesLevel('advanced', 'Intermediate'), false, 'the refusal path must still exist');
 });
 
 /**
@@ -330,14 +351,16 @@ test('⚠ successorIdFor — an unauthored successor returns null rather than a 
 /**
  * The live state, so the day somebody authors one of the six this test tells them the hand-off changed.
  */
-test('⚠ today only ONE of the named successors is real', () => {
+test('⚠ how many of the named successors are real', () => {
   const names = CATALOG.map((d) => ({ id: d.id, name: d.name }));
   const named = CATALOG.filter((d) => d.successorName);
   const real = named.filter((d) => successorIdFor(d.successorName, names));
-  assert.equal(named.length, 7, 'seven programs name a successor');
-  assert.deepEqual(
-    real.map((d) => d.id),
-    ['strength-foundation-i-3day'],
-    'if this list grew, a successor was authored — the hand-off now offers it, which is the point',
-  );
+  assert.equal(named.length, 8, 'eight programs name a successor');
+  /* Grew from ONE to THREE when `Strength Builder I` landed, which chained the whole strength ladder:
+     Foundation I -> Foundation II -> Builder I -> Squat Ascent. Every other named successor is still an
+     intention, and `nextAfter` hands those to Holt rather than promising them. */
+  assert.equal(real.length, 3, `real successors: ${real.map((d) => d.id).join(', ')}`);
+  for (const id of ['strength-foundation-i-3day', 'strength-foundation-ii-4day', 'strength-builder-i-4day']) {
+    assert.ok(real.some((d) => d.id === id), `${id} should now reach a real successor`);
+  }
 });

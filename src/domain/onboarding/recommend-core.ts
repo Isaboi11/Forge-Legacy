@@ -102,9 +102,14 @@ export function intendedProgramId(input: RecommendInput): string {
   if (access === 'home') {
     if (primary === 'muscle') return 'fbh-dumbbell-only';
     if (primary === 'health') return 'fbh-home-minimalist';
-    // strength / fatloss / athletic / endurance — nothing in the catalog trains these with dumbbells
-    // alone, so they get the program that needs nothing at all rather than one they cannot load.
-    return 'fbh-bodyweight-basics';
+    /* ⚠ THIS TIER USED TO FALL THROUGH TO THE NO-EQUIPMENT PROGRAM, and it was the right answer only
+       because nothing better existed: 15 of the 18 dumbbell answers handed somebody a bodyweight block
+       after they had just said they own dumbbells. `Within Reach` is authored for exactly this athlete —
+       full-body barbell-free strength that keeps loading by moving to one limb at a time once a fixed
+       pair of bells stops being heavy — so strength, fat loss and athletic now have a real home here.
+       Endurance still does not: a running goal is not answered by dumbbells, and Holt builds those. */
+    if (primary === 'endurance') return 'fbh-bodyweight-basics';
+    return 'fbh-home-strength';
   }
   return (GYM_MAP[primary] ?? GYM_MAP.health)[exp] ?? 'fbh-full-body-3';
 }
@@ -138,13 +143,23 @@ const CATALOG_ALIAS: Record<string, string> = {
   // Strength — the three that were already here.
   'strength-foundation-1': FALLBACK_ID,
   'strength-powerbuilding-1': ADVANCED_ID,
-  'strength-531': ADVANCED_ID,
+  /* ⚠ ADVANCED NO LONGER COLLAPSES ONTO A "FOUNDATION". Until `Strength Builder I` was authored this
+     pointed at Strength Foundation II — an Intermediate block whose own stated goal is "improve gym
+     confidence" — which is what `catalogServesLevel` exists to refuse to say to a fifteen-year lifter.
+     It is also the successor Strength Foundation II has always NAMED, so graduating one now reaches the
+     other instead of falling through to Holt. */
+  'strength-531': 'strength-builder-i-4day',
 
   // Full Body & Home. Both no-equipment ids land on the same program because there is one authored
   // for training with nothing, and it is the honest answer to both questions.
   'fbh-bodyweight-basics': 'bodyweight-foundation',
-  'fbh-home-minimalist': 'bodyweight-foundation',
+  /* ⚠ POINTED AT THE DUMBBELL PROGRAM, NOT THE BODYWEIGHT ONE. "Feel good, move well, stay strong for
+     life" is what a full-body strength block three days a week IS — and this athlete has told us they
+     own dumbbells. Sending them to a no-equipment program would ignore the one fact they volunteered. */
+  'fbh-home-minimalist': 'within-reach-dumbbell-3day',
   'fbh-dumbbell-only': 'close-quarters-6day',
+  /* Dumbbell strength, fat loss and athletic — the gap `Within Reach` was written to close. */
+  'fbh-home-strength': 'within-reach-dumbbell-3day',
   // gym/health at beginner and intermediate — a full-body 3-day that teaches the patterns, which is
   // what "general health, at a gym, new to this" actually wants.
   'fbh-full-body-3': FALLBACK_ID,

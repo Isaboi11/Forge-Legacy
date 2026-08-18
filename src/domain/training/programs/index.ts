@@ -189,6 +189,8 @@ import muscleBuildingIntermediate from './muscle-building-intermediate.json';
 import bodyweightFoundation from './bodyweight-foundation.json';
 import athleticConditioningFoundation from './athletic-conditioning-foundation.json';
 import mobilityFoundation from './mobility-foundation.json';
+import withinReach from './within-reach-dumbbell-3day.json';
+import strengthBuilderI from './strength-builder-i-4day.json';
 
 // JSON import types widen literals (e.g. theme:string); the validator test enforces the
 // real ProgramDefinition contract, so a single narrowing cast here is safe.
@@ -207,6 +209,14 @@ const DEFINITIONS: readonly ProgramDefinition[] = [
   bodyweightFoundation,
   athleticConditioningFoundation,
   mobilityFoundation,
+  /* ⚠ A PROGRAM IS IN THE APP BECAUSE IT IS IN THIS ARRAY, NOT BECAUSE ITS FILE EXISTS.
+     Both of these were authored, schema-valid, wired into the recommender and verified against the
+     catalogue — and were still invisible, because every check read the DIRECTORY while the app reads this
+     list. The web bundle told on it: one name appeared only because another program mentions it in
+     `successorName`, and the other appeared nowhere at all. Anything added to this folder must be added
+     here too. */
+  withinReach,
+  strengthBuilderI,
 ] as unknown as ProgramDefinition[];
 
 /** All converted, PO-approved program definitions. */

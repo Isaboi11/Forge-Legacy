@@ -653,3 +653,60 @@ test('specializations: four weeks, no gap or overlap, and no claimed LOCK', () =
     assert.equal(p.successorName, null, `${p.id} is a standalone block`);
   }
 });
+
+/**
+ * ── EVERY AUTHORED PROGRAM IS ACTUALLY IN THE APP ────────────────────────────────────────────────────
+ *
+ * A PROGRAM IS IN THE CATALOGUE BECAUSE IT IS IN `DEFINITIONS`, NOT BECAUSE ITS FILE EXISTS.
+ *
+ * `Within Reach` and `Strength Builder I` were authored, schema-valid, wired into the recommender, and
+ * verified movement-by-movement against the visible catalogue — and were still invisible to every
+ * athlete, because `index.ts` had not been told about them. Nothing failed: the recommender resolved
+ * their ids, the program guards passed, and every test in this file reads the DIRECTORY, which is exactly
+ * where they were. The web bundle is what told on it.
+ *
+ * Reads the index as TEXT rather than importing it: the module pulls in sixteen JSON files, which
+ * `node --test` cannot resolve without import attributes.
+ *
+ * Names are compared as trimmed LINES rather than by a built regex. The first version used
+ * `new RegExp("\b" + name + ",")`, and in a JS string that escape is a BACKSPACE character rather than a
+ * word boundary — so it matched nothing and reported all sixteen programs unregistered while they were
+ * registered fine. Exact line matching needs no escaping and cannot fail in that direction.
+ */
+test('every program file is registered in index.ts, and every registration has a file', () => {
+  const indexSrc = readFileSync(join(PROGRAMS, 'index.ts'), 'utf8');
+  const from = indexSrc.indexOf('const DEFINITIONS');
+  const listedNames = new Set(
+    indexSrc
+      .slice(from, indexSrc.indexOf('as unknown as', from))
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter((l) => l.endsWith(',') && !l.includes(' '))
+      .map((l) => l.slice(0, -1)),
+  );
+
+  const importPairs = [...indexSrc.matchAll(/import (\w+) from '\.\/([a-z0-9-]+)\.json'/g)];
+  const imported = new Set(importPairs.map((m) => m[2]));
+  const listed = new Set(importPairs.filter((m) => listedNames.has(m[1])).map((m) => m[2]));
+
+  const onDisk = readdirSync(PROGRAMS)
+    .filter((f) => f.endsWith('.json'))
+    .map((f) => f.replace(/\.json$/, ''));
+
+  assert.ok(listed.size > 0, 'parsed no registrations at all — this test would pass vacuously');
+  assert.deepEqual(
+    onDisk.filter((f) => !listed.has(f)),
+    [],
+    'authored but invisible to athletes — add them to DEFINITIONS',
+  );
+  assert.deepEqual(
+    [...imported].filter((f) => !onDisk.includes(f)),
+    [],
+    'index.ts imports a program file that does not exist',
+  );
+  assert.deepEqual(
+    [...imported].filter((f) => !listed.has(f)),
+    [],
+    'imported but missing from DEFINITIONS — the import alone does nothing',
+  );
+});

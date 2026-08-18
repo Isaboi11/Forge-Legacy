@@ -1,0 +1,1314 @@
+{
+  "id": "strength-builder-i-4day",
+  "name": "Strength Builder I (4-Day)",
+  "family": "Strength",
+  "difficulty": "Advanced",
+  "durationWeeks": 10,
+  "frequencyPerWeek": 4,
+  "environment": "Commercial Gym",
+  "description": "Ten weeks on the four lifts, four days a week, for somebody who is past being taught them. Each day opens with one barbell lift carried from a top set into back-offs, and every week moves that top set — eights, then fives, then triples — before a deload pays for the block. The accessory work exists to keep the main lift moving: pulling for the bench, position work for the squat, and a face pull at the end of every pressing week.",
+  "goals": [
+    "Add weight to the squat, bench, deadlift and overhead press across ten weeks",
+    "Train each of the four lifts once a week at a real top set",
+    "Learn to work from a top set into back-offs rather than grinding every set",
+    "Hold a four-day week for ten weeks, deloads included",
+    "Finish the block ready to test, or to run a specialisation on one lift"
+  ],
+  "successorName": "Squat Ascent Intermediate",
+  "theme": "strength",
+  "status": "AUTHORED — original program, PO Lock Approval outstanding",
+  "source": "forge",
+  "sourceFile": "Programs/Strength/Strength Builder I (4-Day)/Design-Record.md",
+  "blocks": [
+    {
+      "label": "Weeks 1–3 · Eights",
+      "weekStart": 1,
+      "weekEnd": 3,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Squat",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            {
+              "name": "Bodyweight Squat",
+              "detail": "15 reps",
+              "text": "Bodyweight Squat — 15 reps"
+            },
+            {
+              "name": "Glute Bridge",
+              "detail": "12 reps",
+              "text": "Glute Bridge — 12 reps"
+            },
+            {
+              "name": "World's Greatest Stretch",
+              "detail": "5 each side",
+              "text": "World's Greatest Stretch — 5 each side"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-back-squat",
+              "displayName": "Back Squat",
+              "sets": 4,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 180,
+              "intensity": true,
+              "coachNote": "Top set at the day's weight, then two back-offs at roughly 90% of it. Stop each set with one clean rep left."
+            },
+            {
+              "catalogKey": "barbell-romanian-deadlift",
+              "displayName": "Romanian Deadlift",
+              "sets": 3,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 10
+            },
+            {
+              "catalogKey": "barbell-hip-thrust",
+              "displayName": "Hip Thrust",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 120,
+              "repsMax": 12
+            },
+            {
+              "catalogKey": "hanging-leg-raise",
+              "displayName": "Hanging Leg Raise",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 12
+            }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Bench",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            {
+              "name": "Arm Circles",
+              "detail": "10 each direction",
+              "text": "Arm Circles — 10 each direction"
+            },
+            {
+              "name": "Band Pull-Apart",
+              "detail": "20 reps",
+              "text": "Band Pull-Apart — 20 reps"
+            },
+            {
+              "name": "Push-Up",
+              "detail": "10 reps",
+              "text": "Push-Up — 10 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-bench-press",
+              "displayName": "Bench Press",
+              "sets": 4,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 180,
+              "intensity": true,
+              "coachNote": "Top set at the day's weight, then two back-offs at roughly 90% of it. Stop each set with one clean rep left."
+            },
+            {
+              "catalogKey": "barbell-close-grip-bench-press",
+              "displayName": "Close-Grip Bench Press",
+              "sets": 3,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 10
+            },
+            {
+              "catalogKey": "dumbbell-bench-press",
+              "displayName": "Dumbbell Bench Press",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 120,
+              "repsMax": 12
+            },
+            {
+              "catalogKey": "cable-triceps-pushdown",
+              "displayName": "Triceps Pushdown",
+              "sets": 3,
+              "reps": 12,
+              "unit": "reps",
+              "restSec": 75,
+              "repsMax": 15
+            }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Deadlift",
+          "modality": "strength",
+          "split": "pull",
+          "warmup": [
+            {
+              "name": "Inchworm",
+              "detail": "6 reps",
+              "text": "Inchworm — 6 reps"
+            },
+            {
+              "name": "Glute Bridge",
+              "detail": "15 reps",
+              "text": "Glute Bridge — 15 reps"
+            },
+            {
+              "name": "World's Greatest Stretch",
+              "detail": "5 each side",
+              "text": "World's Greatest Stretch — 5 each side"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-deadlift",
+              "displayName": "Deadlift",
+              "sets": 4,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 180,
+              "intensity": true,
+              "coachNote": "Top set at the day's weight, then two back-offs at roughly 90% of it. Stop each set with one clean rep left."
+            },
+            {
+              "catalogKey": "barbell-pendlay-row",
+              "displayName": "Pendlay Row",
+              "sets": 4,
+              "reps": 6,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 8
+            },
+            {
+              "catalogKey": "barbell-front-squat",
+              "displayName": "Front Squat",
+              "sets": 3,
+              "reps": 6,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 8,
+              "coachNote": "Light enough to keep the elbows up. This is a position day for the squat, not a second heavy session."
+            },
+            {
+              "catalogKey": "cable-lat-pulldown",
+              "displayName": "Lat Pulldown",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 12
+            }
+          ]
+        },
+        {
+          "code": "D",
+          "name": "Press",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            {
+              "name": "Band Pull-Apart",
+              "detail": "20 reps",
+              "text": "Band Pull-Apart — 20 reps"
+            },
+            {
+              "name": "Arm Circles",
+              "detail": "10 each direction",
+              "text": "Arm Circles — 10 each direction"
+            },
+            {
+              "name": "Band Face Pull",
+              "detail": "15 reps",
+              "text": "Band Face Pull — 15 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-overhead-press",
+              "displayName": "Overhead Press",
+              "sets": 4,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 150,
+              "intensity": true,
+              "coachNote": "Top set at the day's weight, then two back-offs at roughly 90% of it. Stop each set with one clean rep left."
+            },
+            {
+              "catalogKey": "pull-up",
+              "displayName": "Pull-Up",
+              "sets": 4,
+              "reps": 6,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 10,
+              "coachNote": "Add weight when you clear ten clean. Bands or a machine if you cannot yet."
+            },
+            {
+              "catalogKey": "barbell-incline-bench-press",
+              "displayName": "Incline Bench Press",
+              "sets": 3,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 120,
+              "repsMax": 10
+            },
+            {
+              "catalogKey": "cable-face-pull",
+              "displayName": "Face Pull",
+              "sets": 3,
+              "reps": 15,
+              "unit": "reps",
+              "restSec": 60,
+              "repsMax": 20,
+              "coachNote": "Every pressing week ends here. The shoulders that survive a five-day press schedule are the ones that get pulled on."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Week 4 · Deload",
+      "weekStart": 4,
+      "weekEnd": 4,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Squat",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            {
+              "name": "Bodyweight Squat",
+              "detail": "15 reps",
+              "text": "Bodyweight Squat — 15 reps"
+            },
+            {
+              "name": "Glute Bridge",
+              "detail": "12 reps",
+              "text": "Glute Bridge — 12 reps"
+            },
+            {
+              "name": "World's Greatest Stretch",
+              "detail": "5 each side",
+              "text": "World's Greatest Stretch — 5 each side"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-back-squat",
+              "displayName": "Back Squat",
+              "sets": 3,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 150,
+              "intensity": true,
+              "coachNote": "⚠ DELOAD. Same movement, roughly 60% of what you handled last week. It is not a light week by accident; it is the week the last three are paid for."
+            },
+            {
+              "catalogKey": "barbell-romanian-deadlift",
+              "displayName": "Romanian Deadlift",
+              "sets": 3,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 10
+            },
+            {
+              "catalogKey": "barbell-hip-thrust",
+              "displayName": "Hip Thrust",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 120,
+              "repsMax": 12
+            },
+            {
+              "catalogKey": "hanging-leg-raise",
+              "displayName": "Hanging Leg Raise",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 12
+            }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Bench",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            {
+              "name": "Arm Circles",
+              "detail": "10 each direction",
+              "text": "Arm Circles — 10 each direction"
+            },
+            {
+              "name": "Band Pull-Apart",
+              "detail": "20 reps",
+              "text": "Band Pull-Apart — 20 reps"
+            },
+            {
+              "name": "Push-Up",
+              "detail": "10 reps",
+              "text": "Push-Up — 10 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-bench-press",
+              "displayName": "Bench Press",
+              "sets": 3,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 150,
+              "intensity": true,
+              "coachNote": "⚠ DELOAD. Same movement, roughly 60% of what you handled last week. It is not a light week by accident; it is the week the last three are paid for."
+            },
+            {
+              "catalogKey": "barbell-close-grip-bench-press",
+              "displayName": "Close-Grip Bench Press",
+              "sets": 3,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 10
+            },
+            {
+              "catalogKey": "dumbbell-bench-press",
+              "displayName": "Dumbbell Bench Press",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 120,
+              "repsMax": 12
+            },
+            {
+              "catalogKey": "cable-triceps-pushdown",
+              "displayName": "Triceps Pushdown",
+              "sets": 3,
+              "reps": 12,
+              "unit": "reps",
+              "restSec": 75,
+              "repsMax": 15
+            }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Deadlift",
+          "modality": "strength",
+          "split": "pull",
+          "warmup": [
+            {
+              "name": "Inchworm",
+              "detail": "6 reps",
+              "text": "Inchworm — 6 reps"
+            },
+            {
+              "name": "Glute Bridge",
+              "detail": "15 reps",
+              "text": "Glute Bridge — 15 reps"
+            },
+            {
+              "name": "World's Greatest Stretch",
+              "detail": "5 each side",
+              "text": "World's Greatest Stretch — 5 each side"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-deadlift",
+              "displayName": "Deadlift",
+              "sets": 3,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 150,
+              "intensity": true,
+              "coachNote": "⚠ DELOAD. Same movement, roughly 60% of what you handled last week. It is not a light week by accident; it is the week the last three are paid for."
+            },
+            {
+              "catalogKey": "barbell-pendlay-row",
+              "displayName": "Pendlay Row",
+              "sets": 4,
+              "reps": 6,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 8
+            },
+            {
+              "catalogKey": "barbell-front-squat",
+              "displayName": "Front Squat",
+              "sets": 3,
+              "reps": 6,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 8,
+              "coachNote": "Light enough to keep the elbows up. This is a position day for the squat, not a second heavy session."
+            },
+            {
+              "catalogKey": "cable-lat-pulldown",
+              "displayName": "Lat Pulldown",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 12
+            }
+          ]
+        },
+        {
+          "code": "D",
+          "name": "Press",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            {
+              "name": "Band Pull-Apart",
+              "detail": "20 reps",
+              "text": "Band Pull-Apart — 20 reps"
+            },
+            {
+              "name": "Arm Circles",
+              "detail": "10 each direction",
+              "text": "Arm Circles — 10 each direction"
+            },
+            {
+              "name": "Band Face Pull",
+              "detail": "15 reps",
+              "text": "Band Face Pull — 15 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-overhead-press",
+              "displayName": "Overhead Press",
+              "sets": 3,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 120,
+              "intensity": true,
+              "coachNote": "⚠ DELOAD. Same movement, roughly 60% of what you handled last week. It is not a light week by accident; it is the week the last three are paid for."
+            },
+            {
+              "catalogKey": "pull-up",
+              "displayName": "Pull-Up",
+              "sets": 4,
+              "reps": 6,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 10,
+              "coachNote": "Add weight when you clear ten clean. Bands or a machine if you cannot yet."
+            },
+            {
+              "catalogKey": "barbell-incline-bench-press",
+              "displayName": "Incline Bench Press",
+              "sets": 3,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 120,
+              "repsMax": 10
+            },
+            {
+              "catalogKey": "cable-face-pull",
+              "displayName": "Face Pull",
+              "sets": 3,
+              "reps": 15,
+              "unit": "reps",
+              "restSec": 60,
+              "repsMax": 20,
+              "coachNote": "Every pressing week ends here. The shoulders that survive a five-day press schedule are the ones that get pulled on."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Weeks 5–7 · Fives",
+      "weekStart": 5,
+      "weekEnd": 7,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Squat",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            {
+              "name": "Bodyweight Squat",
+              "detail": "15 reps",
+              "text": "Bodyweight Squat — 15 reps"
+            },
+            {
+              "name": "Glute Bridge",
+              "detail": "12 reps",
+              "text": "Glute Bridge — 12 reps"
+            },
+            {
+              "name": "World's Greatest Stretch",
+              "detail": "5 each side",
+              "text": "World's Greatest Stretch — 5 each side"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-back-squat",
+              "displayName": "Back Squat",
+              "sets": 5,
+              "reps": 5,
+              "unit": "reps",
+              "restSec": 210,
+              "intensity": true,
+              "coachNote": "Top set at the day's weight, then two back-offs at roughly 90% of it. Stop each set with one clean rep left."
+            },
+            {
+              "catalogKey": "barbell-romanian-deadlift",
+              "displayName": "Romanian Deadlift",
+              "sets": 3,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 10
+            },
+            {
+              "catalogKey": "barbell-hip-thrust",
+              "displayName": "Hip Thrust",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 120,
+              "repsMax": 12
+            },
+            {
+              "catalogKey": "hanging-leg-raise",
+              "displayName": "Hanging Leg Raise",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 12
+            }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Bench",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            {
+              "name": "Arm Circles",
+              "detail": "10 each direction",
+              "text": "Arm Circles — 10 each direction"
+            },
+            {
+              "name": "Band Pull-Apart",
+              "detail": "20 reps",
+              "text": "Band Pull-Apart — 20 reps"
+            },
+            {
+              "name": "Push-Up",
+              "detail": "10 reps",
+              "text": "Push-Up — 10 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-bench-press",
+              "displayName": "Bench Press",
+              "sets": 5,
+              "reps": 5,
+              "unit": "reps",
+              "restSec": 210,
+              "intensity": true,
+              "coachNote": "Top set at the day's weight, then two back-offs at roughly 90% of it. Stop each set with one clean rep left."
+            },
+            {
+              "catalogKey": "barbell-close-grip-bench-press",
+              "displayName": "Close-Grip Bench Press",
+              "sets": 3,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 10
+            },
+            {
+              "catalogKey": "dumbbell-bench-press",
+              "displayName": "Dumbbell Bench Press",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 120,
+              "repsMax": 12
+            },
+            {
+              "catalogKey": "cable-triceps-pushdown",
+              "displayName": "Triceps Pushdown",
+              "sets": 3,
+              "reps": 12,
+              "unit": "reps",
+              "restSec": 75,
+              "repsMax": 15
+            }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Deadlift",
+          "modality": "strength",
+          "split": "pull",
+          "warmup": [
+            {
+              "name": "Inchworm",
+              "detail": "6 reps",
+              "text": "Inchworm — 6 reps"
+            },
+            {
+              "name": "Glute Bridge",
+              "detail": "15 reps",
+              "text": "Glute Bridge — 15 reps"
+            },
+            {
+              "name": "World's Greatest Stretch",
+              "detail": "5 each side",
+              "text": "World's Greatest Stretch — 5 each side"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-deadlift",
+              "displayName": "Deadlift",
+              "sets": 5,
+              "reps": 5,
+              "unit": "reps",
+              "restSec": 210,
+              "intensity": true,
+              "coachNote": "Top set at the day's weight, then two back-offs at roughly 90% of it. Stop each set with one clean rep left."
+            },
+            {
+              "catalogKey": "barbell-pendlay-row",
+              "displayName": "Pendlay Row",
+              "sets": 4,
+              "reps": 6,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 8
+            },
+            {
+              "catalogKey": "barbell-front-squat",
+              "displayName": "Front Squat",
+              "sets": 3,
+              "reps": 6,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 8,
+              "coachNote": "Light enough to keep the elbows up. This is a position day for the squat, not a second heavy session."
+            },
+            {
+              "catalogKey": "cable-lat-pulldown",
+              "displayName": "Lat Pulldown",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 12
+            }
+          ]
+        },
+        {
+          "code": "D",
+          "name": "Press",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            {
+              "name": "Band Pull-Apart",
+              "detail": "20 reps",
+              "text": "Band Pull-Apart — 20 reps"
+            },
+            {
+              "name": "Arm Circles",
+              "detail": "10 each direction",
+              "text": "Arm Circles — 10 each direction"
+            },
+            {
+              "name": "Band Face Pull",
+              "detail": "15 reps",
+              "text": "Band Face Pull — 15 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-overhead-press",
+              "displayName": "Overhead Press",
+              "sets": 4,
+              "reps": 5,
+              "unit": "reps",
+              "restSec": 180,
+              "intensity": true,
+              "coachNote": "Top set at the day's weight, then two back-offs at roughly 90% of it. Stop each set with one clean rep left."
+            },
+            {
+              "catalogKey": "pull-up",
+              "displayName": "Pull-Up",
+              "sets": 4,
+              "reps": 6,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 10,
+              "coachNote": "Add weight when you clear ten clean. Bands or a machine if you cannot yet."
+            },
+            {
+              "catalogKey": "barbell-incline-bench-press",
+              "displayName": "Incline Bench Press",
+              "sets": 3,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 120,
+              "repsMax": 10
+            },
+            {
+              "catalogKey": "cable-face-pull",
+              "displayName": "Face Pull",
+              "sets": 3,
+              "reps": 15,
+              "unit": "reps",
+              "restSec": 60,
+              "repsMax": 20,
+              "coachNote": "Every pressing week ends here. The shoulders that survive a five-day press schedule are the ones that get pulled on."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Week 8 · Deload",
+      "weekStart": 8,
+      "weekEnd": 8,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Squat",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            {
+              "name": "Bodyweight Squat",
+              "detail": "15 reps",
+              "text": "Bodyweight Squat — 15 reps"
+            },
+            {
+              "name": "Glute Bridge",
+              "detail": "12 reps",
+              "text": "Glute Bridge — 12 reps"
+            },
+            {
+              "name": "World's Greatest Stretch",
+              "detail": "5 each side",
+              "text": "World's Greatest Stretch — 5 each side"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-back-squat",
+              "displayName": "Back Squat",
+              "sets": 3,
+              "reps": 5,
+              "unit": "reps",
+              "restSec": 150,
+              "intensity": true,
+              "coachNote": "⚠ DELOAD. Same movement, roughly 60% of what you handled last week. It is not a light week by accident; it is the week the last three are paid for."
+            },
+            {
+              "catalogKey": "barbell-romanian-deadlift",
+              "displayName": "Romanian Deadlift",
+              "sets": 3,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 10
+            },
+            {
+              "catalogKey": "barbell-hip-thrust",
+              "displayName": "Hip Thrust",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 120,
+              "repsMax": 12
+            },
+            {
+              "catalogKey": "hanging-leg-raise",
+              "displayName": "Hanging Leg Raise",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 12
+            }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Bench",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            {
+              "name": "Arm Circles",
+              "detail": "10 each direction",
+              "text": "Arm Circles — 10 each direction"
+            },
+            {
+              "name": "Band Pull-Apart",
+              "detail": "20 reps",
+              "text": "Band Pull-Apart — 20 reps"
+            },
+            {
+              "name": "Push-Up",
+              "detail": "10 reps",
+              "text": "Push-Up — 10 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-bench-press",
+              "displayName": "Bench Press",
+              "sets": 3,
+              "reps": 5,
+              "unit": "reps",
+              "restSec": 150,
+              "intensity": true,
+              "coachNote": "⚠ DELOAD. Same movement, roughly 60% of what you handled last week. It is not a light week by accident; it is the week the last three are paid for."
+            },
+            {
+              "catalogKey": "barbell-close-grip-bench-press",
+              "displayName": "Close-Grip Bench Press",
+              "sets": 3,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 10
+            },
+            {
+              "catalogKey": "dumbbell-bench-press",
+              "displayName": "Dumbbell Bench Press",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 120,
+              "repsMax": 12
+            },
+            {
+              "catalogKey": "cable-triceps-pushdown",
+              "displayName": "Triceps Pushdown",
+              "sets": 3,
+              "reps": 12,
+              "unit": "reps",
+              "restSec": 75,
+              "repsMax": 15
+            }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Deadlift",
+          "modality": "strength",
+          "split": "pull",
+          "warmup": [
+            {
+              "name": "Inchworm",
+              "detail": "6 reps",
+              "text": "Inchworm — 6 reps"
+            },
+            {
+              "name": "Glute Bridge",
+              "detail": "15 reps",
+              "text": "Glute Bridge — 15 reps"
+            },
+            {
+              "name": "World's Greatest Stretch",
+              "detail": "5 each side",
+              "text": "World's Greatest Stretch — 5 each side"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-deadlift",
+              "displayName": "Deadlift",
+              "sets": 3,
+              "reps": 5,
+              "unit": "reps",
+              "restSec": 150,
+              "intensity": true,
+              "coachNote": "⚠ DELOAD. Same movement, roughly 60% of what you handled last week. It is not a light week by accident; it is the week the last three are paid for."
+            },
+            {
+              "catalogKey": "barbell-pendlay-row",
+              "displayName": "Pendlay Row",
+              "sets": 4,
+              "reps": 6,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 8
+            },
+            {
+              "catalogKey": "barbell-front-squat",
+              "displayName": "Front Squat",
+              "sets": 3,
+              "reps": 6,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 8,
+              "coachNote": "Light enough to keep the elbows up. This is a position day for the squat, not a second heavy session."
+            },
+            {
+              "catalogKey": "cable-lat-pulldown",
+              "displayName": "Lat Pulldown",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 12
+            }
+          ]
+        },
+        {
+          "code": "D",
+          "name": "Press",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            {
+              "name": "Band Pull-Apart",
+              "detail": "20 reps",
+              "text": "Band Pull-Apart — 20 reps"
+            },
+            {
+              "name": "Arm Circles",
+              "detail": "10 each direction",
+              "text": "Arm Circles — 10 each direction"
+            },
+            {
+              "name": "Band Face Pull",
+              "detail": "15 reps",
+              "text": "Band Face Pull — 15 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-overhead-press",
+              "displayName": "Overhead Press",
+              "sets": 3,
+              "reps": 5,
+              "unit": "reps",
+              "restSec": 120,
+              "intensity": true,
+              "coachNote": "⚠ DELOAD. Same movement, roughly 60% of what you handled last week. It is not a light week by accident; it is the week the last three are paid for."
+            },
+            {
+              "catalogKey": "pull-up",
+              "displayName": "Pull-Up",
+              "sets": 4,
+              "reps": 6,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 10,
+              "coachNote": "Add weight when you clear ten clean. Bands or a machine if you cannot yet."
+            },
+            {
+              "catalogKey": "barbell-incline-bench-press",
+              "displayName": "Incline Bench Press",
+              "sets": 3,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 120,
+              "repsMax": 10
+            },
+            {
+              "catalogKey": "cable-face-pull",
+              "displayName": "Face Pull",
+              "sets": 3,
+              "reps": 15,
+              "unit": "reps",
+              "restSec": 60,
+              "repsMax": 20,
+              "coachNote": "Every pressing week ends here. The shoulders that survive a five-day press schedule are the ones that get pulled on."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Weeks 9–10 · Triples",
+      "weekStart": 9,
+      "weekEnd": 10,
+      "workouts": [
+        {
+          "code": "A",
+          "name": "Squat",
+          "modality": "strength",
+          "split": "legs",
+          "warmup": [
+            {
+              "name": "Bodyweight Squat",
+              "detail": "15 reps",
+              "text": "Bodyweight Squat — 15 reps"
+            },
+            {
+              "name": "Glute Bridge",
+              "detail": "12 reps",
+              "text": "Glute Bridge — 12 reps"
+            },
+            {
+              "name": "World's Greatest Stretch",
+              "detail": "5 each side",
+              "text": "World's Greatest Stretch — 5 each side"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-back-squat",
+              "displayName": "Back Squat",
+              "sets": 5,
+              "reps": 3,
+              "unit": "reps",
+              "restSec": 240,
+              "intensity": true,
+              "coachNote": "Heaviest single triple of the block. If the bar slows badly, that was the set — do the back-offs and go home."
+            },
+            {
+              "catalogKey": "barbell-romanian-deadlift",
+              "displayName": "Romanian Deadlift",
+              "sets": 3,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 10
+            },
+            {
+              "catalogKey": "barbell-hip-thrust",
+              "displayName": "Hip Thrust",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 120,
+              "repsMax": 12
+            },
+            {
+              "catalogKey": "hanging-leg-raise",
+              "displayName": "Hanging Leg Raise",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 12
+            }
+          ]
+        },
+        {
+          "code": "B",
+          "name": "Bench",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            {
+              "name": "Arm Circles",
+              "detail": "10 each direction",
+              "text": "Arm Circles — 10 each direction"
+            },
+            {
+              "name": "Band Pull-Apart",
+              "detail": "20 reps",
+              "text": "Band Pull-Apart — 20 reps"
+            },
+            {
+              "name": "Push-Up",
+              "detail": "10 reps",
+              "text": "Push-Up — 10 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-bench-press",
+              "displayName": "Bench Press",
+              "sets": 5,
+              "reps": 3,
+              "unit": "reps",
+              "restSec": 240,
+              "intensity": true,
+              "coachNote": "Heaviest single triple of the block. If the bar slows badly, that was the set — do the back-offs and go home."
+            },
+            {
+              "catalogKey": "barbell-close-grip-bench-press",
+              "displayName": "Close-Grip Bench Press",
+              "sets": 3,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 10
+            },
+            {
+              "catalogKey": "dumbbell-bench-press",
+              "displayName": "Dumbbell Bench Press",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 120,
+              "repsMax": 12
+            },
+            {
+              "catalogKey": "cable-triceps-pushdown",
+              "displayName": "Triceps Pushdown",
+              "sets": 3,
+              "reps": 12,
+              "unit": "reps",
+              "restSec": 75,
+              "repsMax": 15
+            }
+          ]
+        },
+        {
+          "code": "C",
+          "name": "Deadlift",
+          "modality": "strength",
+          "split": "pull",
+          "warmup": [
+            {
+              "name": "Inchworm",
+              "detail": "6 reps",
+              "text": "Inchworm — 6 reps"
+            },
+            {
+              "name": "Glute Bridge",
+              "detail": "15 reps",
+              "text": "Glute Bridge — 15 reps"
+            },
+            {
+              "name": "World's Greatest Stretch",
+              "detail": "5 each side",
+              "text": "World's Greatest Stretch — 5 each side"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-deadlift",
+              "displayName": "Deadlift",
+              "sets": 4,
+              "reps": 3,
+              "unit": "reps",
+              "restSec": 240,
+              "intensity": true,
+              "coachNote": "Heaviest single triple of the block. If the bar slows badly, that was the set — do the back-offs and go home."
+            },
+            {
+              "catalogKey": "barbell-pendlay-row",
+              "displayName": "Pendlay Row",
+              "sets": 4,
+              "reps": 6,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 8
+            },
+            {
+              "catalogKey": "barbell-front-squat",
+              "displayName": "Front Squat",
+              "sets": 3,
+              "reps": 6,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 8,
+              "coachNote": "Light enough to keep the elbows up. This is a position day for the squat, not a second heavy session."
+            },
+            {
+              "catalogKey": "cable-lat-pulldown",
+              "displayName": "Lat Pulldown",
+              "sets": 3,
+              "reps": 10,
+              "unit": "reps",
+              "restSec": 90,
+              "repsMax": 12
+            }
+          ]
+        },
+        {
+          "code": "D",
+          "name": "Press",
+          "modality": "strength",
+          "split": "push",
+          "warmup": [
+            {
+              "name": "Band Pull-Apart",
+              "detail": "20 reps",
+              "text": "Band Pull-Apart — 20 reps"
+            },
+            {
+              "name": "Arm Circles",
+              "detail": "10 each direction",
+              "text": "Arm Circles — 10 each direction"
+            },
+            {
+              "name": "Band Face Pull",
+              "detail": "15 reps",
+              "text": "Band Face Pull — 15 reps"
+            }
+          ],
+          "main": [
+            {
+              "catalogKey": "barbell-overhead-press",
+              "displayName": "Overhead Press",
+              "sets": 4,
+              "reps": 3,
+              "unit": "reps",
+              "restSec": 180,
+              "intensity": true,
+              "coachNote": "Heaviest single triple of the block. If the bar slows badly, that was the set — do the back-offs and go home."
+            },
+            {
+              "catalogKey": "pull-up",
+              "displayName": "Pull-Up",
+              "sets": 4,
+              "reps": 6,
+              "unit": "reps",
+              "restSec": 150,
+              "repsMax": 10,
+              "coachNote": "Add weight when you clear ten clean. Bands or a machine if you cannot yet."
+            },
+            {
+              "catalogKey": "barbell-incline-bench-press",
+              "displayName": "Incline Bench Press",
+              "sets": 3,
+              "reps": 8,
+              "unit": "reps",
+              "restSec": 120,
+              "repsMax": 10
+            },
+            {
+              "catalogKey": "cable-face-pull",
+              "displayName": "Face Pull",
+              "sets": 3,
+              "reps": 15,
+              "unit": "reps",
+              "restSec": 60,
+              "repsMax": 20,
+              "coachNote": "Every pressing week ends here. The shoulders that survive a five-day press schedule are the ones that get pulled on."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
