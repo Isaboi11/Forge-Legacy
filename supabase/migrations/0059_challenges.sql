@@ -1,5 +1,19 @@
 -- Forge Legacy — 0059: the Challenge System (C-series foundation)
 --
+-- ⛔⛔ DO NOT RE-RUN THIS FILE. IT IS SUPERSEDED AND RE-PASTING IT BREAKS FRIENDS COMPETITIONS. ⛔⛔
+--
+--   `0087_friend_challenges.sql` replaced four of the objects below with FRIENDS-aware versions:
+--   `can_read_challenge`, `challenges_select`, `challenges_insert`, `challenge_participants_insert`.
+--   Everything here is idempotent, so re-pasting this file to recover a half-applied run — which IS the
+--   documented recovery procedure in this project — silently reverts all four to SQUAD-ONLY.
+--
+--   IT FAILS QUIETLY AND IT FAILS WEIRDLY: `challenge_hub()` is SECURITY DEFINER and never consults
+--   these policies, so every friends competition keeps appearing in "Open to Join" while the table
+--   refuses the insert with `42501`. The list and the button disagree, and nothing logs it.
+--
+--   If you have already done it: run `supabase/migrations/0165_challenge_policy_reassert.sql`, which
+--   restates 0087's four bodies and asserts they took.
+--
 -- First real backend for competitions. Built to `Challenge-System-Architecture-v1.0` v1.5 (CS-D1–D27),
 -- scoped to what the rest of the app can actually support today.
 --

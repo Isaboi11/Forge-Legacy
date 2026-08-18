@@ -22,6 +22,13 @@ export type NotificationKind =
   | 'friend_request'
   | 'friend_accepted'
   | 'challenge_invite'
+  /**
+   * Somebody opted into a competition you created (0164) — the other half of `challenge_invite`, missing
+   * since the friends context shipped: an invitation could be sent and accepted with the sender told
+   * neither. NOT fan-out; the creator is the only recipient. Bounded by 14 days AND by the competition
+   * still running, because who is in stops being news once it is over.
+   */
+  | 'challenge_joined'
   | 'workout_invite'
   /** Someone asking to join a session already under way (0121) — `workout_invite` with the arrow reversed. */
   | 'workout_join_request'
@@ -72,7 +79,7 @@ export interface ForgeNotification {
   squadName: string;
   squadCrest: string;
   squadPhotoUrl: string | null;
-  /** Set only on `challenge_invite`. */
+  /** Set on `challenge_invite` and `challenge_joined` (0164) — both open the competition. */
   challengeId: string | null;
   challengeName: string | null;
   /** Set on `workout_invite` and `workout_join_request` — the same table, the arrow reversed (0121). */
@@ -94,6 +101,19 @@ export interface ForgeNotification {
 const MISSING_FN = 'PGRST202';
 const isMissingFn = (e: unknown): boolean => (e as { code?: string } | null)?.code === MISSING_FN;
 
+/**
+ * ⚠ THIS LIST IS AN ALLOW-LIST, AND A KIND MISSING FROM IT IS SILENTLY DROPPED FROM THE INBOX.
+ *
+ * `asKind` returns null for anything not here and the row is skipped — the right behaviour for a kind a
+ * NEW server sends to an OLD build, and a silent deletion for one this build renders perfectly well.
+ *
+ * ⚠ 0153's two training kinds were never added, so `squad_training_started` and `squad_training_finished`
+ * have been derived by the union, enqueued by the sender, PUSHED to devices, and then dropped here on
+ * arrival — every one of them rendered on a lock screen and by nothing in `/inbox`. Added below with the
+ * 0164 kind, which was one omission away from the same fate.
+ *
+ * Adding a branch to `notification_events_for` means adding it HERE as well as to `inbox.tsx`.
+ */
 const KINDS: NotificationKind[] = [
   'join_request',
   'member_joined',
@@ -102,6 +122,7 @@ const KINDS: NotificationKind[] = [
   'friend_request',
   'friend_accepted',
   'challenge_invite',
+  'challenge_joined',
   'workout_invite',
   'workout_join_request',
   'program_shared',
@@ -110,6 +131,8 @@ const KINDS: NotificationKind[] = [
   'squad_recap',
   'post_comment',
   'post_reaction',
+  'squad_training_started',
+  'squad_training_finished',
 ];
 const asKind = (v: string): NotificationKind | null => (KINDS as string[]).includes(v) ? (v as NotificationKind) : null;
 

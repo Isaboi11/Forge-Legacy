@@ -67,6 +67,140 @@ export const LIMITATION_PATTERNS: Record<Limitation, readonly string[]> = {
 export const limitationPatterns = (l: Limitation): readonly string[] => LIMITATION_PATTERNS[l] ?? [];
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// 1a. THE EXCEPTIONS TO A BANNED PATTERN  (PO decision, 2026-08-17)
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Supine hip extension: shoulders on the floor or a bench, load across the hips, spine neutral throughout.
+ *
+ * ⚠ **A BANNED PATTERN IS TOO BLUNT AN INSTRUMENT HERE, AND THE MEASUREMENT SAID SO.** `lower_back` bans
+ * `Hinge / Hip Dominant` whole, which is right for a deadlift and wrong for a glute bridge — and the ban
+ * took **all thirteen** of these along with it. The result was an eight-week block for someone with a bad
+ * back containing *zero* posterior-chain hip extension, which is close to the opposite of what the
+ * complaint calls for.
+ *
+ * The family is admitted rather than four hand-picked keys because it is genuinely one movement on
+ * thirteen implements: the bar, the band and the machine change what loads the hips, not what the spine
+ * does. The equipment gate already decides which of them an athlete can reach.
+ *
+ * ⚠ WHAT IS **NOT** HERE, AND WHY THE BAN IS STILL DOING WORK: deadlifts of every kind, Romanian and
+ * stiff-leg variants, sumo, swings, good mornings, back extensions and supermans all stay excluded. Those
+ * load a hinging or extending lumbar spine, which is the thing being worked around. So do all four
+ * carries — considered and left out, because a loaded carry is axial compression however good the
+ * suitcase variant is for anti-lateral-flexion.
+ */
+const SUPINE_HIP_EXTENSION: readonly string[] = [
+  'glute-bridge',
+  'glute-bridge-iso-hold',
+  'single-leg-glute-bridge',
+  'band-glute-bridge',
+  'barbell-glute-bridge',
+  'dumbbell-glute-bridge',
+  'suspension-trainer-glute-bridge',
+  'band-hip-thrust',
+  'barbell-hip-thrust',
+  'cable-hip-thrust',
+  'dumbbell-hip-thrust',
+  'hip-thrust-machine',
+  'smith-machine-hip-thrust',
+];
+
+/**
+ * Exercises admitted DESPITE their pattern being excluded, keyed by limitation.
+ *
+ * ⚠ AN EXCEPTION LIST IS ONLY EVER SAFE IN THIS DIRECTION. Adding a key here can only widen what a
+ * limited athlete is offered, so a typo produces a movement that was already legal for everyone else
+ * rather than a missing safeguard. `LIMITATION_EXCLUDE_KEYS` below is the dangerous direction, and it is
+ * the one whose keys are asserted to exist.
+ */
+export const LIMITATION_KEEP_KEYS: Record<Limitation, readonly string[]> = {
+  shoulders: [],
+  knees: [],
+  lower_back: SUPINE_HIP_EXTENSION,
+  no_jumping: [],
+  no_overhead: [],
+  no_barbell: [],
+  no_running: [],
+};
+
+export const limitationKeepKeys = (l: Limitation): readonly string[] => LIMITATION_KEEP_KEYS[l] ?? [];
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// 1b. MOVEMENTS A PATTERN BAN DOES NOT CATCH  (PO decision, 2026-08-17)
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * The upright row family — all six of them, filed under `Horizontal Pull`.
+ *
+ * ⚠ **FOUND BY MEASUREMENT, NOT BY REVIEW, AND IT HAD BEEN LIVE THE WHOLE TIME.** A shoulders-limited
+ * athlete at a full gym asking for a shoulder day was handed *Band Upright Row · Band Rear Delt Fly ·
+ * Kettlebell Clean and Press · Barbell Upright Row · Cable Rear Delt Fly*. Banning `Vertical Push` and
+ * `Shoulder Isolation` caught the overhead press and the lateral raise and could never have caught these,
+ * because an upright row is filed as a pull. Internally rotating and elevating a loaded humerus is the
+ * classic impingement position and it is exactly what somebody ticking this box is describing.
+ *
+ * Rear delt flies are deliberately KEPT. They are the one piece of direct shoulder work that does not
+ * take the joint anywhere it complains about, and removing them would leave the day with nothing.
+ */
+const UPRIGHT_ROWS: readonly string[] = [
+  'band-upright-row',
+  'barbell-upright-row',
+  'cable-upright-row',
+  'dumbbell-upright-row',
+  'ez-bar-upright-row',
+  'machine-upright-row',
+];
+
+/**
+ * Lifts that finish with the load locked out overhead, all filed under `Power / Plyometric`.
+ *
+ * The same blind spot as the upright rows: `no_overhead` bans `Vertical Push`, so it caught the press and
+ * missed the jerk, the snatch and the clean-and-press — which put a barbell overhead just as thoroughly,
+ * faster, and from a worse position.
+ *
+ * ⚠ THE PLAIN CLEANS ARE NOT HERE, DELIBERATELY. A clean racks the bar on the front delts and stops; it
+ * never goes overhead. Excluding it would be over-reaching past the stated complaint, which is the thing
+ * the top of this file warns against.
+ */
+const OVERHEAD_FINISH: readonly string[] = [
+  'axle-clean-and-press',
+  'kettlebell-clean-and-press',
+  'log-clean-and-press',
+  'barbell-clean-and-jerk',
+  'barbell-push-jerk',
+  'barbell-split-jerk',
+  'kettlebell-jerk',
+  'barbell-snatch',
+  'barbell-hang-snatch',
+  'barbell-power-snatch',
+  'kettlebell-snatch',
+  'single-arm-dumbbell-snatch',
+  // Same shape as an upright row, done fast — it belongs with them whichever complaint is being worked
+  // around, and it is filed under Power rather than Pull, so neither list would catch it alone.
+  'kettlebell-high-pull',
+];
+
+/**
+ * Catalogue keys a limitation removes on top of its patterns.
+ *
+ * ⚠ EVERY KEY IS ASSERTED TO EXIST (`limitation-keys.test.mjs`). A typo here is a safeguard that silently
+ * does nothing, which is the failure mode this whole file is written against — the athlete ticks the box,
+ * believes they have been heard, and gets the movement anyway.
+ */
+export const LIMITATION_EXCLUDE_KEYS: Record<Limitation, readonly string[]> = {
+  shoulders: [...UPRIGHT_ROWS, ...OVERHEAD_FINISH],
+  knees: [],
+  lower_back: [],
+  no_jumping: [],
+  // Not the upright rows: this is a statement about where the load goes, not about the shoulder joint.
+  no_overhead: OVERHEAD_FINISH,
+  no_barbell: [],
+  no_running: [],
+};
+
+export const limitationExcludeKeys = (l: Limitation): readonly string[] => LIMITATION_EXCLUDE_KEYS[l] ?? [];
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // 2. EQUIPMENT
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 

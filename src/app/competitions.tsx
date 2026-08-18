@@ -120,6 +120,10 @@ export default function CompetitionsScreen() {
       (e: unknown) => {
         setBusyId(null);
         showToast(errorMessage(e));
+        /* A join fails because the list went stale — the competition was called off or ran out while this
+           screen sat open. Saying so and leaving the dead row on screen with its Join button invites the
+           same tap again, so the refetch is part of the answer rather than cleanup. */
+        refetch();
       },
     );
   };
@@ -191,7 +195,7 @@ export default function CompetitionsScreen() {
                         {c.name}
                       </Text>
                       <Text style={styles.openMeta} numberOfLines={1}>
-                        {c.squadName} · from {c.creatorName}
+                        {openMeta(c)}
                       </Text>
                     </View>
                     <Pressable onPress={() => setDismissed((d) => ({ ...d, [c.id]: true }))} accessibilityRole="button" accessibilityLabel={`Dismiss ${c.name}`} style={styles.declineBtn}>
@@ -306,6 +310,24 @@ export default function CompetitionsScreen() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * The line under an open-to-join name. A FRIENDS competition has no squad, and the old template printed
+ * its name unconditionally — so it opened on a bare separator. And since 0163 this list also carries
+ * competitions that have already started, which the athlete has to be told: "Open to Join" on its own
+ * reads as "hasn't begun", and joining on day three without knowing it is a worse surprise than the
+ * standing start itself.
+ */
+function openMeta(c: OpenChallenge): string {
+  const left = daysLeft(c.endAt);
+  return [
+    c.squadName,
+    `from ${c.creatorName}`,
+    c.state === 'ACTIVE' ? `underway · ${left} ${left === 1 ? 'day' : 'days'} left` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+}
 
 function ActiveCard({ challenge: c, onOpen }: { challenge: ActiveChallenge; onOpen: () => void }) {
   const meta = CHALLENGE_TYPES[c.type];

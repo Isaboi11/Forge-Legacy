@@ -144,6 +144,8 @@ export interface OpenChallenge {
   creatorName: string;
   startAt: string;
   endAt: string;
+  /** ACTIVE means it is already running and you can still enter — see 0163. */
+  state: 'ENROLLMENT' | 'ACTIVE';
   roster: number;
 }
 
@@ -259,6 +261,9 @@ export async function fetchChallengeHub(): Promise<ChallengeHub> {
       creatorName: String(r.creator_name ?? 'Athlete'),
       startAt: String(r.start_at),
       endAt: String(r.end_at),
+      // 'ENROLLMENT' when it hasn't begun, 'ACTIVE' when it already has — both are joinable (0163), and
+      // the row has to say which, because "Open to Join" alone would imply it hasn't started.
+      state: r.state === 'ACTIVE' ? ('ACTIVE' as const) : ('ENROLLMENT' as const),
       roster: Number(r.roster ?? 0),
     })),
     active: (d.active ?? []).map((r) => ({
@@ -789,14 +794,33 @@ export async function cancelChallenge(challengeId: string): Promise<void> {
   }
 }
 
-/** Opt in. No auto-enrollment (CS-D1) — this is only ever the athlete adding themselves. */
+/**
+ * Opt in. No auto-enrollment (CS-D1) — this is only ever the athlete adding themselves.
+ *
+ * ⚠ THE HUB LIST IS A SNAPSHOT AND THE POLICY IS LIVE, so this call is the first thing to learn that the
+ * competition stopped being joinable. It is a plain race, not a fault: the creator calls a competition
+ * off (`cancel_challenge`, 0067) or it runs out, and every screen already showing its Join button keeps
+ * showing it until something refetches. Reported 2026-08-17 — an invitee tapped Join on a competition
+ * that had been CANCELLED and got `new row violates row-level security policy … (42501)` in a toast,
+ * which reads as the app being broken rather than as the answer to a question that had gone stale.
+ *
+ * The two codes are translated here rather than at the call sites, so every surface that can join says
+ * the same thing. `23505` is the same race from the other side: two taps, or a join that already landed.
+ */
 export async function joinChallenge(challengeId: string): Promise<void> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error('Not signed in');
   const { error } = await supabase.from('challenge_participants').insert({ challenge_id: challengeId, user_id: user.id });
-  if (error) throw error;
+  if (error) {
+    const code = (error as { code?: string }).code;
+    // The policy allows ENROLLMENT and ACTIVE (0087). Anything else — CANCELLED, COMPLETED, ARCHIVED —
+    // lands here, and so does an athlete who was never actually invited.
+    if (code === '42501') throw new Error('This competition isn’t open any more — it was called off or has finished.');
+    if (code === '23505') throw new Error('You’re already in this one.');
+    throw error;
+  }
   // Joining a challenge is free on every tier (Amendment 003 §5 — only CREATING one is Premium), so this
   // is a pure funnel event with no gate behind it.
   trackInvite('accepted', { kind: 'challenge', method: 'in_app' });

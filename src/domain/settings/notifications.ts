@@ -17,7 +17,7 @@
  * ══ WHAT ACTUALLY SENDS TODAY ══
  *
  * Nine of the eleven map to a branch of `notification_events_for` and are live:
- *   squad_activity · friend_requests · workout_tags · program_shares · challenge_updates · squad_feed
+ *   squad_activity · friend_requests · workout_tags · program_shares · challenge_invites · squad_feed
  *   · post_comments · squad_reactions · squad_training
  *
  * `squad_feed` joined them in 0122, which added the first FAN-OUT branches (`squad_post`,
@@ -46,7 +46,7 @@ export type NotifKey =
   | 'workout_tags'
   | 'program_shares'
   | 'squad_invites'
-  | 'challenge_updates'
+  | 'challenge_invites'
   | 'post_comments'
   | 'squad_training'
   | 'training_briefing';
@@ -143,9 +143,22 @@ export const NOTIF_SECTIONS: NotifSection[] = [
   {
     key: 'challenges',
     label: 'Challenges',
-    blurb: 'Competitions you’ve joined. Off by default — ambient, not urgent.',
+    /*
+     * 0164 replaced `challenge_updates` (off) with this (on), and it is a rename rather than a split.
+     *
+     * The old row read "Invitations and standing changes" and defaulted off — a defensible answer to a
+     * question nothing asks, because THERE ARE NO STANDING-CHANGE NOTIFICATIONS and never have been. No
+     * branch of the union emits one. So the label described a category that did not exist, and its
+     * ambient-sounding half is what justified silencing the half that is not ambient at all: somebody
+     * putting your name in a competition. Splitting the toggle would have left the old key governing
+     * nothing, which is the inert control this file deletes on sight.
+     *
+     * Both directions ride one key, exactly as `friend_request` and `friend_accepted` have shared
+     * `friend_requests` since 0073 — an invitation and its answer are one exchange.
+     */
+    blurb: 'Being challenged, and being answered. On by default — a competition invite is aimed at you.',
     toggles: [
-      { key: 'challenge_updates', label: 'Challenge Updates', desc: 'Invitations and standing changes in your competitions', def: false, icon: 'trophy' },
+      { key: 'challenge_invites', label: 'Competition Invites', desc: 'When a friend challenges you, and when someone accepts', def: true, icon: 'trophy' },
     ],
   },
   /*
@@ -210,7 +223,11 @@ export const PUSH_KIND_PREF: Record<string, NotifKey> = {
   request_approved: 'squad_activity',
   friend_request: 'friend_requests',
   friend_accepted: 'friend_requests',
-  challenge_invite: 'challenge_updates',
+  /* 0164. Both halves of the invitation handshake, on one key — see the section comment above for why
+     `challenge_updates` is gone rather than split. `challenge_joined` is branch 17: for six migrations
+     an invitation could be sent and accepted with the sender told neither. */
+  challenge_invite: 'challenge_invites',
+  challenge_joined: 'challenge_invites',
   workout_invite: 'workout_tags',
   // Reverse arrow, same idea to an athlete: someone wants to train with me. A tenth toggle for it
   // would be a distinction only the schema cares about (0121).

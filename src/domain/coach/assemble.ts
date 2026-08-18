@@ -50,7 +50,14 @@ import {
   prescribeCardio,
   roleFor,
 } from './prescribe.ts';
-import { equipmentAfterLimitations, forbidsRunning, limitationPatterns } from './rulebook/limitations.ts';
+import { MIN_DAY_MOVEMENTS } from './day.ts';
+import {
+  equipmentAfterLimitations,
+  forbidsRunning,
+  limitationExcludeKeys,
+  limitationKeepKeys,
+  limitationPatterns,
+} from './rulebook/limitations.ts';
 import {
   defaultWeeksFor,
   firstUnviableDay,
@@ -76,7 +83,8 @@ export interface CoachRefusal {
 
 /** What had to give, so the wizard can say it before the athlete finds out for themselves. */
 export interface AssemblyNote {
-  kind: 'relaxed' | 'dropped';
+  /** `stretched`: filled from the tier above the athlete because their own held nothing — `fillSlot`. */
+  kind: 'relaxed' | 'dropped' | 'stretched';
   day: string;
   wanted: string;
   got?: string;
@@ -249,6 +257,12 @@ function buildDay(
     if (found.relaxed && opts.weekIndex === 0) {
       notes.push({ kind: 'relaxed', day: skeleton.name, wanted: pattern, got: found.pattern });
     }
+    /* Reaching a tier above the athlete is reported the same way relaxing a pattern is: it is the right
+       call and it is still a thing they are owed a sentence about. Week 0 only, for the same reason —
+       the same stretch repeats every week and forty identical notes are noise. */
+    if (found.stretched && opts.weekIndex === 0) {
+      notes.push({ kind: 'stretched', day: skeleton.name, wanted: pattern, got: found.exercise.name });
+    }
 
     used.add(found.exercise.key);
     const role = roleFor(main.length, isCompound(found.pattern));
@@ -375,6 +389,10 @@ export function assemble(
     experience: c.experience.lifting,
     limitations: c.limitations,
     limitationPatterns,
+    /* A pattern ban is too blunt at both ends: it misses the upright row a shoulder complaint means, and
+       it takes the glute bridge a bad back wants. Both tables, or neither is doing its job. */
+    limitationKeys: limitationExcludeKeys,
+    limitationKeepKeys,
     excludeExercises: c.excludeExercises,
     /* What this athlete keeps swapping TO. ⚠ It re-ranks within a pattern and can never remove one, so
        a program built with it is the same shape as one built without — just filled with the movements
@@ -455,16 +473,43 @@ export function assemble(
     };
   });
 
-  // An empty room can leave a day with nothing in it. `trainingDays` filters those out, so the program
-  // would silently be shorter than the athlete was told — refuse instead and say what is missing.
-  const emptyDays = weekPlans[0]?.days.filter((d) => d.main.length === 0) ?? [];
-  if (emptyDays.length > 0) {
+  /*
+   * ══ ⚠ A BACKSTOP, AND HONESTLY NOT THE THING THAT FIXED THE REPORT ══
+   *
+   * The check here used to be `main.length === 0`. Zero was refused; one and two were shipped — as an
+   * EIGHT-WEEK BLOCK. The single-workout path was given `MIN_DAY_MOVEMENTS` when the PO reported this
+   * class of bug against it (`day.ts`, `thin-day.test.mjs`, 2026-08-14); the assembler was never
+   * brought along, so a program could still ship a two-movement day that a one-off workout refused.
+   *
+   * ⚠ **IT WOULD NOT HAVE CAUGHT THE 2026-08-17 REPORT.** That program — dumbbells, a mat, a bench and
+   * a bad back — came out at *Box Squat to Bench · Seated Dumbbell Shoulder Press · Dead Bug*, three
+   * movements a day for eight weeks, which clears a floor of three by exactly nothing. What repaired
+   * that is `STRETCH_CEILING` in `candidates.ts`; this closes the hole underneath it so the next
+   * starved room refuses instead of shipping. Swept after the fix: **54,000 combinations across six
+   * rooms, 0 refusals, thinnest day shipped anywhere = 4.** It is a guard that should never fire.
+   *
+   * Same constant as the day builder, deliberately — a session is a session, and a floor that differed
+   * between them would mean Holt refusing to write a workout he would happily put in a program.
+   *
+   * ⚠ NOT THE PAS-D11 FLOOR, which is 4–5 depending on category. That one is already handled, and
+   * deliberately as a DEVIATION rather than a failure, by `validate-program.ts` — a room that cannot
+   * reach five movements gets a note, not a refusal. Re-deciding it here would overrule the standard
+   * from the wrong file.
+   *
+   * ⚠ IT IS CHECKED ON EVERY WEEK, NOT JUST THE FIRST. A deload cuts sets, never exercises (PAS-A6-D2),
+   * so week 1 is representative today — but that is a property of the volume tables, not a guarantee
+   * this check is entitled to assume.
+   */
+  const thin = weekPlans.flatMap((w) => w.days).filter((d) => d.main.length < MIN_DAY_MOVEMENTS);
+  if (thin.length > 0) {
+    const bareRoom = c.environment === 'bodyweight' || owned.length === 0;
     return {
       ok: false,
       refusal: {
         reason: 'not_enough_equipment',
-        message:
-          "There isn't enough here for me to build a full week — I couldn't fill a single day. Tell me what you have access to, or pick bodyweight-only and I'll work with that.",
+        message: c.limitations.length > 0 && !bareRoom
+          ? "Between what you've got to train with and what you've told me to work around, I can't fill a session properly — and a three-movement week isn't a program. Add what else you have access to, or take one restriction off, and I'll build it."
+          : "There isn't enough here for me to build a full week — I couldn't fill a single day. Tell me what you have access to, or pick bodyweight-only and I'll work with that.",
       },
     };
   }

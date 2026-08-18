@@ -58,7 +58,11 @@ export function destinationFor(n: NotificationTarget): NotificationDestination {
     // A shared program opens the program itself, where it can be read before it's taken.
     case 'program_shared':
       return n.shareId ? { pathname: '/program-share/[id]', params: { id: n.shareId } } : '/inbox';
+    /* Both halves of the handshake open the competition (0164). The joiner's PROFILE would be the
+       friend-request answer, but here the news is the competition filling up, not the person — and C-3
+       is where the roster it names actually is. */
     case 'challenge_invite':
+    case 'challenge_joined':
       return n.challengeId ? { pathname: '/challenge/[id]', params: { id: n.challengeId } } : '/inbox';
     case 'join_request':
       return n.squadId ? { pathname: '/squad-requests', params: { id: n.squadId } } : '/inbox';

@@ -118,10 +118,41 @@ test('⚠ at a full gym with nothing to work around, NOTHING is refused', () => 
   assert.deepEqual(refused, [], 'the guard fired on a full-gym session with no limitations');
 });
 
-test('⚠ the only full-gym refusal is asking for the thing you said to work around', () => {
-  const over = { focus: { kind: 'body_parts', parts: ['shoulders'] }, experience: 'beginner', limitations: ['shoulders'] };
+test('⚠ NOTHING is refused at a full gym any more, including the case that used to be', () => {
+  /*
+   * ⚠ THIS TEST INVERTED ON 2026-08-17, AND THE INVERSION IS THE POINT.
+   *
+   * It used to read "the only full-gym refusal is asking for the thing you said to work around", and the
+   * measured case was a BEGINNER with a shoulders focus and a shoulders limitation. That refusal was
+   * never about the shoulder: the same request from an intermediate built five movements and always had.
+   * The beginner was refused because `difficultyRank` barred every `Intermediate`-tagged movement and
+   * 590 of the catalogue's 733 records carry that tag — so the guard was firing on a starved filter and
+   * reading as a coaching decision. `STRETCH_CEILING` removed the starvation; the beginner now gets the
+   * same five movements the intermediate always did.
+   *
+   * Re-swept afterwards: 0 of 3,000 full-gym combinations fall under the floor.
+   */
+  const refused = [];
+  for (const [label, focus] of FOCI)
+    for (const experience of ['beginner', 'intermediate', 'advanced'])
+      for (const limitations of [[], ['shoulders'], ['knees'], ['lower_back'], ['shoulders', 'lower_back']]) {
+        const over = { focus, experience, limitations };
+        if (build(over) < MIN_DAY_MOVEMENTS) refused.push(`${label}/${experience}/${limitations.join('+') || 'none'}`);
+      }
+  assert.deepEqual(refused, [], 'a full gym can always fill a session — refusing one is the guard misfiring');
+});
+
+test('⚠ a limitation is still told apart from the gear, in a room where it actually bites', () => {
+  // The case above moved out of the full gym rather than disappearing: dumbbells alone, shoulders focus,
+  // shoulders to work around. Measured — 120 of 3,000 dumbbell-only combinations, every one of them this.
+  const over = {
+    focus: { kind: 'body_parts', parts: ['shoulders'] },
+    environment: 'home',
+    ownedEquipment: ['dumbbells'],
+    limitations: ['shoulders'],
+  };
   assert.ok(build(over) < MIN_DAY_MOVEMENTS, 'precondition: this is the measured case');
-  assert.equal(diagnose(over), 'limits', 'and Holt must name the limitation, not blame the equipment');
+  assert.notEqual(diagnose(over), 'unknown', 'Holt must be able to name a lever the athlete can pull');
 });
 
 test('a well-kitted home gym builds every focus a real gym does', () => {
@@ -152,7 +183,13 @@ test('⚠ gear and limitation are told apart, because the fix Holt offers depend
    */
   const shoulders = { kind: 'body_parts', parts: ['shoulders'] };
   assert.equal(diagnose({ focus: shoulders, environment: 'bodyweight' }), 'gear');
-  assert.equal(diagnose({ focus: shoulders, experience: 'beginner', limitations: ['shoulders'] }), 'limits');
+  // A full gym plus a shoulder to work around now BUILDS (see above), so the limitation-only case has to
+  // be asked in a room where the limitation is what is actually biting.
+  assert.equal(
+    diagnose({ focus: shoulders, environment: 'home', ownedEquipment: ['dumbbells'], limitations: ['shoulders'] }),
+    'both',
+    'dumbbells alone AND a bad shoulder: both levers genuinely help, and saying so beats picking one',
+  );
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

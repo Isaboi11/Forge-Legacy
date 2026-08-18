@@ -128,6 +128,14 @@ export interface CandidateContext {
   excludePatterns: ReadonlySet<string>;
   /** Catalogue keys to leave out — a limitation's specific exclusions, plus anything the athlete named. */
   excludeKeys: ReadonlySet<string>;
+  /**
+   * Exercises admitted even though their PATTERN is excluded — `LIMITATION_KEEP_KEYS`.
+   *
+   * ⚠ IT LOSES TO `excludeKeys`, ALWAYS. A movement named in both is excluded, so a carve-out can never
+   * re-admit something another limitation removed on purpose: someone with a bad back AND no barbell
+   * gets the bodyweight glute bridge and not the barbell one.
+   */
+  keepKeys?: ReadonlySet<string>;
   /** Already used in this day (or block), so a day never prescribes the same movement twice. */
   used: ReadonlySet<string>;
   /**
@@ -151,18 +159,65 @@ const DIFFICULTY_ORDER = { Beginner: 0, Intermediate: 1, Advanced: 2 } as const;
 const EXPERIENCE_CEILING: Record<Experience, number> = { beginner: 0, intermediate: 1, advanced: 2 };
 
 /**
- * How well an exercise's difficulty fits the athlete — lower is better.
+ * ══ ⚠ THE CEILING A SLOT MAY REACH WHEN NOTHING AT THE ATHLETE'S LEVEL FILLS IT ══
  *
- * Above their level is barred outright, not penalised: an advanced movement handed to a beginner is a
- * failed rep at best. Below their level is merely suboptimal, and rightly so — an advanced lifter still
- * benches, and a plan that refused to prescribe anything a beginner could also do would be absurd.
+ * Reported by the PO: *"I put in to build me a program, home gym with dumbbells and a mat and a bench,
+ * and lower back pain, and he gave me two exercises throughout the whole workout."* (2026-08-17)
+ *
+ * The engine was doing exactly what it was told. `difficultyRank` barred anything above the athlete's
+ * level outright, and **`beginner` is a ceiling of `Beginner` only** — so the question became "how much
+ * of the catalogue is tagged `Beginner`?" Measured over the 733 records the app actually shows:
+ *
+ *   Intermediate  590        Beginner  121        Advanced  22
+ *
+ * `Intermediate` is not a difficulty tier in this dataset, it is the DEFAULT BUCKET. **Push-Up, Plank,
+ * Bodyweight Squat and Dumbbell Biceps Curl are all tagged `Intermediate`.** So a beginner with
+ * dumbbells, a mat and a bench — 214 movements within reach — was filtered down to **19**, and those 19
+ * held zero horizontal push, zero pull of either kind, zero curls, zero triceps, zero calves and zero
+ * shoulder isolation. Every one of those slots was then dropped, and a full-body day came back as
+ * *Box Squat to Bench · Seated Dumbbell Shoulder Press · Dead Bug* — the same three, every day, for
+ * eight weeks.
+ *
+ * ⚠ **`Advanced` IS A REAL GATE AND STAYS ONE.** Those 22 records are muscle-ups, front and back levers,
+ * one-arm pull-ups and archer work — genuinely selective movements where the original reasoning holds
+ * exactly as written: handed to a beginner they are a failed rep at best. This raises the floor of the
+ * ceiling to `Intermediate` and nothing more, because that is the only tier the distribution shows to be
+ * uninformative.
+ *
+ * ⚠ **AND IT IS A SECOND PASS, NEVER A WIDER FIRST ONE** — see `fillSlot`. A beginner is still offered
+ * every beginner-tagged movement first, and only reaches past their level for a pattern that has nothing
+ * at their level at all. `candidatesFor` is strict by default so nothing that asks it a question gets a
+ * different answer than it did before.
  */
-function difficultyRank(ex: CatalogExercise, experience: Experience): number | null {
+const STRETCH_CEILING: Record<Experience, number> = { beginner: 1, intermediate: 1, advanced: 2 };
+
+/**
+ * How well an exercise's difficulty fits the athlete — lower is better, `null` means barred.
+ *
+ * Below their level is merely suboptimal, and rightly so — an advanced lifter still benches, and a plan
+ * that refused to prescribe anything a beginner could also do would be absurd.
+ */
+function difficultyRank(ex: CatalogExercise, experience: Experience, stretch = false): number | null {
   const d = DIFFICULTY_ORDER[ex.difficulty];
-  const ceiling = EXPERIENCE_CEILING[experience];
+  const ceiling = stretch ? STRETCH_CEILING[experience] : EXPERIENCE_CEILING[experience];
   if (d > ceiling) return null;
   return ceiling - d;
 }
+
+/** Is there a tier above this athlete worth a second look? `false` means the two passes are identical. */
+export const canStretch = (experience: Experience): boolean =>
+  STRETCH_CEILING[experience] > EXPERIENCE_CEILING[experience];
+
+/**
+ * May this athlete be prescribed this movement?
+ *
+ * ⚠ EXPORTED SO `day.ts` CANNOT KEEP ITS OWN COPY OF THE TIERS. The body-part path used to carry a
+ * second, identical pair of tables; two tables that must agree are one table that will eventually
+ * disagree, and the disagreement would be a single workout and a block prescribing different movements
+ * to the same person.
+ */
+export const difficultyAllows = (ex: CatalogExercise, experience: Experience, stretch = false): boolean =>
+  difficultyRank(ex, experience, stretch) != null;
 
 /**
  * Every exercise that could legitimately fill this slot, best first.
@@ -171,18 +226,32 @@ function difficultyRank(ex: CatalogExercise, experience: Experience): number | n
  * produce the same program every time. A wizard that returned a different plan on a second run would
  * make every bug report unreproducible, and would quietly tell the athlete their plan was arbitrary.
  */
-export function candidatesFor(pattern: string, pool: readonly CatalogExercise[], ctx: CandidateContext): CatalogExercise[] {
-  if (ctx.excludePatterns.has(pattern)) return [];
+export function candidatesFor(
+  pattern: string,
+  pool: readonly CatalogExercise[],
+  ctx: CandidateContext,
+  /**
+   * Allow the tier above the athlete — `STRETCH_CEILING`. ⚠ DEFAULTS TO STRICT, deliberately: this is
+   * the second half of a two-pass fill and every caller that has not opted in gets exactly the answer it
+   * got before the stretch existed.
+   */
+  stretch = false,
+): CatalogExercise[] {
+  /* A banned pattern with a carve-out is not a banned pattern — `lower_back` takes the hinge and gives
+     back the glute bridge. Bailing out here was what made the carve-out unexpressible. */
+  const patternExcluded = ctx.excludePatterns.has(pattern);
+  if (patternExcluded && !ctx.keepKeys?.size) return [];
 
   const scored: { ex: CatalogExercise; pref: number; fit: number; breadth: number }[] = [];
   for (const ex of pool) {
     if (ex.pattern !== pattern) continue;
+    if (patternExcluded && !ctx.keepKeys?.has(ex.key)) continue;
     // The pattern says one thing and the primary mover says another — a leg curl filed under Elbow
     // Flexion is not a biceps exercise, whatever the tag says. See `rulebook/coherence.ts`.
     if (!isCoherent(ex)) continue;
     if (ctx.excludeKeys.has(ex.key) || ctx.used.has(ex.key)) continue;
     if (!ctx.canDo(ex, ctx.owned)) continue;
-    const fit = difficultyRank(ex, ctx.experience);
+    const fit = difficultyRank(ex, ctx.experience, stretch);
     if (fit == null) continue;
     /* The athlete's own ranking wins when they have one, and it is negative by construction so it
        sorts ahead of the rulebook's canonical order without a second sort key. Nobody with no swaps on
@@ -213,22 +282,33 @@ export function candidatesFor(pattern: string, pool: readonly CatalogExercise[],
 }
 
 /**
- * Fill one slot, relaxing the pattern only if its own yields nothing.
+ * Fill one slot: the athlete's own level first, then the tier above, then the nearest pattern.
  *
- * Returns `null` rather than reaching further when the ladder is exhausted. A slot that cannot be filled
- * is information — it is what a bodyweight-only athlete's vertical-pull slot looks like without a bar —
- * and the assembler drops it and says so, rather than substituting something that trains a different
- * thing and calling the day complete.
+ * ══ ⚠ THE ORDER OF THOSE TWO FALLBACKS IS THE COACHING DECISION ══
+ *
+ * A beginner's `Horizontal Push` slot in a room with dumbbells has nothing tagged `Beginner` in it. The
+ * two ways out are a **Push-Up** (right pattern, tagged `Intermediate`) and a **Seated Dumbbell Shoulder
+ * Press** (tagged `Beginner`, but a vertical push). Reaching one tier up inside the pattern the day asked
+ * for is a far smaller lie than answering a different question at the right tier — so the whole difficulty
+ * ladder is walked before the pattern is relaxed at all, and the day gets the push-up.
+ *
+ * Returns `null` rather than reaching further when both ladders are exhausted. A slot that cannot be
+ * filled is information — it is what a bodyweight-only athlete's vertical-pull slot looks like without a
+ * bar — and the assembler drops it and says so, rather than substituting something that trains a
+ * different thing and calling the day complete.
  */
 export function fillSlot(
   pattern: string,
   pool: readonly CatalogExercise[],
   ctx: CandidateContext,
-): { exercise: CatalogExercise; pattern: string; relaxed: boolean } | null {
+): { exercise: CatalogExercise; pattern: string; relaxed: boolean; stretched: boolean } | null {
   const ladder = patternLadder(pattern);
+  const passes: boolean[] = canStretch(ctx.experience) ? [false, true] : [false];
   for (let i = 0; i < ladder.length; i++) {
-    const found = candidatesFor(ladder[i], pool, ctx)[0];
-    if (found) return { exercise: found, pattern: ladder[i], relaxed: i > 0 };
+    for (const stretch of passes) {
+      const found = candidatesFor(ladder[i], pool, ctx, stretch)[0];
+      if (found) return { exercise: found, pattern: ladder[i], relaxed: i > 0, stretched: stretch };
+    }
   }
   return null;
 }
@@ -239,16 +319,21 @@ export function fillSlot(
  * The wizard uses this to answer the question BEFORE building — "with what you've got I can give you
  * four of these six movements" — so a bodyweight-only athlete learns what is missing up front instead of
  * finding a thin day in week 3.
+ *
+ * ⚠ IT ASKS THE SAME QUESTION `fillSlot` ANSWERS, INCLUDING THE STRETCH. `weekIsViable` reads this to
+ * decide whether a split can be built at all, so a stricter answer here than the filler actually uses
+ * would restructure a beginner to full body over patterns the filler was about to fill perfectly well.
  */
 export function trainablePatterns(pool: readonly CatalogExercise[], ctx: CandidateContext): Set<string> {
   const out = new Set<string>();
+  const stretch = canStretch(ctx.experience);
   for (const ex of pool) {
     if (out.has(ex.pattern)) continue;
-    if (ctx.excludePatterns.has(ex.pattern)) continue;
+    if (ctx.excludePatterns.has(ex.pattern) && !ctx.keepKeys?.has(ex.key)) continue;
     if (!isCoherent(ex)) continue;
     if (ctx.excludeKeys.has(ex.key)) continue;
     if (!ctx.canDo(ex, ctx.owned)) continue;
-    if (difficultyRank(ex, ctx.experience) == null) continue;
+    if (difficultyRank(ex, ctx.experience, stretch) == null) continue;
     out.add(ex.pattern);
   }
   return out;
@@ -262,6 +347,8 @@ export function contextFrom(opts: {
   limitations: readonly Limitation[];
   limitationPatterns: (l: Limitation) => readonly string[];
   limitationKeys?: (l: Limitation) => readonly string[];
+  /** Exercises a limitation admits despite banning their pattern — `limitationKeepKeys`. */
+  limitationKeepKeys?: (l: Limitation) => readonly string[];
   excludeExercises?: readonly string[];
   used?: ReadonlySet<string>;
   /** What this athlete keeps choosing instead — resolved by the CALLER, never fetched here. */
@@ -269,10 +356,17 @@ export function contextFrom(opts: {
 }): CandidateContext {
   const excludePatterns = new Set<string>();
   const excludeKeys = new Set<string>(opts.excludeExercises ?? []);
+  const keepKeys = new Set<string>();
   for (const l of opts.limitations) {
     for (const p of opts.limitationPatterns(l)) excludePatterns.add(p);
     for (const k of opts.limitationKeys?.(l) ?? []) excludeKeys.add(k);
+    for (const k of opts.limitationKeepKeys?.(l) ?? []) keepKeys.add(k);
   }
+  /* ⚠ EXCLUSION WINS, AND IT IS RESOLVED HERE RATHER THAN AT EVERY READ SITE. A carve-out must never hand
+     back something that was removed on purpose — most concretely, `excludeExercises` is the athlete
+     naming a movement themselves, and a limitation quietly overruling that would be the worst version of
+     this feature. Doing it once means no filter downstream can forget the precedence. */
+  for (const k of excludeKeys) keepKeys.delete(k);
   return {
     learned: opts.learned,
     owned: opts.owned,
@@ -280,6 +374,7 @@ export function contextFrom(opts: {
     experience: opts.experience,
     excludePatterns,
     excludeKeys,
+    keepKeys,
     used: opts.used ?? new Set(),
   };
 }

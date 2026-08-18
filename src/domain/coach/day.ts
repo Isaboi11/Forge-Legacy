@@ -34,7 +34,9 @@ import {
   type SessionMinutes,
 } from './constraints.ts';
 import {
+  canStretch,
   contextFrom,
+  difficultyAllows,
   isCompound,
   type CatalogExercise,
   type EquipmentGate,
@@ -42,7 +44,12 @@ import {
 import { exerciseBudget, prescribeReps, roleFor } from './prescribe.ts';
 import { cueFor } from './rulebook/cues.ts';
 import { GOAL_CATEGORY } from './rulebook/volume.ts';
-import { equipmentAfterLimitations, limitationPatterns } from './rulebook/limitations.ts';
+import {
+  equipmentAfterLimitations,
+  limitationExcludeKeys,
+  limitationKeepKeys,
+  limitationPatterns,
+} from './rulebook/limitations.ts';
 import { skeletonFor } from './rulebook/skeletons.ts';
 import { preferenceRank } from './rulebook/preferences.ts';
 import type { LearnedPreferences } from './learned-preference.ts';
@@ -179,6 +186,15 @@ export interface DayResult {
   day: ProgramDay;
   /** Patterns or body parts nothing could be found for, so the wizard can say it rather than hide it. */
   missing: string[];
+  /**
+   * At least one movement came from the tier above the athlete because their own tier held nothing for
+   * that slot — `STRETCH_CEILING` in `candidates.ts`.
+   *
+   * Surfaced rather than swallowed: a beginner being handed a push-up is the right call and it is still
+   * a thing the athlete is owed a sentence about, because the alternative is a session that quietly
+   * disagrees with the level they told us they were.
+   */
+  stretched: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -332,6 +348,10 @@ export function buildDayWorkout(
     experience: req.experience,
     limitations: req.limitations,
     limitationPatterns,
+    // Same three tables the assembler uses — a single workout and a block must not disagree about what a
+    // stated limitation means.
+    limitationKeys: limitationExcludeKeys,
+    limitationKeepKeys,
     excludeExercises: req.excludeExercises ?? [],
     // Same map the program assembler gets — a single day and a twelve-week block should not disagree
     // about which row of a movement pattern this athlete actually does.
@@ -340,6 +360,7 @@ export function buildDayWorkout(
 
   const missing: string[] = [];
   const chosen: { ex: CatalogExercise; pattern: string }[] = [];
+  let stretched = false;
 
   if (req.focus.kind === 'split') {
     // A split IS a pattern list, so this is the program engine's own fill path, unchanged.
@@ -354,27 +375,56 @@ export function buildDayWorkout(
         continue;
       }
       used.add(found.exercise.key);
+      if (found.stretched) stretched = true;
       chosen.push({ ex: found.exercise, pattern: found.pattern });
     }
   } else {
-    const targets = new Set(req.focus.parts.flatMap((p) => BODY_PART_MUSCLES[p]));
+    /* Bound once: `collect` is a closure, and TypeScript does not carry the narrowing of `req.focus`
+       into a callback — inside it the union is wide again and `.cardio` stops existing. */
+    const focus = req.focus;
+    const targets = new Set(focus.parts.flatMap((p) => BODY_PART_MUSCLES[p]));
 
     // Primary movers only. An exercise that hits the chest as a SECONDARY is not a chest exercise, and a
     // "chest day" made of movements that merely involve the chest is the commonest way this goes wrong.
-    const byPattern = new Map<string, CatalogExercise[]>();
-    for (const ex of pool) {
-      /* Conditioning joins on its PATTERN, not on a muscle — see the note on `DayFocus.cardio`. It is an
-         `||` rather than a separate pass so a session that asks for chest and conditioning gets both
-         spread through the same round-robin, instead of the cardio arriving as an afterthought bolted
-         on the end. */
-      const wanted = ex.primaryMuscleIds.some((m) => targets.has(m)) || (req.focus.cardio === true && ex.pattern === CARDIO_PATTERN);
-      if (!wanted) continue;
-      if (ctx.excludePatterns.has(ex.pattern) || ctx.excludeKeys.has(ex.key)) continue;
-      if (!canDo(ex, owned)) continue;
-      if (!difficultyAllows(ex, req.experience)) continue;
-      const list = byPattern.get(ex.pattern) ?? [];
-      list.push(ex);
-      byPattern.set(ex.pattern, list);
+    const collect = (stretch: boolean) => {
+      const out = new Map<string, CatalogExercise[]>();
+      for (const ex of pool) {
+        /* Conditioning joins on its PATTERN, not on a muscle — see the note on `DayFocus.cardio`. It is
+           an `||` rather than a separate pass so a session that asks for chest and conditioning gets both
+           spread through the same round-robin, instead of the cardio arriving as an afterthought bolted
+           on the end. */
+        const wanted = ex.primaryMuscleIds.some((m) => targets.has(m)) || (focus.cardio === true && ex.pattern === CARDIO_PATTERN);
+        if (!wanted) continue;
+        // `keepKeys` re-admits a movement whose PATTERN is banned — the glute bridge inside a hinge ban.
+        // `excludeKeys` still wins; `contextFrom` has already resolved that precedence.
+        if (ctx.excludePatterns.has(ex.pattern) && !ctx.keepKeys?.has(ex.key)) continue;
+        if (ctx.excludeKeys.has(ex.key)) continue;
+        if (!canDo(ex, owned)) continue;
+        if (!difficultyAllows(ex, req.experience, stretch)) continue;
+        const list = out.get(ex.pattern) ?? [];
+        list.push(ex);
+        out.set(ex.pattern, list);
+      }
+      return out;
+    };
+
+    /*
+     * ⚠ THE SAME TWO-PASS RULE `fillSlot` USES, FOR THE SAME REASON — see the `STRETCH_CEILING` note in
+     * `candidates.ts`. `Intermediate` is 590 of the catalogue's 733 records, so a beginner asking for
+     * "chest and triceps" was matched against ten movements catalogue-wide and got nothing they owned
+     * gear for. The strict pass still wins whenever it can carry the session on its own; the widened one
+     * only runs when it cannot, and it is reported by `stretched` rather than swapped in silently.
+     */
+    let byPattern = collect(false);
+    let count = [...byPattern.values()].reduce((n, l) => n + l.length, 0);
+    if (count < Math.min(budget, MIN_DAY_MOVEMENTS) && canStretch(req.experience)) {
+      const wider = collect(true);
+      const widerCount = [...wider.values()].reduce((n, l) => n + l.length, 0);
+      if (widerCount > count) {
+        byPattern = wider;
+        count = widerCount;
+        stretched = true;
+      }
     }
 
     for (const [pattern, list] of byPattern) {
@@ -480,13 +530,7 @@ export function buildDayWorkout(
   const named: DayFocus =
     req.focus.kind === 'body_parts' && req.focus.cardio && !gotCardio ? { ...req.focus, cardio: false } : req.focus;
 
-  return { day: { letter: 'A', name: titleFor(named), warmup: [], main, cooldown: [] }, missing };
-}
-
-function difficultyAllows(ex: CatalogExercise, experience: Experience): boolean {
-  const order = { Beginner: 0, Intermediate: 1, Advanced: 2 } as const;
-  const ceiling = { beginner: 0, intermediate: 1, advanced: 2 } as const;
-  return order[ex.difficulty] <= ceiling[experience];
+  return { day: { letter: 'A', name: titleFor(named), warmup: [], main, cooldown: [] }, missing, stretched };
 }
 
 /** A split maps onto the goal whose skeletons already express it. */

@@ -1,163 +1,105 @@
 # GO-LIVE — the short list
 
-**v1.3 · 2026-08-17 · every claim below re-verified against the repo on this date.**
-**STAGE 1 IS CLOSED AND D-U-N-S IS IN** (`149910851`, issued this date). **Nothing external gates the
-public release any more** — every remaining item is work this team controls.
+**v1.6 · 2026-08-17 · rewritten for brevity. Detail lives in `Docs/Launch-Checklist-Free-And-Premium.md` (v1.5) and `Forge-Legacy-Master-Status.md`. If they disagree, the checklist wins and this file is stale.**
 
-⚠ **The critical path just moved, and it moved onto US.** For four days the honest answer to *"what is
-blocking launch"* was "D&B." That answer is gone. What stands between here and submission is now the
-paywall (§6), the bundle-identifier decision (§5), the store listing (§7) and legal (§8) — **and the
-bundle-ID decision should be started first, because it is the only one whose answer comes from Apple
-rather than from us, and it must be settled BEFORE anything is built under the new team.**
-
-> **v1.2 corrected four things this file asserted and the repo contradicted.** Recorded because the pattern
-> is the point: *every one was stale in the "still to do" direction* — the same failure as the migration
-> ledger that once listed eleven applied files as pending. **This file is written by hand and the repo is
-> not. Re-verify before trusting any ⛔ in it.**
-> 1. **Stage 1 step 1** said the testers had no build. They have had one for a while.
-> 2. **The paywall row** said `subscription.tsx` did not exist. It shipped 2026-08-16 — 50 minutes after
->    this file was last written.
-> 3. **Phase F step 10** named the landing page as the only home of the "free while testing" claim. There
->    are three, and one of them is a *test that asserts it*.
-> 4. **The privacy-copy fix** (checklist §10.2) was listed as blocking the App Privacy labels. It was
->    closed by `cc2b5de` on 08-15; the in-app summary and `site/privacy.html` are complete and agree.
-
-⚠ **This is a VIEW, not a fork.** The detail — every phase, every number, every reason — lives in
-`Docs/Launch-Checklist-Free-And-Premium.md` (v1.2) and `Forge-Legacy-Master-Status.md`. This file exists
-so a fresh session can pick up the thread in one read. **If the two disagree, the checklist wins and this
-file is stale — fix it.**
+> **⛔ v1.6 corrects the headline claim of v1.5: the bank account is NOT open, and "nothing external
+> gates the public release" was wrong.** Zions emailed on 08-17 asking for the EIN letter and documents
+> showing all authorized principals and titles — **the application was in verification the whole time,
+> and it auto-closes 2026-08-31 if unanswered.** Answered same day. Apple's step 9b needs a *funded,
+> verified* account, so an external party is back on the critical path.
+>
+> **The recurring failure again: this file was stale in the reassuring direction.** v1.2 caught four such
+> errors, v1.5 caught the "qest4 team" that never existed, and v1.6 catches a bank account that was
+> applied for rather than opened. **Re-verify before trusting any ✅ here.**
 
 ---
 
-## Where we actually are
+## Where we are
 
 | | |
 |---|---|
-| **App** | iOS only. Zero Android builds. Live at `forgelegacy.expo.app` (a *testing* surface, not the product) |
-| **Database** | 162 migration files. **Applied through 0162** — `0155`–`0158` preflighted 15/15 on 08-13, `0159` applied 08-15, `0160`/`0161` verified by working squad create+transfer, `0162` confirmed by a route drawn on device 08-16. `0144` absent by decision. ⚠ *This line has been wrong in both directions before — run `supabase/apply/preflight-*.sql` rather than trusting it* |
-| **Entitlement** | `default_tier = PREMIUM`, so **every cap is built and nothing gates**. Phase F is one UPDATE |
-| **Entity** | Forge Legacy LLC · Utah · EIN 42-4433633 · parent Altimealix Holdings LLC |
-| **Domain** | `forgelegacy.app` registered, Cloudflare nameservers. Email live (`isaiah@`, `support@`). ✅ **Apex + `www` resolve, HTTP 301s to HTTPS, MX untouched** |
-| **Website** | ✅ **LIVE at `forgelegacy.app`** — deployed 2026-08-16 as a **Cloudflare Worker with static assets** named `forgelegacy` (*not* Pages; the dashboard steers new projects to Workers now). Root / `/privacy` / `/terms` all 200. Redeploy = drag `site/`'s deployable files into the project's upload flow, minus `_exported-bundle.html` |
-| **D-U-N-S** | ✅ **`149910851`** — issued 2026-08-17 18:14 UTC, case `10803372` resolved, *"verified through a company spokesperson"*. Tracking `10740542`. Matched exactly as recorded: **Forge Legacy LLC · 3832 E Cunninghill Dr, Eagle Mountain UT 84005 · 1 employee · principal Isaiah Altamirano** — the name/address match was the single biggest rejection risk and it came back clean. ⏳ **D&B says the record is queryable in 24–48 h** (i.e. from ~08-18 18:14 UTC), and Apple then needs its own ~2 days to receive it |
-| **Apple** | App `6798436104` on team `G722GV8H8C` (qest4). The public release ships under a **new Forge Legacy LLC org account** |
-| **Paywall** | 🟡 **Screen built, store not.** `src/app/subscription.tsx` shipped 2026-08-16 (37 KB, 23 tests, written against `BillingAdapter`; `UNAVAILABLE_BILLING` in force so it states the truth rather than faking a price). **`react-native-purchases` is deliberately NOT installed** — it is a native module, and the moment it lands every OTA to the build in testers' hands stops being deliverable. Still owed: the adapter, 6 SKUs, referrals, the Founder counter, StoreKit sandbox (§4.2–4.6). ⚠ *This row read "Not built · no `subscription.tsx`" in v1.1 — written 50 minutes before the file landed* |
+| **App** | iOS only. Zero Android. Testers on **build 6**, OTA-reachable |
+| **Entity** | Forge Legacy LLC · Utah `14725906-0160` · EIN `42-4433633` · parent Altimealix Holdings LLC |
+| **Ownership** | Isaiah → Altimealix Holdings LLC → Forge Legacy LLC. **Proven only by the operating agreement** — Utah's certificate has no member field |
+| **Database** | **167 migration files · `0163` AND `0164` both applied**, confirmed against the live catalog 2026-08-17 by `preflight-0163-0165.sql`. **`0165` is unnecessary** — its four objects were verified already friends-aware, which is the only question it exists to answer. ⚠ *Two documents said `0164` was outstanding and both were stale in the "still to do" direction — the third time this project has paid for trusting a hand-written ledger.* `0144` absent by decision.<br>⛔ **`0166` and `0167` are AUTHORED, NOT APPLIED** (2026-08-17) — paste in order, each carries its own self-check block |
+| **Support** | 🟡 **Built, not deployed.** `site/support.html` + in-app `/feedback` (0167). Apple requires a Support URL and rejects a bare `mailto:` — the page is written and the site has not been re-uploaded since |
+| **Entitlement** | `default_tier = PREMIUM` — every cap built, nothing gates. Phase F is one UPDATE |
+| **Paywall** | 🟡 Screen only. `subscription.tsx` shipped (37 KB, 23 tests). **`react-native-purchases` deliberately NOT installed** — a native module ends OTA reach to testers' build |
 
 ---
 
-## STAGE 1 — testers ✅ CLOSED
+## ✅ DONE
 
-**1. ✅ DONE — the testers have the build, and have had it for a while (PO, 2026-08-17).** This item read
-⛔ through v1.1 and was **wrong**; distribution had already happened. Corrected rather than deleted,
-because the board being wrong in the "still to do" direction is the same failure as the migration ledger.
-
-✅ **And they are on build 6** (PO, 2026-08-17) — the runtime every OTA since 08-15 has been published
-against (`411fd2b6…`, commit `aaee846c`). **So the testers are current**: the units fix, the white screen,
-the squads outage, the chapter dead end and both cardio fixes have all reached them. This was worth
-asking rather than assuming — an OTA only lands on a device whose runtime matches, so had they been on
-build 4 or 5 they would have received *nothing* since, and no OTA could have repaired it.
-
-**What this buys, and it is the useful part: the tester cohort is OTA-reachable.** Any JS-only fix ships
-to them in minutes. That holds until a native module is added — which is exactly why §4.2's RevenueCat
-install is now a decision with a cost rather than a routine step.
-
-**2. ✅ DONE 2026-08-16 — the website is live.** Cloudflare **Worker + static assets**, project `forgelegacy`,
-custom domains `forgelegacy.app` (apex) and `www.forgelegacy.app`, **Always Use HTTPS** on.
-Verified from outside: root **200** · `/privacy` **200** · `/terms` **200** · `www` **200** · HTTP **301 → HTTPS** ·
-MX records intact, so `isaiah@` and `support@` are unaffected.
-⚠ **`_exported-bundle.html` (4 MB) was deliberately excluded** and returns **404** — do not let a future
-redeploy sweep the whole `site/` directory in, or that file becomes a public, indexable page.
-⚠ **SSL/TLS mode is `Full`, and that is correct here** — the origin *is* the Worker, so there is no
-Cloudflare-to-origin hop for `Full (strict)` to protect. Do not "fix" it.
+| | Item | Date |
+|---|---|---|
+| 1 | **Testers have the build** — build 6, every fix since 08-15 reached them. Stage 1 closed | 08-17 |
+| 2 | **Website live** at `forgelegacy.app` — Cloudflare Worker, root/`/privacy`/`/terms` all 200 | 08-16 |
+| 3 | **LLC formed** — stamped Certificate of Organization, effective 08-13 02:06 PM | 08-13 |
+| 4 | **EIN issued** — CP 575, `42-4433633` | 08-13 |
+| 5 | **D-U-N-S issued** — `149910851`, case `10803372`, verified via company spokesperson | 08-17 |
+| 6 | **Ownership settled** — CP 575's "SOLE MBR" is the SS-4 responsible party, not a rival claim | 08-17 |
+| 7 | **Operating agreement executed** — manager-managed, Altimealix sole member, Isaiah Manager. **Exhibit B is the authorized-principals-and-titles page every institution asks for.** Reusable for Apple 9b and D&B | 08-17 |
+| 8 | **Bank documents answered** — CP 575 + stamped certificate + operating agreement sent to Zions | 08-17 |
+| 9 | **Privacy copy fixed** — in-app summary and `site/privacy.html` complete and agreeing (`cc2b5de`) | 08-15 |
+| 10 | **Paywall screen built** — `subscription.tsx` to P-8, `UNAVAILABLE_BILLING` in force | 08-16 |
 
 ---
 
-## STAGE 2 — public launch
+## ⛔ LEFT
 
-**3. ✅ DONE 2026-08-17 — D-U-N-S `149910851`.** Case `10803372` resolved *"verified through a company
-spokesperson"*; the documents answered on 08-15 did it, and no phone call was needed. Four days end to
-end, well inside Apple's stated ~7 business days.
+**Ordered by who has to move. Start 1–3 first: they're the ones waiting on someone else.**
 
-⏳ **But do NOT attempt enrollment yet.** D&B's own resolution says *"information will be available in
-24–48 hours"* — the number exists, the **record is not queryable until it propagates** (~08-18 18:14 UTC
-at the earliest), and Apple's enrollment validates by looking it up at D&B. Enrolling into a lookup that
-misses is how a case gets rejected and the clock restarts, which is the exact failure this project has
-already paid for once at D&B.
-**Gate step 4 on this, not on the clock:** confirm the number resolves in Apple's own tool at
-`https://developer.apple.com/enroll/duns-lookup/` **first**. When it returns Forge Legacy LLC at the
-Eagle Mountain address, enrollment is safe to start.
+| | Item | Waiting on | Notes |
+|---|---|---|---|
+| 1 | **Bank account actually open** | Zions review | ⚠ **Closes 08-31 if they need more.** Expect a second ask for **Altimealix's** certificate + EIN letter, since an entity is the member |
+| 2 | **D-U-N-S propagates** | D&B, ~24–48 h from 08-17 18:14 UTC | ⚠ **Do not enroll until it resolves in Apple's own lookup tool.** Enrolling against a missing record restarts the clock — this project has already paid that once |
+| 3 | **Convert Apple membership** | Apple Support | `G722GV8H8C` **Individual → Organization**. ⚠ **One request, not two** — in the same message confirm bundle ID `com.qest4.forgelegacy`, app `6798436104`, TestFlight, EAS creds and **the APNs key** all survive. Then enroll in **Small Business Program** (15%). ⛔ Do NOT create a second Apple ID |
+| 4 | **Paywall (Phase E)** | us | RevenueCat adapter · 6 SKUs · referrals · Founder counter · StoreKit sandbox (buy, force-quit, reinstall, Restore). ⚠ Native dep ⇒ **new build, not OTA**. `fingerprint:compare` first |
+| 5 | **Store listing** | us | App Privacy labels **from `site/privacy.html`** · screenshots 6.9"+6.5" · description · keywords · age rating. ⚠ **Seeded reviewer account** (program, history, squad with a 2nd member, a challenge) or the social pillar reads as Guideline 2.1 incomplete.<br>**Support URL — page WRITTEN, not yet DEPLOYED.** `site/support.html` exists in the repo with the in-app half (`/feedback`, 0167) built alongside it. ⚠ **It is not live until the site is re-uploaded** — stage the now-**25** files per `site/README.md` and confirm `curl -I https://forgelegacy.app/support` → **200** before pasting the URL into App Store Connect. A 404 there is a rejection |
+| 6 | **Counsel review** | lawyer | Terms + privacy, before money moves |
+| 7 | **9b — Agreements, Tax & Banking** | Apple + CPA | ⚠ **A SUBMISSION GATE, not a payout chore.** IAPs cannot ship while the Paid Applications Agreement is not *in effect*. **(a)** accept it (signer must bind the entity) · **(b)** bank account, holder exactly `FORGE LEGACY LLC`, Apple verifies over days · **(c)** W-9 — ⚠ **a two-tier disregarded chain is a CPA question. Wrong here is a federal filing, not a rejected form** |
+| 8 | **Diagnose the `42501` on Join** | PO (dashboard) | ✅ `0163`+`0164` applied, `0165` unnecessary — **the migrations are done.** All that remains is `diagnose-challenge-join-42501.sql` (read-only). Policy is already ruled out, so the live candidate is **data** — a device signed in as an account not named in `invited_ids`. ⛔ **Never re-paste `0059`** — it silently reverts every friends competition to unjoinable |
+| 9 | **Phase F — flip to Free** | us | Strict order or the free tier is given away twice. See below |
+| 10 | **Ship** | us | Gates green · `git status` clean · `fingerprint:compare` · new build · submit. ⚠ 9b must be green first |
 
-**4. Enroll Forge Legacy LLC** in the Apple Developer Program.
-✅ **Both prerequisites are now met**: a live, functional website on the org's own domain (step 2,
-done 2026-08-16) and a work email at that domain. **D-U-N-S is the only thing still gating this.**
-Then enroll in the **Small Business Program** (15% not 30%) — per entity, before revenue.
+---
 
-**5. ⚠ Settle the bundle identifier BEFORE building under the new team.** `com.qest4.forgelegacy` belongs
-to `G722GV8H8C` and bundle IDs are globally unique. Three shapes, none free — release-and-re-register,
-a new ID (a *different app* to iOS; installs sit alongside), or an Apple app transfer (needs a prior
-public release). **Confirm with Apple, don't assume.** Whichever wins: re-check the `forgelegacy` scheme
-and the Supabase redirect allow-list, and **re-upload the APNs key — push stops silently under a new team**.
+## Phase F — the exact order
 
-**6. Build the paywall (Phase E).** `subscription.tsx` to P-8 · RevenueCat · 6 SKUs · StoreKit sandbox
-(buy, force-quit, reinstall, Restore Purchases, confirm both entitlements return).
-⚠ **New native dependency ⇒ a new build, not an OTA.** `fingerprint:compare` first.
-
-**7. Store listing.** App Privacy labels **from `site/privacy.html`** — location, health, photos/video and
-usage analytics are all declared there and the label must match. Screenshots (6.9" + 6.5"), description,
-keywords, age rating, category, support URL.
-⚠ **A seeded reviewer account** with a running program, logged history, a squad with a second member and
-a challenge — the social pillar is unreviewable from an empty account and reads as Guideline 2.1.
-
-**8. Counsel review** of terms and privacy. Before money changes hands.
-
-**9. Business bank account** — Apple pays into an account in the entity's name.
-
-**10. ⚠ Phase F — flip entitlement to Free, in this order or the free tier is given away twice.**
 The SQL is in `0145`'s footer.
-&nbsp;&nbsp;**(a)** backfill `athlete_usage.programs_created` from `programs` — the trigger only counts
-inserts made since 0145, so a populated account reads 0 and gets three more.
-&nbsp;&nbsp;**(b)** grant the 20 OG testers their seat-free PREMIUM row — *before* the flip, not after.
-&nbsp;&nbsp;**(c)** then `update entitlement_config set default_tier = 'FREE'`.
-&nbsp;&nbsp;**(d) ⚠ Retire the "free while testing" claim in all THREE places it lives.** Every one becomes a
-false billing claim the instant (c) runs, and **nothing on any surface will look wrong** — this is a
-grep, not a review:
-&nbsp;&nbsp;&nbsp;&nbsp;• `site/index.html` — the copy **and** the JSON-LD `offers: price "0"` (3 hits).
-&nbsp;&nbsp;&nbsp;&nbsp;• `src/domain/settings/content.ts:30,32` — *"Forge is free while we're testing. There
-is no subscription, no billing, and nothing to cancel."* Shown in-app, to the exact cohort being charged.
-&nbsp;&nbsp;&nbsp;&nbsp;• `src/domain/settings/__tests__/content.test.mjs:168` — **asserts the claim**
-(`assert.match(text, /free while we're testing/i)`). So Phase F **fails the test gate** until this is
-updated in the same pass. That is the gate working: the same test file already bans `renews yearly`,
-`cancel at any time` and `Founder` because shipped comp copy once made all three claims falsely.
-⚠ *v1.1 of this step named the landing page only, and would have shipped an in-app page telling paying
-athletes there was nothing to cancel.*
 
-**11. Ship.** Gates green · `git status` clean · `fingerprint:compare` · new build · submit.
+1. **Backfill** `athlete_usage.programs_created` from `programs` — the trigger only counts inserts since 0145, so a populated account reads 0 and gets three more.
+2. **Grant the 20 OG testers** their seat-free PREMIUM row — *before* the flip.
+3. `update entitlement_config set default_tier = 'FREE'`.
+4. **Retire the "free while testing" claim.** Every instance becomes a false billing claim the moment step 3 runs, and **nothing on any surface will look wrong.**
+
+⚠ **v1.5 said THREE places. It is FOUR files — `site/terms.html` was missing from the list, and it is the one making a billing promise inside a legal document.**
+
+| File | Line | What |
+|---|---|---|
+| `site/terms.html` | 89 | *"free while we are testing. There is no subscription and nothing to…"* ⚠ **newly found, not in prior versions** |
+| `src/domain/settings/content.ts` | 32 | *"Forge is free while we're testing… nothing to cancel."* Shown in-app to the cohort being charged |
+| `src/domain/settings/__tests__/content.test.mjs` | 168 | **Asserts the claim** → Phase F **fails the test gate** until updated in the same pass |
+| `site/index.html` | 172, 1205 | JSON-LD `offers.price "0"` and the "Free while we're testing" beat |
+
+*"Free to start" (index 208, 1212) and "History is free forever" (492) stay true after Phase F — leave them.*
 
 ---
 
 ## Traps this project has actually hit
 
-- **⚠ Publishing bundles the WORKING TREE, not the commit.** `git status` before every publish. Another
-  session's uncommitted work has shipped to a phone.
-- **⚠ Don't trust any ledger — run `supabase/apply/preflight-*.sql`.** Read-only, one minute. Three
-  separate documents once listed migrations as pending that were already applied. **Re-pasting an applied
-  migration is not free** (`0141` died on `42P13`).
-- **⚠ `fingerprint:compare` before every OTA.** An update against a mismatched runtime uploads fine,
-  reports success, and reaches nobody. Testers on an older build get *nothing*.
-- **⚠ Green gates ≠ a working app.** Four P0s in one week were invisible to `tsc`, 2,300+ tests and lint,
-  because none of them was *in* the code: a runtime the bundler doesn't verify, a database privilege, a
-  locked spec nobody built, and a display-unit bug.
-- **⚠ A deploy replaces hashed chunks**, so anyone with the app open sees a white screen until they
-  reload. Harmless; tell testers.
-- Only ever hand out **forgelegacy.expo.app** — a throwaway `--hash` URL wipes localStorage and signs
-  people out.
-- **Concurrent sessions want separate branches.** Several collisions so far.
+- **⚠ Publishing bundles the WORKING TREE, not the commit.** `git status` before every publish.
+- **⚠ Don't trust any ledger — run `supabase/apply/preflight-*.sql`.** Re-pasting an applied migration is not free (`0141` died on `42P13`).
+- **⚠ `fingerprint:compare` before every OTA.** A mismatched runtime uploads fine, reports success, reaches nobody.
+- **⚠ Green gates ≠ a working app.** Four P0s in one week were invisible to `tsc`, 2,300+ tests and lint — none was *in* the code.
+- **⚠ A deploy replaces hashed chunks** — anyone with the app open sees a white screen until reload. Harmless; warn testers.
+- Only ever hand out **forgelegacy.expo.app** — a `--hash` URL wipes localStorage and signs people out.
+- **Concurrent sessions want separate branches.**
 
 ---
 
 ## Deliberately not in scope
 
-- **Coach AI** — no AI spend before full release. **Do not apply `0144`** or deploy `coach-interpret`.
-- **Forge Coach CRM** (the human-trainer desktop product) — designed, approved, **not being built**.
-  Decision Queue #23. Keep it off the landing page.
+- **Coach AI** — no AI spend before full release. Do not apply `0144` or deploy `coach-interpret`.
+- **Forge Coach CRM** — designed, approved, **not being built** (Decision Queue #23). Keep it off the landing page.
 - **Android.** Say so plainly rather than implying it is coming.

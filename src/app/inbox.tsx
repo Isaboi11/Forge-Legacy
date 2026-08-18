@@ -145,6 +145,8 @@ function NotificationRow({ notification: n, divided, onPress }: { notification: 
     n.kind === 'friend_request' ||
     n.kind === 'friend_accepted' ||
     n.kind === 'challenge_invite' ||
+    // 0164. Somebody answered your challenge — the row is about them, not the competition.
+    n.kind === 'challenge_joined' ||
     n.kind === 'workout_invite' ||
     n.kind === 'workout_join_request' ||
     n.kind === 'squad_post' ||
@@ -236,6 +238,12 @@ function bodyFor(n: ForgeNotification, actor: string) {
           <Text style={styles.strong}>{actor}</Text> challenged you to <Text style={styles.strong}>{n.challengeName ?? 'a competition'}</Text>
         </>
       );
+    case 'challenge_joined':
+      return (
+        <>
+          <Text style={styles.strong}>{actor}</Text> joined <Text style={styles.strong}>{n.challengeName ?? 'your competition'}</Text>
+        </>
+      );
     case 'workout_invite':
       return (
         <>
@@ -323,6 +331,8 @@ function subFor(n: ForgeNotification): string {
       return 'You’re now friends';
     case 'challenge_invite':
       return 'Opt in to compete';
+    case 'challenge_joined':
+      return 'See the roster';
     case 'workout_invite':
       return 'Accept and start';
     case 'workout_join_request':
@@ -365,6 +375,8 @@ function accessibilityLabelFor(n: ForgeNotification, actor: string): string {
       return `${actor} accepted your friend request, ${when} ago.`;
     case 'challenge_invite':
       return `${actor} challenged you to ${n.challengeName ?? 'a competition'}, ${when} ago. Opt in to compete.`;
+    case 'challenge_joined':
+      return `${actor} joined ${n.challengeName ?? 'your competition'}, ${when} ago. See the roster.`;
     case 'workout_invite':
       return `${actor} wants to train ${n.inviteName ?? 'together'} with you, ${when} ago. Accept and start.`;
     case 'workout_join_request':
@@ -404,6 +416,9 @@ function glyphFor(kind: ForgeNotification['kind']) {
       return <CheckGlyph size={11} color="#8FB295" />;
     case 'challenge_invite':
       return <SwordsGlyph size={11} color={flColor.bronze300} />;
+    // A tick, not swords: this is somebody saying yes, which is the same shape as `friend_accepted`.
+    case 'challenge_joined':
+      return <CheckGlyph size={11} color="#8FB295" />;
     case 'workout_invite':
       return <PeopleGlyph size={11} color={flColor.bronze300} />;
     case 'workout_join_request':

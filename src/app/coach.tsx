@@ -342,7 +342,7 @@ export default function CoachScreen() {
           })),
           /* Two kinds of honesty in one list: what he COULDN'T build, and what he built because of
              something this athlete taught him. Both are the coach showing his working. */
-          notes: [...droppedLine(notes), ...learnedLine(learned, structure)],
+          notes: [...droppedLine(notes), ...stretchedLine(notes), ...learnedLine(learned, structure)],
           apply: async () => {
             await saveProgramDraft(draftFromStructure(structure));
             router.replace('/program-builder');
@@ -1255,6 +1255,22 @@ function droppedLine(notes: readonly { kind: string; wanted: string }[]): string
   return dropped.length > 0
     ? [`Nothing you've got trains ${dropped.join(' or ').toLowerCase()} — left it out rather than fake it.`]
     : [];
+}
+
+/**
+ * Holt reached past the level the athlete told us they were, because their level held nothing for that
+ * movement — see `STRETCH_CEILING` in `domain/coach/candidates.ts`.
+ *
+ * ⚠ ONE SENTENCE, NOT ONE PER SLOT. The stretch is normal in a home gym — a beginner with dumbbells hits
+ * it on pressing, rowing and curling at once — and three lines saying the same thing reads as the plan
+ * apologising for itself. It names the movements so the claim is checkable, and says the thing that
+ * actually matters: these are still the right movements, start light.
+ */
+function stretchedLine(notes: readonly { kind: string; got?: string }[]): string[] {
+  const got = [...new Set(notes.filter((n) => n.kind === 'stretched').map((n) => n.got).filter(Boolean))];
+  if (got.length === 0) return [];
+  const named = got.length <= 3 ? got.join(', ') : `${got.slice(0, 3).join(', ')} and ${got.length - 3} more`;
+  return [`A few of these — ${named} — sit a step above where you said you're starting. They're the right movements for what you've got; take the weight light for the first week.`];
 }
 
 /* ── STYLE ───────────────────────────────────────────────────────────────────────────────────────── */

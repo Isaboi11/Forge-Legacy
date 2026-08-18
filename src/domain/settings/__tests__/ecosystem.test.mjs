@@ -123,13 +123,26 @@ test('a stored visibility map merges over defaults and drops junk', () => {
  * it is neither squad activity nor a request from another person — it is the only self-directed control
  * on the screen — and it defaults OFF, back on P-5 §3.1's ambient side.
  */
-test('twelve toggles across six sections, squad off / requests on / challenges off / comments on', () => {
+test('twelve toggles across six sections, squad off / requests on / invites on / comments on', () => {
   assert.equal(NOTIF_SECTIONS.flatMap((s) => s.toggles).length, 12);
   assert.equal(NOTIF_SECTIONS.length, 6);
   assert.equal(NOTIF_DEFAULTS.squad_feed, false);
   assert.equal(NOTIF_DEFAULTS.squad_invites, true);
   assert.equal(NOTIF_DEFAULTS.friend_requests, true, 'a direct request stays on (P-5 §3.2b)');
-  assert.equal(NOTIF_DEFAULTS.challenge_updates, false, 'ambient competition stays off (P-5 §3.2a)');
+  /*
+   * ⚠ 0164 REPLACED `challenge_updates` (off) WITH THIS (on), and it is a rename rather than a split.
+   *
+   * The old key was read as ambient — "Invitations and standing changes" — and filed under §3.2a on
+   * that basis. It was the wrong shelf: there are no standing-change notifications and never have
+   * been, so the only thing the toggle ever governed was somebody putting your name in a competition,
+   * which is §3.2b's "a direct request stays on" exactly. Splitting it would have left the old key
+   * governing nothing, and an inert control is what 0120 deleted four ceremony toggles to avoid.
+   *
+   * The key must be GONE, not merely superseded — a stale entry here would let the screen offer a
+   * switch `push_pref_key` no longer answers for.
+   */
+  assert.equal(NOTIF_DEFAULTS.challenge_invites, true, 'an invitation is aimed at you, so it stays on (P-5 §3.2b)');
+  assert.ok(!('challenge_updates' in NOTIF_DEFAULTS), 'challenge_updates was retired by 0164 — it must not still be offerable');
   assert.equal(NOTIF_DEFAULTS.post_comments, true, 'a comment is aimed at you by name, so it stays on (SOC-D11, P-5 §3.2b)');
   assert.equal(NOTIF_DEFAULTS.squad_reactions, false, 'SOC-D11 locks reaction pushes OFF — the inbox still shows them');
   /*

@@ -1,16 +1,48 @@
 # Launch Checklist — Free & Premium
 
-## v1.3 | 2026-08-17 · THE WORKING LIST
+## v1.5 | 2026-08-17 · THE WORKING LIST
 
-> **⭐ v1.3 — D-U-N-S `149910851` IS IN (§9.1), and with it the last EXTERNAL blocker on the public
-> release.** ⏳ The record needs 24–48 h to become queryable before §9.2 can start — that is a wait, not
-> a blocker, and it is gated on Apple's `duns-lookup` returning the company rather than on the calendar.
+> **⛔⛔ v1.5 — §9 WAS BUILT ON A FACTUAL ERROR AND MOST OF IT MAY NOW DISSOLVE. READ §9's BANNER BEFORE
+> DOING ANYTHING IN IT.** Since v1.1 this list has called `G722GV8H8C` *"the qest4 team"* and planned a
+> migration away from it. **PO, 2026-08-17: it is an INDIVIDUAL Apple Developer membership under
+> Isaiah's own personal Apple ID. There is no qest4 company account, and there never was** — `qest4` is
+> reverse-DNS of the work email domain, picked on 2026-08-05 as a bundle-ID string, and **this document
+> mistook a naming convention for an owner.**
 >
-> **⚠ Execution order has changed, because the critical path is now entirely ours.** §9.3 — the bundle
-> identifier — **moves to the front.** It is the only remaining item whose answer comes from Apple rather
-> than from us, it carries a support round trip, and it must be settled *before* anything is built under
-> the new team. Revised order: **§9.3 (ask Apple now) → §9.2 (once the lookup resolves) → §4 Phase E →
-> §10 → §5 → §6 → §7.**
+> **Nothing has to be migrated, because nothing belongs to anyone else.** The likely path is now
+> **Apple's individual-to-organization conversion** of the membership already held (§9.2 rewritten),
+> which — if Apple confirms it — **keeps the bundle ID, app `6798436104`, the TestFlight builds, the
+> testers' installs, the EAS credentials and the APNs key, all untouched.** §9.3 stops being the item
+> that "can genuinely bite," and **§9.4 and §9.5 collapse to verification.**
+>
+> ⚠ **This is not yet confirmed with Apple, and the fallbacks stay in the document until it is.** But
+> the honest reading is that **the scariest item in Stage 2 was an artefact of a wrong assumption about
+> who owned an account**, and it went four versions without anyone checking. Cost of checking: one
+> glance at Membership details.
+
+> **⭐ v1.4 — THE BUSINESS CHECKING ACCOUNT IS OPEN (§9.0b), AND IT CLOSES A GATE THIS LIST NEVER
+> NAMED.** Zions Business Launch, in the exact legal name `FORGE LEGACY LLC`, opened 2026-08-17 — the
+> same day the D-U-N-S issued. ⏳ Routing and account numbers are *coming*, not in hand.
+>
+> **⚠ The gap it exposes matters more than the item itself: this checklist had no line for App Store
+> Connect's Agreements, Tax and Banking.** §7.4 said "submit" and §10.7 said "confirm the paywall", and
+> **neither is possible without an active Paid Applications Agreement** — which needs the bank account,
+> a W-9, and a signature from someone with legal authority to bind the entity. It is now **§9.7**, and
+> it is a submission gate, not a payout chore: an app with IAPs cannot be submitted under an agreement
+> that is not in effect. Left undiscovered, it would have surfaced on the day of submission.
+>
+> **⚠ The ownership contradiction v1.1 flagged is RESOLVED (§9.0b).** PO, 2026-08-17: *Isaiah owns
+> Altimealix Holdings; Altimealix is the parent of Forge Legacy LLC.* The operating agreement is right
+> and CP 575's "SOLE MBR" is the SS-4 responsible party, not a membership claim. **That chain decides
+> what goes on Apple's W-9 — see §9.7.**
+>
+> **Execution order — ⚠ REVISED AGAIN IN v1.5, because §9.2 and §9.3 are now ONE conversation with Apple,
+> not two items in sequence:** **§9.2+§9.3 together (one support request: convert `G722GV8H8C` to an
+> organization, and confirm in writing that the bundle ID, the app record and TestFlight survive it) →
+> §9.7 → §4 Phase E → §10 → §5 → §6 → §7.** ⚠ Gate that request on §9.1's D-U-N-S lookup resolving
+> first. §9.7 sits where it does because it needs the organization to exist, and everything from §4 down
+> assumes money can eventually move. *(v1.3 put §9.3 first as the item "whose answer comes from Apple";
+> that is still true, it is just the same phone call as §9.2 now.)*
 
 > **⚠ v1.2 — STAGE 1 IS CLOSED, AND SIX ITEMS BELOW WERE STALE IN THE SAME DIRECTION.** The testers have
 > the build (PO, 08-17), the database runs through `0162`, the website is live, the paywall *screen* is
@@ -38,9 +70,9 @@ That splits this list in two, and the split is the schedule:
 | | **Stage 1 — TestFlight** | **Stage 2 — Public** |
 |---|---|---|
 | **Audience** | the 20 OG testers | everyone |
-| **Apple team** | existing `G722GV8H8C` (§8) | **new Forge Legacy LLC org account** (§9) |
+| **Apple team** | existing `G722GV8H8C` (§8) | ⚠ **v1.5: the SAME membership, converted Individual → Organization** (§9.2). Previously read "new Forge Legacy LLC org account", which assumed a second entity held the first one |
 | **Entitlement** | `default_tier` stays `PREMIUM` — nothing gates | Phase F flip (§6) |
-| **Needs** | §8 only — the DB blockers and a build | §4 Phase E · §5 Legal · §6 · §9 · §10 |
+| **Needs** | §8 only — the DB blockers and a build | §4 Phase E · §5 Legal · §6 · §9 (incl. **9.7 Paid Apps Agreement**) · §10 |
 | **Blocked by** | ✅ **nothing — shipped, testers have it** | ✅ **Nothing external.** D-U-N-S `149910851` issued 2026-08-17 (§9.1). ⏳ The record needs 24–48 h to become queryable before 9.2 can start, but that is a wait, not a blocker. **Everything remaining is work this team controls** |
 
 **The D-U-N-S wait is the build window, not dead time.** Start §9.1 the day the LLC is filed; Phase E
@@ -411,7 +443,9 @@ Apple team, no paywall. Do not read 7.4 as the tester build.
 - [ ] **7.3 — `eas update` + `expo export` + `eas deploy --prod`, then curl prod for a 200.**
       A "successful" deploy serving a 404 has happened twice; re-running fixes it. Only ever hand over
       **forgelegacy.expo.app** — a throwaway `--hash` URL wipes localStorage and signs people out.
-- [ ] **7.4 — New iOS build and App Store submission.**
+- [ ] **7.4 — New iOS build and App Store submission.** ⚠ **v1.4: §9.7 must be green first** — the Paid
+      Applications Agreement has to be *in effect*, not merely accepted, or the IAPs cannot be submitted
+      with the build.
 - [ ] **7.5 — Update `Forge-Legacy-Master-Status.md`** — a Recently Completed entry per shipped phase.
 
 ---
@@ -498,9 +532,14 @@ the app in their hands.**
 
 ## 9 · Apple entity migration — Forge Legacy LLC
 
-PO decision 2026-08-13: **the public release ships under a new Forge Legacy LLC organization account**, not
-`G722GV8H8C` (the qest4 team that `eas.json` names today, holding app `6798436104` and the bundle
-`com.qest4.forgelegacy`).
+PO decision 2026-08-13: **the public release ships under Forge Legacy LLC as an organization**, rather
+than under the individual membership `G722GV8H8C` that `eas.json` names today, holding app `6798436104`
+and the bundle `com.qest4.forgelegacy`.
+
+⚠ **v1.5 corrected the sentence above.** It read *"under a new Forge Legacy LLC organization account, not
+`G722GV8H8C` (the qest4 team…)"* — two errors in one line: there is no qest4 team, and a *new* account is
+probably not how this happens. **The decision was always about the seller of record, not about which
+account object holds the app.** Converting the existing membership satisfies the decision completely.
 
 **✅ LLC FILED 2026-08-13.** The entity of record, and the exact strings Apple and D&B match against:
 
@@ -540,6 +579,29 @@ most common rejection at D&B and at Apple enrollment, and it restarts the clock 
       **weekdays 07:00–22:00 ET** and times out on inactivity, so do it in one sitting and save the PDF —
       re-issuing is a phone call. Needed for the business bank account and for **App Store Connect's tax
       and banking forms**, without which Apple cannot pay out. Not a D-U-N-S dependency; do it in parallel.
+- [x] **9.0b — ✅ DONE 2026-08-17. Business checking account open — Zions Business Launch, in the exact
+      legal name `FORGE LEGACY LLC`.** Opened from the existing Zions personal relationship, so it is a
+      new account rather than a new customer; expect a separate Business Digital Banking login.
+      ⏳ **Routing and account numbers are not in hand yet** — they arrive with the welcome packet /
+      online-banking access. **§9.7 cannot be completed until they do**, though nothing else waits on it.
+      As filed and as it should stay: NAICS **513210 Software Publishers** (not a gym code) · tax
+      classification **Disregarded Entity** · taxable party **Isaiah + SSN** · **no** DBA · Operating
+      Account only · declared activity ATM/debit, no cash, no wires · **no** merchant services.
+      $50 to open; **$10/mo waived by a $500 minimum daily balance**; 50 txns + $3k cash per cycle; go
+      paperless or it is $3/mo. ⚠ **The $30/mo Payments Package was correctly declined** — that is ACH
+      and wire *origination*, and an Apple payout is *incoming* ACH. Nothing in this launch needs it.
+      ⭐ **AND IT RESOLVED THE OWNERSHIP CONTRADICTION v1.1 COULD NOT.** PO, 2026-08-17: **Isaiah owns
+      Altimealix Holdings LLC; Altimealix owns Forge Legacy LLC.** So the operating agreement's
+      "`Altimealix Holdings LLC` owns 100%" is the correct statement of *direct* membership, and CP 575's
+      **"ISAIAH ALTAMIRANO SOLE MBR" is the SS-4 responsible party printed back**, not a competing
+      ownership claim. The two documents were never in conflict about the facts, only about which layer
+      of the chain they name. **Isaiah is the ultimate beneficial owner through a two-link chain** —
+      Forge Legacy → Altimealix → Isaiah — which is exactly the look-through the Zions application
+      declared, and it is the same chain Apple's tax form has to reflect (§9.7).
+      ⚠ **This does not close the evidence gap.** Utah's Certificate of Organization still has no member
+      field, so the parent-child link remains provable only by the operating agreement and Utah's
+      principals data. Any future counterparty that wants ownership *proved* rather than asserted needs
+      those, not the stamped certificate.
 - [x] **9.1 — ✅ DONE 2026-08-17. D-U-N-S `149910851`.** Case `10803372` resolved at 18:14 UTC, tracking
       `10740542`, sub-resolution *"Verified through a company spokesperson"* — **the documents answered on
       08-15 closed it and the anticipated phone call never came.** Four days from request to number,
@@ -573,34 +635,101 @@ most common rejection at D&B and at Apple enrollment, and it restarts the clock 
       is a git-ignored 4 MB export that a directory upload would publish as a public indexable page; it
       returns 404 live and must stay that way. Original text: **Buy the domain and stand up a real site +
       work email on it. Blocks enrollment, and it is the item that will be discovered late.**
-- [ ] **9.2 — Enroll Forge Legacy LLC in the Apple Developer Program** ($99/yr) once the D-U-N-S resolves.
-      The enrolling person must have legal authority to bind the entity.
-- [ ] **9.3 — ⚠ RESOLVE THE BUNDLE IDENTIFIER BEFORE BUILDING ANYTHING UNDER THE NEW TEAM. This is the
-      one item here that can genuinely bite, and it should be confirmed with Apple rather than assumed.**
-      Bundle IDs are globally unique across the App Store, and `com.qest4.forgelegacy` is currently
-      registered to `G722GV8H8C`. Three shapes, and they are not equivalent:
-      **(a) Release the identifier from the qest4 team** and register it under Forge Legacy LLC — keeps the ID
-      and every deep link, but the qest4 app record must be removed first and TestFlight builds under it
-      die with it.
+> **⛔⛔ v1.5 — THIS ENTIRE SECTION WAS BUILT ON A FACTUAL ERROR, AND CORRECTING IT MAY DELETE MOST OF
+> IT.** Every version of this list has called `G722GV8H8C` *"the qest4 team"* and reasoned from there:
+> a second legal entity holding the app, requiring migration, transfer or surrender. **PO, 2026-08-17:
+> the Apple Developer account is an INDIVIDUAL membership under Isaiah's own personal Apple ID.**
+>
+> **There is no qest4 company account. There never was.** `qest4` is a string in a bundle identifier —
+> reverse-DNS of the work email domain, chosen on 2026-08-05 because it was the domain at hand — and
+> this document mistook a naming convention for an owner. Nothing was ever held by anyone else.
+>
+> **So the framing "migrate away from qest4" is wrong.** The account is already Isaiah's. What Stage 2
+> actually needs is for that same membership to be re-badged from an individual to an organization, and
+> **Apple has a documented path for exactly that: individual-to-organization conversion.** See 9.3.
+>
+> ⚠ **Do not delete 9.3's (a)/(b)/(c) yet.** They stay as the fallbacks until Apple confirms conversion
+> in writing. But **9.2, 9.4 and 9.5 are now conditional and may collapse to nothing**, and that is a
+> materially different — and much cheaper — Stage 2 than the one this list has described since v1.1.
+
+- [ ] **9.2 — ⚠ CONVERT, DO NOT ENROLL — CONFIRM WITH APPLE FIRST (rewritten v1.5).** The old text here
+      said *"enroll Forge Legacy LLC in the Apple Developer Program ($99/yr)"*, which assumed a fresh
+      second account. **With an individual membership already held on this Apple ID, a fresh enrollment
+      is likely not even possible** — Apple does not generally let one Apple ID hold both an individual
+      and an organization membership, which is precisely why the conversion path exists.
+      **Ask Apple Developer Support to convert membership `G722GV8H8C` from Individual to Organization**,
+      with `Forge Legacy LLC`, D-U-N-S `149910851`, and Isaiah as a person with authority to bind it.
+      ⚠ **Gate it on 9.1's lookup resolving first** — conversion validates the D-U-N-S the same way
+      enrollment does.
+      ⚠ **One consequence to accept deliberately:** conversion leaves the LLC's developer account owned
+      by Isaiah's *personal* Apple ID. That is normal (every org account is held by a person's Apple ID)
+      but it is worth knowing rather than discovering. **Do not create a second Apple ID at
+      `forgelegacy.app` for this** — a new Apple ID means a new account, which is the expensive path this
+      correction just avoided. If the address matters later, change the Apple ID on the account.
+      ⚠ **Fallback if Apple says no:** the old plan stands — enroll a separate organization account under
+      a different Apple ID, and 9.3–9.5 apply in full.
+- [ ] **9.3 — ⚠ BUNDLE IDENTIFIER — LIKELY A NON-ISSUE NOW, BUT CONFIRM RATHER THAN ASSUME.** Bundle IDs
+      are globally unique and `com.qest4.forgelegacy` is registered to `G722GV8H8C`.
+      **If 9.2's conversion succeeds, this item costs nothing: the team record is the same record, so the
+      bundle ID, app `6798436104`, the TestFlight builds and the testers' installs all persist untouched.**
+      Nothing is transferred because nothing moves. ⚠ **Confirm that in writing with Apple as part of the
+      conversion request** — it is the single question worth asking explicitly, and it is cheap to ask.
+      ⚠ **The seller name still changes** to `Forge Legacy LLC`, which is the point of converting; on an
+      individual account it would otherwise have been Isaiah's personal legal name on the public listing.
+      **Only if conversion is refused** do the three original shapes apply, and they are kept verbatim:
+      **(a) Release the identifier** and re-register it under a new org account — keeps the ID and every
+      deep link, but the old app record must be removed first and its TestFlight builds die with it.
       **(b) New bundle ID** (e.g. `com.forgelegacy.app`) — always available, but it is a *different app*
       to iOS: the 20 testers' installs do not upgrade, they sit alongside. Changes the native
       fingerprint, so a new build regardless.
-      **(c) Apple app transfer** from qest4 to Forge Legacy LLC — preserves ID, installs and TestFlight, **but
+      **(c) Apple app transfer** to the new org account — preserves ID, installs and TestFlight, **but
       transfer generally requires the app to have already been publicly released**, which contradicts
-      "first public release is under the LLC." Only viable if Stage 2 is re-sequenced to ship under
-      qest4 and transfer after.
-      ⚠ **Whichever is chosen, the `scheme` (`forgelegacy`) and the Supabase redirect allow-list must be
-      re-checked** — an auth callback that silently stops resolving is a launch-day outage.
-- [ ] **9.4 — Update `eas.json` `submit.production.ios`** (`ascAppId`, `appleTeamId`) and, if 9.3 chose
-      (b), `ios.bundleIdentifier` + `android.package` in `app.json`.
+      "first public release is under the LLC." Only viable if Stage 2 is re-sequenced to ship first and
+      transfer after.
+      ⚠ **In the (a)/(b)/(c) branch only, the `scheme` (`forgelegacy`) and the Supabase redirect
+      allow-list must be re-checked** — an auth callback that silently stops resolving is a launch-day
+      outage. **Conversion does not touch either**, because the bundle ID does not change.
+- [ ] **9.4 — ⚠ CONDITIONAL (v1.5) — probably a NO-OP.** `eas.json` already names `ascAppId 6798436104`
+      and `appleTeamId G722GV8H8C`, and **conversion changes neither** — the team ID survives a
+      membership-type change. **Verify both after conversion and expect to change nothing.**
+      Only if 9.3 lands on (a)/(b)/(c): update `submit.production.ios`, and for (b) also
+      `ios.bundleIdentifier` + `android.package` in `app.json`.
       ⚠ **`eas.json` byte-for-byte matters** — a fresh checkout rewrites it with CRLF where the working
       copy has LF: identical to read, different fingerprint. Edit in place; do not re-create the file.
-- [ ] **9.5 — Re-create the EAS project credentials** under the new team (push key, provisioning). Push
-      notifications are configured against the old team's APNs key; **a new key means push silently
-      stops** until it is uploaded.
+- [ ] **9.5 — ⚠ CONDITIONAL (v1.5) — the push-key risk is probably GONE.** This item existed because a
+      *new team* means new credentials and **push stops silently** until the APNs key is re-uploaded.
+      **Conversion keeps the team, so it keeps the credentials** — no new provisioning, no new APNs key,
+      no silent push outage. **Verify push still delivers after conversion anyway** (it is one test send
+      and the failure mode is invisible), but do not pre-emptively rotate anything.
+      Only if 9.3 lands on (a)/(b)/(c): re-create EAS credentials under the new team and **re-upload the
+      APNs key**, or push dies quietly.
 - [ ] **9.6 — Enroll Forge Legacy LLC in the App Store Small Business Program** for 15% rather than 30%.
       Enrollment is per-entity and applies from the following month — **do it before revenue, not after.**
       (This supersedes §6.2, which assumed a single account.)
+- [ ] **9.7 — ⚠ NEW v1.4 · App Store Connect → Agreements, Tax, and Banking. THIS IS A SUBMISSION GATE,
+      NOT A PAYOUT CHORE, AND THE LIST DID NOT HAVE IT.** §7.4 said "submit" and §10.7 said "confirm the
+      paywall ships"; **neither is achievable while the Paid Applications Agreement is merely accepted
+      rather than in effect.** In-app purchases stay unsubmittable and sandbox purchases fail until all
+      three of the following are green in App Store Connect. Three parts, in order:
+      **(a) Accept the Paid Applications Agreement** under the Forge Legacy LLC org account (so: after
+      9.2). The accepting person must have legal authority to bind the entity — the same standard as
+      enrollment. The free-apps agreement is already in force and is **not** this.
+      **(b) Bank account.** Needs the routing and account numbers from 9.0b — ⏳ **not yet in hand**, and
+      this is the only line in §9 still waiting on something external. **The account holder name must
+      match the legal entity exactly: `FORGE LEGACY LLC`.** A mismatch here fails the same way every
+      other name mismatch in this section fails — silently, and by restarting the clock.
+      **(c) Tax forms — and the two-link ownership chain from 9.0b decides what goes on them.** Forge
+      Legacy LLC is a **disregarded entity**, so a W-9 does not carry the LLC's own name on line 1; it
+      carries the name of the tax owner, with the LLC on line 2. **With Altimealix Holdings LLC in the
+      middle, the look-through runs Forge Legacy → Altimealix → Isaiah** — the same reading the Zions
+      application declared. ⚠ **Do not fill this from the above.** It is the one item in this checklist
+      whose wrong answer is a federal tax filing rather than a rejected form, the EIN on CP 575 is a real
+      alternative to the SSN, and **a two-tier disregarded chain is exactly the shape a CPA should
+      confirm before signing.** Budget an hour of professional time; it is cheaper than an amended
+      return. US entity ⇒ W-9; the other regions' forms only matter once those storefronts are enabled.
+      ⚠ **Sequence it early enough to absorb a bank-verification round trip.** Apple micro-deposits or
+      otherwise verifies the account, and that is days, not minutes — it should not be discovered in the
+      same week as submission.
 
 ---
 
@@ -641,6 +770,9 @@ genuinely unstarted**, and all five gate submission rather than review.
 - [ ] **10.7 — Confirm the Stage-2 build carries the paywall** and that §5 (Legal) and §6 (Phase F) are
       done before submission, not after. **An IAP that is present but not yet purchasable fails review;
       an app that shows prices with no way to pay fails 3.1.2.**
+      ⚠ **v1.4: add §9.7 to that list.** "Not yet purchasable" includes *the Paid Applications Agreement
+      is not in effect* — the failure looks identical from the reviewer's side, and unlike the other two
+      it cannot be fixed by editing the build.
 
 ---
 

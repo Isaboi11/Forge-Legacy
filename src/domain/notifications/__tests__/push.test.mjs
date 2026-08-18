@@ -34,10 +34,16 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
  * union's newest body is therefore still 0153's while the preference map's is 0159's, and a single `SQL`
  * constant could only have been right about one of them. Read each from the file that owns it:
  *
- *   · `SQL`       0153 — the union, `push_enqueue_for`, the squad-training triggers
- *   · `SQL_PREFS` 0159 — `push_pref_key`, `push_pref_default`
+ *   · `SQL`       0164 — the union, `push_enqueue_for`, and the two preference functions
+ *   · `SQL_0153`  0153 — the squad-training TRIGGERS and `set_squad_notify`, which 0164 does not restate
  *   · `SQL_BASE`  0120 — the invariants that live ONLY there: the revokes, the outbox unique index, and
  *                        the thin `notification_events()` wrapper, none of which later files restate.
+ *
+ * ⚠ AND 0164 COLLAPSED `SQL_PREFS` BACK INTO `SQL`. 0159 owned the preference map alone only for as long
+ * as no later migration touched both; 0164 adds a branch AND retires a preference key in one file, so the
+ * two are the same source again. `SQL_PREFS` is kept as an alias rather than deleted, because every
+ * assertion below that names it is making a statement about the preference map specifically, and losing
+ * that distinction is how the next split gets missed.
  */
 const SQL_BASE = readFileSync(resolve(ROOT, 'supabase/migrations/0120_push_notifications.sql'), 'utf8');
 const SQL_0121 = readFileSync(resolve(ROOT, 'supabase/migrations/0121_workout_join_requests.sql'), 'utf8');
@@ -55,10 +61,20 @@ const SQL_0134 = readFileSync(resolve(ROOT, 'supabase/migrations/0134_goal_contr
  * reason to touch. It is NO LONGER the newest union — see `SQL` below.
  */
 const SQL_0135 = readFileSync(resolve(ROOT, 'supabase/migrations/0135_post_reply_notifications.sql'), 'utf8');
-// 0153 is the newest definition of the union, `push_enqueue_for` and the squad-training triggers.
-const SQL = readFileSync(resolve(ROOT, 'supabase/migrations/0153_squad_training_notifications.sql'), 'utf8');
-// 0159 is the newest definition of the two preference functions — see the warning above.
-const SQL_PREFS = readFileSync(resolve(ROOT, 'supabase/migrations/0159_training_briefing.sql'), 'utf8');
+// 0153 still owns the squad-training triggers and `set_squad_notify` — 0164 rebuilt the union and the
+// sender above them and had no reason to restate a trigger.
+const SQL_0153 = readFileSync(resolve(ROOT, 'supabase/migrations/0153_squad_training_notifications.sql'), 'utf8');
+// 0159 is still read for `briefing`-only invariants; it is NO LONGER the newest preference map.
+const SQL_0159 = readFileSync(resolve(ROOT, 'supabase/migrations/0159_training_briefing.sql'), 'utf8');
+/*
+ * 0163 fixed the two competition defects (`challenge_detail`'s 42702, and an invite that expired seconds
+ * after it was created). It rebuilt the union and is superseded by 0164 as its newest body — it is read
+ * here for the run-twice guard and the revoke rule, both of which apply to every file in this set.
+ */
+const SQL_0163 = readFileSync(resolve(ROOT, 'supabase/migrations/0163_competition_invite_and_standings.sql'), 'utf8');
+// 0164 is the newest definition of the union, `push_enqueue_for`, and BOTH preference functions.
+const SQL = readFileSync(resolve(ROOT, 'supabase/migrations/0164_challenge_joined_and_invite_push.sql'), 'utf8');
+const SQL_PREFS = SQL;
 
 /** Every migration paired with the bundle that gets pasted into the dashboard. */
 const BUNDLES = [
@@ -73,8 +89,10 @@ const BUNDLES = [
      one-function fix that would otherwise wait for a paste of its own. */
   ['0134_goal_contribution_workout', 'pending-0134-0135', SQL_0134],
   ['0135_post_reply_notifications', 'pending-0134-0135', SQL_0135],
-  ['0153_squad_training_notifications', 'pending-0153', SQL],
-  ['0159_training_briefing', 'pending-0159', SQL_PREFS],
+  ['0153_squad_training_notifications', 'pending-0153', SQL_0153],
+  ['0159_training_briefing', 'pending-0159', SQL_0159],
+  ['0163_competition_invite_and_standings', 'pending-0163', SQL_0163],
+  ['0164_challenge_joined_and_invite_push', 'pending-0164', SQL],
 ];
 
 /**
@@ -193,7 +211,7 @@ test('every default in the SQL matches the toggle the athlete actually sees', ()
  * 0088 and 0092 dropped both friend branches, 0106 dropped program graduation. Each compiled cleanly and
  * each was found by a person, not a test. This is that test.
  */
-test('notification_events_for still has all sixteen branches', () => {
+test('notification_events_for still has all seventeen branches', () => {
   const body = fnBody('notification_events_for');
   const kinds = [...body.matchAll(/select\s+'([a-z_]+)'::text/g)].map((m) => m[1]);
   // Branch 3 is built from the row's status rather than a literal, so it is matched separately.
@@ -226,6 +244,10 @@ test('notification_events_for still has all sixteen branches', () => {
          trigger of any kind. */
       'squad_training_started',
       'squad_training_finished',
+      /* Branch 17, added 0164 — the other half of branch 6, and the first branch that reports an ANSWER
+         to something the recipient started. An invitation could be sent and accepted from 0087 to 0164
+         with the sender told neither. Not fan-out: one join notifies the creator and nobody else. */
+      'challenge_joined',
     ],
     'a branch has been added or lost — if this is intentional, update the list and say so in the migration',
   );
@@ -340,6 +362,39 @@ test('an invitation and a join request cannot be confused for each other', () =>
 test('a join request expires with the host presence it is about', () => {
   const body = fnBody('notification_events_for');
   assert.match(body, /'workout_join_request'::text[\s\S]*?h\.training_since > now\(\) - interval '4 hours'/);
+});
+
+/**
+ * ⚠ BOTH COMPETITION BRANCHES ARE GATED ON "STILL JOINABLE", NOT ON "NOT STARTED" — 0163 and 0164.
+ *
+ * Create Challenge defaults to "Starts Today", which is midnight this morning, and `advance_challenges()`
+ * runs on the creator's own trip back to the hub — so a competition is ACTIVE within seconds of being
+ * made. Gated on ENROLLMENT alone, branch 6 is a DERIVED event that stops having existed before the
+ * invited friend opens the app: no notification, no push, and the "Open to Join" row gone with it. That
+ * shipped, and it presented to the PO as "it did not send them an invite".
+ *
+ * `challenge_participants_insert` (0087) has always allowed joining a running competition; only these
+ * surfaces disagreed. Reverting either predicate re-opens the exact bug and nothing else here would say
+ * so — every other assertion in this file stayed green through it, which is why this one is specific.
+ *
+ * AND BRANCH 17 IS BOUNDED TWICE. It is the only branch whose subject is somebody else joining a thing
+ * you own, so the creator of a 50-athlete competition collects one row per member: 14 days like every
+ * written branch, AND the competition's own life, or a finished season keeps its whole roster in their
+ * inbox permanently.
+ */
+test('a competition notifies while it can still be joined, and not one day longer', () => {
+  const body = fnBody('notification_events_for');
+
+  const invite = branchOf(body, 'challenge_invite');
+  assert.match(invite, /c\.state in \('ENROLLMENT', 'ACTIVE'\)/, "branch 6 gated on ENROLLMENT alone expires before the invited athlete ever sees it (0163)");
+  assert.match(invite, /p_user = any\(c\.invited_ids\)/, 'branch 6 must only fire for somebody actually named');
+  assert.match(invite, /not exists \(\s*select 1 from public\.challenge_participants/, 'joining must make the invite stop existing — it is derived, not stored (CS-D3)');
+
+  const joined = branchOf(body, 'challenge_joined');
+  assert.match(joined, /c\.creator_id = p_user/, 'branch 17 goes to the creator and nobody else');
+  assert.match(joined, /cp\.user_id <> p_user/, 'creating a competition inserts your own row — you must not be told you joined it');
+  assert.match(joined, /c\.state in \('ENROLLMENT', 'ACTIVE'\)/, 'branch 17 must stop when the competition does, or a closed season keeps its roster in the inbox forever');
+  assert.match(joined, /cp\.joined_at > now\(\) - interval '14 days'/, 'branch 17 must stay windowed like every other written branch');
 });
 
 /**
@@ -547,19 +602,29 @@ test('the training branches expire faster than the written ones', () => {
  * other gate green, so the exception block is the load-bearing line rather than defensive habit.
  */
 test('a failed notification can never roll back the workout that caused it', () => {
+  // These three triggers still live in 0153 — 0164 rebuilt the union and the sender above them.
   for (const fn of ['push_tg_training_started', 'push_tg_training_finished']) {
-    const at = SQL.indexOf('function public.' + fn);
+    const at = SQL_0153.indexOf('function public.' + fn);
     assert.notEqual(at, -1, fn + ' is missing');
-    const body = SQL.slice(at, SQL.indexOf('$$;', at));
+    const body = SQL_0153.slice(at, SQL_0153.indexOf('$$;', at));
     assert.match(body, /exception when others then/, fn + ' can raise into its caller');
     assert.match(body, /push_enqueue_for/, fn + ' does not actually enqueue anything');
   }
   // And the workouts trigger only fires on a session that is actually finished.
-  assert.match(SQL, /create trigger push_workout_saved[\s\S]*?when \(new\.state = 'saved' and new\.saved_at is not null\)/);
+  assert.match(SQL_0153, /create trigger push_workout_saved[\s\S]*?when \(new\.state = 'saved' and new\.saved_at is not null\)/);
   // The profiles trigger is narrowed to the one column, because profiles is written on nearly every
   // launch — the timezone, the seen stamp, the avatar — and each of those would walk the athlete's squads.
-  assert.match(SQL, /create trigger push_training_started\s+after update of training_since on public\.profiles/);
-  assert.match(SQL, /when \(new\.training_since is not null and new\.training_since is distinct from old\.training_since\)/);
+  assert.match(SQL_0153, /create trigger push_training_started\s+after update of training_since on public\.profiles/);
+  assert.match(SQL_0153, /when \(new\.training_since is not null and new\.training_since is distinct from old\.training_since\)/);
+
+  /*
+   * 0164's trigger is the same shape and for the same reason, one table over: `challenge_participants`
+   * is written by the JOINING athlete, so an unhandled raise in the fan-out rolls back their opt-in and
+   * presents as "Join does nothing" — the Finish Workout failure (0150) with a different verb.
+   */
+  const joinTg = SQL.slice(SQL.indexOf('function public.push_tg_challenge_participants'));
+  assert.match(joinTg.slice(0, joinTg.indexOf('$$;')), /exception when others then/, 'the join trigger can raise into the athlete opting in');
+  assert.match(SQL, /create trigger push_challenge_participants\s+after insert on public\.challenge_participants/);
 });
 
 /**
@@ -571,11 +636,11 @@ test('a failed notification can never roll back the workout that caused it', () 
  * legitimately own, past every approval path 0050 and 0053 exist to enforce.
  */
 test('the per-squad toggles are written by a definer function, never by a policy', () => {
-  assert.match(SQL, /create or replace function public\.set_squad_notify\(p_squad uuid, p_start boolean, p_finish boolean\)/);
-  assert.match(SQL, /security definer/);
+  assert.match(SQL_0153, /create or replace function public\.set_squad_notify\(p_squad uuid, p_start boolean, p_finish boolean\)/);
+  assert.match(SQL_0153, /security definer/);
   // Only the two columns, and only the caller's own row.
-  const at = SQL.indexOf('function public.set_squad_notify');
-  const fn = SQL.slice(at, SQL.indexOf('$$;', at));
+  const at = SQL_0153.indexOf('function public.set_squad_notify');
+  const fn = SQL_0153.slice(at, SQL_0153.indexOf('$$;', at));
   assert.match(fn, /update public\.squad_members\s+set notify_start\s+= coalesce\(p_start,\s+notify_start\),\s+notify_finish = coalesce\(p_finish, notify_finish\)/);
   assert.match(fn, /user_id\s+= auth\.uid\(\)/, 'it must scope to the caller');
   /*
@@ -666,10 +731,61 @@ test('a tapped push lands where the inbox row lands', () => {
     assert.equal(destinationFor({ kind, squadId: 'q1' }), '/inbox');
   }
 
+  // 0164. An invitation and its answer both open the competition — the roster is the news, not the person.
+  for (const kind of ['challenge_invite', 'challenge_joined']) {
+    assert.deepEqual(destinationFor({ kind, challengeId: 'c1' }), { pathname: '/challenge/[id]', params: { id: 'c1' } });
+    assert.equal(destinationFor({ kind }), '/inbox');
+  }
+
   // And the SQL sender has to land in the same two places.
   const enqueue = SQL.slice(SQL.indexOf('function public.push_enqueue_for'));
   assert.match(enqueue, /'squad_training_started'\s+then '\/workout-join\?athlete=' \|\| e\.actor_id::text/);
   assert.match(enqueue, /'squad_training_finished'\s+then '\/athlete\/' \|\| e\.actor_id::text/);
+  assert.match(enqueue, /'challenge_joined'\s+then '\/challenge\/' \|\| e\.challenge_id::text/);
+});
+
+/**
+ * ⚠ A KIND WITH NO TITLE OR BODY ARM IS NOT A MISSING PUSH — IT IS A BROKEN JOIN.
+ *
+ * `push_outbox.title` and `.body` are NOT NULL, and neither of their `case e.kind` expressions in
+ * `push_enqueue_for` has an `else`. A kind the union emits and the sender has never heard of therefore
+ * inserts NULL, the whole enqueue raises, and it raises inside whatever transaction the trigger fired
+ * from — somebody's opt-in, somebody's saved workout. The ROUTE case is different and safe by
+ * construction: it has an `else` falling to the squad page.
+ *
+ * This exists because mutation-testing found the gap — deleting `challenge_joined`'s arms from the sender
+ * left every other assertion in this file green.
+ *
+ * THE SET CHECKED IS "EMITTED BY THE UNION AND PUSHABLE", derived from the union body rather than
+ * listed, so a new branch is covered the day it is written. Two kinds are outside it, each for a reason:
+ *   · `request_declined` is derived and shown in `/inbox` and deliberately never enqueued (0073).
+ *   · `training_briefing` (0159) is not a branch at all — nobody causes it, so it writes `push_outbox`
+ *     directly the way 0137's operator alert does and never passes through this function.
+ * `request_approved` is built as `('request_' || q.status)` rather than a literal, so it is named here.
+ */
+test('every pushable kind has a title and a body in the sender', () => {
+  const start = SQL.indexOf('function public.push_enqueue_for');
+  const enqueue = SQL.slice(start, SQL.indexOf('$$;', start));
+  const cases = enqueue.split('case e.kind');
+  assert.equal(cases.length, 4, 'push_enqueue_for should have exactly three `case e.kind` expressions — title, body, route');
+
+  const [, title, body, route] = cases;
+  // The premise. If either of these ever gains an `else`, this test is guarding a property that stopped
+  // being true and should be rewritten rather than deleted.
+  assert.doesNotMatch(title, /\n\s+else\s/, 'the title case gained an else arm — a NULL title is no longer possible, so re-state what this test is for');
+  assert.doesNotMatch(body, /\n\s+else\s/, 'the body case gained an else arm — see above');
+  assert.match(route, /\n\s+else '\/squad\/' \|\| e\.squad_id::text/, 'the route case must keep its default, or a kind with no arm writes a NULL route');
+
+  const emitted = [
+    ...[...fnBody('notification_events_for').matchAll(/select\s+'([a-z_]+)'::text/g)].map((m) => m[1]),
+    'request_approved',
+  ].filter((k) => k in PUSH_KIND_PREF);
+  assert.ok(emitted.includes('challenge_joined'), 'the union kinds were not parsed — the regex has drifted');
+
+  for (const kind of emitted) {
+    assert.ok(title.includes(`'${kind}'`), `${kind} has no TITLE arm in push_enqueue_for — NULL into a NOT NULL column, inside the caller's transaction`);
+    assert.ok(body.includes(`'${kind}'`), `${kind} has no BODY arm in push_enqueue_for — NULL into a NOT NULL column, inside the caller's transaction`);
+  }
 });
 
 test('a notification missing the id it routes on falls back to the inbox, never a broken route', () => {
