@@ -156,15 +156,20 @@ the same files — it is not a conversion artifact.
 - ✅ **Contact email** — `support@forgelegacy.app`, live on the domain (Cloudflare Email Routing,
   forwarding, verified by test 2026-08-15). `isaiah@forgelegacy.app` also routes.
 - ✅ **`/privacy` and `/terms`** — real pages, in this directory, at stable URLs.
-- ⚠ **Re-measure the FAQ's claim on publish day.** Re-measured **2026-08-16 on `feat/route-map`** and the
-  page now reads **"162 database migrations … 2,426 automated tests"** (was 161 / 2,362 on 2026-08-14).
-  Both move weekly, so do it again on the day.
-  - `ls supabase/migrations/*.sql | wc -l` → **162**. Note the numbering is not the count: `0002` was
+- ⚠ **Re-measure the FAQ's claim on publish day.** Re-measured **2026-08-18 on `feat/route-map`** and the
+  page now reads **"167 database migrations … 2,552 automated tests"** (was 162 / 2,426 on 2026-08-16, and
+  161 / 2,362 on 2026-08-14). Both move weekly, so do it again on the day.
+  - `ls supabase/migrations/*.sql | wc -l` → **167**. Note the numbering is not the count: `0002` was
     never used and `0152` is used twice (`0152_discover_trained_today`, `0152_weekly_review_created_at`),
-    so there are 162 files across 161 distinct numbers up to `0162`. The page says *migrations*, so the
-    file count is the honest figure.
-  - `node --test --experimental-strip-types "src/**/*.test.mjs"` → **2,426 passing, 0 failing**
-    (~110s). Note the bare `node --test … src` form in `.claude/settings.json` treats `src` as a
+    so there are 167 files across 166 distinct numbers up to `0167`.
+    ✅ `0166` and `0167` were **applied and verified against the live database on 2026-08-18** (six
+    read-only checks, all true), so 167 is now a claim about a *running* backend rather than a repo.
+    ⚠ **Keep the rule that produced the brief 165:** this sentence describes what is **DEPLOYED**, so
+    whenever a migration is authored but unapplied, the page carries the smaller number. Understating is
+    safe; overstating is a false claim on a public page. *(The earlier rule — "the page says migrations,
+    so the file count is the honest figure" — held only while every file was applied.)*
+  - `node --test --experimental-strip-types "src/**/*.test.mjs"` → **2,552 passing, 0 failing**
+    (~42s). Note the bare `node --test … src` form in `.claude/settings.json` treats `src` as a
     *file* and reports a single phantom failure — use the glob.
 - ⚠ **"Free while we're testing"** is true only until **Phase F** of
   `Docs/Launch-Checklist-Free-And-Premium.md`. That block and any JSON-LD `offers: price "0"` both become
@@ -222,6 +227,24 @@ bare `mailto:` as an answer, so this page is a submission dependency, not a nice
 drops it, the listing's Support URL 404s. `/support` must return **200** after every deploy.
 
 The live deployment serves `/_exported-bundle.html` as **404**. Keep it that way.
+
+### ✅ Re-deployed 2026-08-18 — `support.html` shipped, and then linked
+
+The 08-16 deploy predated `support.html`, so **`/support` 404'd for two days** while both this README and
+`GO-LIVE.md` described the page as done. It *was* done — it had simply never been uploaded. **"Written" and
+"live" are two states and this directory now says which one it means.** Re-uploaded the full 25-file set
+(Cloudflare replaces the whole asset manifest per deploy; a one-file upload is not a thing here) with the
+corrected FAQ figures.
+
+⚠ **It took TWO deploys, and the second one is the lesson.** After the first upload `/support` returned 200
+and every check passed — but **nothing on the site linked to it.** The footer was written before the page
+existed, so the only way to reach it was to type the URL. Apple hits the Support URL directly and would
+never have caught it; the PO caught it by looking at the page. **A URL returning 200 is not the same as a
+page being reachable — check the footer, not just the status code.** Second deploy added the footer link
+and raised the FAQ to 167 once `0166`/`0167` were verified applied.
+
+Verified from outside after the final deploy: `/` · `/support` · `/privacy` · `/terms` · `www` all **200**,
+`/_exported-bundle.html` still **404**, footer reads **Privacy · Terms · Support · support@forgelegacy.app**.
 
 ### Verified from outside on deploy day
 

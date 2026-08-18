@@ -1187,13 +1187,17 @@
         <summary style="display:flex; align-items:center; gap:16px; min-height:44px; padding:16px 0; cursor:pointer; list-style:none; font-size:16.5px; font-weight:600;"><span style="flex:1;">Does it track calories?</span><span aria-hidden="true" style="flex:none; color:var(--fl-bronze-primary);">+</span></summary>
         <p style="margin:0 0 20px; font-size:15px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">No, and it isn't going to. Nutrition is a different product. This one does training and what training builds.</p>
       </details>
-      <!-- ⚠ MEASURED 2026-08-16 on feat/route-map: `ls supabase/migrations | wc -l` = 162 files
-           (0001–0162; 0002 was never used and 0152 is used twice), and
-           `node --test --experimental-strip-types "src/**/*.test.mjs"` = 2,426 passing.
+      <!-- ⚠ RE-MEASURED 2026-08-18 on feat/route-map: `ls supabase/migrations/*.sql | wc -l` = 167 files
+           (0001–0167; 0002 was never used and 0152 is used twice), and
+           `node --test --experimental-strip-types "src/**/*.test.mjs"` = 2,552 passing / 0 failing.
+           ✅ 0166 and 0167 APPLIED 2026-08-18 and verified against the live database (six checks, all
+           true), so the page's 167 is a claim about a running backend and not just a repo. It briefly
+           read 165 while they were outstanding — keep that habit: this number describes what is DEPLOYED,
+           so when a migration is authored but unapplied, the page says the smaller number.
            BOTH MOVE WEEKLY — re-measure on publish day. Do not copy from the tester deck. -->
       <details data-analytics="faq-open" style="border-top:1px solid var(--fl-charcoal-600); border-bottom:1px solid var(--fl-charcoal-600);">
         <summary style="display:flex; align-items:center; gap:16px; min-height:44px; padding:16px 0; cursor:pointer; list-style:none; font-size:16.5px; font-weight:600;"><span style="flex:1;">How is it built?</span><span aria-hidden="true" style="flex:none; color:var(--fl-bronze-primary);">+</span></summary>
-        <p style="margin:0 0 20px; font-size:15px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">162 database migrations, security policies on every table, 2,426 automated tests, and a live backend. A real application, not a prototype.</p>
+        <p style="margin:0 0 20px; font-size:15px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">167 database migrations, security policies on every table, 2,552 automated tests, and a live backend. A real application, not a prototype.</p>
       </details>
     </div>
   </section>
@@ -1220,13 +1224,20 @@
   </section>
 </main>
 
-  <!-- Privacy and Terms are REAL pages at stable URLs on this domain — App Store Connect takes them
-       as separate fields and Apple checks they resolve. Never turn these into anchors.
-       No newsletter signup. No social icons: a row of social badges undercuts § 7's third promise. -->
+  <!-- Privacy, Terms and Support are REAL pages at stable URLs on this domain — App Store Connect takes
+       them as separate fields and Apple checks they resolve. Never turn these into anchors.
+       ⚠ /support was live for two days with nothing linking to it: the page shipped after the footer was
+       written, so it was reachable only by typing the URL. Apple hits the Support URL directly and would
+       not have caught it, but a visitor never would have found it. A new page is not shipped until
+       something links to it.
+       The mailto stays alongside it — someone who only wants to send an email should not have to load a
+       page first. No newsletter signup. No social icons: a row of social badges undercuts § 7's third
+       promise. -->
   <footer style="background:var(--fl-base); padding:22px var(--gut) 40px; border-top:1px solid var(--fl-charcoal-600);">
     <div style="display:flex; flex-wrap:wrap; align-items:center; gap:10px 22px; max-width:1180px; margin:0 auto; font-size:13px; color:var(--fl-gray-400);">
       <a href="/privacy">Privacy</a>
       <a href="/terms">Terms</a>
+      <a href="/support">Support</a>
       <a href="mailto:support@forgelegacy.app">support@forgelegacy.app</a>
       <span style="flex:1;"></span>
       <!-- Exactly this string: it is the App Store seller name, and the same one must appear in the

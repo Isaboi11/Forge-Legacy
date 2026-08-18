@@ -579,9 +579,17 @@ most common rejection at D&B and at Apple enrollment, and it restarts the clock 
       **weekdays 07:00–22:00 ET** and times out on inactivity, so do it in one sitting and save the PDF —
       re-issuing is a phone call. Needed for the business bank account and for **App Store Connect's tax
       and banking forms**, without which Apple cannot pay out. Not a D-U-N-S dependency; do it in parallel.
-- [x] **9.0b — ✅ DONE 2026-08-17. Business checking account open — Zions Business Launch, in the exact
+- [x] **9.0b — ✅ OPEN 2026-08-18. Business checking — Zions Business Launch, in the exact
       legal name `FORGE LEGACY LLC`.** Opened from the existing Zions personal relationship, so it is a
       new account rather than a new customer; expect a separate Business Digital Banking login.
+      ⚠ **Applying was not opening, and this entry claimed 08-17 for a week it had not earned.** Zions
+      emailed the same evening (Digital Banking Ops) asking for the SS-4/EIN letter plus documents naming
+      **all authorized principals and titles**, with the application set to auto-close **2026-08-31** if
+      unanswered. Answered same day with CP 575 + the stamped certificate + the executed operating
+      agreement (**Exhibit B is the principals-and-titles page**), and **that cleared it — the
+      anticipated second round on Altimealix's certificate and EIN never came.** PO confirmed open
+      2026-08-18. Record it as *applied 08-17 → verified → open 08-18*, because the gap is the thing
+      that keeps catching this project.
       ⏳ **Routing and account numbers are not in hand yet** — they arrive with the welcome packet /
       online-banking access. **§9.7 cannot be completed until they do**, though nothing else waits on it.
       As filed and as it should stay: NAICS **513210 Software Publishers** (not a gym code) · tax

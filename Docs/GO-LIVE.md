@@ -1,8 +1,19 @@
 # GO-LIVE — the short list
 
-**v1.6 · 2026-08-17 · rewritten for brevity. Detail lives in `Docs/Launch-Checklist-Free-And-Premium.md` (v1.5) and `Forge-Legacy-Master-Status.md`. If they disagree, the checklist wins and this file is stale.**
+**v1.7 · 2026-08-18. Detail lives in `Docs/Launch-Checklist-Free-And-Premium.md` (v1.5) and `Forge-Legacy-Master-Status.md`. If they disagree, the checklist wins and this file is stale.**
 
-> **⛔ v1.6 corrects the headline claim of v1.5: the bank account is NOT open, and "nothing external
+> **✅ v1.7 — THE BANK ACCOUNT IS OPEN (PO, 2026-08-18).** The 08-17 document answer cleared Zions'
+> verification; the anticipated second round on Altimealix never came, and the 08-31 auto-close is moot.
+> **The only external party left on the critical path is Apple** — and the D-U-N-S it needs is already
+> issued. ⚠ **"No word from D&B" is the expected state**: D&B sends no completion email, so the only
+> test is Apple's own D-U-N-S lookup tool. Check the lookup, don't wait for a message.
+>
+> ⚠ **This does not make 9b actionable yet.** Agreements, Tax & Banking is entered inside an
+> *organization* App Store Connect account, which does not exist until the membership conversion
+> (item 2) goes through. What the open account unblocks *today* is the CPA question on the W-9 and
+> having the routing numbers ready, so Apple's multi-day bank verification is not the last thing.
+
+> **⛔ v1.6 corrected the headline claim of v1.5: the bank account is NOT open, and "nothing external
 > gates the public release" was wrong.** Zions emailed on 08-17 asking for the EIN letter and documents
 > showing all authorized principals and titles — **the application was in verification the whole time,
 > and it auto-closes 2026-08-31 if unanswered.** Answered same day. Apple's step 9b needs a *funded,
@@ -22,7 +33,7 @@
 | **Entity** | Forge Legacy LLC · Utah `14725906-0160` · EIN `42-4433633` · parent Altimealix Holdings LLC |
 | **Ownership** | Isaiah → Altimealix Holdings LLC → Forge Legacy LLC. **Proven only by the operating agreement** — Utah's certificate has no member field |
 | **Database** | **167 migration files · `0163` AND `0164` both applied**, confirmed against the live catalog 2026-08-17 by `preflight-0163-0165.sql`. **`0165` is unnecessary** — its four objects were verified already friends-aware, which is the only question it exists to answer. ⚠ *Two documents said `0164` was outstanding and both were stale in the "still to do" direction — the third time this project has paid for trusting a hand-written ledger.* `0144` absent by decision.<br>⛔ **`0166` and `0167` are AUTHORED, NOT APPLIED** (2026-08-17) — paste in order, each carries its own self-check block |
-| **Support** | 🟡 **Built, not deployed.** `site/support.html` + in-app `/feedback` (0167). Apple requires a Support URL and rejects a bare `mailto:` — the page is written and the site has not been re-uploaded since |
+| **Support** | ✅ **LIVE 08-18** — `https://forgelegacy.app/support` returns **200**, verified from outside. Apple requires a Support URL and rejects a bare `mailto:`. ⏳ The in-app half (`/feedback`) still needs `0167` applied |
 | **Entitlement** | `default_tier = PREMIUM` — every cap built, nothing gates. Phase F is one UPDATE |
 | **Paywall** | 🟡 Screen only. `subscription.tsx` shipped (37 KB, 23 tests). **`react-native-purchases` deliberately NOT installed** — a native module ends OTA reach to testers' build |
 
@@ -42,25 +53,25 @@
 | 8 | **Bank documents answered** — CP 575 + stamped certificate + operating agreement sent to Zions | 08-17 |
 | 9 | **Privacy copy fixed** — in-app summary and `site/privacy.html` complete and agreeing (`cc2b5de`) | 08-15 |
 | 10 | **Paywall screen built** — `subscription.tsx` to P-8, `UNAVAILABLE_BILLING` in force | 08-16 |
+| 11 | **Business checking OPEN** — Zions Business Launch, exact legal name `FORGE LEGACY LLC`. The 08-17 document request (CP 575 + stamped certificate + operating agreement) satisfied verification; **no second round on Altimealix was needed**, and the 08-31 auto-close no longer applies. ⏳ Routing + account numbers still to come with the welcome packet | 08-18 |
 
 ---
 
 ## ⛔ LEFT
 
-**Ordered by who has to move. Start 1–3 first: they're the ones waiting on someone else.**
+**Ordered by who has to move. Start 1–2 first: they're the ones waiting on someone else.**
 
 | | Item | Waiting on | Notes |
 |---|---|---|---|
-| 1 | **Bank account actually open** | Zions review | ⚠ **Closes 08-31 if they need more.** Expect a second ask for **Altimealix's** certificate + EIN letter, since an entity is the member |
-| 2 | **D-U-N-S propagates** | D&B, ~24–48 h from 08-17 18:14 UTC | ⚠ **Do not enroll until it resolves in Apple's own lookup tool.** Enrolling against a missing record restarts the clock — this project has already paid that once |
-| 3 | **Convert Apple membership** | Apple Support | `G722GV8H8C` **Individual → Organization**. ⚠ **One request, not two** — in the same message confirm bundle ID `com.qest4.forgelegacy`, app `6798436104`, TestFlight, EAS creds and **the APNs key** all survive. Then enroll in **Small Business Program** (15%). ⛔ Do NOT create a second Apple ID |
-| 4 | **Paywall (Phase E)** | us | RevenueCat adapter · 6 SKUs · referrals · Founder counter · StoreKit sandbox (buy, force-quit, reinstall, Restore). ⚠ Native dep ⇒ **new build, not OTA**. `fingerprint:compare` first |
-| 5 | **Store listing** | us | App Privacy labels **from `site/privacy.html`** · screenshots 6.9"+6.5" · description · keywords · age rating. ⚠ **Seeded reviewer account** (program, history, squad with a 2nd member, a challenge) or the social pillar reads as Guideline 2.1 incomplete.<br>**Support URL — page WRITTEN, not yet DEPLOYED.** `site/support.html` exists in the repo with the in-app half (`/feedback`, 0167) built alongside it. ⚠ **It is not live until the site is re-uploaded** — stage the now-**25** files per `site/README.md` and confirm `curl -I https://forgelegacy.app/support` → **200** before pasting the URL into App Store Connect. A 404 there is a rejection |
-| 6 | **Counsel review** | lawyer | Terms + privacy, before money moves |
-| 7 | **9b — Agreements, Tax & Banking** | Apple + CPA | ⚠ **A SUBMISSION GATE, not a payout chore.** IAPs cannot ship while the Paid Applications Agreement is not *in effect*. **(a)** accept it (signer must bind the entity) · **(b)** bank account, holder exactly `FORGE LEGACY LLC`, Apple verifies over days · **(c)** W-9 — ⚠ **a two-tier disregarded chain is a CPA question. Wrong here is a federal filing, not a rejected form** |
-| 8 | **Diagnose the `42501` on Join** | PO (dashboard) | ✅ `0163`+`0164` applied, `0165` unnecessary — **the migrations are done.** All that remains is `diagnose-challenge-join-42501.sql` (read-only). Policy is already ruled out, so the live candidate is **data** — a device signed in as an account not named in `invited_ids`. ⛔ **Never re-paste `0059`** — it silently reverts every friends competition to unjoinable |
-| 9 | **Phase F — flip to Free** | us | Strict order or the free tier is given away twice. See below |
-| 10 | **Ship** | us | Gates green · `git status` clean · `fingerprint:compare` · new build · submit. ⚠ 9b must be green first |
+| 1 | **D-U-N-S propagates** | D&B, requested 08-17 18:14 UTC | ⚠ **D&B does not email a confirmation — the only test is Apple's own D-U-N-S lookup tool.** "No word from D&B" is the expected state, not a stall. **Do not enroll until the lookup resolves `FORGE LEGACY LLC` at the Eagle Mountain address**; enrolling against a missing record restarts the clock, and this project has already paid that once |
+| 2 | **Convert Apple membership** | Apple Support | `G722GV8H8C` **Individual → Organization**. ⚠ **One request, not two** — in the same message confirm bundle ID `com.qest4.forgelegacy`, app `6798436104`, TestFlight, EAS creds and **the APNs key** all survive. Then enroll in **Small Business Program** (15%). ⛔ Do NOT create a second Apple ID |
+| 3 | **Paywall (Phase E)** | us | RevenueCat adapter · 6 SKUs · referrals · Founder counter · StoreKit sandbox (buy, force-quit, reinstall, Restore). ⚠ Native dep ⇒ **new build, not OTA**. `fingerprint:compare` first |
+| 4 | **Store listing** | us | App Privacy labels **from `site/privacy.html`** · screenshots 6.9"+6.5" · description · keywords · age rating. ⚠ **Seeded reviewer account** (program, history, squad with a 2nd member, a challenge) or the social pillar reads as Guideline 2.1 incomplete.<br>✅ **Support URL LIVE 2026-08-18** — `https://forgelegacy.app/support` is **200** and ready to paste into App Store Connect. The 25-file set was re-uploaded to the `forgelegacy` Worker; `/`, `/privacy`, `/terms`, `www` all 200 and `/_exported-bundle.html` still 404s |
+| 5 | **Counsel review** | lawyer | Terms + privacy, before money moves |
+| 6 | **9b — Agreements, Tax & Banking** | Apple + CPA | ⚠ **A SUBMISSION GATE, not a payout chore.** IAPs cannot ship while the Paid Applications Agreement is not *in effect*. **(a)** accept it (signer must bind the entity) · **(b)** bank account — ✅ **open as of 08-18**, holder exactly `FORGE LEGACY LLC`; needs the routing + account numbers, and **Apple verifies over days** · **(c)** W-9 — ⚠ **a two-tier disregarded chain is a CPA question. Wrong here is a federal filing, not a rejected form.** ⚠ Gated on item 2: the *organization* App Store Connect account has to exist before any of (a)/(b)/(c) can be entered |
+| 7 | **`42501` on Join — CLOSED 08-18** | ✅ nothing to build | **Policy AND data both cleared.** `diagnose-challenge-join-who.sql` returned every clause `true` for every athlete on both live competitions: Wes Price passes the policy on *Biiiiiig lifters* and simply has not joined; Moses Ruiz is already in *Yiiiiiiip*; the creator is already a participant everywhere, so a Join tap by him would raise **23505, not 42501**. §5 separately ruled out the clock. **The only remaining cause is a stale session** — `auth.uid()` NULL server-side while the client still believes it is signed in; sign out and back in clears it. ⚠ **If it recurs after a fresh sign-in, the bug is token refresh, not this policy** — do not go back to the RLS. ⛔ **Never re-paste `0059`** — it silently reverts every friends competition to unjoinable |
+| 8 | **Phase F — flip to Free** | us | Strict order or the free tier is given away twice. See below |
+| 9 | **Ship** | us | Gates green · `git status` clean · `fingerprint:compare` · new build · submit. ⚠ 9b must be green first |
 
 ---
 
