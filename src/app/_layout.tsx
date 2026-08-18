@@ -35,6 +35,7 @@ import { ShareProvider } from '@/hooks/useShareSheet';
 import { CeremonyProvider } from '@/hooks/useCeremony';
 import { TourProvider } from '@/hooks/useTour';
 import { TourAnchorProvider } from '@/hooks/useTourAnchors';
+import { CoachDoorProvider } from '@/hooks/useCoachDoor';
 
 /**
  * Root layout — a Stack over the whole app. The `(tabs)` group holds the 5-tab shell; every
@@ -111,6 +112,11 @@ export default function RootLayout() {
               <CeremonyProvider>
                 <TourAnchorProvider>
                   <TourProvider>
+                    {/* Whether Holt is open. Wraps BOTH the navigator and the bubble below, which is the
+                        whole point: the bubble still renders the sheet, and a screen inside the navigator
+                        can now open it. A new athlete has no reason to tap a circle in the corner, so
+                        Home has to be able to hand over to him. See `useCoachDoor`. */}
+                    <CoachDoorProvider>
                     <AnimatedSplashOverlay />
                     <RootNavigator />
                     {/* Outside the Stack, like the splash above it, so it floats over every route rather
@@ -135,6 +141,7 @@ export default function RootLayout() {
                     <OverlayBoundary>
                       <AnalyticsTracker />
                     </OverlayBoundary>
+                    </CoachDoorProvider>
                   </TourProvider>
                 </TourAnchorProvider>
               </CeremonyProvider>

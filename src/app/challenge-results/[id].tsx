@@ -147,7 +147,7 @@ function Hero({ result: r }: { result: ChallengeResultsDetail }) {
       <LinearGradient colors={['rgba(6,7,9,0.97)', 'rgba(6,7,9,0.72)', 'transparent'] as const} locations={[0, 0.54, 0.84] as const} start={{ x: 0.5, y: 0.1 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
 
       <View style={styles.crownWrap}>
-        <CrownArt opacity={0.52} duration={1000} shimmer={false} />
+        <CrownArt opacity={1} duration={1000} shimmer={false} />
       </View>
 
       <Animated.View

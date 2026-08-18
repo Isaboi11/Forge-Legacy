@@ -447,8 +447,22 @@ export default function ExerciseLibraryScreen() {
               active={draft.cat}
               onToggle={(v) => toggleDraft('cat', v)}
             />
+            {/*
+              ⚠ "DIFFICULTY" IS THE WRONG WORD FOR WHAT THIS FIELD HOLDS, AND IT COSTS BEGINNERS THE
+              CATALOGUE.
+
+              The tag rates how demanding a movement is to PERFORM WELL — its technical demand — not how
+              fit somebody needs to be to attempt it. Read as fitness, a new athlete filters to
+              "Beginner" on their first visit and removes most of the library on the way past: the
+              catalogue is overwhelmingly Intermediate, so the filter that looks like "show me things I
+              can handle" is really "show me the small set of movements with the simplest technique".
+
+              The DATA IS CORRECT and must not be re-tagged. Only the word was wrong. Renamed here and in
+              the picker's identical sheet; the hint is what actually removes the trap.
+            */}
             <FilterGroup
-              label="Difficulty"
+              label="Technique"
+              hint="How demanding the movement is to perform well — not how fit you need to be."
               options={DIFFS.map((d) => ({ value: d, label: d }))}
               active={draft.diff}
               onToggle={(v) => toggleDraft('diff', v)}
@@ -506,11 +520,14 @@ function HubSection({ title, onViewAll, children }: { title: string; onViewAll?:
 
 function FilterGroup({
   label,
+  hint,
   options,
   active,
   onToggle,
 }: {
   label: string;
+  /** One line under the label, for a group whose meaning the label alone gets wrong. */
+  hint?: string;
   options: { value: string; label: string }[];
   active: readonly string[];
   onToggle: (v: string) => void;
@@ -518,6 +535,7 @@ function FilterGroup({
   return (
     <View style={styles.filterGroup}>
       <Text style={styles.filterGroupLabel}>{label}</Text>
+      {hint ? <Text style={styles.filterGroupHint}>{hint}</Text> : null}
       <View style={styles.filterChips}>
         {options.map((o) => {
           const on = active.includes(o.value);
@@ -694,6 +712,8 @@ const styles = StyleSheet.create({
     color: flColor.bronze400,
     marginBottom: 10,
   },
+  // Sits between the label and its chips, so it is read before the choice rather than after it.
+  filterGroupHint: { fontSize: 11.5, lineHeight: 16, color: flColor.gray600, marginTop: -4, marginBottom: 10 },
   filterChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   filterChip: {
     paddingVertical: 8,

@@ -30,6 +30,7 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { claimInitiativeHonor } from '@/data/honors-live';
 import { createProgram, fetchProgram, updateProgram, type ProgramDay, type ProgramExercise } from '@/data/programs-live';
+import { markFreeImportUsed } from '@/data/entitlement-live';
 import { clearBuilderInbox, readBuilderInbox, type BuilderSection } from '@/lib/builder-inbox';
 import {
   CARDIO_ACTIVITIES,
@@ -410,6 +411,7 @@ function ProgramBuilderScreen() {
       openDay: null,
     }));
     setImportOpen(false);
+    setFromImport(true);
 
     // One line, and it leads with whatever was LOST — the part an athlete needs to know about.
     const unmatched = unmatchedNames(preview, (n) => resolveName(n)?.key);
@@ -419,6 +421,16 @@ function ProgramBuilderScreen() {
     if (unmatched.length) notes.push(`${unmatched.length} name${unmatched.length === 1 ? '' : 's'} weren’t in the library and kept yours`);
     showToast(notes.length ? `Imported · ${notes.join(' · ')}` : 'Imported — review and save');
   };
+  /**
+   * This draft came from a PASTE, so a successful save spends the free import.
+   *
+   * ⚠ HELD UNTIL THE SAVE, DELIBERATELY. `markFreeImportUsed()` shipped with ZERO CALLERS — the gate
+   * checked a usage figure nothing ever wrote, so the one-import allowance could never actually bite.
+   * Wiring it at the obvious place (opening the paste sheet, or confirming the preview) would be worse
+   * than leaving it broken: an athlete who pastes the wrong tab, reads the preview and backs out would
+   * have spent their only import on nothing. It is spent when a program actually exists.
+   */
+  const [fromImport, setFromImport] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
   const [jumpOpen, setJumpOpen] = useState(false);
   const [weekSheet, setWeekSheet] = useState<{ index: number; entering: boolean } | null>(null);
@@ -686,6 +698,10 @@ function ProgramBuilderScreen() {
         ({ id } = await createProgram(structure));
       }
       await clearProgramDraft(draftKind);
+      /* The import is spent HERE — a real program now exists from it. Best-effort and never awaited into
+         the happy path: the row is written, and failing to tick a counter must not cost the athlete the
+         program they just made. Create paths only; an edit rewrites something that already exists. */
+      if (fromImport && draft.mode !== 'edit') void markFreeImportUsed().catch(() => {});
       // First-move honor (build path): grant "Initiative" — best-effort, DB dedupes to one row.
       void claimInitiativeHonor().catch(() => {});
       router.replace({ pathname: '/program/[id]', params: { id } });

@@ -25,7 +25,7 @@
 /** Goals served by a strength/conditioning skeleton — no race, no mileage, no date. */
 import type { LearnedPreferences } from './learned-preference.ts';
 
-export type StrengthGoal = 'strength' | 'muscle' | 'weight_loss' | 'conditioning' | 'mobility';
+export type StrengthGoal = 'strength' | 'muscle' | 'weight_loss' | 'conditioning' | 'mobility' | 'health';
 
 /**
  * Goals built backwards from a date. Kept apart from `StrengthGoal` because they need two fields nothing
@@ -42,6 +42,11 @@ export const STRENGTH_GOALS: readonly StrengthGoal[] = [
   'weight_loss',
   'conditioning',
   'mobility',
+  /* ⚠ THE ORDER HERE IS THE ORDER ON SCREEN, and General health is deliberately LAST of the offered
+     goals. It is the broadest answer on the list — put it first and somebody takes it before reading the
+     four specific ones underneath, which is how a general goal quietly swallows every specific one.
+     (`conditioning` sits above it and is never drawn: it is authored but not offered — see NOT_OFFERED.) */
+  'health',
 ];
 
 export const ENDURANCE_GOALS: readonly EnduranceGoal[] = [
@@ -64,6 +69,7 @@ export const GOAL_LABEL: Record<Goal, string> = {
   weight_loss: 'Lose weight',
   conditioning: 'Get fitter',
   mobility: 'Move better',
+  health: 'General health',
   run_5k: 'Run a 5K',
   run_10k: 'Run a 10K',
   run_half: 'Run a half marathon',

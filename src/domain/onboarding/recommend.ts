@@ -2,7 +2,7 @@ import { getProgramDefinitions } from '@/domain/training/programs';
 import type { ProgramDefinition } from '@/domain/training/schema';
 import { PICKER_DB } from '@/domain/exercise-picker/data';
 import { programCoverage, type GymCoverage } from '@/domain/home-gym/equipment';
-import { canRecommend, FALLBACK_ID, resolveRecommendationId, type RecommendInput } from './recommend-core';
+import { canRecommend, FALLBACK_ID, resolveRecommendationId, successorIdFor, type RecommendInput } from './recommend-core';
 
 /**
  * Program recommendation for the Home starting-point on-ramp. The goal × experience × equipment mechanism
@@ -42,6 +42,76 @@ function toView(d: ProgramDefinition): ProgramView {
  */
 export function catalogCanRecommend(): boolean {
   return canRecommend(getProgramDefinitions().map((d) => d.id));
+}
+
+/**
+ * WHAT COMES AFTER THE ONE THEY JUST FINISHED.
+ *
+ * ══ THE EMPTIEST MOMENT IN THE APP ══
+ *
+ * Ten weeks of work end, the graduation ceremony plays, and the athlete is handed back to the same
+ * "browse or build" they started from. Seven of the fourteen programs already NAME their successor in
+ * `successorName` — and that field was declared in the schema and **read by nothing**, so not one athlete
+ * has ever been told.
+ *
+ * ══ ⚠ AND IT CANNOT SIMPLY BE SURFACED, WHICH IS WHY THIS IS A FUNCTION AND NOT A FIELD READ ══
+ *
+ * **Six of the seven named successors do not exist.** Only *Strength Foundation II* is real; Bodyweight
+ * Strength, Conditioning Intermediate, Muscle Building Advanced and the rest are intentions. Printing the
+ * field would promise six programs nobody has authored — the exact defect that closed the guided on-ramp,
+ * reappearing at the other end of the athlete's journey.
+ *
+ * So the name is matched against the catalogue, and a miss falls through to Holt, who can build the thing
+ * the successor was going to be. Nothing is promised that does not exist.
+ *
+ * Matching is on NAME rather than id because that is what the field holds — authored for a human to read,
+ * not as a foreign key. Compared case- and punctuation-insensitively so "Strength Foundation II" finds
+ * "Strength Foundation II (4-Day)".
+ */
+export type NextAfter = { kind: 'program'; program: ProgramView } | { kind: 'coach'; named: string | null };
+
+export function nextAfter(programId: string | null | undefined): NextAfter {
+  const defs = getProgramDefinitions();
+  const done = defs.find((d) => d.id === programId);
+  const named = done?.successorName?.trim() || null;
+  if (!named) return { kind: 'coach', named: null };
+  const id = successorIdFor(named, defs.map((d) => ({ id: d.id, name: d.name })));
+  const hit = id ? defs.find((d) => d.id === id) : undefined;
+  return hit ? { kind: 'program', program: toView(hit) } : { kind: 'coach', named };
+}
+
+/**
+ * THE FOUR-WEEK SPECIALISATION BLOCKS — Squat Ascent, Bench Approach, Deadlift Measure.
+ *
+ * ══ THEY WERE UNREACHABLE, AND NOT BY OVERSIGHT ══
+ *
+ * Three good programs that no athlete could arrive at. Measured: they are returned by **zero** of the
+ * intake's 54 goal × experience × equipment combinations, and they cannot be — the questionnaire asks
+ * what you want and where you train, and none of its answers is *"I want a bigger bench."* They sat in
+ * Discover among everything else, found only by scrolling.
+ *
+ * ⚠ AND THEY MUST NOT SIMPLY BE RANKED INTO THE ALTERNATES. `recommendProgramOptions` deliberately does
+ * not order what it offers — *"presenting them as a ranked second best would dress a fixed list up as an
+ * opinion the app doesn't have"*. Promoting these there would be exactly that opinion, smuggled in.
+ *
+ * So they are offered where they actually belong. Their own design records call them **standalone blocks
+ * run BETWEEN general programs** — which makes finishing a program the one honest moment to mention them,
+ * and that surface now exists (see `nextAfter` and the sealed record on Program Detail).
+ *
+ * ══ IDENTIFIED BY WHAT MAKES THEM ONE, NOT BY A LIST OF IDS ══
+ *
+ * `percentOfMax` is the real distinction: these are the only programs in the catalogue whose prescriptions
+ * cannot be read at all until the athlete has entered a tested max. A hardcoded id list would be a second
+ * place to remember, and the fourth block authored would be the one nobody added to it.
+ */
+export function specialisationBlocks(): ProgramView[] {
+  return getProgramDefinitions()
+    .filter((d) =>
+      (d.blocks ?? []).some((b) =>
+        (b.workouts ?? []).some((w) => (w.main ?? []).some((ex) => 'percentOfMax' in ex && ex.percentOfMax != null)),
+      ),
+    )
+    .map(toView);
 }
 
 /** Recommend a real catalog program from the athlete's intake (experience + primary goal + equipment). */

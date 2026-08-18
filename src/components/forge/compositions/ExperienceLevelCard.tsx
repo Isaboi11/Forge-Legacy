@@ -7,6 +7,7 @@ import { Button } from '@/components/forge/composites/Button';
 import { BarbellIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 import { programGymCoverage, recommendProgramOptions, type ProgramView } from '@/domain/onboarding/recommend';
+import { catalogServesLevel } from '@/domain/onboarding/recommend-core';
 import type { GoalId, EquipmentId } from '@/domain/onboarding/derive';
 import type { HomeLevel } from '@/lib/home-level';
 import type { HomeIntake } from '@/lib/home-intake';
@@ -190,11 +191,26 @@ type Props =
       onStart: (programId: string) => void;
       onExplore: () => void;
       onChange: () => void;
+      /* The two honest exits when the catalogue holds nothing written for this athlete's level — see
+         `catalogServesLevel`. Optional so the card still renders anywhere they are not wired. */
+      onCoach?: () => void;
+      onImport?: () => void;
     };
 
 export function ExperienceLevelCard(props: Props) {
   if (props.mode === 'collect') return <IntakeStepper onComplete={props.onComplete} onBuild={props.onBuild} />;
-  return <SuggestedFace level={props.level} intake={props.intake} homeGym={props.homeGym ?? null} onStart={props.onStart} onExplore={props.onExplore} onChange={props.onChange} />;
+  return (
+    <SuggestedFace
+      level={props.level}
+      intake={props.intake}
+      homeGym={props.homeGym ?? null}
+      onStart={props.onStart}
+      onExplore={props.onExplore}
+      onChange={props.onChange}
+      onCoach={props.onCoach}
+      onImport={props.onImport}
+    />
+  );
 }
 
 /** The level → goals → equipment stepper (component-local state; persists only at the end). */
@@ -371,10 +387,16 @@ function SuggestedFace({
   onStart,
   onExplore,
   onChange,
+  onCoach,
+  onImport,
 }: {
   level: HomeLevel;
   intake: HomeIntake | null;
   homeGym: readonly string[] | null;
+  /** Hand over to Holt, who builds rather than picks. The honest answer when the shelf has nothing. */
+  onCoach?: () => void;
+  /** Bring a plan they already run across. The other honest answer. */
+  onImport?: () => void;
   onStart: (programId: string) => void;
   onExplore: () => void;
   onChange: () => void;
@@ -392,6 +414,49 @@ function SuggestedFace({
   const cov = programGymCoverage(rec.id, homeGym);
   const gap = cov && cov.total > 0 && cov.doable < cov.total ? cov : null;
   const line = (p: ProgramView) => [p.family, p.difficulty, p.weeks ? `${p.weeks} weeks` : null].filter(Boolean).join(' · ');
+
+  /*
+   * ⚠ THE CATALOGUE IS NOT ALWAYS WRITTEN FOR THE PERSON ASKING, AND PRETENDING OTHERWISE COSTS YOU THEM.
+   *
+   * Fifteen years under the bar, three questions, and the shelf's best answer is a block tagged
+   * `Intermediate` called *Strength Foundation II* — goals including "improve gym confidence". There is
+   * nothing better to offer: one of fourteen programs is tagged Advanced and it is conditioning. So the
+   * card stops offering. Saying "nothing here is written for you yet" costs nothing, respects them, and
+   * routes them to the two things that DO serve them — Holt, who builds to their answers rather than
+   * picking off a shelf, and the importer.
+   *
+   * `catalogServesLevel` only ever looks downward: a beginner offered an Intermediate program is normal
+   * and does not trip this. See its own note.
+   */
+  const served = catalogServesLevel(EXPERIENCE_FOR[level], rec.difficulty);
+  if (!served && (onCoach || onImport)) {
+    return (
+      <HeroShell>
+        <Medallion />
+        <Text style={styles.eyebrow}>Nothing on the shelf yet</Text>
+        <Text style={styles.progName}>You&apos;re past what the library holds.</Text>
+        <Text style={styles.because}>
+          Every program we&apos;ve written is built for somebody earlier on than you. Rather than hand you
+          one and call it a fit, here are the two that actually suit where you are.
+        </Text>
+        <View style={styles.actions}>
+          {onCoach ? (
+            <Button variant="primary" fullWidth onPress={onCoach} accessibilityLabel="Build a program with Coach Holt">
+              Build it with me
+            </Button>
+          ) : null}
+          {onImport ? (
+            <Button variant="secondary" fullWidth onPress={onImport} accessibilityLabel="Bring a program you already run">
+              I&apos;ve got a program already
+            </Button>
+          ) : null}
+          <Pressable onPress={onExplore} accessibilityRole="button" accessibilityLabel="Browse the library anyway" style={styles.change}>
+            <Text style={styles.changeText}>Browse the library anyway</Text>
+          </Pressable>
+        </View>
+      </HeroShell>
+    );
+  }
 
   return (
     <HeroShell>

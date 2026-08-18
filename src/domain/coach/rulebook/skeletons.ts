@@ -395,6 +395,10 @@ const SPLITS: Partial<Record<Goal, Record<number, DaySkeleton[]>>> = {
   conditioning: CONDITIONING_SPLITS,
   weight_loss: CONDITIONING_SPLITS,
   mobility: MOBILITY_SPLITS,
+  /* Reuses the strength skeletons deliberately, exactly as `weight_loss` reuses conditioning's. A
+     general-health block IS full-body strength work — the difference between it and `strength` is the
+     volume band it is prescribed at (see GOAL_CATEGORY), not the shape of the week. */
+  health: STRENGTH_SPLITS,
 };
 
 /**
@@ -476,6 +480,8 @@ export const DEFAULT_WEEKS: Partial<Record<Goal, number>> = {
   conditioning: 8,
   weight_loss: 8,
   mobility: 4,
+  /* Eight, like the other strength-shaped goals. Long enough for the habit to be the point. */
+  health: 8,
 };
 
 export const defaultWeeksFor = (goal: Goal): number => DEFAULT_WEEKS[goal] ?? 8;

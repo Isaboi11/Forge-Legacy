@@ -4,12 +4,13 @@ import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from '
 import Svg, { Circle, Path } from 'react-native-svg';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 
+import { HoltMark } from '@/components/forge/HoltMark';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { NotificationBell } from '@/components/forge/compositions/NotificationBell';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
-import { ForgeMarkIcon, ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
+import { ForgeMarkIcon, ChevronRightIcon, PlanSheetIcon, BarbellIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { WorkoutsTabIcon, LegacyTabIcon, SquadsTabIcon } from '@/components/forge/primitives/icons/NavIcons';
 import { ChapterTitleBlock } from '@/components/forge/compositions/ChapterTitleBlock';
 import { TodaysWorkoutCard } from '@/components/forge/compositions/TodaysWorkoutCard';
@@ -45,6 +46,7 @@ import { getStartChoice, setStartChoice, type StartChoice } from '@/lib/program-
 import { getHomeIntake, setHomeIntake, clearHomeIntake } from '@/lib/home-intake';
 import { claimInitiativeHonor } from '@/data/honors-live';
 import { useTour } from '@/hooks/useTour';
+import { useCoachDoor } from '@/hooks/useCoachDoor';
 import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { TourAnchor } from '@/components/tour/TourAnchor';
 import { adoptCatalogProgram, fetchAllProgramSessions, fetchMyPrograms, startProgram, updateProgram } from '@/data/programs-live';
@@ -181,6 +183,8 @@ function ProgramPathChooser({
   title,
   subtitle,
   onGuided,
+  onCoach,
+  onImport,
   onBuild,
   onBrowse,
   onFreestyle,
@@ -189,6 +193,10 @@ function ProgramPathChooser({
   subtitle?: string;
   /** Undefined = the catalog cannot answer the intake's questions, so it is not asked. */
   onGuided?: () => void;
+  /** Hand over to Coach Holt, who builds one rather than picking one off a shelf. */
+  onCoach: () => void;
+  /** Bring across a plan they already run. The door an experienced athlete is actually looking for. */
+  onImport: () => void;
   onBuild: () => void;
   onBrowse: () => void;
   onFreestyle: () => void;
@@ -197,41 +205,100 @@ function ProgramPathChooser({
     <View style={styles.pathBlock}>
       <Text style={styles.pathTitle}>{title}</Text>
       {subtitle ? <Text style={styles.pathCardSub}>{subtitle}</Text> : null}
-      {onGuided ? (
-        <Pressable
-          onPress={onGuided}
-          accessibilityRole="button"
-          accessibilityLabel="Help me find a program"
-          style={({ pressed }) => [styles.pathCard, pressed ? styles.pathPressed : null]}
-        >
-          <Text style={styles.pathCardTitle}>Help me find one</Text>
-          <Text style={styles.pathCardSub}>A few questions, then a program picked for where you are.</Text>
-        </Pressable>
-      ) : (
-        <Pressable
-          onPress={onFreestyle}
-          accessibilityRole="button"
-          accessibilityLabel="Start a freestyle workout"
-          style={({ pressed }) => [styles.pathCard, pressed ? styles.pathPressed : null]}
-        >
-          <Text style={styles.pathCardTitle}>Start a freestyle workout</Text>
-          {/* Names cardio because the tap opens the "What are you training?" sheet, and with no program
-              there is no hero card — this is the only door to a conditioning session on Home. */}
-          <Text style={styles.pathCardSub}>Train today with nothing planned — lifts or cardio.</Text>
-        </Pressable>
-      )}
+      {/*
+        ══ THREE DOORS, AND EACH ONE MATCHES SOMETHING THE ATHLETE ALREADY KNOWS ABOUT THEMSELVES ══
+
+        This card had drifted to SIX options: Build it with me · Help me find one · I've got a program
+        already · Build my own · Or browse everything · Or just train today. Two of them said the same
+        thing to the person reading — "Build it with me" and "Help me find one" both mean *help me get a
+        program*, and which one BUILDS versus which one PICKS OFF A SHELF is an implementation detail no
+        beginner should have to reason about. A fourteen-program shelf standing beside a coach who writes
+        to order is not a real choice; it is two doors to the same room.
+
+        So the question each door answers is now one the athlete can actually answer about themselves:
+        do I want one written for me, do I already have one, or do I just want to train today.
+
+        ⚠ THE LIBRARY IS DEMOTED, NOT DELETED. The quiet link below still opens the guided intake, which
+        is the thing that picks well and ends in a real recommendation. Named, authored programs are real
+        work and some athletes want to choose one — they are simply not the primary door.
+      */}
+      {/*
+        ⚠ THE RECOMMENDED PATH HAS TO LOOK RECOMMENDED, AND A BRONZE BORDER ALONE DID NOT DO IT.
+        Three cards of equal weight read as "three menu buttons", whichever one is outlined. The eyebrow
+        names the recommendation in words, the mark says WHO you are choosing rather than which setup
+        method, and the extra height and warmth carry it at a glance. Everything else on the card is
+        deliberately unchanged — the background is already doing the brand work, and more gold here would
+        read as theatrical rather than premium.
+      */}
       <Pressable
-        onPress={onBuild}
+        onPress={onCoach}
         accessibilityRole="button"
-        accessibilityLabel="Build my own program"
+        accessibilityLabel="Recommended — build a program with Coach Holt"
+        style={({ pressed }) => [styles.pathCard, styles.pathCardLead, pressed ? styles.pathPressed : null]}
+      >
+        <View style={styles.leadRow}>
+          <View style={styles.leadText}>
+            <Text style={styles.leadEyebrow}>
+              Recommended <Text style={styles.leadEyebrowDim}>· with Coach Holt</Text>
+            </Text>
+            <Text style={styles.pathCardTitle}>Build it with me</Text>
+            <Text style={styles.pathCardSub}>Coach Holt asks what you&apos;re after, then writes the block around it.</Text>
+          </View>
+          {/* Low visual weight on purpose — it is a signature, not an illustration. */}
+          <View style={styles.leadMark}>
+            <HoltMark size={54} />
+          </View>
+          <ChevronRightIcon size={18} color={flColor.bronze400} />
+        </View>
+      </Pressable>
+      {/* ⚠ NO LONGER STRAIGHT TO THE PASTE SHEET. "I have a program" does not mean "I have a spreadsheet"
+          — it may be on a whiteboard, in a coach's message, or in their head. Holt asks which. */}
+      <Pressable
+        onPress={onImport}
+        accessibilityRole="button"
+        accessibilityLabel="Bring a program you already have"
         style={({ pressed }) => [styles.pathCard, pressed ? styles.pathPressed : null]}
       >
-        <Text style={styles.pathCardTitle}>Build my own</Text>
-        <Text style={styles.pathCardSub}>You know the work. Lay out the days and lifts yourself.</Text>
+        <View style={styles.pathRow}>
+          <View style={styles.pathIcon}>
+            <PlanSheetIcon size={22} color={flColor.gray400} />
+          </View>
+          <View style={styles.pathText}>
+            <Text style={styles.pathCardTitle}>I&apos;ve got a program already</Text>
+            <Text style={styles.pathCardSub}>Paste it in, build it here, or log it as you go.</Text>
+          </View>
+          <ChevronRightIcon size={18} color={flColor.gray600} />
+        </View>
       </Pressable>
-      <Pressable onPress={onBrowse} accessibilityRole="button" accessibilityLabel="Browse programs" hitSlop={8} style={styles.pathQuiet}>
-        <Text style={styles.pathQuietText}>Or browse everything</Text>
+      <Pressable
+        onPress={onFreestyle}
+        accessibilityRole="button"
+        accessibilityLabel="Just train today"
+        style={({ pressed }) => [styles.pathCard, pressed ? styles.pathPressed : null]}
+      >
+        <View style={styles.pathRow}>
+          <View style={styles.pathIcon}>
+            <BarbellIcon size={22} color={flColor.gray400} />
+          </View>
+          <View style={styles.pathText}>
+            <Text style={styles.pathCardTitle}>Just train today</Text>
+            {/* ⚠ NOT "nothing planned" — that phrasing made the option sound like the athlete had failed
+                to prepare, when choosing to train without a plan is a legitimate way to train. The tap
+                opens the "What are you training?" sheet, so this is also the only door to cardio here. */}
+            <Text style={styles.pathCardSub}>No plan. Just start training and log as you go.</Text>
+          </View>
+          <ChevronRightIcon size={18} color={flColor.gray600} />
+        </View>
       </Pressable>
+      {onGuided ? (
+        <Pressable onPress={onGuided} accessibilityRole="button" accessibilityLabel="Browse training programs" hitSlop={8} style={styles.pathQuiet}>
+          <Text style={styles.pathQuietText}>Browse training programs →</Text>
+        </Pressable>
+      ) : (
+        <Pressable onPress={onBrowse} accessibilityRole="button" accessibilityLabel="Browse programs" hitSlop={8} style={styles.pathQuiet}>
+          <Text style={styles.pathQuietText}>Or browse everything</Text>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -329,6 +396,9 @@ export default function HomeScreen() {
   const router = useRouter();
   const { startWorkout } = useWorkoutSession();
   const { requestPrompt, markAnnounced, requestTour } = useTour();
+  /* Holt is mounted outside the navigator, so opening him is a context call rather than a route
+     push — the sheet grows out of the bubble instead of taking Home off the screen. */
+  const { open: coachOpen, openCoach } = useCoachDoor();
   // The guided tour measures Home's real cards, and four of the seven sit below the fold — so it needs the
   // scroll view itself, not just the anchors inside it.
   const tourScroller = useTourScroller();
@@ -580,6 +650,15 @@ export default function HomeScreen() {
   };
   const openPrograms = () => router.push('/workouts');
   const openBuilder = () => router.push('/program-builder');
+  /*
+   * ⚠ THE SUGGESTION CARD'S EXIT, NOT HOME'S DOOR — and the two are deliberately different.
+   *
+   * By the time somebody is looking at a recommendation they did not want, "bring your own" means the
+   * fastest route in, which is the paste sheet. On the CHOOSER, the same words mean something vaguer:
+   * *"I have a program"* does not say whether it is a spreadsheet, a whiteboard or a memory. That door
+   * opens Holt, who asks which — see `onImport` on the chooser.
+   */
+  const openImport = () => router.push('/program-builder?o=import');
   const completeIntake = async (r: IntakeResult) => {
     await setHomeLevel(r.level);
     await setHomeIntake({ goals: r.goals, primaryGoal: r.primaryGoal, equipment: r.equipment });
@@ -885,6 +964,28 @@ export default function HomeScreen() {
    * false for a frame on every cold load. Passing it through means Home says nothing about the athlete
    * until it knows something, instead of flashing a claim it then takes back.
    */
+  /*
+   * ⚠ HOLT CAN ANSWER HOME'S OWN QUESTION, SO HOME HAS TO LOOK AGAIN WHEN HE CLOSES.
+   *
+   * The sheet is an OVERLAY, not a route — Home never loses focus while it is up, so the focus effect
+   * that refreshes everything else never runs for it. And Holt now writes a start choice: "I'll log as I
+   * go" records `freestyle`. Without this, the athlete answered the question and watched the same chooser
+   * sit there behind him, which is the defect this closes.
+   *
+   * Keyed on the door SHUTTING rather than on every render, and `refetch` is idempotent, so a close that
+   * changed nothing costs one cheap read.
+   */
+  const coachWasOpen = useRef(false);
+  useEffect(() => {
+    if (coachOpen) {
+      coachWasOpen.current = true;
+      return;
+    }
+    if (!coachWasOpen.current) return;
+    coachWasOpen.current = false;
+    refetchStartChoice();
+  }, [coachOpen, refetchStartChoice]);
+
   const composition = composeHome({
     chapterLoading: awaitingLoading,
     awaiting: !!awaiting,
@@ -1179,6 +1280,8 @@ export default function HomeScreen() {
                   onStart={(programId) => void acceptSuggestion(programId)}
                   onExplore={openPrograms}
                   onChange={changeIntake}
+                  onCoach={() => openCoach('build')}
+                  onImport={openImport}
                 />
               ) : composition.startingPoint === 'intake' ? (
                 // Chose "Help me find one" — the intake stepper (level → goals → equipment), inline.
@@ -1188,9 +1291,14 @@ export default function HomeScreen() {
                    the athlete who had simply been here a while. */
                 <ProgramPathChooser
                   title="How do you want to start?"
+                  /* ⚠ RECORDS NOTHING, for the same reason "Help me find one" does not: it opens a
+                     conversation that ends in a program, and settling the slot on the way in would take
+                     the question away from an athlete who then closed the sheet without building. */
+                  onCoach={() => openCoach('build')}
                   /* "Help me find one" records nothing — it opens a stepper that lives on this same slot
                      and ends in a program. The other three are exits, and an exit is an answer. */
                   onGuided={guidedOnRamp ? () => setPath('guided') : undefined}
+                  onImport={() => openCoach('import')}
                   onBuild={() => chooseStart('build_own', openBuilder)}
                   onBrowse={() => chooseStart('browse', openPrograms)}
                   onFreestyle={() => chooseStart('freestyle', startFreestyleFromHome)}
@@ -1287,13 +1395,13 @@ export default function HomeScreen() {
               and Discover), so this is one tap to either rather than two cards for one decision. */}
           {composition.showQuietProgramLink ? (
             <Pressable
-              onPress={openPrograms}
+              onPress={() => openCoach('build')}
               accessibilityRole="button"
-              accessibilityLabel="Build or browse programs"
+              accessibilityLabel="Ask Coach Holt to build you a program"
               hitSlop={8}
               style={styles.pathQuiet}
             >
-              <Text style={styles.pathQuietText}>Want a plan? Build or browse programs →</Text>
+              <Text style={styles.pathQuietText}>Want a plan? Holt will build you one →</Text>
             </Pressable>
           ) : null}
 
@@ -1512,14 +1620,55 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.charcoal900,
     boxShadow: flShadow.trainTogetherCard,
   },
-  pathBlock: { gap: 12 },
-  pathTitle: { marginBottom: 4, fontFamily: flFont.display, fontSize: 21, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
-  pathCard: { paddingHorizontal: 18, paddingVertical: 18, borderRadius: flRadius.xl, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card },
+  /* Tightened from 12 — the stack read as a web form at its old height. The lead card carries the
+     hierarchy now, so the gaps no longer have to do it. */
+  pathBlock: { gap: 10 },
+  pathTitle: {
+    marginBottom: 6,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1.6,
+    textTransform: 'uppercase',
+    color: flColor.cream100,
+  },
+  /*
+   * THE RECOMMENDED CARD. Warm rather than bright: a bronze edge, the faintest internal tint, and a low
+   * glow that lifts it off the stone. Deliberately NOT a gradient or a heavier border — the background is
+   * already ornate, and stacking gold on gold turns luxury into theatre.
+   */
+  pathCardLead: {
+    paddingVertical: 20,
+    borderColor: flColor.bronzeBorder,
+    backgroundColor: flColor.bronzeTint,
+    boxShadow: '0 0 22px -8px rgba(181,138,97,0.34), inset 0 1px 0 rgba(219,184,151,0.16)',
+  },
+  leadRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  leadText: { flex: 1, minWidth: 0 },
+  leadEyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze300, marginBottom: 7 },
+  leadEyebrowDim: { color: flColor.bronze600, fontWeight: '600' },
+  leadMark: { opacity: 0.9 },
+  pathRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  /* Fixed width so both titles start on the same vertical line — a ragged left edge between two adjacent
+     cards reads as a mistake long before anyone works out why. */
+  pathIcon: { width: 26, alignItems: 'center' },
+  pathText: { flex: 1, minWidth: 0 },
+  /* The two alternatives, quieter than they were: less padding, a flatter ground and no card shadow, so
+     they read as the choices BESIDE the recommendation rather than as peers of it. */
+  pathCard: {
+    paddingHorizontal: 18,
+    paddingVertical: 15,
+    borderRadius: flRadius.xl,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.surfaceRecessed,
+  },
   pathPressed: { opacity: 0.88, borderColor: flColor.bronzeBorder },
   pathCardTitle: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', color: flColor.cream100 },
-  pathCardSub: { marginTop: 6, fontSize: 13, lineHeight: 19, color: flColor.gray600 },
-  pathQuiet: { alignSelf: 'center', marginTop: 4, paddingVertical: 6 },
-  pathQuietText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
+  pathCardSub: { marginTop: 5, fontSize: 13, lineHeight: 18.5, color: flColor.gray600 },
+  pathQuiet: { alignSelf: 'center', marginTop: 6, paddingVertical: 8 },
+  /* Lifted from gray600 — a real exit that some athletes genuinely want should be readable, not a
+     watermark. Named plainly too: "library" is a word this app has never taught anybody. */
+  pathQuietText: { fontSize: 12.5, fontWeight: '700', letterSpacing: 0.6, color: flColor.bronze400 },
   root: {
     flex: 1,
   },

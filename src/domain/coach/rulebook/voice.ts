@@ -57,6 +57,12 @@ export type VoiceKey =
   | 'not_understood'
   | 'help_open'
   | 'import_open'
+  | 'allowance_program'
+  | 'allowance_day'
+  | 'rebuild_open'
+  | 'ask_level_again'
+  | 'level_saved'
+  | 'import_later'
   | 'nothing_to_build'
   | 'no_active_program'
   | 'ask_edit_session'
@@ -249,6 +255,65 @@ export const VOICE: Record<VoiceKey, readonly string[]> = {
     "Paste it in and I'll read it. A table, a sheet, a plan someone wrote out — whatever you've got.",
     "Bring it over. Paste the plan in and I'll turn it into something you can train.",
     "Hand it here. Paste the whole thing and I'll read the weeks out of it.",
+  ],
+  /* ── they'd rather not paste it now ───────────────────────────────────────────────────────────────
+   *
+   * ⚠ "NOT NOW" HAD NO CHIP. The import offer carried exactly one — "Paste it in" — so the only way to
+   * decline was to close the sheet, which reads as backing out of something rather than choosing.
+   *
+   * It also matters that he says the offer keeps: a free account gets ONE import, and somebody hurried
+   * into pasting a half-remembered plan in their first minutes spends it on a bad copy. And it catches
+   * the athlete whose program is in their head rather than written down anywhere — there is nothing for
+   * them to paste, and until now nothing for them to tap either. */
+  import_later: [
+    "Fair enough — log as you go. Bring it across whenever you like; it'll be here.",
+    "No rush. Train off it and paste it in another time — the offer keeps.",
+    "Right you are. It'll still be here when you want it brought over.",
+  ],
+  /* ── out of allowance ─────────────────────────────────────────────────────────────────────────────
+   *
+   * ⚠ HE ANSWERS; HE DOES NOT SELL. The M-7 modal is already rising over this with the offer, and it is
+   * one shared surface across nine caps — putting the commercial ask in his mouth as well would say it
+   * twice and in two different voices.
+   *
+   * These exist because the athlete's own message is echoed into the thread BEFORE the gate is checked,
+   * so a blocked build left their question sitting there with no reply at all. Dismiss the modal and you
+   * were looking at a coach who had been asked something and said nothing. Whatever the commercial
+   * answer is, the conversational one cannot be silence.
+   */
+  allowance_program: [
+    "That's the one block I write for free — you've had it.",
+    "I've already written you a block. That's the free one used.",
+    "You've had the block I write for nothing. There's more where it came from, mind.",
+  ],
+  allowance_day: [
+    "That's this month's sessions used. They come back when the month turns.",
+    "You've had this month's sessions off me. Fresh ones next month.",
+    "I'm out of sessions for this month — they reset when it rolls over.",
+  ],
+  /* ── asked to build it again ──────────────────────────────────────────────────────────────────────
+   *
+   * ⚠ NO APOLOGY AND NO INTERROGATION. He does not ask what was wrong with the last one: an athlete who
+   * knew that would have used the Builder. The whole value of this door is that it costs nothing to say
+   * "not that" — so he takes it as a normal part of the work and starts asking again.
+   */
+  rebuild_open: [
+    "Fair enough. Let's go again.",
+    'Right — from the top.',
+    "No bother. Let's build you a different one.",
+  ],
+  /* ── correcting the one thing he only asks once ───────────────────────────────────────────────────
+   * Deliberately not an apology. Moving up a level is the point of the work, and moving down after time
+   * off is ordinary — neither is a mistake to be sorry about. */
+  ask_level_again: [
+    'Where are you at now?',
+    "Tell me where you're at these days.",
+    'How would you put it now?',
+  ],
+  level_saved: [
+    "Got it — I'll build to that from here.",
+    "Noted. That's what I'll work from now.",
+    "Right, that's what I'll go on.",
   ],
   // ── changing a plan already running ───────────────────────────────────────────────────────────────
   no_active_program: [

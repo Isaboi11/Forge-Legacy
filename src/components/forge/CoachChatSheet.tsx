@@ -48,10 +48,12 @@ import {
   TYPING_ENABLED,
   interpret,
   isMedical,
+  LEVEL_CHIPS,
   nextQuestion,
   preamble,
   programCardFor,
   readyToBuild,
+  startingLoadLine,
   thinDayFor,
   toggleFocus,
   hasFocus,
@@ -70,6 +72,8 @@ import {
   type Turn,
 } from '@/domain/coach/chat-core';
 import { pick } from '@/domain/coach/rulebook/voice';
+import { setStartChoice } from '@/lib/program-intent';
+import type { CoachIntent } from '@/hooks/useCoachDoor';
 import { useProfile } from '@/lib/profile';
 import { rationaleFor } from '@/domain/coach/rulebook/rationale';
 import { buildDayWorkout, whyThin } from '@/domain/coach/day';
@@ -80,7 +84,7 @@ import { canDoExercise } from '@/domain/home-gym/equipment';
 import { fetchActiveProgram } from '@/data/programs-live';
 import { fetchHomeGym } from '@/data/home-gym-live';
 import { clearThread, hasMetHolt, loadThread, rememberMetHolt, saveThread } from '@/lib/coach-thread';
-import { loadExperience, rememberExperience } from '@/lib/coach-memory';
+import { forgetExperience, loadExperience, rememberExperience } from '@/lib/coach-memory';
 import {
   createProgram,
   fetchProgramSessions,
@@ -145,7 +149,21 @@ type Built =
   | { kind: 'week'; structure: ProgramStructure }
   | { kind: 'day'; day: ProgramDay };
 
-export function CoachChatSheet({ onClose }: { onClose: () => void }) {
+/**
+ * The label on the chip that declines the import, used by the offer and by the handler that answers it.
+ * A literal in two places is how one of them gets reworded and the other silently stops matching.
+ */
+const DECLINE_IMPORT = "I'll log as I go";
+/**
+ * ⚠ "I'VE GOT A PROGRAM" IS NOT "I'VE GOT A SPREADSHEET".
+ *
+ * The import offer used to assume the two were the same thing, so an athlete whose program lives on a
+ * whiteboard, in a coach's message, or in their own head had one door and it was the wrong one. Pasting
+ * is only the fastest route when the thing is already in rows.
+ */
+const BUILD_IT_OUT = 'Build it out';
+
+export function CoachChatSheet({ onClose, intent }: { onClose: () => void; intent?: CoachIntent | null }) {
   const router = useRouter();
   /*
    * ⚠ **THIS SHEET HAD NO GATE AT ALL**, while the dead wizard at `/coach` had two. Free athletes could
@@ -309,14 +327,20 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
         ...stamped([
           beat != null
             ? { kind: 'holt' as const, text: beat }
-            : { kind: 'chips' as const, chips: OPENERS.map((label) => ({ label, patch: {} })) },
+            /* ⚠ NO OPENER LIST WHEN THEY ARRIVED THROUGH A DOOR THAT ALREADY ANSWERED IT. Offering five
+               choices to somebody who has just tapped "Build it with me" is the app asking a question it
+               was already given the answer to. The build fires straight after the introduction instead —
+               see the effect below. */
+            : intent
+              ? { kind: 'chips' as const, chips: [] }
+              : { kind: 'chips' as const, chips: OPENERS.map((label) => ({ label, patch: {} })) },
         ]),
       ]);
       setIntroStep((n) => n + 1);
     }, gap);
 
     return () => clearTimeout(id);
-  }, [introStep]);
+  }, [introStep, intent]);
 
   /* DERIVED, not a second piece of state. A beat is pending for exactly as long as the intro effect is
      mid-flight, and that is already what `introStep` says — setting a `busy` flag from the effect body
@@ -514,7 +538,19 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
         });
         const programCard = programCardFor(c, structure, volume, reason);
         setLastCard({ program: programCard });
-        say({ kind: 'holt', text: preamble(c, structure.weeks) }, { kind: 'program', card: programCard });
+        /*
+         * ⚠ A SECOND BUBBLE, NOT A LONGER FIRST ONE. For a first-timer Holt says how to LOAD week one —
+         * the question no prescription in the app answers, because none of them carries a weight. It is
+         * its own line so it reads as the instruction it is rather than a clause at the end of a summary,
+         * and it lands here, with the build, because in-workout coaching is capped at zero on Free and
+         * anything said mid-set would never reach the athletes who need it. See `startingLoadLine`.
+         */
+        const load = startingLoadLine(c);
+        say(
+          { kind: 'holt', text: preamble(c, structure.weeks) },
+          ...(load ? [{ kind: 'holt' as const, text: load }] : []),
+          { kind: 'program', card: programCard },
+        );
       } catch (e) {
         /*
          * ⚠ **THE SHEET FREEZING WAS THIS, AND THE FAILURE CARD BELOW HAD NO CALLER.**
@@ -622,6 +658,58 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
     }));
     setIntroStep(INTRO.length + 1);
     setThread(stamped(greetReturning(firstName)));
+  };
+
+  /**
+   * ASK ME AGAIN — throw the block away and re-run the questionnaire.
+   *
+   * ⚠ THIS EXISTS BECAUSE "ADJUST IT" IS NOT AN ANSWER FOR A BEGINNER. The card's other secondary opens
+   * the Program Builder, which is the right door for somebody who knows what they would change. Somebody
+   * who has never trained has no basis for editing a program at all — what they can say is *"not that
+   * one"*, and until now the only way to say it was to close Holt and start him again.
+   *
+   * Distinct from `newChat` on purpose. New chat RESETS and greets, leaving the athlete to find their way
+   * back to the build door. This one keeps going: it drops the block and lands directly on the first
+   * question, because they have already said what they want to do.
+   *
+   * Facts about the ATHLETE survive, exactly as they do across a new conversation — their level and the
+   * kit in their garage did not change because the block was wrong, and re-asking either would be the
+   * coach not listening. Everything situational (goal, days, length, room, session time) is cleared, and
+   * those are the answers that produce a different program.
+   */
+  /**
+   * CHANGE MY TRAINING LEVEL — the missing half of "asked once, ever".
+   *
+   * ⚠ `forgetExperience()` HAD ZERO CALLERS. The level is seeded from storage on every mount and the
+   * questionnaire skips the question whenever it is already set, so the first answer an athlete ever gave
+   * was permanent: not changeable in the coach, not in settings, and not by starting a new conversation,
+   * which keeps it on purpose. Somebody who tapped "I know what I'm doing" on day one could never tell
+   * Holt they had been off for a year, and a beginner who had grown out of it had no way to say so.
+   *
+   * Clears the stored value AND the one in flight, then asks. Answering is `levelOnly`, so it records and
+   * stops rather than starting a build nobody asked for.
+   */
+  const changeLevel = () => {
+    void forgetExperience();
+    setConstraints(({ experience: _cleared, ...rest }) => rest);
+    say({ kind: 'holt', text: pick('ask_level_again') }, { kind: 'chips', chips: [...LEVEL_CHIPS] });
+  };
+
+  const rebuild = () => {
+    setBuilt(null);
+    setLastCard(null);
+    setPreview(false);
+    setEdit(null);
+    setDraft('');
+    askedAboutReplacing.current = false;
+    const kept: ChatState = {
+      ...(constraints.experience ? { experience: constraints.experience } : {}),
+      ...(constraints.ownedEquipment ? { ownedEquipment: constraints.ownedEquipment } : {}),
+    };
+    setConstraints(kept);
+    setMode('program');
+    say({ kind: 'holt', text: pick('rebuild_open') });
+    void advance(kept, 'program');
   };
 
   /* ── changing a plan already running ─────────────────────────────────────────────────────────────
@@ -824,9 +912,39 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
      * on the athlete's behalf — defaulting to a 5k — would have the engine build for a distance nobody
      * chose. So it sets a chat-only flag and `nextQuestion` asks which.
      */
+    /* Recording a corrected level, NOT answering the build's identical question — see `Chip.levelOnly`.
+       It saves and stops; `advance` is deliberately not called, because nobody asked for a program. */
+    if (chip.levelOnly) {
+      say({ kind: 'me', text: chip.label });
+      const next = { ...constraints, ...chip.patch };
+      setConstraints(next);
+      if (next.experience) void rememberExperience(next.experience);
+      say({ kind: 'holt', text: pick('level_saved') });
+      return;
+    }
+
     if (chip.edit) {
       say({ kind: 'me', text: chip.label });
       stepEdit(chip.edit);
+      return;
+    }
+
+    /*
+     * Declining the import — he acknowledges, records the choice, and gets out of the way.
+     *
+     * ⚠ IT WRITES A START CHOICE AND CLOSES. "I'll log as I go" is an ANSWER to Home's "how do you want
+     * to start?", not a remark — and leaving the sheet open over an unchanged chooser was the athlete
+     * saying what they wanted and the screen behind it carrying on as though they had not. Recording
+     * `freestyle` is what swaps that card for the Train Today hero.
+     *
+     * The line is said BEFORE the close so it lands in the thread they can scroll back to, and the close
+     * is deferred a beat so it is readable rather than a flash.
+     */
+    if (chip.label === DECLINE_IMPORT) {
+      say({ kind: 'me', text: chip.label });
+      say({ kind: 'holt', text: pick('import_later') });
+      void setStartChoice('freestyle');
+      setTimeout(onClose, 900);
       return;
     }
 
@@ -877,7 +995,19 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
            which is the same promise Holt makes about the blocks he writes himself. */
         say(
           { kind: 'holt', text: pick('import_open') },
-          { kind: 'chips', chips: [{ label: 'Paste it in', patch: {}, goTo: '/program-builder?o=import' }] },
+          {
+            kind: 'chips',
+            /* ⚠ TWO CHIPS, NOT ONE. With only "Paste it in" the sole way to decline was closing the
+               sheet — see `import_later`. The second door is also the only one that fits an athlete
+               whose program is in their head rather than written down. */
+            chips: [
+              { label: 'Paste it in', patch: {}, goTo: '/program-builder?o=import' },
+              /* The builder WITHOUT the paste sheet — an empty week grid to lay it out by hand. Same
+                 screen, different door, because they have nothing to paste. */
+              { label: BUILD_IT_OUT, patch: {}, goTo: '/program-builder' },
+              { label: DECLINE_IMPORT, patch: {} },
+            ],
+          },
         );
         return;
       }
@@ -901,7 +1031,19 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
        * "what should I train today?" is a free question whose answer you can train without saving, and
        * refusing it at the door would take away something the athlete is entitled to.
        */
-      if (!guard(opener.mode === 'day' ? 'holt_days_per_month' : 'holt_programs')) return;
+      /*
+       * ⚠ AND HE ANSWERS WHEN IT REFUSES. The athlete's own message is said into the thread a few lines
+       * above, before this check — so a blocked build used to leave their question sitting there with no
+       * reply. Dismissing the M-7 modal returned them to a conversation in which they had asked a coach
+       * for something and been ignored, which reads as a broken sheet rather than a spent allowance.
+       *
+       * The modal keeps the commercial half. This is only the conversational one, and it deliberately
+       * does not repeat the offer — see `allowance_program` in `voice.ts`.
+       */
+      if (!guard(opener.mode === 'day' ? 'holt_days_per_month' : 'holt_programs')) {
+        say({ kind: 'holt', text: pick(opener.mode === 'day' ? 'allowance_day' : 'allowance_program') });
+        return;
+      }
 
       setMode(opener.mode);
       void (async () => {
@@ -916,6 +1058,42 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
     say({ kind: 'me', text: chip.label });
     void advance({ ...constraints, ...chip.patch }, mode ?? 'program');
   };
+
+  /**
+   * ARRIVED THROUGH A DOOR THAT ALREADY SAID WHAT THEY WANTED — start building, do not offer a menu.
+   *
+   * ⚠ AFTER THE INTRODUCTION, NOT INSTEAD OF IT. `introStep` passing its last beat is the signal: on a
+   * first meeting he says who he is and what he does, and only then starts asking. Firing immediately
+   * would talk over his own introduction on the one screen where it matters most.
+   *
+   * ⚠ THE `setTimeout` IS NOT A FLOURISH. `tapChip` calls `setState`, and this project's react-compiler
+   * lint rejects a synchronous `setState` inside an effect body outright. Deferring it by a tick makes it
+   * an ordinary event, which is what it actually is — the same trick the intro effect above already uses.
+   *
+   * The ref guard is what keeps it to once: `tapChip` is recreated every render, so this effect re-runs
+   * often and must be idempotent.
+   */
+  const intentFired = useRef(false);
+  /* ⚠ HELD IN A REF SO THE EFFECT DOES NOT DEPEND ON IT. `tapChip` is rebuilt every render, so listing
+     it would re-run this effect constantly; wrapping `tapChip` itself in `useCallback` would mean
+     memoising a function that closes over a dozen pieces of live state, which is a far bigger change
+     than this earns. The effect fires exactly once, so it only ever needs the CURRENT tapChip. */
+  const tapChipRef = useRef(tapChip);
+  /* ⚠ WRITTEN IN AN EFFECT, NEVER IN RENDER. react-compiler ERRORS on `ref.current` touched during
+     render — rightly, because it is a render whose output depends on something React cannot see. */
+  useEffect(() => {
+    tapChipRef.current = tapChip;
+  });
+  useEffect(() => {
+    if (!intent || intentFired.current) return undefined;
+    if (introStep < INTRO.length + 1) return undefined;
+    intentFired.current = true;
+    /* Both openers already exist and both are real chips — the door is only choosing which one the
+       athlete would have tapped, having already said so on the previous screen. */
+    const label = intent === 'import' ? "I've got a program already" : 'Build me something';
+    const id = setTimeout(() => tapChipRef.current({ label, patch: {} }), 240);
+    return () => clearTimeout(id);
+  }, [intent, introStep]);
 
   /* §12.7 — a message sent while Holt is working is HELD, not dropped and not interleaved. The composer
      is dimmed rather than disabled precisely so a thought can be typed while he finishes. */
@@ -1091,12 +1269,26 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
   };
 
   /* One object, built once, so a card cannot be given half a handoff. A block goes to the Builder to be
-     finished and named, which is a different promise from "saved" — so it says so. */
+     finished and named, which is a different promise from "saved" — so it says so.
+     *
+     * ⚠ THE SECOND DOOR IS DIFFERENT FOR SOMEBODY WHO HAS NEVER TRAINED, AND THE LABEL AND THE ACTION
+     * CHANGE TOGETHER.
+     *
+     * "Adjust it" opens the Program Builder, which is the right offer for an athlete who knows what they
+     * would change. A beginner has no basis for editing a program, so that button reads to them as a hint
+     * that something is wrong with what they were just handed — and following it drops them into an
+     * authoring tool they cannot use.
+     *
+     * What they CAN say is "not that one", so that is what they are given: `rebuild` throws the block
+     * away and starts asking again. The label was not softened over the same action — a button promising
+     * to ask again while opening an editor would be worse than the blunt one it replaced. */
+  const isNewToTraining = constraints.experience?.lifting === 'beginner';
+  const rebuildable = built?.kind === 'program' && isNewToTraining;
   const handoff: Handoff = {
     onPreview: () => setPreview(true),
     onStart: startNow,
-    onSave: saveForLater,
-    saveLabel: built?.kind === 'program' ? 'Adjust it' : 'Save for later',
+    onSave: rebuildable ? rebuild : saveForLater,
+    saveLabel: rebuildable ? 'Ask me again' : built?.kind === 'program' ? 'Adjust it' : 'Save for later',
   };
 
   const reallyStart = async () => {
@@ -1237,6 +1429,15 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
                   tapChip({ label: 'How do I…?', patch: {} });
                 }}
               />
+              {/* The only correction path for the one answer Holt keeps between conversations. */}
+              <MenuRow
+                divided
+                label="Change my training level"
+                onPress={() => {
+                  setMenu(false);
+                  changeLevel();
+                }}
+              />
             </MenuPop>
           </>
         ) : null}
@@ -1246,8 +1447,22 @@ export function CoachChatSheet({ onClose }: { onClose: () => void }) {
             program={lastCard.program}
             day={lastCard.day}
             onBack={() => setPreview(false)}
-            onOpenBuilder={() => {
+            /* Preview closes FIRST. `startNow` can raise the "end your current program?" confirm, and
+               that dialog is a sibling of this screen rather than a child — left open, the preview
+               would sit over the question it just asked. */
+            onStart={() => {
               setPreview(false);
+              handoff.onStart();
+            }}
+            secondaryLabel={rebuildable ? 'Ask me again' : 'Final touches'}
+            onSecondary={() => {
+              setPreview(false);
+              // Same split as the card's own secondary — a beginner is asked again rather than handed an
+              // authoring tool, and the label above says which of the two this is.
+              if (rebuildable) {
+                rebuild();
+                return;
+              }
               onClose();
               router.push(built?.kind === 'day' ? '/workout-builder' : '/program-builder');
             }}
@@ -2376,12 +2591,36 @@ function PlanPreview({
   program,
   day,
   onBack,
-  onOpenBuilder,
+  onStart,
+  onSecondary,
+  secondaryLabel,
 }: {
   program?: ProgramCard;
   day?: DayCard;
   onBack: () => void;
-  onOpenBuilder: () => void;
+  /**
+   * ⚠ READING THE PLAN HAS TO BE ABLE TO END IN AGREEMENT.
+   *
+   * This screen used to close with one button — "Final touches" — which opens the Builder. Holt's own
+   * introduction asks the athlete to read every week before anything is saved, so the athlete who does
+   * exactly that arrived at the bottom and was offered an AUTHORING TOOL as the only way forward. To
+   * start the thing they had just approved they had to go back and find the card again.
+   *
+   * That is a bad ending for anyone and a worse one for a beginner, who has no basis for "adjusting" a
+   * program and reads the offer as a hint that something is wrong with it.
+   */
+  onStart: () => void;
+  /**
+   * The second door, which is not the same door for everybody — "Final touches" opens the Builder, and a
+   * beginner is offered "Ask me again" instead, for the reason spelled out beside `handoff`.
+   *
+   * ⚠ THE HANDLER AND THE LABEL ARRIVE TOGETHER, AND THE PROP IS NOT CALLED `onOpenBuilder` ANY MORE.
+   * It was, and passing a rebuild through a prop named for the Builder is precisely how a button ends up
+   * promising one thing and doing another. Both come from the caller so the card and this screen cannot
+   * offer the same athlete different things.
+   */
+  onSecondary: () => void;
+  secondaryLabel: string;
 }) {
   /* 22 was a guess at the home indicator, made before this screen had insets. On a phone with a taller
      indicator the Final-touches button sat under it; on one with none, it floated. */
@@ -2436,8 +2675,13 @@ function PlanPreview({
       </ScrollView>
 
       <View style={[styles.previewActions, { paddingBottom: 12 + insets.bottom }]}>
-        <Button variant="primary" fullWidth onPress={onOpenBuilder} accessibilityLabel="Final touches">
-          Final touches
+        <Button variant="primary" fullWidth onPress={onStart} accessibilityLabel="Start this plan">
+          Start it
+        </Button>
+        {/* Demoted, not removed — the athlete who came here to change something still has the door, it
+            is simply no longer the only one. */}
+        <Button variant="secondary" fullWidth onPress={onSecondary} accessibilityLabel={secondaryLabel}>
+          {secondaryLabel}
         </Button>
       </View>
     </View>
@@ -3212,7 +3456,7 @@ const styles = StyleSheet.create({
   previewScroll: { flex: 1 },
   previewInner: { padding: 18, gap: 16 },
   /* `paddingBottom` is applied at render from the safe-area inset — see `PlanPreview`. */
-  previewActions: { paddingHorizontal: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
+  previewActions: { paddingHorizontal: 16, paddingTop: 12, gap: 9, borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
   weekList: { borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
   weekRow: {
     flexDirection: 'row',

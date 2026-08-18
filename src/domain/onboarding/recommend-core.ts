@@ -75,33 +75,171 @@ const GYM_MAP: Record<GoalId, Record<Experience, string>> = {
   health: { beginner: 'fbh-full-body-3', intermediate: 'fbh-full-body-3', advanced: 'mb-upper-lower' },
 };
 
-/** The design's intended program id for the inputs (may be an id not yet in our catalog). */
+/**
+ * The design's intended program id for the inputs (may be an id not yet in our catalog).
+ *
+ * ══ THE HOME AND BODYWEIGHT TIERS NO LONGER BORROW GYM IDS ══
+ *
+ * Two ids used to serve two access tiers at once, and that is what made them impossible to alias
+ * honestly: `fbh-full-body-3` meant both "home/strength" and "gym/health", and `cond-circuit` meant
+ * both "home/fatloss" and "gym/fatloss/intermediate". One alias entry cannot answer a dumbbells-only
+ * athlete and a commercial-gym athlete with the same program — whichever real program it points at is
+ * wrong for one of them, and the wrong direction here is prescribing a barbell to somebody who owns
+ * a pair of dumbbells.
+ *
+ * So the tiers that cannot run barbell programming now resolve to `fbh-bodyweight-basics`, which is
+ * the one id in the design's vocabulary that already means "needs no equipment". It under-serves a
+ * dumbbell owner rather than over-prescribing to them — the safe direction of the two — and it leaves
+ * every gym id with exactly one meaning, which is what lets the alias table below be read and checked.
+ *
+ * `fbh-dumbbell-only` (home/muscle) keeps its own id because a real dumbbell program is authored for it.
+ */
 export function intendedProgramId(input: RecommendInput): string {
   const primary: GoalId = input.primaryGoal ?? 'health';
   const exp = expFor(input.experience);
   const access = accessFor(input.equipment, input.homeGym);
-  if (access === 'bodyweight') return primary === 'endurance' ? 'run-c25k' : 'fbh-bodyweight-basics';
+  if (access === 'bodyweight') return 'fbh-bodyweight-basics';
   if (access === 'home') {
-    if (primary === 'endurance') return 'run-c25k';
     if (primary === 'muscle') return 'fbh-dumbbell-only';
-    if (primary === 'strength') return 'fbh-full-body-3';
-    if (primary === 'fatloss' || primary === 'athletic') return 'cond-circuit';
-    return 'fbh-home-minimalist';
+    if (primary === 'health') return 'fbh-home-minimalist';
+    // strength / fatloss / athletic / endurance — nothing in the catalog trains these with dumbbells
+    // alone, so they get the program that needs nothing at all rather than one they cannot load.
+    return 'fbh-bodyweight-basics';
   }
   return (GYM_MAP[primary] ?? GYM_MAP.health)[exp] ?? 'fbh-full-body-3';
 }
 
-/** Intended id → a REAL catalog id. Everything unmapped falls back to Strength Foundation I. */
+/**
+ * Intended id → a REAL catalog id. Everything unmapped falls back to Strength Foundation I.
+ *
+ * ══ THIS TABLE IS WHAT SWITCHES THE GUIDED ON-RAMP BACK ON ══
+ *
+ * It held three entries — all strength, all gym — while fourteen programs shipped. `canRecommend`
+ * therefore failed 51 of its 54 combinations and Home stopped offering "Help me find one" at all
+ * (see the note on `canRecommend`). The catalog had grown; this map had not been told.
+ *
+ * Every entry below points at a program that is authored, shipping, and a defensible answer to the
+ * question that reaches it. Where the catalog cannot answer precisely, the alias errs toward the
+ * program an athlete can actually run — never toward the one that merely sounds closer.
+ *
+ * ⚠ ENDURANCE RESOLVES TO CONDITIONING, AND THAT IS A JUDGEMENT, NOT A PLACEHOLDER.
+ *
+ * The `run-*` ids are the design's intended Running family and nothing in the catalog answers them.
+ * But the intake never asks about running: the goal is presented to the athlete as *"Improve
+ * Endurance — go longer. Build your engine and stamina."*, which is the question Athletic Conditioning
+ * Foundation ("build a base of work capacity from a standing start") and Iron & Engine ("conditioning
+ * that survives a heavy session") are written to answer. Routing that wording to a conditioning block
+ * is honest; routing it to a barbell strength program was not.
+ *
+ * When the Running family lands, re-point these three ids at it — that is the only edit needed, and
+ * the recommendation changes without anything else moving.
+ */
 const CATALOG_ALIAS: Record<string, string> = {
+  // Strength — the three that were already here.
   'strength-foundation-1': FALLBACK_ID,
   'strength-powerbuilding-1': ADVANCED_ID,
   'strength-531': ADVANCED_ID,
+
+  // Full Body & Home. Both no-equipment ids land on the same program because there is one authored
+  // for training with nothing, and it is the honest answer to both questions.
+  'fbh-bodyweight-basics': 'bodyweight-foundation',
+  'fbh-home-minimalist': 'bodyweight-foundation',
+  'fbh-dumbbell-only': 'close-quarters-6day',
+  // gym/health at beginner and intermediate — a full-body 3-day that teaches the patterns, which is
+  // what "general health, at a gym, new to this" actually wants.
+  'fbh-full-body-3': FALLBACK_ID,
+
+  // Muscle Building. A beginner asking for size at a gym gets foundational strength first —
+  // Muscle Building Intermediate opens above where they are, and telling them so is the coaching.
+  'mb-arms-aesthetics': FALLBACK_ID,
+  'mb-hypertrophy-block': 'muscle-building-intermediate',
+  'mb-upper-lower': 'muscle-building-intermediate',
+  'mb-ppl': 'frame-by-frame-5day',
+
+  // Conditioning — beginner and intermediate to the foundation, advanced to the six-day block.
+  'cond-hiit': 'athletic-conditioning-foundation',
+  'cond-circuit': 'athletic-conditioning-foundation',
+  'cond-engine': 'iron-and-engine',
+  'cond-metcon': 'iron-and-engine',
+
+  // Endurance at a gym, until the Running family is authored — see the note above.
+  'run-c25k': 'athletic-conditioning-foundation',
+  'run-10k': 'athletic-conditioning-foundation',
+  'run-half-base': 'iron-and-engine',
 };
 
 /** Pure: resolve intake → a real catalog program id. Always returns an id that exists in the catalog. */
 export function resolveRecommendationId(input: RecommendInput): string {
   return CATALOG_ALIAS[intendedProgramId(input)] ?? FALLBACK_ID;
 }
+
+/**
+ * IS THE CATALOGUE ACTUALLY WRITTEN FOR THIS ATHLETE, OR ONLY THE NEAREST THING TO THEM?
+ *
+ * ══ THE NINETY SECONDS THIS EXISTS TO STOP ══
+ *
+ * A lifter of fifteen years answers three questions — very experienced, get stronger, full gym — and is
+ * handed **Strength Foundation II**, a block tagged `Intermediate` whose own stated goals include
+ * *"improve gym confidence"*. To somebody who has coached other people, that is the app announcing it
+ * cannot tell them apart from a novice, in the first minute, before they have logged a thing.
+ *
+ * It is not a bug in the map. The map is doing its best: **one of fourteen shipping programs is tagged
+ * Advanced, and it is conditioning.** There is genuinely nothing else to hand them.
+ *
+ * So the fix is not a better guess — it is admitting it. This decides WHETHER the recommendation is
+ * worth making; the surface decides what to say instead (see `ExperienceLevelCard`, suggested mode).
+ *
+ * ⚠ IT ONLY EVER LOOKS DOWNWARD. A BEGINNER BEING OFFERED AN INTERMEDIATE PROGRAM IS FINE and must not
+ * trip this: the catalogue is 590/733 `Intermediate` at exercise level for the same reason — the tag
+ * describes technical demand, not required fitness, and `STRETCH_CEILING` already reaches a beginner one
+ * tier up on purpose. Only a program authored BELOW the athlete's own level is the failure here.
+ *
+ * Unknown or unparseable difficulty counts as served: refusing to recommend because a tag was misspelt
+ * would turn a data problem into a silent product outage.
+ */
+const LEVEL_RANK: Record<string, number> = { beginner: 0, intermediate: 1, advanced: 2 };
+const DIFFICULTY_RANK: Record<string, number> = { Beginner: 0, Intermediate: 1, Advanced: 2 };
+
+export function catalogServesLevel(experience: string | null | undefined, programDifficulty: string | null | undefined): boolean {
+  const want = LEVEL_RANK[expFor(experience)];
+  const got = DIFFICULTY_RANK[(programDifficulty ?? '').trim()];
+  if (got == null) return true; // an unreadable tag is a data problem, not a reason to refuse
+  return got >= want;
+}
+
+/**
+ * MATCH A PROGRAM'S NAMED SUCCESSOR TO SOMETHING THAT ACTUALLY EXISTS.
+ *
+ * ⚠ SIX OF THE SEVEN NAMED SUCCESSORS DO NOT EXIST. Only *Strength Foundation II* is real; Bodyweight
+ * Strength, Conditioning Intermediate, Muscle Building Advanced and the rest are intentions written into
+ * the programs that lead to them. Printing `successorName` straight out would promise six programs nobody
+ * has authored — the same defect that closed the guided on-ramp, arriving at the other end of the
+ * athlete's journey.
+ *
+ * Matching is by NAME because that is what the field holds: authored for a human to read, never as a
+ * foreign key. Compared with punctuation and case stripped, and in BOTH directions, because a successor
+ * named "Strength Foundation II" is filed as "Strength Foundation II (4-Day)" — an exact match finds
+ * none of them.
+ *
+ * Returns the id of the real program, or null when the successor is still only an intention.
+ *
+ * Lives here rather than beside the catalogue because `recommend.ts` imports through the `@/` alias,
+ * which `node --test` cannot resolve — so anything testable has to sit on this side of that line.
+ */
+export function successorIdFor(
+  named: string | null | undefined,
+  catalog: readonly { id: string; name: string }[],
+): string | null {
+  const key = loose(named ?? '');
+  if (!key) return null;
+  const hit = catalog.find((d) => {
+    const n = loose(d.name);
+    return n === key || n.startsWith(key) || key.startsWith(n);
+  });
+  return hit?.id ?? null;
+}
+
+const loose = (s: string): string => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 
 /** The 6 goals the intake asks about — every question the catalog has to be able to answer. */
 const GOALS: readonly GoalId[] = ['strength', 'muscle', 'fatloss', 'endurance', 'health', 'athletic'];
@@ -123,12 +261,23 @@ const ACCESS_ANSWERS: readonly (readonly EquipmentId[])[] = [['fullgym'], ['dumb
  * Conditioning, Muscle Building and Full Body families land (either authored under the design's own ids
  * or aliased to them), the on-ramp returns without anyone having to remember it was switched off.
  *
- * A combination counts as answered only when its INTENDED program is real — present in the catalog, or
- * deliberately aliased to something in it. Reaching `FALLBACK_ID` is precisely the case this rules out.
+ * A combination counts as answered only when the program it RESOLVES TO is really in the catalog.
+ * Reaching `FALLBACK_ID` is precisely the case this rules out.
+ *
+ * ⚠ IT FOLLOWS THE ALIAS TO ITS TARGET, AND THAT IS THE WHOLE GUARD.
+ *
+ * This used to accept `CATALOG_ALIAS[intended] != null` — the mere EXISTENCE of an alias entry — which
+ * was safe only while the table was nearly empty. The moment the table names every intended id (which
+ * is what makes the on-ramp work at all), that test is true for every input and `canRecommend` returns
+ * true for ANY catalog, including an empty one. It would have gone on reporting that the app can
+ * recommend after somebody deleted every program in it.
+ *
+ * Checking the TARGET keeps the question honest and makes it stricter than before: an alias pointing at
+ * a program nobody authored now fails, where previously it passed for being written down.
  */
 export function canRecommend(catalogIds: readonly string[]): boolean {
   const have = new Set(catalogIds);
-  const answered = (intended: string) => have.has(intended) || CATALOG_ALIAS[intended] != null;
+  const answered = (intended: string) => have.has(CATALOG_ALIAS[intended] ?? intended);
 
   return GOALS.every((primaryGoal) =>
     EXPERIENCES.every((experience) =>

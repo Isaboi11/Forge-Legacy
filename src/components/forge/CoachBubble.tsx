@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { hasMetHolt } from '@/lib/coach-thread';
+import { useCoachDoor } from '@/hooks/useCoachDoor';
 import { loadProgramDraft } from '@/lib/program-draft';
 import { useCeremony } from '@/hooks/useCeremony';
 import { useTour } from '@/hooks/useTour';
@@ -67,7 +68,9 @@ export function CoachBubble() {
    * `/coach` still exists and is untouched — it is the wizard, and the tap-through path for anyone who
    * would rather not type.
    */
-  const [open, setOpen] = useState(false);
+  /* ⚠ FROM CONTEXT, NOT `useState` — so Home can open him. The sheet is still rendered here; only the
+     flag moved. See `useCoachDoor`. */
+  const { open, intent, openCoach: openSheet, closeCoach } = useCoachDoor();
 
   /*
    * §3.4–3.5 — the teaser, and the rule that governs it: "only appears when there is a real, specific
@@ -172,7 +175,7 @@ export function CoachBubble() {
        the nag §3.5 forbids. Whether they act on the draft is their business; being informed of it is
        something that has now definitively happened. */
     setSeenDraft(draftName);
-    setOpen(true);
+    openSheet();
   };
 
   /* DERIVED, not a second piece of state — the line is simply the fact, minus the ones already told. */
@@ -200,7 +203,7 @@ export function CoachBubble() {
    */
   if (!HOME_SURFACES.has(pathname)) return null;
 
-  if (open) return <CoachChatSheet onClose={() => setOpen(false)} />;
+  if (open) return <CoachChatSheet onClose={closeCoach} intent={intent} />;
 
   return (
     /* Placement is the caller's: 18px above the tab bar, 20 from the right edge (PROMPT §3.1). The

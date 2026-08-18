@@ -173,9 +173,18 @@ export function composeHome(s: HomeStateInput): HomeComposition {
     hero,
     heroOffersFreestyle,
     startingPoint,
-    // Only under the chooser, and only when the chooser's first card is the guided one — otherwise that
-    // card is already "Start a freestyle workout" and this link repeats it.
-    showQuietFreestyle: startingPoint === 'chooser' && s.guidedOnRamp,
+    /*
+     * ⚠ ALWAYS FALSE NOW, AND THE RULE IT REPLACED IS WHY.
+     *
+     * This used to read `startingPoint === 'chooser' && guidedOnRamp`, whose whole job was to avoid
+     * saying the same thing twice: the link appeared only when the chooser's own freestyle CARD was
+     * absent. The chooser is now three fixed doors and *"Just train today"* is permanently one of them,
+     * so the condition can never be satisfied without repeating a card that is already on screen.
+     *
+     * Kept in the shape rather than deleted: it is part of `HomeComposition`'s contract, several tests
+     * name it, and a field that is honestly always false reads better than a field quietly removed.
+     */
+    showQuietFreestyle: false,
     // Subordinate on purpose. Training is the primary action; a program is an option, not a prerequisite.
     // It appears the moment they settle, so the athlete who chose freestyle always has a route to one.
     showQuietProgramLink: !s.hasProgram && settled,

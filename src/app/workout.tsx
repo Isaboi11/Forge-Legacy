@@ -84,6 +84,7 @@ import { backOffTo, incrementFor, progressionFor, sessionPerformance, type Progr
 import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { DEFAULT_HOLD_SEC, itemByKey, itemByName } from '@/domain/exercise-picker/data';
 import { loadExperience } from '@/lib/coach-memory';
+import { effortReply, shouldAskEffort, weightAfterEffort, type EffortAnswer } from '@/domain/coach/first-set';
 import { SessionCoachSheet } from '@/components/forge/SessionCoachSheet';
 import { PlaylistSheet } from '@/components/forge/composites/Playlist';
 import { JoinRequestBanner } from '@/components/forge/JoinRequestBanner';
@@ -325,6 +326,18 @@ export default function WorkoutScreen() {
      logged a set at or above it. Carried beside the text because the sentence has already been rendered
      by then and no reliable number can be read back out of prose. */
   const [intraLine, setIntraLine] = useState<{ ei: number; text: string; upTo: number } | null>(null);
+  /**
+   * "How did that feel?" — the first set of a movement this athlete has never done (`first-set.ts`).
+   *
+   * ⚠ SEPARATE FROM `intraLine`, WHICH IS AN INFERENCE. That one reads the reps against the range and is
+   * switched OFF for every beginner cell, on purpose: a mid-exercise load change is a judgement about a
+   * rep, and a novice has not earned the reps to judge by. That decision is untouched. This ASKS, and
+   * takes the athlete at their word about their own effort — the one thing they can report from their
+   * very first set. The ANSWER is then written into `intraLine`, so both end up on the same coin.
+   */
+  const [effortAsk, setEffortAsk] = useState<{ ei: number } | null>(null);
+  /** Answered already, per exercise index. Once per movement, ever — see `shouldAskEffort`. */
+  const [effortDone, setEffortDone] = useState<Record<number, boolean>>({});
   /**
    * What the recent record suggests about how hard to push — read ONLY when the coach sheet opens.
    *
@@ -1186,6 +1199,30 @@ export default function WorkoutScreen() {
       nudge ? { ei, text: nudge.message, upTo: nudge.suggestedWeight } : prev?.ei === ei ? null : prev,
     );
 
+    /*
+     * THE FIRST SET OF A MOVEMENT THEY HAVE NEVER DONE — ask how it felt.
+     *
+     * `startingLoadLine` tells a first-timer how to pick a weight, and a guess made that way is
+     * deliberately conservative, so the first working set is usually too light. Nothing corrected it
+     * until the next session. This does, from the one thing a beginner can report accurately.
+     *
+     * ⚠ IT DOES NOT REACH PAST THE NUDGE ABOVE — every gate is in `shouldAskEffort`, and the two cannot
+     * both fire: `intraSession` is false for every beginner cell, and this is beginners only.
+     */
+    if (
+      shouldAskEffort({
+        experience,
+        pattern: patternOf(ex),
+        equipment: equipmentForCatalogKey(ex.catalogKey),
+        hasHistory: (liftHistory?.get(liftId(ex))?.sessions.length ?? 0) > 0,
+        weight: done.weight,
+        setsRemaining: ex.sets.filter((s2) => !s2.done).length,
+        answered: !!effortDone[ei],
+      })
+    ) {
+      setEffortAsk({ ei });
+    }
+
     // milestone tier: exercise done (others remain) → non-blocking seal; else more sets → rest (never the last set)
     const exDone = ex.sets.every((s2) => s2.done);
     const allDone = ns.exercises.every((e) => e.sets.every((s2) => s2.done));
@@ -1210,6 +1247,43 @@ export default function WorkoutScreen() {
       if (restEnabled && !holdRest) startRest();
     }
   };
+  /**
+   * They answered. Write the new weight into every set of this exercise still to come, and hand the
+   * sentence to the same coin the nudge uses.
+   *
+   * ⚠ UNLOGGED SETS ONLY. A set already done is a record of what happened; rewriting its weight because
+   * of something said afterwards would edit history rather than the plan.
+   */
+  const answerEffort = (answer: EffortAnswer) => {
+    const ask = effortAsk;
+    const ex = ask ? session?.exercises[ask.ei] : null;
+    if (!ask || !ex) return;
+    const input = {
+      experience,
+      pattern: patternOf(ex),
+      equipment: equipmentForCatalogKey(ex.catalogKey),
+      hasHistory: (liftHistory?.get(liftId(ex))?.sessions.length ?? 0) > 0,
+      weight: ex.sets.find((s2) => s2.done)?.weight ?? null,
+      setsRemaining: ex.sets.filter((s2) => !s2.done).length,
+      answered: false,
+    };
+    const next = weightAfterEffort(input, answer);
+    if (next != null) {
+      mutate((s2) => ({
+        ...s2,
+        exercises: s2.exercises.map((e, i) =>
+          i !== ask.ei ? e : { ...e, sets: e.sets.map((st) => (st.done ? st : { ...st, weight: next })) },
+        ),
+      }));
+    }
+    /* `upTo: 0` on purpose — that field retires a line once the athlete has LIFTED the weight it named,
+       which is right for "go up to X" and wrong for both of the others. Zero means the line simply ages
+       out with the exercise, like every cue that names no target. */
+    setIntraLine({ ei: ask.ei, text: effortReply(answer, next), upTo: 0 });
+    setEffortDone((d) => ({ ...d, [ask.ei]: true }));
+    setEffortAsk(null);
+  };
+
   const uncompleteSet = (ei: number, si: number) => mutate((s) => patchSet(s, ei, si, (set) => ({ ...set, done: false })));
 
   /**
@@ -2639,18 +2713,33 @@ export default function WorkoutScreen() {
                 <View style={styles.heroTags}>
                   <Pill size="sm">Strength</Pill>
                 </View>
-                {/* 732 exercises ship published coaching content; this used to open nothing. */}
+                {/*
+                  735 exercises ship published coaching — setup, execution, cues, common mistakes,
+                  breathing, tempo. It is the best beginner asset in the product and it used to open
+                  nothing; then it opened the right screen, styled as a footnote.
+
+                  ⚠ LOUD ON A MOVEMENT THEY HAVE NEVER DONE, QUIET EVERYWHERE ELSE. Somebody meeting a
+                  lift for the first time has exactly one question — *how do I do this* — and the answer
+                  was a 13pt link competing with the weight field. Somebody on their fortieth set of
+                  bench does not need it shouted at them, and shouting it at everybody is how a useful
+                  affordance becomes furniture nobody reads.
+
+                  `liftHist` is null for a lift with no history — the same fact the card already uses to
+                  print `—` where a previous best would go. No new state, no new read.
+                */}
                 <Pressable
                   onPress={() => (ex.catalogKey ? router.push({ pathname: '/exercise/[id]', params: { id: ex.catalogKey } }) : undefined)}
                   accessibilityRole="button"
-                  accessibilityLabel={`How to ${ex.name}`}
-                  style={styles.howTo}
+                  accessibilityLabel={liftHist ? `How to ${ex.name}` : `First time on ${ex.name} — see how it's done`}
+                  style={({ pressed }) => [styles.howTo, liftHist ? null : styles.howToFirst, pressed ? styles.howToPressed : null]}
                 >
-                  <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8}>
+                  <Svg width={liftHist ? 16 : 18} height={liftHist ? 16 : 18} viewBox="0 0 24 24" fill="none" stroke={liftHist ? flColor.bronze400 : flColor.bronze300} strokeWidth={1.8}>
                     <Path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z" />
-                    <Path d="M10 8.5l6 3.5-6 3.5z" fill={flColor.bronze400} stroke="none" />
+                    <Path d="M10 8.5l6 3.5-6 3.5z" fill={liftHist ? flColor.bronze400 : flColor.bronze300} stroke="none" />
                   </Svg>
-                  <Text style={styles.howToText}>How To</Text>
+                  <Text style={[styles.howToText, liftHist ? null : styles.howToTextFirst]}>
+                    {liftHist ? 'How To' : "First time — here's how"}
+                  </Text>
                 </Pressable>
               </View>
             </View>
@@ -3022,6 +3111,38 @@ export default function WorkoutScreen() {
         content-width, so a right-anchored bubble clears it; the join banner is full width and does not,
         which is why it hides the bubble in `holtHidden` rather than being dodged by arithmetic.
       */}
+      {/*
+        "How did that feel?" — once, on the first set of a movement they have never done.
+
+        ⚠ SHARES `holtHidden`, so it obeys all fourteen conditions the coin does: it never floats over
+        the number pad, a ceremony or the seal. A question is more intrusive than a sentence, not less,
+        so it cannot be the one thing that ignores those rules. It sits directly above the coin because
+        the ANSWER lands there — the athlete's eye does not have to move.
+      */}
+      {!holtHidden && effortAsk && effortAsk.ei === exIdx ? (
+        <View style={[styles.effortAsk, { bottom: 82 + barBottom + 56 }]}>
+          <Text style={styles.effortAskText}>How did that feel?</Text>
+          <View style={styles.effortRow}>
+            {(
+              [
+                ['easy', 'Easy'],
+                ['right', 'About right'],
+                ['heavy', 'Too heavy'],
+              ] as const
+            ).map(([value, label]) => (
+              <Pressable
+                key={value}
+                onPress={() => answerEffort(value as EffortAnswer)}
+                accessibilityRole="button"
+                accessibilityLabel={`That set felt ${label.toLowerCase()}`}
+                style={({ pressed }) => [styles.effortChip, pressed ? styles.effortChipPressed : null]}
+              >
+                <Text style={styles.effortChipText}>{label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      ) : null}
       {!holtHidden ? (
         /*
          * ⚠ THE LINE IS QUEUED BEHIND `holtHidden`, NOT DROPPED BY IT. The fourteen conditions exist so
@@ -4146,6 +4267,32 @@ const styles = StyleSheet.create({
      screen takes none anywhere — the bar sits at the foot of a plain flex root — and introducing one
      here alone would float the bubble at a different height than every other element it lines up with. */
   holtWrap: { position: 'absolute', right: SCREEN_GUTTER, zIndex: 42, alignItems: 'flex-end' },
+  /* Right-anchored like the coin it sits over, and on the same z-band so the two read as one voice. */
+  effortAsk: {
+    position: 'absolute',
+    right: SCREEN_GUTTER,
+    zIndex: 42,
+    alignItems: 'flex-end',
+    gap: 7,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    backgroundColor: flColor.charcoal900,
+  },
+  effortAskText: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray400 },
+  effortRow: { flexDirection: 'row', gap: 7 },
+  effortChip: {
+    paddingVertical: 7,
+    paddingHorizontal: 11,
+    borderRadius: flRadius.pill,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    backgroundColor: flColor.bronzeTint,
+  },
+  effortChipPressed: { opacity: 0.7 },
+  effortChipText: { fontFamily: flFont.sans, fontSize: 12.5, fontWeight: '600', color: flColor.bronze300 },
   /* ⚠ `holtBubble`/`holtPressed` were deleted with the local mark. `CoachSays` draws it now, so the
      two screens that show the coach cannot drift apart on what he looks like. Only the PLACEMENT stays
      here, because the height that clears this screen's action bar is this screen's business. */
@@ -4227,6 +4374,18 @@ const styles = StyleSheet.create({
   heroTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   howTo: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 4 },
   howToText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.bronze400 },
+  /* The first-time face: a real target rather than a link, on the one occasion it is the whole question. */
+  howToFirst: {
+    marginTop: 8,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    borderRadius: flRadius.md,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    backgroundColor: flColor.bronzeTint,
+  },
+  howToPressed: { opacity: 0.7 },
+  howToTextFirst: { fontSize: 14, color: flColor.bronze300 },
   insightRow: { flexDirection: 'row', marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
   insightCol: { flex: 1, gap: 2, paddingHorizontal: 12 },
   insightMid: { borderLeftWidth: 1, borderRightWidth: 1, borderColor: flColor.charcoal700, alignItems: 'flex-start' },

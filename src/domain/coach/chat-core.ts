@@ -163,6 +163,15 @@ export interface Chip {
    * day ends up being depends on every other tap — see `mergeFocus`.
    */
   focus?: FocusPick;
+  /**
+   * Records the athlete's training level and STOPS. Nothing is built.
+   *
+   * ⚠ IT NEEDS ITS OWN FLAG BECAUSE THE LABELS COLLIDE. These chips carry the same three labels the
+   * build questionnaire uses, so matching on the text — the trick the one-off chips above use — would
+   * make correcting your level indistinguishable from answering the question mid-build, and one of the
+   * two must not kick off an assembly.
+   */
+  levelOnly?: boolean;
   label: string;
   /** What tapping it fills in. The typed path resolves to the same thing — see `interpret`. */
   /* Widened to ChatState so a chip can carry `dayFocus`, which describes one WORKOUT rather than the
@@ -345,6 +354,51 @@ export function sizeQuestion(): Question {
 /** A single week. Decides the goal chips, the days wording, and what the artifact's buttons save. */
 export const isOneWeek = (c: ChatState): boolean => c.weeks === 1;
 
+/**
+ * Running experience, which is NOT the same answer as lifting experience.
+ *
+ * ⚠ ONE CHIP USED TO SET BOTH. `{ lifting: e, running: e }` meant a fifteen-year lifter who has never
+ * run a step tapped "Advanced" and was advanced at running too. The volume rail catches the dangerous
+ * half of that — answering "I don't run at the moment" forces the beginner day-floor whatever they said,
+ * because more days before the tissue is ready is how a new runner gets hurt (EPS-D7) — but the HARD/EASY
+ * MIX is composed from `experience.running`, so they would have got a beginner's mileage arranged in an
+ * advanced athlete's intensity distribution.
+ *
+ * Weekly mileage is simply the better signal, and the race questionnaire already collects it one question
+ * earlier (`race_base`). So this needs no new question: where a real mileage answer exists it decides,
+ * and where it does not — every non-race build — the athlete's own word stands exactly as before.
+ *
+ * The bands follow `race_base`'s own chips: 0 and "under 5" are somebody who does not currently run,
+ * 5–20 is a runner, and 20+ a seasoned one. Deliberately never rounds UP past what they claimed: an
+ * athlete who says beginner and runs 30 miles a week is still coached as a beginner, because the
+ * downside of the two mistakes is not symmetric.
+ */
+export function runningExperienceFor(stated: Experience, weeklyMi: number | null | undefined): Experience {
+  if (weeklyMi == null) return stated;
+  const fromMileage: Experience = weeklyMi < 5 ? 'beginner' : weeklyMi < 20 ? 'intermediate' : 'advanced';
+  const rank: Record<Experience, number> = { beginner: 0, intermediate: 1, advanced: 2 };
+  return rank[fromMileage] < rank[stated] ? fromMileage : stated;
+}
+
+/** Has the athlete told us they are new to this? Read from the answer OR from what he remembers. */
+const isNewToTraining = (c: ChatState): boolean => c.experience?.lifting === 'beginner';
+
+/**
+ * The level question, asked from two places — before the length question on a lifting block, and after
+ * the mileage answer on a race. One definition, so the two cannot drift into asking it differently.
+ */
+function experienceQuestion(c: ChatState): Question {
+  return {
+    id: 'experience',
+    ask: pick('ask_experience'),
+    chips: (['beginner', 'intermediate', 'advanced'] as Experience[]).map((e) =>
+      // Running is read off the mileage they already gave, never off this tap alone — see
+      // `runningExperienceFor`. On a lifting build `currentWeeklyMi` is undefined and this is `e`.
+      chip(EXPERIENCE_LABEL[e], { experience: { lifting: e, running: runningExperienceFor(e, c.currentWeeklyMi) } }),
+    ),
+  };
+}
+
 function askProgram(c: ChatState): Question | null {
 
   if (c.goal == null && !c.pickingRace) {
@@ -374,10 +428,34 @@ function askProgram(c: ChatState): Question | null {
 
   const endurance = isEnduranceGoal(c.goal);
 
+  /*
+   * ⚠ EXPERIENCE COMES BEFORE THE LENGTH QUESTION ON A LIFTING BLOCK, BECAUSE IT DECIDES IT.
+   *
+   * On a race it stays where it always was — below `race_base` — because the mileage answer REFINES it
+   * (see `runningExperienceFor`), and a race skips the length question anyway. So it is only the lifting
+   * path that gains anything by asking earlier, and only the lifting path that moves.
+   *
+   * Costs a returning athlete nothing either way: the level is remembered between conversations, so this
+   * branch is skipped entirely for anyone who has answered it once.
+   */
+  if (!endurance && c.experience == null) return experienceQuestion(c);
+
   /* ⚠ SKIPPED FOR A RACE, WHICH IS THE WHOLE REASON IT SITS HERE RATHER THAN AT THE DOOR. A race block's
      length is counted back from `raceDate` against per-race floors, so asking would be taking an answer
-     Holt is about to overrule. See the note on `sizeQuestion`. */
-  if (!endurance && c.weeks === undefined) return sizeQuestion();
+     Holt is about to overrule. See the note on `sizeQuestion`.
+     *
+     * ⚠ AND SKIPPED FOR A BEGINNER, WHO IS BEING ASKED TO GUESS.
+     *
+     * "A block, or one week?" is a question about training STRUCTURE, and somebody who has never trained
+     * has no basis for preferring four weeks to twelve — they pick one and hope. Everything else in this
+     * questionnaire is a fact they own: their goal, their days, their room, their session length (which
+     * is a diary question, not a training one, and stays). This is the only rung that asks them to have
+     * an opinion about programming.
+     *
+     * `weeks` is deliberately left UNDEFINED rather than defaulted here — `missingFor` does not require
+     * it, and `assemble` falls back to `defaultWeeksFor`, which is the engine's own answer and a better
+     * one than a number picked in the chat. */
+  if (!endurance && !isNewToTraining(c) && c.weeks === undefined) return sizeQuestion();
 
   if (endurance && c.raceDate == null) {
     return {
@@ -434,15 +512,8 @@ function askProgram(c: ChatState): Question | null {
     };
   }
 
-  if (c.experience == null) {
-    return {
-      id: 'experience',
-      ask: pick('ask_experience'),
-      chips: (['beginner', 'intermediate', 'advanced'] as Experience[]).map((e) =>
-        chip(EXPERIENCE_LABEL[e], { experience: { lifting: e, running: e } }),
-      ),
-    };
-  }
+  // Only a race reaches this — the lifting path answered it above, before the length question.
+  if (c.experience == null) return experienceQuestion(c);
 
   if (c.limitations == null) {
     return {
@@ -626,6 +697,26 @@ const EXPERIENCE_LABEL: Record<Experience, string> = {
   intermediate: "I've been at it a while",
   advanced: "I know what I'm doing",
 };
+
+/**
+ * The three level chips, on their own, outside any build.
+ *
+ * ⚠ THIS EXISTS BECAUSE "ASKED ONCE, EVER" HAD NO SECOND HALF.
+ *
+ * `loadExperience` seeds the answer on every mount and `askProgram` skips the question whenever it is
+ * already set — which is exactly what was asked for, and correct. But `forgetExperience()` was written to
+ * undo it and NOTHING EVER CALLED IT, so a level set once could not be changed by any means: not in the
+ * coach, not in settings, not by starting a new conversation (which deliberately keeps it). An athlete
+ * who answered "I know what I'm doing" on their first day owned that answer permanently, and a beginner
+ * who had grown out of it had no way to say so.
+ *
+ * `levelOnly` keeps these apart from the identical labels in the questionnaire — see `Chip`.
+ */
+export const LEVEL_CHIPS: readonly Chip[] = (['beginner', 'intermediate', 'advanced'] as Experience[]).map((e) => ({
+  label: EXPERIENCE_LABEL[e],
+  levelOnly: true,
+  patch: { experience: { lifting: e, running: e } },
+}));
 
 const LIMIT_CHIPS: [string, Limitation][] = [
   ['Shoulders', 'shoulders'],
@@ -1068,6 +1159,55 @@ export function preamble(c: CoachConstraints, weeks: number): string {
       : `${pick('lead_block')} ${wk} to the ${spec.label}, starting from where you actually are rather than where you'd like to be.`;
   }
   return `${pick('lead_block')} ${wk}, ${c.daysPerWeek} days a week, built for what you've got.`;
+}
+
+/**
+ * HOW TO LOAD WEEK ONE — the one thing a first-timer needs and nothing in the app was saying.
+ *
+ * ══ THE PROBLEM THIS ANSWERS ══
+ *
+ * No prescription anywhere in Forge carries a weight. `{ sets, reps, unit, restSec }` is the whole shape,
+ * and that is right: the logger prefills from what the athlete lifted last time, which is a better answer
+ * than any number a program could guess. But somebody who has never trained has no last time. They reach
+ * their first set, the weight field is empty, their history reads `—`, and they are stood in front of a
+ * rack that runs from 5 to 100 lb with no opinion offered. That is where a new athlete quits.
+ *
+ * ══ ⚠ A METHOD, NEVER A NUMBER ══
+ *
+ * Holt knows their goal, their room, their days and their level. He does NOT know their bodyweight, their
+ * history, or what they did in a PE lesson fifteen years ago. "Squat 135" is a guess wearing a coach's
+ * voice, and it is also unrenderable — weights are stored canonically and converted per athlete, so a
+ * literal here would be wrong for everybody training in kilos.
+ *
+ * What a good coach actually says out loud carries no number at all: start with the empty bar, pick one
+ * you could do fifteen with, use the lightest plate that moves. That is safe for every bodyweight, in
+ * every unit, and it answers the question completely.
+ *
+ * ══ WHY IT IS SAID WITH THE PROGRAM, NOT IN THE SESSION ══
+ *
+ * In-workout coaching is capped at ZERO on the free tier — so delivered as mid-set conversation, the
+ * athletes who need this most could never receive it. Said as Holt hands the block over, it ships as part
+ * of the build and no cap touches it.
+ *
+ * ⚠ DELIBERATELY NOT DRAWN FROM THE VOICE POOL. Every other line Holt speaks varies so he does not read
+ * as a machine; this one is an instruction about load for somebody who does not yet know what is safe,
+ * and instructions do not get to be different on a Tuesday.
+ *
+ * Returns null for anyone who is not new to this, and for a race — a running block is paced, not loaded,
+ * and `race_base` has already asked what they run today.
+ */
+export function startingLoadLine(c: CoachConstraints): string | null {
+  if (c.experience?.lifting !== 'beginner') return null;
+  if (isEnduranceGoal(c.goal)) return null;
+  switch (c.environment) {
+    case 'bodyweight':
+      return 'Week one is just you — nothing added anywhere. If ten reps is too many, stop at six and call it the set.';
+    case 'home':
+      return 'Week one, take the lightest pair you could still get fifteen reps with, and do ten. If it felt easy, go up next week — not this one.';
+    default:
+      // Full gym, and the outdoor case, which reaches a gym's equipment through the same skeletons.
+      return 'Week one, put nothing on the bar. An empty bar is the right answer while you are learning the movement, and anything on a stack starts at the lightest plate that moves.';
+  }
 }
 
 /** The line above a single day. */

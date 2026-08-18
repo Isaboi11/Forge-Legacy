@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { clearHomeLevel } from './home-level';
 import { clearHomeIntake } from './home-intake';
 import { clearHomeTourStatus, clearTourStatus, clearUnlockAnnounced } from './tour';
@@ -14,6 +15,12 @@ import { clearSquadFavorites } from './squad-favorites';
 // ⚠ the STORE, not './pending-invite' — that module imports expo-router and this file is reached
 //   during auth init, upstream of the router. See pending-invite-store.ts.
 import { clearPendingInvite } from './pending-invite-store';
+/* Both are AsyncStorage plus a TYPE-ONLY import of the coach's own types — no runtime weight, so neither
+   drags anything into this file's graph. That matters here: `first-run` is reached during auth init,
+   upstream of the router, which is the same reason the invite store is imported above rather than the
+   module that wraps it. */
+import { forgetExperience } from './coach-memory';
+import { clearThread, forgetMetHolt } from './coach-thread';
 
 /**
  * Clear the device-local state an account leaves behind. It lives in AsyncStorage (localStorage on web)
@@ -59,5 +66,48 @@ export async function resetFirstRunFlags(): Promise<void> {
     // An invite is tapped by a PERSON, before anyone is signed in. The next account on this phone is a
     // different person and did not tap it — inheriting it would route a stranger into somebody else's squad.
     clearPendingInvite(),
+    /*
+     * ⚠ THE COACH'S MEMORY, AND IT WAS THE ONE THING HERE THAT LEAKED BETWEEN PEOPLE.
+     *
+     * Holt stores three device-local facts: how long you have been training, whether you have met him,
+     * and the conversation itself. None of them was cleared on an account change, so the SECOND athlete
+     * on a phone inherited the first one's training level — and was never asked their own, because the
+     * questionnaire skips a question it believes it already has the answer to. Reported as "it never
+     * asked me what level I am", on a brand-new account, which is exactly what it would do.
+     *
+     * The same reasoning as every line above: another athlete's answers are not this athlete's answers.
+     * The level is the one that matters most, because it silently shapes every program he builds.
+     */
+    forgetExperience(),
+    forgetMetHolt(),
+    clearThread(),
   ]);
+}
+
+/**
+ * WHO THIS DEVICE LAST BELONGED TO — persisted, because a ref cannot outlive a mount.
+ *
+ * `resetFirstRunFlags` above is only useful if something notices the handover, and the in-memory check
+ * that used to do it could not see across a page reload: signing up after one was the first auth event
+ * the new mount observed, and the guard against wiping your own flags on boot skipped it. See
+ * `domain/auth/device-handover.ts` for the rule this feeds.
+ */
+const OWNER_KEY = 'forge_device_owner_v1';
+
+export async function lastAthleteId(): Promise<string | null> {
+  try {
+    return await AsyncStorage.getItem(OWNER_KEY);
+  } catch {
+    /* Unreadable storage must not be read as "a different athlete" — that would wipe the flags of
+       whoever is actually signed in, for a transient failure. Unknown means do nothing. */
+    return null;
+  }
+}
+
+export async function rememberAthleteId(id: string): Promise<void> {
+  try {
+    await AsyncStorage.setItem(OWNER_KEY, id);
+  } catch {
+    // Failing to record the owner costs one missed handover, never a wrongly-wiped device.
+  }
 }

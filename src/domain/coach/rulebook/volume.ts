@@ -181,6 +181,12 @@ export const GOAL_CATEGORY = {
   weight_loss: 'CONDITIONING',
   conditioning: 'CONDITIONING',
   mobility: 'MOBILITY',
+  /* ⚠ STRENGTH, NOT CONDITIONING — and the catalogue already made this call. Its own answer for a
+     health goal at a gym is `fbh-full-body-3`, which resolves to Strength Foundation I: a full-body
+     3-day in the Strength family. "Feel good, move well, stay strong for life" is built by pressing,
+     pulling, squatting and hinging at a sustainable volume, not by circuits — routing it to
+     CONDITIONING would have made it a gentler `weight_loss`, which is not what anybody means by it. */
+  health: 'STRENGTH',
   run_5k: 'RUNNING',
   run_10k: 'RUNNING',
   run_half: 'RUNNING',

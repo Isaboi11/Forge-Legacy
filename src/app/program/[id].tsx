@@ -29,6 +29,7 @@ import {
   type SavedProgram,
 } from '@/data/programs-live';
 import { fmtLongDate, spanLabel, workoutsLabel } from '@/domain/program/graduation';
+import { useCoachDoor } from '@/hooks/useCoachDoor';
 import {
   buildLog,
   computeProgress,
@@ -53,7 +54,7 @@ import { getProgramDefinition } from '@/domain/training/programs';
 import { structureFromDefinition } from '@/domain/program/adopt-core';
 import { equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
 import { fetchHomeGym } from '@/data/home-gym-live';
-import { programGymCoverage } from '@/domain/onboarding/recommend';
+import { nextAfter, programGymCoverage, specialisationBlocks } from '@/domain/onboarding/recommend';
 import { itemByName } from '@/domain/exercise-picker/data';
 import { LiftMaxSheet } from '@/components/forge/LiftMaxSheet';
 import {
@@ -212,6 +213,23 @@ export default function ProgramDetailScreen() {
       };
     }, [id, previewDef]),
   );
+
+  /* ⚠ ABOVE THE EARLY RETURNS. Both of these are hooks, and the loading and not-found branches below
+     return before they would have run — which is a rules-of-hooks violation that only bites on the
+     render where the data lands. `program` is simply undefined until then, and `whatsNext` follows it. */
+  const { openCoach } = useCoachDoor();
+  /* Derived, not fetched — `nextAfter` is a find over fourteen shipped programs, which cannot change
+     under this screen. Deliberately NOT memoised: hand-written deps here read `program?.sourceDefinitionId`
+     while react-compiler infers `program`, and it refuses to optimise the whole component rather than
+     honour a narrower dependency than it can prove. The compiler memoises this correctly on its own.
+     Null for a program that is not a Forge one: an athlete's own block names no successor, and inventing
+     one for it would be the app pretending to know their plan. */
+  const whatsNext = program?.sourceDefinitionId ? nextAfter(program.sourceDefinitionId) : null;
+  /* The four-week blocks that sharpen ONE lift. Offered here because their own design records call them
+     standalone blocks run BETWEEN general programs — so finishing one is the moment they make sense, and
+     it is the only moment the intake could never reach them from. The block they just did is dropped:
+     offering somebody Squat Ascent as they walk out of Squat Ascent is the app not paying attention. */
+  const sharpen = specialisationBlocks().filter((b) => b.id !== program?.sourceDefinitionId);
 
   if (loading) {
     return (
@@ -678,6 +696,81 @@ export default function ProgramDetailScreen() {
                 .filter(Boolean)
                 .join(' · ')}
             </Text>
+          </View>
+        ) : null}
+
+        {/*
+          WHAT COMES NEXT — the answer that used to be silence.
+
+          ⚠ ONLY AFTER A PROGRAM THAT RAN ITS COURSE. `graduated` and `finished` earned this; `ended_early`
+          did not, and offering somebody a sequel to a block they walked away from reads as not having
+          noticed. The M-4 ceremony that plays at the moment of graduation is locked and deliberately
+          program-agnostic, so this is the surface that can be specific — and it is where the record lives
+          permanently rather than for the eight seconds a modal is up.
+
+          ⚠ AND IT IS EXISTENCE-CHECKED. Seven programs name a successor; SIX OF THOSE NAMES ARE NOT
+          AUTHORED. `nextAfter` matches against the real catalogue and falls through to Holt on a miss, so
+          this can never promise a program nobody has written — the on-ramp's original defect, which would
+          otherwise have reappeared here.
+        */}
+        {(state === 'graduated' || state === 'finished') && whatsNext ? (
+          <View style={styles.next}>
+            <Text style={styles.nextLabel}>What&apos;s next</Text>
+            {whatsNext.kind === 'program' ? (
+              <>
+                <Text style={styles.nextName}>{whatsNext.program.name}</Text>
+                <Text style={styles.nextMeta}>
+                  {[whatsNext.program.family, whatsNext.program.difficulty, whatsNext.program.weeks ? `${whatsNext.program.weeks} weeks` : null]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </Text>
+                <Button
+                  variant="primary"
+                  fullWidth
+                  onPress={() => router.push({ pathname: '/program/[id]', params: { id: whatsNext.program.id } })}
+                  accessibilityLabel={`Open ${whatsNext.program.name}`}
+                >
+                  Take a look
+                </Button>
+              </>
+            ) : (
+              <>
+                <Text style={styles.nextName}>
+                  {whatsNext.named ? `${whatsNext.named} isn't written yet.` : 'Nothing follows this one yet.'}
+                </Text>
+                <Text style={styles.nextMeta}>
+                  Holt can build the next block from what you just did, rather than picking one off a shelf.
+                </Text>
+                <Button variant="primary" fullWidth onPress={() => openCoach('build')} accessibilityLabel="Build the next block with Coach Holt">
+                  Build it with me
+                </Button>
+              </>
+            )}
+            {/*
+              ⚠ SECONDARY, AND ONLY AFTER A BLOCK THAT WAS NOT ITSELF ONE OF THESE. The primary offer
+              above is what comes NEXT in the athlete's progression; this is a four-week detour to put
+              weight on one lift. Presented as a choice of lift rather than a recommendation, because
+              which lift they care about is the one thing the app genuinely does not know.
+            */}
+            {sharpen.length > 0 ? (
+              <View style={styles.sharpen}>
+                <Text style={styles.sharpenLabel}>Or sharpen one lift first</Text>
+                <View style={styles.sharpenRow}>
+                  {sharpen.map((b) => (
+                    <Pressable
+                      key={b.id}
+                      onPress={() => router.push({ pathname: '/program/[id]', params: { id: b.id } })}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Open ${b.name}`}
+                      style={({ pressed }) => [styles.sharpenChip, pressed ? styles.sharpenPressed : null]}
+                    >
+                      <Text style={styles.sharpenChipText}>{b.name.replace(/\s+Intermediate$/, '')}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+                <Text style={styles.sharpenHint}>Four weeks each, loaded off a max you test first.</Text>
+              </View>
+            ) : null}
           </View>
         ) : null}
 
@@ -1307,6 +1400,32 @@ const styles = StyleSheet.create({
   metaFamily: { fontSize: 13.5, fontWeight: '600', color: flColor.gray400 },
   metaLine: { marginTop: 3, fontSize: 13, color: flColor.gray600 },
 
+  next: {
+    marginTop: 14,
+    gap: 8,
+    padding: 16,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    backgroundColor: flColor.bronzeTint,
+  },
+  nextLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  nextName: { fontFamily: flFont.display, fontSize: 18, lineHeight: 24, color: flColor.cream100 },
+  sharpen: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.bronzeBorderSubtle, gap: 9 },
+  sharpenLabel: { fontFamily: flFont.sans, fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
+  sharpenRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  sharpenChip: {
+    paddingVertical: 7,
+    paddingHorizontal: 11,
+    borderRadius: flRadius.pill,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    backgroundColor: flColor.surfaceRecessed,
+  },
+  sharpenPressed: { opacity: 0.7 },
+  sharpenChipText: { fontFamily: flFont.sans, fontSize: 12.5, fontWeight: '600', color: flColor.bronze300 },
+  sharpenHint: { fontFamily: flFont.sans, fontSize: 11.5, lineHeight: 16, color: flColor.gray600 },
+  nextMeta: { fontFamily: flFont.sans, fontSize: 13, lineHeight: 19, color: flColor.gray400, marginBottom: 4 },
   sealed: { marginTop: 16, gap: 4 },
   sealedWhen: { fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   sealedWhat: { fontSize: 13, color: flColor.gray600 },

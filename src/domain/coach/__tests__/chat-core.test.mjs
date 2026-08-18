@@ -32,15 +32,25 @@ import {
   interpret,
   isHomeTurn,
   isMedical,
+  LEVEL_CHIPS,
   nextQuestion,
   programCardFor,
   readyToBuild,
   refusalCardFor,
+  runningExperienceFor,
+  startingLoadLine,
   sizeQuestion,
 } from '../chat-core.ts';
 import { AUTHORED_GOALS, isAuthored } from '../rulebook/skeletons.ts';
 import { isEnduranceGoal } from '../constraints.ts';
 import { VOICE } from '../rulebook/voice.ts';
+
+/**
+ * An athlete who has already given a level, so a test about a LATER question is not answered by the
+ * level question instead. Intermediate on purpose: `beginner` skips the length question (see
+ * `isNewToTraining`), which several of these are specifically about.
+ */
+const LIFTER = { lifting: 'intermediate', running: 'intermediate' };
 
 /** Walk the conversation by always taking the first chip, as a fast tapper would. */
 function walk(seed = {}, maxTurns = 20) {
@@ -123,7 +133,7 @@ test('the goal question only offers goals the engine can build', () => {
 
 test('a typed answer resolves to the same patch as tapping the chip', () => {
   // `weeks` is seeded because the length question now sits between the goal and the days.
-  const q = nextQuestion({ goal: 'strength', weeks: 8 });
+  const q = nextQuestion({ goal: 'strength', weeks: 8, experience: LIFTER });
   assert.equal(q.id, 'days');
   // Typing what you can see is the common case, and it must land identically.
   assert.deepEqual(interpret('4 days', q), q.chips.find((c) => c.label === '4 days').patch);
@@ -133,7 +143,7 @@ test('a typed answer resolves to the same patch as tapping the chip', () => {
 test('a number means what the question on the table says it means', () => {
   // ⚠ SCOPED ON PURPOSE. "4" is four days on one turn and would be four miles on the next; a parser that
   // answered globally would put the right number in the wrong field and never say a word about it.
-  const days = nextQuestion({ goal: 'strength', weeks: 8 });
+  const days = nextQuestion({ goal: 'strength', weeks: 8, experience: LIFTER });
   assert.deepEqual(interpret('4', days), { daysPerWeek: 4 });
 
   const base = nextQuestion({ goal: 'run_half', raceDate: '2026-12-01' });
@@ -150,7 +160,7 @@ test('anything it cannot place returns null rather than a guess', () => {
 });
 
 test('an out-of-range number is not forced into range', () => {
-  const q = nextQuestion({ goal: 'strength', weeks: 8 });
+  const q = nextQuestion({ goal: 'strength', weeks: 8, experience: LIFTER });
   assert.equal(q.id, 'days');
   // 9 days a week is not an answer. Clamping it silently would be the app deciding it knew better.
   assert.equal(interpret('9', q), null);
@@ -163,7 +173,7 @@ test('⚠ a bare "1" on the length question is one week, not twelve', () => {
    * here: "1" is not in "One week" but IS in "12 weeks", so it fell through to a twelve-week block from
    * an athlete who asked for one. Snapped to the nearest rung, ahead of the loop.
    */
-  const q = nextQuestion({ goal: 'strength' });
+  const q = nextQuestion({ goal: 'strength', experience: LIFTER });
   assert.equal(q.id, 'size');
   assert.deepEqual(interpret('1', q), { weeks: 1 });
   assert.deepEqual(interpret('12', q), { weeks: 12 });
@@ -239,7 +249,8 @@ test('⚠ it is asked AFTER the goal, so a race can skip it', () => {
    * Asked after the goal, it is simply not asked of a race at all.
    */
   assert.equal(nextQuestion({}).id, 'goal', 'the goal still comes first');
-  assert.equal(nextQuestion({ goal: 'strength' }).id, 'size', 'and the length straight after it');
+  assert.equal(nextQuestion({ goal: 'strength' }).id, 'experience', 'then the level, which decides the next one');
+  assert.equal(nextQuestion({ goal: 'strength', experience: LIFTER }).id, 'size', 'then the length');
 
   const race = nextQuestion({ goal: 'run_half' });
   assert.notEqual(race.id, 'size', 'a race must never be asked a length it does not decide');
@@ -255,20 +266,20 @@ test('the race door is open again, because nothing can overrule it now', () => {
 
 test('⚠ answered once, and never asked twice', () => {
   // `undefined` means nobody asked. Any number means they did — including 1.
-  assert.equal(nextQuestion({ goal: 'strength' }).id, 'size');
-  assert.notEqual(nextQuestion({ goal: 'strength', weeks: 1 }).id, 'size');
-  assert.notEqual(nextQuestion({ goal: 'strength', weeks: 8 }).id, 'size');
+  assert.equal(nextQuestion({ goal: 'strength', experience: LIFTER }).id, 'size');
+  assert.notEqual(nextQuestion({ goal: 'strength', experience: LIFTER, weeks: 1 }).id, 'size');
+  assert.notEqual(nextQuestion({ goal: 'strength', experience: LIFTER, weeks: 8 }).id, 'size');
 });
 
 test('⚠ a week is not asked how many days A WEEK — the PO caught this one', () => {
   // "How many days a week can you train" asks what you can SUSTAIN. There is nothing to sustain in a
   // week that ends on Sunday; the honest question is how many days this week has in it.
-  const week = nextQuestion({ weeks: 1, goal: 'strength' });
+  const week = nextQuestion({ weeks: 1, goal: 'strength', experience: LIFTER });
   assert.equal(week.id, 'days', 'a one-week build must still be asked how many days');
   assert.ok(VOICE.ask_days_week.includes(week.ask), `a one-week build asked "${week.ask}"`);
   assert.deepEqual(week.chips.map((c) => c.patch.daysPerWeek), [2, 3, 4, 5, 6]);
 
-  const block = nextQuestion({ weeks: null, goal: 'strength' });
+  const block = nextQuestion({ weeks: null, goal: 'strength', experience: LIFTER });
   assert.ok(VOICE.ask_days.includes(block.ask), 'a block must keep the habit question');
 });
 
@@ -495,4 +506,191 @@ test('the wall copy survives even though nothing renders it', () => {
   // wizard is named as a real option rather than quietly hidden behind the ask.
   assert.match(WALL.body, /wizard is free and stays free/i);
   assert.match(WALL.secondary, /wizard/i);
+});
+
+/**
+ * ── RUNNING EXPERIENCE IS NOT LIFTING EXPERIENCE ─────────────────────────────────────────────────────
+ *
+ * One chip used to write `{ lifting: e, running: e }`, so a fifteen-year lifter who had never run tapped
+ * "Advanced" and was coached as an advanced RUNNER. The day-floor rail catches the dangerous half of that
+ * (EPS-D7 forces a beginner's days on somebody who cannot run continuously), but the hard/easy mix is
+ * composed from `experience.running` — so they would have got a beginner's mileage arranged in an
+ * advanced athlete's intensity distribution.
+ *
+ * The race questionnaire already asks for weekly mileage one question earlier, and mileage is the better
+ * answer. These guard that it is used, and that it is only ever used to come DOWN.
+ */
+test('runningExperienceFor — mileage overrides an overstated claim', () => {
+  // The reported case: a seasoned lifter who does not run.
+  assert.equal(runningExperienceFor('advanced', 0), 'beginner');
+  assert.equal(runningExperienceFor('advanced', 3), 'beginner');
+  assert.equal(runningExperienceFor('intermediate', 0), 'beginner');
+  // The race_base bands, at their own boundaries.
+  assert.equal(runningExperienceFor('advanced', 8), 'intermediate');
+  assert.equal(runningExperienceFor('advanced', 15), 'intermediate');
+  assert.equal(runningExperienceFor('advanced', 25), 'advanced');
+  assert.equal(runningExperienceFor('advanced', 35), 'advanced');
+});
+
+test('runningExperienceFor — it never rounds an athlete UP past their own word', () => {
+  /*
+   * The two mistakes are not symmetric. Coaching a real runner as a beginner costs them some progress;
+   * coaching a beginner as an advanced runner because a number said so is how people get hurt. So a high
+   * mileage answer never promotes somebody who called themselves a beginner.
+   */
+  assert.equal(runningExperienceFor('beginner', 35), 'beginner');
+  assert.equal(runningExperienceFor('beginner', 8), 'beginner');
+  assert.equal(runningExperienceFor('intermediate', 35), 'intermediate');
+});
+
+test('runningExperienceFor — no mileage answer leaves the athlete’s own word alone', () => {
+  // Every non-race build: `currentWeeklyMi` is never collected, so nothing may change.
+  for (const e of ['beginner', 'intermediate', 'advanced']) {
+    assert.equal(runningExperienceFor(e, null), e);
+    assert.equal(runningExperienceFor(e, undefined), e);
+  }
+});
+
+/**
+ * ── CORRECTING A LEVEL IS NOT ANSWERING A QUESTION ───────────────────────────────────────────────────
+ *
+ * `forgetExperience()` sat with zero callers, so the first level an athlete ever gave was permanent —
+ * the questionnaire skips the question whenever one is already stored, and a new conversation keeps it
+ * on purpose. `LEVEL_CHIPS` is the correction path.
+ *
+ * ⚠ THE FLAG IS THE WHOLE SAFETY OF IT. These carry the SAME LABELS as the build questionnaire's
+ * experience chips, and the sheet routes on `levelOnly` alone. A chip that lost the flag would fall
+ * through to the ordinary path and start assembling a program the athlete never asked for.
+ */
+test('LEVEL_CHIPS — every one records a level and none of them builds', () => {
+  assert.equal(LEVEL_CHIPS.length, 3, 'beginner, intermediate, advanced');
+  for (const c of LEVEL_CHIPS) {
+    assert.equal(c.levelOnly, true, `"${c.label}" would start a build instead of recording a level`);
+    assert.ok(c.patch.experience, `"${c.label}" records nothing`);
+    // Both disciplines are set, because the engine reads them apart and a half-answer leaves the other
+    // at whatever it was — which is the bug this whole path exists to make correctable.
+    assert.ok(c.patch.experience.lifting, 'lifting level missing');
+    assert.ok(c.patch.experience.running, 'running level missing');
+    assert.equal(c.goTo, undefined, 'correcting a level must not leave the conversation');
+  }
+  const levels = LEVEL_CHIPS.map((c) => c.patch.experience.lifting);
+  assert.deepEqual([...levels].sort(), ['advanced', 'beginner', 'intermediate'], 'all three, once each');
+});
+
+/**
+ * ── A BEGINNER IS NOT ASKED TO GUESS AT PROGRAMMING ──────────────────────────────────────────────────
+ *
+ * "A block, or one week?" is a question about training STRUCTURE. Somebody who has never trained has no
+ * basis for preferring four weeks to twelve — they pick one and hope, and the answer then shapes ten
+ * weeks of their life. Everything else in the questionnaire is a fact they own, INCLUDING the session
+ * length: "how long have you got?" is a diary question, not a training one, so it stays.
+ *
+ * The level therefore has to be known before the length is asked, which is why it moved ahead of it on
+ * the lifting path.
+ */
+test('a beginner is asked their level before the length, and then not asked the length at all', () => {
+  const NEW = { lifting: 'beginner', running: 'beginner' };
+
+  assert.equal(nextQuestion({ goal: 'strength' }).id, 'experience', 'the level comes before the length');
+
+  const { asked, finished, c } = walk({ goal: 'strength', experience: NEW });
+  assert.ok(finished, `never stopped asking — ${asked.join(', ')}`);
+  assert.ok(!asked.includes('size'), 'a beginner was asked to choose a block length');
+  assert.ok(asked.includes('time'), 'a diary question they can answer must still be asked');
+  assert.ok(asked.includes('days'), 'and their days');
+  assert.ok(asked.includes('where'), 'and their room');
+
+  /* ⚠ LEFT UNDEFINED, NOT DEFAULTED IN THE CHAT. `missingFor` does not require `weeks`, so the assembler
+     reaches `defaultWeeksFor` — the engine's own answer, which is a better one than a number this file
+     would have had to invent. A default written here would also silently outrank it. */
+  assert.equal(c.weeks, undefined, 'the chat must not invent a block length');
+  assert.ok(readyToBuild(c), 'and it still has everything the assembler needs');
+});
+
+test('an experienced athlete is still asked how long a block they want', () => {
+  const { asked } = walk({ goal: 'strength', experience: { lifting: 'advanced', running: 'advanced' } });
+  assert.ok(asked.includes('size'), 'the length question is a real choice for anyone who can make it');
+});
+
+/**
+ * ── HOW TO LOAD WEEK ONE ─────────────────────────────────────────────────────────────────────────────
+ *
+ * The one question the app could not answer for a first-timer: no prescription anywhere carries a weight,
+ * so their first set is an empty field beside a history of `—`.
+ *
+ * ⚠ THE GUARD THAT MATTERS IS "NO NUMBER". Holt does not know their bodyweight or their history, and
+ * weights are stored canonically and converted per athlete — so a literal figure would be both a guess
+ * and wrong for everyone training in kilos.
+ */
+const asBeginner = (over = {}) => ({
+  goal: 'strength',
+  experience: { lifting: 'beginner', running: 'beginner' },
+  environment: 'full_gym',
+  daysPerWeek: 3,
+  sessionMinutes: 45,
+  ...over,
+});
+
+test('startingLoadLine — a beginner is told how to load, in every room', () => {
+  for (const environment of ['full_gym', 'home', 'bodyweight', 'outdoor']) {
+    const line = startingLoadLine(asBeginner({ environment }));
+    assert.ok(line, `${environment} said nothing to somebody who has never trained`);
+    assert.ok(/week one/i.test(line), `${environment} did not say when this applies`);
+  }
+});
+
+test('⚠ startingLoadLine — it never states a weight', () => {
+  for (const environment of ['full_gym', 'home', 'bodyweight', 'outdoor']) {
+    const line = startingLoadLine(asBeginner({ environment }));
+    // Rep counts are spelled as words in this copy, so any DIGIT is a weight that escaped.
+    assert.ok(!/\d/.test(line), `${environment} put a number in front of a beginner: "${line}"`);
+    assert.ok(!/\b(lb|lbs|kg|kgs|pounds|kilos)\b/i.test(line), `${environment} named a unit: "${line}"`);
+  }
+});
+
+test('startingLoadLine — silent for anyone who does not need it', () => {
+  for (const lifting of ['intermediate', 'advanced']) {
+    assert.equal(startingLoadLine(asBeginner({ experience: { lifting, running: lifting } })), null, lifting);
+  }
+  // A race block is paced, not loaded, and `race_base` already asked what they run today.
+  assert.equal(startingLoadLine(asBeginner({ goal: 'run_10k' })), null, 'a race got load advice');
+});
+
+test('startingLoadLine — the bar, the dumbbells and the floor get different answers', () => {
+  const gym = startingLoadLine(asBeginner({ environment: 'full_gym' }));
+  const home = startingLoadLine(asBeginner({ environment: 'home' }));
+  const bw = startingLoadLine(asBeginner({ environment: 'bodyweight' }));
+  assert.equal(new Set([gym, home, bw]).size, 3, 'three rooms must not get one generic sentence');
+  assert.ok(/bar/i.test(gym), 'a gym answer should mention the bar');
+  assert.ok(/fifteen/i.test(home), 'the dumbbell answer is the fifteen-rep rule');
+  assert.ok(!/bar\b/i.test(bw), 'somebody with no equipment must not be told about a bar');
+});
+
+/**
+ * ── "GENERAL HEALTH" IS A REAL GOAL, AND IT IS NOT "GET FITTER" ──────────────────────────────────────
+ *
+ * `conditioning` was pulled from the offered list by PO decision — *"Take out Get Fitter"* — because it
+ * sat between Build muscle and Lose weight answering neither. General health is a different question: it
+ * is not BETWEEN those two, it is below all of them, the athlete who is not chasing a number at all. It
+ * is also the commonest thing a beginner actually means, and until now they had to pick "Get stronger"
+ * or "Move better" instead.
+ *
+ * ⚠ IT BUILDS STRENGTH-SHAPED, WHICH IS THE CATALOGUE'S OWN ANSWER. `fbh-full-body-3` — what the intake
+ * resolves a health goal to — is Strength Foundation I, a full-body 3-day in the Strength family. Routing
+ * it to CONDITIONING would have made it a gentler `weight_loss`, which is not what anybody means by it.
+ */
+test('the goal question offers General health, and never re-offers Get fitter', () => {
+  const labels = nextQuestion({}).chips.map((c) => c.label);
+  assert.ok(labels.includes('General health'), `offered: ${labels.join(', ')}`);
+  assert.ok(!labels.includes('Get fitter'), 'conditioning was taken out by decision and must stay out');
+});
+
+test('a General health build terminates and is ready, like every other goal', () => {
+  const { asked, finished, c } = walk({ goal: 'health' });
+  assert.ok(finished, `never stopped asking — ${asked.join(', ')}`);
+  assert.ok(readyToBuild(c), 'finished without being ready');
+  // It is a lifting block, so it is asked the lifting questions and none of the race ones.
+  assert.ok(asked.includes('where'), 'never asked where they train');
+  assert.ok(asked.includes('time'), 'never asked how long they have');
+  assert.ok(!asked.includes('race_when'), 'asked about a race');
 });

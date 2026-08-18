@@ -16,6 +16,7 @@ import {
   fetchChallengeDetail,
   formatScore,
   isGainType,
+  joinChallenge,
   metricLabel,
   ordinal,
   type ChallengeDetail,
@@ -29,8 +30,13 @@ import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/fou
  * Challenge (C-3) — the standings screen. Built to `Forge Challenge.dc.html`.
  *
  * The design calls itself the most cinematic screen in the project and it is: a crown emerging from the
- * stone at 34% opacity, an ember drifting up over 7.5s, a shimmer that glints for 21% of a 10s cycle,
- * and a season timeline of week segments. All of that is here.
+ * stone, an ember drifting up over 7.5s, a shimmer that glints for 21% of a 10s cycle, and a season
+ * timeline of week segments. All of that is here.
+ *
+ * ⚠ THE CROWN IS AT 0.60, NOT THE DESIGN'S 0.34 (PO, 2026-08-17: "I can't see it at all"). The design
+ * sets 34% against a flat page; here it sits under the vignette below and over `SCREEN_BG`, and the two
+ * together ate it entirely on a phone. Any figure copied from a `.dc` that describes opacity against a
+ * background this screen does not have is a starting point, not a value.
  *
  * It is also, in the design, entirely fictional — `yourRank: '2nd'`, `raceLine: 'Marcus leads by 2
  * workouts'` and `yourScore: '5'` are typed strings that merely happen to agree with the seed roster.
@@ -66,8 +72,31 @@ export default function ChallengeDetailScreen() {
   const { showToast } = useToast();
   const [confirmOff, setConfirmOff] = useState(false);
   const [callingOff, setCallingOff] = useState(false);
+  const [joining, setJoining] = useState(false);
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/competitions'));
+
+  /* Both the invite notification and its push route here, and the inbox row's own call to action reads
+     "Opt in to compete" — so this screen has to be somewhere you can. It wasn't: `i_joined` came back from
+     0064 on day one and nothing on C-3 ever read it, which left an invited athlete on a leaderboard they
+     could look at and not enter. CS-D1 is untouched — this is still only ever you adding yourself. */
+  const onJoin = () => {
+    if (joining) return;
+    setJoining(true);
+    joinChallenge(challengeId).then(
+      () => {
+        setJoining(false);
+        showToast('You’re in. Every session from here counts.');
+        refetch();
+      },
+      (e: unknown) => {
+        setJoining(false);
+        showToast(errorMessage(e));
+        // Same race as the hub's Join row: refetch so the button goes with the reason it failed.
+        refetch();
+      },
+    );
+  };
 
   const callOff = () => {
     if (callingOff) return;
@@ -115,6 +144,34 @@ export default function ChallengeDetailScreen() {
     <Shell onBack={goBack}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Hero challenge={data} />
+
+        {/* OPT IN (CS-D1) — above the standings, because for an invited athlete this screen is a question
+            before it is a leaderboard. A competition is joinable for as long as the insert policy says it
+            is, which is ENROLLMENT *or* ACTIVE (0087) — and since 0163 that is also exactly when the
+            invite still exists. */}
+        {!data.iJoined && (data.state === 'ENROLLMENT' || data.state === 'ACTIVE') ? (
+          <>
+            <Pressable
+              onPress={onJoin}
+              disabled={joining}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: joining }}
+              accessibilityLabel={`Join ${data.name}`}
+              style={({ pressed }) => [styles.joinBtn, pressed ? styles.standRowPressed : null]}
+            >
+              <LinearGradient colors={flGradient.bronzeFill.colors} locations={flGradient.bronzeFill.locations} start={flGradient.bronzeFill.start} end={flGradient.bronzeFill.end} style={StyleSheet.absoluteFill} />
+              <Text style={styles.joinLabel}>{joining ? 'Joining…' : 'Join This Competition'}</Text>
+            </Pressable>
+            {/* Said plainly rather than discovered from the standings: everyone is scored from the start
+                date, so a late entry is a standing start and not a handicap. */}
+            <Text style={styles.joinNote}>
+              {data.state === 'ACTIVE'
+                ? 'Already underway — you’ll be scored from the start date, the same as everyone else.'
+                : 'Nobody is entered until they opt in.'}
+            </Text>
+          </>
+        ) : null}
+
         {/* The design's own flagged gap: a closed season had no way through to its final standings. */}
         {data.state === 'COMPLETED' || data.state === 'ARCHIVED' ? (
           <Pressable
@@ -215,7 +272,10 @@ function Hero({ challenge: c }: { challenge: ChallengeDetail }) {
       <LinearGradient colors={['rgba(6,7,9,0.97)', 'rgba(6,7,9,0.72)', 'transparent'] as const} locations={[0, 0.54, 0.84] as const} start={{ x: 0.5, y: 0.2 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
 
       <View style={styles.crownWrap}>
-        <CrownArt opacity={0.34} duration={900} shimmer />
+        {/* 0.34 → 0.60 (PO 2026-08-17: "I can't see it at all"). The design's 34% is measured against a
+            flat page; this hero also carries the vignette above and a textured screen background under
+            it, and on a phone in daylight the crown simply was not there. 75% brighter, as asked. */}
+        <CrownArt opacity={0.9} duration={900} shimmer />
       </View>
 
       <Animated.View
@@ -587,6 +647,20 @@ const styles = StyleSheet.create({
 
   finalBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, marginTop: 4, marginBottom: 10, padding: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   finalBtnLabel: { fontSize: 14, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronze300 },
+  joinBtn: {
+    position: 'relative',
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+    paddingVertical: 15,
+    borderRadius: flRadius.md,
+    borderWidth: 1,
+    borderColor: flColor.bronzeMetalBorder,
+    boxShadow: `${flShadow.bronzeMetalTopRim}, ${flShadow.card}`,
+  },
+  joinLabel: { fontSize: 15, fontWeight: '700', color: '#F7F5F1', textShadowColor: 'rgba(8,5,2,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 1 },
+  joinNote: { marginTop: 9, marginBottom: 6, fontSize: 11.5, lineHeight: 17, textAlign: 'center', color: flColor.gray600 },
   callOffBtn: { marginTop: 26, alignItems: 'center', justifyContent: 'center', paddingVertical: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600 },
   callOffLabel: { fontSize: 13, fontWeight: '600', color: flColor.gray600 },
 

@@ -154,13 +154,26 @@ test('the guided on-ramp faces are reachable only while awaiting without a progr
 });
 
 /**
- * The quiet "Or just train today" duplicates the chooser's own first card whenever that card is
- * "Start a freestyle workout" — which is what it becomes while the catalog cannot answer the intake.
+ * ⚠ THE QUIET "OR JUST TRAIN TODAY" IS RETIRED, BECAUSE IT BECAME THE THING IT GUARDED AGAINST.
+ *
+ * It used to appear only when the chooser's own first card was NOT "Start a freestyle workout" — its
+ * entire job was to stop the same offer being made twice on one card. The chooser is now three fixed
+ * doors and **"Just train today" is permanently one of them**, so there is no state left in which the
+ * link is anything but the second copy.
+ *
+ * Kept as a field rather than deleted: it is part of the composition's contract, and a flag that is
+ * honestly always false is easier to read than one quietly removed.
  */
-test('"Or just train today" appears only when the chooser leads with the guided card', () => {
-  assert.equal(compose({ awaiting: true, guidedOnRamp: true }).showQuietFreestyle, true);
-  assert.equal(compose({ awaiting: true, guidedOnRamp: false }).showQuietFreestyle, false);
-  assert.equal(compose({ guidedOnRamp: true }).showQuietFreestyle, false, 'no chooser, no link');
+test('"Or just train today" is never drawn — the chooser always carries that door itself', () => {
+  for (const guidedOnRamp of [true, false])
+    for (const awaiting of [true, false])
+      for (const startChosen of [true, false]) {
+        assert.equal(
+          compose({ awaiting, guidedOnRamp, startChosen }).showQuietFreestyle,
+          false,
+          `guided=${guidedOnRamp} awaiting=${awaiting} chosen=${startChosen}`,
+        );
+      }
 });
 
 /** Two ways to say "start something" on one card is not two choices — it is one choice, said twice. */

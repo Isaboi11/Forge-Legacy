@@ -29,6 +29,38 @@ export function ChevronRightIcon({ size = 20, color = flColor.gray600 }: HomeIco
   )
 }
 
+/**
+ * A written plan — the sheet somebody already has, whether that is a spreadsheet, a coach's message or a
+ * page torn out of a notebook.
+ *
+ * Drawn in the same square-capped, mitred line style as the rest of this set rather than borrowed from an
+ * icon pack: the whole point of this file is that Home's glyphs are one hand. The folded corner is what
+ * stops it reading as a plain rectangle at 22px.
+ */
+export function PlanSheetIcon({ size = 21, color = flColor.bronze400 }: HomeIconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M14 3H6.5v18h11V6.5L14 3z"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="square"
+        strokeLinejoin="miter"
+        strokeMiterlimit={8}
+      />
+      {/* The fold, then the rows of a written plan — two long, one short, so it reads as a list. */}
+      <Path
+        d="M13.75 3.25V6.75h3.5M9.5 11h5M9.5 14h5M9.5 17h3"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="square"
+        strokeLinejoin="miter"
+        strokeMiterlimit={8}
+      />
+    </Svg>
+  )
+}
+
 export function BarbellIcon({ size = 21, color = flColor.bronze400 }: HomeIconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">

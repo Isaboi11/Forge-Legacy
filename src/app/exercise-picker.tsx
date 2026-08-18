@@ -866,8 +866,12 @@ export default function ExercisePickerScreen() {
                   onToggle={(v) => toggleDraft('equip', v)}
                 />
               ))}
+              {/* See the long note on the identical group in `exercise-library.tsx`: the tag rates
+                  TECHNICAL demand, not required fitness, and read as fitness it quietly removes most of
+                  the catalogue for the beginner most likely to reach for it. Data unchanged; word fixed. */}
               <FilterGroup
-                label="Difficulty"
+                label="Technique"
+                hint="How demanding the movement is to perform well — not how fit you need to be."
                 options={DIFFS.map((d) => ({ value: d, label: d }))}
                 active={draft.diff}
                 onToggle={(v) => toggleDraft('diff', v as Difficulty)}
@@ -953,11 +957,14 @@ function SectionHeader({ label }: { label: string }) {
 
 function FilterGroup({
   label,
+  hint,
   options,
   active,
   onToggle,
 }: {
   label: string;
+  /** One line under the label, for a group whose meaning the label alone gets wrong. */
+  hint?: string;
   options: { value: string; label: string }[];
   active: string[];
   onToggle: (v: string) => void;
@@ -965,6 +972,7 @@ function FilterGroup({
   return (
     <View style={styles.filterGroup}>
       <Text style={styles.filterGroupLabel}>{label}</Text>
+      {hint ? <Text style={styles.filterGroupHint}>{hint}</Text> : null}
       <View style={styles.filterChips}>
         {options.map((o) => {
           const on = active.includes(o.value);
@@ -1079,6 +1087,8 @@ const styles = StyleSheet.create({
   filterScroll: { maxHeight: 380 },
   filterGroup: { marginBottom: 20 },
   filterGroupLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 11 },
+  // Sits between the label and its chips, so it is read before the choice rather than after it.
+  filterGroupHint: { fontSize: 11.5, lineHeight: 16, color: flColor.gray600, marginTop: -5, marginBottom: 11 },
   filterChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   filterChip: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: 'transparent' },
   filterChipOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },

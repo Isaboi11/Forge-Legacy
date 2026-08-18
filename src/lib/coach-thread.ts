@@ -97,6 +97,22 @@ export async function hasMetHolt(): Promise<boolean> {
   }
 }
 
+/**
+ * Forget that anyone here has met Holt — a DIFFERENT athlete is signing in.
+ *
+ * ⚠ WITHOUT THIS, HE GREETS A STRANGER AS THOUGH THEY HAD ALREADY SPOKEN. The introduction is shown once
+ * ever, keyed on this flag, and the flag is device-local — so the second account on a phone never heard
+ * who he is or what he does. Cleared from `resetFirstRunFlags`, alongside the thread and the remembered
+ * training level, for the same reason every other line in that function exists.
+ */
+export async function forgetMetHolt(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(MET_KEY);
+  } catch {
+    // A flag that will not clear is a re-shown introduction, not a broken sign-in.
+  }
+}
+
 export async function rememberMetHolt(): Promise<void> {
   try {
     await AsyncStorage.setItem(MET_KEY, '1');

@@ -11,6 +11,7 @@ import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { completeOnboarding, isHandleAvailable } from '@/domain/onboarding/service';
 import { CHAPTER_SUGGESTIONS, CHAPTER_TITLE_MAX, chapterNameFrom, DEFAULT_CHAPTER_I_TITLE } from '@/domain/legacy/chapter-name';
 import { useProfile } from '@/lib/profile';
+import { useMediaPicker } from '@/lib/useMediaPicker';
 import { errorMessage } from '@/lib/useQuery';
 
 /**
@@ -33,18 +34,37 @@ interface Data {
   username: string;
   /** The TITLE half of Chapter I. Blank means "skipped", which writes the default. */
   chapterTitle: string;
+  /** A local file URI until "Enter Forge" uploads it. Null = they never added one, which is fine. */
+  photoUri: string | null;
 }
 
 export default function Onboarding() {
   const [step, setStep] = useState<Step>('account');
   const [data, setData] = useState<Data>({
-    name: '', sex: null, units: 'imperial', username: '', chapterTitle: '',
+    name: '', sex: null, units: 'imperial', username: '', chapterTitle: '', photoUri: null,
   });
   const [uStatus, setUStatus] = useState<UStatus>('idle');
   const [finishing, setFinishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { refetch: refetchProfile } = useProfile();
+  /*
+   * ⚠ THE AVATAR ON STEP ONE USED TO BE A PICTURE OF A BUTTON.
+   *
+   * It was drawn under the words "Add a photo — optional", wrapped in a plain `View`, with
+   * `photoUri: null` hard-coded at the finish and a comment calling the picker "a fast-follow". Everybody
+   * taps the circle first, and nothing was listening. The parenthetical "(add it later in Profile)" was
+   * carrying the whole explanation and losing.
+   *
+   * `useMediaPicker` is the one camera-or-library path in the app — a screen must never reach for
+   * `ImagePicker.launch*` itself — and it is what Edit Profile already uses for exactly this job.
+   */
+  const { pick, mediaPickerSheet } = useMediaPicker();
   const patch = (p: Partial<Data>) => setData((d) => ({ ...d, ...p }));
+
+  const choosePhoto = async () => {
+    const asset = await pick({ kind: 'images', title: 'Profile photo', quality: 0.92 });
+    if (asset?.uri) patch({ photoUri: asset.uri });
+  };
 
   const idx = SETUP.indexOf(step);
   const next = () => setStep(step === 'chapter' ? 'transition' : SETUP[idx + 1]);
@@ -84,7 +104,9 @@ export default function Onboarding() {
         name: data.name,
         handle: data.username.length >= 3 ? data.username : null,
         sex: data.sex ?? 'male',
-        photoUri: null, // optional photo picker is a fast-follow
+        // Uploaded inside `completeOnboarding` before the atomic RPC. Null when they skipped it, which
+        // is the same path this always took — the difference is that choosing one now works.
+        photoUri: data.photoUri,
         chapterTitle: data.chapterTitle,
         // Asked on the Account step since onboarding was built, and discarded until now.
         units: data.units,
@@ -105,7 +127,21 @@ export default function Onboarding() {
       {/* The SAME background as the Home screen — SCREEN_BG.slate + flat rgba(5,5,5,0.15) — across the
           WHOLE onboarding flow, Transition included (supersedes the earlier atmospheric-transition). */}
       <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.15)' }} />
-      {idx >= 0 ? <ProgressHeader step={idx + 1} total={SETUP.length} onBack={idx > 0 || step === 'transition' ? back : undefined} /> : null}
+      {/*
+        ⚠ THE TRANSITION STEP GETS A HEADER TOO, AND UNTIL NOW IT COULD NOT.
+        This read `idx >= 0`, and `idx` is `SETUP.indexOf('transition')` — which is `-1`. So the header
+        did not render on the final screen at all, and the `step === 'transition'` branch inside its own
+        `onBack` was unreachable code: somebody meant for Back to work there and it never once did.
+        The result was a one-way door — "Enter Forge" with no way back to rename Chapter I, on the last
+        screen before the app, where changing your mind is most likely.
+        The bar stays full (`step` is clamped to `total`) rather than showing a fourth segment: the
+        transition is the finish line, not a fourth question.
+      */}
+      <ProgressHeader
+        step={idx >= 0 ? idx + 1 : SETUP.length}
+        total={SETUP.length}
+        onBack={idx > 0 || step === 'transition' ? back : undefined}
+      />
 
       {step === 'transition' ? (
         <View style={styles.transition}>
@@ -130,8 +166,18 @@ export default function Onboarding() {
             <>
               <Heading eyebrow="Create your account" title="Claim your name" body="This is the name on your record and above every honor you earn." />
               <View style={styles.avatarRow}>
-                <Avatar name={data.name || '  '} size="profile" ring />
-                <Text style={styles.optional}>Add a photo — optional (add it later in Profile)</Text>
+                <Pressable
+                  onPress={() => void choosePhoto()}
+                  accessibilityRole="button"
+                  accessibilityLabel={data.photoUri ? 'Change your profile photo' : 'Add a profile photo'}
+                  hitSlop={8}
+                  style={({ pressed }) => (pressed ? styles.avatarPressed : null)}
+                >
+                  <Avatar src={data.photoUri ?? undefined} name={data.name || '  '} size="profile" ring />
+                </Pressable>
+                <Text style={styles.optional}>
+                  {data.photoUri ? 'Tap to change — optional' : 'Tap to add a photo — optional'}
+                </Text>
               </View>
               <Field label="Your name" placeholder="e.g. Marcus Vale" maxLength={24} showCount value={data.name} onChangeText={(t) => patch({ name: t.replace(/^\s+/, '') })} />
               <Group label="Sex" hint="Used to tailor your starting training load.">
@@ -166,8 +212,16 @@ export default function Onboarding() {
                 </View>
               </View>
               <Continue disabled={uStatus !== 'available'} onPress={next} />
-              <Pressable onPress={next} accessibilityRole="button" accessibilityLabel="Skip for now" style={styles.skip}>
+              {/*
+                ⚠ THE SKIP NOW SAYS WHAT IT COSTS.
+                Handle search is the ONLY way another athlete can add you (SOC-D15) — skip this and you
+                are invisible to Friends, tagging and every social surface in the app, while the link
+                read as a neutral convenience. The sentence is not new: Edit Profile has always said it,
+                months later, to somebody who had already hit the problem. It belongs at the decision.
+              */}
+              <Pressable onPress={next} accessibilityRole="button" accessibilityLabel="Skip for now — nobody will be able to find you by search" style={styles.skip}>
                 <Text style={styles.skipText}>Skip for now</Text>
+                <Text style={styles.skipCost}>Without a handle, nobody can find you by search. You can add one any time in Profile.</Text>
               </Pressable>
             </>
           ) : null}
@@ -216,6 +270,9 @@ export default function Onboarding() {
           ) : null}
         </ScrollView>
       )}
+      {/* The camera-or-library chooser. Rendered once at the root so it presents over whichever step is
+          on screen, which today is only the Account step's avatar. */}
+      {mediaPickerSheet}
     </View>
   );
 }
@@ -257,6 +314,7 @@ const styles = StyleSheet.create({
   continue: { marginTop: 8 },
 
   avatarRow: { alignItems: 'center', gap: 10, paddingVertical: 6 },
+  avatarPressed: { opacity: 0.7 },
   optional: { fontFamily: flFont.sans, fontSize: 12, color: flColor.gray600 },
 
   suggestRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
@@ -281,8 +339,9 @@ const styles = StyleSheet.create({
   previewCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
   previewName: { fontFamily: flFont.sans, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   previewHandle: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray600, marginTop: 1 },
-  skip: { alignItems: 'center', paddingVertical: 10 },
+  skip: { alignItems: 'center', paddingVertical: 10, gap: 5 },
   skipText: { fontFamily: flFont.sans, fontSize: 14, color: flColor.gray400 },
+  skipCost: { fontFamily: flFont.sans, fontSize: 12, lineHeight: 17, color: flColor.gray600, textAlign: 'center', maxWidth: 300 },
 
   transition: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 36, gap: 20 },
   tEyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronze400, textAlign: 'center' },
