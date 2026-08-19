@@ -815,6 +815,17 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
+> **✅ DEPLOYED 2026-08-19.** Web: `entry-69d5be4226aaa8d83f75e397b28f981b.js` — `forgelegacy.expo.app`
+> returned **200** twice with a matching hash, and the live bundle was searched for strings only this
+> pass's code contains (`Blocked People`, `Harassment or bullying`, `Block this person`, `Send report`).
+> ⚠ Two searches first read as MISSING and were not: the minifier escapes `’` as `’`, so any grep
+> carrying a curly apostrophe fails against a bundle that contains the string. Search the ASCII portion.
+> **OTA published to `production`, commit `731e2dd`, iOS update `01a01bda-3b69-727c-b0b0-7006e229cf1b`,
+> runtime `411fd2b68cbe11016f037dd7881b3fe813a1e148`** — `fingerprint:compare` matched build 6
+> (`078d2838`, 2026-08-15) exactly BEFORE publishing, and the manifest endpoint was then queried as an iOS
+> client on that runtime and returned the new update id. **Deliverable, not merely published.**
+> ⏳ Not yet confirmed on a device.
+
 ### 0. ⛔ The App Store would have rejected this build, and no launch document said so — Guideline 1.2 (2026-08-19, Moderation — **MIGRATION `0171` APPLIED AND VERIFIED**, client code is OTA-safe, ⏳ NOT DEPLOYED)
 
 **Found while writing the age-rating section of the store listing, which is the only reason anyone looked.** Guideline 1.2 requires an app carrying user-generated content to have **four** things: filtering, reporting **with timely responses**, the ability to **block** abusive users, and published contact info. Forge had the fourth (`/support`, 08-18) and, in the entire binary, **one** report control — `squad-settings.tsx:688`, a toast reading *"Reporting a squad is coming soon."* No report on a post. **No block.** `grep "create table.*(block|report)"` across all 170 migrations returned nothing.
