@@ -18,7 +18,7 @@ pointed at it. Name it *before* dragging the folder in.
 | `terms.html` | ✅ **DONE** |
 | `support.html` | ✅ **DONE** — the App Store **Support URL**. Apple requires one and rejects a bare `mailto:` |
 | `assets/landing/*` | ✅ **DONE** — 328 KB WebP, generated from repo art (see below) |
-| `index.html` | ✅ **DONE** — 152 KB, built 2026-08-16 from Landing v5 |
+| `index.html` | ✅ **DONE** — 169 KB, **restructured 2026-08-18 to Landing v6** (was 152 KB / v5) |
 | `favicon.png` | ✅ **DONE** — 64 px, from the wordmark mark |
 | `_exported-bundle.html` | reference only, **git-ignored**. See "Why not this" |
 
@@ -26,11 +26,15 @@ pointed at it. Name it *before* dragging the folder in.
 
 ## How `index.html` was built
 
-**Source of truth:** `Forge Legacy Landing v5.dc.html` in the Claude Design project
-`b029488a-201b-432f-b04c-b0df5228381e`, readable with the `DesignSync` tool
-(`get_file`, ~147 KB / 1,201 lines). The line-region-by-line-region description is
-`handoff/landing-v5-implementation.md` in that same project — it is the better starting point, but
-**the `.dc.html` is what governs when they disagree.** Both were read in full for this build.
+**Source of truth:** `design_handoff_landing_v6/Forge Legacy Landing v6.dc.html` in the Claude Design
+project `b029488a-201b-432f-b04c-b0df5228381e`, readable with the `DesignSync` tool. Its change order
+is `design_handoff_landing_v6/README.md`; the v5 file sits beside both for diffing. As with v5, the
+README is the better starting point but **the `.dc.html` governs when they disagree** — three copy
+cuts are in the design and not in the README (see the v6 section below).
+
+⚠ **v6 was a change order, not a rebuild.** The visual language, the mocks, the imagery and most of
+the copy are byte-identical to the v5 build; the page was sliced into blocks by line range,
+reassembled in the new order, and 27 asserted string substitutions applied. Nothing was retyped.
 
 It is **plain HTML + CSS**, self-contained apart from Google Fonts and `assets/landing/`. The design
 file is already almost entirely inline styles, so the conversion was mostly subtraction:
@@ -44,6 +48,84 @@ file is already almost entirely inline styles, so the conversion was mostly subt
 - The `--gut` / `--shotw` / `--shotml` / `--bz` / `--bzr` responsive contract is carried over exactly.
   **Do not replace it with media-query-per-component CSS** — it is the reason the phone mock goes edge
   to edge at 100vw below 760px instead of scaling app text down to an unreadable ~10px.
+
+### The v6 restructure — 2026-08-18
+
+**Section order.** A stranger now meets the product before the philosophy, and the practical proof
+lands in the first two screens instead of two thirds of the way down:
+
+| # | Section | v5 | Background |
+|---:|---|---|---|
+| 1 | Hook | 1 | page |
+| 2 | **What Forge Legacy actually is** | **new** | page |
+| 3 | The part you use every morning | ex-8, split | `--fl-base` |
+| 4 | Why it exists | 2 | page |
+| 5 | Chapters | 3 | `--fl-base` |
+| 6 | Sealed | 4 | page |
+| 7 | Rank | 6 | `--fl-base` |
+| 8 | **Holt** | **new** | page |
+| 9 | Squads | 5, demoted | `--fl-base` |
+| 10 | What we won't do | 7 | page |
+| 11 | The rest of it | ex-8, split | `--fl-base` |
+| 12 | FAQ | 9 | page |
+| 13 | Final CTA | 10 | `--fl-base` |
+
+⚠ **The alternating background is load-bearing and four sections had to flip.** Moving a section
+moves its parity. `--fl-base` must land on 3, 5, 7, 9, 11, 13 — the verifier checks this by
+*computed* `background-color`, not by reading the attribute.
+
+⚠ **`#chapters`, `#squads` and `#final` all still resolve.** They moved from sections 3/5/10 to
+5/9/13 but the ids travelled with them.
+
+⚠ **The "Difference N" series is now three, not four, and it is not the section order.** Chapters =
+one, Rank = two, **Holt = three**. Squads and the principles section were both removed from the
+series — Squads because it was reading as a load-bearing pillar, which makes someone who trains
+alone wonder whether the app is for them.
+
+**Two behaviour fixes.**
+
+- **The decorative phone-scroll loops were never gated** (`flLegacyScroll` 44 s, `flFeedScroll`
+  46 s). They ran from page load, so a visitor arriving at § 9 saw the squad feed mid-loop at an
+  arbitrary frame. Both now declare `animation-play-state: paused` and the scene engine sets
+  `animationPlayState = 'running'` when it first plays the containing scene. `prefers-reduced-motion`
+  still kills them outright — verified as computed `animation-name: none`.
+- **The hero CTA stack was pinned `align-items: flex-start`** on a phone-first page. It is now a
+  `[data-cta]` selector with one `min-width: 760px` query — centred below 760, left-aligned above.
+  Do **not** centre it on desktop: the headline is left-aligned there and a centred button under
+  left-aligned copy reads as a mistake.
+
+**Three copy cuts are in the `.dc.html` and not in the handoff README.** The design governs, so they
+shipped: the Rank lede lost *"No XP, no points, no leaderboard."*, the Chapters lede lost
+*"— not into a feed."*, and the hero's first bullet stopped being three things we don't have.
+All three are the same edit — **stating what we lack describes competitors; stating what we have
+describes us** (the handoff's own rationale for item 3c).
+
+### ⚠ Two v6 items are deliberately NOT shipped, and both are the same decision
+
+The design ships live `<a href>` CTAs labelled **Download for iPhone**, plus the sticky bottom bar.
+**There is still no App Store listing.** The 2026-08-16 PO decision that made the CTAs
+non-interactive `Coming to the App Store` spans has not been superseded by anything, and this
+README's own rule applies — *understating is safe; overstating is a false claim on a public page.*
+
+So both CTAs still read **Coming to the App Store**, and the sticky bar is still absent (a bar whose
+whole job is to follow the reader with a door to walk through is pure noise when the label cannot be
+acted on, and it costs 56 px of phone viewport permanently).
+
+✅ **The v6 labelling is recorded in place** in the § 1 comment, so the launch swap stays mechanical:
+
+| Location | `data-analytics` | At launch |
+|---|---|---|
+| Hero | `cta-hero` | `<a href>` + **Download for iPhone** |
+| Sticky bar | `cta-sticky` | restore from the v6 design, **Download for iPhone** |
+| Final CTA | `cta-final` | `<a href>` + **Start Chapter One** — *keep this label* |
+
+The final CTA keeps *Start Chapter One* on purpose: by § 13 the visitor has read Chapters and
+Sealed, so it reads as intent rather than jargon. At the top of the page it is jargon.
+
+⚠ **Holt's launch gate (handoff item 10) is CLEAR, and § 8 is written in the present tense because
+of it.** Coach Holt ships in the build this page advertises — he leads the Home chooser, reads
+logged training and writes week one. If that ever stops being true before a deploy, add a "coming"
+qualifier or hold the section. The gate is in a comment above the section.
 
 ### Deltas from the `.dc.html`, and why
 
@@ -59,19 +141,39 @@ file is already almost entirely inline styles, so the conversion was mostly subt
 
 ### Verified by rendering, not by reading
 
-| Measure | Design | Built |
-|---|---|---|
-| Page height at 390px | ~10,970px | **11,038px** |
-| Hero CTA bottom at 390px | 456px | **367px** — still inside the first screen |
-| Horizontal overflow at 390px / 1280px | 0 | **0 / 0** |
-| Broken images | 0 | **0** of 21 |
-| Unresolved `var(--fl-*)` | 0 of 39 | **0 of 41** |
-| Page weight | ≤ 900 KB | **394 KB** (152 KB HTML + 242 KB assets) |
+Re-measured after the **v6** restructure (2026-08-18), headless Chromium over `file://`:
 
-Also confirmed in a headless browser: `prefers-reduced-motion` collapses all 73 animated elements to
-their end state and stops both scroll loops and the workout sequence; with **JavaScript disabled** all
-73 settle and all 1,252 words stay readable; the bezel returns at ≥760px; the promise grid renders
-4-up and never 3 + 1.
+| Measure | Budget | v5 build | **v6 build** |
+|---|---|---|---|
+| Page height at 390px | — | 11,038px | **13,081px** (two new sections) |
+| Page height at 1280px | — | — | **11,820px** |
+| Hero CTA bottom at 390px | first screen | 367px | **315px** |
+| Horizontal overflow at 390 / 1280 | 0 | 0 / 0 | **0 / 0** |
+| Broken images | 0 | 0 of 21 | **0 of 22** |
+| Unresolved `var(--fl-*)` | 0 | 0 of 41 | **0 of 41** |
+| Animated elements, all settled | all | 73 | **98** |
+| Page weight | ≤ 900 KB | 394 KB | **438 KB** (169 KB HTML + 269 KB assets) |
+
+Also confirmed by rendering, at 390 / 760 / 1040 / 1280: the mock bezel is **0px** below 760 and
+**8px / 40px radius** above it; both `--pcols` grids (§ 2's four promises and § 10's four principles)
+render **1 / 2 / 4 / 4** columns and never 3 + 1; `--fl-base` computes onto sections 3, 5, 7, 9, 11,
+13; `#chapters` / `#squads` / `#final` resolve; the hero CTA stack computes `center` below 760 and
+`flex-start` above. `prefers-reduced-motion` settles all 98 and reduces both loops to computed
+`animation-name: none`. With **JavaScript off** the page keeps the same height and 1,472 words
+(v5: 1,252), within 0.3 pts of the JS-on ink coverage.
+
+⚠ **`--virtual-time-budget` freezes the CSS transition clock, and it will lie to you.** After the
+restructure 94 of 98 elements reported computed `opacity: 0` while their **inline** opacity was `1` —
+the engine had settled every one and only the transition never advanced. The tell is that the
+computed value is exactly `0` and never a partial like `0.4`. Neutralise the transitions before
+sampling (`el.style.transition = 'none'`, force a reflow, re-read) — that took the count to **0**.
+⚠ **And `html { scroll-behavior: smooth }` defeats a scripted walk-through**: stepping `scrollTo`
+every 120 ms just restarts an animation that never lands, so the page barely moves and every section
+below the fold reports unsettled. Set `scrollBehavior = 'auto'` first. Both are harness artifacts,
+both look exactly like a real regression, and both cost time on this build.
+⚠ `--blink-settings=scriptEnabled=false` **fails silently** in this headless shell — it produces no
+screenshot at all. To test JS-off, strip the `<script>` blocks and promote `<noscript>`'s contents to
+a live `<style>`; that is precisely what a scripting-disabled browser does.
 
 ### ⚠ Why not just deploy the design tool's own export
 
@@ -150,9 +252,13 @@ the same files — it is not a conversion artifact.
     one string in three known places — exactly as the handoff intends.
   - ✅ **BUILT THIS WAY.** ⚠ One correction to the instruction above: dropping the sticky bar also drops
     the element that carried `cta-sticky`, so **two** hooks survive, not three — `cta-hero` in § 1 and
-    `cta-final` in § 10. Both are `<span>`s, both are commented in place. **At launch: turn those two
-    spans back into `<a href="…">`, restore the sticky bar from the `.dc.html` (lines 1090–1098) along
-    with its show/hide logic, and `cta-sticky` comes back with it.**
+    `cta-final` in **§ 13** (§ 10 before the v6 restructure). Both are `<span>`s, both are commented in
+    place. **At launch: turn those two spans back into `<a href="…">`, restore the sticky bar from the
+    `.dc.html` along with its show/hide logic, and `cta-sticky` comes back with it.**
+  - ⚠ **v6 re-raised this and the answer did not change.** The v6 design ships all three CTAs live and
+    relabels two of them *Download for iPhone*. There is still no App Store listing, so the held state
+    stands — see **"Two v6 items are deliberately NOT shipped"** above for the per-CTA launch labels,
+    which now differ between the hero and the final CTA.
 - ✅ **Contact email** — `support@forgelegacy.app`, live on the domain (Cloudflare Email Routing,
   forwarding, verified by test 2026-08-15). `isaiah@forgelegacy.app` also routes.
 - ✅ **`/privacy` and `/terms`** — real pages, in this directory, at stable URLs.
@@ -199,7 +305,8 @@ Two passes were used for this build and both are worth repeating after any edit 
 carried by scroll-revealed copy, so a regression in the settle logic makes sections permanently
 invisible rather than merely unanimated. The `<noscript>` block is what covers the JS-off case; the
 `data-settle` attributes are what stop the sealing modal and the forge glow from settling to the wrong
-state. Check all 73 animated elements, not a sample.
+state. Check all **98** animated elements, not a sample — and check them by *inline* opacity or with
+transitions neutralised, per the virtual-time warning above.
 
 ⚠ **`og:image`, `og:url` and `canonical` are absolute `https://forgelegacy.app/…` URLs.** They are
 correct but inert until the apex resolves — link previews will stay blank until then, which is expected,
