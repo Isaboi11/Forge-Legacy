@@ -52,10 +52,26 @@
       "PowerShell(Set-Location \"c:\\\\Users\\\\isaia\\\\OneDrive - qest4.com\\\\ForgeLegacy\\\\site\"; $env:CLOUDFLARE_API_TOKEN = [Environment]::GetEnvironmentVariable\\('CLOUDFLARE_API_TOKEN','User'\\); $env:CLOUDFLARE_ACCOUNT_ID = [Environment]::GetEnvironmentVariable\\('CLOUDFLARE_ACCOUNT_ID','User'\\); npx wrangler versions upload)",
       "PowerShell(Set-Location \"c:\\\\Users\\\\isaia\\\\OneDrive - qest4.com\\\\ForgeLegacy\\\\site\"; Remove-Item -Recurse -Force .wrangler -ErrorAction SilentlyContinue; $env:CLOUDFLARE_API_TOKEN = [Environment]::GetEnvironmentVariable\\('CLOUDFLARE_API_TOKEN','User'\\); $env:CLOUDFLARE_ACCOUNT_ID = [Environment]::GetEnvironmentVariable\\('CLOUDFLARE_ACCOUNT_ID','User'\\); npx wrangler versions upload)",
       "PowerShell(Set-Location \"c:\\\\Users\\\\isaia\\\\OneDrive - qest4.com\\\\ForgeLegacy\\\\site\"; $env:CLOUDFLARE_API_TOKEN = [Environment]::GetEnvironmentVariable\\('CLOUDFLARE_API_TOKEN','User'\\); $env:CLOUDFLARE_ACCOUNT_ID = [Environment]::GetEnvironmentVariable\\('CLOUDFLARE_ACCOUNT_ID','User'\\); npx wrangler deployments list 2>&1 | Select-Object -First 30)",
-      "PowerShell(Set-Location \"c:\\\\Users\\\\isaia\\\\OneDrive - qest4.com\\\\ForgeLegacy\\\\site\"; $env:CLOUDFLARE_API_TOKEN = [Environment]::GetEnvironmentVariable\\('CLOUDFLARE_API_TOKEN','User'\\); $env:CLOUDFLARE_ACCOUNT_ID = [Environment]::GetEnvironmentVariable\\('CLOUDFLARE_ACCOUNT_ID','User'\\); npx wrangler versions deploy 3192970c-33a8-46bd-a17c-4fe40c3c1723@100% -y)"
+      "PowerShell(Set-Location \"c:\\\\Users\\\\isaia\\\\OneDrive - qest4.com\\\\ForgeLegacy\\\\site\"; $env:CLOUDFLARE_API_TOKEN = [Environment]::GetEnvironmentVariable\\('CLOUDFLARE_API_TOKEN','User'\\); $env:CLOUDFLARE_ACCOUNT_ID = [Environment]::GetEnvironmentVariable\\('CLOUDFLARE_ACCOUNT_ID','User'\\); npx wrangler versions deploy 3192970c-33a8-46bd-a17c-4fe40c3c1723@100% -y)",
+      "Edit(/.claude/skills/deploy-web/**)",
+      "Edit(/.claude/skills/migration/**)",
+      "Edit(/.claude/skills/status-update/**)"
     ],
     "additionalDirectories": [
       "C:\\Users\\isaia\\OneDrive\\Desktop\\Forge Legacy Documents"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "PowerShell|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"c:/Users/isaia/OneDrive - qest4.com/ForgeLegacy/.claude/hooks/guard-publish.mjs\""
+          }
+        ]
+      }
     ]
   },
   "enabledPlugins": {
