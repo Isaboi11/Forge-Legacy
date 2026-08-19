@@ -800,9 +800,13 @@ genuinely unstarted**, and all five gate submission rather than review.
 - [ ] **10.4 — Support URL and marketing URL.** Support URL is required. A mailto: alone is not enough.
 - [~] **10.5 — Screenshots** at the required display size, plus app icon, description, promotional text,
       keywords, category (Health & Fitness), and age rating.
-      ✅ **COPY WRITTEN 2026-08-19 — `Docs/App-Store-Listing-Copy.md`.** Name, three subtitle options,
-      promotional text (149/170), keywords (94/100) and the full description (~2,470/4000), in Landing v6's
-      voice. **Needs from the PO: pick a subtitle.**
+      ✅ **COPY WRITTEN 2026-08-19 — `Docs/App-Store-Listing-Copy.md`.** Name, subtitle, promotional text
+      (149/170), keywords (94/100) and the full description (~2,470/4000), in Landing v6's voice.
+      ✅ **SUBTITLE CHOSEN 2026-08-19 — option A, `Workout log & strength tracker`** (30/30, so any later
+      edit is a rewrite). **§4's keyword list already assumed A and needs no change**; the two are coupled,
+      and changing the subtitle without rewriting the keywords is the documented failure mode.
+      **Nothing in the copy is still owed by the PO** — what remains on this row is the app icon and the
+      age rating.
       ✅ **SCREENSHOTS SHOT AND FRAMED 2026-08-19 — eight, at 6.9" (1320 × 2868).** Captured on an
       iPhone 16 Pro Max, whose native resolution **is** an accepted 6.9" size, so nothing was scaled or
       resampled. Raws in `…/OneDrive/ForgeLegacy-AppStore/raw`, framed finals in `…/final/01–08.png`,

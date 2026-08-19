@@ -32,16 +32,25 @@ Forge Legacy
 
 ## 2 · Subtitle — 30 characters
 
-Indexed for search and shown under the name everywhere. Three options; **I recommend A.**
+Indexed for search and shown under the name everywhere. **✅ PO CHOSE A, 2026-08-19. This is the one to
+paste — the options below are kept only as the record of why.**
+
+```
+Workout log & strength tracker
+```
+*30 / 30 — exactly at the limit, so **any edit is a rewrite**, not a tweak.*
 
 | | Text | Chars | The trade |
 |---|---|---|---|
-| **A ✅** | `Workout log & strength tracker` | **30** | Maximum search reach. Every word is a term people actually type. Says nothing distinctive — but the *name* carries the brand and the description carries the soul, and a new app with no awareness cannot afford a subtitle that no one searches. |
+| **A ✅ CHOSEN** | `Workout log & strength tracker` | **30** | Maximum search reach. Every word is a term people actually type. Says nothing distinctive — but the *name* carries the brand and the description carries the soul, and a new app with no awareness cannot afford a subtitle that no one searches. |
 | B | `Lift. Log. Keep the record.` | 27 | The voice, exactly. Wins on a store page someone was sent to; loses on a store page someone has to find. |
 | C | `Strength log & training squad` | 29 | A compromise. "Squad" is low-volume as a search term, so it buys less reach than it looks like it does. |
 
-⚠ **Whichever you pick changes §4.** Apple indexes the name and subtitle already, so keywords must not
-repeat those words — the keyword list below assumes **A**.
+✅ **§4 IS THEREFORE CORRECT AS WRITTEN AND NEEDS NO EDIT.** Apple indexes the name and subtitle already,
+so keywords must not repeat those words — and the keyword list below was written assuming **A**, which is
+why `workout`, `log`, `strength` and `tracker` are deliberately absent from it. ⚠ **If the subtitle is
+ever changed, §4 must be rewritten in the same pass**, or the list will either duplicate indexed terms
+(wasting characters) or drop terms nothing else covers.
 
 ---
 
@@ -181,7 +190,9 @@ some form of all three must exist before submission.
 
 ## 8 · What still needs you
 
-- [ ] **Pick a subtitle** (§2) — everything else is written.
+- [x] **Subtitle — ✅ CHOSEN 2026-08-19: A, `Workout log & strength tracker`** (§2). Exactly 30/30, so any
+      later edit is a rewrite. **§4's keyword list already assumed A and therefore needs no change** — but
+      the two move together, and changing one without the other is the failure mode §2 now warns about.
 - [x] **Screenshots — ✅ SHOT AND FRAMED 2026-08-19. Eight, at 6.9" (1320 × 2868).**
       Captured on an iPhone 16 Pro Max, whose native resolution **is** an accepted 6.9" size, so nothing
       was scaled. Raw captures in `…/OneDrive/ForgeLegacy-AppStore/raw`, framed finals in
