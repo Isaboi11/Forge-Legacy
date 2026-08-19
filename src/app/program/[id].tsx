@@ -70,6 +70,7 @@ import { useProfile } from '@/lib/profile';
 import { useShareSheet } from '@/hooks/useShareSheet';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { errorMessage } from '@/lib/useQuery';
+import { equipmentLabel } from '@/components/forge/EquipIcon';
 
 /**
  * Program Detail (`Forge Program.dc.html`) — one athlete-authored program across its five lifecycle
@@ -817,7 +818,7 @@ export default function ProgramDetailScreen() {
             <View style={styles.equipRow}>
               {equipment.map((e) => (
                 <View key={e} style={styles.equipPill}>
-                  <Text style={styles.equipText}>{e}</Text>
+                  <Text style={styles.equipText}>{equipmentLabel(e)}</Text>
                 </View>
               ))}
             </View>

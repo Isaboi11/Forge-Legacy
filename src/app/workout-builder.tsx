@@ -55,6 +55,7 @@ import {
 } from '@/lib/workout-builder-draft';
 import { errorMessage } from '@/lib/useQuery';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
+import { equipmentLabel } from '@/components/forge/EquipIcon';
 
 /**
  * W-25 Free Workout Builder — plan a session, then keep it (and start it).
@@ -472,7 +473,7 @@ function Row({
           </Text>
           {item.equip ? (
             <Text style={styles.exEquip} numberOfLines={1}>
-              {item.equip}
+              {equipmentLabel(item.equip)}
             </Text>
           ) : null}
         </View>

@@ -24,7 +24,7 @@ import { resolveExerciseName } from '@/domain/exercise-picker/data';
 import { useToast } from '@/hooks/useCeremony';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { useUnits } from '@/lib/settings';
-import { EquipIcon } from '@/components/forge/EquipIcon';
+import { EquipIcon, equipmentLabel } from '@/components/forge/EquipIcon';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
@@ -2397,7 +2397,7 @@ function ExerciseCard({
           </Text>
           {item.equip ? (
             <Text style={styles.exEquip} numberOfLines={1}>
-              {item.equip}
+              {equipmentLabel(item.equip)}
             </Text>
           ) : null}
         </View>

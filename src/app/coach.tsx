@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
-import { fetchHomeGym } from '@/data/home-gym-live';
+import { EMPTY_COACH_PROFILE, fetchCoachProfile } from '@/data/coach-profile-live';
 import { fetchLiftHistory, liftId } from '@/data/lift-history-live';
 import { assemble } from '@/domain/coach/assemble';
 import {
@@ -31,6 +31,7 @@ import {
   type Limitation,
   type SessionMinutes,
 } from '@/domain/coach/constraints';
+import { intakeSteps, type StepId } from '@/domain/coach/intake-steps';
 import { progressionFor } from '@/domain/coach/progression';
 import { rationaleFor } from '@/domain/coach/rulebook/rationale';
 import {
@@ -82,7 +83,35 @@ import { useQuery } from '@/lib/useQuery';
 const INTRO_SEEN_KEY = 'forge_coach_intro_seen_v1';
 const ACK_MS = 620;
 
+/**
+ * How the carried-over profile answers read back to the athlete.
+ *
+ * Separate from `EXPERIENCE_ACK` and the `where` step's own card titles on purpose: those are Holt
+ * REPLYING to a choice just made ("Then we start with the movements, not the numbers"), these are
+ * clauses in a sentence describing a standing fact. The same string cannot do both jobs.
+ */
+const EXPERIENCE_SUMMARY: Record<Experience, string> = {
+  beginner: 'starting out',
+  intermediate: 'training a while',
+  advanced: 'years of training',
+};
+
+const ENVIRONMENT_SUMMARY: Record<Environment, string> = {
+  full_gym: 'a full gym',
+  home: 'training at home',
+  bodyweight: 'bodyweight only',
+  outdoor: 'training outdoors',
+};
+
 type Mode = 'program' | 'day';
+
+/**
+ * ⚠ `StepId` AND THE STEP LIST NOW LIVE IN `domain/coach/intake-steps.ts`.
+ *
+ * They moved the moment the wizard started skipping questions the profile already answers: a wrong
+ * boolean there produces a flow that still runs and still builds, having silently never asked something.
+ * That is not catchable by `tsc` and is catchable by a test, so it lives where a test can reach it.
+ */
 /** Weeks from today as an ISO date, which is what the engine counts back from. */
 function isoInWeeks(weeks: number): string {
   const d = new Date();
@@ -132,25 +161,17 @@ const RESULT_DISTANCES: { label: string; mi: number }[] = [
   { label: 'Marathon', mi: 26.2 },
 ];
 
-type StepId =
-  | 'goal'
-  | 'race_when'
-  | 'race_base'
-  | 'race_can_run'
-  | 'race_result'
-  | 'days'
-  | 'style'
-  | 'focus'
-  | 'muscles'
-  | 'where'
-  | 'gear'
-  | 'time'
-  | 'experience'
-  | 'limits';
-
 export default function CoachScreen() {
   const router = useRouter();
-  const gym = useQuery(fetchHomeGym, []);
+  /**
+   * What onboarding already asked. See `data/coach-profile-live.ts`.
+   *
+   * ⚠ THIS REPLACED `fetchHomeGym()` RATHER THAN JOINING IT. Every field is on the same `profiles` row,
+   * and two reads of one row for one screen is how two callers start disagreeing about what the athlete
+   * owns. Anything that still wants the bare equipment list uses `profile.ownedEquipment`.
+   */
+  const profileQ = useQuery(fetchCoachProfile, []);
+  const known = profileQ.data ?? EMPTY_COACH_PROFILE;
 
   const [intro, setIntro] = useState<boolean | null>(null);
   useEffect(() => {
@@ -177,7 +198,7 @@ export default function CoachScreen() {
   const [focusKind, setFocusKind] = useState<'split' | 'body_parts' | null>(null);
   const [split, setSplit] = useState<SplitName | null>(null);
   const [parts, setParts] = useState<BodyPart[]>([]);
-  const [environment, setEnvironment] = useState<Environment>('full_gym');
+  const [environment, setEnvironment] = useState<Environment | null>(null);
   /**
    * Gear named in the wizard, which overrides the saved Home Gym for this build only.
    *
@@ -201,43 +222,57 @@ export default function CoachScreen() {
   const [resultMi, setResultMi] = useState<number | null>(null);
   const [resultTime, setResultTime] = useState('');
 
-  const endurance = goal != null && isEnduranceGoal(goal);
-
   const [built, setBuilt] = useState<Built | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const owned = pickedGear ?? gym.data ?? [];
+  /*
+   * ══ WHAT ONBOARDING ANSWERED IS NOT ASKED AGAIN — AND IS ALWAYS CHANGEABLE ══
+   *
+   * `missingFor()` in `domain/coach/constraints.ts` was written for exactly this and says so: goal and
+   * experience come from onboarding, equipment from the Home Gym profile, and the wizard asks for the
+   * rest. Until now nothing read the profile, so every athlete answered all eight questions on every
+   * build — including the three they had just answered on the way in.
+   *
+   * ⚠ SKIPPED IS NOT THE SAME AS FIXED. `revising` puts all three back, and the chooser screen shows what
+   * Holt is about to assume so the athlete can see it BEFORE it is used rather than discover it in the
+   * built program. A profile answer is a good default and a bad cage: somebody who set up a full gym in
+   * January is in a hotel room in March.
+   *
+   * ⚠ AND `revising` IS PLAIN STATE READ INLINE, not a seed written into the answer fields by an effect.
+   * This project's react-compiler lint ERRORS on `setState` inside an effect, and seeding would also make
+   * the profile and the athlete's own answer indistinguishable the moment they differ.
+   */
+  const [revising, setRevising] = useState(false);
+  const askGoal = revising || known.goal == null;
+  const askExperience = revising || known.experience == null;
+  const askWhere = revising || known.environment == null;
 
-  // The gear step only exists once the athlete has said they want to name their equipment. Inserting it
-  // straight after `where` means answering that question walks onto it, and changing the answer walks
-  // back off — no index bookkeeping either way.
-  const gearStep: StepId[] = pickedGear != null ? ['gear'] : [];
+  const effGoal = askGoal ? goal : known.goal;
+  const effExperience = askExperience ? experience : known.experience;
+  /* `full_gym` is the fallback of last resort and is only ever reached with the `where` step on screen
+     and unanswered, which the step list prevents from mattering — it exists so the type is not optional
+     all the way down into the engine. */
+  const effEnvironment: Environment = (askWhere ? environment : known.environment) ?? 'full_gym';
+
+  const endurance = effGoal != null && isEnduranceGoal(effGoal);
+
+  const owned = pickedGear ?? known.ownedEquipment ?? [];
   /* A race plan asks a different set of questions, and skips three the strength flow needs: there is no
      split to choose, the room is wherever they run, and session length is decided by the volume curve
      rather than by a budget. `race_can_run` only appears for someone whose mileage has not already
      answered it — asking a 30-mile-a-week runner whether they can run for twenty minutes is the wizard
      not listening. */
-  const canRunStep: StepId[] = (weeklyMi ?? 99) <= 3 ? ['race_can_run'] : [];
-  const enduranceSteps: StepId[] = [
-    'goal',
-    'race_when',
-    'race_base',
-    ...canRunStep,
-    'race_result',
-    'days',
-    'experience',
-    'limits',
-  ];
-
-  const steps: StepId[] =
-    mode === 'program' && endurance
-      ? enduranceSteps
-      : mode === 'program'
-      ? ['goal', 'days', 'style', 'where', ...gearStep, 'time', 'experience', 'limits']
-      : focusKind === 'body_parts'
-        ? ['focus', 'muscles', 'where', ...gearStep, 'time', 'experience', 'limits']
-        : ['focus', 'where', ...gearStep, 'time', 'experience', 'limits'];
+  const steps: StepId[] = intakeSteps({
+    mode,
+    endurance,
+    focusKind,
+    namingGear: pickedGear != null,
+    weeklyMi,
+    askGoal,
+    askWhere,
+    askExperience,
+  });
 
   const step = steps[stepIndex];
 
@@ -291,13 +326,13 @@ export default function CoachScreen() {
       if (mode === 'program') {
         const res = assemble(
           {
-            goal: goal!,
-            experience: { lifting: experience!, running: experience! },
+            goal: effGoal!,
+            experience: { lifting: effExperience!, running: effExperience! },
             daysPerWeek: daysPerWeek!,
             // Not asked on a race plan: a long run is as long as it is, so a stated session budget would
             // be a question whose answer changes nothing. 60 keeps the field honest for the validator.
             sessionMinutes: sessionMinutes ?? 60,
-            environment,
+            environment: effEnvironment,
             ownedEquipment: owned,
             limitations,
             excludeExercises: [],
@@ -324,9 +359,9 @@ export default function CoachScreen() {
           kind: 'program',
           title: structure.name,
           stats: [`${structure.weeks} weeks`, `${structure.daysPerWeek} days`, `~${sessionMinutes} min`],
-          tag: GOAL_LABEL[goal!],
+          tag: GOAL_LABEL[effGoal!],
           why: rationaleFor({
-            goal: goal!,
+            goal: effGoal!,
             daysPerWeek: daysPerWeek!,
             sessionMinutes: sessionMinutes!,
             weeks: structure.weeks,
@@ -355,8 +390,8 @@ export default function CoachScreen() {
           {
             focus,
             sessionMinutes: sessionMinutes!,
-            experience: experience!,
-            environment,
+            experience: effExperience!,
+            environment: effEnvironment,
             ownedEquipment: owned,
             limitations,
             learned,
@@ -388,7 +423,7 @@ export default function CoachScreen() {
                 const p = progressionFor({
                   exerciseName: e.name,
                   pattern: (e.catalogKey ? itemByKey(e.catalogKey)?.pattern : undefined) ?? '',
-                  experience: experience!,
+                  experience: effExperience!,
                   prescription: { sets: e.sets ?? 3, reps: e.reps ?? 8, repsMax: e.repsMax ?? null },
                   history: history.get(liftId({ catalogKey: e.catalogKey, name: e.name }))?.sessions ?? [],
                   /* The rack's own constraint — a dumbbell lift cannot advance by 2.5 lb because no such
@@ -440,11 +475,30 @@ export default function CoachScreen() {
   const showBack = intro === false && (mode != null || built != null);
   const chapter = mode === 'program' ? 'PROGRAM DESIGN' : "TODAY'S SESSION";
 
+  /**
+   * One sentence naming everything carried over from the profile, or `null` when nothing was.
+   *
+   * ⚠ IT NAMES ONLY WHAT IS ACTUALLY BEING SKIPPED. `known.goal` is null for an endurance or athletic
+   * answer even though onboarding recorded one, and the goal question is then still asked — claiming
+   * "Run a 5K" here on the strength of a coarse `endurance` bucket would be the summary asserting
+   * something the engine is not being told.
+   */
+  const knownLine = ((): string | null => {
+    const parts: string[] = [];
+    if (known.goal) parts.push(GOAL_LABEL[known.goal].toLowerCase());
+    if (known.experience) parts.push(EXPERIENCE_SUMMARY[known.experience]);
+    if (known.environment) parts.push(ENVIRONMENT_SUMMARY[known.environment]);
+    if (parts.length === 0) return null;
+    // Sentence case on the first fragment only — the rest are lowercase clauses by construction.
+    const joined = parts.length === 1 ? parts[0] : `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`;
+    return `${joined.charAt(0).toUpperCase()}${joined.slice(1)}.`;
+  })();
+
   return (
     <View style={styles.root}>
       <AppBar title="Coach Holt" serif onClose={() => router.back()} onBack={showBack ? back : undefined} />
 
-      {gym.loading || intro == null ? (
+      {profileQ.loading || intro == null ? (
         <View style={styles.center}>
           <ActivityIndicator color={flColor.bronze400} />
         </View>
@@ -500,6 +554,28 @@ export default function CoachScreen() {
               }}
             />
           </View>
+          {/*
+            ⚠ WHAT HOLT IS ABOUT TO ASSUME, SHOWN BEFORE HE ASSUMES IT.
+            Skipping a question the athlete already answered is only an improvement if they can SEE what
+            was carried over. Without this the shorter flow is indistinguishable from a flow that quietly
+            decided for them, and the first they would know of a wrong assumption is a program built on
+            it. Rendered only when something was actually carried — an empty summary that says "I know
+            nothing about you" is the generic teaser the coach spec forbids.
+          */}
+          {!revising && knownLine != null ? (
+            <View style={styles.knows}>
+              <Text style={styles.knowsHead}>What I already know</Text>
+              <Text style={styles.knowsBody}>{knownLine}</Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Change what Coach Holt knows about you"
+                onPress={() => setRevising(true)}
+                style={styles.knowsChange}
+              >
+                <Text style={styles.knowsChangeText}>Not right today? Change it</Text>
+              </Pressable>
+            </View>
+          ) : null}
         </ScrollView>
       ) : ack ? (
         <Acknowledgement label={ack.label} line={ack.line} />
@@ -520,7 +596,7 @@ export default function CoachScreen() {
               focusKind,
               split,
               parts,
-              environment,
+              environment: effEnvironment,
               pickedGear,
               raceWeeks,
               weeklyMi,
@@ -532,7 +608,7 @@ export default function CoachScreen() {
               limitations,
               // The profile's own count — the Home Gym card describes what is SAVED, not what a
               // limited-equipment answer is currently overriding it with.
-              ownedCount: (gym.data ?? []).length,
+              ownedCount: (known.ownedEquipment ?? []).length,
             }}
             answer={answer}
             set={{
@@ -1347,6 +1423,22 @@ const styles = StyleSheet.create({
   chipTextOn: { color: flColor.bronze300 },
 
   cta: { marginTop: 18 },
+
+  /* Quiet by construction — recessed surface, no bronze on the card itself. It is context for the two
+     choices above it, not a third one. */
+  knows: {
+    marginTop: 22,
+    padding: 14,
+    gap: 6,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.charcoal700,
+    backgroundColor: flColor.surfaceRecessed,
+  },
+  knowsHead: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.6, color: flColor.gray600 },
+  knowsBody: { fontSize: 14, lineHeight: 21, color: flColor.gray400 },
+  knowsChange: { alignSelf: 'flex-start', paddingVertical: 6 },
+  knowsChangeText: { fontSize: 13, fontWeight: '600', color: flColor.bronze300 },
 
   timeInput: {
     marginTop: 12,

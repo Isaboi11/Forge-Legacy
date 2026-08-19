@@ -103,7 +103,18 @@ const SCORE_TEXT: Record<ChallengeType, string> = {
 
 const measureFor = (t: ChallengeType): Measure => MEASURES.find((m) => m.total === t || m.gain === t) ?? MEASURES[0];
 
+/**
+ * The custom-run bounds. `Create-Challenge-Wireframe-Spec-C2` §4.3: *"Custom range must be ≥ 1 day"*,
+ * and the spec's own presets lead with **Daily**. The floor was 3 until 2026-08-19 — not a decision,
+ * just a number — and it silently turned a 2-day competition into a 3-day one.
+ */
+const MIN_DAYS = 1;
+const MAX_DAYS = 180;
+
 const DURATIONS: { days: number; label: string; sub?: string }[] = [
+  /* Daily is the spec's first preset (§4.3) and had no chip at all, which is why a short competition had
+     to go through Custom — and through the floor that rewrote it. */
+  { days: 1, label: 'Daily', sub: '1 day' },
   { days: 7, label: '1 Week' },
   { days: 14, label: '2 Weeks' },
   { days: 28, label: '4 Weeks' },
@@ -176,9 +187,29 @@ export default function CreateChallengeScreen() {
   const squad = squadData?.squad ?? null;
   const memberCount = squadData?.members.length ?? 0;
 
-  // Clamped on read, so a half-typed or emptied field can never produce an invalid window. The design
-  // let state hold 0 while the run line said 3 — the field and the summary disagreed.
-  const durationDays = preset === 'custom' ? Math.min(180, Math.max(3, parseInt(customDays, 10) || 0)) : preset;
+  /**
+   * Clamped on read, so a half-typed or emptied field can never produce an invalid window. The design
+   * let state hold 0 while the run line said 3 — the field and the summary disagreed.
+   *
+   * ⚠ THE FLOOR WAS 3, AND IT SILENTLY REWROTE WHAT YOU TYPED — 2026-08-19.
+   *
+   * PO: *"I made a 2 day competition for me and king mo."* The row says three days, Aug 17 → Aug 20, and
+   * that is why it had not finished when it should have. Typing `2` left `2` in the field and built a
+   * **3-day** competition, because `Math.max(3, …)` moved it and nothing said so. The one line that
+   * disagreed was the run summary below, which is exactly the field-vs-summary split this clamp was
+   * added to close — closed for `0`, left open for everything under 3.
+   *
+   * ⛔ AND 3 WAS NEVER THE RULE. `Create-Challenge-Wireframe-Spec-C2` §4.3 is explicit: *"Custom range
+   *   must be ≥ 1 day"*, and its duration presets are **Daily**, Weekly, Monthly — a one-day competition
+   *   is named in the spec. `challenges` only constrains `end_at > start_at`. So the floor was neither a
+   *   product decision nor a database limit; it was a number in a clamp, and it cost a real competition
+   *   a day.
+   */
+  const durationDays = preset === 'custom' ? Math.min(MAX_DAYS, Math.max(MIN_DAYS, parseInt(customDays, 10) || 0)) : preset;
+  /* What you typed, when it is not what you are going to get. Rendered next to the field rather than
+     corrected behind it: silently rewriting an athlete's input is what produced the report. */
+  const typedDays = preset === 'custom' ? parseInt(customDays, 10) : durationDays;
+  const clamped = preset === 'custom' && Number.isFinite(typedDays) && typedDays !== durationDays;
   const start = startFor(startWhen);
   const end = new Date(start.getTime() + durationDays * 24 * 60 * 60 * 1000);
 
@@ -392,8 +423,19 @@ export default function CreateChallengeScreen() {
                   style={[styles.input, styles.numInput]}
                 />
                 <Text style={styles.customLabel}>days</Text>
-                <Text style={styles.customHint}>3–180</Text>
+                <Text style={styles.customHint}>
+                  {MIN_DAYS}–{MAX_DAYS}
+                </Text>
               </View>
+            ) : null}
+
+            {/* Said out loud, because it used to happen behind the field. */}
+            {clamped ? (
+              <Text style={styles.customClamp}>
+                {typedDays < MIN_DAYS
+                  ? `A competition runs at least ${MIN_DAYS} day — this will run ${durationDays}.`
+                  : `The longest run is ${MAX_DAYS} days — this will run ${durationDays}.`}
+              </Text>
             ) : null}
 
             <View style={styles.divider} />
@@ -882,6 +924,7 @@ const styles = StyleSheet.create({
   customRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   customLabel: { fontSize: 13, color: flColor.gray400 },
   customHint: { marginLeft: 'auto', fontSize: 11, color: flColor.gray600 },
+  customClamp: { marginTop: 8, fontSize: 11.5, lineHeight: 17, color: flColor.bronze300 },
   divider: { height: 1, backgroundColor: flColor.charcoal700 },
   subLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray600 },
   runLine: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 12, paddingVertical: 11, borderRadius: flRadius.md, backgroundColor: flColor.charcoal900 },

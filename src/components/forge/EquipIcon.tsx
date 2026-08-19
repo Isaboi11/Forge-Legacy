@@ -71,6 +71,46 @@ export function glyphFor(equip: string | undefined): GlyphName {
   return EQUIP_GLYPH[equip] ?? NAME_GLYPH[equip] ?? 'barbell'
 }
 
+/**
+ * Catalog `equipmentId` → the words an athlete reads.
+ *
+ * ⚠ FOUR SCREENS WERE PRINTING THE RAW DATABASE KEY. Program detail, the share card, the program
+ * builder and the workout builder each rendered `equip` straight into a pill, so a program's equipment
+ * row read `battle_rope · medicine_ball · plyo_box`. It survived because the pills are decorative and
+ * nobody reads their own gym's equipment list — it was caught while shooting App Store screenshots.
+ *
+ * Every name below is copied 1:1 from `exercise-relationships/source/equipment.json`, which is the
+ * catalogue's own `name` field. **They are not invented here.** A new equipment type is added THERE and
+ * mirrored here; if the two ever disagree, that file wins.
+ *
+ * ⚠ An unknown id de-snakes rather than disappearing. A missing pill silently removes real information
+ * about what a program demands, and `Plyo Box` still reads as English while telling us the map is short
+ * a row. This also makes the function idempotent for saved programs whose `equip` is already a display
+ * name — see `NAME_GLYPH` above, which exists for exactly that case.
+ */
+const EQUIP_LABEL: Record<string, string> = {
+  barbell: 'Barbell',
+  ez_bar: 'EZ-Curl Bar',
+  dumbbell: 'Dumbbell',
+  kettlebell: 'Kettlebell',
+  cable: 'Cable Machine',
+  selectorized_machine: 'Selectorized Machine',
+  smith_machine: 'Smith Machine',
+  bodyweight: 'Bodyweight',
+  resistance_band: 'Resistance Band',
+  suspension_trainer: 'Suspension Trainer',
+  medicine_ball: 'Medicine Ball',
+  plyo_box: 'Plyometric Box',
+  sled: 'Sled / Prowler',
+  battle_rope: 'Battle Rope',
+  cardio: 'Cardio Equipment / Outdoors',
+}
+
+export function equipmentLabel(equip: string | undefined): string {
+  if (!equip) return ''
+  return EQUIP_LABEL[equip] ?? equip.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
 export function EquipIcon({ equip, size = 20, color = flColor.bronze400 }: { equip?: string; size?: number; color?: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">

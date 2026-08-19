@@ -9,6 +9,14 @@
 -- should be run first — the most likely cause is data (the device signed in as an account that is not
 -- the one named in `invited_ids`), which no migration can or should fix.
 --
+-- ⚠⚠ THIS FILE IS INCOMPLETE, AND IT SAYS "FOUR" SIX TIMES. 0059 and 0087 both define **SIX** objects.
+--    The two below are only the policy side; `challenge_hub()` and `advance_challenges()` are the other
+--    two, and they are the two that decide whether a competition MOVES. Under 0059's `advance_challenges`
+--    a friends competition never leaves ENROLLMENT and never completes — the days do not progress and no
+--    winner is ever written — while every assertion in §2 of this file passes.
+--    **RUN `0168_challenge_lifecycle_reassert.sql` AFTER THIS ONE.** (Found 2026-08-19, from the PO's
+--    report that a competition's days had stopped advancing.)
+--
 -- This is the OTHER candidate, closed permanently. `0059_challenges.sql` and `0087_friend_challenges.sql`
 -- both define these four objects, and 0059's versions are SQUAD-ONLY:
 --

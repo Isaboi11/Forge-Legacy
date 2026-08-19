@@ -9,22 +9,79 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { Field, Heading, ProgressHeader, SelectTile } from '@/components/onboarding/kit';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { completeOnboarding, isHandleAvailable } from '@/domain/onboarding/service';
+import type { EquipmentId, GoalId } from '@/domain/onboarding/derive';
+import type { Experience } from '@/domain/coach/constraints';
+import { HOME_GYM_EQUIPMENT, HOME_GYM_GROUPS } from '@/domain/home-gym/equipment';
 import { CHAPTER_SUGGESTIONS, CHAPTER_TITLE_MAX, chapterNameFrom, DEFAULT_CHAPTER_I_TITLE } from '@/domain/legacy/chapter-name';
 import { useProfile } from '@/lib/profile';
 import { useMediaPicker } from '@/lib/useMediaPicker';
 import { errorMessage } from '@/lib/useQuery';
 
 /**
- * The onboarding route (session, not-onboarded) — a MINIMAL identity ramp (ONB-Amendment-002): Account →
- * Username → Transition, nothing else. Goals / Experience / Equipment / Schedule / Program / Athlete Type
- * are all deferred to opt-in, post-Home surfaces — you answer them only if you want a suggested program
- * (ONB-A2-D1). Answers accumulate in local `data`; nothing persists until "Enter Forge" runs the atomic
- * finish (`completeOnboarding`), which writes athlete_type = Hybrid (the default — type isn't asked) and
- * environment = null (unknown until a program-recommendation flow captures equipment). On success
- * `onboarded_at` flips and the boot router swaps to the app. Welcome/Create/Sign-In are the auth route.
+ * The onboarding route (session, not-onboarded): Account → Username → Goal → Experience → Equipment
+ * (→ Gear) → Chapter → Transition.
+ *
+ * ══ WHY THE THREE TRAINING QUESTIONS CAME BACK ══
+ *
+ * ONB-Amendment-002 stripped this to an identity ramp and deferred Goal / Experience / Equipment to
+ * opt-in, post-Home surfaces. Those surfaces were built — `lib/home-level.ts` and `lib/home-intake.ts` —
+ * and the deferral cost more than it saved, in three compounding ways:
+ *
+ *  1. **Both stores are AsyncStorage and write nothing to Supabase.** Whatever the athlete answered did
+ *     not survive a reinstall or reach a second device.
+ *  2. **Coach Holt cannot read either of them.** `app/coach.tsx` reads the Home Gym profile, lift history
+ *     and learned preferences — nothing else — so it asked experience and equipment on every build even
+ *     when the athlete had already answered both.
+ *  3. **They sit on the demoted path.** The level/equipment stepper lives behind the quiet link under the
+ *     three doors, so anyone taking the RECOMMENDED door ("Build it with me") never saw it at all.
+ *
+ * Meanwhile `domain/coach/constraints.ts` has said since it was written that *"goal and experience come
+ * from onboarding, equipment from the Home Gym profile"*, and `missingFor()` was built to ask only for
+ * what is left. The engine was waiting for data nothing sent it.
+ *
+ * ⚠ THE COST OF ASKING IS REAL AND IS THE REASON THE LIST IS SHORT. Three questions, no schedule step,
+ * no split style, no limitations — those stay with Holt, who needs them per-build rather than per-athlete
+ * (a shoulder that hurts this week is not a profile field). Each of the three earns its place by removing
+ * at least one question from every future build, permanently.
+ *
+ * Answers accumulate in local `data`; nothing persists until "Enter Forge" runs the atomic finish
+ * (`completeOnboarding`). On success `onboarded_at` flips and the boot router swaps to the app.
+ * Welcome/Create/Sign-In are the auth route.
  */
-const SETUP: Step[] = ['account', 'username', 'chapter'];
-type Step = 'account' | 'username' | 'chapter' | 'transition';
+const BASE_SETUP: Step[] = ['account', 'username', 'goal', 'experience', 'equipment', 'chapter'];
+
+/** The 6 goals from the design `.dc` Goals screen, in its order. */
+const GOAL_OPTIONS: { id: GoalId; title: string; desc: string }[] = [
+  { id: 'strength', title: 'Get stronger', desc: 'Move heavier weight on the big lifts.' },
+  { id: 'muscle', title: 'Build muscle', desc: 'Add size, shape and definition.' },
+  { id: 'fatloss', title: 'Lose fat', desc: 'Lean out while holding onto strength.' },
+  { id: 'endurance', title: 'Go further', desc: 'Running, riding, rowing — distance and stamina.' },
+  { id: 'athletic', title: 'Perform better', desc: 'Power, speed and conditioning for sport.' },
+  { id: 'health', title: 'Feel better', desc: 'Move well, stay healthy, build the habit.' },
+];
+
+/**
+ * ⚠ THE COPY DESCRIBES WHAT THEY CAN DO, NOT WHAT THEY KNOW.
+ *
+ * "Beginner / Intermediate / Advanced" asks the athlete to rank themselves against a scale nobody defines,
+ * and the honest ones undersell — which lands a capable lifter in beginner progressions. Every option here
+ * is a concrete, checkable statement about their own history instead.
+ */
+const EXPERIENCE_OPTIONS: { id: Experience; title: string; desc: string }[] = [
+  { id: 'beginner', title: 'I’m starting out', desc: 'New to training, or coming back after a long break.' },
+  { id: 'intermediate', title: 'I’ve been training a while', desc: 'Comfortable in a gym. I know what a hard set feels like.' },
+  { id: 'advanced', title: 'I’ve trained for years', desc: 'I know my lifts, my numbers and how I respond.' },
+];
+
+/** The 5 buckets from the design `.dc` Equipment screen. `homegym` is the one that opens the gear grid. */
+const EQUIPMENT_OPTIONS: { id: EquipmentId; title: string; desc: string }[] = [
+  { id: 'fullgym', title: 'A full gym', desc: 'Barbells, racks, machines, cables.' },
+  { id: 'homegym', title: 'A home setup', desc: 'Tell me what’s in it on the next screen.' },
+  { id: 'dumbbells', title: 'Dumbbells', desc: 'A pair or a rack, and not much else.' },
+  { id: 'bands', title: 'Resistance bands', desc: 'Bands and bodyweight.' },
+  { id: 'bodyweight', title: 'Nothing yet', desc: 'Just me and the floor. That’s a real answer.' },
+];
+type Step = 'account' | 'username' | 'goal' | 'experience' | 'equipment' | 'gear' | 'chapter' | 'transition';
 type UStatus = 'idle' | 'short' | 'checking' | 'available' | 'taken';
 
 interface Data {
@@ -32,6 +89,22 @@ interface Data {
   sex: 'male' | 'female' | null;
   units: 'imperial' | 'metric';
   username: string;
+  /**
+   * Up to 3, and **the first one tapped is the primary** — the same rule `lib/home-intake.ts` already
+   * stores (`primaryGoal = goals[0]`), so the two never need reconciling. The primary is what derives
+   * Athlete Type and what Coach Holt prefills.
+   */
+  goals: GoalId[];
+  experience: Experience | null;
+  equipment: EquipmentId[];
+  /**
+   * The gear grid's answer, asked only when "A home setup" is chosen.
+   *
+   * `null` ≠ `[]`, exactly as `profiles.home_gym_equipment` keeps them apart (0021): null is "never
+   * asked", `[]` is "asked, and I own nothing". De-selecting the home-setup bucket clears it back to
+   * null rather than to empty, so backing out of the question is not mistaken for answering it.
+   */
+  gear: string[] | null;
   /** The TITLE half of Chapter I. Blank means "skipped", which writes the default. */
   chapterTitle: string;
   /** A local file URI until "Enter Forge" uploads it. Null = they never added one, which is fine. */
@@ -41,7 +114,8 @@ interface Data {
 export default function Onboarding() {
   const [step, setStep] = useState<Step>('account');
   const [data, setData] = useState<Data>({
-    name: '', sex: null, units: 'imperial', username: '', chapterTitle: '', photoUri: null,
+    name: '', sex: null, units: 'imperial', username: '', goals: [], experience: null,
+    equipment: [], gear: null, chapterTitle: '', photoUri: null,
   });
   const [uStatus, setUStatus] = useState<UStatus>('idle');
   const [finishing, setFinishing] = useState(false);
@@ -66,13 +140,62 @@ export default function Onboarding() {
     if (asset?.uri) patch({ photoUri: asset.uri });
   };
 
-  const idx = SETUP.indexOf(step);
-  const next = () => setStep(step === 'chapter' ? 'transition' : SETUP[idx + 1]);
+  /*
+   * ⚠ THE STEP LIST IS DERIVED, NOT A CONSTANT, because one step is conditional.
+   *
+   * The gear grid only exists once the athlete has said they train on a home setup. Inserting it straight
+   * after `equipment` means answering that question walks onto it and changing the answer walks back off,
+   * with no index bookkeeping either way — the same shape `app/coach.tsx` uses for its own `gearStep`,
+   * and for the same reason. The progress counter follows automatically because it reads this array's
+   * length rather than a hard-coded total.
+   */
+  const setup: Step[] = data.equipment.includes('homegym')
+    ? [...BASE_SETUP.slice(0, 5), 'gear', ...BASE_SETUP.slice(5)]
+    : BASE_SETUP;
+
+  const idx = setup.indexOf(step);
+  const next = () => setStep(step === 'chapter' ? 'transition' : setup[idx + 1]);
   const back = () => {
     setError(null);
     if (step === 'transition') setStep('chapter');
-    else if (idx > 0) setStep(SETUP[idx - 1]);
+    else if (idx > 0) setStep(setup[idx - 1]);
   };
+
+  /**
+   * Tap to select, up to three, first one wins the primary slot.
+   *
+   * ⚠ DE-SELECTING THE PRIMARY PROMOTES THE NEXT ONE rather than leaving the athlete with two chosen
+   * goals and no primary — `goals[0]` IS the primary, so the array order is the whole mechanism and
+   * filtering preserves it.
+   */
+  const toggleGoal = (id: GoalId) =>
+    setData((d) => ({
+      ...d,
+      goals: d.goals.includes(id)
+        ? d.goals.filter((g) => g !== id)
+        : d.goals.length >= 3
+          ? d.goals
+          : [...d.goals, id],
+    }));
+
+  /**
+   * ⚠ CLEARING `gear` BACK TO `null` ON DE-SELECT IS LOAD-BEARING. Someone who picks the home setup,
+   * fills the grid, then changes to "A full gym" must not leave a stale owned-equipment list behind to be
+   * written to their profile — and `null` (never asked) is the honest state to return to, not `[]`
+   * (asked, owns nothing).
+   */
+  const toggleEquipment = (id: EquipmentId) =>
+    setData((d) => {
+      const on = d.equipment.includes(id);
+      const equipment = on ? d.equipment.filter((e) => e !== id) : [...d.equipment, id];
+      return { ...d, equipment, gear: equipment.includes('homegym') ? d.gear : null };
+    });
+
+  const toggleGear = (id: string) =>
+    setData((d) => {
+      const cur = d.gear ?? [];
+      return { ...d, gear: cur.includes(id) ? cur.filter((g) => g !== id) : [...cur, id] };
+    });
 
   /** What Chapter I will be called — one derivation, used by the step, the transition and the finish. */
   const chapterName = chapterNameFrom(data.chapterTitle);
@@ -110,8 +233,13 @@ export default function Onboarding() {
         chapterTitle: data.chapterTitle,
         // Asked on the Account step since onboarding was built, and discarded until now.
         units: data.units,
-        // athlete_type defaults to Hybrid (type isn't asked) and environment is null (unknown) — both are
-        // deferred to opt-in, post-Home surfaces per ONB-Amendment-002 (ONB-A2-D1).
+        /* The three training answers. `service.ts` derives athlete_type and environment from them for
+           the RPC, and writes experience + home_gym_equipment alongside it — so athlete_type stops being
+           the hard-coded 'Hybrid' that Rank has been reading for every athlete in the app. */
+        goals: data.goals,
+        experience: data.experience,
+        equipment: data.equipment,
+        gear: data.gear,
       });
       // Pull the new onboarded_at so the boot router swaps to the app (it fetched once per session and
       // would otherwise stay stale on this screen — the "stuck on Opening your forge" bug).
@@ -129,7 +257,7 @@ export default function Onboarding() {
       <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.15)' }} />
       {/*
         ⚠ THE TRANSITION STEP GETS A HEADER TOO, AND UNTIL NOW IT COULD NOT.
-        This read `idx >= 0`, and `idx` is `SETUP.indexOf('transition')` — which is `-1`. So the header
+        This read `idx >= 0`, and `idx` is `setup.indexOf('transition')` — which is `-1`. So the header
         did not render on the final screen at all, and the `step === 'transition'` branch inside its own
         `onBack` was unreachable code: somebody meant for Back to work there and it never once did.
         The result was a one-way door — "Enter Forge" with no way back to rename Chapter I, on the last
@@ -138,8 +266,8 @@ export default function Onboarding() {
         transition is the finish line, not a fourth question.
       */}
       <ProgressHeader
-        step={idx >= 0 ? idx + 1 : SETUP.length}
-        total={SETUP.length}
+        step={idx >= 0 ? idx + 1 : setup.length}
+        total={setup.length}
         onBack={idx > 0 || step === 'transition' ? back : undefined}
       />
 
@@ -223,6 +351,127 @@ export default function Onboarding() {
                 <Text style={styles.skipText}>Skip for now</Text>
                 <Text style={styles.skipCost}>Without a handle, nobody can find you by search. You can add one any time in Profile.</Text>
               </Pressable>
+            </>
+          ) : null}
+
+          {step === 'goal' ? (
+            <>
+              <Heading
+                eyebrow="What you're here for"
+                title="What are you working toward?"
+                body="Pick up to three. The first one you choose is the one everything gets built around — you can change it any time."
+              />
+              <View style={styles.tileStack}>
+                {GOAL_OPTIONS.map((g) => {
+                  const rank = data.goals.indexOf(g.id);
+                  return (
+                    <SelectTile
+                      key={g.id}
+                      title={g.title}
+                      desc={g.desc}
+                      selected={rank >= 0}
+                      onPress={() => toggleGoal(g.id)}
+                      /* The primary is NAMED rather than merely first in a list the athlete cannot see
+                         the order of. Without this, "the first one you choose" is a rule stated in the
+                         body copy and nowhere confirmed on screen. */
+                      right={rank === 0 ? <Text style={styles.primaryTag}>PRIMARY</Text> : null}
+                    />
+                  );
+                })}
+              </View>
+              <Continue disabled={data.goals.length === 0} onPress={next} />
+            </>
+          ) : null}
+
+          {step === 'experience' ? (
+            <>
+              <Heading
+                eyebrow="Where you're starting"
+                title="How long have you been training?"
+                body="This sets where your first program starts — not a label you have to live up to."
+              />
+              <View style={styles.tileStack}>
+                {EXPERIENCE_OPTIONS.map((e) => (
+                  <SelectTile
+                    key={e.id}
+                    title={e.title}
+                    desc={e.desc}
+                    selected={data.experience === e.id}
+                    onPress={() => patch({ experience: e.id })}
+                  />
+                ))}
+              </View>
+              <Continue disabled={!data.experience} onPress={next} />
+            </>
+          ) : null}
+
+          {step === 'equipment' ? (
+            <>
+              <Heading
+                eyebrow="What you've got"
+                title="Where will you be training?"
+                body="Pick everything that applies. Nothing gets prescribed that you can't actually do."
+              />
+              <View style={styles.tileStack}>
+                {EQUIPMENT_OPTIONS.map((e) => (
+                  <SelectTile
+                    key={e.id}
+                    title={e.title}
+                    desc={e.desc}
+                    selected={data.equipment.includes(e.id)}
+                    onPress={() => toggleEquipment(e.id)}
+                  />
+                ))}
+              </View>
+              <Continue disabled={data.equipment.length === 0} onPress={next} />
+            </>
+          ) : null}
+
+          {step === 'gear' ? (
+            <>
+              <Heading
+                eyebrow="Your home setup"
+                title="What's in it?"
+                body="Everything you can reach. Bodyweight is assumed — no need to say it."
+              />
+              {HOME_GYM_GROUPS.map((group) => {
+                const items = HOME_GYM_EQUIPMENT.filter((e) => e.group === group);
+                if (items.length === 0) return null;
+                return (
+                  <Group key={group} label={group.toUpperCase()}>
+                    <View style={styles.chipWrap}>
+                      {items.map((e) => {
+                        const on = (data.gear ?? []).includes(e.id);
+                        return (
+                          <Pressable
+                            key={e.id}
+                            onPress={() => toggleGear(e.id)}
+                            accessibilityRole="button"
+                            accessibilityState={{ selected: on }}
+                            style={[styles.gearChip, on ? styles.gearChipOn : null]}
+                          >
+                            <Text style={[styles.gearChipText, on ? styles.gearChipTextOn : null]}>{e.label}</Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </Group>
+                );
+              })}
+              {/*
+                ⚠ NOT DISABLED ON AN EMPTY LIST, unlike every other step here. An empty grid is a real
+                answer — "nothing but me and the floor" — and it is stored as `[]` rather than `null`
+                precisely so the coach can tell it apart from never having asked. Blocking Continue would
+                make the one honest answer the only unreachable one.
+              */}
+              <Continue
+                onPress={next}
+                label={
+                  (data.gear ?? []).length > 0
+                    ? `Continue — ${(data.gear ?? []).length} ${(data.gear ?? []).length === 1 ? 'thing' : 'things'}`
+                    : 'Nothing but me and the floor'
+                }
+              />
             </>
           ) : null}
 
@@ -331,6 +580,16 @@ const styles = StyleSheet.create({
   groupLabel: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray400 },
   groupHint: { fontFamily: flFont.sans, fontSize: 12, color: flColor.gray600 },
   tileRow: { flexDirection: 'row', gap: 10 },
+
+  // Goal / Experience / Equipment: one column of full-width tiles, unlike the 2-across Sex/Units rows —
+  // every option here carries a description line, and two of those side by side is four lines of nothing.
+  tileStack: { gap: 10 },
+  primaryTag: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, color: flColor.bronze400 },
+  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  gearChip: { paddingVertical: 9, paddingHorizontal: 13, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.surfaceRecessed },
+  gearChipOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
+  gearChipText: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray400 },
+  gearChipTextOn: { color: flColor.bronze300, fontWeight: '600' },
 
   handleRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
   at: { fontFamily: flFont.display, fontSize: 20, color: flColor.bronze400, paddingBottom: 12 },

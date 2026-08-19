@@ -72,7 +72,7 @@ export default function CompetitionsScreen() {
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/squads'));
 
-  const hub = data ?? { open: [], active: [], history: [], stats: { entered: 0, wins: 0, podiums: 0, favType: null } };
+  const hub = data ?? { open: [], active: [], history: [], stats: { entered: 0, wins: 0, podiums: 0, favType: null }, advanceError: null };
 
   /**
    * The podium's entry point. `fetchChallengeHub` advances the lifecycle first, so opening this screen
@@ -167,6 +167,16 @@ export default function CompetitionsScreen() {
               <Text style={styles.createLabel}>Create Competition</Text>
             </Pressable>
           </View>
+
+          {/* The lifecycle nudge was refused. This screen's whole job is to be the clock — a competition
+              that will not start or finish is exactly the failure that hid here for weeks, because this
+              RPC's result used to be discarded outright. See `advanceChallenges`. */}
+          {hub.advanceError ? (
+            <View style={styles.advanceWarn}>
+              <Text style={styles.advanceWarnTitle}>Competitions aren’t starting or finishing.</Text>
+              <Text style={styles.advanceWarnBody}>{hub.advanceError}</Text>
+            </View>
+          ) : null}
 
           {/* ── Filters ── */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRail} contentContainerStyle={styles.chipRailContent}>
@@ -516,6 +526,11 @@ const styles = StyleSheet.create({
   createLabel: { fontSize: 15, fontWeight: '700', color: '#F7F5F1', textShadowColor: 'rgba(8,5,2,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 1 },
 
   // chips
+  /* Charcoal, not red — see the twin in `challenge/[id].tsx`. The seasons listed below are still true. */
+  advanceWarn: { marginTop: 16, marginHorizontal: 22, padding: 13, gap: 4, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
+  advanceWarnTitle: { fontSize: 13, fontWeight: '600', color: flColor.cream100 },
+  advanceWarnBody: { fontSize: 11.5, lineHeight: 17, color: flColor.gray400 },
+
   chipRail: { marginTop: 14 },
   chipRailContent: { gap: 8, paddingHorizontal: 22, paddingBottom: 6 },
   chip: { paddingHorizontal: 15, paddingVertical: 8, borderRadius: flRadius.pill, borderWidth: 1 },

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -22,7 +22,9 @@ import {
   type ChallengeDetail,
   type Standing,
 } from '@/data/challenges-live';
+import { seasonClock } from '@/domain/challenges/season';
 import { errorMessage, useQuery } from '@/lib/useQuery';
+import { getSeenPodiums } from '@/lib/podium-seen';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 
@@ -62,8 +64,6 @@ import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/fou
  * design does at all — its band is clipped to the crown's linework by a second asset. Fixed there.
  */
 
-const DAY = 24 * 60 * 60 * 1000;
-
 export default function ChallengeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const challengeId = String(id ?? '');
@@ -75,6 +75,36 @@ export default function ChallengeDetailScreen() {
   const [joining, setJoining] = useState(false);
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/competitions'));
+
+  /**
+   * THE CORONATION, FROM HERE TOO.
+   *
+   * `fetchChallengeDetail` advances the lifecycle before it reads, so this screen is very often the one
+   * that actually closes the season — an invited friend arrives from the inbox, and the competition
+   * finishes on the way in. Until this pass the only ceremony trigger was the hub's, so the athlete who
+   * caused the completion was handed a static "View Final Standings" button and the coronation waited
+   * for a screen they had no reason to open.
+   *
+   * ⚠ NO FRESHNESS GATE HERE, UNLIKE THE HUB, AND THAT DIFFERENCE IS DELIBERATE. `podiumIsFresh` exists
+   *   so a LIST cannot ambush you with a season that closed last month; C-1 is a screen you pass through
+   *   and the ceremony there is unrequested. Opening a competition is not passing through — it is asking
+   *   about that competition specifically, and its result is the answer. `markPodiumSeen` still holds it
+   *   to once per device, so nobody watches the same six seconds twice.
+   */
+  const crowned = useRef(false);
+  const finished = data?.state === 'COMPLETED' || data?.state === 'ARCHIVED';
+  useEffect(() => {
+    if (crowned.current || !finished || !challengeId) return;
+    let alive = true;
+    getSeenPodiums().then((seen) => {
+      if (!alive || crowned.current || seen.includes(challengeId)) return;
+      crowned.current = true;
+      router.push({ pathname: '/podium/[id]', params: { id: challengeId } });
+    }, () => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [finished, challengeId, router]);
 
   /* Both the invite notification and its push route here, and the inbox row's own call to action reads
      "Opt in to compete" — so this screen has to be somewhere you can. It wasn't: `i_joined` came back from
@@ -144,6 +174,16 @@ export default function ChallengeDetailScreen() {
     <Shell onBack={goBack}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Hero challenge={data} />
+
+        {/* A lifecycle transition that was REFUSED. Never fatal — the standings above are real and worth
+            reading — but never silent either: discarding this exact result is what let a competition sit
+            at its start date for days while every screen looked healthy. See `advanceChallenges`. */}
+        {data.advanceError ? (
+          <View style={styles.advanceWarn}>
+            <Text style={styles.advanceWarnTitle}>This competition’s clock isn’t updating.</Text>
+            <Text style={styles.advanceWarnBody}>{data.advanceError}</Text>
+          </View>
+        ) : null}
 
         {/* OPT IN (CS-D1) — above the standings, because for an invited athlete this screen is a question
             before it is a leaderboard. A competition is joinable for as long as the insert policy says it
@@ -235,18 +275,16 @@ function Hero({ challenge: c }: { challenge: ChallengeDetail }) {
     };
   }, [rise, ember]);
 
-  const start = new Date(c.startAt).getTime();
-  const end = new Date(c.endAt).getTime();
   // Pinned at mount: the season maths must not shift between re-renders, and Date.now() in a render
   // body is impure (react-compiler flags it).
   const [now] = useState(() => Date.now());
-  const totalDays = Math.max(1, Math.round((end - start) / DAY));
-  const totalWeeks = Math.max(1, Math.ceil(totalDays / 7));
-  const elapsed = Math.max(0, Math.min(end - start, now - start));
-  const elapsedWeeks = elapsed / (7 * DAY);
-  const currentWeek = Math.min(totalWeeks, Math.floor(elapsedWeeks) + 1);
-  const weekFill = Math.max(0, Math.min(1, elapsedWeeks - Math.floor(elapsedWeeks)));
-  const daysLeft = Math.max(0, Math.ceil((end - now) / DAY));
+  /* All of it — segment count, fill, day index, the line — lives in `domain/challenges/season.ts`, and
+     is unit-tested there against this competition's real dates. It was inline here, and it was wrong in
+     three ways at once: a 3-day duel drawn on a week grid as one segment that could never pass 43% and a
+     caption reading "Week 1 of 1" for its whole life, a "final day" branch that could never run, and
+     "1 days remaining". See that file's header for the report it came from. */
+  const season = seasonClock(c.startAt, c.endAt, c.state, now);
+  const { totalUnits, currentUnit, unitFill } = season;
 
   const leader = c.standings[0];
   const self = c.standings.find((s) => s.isSelf);
@@ -293,14 +331,17 @@ function Hero({ challenge: c }: { challenge: ChallengeDetail }) {
           {c.name}
         </Text>
 
+        {/* One segment per DAY on a run of 14 days or fewer, per week beyond that — see `byDay` above.
+            The design's week grid is right for the 4- and 8-week presets it was drawn against and wrong
+            for a 3-day duel, which it drew as a single bar stuck below half. */}
         <View style={styles.timeline}>
-          {Array.from({ length: totalWeeks }).map((_, i) => {
-            const week = i + 1;
-            const fill = week < currentWeek ? 1 : week === currentWeek ? weekFill : 0;
+          {Array.from({ length: totalUnits }).map((_, i) => {
+            const unit = i + 1;
+            const fill = unit < currentUnit ? 1 : unit === currentUnit ? unitFill : 0;
             return (
               <View key={i} style={styles.weekTrack}>
                 {fill > 0 ? (
-                  <View style={[styles.weekFill, { width: `${Math.round(fill * 100)}%` }, week === currentWeek ? styles.weekFillCurrent : null]}>
+                  <View style={[styles.weekFill, { width: `${Math.round(fill * 100)}%` }, unit === currentUnit ? styles.weekFillCurrent : null]}>
                     <LinearGradient colors={flGradient.bronzeMetallic.colors} locations={flGradient.bronzeMetallic.locations} start={flGradient.bronzeMetallic.start} end={flGradient.bronzeMetallic.end} style={StyleSheet.absoluteFill} />
                   </View>
                 ) : null}
@@ -308,11 +349,7 @@ function Hero({ challenge: c }: { challenge: ChallengeDetail }) {
             );
           })}
         </View>
-        <Text style={styles.seasonLabel}>
-          {c.state === 'ENROLLMENT'
-            ? `Starts in ${Math.max(0, Math.ceil((start - now) / DAY))} days · ${totalDays} day run`
-            : `Week ${currentWeek} of ${totalWeeks} • ${daysLeft === 0 ? 'final day' : `${daysLeft} days remaining`}`}
-        </Text>
+        <Text style={styles.seasonLabel}>{season.label}</Text>
 
         <View style={styles.raceRow}>
           <CrownGlyph size={15} />
@@ -644,6 +681,13 @@ const styles = StyleSheet.create({
   standScoreValue: { fontFamily: flFont.display, fontSize: 19, fontWeight: '700', color: flColor.cream100 },
   standScoreLeader: { color: flColor.bronze300 },
   standScoreUnit: { fontSize: 9, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray600 },
+
+  /* Charcoal, not red. A transition that did not fire is a fault in the app, not a failure of the
+     athlete's season — the standings above it are still true, and it must not read like a warning about
+     them. Legible and unmissable is the whole requirement. */
+  advanceWarn: { marginTop: 4, marginBottom: 12, padding: 13, gap: 4, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
+  advanceWarnTitle: { fontSize: 13, fontWeight: '600', color: flColor.cream100 },
+  advanceWarnBody: { fontSize: 11.5, lineHeight: 17, color: flColor.gray400 },
 
   finalBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, marginTop: 4, marginBottom: 10, padding: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   finalBtnLabel: { fontSize: 14, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronze300 },

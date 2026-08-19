@@ -1,5 +1,6 @@
 import { trackInvite } from '@/lib/analytics';
 import { supabase } from '@/lib/supabase';
+import { errorMessage } from '@/lib/useQuery';
 
 /**
  * Challenge System (C-series) — the competition backend (migration 0059).
@@ -191,6 +192,35 @@ export interface ChallengeHub {
   active: ActiveChallenge[];
   history: PastChallenge[];
   stats: ChallengeStats;
+  /** Non-null when the lifecycle could not be advanced — see `advanceChallenges`. */
+  advanceError: string | null;
+}
+
+/**
+ * Advance every due lifecycle transition the caller can see: ENROLLMENT → ACTIVE once the start time
+ * passes, ACTIVE → COMPLETED once the end time does (writing the frozen `challenge_results` that C-4 and
+ * the podium read). **There is no scheduler.** Opening a screen IS the clock, which is why this sits in
+ * one place and every screen that can show a competition calls it.
+ *
+ * ⚠ ITS FAILURE IS RETURNED, NOT THROWN, AND NEVER DISCARDED — 2026-08-19.
+ *
+ * This used to be a bare `await supabase.rpc('advance_challenges', …)` at the top of two functions, with
+ * no error check. supabase-js REJECTS NOTHING: it resolves `{ data, error }`. So every possible failure —
+ * a revoked grant, a raise inside the function, or `advance_challenges` reverted to 0059's SQUAD-only
+ * body by a re-paste (see 0168) — rendered as a screen that looked entirely healthy, sitting next to a
+ * competition whose days never moved. That is the whole reason the defect survived 0163, 0164 and 0165.
+ *
+ * It must not THROW either. A competition you can still read and score is worth showing even when the
+ * transition fails, and a hub that blanks itself because a lifecycle nudge was refused is a worse answer
+ * than a stale one. So the failure rides along on the data and the screens say it plainly.
+ */
+export async function advanceChallenges(): Promise<string | null> {
+  const { error } = await supabase.rpc('advance_challenges', { p_squad: null });
+  if (!error) return null;
+  if ((error as { code?: string }).code === 'PGRST202') {
+    return 'Competitions can’t start or finish yet — migration 0059 hasn’t been applied.';
+  }
+  return errorMessage(error);
 }
 
 const TYPES = Object.keys(CHALLENGE_TYPES) as ChallengeType[];
@@ -234,7 +264,7 @@ export function pastPlaceLabel(p: PastChallenge): string {
  * scheduler, so opening the hub is what starts an enrolled challenge and completes a finished one.
  */
 export async function fetchChallengeHub(): Promise<ChallengeHub> {
-  await supabase.rpc('advance_challenges', { p_squad: null });
+  const advanceError = await advanceChallenges();
 
   const { data, error } = await supabase.rpc('challenge_hub');
   if (error) {
@@ -300,6 +330,7 @@ export async function fetchChallengeHub(): Promise<ChallengeHub> {
       podiums: Number(d.stats?.podiums ?? 0),
       favType: d.stats?.fav_type ? asType(d.stats.fav_type) : null,
     },
+    advanceError,
   };
 }
 
@@ -420,10 +451,28 @@ export interface ChallengeDetail {
   isCreator: boolean;
   iJoined: boolean;
   standings: Standing[];
+  /** Non-null when the lifecycle could not be advanced — see `advanceChallenges`. */
+  advanceError: string | null;
 }
 
-/** One challenge and its full roster, ranked. Null when it isn't visible to you. */
+/**
+ * One challenge and its full roster, ranked. Null when it isn't visible to you.
+ *
+ * ⚠ IT ADVANCES THE LIFECYCLE FIRST, AND THAT IS NOT AN OPTIMISATION — 2026-08-19.
+ *
+ * Until this pass, only `/competitions` and the Trophy Case called `advance_challenges()`, and the hub
+ * lists exactly two things: competitions you have NOT joined (state ENROLLMENT or ACTIVE) and ones you
+ * HAVE (state ACTIVE). **A competition you joined that is stuck in ENROLLMENT is in neither list** — it
+ * is simply not on the hub. The only routes left to it are the inbox row and the push, and both open
+ * this screen. So the one surface a stuck competition was still reachable from was the one surface that
+ * could not start it, and the season sat at its start date indefinitely with nowhere to be nudged from.
+ *
+ * Advancing here closes that: opening the competition is now enough to start it, finish it, and write
+ * the frozen standings the podium and C-4 read.
+ */
 export async function fetchChallengeDetail(challengeId: string): Promise<ChallengeDetail | null> {
+  const advanceError = await advanceChallenges();
+
   const { data, error } = await supabase.rpc('challenge_detail', { p_challenge: challengeId });
   if (error) {
     if ((error as { code?: string }).code === 'PGRST202') throw new Error('Challenge detail isn’t available yet — migration 0064 hasn’t been applied.');
@@ -456,6 +505,7 @@ export async function fetchChallengeDetail(challengeId: string): Promise<Challen
       loggedToday: !!r.logged_today,
       recent: Number(r.recent ?? 0),
     })),
+    advanceError,
   };
 }
 

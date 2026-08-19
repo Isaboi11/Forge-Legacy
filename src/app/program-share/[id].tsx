@@ -14,6 +14,7 @@ import { deriveBlocks, plannedSetCount, schemeText } from '@/domain/program/pres
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
+import { equipmentLabel } from '@/components/forge/EquipIcon';
 
 /**
  * A program someone sent you (migration 0110) — read it before you take it.
@@ -144,7 +145,7 @@ export default function ProgramShareScreen() {
           <View style={styles.equipRow}>
             {equipment.map((e) => (
               <View key={e} style={styles.equipPill}>
-                <Text style={styles.equipText}>{e}</Text>
+                <Text style={styles.equipText}>{equipmentLabel(e)}</Text>
               </View>
             ))}
           </View>

@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { CHALLENGE_TYPES, formatScore, metricLabel, type ChallengeContext, type ChallengeType } from './challenges-live';
+import { CHALLENGE_TYPES, advanceChallenges, formatScore, metricLabel, type ChallengeContext, type ChallengeType } from './challenges-live';
 
 /**
  * Trophy Case — one athlete's competitive legacy (migration 0084).
@@ -69,7 +69,11 @@ export function tierOf(f: TrophyFinish): TrophyTier {
  * that would show it.
  */
 export async function fetchTrophyCase(athleteId?: string | null): Promise<TrophyCase | null> {
-  await supabase.rpc('advance_challenges', { p_squad: null });
+  /* The one shared advance (`challenges-live.ts`). This screen has no place to report a failed
+     transition — it is a record of finished seasons, not a live one — so the failure is dropped here
+     DELIBERATELY and on purpose, rather than by omission: C-1 and C-3 both surface it, and both are
+     reached far more often than this. Dropping it silently was the bug everywhere else. */
+  await advanceChallenges();
 
   const { data, error } = await supabase.rpc('athlete_trophy_case', { p_athlete: athleteId ?? null });
   if (error) {

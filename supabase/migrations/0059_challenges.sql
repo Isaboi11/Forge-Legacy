@@ -2,17 +2,29 @@
 --
 -- ⛔⛔ DO NOT RE-RUN THIS FILE. IT IS SUPERSEDED AND RE-PASTING IT BREAKS FRIENDS COMPETITIONS. ⛔⛔
 --
---   `0087_friend_challenges.sql` replaced four of the objects below with FRIENDS-aware versions:
---   `can_read_challenge`, `challenges_select`, `challenges_insert`, `challenge_participants_insert`.
+--   `0087_friend_challenges.sql` replaced SIX of the objects below with FRIENDS-aware versions:
+--   `can_read_challenge`, `challenges_select`, `challenges_insert`, `challenge_participants_insert`,
+--   `challenge_hub()` (superseded again by 0163) and `advance_challenges()`.
 --   Everything here is idempotent, so re-pasting this file to recover a half-applied run — which IS the
---   documented recovery procedure in this project — silently reverts all four to SQUAD-ONLY.
+--   documented recovery procedure in this project — silently reverts all six to SQUAD-ONLY.
+--
+--   ⚠ IT SAID "FOUR" UNTIL 2026-08-19, AND THE TWO IT LEFT OUT ARE THE WORST TWO. `advance_challenges`
+--   is the ENTIRE competition lifecycle — there is no scheduler — so on 0059's body a friends
+--   competition is never promoted out of ENROLLMENT and never completed: the days do not progress, no
+--   `challenge_results` row is ever written, and no winner is ever crowned. `challenge_hub()` then hides
+--   the evidence, because a competition you joined that is stuck in ENROLLMENT is on neither of its two
+--   lists. Reported by the PO on 2026-08-19 as *"it doesn't look like the days have progressed"*.
 --
 --   IT FAILS QUIETLY AND IT FAILS WEIRDLY: `challenge_hub()` is SECURITY DEFINER and never consults
 --   these policies, so every friends competition keeps appearing in "Open to Join" while the table
 --   refuses the insert with `42501`. The list and the button disagree, and nothing logs it.
 --
 --   If you have already done it: run `supabase/migrations/0165_challenge_policy_reassert.sql`, which
---   restates 0087's four bodies and asserts they took.
+--   restates 0087's four POLICY-side bodies and asserts they took, **AND THEN**
+--   `supabase/migrations/0168_challenge_lifecycle_reassert.sql`, which does the same for the two
+--   lifecycle objects 0165 missed. Running only 0165 leaves every friends competition joinable and
+--   permanently frozen, which is a worse failure than the one you set out to repair, because it looks
+--   fixed.
 --
 -- First real backend for competitions. Built to `Challenge-System-Architecture-v1.0` v1.5 (CS-D1–D27),
 -- scoped to what the rest of the app can actually support today.
