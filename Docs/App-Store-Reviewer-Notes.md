@@ -90,11 +90,14 @@ loads empty is the finding.**
 - [x] **Squads → Iron Circle** — two members, three posts, check-ins
 - [x] **Competition** — *February Volume*, two entrants, a leaderboard
 - [x] **Friends** — Sam Torres
-- [ ] **⋯ on Sam's profile** — Report and Block both present *(Guideline 1.2 — the controls a reviewer looks for)*
-      ⛔ **CONFIRMED ABSENT on build 6 / the web preview as of 2026-08-19** — `0171`'s client half is built
-      and not deployed. **This must be re-checked after the deploy; it is a submission blocker, not cosmetic.**
-- [ ] **Settings → Privacy & Alerts → Blocked People** — loads, says nobody is blocked
-      ⛔ Absent for the same reason, and returns with the same deploy.
+- [x] **⋯ on Sam's profile** — Report and Block both present *(Guideline 1.2 — the controls a reviewer looks for)*
+      ✅ **CONFIRMED PRESENT after the 2026-08-19 deploy** (`entry-69d5be42…`). It was absent before it, on
+      build 6 and the older web bundle, which is exactly what "applied is not shipped" looks like from the
+      outside: a migration live in the database and the control it exists for nowhere in the app.
+- [x] **Settings → Privacy & Alerts → Blocked People** — loads, says nobody is blocked
+      ✅ Present. ⚠ **There is deliberately no "report" entry in Settings** — reporting lives on the content
+      itself (a person, a post, a squad), because a report needs a target. Its absence here was briefly read
+      as a missing feature during the walkthrough; it is the correct design.
 - [x] **Settings → Account → Delete Account** — reachable *(Guideline 5.1.1(v))*
 
 ---

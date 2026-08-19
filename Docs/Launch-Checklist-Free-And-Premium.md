@@ -828,7 +828,11 @@ genuinely unstarted**, and all five gate submission rather than review.
       impersonation patterns only; extending it needs no migration, so requirement 1 currently rests on
       operator takedown), and **blocked athletes still appear in competition standings** — a decision, since
       standings are numbers rather than authored content.
-      ⏳ **NOT DEPLOYED.** The build in testers' hands still has no block.
+      ✅ **DEPLOYED 2026-08-19** — web `entry-69d5be4226aaa8d83f75e397b28f981b.js` (200, hash matched, live
+      bundle searched for strings only this code contains) and an OTA to `production` on runtime
+      `411fd2b6…`, which `fingerprint:compare` matched against build 6 BEFORE publishing and which the
+      manifest endpoint then returned when queried as an iOS client. Report and Block confirmed visible in
+      the app by the PO.
       *Original finding, kept because it is why this row exists:* **A submission
       blocker that appears on no other launch document.** The app has UGC — squad posts, comments, reactions,
       check-in photos and video, handles, shared workout notes — and the entire binary contains **one** Report
@@ -854,9 +858,10 @@ genuinely unstarted**, and all five gate submission rather than review.
       showed its cold-start face), no chapter (the entire Legacy tab blank despite 5 real PRs), PRs first 0
       then 20, an empty friends feed, an impossible check-in, and two re-run failures. All fixed; all listed
       in the notes' §1b. **Walking it is not a formality.**
-      ⛔ **STILL FAILS TWO CHECKS, AND BOTH ARE THE SAME CAUSE:** Report/Block on a profile and
-      Settings → Blocked People are absent on build 6 and the web preview, because `0171`'s client half is
-      **not deployed**. Re-check both after the deploy — they are Guideline 1.2 submission blockers.
+      ✅ **ALL NINE CHECKS PASS as of the 2026-08-19 deploy** (`entry-69d5be42…` + OTA `01a01bda…`). The two
+      that failed before it — Report/Block on a profile, Settings → Blocked People — were failing only
+      because `0171`'s client half was unshipped, which is what "applied is not shipped" looks like from the
+      outside.
       *(Original text:)* **A review demo account, seeded.** Apple reviews behind the login. It needs a real account
       with a running program, logged history, a squad with a second member, and a challenge — **the
       social pillar is unreviewable from an empty account**, and "no content" reads as a broken app
