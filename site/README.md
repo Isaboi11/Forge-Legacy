@@ -321,6 +321,39 @@ domains were added from the project's **Domains** tab; because the zone is on Cl
 the same account, **Cloudflare wrote the DNS records itself** — the DNS tab was never touched, and the
 MX records that run `isaiah@`/`support@` were unaffected.
 
+### The CLI path — `wrangler`, and why it is now the better one
+
+`wrangler.jsonc` and `.assetsignore` are in this directory, so a deploy is one command run **from
+here**:
+
+```
+npx wrangler deploy          # needs CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID in the environment
+```
+
+⚠ **`.assetsignore` is what makes the staging ritual below unnecessary**, and it is a better rule than
+the one it replaces. "Stage exactly 25 files" is a rule a *person* has to follow correctly every time,
+under time pressure, on the day of a launch; `.assetsignore` is followed by the tool. Verified with
+`wrangler deploy --dry-run`: `Ignoring asset: .assetsignore / README.md / wrangler.jsonc /
+_exported-bundle.html` — 29 files on disk, 4 excluded, **25 uploaded**, which is the same 25.
+
+⚠ **The first CLI deploy is the risky one and should NOT be a plain `deploy`.** This Worker was created
+by dashboard upload, and wrangler guards against clobbering a dashboard-edited Worker. Do it as a
+version that carries no traffic, check the preview URL, then promote:
+
+```
+npx wrangler versions upload      # → a preview URL, production untouched
+npx wrangler versions deploy      # → promote it to 100%
+```
+
+The custom domains are attached to the **Worker**, not to a deployment, so they ride through — but
+confirm that on the first run rather than assuming it.
+
+**After ANY deploy, by either path:** `/` · `/privacy` · `/terms` · `/support` · `www` all 200,
+`/_exported-bundle.html` still 404, and **read the footer** — a URL returning 200 is not the same as a
+page being reachable (see the 08-18 lesson below).
+
+### The dashboard path — still valid, and still needs the staged folder
+
 ⚠ **NEVER upload this directory as-is.** `_exported-bundle.html` is 4 MB, is git-ignored, and would
 become a public indexable page at `/_exported-bundle.html`. Stage a folder with exactly these **25
 files** and upload that:

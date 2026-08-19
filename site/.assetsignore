@@ -1,0 +1,12 @@
+# What must NEVER reach forgelegacy.app. Gitignore syntax, read by wrangler at deploy time.
+#
+# ⚠ The 4 MB design-tool export. It is git-ignored, so it is present on every machine that has ever
+# opened this folder and tracked by nothing — exactly the shape of file that gets published by accident.
+# Uploaded, it becomes a public indexable page at /_exported-bundle.html whose <title> is "Bundled Page"
+# and whose entire body lives inside a JavaScript string. The live site serves it as 404. Keep it that way.
+_exported-bundle.html
+
+# Repo documentation, not a page.
+README.md
+wrangler.jsonc
+.assetsignore

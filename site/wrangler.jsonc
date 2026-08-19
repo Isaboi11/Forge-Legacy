@@ -1,0 +1,33 @@
+{
+  // The public website at forgelegacy.app. Run wrangler FROM THIS DIRECTORY.
+  //
+  // ⚠ THE WORKER WAS CREATED IN THE DASHBOARD, and this file has to match it or the deploy makes a
+  // SECOND Worker instead of updating the live one. `name` is the identity — `forgelegacy`, which is
+  // also why it cannot be changed later (a Worker cannot be renamed; the first upload here auto-named
+  // itself `patient-thunder-a29b` and had to be deleted and redone).
+  //
+  // The custom domains (forgelegacy.app, www.forgelegacy.app) are attached to the WORKER, not declared
+  // here on purpose: they already exist, Cloudflare wrote their DNS itself, and re-declaring routes in
+  // config is the one thing that could disturb a working apex. Deploys replace the script and the asset
+  // manifest; they do not touch domain attachment.
+  "name": "forgelegacy",
+  "compatibility_date": "2026-08-19",
+
+  // ⚠ ASSETS-ONLY WORKER — there is no `main`. This is a static site; adding a script entrypoint would
+  // put code in front of every request for no reason.
+  //
+  // Pointed at this directory rather than at a hand-staged copy, with `.assetsignore` doing the
+  // excluding. The staged-folder ritual in README.md exists because a dashboard upload takes whatever
+  // you drag in, and dragging `site/` in would publish `_exported-bundle.html` — 4 MB, git-ignored, and
+  // a public indexable page. A rule written in a README is followed by whoever read it; a rule in
+  // `.assetsignore` is followed by the tool.
+  "assets": {
+    "directory": "."
+  },
+
+  // Cloudflare replaces the ENTIRE asset manifest per deploy — there is no partial upload. That is the
+  // mechanism behind /support 404ing for two days: the 08-16 deploy simply did not contain the file.
+  "observability": {
+    "enabled": true
+  }
+}
