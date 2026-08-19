@@ -22,11 +22,14 @@ import { useProfile } from '@/lib/profile';
  * Real sources: the 809-exercise catalog (identity, equipment, difficulty, pattern, muscles), the
  * 5,698-edge relationship graph (alternatives), and the coaching system's sanctioned bridge.
  *
- * COACHING COPY IS GATED. `getExerciseDetailCoaching` serves Published records only; today none of the
- * 556 generated records are approved, so Why-it-matters / How-to / Cues / Mistakes are absent for every
- * exercise. That is the locked serving policy, not a bug — unreviewed coaching for someone under a
- * loaded barbell is the one thing this system is designed to prevent. Publish content and these sections
- * appear with no code change.
+ * COACHING COPY IS GATED. `getExerciseDetailCoaching` serves Published records only — unreviewed
+ * coaching for someone under a loaded barbell is the one thing this system is designed to prevent.
+ * ⚠ THIS COMMENT USED TO SAY NOTHING WAS APPROVED AND IT WENT STALE. `content/coaching_content.json`
+ * now holds 797 records: **735 Published, 62 Needs Review** (verified 2026-08-19). So Why-it-matters /
+ * How-to / Cues / Mistakes DO render, on 735 of 797 exercises; the other 62 fall through to W-22 §4.2's
+ * section-visibility rules and simply hide those sections. Publishing the rest needs no code change.
+ * ⚠ The App Store description's feature list promises "demonstration loops and coaching cues" — that
+ * claim rests on this gate, so a mass un-publish would make the listing false.
  *
  * SECTION ORDER IS THE `.dc`'s: demonstration · what it is · why it matters · what it trains · how to
  * do it · cues · common mistakes · alternatives. The demo leads deliberately — you look at the movement
