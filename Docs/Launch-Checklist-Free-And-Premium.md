@@ -365,9 +365,26 @@ app today and the right shape.
       `coach_ai_monthly_999` · `coach_ai_annual_8999` · `founder_lifetime_149` (first 100, then delisted).
       ⚠ The Coach AI IDs were corrected from `_799`/`_6999` on 2026-08-12 — the price is **$9.99/$89.99**.
       Coach AI SKUs can be configured now and left unreleased.
-- [ ] **4.4 — Referrals.** A code per athlete. Credit granted only on the referee's **first successful
-      payment**. Both sides credited; referrer capped at 12 months per rolling year. Attach it to squad
-      and challenge invites, not just a generic code.
+- [~] **4.4 — Referrals.** ✅ **CLIENT HALF BUILT AND `0170` APPLIED 2026-08-19; the grant itself waits on 4.2.**
+      A code per athlete. Credit granted only on the referee's **first successful payment**. Both sides
+      credited; referrer capped at 12 months per rolling year.
+      **Done:** `0170_referral_attribution.sql` (the attribution store + `record_referral_attribution()` +
+      `my_referral_attribution()`), `src/domain/referral/` (pure, 24 tests), `src/data/referral-live.ts`,
+      `src/lib/pending-referral-store.ts`, capture off the incoming link, flush at the first authenticated
+      moment, and the squad invite link carrying `ref=`.
+      ⚠ **`0145` HAD ALREADY BUILT THE WHOLE ECONOMIC HALF IN JUNE AND NOTHING HAD EVER CALLED IT.** The one
+      missing fact was that `grant_referral_credit(p_referee, p_code)` takes the code **as an argument**, and
+      the database never knew which code an athlete arrived through — fine only if payment follows the invite
+      immediately, which MA3-D20 guarantees it does not.
+      ⚠ **NO REWARD IS PROMISED IN ANY COPY, DELIBERATELY.** The credit cannot be granted until 4.2's webhook
+      exists and `default_tier` is still `PREMIUM`, so *"we both get a month free"* would be a NEW false
+      billing claim added to the four §6 is already retiring. **Phase F owes this a revisit** — the marker is
+      in `referralLinkFor()`'s header.
+      ⛔ **OPEN — MA3-D21's challenge half cannot be built as specified.** Challenge invites are
+      `method: 'in_app'` to existing friends and never leave the app, so there is no link to attach a referral
+      to and the recipient already has an account. `challenges-live.ts:415` calls a challenge invite *"an
+      install opportunity"*; as built it is not one. **Needs a product decision, not code.**
+      ⛔ **OPEN — no surface for typing in a code** you were given verbally rather than tapped.
 - [ ] **4.5 — Founder seat counter.** Visible ("68 of 100 left") or the scarcity does no work. Stops at
       100 and the SKU delists. **The 20 OG testers do not occupy seats** — they get the same entitlement
       free on a separate grant.
@@ -762,16 +779,85 @@ genuinely unstarted**, and all five gate submission rather than review.
       `content.ts` carries that rule in a comment above the body. **Change one, change the other**, and
       re-check both against the labels in 10.3.
       **Declare 10.3 from `site/privacy.html`, not from memory and not from the in-app summary.**
-- [ ] **10.3 — App Privacy nutrition labels** — every category the app actually collects: account
-      identity, health/fitness data, photos and video, **precise location** (the app requests
-      `ACCESS_FINE_LOCATION` for run tracking), and usage analytics. Declare linkage and tracking use
-      honestly; `usesNonExemptEncryption: false` is already set in `app.json`.
+- [~] **10.3 — App Privacy nutrition labels** — ✅ **THE ANSWER SHEET IS WRITTEN: `Docs/App-Store-Privacy-Labels.md`
+      (2026-08-19).** Every answer derived from `site/privacy.html` per 10.2, with the policy section cited
+      beside each, plus the *considered-and-excluded* list so the near-calls read as decisions.
+      **Twelve data types to declare**, all Linked, none used for tracking: Email · Name · Fitness · Health ·
+      Precise Location · Photos or Videos · Customer Support · Other User Content · User ID · Device ID ·
+      Product Interaction. Declare linkage and tracking use honestly; `usesNonExemptEncryption: false` is
+      already set in `app.json`.
+      ✅ **"Used for tracking" is NO, and it is verifiable rather than asserted** — `package.json` carries no
+      Sentry, Bugsnag, Firebase, Amplitude, Mixpanel, Segment, Facebook, AdMob, AppsFlyer, Adjust or Branch.
+      **No ATT prompt is required and none should be added.**
+      ⚠ **Two answers are easy to get wrong and are called out in the sheet:** **Product Personalization** is
+      required on Fitness and Health — Coach Holt building a program *from* training data is the definition —
+      and **Device ID** must be declared for the push token.
+      ⛔ **DO NOT SIGN UNTIL THE SUBMISSION BUILD IS DECIDED.** `Purchases → Purchase History` is NO today and
+      **YES the moment `react-native-purchases` ships (4.2)**. Since 10.7 requires the Stage-2 build to carry
+      the paywall, filling these in now and shipping the paywall later signs a declaration that is false about
+      the build in review. `site/privacy.html` also gains a purchases paragraph and RevenueCat joins its §4
+      provider list in the same pass — **policy → in-app summary → labels, in that order.**
 - [ ] **10.4 — Support URL and marketing URL.** Support URL is required. A mailto: alone is not enough.
-- [ ] **10.5 — Screenshots** at the required display sizes (6.9" and 6.5" iPhone at minimum), plus
-      app icon, description, promotional text, keywords, category (Health & Fitness), and age rating.
+- [~] **10.5 — Screenshots** at the required display size, plus app icon, description, promotional text,
+      keywords, category (Health & Fitness), and age rating.
+      ✅ **COPY WRITTEN 2026-08-19 — `Docs/App-Store-Listing-Copy.md`.** Name, three subtitle options,
+      promotional text (149/170), keywords (94/100) and the full description (~2,470/4000), in Landing v6's
+      voice. **Needs from the PO: pick a subtitle.**
+      ⚠ **SCREENSHOTS: ONE iPhone size — 6.5" OR 6.9", not both.** This row said "6.9" and 6.5" at minimum",
+      which is double the work; Apple takes one set and scales. Verified against Apple's screenshot
+      specifications 2026-08-18. **Real captures of the running app** — the landing page's phone mockups are
+      HTML recreations and must never be used as screenshots, though their art direction is the right frame.
       ⚠ **Do not state the program-catalogue count anywhere in the listing** — the catalogue is a
       DISCOVER shelf now, Coach Holt is the product, and the number reads as a shortfall.
-- [ ] **10.6 — A review demo account, seeded.** Apple reviews behind the login. It needs a real account
+      ⛔ **Do not call Coach Holt "AI"** — it is a deterministic rulebook and the sentence-reading layer is out
+      of scope before full release. ⛔ **Promise no Android, Watch, Health/Strava sync or CSV export**; the
+      description says so explicitly instead, per Known Gaps' *"say it rather than let it be discovered."*
+      ⛔ **AGE RATING IS BLOCKED** on the new 10.8 below.
+- [x] **10.8 — ✅ BUILT 2026-08-19, `0171` APPLIED AND VERIFIED (⏳ client half NOT deployed).**
+      Blocks (symmetric, severing the friendship, leaving shared squads intact per the PO decision) ·
+      reports on post/comment/check-in/person/squad with an open/actioned/dismissed status · `/admin` →
+      Reports carrying an **oldest-still-open** line, which is what evidences *timely response* where a bare
+      count cannot · `/blocked` in Settings → Privacy & Alerts, **ungated**, because blocking is reachable
+      from a profile and unblocking is not · a `moderation_blocklist` + `profiles` trigger.
+      ⚠ **ENFORCEMENT IS ENTIRELY SERVER-SIDE AND THE TWO FEEDS NEEDED DIFFERENT TOOLS.** `squad_feed()` is
+      `security invoker` ⇒ four **`AS RESTRICTIVE`** policies reach it (restrictive = ANDed, so nothing
+      existing had to be read or replaced). `friends_feed()` is `security definer` ⇒ **RLS does not apply**,
+      so it carries **four explicit `is_blocked` predicates** — post, comment count, reaction count and
+      reactor names. `supabase/apply/verify-0171.sql` asserts **both counts are 4**.
+      ⛔ **STILL OWED, and recorded in the migration:** the slur/profanity list is **not seeded** (9
+      impersonation patterns only; extending it needs no migration, so requirement 1 currently rests on
+      operator takedown), and **blocked athletes still appear in competition standings** — a decision, since
+      standings are numbers rather than authored content.
+      ⏳ **NOT DEPLOYED.** The build in testers' hands still has no block.
+      *Original finding, kept because it is why this row exists:* **A submission
+      blocker that appears on no other launch document.** The app has UGC — squad posts, comments, reactions,
+      check-in photos and video, handles, shared workout notes — and the entire binary contains **one** Report
+      control: `src/app/squad-settings.tsx:688`, which shows `'Reporting a squad is coming soon'`. **No report
+      on a post, no block, no mute, no backing table** — `grep "create table.*(block|report)"` over all 170
+      migrations returns nothing.
+      Guideline 1.2 requires **filtering · reporting with timely response · blocking abusive users · published
+      contact info**. Only the fourth is done (`forgelegacy.app/support`, 08-18).
+      ⚠ **"It is only a private squad" does not exempt it** — Discover and request-to-join mean a stranger can
+      enter a squad and post into a feed the athlete reads.
+      ⚠ **The "coming soon" toast is worse than no button**: it proves inside the binary that the need was
+      known and unmet, and a reviewer who taps it has found the finding.
+      **Not designed here** — block-vs-mute, who a report notifies, and what `/admin` shows are product
+      decisions. That some form of all three must exist before submission is not.
+- [x] **10.6 — ✅ DONE 2026-08-19. A review demo account, seeded AND walked screen by screen.**
+      `supabase/seed/reviewer-seed.mjs` (idempotent, writes through the anon key as the signed-in athlete so
+      everything is provably reachable by the account Apple signs in to) + `reviewer-verify.mjs` (reports
+      what that session can READ, which is the different and load-bearing question) +
+      `Docs/App-Store-Reviewer-Notes.md` (pre-submission checklist and the paste-ready notes box).
+      **Two accounts**, because a squad of one, a leaderboard of one and a feed of your own posts are the
+      empty screens this item exists to prevent.
+      ⚠ **THE WALKTHROUGH FOUND SIX DEFECTS THE SEED'S OWN OUTPUT REPORTED AS SUCCESS** — no program (Home
+      showed its cold-start face), no chapter (the entire Legacy tab blank despite 5 real PRs), PRs first 0
+      then 20, an empty friends feed, an impossible check-in, and two re-run failures. All fixed; all listed
+      in the notes' §1b. **Walking it is not a formality.**
+      ⛔ **STILL FAILS TWO CHECKS, AND BOTH ARE THE SAME CAUSE:** Report/Block on a profile and
+      Settings → Blocked People are absent on build 6 and the web preview, because `0171`'s client half is
+      **not deployed**. Re-check both after the deploy — they are Guideline 1.2 submission blockers.
+      *(Original text:)* **A review demo account, seeded.** Apple reviews behind the login. It needs a real account
       with a running program, logged history, a squad with a second member, and a challenge — **the
       social pillar is unreviewable from an empty account**, and "no content" reads as a broken app
       under Guideline 2.1. Include reviewer notes explaining Train Together needs two devices.

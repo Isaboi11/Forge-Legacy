@@ -89,13 +89,34 @@ test('a row is never offered for a screen that is switched off', () => {
   assert.ok(!keys.includes('notif'), 'Notifications gated off');
   assert.ok(!keys.includes('prefs'), 'Preferences gated off');
   assert.ok(keys.includes('gym'), 'My Home Gym is always built, so it is always offered');
-  assert.ok(!bare.some((s) => s.key === 'privacy'), 'an empty Privacy & Alerts section is not shown');
+  /*
+   * ⚠ THIS ASSERTION WAS INVERTED BY 0171, AND THE INVERSION IS THE POINT.
+   *
+   * It used to read `!bare.some(s => s.key === 'privacy')` — an empty Privacy & Alerts section is not
+   * shown. Correct while every row in it was flag-gated. **Blocked People is not gated**, so the section
+   * can no longer be empty, and that is deliberate: blocking is reachable from a profile but UNBLOCKING is
+   * not, because a blocked athlete's content and profile are gone from every surface. Without this row a
+   * block is one-way in practice.
+   *
+   * App Store Guideline 1.2 requires the ability to block, and it is also the only screen where blocking is
+   * visible to a reviewer without two accounts. Gating it behind a flag would reproduce the exact failure
+   * 0171 exists to fix.
+   */
+  const barePrivacy = bare.find((s) => s.key === 'privacy');
+  assert.ok(barePrivacy, 'Privacy & Alerts survives every flag being off, because Blocked People is ungated');
+  assert.deepEqual(barePrivacy.rows.map((r) => r.key), ['blocked'], 'and it is the ONLY row left when the flags are off');
 });
 
 test('the full menu carries all three settings screens in the design’s order', () => {
   const full = settingsSections({ hasVisibility: true, hasNotifications: true, hasPreferences: true });
   assert.deepEqual(full.map((s) => s.key), ['privacy', 'training', 'membership', 'about', 'danger']);
-  assert.deepEqual(full[0].rows.map((r) => r.key), ['vis', 'notif'], 'Privacy & Alerts: Visibility then Notifications');
+  // Blocked People (0171) sits LAST in the group: the two above are things you configure, this is a list
+  // you visit only when undoing something. It is ungated — see the note in the previous test.
+  assert.deepEqual(
+    full[0].rows.map((r) => r.key),
+    ['vis', 'notif', 'blocked'],
+    'Privacy & Alerts: Visibility, Notifications, then Blocked People',
+  );
   assert.deepEqual(full[1].rows.map((r) => r.key), ['gym', 'prefs']);
 });
 

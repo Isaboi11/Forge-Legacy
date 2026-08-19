@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Redirect, useRouter } from 'expo-router';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -16,7 +16,7 @@ import {
   StatLine,
 } from '@/components/forge/admin/charts';
 import { SCREEN_BG } from '@/constants/backgrounds';
-import { flColor, flFont, flText } from '@/constants/foundation';
+import { flColor, flFont, flRadius, flText } from '@/constants/foundation';
 import {
   dashboardTz,
   fetchAdminAdoption,
@@ -31,6 +31,7 @@ import {
   fetchRecentSignups,
   isAppAdmin,
 } from '@/data/admin-live';
+import { fetchAdminReports, resolveReport } from '@/data/moderation-live';
 import { column, RANGES, rangeLabel, rangeToDays, type RangeKey } from '@/domain/admin/series';
 import { pctOf } from '@/domain/admin/chart-core';
 import { useQuery } from '@/lib/useQuery';
@@ -92,6 +93,19 @@ export default function AdminScreen() {
   /* Also not range-scoped. An unanswered bug report from six weeks ago is not less unanswered because
      the range chips say 7D — a support queue is a to-do list, not a trend. */
   const feedback = useQuery(() => fetchAdminFeedback(50, null), []);
+  /* Reports (0171). Same reasoning as feedback above — deliberately NOT range-scoped, because an open
+     report is not less open because the chips say 7D. */
+  const reports = useQuery(() => fetchAdminReports(50, null), []);
+
+  const resolve = async (id: string, status: 'actioned' | 'dismissed') => {
+    try {
+      await resolveReport(id, status);
+      await reports.refetch();
+    } catch {
+      /* The row stays open and visibly unresolved, which is the safe failure: a report that silently
+         disappears from the queue is worse than one that refuses to close. */
+    }
+  };
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/account-settings'));
 
@@ -228,6 +242,85 @@ export default function AdminScreen() {
                           {[f.status, f.screen, f.platform, f.appVersion].filter(Boolean).join(' · ')}
                           {f.contactOk ? '' : ' · no reply wanted'}
                         </Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </>
+            ) : null}
+          </Section>
+        </SectionCard>
+
+        {/* ── Reports (0171) ───────────────────────────────────────────── */}
+        <SectionCard
+          title="Reports"
+          subtitle="Reported content and people. ⚠ This queue is an App Store obligation, not a nice-to-have — Guideline 1.2 requires reporting AND timely responses, and an unread queue fails the second half while passing the first."
+        >
+          <Section state={reports}>
+            {reports.data ? (
+              <>
+                <StatLine label="Open" value={reports.data.counts.open} />
+                <StatLine label="Actioned" value={reports.data.counts.actioned} />
+                <StatLine label="Dismissed" value={reports.data.counts.dismissed} />
+                {/*
+                  * ⚠ THE LINE THAT ACTUALLY MEASURES "TIMELY". `Open: 0` and `Open: 3, oldest three weeks
+                  * ago` are the difference between a queue being worked and a queue being ignored, and the
+                  * count alone cannot tell them apart. Null is "nothing has ever been reported" — a
+                  * different fact from "nothing is open", which a bare 0 collapses.
+                  */}
+                <StatLine
+                  label="Oldest still open"
+                  value={
+                    reports.data.counts.oldestOpenAt
+                      ? signupDate(reports.data.counts.oldestOpenAt)
+                      : reports.data.counts.open === 0 && reports.data.counts.actioned === 0 && reports.data.counts.dismissed === 0
+                        ? 'nothing has ever been reported'
+                        : 'nothing open'
+                  }
+                />
+                {reports.data.rows.length === 0 ? null : (
+                  <View style={styles.feedbackList}>
+                    {reports.data.rows.map((r) => (
+                      <View key={r.id} style={styles.feedbackRow}>
+                        <View style={styles.feedbackHead}>
+                          <Text style={styles.feedbackKind}>
+                            {r.reason} · {r.targetKind}
+                          </Text>
+                          <Text style={styles.feedbackWho} numberOfLines={1}>
+                            {r.targetHandle ? `@${r.targetHandle}` : r.targetId.slice(0, 8)}
+                          </Text>
+                          <Text style={styles.feedbackWhen}>{signupDate(r.createdAt)}</Text>
+                        </View>
+                        {r.note ? <Text style={styles.feedbackBody}>{r.note}</Text> : null}
+                        <Text style={styles.feedbackMeta}>
+                          {[
+                            r.status,
+                            r.reporterHandle ? `from @${r.reporterHandle}` : null,
+                            r.resolution,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </Text>
+                        {r.status === 'open' ? (
+                          <View style={styles.reportActions}>
+                            <Pressable
+                              onPress={() => void resolve(r.id, 'actioned')}
+                              accessibilityRole="button"
+                              accessibilityLabel="Mark actioned"
+                              style={styles.reportAction}
+                            >
+                              <Text style={styles.reportActionLabel}>Actioned</Text>
+                            </Pressable>
+                            <Pressable
+                              onPress={() => void resolve(r.id, 'dismissed')}
+                              accessibilityRole="button"
+                              accessibilityLabel="Dismiss report"
+                              style={styles.reportAction}
+                            >
+                              <Text style={styles.reportActionLabel}>Dismiss</Text>
+                            </Pressable>
+                          </View>
+                        ) : null}
                       </View>
                     ))}
                   </View>
@@ -584,6 +677,10 @@ function Section({
 }
 
 const styles = StyleSheet.create({
+  // ── Reports (0171) ──
+  reportActions: { flexDirection: 'row', gap: 8, marginTop: 8 },
+  reportAction: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: flRadius.sm, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  reportActionLabel: { fontSize: 11.5, fontWeight: '600', color: flColor.bronze300 },
   root: { flex: 1, backgroundColor: flColor.base },
   boot: { flex: 1, backgroundColor: flColor.base, alignItems: 'center', justifyContent: 'center' },
   body: { paddingHorizontal: 16, paddingBottom: 56, gap: 14 },

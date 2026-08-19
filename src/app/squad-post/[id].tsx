@@ -9,6 +9,8 @@ import { BeforeAfterSlider } from '@/components/forge/BeforeAfterSlider';
 import { TransformationLayout } from '@/components/forge/TransformationLayout';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
+import { ReportSheet } from '@/components/ReportSheet';
+import { useAuth } from '@/lib/auth';
 import { Pill } from '@/components/forge/composites/Pill';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
@@ -42,6 +44,10 @@ export default function SquadPostRoute() {
   const [sending, setSending] = useState(false);
   /** Measured, so a progress card fills the column it is in rather than assuming the screen's width. */
   const [cardW, setCardW] = useState(0);
+  const [reportOpen, setReportOpen] = useState(false);
+  /* Only to decide whether the Report control is offered — reporting your own post is operator noise. */
+  const { session } = useAuth();
+  const myId = session?.user?.id ?? null;
 
   useFocusEffect(
     useCallback(() => {
@@ -112,7 +118,38 @@ export default function SquadPostRoute() {
   return (
     <View style={styles.root}>
       <PostBg />
-      <AppBar title={<Text style={styles.barTitle}>Post</Text>} onBack={() => router.back()} />
+      {/*
+        * Report (0171). Guideline 1.2 asks for a way to report offensive content, and a post detail screen
+        * is where someone who has actually read something objectionable is standing.
+        *
+        * ⚠ HIDDEN ON YOUR OWN POST. Reporting yourself is noise in the operator queue and reads as a bug.
+        */}
+      <AppBar
+        title={<Text style={styles.barTitle}>Post</Text>}
+        onBack={() => router.back()}
+        actions={
+          post.authorId && post.authorId !== myId ? (
+            <Pressable
+              onPress={() => setReportOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Report this post"
+              hitSlop={10}
+              style={styles.reportBtn}
+            >
+              <FlagGlyph />
+            </Pressable>
+          ) : null
+        }
+      />
+
+      <ReportSheet
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        targetKind="post"
+        targetId={String(post.id)}
+        targetAthleteId={post.authorId}
+        targetName={post.authorName}
+      />
 
       <ScrollView style={styles.flex} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.body}>
@@ -362,7 +399,18 @@ function SendIcon({ active }: { active: boolean }) {
   );
 }
 
+/** The Report affordance in the app bar. A flag reads as "report" without a label at this size. */
+function FlagGlyph() {
+  return (
+    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M4 21V4" />
+      <Path d="M4 4h12l-2 4 2 4H4" />
+    </Svg>
+  );
+}
+
 const styles = StyleSheet.create({
+  reportBtn: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
   root: { flex: 1 },
   flex: { flex: 1 },
   barTitle: { fontSize: 17, fontWeight: '600', color: flColor.cream100 },

@@ -301,6 +301,13 @@ function RootNavigator() {
         <Stack.Screen name="preferences" />
         <Stack.Screen name="profile-visibility" />
         <Stack.Screen name="notifications" />
+        {/* Blocked People (0171). Account Settings → Privacy & Alerts, and the ONLY way to undo a block:
+            once one lands, that athlete's content is gone from every feed and their profile — carrying the
+            Unblock control — is no longer reachable. ⚠ Like `feedback`, this is half of an App Store
+            obligation rather than a preference: Guideline 1.2 requires the ability to block, and a block
+            an athlete cannot reverse is one they will not use. It is also the only surface where blocking
+            is visible to a reviewer without two accounts. */}
+        <Stack.Screen name="blocked" />
         {/* Send Feedback (0167). Reached from Account Settings → Help & About, and deep-linkable as
             `/feedback?from=<route>` so any screen can hand over the route a bug was seen on. ⚠ It is
             the in-app half of an App Store obligation — Apple requires a Support URL and rejects a bare

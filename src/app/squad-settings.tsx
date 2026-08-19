@@ -16,6 +16,7 @@ import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
 import { ForgeTextArea } from '@/components/forge/inputs/ForgeTextArea';
 import { SquadCrest } from '@/components/forge/SquadCrest';
+import { ReportSheet } from '@/components/ReportSheet';
 import {
   DEFAULT_SQUAD_NOTIF,
   deleteSquad,
@@ -601,6 +602,7 @@ function MemberSettings({ squad, members, onBack }: { squad: SquadDetail; member
   const { data: prefsData } = useQuery(() => getSquadNotifPrefs(squad.id), [squad.id]);
   const [edits, setEdits] = useState<Partial<SquadNotifPrefs>>({});
   const [leaveOpen, setLeaveOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const [leaving, setLeaving] = useState(false);
 
   const prefs: SquadNotifPrefs = { ...DEFAULT_SQUAD_NOTIF, ...(prefsData ?? {}), ...edits };
@@ -685,7 +687,16 @@ function MemberSettings({ squad, members, onBack }: { squad: SquadDetail; member
 
         {/* Membership */}
         <Text style={styles.membershipLabel}>Membership</Text>
-        <Pressable onPress={() => showToast('Reporting a squad is coming soon')} accessibilityRole="button" accessibilityLabel="Report squad" style={styles.reportRow}>
+        {/*
+          * ⚠ THIS ROW SHOWED A TOAST READING "Reporting a squad is coming soon" FROM ITS FIRST SHIP UNTIL
+          * 2026-08-19, and it was the ONLY report control anywhere in the binary.
+          *
+          * App Store Guideline 1.2 requires reporting, blocking and filtering for any app carrying
+          * user-generated content, and a "coming soon" toast is worse than no button at all: it
+          * demonstrates, inside the shipped app, that the need was known and unmet. A reviewer who tapped
+          * it would have found the finding for us. Now it opens the real sheet (0171).
+          */}
+        <Pressable onPress={() => setReportOpen(true)} accessibilityRole="button" accessibilityLabel="Report squad" style={styles.reportRow}>
           <View style={styles.reportIcon}>
             <FlagGlyph />
           </View>
@@ -705,6 +716,14 @@ function MemberSettings({ squad, members, onBack }: { squad: SquadDetail; member
 
         <Text style={styles.footer}>Forge Legacy</Text>
       </ScrollView>
+
+      <ReportSheet
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        targetKind="squad"
+        targetId={squad.id}
+        targetName={squad.name}
+      />
 
       <Modal visible={leaveOpen} transparent animationType="fade" onRequestClose={() => setLeaveOpen(false)}>
         <View style={styles.confirmBackdrop}>

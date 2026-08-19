@@ -3,7 +3,9 @@ import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 
 import { inviteCodeFromUrl } from '@/domain/squad/invite-link';
+import { referralCodeFromUrl, referralSourceFromUrl } from '@/domain/referral/referral-link';
 import { stashPendingInvite, takePendingInvite } from './pending-invite-store';
+import { stashPendingReferral } from './pending-referral-store';
 
 /*
  * ⚠ THE STORAGE HELPERS LIVE IN `pending-invite-store.ts`, WHICH IMPORTS NEITHER REACT NOR THE ROUTER.
@@ -56,8 +58,23 @@ export function usePendingInvite(route: 'splash' | 'auth' | 'onboarding' | 'app'
     let alive = true;
 
     const capture = (url: string | null) => {
+      if (!alive) return;
       const code = inviteCodeFromUrl(url);
-      if (alive && code) void stashPendingInvite(code);
+      if (code) void stashPendingInvite(code);
+      /*
+       * The referral rides on the SAME link and is captured in the same breath (0170, MA3-D21).
+       *
+       * ⚠ INDEPENDENT OF THE SQUAD CODE, NOT NESTED UNDER IT. A referral can arrive on a link that carries
+       * no squad code at all — a challenge invite, or a bare code someone typed — and nesting this inside
+       * the `if (code)` above would drop every one of those while looking entirely correct.
+       *
+       * ⚠ Stashed, never redeemed here. The redeem arm below navigates; this one has nothing to navigate
+       * to. `flushPendingReferral()` in `auth.tsx` moves it to the server the moment a session exists,
+       * which is earlier than this hook's `'app'` gate and is the right moment — attribution should not
+       * wait on onboarding finishing.
+       */
+      const referral = referralCodeFromUrl(url);
+      if (referral) void stashPendingReferral(referral, referralSourceFromUrl(url));
     };
 
     void Linking.getInitialURL().then(capture, () => {});

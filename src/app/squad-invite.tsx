@@ -11,6 +11,8 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { SquadCrest } from '@/components/forge/SquadCrest';
 import { fetchSquadInvite, regenerateSquadCode } from '@/data/squad-live';
+import { fetchMyReferralCode } from '@/data/referral-live';
+import { referralLinkFor } from '@/domain/referral/referral-core';
 import { trackInvite } from '@/lib/analytics';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { encodeQr, type QrMatrix } from '@/lib/qr';
@@ -81,9 +83,26 @@ export default function SquadInviteRoute() {
     }, [refetch]),
   );
 
+  /*
+   * The inviter's REFERRAL code, which is a different thing from the squad's invite code and is not shown
+   * anywhere on this screen — it rides in the link only (MA3-D21: "attach it to squad and challenge
+   * invites, not just a generic code").
+   *
+   * ⚠ NULL IS A COMPLETE ANSWER HERE. `referralLinkFor` returns the link untouched when there is no usable
+   * code, so a failed read costs the attribution and nothing else: the invite still works, still carries the
+   * squad code, and still says the same thing. Blocking the share on it would trade a working invite for an
+   * accounting detail the athlete cannot see.
+   *
+   * ⚠ NO REWARD IS PROMISED IN THE COPY BELOW, and that is deliberate — see `referralLinkFor`'s header.
+   * The credit cannot be granted until §4.2's webhook exists, and `default_tier` is still PREMIUM, so a
+   * "free month" line would be a new false billing claim of exactly the kind Phase F exists to retire.
+   */
+  const { data: myReferralCode } = useQuery(fetchMyReferralCode, []);
+
   const code = squad?.inviteCode ?? '';
-  const link = code ? joinLink(code) : '';
-  const inviteText = squad && code ? `Join ${squad.name} on Forge Legacy.\nCode: ${code}\n${link}\n\nAlready have the app? ${appLink(code)}` : '';
+  const link = code ? referralLinkFor(joinLink(code), myReferralCode) : '';
+  const deepLink = code ? referralLinkFor(appLink(code), myReferralCode) : '';
+  const inviteText = squad && code ? `Join ${squad.name} on Forge Legacy.\nCode: ${code}\n${link}\n\nAlready have the app? ${deepLink}` : '';
   /*
    * The QR encodes the LINK, not the code. The old pseudo-QR was seeded with the bare code, so even if
    * it had been decodable a scanner would have got four characters and no idea what to do with them.

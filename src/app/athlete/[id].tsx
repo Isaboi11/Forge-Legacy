@@ -24,6 +24,15 @@ import type { Accomplishment, Chapter, Goal, TimelineEntry } from '@/types/legac
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
+import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { ReportSheet } from '@/components/ReportSheet';
+import { blockAthlete, isBlockedWith, unblockAthlete } from '@/data/moderation-live';
+import {
+  BLOCK_CONFIRM_TITLE,
+  UNBLOCK_CONFIRM_BODY,
+  UNBLOCK_CONFIRM_TITLE,
+  blockConfirmBody,
+} from '@/domain/moderation/moderation-core';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 
 /**
@@ -86,8 +95,20 @@ import { flColor, flFont, flRadius } from '@/constants/foundation';
  * an ordinary workout with you already tagged as a partner, which is what finally writes a real name into
  * `workouts.partners` (there since 0016, and counted by 0079's partnership honors).
  *
- * STILL INERT, HONESTLY: Invite to Squad, Report and Block. Each needs a system that doesn't exist.
- * They render visibly disabled with one line saying so, rather than as buttons that toast.
+ * REPORT AND BLOCK ARE LIVE (migration 0171), in the ⋯ menu on the app bar.
+ *
+ * ⚠ THIS PARAGRAPH USED TO READ: *"STILL INERT, HONESTLY: Invite to Squad, Report and Block. Each needs a
+ *   system that doesn't exist. They render visibly disabled with one line saying so, rather than as buttons
+ *   that toast."* **Only the first sentence was true.** Report and Block were not rendered at all — not
+ *   disabled, not present — so a header describing an honest disabled state was itself describing something
+ *   the screen did not do. Recorded because it is the same failure the whole 0171 pass exists to correct:
+ *   a control that claims more than the app delivers, in the one area where App Store review looks.
+ *
+ * The block is enforced ENTIRELY server-side (four RESTRICTIVE policies + four predicates in
+ * `friends_feed`). Nothing on this screen filters anything — see `data/moderation-live.ts`'s header for why
+ * client-side filtering would silently turn a block into a mute.
+ *
+ * INVITE TO SQUAD REMAINS UNBUILT, and is not rendered.
  */
 
 const SCROLL_RANGE = 220;
@@ -106,6 +127,20 @@ export default function AthleteProfileScreen() {
   const [pending, setPending] = useState<FriendState | null>(null);
   const [busy, setBusy] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [confirmBlock, setConfirmBlock] = useState(false);
+  const [confirmUnblock, setConfirmUnblock] = useState(false);
+  /*
+   * Whether a block already exists, in EITHER direction — `is_blocked()` is symmetric.
+   *
+   * ⚠ THIS CHOOSES WHICH CONTROL TO SHOW, AND NOTHING ELSE. It never decides what renders: the database
+   * has already removed every blocked row before this screen sees it, via 0171's four RESTRICTIVE policies
+   * and the four predicates in `friends_feed`. Filtering here as well would make the block feel client-side
+   * — and a client-side block only hides content from the person who blocked, leaving the other half of the
+   * pair reading everything.
+   */
+  const { data: blocked, refetch: refetchBlocked } = useQuery(() => isBlockedWith(athleteId), [athleteId]);
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/squads'));
 
@@ -174,7 +209,19 @@ export default function AthleteProfileScreen() {
       {/* The plate that dissolves the artwork as you read — the design's `p · 0.52`. */}
       <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.plate, { opacity: p.interpolate({ inputRange: [0, 1], outputRange: [0, 0.52] }) }]} />
 
-      <AppBar title="" onBack={goBack} />
+      {/*
+        * ⚠ THE UGC CONTROLS APPLE REQUIRES (Guideline 1.2), AND THIS IS THE SCREEN THEY HAVE TO BE ON.
+        *
+        * An athlete profile is the surface a stranger reaches from Discover, friend search or a squad
+        * roster — the one place a person can be seen with no relationship in place. Report and Block are
+        * hidden for `isSelf`, because neither means anything about yourself and both would be noise on the
+        * screen every athlete visits most.
+        */}
+      <AppBar
+        title=""
+        onBack={goBack}
+        actions={data.isSelf ? null : <OverflowButton onPress={() => setActionsOpen(true)} />}
+      />
 
       <Animated.ScrollView
         contentContainerStyle={styles.scroll}
@@ -361,7 +408,97 @@ export default function AthleteProfileScreen() {
         tone="destructive"
         cancelLabel="Keep"
       />
+
+      {/* ── Guideline 1.2 controls (0171) ────────────────────────────────────────────── */}
+
+      <BottomSheet open={actionsOpen} onClose={() => setActionsOpen(false)} title={data.name}>
+        <View style={styles.moderationSheet}>
+          <Pressable
+            onPress={() => {
+              setActionsOpen(false);
+              setReportOpen(true);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={`Report ${data.name}`}
+            style={styles.moderationRow}
+          >
+            <Text style={styles.moderationLabel}>Report {data.firstName}</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              setActionsOpen(false);
+              if (blocked) setConfirmUnblock(true);
+              else setConfirmBlock(true);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={blocked ? `Unblock ${data.name}` : `Block ${data.name}`}
+            style={styles.moderationRow}
+          >
+            <Text style={[styles.moderationLabel, styles.moderationDanger]}>
+              {blocked ? `Unblock ${data.firstName}` : `Block ${data.firstName}`}
+            </Text>
+          </Pressable>
+        </View>
+      </BottomSheet>
+
+      <ReportSheet
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        targetKind="athlete"
+        targetId={athleteId}
+        targetAthleteId={athleteId}
+        targetName={data.firstName}
+      />
+
+      <ConfirmSheet
+        open={confirmBlock}
+        onClose={() => setConfirmBlock(false)}
+        headline={BLOCK_CONFIRM_TITLE}
+        body={blockConfirmBody(data.firstName)}
+        confirmLabel="Block"
+        onConfirm={() => {
+          setConfirmBlock(false);
+          /*
+           * `refetchBlocked` on success, and the friend state is reset to 'none' in the same breath —
+           * `block_athlete()` deletes the friendship server-side, so leaving the button reading "Friends"
+           * would show a relationship the database no longer has.
+           */
+          run(blockAthlete(athleteId).then(() => refetchBlocked()), 'none', `${data.firstName} blocked`);
+        }}
+        tone="destructive"
+        cancelLabel="Cancel"
+      />
+
+      <ConfirmSheet
+        open={confirmUnblock}
+        onClose={() => setConfirmUnblock(false)}
+        headline={UNBLOCK_CONFIRM_TITLE}
+        body={UNBLOCK_CONFIRM_BODY}
+        confirmLabel="Unblock"
+        onConfirm={() => {
+          setConfirmUnblock(false);
+          run(unblockAthlete(athleteId).then(() => refetchBlocked()), 'none', `${data.firstName} unblocked`);
+        }}
+        cancelLabel="Cancel"
+      />
     </View>
+  );
+}
+
+/** The ⋯ that carries Report and Block. Its own component so the AppBar `actions` slot stays one node. */
+function OverflowButton({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="More options"
+      hitSlop={10}
+      style={styles.overflow}
+    >
+      {[0, 1, 2].map((i) => (
+        <View key={i} style={styles.overflowDot} />
+      ))}
+    </Pressable>
   );
 }
 
@@ -613,6 +750,16 @@ function FriendsGlyph() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   plate: { backgroundColor: '#000' },
+  // ── Guideline 1.2 controls (0171) ──
+  overflow: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', gap: 3 },
+  overflowDot: { width: 3.5, height: 3.5, borderRadius: 2, backgroundColor: flColor.cream100 },
+  // ⚠ `moderation*` and not `action*` — this screen already owns `actionRow`, `actionLabel` and four more
+  // for the friend-state buttons, and `StyleSheet.create` takes the LAST duplicate key silently at runtime.
+  // `tsc` caught it here (TS1117); a plain object would not have.
+  moderationSheet: { gap: 2, paddingBottom: 8 },
+  moderationRow: { paddingVertical: 15, paddingHorizontal: 4 },
+  moderationLabel: { fontSize: 16, color: flColor.cream100 },
+  moderationDanger: { color: flColor.redMuted },
   scroll: { paddingBottom: 44 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 34 },
   missingTitle: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', textAlign: 'center', color: flColor.cream100 },

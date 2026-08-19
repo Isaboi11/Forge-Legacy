@@ -15,6 +15,9 @@ import { clearSquadFavorites } from './squad-favorites';
 // ⚠ the STORE, not './pending-invite' — that module imports expo-router and this file is reached
 //   during auth init, upstream of the router. See pending-invite-store.ts.
 import { clearPendingInvite } from './pending-invite-store';
+// Same rule as the line above — a plain AsyncStorage module, no React and no expo-router, because this file
+// is reached during auth initialisation and is upstream of the router.
+import { clearPendingReferral } from './pending-referral-store';
 /* Both are AsyncStorage plus a TYPE-ONLY import of the coach's own types — no runtime weight, so neither
    drags anything into this file's graph. That matters here: `first-run` is reached during auth init,
    upstream of the router, which is the same reason the invite store is imported above rather than the
@@ -76,6 +79,10 @@ export async function resetFirstRunFlags(): Promise<void> {
     // An invite is tapped by a PERSON, before anyone is signed in. The next account on this phone is a
     // different person and did not tap it — inheriting it would route a stranger into somebody else's squad.
     clearPendingInvite(),
+    // The referral code that rode in on the same link, for the same reason and with a sharper edge: an
+    // inherited invite routes a stranger to the wrong squad, an inherited referral credits the wrong person
+    // with a month of somebody's money. Both are tapped by a PERSON before anyone is signed in.
+    clearPendingReferral(),
     /*
      * ⚠ THE COACH'S MEMORY, AND IT WAS THE ONE THING HERE THAT LEAKED BETWEEN PEOPLE.
      *

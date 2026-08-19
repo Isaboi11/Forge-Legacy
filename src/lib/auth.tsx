@@ -4,6 +4,7 @@ import { supabase } from './supabase';
 import { lastAthleteId, rememberAthleteId, resetFirstRunFlags } from './first-run';
 import { isDeviceHandover, shouldRecordAthlete } from '@/domain/auth/device-handover';
 import { syncAthletePresence } from '@/data/honors-live';
+import { flushPendingReferral } from '@/data/referral-live';
 import { stopAnalytics } from './analytics';
 
 /**
@@ -103,6 +104,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (shouldRecordAthlete(owner, nextId) && nextId) await rememberAthleteId(nextId);
       })();
       if (nextId && prevUserId.current !== nextId) void syncAthletePresence();
+      /*
+       * A referral code held from an invite link, moved to the server now that there is an `auth.uid()` to
+       * attribute it to (0170). Same shape and same rules as the presence sync above: fire-and-forget, on
+       * the identity CHANGING rather than on every event, and never able to delay or fail a launch.
+       *
+       * ⚠ Deliberately on the same edge as presence rather than on `session` being non-null — a token
+       * refresh fires this listener with the same athlete, and re-running the flush there would be a
+       * network call per refresh forever, all of them finding an empty stash.
+       */
+      if (nextId && prevUserId.current !== nextId) void flushPendingReferral();
       prevUserId.current = nextId;
     });
     return () => data.subscription.unsubscribe();

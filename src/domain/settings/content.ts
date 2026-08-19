@@ -164,6 +164,19 @@ export function settingsSections(opts: {
   const privacy: SettingsRow[] = [];
   if (opts.hasVisibility) privacy.push({ key: 'vis', label: 'Profile Visibility', action: { type: 'route', path: '/profile-visibility' } });
   if (opts.hasNotifications) privacy.push({ key: 'notif', label: 'Notifications', action: { type: 'route', path: '/notifications' } });
+  /*
+   * ⚠ UNCONDITIONAL, UNLIKE THE TWO ROWS ABOVE — and that is the point of it.
+   *
+   * Blocking is reachable from an athlete's profile, but UNBLOCKING is not: once blocked, that person's
+   * content is gone from every feed and their profile is not something you can stumble back onto. Without a
+   * list, a block is one-way in practice.
+   *
+   * App Store Guideline 1.2 asks for the ability to block abusive users, and a control an athlete cannot
+   * reverse is a control they will hesitate to use. It is also the surface a reviewer looks for when
+   * checking that blocking exists at all, since it is the only place the feature is visible without two
+   * accounts. Gating it behind a flag would reproduce the failure this pass exists to fix.
+   */
+  privacy.push({ key: 'blocked', label: 'Blocked People', action: { type: 'route', path: '/blocked' } });
   if (privacy.length) sections.push({ key: 'privacy', label: 'Privacy & Alerts', rows: privacy });
 
   const training: SettingsRow[] = [
