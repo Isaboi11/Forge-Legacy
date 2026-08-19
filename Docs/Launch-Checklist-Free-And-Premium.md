@@ -803,6 +803,19 @@ genuinely unstarted**, and all five gate submission rather than review.
       ✅ **COPY WRITTEN 2026-08-19 — `Docs/App-Store-Listing-Copy.md`.** Name, three subtitle options,
       promotional text (149/170), keywords (94/100) and the full description (~2,470/4000), in Landing v6's
       voice. **Needs from the PO: pick a subtitle.**
+      ✅ **SCREENSHOTS SHOT AND FRAMED 2026-08-19 — eight, at 6.9" (1320 × 2868).** Captured on an
+      iPhone 16 Pro Max, whose native resolution **is** an accepted 6.9" size, so nothing was scaled or
+      resampled. Raws in `…/OneDrive/ForgeLegacy-AppStore/raw`, framed finals in `…/final/01–08.png`,
+      uploaded in numeric order. Full running order, captions and the rationale are in
+      **`Docs/App-Store-Listing-Copy.md` §8**, which is now the record for this row.
+      ⚠ **EVERY FRAME IS CROPPED BELOW THE STATUS BAR** — that is what removes a third-party media-player
+      pill sitting in the Dynamic Island on four captures, and on 02 the pinned red **Delete Program**
+      button, which no amount of scrolling moves out of frame.
+      ⚠ **THE SOCIAL FRAMES ARE THE REVIEWER DEMO ACCOUNT ON PURPOSE** — real testers' names and handles
+      in a store screenshot are public forever and would need consent; `reviewer-seed.mjs` content is ours.
+      ⛔ **STILL OWED: RESHOOT 05 (rank).** It reads *"I've started."*, `LIFETIME 5` and *"0 of the path
+      walked"* — the one pillar whose frame currently argues against it. The account has no rank history
+      yet and will by launch.
       ⚠ **SCREENSHOTS: ONE iPhone size — 6.5" OR 6.9", not both.** This row said "6.9" and 6.5" at minimum",
       which is double the work; Apple takes one set and scales. Verified against Apple's screenshot
       specifications 2026-08-18. **Real captures of the running app** — the landing page's phone mockups are

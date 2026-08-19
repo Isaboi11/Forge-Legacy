@@ -826,6 +826,23 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 > client on that runtime and returned the new update id. **Deliverable, not merely published.**
 > ⏳ Not yet confirmed on a device.
 
+### 0. ⭐ The store listing has its screenshots — and the crop is what made four of the eight shippable (2026-08-19, App Store listing — no code, no migration, not an OTA)
+
+**Eight framed screenshots at 6.9" (1320 × 2868), which is the only size Apple needs** — it takes one set and scales the rest itself. Shot on an iPhone 16 Pro Max, whose native resolution **is** an accepted 6.9" size, so nothing was scaled or resampled. Raws in `…/OneDrive/ForgeLegacy-AppStore/raw`, framed finals in `…/final/01–08.png`, uploaded in numeric order. **`Docs/App-Store-Listing-Copy.md` §8 is now the record** for running order, captions and rationale.
+
+**The order follows §5's pillars, and 01–03 carry the pitch because Apple shows only the first three in search results:** 01 active workout *"Log a set in under two seconds."* · 02 a Holt-built 12-week block *"Coach Holt builds the program."* · 03 a sealed chapter *"Seal a chapter. It's permanent."* · 04 Home *"Pick up where you left off."* · 05 rank *"Earned once. Yours for good."* · 06 squad feed *"A few real people. No audience."* · 07 competition standings *"Compete with people who know you."* · 08 exercise detail *"Every movement, demonstrated."*
+
+**⚠ THE CROP IS NOT COSMETIC — IT IS WHAT MAKES FOUR OF THE EIGHT SHIPPABLE.** Every frame is cut below the status bar, which removes a **third-party media-player pill sitting in the Dynamic Island** on four of the captures, and on 02 the pinned **Delete Program** button — red, the most eye-catching thing in the lower half of the frame, and **impossible to scroll away because that footer is fixed**. Cropping a real capture onto a caption band is the art direction the launch docs always meant; the landing page's HTML phone mocks are still never the screenshot.
+
+**⚠ 06 AND 07 ARE THE REVIEWER DEMO ACCOUNT BY DECISION, NOT BY CONVENIENCE.** The PO's own circle is empty — Home renders *"Nothing from your circle yet."* — and real testers' names and handles in a store screenshot are public forever and would need each person's consent. `supabase/seed/reviewer-seed.mjs` builds *Iron Circle* with a second member, posts from both authors and a two-entrant competition: content that is ours to publish.
+
+**⛔ OWED — RESHOOT 05 (RANK).** It reads *"I've started."*, `LIFETIME 5` and *"0 of the path walked"*, which makes it the one frame that argues against the pillar it illustrates. The account simply has no rank history yet and will by launch. The same weakness, smaller, sits on 01 (`LAST —` / `BEST —`, a lift with no history) and 02 (`Workout 0 of 72`).
+
+**⏳ OPEN — DOES §5 OVERCLAIM?** The description's feature list promises *"demonstration loops and coaching cues"*. `src/app/exercise/[id].tsx`'s header states no coaching record is approved and therefore none render — **but the live app draws Why it matters, so that comment is stale**. Whether *How to do it*, *Cues* and *Common mistakes* also render is unconfirmed, and the line stands or is cut on that answer.
+
+**Files:** `Docs/App-Store-Listing-Copy.md` §8 · `Docs/Launch-Checklist-Free-And-Premium.md` §10.5 (still `[~]` — the app icon, the subtitle pick and the age rating remain) · `Docs/GO-LIVE.md` row 4 · this board.
+
+
 ### 0. ⛔ The App Store would have rejected this build, and no launch document said so — Guideline 1.2 (2026-08-19, Moderation — **MIGRATION `0171` APPLIED AND VERIFIED**, client code is OTA-safe, ⏳ NOT DEPLOYED)
 
 **Found while writing the age-rating section of the store listing, which is the only reason anyone looked.** Guideline 1.2 requires an app carrying user-generated content to have **four** things: filtering, reporting **with timely responses**, the ability to **block** abusive users, and published contact info. Forge had the fourth (`/support`, 08-18) and, in the entire binary, **one** report control — `squad-settings.tsx:688`, a toast reading *"Reporting a squad is coming soon."* No report on a post. **No block.** `grep "create table.*(block|report)"` across all 170 migrations returned nothing.
@@ -1206,23 +1223,9 @@ The two halves 0163 deliberately left as a decision rather than a repair. **PO a
 
 **Files:** `Docs/Launch-Checklist-Free-And-Premium.md` → **v1.4** (new **9.0b** and **9.7**; §7.4 and §10.7 cross-referenced; the two-stage table's *Needs* cell) · `Docs/GO-LIVE.md` → **v1.4** (new **Banking** and **Ownership** rows, step 9 closed, new **step 9b**, step 11 gated) · this board.
 
-### 0. ⭐ D-U-N-S `149910851` — the last external blocker is gone, and the critical path moves onto us (2026-08-17, OPS — no code, no migration, not an OTA)
-
-**D&B case `10803372` resolved at 18:14 UTC, four days after it was opened.** Tracking `10740542`, concern category *"Add business — Mini Inquiry — Identity Data Only"*, sub-resolution **"Verified through a company spokesperson."** The two documents sent on 08-15 — the stamped Certificate of Organization, the CP 575, and the Business Information Form — did the whole job; **the phone call this board twice flagged as *the step that stalls cases* never came.** Well inside Apple's stated ~7 business days, and the "3–14 days" in the original plan was pessimistic.
-
-**The record came back matching the filing field for field**, which is the part that mattered: `Forge Legacy LLC` · `3832 E Cunninghill Dr, Eagle Mountain, UT 84005` · 1 employee · CEO/primary principal Isaiah Altamirano. **A name or address mismatch is the single most common rejection at both D&B and Apple enrollment, and it restarts the clock rather than erroring** — the discipline of writing the exact strings into §9 and matching every downstream form against them is what bought this.
-
-**⏳ ⚠ THE NUMBER EXISTS AND THE RECORD DOES NOT RESOLVE YET — do not enroll today.** D&B's own resolution text says *"a DUNS number has been generated for the business, and information will be available in 24–48 hours"*, i.e. ~08-18 18:14 UTC at the earliest. **Apple's enrollment validates by querying D&B**, so starting §9.2 against a lookup that misses is how an enrollment gets rejected and a cleared four-day wait turns into a new one. **§9.2 is gated on the lookup succeeding, not on the calendar:** confirm at `developer.apple.com/enroll/duns-lookup/`, **signed in as the Apple ID intended to OWN the developer account** and not a personal one, that it returns Forge Legacy LLC at the Eagle Mountain address. Then enroll.
-
-**⚠ THE CRITICAL PATH JUST MOVED ONTO US, AND THAT IS THE REAL NEWS.** For four days the honest answer to *"what is blocking launch"* was "a third party." That answer is gone, and nothing external gates the public release any more. What remains is entirely this team's: **the paywall** (§4.2–4.6 — RevenueCat adapter, 6 SKUs, referrals, Founder counter, StoreKit sandbox), **the bundle-identifier decision** (§9.3), **the store listing** (§10.3–10.7 — labels, screenshots, seeded reviewer account), and **legal** (§5). ⚠ **Start §9.3 first.** It is the only remaining item whose answer comes from Apple rather than from us, it carries a support round trip, and it **must be settled before anything is built under the new team** — bundle IDs are globally unique, `com.qest4.forgelegacy` belongs to `G722GV8H8C`, and all three resolutions have costs that are cheaper to choose than to undo.
-
-**Also now live: `react-native-purchases` becomes a real decision.** It is a native module, the tester cohort is OTA-reachable on build 6 today, and installing it ends that until a new binary ships. Do the JS-only work the testers should see first.
-
-**Files:** `Docs/GO-LIVE.md` → v1.3 · `Docs/Launch-Checklist-Free-And-Premium.md` → v1.3 (§9.1 closed) · this board.
-
 ### Older entries — `Docs/Status-Archive-2026-08.md`
 
-The 33 entries before this point moved there on 2026-08-18, **verbatim**. Nothing was deleted or
+The 39 entries before this point moved there on 2026-08-18 and 2026-08-19, **verbatim**. Nothing was deleted or
 summarised.
 
 This section had grown to 48 entries and 4,378 lines — **81% of a dashboard `AGENTS.md` requires every

@@ -1,7 +1,7 @@
 # Forge Legacy — Status Archive, August 2026
 
 **Type:** Historical record, split out of `Forge-Legacy-Master-Status.md`
-**Covers:** the 38 Recently-Completed entries below the 15 most recent, as of 2026-08-19
+**Covers:** the 39 Recently-Completed entries below the 15 most recent, as of 2026-08-19
 
 > ## Why this file exists
 >
@@ -22,6 +22,20 @@
 > **Read this file when the dashboard does not explain something.** It is the same content, one level back.
 
 ---
+
+### 0. ⭐ D-U-N-S `149910851` — the last external blocker is gone, and the critical path moves onto us (2026-08-17, OPS — no code, no migration, not an OTA)
+
+**D&B case `10803372` resolved at 18:14 UTC, four days after it was opened.** Tracking `10740542`, concern category *"Add business — Mini Inquiry — Identity Data Only"*, sub-resolution **"Verified through a company spokesperson."** The two documents sent on 08-15 — the stamped Certificate of Organization, the CP 575, and the Business Information Form — did the whole job; **the phone call this board twice flagged as *the step that stalls cases* never came.** Well inside Apple's stated ~7 business days, and the "3–14 days" in the original plan was pessimistic.
+
+**The record came back matching the filing field for field**, which is the part that mattered: `Forge Legacy LLC` · `3832 E Cunninghill Dr, Eagle Mountain, UT 84005` · 1 employee · CEO/primary principal Isaiah Altamirano. **A name or address mismatch is the single most common rejection at both D&B and Apple enrollment, and it restarts the clock rather than erroring** — the discipline of writing the exact strings into §9 and matching every downstream form against them is what bought this.
+
+**⏳ ⚠ THE NUMBER EXISTS AND THE RECORD DOES NOT RESOLVE YET — do not enroll today.** D&B's own resolution text says *"a DUNS number has been generated for the business, and information will be available in 24–48 hours"*, i.e. ~08-18 18:14 UTC at the earliest. **Apple's enrollment validates by querying D&B**, so starting §9.2 against a lookup that misses is how an enrollment gets rejected and a cleared four-day wait turns into a new one. **§9.2 is gated on the lookup succeeding, not on the calendar:** confirm at `developer.apple.com/enroll/duns-lookup/`, **signed in as the Apple ID intended to OWN the developer account** and not a personal one, that it returns Forge Legacy LLC at the Eagle Mountain address. Then enroll.
+
+**⚠ THE CRITICAL PATH JUST MOVED ONTO US, AND THAT IS THE REAL NEWS.** For four days the honest answer to *"what is blocking launch"* was "a third party." That answer is gone, and nothing external gates the public release any more. What remains is entirely this team's: **the paywall** (§4.2–4.6 — RevenueCat adapter, 6 SKUs, referrals, Founder counter, StoreKit sandbox), **the bundle-identifier decision** (§9.3), **the store listing** (§10.3–10.7 — labels, screenshots, seeded reviewer account), and **legal** (§5). ⚠ **Start §9.3 first.** It is the only remaining item whose answer comes from Apple rather than from us, it carries a support round trip, and it **must be settled before anything is built under the new team** — bundle IDs are globally unique, `com.qest4.forgelegacy` belongs to `G722GV8H8C`, and all three resolutions have costs that are cheaper to choose than to undo.
+
+**Also now live: `react-native-purchases` becomes a real decision.** It is a native module, the tester cohort is OTA-reachable on build 6 today, and installing it ends that until a new binary ships. Do the JS-only work the testers should see first.
+
+**Files:** `Docs/GO-LIVE.md` → v1.3 · `Docs/Launch-Checklist-Free-And-Premium.md` → v1.3 (§9.1 closed) · this board.
 
 ### 0. Launch-doc reconciliation — Stage 1 closed, six stale items, and a false billing claim Phase F would have shipped (2026-08-17, DOCS only — no code, no migration, not an OTA)
 

@@ -182,8 +182,29 @@ some form of all three must exist before submission.
 ## 8 · What still needs you
 
 - [ ] **Pick a subtitle** (§2) — everything else is written.
-- [ ] **Screenshots** — one iPhone size, **6.5" OR 6.9", not both**. ⚠ Real captures of the running app.
-      The landing page's phone mockups are HTML recreations: reuse their art direction (bronze, `#0C1013`,
-      the wordmark) as the frame, **never their mock UI as the screenshot**.
+- [x] **Screenshots — ✅ SHOT AND FRAMED 2026-08-19. Eight, at 6.9" (1320 × 2868).**
+      Captured on an iPhone 16 Pro Max, whose native resolution **is** an accepted 6.9" size, so nothing
+      was scaled. Raw captures in `…/OneDrive/ForgeLegacy-AppStore/raw`, framed finals in
+      `…/final/01–08.png`, upload in numeric order.
+      Order and captions: **01** active workout *"Log a set in under two seconds."* · **02** a Holt-built
+      12-week block *"Coach Holt builds the program."* · **03** a sealed chapter *"Seal a chapter. It's
+      permanent."* · **04** Home *"Pick up where you left off."* · **05** rank *"Earned once. Yours for
+      good."* · **06** squad feed *"A few real people. No audience."* · **07** competition standings
+      *"Compete with people who know you."* · **08** exercise detail *"Every movement, demonstrated."*
+      The order follows §5's pillars, and 01–03 carry the pitch because Apple shows only the first three
+      in search results.
+      ⚠ **EVERY FRAME IS CROPPED BELOW THE STATUS BAR**, which is what removes a third-party media-player
+      pill that was sitting in the Dynamic Island on four of the captures — and, on 02, the pinned
+      **Delete Program** button, which is red and cannot be scrolled out of frame in-app. Cropping a real
+      capture onto a caption band is the art direction this section always meant; the mock UI is still
+      never the screenshot.
+      ⚠ **06 AND 07 ARE THE REVIEWER DEMO ACCOUNT, DELIBERATELY.** The PO's own circle is empty, and real
+      testers' names and handles in a store screenshot are public forever and would need each person's
+      consent. `reviewer-seed.mjs` builds *Iron Circle* with a second member, posts from both authors and
+      a two-entrant competition — content that is ours to publish.
+      ⛔ **05 IS THE WEAK FRAME AND SHOULD BE RESHOT BEFORE SUBMISSION.** It reads *"I've started."*,
+      `LIFETIME 5` and *"0 of the path walked"* — a rank pillar illustrated by a rank that has not moved.
+      The account simply has no rank history yet; it will by launch. Same weakness, smaller, on **01**
+      (`LAST —` / `BEST —`, a lift with no history) and **02** (`Workout 0 of 72`).
 - [ ] **Age rating** — blocked on §7.
 - [ ] **Guideline 1.2 controls** — §7. Needs a decision before it needs code.
