@@ -21,6 +21,16 @@ import { clearPendingInvite } from './pending-invite-store';
    module that wraps it. */
 import { forgetExperience } from './coach-memory';
 import { clearThread, forgetMetHolt } from './coach-thread';
+/* Its own doc says "used on account switch, beside the other first-run flags" and it had NO CALLERS —
+   see the note beside it in the wipe below. Relative, like every other import here. */
+import { forgetWorkoutsLogged } from './tour-phase';
+
+/*
+ * CLEARING STORAGE IS ONLY HALF OF A HANDOVER — the other half is telling whoever already read it.
+ * `emitFirstRunReset` is called at the bottom of the wipe below; the reasoning, and the bug it closes,
+ * are written up in `domain/auth/first-run-signal.ts`. Pure, no imports, node-tested.
+ */
+import { emitFirstRunReset } from '@/domain/auth/first-run-signal';
 
 /**
  * Clear the device-local state an account leaves behind. It lives in AsyncStorage (localStorage on web)
@@ -81,7 +91,29 @@ export async function resetFirstRunFlags(): Promise<void> {
     forgetExperience(),
     forgetMetHolt(),
     clearThread(),
+    /*
+     * ⚠ HOW MANY WORKOUTS THE LAST ATHLETE HAD LOGGED, AND IT HAD NO CALLERS AT ALL.
+     *
+     * `forgetWorkoutsLogged`'s own doc reads "Used on account switch, beside the other first-run flags"
+     * — it simply was never added to the list it names. So the count survived a handover, in AsyncStorage
+     * AND in that module's in-memory `cached`, and the count is what the tutorial's phases are computed
+     * from. A brand-new athlete on a veteran's device was therefore handed phase 3: the thinned first
+     * visit the phasing feature exists to give them was skipped, on the grounds of ten workouts somebody
+     * else had done.
+     *
+     * The fourth zero-caller function found in this subsystem in two days. They do not announce
+     * themselves — a feature built, exported, documented and never wired reads exactly like a feature
+     * that works.
+     */
+    forgetWorkoutsLogged(),
   ]);
+
+  /*
+   * ⚠ AFTER THE AWAIT, NEVER BEFORE IT. A listener's whole job is to overwrite state it read from these
+   * keys; firing while the clears are still in flight would invite it to re-read a half-wiped device and
+   * re-cache the very values being removed.
+   */
+  emitFirstRunReset();
 }
 
 /**

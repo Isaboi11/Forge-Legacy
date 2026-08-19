@@ -80,6 +80,9 @@ import {
   type ScreenKey,
 } from '@/lib/screen-prompts';
 import { getWorkoutsLogged } from '@/lib/tour-phase';
+/* The SIGNAL, not `lib/first-run` itself — subscribing must not drag AsyncStorage, supabase and the
+   autosave module into this provider's graph. See the module header for the bug it closes. */
+import { onFirstRunReset } from '@/domain/auth/first-run-signal';
 
 export type { TourStep } from '@/domain/onboarding/tour-plan';
 
@@ -192,52 +195,88 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
 
   // Baseline the tour state ONCE the session read has resolved, so we read the restored account directly and
   // never mistake boot's null→id settle for an account switch. That false "switch" was wiping the seen-set on
-  // every relaunch (and re-firing the honor ceremony). After the baseline, only a genuinely DIFFERENT account
-  // signing in on this device resets to fresh-athlete defaults; a plain relaunch — or re-logging into the same
-  // account — keeps the persisted "already seen" state. `resetFirstRunFlags` (AuthProvider) is gated the same way.
+  // every relaunch (and re-firing the honor ceremony). A plain relaunch — or re-logging into the same
+  // account — keeps the persisted "already seen" state.
   const didInit = useRef(false);
-  const lastRealId = useRef<string | null>(null);
   useEffect(() => {
     if (authLoading) return; // hold until getSession() resolves — userId is final from here on
-    if (!didInit.current) {
-      didInit.current = true;
-      lastRealId.current = userId;
-      let alive = true;
-      void (async () => {
-        const [tabs, home, seenList, wasAnnounced, tips] = await Promise.all([
-          getTourStatus(),
-          getHomeTourStatus(),
-          getSeenPrompts(),
-          getUnlockAnnounced(),
-          getGuidedTipsEnabled(),
-        ]);
-        if (!alive) return;
-        setTabsStatus(tabs);
-        setHomeStatus(home);
-        setSeen(seenList);
-        setSeenLoaded(true);
-        setAnnounced(wasAnnounced);
-        setTips(tips);
-        setLoaded(true);
-      })();
-      return () => {
-        alive = false;
-      };
-    }
-    if (userId && lastRealId.current && lastRealId.current !== userId) {
-      setTabsStatus('pending');
-      setHomeStatus('pending');
-      setRun(null);
-      setStepIndex(0);
-      setDeferred(false);
-      setRequested(false);
-      setAnnounced(false); // a different account has not been told anything yet
-      setSeen([]);
+    if (didInit.current) return;
+    didInit.current = true;
+    let alive = true;
+    void (async () => {
+      const [tabs, home, seenList, wasAnnounced, tips] = await Promise.all([
+        getTourStatus(),
+        getHomeTourStatus(),
+        getSeenPrompts(),
+        getUnlockAnnounced(),
+        getGuidedTipsEnabled(),
+      ]);
+      if (!alive) return;
+      setTabsStatus(tabs);
+      setHomeStatus(home);
+      setSeen(seenList);
       setSeenLoaded(true);
-      setTips(true);
-    }
-    if (userId) lastRealId.current = userId;
+      setAnnounced(wasAnnounced);
+      setTips(tips);
+      setLoaded(true);
+    })();
+    return () => {
+      alive = false;
+    };
   }, [authLoading, userId]);
+
+  /**
+   * ══ THE HANDOVER, AND IT IS NOW TOLD RATHER THAN GUESSED ══
+   *
+   * This provider used to work out for itself whether a different athlete had appeared, by comparing the
+   * live user id against an in-memory ref of the last REAL one:
+   *
+   *     if (userId && lastRealId.current && lastRealId.current !== userId) { …reset… }
+   *
+   * That is the same shape of bug `domain/auth/device-handover.ts` was written to close in `AuthProvider`,
+   * left behind in a second place. The app mounts this provider ABOVE the navigator, so on a device
+   * sitting at the sign-in screen it baselines with `userId = null` — and `lastRealId.current && …` then
+   * short-circuits on the very transition that matters, the one where somebody signs UP. Storage got
+   * wiped by `resetFirstRunFlags`; this component's state did not; the stale `completed` won, and a
+   * brand-new athlete was never shown the four-tab map. Only on a device that had signed somebody in
+   * before — so never on a fresh install, and always on the PO's own phone.
+   *
+   * ⚠ RE-READING STORAGE ON AN ID CHANGE WOULD NOT HAVE FIXED IT EITHER. The wipe is async and races
+   * this read; React runs child effects before parent ones, so the provider tends to read FIRST and
+   * win the race with the previous athlete's values. The signal fires after the wipe has finished, which
+   * removes the race rather than betting on it.
+   *
+   * The reset is deliberately to LITERAL fresh-athlete defaults rather than a re-read, for the same
+   * reason: after a wipe those defaults are exactly what storage now says, and asserting them costs
+   * nothing while another read reopens the ordering question.
+   */
+  useEffect(
+    () =>
+      onFirstRunReset(() => {
+        setTabsStatus('pending');
+        setHomeStatus('pending');
+        setRun(null);
+        setStepIndex(0);
+        setDeferred(false);
+        setRequested(false);
+        setAnnounced(false); // a different account has not been told anything yet
+        setSeen([]);
+        setSeenLoaded(true);
+        setTips(true);
+        /*
+         * ⚠ NULL, THEN RE-SEED — and the order matters more than it looks. Null means "unknown", which
+         * every phase check treats as NO RESTRICTION, so leaving it there would hand the new athlete the
+         * complete 105-step tutorial. `getWorkoutsLogged` re-seeds from the server for whoever is signed
+         * in now, because `forgetWorkoutsLogged` (in the same wipe) cleared both the stored value and
+         * that module's in-memory cache. For a genuinely new account that resolves to 0 — phase 1.
+         */
+        setWorkoutsLogged(null);
+        void getWorkoutsLogged().then((n) => {
+          if (n != null) setWorkoutsLogged(n);
+        });
+      }),
+    [],
+  );
 
   /** Record a leg's terminal decision — in memory and on the device — for every leg the run contained. */
   const recordLegs = useCallback((steps: TourStep[], outcome: 'completed' | 'skipped') => {
