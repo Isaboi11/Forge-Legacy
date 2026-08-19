@@ -386,6 +386,29 @@ and raised the FAQ to 167 once `0166`/`0167` were verified applied.
 Verified from outside after the final deploy: `/` · `/support` · `/privacy` · `/terms` · `www` all **200**,
 `/_exported-bundle.html` still **404**, footer reads **Privacy · Terms · Support · support@forgelegacy.app**.
 
+### ✅ Deployed 2026-08-19 by CLI — landing v6 went live, four days after it was written
+
+First `wrangler` deploy. `versions upload` → `versions deploy …@100%`, promoted from version `13de57bb`
+(v5, dashboard-uploaded) to `3192970c`. Live `/` is **173,559 b and byte-identical to
+`site/index.html`** — checked with `cmp`, not by eye.
+
+⚠ **THE FIRST UPLOAD PUBLISHED TWO FILES THAT DID NOT EXIST WHEN IT STARTED.** `wrangler versions
+upload` writes its temp entrypoint to `.wrangler/tmp/deploy-<random>/no-op-worker.js` — *inside* the
+assets directory it is about to walk — so the act of deploying created site content, and
+`/.wrangler/tmp/deploy-MNeLP3/no-op-worker.js` went up as a public path. `.wrangler/` is in
+`.assetsignore` now.
+
+The lesson generalises past this one directory: **the upload manifest is the artifact, not the working
+tree.** Every check written for this site until now read files on disk, and not one of them could have
+caught this — the offending path did not exist until wrangler created it, and its name is random per
+run. Read what the deploy says it sent.
+
+⚠ **This is also why the first CLI deploy was `versions upload` and not `deploy`.** The junk paths were
+caught while the version carried 0% of traffic.
+
+⚠ **Preview URLs are not enabled on this Worker**, so `versions upload` issues no URL to check and
+verification is necessarily post-promotion, with rollback standing by. Worth enabling.
+
 ### Verified from outside on deploy day
 
 | | |

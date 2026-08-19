@@ -10,3 +10,15 @@ _exported-bundle.html
 README.md
 wrangler.jsonc
 .assetsignore
+
+# ⚠ WRANGLER'S OWN SCRATCH DIRECTORY, AND IT CAUGHT US ON THE FIRST RUN.
+#
+# `wrangler versions upload` writes a temp entrypoint to `.wrangler/tmp/deploy-XXXXXX/no-op-worker.js`
+# — INSIDE the assets directory it is about to walk. So the very act of deploying created two files
+# that were then published as site content: `/.wrangler/tmp/deploy-MNeLP3/no-op-worker.js` and its
+# source map, both live public paths. Harmless in content, wrong in principle, and invisible in any
+# check that reads the working tree rather than the upload manifest.
+#
+# The name is random per run, so this cannot be caught by listing files beforehand — only by reading
+# what the upload actually said it sent. Read the manifest, not the directory.
+.wrangler/

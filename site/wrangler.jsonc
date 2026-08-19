@@ -27,7 +27,10 @@
 
   // Cloudflare replaces the ENTIRE asset manifest per deploy — there is no partial upload. That is the
   // mechanism behind /support 404ing for two days: the 08-16 deploy simply did not contain the file.
-  "observability": {
-    "enabled": true
-  }
+
+  // ⚠ `observability` IS DELIBERATELY ABSENT. It was set to `enabled: true` here for one commit, which
+  // would have switched Workers Logs on for a Worker whose dashboard reads Disabled — a change to the
+  // account's settings smuggled in on a content deploy. A config file describes what is already true
+  // unless someone decides otherwise. Static-asset Workers are served at no charge and report no
+  // metrics anyway, so there was nothing to gain for it either.
 }
