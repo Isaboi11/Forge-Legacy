@@ -825,15 +825,23 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
-> **✅ DEPLOYED 2026-08-20.** Web: `entry-83197669fb7e246e1c801dae902ba7fe.js` — `forgelegacy.expo.app`
-> returned **200** twice with a matching hash, and the live bundle was searched for five strings only
-> this pass's code contains (`podium-grain`, `podium-halo`, `podium-ambient`, `podium-flash`,
-> `podium-tint-`). All PRESENT. Commit `dfce07b` on `feat/route-map`.
-> ⏳ **WEB ONLY — no OTA published**, so the phone still runs the old ceremony. The change is JS-only,
-> so an OTA is available whenever it is wanted; it was not run because the reveal cannot be exercised
-> on a device without a season that has just closed.
+> **✅ DEPLOYED 2026-08-20 — BOTH SURFACES.** Web: `entry-83197669fb7e246e1c801dae902ba7fe.js` —
+> `forgelegacy.expo.app` returned **200** twice with a matching hash, and the live bundle was searched for
+> five strings only this pass's code contains (`podium-grain`, `podium-halo`, `podium-ambient`,
+> `podium-flash`, `podium-tint-`). All PRESENT. Commit `dfce07b` on `feat/route-map`.
+> **OTA published to `production`, commit `7d038cc`, iOS update `01a02139-abe9-7dcb-8fc8-78fdac1d9fb3`,
+> runtime `411fd2b68cbe11016f037dd7881b3fe813a1e148`** — `fingerprint:compare --build-id 078d2838…`
+> matched **build 6 exactly** BEFORE publishing, and the manifest endpoint was then queried as an iOS
+> client on that runtime and returned the new update id. **Deliverable, not merely published.**
+> (Android also published: runtime `a8afa07c…`, update `01a02139-abe9-7c0b-93a7-5be0d5d34dbb`. No Android
+> build exists, so it reaches nobody — recorded only so the id is not mistaken for the iOS one.)
+> ⚠ **`fingerprint:compare` needs `--build-id` in non-interactive mode** — bare `--non-interactive`
+> exits 1 with "Insufficent arguments", which reads like a failed comparison rather than a missing flag.
+> ⚠ **`dist/` now holds the OTA's export (`entry-f3654904…`), NOT what the web is serving.** Same commit,
+> different hash. Re-export before any `eas deploy --export-dir dist`, or verify the hash after.
+> ⏳ Not yet confirmed on a device.
 
-### 0. ⭐ The podium reveal was spoiling its own ending — the champion's name never actually wiped on (2026-08-20, Podium Reveal / C-3.5 — no migration, client code is OTA-safe, ✅ WEB DEPLOYED)
+### 0. ⭐ The podium reveal was spoiling its own ending — the champion’s name never actually wiped on (2026-08-20, Podium Reveal / C-3.5 — no migration, ✅ WEB DEPLOYED + ✅ OTA DELIVERABLE ON BUILD 6)
 
 **A design-parity pass against `Forge Podium Reveal.dc.html`, pulled from the live Claude Design project
 (`b029488a`) rather than the local `design_reference/` copy.** The screen was built to the `.dc` and read as
