@@ -1,16 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, ActivityIndicator, Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Circle, Defs, FeTurbulence, Filter, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 
-import { Avatar } from '@/components/forge/composites/Avatar';
+import { initials } from '@/components/forge/composites/Avatar/AvatarGlyph';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { CHALLENGE_TYPES, fetchChallengeResults, formatScore, type ChallengeResultsDetail, type FinalStanding } from '@/data/challenges-live';
 import { markPodiumSeen } from '@/lib/podium-seen';
+import { svgStop } from '@/lib/svg-color';
 import { useQuery } from '@/lib/useQuery';
-import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 
 /**
  * Podium Reveal — the coronation. Built to `Forge Podium Reveal.dc.html`.
@@ -52,26 +55,131 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
  * "you finished 8th" to a celebration is exactly the dramatization CC-D3 forbids; C-4 states placement
  * plainly, which is the right surface for it.
  *
- * NOT PORTED: the champion name's `clip-path` engrave runs on a separate non-native value (RN cannot
- * interpolate clip-path, and a measured-width wipe is the honest equivalent).
+ * ── THE ONE DELTA LEFT AGAINST THE `.dc` ──
+ * The `.dc` renders against the Visual Foundation's OLDER bronze ramp (`--fl-bronze-400: #BF8F4F`,
+ * `--fl-bronze-300: #CDA063`); the app's `foundation.ts` is a deeper ramp (`#BA8654` / `#C99767`).
+ * Every screen in the app uses the app ramp, so the podium uses it too — matching the `.dc`'s literal
+ * rgba values here would make this the one screen wearing a different bronze. Palette reconciliation
+ * is an app-wide job, not a podium job.
  */
+
+/** `--fl-ease-out` — the design's single timing function, on all twelve keyframe blocks. */
+const EASE_OUT = Easing.bezier(0.16, 1, 0.3, 1);
+/** CSS `ease-out` (the keyword), which only the ember loop uses. */
+const EASE_OUT_CSS = Easing.bezier(0, 0, 0.58, 1);
+/** Samples per keyframe segment. The native driver rejects an `easing` fn on `interpolate()`, so the
+ *  curve gets baked into the range instead — 8 steps is well under a pixel at these distances. */
+const SAMPLES = 8;
+
+/** One CSS `@keyframes` stop: `[milliseconds on the master clock, value]`. */
+type Frame = readonly [number, number];
+
+/**
+ * A `@keyframes` block read off the master clock: held flat before the first stop and after the last,
+ * with the easing applied BETWEEN each pair — which is what a CSS `animation-timing-function` does by
+ * default. Interpolating the stops linearly (what this screen used to do) is the difference between
+ * the design's snap and a dead mechanical slide.
+ */
+function keyframes(t: Animated.Value, frames: readonly Frame[], end: number, easing: (v: number) => number = EASE_OUT) {
+  const inputRange: number[] = [];
+  const outputRange: number[] = [];
+  const push = (input: number, output: number) => {
+    // Animated demands a strictly increasing input range; coincident stops collapse to the first.
+    if (inputRange.length > 0 && input <= inputRange[inputRange.length - 1]) return;
+    inputRange.push(input);
+    outputRange.push(output);
+  };
+
+  push(0, frames[0][1]);
+  push(frames[0][0], frames[0][1]);
+  for (let i = 1; i < frames.length; i += 1) {
+    const [fromMs, fromV] = frames[i - 1];
+    const [toMs, toV] = frames[i];
+    for (let s = 1; s <= SAMPLES; s += 1) {
+      const p = s / SAMPLES;
+      push(fromMs + (toMs - fromMs) * p, fromV + (toV - fromV) * easing(p));
+    }
+  }
+  push(end, frames[frames.length - 1][1]);
+
+  return t.interpolate({ inputRange, outputRange, extrapolate: 'clamp' });
+}
 
 /** Beats measured from the champion's landing, so the climax stays the anchor at any field size. */
 const BEATS = {
   countdown: [300, 900, 1500],
   countdownDur: 620,
-  pedestalDur: 700,
-  dropDur: 700,
-  slamDur: 900,
   zoomDur: 5200,
-  afterClimax: { flash: 0, halo: 0, ember: 300, crown: 550, eyebrow: 750, name: 950, cta: 1300, end: 2100 },
+  afterClimax: { crown: 550, eyebrow: 750, name: 950, cta: 1300, end: 2100 },
 } as const;
 
 /** Gold / silver / bronze TIER, indexed by podium slot — never by place, so ties can't shift the look. */
 const SLOT = [
-  { avatar: 78, ring: flColor.bronze400, medal: flColor.bronze300, medalSize: 24, pedestal: 128, numeral: 30, numeralColor: flColor.bronze300, name: 15, glow: true },
-  { avatar: 60, ring: 'rgba(190,193,199,0.75)', medal: '#C7CAD0', medalSize: 20, pedestal: 92, numeral: 24, numeralColor: flColor.gray400, name: 13.5, glow: false },
-  { avatar: 56, ring: 'rgba(196,140,90,0.7)', medal: '#B07C4E', medalSize: 20, pedestal: 68, numeral: 22, numeralColor: flColor.gray600, name: 13, glow: false },
+  {
+    avatar: 78,
+    avatarFs: 28,
+    ring: flColor.bronze400,
+    glow: '0 0 26px rgba(186, 134, 84, 0.5)',
+    medal: flColor.bronze300,
+    medalSize: 24,
+    name: 15,
+    dropDur: 900,
+    pedestal: 128,
+    pedestalDur: 560,
+    pedestalBorder: flColor.bronzeBorder,
+    pedestalFill: ['#3a2c1a', '#241a0f'] as const,
+    pedestalShadow: 'inset 0 1px 0 rgba(186, 134, 84, 0.35), 0 -2px 14px rgba(186, 134, 84, 0.18)',
+    numeral: 30,
+    numeralColor: flColor.bronze300,
+  },
+  {
+    avatar: 60,
+    avatarFs: 21,
+    ring: 'rgba(190,193,199,0.75)',
+    glow: '0 0 14px rgba(185,188,194,0.18)',
+    medal: '#C7CAD0',
+    medalSize: 20,
+    name: 13.5,
+    dropDur: 640,
+    pedestal: 92,
+    pedestalDur: 520,
+    pedestalBorder: flColor.charcoal500,
+    pedestalFill: [flColor.charcoal600, flColor.charcoal800] as const,
+    pedestalShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
+    numeral: 24,
+    numeralColor: flColor.gray400,
+  },
+  {
+    avatar: 56,
+    avatarFs: 19,
+    ring: 'rgba(196,140,90,0.7)',
+    glow: '0 0 12px rgba(176,124,78,0.16)',
+    medal: '#B07C4E',
+    medalSize: 20,
+    name: 13,
+    dropDur: 640,
+    pedestal: 68,
+    pedestalDur: 520,
+    pedestalBorder: flColor.charcoal500,
+    pedestalFill: [flColor.charcoal600, flColor.charcoal800] as const,
+    pedestalShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+    numeral: 22,
+    numeralColor: flColor.gray600,
+  },
+] as const;
+
+/** The design's three avatar tints, picked per athlete so a podium is never three identical discs. */
+const TINT = [
+  { cx: '42%', cy: '32%', from: '#4a3826', to: '#1c1510' },
+  { cx: '45%', cy: '35%', from: '#34302a', to: '#17130f' },
+  { cx: '40%', cy: '30%', from: '#40301f', to: '#17120c' },
+] as const;
+
+/** The three embers, verbatim: offset, size, drift, loop length and the delay after the climax. */
+const EMBERS = [
+  { bottom: 150, left: '47%', size: 3, dx: -14, dur: 2600, after: 300, shadow: '0 0 6px 1px rgba(205,160,99,0.7)' },
+  { bottom: 160, left: '53%', size: 2.5, dx: 16, dur: 3000, after: 700, shadow: '0 0 6px 1px rgba(205,160,99,0.6)' },
+  { bottom: 145, left: '50%', size: 2, dx: 4, dur: 3400, after: 1100, shadow: '0 0 5px 1px rgba(205,160,99,0.6)' },
 ] as const;
 
 interface Slot {
@@ -111,7 +219,7 @@ export default function PodiumRevealScreen() {
   if (loading && !data) {
     return (
       <View style={styles.root}>
-        <ScreenBackground image={SCREEN_BG.slate2} base="#050505" overlay={{ flat: 'rgba(5,5,6,0.5)' }} />
+        <Backdrop />
         <View style={styles.center}>
           <ActivityIndicator color={flColor.bronze400} />
         </View>
@@ -136,8 +244,19 @@ function Redirect({ onReady }: { onReady: () => void }) {
   }, [onReady]);
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.slate2} base="#050505" overlay={{ flat: 'rgba(5,5,6,0.5)' }} />
+      <Backdrop />
     </View>
+  );
+}
+
+/** `forge-bg-2.png` under the design's two-stop darkening ramp on the cooler `#060708` base. */
+function Backdrop() {
+  return (
+    <ScreenBackground
+      image={SCREEN_BG.bg2}
+      base="#060708"
+      overlay={{ colors: ['rgba(6,7,8,0.42)', 'rgba(4,5,6,0.60)'], locations: [0, 1] }}
+    />
   );
 }
 
@@ -145,6 +264,7 @@ function Redirect({ onReady }: { onReady: () => void }) {
 
 function Ceremony({ result: r, onDone }: { result: ChallengeResultsDetail; onDone: () => void }) {
   const meta = CHALLENGE_TYPES[r.type];
+  const insets = useSafeAreaInsets();
 
   // ── Podium composition: up to three distinct PLACES, tallest first ──
   const slots = useMemo<Slot[]>(() => {
@@ -177,8 +297,14 @@ function Ceremony({ result: r, onDone }: { result: ChallengeResultsDetail; onDon
   const [t] = useState(() => new Animated.Value(0));
   const [engrave] = useState(() => new Animated.Value(0));
   const [breathe] = useState(() => new Animated.Value(0));
-  const [ember] = useState(() => new Animated.Value(0));
+  const [breatheSlow] = useState(() => new Animated.Value(0));
+  const [embers] = useState(() => EMBERS.map(() => new Animated.Value(0)));
   const [reduced, setReduced] = useState<boolean | null>(null);
+  // The champion's name is wiped on by CLIP-PATH in the design, which RN cannot interpolate. Measured
+  // off a hidden copy, then an explicit numeric width — a percentage width against a content-sized
+  // parent resolves to `auto` in Yoga, so the wipe never clipped and the name sat on screen from the
+  // very first frame, spoiling its own reveal.
+  const [nameWidth, setNameWidth] = useState(0);
 
   useEffect(() => {
     let alive = true;
@@ -200,45 +326,56 @@ function Ceremony({ result: r, onDone }: { result: ChallengeResultsDetail; onDon
       t.setValue(END);
       engrave.setValue(1);
       breathe.setValue(0.7);
+      breatheSlow.setValue(0.7);
       return undefined;
     }
 
     const clock = Animated.timing(t, { toValue: END, duration: END, easing: Easing.linear, useNativeDriver: true });
     const wipe = Animated.sequence([
       Animated.delay(climax + BEATS.afterClimax.name),
-      Animated.timing(engrave, { toValue: 1, duration: 780, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
+      Animated.timing(engrave, { toValue: 1, duration: 780, easing: EASE_OUT, useNativeDriver: false }),
     ]);
-    const halo = Animated.loop(
-      Animated.sequence([
-        Animated.timing(breathe, { toValue: 1, duration: 2000, useNativeDriver: true }),
-        Animated.timing(breathe, { toValue: 0, duration: 2000, useNativeDriver: true }),
-      ]),
+    /** `pGlow` — the design breathes the halo on a 4s cycle and the ambient light on 5.5s. */
+    const glow = (v: Animated.Value, cycle: number) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(v, { toValue: 1, duration: cycle / 2, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+          Animated.timing(v, { toValue: 0, duration: cycle / 2, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        ]),
+      );
+    const halo = glow(breathe, 4000);
+    const ambient = glow(breatheSlow, 5500);
+    // Each ember runs its own loop at its own length — sharing one clock put all three in lockstep,
+    // which reads as three synchronised dots rather than a drift of sparks.
+    const emberLoops = embers.map((v, i) =>
+      Animated.loop(Animated.timing(v, { toValue: 1, duration: EMBERS[i].dur, easing: EASE_OUT_CSS, useNativeDriver: true })),
     );
-    const embers = Animated.loop(Animated.timing(ember, { toValue: 1, duration: 3000, easing: Easing.linear, useNativeDriver: true }));
 
     clock.start();
     wipe.start();
     halo.start();
-    const emberTimer = setTimeout(() => embers.start(), climax + BEATS.afterClimax.ember);
+    ambient.start();
+    const emberTimers = emberLoops.map((loop, i) => setTimeout(() => loop.start(), climax + EMBERS[i].after));
 
     return () => {
       clock.stop();
       wipe.stop();
       halo.stop();
-      embers.stop();
-      clearTimeout(emberTimer);
+      ambient.stop();
+      emberLoops.forEach((loop) => loop.stop());
+      emberTimers.forEach(clearTimeout);
     };
-  }, [reduced, t, engrave, breathe, ember, climax, END]);
+  }, [reduced, t, engrave, breathe, breatheSlow, embers, climax, END]);
 
   if (reduced === null) {
     return (
       <View style={styles.root}>
-        <ScreenBackground image={SCREEN_BG.slate2} base="#050505" overlay={{ flat: 'rgba(5,5,6,0.5)' }} />
+        <Backdrop />
       </View>
     );
   }
 
-  const at = (from: number, to: number) => t.interpolate({ inputRange: [0, Math.max(1, from), to, END], outputRange: [0, 0, 1, 1], extrapolate: 'clamp' });
+  const at = (from: number, to: number) => keyframes(t, [[from, 0], [to, 1]], END);
 
   const champions = slots[0]?.athletes ?? [];
   const championNames = champions.map((c) => c.name).join(' & ');
@@ -247,11 +384,14 @@ function Ceremony({ result: r, onDone }: { result: ChallengeResultsDetail; onDon
 
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.slate2} base="#050505" overlay={{ flat: 'rgba(5,5,6,0.5)' }} />
+      <Backdrop />
 
       {/* Ambient forge glow — the light source sits off the top edge for the whole screen. */}
-      <Animated.View style={[styles.ambient, { opacity: breathe.interpolate({ inputRange: [0, 1], outputRange: [0.4, 0.85] }) }]}>
-        <LinearGradient colors={['rgba(186, 134, 84,0.20)', 'rgba(186, 134, 84,0.05)', 'transparent'] as const} locations={[0, 0.45, 1] as const} style={StyleSheet.absoluteFill} />
+      <Animated.View
+        pointerEvents="none"
+        style={[styles.ambient, { opacity: breatheSlow.interpolate({ inputRange: [0, 1], outputRange: [0.4, 0.85] }) }]}
+      >
+        <Bloom id="podium-ambient" stops={[[0, 'rgba(186, 134, 84,0.18)'], [0.66, 'rgba(186, 134, 84,0)']]} />
       </Animated.View>
 
       {/* Top bar — Skip is live from the first frame, so the ceremony is never a trap. */}
@@ -272,8 +412,21 @@ function Ceremony({ result: r, onDone }: { result: ChallengeResultsDetail; onDon
           {champions.length > 1 ? 'Co-Champions' : 'Season Champion'}
         </Animated.Text>
         <View style={styles.engraveClip}>
-          <Animated.View style={{ width: engrave.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }), overflow: 'hidden' }}>
-            <Text style={styles.headName} numberOfLines={1}>
+          {/* Hidden measuring copy — it alone sizes the block, so the wipe can't feed back into it. */}
+          <Text
+            style={[styles.headName, styles.headMeasure]}
+            numberOfLines={1}
+            onLayout={(e) => setNameWidth(e.nativeEvent.layout.width)}
+          >
+            {championNames}
+          </Text>
+          <Animated.View
+            style={[
+              styles.headWipe,
+              { width: nameWidth > 0 ? engrave.interpolate({ inputRange: [0, 1], outputRange: [0, nameWidth] }) : 0 },
+            ]}
+          >
+            <Text style={[styles.headName, { width: nameWidth || undefined }]} numberOfLines={1}>
               {championNames}
             </Text>
           </Animated.View>
@@ -290,9 +443,11 @@ function Ceremony({ result: r, onDone }: { result: ChallengeResultsDetail; onDon
             style={[
               styles.count,
               {
-                opacity: t.interpolate({ inputRange: [0, delay, delay + 50, delay + 484, delay + BEATS.countdownDur, END], outputRange: [0, 0, 1, 1, 0, 0], extrapolate: 'clamp' }),
+                opacity: keyframes(t, [[delay, 0], [delay + 149, 1], [delay + 484, 1], [delay + BEATS.countdownDur, 0]], END),
                 transform: [
-                  { scale: t.interpolate({ inputRange: [0, delay, delay + 149, delay + 484, delay + BEATS.countdownDur, END], outputRange: [1.7, 1.7, 1, 1, 0.85, 0.85], extrapolate: 'clamp' }) },
+                  // `translate(-50%,-50%)` — the design centres the numeral ON 42%, not below it.
+                  { translateY: -COUNT_LINE / 2 },
+                  { scale: keyframes(t, [[delay, 1.7], [delay + 149, 1], [delay + 484, 1], [delay + BEATS.countdownDur, 0.85]], END) },
                 ],
               },
             ]}
@@ -303,44 +458,73 @@ function Ceremony({ result: r, onDone }: { result: ChallengeResultsDetail; onDon
 
         {/* Victory halo — blooms exactly as the champion lands, then breathes. */}
         <Animated.View
+          pointerEvents="none"
           style={[
             styles.halo,
-            {
-              opacity: Animated.multiply(at(climax, climax + 1000), breathe.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] })),
-            },
+            { opacity: Animated.multiply(at(climax, climax + 500), breathe.interpolate({ inputRange: [0, 1], outputRange: [0.4, 0.85] })) },
           ]}
         >
-          <LinearGradient colors={['rgba(186, 134, 84,0.34)', 'rgba(186, 134, 84,0.10)', 'transparent'] as const} locations={[0, 0.5, 1] as const} style={StyleSheet.absoluteFill} />
+          <Bloom
+            id="podium-halo"
+            stops={[[0, 'rgba(186, 134, 84,0.32)'], [0.42, 'rgba(186, 134, 84,0.10)'], [0.68, 'rgba(186, 134, 84,0)']]}
+          />
         </Animated.View>
 
         {/* Podium — the whole row eases back from 1.075 over the full reveal: a slow camera pull-back. */}
-        <Animated.View
-          style={[
-            styles.podium,
-            { transform: [{ scale: t.interpolate({ inputRange: [0, BEATS.zoomDur, END], outputRange: [1.075, 1, 1], extrapolate: 'clamp' }) }] },
-          ]}
-        >
+        <Animated.View style={[styles.podium, { transform: [{ scale: keyframes(t, [[0, 1.075], [BEATS.zoomDur, 1]], END) }] }]}>
           {display.map((s) => (
-            <Column key={s.place} slot={s} t={t} end={END} climax={climax} ember={ember} type={r.type} unit={meta.unit} />
+            <Column key={s.place} slot={s} t={t} end={END} climax={climax} type={r.type} unit={meta.unit} />
           ))}
         </Animated.View>
+
+        {/* Embers rising past the champion — last, so they drift IN FRONT of him as the design has them. */}
+        {EMBERS.map((e, i) => (
+          <Animated.View
+            key={i}
+            pointerEvents="none"
+            style={[
+              styles.ember,
+              { bottom: e.bottom, left: e.left, width: e.size, height: e.size, boxShadow: e.shadow },
+              {
+                opacity: embers[i].interpolate({ inputRange: [0, 0.3, 1], outputRange: [0, 0.9, 0] }),
+                transform: [
+                  { translateY: embers[i].interpolate({ inputRange: [0, 1], outputRange: [0, -120] }) },
+                  { translateX: embers[i].interpolate({ inputRange: [0, 1], outputRange: [0, e.dx] }) },
+                  { scale: embers[i].interpolate({ inputRange: [0, 1], outputRange: [1, 0.5] }) },
+                ],
+              },
+            ]}
+          />
+        ))}
       </View>
 
       {/* CTA */}
       <Animated.View
         style={[
           styles.ctaWrap,
+          { paddingBottom: 26 + insets.bottom },
           {
             opacity: at(climax + BEATS.afterClimax.cta, climax + BEATS.afterClimax.cta + 800),
-            transform: [{ translateY: at(climax + BEATS.afterClimax.cta, climax + BEATS.afterClimax.cta + 800).interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }],
+            transform: [{ translateY: keyframes(t, [[climax + BEATS.afterClimax.cta, 14], [climax + BEATS.afterClimax.cta + 800, 0]], END) }],
           },
         ]}
       >
         <Pressable onPress={onDone} accessibilityRole="button" accessibilityLabel="See full results" style={({ pressed }) => [styles.cta, pressed ? styles.pressed : null]}>
+          {/* `--fl-bronze-fill` — the forged-metal button, never a flat tint. */}
+          <LinearGradient
+            colors={flGradient.bronzeFill.colors}
+            locations={flGradient.bronzeFill.locations}
+            start={flGradient.bronzeFill.start}
+            end={flGradient.bronzeFill.end}
+            style={StyleSheet.absoluteFill}
+          />
           <Text style={styles.ctaLabel}>See Full Results</Text>
           <ArrowGlyph />
         </Pressable>
       </Animated.View>
+
+      {/* Film grain over the whole frame. */}
+      <Grain />
     </View>
   );
 }
@@ -350,7 +534,6 @@ function Column({
   t,
   end,
   climax,
-  ember,
   type,
   unit,
 }: {
@@ -358,28 +541,30 @@ function Column({
   t: Animated.Value;
   end: number;
   climax: number;
-  ember: Animated.Value;
   type: ChallengeResultsDetail['type'];
   unit: string;
 }) {
   const cfg = SLOT[s.slot];
   const gold = s.slot === 0;
-  const dur = gold ? BEATS.slamDur : BEATS.dropDur;
+  const d = cfg.dropDur;
   const a = s.athleteAt;
   const p = s.pedestalAt;
 
-  // The champion's entrance is heavier and slower — a slam with compression and rebound, against the
-  // minor places' light drop-and-overshoot.
+  // The champion's entrance is heavier and slower — `pSlam`, with compression and rebound, against the
+  // minor places' light `pDrop`. The fractions are the design's keyframe stops.
   const drop = gold
-    ? t.interpolate({ inputRange: [0, a, a + dur * 0.74, a + dur * 0.84, a + dur, end], outputRange: [-96, -96, 9, -2, 0, 0], extrapolate: 'clamp' })
-    : t.interpolate({ inputRange: [0, a, a + dur * 0.68, a + dur * 0.84, a + dur, end], outputRange: [-58, -58, 6, -3, 0, 0], extrapolate: 'clamp' });
+    ? keyframes(t, [[a, -96], [a + d * 0.74, 9], [a + d * 0.88, -2], [a + d, 0]], end)
+    : keyframes(t, [[a, -58], [a + d * 0.68, 6], [a + d * 0.84, -3], [a + d, 0]], end);
   const dropScale = gold
-    ? t.interpolate({ inputRange: [0, a, a + dur * 0.74, a + dur * 0.84, a + dur, end], outputRange: [1.16, 1.16, 0.96, 1.02, 1, 1], extrapolate: 'clamp' })
-    : t.interpolate({ inputRange: [0, a, a + dur, end], outputRange: [1, 1, 1, 1], extrapolate: 'clamp' });
-  const athleteOpacity = t.interpolate({ inputRange: [0, a, a + 90, end], outputRange: [0, 0, 1, 1], extrapolate: 'clamp' });
+    ? keyframes(t, [[a, 1.16], [a + d * 0.74, 0.96], [a + d * 0.88, 1.02], [a + d, 1]], end)
+    : keyframes(t, [[a, 1], [a + d, 1]], end);
+  const athleteOpacity = keyframes(t, [[a, 0], [a + d * (gold ? 0.56 : 0.68), 1]], end);
 
   const visible = s.athletes.slice(0, 2);
   const overflow = s.athletes.length - visible.length;
+  const self = visible.some((x) => x.isSelf);
+
+  const crownAt = climax + BEATS.afterClimax.crown;
 
   return (
     <View style={styles.column}>
@@ -392,12 +577,12 @@ function Column({
               style={[
                 styles.flash,
                 {
-                  opacity: t.interpolate({ inputRange: [0, climax + 360, climax + 486, climax + 900, end], outputRange: [0, 0, 0.9, 0, 0], extrapolate: 'clamp' }),
-                  transform: [{ scale: t.interpolate({ inputRange: [0, climax + 360, climax + 900, end], outputRange: [0.6, 0.6, 1.7, 1.7], extrapolate: 'clamp' }) }],
+                  opacity: keyframes(t, [[climax + 360, 0], [climax + 486, 0.9], [climax + 900, 0]], end),
+                  transform: [{ scale: keyframes(t, [[climax + 360, 0.4], [climax + 486, 1.05], [climax + 900, 1.7]], end) }],
                 },
               ]}
             >
-              <LinearGradient colors={['rgba(230,202,156,0.55)', 'transparent'] as const} style={StyleSheet.absoluteFill} />
+              <Bloom id="podium-flash" stops={[[0, 'rgba(230,202,156,0.55)'], [0.66, 'rgba(230,202,156,0)']]} />
             </Animated.View>
 
             {/* Crown drops on as its own beat, after the champion has already landed. */}
@@ -405,43 +590,31 @@ function Column({
               style={[
                 styles.crown,
                 {
-                  opacity: t.interpolate({ inputRange: [0, climax + BEATS.afterClimax.crown, climax + BEATS.afterClimax.crown + 120, end], outputRange: [0, 0, 1, 1], extrapolate: 'clamp' }),
+                  opacity: keyframes(t, [[crownAt, 0], [crownAt + 374, 1]], end),
                   transform: [
-                    { translateY: t.interpolate({ inputRange: [0, climax + BEATS.afterClimax.crown, climax + BEATS.afterClimax.crown + 430, climax + BEATS.afterClimax.crown + 580, climax + BEATS.afterClimax.crown + 720, end], outputRange: [-42, -42, 4, -3, 0, 0], extrapolate: 'clamp' }) },
-                    { scale: t.interpolate({ inputRange: [0, climax + BEATS.afterClimax.crown, climax + BEATS.afterClimax.crown + 430, end], outputRange: [0.8, 0.8, 1, 1], extrapolate: 'clamp' }) },
+                    { translateY: keyframes(t, [[crownAt, -42], [crownAt + 374, 3], [crownAt + 490, -5], [crownAt + 605, 2], [crownAt + 720, 0]], end) },
+                    { scale: keyframes(t, [[crownAt, 0.8], [crownAt + 374, 1], [crownAt + 490, 1.03], [crownAt + 605, 1], [crownAt + 720, 1]], end) },
                   ],
                 },
               ]}
             >
-              <CrownGlyph size={34} />
+              <CrownGlyph size={42} />
             </Animated.View>
-
-            {[0, 1, 2].map((i) => (
-              <Animated.View
-                key={i}
-                pointerEvents="none"
-                style={[
-                  styles.ember,
-                  { bottom: 145 + i * 7, left: `${47 + i * 3}%`, width: 3 - i * 0.5, height: 3 - i * 0.5 },
-                  {
-                    opacity: ember.interpolate({ inputRange: [0, 0.1, 0.75, 1], outputRange: [0, 0.9, 0.35, 0] }),
-                    transform: [
-                      { translateY: ember.interpolate({ inputRange: [0, 1], outputRange: [0, -120] }) },
-                      { translateX: ember.interpolate({ inputRange: [0, 1], outputRange: [0, [-14, 16, 4][i]] }) },
-                      { scale: ember.interpolate({ inputRange: [0, 1], outputRange: [1, 0.5] }) },
-                    ],
-                  },
-                ]}
-              />
-            ))}
           </>
         ) : null}
 
         <View style={styles.avatarRow}>
           {visible.map((athlete) => (
-            <View key={athlete.userId} style={[styles.avatarRing, { borderColor: cfg.ring, borderRadius: flRadius.round }, cfg.glow ? styles.avatarGlow : null]}>
-              <Avatar src={athlete.avatarUrl ?? undefined} name={athlete.name} size={visible.length > 1 ? cfg.avatar - 18 : cfg.avatar} />
-            </View>
+            <PodiumAvatar
+              key={athlete.userId}
+              size={visible.length > 1 ? cfg.avatar - 18 : cfg.avatar}
+              fontSize={visible.length > 1 ? cfg.avatarFs - 6 : cfg.avatarFs}
+              ring={cfg.ring}
+              glow={cfg.glow}
+              seed={athlete.name.length + s.place}
+              src={athlete.avatarUrl}
+              name={athlete.name}
+            />
           ))}
         </View>
         {overflow > 0 ? <Text style={styles.overflowText}>+{overflow} more</Text> : null}
@@ -450,16 +623,17 @@ function Column({
           <MedalGlyph size={cfg.medalSize} color={cfg.medal} />
         </View>
 
+        {/* Name and the You pill share one row — the design never stacks them. */}
         <View style={styles.nameRow}>
-          <Text style={[styles.name, { fontSize: cfg.name }, gold ? styles.nameStrong : null, visible.some((x) => x.isSelf) ? styles.nameSelf : null]} numberOfLines={1}>
+          <Text style={[styles.name, { fontSize: cfg.name }, gold ? styles.nameStrong : null, self ? styles.nameSelf : null]} numberOfLines={1}>
             {visible.map((x) => x.name).join(' & ')}
           </Text>
+          {self ? (
+            <View style={styles.youPill}>
+              <Text style={styles.youPillText}>You</Text>
+            </View>
+          ) : null}
         </View>
-        {visible.some((x) => x.isSelf) ? (
-          <View style={styles.youPill}>
-            <Text style={styles.youPillText}>You</Text>
-          </View>
-        ) : null}
         <Text style={styles.score}>
           {formatScore(type, visible[0]?.score ?? 0)} {unit}
         </Text>
@@ -469,26 +643,114 @@ function Column({
       <Animated.View
         style={[
           styles.pedestal,
-          { height: cfg.pedestal, borderColor: gold ? flColor.bronzeBorder : flColor.charcoal600 },
-          gold ? styles.pedestalGold : null,
+          { height: cfg.pedestal, borderColor: cfg.pedestalBorder, boxShadow: cfg.pedestalShadow },
           {
-            opacity: t.interpolate({ inputRange: [0, p, p + BEATS.pedestalDur * 0.7, end], outputRange: [0, 0, 1, 1], extrapolate: 'clamp' }),
-            transform: [{ scaleY: t.interpolate({ inputRange: [0, p, p + BEATS.pedestalDur, end], outputRange: [0.12, 0.12, 1, 1], extrapolate: 'clamp' }) }],
+            opacity: keyframes(t, [[p, 0], [p + cfg.pedestalDur * 0.7, 1]], end),
+            transform: [{ scaleY: keyframes(t, [[p, 0.12], [p + cfg.pedestalDur, 1]], end) }],
           },
         ]}
       >
-        <LinearGradient
-          colors={gold ? (['#3a2c1a', '#241a0f'] as const) : ([flColor.charcoal600, flColor.charcoal800] as const)}
-          style={StyleSheet.absoluteFill}
-        />
-        <Text style={[styles.numeral, { fontSize: cfg.numeral, color: cfg.numeralColor }]}>{s.place}</Text>
+        <LinearGradient colors={cfg.pedestalFill} style={StyleSheet.absoluteFill} />
+        {/* `line-height:1` — the numeral has to hug the pedestal's 12px top padding, not float below it. */}
+        <Text style={[styles.numeral, { fontSize: cfg.numeral, lineHeight: cfg.numeral, color: cfg.numeralColor }]}>{s.place}</Text>
       </Animated.View>
     </View>
   );
 }
 
+/**
+ * The podium disc: a 2px place-tiered ring at the EXACT design diameter (border-box, so the champion
+ * is 78px across and not 86), the tinted well behind the initials, and the inset that seats the face
+ * into the metal — painted OVER the photo, so a real avatar gets the same seating the initials do.
+ */
+function PodiumAvatar({
+  size,
+  fontSize,
+  ring,
+  glow,
+  seed,
+  src,
+  name,
+}: {
+  size: number;
+  fontSize: number;
+  ring: string;
+  glow: string;
+  seed: number;
+  src: string | null;
+  name: string;
+}) {
+  const i = seed % TINT.length;
+  const tint = TINT[i];
+  return (
+    <View style={{ width: size, height: size, borderRadius: flRadius.round, boxShadow: glow }}>
+      <View style={[styles.avatarDisc, { borderRadius: flRadius.round, borderColor: ring }]}>
+        <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
+          <Defs>
+            <RadialGradient id={`podium-tint-${i}`} cx={tint.cx} cy={tint.cy} r="72%">
+              <Stop offset="0" stopColor={tint.from} />
+              <Stop offset="1" stopColor={tint.to} />
+            </RadialGradient>
+          </Defs>
+          <Rect width="100%" height="100%" fill={`url(#podium-tint-${i})`} />
+        </Svg>
+        {src ? (
+          <Image source={{ uri: src }} accessibilityLabel={name} style={StyleSheet.absoluteFill} contentFit="cover" />
+        ) : (
+          <Text style={[styles.avatarInitials, { fontSize }]} accessibilityLabel={`${name}, no photo`}>
+            {initials(name)}
+          </Text>
+        )}
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.avatarInset, { borderRadius: flRadius.round }]} />
+      </View>
+    </View>
+  );
+}
+
+/**
+ * A `radial-gradient(circle, …)`. `expo-linear-gradient` has no radial, and the vertical stand-in this
+ * screen used read as a band across the stage rather than a bloom around the champion. `r="70.71%"` is
+ * the CSS `farthest-corner` default for a square box, which makes the stop offsets the design's own.
+ */
+function Bloom({ id, stops }: { id: string; stops: readonly (readonly [number, string])[] }) {
+  return (
+    <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
+      <Defs>
+        <RadialGradient id={id} cx="50%" cy="50%" r="70.71%">
+          {stops.map(([offset, css]) => {
+            const s = svgStop(css);
+            return <Stop key={offset} offset={offset} stopColor={s.color} stopOpacity={s.opacity} />;
+          })}
+        </RadialGradient>
+      </Defs>
+      <Rect width="100%" height="100%" fill={`url(#${id})`} />
+    </Svg>
+  );
+}
+
+/**
+ * The design's `feTurbulence` film grain over the whole frame. The wrapper carries `pointerEvents` and
+ * the z-index: every other child of the ceremony sets an explicit `zIndex`, so an unranked grain layer
+ * would slide UNDER the podium instead of lying over it — and a grain that swallowed taps would take
+ * both Skip and the CTA with it.
+ */
+function Grain() {
+  return (
+    <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.grain]}>
+      <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
+        <Defs>
+          <Filter id="podium-grain">
+            <FeTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves={2} stitchTiles="stitch" />
+          </Filter>
+        </Defs>
+        <Rect width="100%" height="100%" filter="url(#podium-grain)" />
+      </Svg>
+    </View>
+  );
+}
+
 // ── glyphs ──
-function CrownGlyph({ size = 34, color = flColor.bronze300 }: { size?: number; color?: string }) {
+function CrownGlyph({ size = 42, color = flColor.bronze300 }: { size?: number; color?: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
       <Path d="M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z" />
@@ -498,25 +760,29 @@ function CrownGlyph({ size = 34, color = flColor.bronze300 }: { size?: number; c
 function MedalGlyph({ size = 20, color }: { size?: number; color: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+      <Circle cx={12} cy={14.5} r={4.8} />
+      <Circle cx={12} cy={14.5} r={1.8} />
       <Path d="M8.8 10.4L6 4h4l2 3.2L14 4h4l-2.8 6.4" />
-      <Path d="M12 9.7a4.8 4.8 0 1 1 0 9.6 4.8 4.8 0 0 1 0-9.6z" />
     </Svg>
   );
 }
-function ChevronsGlyph({ size = 13, color = flColor.gray600 }: { size?: number; color?: string }) {
+function ChevronsGlyph({ size = 15, color = flColor.gray600 }: { size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <Path d="M6 5l7 7-7 7M13 5l7 7-7 7" />
     </Svg>
   );
 }
-function ArrowGlyph({ size = 16, color = flColor.bronze300 }: { size?: number; color?: string }) {
+function ArrowGlyph({ size = 18, color = flColor.bronze300 }: { size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.1} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M5 12h13M12 5l7 7-7 7" />
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M5 12h14M13 6l6 6-6 6" />
     </Svg>
   );
 }
+
+/** 96px display type; the line box the countdown's `translate(-50%)` centring is measured against. */
+const COUNT_LINE = 116;
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
@@ -524,45 +790,65 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.85 },
 
   ambient: { position: 'absolute', top: '-14%', alignSelf: 'center', width: 380, height: 380, borderRadius: flRadius.round, overflow: 'hidden' },
+  grain: { opacity: 0.06, zIndex: 20 },
 
-  topBar: { height: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, zIndex: 6 },
+  topBar: { height: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 20, paddingRight: 10, zIndex: 6 },
   eyebrow: { flexShrink: 1, fontSize: 10, fontWeight: '700', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronze400 },
-  skip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 8, paddingLeft: 12 },
-  skipText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
+  skip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 8, paddingHorizontal: 12 },
+  skipText: { fontSize: 12, fontWeight: '600', color: flColor.gray600 },
 
-  headline: { alignItems: 'center', paddingHorizontal: 24, zIndex: 4 },
-  headEyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronze300 },
-  engraveClip: { marginTop: 8, alignItems: 'center', overflow: 'hidden' },
-  headName: { fontFamily: flFont.display, fontSize: 26, fontWeight: '700', letterSpacing: -0.3, color: flColor.cream100 },
+  headline: { alignItems: 'center', paddingTop: 6, paddingHorizontal: 24, zIndex: 4 },
+  headEyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.bronze300 },
+  engraveClip: { marginTop: 5 },
+  headWipe: { position: 'absolute', top: 0, left: 0, bottom: 0, overflow: 'hidden' },
+  headMeasure: { opacity: 0 },
+  headName: { fontFamily: flFont.display, fontSize: 26, fontWeight: '700', letterSpacing: -0.4, lineHeight: 29, color: flColor.cream100 },
 
-  stage: { flex: 1, justifyContent: 'flex-end', zIndex: 2 },
-  count: { position: 'absolute', top: '42%', alignSelf: 'center', fontFamily: flFont.display, fontSize: 96, fontWeight: '700', color: flColor.bronze300, textShadowColor: 'rgba(0,0,0,0.75)', textShadowOffset: { width: 0, height: 4 }, textShadowRadius: 14 },
+  stage: { flex: 1, justifyContent: 'flex-end', paddingHorizontal: 14, zIndex: 2 },
+  count: {
+    position: 'absolute',
+    top: '42%',
+    alignSelf: 'center',
+    fontFamily: flFont.display,
+    fontSize: 96,
+    lineHeight: COUNT_LINE,
+    fontWeight: '700',
+    color: flColor.bronze300,
+    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 20,
+  },
   halo: { position: 'absolute', bottom: 96, alignSelf: 'center', width: 300, height: 300, borderRadius: flRadius.round, overflow: 'hidden' },
+  ember: { position: 'absolute', borderRadius: flRadius.round, backgroundColor: flColor.bronze300 },
 
-  podium: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 8, maxWidth: 360, width: '100%', alignSelf: 'center' },
-  column: { flex: 1, alignItems: 'center', maxWidth: 120 },
+  podium: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 8, maxWidth: 360, width: '100%', alignSelf: 'center', marginBottom: 30 },
+  column: { flex: 1, alignItems: 'center' },
 
-  athleteBlock: { alignItems: 'center', paddingBottom: 10 },
-  crown: { position: 'absolute', top: -30, zIndex: 3 },
-  flash: { position: 'absolute', top: 30, width: 170, height: 170, borderRadius: flRadius.round, overflow: 'hidden' },
-  ember: { position: 'absolute', borderRadius: flRadius.round, backgroundColor: flColor.bronze300, boxShadow: '0 0 6px rgba(186, 134, 84,0.8)' },
+  athleteBlock: { alignItems: 'center' },
+  crown: { position: 'absolute', top: -30, zIndex: 3, filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.7))' },
+  /** `translate(-50%,-50%)` on a 170px bloom — its CENTRE sits at the design's `top`, not its edge. */
+  flash: { position: 'absolute', top: -55, width: 170, height: 170, borderRadius: flRadius.round, overflow: 'hidden' },
   avatarRow: { flexDirection: 'row', gap: 6 },
-  avatarRing: { borderWidth: 2, padding: 2 },
-  avatarGlow: { boxShadow: '0 0 26px rgba(186, 134, 84,0.5)' },
+  avatarDisc: { flex: 1, borderWidth: 2, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+  avatarInset: { boxShadow: 'inset 0 1px 5px rgba(0,0,0,0.55)' },
+  avatarInitials: { fontFamily: flFont.display, fontWeight: '700', color: flColor.bronze300 },
   overflowText: { marginTop: 4, fontSize: 10, color: flColor.gray600 },
-  medal: { marginTop: 8 },
-  nameRow: { marginTop: 6, maxWidth: 108 },
-  name: { fontWeight: '500', textAlign: 'center', color: flColor.cream100 },
+  medal: { marginTop: 9 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 7, maxWidth: 108 },
+  name: { flexShrink: 1, fontWeight: '500', textAlign: 'center', color: flColor.cream100 },
   nameStrong: { fontWeight: '700' },
   nameSelf: { color: flColor.bronze300, fontWeight: '700' },
-  youPill: { marginTop: 4, paddingHorizontal: 7, paddingVertical: 2, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
-  youPillText: { fontSize: 8, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronze300 },
-  score: { marginTop: 4, fontSize: 11, color: flColor.gray600 },
+  youPill: { flexGrow: 0, flexShrink: 0, paddingHorizontal: 6, paddingVertical: 1, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  youPillText: { fontSize: 8, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.bronze300 },
+  score: { marginTop: 2, fontSize: 11, fontWeight: '600', color: flColor.gray600 },
 
   pedestal: {
     width: '100%',
+    marginTop: 12,
     alignItems: 'center',
-    justifyContent: 'center',
+    // The numeral is pinned near the TOP of the pedestal face, not floated in the middle of it.
+    justifyContent: 'flex-start',
+    paddingTop: 12,
     overflow: 'hidden',
     borderWidth: 1,
     borderBottomWidth: 0,
@@ -570,22 +856,20 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 6,
     transformOrigin: 'bottom',
   },
-  /** Warm forged metal, lit from above by the athlete standing on it. */
-  pedestalGold: { boxShadow: 'inset 0 1px 0 rgba(230,202,156,0.35), 0 -2px 14px rgba(186, 134, 84,0.30)' },
-  numeral: { fontFamily: flFont.display, fontWeight: '700' },
+  numeral: { fontFamily: flFont.display, fontWeight: '700', includeFontPadding: false },
 
-  ctaWrap: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 30, zIndex: 5 },
+  ctaWrap: { paddingHorizontal: 24, zIndex: 5 },
   cta: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 9,
+    gap: 10,
     padding: 16,
-    borderRadius: flRadius.lg,
+    borderRadius: flRadius.md,
+    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
-    backgroundColor: flColor.bronzeTint,
+    borderColor: flColor.bronzeMetalBorder,
     boxShadow: `${flShadow.glowSubtle}, ${flShadow.card}`,
   },
-  ctaLabel: { fontSize: 15, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronze300 },
+  ctaLabel: { fontSize: 15, fontWeight: '700', letterSpacing: 0.3, color: flColor.bronze300 },
 });
