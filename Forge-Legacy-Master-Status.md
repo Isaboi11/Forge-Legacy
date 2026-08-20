@@ -825,6 +825,62 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
+> **✅ DEPLOYED 2026-08-20.** Web: `entry-83197669fb7e246e1c801dae902ba7fe.js` — `forgelegacy.expo.app`
+> returned **200** twice with a matching hash, and the live bundle was searched for five strings only
+> this pass's code contains (`podium-grain`, `podium-halo`, `podium-ambient`, `podium-flash`,
+> `podium-tint-`). All PRESENT. Commit `dfce07b` on `feat/route-map`.
+> ⏳ **WEB ONLY — no OTA published**, so the phone still runs the old ceremony. The change is JS-only,
+> so an OTA is available whenever it is wanted; it was not run because the reveal cannot be exercised
+> on a device without a season that has just closed.
+
+### 0. ⭐ The podium reveal was spoiling its own ending — the champion's name never actually wiped on (2026-08-20, Podium Reveal / C-3.5 — no migration, client code is OTA-safe, ✅ WEB DEPLOYED)
+
+**A design-parity pass against `Forge Podium Reveal.dc.html`, pulled from the live Claude Design project
+(`b029488a`) rather than the local `design_reference/` copy.** The screen was built to the `.dc` and read as
+"close but not it"; twenty-odd deltas, of which three actually broke the ceremony.
+
+**THE ONE THAT MATTERED.** The champion's name is revealed by a `clip-path` wipe in the design. RN cannot
+interpolate `clip-path`, and the port animated `width: '0%' → '100%'` instead — against a **content-sized**
+parent, which **Yoga resolves to `auto`**. So the wipe clipped nothing, the name was on screen from frame 0,
+and a six-second build-up announced its own punchline before the countdown finished. It is now measured off a
+hidden copy and wiped with a real pixel width. ⚠ **A percentage dimension against an indefinite parent is not
+a smaller version of the same thing — it is silently no constraint at all**, and it typechecks, lints and
+renders, so nothing catches it but looking.
+
+**THE TWO POSITIONING BUGS.** The countdown numerals and the champion's impact flash are centred in the design
+with `translate(-50%,-50%)`; the port pinned their **top edge** to the design's **centre** coordinate, dropping
+the countdown ~58px and the flash 85px. The flash therefore bloomed below the champion instead of behind him.
+
+**MOTION.** All twelve keyframe blocks run `--fl-ease-out` (`cubic-bezier(.16,1,.3,1)`); every one of them was
+interpolating linearly. ⚠ **The native driver rejects an `easing` fn on `interpolate()`** (`validateInterpolation`
+throws on any param outside input/output/extrapolate), so the curve is now **sampled into the interpolation
+range** by a `keyframes()` helper — 8 steps per segment, which is what a CSS `animation-timing-function` does
+between keyframes anyway. The rounded-off stops came back with it: `pSlam`'s 88% rebound, `pCrown`'s four stops
+instead of three, per-slot pedestal durations (560/520, not one 700).
+
+**THE REST, ALL VISIBLE.** Three radial gradients (ambient glow, victory halo, impact flash) were vertical
+`LinearGradient`s and read as bands rather than blooms — now SVG radials at the CSS `farthest-corner` radius ·
+the background was `forge-slate2.png`, not the design's `forge-bg-2.png`, **which was already wired as
+`SCREEN_BG.bg2`** · the film-grain layer was absent entirely · pedestal numerals floated centre instead of
+pinned to the 12px top padding · the champion's avatar rendered at **86px instead of 78** (the `Avatar`
+composite inside a padded ring gave a double border and a gap) · the medal glyph was missing its centre dot ·
+the crown was 34px, not 42, with no drop shadow · the **You pill was stacked below the name** where the design
+has it inline · the three embers shared one clock, so they moved in lockstep, and were anchored inside the
+champion's block so they rode the slam · the CTA was a flat `bronzeTint` at radius 12 instead of the forged
+`--fl-bronze-fill` at radius 10.
+
+**TWO THINGS THE GRAIN LAYER WOULD HAVE BROKEN if it had gone in naively:** every other child of the ceremony
+sets an explicit `zIndex`, so an unranked grain layer slides **under** the podium rather than over it; and a
+full-screen overlay that does not set `pointerEvents="none"` swallows both Skip and the CTA. It carries both.
+
+**DELIBERATELY NOT CHANGED.** The `.dc` renders against the Visual Foundation's older bronze ramp
+(`--fl-bronze-400: #BF8F4F`, `--fl-bronze-300: #CDA063`); the app's `foundation.ts` is deeper (`#BA8654` /
+`#C99767`). Matching the `.dc`'s literal rgba values would make the podium **the one screen wearing a different
+bronze**. Palette reconciliation is app-wide work, not podium work — noted in the file header so the next reader
+does not "fix" it. Also unchanged: the six data-correctness deviations the port already documented (real
+standings instead of the design's invented Marcus Vale, the real unit instead of hardcoded `wkts`, tie/
+co-champion handling, variable field size, the reduce-motion rest state).
+
 > **✅ DEPLOYED 2026-08-19.** Web: `entry-69d5be4226aaa8d83f75e397b28f981b.js` — `forgelegacy.expo.app`
 > returned **200** twice with a matching hash, and the live bundle was searched for strings only this
 > pass's code contains (`Blocked People`, `Harassment or bullying`, `Block this person`, `Send report`).
