@@ -2,6 +2,28 @@
 
 **v1.9 · 2026-08-20. Detail lives in `Docs/Launch-Checklist-Free-And-Premium.md` (v1.5) and `Forge-Legacy-Master-Status.md`. If they disagree, the checklist wins and this file is stale.**
 
+> **✅ v1.10 — `0172` AND `0173` ARE APPLIED, AND `0169` IS NOW FULLY LIVE (2026-08-20).** Pasted as one
+> bundle (`supabase/apply/pending-0172-0173.sql`). §3 returned **every one of the six predicted numbers**:
+> total 46 · both 13 · handle 33 · name 0 · added_here 37 · **existing_profiles_now_failing 0**. Because the
+> editor runs the file in one implicit transaction, a result row at all proves both halves' assertions
+> passed. **The deploy blocker is gone.**
+>
+> ⚠ **AND THE 0169 CLIENT HALF HAD ALREADY SHIPPED — IT WENT OUT IN THE 08-20 PODIUM DEPLOY, BEFORE `0172`
+> WAS APPLIED.** `expo export` bundles the WORKING TREE, and `src/data/coach-profile-live.ts` (selecting
+> `experience, training_goals, environment, home_gym_equipment`) was already committed in it. So the web
+> deploy `entry-83197669…` and OTA `01a02139…` carried the read that `0172` exists to make legal, into a
+> database where it was still illegal. **The window is closed** — `0172` is applied and the client is
+> deployed, so `0169` is now applied AND deployed, which is further along than any row here claimed.
+> **Impact during the window was degradation, not breakage:** `fetchCoachProfile` resolves a `42501` to
+> `EMPTY_COACH_PROFILE` by design ("fails to *ask everything*, never to a default"), so Holt re-asked the
+> experience question — the pre-0169 behaviour. **The lesson is the deploy, not the code:** this file said
+> *"Apply this BEFORE deploying"* and the deploy happened anyway, because the pass being shipped was about
+> a different screen entirely. **A tree-wide publish ships every undeployed client half in the tree**, so
+> check for pending migrations before publishing ANYTHING, not just before publishing their own feature.
+>
+> ⏳ **Still unseen in the app.** Neither the blocklist nor Holt's skipped questions has been observed by a
+> human. Applied + deployed is two of the three.
+
 > **✅ v1.9 — TWO LISTING ITEMS CLOSE, AND THIS FILE WAS STALE IN THE *PESSIMISTIC* DIRECTION FOR ONCE (2026-08-20).**
 > **(a) ✅ The age rating is answered AND ENTERED IN APP STORE CONNECT: `13+`, `16+` in Australia.** ⚠ **The
 > Step 1 trap, hit on the first attempt: "Social Media Disabled for Users Under 13" is its own row, it sits

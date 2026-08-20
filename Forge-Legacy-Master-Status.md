@@ -840,6 +840,13 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 > ⚠ **`dist/` now holds the OTA's export (`entry-f3654904…`), NOT what the web is serving.** Same commit,
 > different hash. Re-export before any `eas deploy --export-dir dist`, or verify the hash after.
 > ⏳ Not yet confirmed on a device.
+> ✅ **`0172` + `0173` APPLIED 2026-08-20**, pasted as `supabase/apply/pending-0172-0173.sql`. §3 matched
+> all six predicted numbers (46 · 13 · 33 · 0 · 37 · **0 profiles now failing**).
+> ⚠ **This deploy had already shipped `0169`'s client half** — `coach-profile-live.ts` was in the tree, so
+> the podium publish carried it out before `0172` made its read legal. Degraded, not broken (`42501` →
+> `EMPTY_COACH_PROFILE` by design), and now closed: **`0169` is applied AND deployed.**
+> ⚠ **A tree-wide publish ships every undeployed client half in the tree.** Check for pending migrations
+> before publishing anything, not just before publishing the feature that needs them.
 
 ### 0. ⭐ The podium reveal was spoiling its own ending — the champion’s name never actually wiped on (2026-08-20, Podium Reveal / C-3.5 — no migration, ✅ WEB DEPLOYED + ✅ OTA DELIVERABLE ON BUILD 6)
 
