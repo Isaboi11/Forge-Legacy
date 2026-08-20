@@ -1,7 +1,7 @@
 # Forge Legacy — Status Archive, August 2026
 
 **Type:** Historical record, split out of `Forge-Legacy-Master-Status.md`
-**Covers:** the 39 Recently-Completed entries below the 15 most recent, as of 2026-08-19
+**Covers:** the 40 Recently-Completed entries below the 15 most recent, as of 2026-08-20
 
 > ## Why this file exists
 >
@@ -22,6 +22,18 @@
 > **Read this file when the dashboard does not explain something.** It is the same content, one level back.
 
 ---
+
+### 0. ⭐ The business account is open — and closing it found a submission gate neither launch document had (2026-08-17, OPS/DOCS — no code, no migration, not an OTA)
+
+**Zions Business Launch, opened in the exact legal name `FORGE LEGACY LLC`**, off the existing personal relationship — a new account rather than a new customer. As filed and as it should stay: NAICS **513210 Software Publishers** · tax classification **disregarded entity** · operating account only · declared activity ATM/debit, no cash, no wires · **no** merchant services. $50 to open, **$10/mo waived by a $500 minimum daily balance**, 50 transactions and $3k cash per cycle, paperless or $3/mo. **The $30/mo Payments Package was correctly declined** — it buys ACH and wire *origination*, and an Apple payout is *incoming* ACH. ⏳ **Routing and account numbers are not in hand yet**; they come with the welcome packet, and exactly one item waits on them.
+
+**⚠ AND THAT ITEM DID NOT EXIST IN EITHER LAUNCH DOCUMENT.** The checklist's §7.4 said "new iOS build and App Store submission" and §10.7 said "confirm the Stage-2 build carries the paywall"; GO-LIVE's step 9 said *"business bank account — Apple pays into an account in the entity's name."* All three frame banking as a payout concern. **It is a submission gate.** An app with in-app purchases cannot be submitted, and sandbox purchases cannot be tested, while the **Paid Applications Agreement is not in effect** — and putting it in effect requires the bank account, a tax form, and a signature from someone with authority to bind the entity. Now **checklist §9.7** and **GO-LIVE step 9b**, sequenced after §9.2 (the org App Store Connect has to exist first) and cross-referenced from §7.4 and §10.7 so it cannot be missed from either end. **Left as it was, this surfaces on the day of submission** — the same shape as every other item this board has caught late, except that this one cannot be fixed by editing the build.
+
+**⭐ It also resolved the ownership contradiction the checklist had carried since v1.1 with "resolve before signing anything, not after."** PO, 2026-08-17: **Isaiah owns Altimealix Holdings LLC; Altimealix is the parent of Forge Legacy LLC.** So the operating agreement's "Altimealix owns 100%" is a correct statement of *direct* membership, and **CP 575's "ISAIAH ALTAMIRANO SOLE MBR" is the SS-4 responsible party printed back** — not a competing ownership claim. The two documents were never in conflict about the facts, only about which link of the chain each one names. Isaiah is the ultimate beneficial owner through **Forge Legacy → Altimealix → Isaiah**, which is exactly the look-through the Zions application declared.
+
+**⚠ That chain is not trivia — it decides what goes on Apple's W-9.** A disregarded entity does not put its own name on line 1; the *tax owner* goes there and the LLC on line 2. With a second disregarded layer in the middle, the look-through runs to Isaiah, and the EIN on CP 575 is a real alternative to the SSN. **§9.7 records the reasoning and then says do not fill the form from it** — this is the one launch item whose wrong answer is a federal filing rather than a rejected form, and an hour of CPA time is cheaper than an amended return. ⚠ The evidence gap is unchanged and is recorded rather than quietly dropped: **Utah's Certificate of Organization has no member field**, so the parent-child link is provable only by the operating agreement and Utah's principals data — never by the stamped certificate.
+
+**Files:** `Docs/Launch-Checklist-Free-And-Premium.md` → **v1.4** (new **9.0b** and **9.7**; §7.4 and §10.7 cross-referenced; the two-stage table's *Needs* cell) · `Docs/GO-LIVE.md` → **v1.4** (new **Banking** and **Ownership** rows, step 9 closed, new **step 9b**, step 11 gated) · this board.
 
 ### 0. ⭐ D-U-N-S `149910851` — the last external blocker is gone, and the critical path moves onto us (2026-08-17, OPS — no code, no migration, not an OTA)
 

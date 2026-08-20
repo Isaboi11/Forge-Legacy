@@ -797,7 +797,11 @@ genuinely unstarted**, and all five gate submission rather than review.
       the paywall, filling these in now and shipping the paywall later signs a declaration that is false about
       the build in review. `site/privacy.html` also gains a purchases paragraph and RevenueCat joins its §4
       provider list in the same pass — **policy → in-app summary → labels, in that order.**
-- [ ] **10.4 — Support URL and marketing URL.** Support URL is required. A mailto: alone is not enough.
+- [~] **10.4 — Support URL and marketing URL.** Support URL is required. A mailto: alone is not enough.
+      ✅ **The URL is LIVE and verified from outside since 2026-08-18: `https://forgelegacy.app/support`
+      returns 200.** *(This box was unticked until 08-20 while the thing it gates had been done for two
+      days — stale in the pessimistic direction, which is still stale.)* ⏳ Left: **paste it into App Store
+      Connect** along with the marketing URL (`https://forgelegacy.app`). Not done until it is in the form.
 - [~] **10.5 — Screenshots** at the required display size, plus app icon, description, promotional text,
       keywords, category (Health & Fitness), and age rating.
       ✅ **COPY WRITTEN 2026-08-19 — `Docs/App-Store-Listing-Copy.md`.** Name, subtitle, promotional text
@@ -829,8 +833,16 @@ genuinely unstarted**, and all five gate submission rather than review.
       ⛔ **Do not call Coach Holt "AI"** — it is a deterministic rulebook and the sentence-reading layer is out
       of scope before full release. ⛔ **Promise no Android, Watch, Health/Strava sync or CSV export**; the
       description says so explicitly instead, per Known Gaps' *"say it rather than let it be discovered."*
-      ⛔ **AGE RATING IS BLOCKED** on the new 10.8 below.
-- [x] **10.8 — ✅ BUILT 2026-08-19, `0171` APPLIED AND VERIFIED (⏳ client half NOT deployed).**
+      ~~⛔ **AGE RATING IS BLOCKED** on the new 10.8 below.~~ ✅ **UNBLOCKED, ANSWERED AND ENTERED IN APP STORE CONNECT 2026-08-20 —
+      `13+`, `16+` in Australia.** The question-by-question sheet is `Docs/App-Store-Listing-Copy.md` **§6b**.
+      ⚠ **Answer it from §6b, not from memory or an older draft: Apple replaced the questionnaire in 2025.**
+      12+ and 17+ no longer exist, and it is now In-App Controls · Capabilities · Content Descriptors.
+      ⚠ **From September 2026 the Social Media questions are required to submit at all**, and we submit
+      inside that window. ⛔ One answer is conditional — *Medical or Treatment Information = None* holds only
+      while `limitations.ts` stays a mechanical exclusion map; injury advice in coaching copy makes it 16+.
+- [x] **10.8 — ✅ BUILT 2026-08-19, `0171` APPLIED AND VERIFIED · ✅ CLIENT HALF DEPLOYED 08-19** (web
+      `entry-69d5be42…`, OTA `01a01bda…` on build 6's runtime) · ✅ **filter list seeded by `0173`**
+      (37 patterns + 18 documented exclusions) — ⏳ **`0173` authored, NOT applied; paste `pending-0173.sql`.**
       Blocks (symmetric, severing the friendship, leaving shared squads intact per the PO decision) ·
       reports on post/comment/check-in/person/squad with an open/actioned/dismissed status · `/admin` →
       Reports carrying an **oldest-still-open** line, which is what evidences *timely response* where a bare
