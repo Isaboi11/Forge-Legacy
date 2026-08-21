@@ -1,7 +1,7 @@
 # Forge Legacy — Status Archive, August 2026
 
 **Type:** Historical record, split out of `Forge-Legacy-Master-Status.md`
-**Covers:** the 40 Recently-Completed entries below the 15 most recent, as of 2026-08-20
+**Covers:** the 41 Recently-Completed entries below the 15 most recent, as of 2026-08-21
 
 > ## Why this file exists
 >
@@ -22,6 +22,36 @@
 > **Read this file when the dashboard does not explain something.** It is the same content, one level back.
 
 ---
+
+### 0. ⭐ Holt's two-exercise program — the difficulty filter met a catalogue where `Intermediate` means "normal" (2026-08-17, Coach Holt — CODE only, no migration, OTA-safe)
+
+**PO report:** *"I put in to build me a program, home gym with dumbbells and a mat and a bench, and lower back pain, and he gave me two exercises throughout the whole workout… there is plenty to do with body weight and dumbbells."* Reproduced exactly against the real 733-record catalogue before anything was changed.
+
+**⚠ THE EQUIPMENT AND THE BAD BACK WERE BOTH INNOCENT.** That room reaches **214** movements and `lower_back` costs 18 of them. What emptied the program was `difficultyRank` barring anything above the athlete's stated level, meeting a catalogue whose difficulty field is not a readiness scale: **Intermediate 590 · Beginner 121 · Advanced 22**. `Intermediate` is the default bucket — **Push-Up, Plank, Bodyweight Squat and Dumbbell Biceps Curl all carry it** — so `beginner` cut 214 reachable movements to **19**, holding **zero** horizontal push, zero pull of either kind, zero curls, zero triceps, zero calves and zero shoulder isolation. Every one of those slots was dropped and the block shipped as *Box Squat to Bench · Seated Dumbbell Shoulder Press · Dead Bug*, identical on all three days, for eight weeks.
+
+**Shipped:**
+- **`STRETCH_CEILING` (`candidates.ts`)** — the floor of the ceiling rises to `Intermediate`, and **only as a SECOND pass**: a beginner is still offered every beginner-tagged movement first and reaches past their level only for a pattern that holds nothing at their level at all. **`Advanced` stays a hard gate** — those 22 records are muscle-ups, levers and one-arm work. ⚠ The difficulty ladder is walked **before** the pattern is relaxed, so an empty beginner push slot gets a *push-up*, not a shoulder press.
+- **`stretched` reported, never swallowed** — new `AssemblyNote` kind, `DayResult.stretched`, and a one-sentence line in the wizard naming the movements and saying to start light.
+- **The assembler's own floor** — was `main.length === 0`; now `MIN_DAY_MOVEMENTS`, the same constant the single-day path got on 2026-08-14 and the assembler never inherited. ⚠ Honestly a backstop, **not what fixed this report** (a 3-movement day clears a floor of 3 by nothing). ⚠ Deliberately **not** the PAS-D11 floor of 4–5, which `validate-program.ts` already handles as a *deviation*.
+- **`LIMITATION_KEEP_KEYS` — PO decision.** `lower_back` banned `Hinge / Hip Dominant` whole, taking **all 13** supine bridge/thrust rows with it: eight weeks for a bad back with zero posterior-chain hip extension. The family is re-admitted; deadlifts, RDLs, sumo, swings, good mornings, back extensions, supermans and all four carries stay out.
+- **`LIMITATION_EXCLUDE_KEYS` — PO decision.** Found by measurement: a shoulders-limited athlete at a full gym was prescribed *Band Upright Row · Kettlebell Clean and Press · Barbell Upright Row*. A pattern ban could never reach those — an upright row is filed as a **pull**, and the jerks/snatches/clean-and-presses are filed as **Power**. Both lists now excluded for `shoulders`, the overhead-finishing half also for `no_overhead`. Rear delt flies and plain cleans deliberately kept. That day is now *Face Pull · Rear Delt Fly*. ⚠ This was **live for intermediate and advanced athletes the whole time** — the beginner starvation was hiding it behind a refusal.
+
+**Measured, not asserted:** 54,000 program combinations across six rooms — **0 refusals, thinnest day shipped anywhere = 4**. Thin-day sweep: full gym **0/3,000**, the PO's room **0/3,000**; the only remaining refusals are dumbbells-only-with-a-shoulder-complaint (120/3,000) and the bodyweight pull day the catalogue genuinely cannot fill.
+
+`tsc` 0 · **2,497 tests green** (10 new + 2 inverted). ⚠ Two thin-day assertions **inverted on purpose** and say so inline: the "only full-gym refusal" was a starved filter reading as a coaching decision, not a shoulder judgement.
+
+**Files:** `src/domain/coach/candidates.ts` · `src/domain/coach/day.ts` · `src/domain/coach/assemble.ts` · `src/domain/coach/rulebook/limitations.ts` · `src/app/coach.tsx` · `src/domain/coach/__tests__/difficulty-stretch.test.mjs` (new) · `src/domain/coach/__tests__/limitation-keys.test.mjs` (new) · `src/domain/coach/__tests__/thin-day.test.mjs`.
+
+⚠ **CORRECTED SAME DAY — there is no re-tagging job here, and the first version of this entry claimed there was.** It read *"the real long-term fix is the catalogue… 590 of 733 are Intermediate because that is the import's default, not because somebody judged them."* That was inferred from the distribution alone and it is **wrong**. Reading which records carry which tag shows the field is coherent and encodes **technique demand**, not trainee readiness:
+
+- Barbell **Box** Squat `Beginner` vs Barbell Back Squat `Intermediate` — the box removes the depth judgement. A real distinction, correctly made.
+- Smith machine **15/15** Beginner · selectorized **56 Beg / 21 Int** · dumbbell **5/85** · cable **5/80**. Guided path = Beginner; you-control-the-path = Intermediate.
+- All 22 `Advanced` are muscle-ups, front/back levers, planches, snatches, pistols, Turkish get-ups, Nordic curls, dragon flag. Not one questionable call.
+- Every push-up variant **and** every bench variant is `Intermediate`, consistently.
+
+So a push-up tagged `Intermediate` is not a mistagging — pressing under your own control is a tier above a chest-press machine. **Re-tagging it to `Beginner` would put it level with Machine Chest Press and delete true information**, at a cost of 733 records of judgement against an append/annotate-only dataset, to fix something that was one filter asking the field a question it never claimed to answer. `STRETCH_CEILING` is the correct and complete fix, not a compensation for bad data.
+
+⚠ **The one residual, and it is a LABEL not a value.** `src/app/exercise/[id].tsx:75` renders *"Difficulty: Intermediate"* on a push-up and `src/app/exercise-library.tsx:451` labels the facet "Difficulty" — which reads to an athlete as *"not for beginners"*. "Technique" or "Skill" would be truthful. ⛔ **NOT a free rename:** "Difficulty chip" is specified in Component-Library-Architecture-v1.0 (CLA-D2, colour+label pairing), there is a `color.difficulty.*` token family, and it appears in the `.dc` specs. It is a design-spec amendment awaiting a PO call. (Unrelated to **PAS-R1 Difficulty Calibration**, which is about *program* positioning across the 24-program catalogue, not exercise records.)
 
 ### 0. `42501` on Join — RESOLVED: the competition had been CALLED OFF, and the screen was still offering it (2026-08-17, C-1 — CODE only, no migration, OTA-safe; `0165` shipped as hardening and is NOT needed)
 
