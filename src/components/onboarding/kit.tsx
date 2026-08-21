@@ -9,8 +9,33 @@ import { flColor, flFont, flRadius } from '@/constants/foundation';
  * labeled field. Faithful to Forge Onboarding.dc.html's setup screens; built on foundation tokens.
  */
 
-/** Bronze progress bar + n/N counter + back chevron. Shown on the 7 setup steps (Account→Program). */
-export function ProgressHeader({ step, total, onBack }: { step: number; total: number; onBack?: () => void }) {
+/**
+ * Bronze progress bar + n/N counter + back chevron. Shown on the 7 setup steps (Account→Program).
+ *
+ * ══ ⚠ `onExit` IS THE WAY OUT, AND ITS ABSENCE WAS A TRAP ══
+ *
+ * Onboarding is reached by `routeFor` whenever an athlete is signed in and `onboarded_at` is null, and
+ * it is the ONLY thing that clears that flag. Until this prop existed the screen had no sign-out, no
+ * account switch and no exit of any kind — `Back` only walks between steps and is hidden on the first
+ * one — so anybody who stopped partway was returned here on every launch, forever, with no error and
+ * nothing to read. **It presents as a frozen app**, which is exactly how it was reported: a tester with
+ * two accounts signed into the wrong one and could never reach anything past sign-in.
+ *
+ * It is deliberately shown on EVERY step rather than only the first. Someone four questions deep who
+ * realises they are on the wrong account is the exact person who needs it, and hiding it until they
+ * back all the way out asks them to solve the problem before they can see the escape.
+ */
+export function ProgressHeader({
+  step,
+  total,
+  onBack,
+  onExit,
+}: {
+  step: number;
+  total: number;
+  onBack?: () => void;
+  onExit?: () => void;
+}) {
   const pct = `${Math.round((step / total) * 100)}%`;
   return (
     <View style={s.progressRow}>
@@ -29,6 +54,17 @@ export function ProgressHeader({ step, total, onBack }: { step: number; total: n
       <Text style={s.counter}>
         {step}/{total}
       </Text>
+      {onExit ? (
+        <Pressable
+          onPress={onExit}
+          accessibilityRole="button"
+          accessibilityLabel="Sign out and use a different account"
+          hitSlop={10}
+          style={({ pressed }) => [s.exit, pressed ? s.exitPressed : null]}
+        >
+          <Text style={s.exitText}>Sign out</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -106,6 +142,12 @@ const s = StyleSheet.create({
   track: { flex: 1, height: 3, borderRadius: 2, backgroundColor: flColor.charcoal700, overflow: 'hidden' },
   fill: { height: 3, borderRadius: 2, backgroundColor: flColor.bronze400 },
   counter: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '600', color: flColor.gray400, minWidth: 26, textAlign: 'right' },
+  /* Quieter than the counter it sits beside. This is an escape hatch, not an action anybody finishing
+     onboarding should be drawn toward — it needs to be findable when you are stuck, not tempting when
+     you are not. */
+  exit: { paddingVertical: 4, paddingLeft: 4 },
+  exitText: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '600', color: flColor.gray600 },
+  exitPressed: { opacity: 0.6 },
 
   tile: {
     flexDirection: 'row',

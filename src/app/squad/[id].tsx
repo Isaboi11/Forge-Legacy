@@ -40,7 +40,7 @@ import { EndOfLedger, LedgerPost, workoutStats, type LedgerMarker } from '@/comp
 import { openPlaylist } from '@/components/forge/composites/Playlist';
 import { useQuery } from '@/lib/useQuery';
 import { useUnits } from '@/lib/settings';
-import { useMediaPicker } from '@/lib/useMediaPicker';
+import { callerModalGone, useMediaPicker } from '@/lib/useMediaPicker';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 
@@ -792,11 +792,18 @@ export default function SquadDetailRoute() {
         <CheckinViewer
           checkin={checkinViewer}
           onClose={() => setCheckinViewer(null)}
+          /* ⚠ THE VIEWER IS A `Modal`, AND `setCheckinViewer(null)` ONLY SCHEDULES ITS DISMISSAL.
+             Calling `startCheckin()` in the same tick presented the camera over a modal still on
+             screen, which iOS drops silently — so Replace did nothing and the screen read as frozen.
+             Same defect as the squad photo inside Edit Identity; see `callerModalGone`. */
           onReplace={
             checkinViewer.isSelf
               ? () => {
                   setCheckinViewer(null);
-                  void startCheckin();
+                  void (async () => {
+                    await callerModalGone();
+                    await startCheckin();
+                  })();
                 }
               : undefined
           }

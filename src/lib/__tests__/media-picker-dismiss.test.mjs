@@ -37,10 +37,33 @@ const raw = readFileSync(join(HERE, '..', 'useMediaPicker.tsx'), 'utf8');
 /** Comments name the forbidden ordering to explain it, so only code is scanned. */
 const src = raw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 
+/**
+ * ⚠ THE ORDERING TESTS SCAN THE HOOK ONLY, AND THAT SCOPING IS LOAD-BEARING.
+ *
+ * This file gained a SECOND caller of `launchImageLibraryAsync` — the standalone `pickImageFromLibrary`,
+ * which the program importer uses. It presents no chooser, so it has no sheet to wait for, and it sits
+ * above the hook in the file. The ordering assertions below use `indexOf`, so without this scoping they
+ * would find that call first and fail — reporting a dismissal bug that does not exist while no longer
+ * checking the code that can actually have one.
+ *
+ * ⚠ **DO NOT FIX A FUTURE FAILURE HERE BY MOVING CODE AROUND IN `useMediaPicker.tsx`.** Passing because
+ * a function happens to sit lower in the file is precisely the "worked only by accident" this suite was
+ * written about. Scope the scan instead.
+ */
+const HOOK_START = src.indexOf('export function useMediaPicker');
+const hookSrc = src.slice(HOOK_START);
+
+test('the guard is scanning the hook, not the whole file', () => {
+  // If the hook is renamed or removed, every assertion below would silently scan an empty string and
+  // pass. This is the check that makes the scoping above safe rather than clever.
+  assert.ok(HOOK_START > 0, 'useMediaPicker moved or was renamed — this guard needs updating with it');
+  assert.ok(hookSrc.length > 500, 'the hook body did not survive the slice');
+});
+
 test('the launcher waits for the sheet before presenting anything', () => {
-  const wait = src.indexOf('await sheetGone()');
-  const library = src.indexOf('launchImageLibraryAsync');
-  const camera = src.indexOf('launchCameraAsync');
+  const wait = hookSrc.indexOf('await sheetGone()');
+  const library = hookSrc.indexOf('launchImageLibraryAsync');
+  const camera = hookSrc.indexOf('launchCameraAsync');
 
   assert.ok(wait > 0, 'useMediaPicker no longer waits for the chooser to be dismissed');
   assert.ok(library > 0 && camera > 0, 'the picker calls moved — this guard needs updating with them');
@@ -49,12 +72,39 @@ test('the launcher waits for the sheet before presenting anything', () => {
 });
 
 /**
+ * The other caller of `launchImageLibraryAsync`, pinned so the two never blur into each other.
+ *
+ * `pickImageFromLibrary` is the program importer's path. It opens the library directly because the
+ * importer's own UI is already a BottomSheet — nesting the chooser inside it would recreate exactly the
+ * defect at the top of this file — and because photo import is deliberately library-only while the age
+ * floor in Decision Queue #22 is open.
+ */
+test('the standalone library export shows no sheet, so it correctly does not wait', () => {
+  const standalone = src.slice(0, HOOK_START);
+  assert.ok(
+    standalone.includes('export async function pickImageFromLibrary'),
+    'pickImageFromLibrary moved below the hook — the scoping above assumes it sits before it',
+  );
+  assert.ok(standalone.includes('launchImageLibraryAsync'), 'it no longer opens the library');
+  assert.ok(
+    !standalone.includes('sheetGone'),
+    'the standalone path waits for a sheet it never shows — that is latency for nothing',
+  );
+  // ⛔ It must never grow a camera. A live capture in a 13+-rated app, past an open age-floor decision,
+  // is the one change this export exists to prevent.
+  assert.ok(
+    !standalone.includes('launchCameraAsync'),
+    'pickImageFromLibrary opens a camera — see its header; the age floor has to be closed first',
+  );
+});
+
+/**
  * The wait must apply to BOTH rows. Putting it inside the `source === 'camera'` branch would restore
  * exactly the original bug — a delay on the path that already worked, and none on the path that did not.
  */
 test('the wait is not hidden inside the camera branch', () => {
-  const wait = src.indexOf('await sheetGone()');
-  const cameraBranch = src.indexOf("source === 'camera'");
+  const wait = hookSrc.indexOf('await sheetGone()');
+  const cameraBranch = hookSrc.indexOf("source === 'camera'");
   assert.ok(cameraBranch > 0, "the camera branch moved — this guard needs updating");
   assert.ok(wait < cameraBranch, 'the dismissal wait sits inside the camera path; the library path needs it more');
 });
@@ -131,4 +181,55 @@ test('BottomSheet actually forwards onDismiss to the native modal', () => {
   const sheet = readFileSync(join(HERE, '..', '..', 'components', 'forge', 'composites', 'BottomSheet', 'BottomSheet.tsx'), 'utf8');
   const code = sheet.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
   assert.match(code, /<Modal[^>]*onDismiss=\{onDismiss\}/, 'the prop is accepted but never reaches the Modal');
+});
+
+/**
+ * ══ THE OTHER HALF: A CALLER THAT IS ITSELF A MODAL ══
+ *
+ * Everything above guards the chooser sheet THIS hook owns. It knew nothing about a caller that is
+ * already a modal when it asks to pick — and that is the half that reached testers, twice:
+ *
+ *   · the Friends-feed composer (fixed by making it a screen), and then
+ *   · the squad photo inside Edit Identity, and Replace on the check-in viewer, both reported as
+ *     *"the app is frozen"* because iOS drops the presentation silently and the control does nothing.
+ *
+ * `callerModalGone()` is the shared wait. These pin the two call sites that need it, by name — a
+ * repo-wide grep would go stale against every new screen and match its own explanation besides.
+ */
+
+const CALLER_FIX = /setEditOpen\(false\);\s*\n\s*await callerModalGone\(\);\s*\n\s*const asset = await pick\(/;
+
+test('callerModalGone exists, and web pays nothing for it', () => {
+  assert.match(src, /export function callerModalGone/);
+  // RN-web's modal is a div and its picker is a file input — there is no rule to obey, and an await
+  // here would risk the browser's "opened from inside the tap" requirement for nothing.
+  assert.match(src, /callerModalGone[\s\S]{0,200}?Platform\.OS === 'web'\) return Promise\.resolve\(\)/);
+});
+
+test('⚠ the squad photo closes Edit Identity before presenting the picker', () => {
+  const squadSettings = readFileSync(join(HERE, '..', '..', 'app', 'squad-settings.tsx'), 'utf8');
+  assert.match(squadSettings, CALLER_FIX, 'pickPhoto presents over the still-open Edit Identity sheet');
+  // Reopened afterwards, or the athlete is dumped out of the editor they were halfway through.
+  assert.match(squadSettings, /const asset = await pick\([\s\S]{0,200}?setEditOpen\(true\)/);
+});
+
+test('⚠ Replace on the check-in viewer waits for the viewer to go', () => {
+  const squadDetail = readFileSync(join(HERE, '..', '..', 'app', 'squad', '[id].tsx'), 'utf8');
+  const code = squadDetail.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+  assert.match(
+    code,
+    /setCheckinViewer\(null\);\s*\n\s*void \(async \(\) => \{\s*\n\s*await callerModalGone\(\);\s*\n\s*await startCheckin\(\);/,
+    'Replace launches the camera in the same tick it closes the viewer Modal',
+  );
+});
+
+test('the two fixed callers both import the shared wait rather than rolling a timeout', () => {
+  for (const parts of [['app', 'squad-settings.tsx'], ['app', 'squad', '[id].tsx']]) {
+    const file = readFileSync(join(HERE, '..', '..', ...parts), 'utf8');
+    assert.match(
+      file,
+      /import \{ callerModalGone, useMediaPicker \} from '@\/lib\/useMediaPicker'/,
+      `${parts.join('/')} does not import callerModalGone from the one file that owns ImagePicker`,
+    );
+  }
 });

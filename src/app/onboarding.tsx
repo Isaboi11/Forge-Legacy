@@ -1,6 +1,7 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { ForgeBrandMark } from '@/components/forge/primitives/icons/HomeIcons';
@@ -13,6 +14,7 @@ import type { EquipmentId, GoalId } from '@/domain/onboarding/derive';
 import type { Experience } from '@/domain/coach/constraints';
 import { HOME_GYM_EQUIPMENT, HOME_GYM_GROUPS } from '@/domain/home-gym/equipment';
 import { CHAPTER_SUGGESTIONS, CHAPTER_TITLE_MAX, chapterNameFrom, DEFAULT_CHAPTER_I_TITLE } from '@/domain/legacy/chapter-name';
+import { useAuth } from '@/lib/auth';
 import { useProfile } from '@/lib/profile';
 import { useMediaPicker } from '@/lib/useMediaPicker';
 import { errorMessage } from '@/lib/useQuery';
@@ -121,6 +123,37 @@ export default function Onboarding() {
   const [finishing, setFinishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { refetch: refetchProfile } = useProfile();
+  /*
+   * ══ ⚠ THE WAY OUT ══
+   *
+   * `routeFor` sends every signed-in athlete with a null `onboarded_at` here, and this screen is the
+   * only thing that ever clears it. Before this, that made onboarding a one-way door: no sign-out, no
+   * account switch, and `Back` hidden on the first step. Anyone who stopped partway was returned here
+   * on every launch with no error and nothing to read, which **presents as a frozen app** — reported as
+   * exactly that by a tester who held two accounts and had signed into the wrong one.
+   *
+   * ⚠ THE CONFIRM IS NOT CEREMONY. Nothing on this screen is persisted until `complete_onboarding`
+   * runs at the very end — the RPC writes the profile, Chapter I and `onboarded_at` in one transaction
+   * — so signing out discards every answer typed so far, silently and irrecoverably. A stuck athlete
+   * needs the door; an athlete four questions deep needs to not fall through it.
+   */
+  const { signOut } = useAuth();
+  const [exitOpen, setExitOpen] = useState(false);
+  const [exiting, setExiting] = useState(false);
+
+  const onExitConfirmed = async () => {
+    if (exiting) return;
+    setExiting(true);
+    try {
+      await signOut();
+      // No navigation here, deliberately. Clearing the session moves `routeFor` to `'auth'` on its own,
+      // and pushing a route as well would race the guard that is already doing it.
+    } catch {
+      // Even a failed sign-out must not strand them on a dead sheet with a spinner.
+      setExiting(false);
+      setExitOpen(false);
+    }
+  };
   /*
    * ⚠ THE AVATAR ON STEP ONE USED TO BE A PICTURE OF A BUTTON.
    *
@@ -269,6 +302,10 @@ export default function Onboarding() {
         step={idx >= 0 ? idx + 1 : setup.length}
         total={setup.length}
         onBack={idx > 0 || step === 'transition' ? back : undefined}
+        /* ⚠ EVERY STEP, INCLUDING THE FIRST — where `onBack` is deliberately absent and there was
+           therefore no control on the screen at all. That first step is where a wrong-account athlete
+           lands on every launch, so it is the one that most needs a door. */
+        onExit={finishing ? undefined : () => setExitOpen(true)}
       />
 
       {step === 'transition' ? (
@@ -522,6 +559,30 @@ export default function Onboarding() {
       {/* The camera-or-library chooser. Rendered once at the root so it presents over whichever step is
           on screen, which today is only the Account step's avatar. */}
       {mediaPickerSheet}
+
+      {/* ⚠ A SHEET RATHER THAN `Alert.alert`, WHICH IS INERT ON WEB — and the deployed web preview is
+          where the athletes actually test. An Alert here would silently do nothing on the exact surface
+          this fix was written for. */}
+      <BottomSheet
+        open={exitOpen}
+        onClose={() => (exiting ? undefined : setExitOpen(false))}
+        title="Sign out?"
+      >
+        <View style={styles.exitSheet}>
+          <Text style={styles.exitBody}>
+            You haven&rsquo;t finished setting up, so nothing has been saved yet — signing out now discards
+            what you&rsquo;ve filled in so far and returns you to the sign-in screen.
+            {'\n\n'}
+            If you have more than one account, this is how you switch to the other one.
+          </Text>
+          <Button variant="primary" fullWidth disabled={exiting} onPress={() => void onExitConfirmed()}>
+            {exiting ? 'Signing out…' : 'Sign out'}
+          </Button>
+          <Button variant="secondary" fullWidth disabled={exiting} onPress={() => setExitOpen(false)}>
+            Keep setting up
+          </Button>
+        </View>
+      </BottomSheet>
     </View>
   );
 }
@@ -558,6 +619,9 @@ function UsernameStatus({ status, username }: { status: UStatus; username: strin
 }
 
 const styles = StyleSheet.create({
+  exitSheet: { gap: 10, paddingBottom: 4 },
+  exitBody: { fontFamily: flFont.sans, fontSize: 13, lineHeight: 20, color: flColor.gray400, marginBottom: 4 },
+
   root: { flex: 1 },
   scroll: { paddingHorizontal: 30, paddingTop: 4, paddingBottom: 40, gap: 22 },
   continue: { marginTop: 8 },

@@ -38,7 +38,7 @@ import {
 } from '@/data/squad-live';
 import { SQUAD_CATEGORIES, fetchPendingRequestCount, fetchSquadDiscovery, updateSquadDiscovery, type SquadCategory } from '@/data/squad-discover-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
-import { useMediaPicker } from '@/lib/useMediaPicker';
+import { callerModalGone, useMediaPicker } from '@/lib/useMediaPicker';
 import { useToast } from '@/hooks/useCeremony';
 import { usePersist } from '@/hooks/usePersist';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
@@ -149,8 +149,25 @@ export default function SquadSettingsScreen() {
     setEditOpen(true);
   };
 
+  /**
+   * ⚠ THE EDIT SHEET IS CLOSED FIRST, AND THAT IS THE WHOLE FIX.
+   *
+   * This control lives INSIDE the Edit Identity sheet, and iOS refuses to present a view controller
+   * while another is on screen. Presenting the picker over the still-open sheet was dropped silently —
+   * no throw, no rejection — so tapping the squad photo did nothing at all and the screen read as
+   * frozen. Reported as exactly that. It is the Friends-feed composer defect, one screen over; see
+   * `callerModalGone`.
+   *
+   * ⚠ THE DRAFT SURVIVES because it lives in this component's state, not in the sheet — so closing and
+   * reopening loses nothing the athlete typed. Reopening happens after `pick()` resolves, which is
+   * itself after the system picker is gone (`pickerGone`), so the sheet never races the dismissal it
+   * just waited for.
+   */
   const pickPhoto = async () => {
+    setEditOpen(false);
+    await callerModalGone();
     const asset = await pick({ kind: 'images', title: 'Squad photo', allowsEditing: true, aspect: [1, 1], quality: 0.7 });
+    setEditOpen(true);
     if (asset?.uri) {
       setDraftPhotoUri(asset.uri);
       setDraftPhotoCleared(false);

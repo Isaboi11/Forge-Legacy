@@ -148,6 +148,76 @@ async function downscalePhoto(asset: ImagePicker.ImagePickerAsset): Promise<Imag
 }
 
 /**
+ * Wait for a modal THE CALLER just closed, before a picker is presented over where it was.
+ *
+ * ══ ⚠ THE HALF `sheetGone()` CANNOT COVER ══
+ *
+ * The long note at the top of this file is about the chooser sheet THIS hook owns: `setOpen(false)`
+ * only schedules a dismissal, and presenting the system picker in the same tick means presenting into
+ * a modal that has not gone. iOS drops it silently — no throw, no rejection, nothing for a `catch`.
+ *
+ * `sheetGone()` closes that hole for the sheet this file controls, and it knew nothing about **a caller
+ * that is itself a modal**. That is the same defect one layer up, and it is the one that reached
+ * testers twice: the Friends-feed composer, and then the squad photo inside Edit Identity and Replace
+ * on the check-in viewer. In every case the control simply does nothing, and the app reads as frozen.
+ *
+ * So a caller that lives inside a sheet or a `Modal` must close it, `await` this, and only then pick.
+ *
+ * ⚠ WEB RESOLVES IMMEDIATELY, DELIBERATELY. RN-web's modal is a div and its picker is a file input;
+ * there is no view-controller rule to obey, and a delay there would be latency bought for nothing.
+ */
+export function callerModalGone(): Promise<void> {
+  if (Platform.OS === 'web') return Promise.resolve();
+  // The same budget `SHEET_DISMISS_FALLBACK_MS` uses, and for the same reason: comfortably longer than
+  // the `animationType="slide"` dismissal (~300ms) and short enough to read as part of the tap.
+  return new Promise((resolve) => setTimeout(resolve, SHEET_DISMISS_FALLBACK_MS));
+}
+
+/**
+ * Pick ONE image from the library, with no chooser sheet and no camera. Returns its uri, or null.
+ *
+ * ══ ⚠ WHY THIS EXISTS RATHER THAN A CALL TO `useMediaPicker()` ══
+ *
+ * Two reasons, and the second is the one that matters.
+ *
+ * **It cannot nest.** `useMediaPicker` renders a `BottomSheet` to offer camera-or-library. Its only
+ * caller so far is the program importer, whose UI is *already* a BottomSheet — and the long note at
+ * the top of this file about `PICKER_DISMISS_MS` is the record of what happens when a picker is
+ * presented over a modal that is still there: iOS drops it silently and the row does nothing.
+ *
+ * **Program import is deliberately library-only.** Decision Queue #22 lists the age floor (16+ vs 18+)
+ * as OPEN and says it must be set before any photo-AI feature ships. That gate is about images of
+ * PEOPLE. Reading a screenshot of a training table is not that, and it stays not-that by never opening
+ * a camera: what reaches the model is something the athlete already chose to save. Combined with the
+ * tab-only filter in `domain/program/photo-transcript.ts`, which gives the read path no channel that
+ * can carry a sentence about a person, that keeps this clear of the gate rather than arguing with it.
+ *
+ * ⚠ **SO DO NOT "UPGRADE" THIS TO OFFER THE CAMERA.** It is not an oversight and it is not a smaller
+ * version of `useMediaPicker`. Adding a camera row here walks a live capture into a 13+-rated app past
+ * an open safety decision. If the camera is genuinely wanted, the age floor gets closed first.
+ *
+ * `ImagePicker` still lives only in this file — the rule `project_media_capture_picker` states — so the
+ * downscale below cannot be skipped by a screen that forgot it.
+ */
+export async function pickImageFromLibrary(): Promise<string | null> {
+  try {
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsMultipleSelection: false,
+      quality: 1,
+    });
+    const picked = res.canceled ? null : res.assets?.[0] ?? null;
+    if (!picked) return null;
+    // The same cap every other capture path gets. A 12-megapixel screenshot is bytes over the wire and
+    // tokens at the far end, and neither buys a single extra readable character.
+    const asset = await downscalePhoto(picked);
+    return asset.uri;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Cap a picked VIDEO's size before anyone can upload it — the other half of the resize above, and the
  * half that was missing entirely.
  *
