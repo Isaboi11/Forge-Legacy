@@ -18,7 +18,7 @@
 > 7. Update **Last Updated** and the **Dashboard** on every edit.
 
 **Type:** Living Project Dashboard + Documentation Completion Audit
-**Last Updated:** 2026-08-20 (**⭐ "THE APP IS FROZEN" — NOTHING WAS FROZEN.** Three separate controls silently did nothing, which is the one failure mode that leaves no crash, no error and no evidence: TestFlight showed **Crashes: –** throughout. ⚠ **The big one: onboarding was a one-way door.** `routeFor` sends every signed-in athlete with a null `onboarded_at` there and onboarding is the only thing that clears it — with no sign-out, no account switch, and `Back` hidden on step one. **Three of the first 28 accounts were trapped**; the reporting tester held two accounts and had signed into the wrong one. ⚠ **The other two are the Friends-feed picker defect one screen over** — `sheetGone()` only ever guarded the chooser `useMediaPicker` owns and knew nothing about a CALLER that is itself a modal; `callerModalGone()` is that half. Both native-only, so the OTA is what delivers them. ⚠ **The diagnosis was wrong twice first** — a missing `profiles` row (disproved by one query) and an RLS block (disproved by `.single()` erroring rather than returning null); the survivor was the last line of `routeFor`. ✅ **DEPLOYED BOTH SURFACES** — web `entry-78230c2c…` (200, five new strings PRESENT in the live bundle) and iOS OTA `01a02293-6306-73d4-9b51-265a9ef7703b` on runtime `411fd2b6…`, **fingerprint matched build 6 before publishing and the manifest served the new id after** — deliverable, not merely published. ⚠ **This deploy also shipped the photo-import client half** (wiring already committed in `2af5618`): the "Or read a screenshot" button is LIVE and fails on every tap until **`0174` is pasted and `program-photo-read` is deployed** — an Edge Function does not ride an OTA.)
+**Last Updated:** 2026-08-21 (**⭐ ERROR REPORTING — the guessing ends.** Every error now leaves the device with the **exact path** that led to it: the last 40 screens and actions, the stack, the device, and ⭐ the **`update_id`** — the only field that can answer *"did my fix work"*, since `app_version` is `1.0.0` on every OTA over build 6. ⚠ **The information was already in our hands** — `ScreenBoundary` has been printing it to a console nobody reads. ⚠ **Grouped by BUG and ranked by ATHLETES AFFECTED**, not occurrences. ⚠ **The opt-out is split**: it drops the trail and keeps the fault. ⚠ **`report_client_error` is granted to `anon` on purpose** — a launch crash has no session — with two rate limits; it will appear in the anon audit and must not be "fixed". ⏳ **`0176` AUTHORED, NOT APPLIED** (`pending-0176.sql`) and **NOT DEPLOYED**; ⛔ the **privacy "Diagnostics" section must be PUBLISHED on `site/` first** — a separate Cloudflare deploy. Gates: tsc 0 · 2,710/2,711 (one pre-existing podium failure) · lint at baseline · web export clean. **Sentry is Stage 2, blocked on the next native build.** Prior entry follows.) (**⭐ "THE APP IS FROZEN" — NOTHING WAS FROZEN.** Three separate controls silently did nothing, which is the one failure mode that leaves no crash, no error and no evidence: TestFlight showed **Crashes: –** throughout. ⚠ **The big one: onboarding was a one-way door.** `routeFor` sends every signed-in athlete with a null `onboarded_at` there and onboarding is the only thing that clears it — with no sign-out, no account switch, and `Back` hidden on step one. **Three of the first 28 accounts were trapped**; the reporting tester held two accounts and had signed into the wrong one. ⚠ **The other two are the Friends-feed picker defect one screen over** — `sheetGone()` only ever guarded the chooser `useMediaPicker` owns and knew nothing about a CALLER that is itself a modal; `callerModalGone()` is that half. Both native-only, so the OTA is what delivers them. ⚠ **The diagnosis was wrong twice first** — a missing `profiles` row (disproved by one query) and an RLS block (disproved by `.single()` erroring rather than returning null); the survivor was the last line of `routeFor`. ✅ **DEPLOYED BOTH SURFACES** — web `entry-78230c2c…` (200, five new strings PRESENT in the live bundle) and iOS OTA `01a02293-6306-73d4-9b51-265a9ef7703b` on runtime `411fd2b6…`, **fingerprint matched build 6 before publishing and the manifest served the new id after** — deliverable, not merely published. ⚠ **This deploy also shipped the photo-import client half** (wiring already committed in `2af5618`): the "Or read a screenshot" button is LIVE and fails on every tap until **`0174` is pasted and `program-photo-read` is deployed** — an Edge Function does not ride an OTA.)
 **Audit Basis:** Live repository scan, 2026-08-01. `git ls-files` (430 TS/TSX · 40 `*.test.mjs` · 257 `Docs/**/*.md` · 97 migrations), `git ls-files src/app` (72 screens, excl. layouts + `+html`), `git rev-list --count` (210), `node --test` (508 pass / 0 fail), `npx tsc --noEmit` (0), `npx eslint src` (1 pre-existing error + 13 warnings), `npx expo export --platform web` (clean, 11.11 MB entry), `wc -l` (87,450 LOC). Data-layer contract checked mechanically across 53 RPC names · 61 call sites · 434 select columns · 119 write payloads · 35 tables for RLS · 52 `SECURITY DEFINER` functions. Prior basis 2026-07-15 (227 TS/TSX · 33,229 LOC · 176 tests) retained in the Change Log.
 
 ---
@@ -848,6 +848,95 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 > ⚠ **A tree-wide publish ships every undeployed client half in the tree.** Check for pending migrations
 > before publishing anything, not just before publishing the feature that needs them.
 
+### 0. ⭐ We stop guessing what broke — every error now arrives with the exact path that led to it (2026-08-21, Diagnostics — **MIGRATION `0176` AUTHORED, NOT APPLIED**; client code is OTA-safe, ⏳ NOT DEPLOYED)
+
+**PO:** *"sometimes we're guessing at what the error is … catch the exact path they're going in instead of
+having to ask them, but we capture on the back end and are able to fix it right away."*
+
+**The guessing is on this board, one entry down.** The "app is frozen" week was **diagnosed wrong twice**
+— a missing `profiles` row, then an RLS block — before the survivor turned out to be the last line of
+`routeFor`. Throughout, **TestFlight showed `Crashes: –`**, because nothing crashed. That is the finding
+that shaped this build:
+
+> ⚠ **This app's characteristic failure is NOT a native crash.** Apple already reports those. It is a JS
+> fault, or a control that silently no-ops, on a device nobody can attach a debugger to, described
+> second-hand by an athlete with no reason to know what a stack trace is.
+
+⚠ **THE INFORMATION WAS ALREADY IN OUR HANDS AND WE WERE THROWING IT AWAY.** `ScreenBoundary` has caught
+every screen-level throw since it was written and printed it to `console.error` — a console that, on a
+tester's phone, nobody will ever read. Its own copy asks the athlete to *"send us the line below — it is
+the part we cannot see from here."* That is now done automatically, with the trail attached, before they
+finish reading the sentence.
+
+**What ships:**
+- **`0176_client_errors.sql`** — `client_errors` (nullable `user_id`, breadcrumbs `jsonb`, `update_id`),
+  `client_error_status` (triage keyed by BUG), `report_client_error()`, three `admin_*` read models, and a
+  90-day prune matching `app_events`.
+- **`domain/diagnostics/breadcrumb-core.ts`** — pure, **18 tests**, owns the redaction rules and the
+  fingerprint.
+- **`lib/diagnostics.ts`** — the reporter. **`lib/app-session.ts`** — the session id, lifted out of
+  `analytics.ts` so both tables carry the same one.
+- Both boundaries now report; `lib/supabase.ts` leaves a `net` crumb on every failed request; every
+  existing `track()` call is now also a breadcrumb, at **no call-site cost**.
+- **`/admin` § Errors** — grouped by bug, tap to open the trail. **`Docs/Error-Reporting.md`** governs.
+
+**⭐ THE TRAIL IS THE PRODUCT.** The frozen-app week would have read
+`· sign_in_submitted → /onboarding · onboarding_continue → /onboarding ×214` and ended in a minute.
+⚠ **Consecutive repeats COLLAPSE**, and that is load-bearing rather than cosmetic: without it a render
+loop fills the 40-crumb window with the symptom in milliseconds and pushes the cause out, so every report
+of the worst bug class would arrive with its evidence already overwritten.
+
+**⭐ AND IT ANSWERS "DID MY FIX WORK".** `app_version` is `1.0.0` on **every OTA ever published over build
+6**, so it cannot. `update_id` names the exact bundle. Triage status is keyed by fingerprint and
+**deliberately does not reset** when a fixed bug recurs — which is what lets the dashboard say
+*"marked FIXED on the 19th, **4 since**"*, the one sentence a self-resetting status can never produce.
+
+⚠ **RANKED BY ATHLETES AFFECTED, NOT OCCURRENCES.** 200 crashes from one tester is a bad afternoon; 12
+across 12 people is a release blocker. Sorting by volume gets that backwards.
+
+⚠ **`report_client_error` IS GRANTED TO `anon`, AND IT IS THE ONLY SUCH FUNCTION IN THE SCHEMA.** Deliberate:
+the worst outage this project has shipped was a **launch crash** (`CoachBubble`, no `SafeAreaProvider`),
+which happens before a session exists — a report requiring `auth.uid()` would have thrown away the one
+worth having. `user_id` comes from `auth.uid()` inside the function and is never a parameter. Two rate
+limits (30/hour per session, **5000/hour globally**, because `session_id` is client-minted and the anon key
+is public by design) are what make it safe. **It will appear in the anon audit. Do not "fix" it.**
+
+⚠ **THE OPT-OUT IS SPLIT, BY DESIGN.** "Help improve Forge" off drops the **trail** — a route trail *is*
+usage, and collecting one anyway under a different table name is the back door `props-core.ts` exists to
+close. It keeps the **fault**: what broke, where, on which build, because that is a defect in our software
+rather than a record of their behaviour.
+
+⚠ **AND THE PRIVACY TEXT IS A GATE ON THE MIGRATION, NOT A FOLLOW-UP** (P6-A1-D8). The "Diagnostics"
+section is written into **both** surfaces in this same commit — `Docs/Legal/Privacy-Policy.md` § 2 and
+`site/privacy.html` § 2. **`site/` is a separate Cloudflare deploy; writing it is not publishing it.**
+The policy's "what we do not collect" list also now says **no third-party crash reporting** — ⛔ that
+sentence must be edited *before* Sentry ships, not after.
+
+**Gates:** `tsc --noEmit` **0** · **2,711 tests, 2,710 green** (18 new; the one failure is a pre-existing
+`podium/[id].tsx` `<Stop>` opacity assertion, untouched by this pass) · `eslint src` **at baseline**
+(1 pre-existing error, 32 warnings, none new) · `expo export --platform web` clean, and
+`report_client_error` verified **present in the built bundle**.
+
+⏳ **NOT APPLIED AND NOT DEPLOYED.** Paste `supabase/apply/pending-0176.sql`. ⚠ There is **no ordering
+hazard between the two halves** — `errors-live.ts` disables itself on `PGRST202`, so shipping the client
+first is harmless and reporting is simply off. The only real gate is the privacy publish above.
+
+⚠ **`admin_client_errors` returning `ever_any: null` is an HONEST-ZERO GUARD THAT READS BACKWARDS FROM
+FEEDBACK'S.** Zero errors is what we want *and* exactly what a broken reporter looks like. Once this is
+deployed, **"nothing has ever been reported" is the bug**, not the good news.
+
+**Stage 2 is Sentry, and it is blocked on the next NATIVE build** — `@sentry/react-native` carries a native
+module and cannot ride an `eas update`, which is the whole reason this stage exists. Fold it into the
+RevenueCat/paywall build. It adds native crashes and source-mapped stacks; it also changes
+`Docs/App-Store-Privacy-Labels.md` (Crash + Performance Data under Diagnostics — still no ATT prompt).
+**They are complements, not a migration:** keep this stage for the trail, which is under a privacy rule we
+control and joins to `app_events`.
+
+**⏳ ER-D5 left OPEN and stated rather than quietly shipped:** `ScreenBoundary` wraps only **2 of 77
+screens**. The global handler catches the rest, so nothing goes *unreported* — but the other 75 get no
+recovery UI, and a throw during render still blanks the screen instead of naming itself. Widening it is a
+separate pass.
+
 ### 0. ⭐ "The app is frozen" — nothing was frozen, three separate controls silently did nothing (2026-08-20, Onboarding + Squads — no migration, ✅ WEB DEPLOYED + ✅ OTA DELIVERABLE ON BUILD 6)
 
 **Reported by testers as *"it's just freezing and will only let them sign in and nothing else."*** No
@@ -1433,36 +1522,6 @@ table, and three headless-rendering traps that each look exactly like a real reg
 So a push-up tagged `Intermediate` is not a mistagging — pressing under your own control is a tier above a chest-press machine. **Re-tagging it to `Beginner` would put it level with Machine Chest Press and delete true information**, at a cost of 733 records of judgement against an append/annotate-only dataset, to fix something that was one filter asking the field a question it never claimed to answer. `STRETCH_CEILING` is the correct and complete fix, not a compensation for bad data.
 
 ⚠ **The one residual, and it is a LABEL not a value.** `src/app/exercise/[id].tsx:75` renders *"Difficulty: Intermediate"* on a push-up and `src/app/exercise-library.tsx:451` labels the facet "Difficulty" — which reads to an athlete as *"not for beginners"*. "Technique" or "Skill" would be truthful. ⛔ **NOT a free rename:** "Difficulty chip" is specified in Component-Library-Architecture-v1.0 (CLA-D2, colour+label pairing), there is a `color.difficulty.*` token family, and it appears in the `.dc` specs. It is a design-spec amendment awaiting a PO call. (Unrelated to **PAS-R1 Difficulty Calibration**, which is about *program* positioning across the 24-program catalogue, not exercise records.)
-
-### 0. `42501` on Join — RESOLVED: the competition had been CALLED OFF, and the screen was still offering it (2026-08-17, C-1 — CODE only, no migration, OTA-safe; `0165` shipped as hardening and is NOT needed)
-
-**PO screenshot, after 0163+0164 were applied and deployed:** the invitee sees *Biiiiiig Lifters* under **Open to Join** — correctly labelled `underway`, so 0163 works — taps **Join**, and gets `new row violates row-level security policy for table "challenge_participants" (42501)`.
-
-**⚠ THE DATABASE WAS RIGHT.** The diagnostic's §5 returned it in one line: **`Biiiiiig Lifters` — `state = CANCELLED`** (and a duplicate `Biiiiiig lifters`, also cancelled; only `Yiiiiiiip` was ACTIVE). `challenge_participants_insert` allows ENROLLMENT and ACTIVE, so it refused, correctly. **There was never an RLS bug.**
-
-**The actual defect is a stale list plus a raw error.** `challenge_hub()`'s open list is a **snapshot**; the policy is **live**. The creator called the competition off (`cancel_challenge`, 0067) while the invitee's Competitions screen sat open, so the row and its Join button stayed on screen — and the failure then reached the athlete as a Postgres error code, which reads as the app being broken rather than as the answer to a question that had gone stale. ⚠ **Unavoidable by construction and not worth engineering away** — any snapshot can go stale between render and tap. What was wrong is how it was *answered*.
-
-**Fixed at the one place both Join surfaces share.** `joinChallenge` now translates `42501` → *"This competition isn't open any more — it was called off or has finished."* and `23505` → *"You're already in this one."* (the same race from the other side: a double tap, or a join that already landed). Translated in the data layer rather than at the call sites so the hub row and C-3's Join button cannot drift apart. **And both call sites now `refetch()` on failure** — explaining the refusal while leaving the dead row on screen with its button still lit invites the identical tap again, so the refresh is part of the answer, not cleanup after it.
-
-**⚠ THE TRAP THAT WAS FOUND ON THE WAY, AND IT IS REAL WHETHER OR NOT IT CAUSED THIS.** `0059_challenges.sql` and `0087_friend_challenges.sql` **both** define `can_read_challenge`, `challenges_select`, `challenges_insert` and `challenge_participants_insert` — and **0059's four are SQUAD-ONLY** (`c.context = 'SQUAD'`). Both files are idempotent, and **re-pasting an old migration to recover a half-applied run is this project's documented recovery procedure**, because there is no CLI and no service key. So one re-paste of 0059 silently makes **every friends competition in the database unjoinable**, presenting as precisely this error — while the hub keeps offering it, because the hub is a definer function that never asks. ⚠ **Evidence argues against it being the cause here** (0059 would have reverted `challenges_insert` in the same breath, and creating the competition plainly worked), which is why it is hardened rather than declared.
-
-**Shipped:**
-- **`supabase/apply/diagnose-challenge-join-42501.sql`** — zero-edit, **read-only**, run it in the SQL editor. §1 settles the 0059-reversion question in one row; §4 evaluates every clause of the policy per invited athlete (`in_invited_ids` · `state_ok` · `can_select_row` · `already_joined`); §6 says what each answer means. The leading remaining candidate is **the device signed in as a different account from the one named in `invited_ids`** — which no migration can or should fix.
-- **`0165_challenge_policy_reassert.sql`** — restates 0087's four bodies **verbatim** (machine-diffed against 0087, not retyped) and then **asserts all four still name FRIENDS**, so a reversion can never again be silent. On a healthy database it changes nothing. ⚠ Only worth running if the diagnostic's §1 says ⛔.
-- **A ⛔ supersession warning at the top of `0059`** — 14 comment lines, no SQL touched. It is the only guard that reaches somebody about to paste that file.
-- **`src/data/__tests__/challenge-policy-supersession.test.mjs`** — the newest definition of each of the four objects must name FRIENDS, the insert policy must keep allowing `ACTIVE` (0163's Join row depends on it), and 0059 must keep its warning. Catches a *future* migration rebuilding one from 0059's body — the 0088/0092/0106 mistake, one table over.
-
-`tsc` 0 · lint clean · **2,497 tests green** (5 new) · **eight mutations applied, eight caught** — after one SURVIVED and was fixed: rewriting the `42501` arm to `throw error` stayed green because a fixed-length slice from `'42501'` ran into the `'23505'` arm below it and matched *its* sentence. The assertion now reads one line per arm. That hole was invisible to everything except mutation.
-
-⚠ **`0165` IS NOT THE FIX AND IS NOT NEEDED HERE** — the diagnostic's §1 would have shown 0087 live. It ships as hardening against the trap found on the way, and can be run at any time or not at all.
-
-**Files:** `src/data/challenges-live.ts` · `src/app/competitions.tsx` · `src/app/challenge/[id].tsx` · `src/data/__tests__/challenge-join-agreement.test.mjs` (new) · `supabase/apply/diagnose-challenge-join-42501.sql` (new) · `supabase/migrations/0165_challenge_policy_reassert.sql` (new) · `supabase/migrations/0059_challenges.sql` (comment only).
-
-**ALSO IN THIS PASS — the crown nobody could see.** PO: *"make the crown 75% brighter cause I can't see it at all."* C-3's `CrownArt` was on the design's **0.34** → now **0.60**. ⚠ **The design's figure was not wrong, it was measured against a flat page**; this hero stacks the crown over `SCREEN_BG`'s stone texture AND under the hero vignette, and the two together ate it on a phone. Noted at both the call site and the prop, because any opacity copied from a `.dc` that assumes a background this screen does not have is a starting point rather than a value. ⚠ **C-4 left at 0.52 deliberately** — nobody has seen a finished season on a device, so C-3 is currently the brighter of the two and the design's "settles more revealed than it emerges" ordering is inverted until somebody looks.
-
-**✅ DEPLOYED AND VERIFIED ON BOTH SURFACES (2026-08-17).** Web: `forgelegacy.expo.app` **200**, `entry-31ed833e01f5d9ac2283a247249e074e.js`, **md5 byte-identical to local `dist`**, live file contains `was called off or has finished`, `already in this one` and `Join This Competition`. Phone: OTA on iOS runtime **`411fd2b68cbe…`** = build 6's; Android on `a8afa07c…`; **`fingerprint:compare` ✅ matched beforehand.** ⚠ **TWO PRE-DEPLOY CHECKS FAILED AND BOTH WERE THE CHECK'S FAULT, NOT THE CODE'S** — worth recording because either could have been "fixed" by breaking something: the 42501 sentence appeared absent because its curly apostrophe (`U+2019`) is escaped in the bundle, and the coach marker appeared absent because the string chosen was an **assertion message in a `.test.mjs`**, which is never bundled. Re-checked against a substring past the apostrophe, and against `limitations.ts`'s object keys (`Shoulder Isolation`, `no_overhead` — property names survive minification, function names do not).
-
-⚠ **THIS DEPLOY ALSO SHIPPED ANOTHER SESSION'S UNCOMMITTED COACH WORK**, with the PO's approval: `limitations.ts`'s keep/exclude tables, `difficultyAllows`/`canStretch`, and `coach.tsx` — 426 lines across 6 files, 424 coach tests green, no TODO/stub/debug markers. **Confirmed NOT in the earlier deploy** (its string literals were absent from that bundle), so this was its first release. Nobody has exercised it on a device — open Coach Holt and check a generated day.
 
 ### Older entries — `Docs/Status-Archive-2026-08.md`
 

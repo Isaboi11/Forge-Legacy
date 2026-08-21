@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { reportError } from '@/lib/diagnostics';
 
 /**
  * A screen that throws should SAY SO, not disappear and not take the app with it.
@@ -37,8 +38,31 @@ export class ScreenBoundary extends React.Component<
     return { message: message || 'Unknown error' };
   }
 
-  componentDidCatch(error: unknown) {
+  componentDidCatch(error: unknown, info: { componentStack?: string | null }) {
     console.error(`[ScreenBoundary] ${this.props.name} failed:`, error);
+    /*
+     * ⭐ AND NOW IT LEAVES THE DEVICE (0176).
+     *
+     * The `console.error` above is three years of good intentions pointed at a console that, on a
+     * tester's phone, nobody will ever read. Everything this comment block asks the athlete to do —
+     * "send us the line below — it is the part we cannot see from here" — is now done automatically,
+     * with the breadcrumb trail attached, before they have finished reading the sentence.
+     *
+     * `info.componentStack` is React's own "the component tree above the throw", which a raw stack does
+     * not carry and which is usually the faster read of the two.
+     *
+     * `reportError` is synchronous, returns void and cannot throw — see its header. That property is
+     * load-bearing here specifically: a `componentDidCatch` that throws takes down the tree this
+     * boundary exists to protect.
+     */
+    reportError(error, {
+      source: 'boundary',
+      fatal: false,
+      componentStack: info?.componentStack ?? null,
+      // The boundary knows which screen it wraps; the router only knows the URL, and on a crash during
+      // navigation those two disagree. The name in the props is the one a human can act on.
+      screen: this.props.name,
+    });
   }
 
   render() {

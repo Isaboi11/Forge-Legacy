@@ -2,6 +2,15 @@ import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 
+/*
+ * ⚠ THE ONLY IMPORT THIS FILE MAY TAKE FROM `lib/`, AND IT IS DIRECTIONAL.
+ *
+ * `lib/diagnostics` deliberately imports NOTHING that reaches back here — see its header. If it ever
+ * does, these two modules deadlock at init on Hermes and the app does not launch. The error REPORT path
+ * gets here the long way round, through `data/errors-live.ts` registering a sink.
+ */
+import { breadcrumb } from '@/lib/diagnostics';
+
 /**
  * The ONE Supabase client for the app (Phase 1 of the Supabase pivot).
  *
@@ -59,8 +68,71 @@ const AUTH_TIMEOUT_MS = 10_000;
 const urlOf = (input: RequestInfo | URL): string =>
   typeof input === 'string' ? input : typeof (input as Request).url === 'string' ? (input as Request).url : String(input);
 
+/**
+ * A request path reduced to its SHAPE, for a breadcrumb.
+ *
+ * ⚠ THE QUERY STRING IS DROPPED, AND THAT IS NOT COSMETIC. PostgREST puts filters there —
+ * `?handle=eq.<what they typed>`, `?name=ilike.*<search term>*` — so a raw URL in a breadcrumb would
+ * carry athlete-authored text straight into `client_errors`, breaking the same promise
+ * `domain/analytics/props-core.ts` exists to keep. Path only, ids reduced.
+ */
+const requestShape = (url: string): string => {
+  try {
+    const path = url.split('?')[0].replace(/^https?:\/\/[^/]+/i, '');
+    return path
+      .split('/')
+      .map((seg) =>
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(seg) ? '[id]' : seg,
+      )
+      .join('/')
+      .slice(0, 60);
+  } catch {
+    return '';
+  }
+};
+
+/**
+ * Leave a `net` crumb when a request FAILS. Successes are not recorded — a trail of 200s is noise, and
+ * the 40-crumb window is small on purpose.
+ *
+ * ══ WHY THIS IS HERE AND NOT IN A `useQuery` WRAPPER ══
+ *
+ * Two thirds of this app's real failures are asynchronous: a query that 401s, an RPC that 42501s, a
+ * request that never settles. None of those throw anywhere an error boundary can see them — they resolve
+ * into an `error` string that a screen renders as an empty state. This is the one chokepoint every
+ * database call in the app passes through, so instrumenting it catches all of them at once, including
+ * the ones nobody remembered to handle.
+ *
+ * ⚠ The `report_client_error` RPC is excluded. A failure to deliver a report is not a step the athlete
+ *   took, and letting it into the trail would make every subsequent report describe the reporter.
+ */
+const noteFailure = (url: string, status: number | string): void => {
+  try {
+    const shape = requestShape(url);
+    if (!shape || shape.includes('report_client_error')) return;
+    breadcrumb('net', 'request_failed', `${status}:${shape}`);
+  } catch {
+    /* a crumb is never worth an exception */
+  }
+};
+
+const withCrumb = (url: string, p: Promise<Response>): Promise<Response> =>
+  p.then(
+    (res) => {
+      if (!res.ok) noteFailure(url, res.status);
+      return res;
+    },
+    (err: unknown) => {
+      // A rejected fetch is the offline / DNS / aborted case, which never has a status code and is the
+      // single most common cause of "the app is broken" reports.
+      noteFailure(url, (err as { name?: string })?.name === 'AbortError' ? 'abort' : 'neterr');
+      throw err;
+    },
+  );
+
 const timedFetch: typeof fetch = (input, init) => {
-  if (!urlOf(input).includes('/auth/v1/')) return fetch(input, init);
+  const url = urlOf(input);
+  if (!url.includes('/auth/v1/')) return withCrumb(url, fetch(input, init));
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), AUTH_TIMEOUT_MS);
@@ -70,7 +142,7 @@ const timedFetch: typeof fetch = (input, init) => {
     if (caller.aborted) controller.abort();
     else caller.addEventListener('abort', () => controller.abort(), { once: true });
   }
-  return fetch(input, { ...init, signal: controller.signal }).finally(() => clearTimeout(timer));
+  return withCrumb(url, fetch(input, { ...init, signal: controller.signal }).finally(() => clearTimeout(timer)));
 };
 
 export const supabase = createClient(url, anonKey, {

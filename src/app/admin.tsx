@@ -23,6 +23,8 @@ import {
   fetchAdminCohorts,
   fetchAdminContent,
   fetchAdminEngagement,
+  fetchAdminErrorDetail,
+  fetchAdminErrors,
   fetchAdminEvents,
   fetchAdminFeedback,
   fetchAdminGrowth,
@@ -30,6 +32,8 @@ import {
   fetchAdminSocial,
   fetchRecentSignups,
   isAppAdmin,
+  setErrorStatus,
+  type ErrorOccurrence,
 } from '@/data/admin-live';
 import { fetchAdminReports, resolveReport } from '@/data/moderation-live';
 import { column, RANGES, rangeLabel, rangeToDays, type RangeKey } from '@/domain/admin/series';
@@ -96,6 +100,28 @@ export default function AdminScreen() {
   /* Reports (0171). Same reasoning as feedback above — deliberately NOT range-scoped, because an open
      report is not less open because the chips say 7D. */
   const reports = useQuery(() => fetchAdminReports(50, null), []);
+
+  /* Errors (0176). ⚠ RANGE-SCOPED, and it is the one operator queue that should be — unlike a support
+     ticket, a crash from six weeks ago on a build nobody is running is genuinely not a to-do item. The
+     chips are how you ask "is this still happening", which is the question that matters after a fix. */
+  const errors = useQuery(() => fetchAdminErrors(days, 50, null), [days]);
+  /* Which bug's trail is open. One at a time: a stack trace and forty breadcrumbs are not something you
+     compare side by side, and rendering fifty of them would make the screen unusable. */
+  const [openFp, setOpenFp] = useState<string | null>(null);
+  const detail = useQuery<ErrorOccurrence[]>(
+    () => (openFp ? fetchAdminErrorDetail(openFp, 5) : Promise.resolve([])),
+    [openFp],
+  );
+
+  const triage = async (fingerprint: string, status: string) => {
+    try {
+      await setErrorStatus(fingerprint, status);
+      await errors.refetch();
+    } catch {
+      /* The row keeps its old status, which is the safe failure: a bug that silently reads FIXED
+         because the write failed is the one outcome this queue must never produce. */
+    }
+  };
 
   const resolve = async (id: string, status: 'actioned' | 'dismissed') => {
     try {
@@ -208,6 +234,168 @@ export default function AdminScreen() {
           this list; AA-D2's performance prohibitions are unamended (AA-D9). If a column is ever added
           here, it is a new decision against a locked one.
         */}
+        {/* ── Errors (0176) ────────────────────────────────────────────── */}
+        {/*
+          ⚠ ONE ROW PER BUG, NOT PER OCCURRENCE. The grouping happens in SQL (by fingerprint) and it is
+          what makes this readable: 400 raw rows is a list nobody opens twice.
+
+          ⚠ AA-D2. The list below names NOBODY — it is aggregate, like every other section on this
+          screen. Identity appears one level down, inside a specific bug's trail, on the same grounds as
+          `admin_feedback`: AA-D2 forbids a named athlete beside PERFORMANCE, and a crash report is not
+          performance. "Three accounts are trapped in onboarding" is not actionable without the three.
+        */}
+        <SectionCard
+          title="Errors"
+          subtitle="What actually broke, grouped by bug, with the path the athlete took to get there. Range-scoped on purpose — a crash on a build nobody runs is not a to-do item."
+        >
+          <Section state={errors}>
+            {errors.data ? (
+              <>
+                <StatLine label="Distinct bugs" value={errors.data.bugs} />
+                <StatLine label="Occurrences" value={errors.data.occurrences} />
+                <StatLine label="Athletes affected" value={errors.data.athletes} />
+                <StatLine label="Fatal" value={errors.data.fatal} />
+                {/*
+                  ⚠ THE HONEST-ZERO LINE, AND IT READS THE OPPOSITE WAY FROM THE ONE ON FEEDBACK.
+                  Zero errors is the outcome we want AND exactly what a broken reporter looks like — a
+                  client half that never deployed, or `report_client_error` left un-granted. So this row
+                  says which of the two it is, rather than letting a comforting 0 stand for both.
+                */}
+                <StatLine
+                  label="Reporting"
+                  value={
+                    errors.data.everAny
+                      ? `live · last report ${signupDate(errors.data.everAny)}`
+                      : 'nothing has EVER been reported — check 0176 is applied and the client is deployed'
+                  }
+                />
+                {errors.data.rows.length === 0 ? null : (
+                  <View style={styles.feedbackList}>
+                    {errors.data.rows.map((g) => (
+                      <View key={g.fingerprint} style={styles.feedbackRow}>
+                        <Pressable
+                          onPress={() => setOpenFp(openFp === g.fingerprint ? null : g.fingerprint)}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Show the trail for ${g.name}`}
+                        >
+                          <View style={styles.feedbackHead}>
+                            <Text style={styles.feedbackKind}>{g.name}</Text>
+                            {/* Athletes first. 200 crashes from one tester is a bad afternoon; 12 across
+                                12 people is a release blocker, and reading occurrences first gets that
+                                ranking backwards. */}
+                            <Text style={styles.errCount} numberOfLines={1}>
+                              {g.athletes === 1 ? '1 athlete' : `${g.athletes} athletes`} · {g.occurrences}×
+                            </Text>
+                            <Text style={styles.feedbackWhen}>{signupDate(g.lastSeen)}</Text>
+                          </View>
+                          <Text style={styles.errMessage}>{g.message}</Text>
+                          <Text style={styles.feedbackMeta}>
+                            {[
+                              g.status,
+                              g.screen,
+                              g.source,
+                              g.platform,
+                              g.fatalCount > 0 ? `${g.fatalCount} fatal` : null,
+                            ]
+                              .filter(Boolean)
+                              .join(' · ')}
+                          </Text>
+                          {/* ⭐ The sentence a self-resetting status could never say. */}
+                          {g.statusAt && g.sinceStatus > 0 ? (
+                            <Text style={styles.errStale}>
+                              marked {g.status} on {signupDate(g.statusAt)} — {g.sinceStatus} since
+                            </Text>
+                          ) : null}
+                          {/* ⭐ "Did my fix work" is answerable only from here: app_version is 1.0.0 on
+                              every OTA published over build 6. */}
+                          {g.updateIds.length > 0 ? (
+                            <Text style={styles.errBuilds}>
+                              seen on {g.updateIds.map((u) => u.slice(0, 8)).join(', ')}
+                            </Text>
+                          ) : null}
+                        </Pressable>
+
+                        <View style={styles.errActions}>
+                          {(['ACKED', 'FIXED', 'IGNORED'] as const).map((st) => (
+                            <Pressable
+                              key={st}
+                              onPress={() => void triage(g.fingerprint, st)}
+                              accessibilityRole="button"
+                              accessibilityLabel={`Mark ${st}`}
+                              style={({ pressed }) => [
+                                styles.errChip,
+                                g.status === st && styles.errChipOn,
+                                pressed && styles.errChipPressed,
+                              ]}
+                            >
+                              <Text style={[styles.errChipText, g.status === st && styles.errChipTextOn]}>
+                                {st}
+                              </Text>
+                            </Pressable>
+                          ))}
+                        </View>
+
+                        {/* ⭐ THE TRAIL. This is the answer to "what path were they on" and the entire
+                            reason the system exists. Route shapes and enum action names only — never a
+                            word the athlete typed (enforced in domain/diagnostics/breadcrumb-core.ts). */}
+                        {openFp === g.fingerprint ? (
+                          <View style={styles.errDetail}>
+                            <Section state={detail}>
+                              {(detail.data ?? []).map((o) => (
+                                <View key={o.id} style={styles.errOccurrence}>
+                                  <Text style={styles.feedbackMeta}>
+                                    {[
+                                      o.athleteHandle ? `@${o.athleteHandle}` : 'signed out',
+                                      signupDate(o.receivedAt),
+                                      o.deviceModel,
+                                      o.osVersion,
+                                      o.updateId ? `ota ${o.updateId.slice(0, 8)}` : 'embedded bundle',
+                                    ]
+                                      .filter(Boolean)
+                                      .join(' · ')}
+                                  </Text>
+                                  {o.breadcrumbs.length === 0 ? (
+                                    <Text style={styles.errTrailEmpty}>
+                                      No trail — this athlete has product-usage measurement off, which drops
+                                      the trail and keeps the fault. Working as designed.
+                                    </Text>
+                                  ) : (
+                                    <View style={styles.errTrail}>
+                                      {o.breadcrumbs.map((c, i) => (
+                                        <Text key={`${o.id}-${i}`} style={styles.errCrumb} selectable>
+                                          {c.type === 'route'
+                                            ? '→'
+                                            : c.type === 'net'
+                                              ? '✕'
+                                              : c.type === 'state'
+                                                ? '◦'
+                                                : '·'}{' '}
+                                          {c.label}
+                                          {c.detail ? ` ${c.detail}` : ''}
+                                          {c.n && c.n > 1 ? ` ×${c.n}` : ''}
+                                        </Text>
+                                      ))}
+                                    </View>
+                                  )}
+                                  {o.componentStack || o.stack ? (
+                                    <Text style={styles.errStack} selectable numberOfLines={14}>
+                                      {(o.componentStack ?? o.stack ?? '').trim()}
+                                    </Text>
+                                  ) : null}
+                                </View>
+                              ))}
+                            </Section>
+                          </View>
+                        ) : null}
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </>
+            ) : null}
+          </Section>
+        </SectionCard>
+
         {/* ── Feedback (0167) ──────────────────────────────────────────── */}
         <SectionCard
           title="Feedback"
@@ -717,6 +905,37 @@ const styles = StyleSheet.create({
 
   // Feedback (0167). Stacked rather than tabular: the body is the point and it needs the full width.
   feedbackList: { marginTop: 10 },
+  // ── Errors (0176) ──────────────────────────────────────────────────────────
+  errCount: { flex: 1, fontSize: 11, fontWeight: '600', color: flColor.bronze400 },
+  errMessage: { marginTop: 5, fontSize: 13, lineHeight: 19, color: flColor.cream100 },
+  errStale: { marginTop: 4, fontSize: 11, fontWeight: '600', color: flColor.bronze400 },
+  errBuilds: { marginTop: 3, fontSize: 10.5, color: flColor.gray400 },
+  errActions: { flexDirection: 'row', gap: 6, marginTop: 8 },
+  errChip: {
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: flRadius.sm,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+  },
+  errChipOn: { borderColor: flColor.bronze400, backgroundColor: flColor.charcoal800 },
+  errChipPressed: { opacity: 0.7 },
+  errChipText: { fontSize: 10, fontWeight: '700', letterSpacing: 0.6, color: flColor.gray400 },
+  errChipTextOn: { color: flColor.bronze400 },
+  errDetail: { marginTop: 10, gap: 10 },
+  errOccurrence: {
+    padding: 10,
+    borderRadius: flRadius.md,
+    borderWidth: 1,
+    borderColor: flColor.charcoal700,
+    backgroundColor: flColor.charcoal800,
+    gap: 6,
+  },
+  errTrail: { gap: 1 },
+  // Selectable and tight: this block exists to be READ top to bottom as a sequence, and copied out.
+  errCrumb: { fontSize: 11, lineHeight: 16, color: flColor.cream100 },
+  errTrailEmpty: { fontSize: 11, lineHeight: 16, color: flColor.gray400, fontStyle: 'italic' },
+  errStack: { fontSize: 10, lineHeight: 14, color: flColor.gray400 },
   feedbackRow: {
     paddingVertical: 11,
     borderTopWidth: StyleSheet.hairlineWidth,

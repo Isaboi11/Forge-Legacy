@@ -36,6 +36,9 @@ const FROM_MIGRATION: Record<string, string> = {
   admin_recent_signups: '0137',
   admin_feedback: '0167',
   admin_feedback_set_status: '0167',
+  admin_client_errors: '0176',
+  admin_client_error_detail: '0176',
+  admin_client_error_set_status: '0176',
 };
 
 function rpcError(e: unknown, fn: string): Error {
@@ -648,4 +651,174 @@ export async function fetchAdminFeedback(limit = 100, status: string | null = nu
     bugs: num(counts.bugs),
     newestAt: counts.newest_at == null ? null : String(counts.newest_at),
   };
+}
+
+// ── Client errors (0176) ─────────────────────────────────────────────────────
+
+/**
+ * One BUG, not one occurrence — the rows come back grouped by fingerprint.
+ *
+ * That grouping is the difference between a usable dashboard and a firehose. 400 raw rows is a list
+ * nobody reads twice; "eleven bugs, one of them hit 312 times by 9 people" is a morning's work, ordered.
+ */
+export interface ErrorGroup {
+  fingerprint: string;
+  occurrences: number;
+  /**
+   * ⭐ THE TRIAGE NUMBER. 200 crashes from one tester is a bad afternoon; 12 crashes across 12 people is
+   * a release blocker. Sorting by `occurrences` alone gets that backwards, which is how loud, harmless
+   * bugs outrank quiet, fatal ones.
+   */
+  athletes: number;
+  fatalCount: number;
+  firstSeen: string;
+  lastSeen: string;
+  name: string;
+  message: string;
+  screen: string | null;
+  source: string;
+  platform: string | null;
+  appVersion: string | null;
+  /**
+   * ⭐ Which OTA bundles this has been seen on. "Did my fix work" is answerable — and only answerable —
+   * from this: `app_version` is 1.0.0 for every update ever published on top of build 6.
+   */
+  updateIds: string[];
+  status: string;
+  note: string | null;
+  statusAt: string | null;
+  /** Occurrences since the operator last triaged it. Non-zero on a FIXED row means the fix did not take. */
+  sinceStatus: number;
+}
+
+export interface AdminErrors {
+  rows: ErrorGroup[];
+  occurrences: number;
+  bugs: number;
+  athletes: number;
+  fatal: number;
+  newestAt: string | null;
+  /**
+   * When ANY error was last reported, ignoring the date range.
+   *
+   * ⚠ THE HONEST-ZERO GUARD, AND IT IS SHARPER HERE THAN ON FEEDBACK. "No errors in the last 7 days" is
+   *   the outcome we want and also exactly what a BROKEN REPORTER looks like — a client half that never
+   *   deployed, or `report_client_error` left un-granted. A null here means nothing has EVER arrived,
+   *   which after this ships is a bug in the reporter rather than good news. `0153` cost this project a
+   *   day to precisely that ambiguity read the other way round.
+   */
+  everAny: string | null;
+}
+
+/** One occurrence, with the trail. `breadcrumbs` is the answer to "what path were they on". */
+export interface ErrorOccurrence {
+  id: number;
+  name: string;
+  message: string;
+  stack: string | null;
+  componentStack: string | null;
+  screen: string | null;
+  source: string;
+  fatal: boolean;
+  breadcrumbs: { t: number; type: string; label: string; detail?: string; n?: number }[];
+  platform: string | null;
+  appVersion: string | null;
+  updateId: string | null;
+  runtimeVersion: string | null;
+  channel: string | null;
+  deviceModel: string | null;
+  osVersion: string | null;
+  occurredAt: string;
+  receivedAt: string;
+  sessionId: string;
+  athleteHandle: string | null;
+  athleteName: string | null;
+}
+
+/**
+ * The error list, grouped by bug (0176).
+ *
+ * ⚠ `status` and `source` are returned as plain strings and NOT filtered against a client allow-list —
+ *   the `notifications-live.ts` `KINDS` lesson, which silently dropped two kinds for eleven migrations.
+ *   A fifth source added in SQL must appear here the same day.
+ */
+export async function fetchAdminErrors(days = 7, limit = 50, status: string | null = null): Promise<AdminErrors> {
+  const raw = obj(await callRpc('admin_client_errors', { p_days: days, p_limit: limit, p_status: status }));
+  const counts = obj(raw.counts);
+  return {
+    rows: arr<Record<string, unknown>>(raw.rows).map((r) => ({
+      fingerprint: String(r.fingerprint ?? ''),
+      occurrences: num(r.occurrences),
+      athletes: num(r.athletes),
+      fatalCount: num(r.fatal_count),
+      firstSeen: String(r.first_seen ?? ''),
+      lastSeen: String(r.last_seen ?? ''),
+      name: String(r.name ?? 'Error'),
+      message: String(r.message ?? ''),
+      screen: r.screen == null ? null : String(r.screen),
+      source: String(r.source ?? 'global'),
+      platform: r.platform == null ? null : String(r.platform),
+      appVersion: r.app_version == null ? null : String(r.app_version),
+      updateIds: arr<unknown>(r.update_ids).map((u) => String(u)),
+      status: String(r.status ?? 'NEW'),
+      note: r.note == null ? null : String(r.note),
+      statusAt: r.status_at == null ? null : String(r.status_at),
+      sinceStatus: num(r.since_status),
+    })),
+    occurrences: num(counts.occurrences),
+    bugs: num(counts.bugs),
+    athletes: num(counts.athletes),
+    fatal: num(counts.fatal),
+    newestAt: counts.newest_at == null ? null : String(counts.newest_at),
+    everAny: counts.ever_any == null ? null : String(counts.ever_any),
+  };
+}
+
+/**
+ * The most recent occurrences of ONE bug, each with its full stack and breadcrumb trail.
+ *
+ * ⚠ Names the athlete, for the `admin_feedback` reason (AA-D2 concerns a named athlete beside
+ *   PERFORMANCE data): you cannot act on "three accounts are trapped in onboarding" without knowing
+ *   which three. Handle and name only — never a training figure.
+ */
+export async function fetchAdminErrorDetail(fingerprint: string, limit = 20): Promise<ErrorOccurrence[]> {
+  const raw = obj(await callRpc('admin_client_error_detail', { p_fingerprint: fingerprint, p_limit: limit }));
+  return arr<Record<string, unknown>>(raw.rows).map((r) => ({
+    id: num(r.id),
+    name: String(r.name ?? 'Error'),
+    message: String(r.message ?? ''),
+    stack: r.stack == null ? null : String(r.stack),
+    componentStack: r.component_stack == null ? null : String(r.component_stack),
+    screen: r.screen == null ? null : String(r.screen),
+    source: String(r.source ?? 'global'),
+    fatal: r.fatal === true,
+    breadcrumbs: arr<Record<string, unknown>>(r.breadcrumbs).map((c) => ({
+      t: num(c.t),
+      type: String(c.type ?? ''),
+      label: String(c.label ?? ''),
+      detail: c.detail == null ? undefined : String(c.detail),
+      n: c.n == null ? undefined : num(c.n),
+    })),
+    platform: r.platform == null ? null : String(r.platform),
+    appVersion: r.app_version == null ? null : String(r.app_version),
+    updateId: r.update_id == null ? null : String(r.update_id),
+    runtimeVersion: r.runtime_version == null ? null : String(r.runtime_version),
+    channel: r.channel == null ? null : String(r.channel),
+    deviceModel: r.device_model == null ? null : String(r.device_model),
+    osVersion: r.os_version == null ? null : String(r.os_version),
+    occurredAt: String(r.occurred_at ?? ''),
+    receivedAt: String(r.received_at ?? ''),
+    sessionId: String(r.session_id ?? ''),
+    athleteHandle: r.athlete_handle == null ? null : String(r.athlete_handle),
+    athleteName: r.athlete_name == null ? null : String(r.athlete_name),
+  }));
+}
+
+/** Move one BUG through NEW → ACKED → FIXED (or IGNORED). Keyed by fingerprint, so it triages the bug. */
+export async function setErrorStatus(fingerprint: string, status: string, note?: string): Promise<void> {
+  await callRpc('admin_client_error_set_status', {
+    p_fingerprint: fingerprint,
+    p_status: status,
+    p_note: note ?? null,
+  });
 }

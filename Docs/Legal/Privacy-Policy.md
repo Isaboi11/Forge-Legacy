@@ -107,6 +107,46 @@ the next time you open the app.
 **You can see it.** These records are readable by your own account and by nobody else’s. Deleting your
 account deletes them along with everything else.
 
+### Diagnostics — when something goes wrong
+
+When the app hits an error, it sends us a report so we can fix it without having to ask you what
+happened. This stays in our own database and is never sent anywhere else.
+
+What a diagnostic report contains, in full:
+
+- the error message and the technical trace of where in our code it happened
+- which screen you were on
+- a short trail of the last few steps that led up to it — **the screens you moved between and the names of
+  the actions you took**, such as “opened a screen” or “saved a workout”
+- your account id, if you were signed in — an error can happen before you sign in, and then there is none
+- the same random session id as above, the date and time, your app version, and which phone model and
+  operating-system version you are on
+
+What it never contains:
+
+- **anything you wrote** — the trail records the *name* of an action, never what you typed into it: no
+  workout or exercise names, notes, reflections, goals, messages, comments or search terms
+- **anything you lifted** — no weights, reps, distances or times
+- no photos or video, no location, no advertising identifier
+- nothing that identifies your phone as *yours* — we record the model, such as “iPhone 15”, never the name
+  you gave it
+
+One honest exception, because it matters more than it sounds: **an error message is written by our code,
+not by us, and once in a while it can quote something you entered** — for example, if a value you typed
+was rejected. We cannot predict those in advance. They are capped in length, they are deleted after 90
+days like everything else here, and they are read only by us, only to fix the fault.
+
+**How long we keep it.** Diagnostic reports are deleted after 90 days.
+
+**What the “Help improve Forge” switch does here.** Turning it off stops the *trail* — we no longer record
+the steps you took. We still record that the app broke, on which screen, and on which version, because
+that is a fault in our software rather than a record of what you did. That is the whole difference:
+without the trail we know something is broken; with it we know how to reproduce it.
+
+**You can see it.** These reports are readable by your own account and by nobody else’s. Reports from
+before you signed in belong to no account and are readable only by us. Deleting your account deletes
+yours along with everything else.
+
 ---
 
 ## 3. What we do not collect
@@ -118,6 +158,8 @@ Stated plainly, because these are the things people reasonably assume an app is 
   *We do keep our own record of which screens and features get used — described under “Product usage”
   above. It stays in our database, is never sold or shared, and is never joined to anything outside your
   account.*
+- **No third-party crash or error reporting.** No Sentry, Bugsnag, Crashlytics or similar. Diagnostic
+  reports, described under “Diagnostics” above, go to our own database and nowhere else.
 - **No advertising SDKs**, no ad identifiers, no cross-app or cross-site tracking.
 - **No sale of personal information**, under any definition, to anyone.
 - **No contacts access.** We never read your address book.

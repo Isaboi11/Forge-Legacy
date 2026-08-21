@@ -38,7 +38,7 @@ const env = Object.fromEntries(
 const TZ = 'UTC';
 
 /**
- * Every admin READ model, with the arguments the app sends. Keep in lockstep with 0130, 0133, 0137, 0167.
+ * Every admin READ model, with the arguments the app sends. Keep in lockstep with 0130, 0133, 0137, 0167, 0176.
  *
  * ⚠ `admin_recent_signups` (0137) and both 0167 functions were missing from this list until 0167 —
  *   0137 shipped an admin function and never added it here, which is precisely the omission this file
@@ -56,6 +56,8 @@ const FUNCTIONS = [
   ['admin_events', { p_days: 30, p_limit: 10, p_tz: TZ }], // 0133
   ['admin_recent_signups', { p_limit: 10 }], // 0137
   ['admin_feedback', { p_limit: 10, p_status: null }], // 0167
+  ['admin_client_errors', { p_days: 7, p_limit: 10, p_status: null }], // 0176
+  ['admin_client_error_detail', { p_fingerprint: 'deadbeef', p_limit: 5 }], // 0176
 ];
 
 /**
@@ -66,6 +68,7 @@ const FUNCTIONS = [
  */
 const GUARDED_WRITES = [
   ['admin_feedback_set_status', { p_id: -1, p_status: 'READ' }], // 0167
+  ['admin_client_error_set_status', { p_fingerprint: 'deadbeef', p_status: 'ACKED', p_note: null }], // 0176
 ];
 
 /** Everything a non-admin must be refused, read or write. */

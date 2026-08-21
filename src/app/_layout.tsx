@@ -17,6 +17,10 @@ import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-c
  * fix taken while the screen was on.
  */
 import '@/domain/run/background-task';
+
+import { startDiagnostics } from '@/lib/diagnostics';
+import { installErrorSink } from '@/data/errors-live';
+
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { ForgeSplash } from '@/components/forge-splash';
 import { AnalyticsTracker } from '@/components/analytics-tracker';
@@ -36,6 +40,32 @@ import { CeremonyProvider } from '@/hooks/useCeremony';
 import { TourProvider } from '@/hooks/useTour';
 import { TourAnchorProvider } from '@/hooks/useTourAnchors';
 import { CoachDoorProvider } from '@/hooks/useCoachDoor';
+
+/*
+ * ⚠ ARMED AT MODULE-EVALUATION TIME, AND THAT IS THE WHOLE POINT (0176).
+ *
+ * These two lines run BEFORE React renders anything — not in an effect, for the same class of reason
+ * the `background-task` import above is not in an effect.
+ *
+ * The worst outage this project has shipped was a LAUNCH crash: `CoachBubble` called
+ * `useSafeAreaInsets()` with no provider above it and the app failed to open on device, with every
+ * automated gate green (see `components/overlay-boundary.tsx`). A reporter started from a `useEffect`
+ * inside a tree that never mounts reports nothing at all — it would have been silent for exactly the
+ * failure it most needs to catch.
+ *
+ * ⚠ THEY SIT BELOW EVERY IMPORT ON PURPOSE, AND IT COSTS NOTHING. An earlier version placed them
+ * mid-file, above the remaining imports, believing that armed them sooner. It does not: Babel hoists
+ * every `require` above an interleaved statement, so the imports below were already evaluated before
+ * these calls ran either way — verified against `@babel/plugin-transform-modules-commonjs`. The only
+ * thing that matters is that they are module-level, not in an effect. Written this way the file also
+ * stops raising 19 `import/first` lint warnings.
+ *
+ * `startDiagnostics()` installs the global handlers; `installErrorSink()` gives them somewhere to send.
+ * Reports raised between the two are queued and flushed, so the ordering here is safe either way.
+ * Both are idempotent, synchronous, and cannot throw.
+ */
+startDiagnostics();
+installErrorSink();
 
 /**
  * Root layout — a Stack over the whole app. The `(tabs)` group holds the 5-tab shell; every

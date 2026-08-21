@@ -688,8 +688,8 @@ function PodiumAvatar({
         <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
           <Defs>
             <RadialGradient id={`podium-tint-${i}`} cx={tint.cx} cy={tint.cy} r="72%">
-              <Stop offset="0" stopColor={tint.from} />
-              <Stop offset="1" stopColor={tint.to} />
+              <Stop offset="0" stopColor={tint.from} stopOpacity={1} />
+              <Stop offset="1" stopColor={tint.to} stopOpacity={1} />
             </RadialGradient>
           </Defs>
           <Rect width="100%" height="100%" fill={`url(#podium-tint-${i})`} />

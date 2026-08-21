@@ -5,6 +5,8 @@ import { AppState, Platform } from 'react-native';
 import { sanitizeKind, sanitizeProps, sanitizeScreen, type Props } from '@/domain/analytics/props-core';
 import { inviteEvent, type InviteProps, type InviteStage } from '@/domain/analytics/invite-funnel';
 import { supabase } from '@/lib/supabase';
+import { currentAppSession, endAppSession, noteBackgrounded, sessionStartedMs } from '@/lib/app-session';
+import { breadcrumb, setTrailEnabled } from '@/lib/diagnostics';
 
 /**
  * First-party product-usage events (migration 0131, `P-6-Amendment-001-Product-Analytics`).
@@ -39,7 +41,6 @@ import { supabase } from '@/lib/supabase';
 const QUEUE_MAX = 200;
 const FLUSH_AT = 20;
 const FLUSH_EVERY_MS = 30_000;
-const SESSION_GAP_MS = 30 * 60_000;
 const MAX_ATTEMPTS = 2;
 
 const OPT_OUT_KEY = 'fl.analytics.optOut';
@@ -56,9 +57,6 @@ interface QueuedEvent {
 let queue: QueuedEvent[] = [];
 let disabled = false;
 let optedOut = false;
-let sessionId: string | null = null;
-let sessionStartedAt = 0;
-let lastBackgroundedAt = 0;
 let timer: ReturnType<typeof setInterval> | null = null;
 let flushing = false;
 let started = false;
@@ -67,32 +65,14 @@ const APP_VERSION = Constants.expoConfig?.version ?? null;
 const PLATFORM: 'ios' | 'android' | 'web' | null =
   Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : Platform.OS === 'web' ? 'web' : null;
 
-/** `crypto.randomUUID` is not on every runtime this ships to; this only needs to be unique, not secret. */
-function uuid(): string {
-  try {
-    const c = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
-    if (c?.randomUUID) return c.randomUUID();
-  } catch {
-    /* fall through */
-  }
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (ch) => {
-    const r = (Math.random() * 16) | 0;
-    const v = ch === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
-
-function currentSession(): string {
-  const now = Date.now();
-  // A new session after 30 minutes backgrounded — the same rule most analytics tools use, chosen so
-  // "session length" means a sitting rather than a calendar day.
-  if (!sessionId || (lastBackgroundedAt && now - lastBackgroundedAt > SESSION_GAP_MS)) {
-    sessionId = uuid();
-    sessionStartedAt = now;
-    lastBackgroundedAt = 0;
-  }
-  return sessionId;
-}
+/**
+ * The sitting this event belongs to.
+ *
+ * ⚠ DELEGATES TO `lib/app-session` AND MUST KEEP DOING SO. `client_errors.session_id` (0176) is the same
+ *   value, which is what lets a crash report join back to the usage trail that led to it. A local id
+ *   here would compile, pass every test, and silently break that join forever.
+ */
+const currentSession = currentAppSession;
 
 // ── consent ──────────────────────────────────────────────────────────────────
 
@@ -108,6 +88,17 @@ export function isAnalyticsEnabled(): boolean {
  */
 export function setAnalyticsEnabled(on: boolean): void {
   optedOut = !on;
+  /*
+   * ⚠ THE SAME SWITCH GOVERNS THE BREADCRUMB TRAIL (0176), AND IT MUST.
+   *
+   * A route trail IS product usage. Continuing to collect one after the athlete said no — merely
+   * writing it to a different table — is exactly the back door `0176`'s header refuses.
+   *
+   * ⭐ IT DOES NOT TURN OFF ERROR REPORTING. The two are deliberately split: turning this off drops the
+   *   trail and keeps the fault, so we still learn the app broke, where, and on which build. That is a
+   *   defect in our software, not a record of their behaviour. See `lib/diagnostics`' header.
+   */
+  setTrailEnabled(on);
   if (optedOut) queue = [];
   void AsyncStorage.setItem(OPT_OUT_KEY, optedOut ? '1' : '0').catch(() => {});
   if (optedOut) void AsyncStorage.removeItem(QUEUE_KEY).catch(() => {});
@@ -120,6 +111,19 @@ export function track(kind: string, props?: Record<string, unknown>): void {
     if (disabled || optedOut) return;
     const k = sanitizeKind(kind);
     if (!k) return;
+
+    /*
+     * ⭐ EVERY EXISTING `track()` CALL IS NOW ALSO A BREADCRUMB, AT NO CALL-SITE COST (0176).
+     *
+     * This one line is why the trail is worth reading. The app already reports its meaningful actions —
+     * `sign_in_submitted`, `onboarding_continue`, `workout_saved` — and each is precisely the kind of
+     * "what did they tap" a crash report needs and normally has to be instrumented for separately.
+     * Routing them through here means the trail stays current as the product grows, instead of decaying
+     * into whatever somebody remembered to annotate.
+     *
+     * `breadcrumb()` is synchronous, cannot throw, and re-sanitises its own input.
+     */
+    breadcrumb('action', k);
 
     queue.push({
       kind: k,
@@ -279,10 +283,14 @@ export function startAnalytics(): void {
   AppState.addEventListener('change', (state) => {
     try {
       if (state === 'background' || state === 'inactive') {
-        lastBackgroundedAt = Date.now();
+        noteBackgrounded();
+        // "It broke right after I came back to it" is a real and otherwise invisible pattern — a
+        // remount against state restored from a session that has since expired.
+        breadcrumb('state', 'backgrounded');
         // The session's own length, recorded once, so "how long do people stay" needs no reconstruction.
-        if (sessionId && sessionStartedAt) {
-          track('session_end', { duration_ms: Math.max(0, Date.now() - sessionStartedAt) });
+        const startedAt = sessionStartedMs();
+        if (startedAt) {
+          track('session_end', { duration_ms: Math.max(0, Date.now() - startedAt) });
         }
         void flushAnalytics();
         void persistQueue();
@@ -301,8 +309,7 @@ export async function stopAnalytics(): Promise<void> {
     /* ignore */
   } finally {
     queue = [];
-    sessionId = null;
-    sessionStartedAt = 0;
+    endAppSession();
     if (timer) {
       clearInterval(timer);
       timer = null;

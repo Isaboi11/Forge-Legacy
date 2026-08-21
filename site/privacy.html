@@ -123,7 +123,22 @@ of these are visible only to the people in the squad or friendship concerned.</p
 we can tell what is worth building and what is being ignored. These are stored against your account
 identifier so we can count people rather than taps. <strong>They are never sold, never shared with
 advertisers, and are not used to build a profile about you.</strong> We do not use third-party
-advertising or tracking SDKs, and the app does not track you across other apps or websites.</p>
+advertising or tracking SDKs, and the app does not track you across other apps or websites.
+<strong>We also use no third-party crash or error reporting</strong> — no Sentry, Bugsnag or Crashlytics;
+the diagnostic reports described below go to our own database and nowhere else.</p>
+
+<h3>Diagnostics — when something goes wrong</h3>
+<p>When the app hits an error it sends us a report, so we can fix it without having to ask you what
+happened. It contains the error message, the technical trace of where in our code it occurred, the screen
+you were on, your app version and phone model, and <strong>a short trail of the last few steps that led up
+to it</strong> — the screens you moved between and the <em>names</em> of the actions you took, never what
+you typed into them. It never contains your training figures, your photos, your location, or text you
+wrote. One honest exception: an error message is written by our code, and once in a while it can quote a
+value you entered — for example if that value was rejected. Reports are capped in length, kept for 90
+days, stored in our own database, and read only by us.</p>
+<p><strong>The “Help improve Forge” switch turns off the trail, not the report.</strong> With it off we
+still learn that the app broke, on which screen and on which version — that is a fault in our software,
+not a record of what you did — but we no longer record the steps that got you there.</p>
 
 <h3>Notifications</h3>
 <p>If you enable push notifications, we store a device push token so messages can reach your phone.
