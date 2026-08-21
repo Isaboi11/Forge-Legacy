@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
 import { Image } from 'expo-image';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { PhotoTransform } from '@/components/forge/BeforeAfterSlider';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
@@ -53,10 +54,21 @@ export function AlignEditor({
   };
   const setZoom = (s: number) => setSelT((t) => ({ ...t, scale: s }));
 
+  /*
+   * ⚠ SAME FIX AS `AvatarCropEditor`, AND THIS FILE IS WHERE THAT BUG CAME FROM.
+   *
+   * A `Modal` covers the whole DISPLAY, so a header pinned to `top: 0` sits under the status bar and the
+   * Dynamic Island — which is taller than the 56pt header. `Done` was unreachable behind system UI.
+   * `AvatarCropEditor` says in its own header that it was modelled on this file, so it inherited this.
+   *
+   * Fixed in both on 2026-08-21 after the crop editor's `Use` was reported as unclickable.
+   */
+  const insets = useSafeAreaInsets();
+
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.root}>
-        <View style={styles.header}>
+      <View style={[styles.root, { paddingTop: 72 + insets.top }]}>
+        <View style={[styles.header, { height: 56 + insets.top, paddingTop: insets.top }]}>
           <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cancel" style={styles.headerBtn} hitSlop={6}>
             <Text style={styles.cancel}>Cancel</Text>
           </Pressable>
@@ -154,6 +166,7 @@ function ZoomGlyph({ small }: { small?: boolean }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#060708', paddingHorizontal: 22, paddingTop: 72, justifyContent: 'flex-start' },
+  // `height`/`paddingTop` overridden inline with the safe-area top inset; these are the zero-inset baseline.
   header: { position: 'absolute', top: 0, left: 0, right: 0, height: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
   headerBtn: { paddingVertical: 8 },
   cancel: { fontSize: 14, color: flColor.gray400 },

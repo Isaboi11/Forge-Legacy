@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
 import { Image } from 'expo-image';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 
 import { flColor, flFont, flRadius } from '@/constants/foundation';
@@ -127,12 +128,29 @@ export function AvatarCropEditor({ uri, onDone, onClose }: AvatarCropEditorProps
     }
   };
 
+  /*
+   * ⚠ THE HEADER IS PINNED TO `top: 0` AND THIS MODAL IS NOT INSIDE A SAFE AREA.
+   *
+   * A React Native `Modal` covers the whole screen — status bar, notch and Dynamic Island included — so
+   * `top: 0` is the top of the DISPLAY, not the top of the safe region. The header is 56pt tall and a
+   * Dynamic Island occupies roughly the first 60, so `Use` was rendering completely underneath it: the
+   * control existed, was hit-testable in theory, and could not be reached by a thumb.
+   *
+   * Reported as "it won't let me click Use because it's so far up at the top", which is exactly what a
+   * control hidden behind system UI feels like — nothing is broken, so nothing is logged.
+   *
+   * The hook is safe here: `SafeAreaProvider` sits at the app root and React context passes through a
+   * `Modal` (same React tree), which is the idiom `ForgeActionSheet` already uses. It is NOT safe in a
+   * tree that never mounts — see `overlay-boundary.tsx` for the launch crash that taught us that.
+   */
+  const insets = useSafeAreaInsets();
+
   const onFrameLayout = (e: LayoutChangeEvent) => setFrame(e.nativeEvent.layout.width);
 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.root}>
-        <View style={styles.header}>
+      <View style={[styles.root, { paddingTop: 84 + insets.top }]}>
+        <View style={[styles.header, { height: 56 + insets.top, paddingTop: insets.top }]}>
           <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cancel" style={styles.headerBtn} hitSlop={6}>
             <Text style={styles.cancel}>Cancel</Text>
           </Pressable>
@@ -225,6 +243,8 @@ const SHADE = 'rgba(6,7,8,0.72)';
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#060708', paddingHorizontal: 22, paddingTop: 84 },
+  // `height` and `paddingTop` are overridden inline with the safe-area top inset — see the comment above
+  // `insets`. These values are the zero-inset baseline (web, and phones with no notch).
   header: { position: 'absolute', top: 0, left: 0, right: 0, height: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
   headerBtn: { paddingVertical: 8, minWidth: 44 },
   cancel: { fontSize: 14, color: flColor.gray400 },
