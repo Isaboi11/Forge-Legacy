@@ -365,8 +365,9 @@ some form of all three must exist before submission.
       None** (conditional on `limitations.ts` never drifting into injury advice). ⚠ **From September 2026
       the Social Media questions are required to submit at all** — we submit inside that window.
 - [x] **Guideline 1.2 controls — ✅ BUILT, APPLIED AND DEPLOYED 2026-08-19 (`0171`).** §7 carries the
-      resolution banner. ⏳ **One tail: `0173` seeds the filter word list and is authored but NOT applied**
-      — paste `supabase/apply/pending-0173.sql`. No deploy needed.
+      resolution banner. ✅ **The tail is closed: `0173` (the filter word list) was APPLIED
+      2026-08-20**, together with `0172`, and §3 of that bundle returned all six predicted numbers. *(This
+      line read "authored but NOT applied" until 2026-08-21 — stale in the "still to do" direction.)*
 - [x] ✅ **Screenshot 05 — RECAPTIONED 2026-08-20, and the file is replaced.** **PO: *"I don't have enough
       to screenshot the other ranks."*** The account has no rank history and will not have one before
       submission, so a reshoot could never fix it — the "reshoot before submission" instruction above is

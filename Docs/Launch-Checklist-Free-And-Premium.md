@@ -821,9 +821,14 @@ genuinely unstarted**, and all five gate submission rather than review.
       button, which no amount of scrolling moves out of frame.
       ⚠ **THE SOCIAL FRAMES ARE THE REVIEWER DEMO ACCOUNT ON PURPOSE** — real testers' names and handles
       in a store screenshot are public forever and would need consent; `reviewer-seed.mjs` content is ours.
-      ⛔ **STILL OWED: RESHOOT 05 (rank).** It reads *"I've started."*, `LIFETIME 5` and *"0 of the path
-      walked"* — the one pillar whose frame currently argues against it. The account has no rank history
-      yet and will by launch.
+      ~~⛔ **STILL OWED: RESHOOT 05 (rank).**~~ ✅ **CLOSED 2026-08-20 — BY RECAPTIONING, NOT RESHOOTING,
+      and this row was stale until 2026-08-21.** A reshoot was never available: **PO — *"I don't have enough
+      to screenshot the other ranks"*** — so the account will NOT have rank history by launch, which is the
+      assumption this row was resting on. The caption band was redrawn instead: *"Earned once. Yours for
+      good."* → **"Everyone starts at zero."**, so the empty rank stops contradicting the caption and becomes
+      the thing it is about. **The file is replaced; all eight frames are final** — verified 2026-08-21, each
+      1320 × 2868, with `05-SUPERSEDED-earned-once.png` kept one folder ABOVE `final/` so the upload set stays
+      exactly eight.
       ⚠ **SCREENSHOTS: ONE iPhone size — 6.5" OR 6.9", not both.** This row said "6.9" and 6.5" at minimum",
       which is double the work; Apple takes one set and scales. Verified against Apple's screenshot
       specifications 2026-08-18. **Real captures of the running app** — the landing page's phone mockups are
