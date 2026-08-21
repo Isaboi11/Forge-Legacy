@@ -20,6 +20,8 @@ import {
   type ParsedWeek,
 } from '@/domain/program/import-parse';
 import { pickTextFile } from '@/lib/pick-text-file';
+import { pickImageFromLibrary } from '@/lib/useMediaPicker';
+import { readProgramPhoto } from '@/data/program-photo-live';
 import { resolveExerciseName } from '@/domain/exercise-picker/data';
 import { useToast } from '@/hooks/useCeremony';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
@@ -29,7 +31,16 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { claimInitiativeHonor } from '@/data/honors-live';
-import { createProgram, fetchProgram, updateProgram, type ProgramDay, type ProgramExercise } from '@/data/programs-live';
+import {
+  createProgram,
+  fetchProgram,
+  fetchProgramSessions,
+  updateProgram,
+  type ProgramDay,
+  type ProgramExercise,
+  type SavedProgram,
+} from '@/data/programs-live';
+import { totalSessions } from '@/domain/program/progress-core';
 import { markFreeImportUsed } from '@/data/entitlement-live';
 import { clearBuilderInbox, readBuilderInbox, type BuilderSection } from '@/lib/builder-inbox';
 import {
@@ -107,6 +118,10 @@ import {
   weekComplete,
   weeksLoseContent,
   withActiveDays,
+  forLiveEdit,
+  isLockedCell,
+  liveEditViolation,
+  lockedCells,
   type ProgramDraft,
 } from '@/lib/program-draft';
 
@@ -223,6 +238,13 @@ function useEntryRise(duration: number) {
  * The boundary does not hide the failure; it prints it, on screen, selectable. Next time it happens there
  * is something to read.
  */
+/**
+ * What a frozen session says when it is touched. One sentence, and it names the way forward — a lock
+ * with no exit is the failure this whole change was made to remove.
+ */
+const FROZEN_NOTE =
+  'You have already trained this session, so it stays as you did it. Sessions ahead of you can be changed.';
+
 export default function ProgramBuilder() {
   const router = useRouter();
   return (
@@ -272,6 +294,8 @@ function ProgramBuilderScreen() {
   const [importOpen, setImportOpen] = useState(false);
   const [pasteText, setPasteText] = useState('');
   const [importError, setImportError] = useState<string | null>(null);
+  /** A photo read is a network round-trip to a vision model — seconds, not milliseconds. It needs to say so. */
+  const [photoBusy, setPhotoBusy] = useState(false);
   /** Non-null once a paste has parsed — the sheet flips to its preview state. */
   const [preview, setPreview] = useState<ParsedWeek[] | null>(null);
 
@@ -298,6 +322,9 @@ function ProgramBuilderScreen() {
     setPasteText('');
     setImportError(null);
     setPreview(null);
+    // A read that was in flight when the sheet was closed would otherwise reopen it stuck on
+    // "Reading your screenshot…" with no request behind it.
+    setPhotoBusy(false);
     setImportOpen(true);
   };
 
@@ -320,6 +347,59 @@ function ProgramBuilderScreen() {
     }
     setPasteText(r.text);
     runParse(r.text);
+  };
+
+  /**
+   * ══ READ A PHOTO OF A PROGRAM ══
+   *
+   * `Architecture-Amendment-001-Import.md` §5 named this and deferred it — *"Image Import: screenshots
+   * of training tables … requires OCR or vision model parsing. Post-MVP."*
+   *
+   * ⚠ **AND IT LANDS AS A THIRD WAY TO FILL THE PASTE BOX, NOT AS A FOURTH IMPORT PATH.** That is the
+   * whole design. The transcript goes into `pasteText` and through `runParse` — the same parser, the
+   * same preview, the same − / + corrections, the same "grey text is the sentence we read it from".
+   * An athlete who photographs a table and one who pastes it are, from this line onward, in identical
+   * code. That is what keeps the feature inside §4.3's locked *"No AI interpretation. No inference."*
+   *
+   * Setting `pasteText` is not cosmetic either: if the transcription is imperfect the athlete is
+   * looking at editable text they can fix and re-preview, rather than a wrong result and a dead end.
+   */
+  const onPickPhoto = async () => {
+    const uri = await pickImageFromLibrary();
+    if (!uri) return; // Cancelled. Not an error, and it must not leave one on screen.
+
+    setImportError(null);
+    setPhotoBusy(true);
+    try {
+      const r = await readProgramPhoto(uri);
+      // ⚠ THREE FAILURES THAT FEEL IDENTICAL AND ARE NOT. Brief §6: an outage must be visibly different
+      // from a verdict. "We couldn't read that" when the request never left the building tells somebody
+      // their program is unreadable, and they will go and retake a photograph that was always fine.
+      switch (r.kind) {
+        case 'ok':
+          setPasteText(r.tsv);
+          runParse(r.tsv);
+          break;
+        case 'not_a_program':
+          setImportError('That doesn’t look like a training program. Try a photo of the table itself.');
+          break;
+        case 'unreadable':
+          setImportError('Couldn’t read a table out of that photo. A straighter, closer shot usually does it.');
+          break;
+        case 'too_large':
+          setImportError('That image is too big to read. Try a screenshot rather than a full-size photo.');
+          break;
+        case 'out_of_credits':
+          setImportError('You’re out of Coach AI credits for this month.');
+          break;
+        default:
+          setImportError('Couldn’t reach us to read that photo. Check your connection and try again.');
+      }
+    } finally {
+      // In a `finally` because every branch above needs it and the one that forgot would strand the
+      // sheet in its loading state with no way back.
+      setPhotoBusy(false);
+    }
   };
 
   /** Adjust a parsed set/rep count before creating. The design's − / + on every preview row. */
@@ -486,6 +566,21 @@ function ProgramBuilderScreen() {
             // In week mode the source is a saved WEEK, not a program — different table, same structure.
             const source = isWeek ? await fetchWeekTemplate(entryId) : await fetchProgram(entryId);
             d = source ? hydrateDraft(source, wantMode) : d;
+            /* ── EDITING A PROGRAM THAT IS ALREADY RUNNING (W-5 Amendment-001) ────────────────────
+               The locked spec forbade this outright. What replaced it is not "no rules" but two:
+               sessions already trained are frozen, and the session COUNT cannot move — because
+               graduation is recomputed live from this structure server-side, and shrinking the
+               program would award five permanent honors that no path can revoke.
+
+               The guard is built HERE, from the structure as it stands before a single edit, so the
+               finish line the athlete signed up for is the one being defended. */
+            if (d && source && !isWeek && wantMode === 'edit' && (source as SavedProgram).state === 'active') {
+              const marks = await fetchProgramSessions(entryId);
+              d = forLiveEdit(d, {
+                trained: marks.map((m) => ({ weekIndex: m.weekIndex, dayIndex: m.dayIndex })),
+                sessions: totalSessions((source as SavedProgram).structure),
+              });
+            }
           }
         } else if (!wantMode && !inbox && d && d.mode !== 'new') {
           d = null; // a fresh "build your own" entry must not inherit a stale edit session
@@ -499,7 +594,15 @@ function ProgramBuilderScreen() {
         if (isWeek) d = { ...d, weeks: 1, vary: false, weekPlans: null, openWeek: null };
         if (inbox) {
           await clearBuilderInbox();
-          d = absorbBuilderInbox(d, inbox);
+          /* ⚠ THE INBOX BYPASSES `patchActiveDay`. Absorption writes straight into the draft, so the
+             funnel's lock check never sees it — a pick made against a frozen day would land here and
+             rewrite a session the athlete already trained. Dropped, and said out loud rather than
+             silently discarded. */
+          if (d.live && isLockedCell(lockedCells(d), inbox.week, inbox.day)) {
+            if (active) setError(FROZEN_NOTE);
+          } else {
+            d = absorbBuilderInbox(d, inbox);
+          }
         }
         await saveProgramDraft(d, draftKind);
         if (active) setDraft(d);
@@ -528,8 +631,18 @@ function ProgramBuilderScreen() {
     void saveProgramDraft(next, draftKind);
   };
 
-  const patchActiveDay = (idx: number, fn: (day: ProgramDay) => ProgramDay) =>
+  /** Sessions already trained, in builder space. Empty unless this is a live edit. */
+  const locked = draft ? lockedCells(draft) : new Set<string>();
+  /** The last word on whether a day may change — every content edit funnels through here. */
+  const dayIsFrozen = (idx: number) => !!draft?.live && isLockedCell(locked, draft.openWeek, idx);
+
+  const patchActiveDay = (idx: number, fn: (day: ProgramDay) => ProgramDay) => {
+    if (dayIsFrozen(idx)) {
+      setError(FROZEN_NOTE);
+      return;
+    }
     mutate((d) => withActiveDays(d, activeDays(d).map((day, i) => (i === idx ? fn(day) : day))));
+  };
 
   const patchSection = (idx: number, section: BuilderSection, fn: (list: ProgramExercise[]) => ProgramExercise[]) =>
     patchActiveDay(idx, (day) => ({ ...day, [section]: fn(day[section]) }));
@@ -672,6 +785,13 @@ function ProgramBuilderScreen() {
        thing it most obviously protects. The real pre-action check is at the tap that opens the
        builder; `programs_cap_guard()` in 0145 is the server's own last word. */
     if (draft.mode !== 'edit' && !guard(isWeek ? 'short_programs' : 'programs')) return;
+    /* The count invariant, checked at the last possible moment rather than at each keystroke — an athlete
+       mid-edit may legitimately pass through an unbalanced state on the way to a balanced one. */
+    const violation = liveEditViolation(draft);
+    if (violation) {
+      setError(violation);
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -856,7 +976,7 @@ function ProgramBuilderScreen() {
           draft={draft}
           days={days}
           onBack={() => mutate((d) => ({ ...d, openWeek: null, openDay: null }))}
-          onOpenDay={(i) => mutate((d) => ({ ...d, openDay: i }))}
+          onOpenDay={(i) => (dayIsFrozen(i) ? setError(FROZEN_NOTE) : mutate((d) => ({ ...d, openDay: i })))}
           onOpenDayMenu={setDayMenu}
           onOpenJump={() => setJumpOpen(true)}
           onOpenWeekSheet={() => setWeekSheet({ index: draft.openWeek ?? 0, entering: false })}
@@ -873,7 +993,7 @@ function ProgramBuilderScreen() {
           onName={(v) => mutate((d) => ({ ...d, name: v }))}
           onWeeks={requestWeeks}
           onDays={requestDays}
-          onOpenDay={(i) => mutate((d) => ({ ...d, openDay: i }))}
+          onOpenDay={(i) => (dayIsFrozen(i) ? setError(FROZEN_NOTE) : mutate((d) => ({ ...d, openDay: i })))}
           onOpenDayMenu={setDayMenu}
           onOpenWeek={openWeek}
           onOpenWeekMenu={(i) => setWeekSheet({ index: i, entering: false })}
@@ -1304,6 +1424,10 @@ function ProgramBuilderScreen() {
               Keep it one row per <Text style={styles.impHintStrong}>day</Text> instead? That works too —
               write the session out (&ldquo;75min bike Z2 + 30min upper strength&rdquo;) and we&rsquo;ll read the
               rides, runs and swims out of it. Check what we read before you create it.
+              {'\n\n'}
+              Only have a <Text style={styles.impHintStrong}>screenshot</Text>? Read it in below — we type
+              the table out for you and it lands in the box above, where you can fix anything we misread
+              before previewing it.
             </Text>
             <TextInput
               value={pasteText}
@@ -1329,6 +1453,30 @@ function ProgramBuilderScreen() {
                 <Path d="M14 3v6h6" />
               </Svg>
               <Text style={styles.impFileText}>Or upload a .csv file</Text>
+            </Pressable>
+            {/* ⚠ LIBRARY ONLY, AND THAT IS A DECISION — see `pickImageFromLibrary`. The label says
+                "screenshot" rather than "photo" because that is both the real use case and the honest
+                description of what this opens: your camera roll, not your camera. */}
+            <Pressable
+              onPress={() => void onPickPhoto()}
+              disabled={photoBusy}
+              accessibilityRole="button"
+              accessibilityLabel="Read a screenshot of a program"
+              accessibilityState={{ disabled: photoBusy, busy: photoBusy }}
+              style={({ pressed }) => [
+                styles.impFileBtn,
+                pressed && !photoBusy ? styles.impPressed : null,
+                photoBusy ? styles.impBusy : null,
+              ]}
+            >
+              <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                <Path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <Circle cx={8.5} cy={8.5} r={1.5} />
+                <Path d="M21 15l-5-5L5 21" />
+              </Svg>
+              <Text style={styles.impFileText}>
+                {photoBusy ? 'Reading your screenshot…' : 'Or read a screenshot'}
+              </Text>
             </Pressable>
           </View>
         ) : (
@@ -2624,6 +2772,8 @@ const styles = StyleSheet.create({
   impFileBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 10 },
   impFileText: { fontFamily: flFont.sans, fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
   impPressed: { opacity: 0.6 },
+  /** Distinct from `impPressed` — a press is momentary, this holds for the length of the round-trip. */
+  impBusy: { opacity: 0.45 },
 
   impSummary: { padding: 13, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
   impSummaryLabel: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 5 },

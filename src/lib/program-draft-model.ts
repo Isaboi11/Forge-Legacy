@@ -4,6 +4,7 @@ import type { BuilderInbox, BuilderSection } from '@/lib/builder-inbox';
 // directly, where the alias does not resolve — the type-only imports above survive only because they are
 // stripped before anything tries. The same rule `domain/program/prescription` states about its own.
 import { supersetLabelAt } from '../domain/program/prescription.ts';
+import { totalSessions } from '../domain/program/progress-core.ts';
 
 /**
  * The Program Builder's in-progress draft — the device-local editing state (the RN analogue of the
@@ -27,6 +28,33 @@ export interface ProgramDraft {
   mode: 'new' | 'edit' | 'dup';
   editId: string | null; // program id being edited
   srcId: string | null; // source id hydrated from (edit/dup)
+  live: LiveEditGuard | null; // set only when editing a program that is already RUNNING
+}
+
+/**
+ * Editing a program the athlete is part-way through — W-5 Amendment-001.
+ *
+ * The locked spec said no modification of an Active program of any kind. The PO overruled the product
+ * half of that on 2026-08-20; this type is what carries the half that was never negotiable.
+ *
+ * ══ WHY A COUNT IS THE THING GUARDED ══
+ *
+ * Graduation is decided server-side as `completed >= program_total_sessions(structure)`, recomputed LIVE
+ * from whatever structure the row currently holds. So the finish line is not stored — it is derived, every
+ * save. Shrink a running program and the next logged session clears a bar that just moved down to meet it:
+ * `save_workout` fires the graduation branch, writing a `PROGRAM_GRADUATED` timeline event and five
+ * honors. Amendment-001 §170 — "These facts are immutable. The product does not provide a mechanism to
+ * alter them." There is no un-graduate path, so this cannot be a thing we apologise for afterwards.
+ *
+ * ⚠ AND NOT ONLY THE WEEK/DAY COUNTS. `program_total_sessions` counts a day that PRESCRIBES SOMETHING —
+ * emptying a day's exercises removes a session the athlete owed just as surely as deleting the day. That
+ * is why the guard holds `totalSessions()` rather than `weeks × daysPerWeek`.
+ */
+export interface LiveEditGuard {
+  /** Schedule-space slots already trained or skipped. Their content is frozen. */
+  trained: readonly { weekIndex: number; dayIndex: number }[];
+  /** `totalSessions()` when editing began. The save is refused if the edit moves it. */
+  sessions: number;
 }
 
 export const DAY_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'] as const;
@@ -98,6 +126,7 @@ export function newDraft(): ProgramDraft {
     mode: 'new',
     editId: null,
     srcId: null,
+    live: null,
   };
 }
 
@@ -124,6 +153,104 @@ export function ensureWeeks(d: ProgramDraft): ProgramDraft {
   }));
   const openWeek = d.openWeek != null && d.openWeek >= d.weeks ? null : d.openWeek;
   return { ...d, weekPlans, openWeek };
+}
+
+/**
+ * Size `weekPlans` to `weeks` WITHOUT touching a week that already exists.
+ *
+ * `ensureWeeks` re-runs every week through `makeDays`, which is right when the athlete just moved the
+ * days-per-week stepper and wrong on every other occasion — it silently truncates a ragged week. This is
+ * the hydrate-time twin: absent weeks get built, present weeks pass through untouched.
+ */
+export function padWeeks(d: ProgramDraft): ProgramDraft {
+  const base = d.weekPlans ?? [];
+  const weekPlans: ProgramWeekPlan[] = Array.from(
+    { length: Math.max(1, d.weeks) },
+    (_, i) => base[i] ?? { days: makeDays(d.daysPerWeek, []) },
+  );
+  const openWeek = d.openWeek != null && d.openWeek >= weekPlans.length ? null : d.openWeek;
+  return { ...d, weekPlans, openWeek };
+}
+
+const cloneDay = (day: ProgramDay): ProgramDay => ({
+  letter: day.letter,
+  name: day.name,
+  warmup: day.warmup.map((x) => ({ ...x, id: newExerciseId() })),
+  main: day.main.map((x) => ({ ...x, id: newExerciseId() })),
+  cooldown: day.cooldown.map((x) => ({ ...x, id: newExerciseId() })),
+});
+
+/**
+ * Prepare a hydrated draft for editing a program that is ALREADY RUNNING.
+ *
+ * ══ WHY THIS FORCES CUSTOMIZE MODE ══
+ *
+ * In Repeat mode ONE template backs every week. So "swap Wednesday's press" on a program you are three
+ * weeks into would rewrite the three Wednesdays already trained along with the nine ahead — and those are
+ * exactly the records the guard exists to protect. Locking the day instead would be worse: the most
+ * ordinary reason to edit a running program ("this exercise hurts, change it going forward") would become
+ * the one thing forbidden.
+ *
+ * Materialising the template into per-week plans resolves it. Every week gets a verbatim copy, so the
+ * program means precisely what it meant a moment ago — `totalSessions()` is unchanged BY CONSTRUCTION,
+ * since each week now holds the same day list it was already being read as — and the weeks ahead become
+ * independently editable while the ones behind stay frozen.
+ */
+export function forLiveEdit(d: ProgramDraft, live: LiveEditGuard): ProgramDraft {
+  if (d.vary) return padWeeks({ ...d, live });
+  const weekPlans: ProgramWeekPlan[] = Array.from({ length: Math.max(1, d.weeks) }, () => ({
+    days: d.days.map(cloneDay),
+  }));
+  return { ...d, vary: true, weekPlans, live };
+}
+
+/**
+ * Builder-space `week:dayIndex` keys that must not be edited — the sessions already trained or skipped.
+ *
+ * ⚠ THE TWO INDEX SPACES ARE NOT THE SAME. A trained slot's `dayIndex` is its position in
+ * `trainingDays(...)` — days that prescribe something — whereas the builder edits the raw `days` array,
+ * empties included. Mapping one to the other by equality would lock the wrong row on any week that has a
+ * blank day sitting above a built one.
+ */
+export function lockedCells(d: ProgramDraft): ReadonlySet<string> {
+  const out = new Set<string>();
+  if (!d.live) return out;
+  for (const t of d.live.trained) {
+    const days = d.vary && d.weekPlans?.[t.weekIndex] ? d.weekPlans[t.weekIndex].days : d.days;
+    let seen = -1;
+    for (let i = 0; i < days.length; i += 1) {
+      if (dayTotal(days[i]) === 0) continue;
+      seen += 1;
+      if (seen === t.dayIndex) {
+        out.add(`${t.weekIndex}:${i}`);
+        break;
+      }
+    }
+  }
+  return out;
+}
+
+/** Is this builder-space cell frozen because the athlete already trained it? */
+export const isLockedCell = (locked: ReadonlySet<string>, weekIndex: number | null, dayIndex: number): boolean =>
+  weekIndex != null && locked.has(`${weekIndex}:${dayIndex}`);
+
+/**
+ * Why this live edit cannot be saved — or `null` when it can. The message reaches the athlete, so it says
+ * what moved and what to do instead, never "invalid".
+ */
+export function liveEditViolation(d: ProgramDraft): string | null {
+  if (!d.live) return null;
+  const now = totalSessions(draftToStructure(d));
+  const was = d.live.sessions;
+  if (now === was) return null;
+  const verb = now < was ? 'removes' : 'adds';
+  const n = Math.abs(now - was);
+  return (
+    `This changes the length of a program you have already started — it ${verb} ${n} ` +
+    `session${n === 1 ? '' : 's'} (${was} → ${now}). The finish line has to stay where it is, or ` +
+    `finishing the program would count wrong. Change what is IN the sessions ahead, or duplicate the ` +
+    `program to build a different length.`
+  );
 }
 
 const dayHasContent = (day: ProgramDay) => day.warmup.length > 0 || day.main.length > 0 || day.cooldown.length > 0;
@@ -472,6 +599,7 @@ export function draftToStructure(d: ProgramDraft): ProgramStructure {
 export function hydrateDraft(
   source: { id: string; name: string; structure: ProgramStructure },
   mode: 'edit' | 'dup',
+  live: LiveEditGuard | null = null,
 ): ProgramDraft {
   const s = source.structure;
   const dup = mode === 'dup';
@@ -484,6 +612,8 @@ export function hydrateDraft(
       cooldown: copyExercises(d.cooldown, dup),
     }));
 
+  const srcDays = copyDays(s.days ?? []);
+
   const draft: ProgramDraft = {
     name: dup ? `${s.name || source.name} (Copy)` : s.name || source.name,
     weeks: clampWeeks(s.weeks || 8),
@@ -491,14 +621,21 @@ export function hydrateDraft(
     vary: !!s.vary,
     openWeek: null,
     openDay: null,
-    days: makeDays(clampDays(s.daysPerWeek || 4), copyDays(s.days ?? [])),
+    // ⚠ NOT `makeDays`. That helper pads OR TRUNCATES to `daysPerWeek`, which is the silent
+    // day-deletion migration `0123` documents: a ragged program — and every Coach Holt program is
+    // ragged — loses its tail merely by being OPENED here. The source's own day list is authoritative;
+    // the fallback only covers a structure that has no days at all.
+    days: srcDays.length > 0 ? srcDays : makeDays(clampDays(s.daysPerWeek || 4), []),
     weekPlans: s.weekPlans ? s.weekPlans.map((w) => ({ days: copyDays(w.days) })) : null,
     mode,
     // A duplicate is a NEW program — it must never write back over the source.
     editId: mode === 'edit' ? source.id : null,
     srcId: source.id,
+    live,
   };
-  return draft.vary ? ensureWeeks(draft) : draft;
+  // `padWeeks`, not `ensureWeeks` — same reason as the day list above: an existing week must come
+  // through exactly as it was written, and only ABSENT weeks get built.
+  return draft.vary ? padWeeks(draft) : draft;
 }
 
 function copyExercises(list: ProgramExercise[], reId: boolean): ProgramExercise[] {
@@ -547,6 +684,7 @@ export function draftFromStructure(structure: ProgramStructure): ProgramDraft {
     mode: 'new',
     editId: null,
     srcId: null,
+    live: null,
   };
 }
 
@@ -561,6 +699,10 @@ export function normalizeDraft(d: ProgramDraft): ProgramDraft {
       main: day.main ?? [],
       cooldown: day.cooldown ?? [],
     }));
-  const next: ProgramDraft = { ...d, days: fix(d.days ?? []) };
-  return next.vary ? ensureWeeks(next) : next;
+  const next: ProgramDraft = { ...d, days: fix(d.days ?? []), live: d.live ?? null };
+  // ⚠ `padWeeks`, NOT `ensureWeeks`. This runs on EVERY focus — every return trip from the Picker — and
+  // `ensureWeeks` truncates each week to `daysPerWeek`. For a draft the builder itself made the two always
+  // agree, so it never showed; a ragged program opened for a live edit would have lost its tail on the
+  // first exercise the athlete added. Padding an absent week is the only repair this needs.
+  return next.vary ? padWeeks(next) : next;
 }

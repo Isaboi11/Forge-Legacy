@@ -942,24 +942,28 @@ export default function ProgramDetailScreen() {
             Add to Planned
           </Button>
         ) : null}
-        {/* ── EDIT IS FUTURE-STATE ONLY (W-5 Decision 1) ─────────────────────────────────────────────
-                This was gated on `terminal`, which let Edit through on an ACTIVE program — directly
-                against the locked spec, whose permission matrix reads NO for Active on every row.
+        {/* ── EDIT IS NOW ALLOWED MID-PROGRAM (W-5 Amendment-001, 2026-08-20) ─────────────────────────
+                W-5 Decisions 1 and 4 said NO for Active on every row, including rename. The PO overruled
+                that: "you should be able to edit". What the amendment keeps is the half that was never a
+                product preference.
 
-                The reason is not tidiness. `program_sessions` rows are keyed by (week_index, day_index)
-                and graduation is `completed >= program_total_sessions(structure)`, recomputed live from
-                the structure. So a structural edit mid-run re-points records the athlete already earned
-                AND moves the finish line: shrinking a live program makes the next save fire the
-                graduation branch, which writes a PROGRAM_GRADUATED timeline event and five honors that
-                can never be revoked. There is no un-graduate path (Amendment-001 §1).
+                `program_sessions` rows are keyed by (week_index, day_index) and graduation is
+                `completed >= program_total_sessions(structure)`, recomputed LIVE from the structure. So
+                an unrestricted edit mid-run re-points records the athlete already earned AND moves the
+                finish line: shrinking a live program makes the next save fire the graduation branch,
+                writing a PROGRAM_GRADUATED timeline event and five honors that can never be revoked.
+                There is no un-graduate path (Amendment-001 §1).
 
-                Merely opening the builder is enough to do damage — `hydrateDraft` normalises through
-                `clampDays`/`makeDays`, which TRUNCATE, so a ragged program loses days on a round trip
-                it never asked for.
+                So the edit is bounded rather than blocked — the "safe edit path" the old comment here
+                said was owed: sessions already trained are frozen, and `totalSessions()` must come out
+                the same. Enforced in the builder (`liveEditViolation`, `lockedCells`) and again in the
+                database by `0174`, because the client is not what should be trusted with five permanent
+                honors.
 
-                Mid-flight changes belong to the coach's safe edit path instead: untouched slots only,
-                session count invariant. Until that lands, Duplicate is the honest route and W-5 §Decision
-                4 already names it — copy it, change the copy, start that.
+                Two things had to be fixed before it was safe to open the builder at all: `hydrateDraft`
+                normalised through `clampDays`/`makeDays`, which TRUNCATE — a ragged program lost days on
+                a round trip it never asked for — and `normalizeDraft` did the same on EVERY focus, so a
+                trip to the exercise Picker would have done it mid-edit.
 
                 Both buttons also require a real row. A catalogue preview has `program === null` (state
                 falls back to 'future' at the top of this component), and both handlers read `program!.id`
@@ -981,7 +985,7 @@ export default function ProgramDetailScreen() {
 
               W-5 Decision 1 still governs the other axis: Edit is FUTURE-state only, never active.
             */}
-            {state === 'future' && !isForgeProgram ? (
+            {(state === 'future' || state === 'active') && !isForgeProgram ? (
               <View style={styles.ctaHalf}>
                 <Button
                   variant="secondary"
@@ -1012,11 +1016,20 @@ export default function ProgramDetailScreen() {
             change however you like.
           </Text>
         ) : null}
-        {/* Said, not silently omitted: an athlete who could edit this yesterday deserves the reason. */}
-        {state === 'active' ? (
+        {/* What Edit will and will not let them do, said BEFORE they tap it rather than as a refusal
+            afterwards. The length sentence is the one that prevents a wasted edit. */}
+        {state === 'active' && !isForgeProgram ? (
           <Text style={styles.editNote}>
-            A program you&apos;ve started can&apos;t be restructured — the sessions you&apos;ve trained are
-            recorded against it. Duplicate it to change the plan and start fresh.
+            You can change the sessions ahead of you — swap exercises, rename a day, adjust sets. Sessions
+            you&apos;ve already trained stay as you did them, and the program keeps its length so finishing
+            it still counts. Duplicate it instead to build a different length.
+          </Text>
+        ) : null}
+        {/* A Forge program is the other axis, and it does not move: provenance, not progress. */}
+        {state === 'active' && isForgeProgram ? (
+          <Text style={styles.editNote}>
+            This is a Forge program, so it stays as we wrote it. Duplicate it and the copy is yours to
+            change however you like.
           </Text>
         ) : null}
         {/* ── THE TWO KINDS OF SHARING, NAMED APART ──────────────────────────────────────────────────

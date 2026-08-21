@@ -1,9 +1,29 @@
 # Forge Legacy — Program Fork/Edit Wireframe Specification
 ## W-5 | Phase 2B | Version 1.0 — June 2026
 
-**Status:** Locked
+**Status:** Locked — ⚠ **AMENDED 2026-08-20, see below**
 **Authority:** Program-Architecture-Amendment-001-Active-Program-Rule.md | W-4 Program Creation Wireframe Specification v1.1
 **PRD Authority:** Section 11 (Program System), Section 5 (MVP — W-5), Section 8 (Workout System)
+**Amended by:** `Amendments/Program-Fork-Edit-Amendment-001-Live-Program-Editing.md`
+
+---
+
+> ## ⚠ AMENDED — W-5 NO LONGER OPERATES ON FUTURE-STATE PROGRAMS ONLY
+>
+> **`Program-Fork-Edit-Amendment-001-Live-Program-Editing.md` (LOCKED 2026-08-20) supersedes
+> §Decision 4 in full and replaces the Active row of §Decision 1.**
+>
+> The PO overruled the product half of the Active-program lock: an athlete may now edit a program they
+> have already started. **Read the amendment before reading Decisions 1 and 4 below, both of which are
+> stale.** They are kept unedited for their reasoning, not for their conclusion.
+>
+> What the amendment KEEPS from them, and hardens: a running program's **length cannot change**, because
+> graduation is `completed >= program_total_sessions(structure)` recomputed live — shrinking a program
+> awards a `PROGRAM_GRADUATED` event and five honors that no path can revoke. Now enforced client-side
+> (`liveEditViolation`) and in the database (`0175_live_program_edit_guard.sql`).
+>
+> Sessions already trained stay frozen. Forge-authored programs stay Duplicate-only. Graduated and
+> Ended Early stay sealed.
 
 ---
 
@@ -60,6 +80,8 @@ W-5 exists to accomplish four things:
 The following nine decisions are resolved in this specification and are locked upon approval.
 
 ### Decision 1 — State-Based Permissions
+
+> ⚠ **STALE — the Active row is replaced by Program-Fork-Edit-Amendment-001 §1.** Active is now YES for content and naming, NO for anything that changes the session count.
 
 **Resolved: W-5 operates exclusively on Future-state programs.**
 
@@ -147,6 +169,8 @@ Access control is enforced at W-3: overflow items "Edit Program" and "Duplicate 
 ---
 
 ### Decision 4 — Active Program Protection
+
+> ⚠ **SUPERSEDED IN FULL by Program-Fork-Edit-Amendment-001.** Kept for its reasoning about *why* the finish line matters, which the amendment carries forward; its conclusion — that no path may modify an Active program — no longer holds.
 
 **Resolved: Active programs cannot be modified through any W-5 path.**
 

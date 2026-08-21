@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { totalSessions } from '../../domain/program/progress-core.ts';
 import {
   absorbBuilderInbox,
   activeDays,
@@ -20,6 +21,11 @@ import {
   makeDays,
   newDraft,
   normalizeDraft,
+  hydrateDraft,
+  forLiveEdit,
+  lockedCells,
+  isLockedCell,
+  liveEditViolation,
   weekBuilt,
   weeksLoseContent,
   withActiveDays,
@@ -536,4 +542,80 @@ test('the last week has no week after it', () => {
 
 test('no open day, no forward move', () => {
   assert.equal(nextDayStop(newDraft()), null);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────
+// LIVE PROGRAM EDITING (W-5 Amendment-001) — a running program may be edited, but its finish line
+// may not move, and the sessions already trained may not change.
+// ─────────────────────────────────────────────────────────────────────────────────────────────────
+
+const day = (mains) => ({ letter: 'A', name: '', warmup: [], main: mains.map((n) => ({ id: n, exerciseId: n, sets: 3, reps: 10 })), cooldown: [] });
+const blank = () => ({ letter: 'B', name: '', warmup: [], main: [], cooldown: [] });
+
+test('hydrateDraft no longer truncates a ragged program (migration 0123 day-deletion)', () => {
+  // Five days in a structure that calls itself 3/week — exactly what a Coach Holt program looks like.
+  const source = {
+    id: 'p1',
+    name: 'Ragged',
+    structure: { name: 'Ragged', weeks: 2, daysPerWeek: 3, vary: false, days: [day(['a']), day(['b']), day(['c']), day(['d']), day(['e'])], weekPlans: null },
+  };
+  const d = hydrateDraft(source, 'edit');
+  assert.equal(d.days.length, 5, 'opening the builder must not delete the two days past daysPerWeek');
+  assert.deepEqual(d.days.map((x) => x.main[0].exerciseId), ['a', 'b', 'c', 'd', 'e']);
+});
+
+test('normalizeDraft does not truncate on the Picker round-trip either', () => {
+  const d = {
+    ...newDraft(),
+    weeks: 2,
+    daysPerWeek: 3,
+    vary: true,
+    weekPlans: [{ days: [day(['a']), day(['b']), day(['c']), day(['d'])] }, { days: [day(['e'])] }],
+  };
+  const out = normalizeDraft(d);
+  assert.equal(out.weekPlans[0].days.length, 4, 'a ragged week must survive every focus');
+  assert.equal(out.weekPlans.length, 2);
+});
+
+test('forLiveEdit materialises Repeat into per-week plans WITHOUT changing the session count', () => {
+  const base = { ...newDraft(), weeks: 4, daysPerWeek: 3, vary: false, days: [day(['a']), day(['b']), day(['c'])], weekPlans: null };
+  const before = totalSessions(draftToStructure(base));
+  const live = forLiveEdit(base, { trained: [], sessions: before });
+  assert.equal(live.vary, true, 'future weeks must become independently editable');
+  assert.equal(live.weekPlans.length, 4);
+  assert.equal(totalSessions(draftToStructure(live)), before, 'materialising must be meaning-preserving');
+  assert.equal(liveEditViolation(live), null);
+});
+
+test('liveEditViolation allows an in-place swap and refuses a shrink', () => {
+  const base = { ...newDraft(), weeks: 4, daysPerWeek: 3, vary: false, days: [day(['a']), day(['b']), day(['c'])], weekPlans: null };
+  const live = forLiveEdit(base, { trained: [], sessions: totalSessions(draftToStructure(base)) });
+
+  // Swapping the exercise in a future week is the whole point of the feature.
+  const swapped = { ...live, weekPlans: live.weekPlans.map((w, i) => (i === 3 ? { days: [day(['z']), day(['b']), day(['c'])] } : w)) };
+  assert.equal(liveEditViolation(swapped), null, 'changing what is IN a session must be allowed');
+
+  // Dropping a week moves the finish line.
+  const shorter = { ...live, weeks: 2, weekPlans: live.weekPlans.slice(0, 2) };
+  assert.match(liveEditViolation(shorter) ?? '', /removes 6 sessions \(12 → 6\)/);
+
+  // ⚠ And so does EMPTYING a day — the case a `weeks × daysPerWeek` guard would have missed entirely.
+  const emptied = { ...live, weekPlans: live.weekPlans.map((w, i) => (i === 3 ? { days: [day(['a']), day(['b']), blank()] } : w)) };
+  assert.match(liveEditViolation(emptied) ?? '', /removes 1 session \(12 → 11\)/);
+});
+
+test('lockedCells maps schedule-space slots to builder-space rows across a blank day', () => {
+  // Week 0 is [built, BLANK, built]. Schedule space skips the blank, so slot 1 is builder row 2.
+  const d = {
+    ...newDraft(),
+    weeks: 1,
+    daysPerWeek: 3,
+    vary: true,
+    weekPlans: [{ days: [day(['a']), blank(), day(['c'])] }],
+    live: { trained: [{ weekIndex: 0, dayIndex: 1 }], sessions: 2 },
+  };
+  const locked = lockedCells(d);
+  assert.equal(isLockedCell(locked, 0, 2), true, 'the second TRAINED day is builder row 2, not row 1');
+  assert.equal(isLockedCell(locked, 0, 1), false, 'the blank row is not the trained session');
+  assert.equal(isLockedCell(locked, 0, 0), false, 'an untrained built day stays editable');
 });
