@@ -18,7 +18,7 @@
 > 7. Update **Last Updated** and the **Dashboard** on every edit.
 
 **Type:** Living Project Dashboard + Documentation Completion Audit
-**Last Updated:** 2026-08-21 (**⭐ ERROR REPORTING — the guessing ends.** Every error now leaves the device with the **exact path** that led to it: the last 40 screens and actions, the stack, the device, and ⭐ the **`update_id`** — the only field that can answer *"did my fix work"*, since `app_version` is `1.0.0` on every OTA over build 6. ⚠ **The information was already in our hands** — `ScreenBoundary` has been printing it to a console nobody reads. ⚠ **Grouped by BUG and ranked by ATHLETES AFFECTED**, not occurrences. ⚠ **The opt-out is split**: it drops the trail and keeps the fault. ⚠ **`report_client_error` is granted to `anon` on purpose** — a launch crash has no session — with two rate limits; it will appear in the anon audit and must not be "fixed". ⏳ **`0176` AUTHORED, NOT APPLIED** (`pending-0176.sql`) and **NOT DEPLOYED**; ⛔ the **privacy "Diagnostics" section must be PUBLISHED on `site/` first** — a separate Cloudflare deploy. Gates: tsc 0 · 2,710/2,711 (one pre-existing podium failure) · lint at baseline · web export clean. **Sentry is Stage 2, blocked on the next native build.** Prior entry follows.) (**⭐ "THE APP IS FROZEN" — NOTHING WAS FROZEN.** Three separate controls silently did nothing, which is the one failure mode that leaves no crash, no error and no evidence: TestFlight showed **Crashes: –** throughout. ⚠ **The big one: onboarding was a one-way door.** `routeFor` sends every signed-in athlete with a null `onboarded_at` there and onboarding is the only thing that clears it — with no sign-out, no account switch, and `Back` hidden on step one. **Three of the first 28 accounts were trapped**; the reporting tester held two accounts and had signed into the wrong one. ⚠ **The other two are the Friends-feed picker defect one screen over** — `sheetGone()` only ever guarded the chooser `useMediaPicker` owns and knew nothing about a CALLER that is itself a modal; `callerModalGone()` is that half. Both native-only, so the OTA is what delivers them. ⚠ **The diagnosis was wrong twice first** — a missing `profiles` row (disproved by one query) and an RLS block (disproved by `.single()` erroring rather than returning null); the survivor was the last line of `routeFor`. ✅ **DEPLOYED BOTH SURFACES** — web `entry-78230c2c…` (200, five new strings PRESENT in the live bundle) and iOS OTA `01a02293-6306-73d4-9b51-265a9ef7703b` on runtime `411fd2b6…`, **fingerprint matched build 6 before publishing and the manifest served the new id after** — deliverable, not merely published. ⚠ **This deploy also shipped the photo-import client half** (wiring already committed in `2af5618`): the "Or read a screenshot" button is LIVE and fails on every tap until **`0174` is pasted and `program-photo-read` is deployed** — an Edge Function does not ride an OTA.)
+**Last Updated:** 2026-08-21 (**⭐ ERROR REPORTING — the guessing ends.** Every error now leaves the device with the **exact path** that led to it: the last 40 screens and actions, the stack, the device, and ⭐ the **`update_id`** — the only field that can answer *"did my fix work"*, since `app_version` is `1.0.0` on every OTA over build 6. ⚠ **The information was already in our hands** — `ScreenBoundary` has been printing it to a console nobody reads. ⚠ **Grouped by BUG and ranked by ATHLETES AFFECTED**, not occurrences. ⚠ **The opt-out is split**: it drops the trail and keeps the fault. ⚠ **`report_client_error` is granted to `anon` on purpose** — a launch crash has no session — with two rate limits; it will appear in the anon audit and must not be "fixed". ✅ **`0176` APPLIED AND VERIFIED, AND BOTH SURFACES ARE DEPLOYED — IN THE ONE MANDATORY ORDER.** The privacy "Diagnostics" section went to Cloudflare FIRST and was verified from outside (`forgelegacy.app/privacy` 200, and the upload manifest reported **1 file changed**, which is how we know nothing else on the marketing site went with it), then `0176` (`prune_job 1 · writer 1 · tbl 1` — so the 90-day retention the policy now promises IN WRITING is really scheduled), then web `entry-bdff3f47…` (200 twice, **all four new RPC names found in the LIVE bundle**) and iOS OTA `01a02529…` on build 6's runtime, `fingerprint:compare` an **exact match** before publishing. Gates: tsc 0 · **2,711/2,711 — the podium failure is CLOSED** (hex-literal `<Stop>`s, the benign case, not a device defect) · lint **back to the real baseline of 1 error + 13 warnings** — ⚠ this entry had recorded "32 warnings, none new" and **19 of them WERE new**: two arming calls sat above 19 imports believing that armed them sooner, which Babel's hoisting makes untrue · web export clean. **Sentry is Stage 2, blocked on the next native build.** Prior entry follows.) (**⭐ "THE APP IS FROZEN" — NOTHING WAS FROZEN.** Three separate controls silently did nothing, which is the one failure mode that leaves no crash, no error and no evidence: TestFlight showed **Crashes: –** throughout. ⚠ **The big one: onboarding was a one-way door.** `routeFor` sends every signed-in athlete with a null `onboarded_at` there and onboarding is the only thing that clears it — with no sign-out, no account switch, and `Back` hidden on step one. **Three of the first 28 accounts were trapped**; the reporting tester held two accounts and had signed into the wrong one. ⚠ **The other two are the Friends-feed picker defect one screen over** — `sheetGone()` only ever guarded the chooser `useMediaPicker` owns and knew nothing about a CALLER that is itself a modal; `callerModalGone()` is that half. Both native-only, so the OTA is what delivers them. ⚠ **The diagnosis was wrong twice first** — a missing `profiles` row (disproved by one query) and an RLS block (disproved by `.single()` erroring rather than returning null); the survivor was the last line of `routeFor`. ✅ **DEPLOYED BOTH SURFACES** — web `entry-78230c2c…` (200, five new strings PRESENT in the live bundle) and iOS OTA `01a02293-6306-73d4-9b51-265a9ef7703b` on runtime `411fd2b6…`, **fingerprint matched build 6 before publishing and the manifest served the new id after** — deliverable, not merely published. ⚠ **This deploy also shipped the photo-import client half** (wiring already committed in `2af5618`): the "Or read a screenshot" button is LIVE and fails on every tap until **`0174` is pasted and `program-photo-read` is deployed** — an Edge Function does not ride an OTA.)
 **Audit Basis:** Live repository scan, 2026-08-01. `git ls-files` (430 TS/TSX · 40 `*.test.mjs` · 257 `Docs/**/*.md` · 97 migrations), `git ls-files src/app` (72 screens, excl. layouts + `+html`), `git rev-list --count` (210), `node --test` (508 pass / 0 fail), `npx tsc --noEmit` (0), `npx eslint src` (1 pre-existing error + 13 warnings), `npx expo export --platform web` (clean, 11.11 MB entry), `wc -l` (87,450 LOC). Data-layer contract checked mechanically across 53 RPC names · 61 call sites · 434 select columns · 119 write payloads · 35 tables for RLS · 52 `SECURITY DEFINER` functions. Prior basis 2026-07-15 (227 TS/TSX · 33,229 LOC · 176 tests) retained in the Change Log.
 
 ---
@@ -848,7 +848,7 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 > ⚠ **A tree-wide publish ships every undeployed client half in the tree.** Check for pending migrations
 > before publishing anything, not just before publishing the feature that needs them.
 
-### 0. ⭐ We stop guessing what broke — every error now arrives with the exact path that led to it (2026-08-21, Diagnostics — **MIGRATION `0176` AUTHORED, NOT APPLIED**; client code is OTA-safe, ⏳ NOT DEPLOYED)
+### 0. ⭐ We stop guessing what broke — every error now arrives with the exact path that led to it (2026-08-21, Diagnostics — **MIGRATION `0176` APPLIED AND VERIFIED**; ✅ WEB DEPLOYED + ✅ OTA DELIVERABLE ON BUILD 6)
 
 **PO:** *"sometimes we're guessing at what the error is … catch the exact path they're going in instead of
 having to ask them, but we capture on the back end and are able to fix it right away."*
@@ -912,14 +912,53 @@ section is written into **both** surfaces in this same commit — `Docs/Legal/Pr
 The policy's "what we do not collect" list also now says **no third-party crash reporting** — ⛔ that
 sentence must be edited *before* Sentry ships, not after.
 
-**Gates:** `tsc --noEmit` **0** · **2,711 tests, 2,710 green** (18 new; the one failure is a pre-existing
-`podium/[id].tsx` `<Stop>` opacity assertion, untouched by this pass) · `eslint src` **at baseline**
-(1 pre-existing error, 32 warnings, none new) · `expo export --platform web` clean, and
-`report_client_error` verified **present in the built bundle**.
+**Gates:** `tsc --noEmit` **0** · **2,711 tests, ALL 2,711 GREEN** (18 new) · `eslint src`
+**at baseline, 1 error + 13 warnings** · `expo export --platform web` clean, and all four new RPC names
+verified **present in the LIVE bundle**, not merely the built one.
 
-⏳ **NOT APPLIED AND NOT DEPLOYED.** Paste `supabase/apply/pending-0176.sql`. ⚠ There is **no ordering
-hazard between the two halves** — `errors-live.ts` disables itself on `PGRST202`, so shipping the client
-first is harmless and reporting is simply off. The only real gate is the privacy publish above.
+⚠ **TWO GATE DEFECTS WERE FOUND ON THE WAY OUT AND BOTH ARE CLOSED HERE — THIS ENTRY PREVIOUSLY
+RECORDED BOTH AS ACCEPTABLE.** It read *“2,710 green, the one failure is pre-existing”* and *“32 warnings,
+none new”*. The first was true and still worth fixing; the second was **wrong** — 19 of those 32 warnings
+were new, and the documented baseline is 13.
+
+- **`podium/[id].tsx`** — two `<Stop stopColor={tint.from}>` carried no `stopOpacity`, failing
+  `svg-gradient-stops`. All six `TINT` values are hex literals, so this was the **benign** case the
+  test's own comment describes, not a device defect. Fixed by declaring `stopOpacity={1}`.
+- **`_layout.tsx`** — `startDiagnostics()` / `installErrorSink()` sat mid-file **above 19 imports**,
+  believing that armed them sooner. ⚠ **It does not.** Babel hoists every `require` above an
+  interleaved statement, so those imports were already evaluated before the calls ran either way —
+  verified against `@babel/plugin-transform-modules-commonjs` rather than assumed. Moved below the
+  imports: byte-identical runtime behaviour, 19 fewer warnings. **The placement was load-bearing in the
+  comment and inert in the bundle.**
+
+✅ **APPLIED AND DEPLOYED 2026-08-21, IN THE ONE ORDER THAT WAS EVER MANDATORY.**
+
+1. **The disclosure went first.** `site/privacy.html` published to Cloudflare and **verified from
+   outside** — `forgelegacy.app/privacy` returns 200 and now contains *“Diagnostics — when something
+   goes wrong”* and the *“Help improve Forge”* paragraph. The upload manifest reported **1 file
+   changed, `/privacy.html`** (24 unchanged), which is how we know nothing else on the marketing site
+   went live with it; `/_exported-bundle.html` still 404s. P6-A1-D8 satisfied: disclosure BEFORE
+   collection, not alongside it.
+2. **`0176` applied by the PO**, self-check green. Verified by data, not by the ledger:
+   `prune_job 1 · writer 1 · tbl 1` — so the 90-day retention the privacy page now promises **in
+   writing** is actually scheduled (`forge-client-errors-prune`, 04:50 daily).
+3. **Web** — `entry-bdff3f47b329cabe112a0ba181b27dd1.js`, `forgelegacy.expo.app` **200 twice** with a
+   matching hash, and the live bundle was searched for four strings only this pass contains
+   (`report_client_error`, `admin_client_errors`, `admin_client_error_detail`,
+   `admin_client_error_set_status`) — **all four FOUND**.
+4. **OTA** — `fingerprint:compare --build-id 078d2838…` returned **an exact match** to build 6
+   (`411fd2b68cbe11016f037dd7881b3fe813a1e148`) *before* publishing, so this update actually reaches
+   testers rather than reporting success and reaching nobody. iOS update **`01a02529-ebcd-7548-84de-d2f4da7a7f9a`**,
+   group `e3f4cb79-2695-43ba-9a72-c21818c56e07`, commit `ff7fee9`.
+
+⭐ **THAT iOS UPDATE ID IS THE FIRST VALUE THIS FEATURE WILL EVER REPORT**, and it is the whole reason
+`update_id` is a column: `app_version` reads `1.0.0` on every OTA over build 6, so it is the only field
+that can answer *“did my fix work”*. Anything arriving from an earlier `update_id` is a device that has
+not picked up the update yet, **not** a fix that failed.
+
+⚠ There was **no ordering hazard between the two code halves** — `errors-live.ts` disables itself on
+`PGRST202`, so shipping the client first would have been harmless and reporting simply off. The privacy
+publish was the only real gate, and it was honoured.
 
 ⚠ **`admin_client_errors` returning `ever_any: null` is an HONEST-ZERO GUARD THAT READS BACKWARDS FROM
 FEEDBACK'S.** Zero errors is what we want *and* exactly what a broken reporter looks like. Once this is
