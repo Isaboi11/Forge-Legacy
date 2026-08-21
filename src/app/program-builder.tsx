@@ -139,6 +139,29 @@ import {
  * DEFERRED vs the `.dc` (flagged, not faked — omitted rather than rendered inert): spreadsheet import.
  */
 
+/**
+ * ⛔ PHOTO IMPORT IS HIDDEN FOR LAUNCH — A DECISION, NOT A BUG (PO, 2026-08-21).
+ *
+ * The feature is BUILT and its code below is untouched. What is missing is the two things it needs to
+ * actually run: migration `0174` (the credit weight for `photo_import`) is not applied, and the
+ * `program-photo-read` Edge Function is not deployed. `GO-LIVE.md` rules out AI spend before full
+ * release, so both are deliberately still pending — which left a control that failed on EVERY tap.
+ *
+ * ⚠ THIS IS THE GUIDELINE 1.2 LESSON, APPLIED BEFORE IT COSTS US AGAIN. The last submission blocker
+ * found in this repo was a button whose only behaviour was a toast reading "Reporting a squad is
+ * coming soon" — and the finding was that the toast is WORSE than no button, because it proves inside
+ * the binary that the need was known and unmet. A visible "Or read a screenshot" that always fails is
+ * the same shape, on a screen a reviewer will certainly open.
+ *
+ * ⚠ THE HINT COPY IS GATED ON THIS TOO, AND THAT IS THE HALF THAT IS EASY TO FORGET. Hiding the
+ * button while leaving the paragraph that promises "Only have a screenshot? Read it in below" is the
+ * same defect written in prose — it just fails silently instead of loudly.
+ *
+ * TO RE-ENABLE: apply `supabase/apply/pending-0174.sql`, deploy `program-photo-read`, then flip this to
+ * `true`. Nothing else. Do not flip it before both are true — that is what this constant is for.
+ */
+const PHOTO_IMPORT_ENABLED = false;
+
 const SECTION_META: { key: BuilderSection; label: string; addLabel: string; req: string; empty: string }[] = [
   { key: 'warmup', label: 'Warm-up', addLabel: 'warm-up', req: 'Optional', empty: 'No warm-up yet' },
   { key: 'main', label: 'Main', addLabel: 'exercise', req: 'Required', empty: 'No main exercises yet' },
@@ -1424,10 +1447,14 @@ function ProgramBuilderScreen() {
               Keep it one row per <Text style={styles.impHintStrong}>day</Text> instead? That works too —
               write the session out (&ldquo;75min bike Z2 + 30min upper strength&rdquo;) and we&rsquo;ll read the
               rides, runs and swims out of it. Check what we read before you create it.
-              {'\n\n'}
-              Only have a <Text style={styles.impHintStrong}>screenshot</Text>? Read it in below — we type
-              the table out for you and it lands in the box above, where you can fix anything we misread
-              before previewing it.
+              {PHOTO_IMPORT_ENABLED ? (
+                <>
+                {'\n\n'}
+                Only have a <Text style={styles.impHintStrong}>screenshot</Text>? Read it in below — we type
+                the table out for you and it lands in the box above, where you can fix anything we misread
+                before previewing it.
+                </>
+              ) : null}
             </Text>
             <TextInput
               value={pasteText}
@@ -1457,27 +1484,29 @@ function ProgramBuilderScreen() {
             {/* ⚠ LIBRARY ONLY, AND THAT IS A DECISION — see `pickImageFromLibrary`. The label says
                 "screenshot" rather than "photo" because that is both the real use case and the honest
                 description of what this opens: your camera roll, not your camera. */}
-            <Pressable
-              onPress={() => void onPickPhoto()}
-              disabled={photoBusy}
-              accessibilityRole="button"
-              accessibilityLabel="Read a screenshot of a program"
-              accessibilityState={{ disabled: photoBusy, busy: photoBusy }}
-              style={({ pressed }) => [
-                styles.impFileBtn,
-                pressed && !photoBusy ? styles.impPressed : null,
-                photoBusy ? styles.impBusy : null,
-              ]}
-            >
-              <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                <Path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                <Circle cx={8.5} cy={8.5} r={1.5} />
-                <Path d="M21 15l-5-5L5 21" />
-              </Svg>
-              <Text style={styles.impFileText}>
-                {photoBusy ? 'Reading your screenshot…' : 'Or read a screenshot'}
-              </Text>
-            </Pressable>
+            {PHOTO_IMPORT_ENABLED ? (
+              <Pressable
+                onPress={() => void onPickPhoto()}
+                disabled={photoBusy}
+                accessibilityRole="button"
+                accessibilityLabel="Read a screenshot of a program"
+                accessibilityState={{ disabled: photoBusy, busy: photoBusy }}
+                style={({ pressed }) => [
+                  styles.impFileBtn,
+                  pressed && !photoBusy ? styles.impPressed : null,
+                  photoBusy ? styles.impBusy : null,
+                ]}
+              >
+                <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                  <Path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  <Circle cx={8.5} cy={8.5} r={1.5} />
+                  <Path d="M21 15l-5-5L5 21" />
+                </Svg>
+                <Text style={styles.impFileText}>
+                  {photoBusy ? 'Reading your screenshot…' : 'Or read a screenshot'}
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
         ) : (
           <View style={styles.impCol}>

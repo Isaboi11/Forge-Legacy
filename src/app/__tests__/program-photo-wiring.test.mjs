@@ -134,3 +134,44 @@ test('⚠ nothing client-side holds an API key or talks to Anthropic directly', 
   }
   assert.match(CLIENT, /supabase\.functions\.invoke\('program-photo-read'/);
 });
+
+
+// ───────────────────────────────────────────────────────────────────────────────────────────
+// 5. THE BUTTON AND THE PROMISE ARE HIDDEN TOGETHER, OR NOT AT ALL
+// ───────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * ⚠ THIS IS THE HALF THAT GETS FORGOTTEN, AND IT FAILS QUIETLY.
+ *
+ * Hiding the control while leaving the paragraph that says "Only have a screenshot? Read it in below"
+ * is the same defect as the Guideline 1.2 "Reporting a squad is coming soon" toast — a promise inside
+ * the binary that the product does not keep — except the prose version raises nothing, renders fine,
+ * and points at a button that is not there.
+ *
+ * This test does not care WHICH way the flag is set. It cares that both halves move together.
+ */
+test('⚠ the photo button and the copy promising it are behind the SAME flag', () => {
+  const gates = BUILDER.match(/\{PHOTO_IMPORT_ENABLED \? \(/g) ?? [];
+  assert.equal(gates.length, 2, 'expected exactly two gates: the hint paragraph and the button');
+
+  // The promise and the control must each sit inside a gate, never loose in the tree.
+  const promise = BUILDER.indexOf('Only have a <Text');
+  const button = BUILDER.indexOf('accessibilityLabel="Read a screenshot of a program"');
+  assert.ok(promise > 0 && button > 0, 'the hint copy and the button should both still exist in source');
+
+  for (const [what, at] of [['the hint copy', promise], ['the button', button]]) {
+    const gateBefore = BUILDER.lastIndexOf('{PHOTO_IMPORT_ENABLED ? (', at);
+    const closeBefore = BUILDER.lastIndexOf(') : null}', at);
+    assert.ok(gateBefore > closeBefore, `${what} is not inside a PHOTO_IMPORT_ENABLED gate`);
+  }
+});
+
+test('⚠ the flag names its two preconditions, so nobody flips it blind', () => {
+  // Turning this on without `0174` applied and the Edge Function deployed puts back the exact control
+  // that failed on every tap. The comment is the only place that says so — keep it attached to the flag.
+  const decl = BUILDER.indexOf('const PHOTO_IMPORT_ENABLED');
+  assert.ok(decl > 0, 'the flag should exist');
+  const comment = BUILDER.slice(Math.max(0, decl - 1800), decl);
+  assert.match(comment, /0174/, 'the flag comment must name the migration it depends on');
+  assert.match(comment, /program-photo-read/, 'the flag comment must name the Edge Function it depends on');
+});
