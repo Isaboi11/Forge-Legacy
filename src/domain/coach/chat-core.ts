@@ -237,7 +237,7 @@ export type QuestionId =
  * it does today, so adding this could not regress a flow — and a future question is never blocked on
  * someone remembering to pick a shape.
  */
-export type QuestionControl = 'chips' | 'segmented' | 'cards' | 'grid' | 'imports' | 'multi';
+export type QuestionControl = 'chips' | 'segmented' | 'cards' | 'grid' | 'imports' | 'multi' | 'multi_limits';
 
 /** The shape each question is drawn in. Absent → `chips`. */
 export const CONTROL_FOR: Partial<Record<QuestionId, QuestionControl>> = {
@@ -253,7 +253,26 @@ export const CONTROL_FOR: Partial<Record<QuestionId, QuestionControl>> = {
   /* ⚠ THE ONLY QUESTION YOU MAY ANSWER MORE THAN ONCE. Every other one advances on the tap; this one
      collects and waits, because "chest and triceps and a bit of conditioning" is one answer. */
   day_focus: 'multi',
-  // Everything else — goal, day_focus, race_distance, limits — is a set of unlike things.
+  /*
+   * ⚠ THE SECOND QUESTION YOU MAY ANSWER MORE THAN ONCE — AND IT ALWAYS SHOULD HAVE BEEN.
+   *
+   * PO: *"this is when I'm having coach holt build me a program or a day workout or template. I should
+   * be able to choose multiple things."*
+   *
+   * A body has more than one complaint. The wizard at `/coach` has always let you tap Shoulders AND
+   * Lower back — `LIMITATIONS` is an array everywhere downstream, `assemble()` unions the excluded
+   * patterns, and `constraints.ts` de-duplicates the list. **Only the CHAT could not say it.** Each chip
+   * carried `{ limitations: [one] }` and answering advanced the question, so a shoulder and a knee were
+   * a choice between two true things, and whichever the athlete tapped second was never heard.
+   *
+   * That is the worst place in the app to lose an answer: `rulebook/limitations.ts` names itself the
+   * closest thing here to health guidance, and this is the question that feeds it.
+   *
+   * Its own control type rather than `multi`, because the commit is different — the focus question
+   * merges splits and body parts through `mergeFocus`, and a list of limitations is just a list.
+   */
+  limits: 'multi_limits',
+  // Everything else — goal, race_distance — is a set of unlike things, answered once.
 };
 
 export interface Question {

@@ -98,6 +98,7 @@ import type { SessionMark } from '@/domain/program/progress-core';
 import { contextFrom } from '@/domain/coach/candidates';
 import { setCardioTarget, setPrescription, swapExercise, type EditScope } from '@/domain/coach/edit-ops';
 import { limitationPatterns } from '@/domain/coach/rulebook/limitations';
+import type { Limitation } from '@/domain/coach/constraints';
 import {
   changesFor,
   editableSessions,
@@ -2321,8 +2322,9 @@ function Answers({
 }) {
   const chosen = (c: Chip) => answer != null && c.label === answer;
 
-  /* The one question you answer more than once — see `CONTROL_FOR.day_focus`. */
+  /* The two questions you answer more than once — see `CONTROL_FOR.day_focus` / `.limits`. */
   if (ctl === 'multi') return <MultiAnswers chips={chips} answer={answer ?? null} onChip={onChip} />;
+  if (ctl === 'multi_limits') return <MultiLimitAnswers chips={chips} answer={answer ?? null} onChip={onChip} />;
 
   /* An ordered scale — 2·3·4·5·6 days, 30·45·60·75 minutes. A ROW, left to right, because the order is
      the information; wrapped pills throw that away and a stepper hides the range. Equal widths so no
@@ -2498,6 +2500,76 @@ function MultiAnswers({ chips, answer, onChip }: { chips: Chip[]; answer: string
       {settled || picks.length === 0 ? null : (
         <Button variant="primary" fullWidth onPress={build} accessibilityLabel="Build it">
           {picks.length === 1 ? 'Build it' : `Build these ${picks.length}`}
+        </Button>
+      )}
+    </View>
+  );
+}
+
+/**
+ * "Anything I should work around?" — collect every one of them, then build.
+ *
+ * The sibling of `MultiAnswers`, and a separate component on purpose: that one runs body parts and
+ * splits through `mergeFocus`, where picking "Push" has to clear "Chest". Limitations have no such
+ * rule — a shoulder and a knee are simply both true — so the commit here is the list itself.
+ *
+ * ⚠ SELECTION IS READ OFF THE CHIP'S OWN PATCH, with no new field on `Chip`. Every limitation chip
+ * already carries `{ limitations: [one] }`; the "Nothing — build it" chip carries `{ limitations: [] }`
+ * and is therefore the one that commits on the tap, which is exactly right — "nothing" is a complete
+ * answer and making the athlete confirm it would be asking twice.
+ */
+function MultiLimitAnswers({ chips, answer, onChip }: { chips: Chip[]; answer: string | null; onChip: (c: Chip) => void }) {
+  const [picks, setPicks] = useState<string[]>([]);
+  /* Once answered, the turn is history: it shows what was chosen and does not invite a second go. */
+  const settled = answer != null;
+  /** The single limitation a chip stands for, or null for "Nothing — build it". */
+  const limitOf = (c: Chip): string | null => {
+    const l = c.patch.limitations;
+    return l && l.length === 1 ? l[0] : null;
+  };
+  const on = (c: Chip) => (settled ? (answer ?? '').split(', ').includes(c.label) : picks.includes(c.label));
+
+  const build = () => {
+    /* Drawn in the CHIPS' order, not the tapping order — the same three taps must read back the same
+       way, which is the rule `mergeFocus` sorts for on the focus question. */
+    const picked = chips.filter((c) => limitOf(c) != null && picks.includes(c.label));
+    const limitations = picked.map((c) => limitOf(c)!) as Limitation[];
+    onChip({ label: picked.map((c) => c.label).join(', '), patch: { limitations } });
+  };
+
+  return (
+    <View style={styles.multiWrap}>
+      <View style={styles.chipGrid}>
+        {chips.map((c) => {
+          const one = limitOf(c);
+          return (
+            <Pressable
+              key={c.label}
+              /* "Nothing" still answers on the tap; a named complaint collects and waits. */
+              onPress={() =>
+                settled
+                  ? undefined
+                  : one == null
+                    ? onChip(c)
+                    : setPicks((p) => (p.includes(c.label) ? p.filter((x) => x !== c.label) : [...p, c.label]))
+              }
+              disabled={settled}
+              accessibilityRole={one == null ? 'button' : 'checkbox'}
+              accessibilityLabel={c.label}
+              accessibilityState={one == null ? { disabled: settled } : { checked: on(c), disabled: settled }}
+              style={({ pressed }) => [styles.chipCell, (on(c) || pressed) && styles.ctlOn]}
+            >
+              <Text style={[styles.chipCellText, on(c) && styles.ctlTextOn]} numberOfLines={1}>{c.label}</Text>
+              {one == null ? null : (
+                <View style={[styles.optSquare, on(c) && styles.optDotOn]}>{on(c) ? <Tick size={9} /> : null}</View>
+              )}
+            </Pressable>
+          );
+        })}
+      </View>
+      {settled || picks.length === 0 ? null : (
+        <Button variant="primary" fullWidth onPress={build} accessibilityLabel="Build it">
+          {picks.length === 1 ? 'Build around it' : `Build around these ${picks.length}`}
         </Button>
       )}
     </View>

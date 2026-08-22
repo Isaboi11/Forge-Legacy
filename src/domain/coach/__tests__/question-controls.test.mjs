@@ -20,8 +20,12 @@ import assert from 'node:assert/strict';
 
 import { CONTROL_FOR, mergeFocus, nextQuestion } from '../chat-core.ts';
 
-/** ⚠ `multi` joined this list on 2026-08-14 — the focus question collects taps instead of advancing. */
-const SHAPES = ['chips', 'segmented', 'cards', 'grid', 'imports', 'multi'];
+/**
+ * ⚠ `multi` joined this list on 2026-08-14 — the focus question collects taps instead of advancing.
+ * ⚠ `multi_limits` joined it on 2026-08-21, for the same reason on `limits`: a body has more than one
+ *   complaint, and the chat could only hear the first one.
+ */
+const SHAPES = ['chips', 'segmented', 'cards', 'grid', 'imports', 'multi', 'multi_limits'];
 
 /**
  * Walk the program questionnaire taking the first chip each turn, collecting every question asked.
@@ -43,6 +47,20 @@ function askedIn(mode, seed = {}) {
   throw new Error('the questionnaire never terminated');
 }
 
+/** The same walk, stopped the turn `id` is asked — the constraints that reached that question. */
+function seedTo(id, mode = 'program') {
+  let c = {};
+  for (let i = 0; i < 20; i += 1) {
+    const q = nextQuestion(c, mode);
+    if (!q) throw new Error(`the questionnaire ended without asking "${id}"`);
+    if (q.id === id) return c;
+    const first = q.chips[0];
+    c = { ...c, ...first.patch, ...(first.focus ? { dayFocus: mergeFocus([first.focus]) } : {}) };
+    if (first.picksRace) c = { ...c, pickingRace: true };
+  }
+  throw new Error('the questionnaire never terminated');
+}
+
 test('every question that gets asked carries a control, and it is a real one', () => {
   for (const mode of ['program', 'day']) {
     for (const q of askedIn(mode)) {
@@ -50,6 +68,37 @@ test('every question that gets asked carries a control, and it is a real one', (
       assert.ok(SHAPES.includes(q.ctl), `${mode}/${q.id} declares an unknown shape "${q.ctl}"`);
     }
   }
+});
+
+/**
+ * ⚠ THE REGRESSION THIS EXISTS TO CATCH: a shoulder AND a knee.
+ *
+ * `limits` used to advance on the first tap, so the second true thing about an athlete's body was
+ * unreachable in the chat — while `/coach`'s wizard, `AskHoltSheet` and every consumer downstream of
+ * `CoachConstraints.limitations` had always treated it as a list. This asserts the two halves of what
+ * makes multiple answers possible: the question declares a collecting control, and the engine actually
+ * accepts more than one.
+ */
+test('⚠ limits collects — more than one thing can hurt at once', () => {
+  assert.equal(CONTROL_FOR.limits, 'multi_limits', 'a single-answer control loses every complaint but one');
+
+  const asked = askedIn('program').find((q) => q.id === 'limits');
+  assert.ok(asked, 'precondition: the program questionnaire asks about limitations');
+  assert.equal(asked.ctl, 'multi_limits');
+
+  // The chips the renderer reads its selection off: "Nothing" carries [], each complaint carries one.
+  const named = asked.chips.filter((c) => c.patch.limitations?.length === 1);
+  assert.ok(named.length >= 2, 'there must be at least two things that can be true at once');
+  assert.ok(
+    asked.chips.some((c) => c.patch.limitations?.length === 0),
+    '"Nothing — build it" must stay a complete answer, committed on the tap',
+  );
+
+  // And the engine takes the list the renderer builds, rather than stopping at the first.
+  const both = named.slice(0, 2).map((c) => c.patch.limitations[0]);
+  assert.equal(new Set(both).size, 2, 'precondition: two distinct limitations');
+  assert.equal(nextQuestion({ ...seedTo('limits'), limitations: both }, 'program'), null, 'answering with two ends the questionnaire');
+  assert.deepEqual(both.length, 2);
 });
 
 test('an ordered scale is a row; a choice that needs a sentence is a card', () => {
