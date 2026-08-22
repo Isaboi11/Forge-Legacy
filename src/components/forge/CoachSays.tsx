@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path } from 'react-native-svg';
 
 import { flColor, flRadius, flShadow } from '@/constants/foundation';
 import { BUBBLE_SHADOW, BUBBLE_SIZE, HoltMark } from '@/components/forge/HoltMark';
@@ -52,13 +53,22 @@ export interface CoachSaysProps {
   named?: boolean;
   /** Opens the reply/options surface — `SessionCoachSheet` in a session, the chat sheet elsewhere. */
   onPress: () => void;
+  /**
+   * Closes THIS line, leaving the mark. Omit it and no close control is drawn.
+   *
+   * ⚠ THE CALLER OWNS WHAT "CLOSED" MEANS, for the same reason it owns visibility. This component has
+   * no idea whether the next render will produce the same sentence or a new one, and a component that
+   * hid its own content would have to be told when to stop — which is the caller's knowledge again.
+   * `/workout` keys it on the text; a surface where the line is a one-shot event can key it on nothing.
+   */
+  onDismiss?: () => void;
   /** What the sheet is called, for screen readers. */
   openLabel: string;
   /** Absolute placement, owned by the caller — the tab bar and the action bar sit at different heights. */
   style?: object;
 }
 
-export function CoachSays({ line, named = false, onPress, openLabel, style }: CoachSaysProps) {
+export function CoachSays({ line, named = false, onPress, onDismiss, openLabel, style }: CoachSaysProps) {
   const said = line?.trim() || null;
 
   return (
@@ -97,6 +107,29 @@ export function CoachSays({ line, named = false, onPress, openLabel, style }: Co
               {said}
             </Text>
           </LinearGradient>
+          {/*
+            ⚠ A SIBLING OF THE GRADIENT, NOT A CHILD OF THE TEXT COLUMN — absolutely placed so it sits
+            over the corner without taking a column of width away from a sentence that is already
+            clipped at three lines.
+
+            Nested inside the bubble's own `Pressable`, which on React Native is fine and is the point:
+            the child wins the touch, so the X closes and the rest of the bubble still opens the sheet.
+            `hitSlop` carries the 13px glyph up to a real target — this is a gym screen and the finger
+            arriving at it is not a careful one.
+          */}
+          {onDismiss ? (
+            <Pressable
+              onPress={onDismiss}
+              accessibilityRole="button"
+              accessibilityLabel="Close what Coach Holt said"
+              hitSlop={12}
+              style={({ pressed }) => [styles.close, pressed && styles.closePressed]}
+            >
+              <Svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2.6} strokeLinecap="round">
+                <Path d="M6 6l12 12M18 6L6 18" />
+              </Svg>
+            </Pressable>
+          ) : null}
         </Pressable>
       ) : null}
       {/* ⚠ THE MARK, NOT A LETTER. `coach-holt-mark.png` cover-filled — the struck bronze medallion IS
@@ -146,6 +179,18 @@ const styles = StyleSheet.create({
   /* The introduction still has to be NOTICED — it competes with an eye that has learned this corner of
      the screen holds nothing. It earns the bronze edge; every later line wears the card's own. */
   bubbleNamed: { borderColor: flColor.bronzeBorder },
+  /* Top-right, inside the 1px border. `bubbleInner`'s 15/11 gutter leaves the eyebrow clear of it. */
+  close: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    width: 22,
+    height: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: flRadius.round,
+  },
+  closePressed: { opacity: 0.55 },
   mark: {
     width: BUBBLE_SIZE,
     height: BUBBLE_SIZE,

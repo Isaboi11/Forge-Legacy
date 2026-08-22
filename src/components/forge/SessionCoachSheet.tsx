@@ -5,6 +5,7 @@ import { flColor, flRadius } from '@/constants/foundation';
 import { HoltMark } from '@/components/forge/HoltMark';
 import { INTENSITY_LEVELS, type IntensityLevel } from '@/domain/coach/rulebook/intensity';
 import type { IntensityProposal } from '@/domain/coach/intensity-learning';
+import type { SuggestionGroup } from '@/domain/coach/session-suggest';
 
 /**
  * Coach Holt, mid-set.
@@ -69,6 +70,9 @@ export function SessionCoachSheet({
   onBreakSuperset,
   onAdd,
   onSkip,
+  swapPicks,
+  addPicks,
+  onPick,
   intensity,
   onSetIntensity,
   proposal,
@@ -112,6 +116,21 @@ export function SessionCoachSheet({
   onBreakSuperset: () => void;
   onAdd: () => void;
   onSkip: () => void;
+  /**
+   * What Holt would put here instead — the authored relationship graph, filtered to the catalogue the
+   * athlete can actually reach. Null when he has nothing worth naming.
+   */
+  swapPicks: SuggestionGroup | null;
+  /** The gap in today's session, and the movements that fill it. Null when there is no gap. */
+  addPicks: SuggestionGroup | null;
+  /**
+   * Apply a named suggestion. `mode` decides whether it REPLACES the current lift or is appended.
+   *
+   * ⚠ ONE CALLBACK, NOT TWO, because the two lists are the same gesture from the athlete's side:
+   * "put this in my workout". The screen owns the difference between replacing and appending, which is
+   * where the session lives.
+   */
+  onPick: (mode: 'swap' | 'add', key: string, name: string) => void;
 }) {
   const run = (fn: () => void) => () => {
     onClose();
@@ -169,10 +188,53 @@ export function SessionCoachSheet({
             </View>
           ) : null}
 
+          {/*
+            ══ HE NAMES MOVEMENTS NOW, INSTEAD OF OPENING A SEARCH BOX ══
+
+            PO: *"when clicking on coach holt during a workout you should be able to swap or add
+            exercises, and then have him suggest based off of what the exercise is that you're doing or
+            what you've already done."*
+
+            Both chips below already existed and both opened the Exercise Picker cold, at the top of a
+            721-row catalogue. Asking the coach what to do instead and being handed a search field is
+            the coach declining to answer.
+
+            ⚠ THESE APPLY DIRECTLY — no picker, no round trip. That is the whole value mid-set: one
+            tap, standing at a rack, with one hand free. The original chips stay underneath as the way
+            to see everything, so nothing is taken away; a named suggestion is added in front of it.
+
+            ⚠ EACH GROUP RENDERS ONLY IF IT HAS SOMETHING. An empty "Holt suggests" heading is worse
+            than no heading — see `session-suggest.ts`, which returns null rather than an empty list
+            precisely so this can be a truthful check rather than a length test on a shape that always
+            exists.
+          */}
+          {swapPicks ? (
+            <View style={styles.group}>
+              <Text style={styles.groupLabel}>{swapPicks.reason.toUpperCase()}</Text>
+              <View style={styles.chipRow}>
+                {swapPicks.picks.map((p) => (
+                  <Chip key={p.key} label={p.name} onPress={run(() => onPick('swap', p.key, p.name))} />
+                ))}
+              </View>
+            </View>
+          ) : null}
+
+          {addPicks ? (
+            <View style={styles.group}>
+              <Text style={styles.groupLabel}>{addPicks.reason.toUpperCase()}</Text>
+              <View style={styles.chipRow}>
+                {addPicks.picks.map((p) => (
+                  <Chip key={p.key} label={p.name} onPress={run(() => onPick('add', p.key, p.name))} />
+                ))}
+              </View>
+            </View>
+          ) : null}
+
           <View style={styles.group}>
             <Text style={styles.groupLabel}>THE PLAN</Text>
             <View style={styles.chipRow}>
-              <Chip label="Can't do this one" onPress={run(onSwap)} />
+              {/* The way to everything, kept — the named suggestions above are an answer, not a cage. */}
+              <Chip label={swapPicks ? 'Something else…' : "Can't do this one"} onPress={run(onSwap)} />
               {isSuperset ? (
                 <Chip label="Stop pairing these" onPress={run(onBreakSuperset)} />
               ) : canSuperset && supersetWithName ? (

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
-import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 
 import { fetchTodaysChapterPhotos } from '@/data/photos-live';
@@ -61,6 +61,9 @@ import { durText, supersetLabels } from '@/domain/program/prescription';
 import { coachLine } from '@/domain/coach/coach-says';
 import { profileFor } from '@/domain/coach/rulebook/intensity';
 import { intraSetSuggestion } from '@/domain/coach/intra-set';
+import { addSuggestions, swapSuggestions } from '@/domain/coach/session-suggest';
+import { exerciseRelationships } from '@/domain/exercise-relationships/query-service';
+import { fetchCoachProfile } from '@/data/coach-profile-live';
 import { proposeIntensity, type IntensityProposal } from '@/domain/coach/intensity-learning';
 import { fetchIntensitySignals } from '@/data/coach-signal-live';
 import { useCapGate } from '@/lib/entitlement';
@@ -82,7 +85,7 @@ import { SCREEN_GUTTER, useBarBottom } from '@/lib/screen-insets';
 import { fetchLiftHistory, liftId, type LiftHistory } from '@/data/lift-history-live';
 import { backOffTo, incrementFor, progressionFor, sessionPerformance, type Progression } from '@/domain/coach/progression';
 import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
-import { DEFAULT_HOLD_SEC, itemByKey, itemByName } from '@/domain/exercise-picker/data';
+import { DEFAULT_HOLD_SEC, itemByKey, itemByName, PICKER_DB } from '@/domain/exercise-picker/data';
 import { loadExperience } from '@/lib/coach-memory';
 import { effortReply, shouldAskEffort, weightAfterEffort, type EffortAnswer } from '@/domain/coach/first-set';
 import { SessionCoachSheet } from '@/components/forge/SessionCoachSheet';
@@ -91,7 +94,7 @@ import { JoinRequestBanner } from '@/components/forge/JoinRequestBanner';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
 import { playlistLabel } from '@/domain/workout/playlist';
 import { enrichSessionExercises, equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
-import { getRestTimerEnabled, setRestTimerEnabled } from '@/lib/rest-timer-pref';
+import { getRestMode, nextRestMode, setRestMode, type RestMode } from '@/lib/rest-timer-pref';
 import { getWheelInput, setWheelInput } from '@/lib/set-input-pref';
 import { useKeyboardInset } from '@/lib/useKeyboardInset';
 import { clearExerciseInbox, readExerciseInbox, type PickedExercise } from '@/lib/exercise-inbox';
@@ -118,6 +121,19 @@ const WEIGHT_OPTS_CABLE = Array.from({ length: 201 }, (_, i) => i * 2.5); // 0�
 // 0–50. Was 0–30, which silently clamped a set of 40 air squats down to 30 and recorded a number the
 // athlete did not do — the same class of quiet falsehood as counting an unweighted set as no set at all.
 const REPS_OPTS = Array.from({ length: 51 }, (_, i) => i);
+
+/**
+ * Where the knob sits for each rest mode — left, centre, right.
+ *
+ * A plain `alignItems` per mode, so the track stays one flex row and the knob lands correctly at every
+ * text scale. Module scope because it is a constant, and a `StyleSheet.create` entry per position would
+ * put three near-identical rules in the sheet for what is one axis.
+ */
+const REST_KNOB_POS = {
+  off: { alignItems: 'flex-start' },
+  auto: { alignItems: 'center' },
+  manual: { alignItems: 'flex-end' },
+} as const;
 const REPS_MAX = 999; // typed entry is not bounded by what fits on a wheel
 const DUR_MIN_OPTS = Array.from({ length: 11 }, (_, i) => i); // 0–10 min
 const DUR_SEC_OPTS = Array.from({ length: 12 }, (_, i) => i * 5); // 0–55 by 5
@@ -461,7 +477,11 @@ export default function WorkoutScreen() {
      every other lift-history read in this app uses. */
   const [lastNotes, setLastNotes] = useState<Record<string, LastNote>>({});
   const [seal, setSeal] = useState<{ name: string; sets: number; volume: number; next: string | null; token: number } | null>(null);
-  const [restEnabled, setRestEnabled] = useState(false); // default OFF; the saved pref loads on mount
+  /* Off → Auto → Manual. `restEnabled` is derived from it, so every existing gate below — the
+     countdown, the ding, the chip's bronze — keeps meaning "there is a timer" and none of them had to
+     learn the third state. Only the two places that care WHEN it starts read the mode itself. */
+  const [restMode, setRestModeState] = useState<RestMode>('off'); // default OFF; the saved pref loads on mount
+  const restEnabled = restMode !== 'off';
   const [restSec, setRestSec] = useState(90);
   // rest-timer runtime — deadline-based so the count survives re-renders and a paused freeze holds its remaining
   const [restEndsAt, setRestEndsAt] = useState<number | null>(null);
@@ -499,6 +519,62 @@ export default function WorkoutScreen() {
   const [ssOpen, setSsOpen] = useState<number | null>(null);
   const [noteOpen, setNoteOpen] = useState<number | null>(null);
   const [noteDraft, setNoteDraft] = useState('');
+  /**
+   * The sentence the athlete has read and closed — stored as the TEXT, not as a boolean.
+   *
+   * PO: *"during active workout when coach holt is talking, put an x on the text bubble so I can close
+   * after reading."*
+   *
+   * ⚠ A BOOLEAN WOULD HAVE BEEN THE WRONG SHAPE, AND SILENTLY. `coachLine` is DERIVED on every render,
+   * never fired (see `saysRaw`), so a `dismissed` flag would have to be cleared by something — and the
+   * only honest trigger is "he has something different to say", which is the comparison itself. Keying
+   * on the string means closing a cue closes THAT cue: the next progression line, the next mid-set
+   * nudge, the next exercise's plan note all arrive as new text and appear on their own.
+   *
+   * It also cannot get stuck. Nothing persists it, so a line dismissed today is not silenced tomorrow,
+   * and the coin never leaves the screen — closing the bubble hides a sentence, not the coach.
+   */
+  const [dismissedSay, setDismissedSay] = useState<string | null>(null);
+  /**
+   * The athlete's home gym, read once when Holt's sheet is first opened.
+   *
+   * ⚠ `undefined` MEANS "NOT READ YET" AND `null` MEANS "THEY NEVER SAID" — both must pass straight
+   * through to `session-suggest`, which treats either as "do not filter". Collapsing them into `[]`
+   * would empty every suggestion list for everyone who skipped that setup question.
+   *
+   * Read on OPEN rather than on mount, for the same reason `fetchIntensitySignals` is: this is a gym
+   * screen and a network read nobody asked for is a network read that can fail while somebody is under
+   * a bar.
+   */
+  const [ownedGear, setOwnedGear] = useState<string[] | null | undefined>(undefined);
+  /**
+   * The exercise pager.
+   *
+   * ⚠ DECLARED UP HERE, WITH THE OTHER TOP-LEVEL STATE, BECAUSE HOOKS CANNOT LIVE WHERE IT IS USED.
+   * This screen has four early returns below (`loading`, `resume`, an empty freestyle session, the
+   * saving state), so a `useRef` or `useEffect` beside the pager's own markup would be called
+   * conditionally — the exact rule `react-hooks/rules-of-hooks` rejects, and the reason the coach
+   * suggestions further down are plain computation rather than `useMemo`.
+   */
+  const pagerRef = useRef<ScrollView>(null);
+  const { width: pageW } = useWindowDimensions();
+  /* False until the pager has been positioned once, so a RESUMED session opens on its exercise instead
+     of visibly sliding to it from the first one. Only the moves after that animate. */
+  const pagerSettled = useRef(false);
+  /**
+   * ⚠ THE PAGE HEIGHT IS MEASURED, NOT INHERITED — and this is the RN trap that renders and then does
+   * nothing.
+   *
+   * Each page holds a vertical `ScrollView` carrying `flex: 1`. Inside a HORIZONTAL scroll view the
+   * content container's height is not definite, and `flex: 1` against an indefinite parent is not a
+   * constraint at all: the inner scroller collapses to its content, stops scrolling, and the set table
+   * runs off the bottom of the screen with no way to reach it. Nothing errors, and it looks fine until
+   * an exercise has more than about four sets.
+   *
+   * `onLayout` on the pager gives a real number to hand each page. Zero on the first frame, which falls
+   * back to content height for that one frame rather than to nothing.
+   */
+  const [pagerH, setPagerH] = useState(0);
   /**
    * The exercise index whose cardio bout is OPEN — started and not yet logged. Null when none is.
    *
@@ -720,6 +796,7 @@ export default function WorkoutScreen() {
           workoutName: nm,
           activityType: 'strength',
           startedAt: new Date().toISOString(),
+          templated: true, // arrived with a prescribed shape — see `ActiveSession.templated`
           /* Both coordinates travel, which is the exception `workout-launch.ts` names: the server picks
              the first OPEN slot when it is sent none, and the slot this shape covers is not always that
              one. A resolution made from live marks two seconds ago cannot go stale the way a card can. */
@@ -771,6 +848,7 @@ export default function WorkoutScreen() {
               // Attributes the saved workout back to the template (0095) — what makes its "Times used"
               // and session history real, and what makes them count only sessions actually finished.
               templateId: t.id,
+              templated: true,
               exercises: templateToSessionExercises(t.exercises),
             });
             setPhase('active');
@@ -803,6 +881,10 @@ export default function WorkoutScreen() {
           workoutName: launch.workoutName ?? def?.name ?? 'Workout',
           activityType: 'strength',
           startedAt: new Date().toISOString(),
+          /* ⚠ THE ONE CASE `programId`/`templateId` CANNOT COVER. This branch stamps neither on
+             purpose (there is no row to attribute to), so without this flag an 11-exercise Forge push
+             day would be indistinguishable from an empty freestyle session. */
+          templated: true,
           exercises: def ? templateToSessionExercises(def.exercises) : [],
         });
         setPhase('active');
@@ -863,7 +945,11 @@ export default function WorkoutScreen() {
        * fallback. It is what an athlete actually landed in whenever anything upstream went wrong, and it
        * looked convincingly like a real workout they had never chosen.
        */
-      startSession(fresh ?? { workoutName: 'Freestyle Workout', activityType: 'strength', startedAt: new Date().toISOString(), exercises: [] });
+      startSession(
+        fresh
+          ? { ...fresh, templated: true }
+          : { workoutName: 'Freestyle Workout', activityType: 'strength', startedAt: new Date().toISOString(), exercises: [] },
+      );
       setPhase('active');
     })();
     /*
@@ -878,8 +964,27 @@ export default function WorkoutScreen() {
 
   // load the saved rest-timer preference (stays OFF until the athlete has turned it on before)
   useEffect(() => {
-    getRestTimerEnabled().then(setRestEnabled);
+    getRestMode().then(setRestModeState);
   }, []);
+
+  /*
+   * The scroll position follows `exerciseIndex`, never the other way round.
+   *
+   * Four things move that index without touching the pager: the arrows, the dot strip, "Next Exercise",
+   * and the Picker's inbox draining after an add or a swap (which jumps to the new lift). Each one has
+   * to carry the page with it, and the alternative — having every caller remember to scroll — is the
+   * kind of rule that holds until somebody adds a fifth caller.
+   *
+   * A swipe settles onto a page and then calls `goExercise`, so this fires with the offset already
+   * correct and the `scrollTo` is a no-op. That is the intended shape: one direction of truth.
+   */
+  useEffect(() => {
+    const n = session?.exercises.length ?? 0;
+    if (phase !== 'active' || !pageW || n === 0) return;
+    const i = Math.min(Math.max(0, session?.exerciseIndex ?? 0), n - 1);
+    pagerRef.current?.scrollTo({ x: i * pageW, animated: pagerSettled.current });
+    pagerSettled.current = true;
+  }, [session?.exerciseIndex, session?.exercises.length, pageW, phase]);
 
   // …and the input preference. Typing unless they have chosen the wheel before.
   useEffect(() => {
@@ -1078,12 +1183,16 @@ export default function WorkoutScreen() {
     setRestPaused(false);
     setPausedRemaining(null);
   };
-  const toggleRest = () => {
-    const next = !restEnabled;
-    setRestEnabled(next);
-    void setRestTimerEnabled(next); // persist — once on, stays on for later workouts
-    if (!next) restSkip(); // turning it off mid-rest clears any running countdown
+  const cycleRest = () => {
+    const next = nextRestMode(restMode);
+    setRestModeState(next);
+    void setRestMode(next); // persist — the choice stays for later workouts
+    if (next === 'off') restSkip(); // turning it off mid-rest clears any running countdown
   };
+  /* What the chip's value line says. `Auto` and `Manual` are named because the duration alone cannot
+     tell them apart, and an athlete who has just switched to manual and sees only "1:30" has no way to
+     know whether the next logged set will start it. */
+  const restValueText = restMode === 'off' ? 'Off' : `${fmtMMSS(restSec)} · ${restMode === 'auto' ? 'Auto' : 'Manual'}`;
   const openDuration = () => {
     setDurMin(Math.floor(restSec / 60));
     setDurSec(restSec % 60);
@@ -1244,7 +1353,9 @@ export default function WorkoutScreen() {
        */
       const b = blockAt(ns.exercises, ei);
       const holdRest = b?.kind === 'superset' && !endsSupersetRound(ns.exercises, b, ei, si);
-      if (restEnabled && !holdRest) startRest();
+      /* ⚠ `auto` ONLY. On `manual` the timer exists and is armed — it just waits for ▶ on the chip,
+         which is the whole difference the mode buys (see `lib/rest-timer-pref`). */
+      if (restMode === 'auto' && !holdRest) startRest();
     }
   };
   /**
@@ -1839,6 +1950,8 @@ export default function WorkoutScreen() {
    * `exercises` array worth indexing into.
    */
   const exIdx = Math.min(Math.max(0, session.exerciseIndex ?? 0), session.exercises.length - 1);
+  /* Freestyle is the absence of a plan, not a kind of plan — see `ActiveSession.templated`. */
+  const templated = !!session.templated;
   const setExIdx = (i: number) => mutate((s) => ({ ...s, exerciseIndex: i }));
   const ex = session.exercises[exIdx];
   const totalSets = session.exercises.reduce((n, e) => n + e.sets.length, 0);
@@ -1940,7 +2053,81 @@ export default function WorkoutScreen() {
    * app does. It is a no-op for imperial and does the arithmetic for metric, so neither athlete can be
    * shown a number wearing the wrong name.
    */
-  const says = saysRaw ? { ...saysRaw, text: inUnits(saysRaw.text) } : null;
+  /*
+   * ══ WHAT HOLT WOULD PUT HERE INSTEAD, AND WHAT TODAY HAS NOT TRAINED ══
+   *
+   * Derived, not fetched — the relationship graph and the picker catalogue are both bundled data, so
+   * this costs no network and cannot fail. Only the home-gym list is read, and only on sheet-open.
+   *
+   * ⚠ COMPUTED ONLY WHILE THE SHEET IS OPEN. `swapSuggestions` walks the catalogue for the fallback
+   * and `addSuggestions` walks it per gap pattern; running that on every render of a screen that
+   * re-renders on every tick of a rest timer would be paying for an answer nobody is looking at.
+   */
+  /*
+   * ⚠ NO `useMemo`, AND IT IS NOT AN OVERSIGHT. This block sits BELOW the screen's early returns
+   * (`loading`, `resume`, the empty freestyle state), so a hook here would be called conditionally —
+   * `react-hooks/rules-of-hooks` rejects it, correctly, and the version of this that shipped with the
+   * memo would have changed hook order the first time a session was empty.
+   *
+   * Plain computation is fine because it is gated on `coachOpen`: nothing walks the catalogue at all
+   * until the athlete has tapped the coin, and a filter-and-sort over 721 rows is a fraction of a
+   * millisecond against a screen that already re-renders once a second during a rest countdown.
+   */
+  const sessionKeys = session.exercises.map((e) => e.catalogKey).filter((k): k is string => !!k);
+  const sessionNames = session.exercises.map((e) => e.name);
+  const swapPicks = coachOpen
+    ? swapSuggestions({
+        currentKey: ex.catalogKey,
+        currentName: ex.name,
+        pool: PICKER_DB,
+        /* The authored graph, best first. It answers by catalogue id, so a lift added freestyle with
+           no key simply has no edges and falls through to the same-pattern fallback. */
+        alternativeKeys: ex.catalogKey
+          ? exerciseRelationships.getSubstitutionPool(ex.catalogKey).map((r) => r.targetExerciseId)
+          : [],
+        inSession: sessionKeys,
+        owned: ownedGear,
+      })
+    : null;
+  const addPicks = coachOpen
+    ? addSuggestions({ sessionKeys, sessionNames, pool: PICKER_DB, owned: ownedGear })
+    : null;
+  /**
+   * Apply one of his suggestions, with no trip through the Picker.
+   *
+   * ⚠ IT REUSES THE EXACT PATHS THE PICKER'S INBOX TAKES — `swapExercise` and `pickedToExercise`.
+   * That is load-bearing rather than tidy: `swapExercise` clears the logged work, re-derives per-side
+   * counting, and preserves `prescribedName` so a substitution is still recorded as one (a LOCKED
+   * requirement, `Exercise-002` §10.2). A hand-rolled "just change the name and key" here would have
+   * looked identical on screen and silently stopped recording what the program actually prescribed.
+   */
+  const applyPick = (mode: 'swap' | 'add', key: string, name: string) => {
+    const item = itemByKey(key);
+    if (!item) return; // a suggestion the catalogue cannot resolve is not applied, and says nothing
+    const picked: PickedExercise = {
+      catalogKey: item.key,
+      name: item.name,
+      equip: item.equip,
+      muscles: item.muscles,
+      type: item.cat,
+    };
+    if (mode === 'swap') {
+      mutate((s) => ({ ...s, exercises: s.exercises.map((e, i) => (i === exIdx ? swapExercise(e, picked) : e)) }));
+      showToast(`Swapped to ${name}`);
+      return;
+    }
+    /* Appended and NAVIGATED TO. Adding a movement you then have to go and find is half an action —
+       the Picker's own add path does the same thing when it drains its inbox. */
+    mutate((s) => {
+      const next = [...s.exercises, pickedToExercise(picked, s.exercises.length)];
+      return { ...s, exercises: next, exerciseIndex: next.length - 1 };
+    });
+    showToast(`Added ${name}`);
+  };
+
+  const saysFull = saysRaw ? { ...saysRaw, text: inUnits(saysRaw.text) } : null;
+  /* Closed by the athlete, and only while he is still saying the same thing. See `dismissedSay`. */
+  const says = saysFull && saysFull.text === dismissedSay ? null : saysFull;
   /* The collapsed strip's `Prev`, indexed to the SAME set position last time — set 3 against last week's
      set 3, not against their best set of the day. `currentSetIdx` is -1 once every set is done, at which
      point there is no next set to compare and the strip says nothing. */
@@ -2279,6 +2466,32 @@ export default function WorkoutScreen() {
     return true;
   };
 
+  /**
+   * When a horizontal swipe must not move the workout.
+   *
+   * ⚠ ITS OWN LIST, NOT `holtHidden`. That one hides the coin and includes an ENTITLEMENT check
+   * (`inWorkoutHolt.ok`) — reusing it here would have made swiping between exercises depend on a
+   * subscription read, which is both wrong and the kind of coupling nobody would look for.
+   *
+   * `ssOpen` is here because an expanded superset member is a drill-down: the way out of it is the
+   * "Back to the superset" bar, and swiping sideways out of a view you opened leaves no way back to it.
+   */
+  const pagerLocked =
+    sheet != null ||
+    coachOpen ||
+    optionsOpen ||
+    overviewOpen ||
+    endConfirmOpen ||
+    wNameOpen ||
+    noteOpen != null ||
+    ssOpen != null ||
+    prPrompt != null ||
+    seal != null ||
+    playlistSheetOpen ||
+    partnerSheetOpen ||
+    invitePickerOpen ||
+    liveBoutIdx != null;
+
   const isLastEx = exIdx >= session.exercises.length - 1;
   const primaryLabel = isLastEx ? 'Finish Workout' : 'Next Exercise';
   const goExercise = (idx: number) => {
@@ -2294,6 +2507,27 @@ export default function WorkoutScreen() {
     if (idx !== exIdx) setGoalOpen(null);
     setExIdx(Math.max(0, Math.min(session.exercises.length - 1, idx)));
     restSkip(); // leaving an exercise ends its rest
+  };
+  /**
+   * A swipe landed on a page. Make it the exercise — or refuse and snap back.
+   *
+   * ⚠ IT ROUTES THROUGH `goExercise` RATHER THAN `setExIdx`, which is the whole reason this is four
+   * lines instead of one. `goExercise` closes a superset expansion, drops a hand-opened goal panel, ends
+   * the rest countdown, and — the important one — refuses while a cardio bout is running. Setting the
+   * index directly would have quietly reopened the hole `blockedByBout` exists to close: an athlete
+   * swiping away from a treadmill bout they never ended, and finishing a workout that records a walk
+   * nothing ever measured.
+   *
+   * ⚠ AND IT SNAPS BACK WHEN REFUSED. `goExercise` returning without moving leaves the pager sitting on
+   * a page that is not the exercise — a screen showing one lift while the app believes you are on
+   * another. The toast says why; this puts the page back under it.
+   */
+  const onPagerSettle = (e: { nativeEvent: { contentOffset: { x: number } } }) => {
+    if (!pageW) return;
+    const page = Math.min(Math.max(0, Math.round(e.nativeEvent.contentOffset.x / pageW)), session.exercises.length - 1);
+    if (page === exIdx) return; // settled where it started — a cancelled drag, not a move
+    goExercise(page);
+    if (boutLive) pagerRef.current?.scrollTo({ x: exIdx * pageW, animated: true });
   };
   const onPrimary = () => {
     if (blockedByBout()) return;
@@ -2492,553 +2726,643 @@ export default function WorkoutScreen() {
               </Pressable>
             </View>
           ) : (
-            <Pressable
-              onPress={() => (restEnabled ? openDuration() : toggleRest())}
-              accessibilityRole="button"
-              accessibilityLabel={restEnabled ? 'Edit rest duration' : 'Turn rest timer on'}
-              style={[styles.restChip, restEnabled ? styles.restChipOn : null]}
-            >
-              <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={restEnabled ? flColor.bronze400 : flColor.gray600} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" strokeDasharray="3 2.4">
-                <Path d="M12 5a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM12 9v4l2.5 1.5M9 2h6" />
-              </Svg>
-              <View style={styles.restChipText}>
-                <Text style={styles.restChipKicker}>Rest Timer</Text>
-                <Text style={[styles.restChipValue, { color: restEnabled ? flColor.cream100 : flColor.gray600 }]}>{restEnabled ? fmtMMSS(restSec) : 'Off'}</Text>
-              </View>
-              <Pressable onPress={toggleRest} accessibilityRole="switch" accessibilityState={{ checked: restEnabled }} accessibilityLabel="Toggle rest timer" hitSlop={8} style={[styles.restToggle, restEnabled ? styles.restToggleOn : styles.restToggleOff]}>
+            /*
+              ══ THREE CONTROLS, NOT ONE ══
+
+              This was a single Pressable wrapping a switch. It cannot stay that way once there is a
+              third mode: `manual` needs a START that is not the same tap as EDIT DURATION, and burying
+              either behind a long-press would make the mode a secret.
+
+              So the chip is now a plain View with three children, each with its own job and its own
+              screen-reader name: the leading glyph is ▶ Start on `manual` (and an inert clock
+              otherwise), the text block edits the duration (or turns the timer on from `off`), and the
+              track on the right steps Off → Auto → Manual.
+
+              ⚠ THE TRACK IS A BUTTON, NOT A SWITCH. `accessibilityRole="switch"` states checked or
+              unchecked, and there is no honest value for `manual` in that vocabulary — a screen reader
+              would have had to call it "on" and lose the distinction the control exists to make.
+            */
+            <View style={[styles.restChip, restEnabled ? styles.restChipOn : null]}>
+              {restMode === 'manual' ? (
+                <Pressable onPress={startRest} accessibilityRole="button" accessibilityLabel="Start rest now" hitSlop={10} style={styles.restStart}>
+                  <Svg width={12} height={12} viewBox="0 0 24 24" fill={flColor.bronze300}>
+                    <Path d="M7 4l12 8-12 8z" />
+                  </Svg>
+                </Pressable>
+              ) : (
+                <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={restEnabled ? flColor.bronze400 : flColor.gray600} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" strokeDasharray="3 2.4">
+                  <Path d="M12 5a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM12 9v4l2.5 1.5M9 2h6" />
+                </Svg>
+              )}
+              <Pressable
+                onPress={() => (restEnabled ? openDuration() : cycleRest())}
+                accessibilityRole="button"
+                accessibilityLabel={restEnabled ? 'Edit rest duration' : 'Turn rest timer on'}
+                style={styles.restChipText}
+              >
+                <Text style={styles.restChipKicker} numberOfLines={1}>Rest Timer</Text>
+                {/* The value carries a mode name now, so on a narrow phone it can reach the label
+                    beside it. Clipping one word is right; a second line would push the whole band down
+                    and move every control under it. */}
+                <Text style={[styles.restChipValue, { color: restEnabled ? flColor.cream100 : flColor.gray600 }]} numberOfLines={1}>{restValueText}</Text>
+              </Pressable>
+              <Pressable
+                onPress={cycleRest}
+                accessibilityRole="button"
+                accessibilityLabel={`Rest timer ${restMode}. Switch to ${nextRestMode(restMode)}.`}
+                hitSlop={8}
+                style={[styles.restToggle, restMode === 'off' ? styles.restToggleOff : styles.restToggleOn, REST_KNOB_POS[restMode]]}
+              >
                 <View style={[styles.restKnob, restEnabled ? styles.restKnobOn : styles.restKnobOff]} />
               </Pressable>
-            </Pressable>
+            </View>
           )}
         </View>
         <ProgressBar value={setsDone} max={totalSets || 1} height={6} />
       </TourAnchor>
 
+      {/*
+        ══ A REAL PAGER, ONE PAGE PER EXERCISE ══
+
+        PO: *"be able to swipe from exercise to exercise. And then going back. Needs to be smooth."*
+
+        Navigation was arrows, a dot strip and View Plan — all taps, all discrete. This is a horizontal
+        `pagingEnabled` ScrollView whose page index IS `exerciseIndex`, so the swipe tracks the finger,
+        settles onto a page, and rubber-bands at both ends for free rather than by arithmetic.
+
+        ⚠ ONLY THE CURRENT PAGE RENDERS THE REAL BODY. The exercise card is ~540 lines of JSX over a
+        dozen derived values — lift history, progression, hero state, superset state — several of which
+        come from hooks that cannot be run per page. Mounting all of them would also put an animated WebP
+        demonstration on screen for every lift in the session at once. Neighbours render `ExercisePeek`:
+        the same header, the same set line, quiet. It fills in on settle.
+
+        ⚠ THE SETTLE GOES THROUGH `goExercise`, NOT `setExIdx`. That is the function that closes a
+        superset expansion, drops a hand-opened goal panel, ends the rest countdown and refuses to move
+        during a live cardio bout. Swiping past a running treadmill bout is exactly the hole the bout
+        lock was built to close, so the pager snaps back instead.
+      */}
       <ScrollView
-        ref={tourScroller}
-        onScroll={onTourScroll}
-        scrollEventThrottle={16}
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+        ref={pagerRef}
+        horizontal
+        pagingEnabled
+        /* A sheet, a ceremony or a live bout owns the screen — a swipe underneath one would move the
+           workout out from under whatever the athlete is reading. */
+        scrollEnabled={!pagerLocked}
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={onPagerSettle}
+        onLayout={(e) => setPagerH(e.nativeEvent.layout.height)}
+        style={styles.pager}
       >
-        {/* The block this exercise belongs to, named above it — an AMRAP announces its clock, a circuit
-            its round count, and both say which of their members you are standing on. */}
-        {/* The way back. An expanded member is still part of a pairing, and without this the athlete is
-            looking at a single lift with no sign that the other half exists. */}
-        {isSuperset && !ssFused ? (
-          <Pressable
-            onPress={() => setSsOpen(null)}
-            accessibilityRole="button"
-            accessibilityLabel="Back to the superset"
-            style={styles.ssBackBar}
-          >
-            <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M15 18l-6-6 6-6" />
-            </Svg>
-            <Text style={styles.ssBackText}>Back to the superset</Text>
-          </Pressable>
-        ) : null}
-
-        {block && !isSuperset ? (
-          <View style={[styles.blockBanner, block.capSec ? styles.blockBannerAmrap : null]}>
-            <View style={styles.blockBannerHead}>
-              <Text style={styles.blockKicker}>{block.capSec ? 'AMRAP' : 'Circuit'}</Text>
-              {block.capSec ? (
-                <Text style={styles.blockRounds}>{durText(block.capSec)} cap</Text>
-              ) : block.rounds && block.rounds > 1 ? (
-                <Text style={styles.blockRounds}>{block.rounds} rounds</Text>
+        {session.exercises.map((pe, pi) => (
+          <View key={pi} style={[{ width: pageW }, pagerH > 0 ? { height: pagerH } : null]}>
+            {pi !== exIdx ? (
+              <ExercisePeek ex={pe} index={pi} total={session.exercises.length} />
+            ) : (
+            <ScrollView
+              ref={tourScroller}
+              onScroll={onTourScroll}
+              scrollEventThrottle={16}
+              contentContainerStyle={styles.scroll}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              {/* The block this exercise belongs to, named above it — an AMRAP announces its clock, a circuit
+                  its round count, and both say which of their members you are standing on. */}
+              {/* The way back. An expanded member is still part of a pairing, and without this the athlete is
+                  looking at a single lift with no sign that the other half exists. */}
+              {isSuperset && !ssFused ? (
+                <Pressable
+                  onPress={() => setSsOpen(null)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Back to the superset"
+                  style={styles.ssBackBar}
+                >
+                  <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <Path d="M15 18l-6-6 6-6" />
+                  </Svg>
+                  <Text style={styles.ssBackText}>Back to the superset</Text>
+                </Pressable>
               ) : null}
-            </View>
-            <Text style={styles.blockName} numberOfLines={1}>{block.name}</Text>
-            <Text style={styles.blockMeta}>
-              Exercise {blockPos} of {block.count}
-              {block.capSec ? ' · as many rounds as you get' : ''}
-            </Text>
-            {/* The cap, made real. Stating "8m" without a way to run it leaves the athlete timing an
-                AMRAP on their phone's clock while the app watches. */}
-            {block.capSec && ex.groupId ? (
-              <Pressable
-                onPress={() =>
-                  amrapLeft != null
-                    ? setAmrap(null)
-                    : setAmrap({ groupId: ex.groupId as string, endsAt: Date.now() + (block.capSec as number) * 1000 })
-                }
-                accessibilityRole="button"
-                accessibilityLabel={amrapLeft != null ? 'Stop the AMRAP clock' : 'Start the AMRAP clock'}
-                style={[styles.amrapBtn, amrapLeft != null ? styles.amrapBtnOn : null]}
-              >
-                <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={amrapLeft != null ? flColor.cream100 : flColor.bronze300} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-                  {amrapLeft != null ? <Path d="M7 6h10v12H7z" /> : <Path d="M12 5a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM12 9v4l2.5 1.5M9 2h6" />}
-                </Svg>
-                <Text style={[styles.amrapBtnText, amrapLeft != null ? styles.amrapBtnTextOn : null]}>
-                  {amrapLeft != null ? fmtMMSS(amrapLeft) : `Start ${durText(block.capSec)}`}
-                </Text>
-              </Pressable>
-            ) : null}
-          </View>
-        ) : null}
 
-        {/*
-          * THE SUPERSET, AS ONE CARD.
-          *
-          * A superset is not two exercises that happen to be adjacent — it is one thing you do, A then B
-          * then A again, resting only at the end of a round. Drawn as separate cards it would need the
-          * athlete to page between them between every single set, and the rest timer would fire in the
-          * middle of the round, which is the one thing a superset exists to avoid.
-          *
-          * The whole card is driven by `nextInSuperset`, which scans round-major — so "what do I do now"
-          * is answered by the domain, with tests, rather than by the render.
-          */}
-        {block && ssFused ? (
-          <View style={styles.supersetCard}>
-            <View style={styles.supersetHead}>
-              <Text style={styles.blockKicker}>Superset {ssLabels[block.start]?.replace(/\d+$/, '') ?? ''}</Text>
-              <Text style={styles.blockRounds}>
-                {ssNext ? `Round ${ssNext.round + 1} of ${ssRounds}` : `${ssRounds} rounds · complete`}
-              </Text>
-            </View>
-            {Array.from({ length: block.count }, (_, m) => {
-              const mi = block.start + m;
-              const mex = session.exercises[mi];
-              const round = ssNext?.round ?? ssRounds - 1;
-              const mset = mex.sets[round];
-              const isNext = ssNext?.exIdx === mi;
-              return (
-                <View key={mi} style={[styles.ssRow, isNext && styles.ssRowNext]}>
-                  <View style={[styles.ssTag, isNext && styles.ssTagNext]}>
-                    <Text style={[styles.ssTagText, isNext && styles.ssTagTextNext]}>{ssLabels[mi] ?? `A${m + 1}`}</Text>
+              {block && !isSuperset ? (
+                <View style={[styles.blockBanner, block.capSec ? styles.blockBannerAmrap : null]}>
+                  <View style={styles.blockBannerHead}>
+                    <Text style={styles.blockKicker}>{block.capSec ? 'AMRAP' : 'Circuit'}</Text>
+                    {block.capSec ? (
+                      <Text style={styles.blockRounds}>{durText(block.capSec)} cap</Text>
+                    ) : block.rounds && block.rounds > 1 ? (
+                      <Text style={styles.blockRounds}>{block.rounds} rounds</Text>
+                    ) : null}
                   </View>
-                  <View style={styles.ssBody}>
+                  <Text style={styles.blockName} numberOfLines={1}>{block.name}</Text>
+                  <Text style={styles.blockMeta}>
+                    Exercise {blockPos} of {block.count}
+                    {block.capSec ? ' · as many rounds as you get' : ''}
+                  </Text>
+                  {/* The cap, made real. Stating "8m" without a way to run it leaves the athlete timing an
+                      AMRAP on their phone's clock while the app watches. */}
+                  {block.capSec && ex.groupId ? (
                     <Pressable
-                      onPress={() => {
-                        goExercise(mi);
-                        setSsOpen(mi);
-                      }}
+                      onPress={() =>
+                        amrapLeft != null
+                          ? setAmrap(null)
+                          : setAmrap({ groupId: ex.groupId as string, endsAt: Date.now() + (block.capSec as number) * 1000 })
+                      }
                       accessibilityRole="button"
-                      accessibilityLabel={`Open ${mex.name} on its own`}
+                      accessibilityLabel={amrapLeft != null ? 'Stop the AMRAP clock' : 'Start the AMRAP clock'}
+                      style={[styles.amrapBtn, amrapLeft != null ? styles.amrapBtnOn : null]}
                     >
-                      <Text style={styles.ssName} numberOfLines={1}>{mex.name}</Text>
-                    </Pressable>
-                    {mset ? (
-                      <Text style={[styles.ssSet, mset.done && styles.ssSetDone]}>
-                        {mset.done
-                          ? `${weightText(mset)} × ${actualText(mset)}  ✓`
-                          : `Goal ${mset.toFailure ? 'max' : mset.targetSec != null ? durText(mset.targetSec) : `${targetRepsText(mset)} reps`}${mex.per ? ` per ${mex.per}` : ''}`}
+                      <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={amrapLeft != null ? flColor.cream100 : flColor.bronze300} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+                        {amrapLeft != null ? <Path d="M7 6h10v12H7z" /> : <Path d="M12 5a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM12 9v4l2.5 1.5M9 2h6" />}
+                      </Svg>
+                      <Text style={[styles.amrapBtnText, amrapLeft != null ? styles.amrapBtnTextOn : null]}>
+                        {amrapLeft != null ? fmtMMSS(amrapLeft) : `Start ${durText(block.capSec)}`}
                       </Text>
-                    ) : (
-                      <Text style={styles.ssSetNone}>— no set this round</Text>
-                    )}
-                  </View>
-                  {mset && !mset.done ? (
-                    <Pressable
-                      onPress={() => openSheet(mi, round, 'weight')}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Log ${mex.name}, round ${round + 1}`}
-                      style={[styles.ssLog, isNext && styles.ssLogNext]}
-                    >
-                      <Text style={[styles.ssLogText, isNext && styles.ssLogTextNext]}>Log Set</Text>
                     </Pressable>
                   ) : null}
                 </View>
-              );
-            })}
-            {/* Every round, at a glance — so the card is the whole block and not just the next thing in
-                it. A round is done when no member still owes it. */}
-            <View style={styles.ssRounds}>
-              {Array.from({ length: ssRounds }, (_, r) => {
-                const owed = Array.from({ length: block.count }, (_, m) => session.exercises[block.start + m].sets[r]).filter((s) => s && !s.done).length;
-                const current = ssNext?.round === r;
-                return (
-                  <View key={r} style={[styles.ssRoundChip, owed === 0 && styles.ssRoundChipDone, current && styles.ssRoundChipCurrent]}>
-                    <Text style={[styles.ssRoundChipText, owed === 0 && styles.ssRoundChipTextDone, current && styles.ssRoundChipTextCurrent]}>{r + 1}</Text>
-                  </View>
-                );
-              })}
-              <Pressable onPress={addSupersetRound} accessibilityRole="button" accessibilityLabel="Add a round" style={styles.ssAddRound}>
-                <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round">
-                  <Path d="M12 5v14M5 12h14" />
-                </Svg>
-                <Text style={styles.ssAddRoundText}>Round</Text>
-              </Pressable>
-            </View>
-            <Text style={styles.ssFoot}>No rest between them — the timer starts once the round is done.</Text>
-          </View>
-        ) : null}
+              ) : null}
 
-        {/* A cardio block replaces the hero as well as the set table. There is no demonstration to play,
-            no How To to read and no per-lift Memories strip for a run — and leaving the lifting hero above
-            it left two headers stacked on one exercise. The block's own card is the whole surface. */}
-        {/* In a superset the merged card above IS the surface — the hero names one member and the
-            table logs one member, and both would be arguing with a card whose whole point is that the
-            pairing is a single thing you do. Tapping a member's name in the card opens it on its own. */}
-        {isCardio || ssFused ? null : heroExpanded ? (
-          <TourAnchor id="workout-hero" style={styles.hero}>
-            <View style={styles.heroRow}>
-              {/* media slot — the exercise's looping demonstration, falling back to the engraved
-                  dumbbell for lifts the library doesn't cover (strongman, most mobility). */}
-              <View style={styles.mediaSlot}>
-                <ExerciseLoop
-                  exerciseId={ex.catalogKey}
-                  fallback={
-                    <Svg width={74} height={74} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.1} strokeLinecap="round" strokeLinejoin="round" opacity={0.14}>
+              {/*
+                * THE SUPERSET, AS ONE CARD.
+                *
+                * A superset is not two exercises that happen to be adjacent — it is one thing you do, A then B
+                * then A again, resting only at the end of a round. Drawn as separate cards it would need the
+                * athlete to page between them between every single set, and the rest timer would fire in the
+                * middle of the round, which is the one thing a superset exists to avoid.
+                *
+                * The whole card is driven by `nextInSuperset`, which scans round-major — so "what do I do now"
+                * is answered by the domain, with tests, rather than by the render.
+                */}
+              {block && ssFused ? (
+                <View style={styles.supersetCard}>
+                  <View style={styles.supersetHead}>
+                    <Text style={styles.blockKicker}>Superset {ssLabels[block.start]?.replace(/\d+$/, '') ?? ''}</Text>
+                    <Text style={styles.blockRounds}>
+                      {ssNext ? `Round ${ssNext.round + 1} of ${ssRounds}` : `${ssRounds} rounds · complete`}
+                    </Text>
+                  </View>
+                  {Array.from({ length: block.count }, (_, m) => {
+                    const mi = block.start + m;
+                    const mex = session.exercises[mi];
+                    const round = ssNext?.round ?? ssRounds - 1;
+                    const mset = mex.sets[round];
+                    const isNext = ssNext?.exIdx === mi;
+                    return (
+                      <View key={mi} style={[styles.ssRow, isNext && styles.ssRowNext]}>
+                        <View style={[styles.ssTag, isNext && styles.ssTagNext]}>
+                          <Text style={[styles.ssTagText, isNext && styles.ssTagTextNext]}>{ssLabels[mi] ?? `A${m + 1}`}</Text>
+                        </View>
+                        <View style={styles.ssBody}>
+                          <Pressable
+                            onPress={() => {
+                              goExercise(mi);
+                              setSsOpen(mi);
+                            }}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Open ${mex.name} on its own`}
+                          >
+                            <Text style={styles.ssName} numberOfLines={1}>{mex.name}</Text>
+                          </Pressable>
+                          {mset ? (
+                            <Text style={[styles.ssSet, mset.done && styles.ssSetDone]}>
+                              {mset.done
+                                ? `${weightText(mset)} × ${actualText(mset)}  ✓`
+                                : `Goal ${mset.toFailure ? 'max' : mset.targetSec != null ? durText(mset.targetSec) : `${targetRepsText(mset)} reps`}${mex.per ? ` per ${mex.per}` : ''}`}
+                            </Text>
+                          ) : (
+                            <Text style={styles.ssSetNone}>— no set this round</Text>
+                          )}
+                        </View>
+                        {mset && !mset.done ? (
+                          <Pressable
+                            onPress={() => openSheet(mi, round, 'weight')}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Log ${mex.name}, round ${round + 1}`}
+                            style={[styles.ssLog, isNext && styles.ssLogNext]}
+                          >
+                            <Text style={[styles.ssLogText, isNext && styles.ssLogTextNext]}>Log Set</Text>
+                          </Pressable>
+                        ) : null}
+                      </View>
+                    );
+                  })}
+                  {/* Every round, at a glance — so the card is the whole block and not just the next thing in
+                      it. A round is done when no member still owes it. */}
+                  <View style={styles.ssRounds}>
+                    {Array.from({ length: ssRounds }, (_, r) => {
+                      const owed = Array.from({ length: block.count }, (_, m) => session.exercises[block.start + m].sets[r]).filter((s) => s && !s.done).length;
+                      const current = ssNext?.round === r;
+                      return (
+                        <View key={r} style={[styles.ssRoundChip, owed === 0 && styles.ssRoundChipDone, current && styles.ssRoundChipCurrent]}>
+                          <Text style={[styles.ssRoundChipText, owed === 0 && styles.ssRoundChipTextDone, current && styles.ssRoundChipTextCurrent]}>{r + 1}</Text>
+                        </View>
+                      );
+                    })}
+                    <Pressable onPress={addSupersetRound} accessibilityRole="button" accessibilityLabel="Add a round" style={styles.ssAddRound}>
+                      <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round">
+                        <Path d="M12 5v14M5 12h14" />
+                      </Svg>
+                      <Text style={styles.ssAddRoundText}>Round</Text>
+                    </Pressable>
+                  </View>
+                  <Text style={styles.ssFoot}>No rest between them — the timer starts once the round is done.</Text>
+                </View>
+              ) : null}
+
+              {/* A cardio block replaces the hero as well as the set table. There is no demonstration to play,
+                  no How To to read and no per-lift Memories strip for a run — and leaving the lifting hero above
+                  it left two headers stacked on one exercise. The block's own card is the whole surface. */}
+              {/* In a superset the merged card above IS the surface — the hero names one member and the
+                  table logs one member, and both would be arguing with a card whose whole point is that the
+                  pairing is a single thing you do. Tapping a member's name in the card opens it on its own. */}
+              {isCardio || ssFused ? null : heroExpanded ? (
+                <TourAnchor id="workout-hero" style={styles.hero}>
+                  <View style={styles.heroRow}>
+                    {/* media slot — the exercise's looping demonstration, falling back to the engraved
+                        dumbbell for lifts the library doesn't cover (strongman, most mobility). */}
+                    <View style={styles.mediaSlot}>
+                      <ExerciseLoop
+                        exerciseId={ex.catalogKey}
+                        fallback={
+                          <Svg width={74} height={74} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.1} strokeLinecap="round" strokeLinejoin="round" opacity={0.14}>
+                            <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />
+                          </Svg>
+                        }
+                      />
+                    </View>
+                    {/* meta */}
+                    <View style={styles.heroMeta}>
+                      <View style={styles.heroTitleRow}>
+                        <Text style={styles.heroName}>{ex.name}</Text>
+                        <View style={styles.heroActionsTop}>
+                          <Pressable onPress={() => setFavorite((v) => !v)} accessibilityRole="button" accessibilityLabel="Save exercise" hitSlop={6} style={styles.heroIconBtn}>
+                            <Svg width={19} height={19} viewBox="0 0 24 24" fill={favorite ? flColor.bronze300 : 'none'} stroke={favorite ? flColor.bronze300 : flColor.gray600} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+                              <Path d="M6 4h12v17l-6-4-6 4z" />
+                            </Svg>
+                          </Pressable>
+                          <Pressable onPress={() => setHero(true)} accessibilityRole="button" accessibilityLabel="Collapse exercise details" hitSlop={6} style={styles.heroIconBtn}>
+                            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                              <Path d="M18 15l-6-6-6 6" />
+                            </Svg>
+                          </Pressable>
+                        </View>
+                      </View>
+                      <View style={styles.heroEquipRow}>
+                        <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.6} strokeLinecap="square">
+                          <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />
+                        </Svg>
+                        <Text style={styles.heroEquip}>Main lift</Text>
+                      </View>
+                      <View style={styles.heroTags}>
+                        <Pill size="sm">Strength</Pill>
+                      </View>
+                      {/*
+                        735 exercises ship published coaching — setup, execution, cues, common mistakes,
+                        breathing, tempo. It is the best beginner asset in the product and it used to open
+                        nothing; then it opened the right screen, styled as a footnote.
+
+                        ⚠ LOUD ON A MOVEMENT THEY HAVE NEVER DONE, QUIET EVERYWHERE ELSE. Somebody meeting a
+                        lift for the first time has exactly one question — *how do I do this* — and the answer
+                        was a 13pt link competing with the weight field. Somebody on their fortieth set of
+                        bench does not need it shouted at them, and shouting it at everybody is how a useful
+                        affordance becomes furniture nobody reads.
+
+                        `liftHist` is null for a lift with no history — the same fact the card already uses to
+                        print `—` where a previous best would go. No new state, no new read.
+                      */}
+                      <Pressable
+                        onPress={() => (ex.catalogKey ? router.push({ pathname: '/exercise/[id]', params: { id: ex.catalogKey } }) : undefined)}
+                        accessibilityRole="button"
+                        accessibilityLabel={liftHist ? `How to ${ex.name}` : `First time on ${ex.name} — see how it's done`}
+                        style={({ pressed }) => [styles.howTo, liftHist ? null : styles.howToFirst, pressed ? styles.howToPressed : null]}
+                      >
+                        <Svg width={liftHist ? 16 : 18} height={liftHist ? 16 : 18} viewBox="0 0 24 24" fill="none" stroke={liftHist ? flColor.bronze400 : flColor.bronze300} strokeWidth={1.8}>
+                          <Path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z" />
+                          <Path d="M10 8.5l6 3.5-6 3.5z" fill={liftHist ? flColor.bronze400 : flColor.bronze300} stroke="none" />
+                        </Svg>
+                        <Text style={[styles.howToText, liftHist ? null : styles.howToTextFirst]}>
+                          {liftHist ? 'How To' : "First time — here's how"}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                  {/*
+                    ══ WHAT YOU SAID LAST TIME ══
+
+                    The whole reason notes are worth building. A note you can only find by digging through
+                    history is a diary; the same note in front of you as you set up for the lift is coaching.
+                    Shown only for a DIFFERENT session — repeating back a note you wrote ninety seconds ago
+                    would be the app talking to itself.
+                  */}
+                  {lastNote && !ex.note ? (
+                    <View style={styles.lastNote}>
+                      <Text style={styles.lastNoteLabel}>LAST TIME</Text>
+                      <Text style={styles.lastNoteText}>{lastNote.text}</Text>
+                    </View>
+                  ) : null}
+                  {/*
+                    ⚠ `HOLT SAYS` AND `THE PLAN SAYS` USED TO BE TWO CARDS HERE, AND BOTH VANISHED AFTER SET ONE.
+
+                    They were stacked in this hero — the author's cue and `progressionFor`'s sentence — and the
+                    hero AUTO-COLLAPSES the first time a set resolves (see `autoCollapsed` in `completeSet`). So
+                    the coach spoke before the first rep and then said nothing for the rest of the session,
+                    while the medallion in the corner volunteered nothing and only opened a sheet.
+
+                    Both now come out of the coin (`CoachSays`, bottom right), which is the PO's call and the
+                    right one: *"whatever the coach says should come from the coach coin."* One object says the
+                    thing, points at itself, and is tappable to answer. It also survives the collapse, which is
+                    the actual defect. `coachLine` decides which of the three he says — see `domain/coach/coach-says`.
+                  */}
+                  {/*
+                    insight row: Last · Goal · Best
+
+                    Both outer figures were hard-coded em-dashes over data the app already had — Best in
+                    particular was fetched on mount, held in state, and read three lines away to decide the PR
+                    moment while the column beside it claimed there was nothing to show.
+
+                    An em-dash still means NEVER DONE IT, and it must: a zero here would read as "you lifted
+                    nothing", and a zero taken as a prior best would make an athlete's first ever set a record.
+                  */}
+                  <View style={styles.insightRow}>
+                    <View style={styles.insightCol}>
+                      <Text style={styles.insightLabel}>Last</Text>
+                      <Text style={styles.insightVal}>{lastText}</Text>
+                    </View>
+                    {/* THE ONE FIGURE HERE THAT IS A DECISION RATHER THAN A RECORD, so it is the one that
+                        opens. Last and Best are history and nothing can edit them; the goal is the athlete's
+                        own, and until now the only way to change it was to have caught the panel the moment the
+                        exercise was added. The pencil says so, in the same bronze the weight cells use. */}
+                    <Pressable
+                      onPress={() => setGoalOpen(goalPanelOpen ? null : exIdx)}
+                      disabled={!goalEditable}
+                      accessibilityRole={goalEditable ? 'button' : 'text'}
+                      accessibilityState={{ expanded: goalPanelOpen }}
+                      accessibilityLabel={goalEditable ? `Goal is ${goalText}. Change it.` : `Goal was ${goalText}`}
+                      style={[styles.insightCol, styles.insightMid]}
+                    >
+                      <Text style={styles.insightGoalLabel}>Goal</Text>
+                      <View style={styles.insightGoalRow}>
+                        <Text style={styles.insightGoal}>{goalText}</Text>
+                        {goalEditable ? (
+                          <Svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" opacity={0.9}>
+                            <Path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+                          </Svg>
+                        ) : null}
+                      </View>
+                    </Pressable>
+                    <View style={styles.insightCol}>
+                      <Text style={styles.insightLabel}>Best</Text>
+                      <Text style={styles.insightVal}>{bestText}</Text>
+                    </View>
+                  </View>
+                </TourAnchor>
+              ) : (
+                <Pressable onPress={() => setHero(false)} accessibilityRole="button" accessibilityLabel="Expand exercise details" style={styles.heroStrip}>
+                  <View style={styles.heroStripThumb}>
+                    <Svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round" opacity={0.16}>
                       <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />
                     </Svg>
-                  }
-                />
-              </View>
-              {/* meta */}
-              <View style={styles.heroMeta}>
-                <View style={styles.heroTitleRow}>
-                  <Text style={styles.heroName}>{ex.name}</Text>
-                  <View style={styles.heroActionsTop}>
-                    <Pressable onPress={() => setFavorite((v) => !v)} accessibilityRole="button" accessibilityLabel="Save exercise" hitSlop={6} style={styles.heroIconBtn}>
-                      <Svg width={19} height={19} viewBox="0 0 24 24" fill={favorite ? flColor.bronze300 : 'none'} stroke={favorite ? flColor.bronze300 : flColor.gray600} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-                        <Path d="M6 4h12v17l-6-4-6 4z" />
-                      </Svg>
-                    </Pressable>
-                    <Pressable onPress={() => setHero(true)} accessibilityRole="button" accessibilityLabel="Collapse exercise details" hitSlop={6} style={styles.heroIconBtn}>
-                      <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                        <Path d="M18 15l-6-6-6 6" />
-                      </Svg>
-                    </Pressable>
                   </View>
-                </View>
-                <View style={styles.heroEquipRow}>
-                  <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.6} strokeLinecap="square">
-                    <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />
+                  <View style={styles.heroStripText}>
+                    <Text style={styles.heroStripName} numberOfLines={1}>{ex.name}</Text>
+                    {/* Collapsed, the strip is all the athlete can see of the lift — so it carries what they
+                        did at THIS set position last time beside what is being asked now. Omitted rather than
+                        drawn as "Prev —": a placeholder in a one-line strip is noise, and the expanded card
+                        above already says the honest em-dash. */}
+                    <Text style={styles.heroStripMeta}>
+                      {prevText ? <>Prev <Text style={styles.heroStripPrev}>{prevText}</Text>{'   '}</> : null}
+                      Goal <Text style={styles.heroStripGoal}>{goalText}</Text>
+                    </Text>
+                  </View>
+                  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                    <Path d="M6 9l6 6 6-6" />
                   </Svg>
-                  <Text style={styles.heroEquip}>Main lift</Text>
-                </View>
-                <View style={styles.heroTags}>
-                  <Pill size="sm">Strength</Pill>
-                </View>
-                {/*
-                  735 exercises ship published coaching — setup, execution, cues, common mistakes,
-                  breathing, tempo. It is the best beginner asset in the product and it used to open
-                  nothing; then it opened the right screen, styled as a footnote.
-
-                  ⚠ LOUD ON A MOVEMENT THEY HAVE NEVER DONE, QUIET EVERYWHERE ELSE. Somebody meeting a
-                  lift for the first time has exactly one question — *how do I do this* — and the answer
-                  was a 13pt link competing with the weight field. Somebody on their fortieth set of
-                  bench does not need it shouted at them, and shouting it at everybody is how a useful
-                  affordance becomes furniture nobody reads.
-
-                  `liftHist` is null for a lift with no history — the same fact the card already uses to
-                  print `—` where a previous best would go. No new state, no new read.
-                */}
-                <Pressable
-                  onPress={() => (ex.catalogKey ? router.push({ pathname: '/exercise/[id]', params: { id: ex.catalogKey } }) : undefined)}
-                  accessibilityRole="button"
-                  accessibilityLabel={liftHist ? `How to ${ex.name}` : `First time on ${ex.name} — see how it's done`}
-                  style={({ pressed }) => [styles.howTo, liftHist ? null : styles.howToFirst, pressed ? styles.howToPressed : null]}
-                >
-                  <Svg width={liftHist ? 16 : 18} height={liftHist ? 16 : 18} viewBox="0 0 24 24" fill="none" stroke={liftHist ? flColor.bronze400 : flColor.bronze300} strokeWidth={1.8}>
-                    <Path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z" />
-                    <Path d="M10 8.5l6 3.5-6 3.5z" fill={liftHist ? flColor.bronze400 : flColor.bronze300} stroke="none" />
-                  </Svg>
-                  <Text style={[styles.howToText, liftHist ? null : styles.howToTextFirst]}>
-                    {liftHist ? 'How To' : "First time — here's how"}
-                  </Text>
                 </Pressable>
-              </View>
-            </View>
-            {/*
-              ══ WHAT YOU SAID LAST TIME ══
+              )}
 
-              The whole reason notes are worth building. A note you can only find by digging through
-              history is a diary; the same note in front of you as you set up for the lift is coaching.
-              Shown only for a DIFFERENT session — repeating back a note you wrote ninety seconds ago
-              would be the app talking to itself.
-            */}
-            {lastNote && !ex.note ? (
-              <View style={styles.lastNote}>
-                <Text style={styles.lastNoteLabel}>LAST TIME</Text>
-                <Text style={styles.lastNoteText}>{lastNote.text}</Text>
-              </View>
-            ) : null}
-            {/*
-              ⚠ `HOLT SAYS` AND `THE PLAN SAYS` USED TO BE TWO CARDS HERE, AND BOTH VANISHED AFTER SET ONE.
+              {/*
+                * THE GOAL EDITOR — opened from the Goal figure directly above, never on its own.
+                *
+                * Sits under the hero and over the table on purpose: it changes the Target column a couple of
+                * inches below, so the control and what it does are in one glance. Tapping Goal again closes
+                * it, which is why it carries no Done button of its own.
+                *
+                * Not drawn over a FUSED superset, where the merged card replaces the table entirely and "the
+                * current exercise" is one of two being alternated — an editor there would point at a column
+                * that is not on screen. Tapping a member's name opens that member on its own card.
+                */}
+              {goalPanelOpen && !ssFused ? (
+                <SetGoalPanel exercise={ex} onChange={(next) => mutate((s) => replaceExercise(s, exIdx, next))} />
+              ) : null}
 
-              They were stacked in this hero — the author's cue and `progressionFor`'s sentence — and the
-              hero AUTO-COLLAPSES the first time a set resolves (see `autoCollapsed` in `completeSet`). So
-              the coach spoke before the first rep and then said nothing for the rest of the session,
-              while the medallion in the corner volunteered nothing and only opened a sheet.
+              {/* The block stands where the hero AND the table would: same position in the session, entirely
+                  different measurement. Sets of reps have nothing to say about three miles. */}
+              {isSuperset ? null : isCardio ? (
+                <CardioBlockCard
+                  exercise={ex}
+                  index={exIdx}
+                  units={units}
+                  onSetModality={setCardioModality}
+                  onSave={saveCardioLog}
+                  onLiveChange={(live) => setLiveBoutIdx(live ? exIdx : null)}
+                />
+              ) : (
+              <TourAnchor id="workout-sets" style={styles.table}>
+                <View style={styles.headRow}>
+                  <Text style={[styles.h, styles.cSet]}>Set</Text>
+                  <Text style={[styles.h, styles.cTarget]}>Target</Text>
+                  <Text style={[styles.h, styles.cWeight]}>Weight ({unitLabel(units)})</Text>
+                  <Text style={[styles.h, styles.cActual]}>Actual</Text>
+                </View>
+                <View style={styles.rows}>
+                  {ex.sets.map((set, si) => {
+                    const isDone = set.done;
+                    const isCurrent = !isDone && si === currentSetIdx;
+                    const ringColor = isDone ? flColor.greenMuted : isCurrent ? flColor.bronze400 : flColor.charcoal500;
+                    const numColor = isDone ? flColor.greenMuted : isCurrent ? flColor.bronze300 : flColor.gray600;
+                    const valColor = isDone || isCurrent ? flColor.cream100 : flColor.gray600;
+                    return (
+                      <View key={si} style={[styles.row, isDone && styles.rowDone, isCurrent && styles.rowCurrent]}>
+                        {flash && flash.ei === exIdx && flash.si === si ? <FuseFlash key={flash.token} /> : null}
+                        <View style={[styles.cSet, styles.setCell]}>
+                          <View style={[styles.setNum, { borderColor: ringColor }]}>
+                            <Text style={[styles.setNumText, { color: numColor }]}>{si + 1}</Text>
+                          </View>
+                          {isDone ? (
+                            <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.greenMuted} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
+                              <Path d="M20 6L9 17l-5-5" />
+                            </Svg>
+                          ) : null}
+                        </View>
+                        <View style={styles.cTarget}>
+                          {/* Three kinds of ask, and only one of them is a rep count. A to-failure set showing
+                              "0 Reps" — which is what the hard-coded label produced — reads as a set with
+                              nothing in it, the opposite of what it prescribes. */}
+                          {set.toFailure ? (
+                            <Text style={[styles.targetText, { color: valColor }]}>F<Text style={styles.repsLabel}> Max</Text></Text>
+                          ) : set.targetSec != null ? (
+                            <Text style={[styles.targetText, { color: valColor }]}>{durText(set.targetSec)}</Text>
+                          ) : (
+                            <Text style={[styles.targetText, { color: valColor }]}>{targetRepsText(set)}<Text style={styles.repsLabel}> Reps</Text></Text>
+                          )}
+                          {/* THE SIDE. "10 Reps" for a split squat is half the prescription wearing the whole
+                              prescription's clothes — the athlete has no way to tell it apart from a real
+                              thirty-rep day. Shown per row because the row is where they are looking. */}
+                          {ex.per ? <Text style={styles.targetPer}>per {ex.per}</Text> : null}
+                          {/* The bar a percentage-based program is asking for. Shown UNDER the rep target
+                              rather than pre-filled into Weight, because Weight is what the athlete lifted:
+                              seeding it would record a lift nobody made and could announce a PR for it. */}
+                          {set.targetWeight != null ? (
+                            <Text style={styles.targetLoad}>{set.targetWeight} {unitLabel(units)}</Text>
+                          ) : null}
+                        </View>
+                        <Pressable style={[styles.cWeight, styles.weightBtn]} onPress={() => openSheet(exIdx, si, 'weight')} accessibilityRole="button" accessibilityLabel={`Edit weight, set ${si + 1}`}>
+                          {popCell(si, 'weight', <Text style={[styles.weightText, { color: valColor }]}>{weightText(set)}</Text>)}
+                          <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" opacity={0.85}>
+                            <Path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+                          </Svg>
+                        </Pressable>
+                        {/* THE ACTUAL IS EDITABLE, and it now looks it. It was a bare label beside an emphatic
+                            weight button carrying a pencil, so the one number the athlete most often has to
+                            change read as a printed target. Same bordered cell, same pencil, both states. */}
+                        <View style={[styles.cActual, styles.actualCell]}>
+                          {isDone ? (
+                            <>
+                              <Pressable style={styles.actualBtn} onPress={() => openSheet(exIdx, si, 'reps')} accessibilityRole="button" accessibilityLabel={`Edit actual reps, set ${si + 1}`}>
+                                {popCell(si, 'reps', <Text style={styles.actualDone}>{actualText(set)}</Text>)}
+                                <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" opacity={0.8}>
+                                  <Path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+                                </Svg>
+                              </Pressable>
+                              <Pressable onPress={() => uncompleteSet(exIdx, si)} accessibilityRole="button" accessibilityLabel={`Mark set ${si + 1} incomplete`} style={styles.checkDoneBtn}>
+                                <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.greenMuted} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
+                                  <Path d="M20 6L9 17l-5-5" />
+                                </Svg>
+                              </Pressable>
+                            </>
+                          ) : isCurrent ? (
+                            /* ══ A HOLD GETS A CLOCK, NOT A REPS BOX ══
+                               The pencil-and-tick pair asks "how many did you get". For a plank the question
+                               is "how long did you last", and until now the app had no way to ask it — the
+                               athlete timed themselves on their phone and pressed a check. The timer records
+                               what it actually watched, so stopping at forty of a prescribed sixty logs a
+                               forty-second set rather than a failure or a lie. */
+                            set.targetSec != null ? (
+                              <HoldTimer
+                                targetSec={set.targetSec}
+                                soundOn={soundOn}
+                                label={ex.name}
+                                onDone={(held) => logHold(exIdx, si, held)}
+                              />
+                            ) : (
+                            <>
+                              <Pressable style={[styles.actualBtn, styles.actualBtnCurrent]} onPress={() => openSheet(exIdx, si, 'reps')} accessibilityRole="button" accessibilityLabel={`Edit actual reps, set ${si + 1}`}>
+                                {popCell(si, 'reps', <Text style={styles.actualCurrent}>{actualText(set)}</Text>)}
+                                <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+                                  <Path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+                                </Svg>
+                              </Pressable>
+                              <Pressable onPress={() => completeSet(exIdx, si)} accessibilityRole="button" accessibilityLabel={`Complete set ${si + 1}`} style={styles.checkCurrent}>
+                                <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+                                  <Path d="M20 6L9 17l-5-5" />
+                                </Svg>
+                              </Pressable>
+                            </>
+                            )
+                          ) : (
+                            /* A pending row is tappable too — so you can put set 3's weight in before you get
+                               there. It writes only: sets still resolve top-down (see `commitSheet`). */
+                            <>
+                              <Pressable style={styles.actualBtn} onPress={() => openSheet(exIdx, si, 'reps')} accessibilityRole="button" accessibilityLabel={`Pre-fill set ${si + 1}`}>
+                                <Text style={styles.actualPending}>{set.actualReps != null ? String(set.actualReps) : '—'}</Text>
+                              </Pressable>
+                              <View style={styles.checkPending} />
+                            </>
+                          )}
+                        </View>
+                      </View>
+                    );
+                  })}
+                  <TourAnchor id="workout-addset" style={styles.setBtns}>
+                    <Pressable onPress={() => addSet(exIdx)} accessibilityRole="button" accessibilityLabel="Add set" style={styles.addSet}>
+                      <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round">
+                        <Path d="M12 5v14M5 12h14" />
+                      </Svg>
+                      <Text style={styles.addSetText}>Add Set</Text>
+                    </Pressable>
+                    {/*
+                      ⚠ ALWAYS RENDERED, DISABLED AT ONE SET — it used to unmount, and that is what made the
+                      row reflow. PO: *"we need to change that to add set and remove set and split the pills
+                      down the middle."* Two halves that swap between full-width and half-width depending on
+                      how many sets you have left are not halves; the athlete's thumb has to find a target
+                      that moves. Both carry `flex: 1` and both stay on screen, so the pair is the same shape
+                      for the whole session.
 
-              Both now come out of the coin (`CoachSays`, bottom right), which is the PO's call and the
-              right one: *"whatever the coach says should come from the coach coin."* One object says the
-              thing, points at itself, and is tappable to answer. It also survives the collapse, which is
-              the actual defect. `coachLine` decides which of the three he says — see `domain/coach/coach-says`.
-            */}
-            {/*
-              insight row: Last · Goal · Best
-
-              Both outer figures were hard-coded em-dashes over data the app already had — Best in
-              particular was fetched on mount, held in state, and read three lines away to decide the PR
-              moment while the column beside it claimed there was nothing to show.
-
-              An em-dash still means NEVER DONE IT, and it must: a zero here would read as "you lifted
-              nothing", and a zero taken as a prior best would make an athlete's first ever set a record.
-            */}
-            <View style={styles.insightRow}>
-              <View style={styles.insightCol}>
-                <Text style={styles.insightLabel}>Last</Text>
-                <Text style={styles.insightVal}>{lastText}</Text>
-              </View>
-              {/* THE ONE FIGURE HERE THAT IS A DECISION RATHER THAN A RECORD, so it is the one that
-                  opens. Last and Best are history and nothing can edit them; the goal is the athlete's
-                  own, and until now the only way to change it was to have caught the panel the moment the
-                  exercise was added. The pencil says so, in the same bronze the weight cells use. */}
-              <Pressable
-                onPress={() => setGoalOpen(goalPanelOpen ? null : exIdx)}
-                disabled={!goalEditable}
-                accessibilityRole={goalEditable ? 'button' : 'text'}
-                accessibilityState={{ expanded: goalPanelOpen }}
-                accessibilityLabel={goalEditable ? `Goal is ${goalText}. Change it.` : `Goal was ${goalText}`}
-                style={[styles.insightCol, styles.insightMid]}
-              >
-                <Text style={styles.insightGoalLabel}>Goal</Text>
-                <View style={styles.insightGoalRow}>
-                  <Text style={styles.insightGoal}>{goalText}</Text>
-                  {goalEditable ? (
-                    <Svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" opacity={0.9}>
-                      <Path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
-                    </Svg>
+                      The label grew a noun for the same reason: "Remove" beside "Add Set" reads as removing
+                      the exercise, which is the one thing this button has never done.
+                    */}
+                    <Pressable
+                      onPress={() => removeSet(exIdx)}
+                      disabled={ex.sets.length <= 1}
+                      accessibilityRole="button"
+                      accessibilityState={{ disabled: ex.sets.length <= 1 }}
+                      accessibilityLabel="Remove last set"
+                      style={[styles.removeSet, ex.sets.length <= 1 && styles.removeSetOff]}
+                    >
+                      <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                        <Path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" />
+                      </Svg>
+                      <Text style={styles.removeSetText}>Remove Set</Text>
+                    </Pressable>
+                  </TourAnchor>
+                  {/* Says the one thing the table does not say about itself, and stops saying it the moment
+                      it stops being news. Derived from the session rather than a stored "seen" flag — there
+                      is nothing to persist, nothing to clear on account switch, and no effect to get wrong. */}
+                  {setsDone === 0 ? (
+                    <Text style={styles.tableHint}>Tap a weight or a rep count to change it — then Log Set marks it done.</Text>
                   ) : null}
                 </View>
-              </Pressable>
-              <View style={styles.insightCol}>
-                <Text style={styles.insightLabel}>Best</Text>
-                <Text style={styles.insightVal}>{bestText}</Text>
-              </View>
-            </View>
-          </TourAnchor>
-        ) : (
-          <Pressable onPress={() => setHero(false)} accessibilityRole="button" accessibilityLabel="Expand exercise details" style={styles.heroStrip}>
-            <View style={styles.heroStripThumb}>
-              <Svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round" opacity={0.16}>
-                <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />
-              </Svg>
-            </View>
-            <View style={styles.heroStripText}>
-              <Text style={styles.heroStripName} numberOfLines={1}>{ex.name}</Text>
-              {/* Collapsed, the strip is all the athlete can see of the lift — so it carries what they
-                  did at THIS set position last time beside what is being asked now. Omitted rather than
-                  drawn as "Prev —": a placeholder in a one-line strip is noise, and the expanded card
-                  above already says the honest em-dash. */}
-              <Text style={styles.heroStripMeta}>
-                {prevText ? <>Prev <Text style={styles.heroStripPrev}>{prevText}</Text>{'   '}</> : null}
-                Goal <Text style={styles.heroStripGoal}>{goalText}</Text>
-              </Text>
-            </View>
-            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M6 9l6 6 6-6" />
-            </Svg>
-          </Pressable>
-        )}
+              </TourAnchor>
+              )}
 
-        {/*
-          * THE GOAL EDITOR — opened from the Goal figure directly above, never on its own.
-          *
-          * Sits under the hero and over the table on purpose: it changes the Target column a couple of
-          * inches below, so the control and what it does are in one glance. Tapping Goal again closes
-          * it, which is why it carries no Done button of its own.
-          *
-          * Not drawn over a FUSED superset, where the merged card replaces the table entirely and "the
-          * current exercise" is one of two being alternated — an editor there would point at a column
-          * that is not on screen. Tapping a member's name opens that member on its own card.
-          */}
-        {goalPanelOpen && !ssFused ? (
-          <SetGoalPanel exercise={ex} onChange={(next) => mutate((s) => replaceExercise(s, exIdx, next))} />
-        ) : null}
-
-        {/* The block stands where the hero AND the table would: same position in the session, entirely
-            different measurement. Sets of reps have nothing to say about three miles. */}
-        {isSuperset ? null : isCardio ? (
-          <CardioBlockCard
-            exercise={ex}
-            index={exIdx}
-            units={units}
-            onSetModality={setCardioModality}
-            onSave={saveCardioLog}
-            onLiveChange={(live) => setLiveBoutIdx(live ? exIdx : null)}
-          />
-        ) : (
-        <TourAnchor id="workout-sets" style={styles.table}>
-          <View style={styles.headRow}>
-            <Text style={[styles.h, styles.cSet]}>Set</Text>
-            <Text style={[styles.h, styles.cTarget]}>Target</Text>
-            <Text style={[styles.h, styles.cWeight]}>Weight ({unitLabel(units)})</Text>
-            <Text style={[styles.h, styles.cActual]}>Actual</Text>
-          </View>
-          <View style={styles.rows}>
-            {ex.sets.map((set, si) => {
-              const isDone = set.done;
-              const isCurrent = !isDone && si === currentSetIdx;
-              const ringColor = isDone ? flColor.greenMuted : isCurrent ? flColor.bronze400 : flColor.charcoal500;
-              const numColor = isDone ? flColor.greenMuted : isCurrent ? flColor.bronze300 : flColor.gray600;
-              const valColor = isDone || isCurrent ? flColor.cream100 : flColor.gray600;
-              return (
-                <View key={si} style={[styles.row, isDone && styles.rowDone, isCurrent && styles.rowCurrent]}>
-                  {flash && flash.ei === exIdx && flash.si === si ? <FuseFlash key={flash.token} /> : null}
-                  <View style={[styles.cSet, styles.setCell]}>
-                    <View style={[styles.setNum, { borderColor: ringColor }]}>
-                      <Text style={[styles.setNumText, { color: numColor }]}>{si + 1}</Text>
-                    </View>
-                    {isDone ? (
-                      <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.greenMuted} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
-                        <Path d="M20 6L9 17l-5-5" />
-                      </Svg>
-                    ) : null}
-                  </View>
-                  <View style={styles.cTarget}>
-                    {/* Three kinds of ask, and only one of them is a rep count. A to-failure set showing
-                        "0 Reps" — which is what the hard-coded label produced — reads as a set with
-                        nothing in it, the opposite of what it prescribes. */}
-                    {set.toFailure ? (
-                      <Text style={[styles.targetText, { color: valColor }]}>F<Text style={styles.repsLabel}> Max</Text></Text>
-                    ) : set.targetSec != null ? (
-                      <Text style={[styles.targetText, { color: valColor }]}>{durText(set.targetSec)}</Text>
-                    ) : (
-                      <Text style={[styles.targetText, { color: valColor }]}>{targetRepsText(set)}<Text style={styles.repsLabel}> Reps</Text></Text>
-                    )}
-                    {/* THE SIDE. "10 Reps" for a split squat is half the prescription wearing the whole
-                        prescription's clothes — the athlete has no way to tell it apart from a real
-                        thirty-rep day. Shown per row because the row is where they are looking. */}
-                    {ex.per ? <Text style={styles.targetPer}>per {ex.per}</Text> : null}
-                    {/* The bar a percentage-based program is asking for. Shown UNDER the rep target
-                        rather than pre-filled into Weight, because Weight is what the athlete lifted:
-                        seeding it would record a lift nobody made and could announce a PR for it. */}
-                    {set.targetWeight != null ? (
-                      <Text style={styles.targetLoad}>{set.targetWeight} {unitLabel(units)}</Text>
-                    ) : null}
-                  </View>
-                  <Pressable style={[styles.cWeight, styles.weightBtn]} onPress={() => openSheet(exIdx, si, 'weight')} accessibilityRole="button" accessibilityLabel={`Edit weight, set ${si + 1}`}>
-                    {popCell(si, 'weight', <Text style={[styles.weightText, { color: valColor }]}>{weightText(set)}</Text>)}
-                    <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" opacity={0.85}>
-                      <Path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
-                    </Svg>
-                  </Pressable>
-                  {/* THE ACTUAL IS EDITABLE, and it now looks it. It was a bare label beside an emphatic
-                      weight button carrying a pencil, so the one number the athlete most often has to
-                      change read as a printed target. Same bordered cell, same pencil, both states. */}
-                  <View style={[styles.cActual, styles.actualCell]}>
-                    {isDone ? (
-                      <>
-                        <Pressable style={styles.actualBtn} onPress={() => openSheet(exIdx, si, 'reps')} accessibilityRole="button" accessibilityLabel={`Edit actual reps, set ${si + 1}`}>
-                          {popCell(si, 'reps', <Text style={styles.actualDone}>{actualText(set)}</Text>)}
-                          <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" opacity={0.8}>
-                            <Path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
-                          </Svg>
-                        </Pressable>
-                        <Pressable onPress={() => uncompleteSet(exIdx, si)} accessibilityRole="button" accessibilityLabel={`Mark set ${si + 1} incomplete`} style={styles.checkDoneBtn}>
-                          <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.greenMuted} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
-                            <Path d="M20 6L9 17l-5-5" />
-                          </Svg>
-                        </Pressable>
-                      </>
-                    ) : isCurrent ? (
-                      /* ══ A HOLD GETS A CLOCK, NOT A REPS BOX ══
-                         The pencil-and-tick pair asks "how many did you get". For a plank the question
-                         is "how long did you last", and until now the app had no way to ask it — the
-                         athlete timed themselves on their phone and pressed a check. The timer records
-                         what it actually watched, so stopping at forty of a prescribed sixty logs a
-                         forty-second set rather than a failure or a lie. */
-                      set.targetSec != null ? (
-                        <HoldTimer
-                          targetSec={set.targetSec}
-                          soundOn={soundOn}
-                          label={ex.name}
-                          onDone={(held) => logHold(exIdx, si, held)}
-                        />
-                      ) : (
-                      <>
-                        <Pressable style={[styles.actualBtn, styles.actualBtnCurrent]} onPress={() => openSheet(exIdx, si, 'reps')} accessibilityRole="button" accessibilityLabel={`Edit actual reps, set ${si + 1}`}>
-                          {popCell(si, 'reps', <Text style={styles.actualCurrent}>{actualText(set)}</Text>)}
-                          <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-                            <Path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
-                          </Svg>
-                        </Pressable>
-                        <Pressable onPress={() => completeSet(exIdx, si)} accessibilityRole="button" accessibilityLabel={`Complete set ${si + 1}`} style={styles.checkCurrent}>
-                          <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
-                            <Path d="M20 6L9 17l-5-5" />
-                          </Svg>
-                        </Pressable>
-                      </>
-                      )
-                    ) : (
-                      /* A pending row is tappable too — so you can put set 3's weight in before you get
-                         there. It writes only: sets still resolve top-down (see `commitSheet`). */
-                      <>
-                        <Pressable style={styles.actualBtn} onPress={() => openSheet(exIdx, si, 'reps')} accessibilityRole="button" accessibilityLabel={`Pre-fill set ${si + 1}`}>
-                          <Text style={styles.actualPending}>{set.actualReps != null ? String(set.actualReps) : '—'}</Text>
-                        </Pressable>
-                        <View style={styles.checkPending} />
-                      </>
-                    )}
-                  </View>
-                </View>
-              );
-            })}
-            <TourAnchor id="workout-addset" style={styles.setBtns}>
-              <Pressable onPress={() => addSet(exIdx)} accessibilityRole="button" accessibilityLabel="Add set" style={styles.addSet}>
-                <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round">
-                  <Path d="M12 5v14M5 12h14" />
-                </Svg>
-                <Text style={styles.addSetText}>Add Set</Text>
-              </Pressable>
-              {ex.sets.length > 1 ? (
-                <Pressable onPress={() => removeSet(exIdx)} accessibilityRole="button" accessibilityLabel="Remove last set" style={styles.removeSet}>
-                  <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                    <Path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" />
+              {/* exercise nav dots */}
+              <View style={styles.nav}>
+                <Pressable disabled={exIdx === 0} onPress={() => goExercise(exIdx - 1)} accessibilityLabel="Previous exercise" style={styles.navArrow}>
+                  <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={exIdx === 0 ? flColor.charcoal500 : flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <Path d="M15 6l-6 6 6 6" />
                   </Svg>
-                  <Text style={styles.removeSetText}>Remove</Text>
                 </Pressable>
-              ) : null}
-            </TourAnchor>
-            {/* Says the one thing the table does not say about itself, and stops saying it the moment
-                it stops being news. Derived from the session rather than a stored "seen" flag — there
-                is nothing to persist, nothing to clear on account switch, and no effect to get wrong. */}
-            {setsDone === 0 ? (
-              <Text style={styles.tableHint}>Tap a weight or a rep count to change it — then Log Set marks it done.</Text>
-            ) : null}
-          </View>
-        </TourAnchor>
-        )}
-
-        {/* exercise nav dots */}
-        <View style={styles.nav}>
-          <Pressable disabled={exIdx === 0} onPress={() => goExercise(exIdx - 1)} accessibilityLabel="Previous exercise" style={styles.navArrow}>
-            <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={exIdx === 0 ? flColor.charcoal500 : flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M15 6l-6 6 6 6" />
-            </Svg>
-          </Pressable>
-          <View style={styles.dots}>
-            {session.exercises.map((e, i) => {
-              const eDone = e.sets.every((s) => s.done);
-              const isCur = i === exIdx;
-              const skipped = !isCur && !eDone && i < exIdx; // passed it by without finishing
-              return (
-                <Pressable key={i} onPress={() => goExercise(i)} accessibilityLabel={e.name} hitSlop={6}>
-                  <View style={[styles.dot, isCur ? styles.dotCurrent : eDone ? styles.dotDone : skipped ? styles.dotSkipped : null]} />
+                <View style={styles.dots}>
+                  {session.exercises.map((e, i) => {
+                    const eDone = e.sets.every((s) => s.done);
+                    const isCur = i === exIdx;
+                    const skipped = !isCur && !eDone && i < exIdx; // passed it by without finishing
+                    return (
+                      <Pressable key={i} onPress={() => goExercise(i)} accessibilityLabel={e.name} hitSlop={6}>
+                        <View style={[styles.dot, isCur ? styles.dotCurrent : eDone ? styles.dotDone : skipped ? styles.dotSkipped : null]} />
+                      </Pressable>
+                    );
+                  })}
+                </View>
+                <Pressable disabled={isLastEx} onPress={() => goExercise(exIdx + 1)} accessibilityLabel="Next exercise" style={styles.navArrow}>
+                  <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={isLastEx ? flColor.charcoal500 : flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <Path d="M9 6l6 6-6 6" />
+                  </Svg>
                 </Pressable>
-              );
-            })}
-          </View>
-          <Pressable disabled={isLastEx} onPress={() => goExercise(exIdx + 1)} accessibilityLabel="Next exercise" style={styles.navArrow}>
-            <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={isLastEx ? flColor.charcoal500 : flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M9 6l6 6-6 6" />
-            </Svg>
-          </Pressable>
-        </View>
-        <Pressable onPress={() => setOverviewOpen(true)} accessibilityRole="button" accessibilityLabel="View full workout plan" style={styles.overviewBtn}>
-          <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-            <Path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
-          </Svg>
-          <Text style={styles.overviewText}>View Plan · {exIdx + 1} / {session.exercises.length}</Text>
-        </Pressable>
+              </View>
+              <Pressable onPress={() => setOverviewOpen(true)} accessibilityRole="button" accessibilityLabel="View full workout plan" style={styles.overviewBtn}>
+                <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+                  <Path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+                </Svg>
+                <Text style={styles.overviewText}>View Plan · {exIdx + 1} / {session.exercises.length}</Text>
+              </Pressable>
 
-        {error ? <Text style={styles.err}>Couldn’t save — {error}. Try again.</Text> : null}
+              {error ? <Text style={styles.err}>Couldn’t save — {error}. Try again.</Text> : null}
+            </ScrollView>
+            )}
+          </View>
+        ))}
       </ScrollView>
 
       {/* bottom actions */}
@@ -3082,11 +3406,27 @@ export default function WorkoutScreen() {
               {primaryLabel}
             </Button>
           </View>
-          <View style={styles.endWrap}>
-            <Button variant="secondary" fullWidth onPress={openAdd} accessibilityLabel="Add an exercise">
-              Add Exercise
-            </Button>
-          </View>
+          {/*
+            ⚠ FREESTYLE ONLY. PO: *"when you're in a full templated workout (so not freestyle) we need
+            to get rid of the add button at the bottom."*
+
+            The reasoning above still holds for a session you are BUILDING as you train — adding is the
+            frequent action and it was three taps deep. It does not hold for a program day, a saved
+            template or a Forge session: there the plan is the point, the frequent action is advancing
+            through it, and a permanent Add sitting under the thumb invites editing a prescription by
+            accident.
+
+            Nothing is lost — ⋯ still carries "Add an exercise", and so does Holt's sheet. With one
+            child, `primaryWrap`'s `flex: 1.15` fills the row on its own; no style change is needed to
+            make the primary full-width.
+          */}
+          {templated ? null : (
+            <View style={styles.endWrap}>
+              <Button variant="secondary" fullWidth onPress={openAdd} accessibilityLabel="Add an exercise">
+                Add Exercise
+              </Button>
+            </View>
+          )}
         </View>
       </View>
 
@@ -3152,8 +3492,18 @@ export default function WorkoutScreen() {
          */
         <CoachSays
           line={says?.text ?? null}
+          onDismiss={says ? () => setDismissedSay(says.text) : undefined}
           onPress={() => {
             setCoachOpen(true);
+            /* The home gym, once per session. `undefined` until it lands, which `session-suggest`
+               reads as "do not filter" — so the first open offers slightly more rather than nothing,
+               which is the right way for a read in flight to fail. */
+            if (ownedGear === undefined) {
+              void fetchCoachProfile().then(
+                (p) => setOwnedGear(p.ownedEquipment),
+                () => setOwnedGear(null), // a failed read must not silence him
+              );
+            }
             /* Read on OPEN. See `proposal` above for why this is not a mount-time fetch. */
             void fetchIntensitySignals().then((signals) => {
               const next = proposeIntensity(signals, coachIntensity);
@@ -3182,6 +3532,9 @@ export default function WorkoutScreen() {
       {coachOpen ? (
         <SessionCoachSheet
           onClose={() => setCoachOpen(false)}
+          swapPicks={swapPicks}
+          addPicks={addPicks}
+          onPick={applyPick}
           exerciseName={ex.name}
           message={progression?.message ?? null}
           basis={
@@ -4043,6 +4396,35 @@ function swapExercise(ex: SessionExercise, p: PickedExercise): SessionExercise {
     sets: ex.sets.map((st) => ({ ...st, weight: null, actualReps: null, done: false })),
   };
 }
+/**
+ * A neighbouring exercise, as seen mid-swipe.
+ *
+ * ⚠ IT IS A PREVIEW, NOT THE CARD, AND THAT IS A DELIBERATE LIMIT. The real exercise body is ~540
+ * lines over a dozen derived values — lift history, progression, hero and superset state — several
+ * from hooks that cannot be run once per page. Rendering every exercise for real would also put an
+ * animated demonstration on screen for every lift in the session simultaneously.
+ *
+ * So it shows what is knowable from the session row alone and stays quiet about the rest: position,
+ * name, and what the sets ask for. It fills in the moment the page settles.
+ */
+function ExercisePeek({ ex, index, total }: { ex: SessionExercise; index: number; total: number }) {
+  const done = ex.sets.filter((s) => s.done).length;
+  const sub =
+    ex.kind === 'cardio'
+      ? VERB[ex.activity ?? 'run']
+      : done > 0
+        ? `${done} of ${ex.sets.length} sets logged`
+        : `${ex.sets.length} ${ex.sets.length === 1 ? 'set' : 'sets'}`;
+  return (
+    <View style={styles.peek} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <Text style={styles.peekPos}>{index + 1} / {total}</Text>
+      <Text style={styles.peekName} numberOfLines={2}>{ex.name}</Text>
+      <Text style={styles.peekSub}>{sub}</Text>
+      <View style={styles.peekRule} />
+    </View>
+  );
+}
+
 function Toast({ msg }: { msg: string }) {
   const a = useState(() => new Animated.Value(0))[0];
   useEffect(() => {
@@ -4257,6 +4639,14 @@ function Shell({ children }: { children: ReactNode }) {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
+  /* The pager fills the space between the progress band and the action bar; each page is exactly one
+     screen wide, which is what makes `pagingEnabled` snap to an exercise rather than to a fraction. */
+  pager: { flex: 1 },
+  peek: { flex: 1, paddingHorizontal: SCREEN_GUTTER, paddingTop: 18, gap: 10, opacity: 0.55 },
+  peekPos: { fontSize: 10, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.gray600 },
+  peekName: { fontSize: 21, fontWeight: '600', color: flColor.cream100 },
+  peekSub: { fontSize: 12.5, color: flColor.gray400 },
+  peekRule: { height: 1, backgroundColor: flColor.charcoal700, marginTop: 4 },
   scroll: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 24, gap: 14 },
   barTitle: { fontFamily: flFont.display, fontSize: 17, fontWeight: '600', color: flColor.cream100, maxWidth: 240 },
   overflowBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
@@ -4304,12 +4694,16 @@ const styles = StyleSheet.create({
   doneAccent: { color: flColor.bronze400 },
   restChip: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6, paddingLeft: 11, paddingRight: 8, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
   restChipOn: { borderColor: flColor.bronzeBorderSubtle },
-  restChipText: { gap: 1 },
+  restChipText: { gap: 1, flexShrink: 1 },
   restChipKicker: { fontSize: 8, fontWeight: '600', letterSpacing: 0.9, textTransform: 'uppercase', color: flColor.gray600 },
   restChipValue: { fontSize: 12, fontWeight: '700', letterSpacing: 0.6, fontVariant: ['tabular-nums'] },
-  restToggle: { width: 34, height: 20, borderRadius: 999, borderWidth: 1, padding: 2, justifyContent: 'center' },
-  restToggleOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.bronzeBorder, alignItems: 'flex-end' },
-  restToggleOff: { backgroundColor: flColor.charcoal700, borderColor: flColor.charcoal600, alignItems: 'flex-start' },
+  /* Widened 34 → 42 so three knob positions read as three, not as a switch that never quite settles.
+     Position is `alignItems` on the track — the same mechanism the two-state version used, extended by
+     one value, rather than absolute offsets that would need re-measuring at every text scale. */
+  restToggle: { width: 42, height: 20, borderRadius: 999, borderWidth: 1, padding: 2, justifyContent: 'center' },
+  restToggleOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.bronzeBorder },
+  restToggleOff: { backgroundColor: flColor.charcoal700, borderColor: flColor.charcoal600 },
+  restStart: { width: 20, height: 20, borderRadius: 10, borderWidth: 1, borderColor: flColor.bronzeBorder, alignItems: 'center', justifyContent: 'center', paddingLeft: 1 },
   restKnob: { width: 14, height: 14, borderRadius: 7 },
   restKnobOn: { backgroundColor: flColor.bronze400 },
   restKnobOff: { backgroundColor: flColor.gray600 },
@@ -4468,7 +4862,10 @@ const styles = StyleSheet.create({
   setBtns: { flexDirection: 'row', gap: 8, marginTop: 2 },
   addSet: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 44, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronzeBorder, borderRadius: flRadius.md, backgroundColor: 'transparent' },
   addSetText: { fontSize: 12.5, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase', color: flColor.bronze400 },
-  removeSet: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: 16, minHeight: 44, borderWidth: 1, borderColor: flColor.charcoal500, borderRadius: flRadius.md },
+  /* `flex: 1` on BOTH halves, and no `paddingHorizontal` — intrinsic width is what made this one
+     narrower than the dashed Add Set beside it. `setBtns`' gap of 8 is the split down the middle. */
+  removeSet: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, minHeight: 44, borderWidth: 1, borderColor: flColor.charcoal500, borderRadius: flRadius.md },
+  removeSetOff: { opacity: 0.32 },
   removeSetText: { fontSize: 12.5, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase', color: flColor.gray400 },
 
   // exercise nav

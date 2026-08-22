@@ -1,24 +1,42 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-/**
- * The rest-timer on/off preference — device-local, like the tour/home-level flags. Defaults to OFF
- * (unset → false): a fresh athlete starts with no rest timer running, and only once they turn it on
- * does the choice persist, so it stays on for every later workout. Cleared on account switch by
- * `first-run.ts`. Only the on/off *preference* lives here; the live countdown is transient in-screen state.
- */
-const KEY = 'forge_rest_timer_on_v1';
+import {
+  isRestMode,
+  legacyFlagFor,
+  resolveRestMode,
+  REST_MODE_KEY,
+  REST_MODE_LEGACY_KEY,
+  type RestMode,
+} from './rest-timer-pref-model';
 
-export async function getRestTimerEnabled(): Promise<boolean> {
+/**
+ * The rest-timer preference — device-local, like the tour/home-level flags. Cleared on account switch
+ * by `first-run.ts`. Only the *preference* lives here; the live countdown is transient in-screen state.
+ *
+ * ⚠ THIS FILE IS THE STORAGE HALF ONLY. The three modes, the legacy migration and the reasoning behind
+ * both live in `rest-timer-pref-model.ts`, which imports nothing native so the migration can actually be
+ * tested. Read that file first — every decision this one makes is made there.
+ */
+
+export { nextRestMode, REST_MODES, type RestMode } from './rest-timer-pref-model';
+
+export async function getRestMode(): Promise<RestMode> {
   try {
-    return (await AsyncStorage.getItem(KEY)) === '1';
+    const stored = await AsyncStorage.getItem(REST_MODE_KEY);
+    /* Short-circuits so the common path stays ONE read — the legacy key is only worth touching when
+       the new one has nothing readable to say. Both exits go through `resolveRestMode` regardless, so
+       the decision lives in exactly one place. */
+    if (isRestMode(stored)) return resolveRestMode(stored, null);
+    return resolveRestMode(stored, await AsyncStorage.getItem(REST_MODE_LEGACY_KEY));
   } catch {
-    return false;
+    return 'off';
   }
 }
 
-export async function setRestTimerEnabled(on: boolean): Promise<void> {
+export async function setRestMode(m: RestMode): Promise<void> {
   try {
-    await AsyncStorage.setItem(KEY, on ? '1' : '0');
+    await AsyncStorage.setItem(REST_MODE_KEY, m);
+    await AsyncStorage.setItem(REST_MODE_LEGACY_KEY, legacyFlagFor(m));
   } catch {
     // best-effort; a missing flag just falls back to OFF
   }
@@ -26,7 +44,7 @@ export async function setRestTimerEnabled(on: boolean): Promise<void> {
 
 export async function clearRestTimerPref(): Promise<void> {
   try {
-    await AsyncStorage.removeItem(KEY);
+    await AsyncStorage.multiRemove([REST_MODE_KEY, REST_MODE_LEGACY_KEY]);
   } catch {
     // best-effort
   }

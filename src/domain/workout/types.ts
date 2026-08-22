@@ -244,6 +244,20 @@ export interface ActiveSession {
    */
   templateId?: string;
   /**
+   * The session arrived with a PLAN — a program day, a saved template, a Forge starter, or a shared
+   * shape — rather than starting empty and being filled from the Picker.
+   *
+   * ⚠ IT IS NOT DERIVABLE, WHICH IS WHY IT IS STORED. `programId` and `templateId` cover two of the
+   * four: a Forge starter deliberately stamps neither (there is no row to attribute to — see the note
+   * in `/workout`'s `starterId` branch), and once a freestyle session has had three exercises added to
+   * it, it looks exactly like a prescribed one. The only moment the difference is knowable is the
+   * moment the session is built, so that is where it is written down.
+   *
+   * Absent means freestyle. A session autosaved before this field existed resumes without it and keeps
+   * the Add Exercise button — the safe direction, since it restores the behaviour that shipped.
+   */
+  templated?: boolean;
+  /**
    * What they're training to — Workout-Playlist-Amendment-001 §4, attached from the "⋯ Options" menu.
    *
    * It lives on the SESSION rather than being written straight to the cloud because that is the only
