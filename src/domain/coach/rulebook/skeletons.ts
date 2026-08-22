@@ -355,7 +355,7 @@ const MUSCLE_SPLITS: Record<number, DaySkeleton[]> = {
   6: [PUSH, PULL, LEGS, PUSH, PULL, LEGS],
 };
 
-/** Conditioning and weight loss: full body, high frequency, cardio on most days. */
+/** Conditioning: full body, high frequency, cardio on most days. */
 const CONDITIONING_SPLITS: Record<number, DaySkeleton[]> = {
   2: [cond(FULL_A, 20), cond(FULL_B, 20)],
   3: [cond(FULL_A, 20), cond(FULL_B, 20), cond(FULL_C, 25)],
@@ -369,6 +369,49 @@ const CONDITIONING_SPLITS: Record<number, DaySkeleton[]> = {
     cond(FULL_B, 15),
     cond(FULL_C, 25),
   ],
+};
+
+/**
+ * ⭐ LOSE WEIGHT: A LIFTING SPLIT WITH A FINISHER — NOT A CIRCUIT WITH WEIGHTS IN IT.
+ *
+ * ⚠ THIS TABLE USED TO BE `CONDITIONING_SPLITS`, AND THAT WAS THE WRONG DEFAULT.
+ *
+ * PO: *"lose weight it automatically did full body exercises, but we need to remember that weight
+ * lifting in general will help lose weight."*
+ *
+ * The old mapping gave every athlete who said "lose weight" a full-body day at EVERY frequency — six
+ * days a week of Full Body A/B/C. That is defensible at two or three days, where frequency is scarce and
+ * everything has to be hit every session. It is not defensible at five, where the athlete has the volume
+ * to run a real split and is instead handed the same three days twice. The shape said, in effect, that
+ * someone losing weight is not really lifting; they are doing circuits that happen to use dumbbells.
+ *
+ * Lifting IS the fat-loss training. Resistance work against a load is what holds on to the muscle while
+ * the weight comes off, and muscle held is the difference between losing weight and losing size. So this
+ * is `MUSCLE_SPLITS` — the same push/pull/legs and upper/lower a hypertrophy block gets — with the
+ * conditioning finisher kept on top.
+ *
+ * ⚠ DERIVED FROM `MUSCLE_SPLITS`, NOT COPIED FROM IT. Written out per frequency so the table still
+ * reads as a table, but each row points at the hypertrophy week rather than restating it, so the two
+ * cannot drift apart in a later edit and leave weight-loss athletes on a stale split.
+ *
+ * ⚠ THE FINISHER IS NOT NEGOTIABLE and stays exactly where it was — see `skeletonFor`'s note. What
+ * changed is what comes BEFORE it.
+ *
+ * The volume BAND is untouched (`GOAL_CATEGORY.weight_loss` is still `CONDITIONING`, 12–24 sets against
+ * hypertrophy's 18–30). That is deliberate: someone eating less recovers from less, so the split gets
+ * the hypertrophy SHAPE at the conditioning DOSE. Shape and dose are separate levers and only one of
+ * them was wrong.
+ */
+const wl = (week: readonly DaySkeleton[]): DaySkeleton[] =>
+  week.map((d, i) => cond(d, i === week.length - 1 ? 25 : 15));
+
+const WEIGHT_LOSS_SPLITS: Record<number, DaySkeleton[]> = {
+  // Two days is the one frequency where full body is still right — nothing can afford to be skipped.
+  2: wl(MUSCLE_SPLITS[2]),
+  3: wl(MUSCLE_SPLITS[3]), // push / pull / legs
+  4: wl(MUSCLE_SPLITS[4]), // upper / lower
+  5: wl(MUSCLE_SPLITS[5]),
+  6: wl(MUSCLE_SPLITS[6]),
 };
 
 /** Mobility: the same two days rotated. Short, frequent, and not trying to be a strength program. */
@@ -393,9 +436,9 @@ const SPLITS: Partial<Record<Goal, Record<number, DaySkeleton[]>>> = {
   strength: STRENGTH_SPLITS,
   muscle: MUSCLE_SPLITS,
   conditioning: CONDITIONING_SPLITS,
-  weight_loss: CONDITIONING_SPLITS,
+  weight_loss: WEIGHT_LOSS_SPLITS,
   mobility: MOBILITY_SPLITS,
-  /* Reuses the strength skeletons deliberately, exactly as `weight_loss` reuses conditioning's. A
+  /* Reuses the strength skeletons deliberately, exactly as `weight_loss` reuses hypertrophy's. A
      general-health block IS full-body strength work — the difference between it and `strength` is the
      volume band it is prescribed at (see GOAL_CATEGORY), not the shape of the week. */
   health: STRENGTH_SPLITS,

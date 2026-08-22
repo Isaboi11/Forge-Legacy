@@ -31,7 +31,10 @@ const FREQUENCY: Record<number, string> = {
 const GOAL_EMPHASIS: Partial<Record<Goal, string>> = {
   strength: 'Compounds lead every day while you are freshest, and the rep ranges stay low enough that the weight is the point.',
   muscle: 'Moderate reps and a bit more volume per muscle — the range where most growth actually happens.',
-  weight_loss: 'Full-body sessions plus conditioning at the end, so you keep the muscle you have while the work adds up.',
+  /* ⚠ REWRITTEN WITH THE SPLIT IT DESCRIBES (2026-08-21). This said "full-body sessions", which was
+     true of the old table and is now false at three days and up — and a rationale that describes a
+     different week than the one on the card is worse than none. See `WEIGHT_LOSS_SPLITS`. */
+  weight_loss: 'Lifting leads and conditioning finishes. Training against a real load is what holds on to the muscle while the weight comes off — the cardio at the end is on top of that, not instead of it.',
   conditioning: 'Movements first, then a cardio block you have earned rather than started with.',
   mobility: 'Held positions rather than reps. Short and frequent beats long and occasional here.',
 };

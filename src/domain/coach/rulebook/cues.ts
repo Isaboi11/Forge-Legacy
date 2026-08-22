@@ -61,7 +61,9 @@ const INTENT: Record<string, string | null> = {
   muscle: 'Three seconds down, no pause at the bottom, drive up. The lowering half is the half that grows.',
   // Heavy work wants intent, not tempo. Slowing a top set down makes it a worse top set.
   strength: 'Move it like you mean it. Brace hard, then be violent out of the bottom — speed is the point.',
-  weight_loss: 'Keep the rest short and the form honest. Density is doing the work here, not load.',
+  /* ⚠ "not load" was the old full-body-circuit framing and it undercut the training that does the
+     work. Density still matters; it is not a licence to stop lifting. See `WEIGHT_LOSS_SPLITS`. */
+  weight_loss: 'Keep the rest short and the form honest. This is still lifting, not a circuit.',
   conditioning: 'Keep moving. The set ends when the reps do, not when it starts to hurt.',
   mobility: null,
 };
